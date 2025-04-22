@@ -1,6 +1,3 @@
-export type User = {
-  id: string;
-  email: string;
-  username: string;
-  password?: string;
-};
+import type { User } from '@sirena/database';
+
+export type CreateUserDto = Omit<User, 'id' | 'createdAt' | 'isEmailValid' | 'isActive'>;

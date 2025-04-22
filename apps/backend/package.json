@@ -2,18 +2,25 @@
   "name": "@sirena/backend",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "generate:openAPI": "tsx src/swagger/gen-openAPI-swagger.ts"
+    "build": "pkgroll --tsconfig tsconfig.build.json",
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "generate:openAPI": "tsx src/swagger/gen-openAPI-swagger.ts",
+    "lint": "biome check ./src/"
   },
   "exports": {
-    ".": "./src/*",
-    "./client": "./src/hc.ts",
-    "./swagger": "./src/swagger/openAPI.json"
+    "./swagger": "./src/swagger/openAPI.json",
+    "./hc": {
+      "import": {
+        "default": "./dist/hc.js",
+        "types": "./dist/hc.d.ts"
+      }
+    }
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
-    "@hono/zod-openapi": "^0.19.2",
+    "@hono/zod-validator": "^0.4.3",
     "@scalar/hono-api-reference": "^0.8.0",
+    "@sirena/database": "workspace:*",
     "hono": "^4.7.5",
     "hono-openapi": "^0.4.6",
     "hono-pino": "^0.8.0",
@@ -23,7 +30,9 @@
     "zod-openapi": "^4.2.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@types/node": "^20.11.17",
+    "pkgroll": "^2.12.1",
     "tsx": "^4.7.1"
   }
 }

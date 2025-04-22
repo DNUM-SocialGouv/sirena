@@ -1,4 +1,5 @@
-import { z } from "@hono/zod-openapi";
+import * as z from 'zod';
+import 'zod-openapi/extend';
 
 export const ErrorSchema = z.object({
   error: z.string(),

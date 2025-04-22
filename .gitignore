@@ -177,4 +177,4 @@ dist
 
 # personal
 
-packages/database/generated/client
+packages/database/generated/*

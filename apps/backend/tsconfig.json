@@ -10,12 +10,7 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@types/*": ["src/types/*"],
-      "@schemas/*": ["src/schemas/*"],
-      "@libs/*": ["src/libs/*"],
-      "@middlewares/*": ["src/middlewares/*"],
-      "@features/*": ["src/features/*"]
+      "@/*": ["src/*"]
     }
   }
 }

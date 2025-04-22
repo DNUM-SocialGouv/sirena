@@ -1,6 +1,6 @@
-import { serve } from "@hono/node-server";
-import { setupOpenAPI } from "./openAPI.ts";
-import { app } from "./app.ts";
+import { serve } from '@hono/node-server';
+import { app } from './app.ts';
+import { setupOpenAPI } from './openAPI.ts';
 
 setupOpenAPI(app);
 
@@ -11,5 +11,5 @@ serve(
   },
   (info) => {
     console.log(`Server is running on http://localhost:${info.port}`);
-  }
+  },
 );

@@ -1,6 +1,10 @@
 packages:
-  - "packages/*"
-  - "apps/*"
+  - packages/*
+  - apps/*
 catalogs:
   prisma:
     prisma: latest
+  zod:
+    zod: 3.24.2,
+onlyBuiltDependencies:
+  - '@prisma/client'

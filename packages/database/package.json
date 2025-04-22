@@ -1,0 +1,34 @@
+{
+  "name": "@sirena/database",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./zod": "./generated/zod/index.ts"
+  },
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:diff": "prisma migrate diff --from-empty --to-schema-datamodel ./prisma/schema.prisma --script",
+    "db:deploy": "prisma migrate deploy",
+    "db:reset": "prisma migrate reset",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.30",
+    "prisma": "catalog:prisma",
+    "tsx": "^4.19.3",
+    "typescript": "~5.7.3"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.5.2",
+  "dependencies": {
+    "@prisma/client": "6.6.0",
+    "zod": "^3.24.2",
+    "zod-prisma-types": "^3.2.4"
+  }
+}

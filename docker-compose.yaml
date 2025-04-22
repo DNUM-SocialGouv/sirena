@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: sirena-postgres-dev
+    environment:
+      POSTGRES_DB: ${PG_SIRENA_DB}
+      POSTGRES_USER: ${PG_SIRENA_USER}
+      POSTGRES_PASSWORD: ${PG_SIRENA_PASSWORD}
+    ports:
+      - "${PG_PORT}:5432"
+    networks:
+      - sirena-network
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_SIRENA_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  studio:
+    container_name: sirena-studio-dev
+    build:
+      dockerfile: ./packages/database/Dockerfile
+    depends_on:
+      - postgres
+    ports:
+      - "3015:5555"
+    networks:
+      - sirena-network
+    env_file:
+      - ./.env
+    environment:
+      PG_URL: postgresql://${PG_SIRENA_USER}:${PG_SIRENA_PASSWORD}@postgres:5432/${PG_SIRENA_DB}
+    entrypoint: ["/app/scripts/studio.sh"]
+
+
+volumes:
+  pgdata:
+
+networks:
+  sirena-network:
+    driver: bridge

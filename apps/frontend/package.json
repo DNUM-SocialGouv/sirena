@@ -4,13 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "predev": "react-dsfr update-icons",
+    "prebuild": "react-dsfr update-icons",
+    "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "generate:openAPI": "tsx ./src/scripts/openAPI.ts"
   },
   "dependencies": {
+    "@codegouvfr/react-dsfr": "^1.22.5",
     "@sirena/backend": "workspace:*",
     "@tanstack/react-query": "^5.71.10",
     "@tanstack/react-router": "^1.115.0",
@@ -20,6 +23,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@eslint/js": "^9.21.0",
     "@tanstack/react-router-devtools": "^1.115.0",
     "@tanstack/router-plugin": "^1.115.0",

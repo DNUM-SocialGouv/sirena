@@ -1,5 +1,7 @@
-import { app } from "./app.ts";
-import { hc } from "hono/client";
+import { hc } from 'hono/client';
+import type { app } from './app.ts';
 
-export type AppType = typeof app;
-export const client = hc<AppType>("http://localhost:4000/");
+const client = hc<typeof app>('');
+export type Client = typeof client;
+
+export const hcWithType = (...args: Parameters<typeof hc>): Client => hc<typeof app>(...args);

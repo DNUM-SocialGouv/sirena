@@ -1,14 +1,14 @@
-import { pinoLogger } from "hono-pino";
-import pino from "pino";
-import pretty from "pino-pretty";
+import { pinoLogger } from 'hono-pino';
+import pino from 'pino';
+import pretty from 'pino-pretty';
 
 export default () => {
   return pinoLogger({
     pino: pino.default(
       {
-        level: "info",
+        level: 'info',
       },
-      pretty()
+      pretty(),
     ),
     http: {
       reqId: () => crypto.randomUUID(),
