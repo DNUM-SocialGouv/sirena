@@ -5,7 +5,7 @@
   "main": "index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./zod": "./generated/zod/index.ts"
+    "./zod": "./src/zod.ts"
   },
   "scripts": {
     "db:generate": "prisma generate",

@@ -1,8 +1,10 @@
+import { z } from '@hono/zod-openapi';
 import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { z } from 'zod';
-import 'zod-openapi/extend';
 import type { AppBindingsLogs } from './factories/appWithLogs.ts';
+import 'zod-openapi/extend';
+import { ZodDate } from 'zod';
+import { ZodBoolean } from 'zod';
 
 export const errorHandler: ErrorHandler<AppBindingsLogs> = (err, c) => {
   if (err instanceof HTTPException) {

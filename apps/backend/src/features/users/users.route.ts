@@ -2,10 +2,10 @@ import { HTTPExceptionSchema } from '@/helpers/errors.ts';
 import { describeRoute } from 'hono-openapi';
 import { resolver } from 'hono-openapi/zod';
 import {
-  deleteUserResponseSchema,
-  getUserResponseSchema,
-  getUsersResponseSchema,
-  userParamsIdSchema,
+  DeleteUserResponseSchema,
+  GetUserResponseSchema,
+  GetUsersResponseSchema,
+  UserParamsIdSchema,
 } from './users.schema.ts';
 
 export const getUserRoute = describeRoute({
@@ -15,7 +15,7 @@ export const getUserRoute = describeRoute({
       id: {
         description: 'User ID',
         required: true,
-        schema: resolver(userParamsIdSchema),
+        schema: resolver(UserParamsIdSchema),
       },
     },
   ],
@@ -23,11 +23,9 @@ export const getUserRoute = describeRoute({
     200: {
       description: 'Successful response',
       content: {
-        'application/json': { schema: resolver(getUserResponseSchema) },
+        'application/json': { schema: resolver(GetUserResponseSchema) },
       },
     },
-  },
-  errorHandler: {
     404: {
       description: 'User not found',
       content: {
@@ -43,7 +41,7 @@ export const getUsersRoute = describeRoute({
     200: {
       description: 'Successful response',
       content: {
-        'application/json': { schema: resolver(getUsersResponseSchema) },
+        'application/json': { schema: resolver(GetUsersResponseSchema) },
       },
     },
   },
@@ -54,11 +52,9 @@ export const postUserRoute = describeRoute({
     201: {
       description: 'Successful response',
       content: {
-        'application/json': { schema: resolver(getUsersResponseSchema) },
+        'application/json': { schema: resolver(GetUserResponseSchema) },
       },
     },
-  },
-  errorHandler: {
     400: {
       description: 'Invalid payload',
       content: {
@@ -74,11 +70,9 @@ export const deleteUserRoute = describeRoute({
     200: {
       description: 'Successful response',
       content: {
-        'application/json': { schema: resolver(deleteUserResponseSchema) },
+        'application/json': { schema: resolver(DeleteUserResponseSchema) },
       },
     },
-  },
-  errorHandler: {
     404: {
       description: 'User not found',
       content: {

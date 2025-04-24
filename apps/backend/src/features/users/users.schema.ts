@@ -1,17 +1,17 @@
-import { UserSchema } from '@sirena/database/zod';
+import zod from '@sirena/database/zod';
 import { z } from 'zod';
 import 'zod-openapi/extend';
 
-export const userSchema = z.object(UserSchema.shape);
+export const UserSchema = zod.UserSchema;
 
-export const getUserResponseSchema = z.object(UserSchema.shape);
-export const getUsersResponseSchema = z.array(getUserResponseSchema);
+export const GetUserResponseSchema = UserSchema;
+export const GetUsersResponseSchema = z.array(UserSchema);
 
-export const userParamsIdSchema = z.object({
+export const UserParamsIdSchema = z.object({
   id: z.string(),
 });
 
-export const createUserRequestSchema = z.object({
+export const PostUserRequestSchema = z.object({
   email: z.string().email(),
   name: z.string(),
   firstName: z.string(),
@@ -19,6 +19,6 @@ export const createUserRequestSchema = z.object({
   password: z.string(),
 });
 
-export const deleteUserResponseSchema = z.object({
+export const DeleteUserResponseSchema = z.object({
   message: z.string(),
 });
