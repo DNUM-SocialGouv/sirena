@@ -5,7 +5,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { errorHandler } from './helpers/errors.ts';
 
 export const app = new OpenAPIHono()
-  // .use(pinoLogger())
+  .use(pinoLogger())
   .route('/', UsersApp)
   .doc31('/doc', {
     openapi: '3.1.0',
@@ -13,5 +13,10 @@ export const app = new OpenAPIHono()
       version: '1.0.0',
       title: 'Sirena',
     },
-  });
-// .errorHandler(errorHandler);
+  })
+  .onError(errorHandler);
+
+const authorsApp = new OpenAPIHono()
+  .get('/', (c) => c.json({ result: 'list authors' }))
+  .post('/', (c) => c.json({ result: 'create an author' }, 201))
+  .get('/:id', (c) => c.json({ result: `get ${c.req.param('id')}` }));

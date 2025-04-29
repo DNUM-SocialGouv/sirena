@@ -1,6 +1,7 @@
 {
   "name": "@sirena/backend-bis",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "build": "pkgroll --tsconfig tsconfig.build.json",
     "dev": "tsx watch --clear-screen=false src/index.ts",

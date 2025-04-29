@@ -1,0 +1,46 @@
+{
+  "name": "@sirena/ui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test": "vitest",
+    "test:browser": "vitest --workspace=vitest.workspace.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "packageManager": "pnpm@10.5.2",
+  "devDependencies": {
+    "@storybook/addon-essentials": "^8.6.12",
+    "@storybook/addon-interactions": "^8.6.12",
+    "@storybook/react": "^8.6.12",
+    "@storybook/react-vite": "^8.6.12",
+    "@storybook/test": "^8.6.12",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/browser": "^3.1.2",
+    "jsdom": "^26.1.0",
+    "playwright": "^1.52.0",
+    "storybook": "^8.6.12",
+    "vitest": "^3.1.2",
+    "vitest-browser-react": "^0.1.1"
+  },
+  "dependencies": {
+    "@codegouvfr/react-dsfr": "^1.22.5",
+    "react": "^19.0.0"
+  }
+}

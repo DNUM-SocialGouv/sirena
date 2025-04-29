@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "predev": "react-dsfr update-icons",
     "prebuild": "react-dsfr update-icons",
@@ -15,6 +16,7 @@
   "dependencies": {
     "@codegouvfr/react-dsfr": "^1.22.5",
     "@sirena/backend": "workspace:*",
+    "@sirena/ui": "workspace:*",
     "@tanstack/react-query": "^5.71.10",
     "@tanstack/react-router": "^1.115.0",
     "hono": "^4.7.5",

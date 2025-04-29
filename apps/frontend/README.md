@@ -1,54 +1,32 @@
-# React + TypeScript + Vite
+# @sirena/frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Frontend application** for the Sirena project.  
+Built with **React 19**, **Vite 6**, **TanStack Router**, and **TypeScript**.
 
-Currently, two official plugins are available:
+## 📚 Main project paths
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```plaintext
+src/assets/             → Static assets like images or SVGs.
+src/components/common/  → Reusable atomic UI components (e.g., buttons, inputs).
+src/components/layout/  → Structural layout components (e.g., headers, footers).
+src/hooks/              → Query and mutation hooks using TanStack React Query.
+src/lib/                → API utilities (OpenAPI-based clients, HTTP helpers).
+src/routes/             → Application pages managed by TanStack Router.
+src/stores/             → Zustand stores for global state management.
+src/scripts/            → Utility scripts (e.g., OpenAPI codegen).
+src/styles/             → Global styles, tokens, Tailwind or CSS modules.
+src/types/              → Global TypeScript definitions (e.g., OpenAPI models).
+src/utils/              → Pure utility functions (formatters, helpers, etc.).
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🚀 Scripts
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+| Command | Description |
+|:--|:--|
+| `pnpm run predev` | Update icons automatically before dev (`react-dsfr`). |
+| `pnpm run prebuild` | Update icons automatically before build (`react-dsfr`). |
+| `pnpm run dev` | Start the Vite dev server (accessible from local network). |
+| `pnpm run build` | Build the TypeScript files and Vite production build. |
+| `pnpm run lint` | Run biome on the project. |
+| `pnpm run preview` | Preview the built application locally. |
+| `pnpm run generate:openAPI` | Generate OpenAPI TypeScript types from `openAPI.ts` script. |
