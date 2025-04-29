@@ -6,7 +6,8 @@
     "build": "pkgroll --tsconfig tsconfig.build.json",
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "generate:openAPI": "tsx src/swagger/gen-openAPI-swagger.ts",
-    "lint": "biome check ./src/"
+    "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/backend/' | sed 's|^packages/backend/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
+    "lint": "biome check"
   },
   "exports": {
     "./swagger": "./src/swagger/openAPI.json",

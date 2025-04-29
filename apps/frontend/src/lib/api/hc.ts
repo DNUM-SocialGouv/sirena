@@ -1,3 +1,3 @@
-import { hcWithType } from "@sirena/backend/hc";
+import { hcWithType } from '@sirena/backend/hc';
 
-export const client = hcWithType("/api");
+export const client = hcWithType('/api');

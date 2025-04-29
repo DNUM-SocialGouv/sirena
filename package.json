@@ -12,7 +12,11 @@
     "db:studio": "dotenv -e .env -- pnpm --filter @sirena/database studio",
     "db:migrate": "dotenv -e .env -- pnpm --filter @sirena/database db:migrate",
     "db:deploy": "dotenv -e .env -- pnpm --filter @sirena/database db:deploy",
-    "db:generate": "dotenv -e .env -- pnpm --filter @sirena/database db:generate"
+    "db:generate": "dotenv -e .env -- pnpm --filter @sirena/database db:generate",
+    "lint": "pnpm -r run lint",
+    "prepare": "husky",
+    "gitleaks": "git diff --cached --name-only | xargs -r gitleaks detect --no-git --source . --redact --verbose",
+    "lint:staged": "pnpm -r run lint:staged"
   },
   "keywords": [],
   "author": "",
@@ -20,5 +24,11 @@
   "packageManager": "pnpm@10.5.2",
   "dependencies": {
     "dotenv-cli": "^8.0.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "biome": "^0.3.3",
+    "husky": "^9.1.7"
   }
 }

@@ -15,12 +15,15 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test": "vitest",
-    "test:browser": "vitest --workspace=vitest.workspace.ts"
+    "test:browser": "vitest --workspace=vitest.workspace.ts",
+    "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/ui/' | sed 's|^packages/ui/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
+    "lint": "biome check"
   },
   "keywords": [],
   "author": "",
   "packageManager": "pnpm@10.5.2",
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@storybook/addon-essentials": "^8.6.12",
     "@storybook/addon-interactions": "^8.6.12",
     "@storybook/react": "^8.6.12",

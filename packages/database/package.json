@@ -14,9 +14,12 @@
     "db:deploy": "prisma migrate deploy",
     "db:reset": "prisma migrate reset",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/database/' | sed 's|^packages/database/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
+    "lint": "biome check"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@types/node": "^20.17.30",
     "prisma": "catalog:prisma",
     "tsx": "^4.19.3",

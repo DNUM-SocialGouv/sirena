@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 type AuthState = {
   token: string | null;
@@ -21,7 +21,7 @@ export const useAuthStore = create<AuthState>()(
       setUsername: (name) => set({ username: name }),
     }),
     {
-      name: "auth-storage",
-    }
-  )
+      name: 'auth-storage',
+    },
+  ),
 );
