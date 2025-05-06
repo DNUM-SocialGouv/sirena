@@ -1,6 +1,6 @@
 import { HTTPException404NotFound } from '@/helpers/errors.ts';
 import factoryWithLogs from '@/helpers/factories/appWithLogs.ts';
-import { validator as zValidator } from 'hono-openapi/zod';
+import { zValidator } from '@hono/zod-validator';
 import { deleteUserRoute, getUserRoute, getUsersRoute, postUserRoute } from './users.route.ts';
 import { PostUserRequestSchema } from './users.schema.ts';
 import { createUser, deleteUser, getUserById, getUsers } from './users.service.ts';

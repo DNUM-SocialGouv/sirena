@@ -9,7 +9,7 @@ services:
     ports:
       - "127.0.0.1:${PG_PORT}:5432"
     networks:
-      - sirena-network
+      - sirena-postgres-network
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -27,7 +27,7 @@ services:
     ports:
       - "127.0.0.1:3015:5555"
     networks:
-      - sirena-network
+      - sirena-postgres-network
     env_file:
       - ./.env
     environment:
@@ -38,5 +38,5 @@ volumes:
   pgdata:
 
 networks:
-  sirena-network:
+  sirena-postgres-network:
     driver: bridge

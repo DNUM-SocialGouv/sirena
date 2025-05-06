@@ -1,0 +1,67 @@
+services:
+  postgres:
+    container_name: sirena-postgres-prod
+    extends:
+      file: docker-compose.yaml
+      service: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  
+  studio:
+    container_name: sirena-studio-prod
+    extends:
+      file: docker-compose.yaml
+      service: studio
+    env_file:
+      - ./.env.docker
+
+  frontend:
+    container_name: sirena-frontend-prod
+    build:
+      dockerfile: ./packages/frontend/Dockerfile
+    ports:
+    - "127.0.0.1:3001:80"
+    depends_on:
+      - postgres
+    env_file:
+      - ./.env.docker
+    networks:
+      - sirena-nginx-network
+    
+  backend:
+    container_name: sirena-backend-prod
+    build:
+      dockerfile: ./packages/backend/Dockerfile
+    ports:
+    - "127.0.0.1:3010:4000"
+    depends_on:
+      - postgres
+    env_file:
+      - ./.env.docker
+    networks:
+      - sirena-postgres-network
+      - sirena-nginx-network
+  
+  nginx:
+    container_name: sirena-nginx-prod
+    image: nginx:latest
+    ports:
+      - "127.0.0.1:3000:80"
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
+    networks:
+      - sirena-nginx-network
+    volumes:
+      - ./nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  pgdata:
+
+networks:
+  sirena-postgres-network:
+    driver: bridge
+  sirena-nginx-network:
+    driver: bridge
