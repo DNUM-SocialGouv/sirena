@@ -30,12 +30,35 @@ services:
       - sirena-postgres-network
     env_file:
       - ./.env
+
+
+  maildev:
+    container_name: sirena-maildev-dev
+    image: maildev/maildev:2.2.1
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1080:1080"
+      - "127.0.0.1:1025:1025"
+
+  minio:
+    container_name: sirena-minio-dev
+    image: minio/minio
+    restart: unless-stopped
+    volumes:
+      - miniodata:/data
+    ports:
+      - "127.0.0.1:9000:9000" # MinIO api
+      - "127.0.0.1:9001:9001" # MinIO admin console
     environment:
-      PG_URL: postgresql://${PG_SIRENA_USER}:${PG_SIRENA_PASSWORD}@postgres:5432/${PG_SIRENA_DB}
+      MINIO_ROOT_USER: ${S3_BUCKET_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_BUCKET_SECRET_KEY}
+      MINIO_REGION: ${S3_BUCKET_REGION}
+    command: server /data --console-address ":9001"
 
 
 volumes:
   pgdata:
+  miniodata:
 
 networks:
   sirena-postgres-network:

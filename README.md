@@ -132,19 +132,6 @@ packages/
 
 ## Docker build
 
-### Backend
-
-- sirena_sirena-network is a network provided by postgres
-- .env.docker must contain PG_URL (ex: postgresql://${PG_SIRENA_USER}:${PG_SIRENA_PASSWORD}@postgres:5432/${PG_SIRENA_DB})
-
 ```bash
-docker build -f apps/backend/Dockerfile -t sirena-backend ./
-docker run --network sirena_sirena-network -p 3010:4000 --env-file .env.docker sirena-backend
-```
-
-### Frontend
-
-```bash
-docker build -f apps/frontend/Dockerfile -t sirena-frontend ./
-docker run -d -p 3000:80 sirena-frontend
+docker compose -f docker-compose.prod.yaml up
 ```

@@ -56,9 +56,22 @@ services:
       - sirena-nginx-network
     volumes:
       - ./nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
+  
+  minio:
+    extends:
+      file: docker-compose.yaml
+      service: minio
+    container_name: sirena-minio-prod
+  
+  maildev:
+    extends:
+      file: docker-compose.yaml
+      service: maildev
+    container_name: sirena-maildev-prod
 
 volumes:
   pgdata:
+  miniodata:
 
 networks:
   sirena-postgres-network:
