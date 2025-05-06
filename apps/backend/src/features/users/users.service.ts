@@ -1,5 +1,6 @@
+import prisma from '@/libs/prisma.ts';
 import type { CreateUserDto } from '@/types/user.d.ts';
-import { type User, prisma } from '@sirena/database';
+import type { User } from '@sirena/database';
 
 export const getUsers = async () => await prisma.user.findMany();
 

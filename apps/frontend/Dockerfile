@@ -1,0 +1,41 @@
+ARG NODE_VERSION=23-alpine
+FROM node:$NODE_VERSION AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN npm install --global corepack@latest && \
+    corepack enable pnpm
+
+FROM base AS builder
+
+USER node
+WORKDIR /app
+
+COPY --chown=node:node package*.json pnpm* ./
+
+COPY --chown=node:node ./packages/ui/package.json packages/ui/
+COPY --chown=node:node ./apps/backend/package.json apps/backend/
+COPY --chown=node:node ./apps/frontend/package.json apps/frontend/
+
+RUN pnpm install --frozen-lockfile 
+
+COPY --chown=node:node ./packages/ui packages/ui
+COPY --chown=node:node ./apps/backend apps/backend
+COPY --chown=node:node ./apps/frontend apps/frontend
+
+RUN pnpm --filter @sirena/backend build
+RUN pnpm --filter @sirena/frontend build
+
+FROM nginx:stable-alpine AS frontend
+
+RUN rm /etc/nginx/conf.d/default.conf
+
+
+COPY ./nginx/frontend.conf /etc/nginx/conf.d/
+
+# copy React build output
+COPY --from=builder /app/apps/frontend/dist   /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

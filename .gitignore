@@ -178,3 +178,4 @@ dist
 # personal
 
 packages/database/generated/*
+.env.docker

@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ${PG_SIRENA_USER}
       POSTGRES_PASSWORD: ${PG_SIRENA_PASSWORD}
     ports:
-      - "${PG_PORT}:5432"
+      - "127.0.0.1:${PG_PORT}:5432"
     networks:
       - sirena-network
     volumes:
@@ -25,14 +25,13 @@ services:
     depends_on:
       - postgres
     ports:
-      - "3015:5555"
+      - "127.0.0.1:3015:5555"
     networks:
       - sirena-network
     env_file:
       - ./.env
     environment:
       PG_URL: postgresql://${PG_SIRENA_USER}:${PG_SIRENA_PASSWORD}@postgres:5432/${PG_SIRENA_DB}
-    entrypoint: ["/app/scripts/studio.sh"]
 
 
 volumes:
