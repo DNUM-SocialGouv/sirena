@@ -19,6 +19,4 @@ export const PostUserRequestSchema = z.object({
   password: z.string(),
 });
 
-export const DeleteUserResponseSchema = z.object({
-  message: z.string(),
-});
+export const UserIdSchema = UserSchema.shape.id;

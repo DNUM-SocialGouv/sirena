@@ -1,0 +1,371 @@
+sire_dico_data 
++-------------------+------------------+
+| Field             | Type             |
++-------------------+------------------+
+| id_data           | int(10) unsigned | PRIMARY_KEY
+| archived          | int(1)           |
+| code              | varchar(50)      |
+| dico_id           | varchar(40)      |
+| dico_name         | varchar(100)     |
+| dico_value_id     | varchar(40)      |
+| id_owner          | int(10) unsigned |
+| label             | varchar(255)     |
+| libelle           | varchar(255)     |
+| position          | int(11)          |
+| short_label       | varchar(30)      |
+| sys_creation_date | datetime         |
+| sys_last_mod_date | datetime         |
+| sys_last_mod_user | int(10) unsigned |
++-------------------+------------------+
+
+sire_finess_data
++----------------------+------------------+
+| Field                | Type             |
++----------------------+------------------+
+| id_data              | int(10) unsigned | PRIMARY_KEY
+| categagretab         | varchar(4)       |
+| categetab            | varchar(3)       |
+| checksum             | varchar(32)      |
+| codepostal           | varchar(5)       |
+| commune              | varchar(3)       |
+| compldistrib         | varchar(50)      |
+| complrs              | varchar(50)      |
+| compvoie             | varchar(3)       |
+| datecrea             | date             |
+| datefermeture        | date             |
+| datelimite           | date             |
+| datemaj              | date             |
+| dateouv              | date             |
+| departement          | varchar(2)       |
+| id_owner             | int(10) unsigned |
+| indcaduc             | varchar(1)       |
+| libcategagretab      | varchar(80)      |
+| libcategetab         | varchar(100)     |
+| libcommune           | varchar(50)      |
+| libcourtcategagretab | varchar(30)      |
+| libcourtcategetab    | varchar(30)      |
+| libdepartement       | varchar(40)      |
+| libelle              | varchar(255)     |
+| libellepays          | varchar(10)      |
+| lieuditbp            | varchar(50)      |
+| ligneacheminement    | varchar(40)      |
+| nofiness             | varchar(10)      |
+| nofinessej           | varchar(9)       |
+| nofinesset           | varchar(9)       |
+| numvoie              | int(11)          |
+| qualifcreation       | varchar(3)       |
+| rs                   | varchar(50)      |
+| rslongue             | varchar(100)     |
+| search               | varchar(255)     |
+| sys_creation_date    | datetime         |
+| sys_last_mod_date    | datetime         |
+| sys_last_mod_user    | int(10) unsigned |
+| telephone            | varchar(10)      |
+| typefermeture        | varchar(3)       |
+| typevoie             | varchar(4)       |
+| voie                 | varchar(50)      |
++----------------------+------------------+
+
+sire_igas_data                             
++-------------------+------------------+
+| Field             | Type             |
++-------------------+------------------+
+| id_data           | int(10) unsigned | PRIMARY_KEY
+| affichage         | int(1)           |
+| id_owner          | int(10) unsigned |
+| libelle           | varchar(255)     |
+| niveau            | int(11)          |
+| parent            | int(11)          |
+| sys_creation_date | datetime         |
+| sys_last_mod_date | datetime         |
+| sys_last_mod_user | int(10) unsigned |
++-------------------+------------------+
+
+sire_mc_igas_data                          
++-------------------+------------------+
+| Field             | Type             |
++-------------------+------------------+
+| id_data           | int(10) unsigned | PRIMARY_KEY
+| associate         | int(10) unsigned |
+| hors_ars          | int(10) unsigned |
+| id_data_voo3      | int(11)          |
+| id_igas           | int(10) unsigned | REFERENCES sire_igas_data.id_data
+| id_mc             | int(10) unsigned | REFERENCES sire_misencause_data.id_data
+| id_owner          | int(10) unsigned |
+| igas_type         | varchar(50)      |
+| institution       | int(10) unsigned |
+| niveau            | int(11)          |
+| sys_creation_date | datetime         |
+| sys_last_mod_date | datetime         |
+| sys_last_mod_user | int(10) unsigned |
++-------------------+------------------+
+
+sire_misencause_data                       
++-------------------+------------------+
+| Field             | Type             |
++-------------------+------------------+
+| id_data           | int(10) unsigned | PRIMARY_KEY
+| adresse           | varchar(255)     |
+| autres_mc         | varchar(255)     |
+| autres_mc_type    | int(10) unsigned |
+| ecrituredroit     | varchar(255)     |
+| identifiant       | int(10) unsigned |
+| id_data_voo3      | int(11)          |
+| id_owner          | int(10) unsigned |
+| id_reclamation    | int(10) unsigned | REFERENCES sire_reclamation_data.id_data
+| label             | varchar(255)     |
+| libelle_mc        | varchar(255)     |
+| partagedroit      | varchar(255)     |
+| public_concerne   | int(10) unsigned |
+| service_concerne  | int(10) unsigned |
+| sys_creation_date | datetime         |
+| sys_last_mod_date | datetime         |
+| sys_last_mod_user | int(10) unsigned |
+| type              | int(10) unsigned |
+| type_traitement   | int(10) unsigned |
+| validate          | int(10) unsigned |
++-------------------+------------------+
+
+sire_misencause_dico_type_traitement_data  
++---------------+------------------+
+| Field         | Type             |
++---------------+------------------+
+| id_data       | int(10) unsigned | PRIMARY_KEY
+| id_dico       | int(10) unsigned |
+| id_misencause | int(10) unsigned | REFERENCES sire_misencause_data.id_data
+| id_owner      | int(10) unsigned | REFERENCES sire_dico_data.id_data
++---------------+------------------+
+
+sire_pj_group                              
++----------+------------------+
+| Field    | Type             |
++----------+------------------+
+| id_group | int(10) unsigned | PRIMARY_KEY
+| disabled | int(10) unsigned |
+| name     | varchar(150)     |
++----------+------------------+
+
+sire_provenances_data                      
++-------------------+------------------+
+| Field             | Type             |
++-------------------+------------------+
+| id_data           | int(10) unsigned | PRIMARY_KEY
+| date_signalement  | date             |
+| id_data_voo3      | int(11)          |
+| id_owner          | int(10) unsigned |
+| id_provenance     | int(11)          |
+| id_reclamation    | int(10) unsigned | REFERENCES sire_reclamation_data.id_data
+| reponse_attendue  | int(10) unsigned |
+| sys_creation_date | datetime         |
+| sys_last_mod_date | datetime         |
+| sys_last_mod_user | int(10) unsigned |
++-------------------+------------------+
+
+sire_reclamation_data                      
++------------------------------+------------------+
+| Field                        | Type             |
++------------------------------+------------------+
+| id_data                      | int(10) unsigned | PRIMARY_KEY
+| accuser_reception            | int(10) unsigned |
+| accuser_reception_precision  | varchar(255)     |
+| adresse_ban_mc_autre         | varchar(255)     |
+| anteriotite                  | int(10) unsigned |
+| autres_mc                    | varchar(255)     |
+| autres_mc_adresse            | varchar(255)     |
+| autres_mc_type               | int(10) unsigned |
+| a_renseigner_mc1             | int(1)           |
+| a_renseigner_mc2             | int(1)           |
+| a_renseigner_mc3             | int(1)           |
+| a_renseigner_mc4             | int(1)           |
+| a_renseigner_mc5             | int(1)           |
+| calculEtat                   | int(1)           |
+| cloture_affectation          | int(1)           |
+| courrier_signal              | int(10) unsigned |
+| date_cloture                 | date             |
+| date_commission              | date             |
+| date_ecriture                | date             |
+| date_envoi_ar                | date             |
+| date_recep_gest              | date             |
+| date_rep_plaignant           | date             |
+| date_rep_provenance1         | date             |
+| date_rep_provenance2         | date             |
+| date_rep_provenance3         | date             |
+| date_signalement             | date             |
+| date_traitement              | date             |
+| date_transfert_instit1       | date             |
+| date_transfert_instit2       | date             |
+| date_transfert_instit3       | date             |
+| demat_number                 | varchar(255)     |
+| departement                  | int(10) unsigned |
+| description                  | text             |
+| dest                         | int(10) unsigned |
+| dest_primaire                | varchar(255)     |
+| dest_secondaire              | varchar(255)     |
+| domaine                      | int(10) unsigned |
+| ecrituredroit                | varchar(255)     |
+| ei_avere                     | int(10) unsigned |
+| etat                         | int(10) unsigned |
+| finess                       | int(10) unsigned | REFERENCES sire_finess_data.id_data
+| id_data_voo3                 | int(11)          |
+| id_owner                     | int(10) unsigned |
+| institution_label            | varchar(255)     |
+| institution_part             | varchar(255)     |
+| lien_plai_autre              | varchar(255)     |
+| mandataire_judiciaire        | int(1)           |
+| mandataire_precisez          | int(10) unsigned |
+| mesures_initiative           | int(10) unsigned |
+| mesures_precision            | varchar(255)     |
+| mesures_prises               | int(10) unsigned |
+| motifs_declares              | int(10) unsigned |
+| motif_cloture                | text             |
+| niv_competence_reclam        | int(10) unsigned |
+| nom_representant             | varchar(255)     |
+| numero_sirce                 | varchar(255)     |
+| num_sign_assoc               | varchar(50)      |
+| observation                  | text             |
+| partagedroit                 | varchar(255)     |
+| plaignant                    | int(10) unsigned |
+| plaignant_adresse            | varchar(255)     |
+| plaignant_adresse_complement | varchar(255)     |
+| plaignant_anonyme            | int(1)           |
+| plaignant_connu              | int(1)           |
+| plaignant_est_anonyme        | int(1)           |
+| plaignant_loc                | int(10) unsigned | REFERENCES sire_villes_data.id_data
+| plaignant_mail               | varchar(255)     |
+| plaignant_nom                | varchar(255)     |
+| plaignant_prenom             | varchar(255)     |
+| plaignant_rs                 | varchar(255)     |
+| plaignant_sexe               | int(10) unsigned |
+| plaignant_tel                | varchar(255)     |
+| plaignant_type               | int(10) unsigned |
+| preciser_statut              | varchar(255)     |
+| prec_niv_comp                | text             |
+| prenom_representant          | varchar(255)     |
+| prioritaire                  | int(1)           |
+| prioritaire_precisez         | varchar(255)     |
+| provenance                   | int(10) unsigned |
+| reception                    | int(10) unsigned |
+| ref_sirce                    | int(11)          |
+| reponse_attendue             | int(10) unsigned |
+| reponse_plaignant            | int(10) unsigned |
+| reponse_plaignant_precision  | varchar(255)     |
+| requerant_adresse            | varchar(255)     |
+| requerant_adresse_complete   | varchar(255)     |
+| requerant_cp                 | varchar(255)     |
+| requerant_ville              | varchar(255)     |
+| rpps                         | int(10) unsigned | REFERENCES sire_rpps_data.id_data
+| r_recept_date                | date             |
+| saisine                      | int(10) unsigned |
+| sans_mc                      | int(1)           |
+| service_gestionnaire         | int(10) unsigned |
+| service_mc1                  | int(10) unsigned |
+| service_mc2                  | int(10) unsigned |
+| service_mc3                  | int(10) unsigned |
+| service_mc4                  | int(10) unsigned |
+| service_mc5                  | int(10) unsigned |
+| service_recepteur_niv1       | int(10) unsigned |
+| signalement                  | int(1)           |
+| sys_creation_date            | datetime         |
+| sys_last_mod_date            | datetime         |
+| sys_last_mod_user            | int(10) unsigned |
+| type_cloture                 | int(10) unsigned |
+| type_traitement              | int(10) unsigned |
+| type_traitement_prec         | varchar(255)     |
+| usager_adresse               | varchar(255)     |
+| usager_adresse_complete      | varchar(255)     |
+| usager_cp                    | varchar(255)     |
+| usager_ville                 | varchar(255)     |
+| victime_adresse              | varchar(255)     |
+| victime_adresse_complement   | varchar(255)     |
+| victime_age                  | int(11)          |
+| victime_lien_plaignant       | int(10) unsigned |
+| victime_loc                  | int(10) unsigned | REFERENCES sire_villes_data.id_data
+| victime_mail                 | varchar(255)     |
+| victime_nom                  | varchar(255)     |
+| victime_non_identifiee       | int(1)           |
+| victime_prenom               | varchar(255)     |
+| victime_sexe                 | int(10) unsigned |
+| victime_tel                  | varchar(255)     |
++------------------------------+------------------+
+
+sire_reclamation_data_group                
++---------------+------------------+
+| Field         | Type             |
++---------------+------------------+
+| id_data_group | int(10) unsigned | PRIMARY_KEY
+| id_data       | int(10) unsigned |
+| id_group      | int(10) unsigned |
++---------------+------------------+
+
+sire_reclamation_dico_motifs_declares_data 
++----------------+------------------+
+| Field          | Type             |
++----------------+------------------+
+| id_data        | int(10) unsigned | PRIMARY_KEY
+| id_dico        | int(10) unsigned | REFERENCES sire_dico_data.id_data
+| id_owner       | int(10) unsigned |
+| id_reclamation | int(10) unsigned | REFERENCES sire_reclamation_data.id_data
++----------------+------------------+
+
+sire_reclamation_dico_type_traitement_data 
++----------------+------------------+
+| Field          | Type             |
++----------------+------------------+
+| id_data        | int(10) unsigned | PRIMARY_KEY
+| id_dico        | int(10) unsigned | REFERENCES sire_dico_data.id_data
+| id_owner       | int(10) unsigned |
+| id_reclamation | int(10) unsigned | REFERENCES sire_reclamation_data.id_data
++----------------+------------------+
+
+sire_rpps_data                             
++---------------------+------------------+
+| Field               | Type             |
++---------------------+------------------+
+| id_data             | int(10) unsigned | PRIMARY_KEY
+| actif               | varchar(255)     |
+| adresse             | varchar(255)     |
+| adresses_multiples  | varchar(255)     |
+| cedex               | varchar(255)     |
+| checksum            | varchar(255)     |
+| checksum_complet    | varchar(255)     |
+| civilite            | varchar(255)     |
+| code_postal         | varchar(255)     |
+| commune             | varchar(255)     |
+| departement         | varchar(255)     |
+| email               | varchar(255)     |
+| id_owner            | int(10) unsigned |
+| indice_rep_num_voie | varchar(255)     |
+| intitule            | varchar(255)     |
+| libelle             | varchar(255)     |
+| libelle_prof        | varchar(255)     |
+| nom                 | varchar(255)     |
+| num_finess_site     | varchar(255)     |
+| num_finess_site_ej  | varchar(255)     |
+| num_siren_site      | varchar(255)     |
+| num_siret_site      | varchar(255)     |
+| num_voie            | varchar(255)     |
+| pays                | varchar(255)     |
+| prenom              | varchar(255)     |
+| raison_sociale_site | varchar(255)     |
+| rpps                | varchar(255)     |
+| sys_creation_date   | datetime         |
+| sys_last_mod_date   | datetime         |
+| sys_last_mod_user   | int(10) unsigned |
+| telephone           | varchar(255)     |
+| telephone2          | varchar(255)     |
+| type_voie           | varchar(255)     |
+| voie                | varchar(255)     |
++---------------------+------------------+
+
+sire_villes_data                           
++-------------------+------------------+
+| Field             | Type             |
++-------------------+------------------+
+| id_data           | int(10) unsigned | PRIMARY_KEY
+| cp                | varchar(255)     |
+| id_owner          | int(10) unsigned |
+| nom               | varchar(255)     |
+| sys_creation_date | datetime         |
+| sys_last_mod_date | datetime         |
+| sys_last_mod_user | int(10) unsigned |
++-------------------+------------------+

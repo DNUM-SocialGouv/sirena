@@ -1,28 +1,32 @@
-type DeepDateToStrings<T> = T extends Date
-  ? string
-  : T extends Array<infer U>
-    ? DeepDateToStrings<U>[]
-    : T extends object
-      ? { [K in keyof T]: DeepDateToStrings<T[K]> }
-      : T;
+type ConvertDatesToStrings<T> = {
+  [K in keyof T]: T[K] extends Date
+    ? string
+    : T[K] extends (infer U)[]
+      ? ConvertDatesToStrings<U>[]
+      : T[K] extends object
+        ? ConvertDatesToStrings<T[K]>
+        : T[K];
+};
 
-// 2. Runtime converter
-export function convertDatesToStrings<T>(obj: T): DeepDateToStrings<T> {
-  if (obj instanceof Date) {
-    return obj.toISOString() as DeepDateToStrings<T>;
-  }
-
+export function convertDatesToStrings<T>(obj: T): ConvertDatesToStrings<T> {
   if (Array.isArray(obj)) {
-    return obj.map((item) => convertDatesToStrings(item)) as DeepDateToStrings<T>;
+    return obj.map((item) => convertDatesToStrings(item)) as ConvertDatesToStrings<T>;
   }
-
-  if (obj !== null && typeof obj === 'object') {
-    const result: Partial<Record<string, unknown>> = {};
-    for (const [key, val] of Object.entries(obj)) {
-      result[key] = convertDatesToStrings(val as unknown);
+  if (typeof obj === 'object' && obj !== null) {
+    const result: Partial<ConvertDatesToStrings<T>> = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const value = obj[key];
+        if (value instanceof Date) {
+          result[key] = value.toISOString() as ConvertDatesToStrings<T>[typeof key];
+        } else if (typeof value === 'object' && value !== null) {
+          result[key] = convertDatesToStrings(value) as ConvertDatesToStrings<T>[typeof key];
+        } else {
+          result[key] = value as ConvertDatesToStrings<T>[typeof key];
+        }
+      }
     }
-    return result as DeepDateToStrings<T>;
+    return result as ConvertDatesToStrings<T>;
   }
-
-  return obj as DeepDateToStrings<T>;
+  return obj as ConvertDatesToStrings<T>;
 }

@@ -1,12 +1,8 @@
-import { HTTPExceptionSchema } from '@/helpers/errors.ts';
+import { OpenApi400ZodError, OpenApi404NotFound } from '@/helpers/apiErrors.ts';
+import { OpenApiDeleteResponse, OpenApiResponse, OpenApiResponses } from '@/helpers/apiResponses.ts';
 import { describeRoute } from 'hono-openapi';
 import { resolver } from 'hono-openapi/zod';
-import {
-  DeleteUserResponseSchema,
-  GetUserResponseSchema,
-  GetUsersResponseSchema,
-  UserParamsIdSchema,
-} from './users.schema.ts';
+import { GetUserResponseSchema, GetUsersResponseSchema, UserIdSchema, UserParamsIdSchema } from './users.schema.ts';
 
 export const getUserRoute = describeRoute({
   description: 'Get user by id',
@@ -20,64 +16,29 @@ export const getUserRoute = describeRoute({
     },
   ],
   responses: {
-    200: {
-      description: 'Successful response',
-      content: {
-        'application/json': { schema: resolver(GetUserResponseSchema) },
-      },
-    },
-    404: {
-      description: 'User not found',
-      content: {
-        'application/json': { schema: resolver(HTTPExceptionSchema) },
-      },
-    },
+    ...OpenApiResponse(GetUserResponseSchema),
+    ...OpenApi404NotFound('User not found'),
   },
 });
 
 export const getUsersRoute = describeRoute({
   description: 'Get all users',
   responses: {
-    200: {
-      description: 'Successful response',
-      content: {
-        'application/json': { schema: resolver(GetUsersResponseSchema) },
-      },
-    },
+    ...OpenApiResponses(GetUsersResponseSchema),
   },
 });
 
 export const postUserRoute = describeRoute({
   responses: {
-    201: {
-      description: 'Successful response',
-      content: {
-        'application/json': { schema: resolver(GetUserResponseSchema) },
-      },
-    },
-    400: {
-      description: 'Invalid payload',
-      content: {
-        'application/json': { schema: resolver(HTTPExceptionSchema) },
-      },
-    },
+    ...OpenApiResponse(GetUserResponseSchema, 201),
+    ...OpenApi400ZodError('Invalid payload'),
   },
 });
 
 export const deleteUserRoute = describeRoute({
   description: 'Delete user by id',
   responses: {
-    200: {
-      description: 'Successful response',
-      content: {
-        'application/json': { schema: resolver(DeleteUserResponseSchema) },
-      },
-    },
-    404: {
-      description: 'User not found',
-      content: {
-        'application/json': { schema: resolver(HTTPExceptionSchema) },
-      },
-    },
+    ...OpenApiDeleteResponse(UserIdSchema),
+    ...OpenApi404NotFound('User not found'),
   },
 });

@@ -1,6 +1,6 @@
 import { HTTPException404NotFound } from '@/helpers/errors.ts';
 import factoryWithLogs from '@/helpers/factories/appWithLogs.ts';
-import { zValidator } from '@hono/zod-validator';
+import { validator as zValidator } from 'hono-openapi/zod';
 import { deleteUserRoute, getUserRoute, getUsersRoute, postUserRoute } from './users.route.ts';
 import { PostUserRequestSchema } from './users.schema.ts';
 import { createUser, deleteUser, getUserById, getUsers } from './users.service.ts';
@@ -29,7 +29,7 @@ const app = factoryWithLogs
       throw HTTPException404NotFound();
     }
     await deleteUser(id);
-    return c.json({ message: 'User deleted' }, 200);
+    return c.json({ id, deleted: true }, 200);
   })
 
   .post('/', postUserRoute, zValidator('json', PostUserRequestSchema), async (c) => {
