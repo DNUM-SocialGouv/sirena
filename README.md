@@ -18,7 +18,7 @@ You can start by copying the example:
 cp .env.example .env
 ```
 
-and edit .env as needed.
+and edit .env as needed (at least the PG_* variables).
 
 ### 1. Install dependencies
 
@@ -43,7 +43,7 @@ pnpm db:generate
 ### 3. Build backend to create rpc
 
 ```bash
-pnpm backend:build
+pnpm build:backend
 ```
 
 ### 4. Start development servers
