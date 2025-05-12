@@ -12,7 +12,7 @@ function Index() {
     <div className="p-2">
       <h3>Welcome Home!</h3>
       <Button label="Welcome from @sirena/ui" />
-      {JSON.stringify(data)}
+        {JSON.stringify(data)}
     </div>
   );
 }

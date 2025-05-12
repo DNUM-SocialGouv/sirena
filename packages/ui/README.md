@@ -24,11 +24,11 @@ packages/
 └── ui/
     ├── src/
     │   ├── components/
-    │   │   ├── Button/
-    │   │   │   ├── Button.tsx
-    │   │   │   ├── Button.stories.tsx
-    │   │   │   ├── Button.test.tsx
-    │   │   │   ├── Button.types.ts (optional)
+    │   │   ├── LoginButton/
+    │   │   │   ├── LoginButton.tsx
+    │   │   │   ├── LoginButton.stories.tsx
+    │   │   │   ├── LoginButton.test.tsx
+    │   │   │   ├── LoginButton.types.ts (optional)
 ```
 
 ## 🚀 Scripts
@@ -42,12 +42,12 @@ packages/
 ## 💡 Example Usage
 
 ```ts
-import { Button } from '@sirena/ui';
+import { LoginButton } from '@sirena/ui';
 
 function Example() {
   return (
     <div className="p-2">
-      <Button label="Welcome from @sirena/ui" />
+      <LoginButton label="Welcome from @sirena/ui" />
     </div>
   );
 }

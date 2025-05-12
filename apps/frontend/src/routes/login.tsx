@@ -1,8 +1,8 @@
 import { LoginLayout } from '@/components/layout/loginLayout';
 import { useUserStore } from '@/stores/userStore';
-import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
+import {LoginButton} from "@sirena/ui";
 
 const fallback = '/home' as const;
 
@@ -22,16 +22,34 @@ function RouteComponent() {
   const { updateIsLogged } = useUserStore();
   const navigate = Route.useNavigate();
   const search = Route.useSearch();
+  const {state, access_token, id_token } = Route.useSearch() as { access_token: string, state: string, id_token: string };
 
   const handleLogin = () => {
     updateIsLogged(true);
-    navigate({ to: search.redirect || fallback });
+    return navigate({ to: search.redirect || fallback });
   };
 
-  return (
-    <LoginLayout>
-      Welcome to login
-      <Button onClick={() => handleLogin()}>Login</Button>
-    </LoginLayout>
-  );
+  const sendedState = localStorage.getItem('sendedState') || '';
+  const register_access_token = localStorage.getItem('access_token') || '';
+  if(register_access_token !== ''){
+    return handleLogin()
+  }
+
+  if(state && sendedState !== '' && sendedState !== state) {
+    return <div>
+      SECURITY ERROR
+    </div>;
+  }
+  if(register_access_token !== '' ||  (sendedState === state && id_token && access_token)) {
+    localStorage.setItem('id_token', id_token);
+    localStorage.setItem('access_token', access_token);
+    return handleLogin()
+  }
+
+  return <div className="p-2">
+      <LoginLayout>
+          Welcome to login
+          <LoginButton />
+      </LoginLayout>
+  </div>;
 }

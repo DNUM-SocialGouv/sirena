@@ -16,9 +16,11 @@ You can start by copying the example:
 
 ```bash
 cp .env.example .env
+cp frontend/.env.example frontend/.env
 ```
 
 and edit .env as needed (at least the PG_* variables).
+you can create an application for the login [here](https://partenaires.proconnect.gouv.fr/) to complete the required informations on the frontend .env
 
 ### 1. Install dependencies
 

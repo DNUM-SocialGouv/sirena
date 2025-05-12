@@ -1,5 +1,4 @@
 import { convertDatesToStrings } from '@/tests/formatter.ts';
-import { Hono } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
 import app from './users.controller.ts';

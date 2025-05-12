@@ -4,6 +4,10 @@ FROM node:$NODE_VERSION AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
+# Définition de la variable d'environnement PROCONNECT_DOMAIN
+ARG PROCONNECT_DOMAIN
+ENV PROCONNECT_DOMAIN=$PROCONNECT_DOMAIN
+
 RUN npm install --global corepack@latest && \
     corepack enable pnpm
 
