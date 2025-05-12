@@ -135,3 +135,26 @@ packages/
 ```bash
 docker compose -f docker-compose.prod.yaml up
 ```
+
+## 🔄 Git Workflow
+
+### Branches
+
+- **`main`** : Main development branch
+  - All feature branches are created from `main`
+  - Automatic deployment to development environment
+  - Should never be deleted
+
+- **`validation`** : Validation branch
+  - Merge from `main` at the end of sprints (or more frequently if needed)
+  - Deployment to validation environment
+  - Hotfixes in validation are pushed to this branch
+  - Hotfixes must be backported to `main` via a PR and merge
+  - Should never be deleted
+
+- **`production`** : Production branch
+  - Merge from `validation` for production deployments
+  - Deployment to production environment
+  - Hotfixes in production are pushed to this branch
+  - Hotfixes must be backported to `validation` then `main` via PRs and merges
+  - Should never be deleted
