@@ -10,7 +10,7 @@ const app = factoryWithLogs
 
   .get('/', getUsersRoute, async (c) => {
     const users = await getUsers();
-    return c.json({ users }, 200);
+    return c.json({ data: users }, 200);
   })
 
   .get('/:id', getUserRoute, async (c) => {
@@ -19,7 +19,7 @@ const app = factoryWithLogs
     if (!user) {
       throw HTTPException404NotFound();
     }
-    return c.json({ user }, 200);
+    return c.json({ data: user }, 200);
   })
 
   .delete('/:id', deleteUserRoute, async (c) => {
@@ -35,7 +35,7 @@ const app = factoryWithLogs
   .post('/', postUserRoute, zValidator('json', PostUserRequestSchema), async (c) => {
     const newUser = c.req.valid('json');
     const user = await createUser(newUser);
-    return c.json({ user }, 201);
+    return c.json({ data: user }, 201);
   });
 
 export default app;

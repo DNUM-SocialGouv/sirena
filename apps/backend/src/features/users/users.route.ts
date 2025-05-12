@@ -1,20 +1,10 @@
 import { OpenApi400ZodError, OpenApi404NotFound } from '@/helpers/apiErrors.ts';
 import { OpenApiDeleteResponse, OpenApiResponse, OpenApiResponses } from '@/helpers/apiResponses.ts';
 import { describeRoute } from 'hono-openapi';
-import { resolver } from 'hono-openapi/zod';
-import { GetUserResponseSchema, GetUsersResponseSchema, UserIdSchema, UserParamsIdSchema } from './users.schema.ts';
+import { GetUserResponseSchema, GetUsersResponseSchema, UserIdSchema } from './users.schema.ts';
 
 export const getUserRoute = describeRoute({
   description: 'Get user by id',
-  parameters: [
-    {
-      id: {
-        description: 'User ID',
-        required: true,
-        schema: resolver(UserParamsIdSchema),
-      },
-    },
-  ],
   responses: {
     ...OpenApiResponse(GetUserResponseSchema),
     ...OpenApi404NotFound('User not found'),
