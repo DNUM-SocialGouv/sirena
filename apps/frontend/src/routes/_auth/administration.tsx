@@ -1,0 +1,34 @@
+import { LoggedLayout } from '@/components/layout/logged/logged';
+import { Link, createFileRoute, redirect } from '@tanstack/react-router';
+
+export const Route = createFileRoute('/_auth/administration')({
+  beforeLoad: ({ location, context }) => {
+    if (!context.userStore.isLogged) {
+      throw redirect({
+        to: '/login',
+        search: {
+          redirect: location.href,
+        },
+      });
+    }
+    console.log;
+    if (!context.userStore.isAdmin) {
+      throw redirect({
+        to: '/home',
+      });
+    }
+  },
+  component: RouteComponent,
+});
+
+function RouteComponent() {
+  return (
+    <LoggedLayout>
+      <div className="administration">
+        <h1>Welcome to administration</h1>
+        <p>This is the administration page.</p>
+        <Link to="/home">Home</Link>
+      </div>
+    </LoggedLayout>
+  );
+}
