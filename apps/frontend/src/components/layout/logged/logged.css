@@ -1,0 +1,32 @@
+.logged-layout__container {
+  display: grid;
+  height: 100vh;
+  grid-template-areas:
+    "header header"
+    "nav    main";
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 240px 1fr;
+}
+
+.logged-layout__header {
+  grid-area: header;
+}
+
+.logged-layout__nav {
+  grid-area: nav;
+  padding: 1rem;
+}
+
+.logged-layout__main {
+  grid-area: main;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.fr-sidemenu {
+  height: 100%;
+}
+
+.fr-sidemenu__inner {
+  height: 100%;
+}
