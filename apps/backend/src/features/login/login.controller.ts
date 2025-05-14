@@ -1,3 +1,5 @@
+import { AppEnvSchema } from '@/config/env.schema.ts';
+import { getProConnectEnv } from '@/config/env.ts';
 import { HTTPException503NotAvailable } from '@/helpers/errors.js';
 import factoryWithLogs from '@/helpers/factories/appWithLogs.ts';
 import { env } from 'hono/adapter';
@@ -21,35 +23,31 @@ const app = factoryWithLogs
     }),
     getLoginRoute,
     async (c) => {
-      const {
-        PROCONNECT_DOMAIN,
-        PROCONNECT_CLIENT_ID,
-        PROCONNECT_CLIENT_SECRET,
-        PROCONNECT_REDIRECT_URI,
-        FRONTEND_REDIRECT_URI,
-      } = env<{
-        PROCONNECT_DOMAIN: string;
-        PROCONNECT_CLIENT_ID: string;
-        PROCONNECT_CLIENT_SECRET: string;
-        PROCONNECT_REDIRECT_URI: string;
-        FRONTEND_REDIRECT_URI: string;
-      }>(c);
       try {
+        // Récupérer les variables d'environnement ProConnect avec Zod
+        const proConnectEnv = getProConnectEnv(c);
+
+        // Récupérer les autres variables d'environnement avec Zod
+        const envVars = env(c);
+        const appEnv = AppEnvSchema.parse({
+          FRONTEND_REDIRECT_URI: envVars.FRONTEND_REDIRECT_URI,
+        });
+
         const login = await getLogin(
           c.req.query('code'),
           c.req.query('state'),
           c.req.query('iss'),
-          PROCONNECT_DOMAIN,
-          PROCONNECT_CLIENT_ID,
-          PROCONNECT_CLIENT_SECRET,
-          PROCONNECT_REDIRECT_URI,
+          proConnectEnv.PROCONNECT_DOMAIN,
+          proConnectEnv.PROCONNECT_CLIENT_ID,
+          proConnectEnv.PROCONNECT_CLIENT_SECRET,
+          proConnectEnv.PROCONNECT_REDIRECT_URI,
         );
         const { tokens, state } = login;
-        const userInfo = await getLoginInfo(tokens.access_token, PROCONNECT_DOMAIN);
+        const userInfo = await getLoginInfo(tokens.access_token, proConnectEnv.PROCONNECT_DOMAIN);
         // Do something with usr info (register into database ?)
         console.log(userInfo);
         return c.redirect(
-          `${FRONTEND_REDIRECT_URI}?access_token=${tokens.access_token}&id_token=${tokens.id_token}&state=${state}`,
+          `${appEnv.FRONTEND_REDIRECT_URI}?access_token=${tokens.access_token}&id_token=${tokens.id_token}&state=${state}`,
         );
       } catch (e) {
         console.error(e);
