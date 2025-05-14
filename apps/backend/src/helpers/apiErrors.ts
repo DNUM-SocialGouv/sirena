@@ -20,7 +20,7 @@ export const HTTPException403Forbidden = (msg = MESSAGES.FORBIDDEN) => new HTTPE
 export const HTTPException404NotFound = (msg = MESSAGES.NOT_FOUND) => new HTTPException(404, { message: msg });
 
 export const HTTPException503ServiceUnavailable = (msg = MESSAGES.NOT_FOUND) =>
-  new HTTPException(404, { message: msg });
+  new HTTPException(503, { message: msg });
 
 export const ApiErrorSchema = (): ResolverResult => resolver(ErrorSchema);
 export const ApiZodErrorSchema = (): ResolverResult => resolver(ZodSafeParseErrorSchema);
@@ -36,6 +36,15 @@ export const OpenApi400BadRequest = (description = MESSAGES.BAD_REQUEST) => ({
 
 export const OpenApi400ZodError = (description = MESSAGES.ZOD_ERROR) => ({
   400: {
+    description,
+    content: {
+      'application/json': { schema: ApiZodErrorSchema() },
+    },
+  },
+});
+
+export const OpenApi503ZodError = (description = MESSAGES.ZOD_ERROR) => ({
+  503: {
     description,
     content: {
       'application/json': { schema: ApiZodErrorSchema() },

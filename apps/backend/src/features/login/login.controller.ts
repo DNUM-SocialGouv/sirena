@@ -2,25 +2,26 @@ import { AppEnvSchema } from '@/config/env.schema.ts';
 import { getProConnectEnv } from '@/config/env.ts';
 import { HTTPException503NotAvailable } from '@/helpers/errors.js';
 import factoryWithLogs from '@/helpers/factories/appWithLogs.ts';
+import { validator as zValidator } from 'hono-openapi/zod';
 import { env } from 'hono/adapter';
-import { validator } from 'hono/validator';
+import { z } from 'zod';
 import { getLoginRoute } from './login.route.ts';
 import { getLogin, getLoginInfo } from './login.service.ts';
+import 'zod-openapi/extend';
 
 const app = factoryWithLogs
   .createApp()
 
   .get(
     '/',
-    validator('form', (value, c) => {
-      const requiredQuery1 = c.req.query('code');
-      const requiredQuery2 = c.req.query('state');
-      const requiredQuery3 = c.req.query('iss');
-
-      if (!requiredQuery1 || !requiredQuery2 || !requiredQuery3) {
-        return c.text('Invalid!', 400);
-      }
-    }),
+    zValidator(
+      'query',
+      z.object({
+        code: z.string(),
+        state: z.string(),
+        iss: z.string(),
+      }),
+    ),
     getLoginRoute,
     async (c) => {
       try {
