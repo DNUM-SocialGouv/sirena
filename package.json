@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "dev": "pnpm dev:frontend & pnpm dev:backend",
-    "dev:frontend": "pnpm --filter @sirena/frontend dev",
+    "dev:frontend": "dotenv -e .env -- pnpm --filter @sirena/frontend dev",
     "build:backend": "pnpm --filter @sirena/backend build",
     "build:backend-bis": "pnpm --filter @sirena/backend-bis build",
     "dev:backend": "dotenv -e .env -- pnpm --filter @sirena/backend dev",

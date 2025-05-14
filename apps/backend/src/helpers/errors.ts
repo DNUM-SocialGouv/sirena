@@ -19,3 +19,5 @@ export const HTTPExceptionSchema = z.object({
 });
 
 export const HTTPException404NotFound = () => new HTTPException(404, { message: 'Not Found' });
+
+export const HTTPException503NotAvailable = () => new HTTPException(503, { message: 'Service not available' });

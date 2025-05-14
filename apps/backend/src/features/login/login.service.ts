@@ -1,6 +1,6 @@
 const parseJwt = (token: string) => {
   return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-}
+};
 
 export const getLogin = async (
   code: string | undefined,
@@ -45,5 +45,5 @@ export const getLoginInfo = async (jwt: string | undefined, baseUrl: string | un
     },
   });
   const infos = await result.text();
-  return parseJwt( infos );
+  return parseJwt(infos);
 };

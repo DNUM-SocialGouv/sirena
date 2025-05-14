@@ -1,8 +1,8 @@
 import { testClient } from 'hono/testing';
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import app from './login.controller.ts';
 import { getLogin, getLoginInfo } from './login.service.ts';
-let doSomethingWithUserInformation = vi.fn()
+const doSomethingWithUserInformation = vi.fn();
 describe('Login endPoint', () => {
   beforeEach(() => {
     vi.mock('./login.service.ts', () => ({
@@ -10,12 +10,12 @@ describe('Login endPoint', () => {
       getLoginInfo: vi.fn(),
     }));
     const consoleMock = vi.spyOn(console, 'log').mockImplementation(doSomethingWithUserInformation);
-    vi.stubEnv('FRONTEND_REDIRECT_URI', 'http://example.com')
+    vi.stubEnv('FRONTEND_REDIRECT_URI', 'http://example.com');
   });
   afterEach(() => {
-    vi.clearAllMocks()
-    vi.unstubAllEnvs()
-  })
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+  });
   const client = testClient(app);
   describe('with good return values', () => {
     it('GET / Should redirect to any page', async () => {
@@ -71,8 +71,8 @@ describe('Login endPoint', () => {
       const res = await client.index.$get();
 
       await res.text();
-      expect(doSomethingWithUserInformation).toHaveBeenCalledOnce()
-      expect(doSomethingWithUserInformation).toHaveBeenCalledWith('user informations')
-    })
+      expect(doSomethingWithUserInformation).toHaveBeenCalledOnce();
+      expect(doSomethingWithUserInformation).toHaveBeenCalledWith('user informations');
+    });
   });
 });

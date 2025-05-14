@@ -16,7 +16,6 @@ You can start by copying the example:
 
 ```bash
 cp .env.example .env
-cp frontend/.env.example frontend/.env
 ```
 
 and edit .env as needed (at least the PG_* variables).
