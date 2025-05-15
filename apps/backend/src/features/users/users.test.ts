@@ -31,6 +31,6 @@ describe('User Endpoint', () => {
 
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json).toEqual({ users: convertDatesToStrings(fakeData) });
+    expect(json).toEqual({ data: convertDatesToStrings(fakeData) });
   });
 });
