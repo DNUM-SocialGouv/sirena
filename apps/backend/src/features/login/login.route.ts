@@ -1,7 +1,4 @@
-import {
-  OpenApi400ZodError,
-  OpenApi503ZodError
-} from '@/helpers/apiErrors.ts';
+import { OpenApi400ZodError, OpenApi503ZodError } from '@/helpers/apiErrors.ts';
 import { describeRoute } from 'hono-openapi';
 
 export const getLoginRoute = describeRoute({

@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { getLoginRoute } from './login.route.ts';
 import { getLogin, getLoginInfo } from './login.service.ts';
 import 'zod-openapi/extend';
+import { setCookie } from 'hono/cookie';
 
 const app = factoryWithLogs
   .createApp()
@@ -47,9 +48,32 @@ const app = factoryWithLogs
         const userInfo = await getLoginInfo(tokens.access_token, proConnectEnv.PROCONNECT_DOMAIN);
         // Do something with usr info (register into database ?)
         console.log(userInfo);
-        return c.redirect(
-          `${appEnv.FRONTEND_REDIRECT_URI}?access_token=${tokens.access_token}&id_token=${tokens.id_token}&state=${state}`,
-        );
+        const authTokenDate = new Date(new Date().getTime() + Number.parseInt('86400', 10) * 1000);
+
+        setCookie(c, 'id_token', `Bearer ${tokens.id_token}`, {
+          path: '/',
+          secure: true,
+          httpOnly: true,
+          expires: authTokenDate,
+          sameSite: 'Strict',
+        });
+
+        setCookie(c, 'access_token', `Bearer ${tokens.access_token}`, {
+          path: '/',
+          secure: true,
+          httpOnly: true,
+          expires: authTokenDate,
+          sameSite: 'Strict',
+        });
+
+        setCookie(c, 'is_logged', 'true', {
+          path: '/',
+          secure: true,
+          expires: authTokenDate,
+          sameSite: 'Strict',
+        });
+
+        return c.redirect(`${appEnv.FRONTEND_REDIRECT_URI}?state=${state}`, 302);
       } catch (e) {
         console.error(e);
         throw HTTPException503NotAvailable();
