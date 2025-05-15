@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 
 pnpm lint
-pnpm gitleaks
+pnpm run gitleaks:detect-secrets
