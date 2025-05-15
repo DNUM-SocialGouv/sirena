@@ -40,6 +40,10 @@ function RouteComponent() {
     return handleLogin();
   }
 
+  if (cookies.includes('is_logged') && !state) {
+    return handleLogin();
+  }
+
   return (
     <div className="p-2">
       <LoginLayout>
