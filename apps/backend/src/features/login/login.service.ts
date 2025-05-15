@@ -3,13 +3,13 @@ const parseJwt = (token: string) => {
 };
 
 export const getLogin = async (
-  code: string | undefined,
-  state: string | undefined,
-  iss: string | undefined,
-  baseUrl: string | undefined,
-  client_id: string | undefined,
-  client_secret: string | undefined,
-  redirect_uri: string | undefined,
+  code: string,
+  state: string,
+  iss: string,
+  baseUrl: string,
+  client_id: string,
+  client_secret: string,
+  redirect_uri: string,
 ) => {
   // Création d'un URLSearchParams pour encoder les données en application/x-www-form-urlencoded
   const formData = new URLSearchParams();

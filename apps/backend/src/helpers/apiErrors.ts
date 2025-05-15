@@ -43,11 +43,11 @@ export const OpenApi400ZodError = (description = MESSAGES.ZOD_ERROR) => ({
   },
 });
 
-export const OpenApi503ZodError = (description = MESSAGES.ZOD_ERROR) => ({
+export const OpenApi503Error = (description = MESSAGES.ZOD_ERROR) => ({
   503: {
     description,
     content: {
-      'application/json': { schema: ApiZodErrorSchema() },
+      'application/json': { schema: ApiErrorSchema() },
     },
   },
 });
