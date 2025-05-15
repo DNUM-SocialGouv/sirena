@@ -9,7 +9,7 @@ export type UserState = {
 
 export const useUserStore = create<UserState>((set) => ({
   isAdmin: false,
-  isLogged: false,
+  isLogged: document.cookie.includes('is_logged'),
   updateIsAdmin: (isAdmin: boolean) => set(() => ({ isAdmin })),
   updateIsLogged: (isLogged: boolean) => set(() => ({ isLogged })),
 }));
