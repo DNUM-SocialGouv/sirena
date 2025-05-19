@@ -9,6 +9,7 @@
     "build:backend-bis": "pnpm --filter @sirena/backend-bis build",
     "dev:backend": "dotenv -e .env -- pnpm --filter @sirena/backend dev",
     "dev:backend-bis": "dotenv -e .env -- pnpm --filter @sirena/backend-bis dev",
+    "dev:ui": "pnpm --filter @sirena/ui storybook",
     "db:studio": "dotenv -e .env -- pnpm --filter @sirena/database studio",
     "db:migrate": "dotenv -e .env -- pnpm --filter @sirena/database db:migrate",
     "db:deploy": "dotenv -e .env -- pnpm --filter @sirena/database db:deploy",
