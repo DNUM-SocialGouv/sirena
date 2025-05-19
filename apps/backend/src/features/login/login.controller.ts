@@ -2,19 +2,19 @@ import { AppEnvSchema } from '@/config/env.schema.ts';
 import { getProConnectEnv } from '@/config/env.ts';
 import { HTTPException503NotAvailable } from '@/helpers/errors.js';
 import factoryWithLogs from '@/helpers/factories/appWithLogs.ts';
+import { z } from '@/libs/zod.ts';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { env } from 'hono/adapter';
-import { z } from 'zod';
+import { setCookie } from 'hono/cookie';
 import { getLoginRoute } from './login.route.ts';
 import { getLogin, getLoginInfo } from './login.service.ts';
-import 'zod-openapi/extend';
-import { setCookie } from 'hono/cookie';
 
 const app = factoryWithLogs
   .createApp()
 
   .get(
     '/',
+    getLoginRoute,
     zValidator(
       'query',
       z.object({
@@ -23,22 +23,19 @@ const app = factoryWithLogs
         iss: z.string(),
       }),
     ),
-    getLoginRoute,
     async (c) => {
+      const query = c.req.valid('query');
       try {
-        // Récupérer les variables d'environnement ProConnect avec Zod
         const proConnectEnv = getProConnectEnv(c);
 
-        // Récupérer les autres variables d'environnement avec Zod
         const envVars = env(c);
         const appEnv = AppEnvSchema.parse({
           FRONTEND_REDIRECT_URI: envVars.FRONTEND_REDIRECT_URI,
         });
-
         const login = await getLogin(
-          c.req.query('code'),
-          c.req.query('state'),
-          c.req.query('iss'),
+          query.code,
+          query.state,
+          query.iss,
           proConnectEnv.PROCONNECT_DOMAIN,
           proConnectEnv.PROCONNECT_CLIENT_ID,
           proConnectEnv.PROCONNECT_CLIENT_SECRET,
@@ -75,7 +72,8 @@ const app = factoryWithLogs
 
         return c.redirect(`${appEnv.FRONTEND_REDIRECT_URI}?state=${state}`, 302);
       } catch (e) {
-        console.error(e);
+        const logger = c.get('logger');
+        logger.error('Error during login process', e);
         throw HTTPException503NotAvailable();
       }
     },

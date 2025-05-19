@@ -1,7 +1,6 @@
+import { type ZodSchema, z } from '@/libs/zod.ts';
 import type { ResolverResult } from 'hono-openapi';
 import { resolver } from 'hono-openapi/zod';
-import { type ZodSchema, z } from 'zod';
-import 'zod-openapi/extend';
 
 import { MetaSchema } from '@/schemas/apiResponses.schema.ts';
 
