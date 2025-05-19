@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/libs/zod.ts';
 
 /**
  * Schéma de validation pour les variables d'environnement ProConnect

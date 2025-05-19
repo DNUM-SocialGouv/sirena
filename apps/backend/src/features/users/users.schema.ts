@@ -1,6 +1,5 @@
+import { z } from '@/libs/zod.ts';
 import zod from '@sirena/database/zod';
-import { z } from 'zod';
-import 'zod-openapi/extend';
 
 export const UserSchema = zod.UserSchema;
 

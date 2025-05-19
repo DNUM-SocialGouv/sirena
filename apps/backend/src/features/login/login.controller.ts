@@ -2,13 +2,12 @@ import { AppEnvSchema } from '@/config/env.schema.ts';
 import { getProConnectEnv } from '@/config/env.ts';
 import { HTTPException503NotAvailable } from '@/helpers/errors.js';
 import factoryWithLogs from '@/helpers/factories/appWithLogs.ts';
+import { z } from '@/libs/zod.ts';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { env } from 'hono/adapter';
-import { z } from 'zod';
+import { setCookie } from 'hono/cookie';
 import { getLoginRoute } from './login.route.ts';
 import { getLogin, getLoginInfo } from './login.service.ts';
-import 'zod-openapi/extend';
-import { setCookie } from 'hono/cookie';
 
 const app = factoryWithLogs
   .createApp()
