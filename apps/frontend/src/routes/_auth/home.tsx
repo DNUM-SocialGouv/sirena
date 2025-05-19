@@ -3,9 +3,6 @@ import { useUserStore } from '@/stores/userStore';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Link, createFileRoute, redirect } from '@tanstack/react-router';
 
-const fallback = '/login' as const;
-const logout = '/api/logout' as const;
-
 export const Route = createFileRoute('/_auth/home')({
   beforeLoad: ({ location, context }) => {
     if (!context.userStore.isLogged) {
@@ -27,6 +24,7 @@ function RouteComponent() {
   };
   const handleLogout = () => {
     updateIsLogged(false);
+    //@TODO: clean all store
     const logoutUrl = '/api/logout';
     window.location.href = logoutUrl;
   };
