@@ -1,14 +1,9 @@
 import { test, expect } from '@playwright/test';
-
-const user = 'user@yopmail.com'
-const password = 'user@yopmail.com'
-const loginPage = 'http://localhost:5173/login'
-
+import {loginUrl, user, password} from "./utils";
 
 test('login', async ({ page }) => {
-    await page.goto(loginPage);
+    await page.goto(loginUrl);
 
-    // Click the login link.
     await page.getByRole('link', { name: 'S’identifier avec ProConnect' }).click();
     
     const userInput = page.getByRole('textbox', { name: 'Email professionnel Format' })

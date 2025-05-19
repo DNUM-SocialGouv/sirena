@@ -1,9 +1,9 @@
-import { OpenApi503Error } from '@/helpers/apiErrors.ts';
+import { OpenApi302Redirect } from '@/helpers/apiErrors.ts';
 import { describeRoute } from 'hono-openapi';
 
 export const getLogoutRoute = describeRoute({
   description: 'logout',
   responses: {
-    ...OpenApi503Error('Service Unavailable'),
+    ...OpenApi302Redirect(),
   },
 });

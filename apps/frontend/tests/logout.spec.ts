@@ -1,8 +1,5 @@
 import { test, expect } from '@playwright/test';
-
-const loginUrl = 'http://localhost:5173/login'
-const user = 'user@yopmail.com'
-const password = 'user@yopmail.com'
+import {loginUrl, user, password} from "./utils";
 
 test('logout', async ({ page }) => {
 

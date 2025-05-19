@@ -25,59 +25,51 @@ const app = factoryWithLogs
     ),
     getLoginRoute,
     async (c) => {
-      try {
-        // Récupérer les variables d'environnement ProConnect avec Zod
-        const proConnectEnv = getProConnectEnv(c);
+      const proConnectEnv = getProConnectEnv(c);
+      const envVars = env(c);
+      const appEnv = AppEnvSchema.parse({
+        FRONTEND_REDIRECT_URI: envVars.FRONTEND_REDIRECT_URI,
+      });
 
-        // Récupérer les autres variables d'environnement avec Zod
-        const envVars = env(c);
-        const appEnv = AppEnvSchema.parse({
-          FRONTEND_REDIRECT_URI: envVars.FRONTEND_REDIRECT_URI,
-        });
+      const login = await getLogin(
+        c.req.query('code'),
+        c.req.query('state'),
+        c.req.query('iss'),
+        proConnectEnv.PROCONNECT_DOMAIN,
+        proConnectEnv.PROCONNECT_CLIENT_ID,
+        proConnectEnv.PROCONNECT_CLIENT_SECRET,
+        proConnectEnv.PROCONNECT_REDIRECT_URI,
+      );
+      const { tokens, state } = login;
+      const userInfo = await getLoginInfo(tokens.access_token, proConnectEnv.PROCONNECT_DOMAIN);
+      // Do something with usr info (register into database ?)
+      console.log(userInfo);
+      const authTokenDate = new Date(new Date().getTime() + Number.parseInt('86400', 10) * 1000);
 
-        const login = await getLogin(
-          c.req.query('code'),
-          c.req.query('state'),
-          c.req.query('iss'),
-          proConnectEnv.PROCONNECT_DOMAIN,
-          proConnectEnv.PROCONNECT_CLIENT_ID,
-          proConnectEnv.PROCONNECT_CLIENT_SECRET,
-          proConnectEnv.PROCONNECT_REDIRECT_URI,
-        );
-        const { tokens, state } = login;
-        const userInfo = await getLoginInfo(tokens.access_token, proConnectEnv.PROCONNECT_DOMAIN);
-        // Do something with usr info (register into database ?)
-        console.log(userInfo);
-        const authTokenDate = new Date(new Date().getTime() + Number.parseInt('86400', 10) * 1000);
+      setCookie(c, 'id_token', `Bearer ${tokens.id_token}`, {
+        path: '/',
+        secure: true,
+        httpOnly: true,
+        expires: authTokenDate,
+        sameSite: 'Strict',
+      });
 
-        setCookie(c, 'id_token', `Bearer ${tokens.id_token}`, {
-          path: '/',
-          secure: true,
-          httpOnly: true,
-          expires: authTokenDate,
-          sameSite: 'Strict',
-        });
+      setCookie(c, 'access_token', `Bearer ${tokens.access_token}`, {
+        path: '/',
+        secure: true,
+        httpOnly: true,
+        expires: authTokenDate,
+        sameSite: 'Strict',
+      });
 
-        setCookie(c, 'access_token', `Bearer ${tokens.access_token}`, {
-          path: '/',
-          secure: true,
-          httpOnly: true,
-          expires: authTokenDate,
-          sameSite: 'Strict',
-        });
+      setCookie(c, 'is_logged', 'true', {
+        path: '/',
+        secure: true,
+        expires: authTokenDate,
+        sameSite: 'Strict',
+      });
 
-        setCookie(c, 'is_logged', 'true', {
-          path: '/',
-          secure: true,
-          expires: authTokenDate,
-          sameSite: 'Strict',
-        });
-
-        return c.redirect(`${appEnv.FRONTEND_REDIRECT_URI}?state=${state}`, 302);
-      } catch (e) {
-        console.error(e);
-        throw HTTPException503NotAvailable();
-      }
+      return c.redirect(`${appEnv.FRONTEND_REDIRECT_URI}?state=${state}`, 302);
     },
   );
 

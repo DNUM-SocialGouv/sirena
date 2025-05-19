@@ -155,9 +155,6 @@ importers:
       hono:
         specifier: ^4.7.5
         version: 4.7.5
-      playwright:
-        specifier: ^1.52.0
-        version: 1.52.0
       react:
         specifier: ^19.0.0
         version: 19.1.0
@@ -201,6 +198,9 @@ importers:
       openapi-typescript:
         specifier: ^7.6.1
         version: 7.6.1(typescript@5.7.3)
+      playwright:
+        specifier: ^1.52.0
+        version: 1.52.0
       typescript:
         specifier: ~5.7.2
         version: 5.7.3
