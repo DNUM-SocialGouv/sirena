@@ -53,6 +53,12 @@ pnpm build:backend
 pnpm dev
 ```
 
+### 5. create project in ProConnect for login and logout
+create your account and project on [this url](https://partenaires.proconnect.gouv.fr/) 
+- Setup your env var with the given Client ID and Client Secret
+- Setup `http://localhost:4000/login` on login url redirection
+- Setup `http://localhost:5173/login` on logout url redirection
+
 ## 📦 Monorepo structure
 
 ```plaintext
