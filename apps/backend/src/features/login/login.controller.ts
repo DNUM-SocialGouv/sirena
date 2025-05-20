@@ -9,6 +9,8 @@ import { getLoginRoute } from './login.route.ts';
 import { getLogin, getLoginInfo } from './login.service.ts';
 import 'zod-openapi/extend';
 import { setCookie } from 'hono/cookie';
+const ONE_DAY_IN_SEC = 60 * 60 * 24; // 86400
+const ONE_SESSION_TIME = ONE_DAY_IN_SEC / 2;
 
 const app = factoryWithLogs
   .createApp()
@@ -43,8 +45,9 @@ const app = factoryWithLogs
       const { tokens, state } = login;
       const userInfo = await getLoginInfo(tokens.access_token, proConnectEnv.PROCONNECT_DOMAIN);
       // Do something with usr info (register into database ?)
-      console.log(userInfo);
-      const authTokenDate = new Date(new Date().getTime() + Number.parseInt('86400', 10) * 1000);
+      const doSomethingWithUserInfos = console.log;
+      doSomethingWithUserInfos(userInfo);
+      const authTokenDate = new Date(new Date().getTime() + Number.parseInt(ONE_SESSION_TIME.toString(), 10) * 1000);
 
       setCookie(c, 'id_token', `Bearer ${tokens.id_token}`, {
         path: '/',
