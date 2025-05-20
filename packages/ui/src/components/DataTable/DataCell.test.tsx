@@ -5,8 +5,19 @@ describe('DataCell Component', () => {
   const mockRow = { id: 1, name: 'alice' };
   const getCell = vi.fn((row: typeof mockRow) => row.name.toUpperCase());
 
+  const wrapWithTable = (children: React.ReactNode) => (
+    <table>
+      <thead>
+        <tr>Header</tr>
+      </thead>
+      <tbody>
+        <tr>{children}</tr>
+      </tbody>
+    </table>
+  );
+
   it('renders the cell with the correct content', () => {
-    render(<DataCell row={mockRow} column={{ key: 'name', label: 'Name' }} getCell={getCell} />);
+    render(wrapWithTable(<DataCell row={mockRow} column={{ key: 'name', label: 'Name' }} getCell={getCell} />));
     expect(getCell).toHaveBeenCalledWith(mockRow, 'name');
     expect(screen.getByText('ALICE')).toBeInTheDocument();
   });
