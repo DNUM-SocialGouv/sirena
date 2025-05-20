@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, memo } from 'react';
 import type { Column, ColumnKey, RowWithId } from './DataTable.type';
 
 type DataCellProps<Datum extends RowWithId<RowId>, RowId extends string> = {
@@ -7,7 +7,7 @@ type DataCellProps<Datum extends RowWithId<RowId>, RowId extends string> = {
   getCell: (row: Datum, key: ColumnKey<Datum>) => ReactNode;
 };
 
-export const DataCell = <Datum extends RowWithId<RowId>, RowId extends string>({
+const DataCellComponent = <Datum extends RowWithId<RowId>, RowId extends string>({
   row,
   column,
   getCell,
@@ -20,3 +20,5 @@ export const DataCell = <Datum extends RowWithId<RowId>, RowId extends string>({
     </td>
   );
 };
+
+export const DataCell = memo(DataCellComponent) as typeof DataCellComponent;

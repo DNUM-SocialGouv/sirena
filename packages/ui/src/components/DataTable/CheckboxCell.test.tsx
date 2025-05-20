@@ -14,8 +14,16 @@ describe('CheckBoxCell Component', () => {
     onToggleSelect: vi.fn(),
   };
 
+  const wrapWithTable = (children: React.ReactNode) => (
+    <table>
+      <thead>
+        <tr> {children} </tr>
+      </thead>
+    </table>
+  );
+
   it('renders the checkbox with the correct label and attributes', () => {
-    render(<CheckboxCell {...defaultProps} />);
+    render(wrapWithTable(<CheckboxCell {...defaultProps} />));
     const checkbox = screen.getByLabelText('Sélectionner la ligne 1') as HTMLInputElement;
 
     expect(checkbox).toBeInTheDocument();
@@ -27,7 +35,7 @@ describe('CheckBoxCell Component', () => {
   it('calls onToggleSelect with the correct ID when clicked', async () => {
     const user = userEvent.setup();
     const onToggleSelect = vi.fn();
-    render(<CheckboxCell {...defaultProps} onToggleSelect={onToggleSelect} />);
+    render(wrapWithTable(<CheckboxCell {...defaultProps} onToggleSelect={onToggleSelect} />));
 
     const checkbox = screen.getByRole('checkbox');
     await user.click(checkbox);
@@ -37,7 +45,7 @@ describe('CheckBoxCell Component', () => {
   });
 
   it('renders the checkbox as checked when selected is true', () => {
-    render(<CheckboxCell {...defaultProps} selected={true} />);
+    render(wrapWithTable(<CheckboxCell {...defaultProps} selected={true} />));
     const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
   });

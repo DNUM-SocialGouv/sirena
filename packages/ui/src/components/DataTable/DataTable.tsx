@@ -161,12 +161,13 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
         rowId={rowId}
         id={id}
         selected={selectedValues.includes(row[rowId])}
+        isSelectable={isSelectable}
         onToggleSelect={handleToggleSelect}
         columns={columns}
         getCell={getCell}
       />
     ));
-  }, [data, columns, selectedValues, handleToggleSelect, getCell, rowId, id]);
+  }, [data, columns, selectedValues, handleToggleSelect, getCell, rowId, id, isSelectable]);
 
   return (
     <div className={`fr-table fr-table--${size} ${isBordered && 'fr-table--bordered'}`} id={`${id}-component`}>

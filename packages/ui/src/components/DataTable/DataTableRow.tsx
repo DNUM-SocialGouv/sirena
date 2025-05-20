@@ -10,6 +10,7 @@ type DataTableRowProps<Datum extends RowWithId<RowId>, RowId extends string> = {
   rowId: RowId;
   id: string;
   selected: boolean;
+  isSelectable: boolean;
   onToggleSelect: (id: Datum[RowId]) => void;
   columns: Column<Datum>[];
   getCell: (row: Datum, key: ColumnKey<Datum>) => ReactNode;
@@ -20,6 +21,7 @@ const DataTableRowComponent = <Datum extends RowWithId<RowId>, RowId extends str
   rowIndex,
   rowId,
   id,
+  isSelectable,
   selected,
   onToggleSelect,
   columns,
@@ -27,14 +29,16 @@ const DataTableRowComponent = <Datum extends RowWithId<RowId>, RowId extends str
 }: DataTableRowProps<Datum, RowId>) => {
   return (
     <tr key={row[rowId]} id={`${id}-row-key-${rowIndex}`} data-row-key={row[rowId]} aria-selected={selected}>
-      <CheckboxCell
-        id={id}
-        row={row}
-        rowId={rowId}
-        rowIndex={rowIndex}
-        selected={selected}
-        onToggleSelect={onToggleSelect}
-      />
+      {isSelectable && (
+        <CheckboxCell
+          id={id}
+          row={row}
+          rowId={rowId}
+          rowIndex={rowIndex}
+          selected={selected}
+          onToggleSelect={onToggleSelect}
+        />
+      )}
       {columns.map((column) => (
         <DataCell key={column.key} column={column} row={row} getCell={getCell} />
       ))}

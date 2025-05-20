@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { RowWithId } from './DataTable.type';
 
-type CheckboxCellProps<RowId extends string, Datum extends RowWithId<RowId>> = {
+type CheckboxCellProps<Datum extends RowWithId<RowId>, RowId extends string> = {
   id: string;
   row: Datum;
   rowIndex: number;
@@ -17,7 +17,7 @@ const CheckboxCellComponent = <Datum extends RowWithId<RowId>, RowId extends str
   rowId,
   selected,
   onToggleSelect,
-}: CheckboxCellProps<RowId, Datum>) => {
+}: CheckboxCellProps<Datum, RowId>) => {
   const inputId = `${id}-checkbox-key-${rowIndex}`;
 
   return (
