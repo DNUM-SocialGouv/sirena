@@ -65,18 +65,18 @@ jobs:
 
 
       - name: Install dependencies
-        working-directory: deploy
         run: |
+          cd deploy
           npm install
       
       - name: Check format and lint
-        working-directory: deploy
         run: |
+          cd deploy
           npm run lint
 
       - name: Render manifests
-        working-directory: deploy
         run: |
+          cd deploy
           npm run build
 
       # - name: Checkout GitOps repository
