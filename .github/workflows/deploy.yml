@@ -33,26 +33,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ env.SHORT_SHA }}
-            
-      - name: Save image tag in an env var
-        run: |
-          echo "IMAGE_TAG=${{ steps.meta.outputs.tags }}" | tee -a $GITHUB_ENV
-
       - name: Build and push Docker backend image
         uses: docker/build-push-action@v5
         with:
           context: . 
           file: apps/backend/Dockerfile
           push: true
-          tags: backend-${{ env.IMAGE_TAG }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ env.SHORT_SHA }}
 
       - name: Build and push Docker frontend image
         uses: docker/build-push-action@v5
@@ -60,20 +47,22 @@ jobs:
           context: .
           file: apps/frontend/Dockerfile
           push: true
-          tags: frontend-${{ env.IMAGE_TAG }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ env.SHORT_SHA }}
 
-      # - name: Format and lint
-      #   run: |
-      #     cd deploy
-      #     npx @biomejs/biome lint ./main.ts
-      #     npx @biomejs/biome format ./main.ts
+      - name: Install dependencies
+        working-directory: ./deploy
+        run: |
+          npm install
+      
+      - name: Check format and lint
+        working-directory: ./deploy
+        run: |
+          npm run lint
 
-      # - name: Render manifests
-      #   run: |
-      #     cd deploy
-      #     npm install
-      #     npm run build
+      - name: Render manifests
+        working-directory: ./deploy
+        run: |
+          npm run build
 
       # - name: Checkout GitOps repository
       #   uses: actions/checkout@v4
