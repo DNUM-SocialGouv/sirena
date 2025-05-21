@@ -18,9 +18,15 @@ export const Route = createFileRoute('/_auth/home')({
 });
 
 function RouteComponent() {
-  const { updateIsAdmin, isAdmin } = useUserStore();
+  const { updateIsAdmin, isAdmin, updateIsLogged } = useUserStore();
   const handlePermissionsChange = () => {
     updateIsAdmin(!isAdmin);
+  };
+  const handleLogout = () => {
+    updateIsLogged(false);
+    //@TODO: clean all store
+    const logoutUrl = '/api/logout';
+    window.location.href = logoutUrl;
   };
 
   return (
@@ -29,6 +35,7 @@ function RouteComponent() {
         <h1>Welcome to home</h1>
         <Link to="/administration">Administration</Link>
         <Button onClick={() => handlePermissionsChange()}> Change permissions </Button>
+        <Button onClick={() => handleLogout()}> Logout </Button>
       </div>
     </LoggedLayout>
   );

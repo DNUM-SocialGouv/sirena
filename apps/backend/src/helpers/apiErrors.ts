@@ -76,3 +76,8 @@ export const OpenApi404NotFound = (description = MESSAGES.NOT_FOUND) => ({
     },
   },
 });
+export const OpenApi302Redirect = () => ({
+  302: {
+    content: {},
+  },
+});

@@ -43,7 +43,7 @@ describe('LoginButton Component', () => {
   it('have the correct link after change', async () => {
     render(<LoginButton />);
     const uuid = '12345678-1234-1234-1234-123456789abc';
-    const generatedUrl = `https://authorization_endpoint?state=${uuid}&nonce=${uuid}&redirect_uri=VITE_PROCONNECT_REDIRECT_URI&client_id=VITE_PROCONNECT_CLIENT_ID&scope=openid+uid&response_type=code`;
+    const generatedUrl = `https://authorization_endpoint?state=${uuid}&nonce=${uuid}&redirect_uri=VITE_PROCONNECT_REDIRECT_URI&client_id=VITE_PROCONNECT_CLIENT_ID&scope=uid+openid+given_name+usual_name+siret+email+organizational_unit&response_type=code`;
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'S’identifier avec ProConnect' })).toHaveAttribute('href', generatedUrl);
     });

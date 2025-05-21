@@ -14,10 +14,10 @@ export const getLogin = async (
   // Création d'un URLSearchParams pour encoder les données en application/x-www-form-urlencoded
   const formData = new URLSearchParams();
   formData.append('grant_type', 'authorization_code');
-  formData.append('code', code || '');
-  formData.append('client_id', client_id || '');
-  formData.append('client_secret', client_secret || '');
-  formData.append('redirect_uri', redirect_uri || '');
+  formData.append('code', code);
+  formData.append('client_id', client_id);
+  formData.append('client_secret', client_secret);
+  formData.append('redirect_uri', redirect_uri);
 
   const result = await fetch(`https://${baseUrl}/api/v2/token`, {
     method: 'POST',

@@ -1,4 +1,5 @@
 import { useUserStore } from '@/stores/userStore';
+import { Button } from '@codegouvfr/react-dsfr/Button';
 import { SideMenu, type SideMenuProps } from '@codegouvfr/react-dsfr/SideMenu';
 import { useMemo } from 'react';
 
@@ -25,5 +26,9 @@ export const SideNav = () => {
     [isAdmin, ADMIN, HOME, CASES, ENTITIES, USERS],
   );
 
-  return <SideMenu align="left" burgerMenuButtonText="Dans cette rubrique" items={items} />;
+  return (
+    <>
+      <SideMenu align="left" burgerMenuButtonText="Dans cette rubrique" items={items} />
+    </>
+  );
 };
