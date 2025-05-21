@@ -65,17 +65,17 @@ jobs:
 
 
       - name: Install dependencies
-        working-directory: ./deploy
+        working-directory: deploy
         run: |
           npm install
       
       - name: Check format and lint
-        working-directory: ./deploy
+        working-directory: deploy
         run: |
           npm run lint
 
       - name: Render manifests
-        working-directory: ./deploy
+        working-directory: deploy
         run: |
           npm run build
 
