@@ -33,13 +33,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ env.SHORT_SHA }}
+            
+      - name: Save image tag in an env var
+        run: |
+          echo "IMAGE_TAG=${{ steps.meta.outputs.tags }}" | tee -a $GITHUB_ENV
+
       - name: Build and push Docker backend image
         uses: docker/build-push-action@v5
         with:
           context: . 
           file: apps/backend/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHORT_SHA }}-backend
+          tags: ${{ env.IMAGE_TAG }}-backend
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Docker frontend image
         uses: docker/build-push-action@v5
@@ -47,7 +60,9 @@ jobs:
           context: .
           file: apps/frontend/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SHORT_SHA }}-frontend
+          tags: ${{ env.IMAGE_TAG }}-frontend
+          labels: ${{ steps.meta.outputs.labels }}
+
 
       - name: Install dependencies
         working-directory: ./deploy
