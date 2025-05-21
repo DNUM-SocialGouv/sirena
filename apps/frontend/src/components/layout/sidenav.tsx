@@ -1,5 +1,4 @@
 import { useUserStore } from '@/stores/userStore';
-import { Button } from '@codegouvfr/react-dsfr/Button';
 import { SideMenu, type SideMenuProps } from '@codegouvfr/react-dsfr/SideMenu';
 import { useMemo } from 'react';
 
