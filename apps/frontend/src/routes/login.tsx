@@ -1,5 +1,6 @@
 import { LoginLayout } from '@/components/layout/loginLayout';
 import { useUserStore } from '@/stores/userStore';
+import ProConnectButton from '@codegouvfr/react-dsfr/ProConnectButton';
 import { LoginButton } from '@sirena/ui';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
@@ -49,6 +50,11 @@ function RouteComponent() {
       <LoginLayout>
         Welcome to login
         <LoginButton />
+        <form action="/api/auth/login" method="post">
+          <button type="submit">
+            <ProConnectButton url="#" />
+          </button>
+        </form>
       </LoginLayout>
     </div>
   );

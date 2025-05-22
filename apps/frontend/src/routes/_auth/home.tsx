@@ -36,6 +36,12 @@ function RouteComponent() {
         <Link to="/administration">Administration</Link>
         <Button onClick={() => handlePermissionsChange()}> Change permissions </Button>
         <Button onClick={() => handleLogout()}> Logout </Button>
+        <form action="/api/auth/logout-proconnect" method="POST">
+          <Button> Proconnect Logout </Button>
+        </form>
+        <form action="/api/auth/logout" method="POST">
+          <Button>Logout </Button>
+        </form>
       </div>
     </LoggedLayout>
   );
