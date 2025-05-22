@@ -6,7 +6,7 @@ import { createUser, getUserBySub } from '@/features/users/users.service.ts';
 import factoryWithLogs from '@/helpers/factories/appWithLogs.ts';
 import { signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken.ts';
 import { getJwtExpirationDate } from '@/helpers/jsonwebtoken.ts';
-import { Prisma } from '@sirena/database';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
 import { createRedirectUrl } from './auth.helper.ts';
@@ -119,7 +119,7 @@ const app = factoryWithLogs
           lastName: String(userInfo.usual_name),
         });
       } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
           logger.error({ err: error }, 'Error in creating new user in database, email already exists');
           const url = createRedirectUrl({ error: ERROR_CODES.USER_ALREADY_EXISTS });
           return c.redirect(url, 302);
