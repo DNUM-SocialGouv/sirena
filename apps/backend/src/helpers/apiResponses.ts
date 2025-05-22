@@ -48,6 +48,15 @@ export const OpenApiResponse = <T extends ZodSchema>(schema: T, code = 200, desc
   },
 });
 
+export const OpenApiRedirect = (code = 302, description = 'Redirect') => ({
+  [code]: {
+    description,
+    headers: z.object({
+      Location: z.string().url(),
+    }),
+  },
+});
+
 export const OpenApiDeleteResponse = <T extends ZodSchema>(id: T, code = 200, description = 'Successful response') => ({
   [code]: {
     description,

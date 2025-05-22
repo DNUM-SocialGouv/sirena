@@ -9,11 +9,18 @@ const MESSAGES = {
   FORBIDDEN: 'Forbidden',
   NOT_FOUND: 'Not found',
   ZOD_ERROR: 'Zod error',
+  SERVICE_NOT_AVAILABLE: 'Service not available',
 };
 
 export const HTTPException400BadRequest = (msg = MESSAGES.BAD_REQUEST) => new HTTPException(400, { message: msg });
 
-export const HTTPException401Unauthorized = (msg = MESSAGES.UNAUTHORIZED) => new HTTPException(401, { message: msg });
+export const HTTPException401Unauthorized = (msg = MESSAGES.UNAUTHORIZED, cause?: unknown) => {
+  const params: { message: string; cause?: unknown } = { message: msg };
+  if (cause) {
+    params.cause = cause;
+  }
+  return new HTTPException(401, params);
+};
 
 export const HTTPException403Forbidden = (msg = MESSAGES.FORBIDDEN) => new HTTPException(403, { message: msg });
 
@@ -24,6 +31,15 @@ export const HTTPException503ServiceUnavailable = (msg = MESSAGES.NOT_FOUND) =>
 
 export const ApiErrorSchema = (): ResolverResult => resolver(ErrorSchema);
 export const ApiZodErrorSchema = (): ResolverResult => resolver(ZodSafeParseErrorSchema);
+
+export const OpenApi401Unauthorized = (description = MESSAGES.BAD_REQUEST) => ({
+  401: {
+    description,
+    content: {
+      'application/json': { schema: ApiErrorSchema() },
+    },
+  },
+});
 
 export const OpenApi400BadRequest = (description = MESSAGES.BAD_REQUEST) => ({
   400: {
@@ -43,7 +59,7 @@ export const OpenApi400ZodError = (description = MESSAGES.ZOD_ERROR) => ({
   },
 });
 
-export const OpenApi503Error = (description = MESSAGES.ZOD_ERROR) => ({
+export const OpenApi503Error = (description = MESSAGES.SERVICE_NOT_AVAILABLE) => ({
   503: {
     description,
     content: {
@@ -52,14 +68,6 @@ export const OpenApi503Error = (description = MESSAGES.ZOD_ERROR) => ({
   },
 });
 
-export const OpenApi401Unauthorized = (description = MESSAGES.UNAUTHORIZED) => ({
-  401: {
-    description,
-    content: {
-      'application/json': { schema: ApiErrorSchema() },
-    },
-  },
-});
 export const OpenApi403Forbidden = (description = MESSAGES.FORBIDDEN) => ({
   403: {
     description,

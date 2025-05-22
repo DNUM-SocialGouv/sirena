@@ -18,10 +18,9 @@ describe('User Endpoint', () => {
         email: 'email',
         firstName: 'firstName',
         lastName: 'lastName',
-        password: 'password',
-        isEmailValid: true,
+        sub: 'sub',
+        uid: 'uid',
         createdAt: new Date(0),
-        isActive: true,
       },
     ];
 
