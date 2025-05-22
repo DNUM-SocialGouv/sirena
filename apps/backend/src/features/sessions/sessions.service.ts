@@ -1,5 +1,6 @@
 import type { SessionCreationDto } from '@/features/sessions/sessions.schema.ts';
-import { type Session, prisma } from '@sirena/database';
+import prisma from '@/libs/prisma.ts';
+import type { Session } from '@sirena/database';
 
 export const createSession = (sessionDto: SessionCreationDto) =>
   prisma.session.create({

@@ -32,8 +32,8 @@ const app = factoryWithLogs
       return c.redirect(url, 302);
     }
 
-    setCookie(c, 'state', state, { path: '/', httpOnly: true, sameSite: 'Strict' });
-    setCookie(c, 'nonce', nonce, { path: '/', httpOnly: true, sameSite: 'Strict' });
+    setCookie(c, 'state', state, { path: '/', httpOnly: true });
+    setCookie(c, 'nonce', nonce, { path: '/', httpOnly: true });
 
     return c.redirect(redirectTo.href, 302);
   })
