@@ -13,11 +13,9 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
   const authToken = getCookie(c, envVars.AUTH_TOKEN_NAME);
   if (authToken) {
     try {
-      const [err, decoded] = verify<{ id: string }>(authToken, envVars.AUTH_TOKEN_SECRET_KEY);
-      if (!err) {
-        c.set('userId', decoded.id);
-        return next();
-      }
+      const decoded = verify<{ id: string }>(authToken, envVars.AUTH_TOKEN_SECRET_KEY);
+      c.set('userId', decoded.id);
+      return next();
     } catch (error) {
       // Continue, try with refresh token
       logger.error({ err: error }, 'Error in auth token verification');
@@ -30,26 +28,21 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
     let session: Session | null = null;
     try {
       session = await getSession(refreshToken);
-      if (session === null) {
-        deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
-        deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-        throw HTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired');
-      }
     } catch (error) {
       deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
       deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
       logger.error({ err: error }, 'Error in refresh token verification');
-      throw HTTPException401Unauthorized('Unauthorized');
+      throw HTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired');
+    }
+
+    if (session === null) {
+      deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
+      deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
+      throw HTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired');
     }
 
     try {
-      const [err, decoded] = verify<{ id: string }>(session.token, envVars.REFRESH_TOKEN_SECRET_KEY);
-      if (err) {
-        deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
-        deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-        throw HTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired');
-      }
-
+      const decoded = verify<{ id: string }>(refreshToken, envVars.REFRESH_TOKEN_SECRET_KEY);
       const newAuthTokenDate = getJwtExpirationDate(envVars.AUTH_TOKEN_EXPIRATION);
 
       const newAuthToken = signAuthCookie(decoded.id, newAuthTokenDate);

@@ -14,7 +14,10 @@ const MESSAGES = {
 
 export const HTTPException400BadRequest = (msg = MESSAGES.BAD_REQUEST) => new HTTPException(400, { message: msg });
 
-export const HTTPException401Unauthorized = (msg = MESSAGES.UNAUTHORIZED, cause?: unknown) => {
+export const HTTPException401Unauthorized = (
+  msg = MESSAGES.UNAUTHORIZED,
+  cause?: { name?: string; message?: string; stack?: string },
+) => {
   const params: { message: string; cause?: unknown } = { message: msg };
   if (cause) {
     params.cause = cause;

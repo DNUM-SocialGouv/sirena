@@ -3,7 +3,13 @@ import 'zod-openapi/extend';
 
 export const ErrorSchema = z.object({
   message: z.string(),
-  cause: z.unknown().optional(),
+  cause: z
+    .object({
+      name: z.string().optional(),
+      message: z.string().optional(),
+      stack: z.string().optional(),
+    })
+    .optional(),
 });
 
 const ZodIssueSchema = z.object({

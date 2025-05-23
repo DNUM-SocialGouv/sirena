@@ -4,20 +4,7 @@ import jwt from 'jsonwebtoken';
 
 type Verify<T> = [null, T] | [jwt.TokenExpiredError | jwt.JsonWebTokenError | jwt.NotBeforeError, null];
 
-export const verify = <T>(token: string, secret: string): Verify<T> => {
-  try {
-    return [null, <T>jwt.verify(token, secret)];
-  } catch (error) {
-    if (
-      error instanceof jwt.TokenExpiredError ||
-      error instanceof jwt.JsonWebTokenError ||
-      error instanceof jwt.NotBeforeError
-    ) {
-      return [error, null];
-    }
-    throw error;
-  }
-};
+export const verify = <T>(token: string, secret: string): T => <T>jwt.verify(token, secret);
 
 export const signAuthCookie = (userId: User['id'], date: Date) =>
   jwt.sign({ id: userId }, envVars.AUTH_TOKEN_SECRET_KEY, {
