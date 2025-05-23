@@ -36,9 +36,6 @@ importers:
       '@hono/zod-validator':
         specifier: ^0.4.3
         version: 0.4.3(hono@4.7.5)(zod@3.24.2)
-      '@prisma/client':
-        specifier: 6.6.0
-        version: 6.6.0(prisma@6.8.2(typescript@5.8.3))(typescript@5.8.3)
       '@scalar/hono-api-reference':
         specifier: ^0.8.0
         version: 0.8.0(hono@4.7.5)
@@ -66,9 +63,6 @@ importers:
       pino-pretty:
         specifier: ^13.0.0
         version: 13.0.0
-      prisma:
-        specifier: ^6.8.2
-        version: 6.8.2(typescript@5.8.3)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -3680,11 +3674,6 @@ snapshots:
       prisma: 6.8.2(typescript@5.7.3)
       typescript: 5.7.3
 
-  '@prisma/client@6.6.0(prisma@6.8.2(typescript@5.8.3))(typescript@5.8.3)':
-    optionalDependencies:
-      prisma: 6.8.2(typescript@5.8.3)
-      typescript: 5.8.3
-
   '@prisma/config@6.8.2':
     dependencies:
       jiti: 2.4.2
@@ -5463,13 +5452,6 @@ snapshots:
       '@prisma/engines': 6.8.2
     optionalDependencies:
       typescript: 5.7.3
-
-  prisma@6.8.2(typescript@5.8.3):
-    dependencies:
-      '@prisma/config': 6.8.2
-      '@prisma/engines': 6.8.2
-    optionalDependencies:
-      typescript: 5.8.3
 
   process-warning@4.0.1: {}
 
