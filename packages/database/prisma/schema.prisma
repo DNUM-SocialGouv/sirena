@@ -24,8 +24,18 @@ model User {
   email             String                @unique /// @zod.string.email({ message: 'Invalid email address' }),
   firstName         String
   lastName          String
-  password          String
-  isEmailValid      Boolean
+  uid               String                @unique
+  sub               String                @unique
   createdAt         DateTime              @default(now())
-  isActive          Boolean              @default(true)
+  Sessions          Session[]
+}
+
+model Session {
+  id                String    @id @default(cuid())
+  user              User      @relation(fields: [userId], references: [id])
+  userId            String
+  token             String    @unique
+  expiresAt         DateTime
+  pcIdToken         String    @unique
+  createdAt         DateTime  @default(now())
 }

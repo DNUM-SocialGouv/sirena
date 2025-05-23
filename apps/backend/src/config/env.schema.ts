@@ -4,17 +4,23 @@ import { z } from 'zod';
  * Schéma de validation pour les variables d'environnement ProConnect
  */
 export const ProConnectEnvSchema = z.object({
-  PROCONNECT_DOMAIN: z.string({
-    required_error: "La variable d'environnement PROCONNECT_DOMAIN est requise",
+  PC_DOMAIN: z.string({
+    required_error: "La variable d'environnement PC_DOMAIN est requise",
   }),
-  PROCONNECT_CLIENT_ID: z.string({
-    required_error: "La variable d'environnement PROCONNECT_CLIENT_ID est requise",
+  PC_CLIENT_ID: z.string({
+    required_error: "La variable d'environnement PC_CLIENT_ID est requise",
   }),
-  PROCONNECT_CLIENT_SECRET: z.string({
-    required_error: "La variable d'environnement PROCONNECT_CLIENT_SECRET est requise",
+  PC_CLIENT_SECRET: z.string({
+    required_error: "La variable d'environnement PC_CLIENT_SECRET est requise",
   }),
-  PROCONNECT_REDIRECT_URI: z.string({
-    required_error: "La variable d'environnement PROCONNECT_REDIRECT_URI est requise",
+  PC_ID_TOKEN_SIGNED_RESPONSE_ALG: z.string({
+    required_error: "La variable d'environnement PC_CLIENT_SECRET est requise",
+  }),
+  PC_USERINFO_SIGNED_RESPONSE_ALG: z.string({
+    required_error: "La variable d'environnement PC_USERINFO_SIGNED_RESPONSE_ALG est requise",
+  }),
+  PC_REDIRECT_URI: z.string({
+    required_error: "La variable d'environnement PC_REDIRECT_URI est requise",
   }),
 });
 
@@ -24,6 +30,30 @@ export const ProConnectEnvSchema = z.object({
 export const AppEnvSchema = z.object({
   FRONTEND_REDIRECT_URI: z.string({
     required_error: "La variable d'environnement FRONTEND_REDIRECT_URI est requise",
+  }),
+  FRONTEND_REDIRECT_LOGIN_URI: z.string({
+    required_error: "La variable d'environnement FRONTEND_REDIRECT_LOGIN_URI est requise",
+  }),
+  AUTH_TOKEN_SECRET_KEY: z.string({
+    required_error: "La variable d'environnement AUTH_TOKEN_SECRET_KEY est requise",
+  }),
+  REFRESH_TOKEN_SECRET_KEY: z.string({
+    required_error: "La variable d'environnement AUTH_TOKEN_SECRET_KEY est requise",
+  }),
+  AUTH_TOKEN_EXPIRATION: z.string({
+    required_error: "La variable d'environnement AUTH_TOKEN_EXPIRATION est requise",
+  }),
+  REFRESH_TOKEN_EXPIRATION: z.string({
+    required_error: "La variable d'environnement REFRESH_TOKEN_EXPIRATION est requise",
+  }),
+  AUTH_TOKEN_NAME: z.string({
+    required_error: "La variable d'environnement AUTH_TOKEN_NAME est requise",
+  }),
+  REFRESH_TOKEN_NAME: z.string({
+    required_error: "La variable d'environnement REFRESH_TOKEN_NAME est requise",
+  }),
+  IS_LOGGED_TOKEN_NAME: z.string({
+    required_error: "La variable d'environnement IS_LOGGED_TOKEN_NAME est requise",
   }),
 });
 
