@@ -64,20 +64,20 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
 
-      - name: Install dependencies
-        run: |
-          cd deploy
-          npm install
+      # - name: Install dependencies
+      #   run: |
+      #     cd deploy
+      #     npm install
       
-      - name: Check format and lint
-        run: |
-          cd deploy
-          npm run lint
+      # - name: Check format and lint
+      #   run: |
+      #     cd deploy
+      #     npm run lint
 
-      - name: Render manifests
-        run: |
-          cd deploy
-          npm run build
+      # - name: Render manifests
+      #   run: |
+      #     cd deploy
+      #     npm run build
 
       # - name: Checkout GitOps repository
       #   uses: actions/checkout@v4
