@@ -28,8 +28,8 @@ services:
       - "127.0.0.1:3015:5555"
     networks:
       - sirena-postgres-network
-    env_file:
-      - ./.env
+    environment:
+      PG_URL: postgres://${PG_SIRENA_USER}:${PG_SIRENA_PASSWORD}@postgres:5432/${PG_SIRENA_DB}
 
 
   maildev:

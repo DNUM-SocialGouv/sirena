@@ -7,6 +7,7 @@ export default () => {
     pino: pino.default(
       {
         level: 'info',
+        serializers: { err: pino.stdSerializers.err },
       },
       pretty(),
     ),

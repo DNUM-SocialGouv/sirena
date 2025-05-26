@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import { Scalar } from '@scalar/hono-api-reference';
 import type { Hono } from 'hono';
 import { generateSpecs, openAPISpecs } from 'hono-openapi';
-import type { AppBindingsLogs } from './helpers/factories/appWithLogs.ts';
+import type { AppBindings } from './helpers/factories/appWithLogs.ts';
 
-export function setupOpenAPI(app: Hono<AppBindingsLogs>, prefix = '/openapi') {
+export function setupOpenAPI(app: Hono<AppBindings>, prefix = '/openapi') {
   // OpenAPI spec
   app.get(
     `${prefix}/spec`,
@@ -29,7 +29,7 @@ export function setupOpenAPI(app: Hono<AppBindingsLogs>, prefix = '/openapi') {
   );
 }
 
-export async function generateSwaggerDocs(app: Hono<AppBindingsLogs>) {
+export async function generateSwaggerDocs(app: Hono<AppBindings>) {
   setupOpenAPI(app, '/docs');
   const spec = await generateSpecs(app);
   const pathToSpec = './src/swagger/openAPI.json';

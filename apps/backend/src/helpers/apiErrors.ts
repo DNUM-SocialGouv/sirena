@@ -9,75 +9,88 @@ const MESSAGES = {
   FORBIDDEN: 'Forbidden',
   NOT_FOUND: 'Not found',
   ZOD_ERROR: 'Zod error',
+  SERVICE_NOT_AVAILABLE: 'Service not available',
 };
 
-export const HTTPException400BadRequest = (msg = MESSAGES.BAD_REQUEST) => new HTTPException(400, { message: msg });
+export const throwHTTPException400BadRequest = (msg = MESSAGES.BAD_REQUEST) => {
+  throw new HTTPException(400, { message: msg });
+};
 
-export const HTTPException401Unauthorized = (msg = MESSAGES.UNAUTHORIZED) => new HTTPException(401, { message: msg });
+export const throwHTTPException401Unauthorized = (
+  msg = MESSAGES.UNAUTHORIZED,
+  cause?: { name?: string; message?: string; stack?: string },
+) => {
+  const params: { message: string; cause?: unknown } = { message: msg };
+  if (cause) {
+    params.cause = cause;
+  }
+  throw new HTTPException(401, params);
+};
 
-export const HTTPException403Forbidden = (msg = MESSAGES.FORBIDDEN) => new HTTPException(403, { message: msg });
+export const throwHTTPException403Forbidden = (msg = MESSAGES.FORBIDDEN) => {
+  throw new HTTPException(403, { message: msg });
+};
 
-export const HTTPException404NotFound = (msg = MESSAGES.NOT_FOUND) => new HTTPException(404, { message: msg });
+export const throwHTTPException404NotFound = (msg = MESSAGES.NOT_FOUND) => {
+  throw new HTTPException(404, { message: msg });
+};
 
-export const HTTPException503ServiceUnavailable = (msg = MESSAGES.NOT_FOUND) =>
-  new HTTPException(503, { message: msg });
+export const throwHTTPException503ServiceUnavailable = (msg = MESSAGES.NOT_FOUND) => {
+  throw new HTTPException(503, { message: msg });
+};
 
-export const ApiErrorSchema = (): ResolverResult => resolver(ErrorSchema);
-export const ApiZodErrorSchema = (): ResolverResult => resolver(ZodSafeParseErrorSchema);
+export const apiErrorResolver = (): ResolverResult => resolver(ErrorSchema);
+export const apiZodErrorResolver = (): ResolverResult => resolver(ZodSafeParseErrorSchema);
 
-export const OpenApi400BadRequest = (description = MESSAGES.BAD_REQUEST) => ({
-  400: {
-    description,
-    content: {
-      'application/json': { schema: ApiErrorSchema() },
-    },
-  },
-});
-
-export const OpenApi400ZodError = (description = MESSAGES.ZOD_ERROR) => ({
-  400: {
-    description,
-    content: {
-      'application/json': { schema: ApiZodErrorSchema() },
-    },
-  },
-});
-
-export const OpenApi503Error = (description = MESSAGES.ZOD_ERROR) => ({
-  503: {
-    description,
-    content: {
-      'application/json': { schema: ApiErrorSchema() },
-    },
-  },
-});
-
-export const OpenApi401Unauthorized = (description = MESSAGES.UNAUTHORIZED) => ({
+export const openApi401Unauthorized = (description = MESSAGES.BAD_REQUEST) => ({
   401: {
     description,
     content: {
-      'application/json': { schema: ApiErrorSchema() },
+      'application/json': { schema: apiErrorResolver() },
     },
   },
 });
-export const OpenApi403Forbidden = (description = MESSAGES.FORBIDDEN) => ({
+
+export const openApi400BadRequest = (description = MESSAGES.BAD_REQUEST) => ({
+  400: {
+    description,
+    content: {
+      'application/json': { schema: apiErrorResolver() },
+    },
+  },
+});
+
+export const openApi400ZodError = (description = MESSAGES.ZOD_ERROR) => ({
+  400: {
+    description,
+    content: {
+      'application/json': { schema: apiZodErrorResolver() },
+    },
+  },
+});
+
+export const openApi503Error = (description = MESSAGES.SERVICE_NOT_AVAILABLE) => ({
+  503: {
+    description,
+    content: {
+      'application/json': { schema: apiErrorResolver() },
+    },
+  },
+});
+
+export const openApi403Forbidden = (description = MESSAGES.FORBIDDEN) => ({
   403: {
     description,
     content: {
-      'application/json': { schema: ApiErrorSchema() },
+      'application/json': { schema: apiErrorResolver() },
     },
   },
 });
-export const OpenApi404NotFound = (description = MESSAGES.NOT_FOUND) => ({
+export const openApi404NotFound = (description = MESSAGES.NOT_FOUND) => ({
   404: {
     description,
     content: {
-      'application/json': { schema: ApiErrorSchema() },
+      'application/json': { schema: apiErrorResolver() },
     },
-  },
-});
-export const OpenApi302Redirect = () => ({
-  302: {
-    content: {},
   },
 });
