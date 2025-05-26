@@ -3,7 +3,7 @@ run-name: Run CI
 
 on:
   push:
-    branches: ['chore/deploy']
+    branches: ['main']
 
 env:
   REGISTRY: ghcr.io
