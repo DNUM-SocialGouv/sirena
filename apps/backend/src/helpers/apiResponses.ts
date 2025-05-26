@@ -5,7 +5,7 @@ import 'zod-openapi/extend';
 
 import { MetaSchema } from '@/schemas/apiResponses.schema.ts';
 
-export const ApiResponsesSchema = <T extends ZodSchema>(schema: T): ResolverResult =>
+export const apiResponsesResolver = <T extends ZodSchema>(schema: T): ResolverResult =>
   resolver(
     z.object({
       data: schema,
@@ -13,14 +13,14 @@ export const ApiResponsesSchema = <T extends ZodSchema>(schema: T): ResolverResu
     }),
   );
 
-export const ApiResponseSchema = <T extends ZodSchema>(schema: T): ResolverResult =>
+export const apiResponseResolver = <T extends ZodSchema>(schema: T): ResolverResult =>
   resolver(
     z.object({
       data: schema,
     }),
   );
 
-export const ApiDeleteResponseSchema = <T extends ZodSchema>(id: T): ResolverResult =>
+export const apiDeleteResponseResolver = <T extends ZodSchema>(id: T): ResolverResult =>
   resolver(
     z.object({
       data: z.object({
@@ -30,25 +30,25 @@ export const ApiDeleteResponseSchema = <T extends ZodSchema>(id: T): ResolverRes
     }),
   );
 
-export const OpenApiResponses = <T extends ZodSchema>(schema: T, code = 200, description = 'Successful response') => ({
+export const openApiResponses = <T extends ZodSchema>(schema: T, code = 200, description = 'Successful response') => ({
   [code]: {
     description,
     content: {
-      'application/json': { schema: ApiResponsesSchema(schema) },
+      'application/json': { schema: apiResponsesResolver(schema) },
     },
   },
 });
 
-export const OpenApiResponse = <T extends ZodSchema>(schema: T, code = 200, description = 'Successful response') => ({
+export const openApiResponse = <T extends ZodSchema>(schema: T, code = 200, description = 'Successful response') => ({
   [code]: {
     description,
     content: {
-      'application/json': { schema: ApiResponseSchema(schema) },
+      'application/json': { schema: apiResponseResolver(schema) },
     },
   },
 });
 
-export const OpenApiRedirect = (code = 302, description = 'Redirect') => ({
+export const openApiRedirect = (code = 302, description = 'Redirect') => ({
   [code]: {
     description,
     headers: z.object({
@@ -57,11 +57,11 @@ export const OpenApiRedirect = (code = 302, description = 'Redirect') => ({
   },
 });
 
-export const OpenApiDeleteResponse = <T extends ZodSchema>(id: T, code = 200, description = 'Successful response') => ({
+export const openApiDeleteResponse = <T extends ZodSchema>(id: T, code = 200, description = 'Successful response') => ({
   [code]: {
     description,
     content: {
-      'application/json': { schema: ApiDeleteResponseSchema(id) },
+      'application/json': { schema: apiDeleteResponseResolver(id) },
     },
   },
 });

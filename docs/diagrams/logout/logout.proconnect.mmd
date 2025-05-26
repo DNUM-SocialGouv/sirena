@@ -4,8 +4,8 @@ sequenceDiagram
     participant User
     participant Browser
     participant App as API Server
-    participant SessionSvc as SessionService
-    participant Proconnect as Authorization Server
+    participant SessionSvc as SessionService (internal service) 
+    participant Proconnect as Proconnect
 
     %% Logout with Proconnect end-session (/logout-proconnect)
     User->>Browser: clicks “Logout Proconnect”

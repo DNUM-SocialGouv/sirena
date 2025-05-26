@@ -1,4 +1,4 @@
-import { HTTPException404NotFound } from '@/helpers/apiErrors.ts';
+import { throwHTTPException404NotFound } from '@/helpers/apiErrors.ts';
 import factoryWithLogs from '@/helpers/factories/appWithLogs.ts';
 import authMiddleware from '@/middlewares/auth.middleware.ts';
 import { getUserRoute, getUsersRoute } from './users.route.ts';
@@ -17,7 +17,7 @@ const app = factoryWithLogs
     const id = c.req.param('id');
     const user = await getUserById(id);
     if (!user) {
-      throw HTTPException404NotFound();
+      throwHTTPException404NotFound();
     }
     return c.json({ data: user }, 200);
   });

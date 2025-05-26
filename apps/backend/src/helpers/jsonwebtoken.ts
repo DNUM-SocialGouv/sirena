@@ -4,6 +4,16 @@ import jwt from 'jsonwebtoken';
 
 type Verify<T> = [null, T] | [jwt.TokenExpiredError | jwt.JsonWebTokenError | jwt.NotBeforeError, null];
 
+export const isJwtError = (
+  error: unknown,
+): error is jwt.TokenExpiredError | jwt.JsonWebTokenError | jwt.NotBeforeError => {
+  return (
+    error instanceof jwt.TokenExpiredError ||
+    error instanceof jwt.JsonWebTokenError ||
+    error instanceof jwt.NotBeforeError
+  );
+};
+
 export const verify = <T>(token: string, secret: string): T => <T>jwt.verify(token, secret);
 
 export const signAuthCookie = (userId: User['id'], date: Date) =>

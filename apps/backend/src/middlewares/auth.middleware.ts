@@ -1,11 +1,21 @@
 import { envVars } from '@/config/env.ts';
 import { getSession } from '@/features/sessions/sessions.service.ts';
-import { HTTPException401Unauthorized } from '@/helpers/apiErrors.ts';
+import { throwHTTPException401Unauthorized } from '@/helpers/apiErrors.ts';
 import factoryWithAuth from '@/helpers/factories/appWithAuth.ts';
-import { getJwtExpirationDate, verify } from '@/helpers/jsonwebtoken.ts';
+import type { AppBindings } from '@/helpers/factories/appWithAuth.ts';
+import { getJwtExpirationDate, isJwtError, verify } from '@/helpers/jsonwebtoken.ts';
 import { signAuthCookie } from '@/helpers/jsonwebtoken.ts';
 import type { Session } from '@sirena/database';
+import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
+
+const cleanAnSendError = (c: Context<AppBindings>, error: unknown, errorMessage: string, errorResponse: string) => {
+  const logger = c.get('logger');
+  deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
+  deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
+  logger.error({ err: error }, errorMessage);
+  return throwHTTPException401Unauthorized(errorResponse);
+};
 
 const app = factoryWithAuth.createMiddleware(async (c, next) => {
   const logger = c.get('logger');
@@ -17,7 +27,10 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
       c.set('userId', decoded.id);
       return next();
     } catch (error) {
-      // Continue, try with refresh token
+      if (!isJwtError(error)) {
+        deleteCookie(c, envVars.AUTH_TOKEN_NAME);
+        throw error;
+      }
       logger.error({ err: error }, 'Error in auth token verification');
     }
     deleteCookie(c, envVars.AUTH_TOKEN_NAME);
@@ -29,16 +42,18 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
     try {
       session = await getSession(refreshToken);
     } catch (error) {
-      deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
-      deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-      logger.error({ err: error }, 'Error in refresh token verification');
-      throw HTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired');
+      cleanAnSendError(
+        c,
+        error,
+        'Error in refresh token verification',
+        'Unauthorized, Refresh token is invalid or expired',
+      );
     }
 
     if (session === null) {
       deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
       deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-      throw HTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired');
+      throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired');
     }
 
     try {
@@ -56,14 +71,21 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
       c.set('userId', decoded.id);
       return next();
     } catch (error) {
-      logger.error({ err: error }, 'Error in refresh token verification');
-      deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-      deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
-      throw HTTPException401Unauthorized('Refresh token is invalid or expired');
+      if (!isJwtError(error)) {
+        deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
+        deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
+        throw error;
+      }
+      cleanAnSendError(
+        c,
+        error,
+        'Error in refresh token verification',
+        'Unauthorized, Refresh token is invalid or expired',
+      );
     }
   } else {
     deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-    throw HTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired');
+    throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired');
   }
 });
 
