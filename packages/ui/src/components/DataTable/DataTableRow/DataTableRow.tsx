@@ -1,8 +1,8 @@
 import { memo } from 'react';
 import type { ReactNode } from 'react';
-import { CheckboxCell } from './CheckboxCell';
-import { DataCell } from './DataCell';
-import type { Column, ColumnKey, RowWithId } from './DataTable.type';
+import { CheckboxCell } from '../CheckboxCell/CheckboxCell';
+import { DataCell } from '../DataCell/DataCell';
+import type { Column, ColumnKey, RowWithId } from '../DataTable.type';
 
 type DataTableRowProps<Datum extends RowWithId<RowId>, RowId extends string> = {
   row: Datum;

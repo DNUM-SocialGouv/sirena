@@ -1,6 +1,6 @@
 import { memo } from 'react';
-import type { Column, ColumnKey, OnSortChangeParams, RowWithId } from './DataTable.type';
-import { SortButton } from './SortButton';
+import type { Column, ColumnKey, OnSortChangeParams, RowWithId } from '../DataTable.type';
+import { SortButton } from '../SortButton/SortButton';
 
 type DataTableHeaderProps<T extends RowWithId<string>> = {
   id: string;

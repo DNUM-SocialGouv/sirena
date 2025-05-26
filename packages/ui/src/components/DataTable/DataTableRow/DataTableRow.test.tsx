@@ -20,6 +20,7 @@ describe('DataTableRow Component', () => {
     rowIndex: 0,
     rowId: 'id' as const,
     id: 'table-1',
+    isSelectable: true,
     selected: false,
     onToggleSelect: vi.fn(),
     columns: mockColumns,

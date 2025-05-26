@@ -1,4 +1,4 @@
-import type { OnSortChangeParams as BaseSortParams } from './SortButton';
+import type { OnSortChangeParams as BaseSortParams } from './SortButton/SortButton';
 
 export type Primitive = string | number | boolean | bigint | null | symbol;
 

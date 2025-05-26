@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { DataTable } from './DataTable';
 
-vi.mock('./DataTableHeader', () => ({
+vi.mock('./DataTableHeader/DataTableHeader', () => ({
   DataTableHeader: () => (
     <thead>
       <tr>
@@ -11,7 +11,7 @@ vi.mock('./DataTableHeader', () => ({
   ),
 }));
 
-vi.mock('./DataTableRow', () => ({
+vi.mock('./DataTableRow/DataTableRow', () => ({
   DataTableRow: ({ row }: { row: { id: number } }) => (
     <tr>
       <td>Row {row.id}</td>
