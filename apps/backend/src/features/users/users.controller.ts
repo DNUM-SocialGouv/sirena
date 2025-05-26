@@ -1,6 +1,6 @@
-import authMiddleware from '@/features/auth/auth.middleware.ts';
 import { HTTPException404NotFound } from '@/helpers/apiErrors.ts';
 import factoryWithLogs from '@/helpers/factories/appWithLogs.ts';
+import authMiddleware from '@/middlewares/auth.middleware.ts';
 import { getUserRoute, getUsersRoute } from './users.route.ts';
 import { getUserById, getUsers } from './users.service.ts';
 

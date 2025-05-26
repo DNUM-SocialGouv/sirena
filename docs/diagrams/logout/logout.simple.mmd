@@ -1,0 +1,18 @@
+%% https://mermaid.live/edit for generation
+
+sequenceDiagram
+    participant User
+    participant Browser
+    participant App as API Server
+    participant SessionSvc as SessionService
+
+    %% Simple logout (/logout)
+    User->>Browser: clicks “Logout”
+    Browser->>App: POST /api/auth/logout
+    App->>App: deleteCookie(AUTH_TOKEN)  
+    App->>App: deleteCookie(REFRESH_TOKEN)  
+    App->>App: deleteCookie(IS_LOGGED)  
+    alt refresh token exists
+        App->>SessionSvc: deleteSession(refreshToken)
+    end
+    App-->>Browser: 302 Redirect to Frontend Login Page

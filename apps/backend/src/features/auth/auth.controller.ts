@@ -1,12 +1,12 @@
 import { ERROR_CODES } from '@/config/authErrors.constants.ts';
 import { envVars } from '@/config/env.ts';
-import authMiddleware from '@/features/auth/auth.middleware.ts';
 import { createSession, deleteSession, getSession } from '@/features/sessions/sessions.service.ts';
 import { createUser, getUserBySub } from '@/features/users/users.service.ts';
 import factoryWithLogs from '@/helpers/factories/appWithLogs.ts';
 import { signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken.ts';
 import { getJwtExpirationDate } from '@/helpers/jsonwebtoken.ts';
 import { Prisma } from '@/libs/prisma.ts';
+import logoutMiddleware from '@/middlewares/logout.middleware.ts';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
 import { createRedirectUrl } from './auth.helper.ts';
@@ -168,7 +168,7 @@ const app = factoryWithLogs
     return c.redirect(envVars.FRONTEND_REDIRECT_URI, 302);
   })
 
-  .use(authMiddleware)
+  .use(logoutMiddleware)
 
   .post('/logout', async (c) => {
     const token = getCookie(c, envVars.REFRESH_TOKEN_NAME);

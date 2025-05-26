@@ -1,5 +1,3 @@
-// import LoginApp from '@/features/login/login.controller.ts';
-// import LogoutApp from '@/features/logout/logout.controller.ts';
 import AuthApp from '@/features/auth/auth.controller.ts';
 import UsersApp from '@/features/users/users.controller.ts';
 import appFactory from '@/helpers/factories/appWithLogs.ts';

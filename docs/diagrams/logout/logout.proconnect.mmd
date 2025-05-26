@@ -1,0 +1,27 @@
+%% https://mermaid.live/edit for generation
+
+sequenceDiagram
+    participant User
+    participant Browser
+    participant App as API Server
+    participant SessionSvc as SessionService
+    participant Proconnect as Authorization Server
+
+    %% Logout with Proconnect end-session (/logout-proconnect)
+    User->>Browser: clicks “Logout Proconnect”
+    Browser->>App: POST /api/auth/logout-proconnect
+    App->>App: deleteCookie(AUTH_TOKEN)  
+    App->>App: deleteCookie(REFRESH_TOKEN)  
+    App->>App: deleteCookie(IS_LOGGED)  
+    alt no refresh token
+        App-->>Browser: 302 Redirect to Frontend Login Page
+    else
+        App->>SessionSvc: getSession(refreshToken)
+        alt session not found
+            App-->>Browser: 302 Redirect to Frontend Login Page
+        else
+            App->>App: buildEndSessionUrl(pcIdToken)
+            App->>SessionSvc: deleteSession(refreshToken)
+            App-->>Browser: 302 Redirect to Proconnect End-Session URL
+        end
+    end

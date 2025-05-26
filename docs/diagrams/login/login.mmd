@@ -1,0 +1,44 @@
+sequenceDiagram
+    participant User
+    participant Browser
+    participant App as API Server
+    participant Proconnect as Authorization Server
+    participant AuthZ as Token Endpoint
+    participant UserSvc as UserService
+    participant SessionSvc as SessionService
+
+    %% 1. Login initiation
+    User->>Browser: clicks “Login”
+    Browser->>App: GET /api/auth/login
+    App->>App: buildAuthorizationUrl()
+    App-->>Browser: 302 Redirect to Proconnect (with state, nonce)
+
+    %% 2. User authentication on Proconnect
+    Browser->>Proconnect: GET /authorize?state&nonce
+    Proconnect-->>Browser: 302 Redirect to /api/auth/callback?code&state
+
+    %% 3. Callback handling
+    Browser->>App: GET /api/auth/callback?code&state
+    App->>App: deleteCookie(state), deleteCookie(nonce)
+    App->>AuthZ: authorizationCodeGrant(code, state, nonce)
+    AuthZ-->>App: { id_token, access_token, refresh_token }
+    App->>AuthZ: fetchUserInfo(access_token)
+    AuthZ-->>App: userInfo
+
+    %% 4. User lookup / creation
+    App->>UserSvc: getUserBySub(userInfo.sub)
+    alt existing user
+        UserSvc-->>App: user
+    else new user
+        App->>UserSvc: createUser(userInfo)
+        UserSvc-->>App: new user
+    end
+
+    %% 5. Token issuance & session
+    App->>App: signAuthCookie(user.id)
+    App->>App: signRefreshCookie(user.id)
+    App->>SessionSvc: createSession(user.id, refresh_token)
+    App-->>Browser: Set-Cookie AUTH_TOKEN
+    App-->>Browser: Set-Cookie REFRESH_TOKEN
+    App-->>Browser: Set-Cookie IS_LOGGED
+    App-->>Browser: 302 Redirect to Frontend
