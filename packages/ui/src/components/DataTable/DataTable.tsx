@@ -1,5 +1,7 @@
+import { isPrimitive } from '@/utils/guard';
+import type { Primitive } from '@/utils/types';
 import { type JSX, type ReactNode, memo, useCallback, useEffect, useId, useMemo, useRef } from 'react';
-import type { Column, ColumnKey, OnSortChangeParams, Primitive, Row, RowWithId } from './DataTable.type';
+import type { Column, ColumnKey, OnSortChangeParams, Row, RowWithId } from './DataTable.type';
 import { DataTableHeader } from './DataTableHeader/DataTableHeader';
 import { DataTableRow } from './DataTableRow/DataTableRow';
 import type { SortDirection } from './SortButton/SortButton';
@@ -21,17 +23,6 @@ export type DataTableProps<K extends string, T extends RowWithId<K>> = {
   onSortChange?: (params: OnSortChangeParams<T>) => void;
   onSelectedValuesChange?: (selectedValues: T[K][]) => void;
 };
-
-function isPrimitive(x: unknown): x is Primitive {
-  return (
-    x === null ||
-    typeof x === 'string' ||
-    typeof x === 'number' ||
-    typeof x === 'boolean' ||
-    typeof x === 'bigint' ||
-    typeof x === 'symbol'
-  );
-}
 
 function isRow(x: Row | Primitive | unknown[]): x is Row {
   return x !== null && typeof x === 'object' && !Array.isArray(x);
@@ -73,6 +64,11 @@ function useSelectAll<RowId extends string, Datum extends RowWithId<RowId>>(
           return item[rowId];
         });
   return { allSelected, isIndeterminate, toggleAll };
+}
+
+function getTableClasses(size: 'sm' | 'md' | 'lg', isBordered: boolean): string {
+  const classes = ['fr-table', `fr-table--${size}`, isBordered ? 'fr-table--bordered' : ''];
+  return classes.filter(Boolean).join(' ');
 }
 
 export const DataTableComponent = <RowId extends string, Datum extends RowWithId<RowId>>({
@@ -152,6 +148,8 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
     }
   }, [isIndeterminate]);
 
+  const tableClasses = useMemo(() => getTableClasses(size, isBordered), [size, isBordered]);
+
   const renderedRows = useMemo(() => {
     return data.map((row, index) => (
       <DataTableRow
@@ -170,7 +168,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
   }, [data, columns, selectedValues, handleToggleSelect, getCell, rowId, id, isSelectable]);
 
   return (
-    <div className={`fr-table fr-table--${size} ${isBordered && 'fr-table--bordered'}`} id={`${id}-component`}>
+    <div className={tableClasses} id={`${id}-component`}>
       <div className="fr-table__wrapper">
         <div className="fr-table__container">
           <div className="fr-table__content">

@@ -1,6 +1,5 @@
+import type { Primitive } from '@/utils/types';
 import type { OnSortChangeParams as BaseSortParams } from './SortButton/SortButton';
-
-export type Primitive = string | number | boolean | bigint | null | symbol;
 
 export type Row = {
   [key: string]: Primitive | Row | unknown[];
