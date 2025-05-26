@@ -19,7 +19,6 @@ export const postLogoutRoute = () => ({
   description: 'Logout from the application',
   responses: {
     ...OpenApiRedirect(302, 'Redirect to login page'),
-    ...OpenApi401Unauthorized('Unauthorized'),
   },
 });
 
@@ -27,6 +26,5 @@ export const postLogoutProconnectRoute = () => ({
   description: 'Logout with redirection on proconnect if possible',
   responses: {
     ...OpenApiRedirect(302, 'Redirect to proconnect or login page if no sesssion'),
-    ...OpenApi401Unauthorized('Unauthorized'),
   },
 });
