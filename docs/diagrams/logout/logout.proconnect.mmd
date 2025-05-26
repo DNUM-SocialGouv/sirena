@@ -10,9 +10,9 @@ sequenceDiagram
     %% Logout with Proconnect end-session (/logout-proconnect)
     User->>Browser: clicks “Logout Proconnect”
     Browser->>App: POST /api/auth/logout-proconnect
-    App->>App: deleteCookie(AUTH_TOKEN)  
-    App->>App: deleteCookie(REFRESH_TOKEN)  
-    App->>App: deleteCookie(IS_LOGGED)  
+    App->>App: deleteCookie(AUTH_TOKEN)
+    App->>App: deleteCookie(REFRESH_TOKEN)
+    App->>App: deleteCookie(IS_LOGGED)
     alt no refresh token
         App-->>Browser: 302 Redirect to Frontend Login Page
     else
@@ -20,8 +20,16 @@ sequenceDiagram
         alt session not found
             App-->>Browser: 302 Redirect to Frontend Login Page
         else
-            App->>App: buildEndSessionUrl(pcIdToken)
-            App->>SessionSvc: deleteSession(refreshToken)
-            App-->>Browser: 302 Redirect to Proconnect End-Session URL
+            alt error building end-session URL
+                App->>App: buildEndSessionUrl(session.pcIdToken) throws
+                App->>App: logger.error(...)
+                App-->>Browser: 302 Redirect to Error Redirect URL
+            else success
+                App->>App: endSessionUrl = buildEndSessionUrl(session.pcIdToken)
+                App->>SessionSvc: deleteSession(refreshToken)
+                App-->>Browser: 302 Redirect to endSessionUrl
+                Browser->>Proconnect: GET endSessionUrl
+                Proconnect-->>Browser: 302 Redirect to Post-Logout URI
+            end
         end
     end
