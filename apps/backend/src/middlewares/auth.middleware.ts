@@ -13,7 +13,7 @@ const cleanAnSendError = (c: Context<AppBindings>, error: unknown, errorMessage:
   const logger = c.get('logger');
   deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
   deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-  logger.error({ err: error }, errorMessage);
+  logger.info({ err: error }, errorMessage);
   return throwHTTPException401Unauthorized(errorResponse);
 };
 
@@ -31,7 +31,7 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
         deleteCookie(c, envVars.AUTH_TOKEN_NAME);
         throw error;
       }
-      logger.error({ err: error }, 'Error in auth token verification');
+      logger.info({ err: error }, 'Error in auth token verification');
     }
     deleteCookie(c, envVars.AUTH_TOKEN_NAME);
   }

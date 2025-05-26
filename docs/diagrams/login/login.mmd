@@ -12,6 +12,7 @@ sequenceDiagram
     User->>Browser: clique sur « Se connecter »
     Browser->>App: GET /api/auth/login
     App->>App: buildAuthorizationUrl()
+    App->>App: createCookie(state), createCookie(nonce)
     App-->>Browser: 302 Redirect to Proconnect (with state, nonce)
 
     %% 2. User auth on Proconnect
