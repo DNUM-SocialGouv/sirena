@@ -4,6 +4,7 @@
   "license": "MIT",
   "scripts": {
     "build": "pkgroll --tsconfig tsconfig.build.json",
+    "build:prod": "pkgroll --tsconfig tsconfig.prod.json",
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "test": "vitest",
     "generate:openAPI": "tsx src/swagger/gen-openAPI-swagger.ts",
