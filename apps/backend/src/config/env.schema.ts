@@ -28,6 +28,9 @@ export const ProConnectEnvSchema = z.object({
  * Schéma de validation pour les autres variables d'environnement requises
  */
 export const AppEnvSchema = z.object({
+  FRONTEND_URI: z.string({
+    required_error: "La variable d'environnement FRONTEND_URL est requise",
+  }),
   FRONTEND_REDIRECT_URI: z.string({
     required_error: "La variable d'environnement FRONTEND_REDIRECT_URI est requise",
   }),

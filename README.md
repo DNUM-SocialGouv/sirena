@@ -54,7 +54,9 @@ pnpm dev
 ```
 
 ### 5. create project in ProConnect for login and logout
-create your account and project on [this url](https://partenaires.proconnect.gouv.fr/) 
+
+create your account and project on [this url](https://partenaires.proconnect.gouv.fr/)
+
 - Setup your env var with the given Client ID and Client Secret
 - Setup `http://localhost:5173/api/auth/callback` on login url redirection
 - Setup `http://localhost:5173/login` on logout url redirection
