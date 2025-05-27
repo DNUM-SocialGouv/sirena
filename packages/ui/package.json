@@ -14,7 +14,7 @@
   "scripts": {
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "test": "vitest",
+    "test": "vitest --typecheck",
     "test:browser": "vitest --workspace=vitest.workspace.ts",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/ui/' | sed 's|^packages/ui/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
     "lint": "biome check"
@@ -39,6 +39,7 @@
     "jsdom": "^26.1.0",
     "playwright": "^1.52.0",
     "storybook": "^8.6.12",
+    "vite": "^6.3.5",
     "vitest": "^3.1.3",
     "vitest-browser-react": "^0.1.1"
   },
