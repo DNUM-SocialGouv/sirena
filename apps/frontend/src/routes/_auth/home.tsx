@@ -27,13 +27,21 @@ function RouteComponent() {
     <LoggedLayout>
       <div className="home">
         <h1>Welcome to home</h1>
-        <Link to="/administration">Administration</Link>
-        <Button onClick={() => handlePermissionsChange()}> Change permissions </Button>
+        <div className="fr-m-1w">
+          <Link to="/administration">Administration</Link>
+        </div>
+        <div className="fr-m-1w">
+          <Button onClick={() => handlePermissionsChange()}> Change permissions </Button>
+        </div>
         <form action="/api/auth/logout-proconnect" method="POST">
-          <Button> Proconnect Logout </Button>
+          <Button className="fr-m-1w" type="submit">
+            Proconnect Logout
+          </Button>
         </form>
         <form action="/api/auth/logout" method="POST">
-          <Button>Logout </Button>
+          <Button className="fr-m-1w" type="submit">
+            Logout
+          </Button>
         </form>
       </div>
     </LoggedLayout>

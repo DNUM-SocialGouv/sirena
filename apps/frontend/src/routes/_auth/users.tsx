@@ -1,4 +1,6 @@
 import { LoggedLayout } from '@/components/layout/logged/logged';
+import { useUser } from '@/hooks/queries/useUser';
+import { type Column, DataTable } from '@sirena/ui';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/users')({
@@ -21,10 +23,35 @@ export const Route = createFileRoute('/_auth/users')({
 });
 
 function RouteComponent() {
+  const { data } = useUser();
+  if (!data) {
+    return <div>Loading...</div>;
+  }
+
+  type User = (typeof data.data)[number];
+
+  const columns: Column<User>[] = [
+    { key: 'id', label: 'Id' },
+    { key: 'email', label: 'Email' },
+    { key: 'firstName', label: 'Prénom' },
+    { key: 'lastName', label: 'Nom' },
+    { key: 'createdAt', label: 'Date de création' },
+  ];
+
+  const cells = {
+    createdAt: (row: User) =>
+      new Date(row.createdAt).toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }),
+  };
+
   return (
     <LoggedLayout>
       <div className="home">
         <h1>Welcome to users</h1>
+        <DataTable title="Liste des utilisateurs" rowId="id" data={data.data} columns={columns} cells={cells} />
       </div>
     </LoggedLayout>
   );
