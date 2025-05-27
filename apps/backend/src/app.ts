@@ -11,7 +11,7 @@ export const app = appFactory
   .use(pinoLogger())
   .use(
     csrf({
-      origin: [envVars.FRONTEND_URL],
+      origin: [envVars.FRONTEND_URI],
     }),
   )
   .route('/auth', AuthApp)
