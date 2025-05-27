@@ -25,4 +25,4 @@ COPY --chown=node:node ./apps/backend apps/backend
 COPY --chown=node:node ./scripts/backend.entrypoint.sh scripts/
 
 ENTRYPOINT ["/app/scripts/backend.entrypoint.sh"]
-CMD ["pnpm", "--filter", "@sirena/backend", "dev"]
+CMD ["sh", "-c", "cd /app/apps/backend && node_modules/.bin/tsx src/index.ts"]
