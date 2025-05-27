@@ -1,11 +1,11 @@
 import { HeaderMenu } from '@/components/layout/header';
 import type { FC, ReactNode } from 'react';
 
-type LoginLayoutLayoutProps = {
+type NotLoggedLayoutProps = {
   children: ReactNode;
 };
 
-export const LoginLayout: FC<LoginLayoutLayoutProps> = ({ children }) => {
+export const NotLoggedLayout: FC<NotLoggedLayoutProps> = ({ children }) => {
   return (
     <div>
       <HeaderMenu homeHref="/" />

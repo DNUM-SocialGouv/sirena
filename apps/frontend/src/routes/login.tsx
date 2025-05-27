@@ -1,5 +1,4 @@
-import { LoginLayout } from '@/components/layout/loginLayout';
-import ProConnectButton from '@codegouvfr/react-dsfr/ProConnectButton';
+import { NotLoggedLayout } from '@/components/layout/notLogged';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { z } from 'zod';
 
@@ -23,14 +22,27 @@ function RouteComponent() {
 
   return (
     <div className="p-2">
-      <LoginLayout>
+      <NotLoggedLayout>
         Welcome to login
-        <form action="/api/auth/login" method="post">
-          <button type="submit">
-            <ProConnectButton url="#" />
-          </button>
-        </form>
-      </LoginLayout>
+        <div id="fr-proconnect-button-«r2»" className="fr-connect-group">
+          <form action="/api/auth/login" method="post">
+            <button className="fr-btn fr-connect pro-connect" type="submit">
+              <span className="fr-connect__login">S’identifier avec</span>
+              <span className="fr-connect__brand">ProConnect</span>
+            </button>
+          </form>
+          <p>
+            <a
+              href="https://www.proconnect.gouv.fr/"
+              target="_blank"
+              rel="noreferrer noopener"
+              title="Qu’est-ce que ProConnect ? - nouvelle fenêtre"
+            >
+              Qu’est-ce que ProConnect ?
+            </a>
+          </p>
+        </div>
+      </NotLoggedLayout>
     </div>
   );
 }

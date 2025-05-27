@@ -10,7 +10,7 @@
 //   return data;
 // }
 
-import { client } from '@/lib/api/hc.ts';
+import { type App, client } from '@/lib/api/hc.ts';
 
 export async function fetchUsers() {
   const res = await client.users.$get();
