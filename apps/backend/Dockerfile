@@ -22,7 +22,8 @@ RUN pnpm install --frozen-lockfile
 COPY --chown=node:node ./packages/database packages/database
 COPY --chown=node:node ./apps/backend apps/backend
 
+RUN pnpm --filter @sirena/database db:generate
+
 COPY --chown=node:node ./scripts/backend.entrypoint.sh scripts/
 
 ENTRYPOINT ["/app/scripts/backend.entrypoint.sh"]
-CMD ["sh", "-c", "cd /app/apps/backend && node_modules/.bin/tsx src/index.ts"]
