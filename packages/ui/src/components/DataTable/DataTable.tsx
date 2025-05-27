@@ -1,6 +1,6 @@
-import { isPrimitive } from '@/utils/guards';
-import type { Primitive } from '@/utils/types';
 import { type JSX, type ReactNode, memo, useCallback, useEffect, useId, useMemo, useRef } from 'react';
+import { isPrimitive } from '../../utils/guards';
+import type { Primitive } from '../../utils/types';
 import type { Column, ColumnKey, OnSortChangeParams, Row, RowWithId } from './DataTable.types';
 import { DataTableHeader } from './DataTableHeader/DataTableHeader';
 import { DataTableRow } from './DataTableRow/DataTableRow';
