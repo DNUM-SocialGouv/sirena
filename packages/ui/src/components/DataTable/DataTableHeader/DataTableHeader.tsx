@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import type { Column, ColumnKey, OnSortChangeParams, RowWithId } from '../DataTable.type';
+import type { Column, ColumnKey, OnSortChangeParams, RowWithId } from '../DataTable.types';
 import { SortButton } from '../SortButton/SortButton';
 
 type DataTableHeaderProps<T extends RowWithId<string>> = {

@@ -8,7 +8,9 @@ describe('DataCell Component', () => {
   const wrapWithTable = (children: React.ReactNode) => (
     <table>
       <thead>
-        <tr>Header</tr>
+        <tr>
+          <th>Header</th>
+        </tr>
       </thead>
       <tbody>
         <tr>{children}</tr>

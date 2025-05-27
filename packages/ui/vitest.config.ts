@@ -7,5 +7,13 @@ export default defineConfig({
     globals: true,
     setupFiles: './setupTests.ts',
     environment: 'jsdom',
+    typecheck: {
+      enabled: true,
+    },
+  },
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
   },
 });

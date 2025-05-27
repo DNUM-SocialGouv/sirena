@@ -17,7 +17,7 @@ describe('CheckBoxCell Component', () => {
   const wrapWithTable = (children: React.ReactNode) => (
     <table>
       <thead>
-        <tr> {children} </tr>
+        <tr>{children}</tr>
       </thead>
     </table>
   );

@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import type { RowWithId } from '../DataTable.type';
+import type { RowWithId } from '../DataTable.types';
 
 type CheckboxCellProps<Datum extends RowWithId<RowId>, RowId extends string> = {
   id: string;
