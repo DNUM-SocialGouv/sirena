@@ -1,4 +1,4 @@
-import { app } from '../app.ts';
-import { generateSwaggerDocs } from '../openAPI.ts';
+import { app } from '../app';
+import { generateSwaggerDocs } from '../openAPI';
 
 generateSwaggerDocs(app);

@@ -1,4 +1,4 @@
-import { SessionSchema } from '@/libs/zod.ts';
+import { SessionSchema } from '@/libs/zod';
 import type { z as Z } from 'zod';
 
 export const SessionCreationSchema = SessionSchema.pick({

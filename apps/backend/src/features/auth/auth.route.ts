@@ -1,4 +1,4 @@
-import { openApiRedirect } from '@/helpers/apiResponses.ts';
+import { openApiRedirect } from '@/helpers/apiResponses';
 
 export const postLoginRoute = () => ({
   description: 'Login with redirection on proconnect',

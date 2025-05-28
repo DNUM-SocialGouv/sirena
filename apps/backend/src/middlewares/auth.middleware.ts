@@ -1,11 +1,11 @@
-import { envVars } from '@/config/env.ts';
-import { getSession } from '@/features/sessions/sessions.service.ts';
-import { throwHTTPException401Unauthorized } from '@/helpers/apiErrors.ts';
-import factoryWithAuth from '@/helpers/factories/appWithAuth.ts';
-import type { AppBindings } from '@/helpers/factories/appWithAuth.ts';
-import { getJwtExpirationDate, isJwtError, verify } from '@/helpers/jsonwebtoken.ts';
-import { signAuthCookie } from '@/helpers/jsonwebtoken.ts';
-import type { Session } from '@/libs/prisma.ts';
+import { envVars } from '@/config/env';
+import { getSession } from '@/features/sessions/sessions.service';
+import { throwHTTPException401Unauthorized } from '@/helpers/apiErrors';
+import factoryWithAuth from '@/helpers/factories/appWithAuth';
+import type { AppBindings } from '@/helpers/factories/appWithAuth';
+import { getJwtExpirationDate, isJwtError, verify } from '@/helpers/jsonwebtoken';
+import { signAuthCookie } from '@/helpers/jsonwebtoken';
+import type { Session } from '@/libs/prisma';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 

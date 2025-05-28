@@ -1,4 +1,4 @@
-import { ErrorSchema, ZodSafeParseErrorSchema } from '@/schemas/apiErrors.schema.ts';
+import { ErrorSchema, ZodSafeParseErrorSchema } from '@/schemas/apiErrors.schema';
 import type { ResolverResult } from 'hono-openapi';
 import { resolver } from 'hono-openapi/zod';
 import { HTTPException } from 'hono/http-exception';

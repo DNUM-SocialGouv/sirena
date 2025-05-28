@@ -1,11 +1,11 @@
-import { envVars } from '@/config/env.ts';
+import { envVars } from '@/config/env';
 import { pinoLogger } from 'hono-pino';
 import pino from 'pino';
 import pretty from 'pino-pretty';
 
 export default () => {
   return pinoLogger({
-    pino: pino.default(
+    pino: pino(
       {
         level: 'info',
         serializers: {

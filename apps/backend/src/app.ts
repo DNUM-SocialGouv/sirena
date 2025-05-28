@@ -1,10 +1,10 @@
-import AuthApp from '@/features/auth/auth.controller.ts';
-import UsersApp from '@/features/users/users.controller.ts';
-import appFactory from '@/helpers/factories/appWithLogs.ts';
-import pinoLogger from '@/middlewares/pino.middleware.ts';
+import AuthApp from '@/features/auth/auth.controller';
+import UsersApp from '@/features/users/users.controller';
+import appFactory from '@/helpers/factories/appWithLogs';
+import pinoLogger from '@/middlewares/pino.middleware';
 import { csrf } from 'hono/csrf';
-import { envVars } from './config/env.ts';
-import { errorHandler } from './helpers/errors.ts';
+import { envVars } from './config/env';
+import { errorHandler } from './helpers/errors';
 
 export const app = appFactory
   .createApp()

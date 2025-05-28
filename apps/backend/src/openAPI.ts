@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { Scalar } from '@scalar/hono-api-reference';
 import type { Hono } from 'hono';
 import { generateSpecs, openAPISpecs } from 'hono-openapi';
-import type { AppBindings } from './helpers/factories/appWithLogs.ts';
+import type { AppBindings } from './helpers/factories/appWithLogs';
 
 export function setupOpenAPI(app: Hono<AppBindings>, prefix = '/openapi') {
   // OpenAPI spec
