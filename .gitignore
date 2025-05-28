@@ -177,5 +177,5 @@ dist
 
 # personal
 
-packages/database/generated/*
+apps/backend/generated/*
 .env.docker

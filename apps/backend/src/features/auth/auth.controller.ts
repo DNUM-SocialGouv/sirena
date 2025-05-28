@@ -1,15 +1,15 @@
-import { ERROR_CODES } from '@/config/authErrors.constants.ts';
-import { envVars } from '@/config/env.ts';
-import { deleteSession, getSession } from '@/features/sessions/sessions.service.ts';
-import { createUser, getUserBySub } from '@/features/users/users.service.ts';
-import factoryWithLogs from '@/helpers/factories/appWithLogs.ts';
-import { getPropertyTypes } from '@/helpers/logs.ts';
-import { Prisma } from '@/libs/prisma.ts';
-import logoutMiddleware from '@/middlewares/logout.middleware.ts';
+import { ERROR_CODES } from '@/config/authErrors.constants';
+import { envVars } from '@/config/env';
+import { deleteSession, getSession } from '@/features/sessions/sessions.service';
+import { createUser, getUserBySub } from '@/features/users/users.service';
+import factoryWithLogs from '@/helpers/factories/appWithLogs';
+import { getPropertyTypes } from '@/helpers/logs';
+import { Prisma } from '@/libs/prisma';
+import logoutMiddleware from '@/middlewares/logout.middleware';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
-import { authUser, createRedirectUrl } from './auth.helper.ts';
-import { authorizationCodeGrant, buildAuthorizationUrl, buildEndSessionUrl, fetchUserInfo } from './auth.service.ts';
+import { authUser, createRedirectUrl } from './auth.helper';
+import { authorizationCodeGrant, buildAuthorizationUrl, buildEndSessionUrl, fetchUserInfo } from './auth.service';
 
 const app = factoryWithLogs
   .createApp()

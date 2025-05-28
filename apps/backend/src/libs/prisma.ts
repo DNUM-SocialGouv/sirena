@@ -1,4 +1,9 @@
-import db from '@sirena/database';
+import { PrismaClient } from '../../generated/client/index.js';
 
-export default db.prisma;
-export const Prisma = db.Prisma;
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
+
+export const prisma = globalForPrisma.prisma || new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+
+export * from '../../generated/client';
