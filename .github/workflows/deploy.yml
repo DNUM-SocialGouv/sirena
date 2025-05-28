@@ -51,8 +51,6 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_TAG }}-backend
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
 
       - name: Build and push Docker frontend image
         uses: docker/build-push-action@v5
@@ -62,7 +60,8 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_TAG }}-frontend
           labels: ${{ steps.meta.outputs.labels }}
-
+          build-args: |
+            VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
 
       # - name: Install dependencies
       #   run: |
