@@ -13,11 +13,11 @@ USER node
 WORKDIR /app
 
 COPY --chown=node:node package*.json pnpm* ./
-COPY --chown=node:node ./packages/database packages/database/
+COPY --chown=node:node ./apps/backend apps/backend/
 
 RUN pnpm install --frozen-lockfile
 
-RUN pnpm --filter @sirena/database db:generate
+RUN pnpm --filter @sirena/backend db:generate
 
 COPY --chown=node:node ./scripts/prisma-studio.entrypoint.sh scripts/
 

@@ -1,7 +1,5 @@
-import zod from '@sirena/database/zod';
+import { SessionSchema } from '@/libs/zod.ts';
 import type { z as Z } from 'zod';
-
-export const SessionSchema = zod.SessionSchema;
 
 export const SessionCreationSchema = SessionSchema.pick({
   userId: true,

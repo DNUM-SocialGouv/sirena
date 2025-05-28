@@ -1,8 +1,6 @@
-import zod from '@sirena/database/zod';
+import { UserSchema } from '@/libs/zod.ts';
 import { z } from 'zod';
 import 'zod-openapi/extend';
-
-export const UserSchema = zod.UserSchema;
 
 export const GetUserResponseSchema = UserSchema;
 export const GetUsersResponseSchema = z.array(UserSchema);

@@ -21,7 +21,7 @@ services:
   studio:
     container_name: sirena-studio-dev
     build:
-      dockerfile: ./packages/database/Dockerfile
+      dockerfile: ./apps/backend/Dockerfile
     depends_on:
       - postgres
     ports:
