@@ -5,7 +5,7 @@ import factoryWithAuth from '@/helpers/factories/appWithAuth.ts';
 import type { AppBindings } from '@/helpers/factories/appWithAuth.ts';
 import { getJwtExpirationDate, isJwtError, verify } from '@/helpers/jsonwebtoken.ts';
 import { signAuthCookie } from '@/helpers/jsonwebtoken.ts';
-import type { Session } from '@sirena/database';
+import type { Session } from '@/libs/prisma.ts';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 

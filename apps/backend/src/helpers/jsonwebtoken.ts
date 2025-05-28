@@ -1,5 +1,5 @@
 import { envVars } from '@/config/env.ts';
-import type { User } from '@sirena/database';
+import type { User } from '@/libs/prisma.ts';
 import jwt from 'jsonwebtoken';
 
 type Verify<T> = [null, T] | [jwt.TokenExpiredError | jwt.JsonWebTokenError | jwt.NotBeforeError, null];

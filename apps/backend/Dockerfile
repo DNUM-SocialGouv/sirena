@@ -15,7 +15,6 @@ USER node
 WORKDIR /app
 
 COPY --chown=node:node package*.json pnpm* ./
-COPY --chown=node:node ./packages/database/package.json packages/database/
 COPY --chown=node:node ./apps/backend/package.json apps/backend/
 
 RUN pnpm install --frozen-lockfile
@@ -23,10 +22,9 @@ RUN pnpm install --frozen-lockfile
 # Stage de build
 FROM deps AS builder
 
-COPY --chown=node:node ./packages/database packages/database
 COPY --chown=node:node ./apps/backend apps/backend
 
-RUN pnpm --filter @sirena/database db:generate
+RUN pnpm --filter @sirena/backend db:generate
 RUN pnpm --filter @sirena/backend build
 
 # Stage final
