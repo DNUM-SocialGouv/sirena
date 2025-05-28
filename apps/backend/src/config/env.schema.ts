@@ -58,6 +58,11 @@ export const AppEnvSchema = z.object({
   IS_LOGGED_TOKEN_NAME: z.string({
     required_error: "La variable d'environnement IS_LOGGED_TOKEN_NAME est requise",
   }),
+  LOG_FORMAT: z
+    .enum(['json', 'pretty'], {
+      invalid_type_error: "La variable d'environnement LOG_FORMAT doit être 'json' ou 'pretty'",
+    })
+    .optional(),
 });
 
 /**

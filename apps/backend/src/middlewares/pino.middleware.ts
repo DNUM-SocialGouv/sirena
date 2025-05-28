@@ -1,3 +1,4 @@
+import { envVars } from '@/config/env.ts';
 import { pinoLogger } from 'hono-pino';
 import pino from 'pino';
 import pretty from 'pino-pretty';
@@ -9,7 +10,7 @@ export default () => {
         level: 'info',
         serializers: { err: pino.stdSerializers.err },
       },
-      pretty(),
+      envVars.LOG_FORMAT === 'pretty' ? pretty() : undefined,
     ),
     http: {
       reqId: () => crypto.randomUUID(),

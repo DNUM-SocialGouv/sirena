@@ -20,6 +20,8 @@ const processEnv = {
   FRONTEND_URI: process.env.FRONTEND_URI,
   FRONTEND_REDIRECT_URI: process.env.FRONTEND_REDIRECT_URI,
   FRONTEND_REDIRECT_LOGIN_URI: process.env.FRONTEND_REDIRECT_LOGIN_URI,
+  // Internal
+  LOG_FORMAT: process.env.LOG_FORMAT,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);
