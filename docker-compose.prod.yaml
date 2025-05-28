@@ -32,6 +32,8 @@ services:
     container_name: sirena-backend-prod
     build:
       dockerfile: ./apps/backend/Dockerfile
+      args:
+        - VITE_IS_LOGGED_TOKEN_NAME=${VITE_IS_LOGGED_TOKEN_NAME}
     ports:
     - "127.0.0.1:3010:4000"
     depends_on:

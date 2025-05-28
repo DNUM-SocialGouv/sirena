@@ -5,6 +5,9 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV NODE_ENV=production
 
+ARG VITE_IS_LOGGED_TOKEN_NAME
+ENV VITE_IS_LOGGED_TOKEN_NAME=$VITE_IS_LOGGED_TOKEN_NAME
+
 RUN npm install --global corepack@latest && \
     corepack enable pnpm
 
