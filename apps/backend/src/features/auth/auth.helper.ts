@@ -1,11 +1,10 @@
-import { envVars } from '@//config/env.ts';
-import { createSession } from '@/features/sessions/sessions.service.ts';
-import type { AppBindings } from '@/helpers/factories/appWithLogs.ts';
-import { getJwtExpirationDate } from '@/helpers/jsonwebtoken.ts';
-import { signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken.ts';
+import { envVars } from '@//config/env';
+import { createSession } from '@/features/sessions/sessions.service';
+import type { AppBindings } from '@/helpers/factories/appWithLogs';
+import { getJwtExpirationDate } from '@/helpers/jsonwebtoken';
+import { signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
 import type { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
-import type { UserInfoResponse } from 'openid-client';
 
 type ErrorParams = {
   error: string;

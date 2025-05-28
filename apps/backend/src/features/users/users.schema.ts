@@ -1,4 +1,4 @@
-import { UserSchema } from '@/libs/zod.ts';
+import { UserSchema } from '@/libs/zod';
 import { z } from 'zod';
 import 'zod-openapi/extend';
 

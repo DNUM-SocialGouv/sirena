@@ -1,5 +1,5 @@
 import { hc } from 'hono/client';
-import type { app } from './app.ts';
+import type { app } from './app';
 
 const client = hc<typeof app>('');
 export type Client = typeof client;

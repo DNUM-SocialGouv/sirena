@@ -1,5 +1,5 @@
-import { envVars } from '@/config/env.ts';
-import { authorizationParams } from '@/config/openID.ts';
+import { envVars } from '@/config/env';
+import { authorizationParams } from '@/config/openID';
 import * as client from 'openid-client';
 
 export const configOptions =
