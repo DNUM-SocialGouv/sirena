@@ -1,4 +1,4 @@
-import type { Primitive } from '@/utils/types';
+import type { Primitive } from '../utils/types';
 
 export function isPrimitive(x: unknown): x is Primitive {
   return (
