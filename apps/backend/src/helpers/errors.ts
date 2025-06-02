@@ -2,7 +2,7 @@ import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import 'zod-openapi/extend';
-import type { AppBindings } from './factories/appWithLogs.ts';
+import type { AppBindings } from './factories/appWithLogs';
 
 export const errorHandler: ErrorHandler<AppBindings> = (err, c) => {
   if (err instanceof HTTPException) {

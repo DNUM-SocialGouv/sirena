@@ -3,7 +3,7 @@ import { resolver } from 'hono-openapi/zod';
 import { type ZodSchema, z } from 'zod';
 import 'zod-openapi/extend';
 
-import { MetaSchema } from '@/schemas/apiResponses.schema.ts';
+import { MetaSchema } from '@/schemas/apiResponses.schema';
 
 export const apiResponsesResolver = <T extends ZodSchema>(schema: T): ResolverResult =>
   resolver(

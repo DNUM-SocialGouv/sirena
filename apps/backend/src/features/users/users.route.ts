@@ -1,7 +1,7 @@
-import { openApi404NotFound } from '@/helpers/apiErrors.ts';
-import { openApiResponse, openApiResponses } from '@/helpers/apiResponses.ts';
+import { openApi404NotFound } from '@/helpers/apiErrors';
+import { openApiResponse, openApiResponses } from '@/helpers/apiResponses';
 import { describeRoute } from 'hono-openapi';
-import { GetUserResponseSchema, GetUsersResponseSchema } from './users.schema.ts';
+import { GetUserResponseSchema, GetUsersResponseSchema } from './users.schema';
 
 export const getUserRoute = describeRoute({
   description: 'Get user by id',

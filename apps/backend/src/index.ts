@@ -1,6 +1,6 @@
 import { serve } from '@hono/node-server';
-import { app } from './app.ts';
-import { setupOpenAPI } from './openAPI.ts';
+import { app } from './app';
+import { setupOpenAPI } from './openAPI';
 import '@/config/env.ts';
 
 setupOpenAPI(app);

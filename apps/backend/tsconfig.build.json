@@ -1,9 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",
+    "outDir": "dist",
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "allowImportingTsExtensions": false,
+    "noEmit": false,
+    "sourceMap": true
   },
-  "include": ["src/hc.ts", "src/index.ts"]
+  "include": ["src"]
 }

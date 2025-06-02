@@ -27,6 +27,7 @@ COPY --chown=node:node ./packages/ui packages/ui
 COPY --chown=node:node ./apps/backend apps/backend
 COPY --chown=node:node ./apps/frontend apps/frontend
 
+RUN pnpm --filter @sirena/backend db:generate
 RUN pnpm --filter @sirena/backend build
 RUN pnpm --filter @sirena/frontend build
 

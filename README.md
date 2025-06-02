@@ -70,7 +70,6 @@ apps/
 ├── backend-bis   → Experimental/alt backend (same tech stack)
 packages/
 ├── ui            → Design system / reusable components (Storybook)
-├── database      → Prisma schema, types, and zod validation
 ```
 
 ## 🧪 Commands
@@ -80,13 +79,12 @@ packages/
 | `pnpm dev` | Start frontend + backend in parallel |
 | `pnpm dev:frontend` | Start frontend (`@sirena/frontend`) |
 | `pnpm dev:backend` | Start backend (`@sirena/backend`) with `.env` |
-| `pnpm dev:backend-bis` | Start alternate backend (`@sirena/backend-bis`) with `.env` |
 | `pnpm build:backend` | Build backend to `dist/` (RPC + OpenAPI ready) |
 | `pnpm build:backend-bis` | Build alternate backend |
-| `pnpm db:migrate` | Run dev migrations (`@sirena/database`) with `.env` |
-| `pnpm db:generate` | Generate Prisma client from schema (`@sirena/database`) with `.env` |
-| `pnpm db:deploy` | Deploy pending migrations to DB (`@sirena/database`) with `.env` |
-| `pnpm db:studio` | Open Prisma Studio (`@sirena/database`) with `.env` |
+| `pnpm db:migrate` | Run dev migrations (`@sirena/backend`) with `.env` |
+| `pnpm db:generate` | Generate Prisma client from schema (`@sirena/backend`) with `.env` |
+| `pnpm db:deploy` | Deploy pending migrations to DB (`@sirena/backend`) with `.env` |
+| `pnpm db:studio` | Open Prisma Studio (`@sirena/backend`) with `.env` |
 | `pnpm lint` | Run `lint` script in all packages (via `pnpm -r`) |
 | `pnpm lint:staged` | Run staged file linter in each workspace |
 | `pnpm gitleaks` | Scan staged files for secrets using [Gitleaks](https://github.com/gitleaks/gitleaks) |
@@ -136,7 +134,6 @@ packages/
 | [`@sirena/ui`](./packages/ui) | Reusable design system components (with Storybook) |
 | [`@sirena/backend`](./apps/backend) | Main Hono backend with OpenAPI + RPC |
 | [`@sirena/backend-bis`](./apps/backend-bis) | Experimental backend variant |
-| [`@sirena/database`](./packages/database) | Prisma schema, zod types, and client |
 | [`@sirena/frontend`](./apps/frontend) | Full React SPA using TanStack Router + Query |
 
 ## Docker build

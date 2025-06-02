@@ -1,8 +1,8 @@
-import { convertDatesToStrings } from '@/tests/formatter.ts';
+import { convertDatesToStrings } from '@/tests/formatter';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
-import app from './users.controller.ts';
-import { getUsers } from './users.service.ts';
+import app from './users.controller';
+import { getUsers } from './users.service';
 
 vi.mock('./users.service.ts', () => ({
   getUsers: vi.fn(),

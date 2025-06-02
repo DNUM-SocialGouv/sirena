@@ -1,7 +1,7 @@
-import { envVars } from '@/config/env.ts';
-import { deleteSession, getSession } from '@/features/sessions/sessions.service.ts';
-import factoryWithAuth from '@/helpers/factories/appWithAuth.ts';
-import authMiddleware from '@/middlewares/auth.middleware.ts';
+import { envVars } from '@/config/env';
+import { deleteSession, getSession } from '@/features/sessions/sessions.service';
+import factoryWithAuth from '@/helpers/factories/appWithAuth';
+import authMiddleware from '@/middlewares/auth.middleware';
 import { deleteCookie, getCookie } from 'hono/cookie';
 import { HTTPException } from 'hono/http-exception';
 
