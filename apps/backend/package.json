@@ -27,8 +27,8 @@
     "./swagger": "./src/swagger/openAPI.json",
     "./hc": {
       "import": {
-        "types": "./dist/src//hc.d.ts",
-        "default": "./dist//src/hc.js"
+        "types": "./dist/src/hc.d.ts",
+        "default": "./dist/src/hc.js"
       }
     }
   },
