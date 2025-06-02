@@ -19,23 +19,33 @@ datasource db {
   url      = env("PG_URL")
 }
 
+enum Role {
+  PENDING
+  READER
+  WRITER
+  PILOTING
+  LOCAL_ADMIN
+  GLOBAL_ADMIN
+}
+
 model User {
-  id                String                @id @default(cuid())
-  email             String                @unique /// @zod.string.email({ message: 'Invalid email address' }),
-  firstName         String
-  lastName          String
-  uid               String                @unique
-  sub               String                @unique
-  createdAt         DateTime              @default(now())
-  Sessions          Session[]
+  id        String    @id @default(cuid())
+  email     String    @unique /// @zod.string.email({ message: 'Invalid email address' }),
+  firstName String
+  lastName  String
+  uid       String    @unique
+  sub       String    @unique
+  createdAt DateTime  @default(now())
+  Sessions  Session[]
+  role      Role      @default(PENDING)
 }
 
 model Session {
-  id                String    @id @default(cuid())
-  user              User      @relation(fields: [userId], references: [id])
-  userId            String
-  token             String    @unique
-  expiresAt         DateTime
-  pcIdToken         String    @unique
-  createdAt         DateTime  @default(now())
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  pcIdToken String   @unique
+  createdAt DateTime @default(now())
 }

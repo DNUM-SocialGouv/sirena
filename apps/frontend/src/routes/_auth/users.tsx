@@ -36,6 +36,7 @@ function RouteComponent() {
     { key: 'firstName', label: 'Prénom' },
     { key: 'lastName', label: 'Nom' },
     { key: 'createdAt', label: 'Date de création' },
+    { key: 'role', label: 'Rôle' },
   ];
 
   const cells = {

@@ -1,3 +1,4 @@
+import { Role } from '@/libs/prisma';
 import { convertDatesToStrings } from '@/tests/formatter';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
@@ -38,6 +39,7 @@ describe('User Endpoint', () => {
         sub: 'sub',
         uid: 'uid',
         createdAt: new Date(0),
+        role: Role.PENDING,
       },
     ];
 
