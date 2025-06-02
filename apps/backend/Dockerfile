@@ -39,7 +39,6 @@ COPY --from=deps --chown=node:node /app/package*.json ./
 COPY --from=deps --chown=node:node /app/pnpm* ./
 
 # Copier les builds
-COPY --from=builder --chown=node:node /app/packages/database packages/database
 COPY --from=builder --chown=node:node /app/apps/backend apps/backend
 
 COPY --chown=node:node ./scripts/backend.entrypoint.sh scripts/
