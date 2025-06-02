@@ -1,7 +1,7 @@
 import { LoggedLayout } from '@/components/layout/logged/logged';
 import { useUser } from '@/hooks/queries/useUser';
 import { type Column, DataTable } from '@sirena/ui';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { Link, createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/users')({
   beforeLoad: ({ location, context }) => {
@@ -37,6 +37,8 @@ function RouteComponent() {
     { key: 'lastName', label: 'Nom' },
     { key: 'createdAt', label: 'Date de création' },
     { key: 'role', label: 'Rôle' },
+    // étonnant que ça ne casse pas
+    { key: 'editionLabel', label: 'Action' },
   ];
 
   const cells = {
@@ -46,6 +48,11 @@ function RouteComponent() {
         month: '2-digit',
         day: '2-digit',
       }),
+    editionLabel: (row: User) => (
+      <Link to="/user/$userId" params={{ userId: row.id }}>
+        Voir
+      </Link>
+    ),
   };
 
   return (
