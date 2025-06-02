@@ -1,5 +1,6 @@
 import { LoggedLayout } from '@/components/layout/logged/logged';
 import { useUserById } from '@/hooks/queries/useUserById';
+import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -67,17 +68,11 @@ function RouteComponent() {
       <div>
         <h1>Détails de l'utilisateur</h1>
         <div>
-          <div>
-            <strong>ID:</strong> {user.data.id}
-          </div>
+          <Input label="Nom" disabled={true} nativeInputProps={{ value: user.data.lastName }} />
+          <Input label="Prénom" disabled={true} nativeInputProps={{ value: user.data.firstName }} />
+          <Input label="Mail" disabled={true} nativeInputProps={{ value: user.data.email }} />
           <div>
             <strong>Email:</strong> {user.data.email}
-          </div>
-          <div>
-            <strong>Prénom:</strong> {user.data.firstName}
-          </div>
-          <div>
-            <strong>Nom:</strong> {user.data.lastName}
           </div>
           <Select
             label="Rôle"
