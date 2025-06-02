@@ -2,9 +2,8 @@ import { envVars } from '@//config/env';
 import { ERROR_CODES } from '@/config/authErrors.constants';
 import { createSession } from '@/features/sessions/sessions.service';
 import type { AppBindings } from '@/helpers/factories/appWithLogs';
-import { getJwtExpirationDate } from '@/helpers/jsonwebtoken';
-import { signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
 import { Prisma } from '@/libs/prisma';
+import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
 import type { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
 
