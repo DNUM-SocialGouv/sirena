@@ -1,4 +1,5 @@
 import { LoggedLayout } from '@/components/layout/logged/logged';
+import { Loader } from '@/components/loader.tsx';
 import { useUser } from '@/hooks/queries/useUser';
 import { type Column, DataTable } from '@sirena/ui';
 import { Link, createFileRoute, redirect } from '@tanstack/react-router';
@@ -25,7 +26,7 @@ export const Route = createFileRoute('/_auth/users')({
 function RouteComponent() {
   const { data } = useUser();
   if (!data) {
-    return <div>Loading...</div>;
+    return <Loader />;
   }
 
   type User = (typeof data.data)[number];

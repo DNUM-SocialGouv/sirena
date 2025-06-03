@@ -1,4 +1,5 @@
 import { LoggedLayout } from '@/components/layout/logged/logged';
+import { Loader } from '@/components/loader.tsx';
 import { useUserById } from '@/hooks/queries/useUserById';
 import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
@@ -34,7 +35,7 @@ function RouteComponent() {
   if (isLoading) {
     return (
       <LoggedLayout>
-        <div>Chargement...</div>
+        <Loader />
       </LoggedLayout>
     );
   }
@@ -70,10 +71,7 @@ function RouteComponent() {
         <div>
           <Input label="Nom" disabled={true} nativeInputProps={{ value: user.data.lastName }} />
           <Input label="Prénom" disabled={true} nativeInputProps={{ value: user.data.firstName }} />
-          <Input label="Mail" disabled={true} nativeInputProps={{ value: user.data.email }} />
-          <div>
-            <strong>Email:</strong> {user.data.email}
-          </div>
+          <Input label="Email" disabled={true} nativeInputProps={{ value: user.data.email }} />
           <Select
             label="Rôle"
             nativeSelectProps={{
