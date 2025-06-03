@@ -57,7 +57,7 @@ describe('auth.controller.ts Auth Endpoints', () => {
 
   const client = testClient(app);
 
-  it('POST /login Should redirect to the authorization URL', async () => {
+  it('POST /login Should redirect to the authorization URL and set cookies', async () => {
     const fakeData = {
       redirectTo: new URL('https://example.com/auth'),
       nonce: 'fakeNonce',
