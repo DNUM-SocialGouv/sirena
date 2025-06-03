@@ -67,39 +67,54 @@ function RouteComponent() {
   return (
     <LoggedLayout>
       <div>
-        <h1>Détails de l'utilisateur</h1>
+        <h1>Modifier un utilisateur</h1>
         <div>
-          <Input label="Nom" disabled={true} nativeInputProps={{ value: user.data.lastName }} />
-          <Input label="Prénom" disabled={true} nativeInputProps={{ value: user.data.firstName }} />
-          <Input label="Email" disabled={true} nativeInputProps={{ value: user.data.email }} />
-          <Select
-            label="Rôle"
-            nativeSelectProps={{
-              onChange: (event) => setValue(event.target.value),
-              value,
-            }}
-          >
-            <option value="" disabled hidden>
-              Sélectionnez une option
-            </option>
-            <option value="PENDING">En attente d'affectation</option>
-            <option value="READER">Agent en lecture</option>
-            <option value="WRITER">Agent en écriture</option>
-            <option value="PILOTING">Pilotage national</option>
-            <option value="LOCAL_ADMIN">Admin local</option>
-            <option value="GLOBAL_ADMIN">Super admin</option>
-          </Select>
-
-          <div>
-            <strong>Date de création:</strong>{' '}
-            {new Date(user.data.createdAt).toLocaleDateString('fr-FR', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </div>
+          <form>
+            <fieldset className="fr-fieldset">
+              <legend className="fr-fieldset__legend">Identifiant de l'utilisateur</legend>
+              <Input
+                className="fr-fieldset__content"
+                label="Nom"
+                disabled={true}
+                nativeInputProps={{ value: user.data.lastName }}
+              />
+              <Input
+                className="fr-fieldset__content"
+                label="Prénom"
+                disabled={true}
+                nativeInputProps={{ value: user.data.firstName }}
+              />
+            </fieldset>
+            <fieldset className="fr-fieldset">
+              <legend className="fr-fieldset__legend">Coordonnées de l'utilisateur</legend>
+              <Input
+                className="fr-fieldset__content"
+                label="Email"
+                disabled={true}
+                nativeInputProps={{ value: user.data.email }}
+              />
+            </fieldset>
+            <fieldset className="fr-fieldset">
+              <legend className="fr-fieldset__legend">Paramètres de profil de l'utilisateur</legend>
+              <Select
+                className="fr-fieldset__content"
+                label="Rôle*"
+                nativeSelectProps={{
+                  onChange: (event) => setValue(event.target.value),
+                  value,
+                }}
+              >
+                <option value="" disabled hidden>
+                  Sélectionnez une option
+                </option>
+                <option value="PENDING" />
+                <option value="WRITER">Agent en écriture</option>
+                <option value="PILOTING">Pilotage national</option>
+                <option value="LOCAL_ADMIN">Admin local</option>
+                <option value="GLOBAL_ADMIN">Super admin</option>
+              </Select>
+            </fieldset>
+          </form>
         </div>
       </div>
     </LoggedLayout>
