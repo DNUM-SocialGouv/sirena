@@ -28,10 +28,10 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
       return next();
     } catch (error) {
       if (!isJwtError(error)) {
-        deleteCookie(c, envVars.AUTH_TOKEN_NAME);
-        throw error;
+        logger.error({ err: error }, 'Error in auth token verification - not a JWT error');
+      } else {
+        logger.info({ err: error }, 'Error in auth token verification');
       }
-      logger.info({ err: error }, 'Error in auth token verification');
     }
     deleteCookie(c, envVars.AUTH_TOKEN_NAME);
   }
@@ -72,6 +72,7 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
       return next();
     } catch (error) {
       if (!isJwtError(error)) {
+        logger.error({ err: error }, 'Error in auth token verification - not a JWT error');
         deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
         deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
         throw error;
