@@ -38,6 +38,7 @@ model User {
   createdAt DateTime  @default(now())
   Sessions  Session[]
   role      Role      @default(PENDING)
+  active    Boolean   @default(false)
 }
 
 model Session {

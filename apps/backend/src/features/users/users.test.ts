@@ -14,10 +14,6 @@ vi.mock('@/config/env', () => ({
   envVars: {},
 }));
 
-vi.mock('@/config/env', () => ({
-  envVars: {},
-}));
-
 vi.mock('@/middlewares/auth.middleware', () => {
   return {
     default: (c: Context, next: () => Promise<Next>) => {
@@ -40,6 +36,7 @@ describe('User Endpoint', () => {
         uid: 'uid',
         createdAt: new Date(0),
         role: Role.PENDING,
+        active: false,
       },
     ];
 
