@@ -1,12 +1,29 @@
 import { convertDatesToStrings } from '@/tests/formatter';
+import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
 import app from './users.controller';
 import { getUsers } from './users.service';
 
-vi.mock('./users.service.ts', () => ({
+vi.mock('./users.service', () => ({
   getUsers: vi.fn(),
 }));
+
+vi.mock('@/config/env', () => ({
+  envVars: {},
+}));
+
+vi.mock('@/config/env', () => ({
+  envVars: {},
+}));
+
+vi.mock('@/middlewares/auth.middleware', () => {
+  return {
+    default: (c: Context, next: () => Promise<Next>) => {
+      return next();
+    },
+  };
+});
 
 describe('User Endpoint', () => {
   const client = testClient(app);

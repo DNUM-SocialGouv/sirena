@@ -24,7 +24,7 @@ function RouteComponent() {
   return (
     <LoggedLayout>
       <div className="home">
-        <h1>Welcome to entities</h1>
+        <h2>Welcome to entities</h2>
       </div>
     </LoggedLayout>
   );

@@ -23,7 +23,7 @@ function RouteComponent() {
   return (
     <div className="p-2">
       <NotLoggedLayout>
-        Welcome to login
+        <h2>Welcome to login</h2>
         <div id="fr-proconnect-button-«r2»" className="fr-connect-group">
           <form action="/api/auth/login" method="post">
             <button className="fr-btn fr-connect pro-connect" type="submit">

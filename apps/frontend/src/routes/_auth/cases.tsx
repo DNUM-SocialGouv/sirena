@@ -19,7 +19,7 @@ function RouteComponent() {
   return (
     <LoggedLayout>
       <div className="home">
-        <h1>Welcome to cases</h1>
+        <h2>Welcome to cases</h2>
       </div>
     </LoggedLayout>
   );

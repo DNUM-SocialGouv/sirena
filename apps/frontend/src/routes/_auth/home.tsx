@@ -26,7 +26,7 @@ function RouteComponent() {
   return (
     <LoggedLayout>
       <div className="home">
-        <h1>Welcome to home</h1>
+        <h2>Welcome to home</h2>
         <div className="fr-m-1w">
           <Link to="/administration">Administration</Link>
         </div>
