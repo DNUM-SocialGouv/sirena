@@ -16,8 +16,8 @@ export const SideNav = () => {
       ...(isAdmin
         ? [
             { linkProps: { to: ADMIN }, text: 'Administration' },
+            { linkProps: { to: USERS }, text: 'Gestion des utilisateurs et des habilitations' },
             { linkProps: { to: ENTITIES }, text: 'Gestion des entités administratives' },
-            { linkProps: { to: USERS }, text: 'Gestion des utilisateurs' },
           ]
         : []),
       { linkProps: { to: CASES }, text: 'Gestion des référentiels' },

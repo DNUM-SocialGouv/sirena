@@ -32,13 +32,9 @@ function RouteComponent() {
   type User = (typeof data.data)[number];
 
   const columns: Column<User>[] = [
-    { key: 'id', label: 'Id' },
-    { key: 'email', label: 'Email' },
-    { key: 'firstName', label: 'Prénom' },
     { key: 'lastName', label: 'Nom' },
+    { key: 'firstName', label: 'Prénom' },
     { key: 'createdAt', label: 'Date de création' },
-    { key: 'role', label: 'Rôle' },
-    // étonnant que ça ne casse pas
     { key: 'editionLabel', label: 'Action' },
   ];
 
@@ -51,7 +47,7 @@ function RouteComponent() {
       }),
     editionLabel: (row: User) => (
       <Link to="/user/$userId" params={{ userId: row.id }}>
-        Voir
+        Traiter la demande
       </Link>
     ),
   };
