@@ -67,28 +67,35 @@ create your account and project on [this url](https://partenaires.proconnect.gou
 apps/
 ├── frontend      → React app using TanStack Router + DSFR + RPC client
 ├── backend       → API server using Hono + Zod + OpenAPI
-├── backend-bis   → Experimental/alt backend (same tech stack)
 packages/
 ├── ui            → Design system / reusable components (Storybook)
 ```
 
 ## 🧪 Commands
 
-| Command | Description |
-|:--|:--|
-| `pnpm dev` | Start frontend + backend in parallel |
-| `pnpm dev:frontend` | Start frontend (`@sirena/frontend`) |
-| `pnpm dev:backend` | Start backend (`@sirena/backend`) with `.env` |
-| `pnpm build:backend` | Build backend to `dist/` (RPC + OpenAPI ready) |
-| `pnpm build:backend-bis` | Build alternate backend |
-| `pnpm db:migrate` | Run dev migrations (`@sirena/backend`) with `.env` |
-| `pnpm db:generate` | Generate Prisma client from schema (`@sirena/backend`) with `.env` |
-| `pnpm db:deploy` | Deploy pending migrations to DB (`@sirena/backend`) with `.env` |
-| `pnpm db:studio` | Open Prisma Studio (`@sirena/backend`) with `.env` |
-| `pnpm lint` | Run `lint` script in all packages (via `pnpm -r`) |
-| `pnpm lint:staged` | Run staged file linter in each workspace |
-| `pnpm gitleaks` | Scan staged files for secrets using [Gitleaks](https://github.com/gitleaks/gitleaks) |
-| `pnpm prepare` | Install Husky Git hooks (called automatically by `pnpm install`) |
+| Command                                | Description                                                                          |
+| :------------------------------------- | :----------------------------------------------------------------------------------- |
+| `pnpm dev`                             | Start frontend + backend in parallel                                                 |
+| `pnpm dev:frontend`                    | Start frontend (`@sirena/frontend`)                                                  |
+| `pnpm dev:backend`                     | Start backend (`@sirena/backend`) with `.env`                                        |
+| `pnpm dev:ui`                          | Start storybook (`@sirena/ui`)                                                       |
+| `pnpm build:backend`                   | Build backend to `dist/` (RPC + OpenAPI ready)                                       |
+| `pnpm build:frontend`                  | Build frontend to `dist/`                                                            |
+| `pnpm db:migrate`                      | Run dev migrations (`@sirena/backend`) with `.env`                                   |
+| `pnpm db:generate`                     | Generate Prisma client from schema (`@sirena/backend`) with `.env`                   |
+| `pnpm db:deploy`                       | Deploy pending migrations to DB (`@sirena/backend`) with `.env`                      |
+| `pnpm db:studio`                       | Open Prisma Studio (`@sirena/backend`) with `.env`                                   |
+| `pnpm db:reset`                        | Reset the database (`@sirena/backend`) with `.env`                                   |
+| `pnpm test:e2e`                        | Run end-to-end tests for frontend (`@sirena/frontend`)                               |
+| `pnpm test:e2e:ui`                     | Run end-to-end tests with UI for frontend (`@sirena/frontend`)                       |
+| `pnpm test:ui`                         | Run UI tests for `@sirena/ui`                                                        |
+| `pnpm test:unit`                       | Run unit tests across all packages                                                   |
+| `pnpm lint`                            | Run `lint` script in all packages (via `pnpm -r`)                                    |
+| `pnpm lint:staged`                     | Run staged file linter in each workspace                                             |
+| `pnpm gitleaks:detect-secrets`         | Scan staged files for secrets using [Gitleaks](https://github.com/gitleaks/gitleaks) |
+| `pnpm gitleaks:update-ignored-secrets` | Update the list of ignored secrets for Gitleaks scripts                              |
+| `pnpm prepare`                         | Install Husky Git hooks (called automatically by `pnpm install`)                     |
+
 
 ## 🛠️ Tools
 
@@ -96,7 +103,7 @@ packages/
 
 - **[pnpm](https://pnpm.io)** — Fast, efficient monorepo package manager.
 - **[Docker](https://www.docker.com)** — Used to run PostgreSQL locally.
-- **[pkgroll](https://github.com/unjs/pkgroll)** — ESM build system for the backend.
+- **[tsc](https://github.com/microsoft/TypeScript)** — ESM build system for the backend.
 - **[tsx](https://github.com/esbuild-kit/tsx)** — Instantly run TypeScript files (used for dev/start/scripts).
 - **[biome](https://biomejs.dev)** — All-in-one linter, formatter, and type checker.
 - **[dotenv-cli](https://github.com/entropitor/dotenv-cli)** — Load `.env` files when running scripts.

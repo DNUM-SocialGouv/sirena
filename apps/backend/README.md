@@ -2,7 +2,7 @@
 
 **Backend package** of the Sirena project.  
 Built with [Hono](https://hono.dev/), [Zod](https://github.com/colinhacks/zod), and OpenAPI-first design.  
-Compiled using [`pkgroll`](https://github.com/unjs/pkgroll) with ESM output.
+Compiled using [`tsc`](https://github.com/microsoft/TypeScript).
 
 ---
 
@@ -28,27 +28,43 @@ src/
 
 ## 🚀 Scripts
 
-| Command | Actual Script | Description |
-|:--|:--|:--|
-| `pnpm run dev` | `tsx watch --clear-screen=false src/index.ts` | Start the backend in dev mode with live reload. |
-| `pnpm run build` | `pkgroll --tsconfig tsconfig.build.json` | Build the backend using pkgroll (outputs to `dist/`). |
-| `pnpm run lint` | `biome check ./src/` | Run Biome linter on source files. |
-| `pnpm run generate:openAPI` | `tsx src/swagger/gen-openAPI-swagger.ts` | Generate OpenAPI schema JSON using `zod-openapi`. |
+| Command                 | Description                                                                   |
+| :---------------------- | :---------------------------------------------------------------------------- |
+| `pnpm build`            | Compile TypeScript sources using `tsconfig.build.json`                        |
+| `pnpm dev`              | Start the backend in development mode with `tsx` watching `src/index.ts`      |
+| `pnpm test`             | Run unit tests using Vitest                                                   |
+| `pnpm db:generate`      | Generate the Prisma client from the schema                                    |
+| `pnpm db:migrate`       | Apply pending migrations in development (`prisma migrate dev`)                |
+| `pnpm db:diff`          | Create a SQL migration script comparing an empty DB to the current schema     |
+| `pnpm db:deploy`        | Deploy all pending migrations to the database (`prisma migrate deploy`)       |
+| `pnpm db:reset`         | Reset the database by dropping and recreating it with migrations (`--force`)  |
+| `pnpm db:push`          | Push the Prisma schema directly to the database without generating migrations |
+| `pnpm db:studio`        | Launch Prisma Studio UI for exploring and modifying the database              |
+| `pnpm generate:openAPI` | Run a custom TypeScript script to generate the OpenAPI specification          |
+| `pnpm lint:staged`      | Run Biome lint checks on staged backend files via a Git diff filter           |
+| `pnpm lint`             | Run Biome lint checks across the entire backend codebase                      |
+
 
 ## 📦 Exports
 
 The package exposes:
 
 ```json
-"exports": {
-  "./swagger": "./src/swagger/openAPI.json",
-  "./hc": {
-    "import": {
-      "default": "./dist/hc.js",
-      "types": "./dist/hc.d.ts"
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/src/index.d.ts",
+        "default": "./dist/src/index.js"
+      }
+    },
+    "./swagger": "./src/swagger/openAPI.json",
+    "./hc": {
+      "import": {
+        "types": "./dist/src/hc.d.ts",
+        "default": "./dist/src/hc.js"
+      }
     }
   }
-}
 ```
 
 | Path | Description |
