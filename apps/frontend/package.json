@@ -20,6 +20,7 @@
     "@codegouvfr/react-dsfr": "^1.22.5",
     "@sirena/backend": "workspace:*",
     "@sirena/ui": "workspace:*",
+    "@sirena/common": "workspace:*",
     "@tanstack/react-query": "^5.71.10",
     "@tanstack/react-router": "^1.115.0",
     "hono": "^4.7.5",

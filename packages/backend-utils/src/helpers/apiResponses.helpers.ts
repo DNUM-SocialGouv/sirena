@@ -1,8 +1,8 @@
-import { type ZodSchema, z } from '@/libs/zod';
 import type { ResolverResult } from 'hono-openapi';
 import { resolver } from 'hono-openapi/zod';
+import { type ZodSchema, z } from '../utils/zod';
 
-import { MetaSchema } from '@/schemas/apiResponses.schema';
+import { MetaSchema } from '../schemas/apiResponses.schema';
 
 export const apiResponsesResolver = <T extends ZodSchema>(schema: T): ResolverResult =>
   resolver(

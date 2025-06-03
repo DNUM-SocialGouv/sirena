@@ -36,6 +36,12 @@ importers:
       '@scalar/hono-api-reference':
         specifier: ^0.8.0
         version: 0.8.0(hono@4.7.5)
+      '@sirena/backend-utils':
+        specifier: workspace:*
+        version: link:../../packages/backend-utils
+      '@sirena/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       hono:
         specifier: ^4.7.5
         version: 4.7.5
@@ -97,6 +103,9 @@ importers:
       '@sirena/backend':
         specifier: workspace:*
         version: link:../backend
+      '@sirena/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       '@sirena/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -161,6 +170,37 @@ importers:
       vite:
         specifier: ^6.3.5
         version: 6.3.5(@types/node@22.15.19)(jiti@2.4.2)(tsx@4.19.3)(yaml@2.7.1)
+
+  packages/backend-utils:
+    dependencies:
+      hono:
+        specifier: ^4.7.5
+        version: 4.7.5
+      hono-openapi:
+        specifier: ^0.4.6
+        version: 0.4.6(@hono/zod-validator@0.4.3(hono@4.7.5)(zod@3.24.2))(hono@4.7.5)(zod-openapi@4.2.4(zod@3.24.2))(zod@3.24.2)
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
+      zod-openapi:
+        specifier: ^4.2.4
+        version: 4.2.4(zod@3.24.2)
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 1.9.4
+        version: 1.9.4
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
+
+  packages/common:
+    devDependencies:
+      '@biomejs/biome':
+        specifier: 1.9.4
+        version: 1.9.4
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
 
   packages/ui:
     dependencies:

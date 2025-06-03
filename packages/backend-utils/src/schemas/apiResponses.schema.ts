@@ -1,4 +1,4 @@
-import { z } from '@/libs/zod';
+import { z } from '../utils/zod';
 
 export const MetaSchema = z.object({
   total: z.optional(z.number()),

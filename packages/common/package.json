@@ -1,0 +1,27 @@
+{
+  "name": "@sirena/common",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.js",
+        "import": "./dist/index.js",
+        "require": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/common/' | sed 's|^packages/common/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
+    "lint": "biome check"
+  },
+  "license": "MIT",
+  "packageManager": "pnpm@10.11.0",
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "typescript": "^5.8.3"
+  }
+}
