@@ -1,8 +1,6 @@
-name: Unit Tests
+name: Lint and Unit Tests
 
 on:
-  pull_request:
-    branches: ['**']
   push:
     branches: ['**']
 
@@ -13,13 +11,15 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install pnpm
       uses: pnpm/action-setup@v4
-    - name: Use Node.js 23
+    - name: Use Node.js 22
       uses: actions/setup-node@v4
       with:
-        node-version: 23
+        node-version: 22
         cache: 'pnpm'
     - name: Install dependencies
       run: pnpm install
+    - name: Run linter
+      run: pnpm lint
     - name: Generate types
       run: pnpm db:generate
     - name: Run tests

@@ -127,7 +127,7 @@ const app = factoryWithLogs
           return c.redirect(errorPageUrl, 302);
         }
         logger.error({ err: error }, 'Error in creating new user in database');
-        const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_INFOS_ERROR });
+        const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_CREATE_ERROR });
         return c.redirect(errorPageUrl, 302);
       }
     }

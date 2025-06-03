@@ -9,8 +9,9 @@ test('login', async ({ browser }) => {
 
   await page.waitForLoadState('networkidle');
   await expect(page).toHaveURL(`${baseUrl}/home`);
-  await expect(page.locator('h2')).toHaveText('Welcome to home');
-  await expect(page.locator('h2')).not.toHaveText('Welcome to login');
+  const heading = page.getByRole('heading', { level: 2 });
+  await expect(heading).toHaveText('Welcome to home');
+  await expect(heading).not.toHaveText('Welcome to login');
   await page.goto(loginUrl);
   await expect(page).toHaveURL(`${baseUrl}/home`);
   await context.close();

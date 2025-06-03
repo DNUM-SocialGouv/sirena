@@ -18,7 +18,8 @@ test('logout', async ({ browser }) => {
 
   await page.waitForLoadState('networkidle');
   await expect(page).toHaveURL(loginUrl);
-  await expect(page.locator('h2')).toHaveText('Welcome to login');
+  const heading = page.getByRole('heading', { level: 2 });
+  await expect(heading).toHaveText('Welcome to login');
 
   await context.close();
 });

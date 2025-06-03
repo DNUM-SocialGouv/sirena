@@ -7,7 +7,10 @@ export const ERROR_CODES = {
   TOKENS_NOT_VALID: 'TOKENS_NOT_VALID',
   CLAIMS_NOT_VALID: 'CLAIMS_NOT_VALID',
   USER_NOT_FOUND: 'USER_NOT_FOUND',
+  USER_CREATE_ERROR: 'USER_CREATE_ERROR',
   USER_ALREADY_EXISTS: 'USER_ALREADY_EXISTS',
+  SESSION_ALREADY_EXISTS: 'SESSION_ALREADY_EXISTS',
+  SESSION_CREATE_ERROR: 'SESSION_CREATE_ERROR',
 };
 
 export const ERROR_MESSAGES: Record<keyof typeof ERROR_CODES, string> = {
@@ -18,4 +21,7 @@ export const ERROR_MESSAGES: Record<keyof typeof ERROR_CODES, string> = {
   CLAIMS_NOT_VALID: 'claims are not valid',
   USER_NOT_FOUND: 'user not found',
   USER_ALREADY_EXISTS: 'user already exists',
+  USER_CREATE_ERROR: 'error while creating user',
+  SESSION_ALREADY_EXISTS: 'session already exists',
+  SESSION_CREATE_ERROR: 'error while creating session',
 };
