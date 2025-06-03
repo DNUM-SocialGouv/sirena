@@ -1,8 +1,10 @@
 import { envVars } from '@//config/env';
+import { ERROR_CODES } from '@/config/authErrors.constants';
 import { createSession } from '@/features/sessions/sessions.service';
 import type { AppBindings } from '@/helpers/factories/appWithLogs';
 import { getJwtExpirationDate } from '@/helpers/jsonwebtoken';
 import { signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
+import { Prisma } from '@/libs/prisma';
 import type { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
 
@@ -50,10 +52,22 @@ export const authUser = async (c: Context<AppBindings>, userId: string, idToken:
     sameSite: 'Strict',
   });
 
-  await createSession({
-    userId: userId,
-    token: refreshToken,
-    pcIdToken: idToken,
-    expiresAt: refreshTokenExpirationDate,
-  });
+  try {
+    await createSession({
+      userId: userId,
+      token: refreshToken,
+      pcIdToken: idToken,
+      expiresAt: refreshTokenExpirationDate,
+    });
+  } catch (error) {
+    const logger = c.get('logger');
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      logger.error({ err: error }, 'Error in creating new session in database');
+      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.SESSION_ALREADY_EXISTS });
+      return c.redirect(errorPageUrl, 302);
+    }
+    logger.error({ err: error }, 'Error in creating new session in database');
+    const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.SESSION_CREATE_ERROR });
+    return c.redirect(errorPageUrl, 302);
+  }
 };

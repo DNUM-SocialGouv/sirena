@@ -50,7 +50,7 @@ function RouteComponent() {
   return (
     <LoggedLayout>
       <div className="home">
-        <h1>Welcome to users</h1>
+        <h2>Welcome to users</h2>
         <DataTable title="Liste des utilisateurs" rowId="id" data={data.data} columns={columns} cells={cells} />
       </div>
     </LoggedLayout>
