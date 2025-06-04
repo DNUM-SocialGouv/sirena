@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Primitive } from '../../utils/types';
 import type { OnSortChangeParams as BaseSortParams } from './SortButton/SortButton';
 
@@ -30,3 +31,5 @@ export type Column<T extends Row> = {
 };
 
 export type OnSortChangeParams<T extends Row> = BaseSortParams<ColumnKey<T>>;
+
+export type Cells<T extends Row> = Partial<Record<ColumnKey<T>, (row: T) => ReactNode>>;

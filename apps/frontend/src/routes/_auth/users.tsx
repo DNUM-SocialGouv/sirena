@@ -2,7 +2,7 @@ import { LoggedLayout } from '@/components/layout/logged/logged';
 import { Loader } from '@/components/loader.tsx';
 import { useUser } from '@/hooks/queries/useUser';
 import { requireAuthAndAdmin } from '@/lib/auth-guards';
-import { type Column, DataTable } from '@sirena/ui';
+import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/users')({
@@ -25,13 +25,16 @@ function RouteComponent() {
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 
-  const cells = {
-    createdAt: (row: User) =>
-      new Date(row.createdAt).toLocaleDateString('fr-FR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }),
+  const cells: Cells<User> = {
+    createdAt: (row: User) => (
+      <div>
+        {new Date(row.createdAt).toLocaleDateString('fr-FR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        })}
+      </div>
+    ),
     'custom:editionLabel': (row: User) => (
       <Link to="/user/$userId" params={{ userId: row.id }}>
         Traiter la demande
