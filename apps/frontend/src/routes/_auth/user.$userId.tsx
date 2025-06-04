@@ -1,36 +1,24 @@
 import { LoggedLayout } from '@/components/layout/logged/logged';
 import { Loader } from '@/components/loader.tsx';
 import { useUserById } from '@/hooks/queries/useUserById';
+import { requireAuthAndAdmin } from '@/lib/auth-guards';
+import Badge from '@codegouvfr/react-dsfr/Badge';
 import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_auth/user/$userId')({
-  beforeLoad: ({ location, context }) => {
-    if (!context.userStore.isLogged) {
-      throw redirect({
-        to: '/login',
-        search: {
-          redirect: location.href,
-        },
-      });
-    }
-    if (!context.userStore.isAdmin) {
-      throw redirect({
-        to: '/home',
-      });
-    }
-  },
+  beforeLoad: requireAuthAndAdmin,
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { userId } = Route.useParams();
+  const { userId } = Route.useParams() as { userId: string };
   const { data: user, isLoading, error } = useUserById(userId);
-  const [value, setValue] = useState('');
+  const [role, setRole] = useState('');
   useEffect(() => {
-    setValue(user?.data?.role);
+    setRole(user?.data?.role);
   }, [user]);
   if (isLoading) {
     return (
@@ -43,7 +31,9 @@ function RouteComponent() {
   if (error) {
     return (
       <LoggedLayout>
-        <div>Erreur lors du chargement de l'utilisateur: {error.message}</div>
+        <Badge noIcon severity="error">
+          Erreur lors du chargement de l'utilisateur: {error.message}
+        </Badge>
       </LoggedLayout>
     );
   }
@@ -100,14 +90,15 @@ function RouteComponent() {
                 className="fr-fieldset__content"
                 label="Rôle*"
                 nativeSelectProps={{
-                  onChange: (event) => setValue(event.target.value),
-                  value,
+                  onChange: (event) => setRole(event.target.value),
+                  value: role,
                 }}
               >
                 <option value="" disabled hidden>
                   Sélectionnez une option
                 </option>
                 <option value="PENDING" />
+                <option value="READER">Agent en lecture</option>
                 <option value="WRITER">Agent en écriture</option>
                 <option value="PILOTING">Pilotage national</option>
                 <option value="LOCAL_ADMIN">Admin local</option>

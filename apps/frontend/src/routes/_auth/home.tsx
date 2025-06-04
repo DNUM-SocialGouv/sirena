@@ -1,19 +1,11 @@
 import { LoggedLayout } from '@/components/layout/logged/logged';
+import { requireAuth } from '@/lib/auth-guards';
 import { useUserStore } from '@/stores/userStore';
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Link, createFileRoute, redirect } from '@tanstack/react-router';
+import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/home')({
-  beforeLoad: ({ location, context }) => {
-    if (!context.userStore.isLogged) {
-      throw redirect({
-        to: '/login',
-        search: {
-          redirect: location.href,
-        },
-      });
-    }
-  },
+  beforeLoad: requireAuth,
   component: RouteComponent,
 });
 

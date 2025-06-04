@@ -1,25 +1,12 @@
 import { LoggedLayout } from '@/components/layout/logged/logged';
 import { Loader } from '@/components/loader.tsx';
 import { useUser } from '@/hooks/queries/useUser';
+import { requireAuthAndAdmin } from '@/lib/auth-guards';
 import { type Column, DataTable } from '@sirena/ui';
-import { Link, createFileRoute, redirect } from '@tanstack/react-router';
+import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/users')({
-  beforeLoad: ({ location, context }) => {
-    if (!context.userStore.isLogged) {
-      throw redirect({
-        to: '/login',
-        search: {
-          redirect: location.href,
-        },
-      });
-    }
-    if (!context.userStore.isAdmin) {
-      throw redirect({
-        to: '/home',
-      });
-    }
-  },
+  beforeLoad: requireAuthAndAdmin,
   component: RouteComponent,
 });
 
@@ -35,7 +22,7 @@ function RouteComponent() {
     { key: 'lastName', label: 'Nom' },
     { key: 'firstName', label: 'Prénom' },
     { key: 'createdAt', label: 'Date de création' },
-    { key: 'editionLabel', label: 'Action' },
+    { key: 'custom:editionLabel', label: 'Action' },
   ];
 
   const cells = {
@@ -45,7 +32,7 @@ function RouteComponent() {
         month: '2-digit',
         day: '2-digit',
       }),
-    editionLabel: (row: User) => (
+    'custom:editionLabel': (row: User) => (
       <Link to="/user/$userId" params={{ userId: row.id }}>
         Traiter la demande
       </Link>
