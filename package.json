@@ -12,6 +12,7 @@
     "test:ui": "pnpm --filter @sirena/ui test",
     "db:studio": "dotenv -e .env -- pnpm --filter @sirena/backend studio",
     "db:migrate": "dotenv -e .env -- pnpm --filter @sirena/backend db:migrate",
+    "db:seed": "dotenv -e .env -- pnpm --filter @sirena/backend db:seed",
     "db:deploy": "dotenv -e .env -- pnpm --filter @sirena/backend db:deploy",
     "db:generate": "dotenv -e .env -- pnpm --filter @sirena/backend db:generate",
     "db:reset": "dotenv -e .env -- pnpm --filter @sirena/backend db:reset",
@@ -27,7 +28,7 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
-  "packageManager": "pnpm@10.11.0",
+  "packageManager": "pnpm@10.11.1",
   "dependencies": {
     "dotenv-cli": "^8.0.0"
   },

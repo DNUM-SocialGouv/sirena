@@ -100,9 +100,9 @@ function RouteComponent() {
                 <option value="PENDING" />
                 <option value="READER">Agent en lecture</option>
                 <option value="WRITER">Agent en écriture</option>
-                <option value="PILOTING">Pilotage national</option>
-                <option value="LOCAL_ADMIN">Admin local</option>
-                <option value="GLOBAL_ADMIN">Super admin</option>
+                <option value="NATIONAL_STEERING">Pilotage national</option>
+                <option value="ENTITY_ADMIN">Admin local</option>
+                <option value="SUPER_ADMIN">Super admin</option>
               </Select>
             </fieldset>
           </form>

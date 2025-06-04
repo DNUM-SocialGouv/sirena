@@ -19,15 +19,6 @@ datasource db {
   url      = env("PG_URL")
 }
 
-enum Role {
-  PENDING
-  READER
-  WRITER
-  PILOTING
-  LOCAL_ADMIN
-  GLOBAL_ADMIN
-}
-
 model User {
   id        String    @id @default(cuid())
   email     String    @unique /// @zod.string.email({ message: 'Invalid email address' }),
@@ -37,8 +28,9 @@ model User {
   sub       String    @unique
   createdAt DateTime  @default(now())
   Sessions  Session[]
-  role      Role      @default(PENDING)
   active    Boolean   @default(false)
+  roleId String?
+  role   Role?   @relation(fields: [roleId], references: [id])
 }
 
 model Session {
@@ -49,4 +41,11 @@ model Session {
   expiresAt DateTime
   pcIdToken String   @unique
   createdAt DateTime @default(now())
+}
+
+model Role {
+  id          String @id @default(cuid())
+  roleName    String @unique
+  description String
+  users       User[] // Relation inverse : un rôle peut avoir plusieurs utilisateurs
 }
