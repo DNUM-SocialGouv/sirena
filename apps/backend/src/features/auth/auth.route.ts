@@ -1,5 +1,5 @@
-import { openApiRedirect } from '@/helpers/apiResponses';
 import { describeRoute } from 'hono-openapi';
+import { openApiRedirect } from '@sirena/backend-utils/helpers';
 
 export const postLoginRoute = describeRoute({
   description: 'Login with redirection on proconnect',

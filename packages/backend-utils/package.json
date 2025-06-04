@@ -10,6 +10,20 @@
         "import": "./dist/index.js",
         "require": "./dist/index.js"
       }
+    },
+    "./helpers": {
+      "import": {
+        "types": "./dist/helpers/index.d.js",
+        "import": "./dist/helpers/index.js",
+        "require": "./dist/helpers/index.js"
+      }
+    },
+    "./schemas": {
+      "import": {
+        "types": "./dist/schemas/index.d.js",
+        "import": "./dist/schemas/index.js",
+        "require": "./dist/schemas/index.js"
+      }
     }
   },
   "scripts": {

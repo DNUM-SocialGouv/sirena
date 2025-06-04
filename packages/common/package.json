@@ -10,6 +10,13 @@
         "import": "./dist/index.js",
         "require": "./dist/index.js"
       }
+    },
+    "./constants": {
+      "import": {
+        "types": "./dist/constants/index.d.js",
+        "import": "./dist/constants/index.js",
+        "require": "./dist/constants/index.js"
+      }
     }
   },
   "scripts": {
