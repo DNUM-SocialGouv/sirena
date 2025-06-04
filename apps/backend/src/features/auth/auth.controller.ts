@@ -149,7 +149,16 @@ const app = factoryWithLogs
     deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
 
     if (token) {
-      await deleteSession(token);
+      try {
+        await deleteSession(token);
+      } catch (error) {
+        const logger = c.get('logger');
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+          logger.info({ err: error }, 'Error in deleting session, session not found');
+        } else {
+          logger.error({ err: error }, 'Error in deleting session');
+        }
+      }
     }
 
     return c.redirect(envVars.FRONTEND_REDIRECT_LOGIN_URI, 302);
@@ -183,7 +192,9 @@ const app = factoryWithLogs
       return c.redirect(errorPageUrl, 302);
     }
 
-    await deleteSession(token);
+    if (session) {
+      await deleteSession(token);
+    }
 
     return c.redirect(endSessionUrl, 302);
   });
