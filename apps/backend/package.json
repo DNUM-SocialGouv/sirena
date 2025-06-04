@@ -8,7 +8,7 @@
     "test": "vitest",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "tsx prisma/seed/20250604151013_add_role_for_user.ts",
     "db:diff": "prisma migrate diff --from-empty --to-schema-datamodel ./prisma/schema.prisma --script",
     "db:deploy": "prisma migrate deploy",
     "db:reset": "prisma migrate reset --force",

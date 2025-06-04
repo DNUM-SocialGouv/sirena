@@ -1,15 +1,6 @@
-/*
-  Warnings:
-
-  - You are about to drop the column `role` on the `User` table. All the data in the column will be lost.
-
-*/
 -- AlterTable
-ALTER TABLE "User" DROP COLUMN "role",
+ALTER TABLE "User" ADD COLUMN     "active" BOOLEAN NOT NULL DEFAULT false,
 ADD COLUMN     "roleId" TEXT;
-
--- DropEnum
-DROP TYPE "Role";
 
 -- CreateTable
 CREATE TABLE "Role" (
