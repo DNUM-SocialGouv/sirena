@@ -120,6 +120,7 @@ const app = factoryWithLogs
           email: userInfo.email,
           firstName: userInfo.given_name,
           lastName: String(userInfo.usual_name),
+          pcData: userInfo,
         });
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {

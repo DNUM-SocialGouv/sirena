@@ -27,10 +27,11 @@ model User {
   uid       String    @unique
   sub       String    @unique
   createdAt DateTime  @default(now())
-  Sessions  Session[]
   active    Boolean   @default(false)
-  roleId String?
-  role   Role?   @relation(fields: [roleId], references: [id])
+  pcData    Json?
+  roleId    String?
+  role      Role?     @relation(fields: [roleId], references: [id])
+  Sessions  Session[]
 }
 
 model Session {
@@ -47,5 +48,5 @@ model Role {
   id          String @id @default(cuid())
   roleName    String @unique
   description String
-  users       User[] // Relation inverse : un rôle peut avoir plusieurs utilisateurs
+  users       User[]
 }
