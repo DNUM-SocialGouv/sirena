@@ -9,12 +9,13 @@ import logoutMiddleware from '@/middlewares/logout.middleware';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
 import { authUser, createRedirectUrl } from './auth.helper';
+import { getCallbackRoute, postLoginRoute, postLogoutProconnectRoute, postLogoutRoute } from './auth.route';
 import { authorizationCodeGrant, buildAuthorizationUrl, buildEndSessionUrl, fetchUserInfo } from './auth.service';
 
 const app = factoryWithLogs
   .createApp()
 
-  .post('/login', async (c) => {
+  .post('/login', postLoginRoute, async (c) => {
     let redirectTo: URL;
     let nonce: string;
     let state: string;
@@ -37,7 +38,7 @@ const app = factoryWithLogs
     return c.redirect(redirectTo.href, 302);
   })
 
-  .get('/callback', async (c) => {
+  .get('/callback', getCallbackRoute, async (c) => {
     const oldUrl = new URL(c.req.url);
     const updatedUrl = new URL(envVars.PC_REDIRECT_URI);
 
@@ -139,7 +140,7 @@ const app = factoryWithLogs
 
   .use(logoutMiddleware)
 
-  .post('/logout', async (c) => {
+  .post('/logout', postLogoutRoute, async (c) => {
     const token = getCookie(c, envVars.REFRESH_TOKEN_NAME);
 
     deleteCookie(c, envVars.AUTH_TOKEN_NAME);
@@ -153,7 +154,7 @@ const app = factoryWithLogs
     return c.redirect(envVars.FRONTEND_REDIRECT_LOGIN_URI, 302);
   })
 
-  .post('/logout-proconnect', async (c) => {
+  .post('/logout-proconnect', postLogoutProconnectRoute, async (c) => {
     const token = getCookie(c, envVars.REFRESH_TOKEN_NAME);
 
     deleteCookie(c, envVars.AUTH_TOKEN_NAME);
