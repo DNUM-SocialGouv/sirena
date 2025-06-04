@@ -18,7 +18,7 @@ function RouteComponent() {
   const { data: user, isLoading, error } = useUserById(userId);
   const [role, setRole] = useState('');
   useEffect(() => {
-    setRole(user?.data?.role);
+    setRole(user?.data?.role?.roleName || '');
   }, [user]);
   if (isLoading) {
     return (
@@ -97,7 +97,9 @@ function RouteComponent() {
                 <option value="" disabled hidden>
                   Sélectionnez une option
                 </option>
-                <option value="PENDING" />
+                <option value="PENDING" disabled>
+                  Attente d'affectation{' '}
+                </option>
                 <option value="READER">Agent en lecture</option>
                 <option value="WRITER">Agent en écriture</option>
                 <option value="NATIONAL_STEERING">Pilotage national</option>

@@ -3,7 +3,8 @@ import type { CreateUserDto } from '@/types/user.d';
 
 export const getUsers = async (): Promise<User[]> => await prisma.user.findMany();
 
-export const getUserById = async (id: User['id']) => await prisma.user.findUnique({ where: { id } });
+export const getUserById = async (id: User['id']) =>
+  await prisma.user.findUnique({ where: { id }, include: { role: true } });
 export const getUserBySub = async (sub: User['sub']) => await prisma.user.findUnique({ where: { sub } });
 
 export const createUser = async (newUser: CreateUserDto) => {

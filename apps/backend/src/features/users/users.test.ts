@@ -35,7 +35,7 @@ describe('User Endpoint', () => {
         sub: 'sub',
         uid: 'uid',
         createdAt: new Date(0),
-        role: Role.PENDING,
+        roleId: '1234',
         active: false,
       },
     ];

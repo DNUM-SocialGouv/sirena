@@ -1,8 +1,14 @@
-import { UserSchema } from '@/libs/zod';
+import { RoleSchema, UserIncludeSchema, UserSchema } from '@/libs/zod';
 import { z } from 'zod';
 import 'zod-openapi/extend';
 
-export const GetUserResponseSchema = UserSchema;
+// Schéma pour un utilisateur avec son rôle
+export const UserWithRoleSchema = UserSchema.extend({
+  role: RoleSchema.nullable(),
+});
+
+// Utiliser le nouveau schéma pour les réponses
+export const GetUserResponseSchema = UserWithRoleSchema;
 export const GetUsersResponseSchema = z.array(UserSchema);
 
 export const UserParamsIdSchema = z.object({
