@@ -1,3 +1,4 @@
+import { Role } from '@/libs/prisma';
 import { convertDatesToStrings } from '@/tests/formatter';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
@@ -7,10 +8,6 @@ import { getUsers } from './users.service';
 
 vi.mock('./users.service', () => ({
   getUsers: vi.fn(),
-}));
-
-vi.mock('@/config/env', () => ({
-  envVars: {},
 }));
 
 vi.mock('@/config/env', () => ({
@@ -38,6 +35,8 @@ describe('User Endpoint', () => {
         sub: 'sub',
         uid: 'uid',
         createdAt: new Date(0),
+        roleId: '1234',
+        active: false,
       },
     ];
 

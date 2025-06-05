@@ -1,7 +1,7 @@
-import { type JSX, type ReactNode, memo, useCallback, useEffect, useId, useMemo, useRef } from 'react';
+import { type JSX, memo, useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import { isPrimitive } from '../../utils/guards';
 import type { Primitive } from '../../utils/types';
-import type { Column, ColumnKey, OnSortChangeParams, Row, RowWithId } from './DataTable.types';
+import type { Cells, Column, ColumnKey, OnSortChangeParams, Row, RowWithId } from './DataTable.types';
 import { DataTableHeader } from './DataTableHeader/DataTableHeader';
 import { DataTableRow } from './DataTableRow/DataTableRow';
 import type { SortDirection } from './SortButton/SortButton';
@@ -13,7 +13,7 @@ export type DataTableProps<K extends string, T extends RowWithId<K>> = {
   rowId: K;
   data: T[];
   columns: Column<T>[];
-  cells?: Partial<Record<ColumnKey<T>, (row: T) => ReactNode>>;
+  cells?: Cells<T>;
   size?: 'sm' | 'md' | 'lg';
   isBordered?: boolean;
   isSelectable?: boolean;

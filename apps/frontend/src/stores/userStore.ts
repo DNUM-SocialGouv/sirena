@@ -10,7 +10,7 @@ export type UserState = {
 const isLoggedTokenName = import.meta.env.VITE_IS_LOGGED_TOKEN_NAME;
 
 export const useUserStore = create<UserState>((set) => ({
-  isAdmin: false,
+  isAdmin: true,
   isLogged: isLoggedTokenName ? document.cookie.includes(isLoggedTokenName) : false,
   updateIsAdmin: (isAdmin: boolean) => set(() => ({ isAdmin })),
   updateIsLogged: (isLogged: boolean) => set(() => ({ isLogged })),

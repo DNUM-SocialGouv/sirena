@@ -18,6 +18,7 @@ import { Route as AuthHomeImport } from './routes/_auth/home'
 import { Route as AuthEntitiesImport } from './routes/_auth/entities'
 import { Route as AuthCasesImport } from './routes/_auth/cases'
 import { Route as AuthAdministrationImport } from './routes/_auth/administration'
+import { Route as AuthUserUserIdImport } from './routes/_auth/user.$userId'
 
 // Create/Update Routes
 
@@ -60,6 +61,12 @@ const AuthCasesRoute = AuthCasesImport.update({
 const AuthAdministrationRoute = AuthAdministrationImport.update({
   id: '/_auth/administration',
   path: '/administration',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthUserUserIdRoute = AuthUserUserIdImport.update({
+  id: '/_auth/user/$userId',
+  path: '/user/$userId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -116,6 +123,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUsersImport
       parentRoute: typeof rootRoute
     }
+    '/_auth/user/$userId': {
+      id: '/_auth/user/$userId'
+      path: '/user/$userId'
+      fullPath: '/user/$userId'
+      preLoaderRoute: typeof AuthUserUserIdImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -129,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/entities': typeof AuthEntitiesRoute
   '/home': typeof AuthHomeRoute
   '/users': typeof AuthUsersRoute
+  '/user/$userId': typeof AuthUserUserIdRoute
 }
 
 export interface FileRoutesByTo {
@@ -139,6 +154,7 @@ export interface FileRoutesByTo {
   '/entities': typeof AuthEntitiesRoute
   '/home': typeof AuthHomeRoute
   '/users': typeof AuthUsersRoute
+  '/user/$userId': typeof AuthUserUserIdRoute
 }
 
 export interface FileRoutesById {
@@ -150,6 +166,7 @@ export interface FileRoutesById {
   '/_auth/entities': typeof AuthEntitiesRoute
   '/_auth/home': typeof AuthHomeRoute
   '/_auth/users': typeof AuthUsersRoute
+  '/_auth/user/$userId': typeof AuthUserUserIdRoute
 }
 
 export interface FileRouteTypes {
@@ -162,6 +179,7 @@ export interface FileRouteTypes {
     | '/entities'
     | '/home'
     | '/users'
+    | '/user/$userId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -171,6 +189,7 @@ export interface FileRouteTypes {
     | '/entities'
     | '/home'
     | '/users'
+    | '/user/$userId'
   id:
     | '__root__'
     | '/'
@@ -180,6 +199,7 @@ export interface FileRouteTypes {
     | '/_auth/entities'
     | '/_auth/home'
     | '/_auth/users'
+    | '/_auth/user/$userId'
   fileRoutesById: FileRoutesById
 }
 
@@ -191,6 +211,7 @@ export interface RootRouteChildren {
   AuthEntitiesRoute: typeof AuthEntitiesRoute
   AuthHomeRoute: typeof AuthHomeRoute
   AuthUsersRoute: typeof AuthUsersRoute
+  AuthUserUserIdRoute: typeof AuthUserUserIdRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -201,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthEntitiesRoute: AuthEntitiesRoute,
   AuthHomeRoute: AuthHomeRoute,
   AuthUsersRoute: AuthUsersRoute,
+  AuthUserUserIdRoute: AuthUserUserIdRoute,
 }
 
 export const routeTree = rootRoute
@@ -219,7 +241,8 @@ export const routeTree = rootRoute
         "/_auth/cases",
         "/_auth/entities",
         "/_auth/home",
-        "/_auth/users"
+        "/_auth/users",
+        "/_auth/user/$userId"
       ]
     },
     "/": {
@@ -242,6 +265,9 @@ export const routeTree = rootRoute
     },
     "/_auth/users": {
       "filePath": "_auth/users.tsx"
+    },
+    "/_auth/user/$userId": {
+      "filePath": "_auth/user.$userId.tsx"
     }
   }
 }

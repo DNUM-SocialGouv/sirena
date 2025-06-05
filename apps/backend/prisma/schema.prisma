@@ -20,22 +20,32 @@ datasource db {
 }
 
 model User {
-  id                String                @id @default(cuid())
-  email             String                @unique /// @zod.string.email({ message: 'Invalid email address' }),
-  firstName         String
-  lastName          String
-  uid               String                @unique
-  sub               String                @unique
-  createdAt         DateTime              @default(now())
-  Sessions          Session[]
+  id        String    @id @default(cuid())
+  email     String    @unique /// @zod.string.email({ message: 'Invalid email address' }),
+  firstName String
+  lastName  String
+  uid       String    @unique
+  sub       String    @unique
+  createdAt DateTime  @default(now())
+  Sessions  Session[]
+  active    Boolean   @default(false)
+  roleId String?
+  role   Role?   @relation(fields: [roleId], references: [id])
 }
 
 model Session {
-  id                String    @id @default(cuid())
-  user              User      @relation(fields: [userId], references: [id])
-  userId            String
-  token             String    @unique
-  expiresAt         DateTime
-  pcIdToken         String    @unique
-  createdAt         DateTime  @default(now())
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  pcIdToken String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Role {
+  id          String @id @default(cuid())
+  roleName    String @unique
+  description String
+  users       User[] // Relation inverse : un rôle peut avoir plusieurs utilisateurs
 }
