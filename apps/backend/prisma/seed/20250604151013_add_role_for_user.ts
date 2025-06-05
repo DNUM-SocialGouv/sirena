@@ -1,6 +1,4 @@
-import { PrismaClient } from '../../generated/client';
-
-const prisma = new PrismaClient();
+import type { PrismaClient } from "generated/client";
 
 const roles = [
   {
@@ -29,7 +27,7 @@ const roles = [
   }
 ];
 
-async function main() {
+export async function seed_role_for_user(prisma: PrismaClient) {
   console.log('🌱 Début du seeding des rôles...');
 
   for (const role of roles) {
@@ -52,12 +50,3 @@ async function main() {
 
   console.log('🎉 Seeding des rôles terminé!');
 }
-
-main()
-  .catch((e) => {
-    console.error('❌ Erreur lors du seeding:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
