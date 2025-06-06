@@ -1,16 +1,7 @@
-import {
-  type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type KeyboardEvent as ReactKeyboardEvent, type ReactNode, memo, useEffect, useRef, useState } from 'react';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import { TabsItem } from './TabsItem';
-import './tabs.css';
+import './Tabs.css';
 
 const keyToEventDict = {
   ArrowRight: 'next',
@@ -38,51 +29,10 @@ export type TabsProps = {
 const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const tablistRef = useRef<HTMLUListElement>(null);
-  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const [direction, setDirection] = useState<'right' | 'left'>('right');
   const pendingIndexRef = useRef<number | null>(null);
-
-  const [tabsStyle, setTabsStyle] = useState<CSSProperties>({
-    '--tabs-height': '100px',
-  } as CSSProperties);
-
-  const recalcHeight = useCallback(() => {
-    const tablistEl = tablistRef.current;
-    if (!containerRef.current || !tablistEl) return;
-    const tablistHeight = tablistEl.offsetHeight;
-    if (!panelRef.current || panelRef.current.offsetHeight === 0) return;
-    const panelHeight = panelRef.current.offsetHeight;
-    setTabsStyle({ '--tabs-height': `${tablistHeight + panelHeight}px` } as CSSProperties);
-  }, []);
-
-  const onTransitionEnd = useCallback(() => {
-    recalcHeight();
-    if (panelRef.current && resizeObserverRef.current) {
-      resizeObserverRef.current.observe(panelRef.current);
-    }
-  }, [recalcHeight]);
-
-  const unobservePanel = useCallback(() => {
-    if (panelRef.current && resizeObserverRef.current) {
-      resizeObserverRef.current.unobserve(panelRef.current);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
-      resizeObserverRef.current = new window.ResizeObserver(() => {
-        recalcHeight();
-      });
-      if (panelRef.current) {
-        resizeObserverRef.current.observe(panelRef.current);
-      }
-    }
-    return () => {
-      resizeObserverRef.current?.disconnect();
-    };
-  }, [recalcHeight]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: we need to trigger this when direction change even if we don't use direction
   useEffect(() => {
@@ -97,7 +47,6 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsPro
   };
 
   const changeTab = (newIndex: number) => {
-    unobservePanel();
     const newDir = computeDirection(newIndex);
     if (newDir === direction) {
       onUpdateActiveTab(newIndex);
@@ -147,7 +96,7 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsPro
   };
 
   return (
-    <div ref={containerRef} className="fr-tabs" style={tabsStyle}>
+    <div ref={containerRef} className="fr-tabs">
       <ul
         ref={tablistRef}
         className="fr-tabs__list"
@@ -169,13 +118,7 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsPro
       </ul>
 
       <SwitchTransition mode="out-in">
-        <CSSTransition
-          key={activeTab}
-          classNames={`fade-${direction}`}
-          timeout={400}
-          onEntered={onTransitionEnd}
-          nodeRef={panelRef}
-        >
+        <CSSTransition key={activeTab} classNames={`fade-${direction}`} timeout={400} nodeRef={panelRef}>
           <div
             ref={panelRef}
             id={tabs[activeTab]?.tabPanelId}

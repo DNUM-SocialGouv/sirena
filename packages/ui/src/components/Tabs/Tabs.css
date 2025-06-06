@@ -1,14 +1,3 @@
-.fr-tabs {
-  position: relative;
-  overflow: hidden;
-  height: var(--tabs-height);
-}
-
-.fr-tabs__panel {
-  padding: 16px;
-  box-sizing: border-box;
-}
-
 .fade-left-enter {
   opacity: 0;
   transform: translateX(-100%);
