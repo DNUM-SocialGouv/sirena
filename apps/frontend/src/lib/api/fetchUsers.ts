@@ -13,7 +13,7 @@
 import { client } from '@/lib/api/hc.ts';
 
 export async function fetchUsers() {
-  const res = await client.users.$get();
+  const res = await client.users.$get({ query: {} });
   if (!res.ok) throw new Error('Failed to fetch user');
   const data = await res.json();
   return data;
