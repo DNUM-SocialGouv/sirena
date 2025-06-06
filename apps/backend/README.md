@@ -85,3 +85,40 @@ export async function fetchUserById(id: string) {
   return await res.json();
 }
 ```
+
+## Prisma Migration Guide
+
+### Create an Up Migration
+
+1 Edit your Prisma schema (prisma/schema.prisma) to include the desired changes.
+2 Create a down migration.
+
+```bash
+pnpm db:diff-down # down.sql created in apps/backend/prisma
+```
+
+3 Create the migration.
+
+```bash
+pnpm db:migrate <name>
+```
+
+4 Copy the down.sql in the migration directory.
+
+```bash
+cp apps/backend/prisma/down.sql apps/backend/prisma/<timestamp>_<name>
+```
+
+### Applying a Down Migration
+
+1 Run the down script against the database.
+
+```bash
+pnpm db:execute prisma/migrations/<timestamp>_<name>/down.sql
+```
+
+2 Mark the migration as rolled back
+
+```bash
+pnpm db:migrate:resolve <timestamp>_<name>
+```
