@@ -17,6 +17,11 @@ src/
 │       ├── users.route.ts
 │       ├── users.schema.ts
 │       └── users.service.ts
+│   └── roles/
+│       ├── roles.controller.ts
+│       ├── roles.route.ts
+│       ├── roles.schema.ts
+│       └── roles.service.ts
 ├── hc.ts               → RPC-style client factory using `hono-client`.
 ├── helpers/            → Internal helpers, error utils.
 ├── middlewares/        → Custom middlewares (e.g., logger).

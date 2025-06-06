@@ -1,4 +1,5 @@
 import AuthApp from '@/features/auth/auth.controller';
+import RolesApp from '@/features/roles/roles.controller';
 import UsersApp from '@/features/users/users.controller';
 import appFactory from '@/helpers/factories/appWithLogs';
 import pinoLogger from '@/middlewares/pino.middleware';
@@ -15,5 +16,6 @@ export const app = appFactory
     }),
   )
   .route('/auth', AuthApp)
+  .route('/roles', RolesApp)
   .route('/users', UsersApp)
   .onError(errorHandler);
