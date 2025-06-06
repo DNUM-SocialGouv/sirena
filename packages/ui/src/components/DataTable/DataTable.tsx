@@ -81,7 +81,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
   size = 'md',
   isBordered = false,
   isSelectable = false,
-  emptyPlaceholder = 'Aucune donnée à afficher',
+  emptyPlaceholder = 'aucune donnée à archer',
   selectedValues = [],
   sort = { sort: '', sortDirection: '' },
   onSortChange = () => {},
@@ -138,15 +138,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
     [onSortChange],
   );
 
-  const selectAllRef = useRef<HTMLInputElement>(null);
-
   const { allSelected, isIndeterminate, toggleAll } = useSelectAll(data, rowId, selectedValues, id);
-
-  useEffect(() => {
-    if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = isIndeterminate;
-    }
-  }, [isIndeterminate]);
 
   const tableClasses = useMemo(() => getTableClasses(size, isBordered), [size, isBordered]);
 
