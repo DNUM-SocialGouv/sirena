@@ -1,6 +1,15 @@
 import { openApi404NotFound, openApiProtectedRoute } from '@sirena/backend-utils/helpers';
 import { openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
+import { z } from 'zod';
 import { GetUserResponseSchema, GetUsersResponseSchema } from './users.schema';
+
+export const GetUsersQuerySchema = z.object({
+  roleId: z.string().optional(),
+  active: z
+    .string()
+    .transform((val) => val === 'true')
+    .optional(),
+});
 
 export const getUserRoute = openApiProtectedRoute({
   description: 'Get user by id',
