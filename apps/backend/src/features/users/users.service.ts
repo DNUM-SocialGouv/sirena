@@ -1,4 +1,4 @@
-import { type User, prisma } from '@/libs/prisma';
+import { type Prisma, type User, prisma } from '@/libs/prisma';
 import type { CreateUserDto } from '@/types/user.d';
 
 export const getUsers = async (): Promise<User[]> => await prisma.user.findMany();
@@ -14,6 +14,7 @@ export const createUser = async (newUser: CreateUserDto) => {
     data: {
       ...newUser,
       roleId,
+      pcData: newUser.pcData as Prisma.JsonObject,
     },
   });
 };
