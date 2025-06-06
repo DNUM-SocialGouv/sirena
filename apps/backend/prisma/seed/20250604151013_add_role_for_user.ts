@@ -47,6 +47,28 @@ export async function seed_role_for_user(prisma: PrismaClient) {
       console.log(`!  Rôle déjà existant: ${role.roleName}`);
     }
   }
-
+  
+  const pendingRole = await prisma.role.findUnique({
+    where: { roleName: 'PENDING' }
+  });
+  
+  if (pendingRole) {
+    const usersWithoutRole = await prisma.user.findMany({
+      where: { roleId: null }
+    });
+    
+    console.log(`📋 ${usersWithoutRole.length} utilisateur(s) trouvé(s) sans rôle assigné`);
+    
+    if (usersWithoutRole.length > 0) {
+      await prisma.user.updateMany({
+        where: { roleId: null },
+        data: { roleId: pendingRole.id }
+      });
+      console.log(`✅ Rôle PENDING assigné à ${usersWithoutRole.length} utilisateur(s)`);
+    }
+  } else {
+    console.log('❌ Rôle PENDING non trouvé');
+  }
+  
   console.log('🎉 Seeding des rôles terminé!');
 }
