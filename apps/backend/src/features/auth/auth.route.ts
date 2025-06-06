@@ -1,4 +1,4 @@
-import { openApiRedirect } from '@/helpers/apiResponses';
+import { openApiRedirect } from '@sirena/backend-utils/helpers';
 import { describeRoute } from 'hono-openapi';
 
 export const postLoginRoute = describeRoute({

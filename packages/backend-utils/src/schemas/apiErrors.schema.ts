@@ -1,5 +1,4 @@
-import * as z from 'zod';
-import 'zod-openapi/extend';
+import { z } from '../utils/zod';
 
 export const ErrorSchema = z.object({
   message: z.string(),

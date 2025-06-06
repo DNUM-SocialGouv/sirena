@@ -20,6 +20,10 @@ jobs:
       run: pnpm install
     - name: Run linter
       run: pnpm lint
+    - name: Build backend-utils
+      run: pnpm build:backend-utils
+    - name: Build common
+      run: pnpm build:common
     - name: Generate types
       run: pnpm db:generate
     - name: Run tests

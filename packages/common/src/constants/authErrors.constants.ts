@@ -1,5 +1,3 @@
-// TODO move in shared package
-
 export const ERROR_CODES = {
   PC_ERROR: 'PC_ERROR',
   USER_INFOS_ERROR: 'USER_INFOS_ERROR',

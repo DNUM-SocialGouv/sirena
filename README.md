@@ -78,9 +78,13 @@ packages/
 | `pnpm dev`                             | Start frontend + backend in parallel                                                 |
 | `pnpm dev:frontend`                    | Start frontend (`@sirena/frontend`)                                                  |
 | `pnpm dev:backend`                     | Start backend (`@sirena/backend`) with `.env`                                        |
+| `pnpm dev:backend-utils`               | Start backend-utils (`@sirena/backend-utils`)                                        |
+| `pnpm dev:common`                      | Start common (`@sirena/common`)                                                      |
 | `pnpm dev:ui`                          | Start storybook (`@sirena/ui`)                                                       |
 | `pnpm build:backend`                   | Build backend to `dist/` (RPC + OpenAPI ready)                                       |
 | `pnpm build:frontend`                  | Build frontend to `dist/`                                                            |
+| `pnpm build:backend-utils`             | Build backend-utils to `dist/`                                                        |
+| `pnpm build:common`                    | Build common to `dist/`                                                               |
 | `pnpm db:migrate`                      | Run dev migrations (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:generate`                     | Generate Prisma client from schema (`@sirena/backend`) with `.env`                   |
 | `pnpm db:deploy`                       | Deploy pending migrations to DB (`@sirena/backend`) with `.env`                      |
@@ -88,14 +92,12 @@ packages/
 | `pnpm db:reset`                        | Reset the database (`@sirena/backend`) with `.env`                                   |
 | `pnpm test:e2e`                        | Run end-to-end tests for frontend (`@sirena/frontend`)                               |
 | `pnpm test:e2e:ui`                     | Run end-to-end tests with UI for frontend (`@sirena/frontend`)                       |
-| `pnpm test:ui`                         | Run UI tests for `@sirena/ui`                                                        |
 | `pnpm test:unit`                       | Run unit tests across all packages                                                   |
 | `pnpm lint`                            | Run `lint` script in all packages (via `pnpm -r`)                                    |
 | `pnpm lint:staged`                     | Run staged file linter in each workspace                                             |
 | `pnpm gitleaks:detect-secrets`         | Scan staged files for secrets using [Gitleaks](https://github.com/gitleaks/gitleaks) |
 | `pnpm gitleaks:update-ignored-secrets` | Update the list of ignored secrets for Gitleaks scripts                              |
 | `pnpm prepare`                         | Install Husky Git hooks (called automatically by `pnpm install`)                     |
-
 
 ## 🛠️ Tools
 
@@ -140,7 +142,8 @@ packages/
 |:--|:--|
 | [`@sirena/ui`](./packages/ui) | Reusable design system components (with Storybook) |
 | [`@sirena/backend`](./apps/backend) | Main Hono backend with OpenAPI + RPC |
-| [`@sirena/backend-bis`](./apps/backend-bis) | Experimental backend variant |
+| [`@sirena/common`](./pacakges/common) | package sharing elements from backend end frontend |
+| [`@sirena/backend-utils`](./pacakges/backend-utils) | package for exporting element to other projects |
 | [`@sirena/frontend`](./apps/frontend) | Full React SPA using TanStack Router + Query |
 
 ## Docker build

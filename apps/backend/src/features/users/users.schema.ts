@@ -1,6 +1,4 @@
-import { RoleSchema, UserIncludeSchema, UserSchema } from '@/libs/zod';
-import { z } from 'zod';
-import 'zod-openapi/extend';
+import { RoleSchema, UserSchema, z } from '@/libs/zod';
 
 export const UserWithRoleSchema = UserSchema.extend({
   role: RoleSchema.nullable(),

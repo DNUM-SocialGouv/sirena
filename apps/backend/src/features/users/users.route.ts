@@ -1,9 +1,8 @@
-import { openApi404NotFound } from '@/helpers/apiErrors';
-import { openApiResponse, openApiResponses } from '@/helpers/apiResponses';
-import { describeRoute } from 'hono-openapi';
+import { openApi404NotFound, openApiProtectedRoute } from '@sirena/backend-utils/helpers';
+import { openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
 import { GetUserResponseSchema, GetUsersResponseSchema } from './users.schema';
 
-export const getUserRoute = describeRoute({
+export const getUserRoute = openApiProtectedRoute({
   description: 'Get user by id',
   responses: {
     ...openApiResponse(GetUserResponseSchema),
@@ -11,7 +10,7 @@ export const getUserRoute = describeRoute({
   },
 });
 
-export const getUsersRoute = describeRoute({
+export const getUsersRoute = openApiProtectedRoute({
   description: 'Get all users',
   responses: {
     ...openApiResponses(GetUsersResponseSchema),

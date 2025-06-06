@@ -1,4 +1,3 @@
-import { ERROR_CODES } from '@/config/authErrors.constants';
 import { envVars } from '@/config/env';
 import { deleteSession, getSession } from '@/features/sessions/sessions.service';
 import { createUser, getUserBySub } from '@/features/users/users.service';
@@ -6,6 +5,7 @@ import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { getPropertyTypes } from '@/helpers/logs';
 import { Prisma } from '@/libs/prisma';
 import logoutMiddleware from '@/middlewares/logout.middleware';
+import { ERROR_CODES } from '@sirena/common/constants';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
 import { authUser, createRedirectUrl } from './auth.helper';

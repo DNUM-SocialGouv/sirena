@@ -1,6 +1,6 @@
-import { throwHTTPException404NotFound } from '@/helpers/apiErrors';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
+import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { getUserRoute, getUsersRoute } from './users.route';
 import { getUserById, getUsers } from './users.service';
 

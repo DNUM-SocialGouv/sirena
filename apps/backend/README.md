@@ -44,7 +44,6 @@ src/
 | `pnpm lint:staged`      | Run Biome lint checks on staged backend files via a Git diff filter           |
 | `pnpm lint`             | Run Biome lint checks across the entire backend codebase                      |
 
-
 ## 📦 Exports
 
 The package exposes:
