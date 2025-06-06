@@ -30,6 +30,7 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsPro
   const containerRef = useRef<HTMLDivElement>(null);
   const tablistRef = useRef<HTMLUListElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const isFirstRenderRef = useRef(true);
 
   const [direction, setDirection] = useState<'right' | 'left'>('right');
   const pendingIndexRef = useRef<number | null>(null);
@@ -41,6 +42,18 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsPro
       pendingIndexRef.current = null;
     }
   }, [direction, onUpdateActiveTab]);
+
+  useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+    const currentTabId = tabs[activeTab]?.tabId;
+    if (currentTabId && containerRef.current) {
+      const btn = containerRef.current.querySelector<HTMLButtonElement>(`#${currentTabId}`);
+      btn?.focus();
+    }
+  }, [activeTab, tabs]);
 
   const computeDirection = (newIndex: number): 'left' | 'right' => {
     return newIndex < activeTab ? 'left' : 'right';
