@@ -1,5 +1,6 @@
 import { LoggedLayout } from '@/components/layout/logged/logged';
 import { Loader } from '@/components/loader.tsx';
+import { useRoles } from '@/hooks/queries/useRoles';
 import { useUser } from '@/hooks/queries/useUser';
 import { requireAuthAndAdmin } from '@/lib/auth-guards';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
@@ -11,12 +12,42 @@ export const Route = createFileRoute('/_auth/users')({
 });
 
 function RouteComponent() {
-  const { data } = useUser();
-  if (!data) {
-    return <Loader />;
+  const { data: rolesData, isLoading: rolesLoading, error: rolesError } = useRoles();
+
+  const pendingRole = rolesData?.data?.find((role) => role.roleName === 'PENDING');
+  const pendingRoleId = pendingRole?.id;
+
+  const {
+    data: usersData,
+    isLoading: usersLoading,
+    error: usersError,
+  } = useUser(pendingRoleId ? { roleId: pendingRoleId } : undefined, !!pendingRoleId);
+
+  if (rolesLoading || (pendingRoleId && usersLoading)) {
+    return (
+      <LoggedLayout>
+        <Loader />
+      </LoggedLayout>
+    );
   }
 
-  type User = (typeof data.data)[number];
+  if (rolesError || usersError) {
+    return (
+      <LoggedLayout>
+        <div>Erreur lors du chargement des données</div>
+      </LoggedLayout>
+    );
+  }
+
+  if (!rolesData || !usersData) {
+    return (
+      <LoggedLayout>
+        <Loader />
+      </LoggedLayout>
+    );
+  }
+
+  type User = (typeof usersData.data)[number];
 
   const columns: Column<User>[] = [
     { key: 'lastName', label: 'Nom' },
@@ -46,7 +77,7 @@ function RouteComponent() {
     <LoggedLayout>
       <div className="home">
         <h2>Welcome to users</h2>
-        <DataTable title="Liste des utilisateurs" rowId="id" data={data.data} columns={columns} cells={cells} />
+        <DataTable title="Liste des utilisateurs" rowId="id" data={usersData.data} columns={columns} cells={cells} />
       </div>
     </LoggedLayout>
   );
