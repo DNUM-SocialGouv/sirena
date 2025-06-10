@@ -1,4 +1,4 @@
-import { openApiResponses } from '@/helpers/apiResponses';
+import { openApiResponses } from '@sirena/backend-utils/helpers';
 import { describeRoute } from 'hono-openapi';
 import { GetRolesResponseSchema } from './roles.schema';
 

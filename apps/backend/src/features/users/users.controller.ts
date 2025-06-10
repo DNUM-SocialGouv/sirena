@@ -1,7 +1,7 @@
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
-import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { zValidator } from '@hono/zod-validator';
+import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { GetUsersQuerySchema, getUserRoute, getUsersRoute } from './users.route';
 import { getUserById, getUsers } from './users.service';
 
