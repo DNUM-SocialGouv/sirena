@@ -2,8 +2,8 @@ import { envVars } from '@//config/env';
 import { createSession } from '@/features/sessions/sessions.service';
 import type { AppBindings } from '@/helpers/factories/appWithLogs';
 import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
-import { ERROR_CODES } from '@sirena/common/constants';
 import { isPrismaUniqueConstraintError } from '@/helpers/prisma';
+import { ERROR_CODES } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
 
