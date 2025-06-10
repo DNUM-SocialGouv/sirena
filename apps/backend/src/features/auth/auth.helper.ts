@@ -2,7 +2,7 @@ import { envVars } from '@//config/env';
 import { createSession } from '@/features/sessions/sessions.service';
 import type { AppBindings } from '@/helpers/factories/appWithLogs';
 import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
-import { Prisma } from '@/libs/prisma';
+import { isPrismaUniqueConstraintError } from '@/helpers/prisma';
 import { ERROR_CODES } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
@@ -60,7 +60,7 @@ export const authUser = async (c: Context<AppBindings>, userId: string, idToken:
     });
   } catch (error) {
     const logger = c.get('logger');
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    if (isPrismaUniqueConstraintError(error)) {
       logger.error({ err: error }, 'Error in creating new session in database');
       const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.SESSION_ALREADY_EXISTS });
       return c.redirect(errorPageUrl, 302);

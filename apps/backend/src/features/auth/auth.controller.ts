@@ -3,7 +3,7 @@ import { deleteSession, getSession } from '@/features/sessions/sessions.service'
 import { createUser, getUserBySub } from '@/features/users/users.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { getPropertyTypes } from '@/helpers/logs';
-import { Prisma } from '@/libs/prisma';
+import { isPrismaUniqueConstraintError } from '@/helpers/prisma';
 import logoutMiddleware from '@/middlewares/logout.middleware';
 import { ERROR_CODES } from '@sirena/common/constants';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
@@ -123,7 +123,7 @@ const app = factoryWithLogs
           pcData: userInfo,
         });
       } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        if (isPrismaUniqueConstraintError(error)) {
           logger.error({ err: error }, 'Error in creating new user in database, email already exists');
           const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_ALREADY_EXISTS });
           return c.redirect(errorPageUrl, 302);
@@ -149,7 +149,16 @@ const app = factoryWithLogs
     deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
 
     if (token) {
-      await deleteSession(token);
+      try {
+        await deleteSession(token);
+      } catch (error) {
+        const logger = c.get('logger');
+        if (isPrismaUniqueConstraintError(error)) {
+          logger.info({ err: error }, 'Error in deleting session, session not found');
+        } else {
+          logger.error({ err: error }, 'Error in deleting session');
+        }
+      }
     }
 
     return c.redirect(envVars.FRONTEND_REDIRECT_LOGIN_URI, 302);
@@ -183,7 +192,9 @@ const app = factoryWithLogs
       return c.redirect(errorPageUrl, 302);
     }
 
-    await deleteSession(token);
+    if (session) {
+      await deleteSession(token);
+    }
 
     return c.redirect(endSessionUrl, 302);
   });
