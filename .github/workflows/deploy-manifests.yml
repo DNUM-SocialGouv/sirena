@@ -1,0 +1,67 @@
+name: Generate manifests and deploy
+
+on:
+  workflow_run:
+    workflows: ["Build docker images"]
+    types:
+      - completed
+    branches: [main] # ou la branche que vous souhaitez
+
+env:
+  GITOPS_REPO: fabrique-atlas/org-sdpsn-ws-ptt
+
+jobs:
+  deploy:
+    name: Generate manifests and deploy
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          cd deploy
+          npm install
+      
+      - name: Check format and lint
+        run: |
+          cd deploy
+          npm run lint
+
+      - name: Render manifests
+        run: |
+          cd deploy
+          npm run build
+
+      - name: Checkout GitOps repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITOPS_REPO }}
+          path: gitops-repo
+          ssh-key: ${{ secrets.GITOPS_REPO_KEY }}
+
+      - run: |
+          rm -f gitops-repo/deployment-targets/developpement/*.yaml
+          rm -rf gitops-repo/deployment-targets/developpement/home/*
+          cp -r deploy/dist/developpement/* gitops-repo/deployment-targets/developpement/home/
+          cp gitops-repo/deployment-targets/developpement/home/* gitops-repo/deployment-targets/developpement
+          cp gitops-repo/deployment-targets/developpement/chantier/* gitops-repo/deployment-targets/developpement
+          cp gitops-repo/deployment-targets/developpement/lsp/* gitops-repo/deployment-targets/developpement
+
+          # rm -f gitops-repo/deployment-targets/dev/*.yaml
+          # rm -rf gitops-repo/deployment-targets/dev/home/*
+          # cp -r deploy/dist/dev/* gitops-repo/deployment-targets/dev/home/
+          # cp gitops-repo/deployment-targets/dev/home/* gitops-repo/deployment-targets/dev
+          # cp gitops-repo/deployment-targets/dev/chantier/* gitops-repo/deployment-targets/dev
+          # cp gitops-repo/deployment-targets/dev/lsp/* gitops-repo/deployment-targets/dev
+
+          # mail standard bot github Actions
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cd gitops-repo
+          git add .
+          git commit -m 'Déploiement manifestes home environnement "developpement"'
+          git push 
