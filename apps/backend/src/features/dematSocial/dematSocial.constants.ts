@@ -41,7 +41,7 @@ export const SERVICE_A_DOMICILE = {
   REPAS: 'Service de repas',
   TRAITEMENT: 'Traitements spécialisés',
   SAADF: "Service d'Aide et d'Accompagnement à Domicile aux Familles (SAADF)",
-  MJPM: 'Mandataire Juidiciaire à la Protection des Majeurs (curatelle, tutelle)',
+  MJPM: 'Mandataire Judiciaire à la Protection des Majeurs (curatelle, tutelle)',
   PROF_LIBERAL: "Intervention d'un professionnel libéral ou service (SAMU, médecin)",
   SSIAD: 'Service de Soins Infirmier à Domicile (SSIAD)',
   SAAD: "Service d'Aide et d'Accompagnement à Domicile (SAAD)",
