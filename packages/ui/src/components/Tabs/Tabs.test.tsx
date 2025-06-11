@@ -26,11 +26,12 @@ describe('Tabs Component', () => {
     expect(screen.getByText('Content 1')).toBeInTheDocument();
   });
 
-  it('clicking Tab 2 shows next panel', () => {
+  it('clicking Tab 2 shows next panel', async () => {
     render(<TabsWrapper />);
     fireEvent.click(screen.getByText('Tab 2'));
-    waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByText('Content 2')).toBeInTheDocument();
+      expect(screen.queryByText('Content 1')).not.toBeInTheDocument();
     });
   });
 });

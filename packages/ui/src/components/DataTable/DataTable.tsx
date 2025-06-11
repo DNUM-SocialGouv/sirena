@@ -81,7 +81,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
   size = 'md',
   isBordered = false,
   isSelectable = false,
-  emptyPlaceholder = 'aucune donnée à archer',
+  emptyPlaceholder = 'Aucune donnée à afficher',
   selectedValues = [],
   sort = { sort: '', sortDirection: '' },
   onSortChange = () => {},
