@@ -173,6 +173,9 @@ describe('auth.controller.ts Auth Endpoints', () => {
       uid: String(fakeUserInfo.uid),
       email: fakeUserInfo.email,
       firstName: fakeUserInfo.given_name,
+      pcData: {},
+      active: false,
+      roleId: 'USER',
       lastName: fakeUserInfo.usual_name,
       createdAt: new Date(),
     };

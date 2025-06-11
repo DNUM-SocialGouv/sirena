@@ -28,6 +28,9 @@ export const ProConnectEnvSchema = z.object({
  * Schéma de validation pour les autres variables d'environnement requises
  */
 export const AppEnvSchema = z.object({
+  OPENDATASOFT_URI: z.string({
+    required_error: "La variable d'environnement OPENDATASOFT_URI est requise",
+  }),
   FRONTEND_URI: z.string({
     required_error: "La variable d'environnement FRONTEND_URI est requise",
   }),
