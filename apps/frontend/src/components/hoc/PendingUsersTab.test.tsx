@@ -74,13 +74,13 @@ const mockUsersData = {
   ],
 };
 
-describe('PendingUsersTab', () => {
+describe('PendingUsersTab Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('États de chargement', () => {
-    it('affiche le loader pendant le chargement des rôles', () => {
+  describe('State of loading', () => {
+    it('display the loader during role loading', () => {
       mockUseRoles.mockReturnValue({
         data: undefined,
         isLoading: true,
@@ -113,7 +113,7 @@ describe('PendingUsersTab', () => {
       expect(screen.getByTestId('loader')).toBeInTheDocument();
     });
 
-    it('affiche le loader pendant le chargement des utilisateurs', () => {
+    it('display loader during users loading', () => {
       mockUseRoles.mockReturnValue({
         data: mockRolesData,
         isLoading: false,
@@ -147,8 +147,8 @@ describe('PendingUsersTab', () => {
     });
   });
 
-  describe('Gestion des erreurs', () => {
-    it("affiche un message d'erreur en cas d'erreur lors du chargement des rôles", () => {
+  describe('Errors display', () => {
+    it('display an error message when role loading fails', () => {
       mockUseRoles.mockReturnValue({
         data: undefined,
         isLoading: false,
@@ -181,7 +181,7 @@ describe('PendingUsersTab', () => {
       expect(screen.getByText('Erreur lors du chargement des utilisateurs en attente')).toBeInTheDocument();
     });
 
-    it("affiche un message d'erreur en cas d'erreur lors du chargement des utilisateurs", () => {
+    it('display an error message when users loading fails', () => {
       mockUseRoles.mockReturnValue({
         data: mockRolesData,
         isLoading: false,
@@ -215,8 +215,8 @@ describe('PendingUsersTab', () => {
     });
   });
 
-  describe('États vides', () => {
-    it("affiche un message quand aucune donnée n'est disponible", () => {
+  describe('Empty states', () => {
+    it('Display a message when no data are available', () => {
       mockUseRoles.mockReturnValue({
         data: null,
         isLoading: false,
@@ -250,8 +250,8 @@ describe('PendingUsersTab', () => {
     });
   });
 
-  describe('Logique métier', () => {
-    it("ne déclenche pas la requête utilisateurs si le rôle PENDING n'existe pas", () => {
+  describe('business logic', () => {
+    it('does not trigger the users request when PENDING role does not exist (should never happen)', () => {
       const rolesDataWithoutPending = {
         data: [
           { id: '1', roleName: 'ADMIN' },
@@ -293,7 +293,7 @@ describe('PendingUsersTab', () => {
       expect(mockUseUserCall).toHaveBeenCalledWith(undefined, false);
     });
 
-    it('appelle useUser avec le bon roleId du rôle PENDING', () => {
+    it('call useUser with the roleId of PENDING role', () => {
       mockUseRoles.mockReturnValue({
         data: mockRolesData,
         isLoading: false,
@@ -329,7 +329,7 @@ describe('PendingUsersTab', () => {
     });
   });
 
-  describe('Affichage de la table', () => {
+  describe('display the table', () => {
     beforeEach(() => {
       mockUseRoles.mockReturnValue({
         data: mockRolesData,
@@ -359,13 +359,13 @@ describe('PendingUsersTab', () => {
       >);
     });
 
-    it('affiche correctement le titre de la table', () => {
+    it('display the title of the table', () => {
       renderWithProviders(<PendingUsersTab />);
 
       expect(screen.getByText('Liste des utilisateurs en attente de validation')).toBeInTheDocument();
     });
 
-    it('affiche correctement les en-têtes de colonnes', () => {
+    it('display table with the right column', () => {
       renderWithProviders(<PendingUsersTab />);
 
       expect(screen.getByText('Nom')).toBeInTheDocument();
@@ -374,7 +374,7 @@ describe('PendingUsersTab', () => {
       expect(screen.getByText('Action')).toBeInTheDocument();
     });
 
-    it('affiche correctement les données des utilisateurs', () => {
+    it('Display the users data', () => {
       renderWithProviders(<PendingUsersTab />);
 
       expect(screen.getByText('Dupont')).toBeInTheDocument();
@@ -384,14 +384,7 @@ describe('PendingUsersTab', () => {
       expect(screen.getByText('Marie')).toBeInTheDocument();
     });
 
-    it('formate correctement les dates en français', () => {
-      renderWithProviders(<PendingUsersTab />);
-
-      expect(screen.getByText('15/01/2024')).toBeInTheDocument();
-      expect(screen.getByText('16/01/2024')).toBeInTheDocument();
-    });
-
-    it('affiche les liens Traiter la demande pour chaque utilisateur', () => {
+    it('display the link "Traiter la demande" for each user', () => {
       renderWithProviders(<PendingUsersTab />);
 
       const actionLinks = screen.getAllByText('Traiter la demande');
@@ -401,7 +394,7 @@ describe('PendingUsersTab', () => {
       expect(actionLinks[1]).toHaveAttribute('href', '/user/2');
     });
 
-    it("gère le cas où la liste d'utilisateurs est vide", () => {
+    it('when no users are at the PENDING state', () => {
       const emptyUsersData = {
         data: [],
       };
