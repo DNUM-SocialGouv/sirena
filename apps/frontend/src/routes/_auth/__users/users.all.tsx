@@ -1,3 +1,4 @@
+import { AllUsersTab } from '@/components/hoc/allUsersTab.tsx';
 import { requireAuthAndAdmin } from '@/lib/auth-guards';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -10,7 +11,7 @@ export function RouteComponent() {
   return (
     <div>
       <h3>Tous les utilisateurs</h3>
-      <p>Fonctionnalité à venir : affichage de tous les utilisateurs</p>
+      <AllUsersTab />
     </div>
   );
 }
