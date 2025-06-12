@@ -13,12 +13,15 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as LoginImport } from './routes/login'
 import { Route as IndexImport } from './routes/index'
-import { Route as AuthUsersImport } from './routes/_auth/users'
 import { Route as AuthHomeImport } from './routes/_auth/home'
 import { Route as AuthEntitiesImport } from './routes/_auth/entities'
 import { Route as AuthCasesImport } from './routes/_auth/cases'
 import { Route as AuthAdministrationImport } from './routes/_auth/administration'
 import { Route as AuthUserUserIdImport } from './routes/_auth/user.$userId'
+import { Route as AuthusersUsersImport } from './routes/_auth/__users/users'
+import { Route as AuthusersUsersIndexImport } from './routes/_auth/__users/users.index'
+import { Route as AuthusersUsersPendingImport } from './routes/_auth/__users/users.pending'
+import { Route as AuthusersUsersAllImport } from './routes/_auth/__users/users.all'
 
 // Create/Update Routes
 
@@ -31,12 +34,6 @@ const LoginRoute = LoginImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const AuthUsersRoute = AuthUsersImport.update({
-  id: '/_auth/users',
-  path: '/users',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -68,6 +65,30 @@ const AuthUserUserIdRoute = AuthUserUserIdImport.update({
   id: '/_auth/user/$userId',
   path: '/user/$userId',
   getParentRoute: () => rootRoute,
+} as any)
+
+const AuthusersUsersRoute = AuthusersUsersImport.update({
+  id: '/_auth/__users/users',
+  path: '/users',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthusersUsersIndexRoute = AuthusersUsersIndexImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthusersUsersRoute,
+} as any)
+
+const AuthusersUsersPendingRoute = AuthusersUsersPendingImport.update({
+  id: '/pending',
+  path: '/pending',
+  getParentRoute: () => AuthusersUsersRoute,
+} as any)
+
+const AuthusersUsersAllRoute = AuthusersUsersAllImport.update({
+  id: '/all',
+  path: '/all',
+  getParentRoute: () => AuthusersUsersRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -116,11 +137,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthHomeImport
       parentRoute: typeof rootRoute
     }
-    '/_auth/users': {
-      id: '/_auth/users'
+    '/_auth/__users/users': {
+      id: '/_auth/__users/users'
       path: '/users'
       fullPath: '/users'
-      preLoaderRoute: typeof AuthUsersImport
+      preLoaderRoute: typeof AuthusersUsersImport
       parentRoute: typeof rootRoute
     }
     '/_auth/user/$userId': {
@@ -130,10 +151,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUserUserIdImport
       parentRoute: typeof rootRoute
     }
+    '/_auth/__users/users/all': {
+      id: '/_auth/__users/users/all'
+      path: '/all'
+      fullPath: '/users/all'
+      preLoaderRoute: typeof AuthusersUsersAllImport
+      parentRoute: typeof AuthusersUsersImport
+    }
+    '/_auth/__users/users/pending': {
+      id: '/_auth/__users/users/pending'
+      path: '/pending'
+      fullPath: '/users/pending'
+      preLoaderRoute: typeof AuthusersUsersPendingImport
+      parentRoute: typeof AuthusersUsersImport
+    }
+    '/_auth/__users/users/': {
+      id: '/_auth/__users/users/'
+      path: '/'
+      fullPath: '/users/'
+      preLoaderRoute: typeof AuthusersUsersIndexImport
+      parentRoute: typeof AuthusersUsersImport
+    }
   }
 }
 
 // Create and export the route tree
+
+interface AuthusersUsersRouteChildren {
+  AuthusersUsersAllRoute: typeof AuthusersUsersAllRoute
+  AuthusersUsersPendingRoute: typeof AuthusersUsersPendingRoute
+  AuthusersUsersIndexRoute: typeof AuthusersUsersIndexRoute
+}
+
+const AuthusersUsersRouteChildren: AuthusersUsersRouteChildren = {
+  AuthusersUsersAllRoute: AuthusersUsersAllRoute,
+  AuthusersUsersPendingRoute: AuthusersUsersPendingRoute,
+  AuthusersUsersIndexRoute: AuthusersUsersIndexRoute,
+}
+
+const AuthusersUsersRouteWithChildren = AuthusersUsersRoute._addFileChildren(
+  AuthusersUsersRouteChildren,
+)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -142,8 +200,11 @@ export interface FileRoutesByFullPath {
   '/cases': typeof AuthCasesRoute
   '/entities': typeof AuthEntitiesRoute
   '/home': typeof AuthHomeRoute
-  '/users': typeof AuthUsersRoute
+  '/users': typeof AuthusersUsersRouteWithChildren
   '/user/$userId': typeof AuthUserUserIdRoute
+  '/users/all': typeof AuthusersUsersAllRoute
+  '/users/pending': typeof AuthusersUsersPendingRoute
+  '/users/': typeof AuthusersUsersIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -153,8 +214,10 @@ export interface FileRoutesByTo {
   '/cases': typeof AuthCasesRoute
   '/entities': typeof AuthEntitiesRoute
   '/home': typeof AuthHomeRoute
-  '/users': typeof AuthUsersRoute
   '/user/$userId': typeof AuthUserUserIdRoute
+  '/users/all': typeof AuthusersUsersAllRoute
+  '/users/pending': typeof AuthusersUsersPendingRoute
+  '/users': typeof AuthusersUsersIndexRoute
 }
 
 export interface FileRoutesById {
@@ -165,8 +228,11 @@ export interface FileRoutesById {
   '/_auth/cases': typeof AuthCasesRoute
   '/_auth/entities': typeof AuthEntitiesRoute
   '/_auth/home': typeof AuthHomeRoute
-  '/_auth/users': typeof AuthUsersRoute
+  '/_auth/__users/users': typeof AuthusersUsersRouteWithChildren
   '/_auth/user/$userId': typeof AuthUserUserIdRoute
+  '/_auth/__users/users/all': typeof AuthusersUsersAllRoute
+  '/_auth/__users/users/pending': typeof AuthusersUsersPendingRoute
+  '/_auth/__users/users/': typeof AuthusersUsersIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -180,6 +246,9 @@ export interface FileRouteTypes {
     | '/home'
     | '/users'
     | '/user/$userId'
+    | '/users/all'
+    | '/users/pending'
+    | '/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -188,8 +257,10 @@ export interface FileRouteTypes {
     | '/cases'
     | '/entities'
     | '/home'
-    | '/users'
     | '/user/$userId'
+    | '/users/all'
+    | '/users/pending'
+    | '/users'
   id:
     | '__root__'
     | '/'
@@ -198,8 +269,11 @@ export interface FileRouteTypes {
     | '/_auth/cases'
     | '/_auth/entities'
     | '/_auth/home'
-    | '/_auth/users'
+    | '/_auth/__users/users'
     | '/_auth/user/$userId'
+    | '/_auth/__users/users/all'
+    | '/_auth/__users/users/pending'
+    | '/_auth/__users/users/'
   fileRoutesById: FileRoutesById
 }
 
@@ -210,7 +284,7 @@ export interface RootRouteChildren {
   AuthCasesRoute: typeof AuthCasesRoute
   AuthEntitiesRoute: typeof AuthEntitiesRoute
   AuthHomeRoute: typeof AuthHomeRoute
-  AuthUsersRoute: typeof AuthUsersRoute
+  AuthusersUsersRoute: typeof AuthusersUsersRouteWithChildren
   AuthUserUserIdRoute: typeof AuthUserUserIdRoute
 }
 
@@ -221,7 +295,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCasesRoute: AuthCasesRoute,
   AuthEntitiesRoute: AuthEntitiesRoute,
   AuthHomeRoute: AuthHomeRoute,
-  AuthUsersRoute: AuthUsersRoute,
+  AuthusersUsersRoute: AuthusersUsersRouteWithChildren,
   AuthUserUserIdRoute: AuthUserUserIdRoute,
 }
 
@@ -241,7 +315,7 @@ export const routeTree = rootRoute
         "/_auth/cases",
         "/_auth/entities",
         "/_auth/home",
-        "/_auth/users",
+        "/_auth/__users/users",
         "/_auth/user/$userId"
       ]
     },
@@ -263,11 +337,28 @@ export const routeTree = rootRoute
     "/_auth/home": {
       "filePath": "_auth/home.tsx"
     },
-    "/_auth/users": {
-      "filePath": "_auth/users.tsx"
+    "/_auth/__users/users": {
+      "filePath": "_auth/__users/users.tsx",
+      "children": [
+        "/_auth/__users/users/all",
+        "/_auth/__users/users/pending",
+        "/_auth/__users/users/"
+      ]
     },
     "/_auth/user/$userId": {
       "filePath": "_auth/user.$userId.tsx"
+    },
+    "/_auth/__users/users/all": {
+      "filePath": "_auth/__users/users.all.tsx",
+      "parent": "/_auth/__users/users"
+    },
+    "/_auth/__users/users/pending": {
+      "filePath": "_auth/__users/users.pending.tsx",
+      "parent": "/_auth/__users/users"
+    },
+    "/_auth/__users/users/": {
+      "filePath": "_auth/__users/users.index.tsx",
+      "parent": "/_auth/__users/users"
     }
   }
 }
