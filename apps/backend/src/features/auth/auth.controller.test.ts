@@ -175,6 +175,8 @@ describe('auth.controller.ts Auth Endpoints', () => {
       firstName: fakeUserInfo.given_name,
       lastName: fakeUserInfo.usual_name,
       createdAt: new Date(),
+      active: false,
+      roleId: '1234',
     };
     vi.mocked(createUser).mockResolvedValueOnce(createdUser);
 

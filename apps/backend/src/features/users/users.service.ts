@@ -1,7 +1,24 @@
 import { type Prisma, type User, prisma } from '@/libs/prisma';
 import type { CreateUserDto } from '@/types/user.d';
 
-export const getUsers = async (): Promise<User[]> => await prisma.user.findMany();
+interface GetUsersFilters {
+  roleId?: string;
+  active?: boolean;
+}
+
+export const getUsers = async (filters?: GetUsersFilters): Promise<User[]> => {
+  const where: Prisma.UserWhereInput = {};
+
+  if (filters?.roleId) {
+    where.roleId = filters.roleId;
+  }
+
+  if (filters?.active !== undefined) {
+    where.active = filters.active;
+  }
+
+  return await prisma.user.findMany({ where });
+};
 
 export const getUserById = async (id: User['id']) =>
   await prisma.user.findUnique({ where: { id }, include: { role: true } });
