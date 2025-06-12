@@ -1,9 +1,12 @@
+import { PendingUsersTab } from '@/components/hoc/PendingUsersTab';
 import { requireAuthAndAdmin } from '@/lib/auth-guards';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/__users/users/')({
   beforeLoad: requireAuthAndAdmin,
-  loader: () => {
-    throw redirect({ to: '/users/pending' });
-  },
+  component: RouteComponent,
 });
+
+export function RouteComponent() {
+  return <PendingUsersTab />;
+}

@@ -1,5 +1,3 @@
-import { RoleSchema } from '@/libs/zod';
-import { z } from 'zod';
-import 'zod-openapi/extend';
+import { RoleSchema, z } from '@/libs/zod';
 
 export const GetRolesResponseSchema = z.object({ data: RoleSchema });

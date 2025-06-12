@@ -20,7 +20,6 @@ import { Route as AuthAdministrationImport } from './routes/_auth/administration
 import { Route as AuthUserUserIdImport } from './routes/_auth/user.$userId'
 import { Route as AuthusersUsersImport } from './routes/_auth/__users/users'
 import { Route as AuthusersUsersIndexImport } from './routes/_auth/__users/users.index'
-import { Route as AuthusersUsersPendingImport } from './routes/_auth/__users/users.pending'
 import { Route as AuthusersUsersAllImport } from './routes/_auth/__users/users.all'
 
 // Create/Update Routes
@@ -76,12 +75,6 @@ const AuthusersUsersRoute = AuthusersUsersImport.update({
 const AuthusersUsersIndexRoute = AuthusersUsersIndexImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthusersUsersRoute,
-} as any)
-
-const AuthusersUsersPendingRoute = AuthusersUsersPendingImport.update({
-  id: '/pending',
-  path: '/pending',
   getParentRoute: () => AuthusersUsersRoute,
 } as any)
 
@@ -158,13 +151,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthusersUsersAllImport
       parentRoute: typeof AuthusersUsersImport
     }
-    '/_auth/__users/users/pending': {
-      id: '/_auth/__users/users/pending'
-      path: '/pending'
-      fullPath: '/users/pending'
-      preLoaderRoute: typeof AuthusersUsersPendingImport
-      parentRoute: typeof AuthusersUsersImport
-    }
     '/_auth/__users/users/': {
       id: '/_auth/__users/users/'
       path: '/'
@@ -179,13 +165,11 @@ declare module '@tanstack/react-router' {
 
 interface AuthusersUsersRouteChildren {
   AuthusersUsersAllRoute: typeof AuthusersUsersAllRoute
-  AuthusersUsersPendingRoute: typeof AuthusersUsersPendingRoute
   AuthusersUsersIndexRoute: typeof AuthusersUsersIndexRoute
 }
 
 const AuthusersUsersRouteChildren: AuthusersUsersRouteChildren = {
   AuthusersUsersAllRoute: AuthusersUsersAllRoute,
-  AuthusersUsersPendingRoute: AuthusersUsersPendingRoute,
   AuthusersUsersIndexRoute: AuthusersUsersIndexRoute,
 }
 
@@ -203,7 +187,6 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthusersUsersRouteWithChildren
   '/user/$userId': typeof AuthUserUserIdRoute
   '/users/all': typeof AuthusersUsersAllRoute
-  '/users/pending': typeof AuthusersUsersPendingRoute
   '/users/': typeof AuthusersUsersIndexRoute
 }
 
@@ -216,7 +199,6 @@ export interface FileRoutesByTo {
   '/home': typeof AuthHomeRoute
   '/user/$userId': typeof AuthUserUserIdRoute
   '/users/all': typeof AuthusersUsersAllRoute
-  '/users/pending': typeof AuthusersUsersPendingRoute
   '/users': typeof AuthusersUsersIndexRoute
 }
 
@@ -231,7 +213,6 @@ export interface FileRoutesById {
   '/_auth/__users/users': typeof AuthusersUsersRouteWithChildren
   '/_auth/user/$userId': typeof AuthUserUserIdRoute
   '/_auth/__users/users/all': typeof AuthusersUsersAllRoute
-  '/_auth/__users/users/pending': typeof AuthusersUsersPendingRoute
   '/_auth/__users/users/': typeof AuthusersUsersIndexRoute
 }
 
@@ -247,7 +228,6 @@ export interface FileRouteTypes {
     | '/users'
     | '/user/$userId'
     | '/users/all'
-    | '/users/pending'
     | '/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -259,7 +239,6 @@ export interface FileRouteTypes {
     | '/home'
     | '/user/$userId'
     | '/users/all'
-    | '/users/pending'
     | '/users'
   id:
     | '__root__'
@@ -272,7 +251,6 @@ export interface FileRouteTypes {
     | '/_auth/__users/users'
     | '/_auth/user/$userId'
     | '/_auth/__users/users/all'
-    | '/_auth/__users/users/pending'
     | '/_auth/__users/users/'
   fileRoutesById: FileRoutesById
 }
@@ -341,7 +319,6 @@ export const routeTree = rootRoute
       "filePath": "_auth/__users/users.tsx",
       "children": [
         "/_auth/__users/users/all",
-        "/_auth/__users/users/pending",
         "/_auth/__users/users/"
       ]
     },
@@ -350,10 +327,6 @@ export const routeTree = rootRoute
     },
     "/_auth/__users/users/all": {
       "filePath": "_auth/__users/users.all.tsx",
-      "parent": "/_auth/__users/users"
-    },
-    "/_auth/__users/users/pending": {
-      "filePath": "_auth/__users/users.pending.tsx",
       "parent": "/_auth/__users/users"
     },
     "/_auth/__users/users/": {

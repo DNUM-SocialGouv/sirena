@@ -20,7 +20,7 @@ export function RouteComponent() {
   ];
 
   const handleTabChange = (newTabIndex: number) => {
-    const newPath = newTabIndex === 0 ? '/users/pending' : '/users/all';
+    const newPath = newTabIndex === 0 ? '/users' : '/users/all';
     navigate({ to: newPath });
   };
 
