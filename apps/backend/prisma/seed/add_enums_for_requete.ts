@@ -2,11 +2,12 @@ import {
   ages,
   civilites,
   consequences,
-  liensPersonneConcernee,
+  liensVictime,
+  lieuTypes,
   maltraitanceTypes,
   motifs,
   natureLieux,
-  professionsTypes,
+  professionTypes,
   receptionTypes,
   servicesDomicile,
   transportTypes,
@@ -50,12 +51,24 @@ async function seedConsequenceEnum(prisma: PrismaClient) {
   return { table: 'consequenceEnum', added };
 }
 
-async function seedLiensPersonnelConcernee(prisma: PrismaClient) {
+async function seedLiensVictimeEnum(prisma: PrismaClient) {
   let added = 0;
-  for (const [id, label] of Object.entries(liensPersonneConcernee)) {
-    const exists = await prisma.lienPersonneConcerneeEnum.findUnique({ where: { id } });
+  for (const [id, label] of Object.entries(liensVictime)) {
+    const exists = await prisma.lienVictimeEnum.findUnique({ where: { id } });
     if (!exists) {
-      await prisma.lienPersonneConcerneeEnum.create({ data: { id, label } });
+      await prisma.lienVictimeEnum.create({ data: { id, label } });
+      added++;
+    }
+  }
+  return { table: 'consequenceEnum', added };
+}
+
+async function seedLieuTypes(prisma: PrismaClient) {
+  let added = 0;
+  for (const [id, label] of Object.entries(lieuTypes)) {
+    const exists = await prisma.lieuTypeEnum.findUnique({ where: { id } });
+    if (!exists) {
+      await prisma.lieuTypeEnum.create({ data: { id, label } });
       added++;
     }
   }
@@ -100,7 +113,7 @@ async function seedNatureLieuEnum(prisma: PrismaClient) {
 
 async function seedProfessionTypeEnum(prisma: PrismaClient) {
   let added = 0;
-  for (const [id, label] of Object.entries(professionsTypes)) {
+  for (const [id, label] of Object.entries(professionTypes)) {
     const exists = await prisma.professionTypeEnum.findUnique({ where: { id } });
     if (!exists) {
       await prisma.professionTypeEnum.create({ data: { id, label } });
@@ -153,7 +166,8 @@ export async function seed_enums_for_requete(prisma: PrismaClient) {
     seedAgeEnum(prisma),
     seedCiviliteEnum(prisma),
     seedConsequenceEnum(prisma),
-    seedLiensPersonnelConcernee(prisma),
+    seedLiensVictimeEnum(prisma),
+    seedLieuTypes(prisma),
     seedMaltraitanceTypeEnum(prisma),
     seedMotifEnum(prisma),
     seedNatureLieuEnum(prisma),

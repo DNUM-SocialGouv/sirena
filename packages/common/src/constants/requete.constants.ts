@@ -13,7 +13,7 @@ export const civilites = {
   Mx: 'Mx',
 } as const;
 
-export const liensPersonneConcernee = {
+export const liensVictime = {
   FAMILLE: 'Membre de la famille',
   PROCHE: 'Proche',
   PROFESSIONNEL: 'Professionnel',
@@ -70,6 +70,8 @@ export const natureLieux = {
   AUTRE: "Autre (institut d'esthétique, salon de tatouage, prison)",
 } as const;
 
+export const lieuTypes = {};
+
 export const servicesDomicile = {
   HAD: 'Hospitalisation à domicile',
   SESSAD: "Service d'éducation spéciale et de soins",
@@ -93,7 +95,7 @@ export const transportTypes = {
   AUTRE: 'Autre type de transport',
 } as const;
 
-export const professionsTypes = {
+export const professionTypes = {
   PROF_SANTE: 'Un professionnel de santé (médecin, infirmier, aide-soignant, kiné, ostéopathe...)',
   PROF_SOIN: 'Un professionnel du soin (coiffeur, esthéticienne, naturopathe, ...)',
   AUTRE_PROF_SERVICE:
