@@ -8,6 +8,12 @@
     "skipLibCheck": true,
     "types": ["node"],
     "baseUrl": ".",
+    "plugins": [
+      {
+        "name": "@0no-co/graphqlsp",
+        "schema": "./src/generated/schema.graphql"
+      }
+    ],
     "paths": {
       "@/*": ["src/*"]
     }
