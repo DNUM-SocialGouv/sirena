@@ -25,7 +25,7 @@ export const getUserById = async (id: User['id']) =>
 export const getUserBySub = async (sub: User['sub']) => await prisma.user.findUnique({ where: { sub } });
 
 export const createUser = async (newUser: CreateUserDto) => {
-  const defaultRole = await prisma.role.findUnique({ where: { roleName: 'PENDING' }, select: { id: true } });
+  const defaultRole = await prisma.roleEnum.findUnique({ where: { roleName: 'PENDING' }, select: { id: true } });
   const roleId = defaultRole?.id;
   return prisma.user.create({
     data: {
