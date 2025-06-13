@@ -50,3 +50,303 @@ model Role {
   description String
   users       User[]
 }
+
+model Directory {
+  id        String   @id @default(uuid())
+  number    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reports Report[]
+
+  statusId String
+  status   ReportStatus @relation(fields: [statusId], references: [id])
+
+  authorityId String
+  authority   Authority @relation(fields: [authorityId], references: [id])
+}
+
+model ReportStatus {
+  id    String @id
+  label String
+
+  directories Directory[]
+  Report      Report[]
+}
+
+model Authority {
+  id    String @id
+  label String
+
+  directories Directory[]
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  sharedId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  directoryId String
+  directory   Directory @relation(fields: [directoryId], references: [id])
+
+  statusId String
+  status   ReportStatus @relation(fields: [statusId], references: [id])
+
+  concernedPeople ConcernedPerson[]
+  declarant       Declarant?
+
+  factsDescription      FactsDescription?
+  incidentLocations     IncidentLocation[]
+  allegedPerpetrators   AllegedPerpetrator[]
+  actionsTaken          ActionsTaken?
+  additionalInformation AdditionalInformation?
+}
+
+model Person {
+  id        String  @id @default(uuid())
+  firstName String?
+  lastName  String?
+  phone     String?
+  email     String?
+  comment   String?
+
+  concernedPerson ConcernedPerson?
+  declarant       Declarant?
+}
+
+model ConcernedPerson {
+  id                  String   @id @default(uuid())
+  isIdentified        Boolean?
+  anonymityLifted     Boolean?
+  hasDisability       Boolean?
+  informedOfProcedure Boolean?
+
+  reportId String @unique
+  report   Report @relation(fields: [reportId], references: [id])
+
+  personId String @unique
+  person   Person @relation(fields: [personId], references: [id])
+
+  addressId String?
+  address   Address? @relation(fields: [addressId], references: [id])
+
+  ageGroupId String?
+  ageGroup   AgeGroup? @relation(fields: [ageGroupId], references: [id])
+
+  civilityId String?
+  civility   Civility? @relation(fields: [civilityId], references: [id])
+}
+
+model AgeGroup {
+  id    String @id
+  label String
+
+  concernedPeople ConcernedPerson[]
+}
+
+model Declarant {
+  id              String   @id @default(uuid())
+  isIdentified    Boolean?
+  anonymityLifted Boolean?
+  isReporter      Boolean?
+  comment         String?
+
+  reportId String @unique
+  report   Report @relation(fields: [reportId], references: [id])
+
+  personId String @unique
+  person   Person @relation(fields: [personId], references: [id])
+
+  addressId String  @unique
+  address   Address @relation(fields: [addressId], references: [id])
+
+  relationshipToConcernedId String?
+  relationshipToConcerned   RelationshipToConcernedType? @relation(fields: [relationshipToConcernedId], references: [id])
+
+  civilityId String?
+  civility   Civility? @relation(fields: [civilityId], references: [id])
+}
+
+model Civility {
+  id    String @id @default(uuid())
+  label String @unique
+
+  concernedPeople ConcernedPerson[]
+  declarants      Declarant[]
+}
+
+model RelationshipToConcernedType {
+  id         String      @id @default(uuid())
+  label      String      @unique
+  declarants Declarant[]
+}
+
+model Address {
+  id         String  @id @default(uuid())
+  street     String?
+  postalCode String?
+  city       String?
+
+  concernedPeople ConcernedPerson[]
+  Declarant       Declarant[]
+}
+
+model FactsDescription {
+  reportId       String    @id
+  isMistreatment Boolean?
+  startDate      DateTime?
+  endDate        DateTime?
+  details        String?
+
+  report            Report                             @relation(fields: [reportId], references: [id])
+  motives           FactsDescriptionMotive[]
+  consequences      FactsDescriptionConsequence[]
+  mistreatmentTypes FactsDescriptionMistreatmentType[]
+}
+
+model Motive {
+  id    String @id @default(uuid())
+  label String @unique
+
+  facts FactsDescriptionMotive[]
+}
+
+model Consequence {
+  id    String @id @default(uuid())
+  label String @unique
+
+  facts FactsDescriptionConsequence[]
+}
+
+model MistreatmentType {
+  id    String @id @default(uuid())
+  label String @unique
+
+  facts FactsDescriptionMistreatmentType[]
+}
+
+model FactsDescriptionMotive {
+  factsId  String
+  motiveId String
+
+  facts  FactsDescription @relation(fields: [factsId], references: [reportId])
+  motive Motive           @relation(fields: [motiveId], references: [id])
+
+  @@id([factsId, motiveId])
+}
+
+model FactsDescriptionConsequence {
+  factsId       String
+  consequenceId String
+
+  facts       FactsDescription @relation(fields: [factsId], references: [reportId])
+  consequence Consequence      @relation(fields: [consequenceId], references: [id])
+
+  @@id([factsId, consequenceId])
+}
+
+model FactsDescriptionMistreatmentType {
+  factsId            String
+  mistreatmentTypeId String
+
+  facts            FactsDescription @relation(fields: [factsId], references: [reportId])
+  mistreatmentType MistreatmentType @relation(fields: [mistreatmentTypeId], references: [id])
+
+  @@id([factsId, mistreatmentTypeId])
+}
+
+model IncidentLocation {
+  id     String  @id @default(uuid())
+  name   String?
+  type   String?
+  place  String?
+  finess String?
+
+  placeNatureId     String?
+  homeCareServiceId String?
+  transportTypeId   String?
+
+  placeNature     PlaceNature?     @relation(fields: [placeNatureId], references: [id])
+  homeCareService HomeCareService? @relation(fields: [homeCareServiceId], references: [id])
+  transportType   TransportType?   @relation(fields: [transportTypeId], references: [id])
+
+  reportId String
+  report   Report @relation(fields: [reportId], references: [id])
+}
+
+model PlaceNature {
+  id    String @id
+  label String
+
+  incidentLocations IncidentLocation[]
+}
+
+model HomeCareService {
+  id    String @id
+  label String
+
+  incidentLocations IncidentLocation[]
+}
+
+model TransportType {
+  id    String @id
+  label String
+
+  incidentLocations IncidentLocation[]
+}
+
+model AllegedPerpetrator {
+  id           String   @id @default(uuid())
+  isIdentified Boolean?
+  type         String?
+  identity     String?
+  rps          String?
+  comment      String?
+  reportId     String
+
+  professionTypeId String?
+  professionType   ProfessionType? @relation(fields: [professionTypeId], references: [id])
+
+  report Report @relation(fields: [reportId], references: [id])
+}
+
+model ProfessionType {
+  id    String @id @default(uuid())
+  label String @unique
+
+  perpetrators AllegedPerpetrator[]
+}
+
+model ActionsTaken {
+  reportId             String    @id
+  hasTakenAction       Boolean?
+  contactedInstitution Boolean?
+  contactDate          DateTime?
+  institutionResponded Boolean?
+  contactedOtherOrg    Boolean?
+  otherOrganization    String?
+  filedComplaint       Boolean?
+  complaintDate        DateTime?
+  complaintLocation    String?
+  comment              String?
+
+  report Report @relation(fields: [reportId], references: [id])
+}
+
+model AdditionalInformation {
+  reportId      String    @id
+  typeId        String?
+  receptionDate DateTime?
+  comments      String?
+
+  report Report                     @relation(fields: [reportId], references: [id])
+  type   AdditionalInformationType? @relation(fields: [typeId], references: [id])
+}
+
+model AdditionalInformationType {
+  id    String @id
+  label String
+
+  entries AdditionalInformation[]
+}

@@ -6,6 +6,7 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "test": "vitest",
+    "gql": "tsx src/gql.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:resolve": "prisma migrate resolve --rolled-back",
@@ -19,7 +20,8 @@
     "db:studio": "prisma studio",
     "generate:openAPI": "tsx src/swagger/gen-openAPI-swagger.ts",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/backend/' | sed 's|^packages/backend/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
-    "lint": "biome check"
+    "lint": "biome check",
+    "codegen": "graphql-codegen --config codegen.ts"
   },
   "exports": {
     ".": {
@@ -41,8 +43,10 @@
     "@hono/zod-validator": "^0.4.3",
     "@prisma/client": "6.6.0",
     "@scalar/hono-api-reference": "^0.8.0",
-    "@sirena/common": "workspace:*",
     "@sirena/backend-utils": "workspace:*",
+    "@sirena/common": "workspace:*",
+    "graphql": "^16.11.0",
+    "graphql-request": "^7.2.0",
     "hono": "^4.7.5",
     "hono-openapi": "^0.4.6",
     "hono-pino": "^0.8.0",
@@ -55,7 +59,11 @@
     "zod-prisma-types": "^3.2.4"
   },
   "devDependencies": {
+    "@0no-co/graphqlsp": "^1.12.16",
     "@biomejs/biome": "1.9.4",
+    "@graphql-codegen/cli": "5.0.7",
+    "@graphql-codegen/client-preset": "4.8.2",
+    "@graphql-codegen/typescript-graphql-request": "^6.3.0",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^20.11.17",
     "prisma": "^6.8.2",

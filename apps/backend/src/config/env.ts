@@ -22,6 +22,9 @@ const processEnv = {
   FRONTEND_REDIRECT_LOGIN_URI: process.env.FRONTEND_REDIRECT_LOGIN_URI,
   // Internal
   LOG_FORMAT: process.env.LOG_FORMAT,
+  // DematSocial
+  DEMAT_SOCIAL_API_URL: process.env.DEMAT_SOCIAL_API_URL,
+  DEMAT_SOCIAL_API_TOKEN: process.env.DEMAT_SOCIAL_API_TOKEN,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);
