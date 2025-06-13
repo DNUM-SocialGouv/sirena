@@ -5,6 +5,14 @@ import { z } from 'zod';
 const fallback = '/home' as const;
 
 export const Route = createFileRoute('/login')({
+  head: () => ({
+    meta: [
+      {
+        title: 'Page de connexion - SIRENA',
+      },
+    ],
+  }),
+
   validateSearch: z.object({
     redirect: z.string().optional().catch(''),
     state: z.string().optional().catch(''),
@@ -23,7 +31,8 @@ function RouteComponent() {
   return (
     <div className="p-2">
       <NotLoggedLayout>
-        <h2>Welcome to login</h2>
+        <h2>Connexion à SIRENA</h2>
+        <h3>Se connecter via ProConnect</h3>
         <div id="fr-proconnect-button-«r2»" className="fr-connect-group">
           <form action="/api/auth/login" method="post">
             <button className="fr-btn fr-connect pro-connect" type="submit">

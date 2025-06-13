@@ -6,6 +6,13 @@ import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/home')({
   beforeLoad: requireAuth,
+  head: () => ({
+    meta: [
+      {
+        title: 'Accueil - SIRENA',
+      },
+    ],
+  }),
   component: RouteComponent,
 });
 

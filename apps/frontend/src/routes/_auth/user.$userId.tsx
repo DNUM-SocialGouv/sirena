@@ -10,6 +10,13 @@ import { useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_auth/user/$userId')({
   beforeLoad: requireAuthAndAdmin,
+  head: () => ({
+    meta: [
+      {
+        title: 'Gérer un utilisateur - SIRENA',
+      },
+    ],
+  }),
   component: RouteComponent,
 });
 

@@ -4,6 +4,13 @@ import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/__users/users/all')({
   beforeLoad: requireAuthAndAdmin,
+  head: () => ({
+    meta: [
+      {
+        title: 'Gérer tous les utilisateurs - SIRENA',
+      },
+    ],
+  }),
   component: RouteComponent,
 });
 
