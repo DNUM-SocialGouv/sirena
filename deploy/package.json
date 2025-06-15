@@ -1,0 +1,25 @@
+{
+  "name": "foo",
+  "version": "0.0.0",
+  "main": "main.js",
+  "types": "main.ts",
+  "license": "Apache-2.0",
+  "private": true,
+  "scripts": {
+    "import": "cdk8s import",
+    "synth": "cdk8s synth",
+    "build": "npm run import && npm run synth",
+    "lint": "biome check"
+  },
+  "dependencies": {
+    "cdk8s": "^2.69.54",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/node": "^14",
+    "cdk8s-cli": "^2.200.20",
+    "ts-node": "^10",
+    "typescript": "^4.9.5"
+  }
+}
