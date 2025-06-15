@@ -5,10 +5,10 @@ on:
     workflows: ["Build docker images"]
     types:
       - completed
-    branches: ["chore/deploy"]
+    # branches: ["chore/deploy"]
 
 env:
-  GITOPS_REPO: fabrique-atlas/org-sdpsn-ws-ptt
+  GITOPS_REPO: fabrique-atlas/org-sdpsn-ws-sirena
 
 jobs:
   deploy:
