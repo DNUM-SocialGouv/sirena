@@ -9,7 +9,11 @@ export const NotLoggedLayout: FC<NotLoggedLayoutProps> = ({ children }) => {
   return (
     <div>
       <HeaderMenu homeHref="/" />
-      <main className={'fr-container not-logged-main'}>{children}</main>
+      {/* biome-ignore lint/a11y/noRedundantRoles: false positive
+       biome-ignore lint/a11y/useSemanticElements: false positive */}
+      <main className={'fr-container not-logged-main fr-mt-15w'} role="main">
+        {children}
+      </main>
     </div>
   );
 };
