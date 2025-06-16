@@ -35,6 +35,7 @@ describe('User Endpoint', () => {
       createdAt: new Date(0),
       roleId: 'role1',
       active: true,
+      pcData: {},
     },
     {
       id: 'id2',
@@ -46,6 +47,7 @@ describe('User Endpoint', () => {
       createdAt: new Date(0),
       roleId: 'role2',
       active: false,
+      pcData: {},
     },
   ];
 

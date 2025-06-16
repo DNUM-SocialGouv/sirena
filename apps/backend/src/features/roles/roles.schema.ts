@@ -1,3 +1,3 @@
-import { RoleSchema, z } from '@/libs/zod';
+import { RoleEnumSchema } from '@/libs/zod';
 
-export const GetRolesResponseSchema = z.object({ data: RoleSchema });
+export const GetRolesResponseSchema = RoleEnumSchema;
