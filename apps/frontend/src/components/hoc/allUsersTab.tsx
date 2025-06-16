@@ -51,13 +51,5 @@ export function AllUsersTab() {
     ),
   };
 
-  return (
-    <DataTable
-      title="Liste des utilisateurs en attente de validation"
-      rowId="id"
-      data={usersData.data}
-      columns={columns}
-      cells={cells}
-    />
-  );
+  return <DataTable title="Liste des utilisateurs" rowId="id" data={usersData.data} columns={columns} cells={cells} />;
 }
