@@ -1,0 +1,404 @@
+-- CreateTable
+CREATE TABLE "Requete" (
+    "id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Requete_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "RequeteEntite" (
+    "id" TEXT NOT NULL,
+    "number" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "requeteId" TEXT,
+
+    CONSTRAINT "RequeteEntite_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "RequeteStatutEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "RequeteStatutEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "RequeteState" (
+    "id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "requeteEntiteId" TEXT NOT NULL,
+    "statutId" TEXT NOT NULL,
+
+    CONSTRAINT "RequeteState_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Identite" (
+    "id" TEXT NOT NULL,
+    "prenom" TEXT,
+    "nom" TEXT,
+    "telephone" TEXT,
+    "email" TEXT,
+    "commentaire" TEXT,
+
+    CONSTRAINT "Identite_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Victime" (
+    "id" TEXT NOT NULL,
+    "estNonIdentifiee" BOOLEAN,
+    "estAnonyme" BOOLEAN,
+    "estHandicape" BOOLEAN,
+    "estInforme" BOOLEAN,
+    "requeteEntiteStateId" TEXT NOT NULL,
+    "identiteId" TEXT NOT NULL,
+    "adresseId" TEXT,
+    "ageId" TEXT,
+    "civiliteId" TEXT,
+
+    CONSTRAINT "Victime_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AgeEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "AgeEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Declarant" (
+    "id" TEXT NOT NULL,
+    "estIdentife" BOOLEAN,
+    "veutGarderAnonnymat" BOOLEAN,
+    "requeteEntiteStateId" TEXT NOT NULL,
+    "identiteId" TEXT NOT NULL,
+    "adresseId" TEXT NOT NULL,
+    "lienVictimeId" TEXT,
+    "civiliteId" TEXT,
+
+    CONSTRAINT "Declarant_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CiviliteEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "CiviliteEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "LienVictimeEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "LienVictimeEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Adresse" (
+    "id" TEXT NOT NULL,
+    "rue" TEXT,
+    "codePostal" TEXT,
+    "ville" TEXT,
+
+    CONSTRAINT "Adresse_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DescriptionFaits" (
+    "estMaltraitance" BOOLEAN,
+    "DateDebut" TIMESTAMP(3),
+    "dateFin" TIMESTAMP(3),
+    "commentaire" TEXT,
+    "requeteEntiteStateId" TEXT NOT NULL,
+
+    CONSTRAINT "DescriptionFaits_pkey" PRIMARY KEY ("requeteEntiteStateId")
+);
+
+-- CreateTable
+CREATE TABLE "MotifEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "MotifEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ConsequenceEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "ConsequenceEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MaltraitanceTypeEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "MaltraitanceTypeEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DescriptionFaitsMotif" (
+    "faitsId" TEXT NOT NULL,
+    "motifId" TEXT NOT NULL,
+
+    CONSTRAINT "DescriptionFaitsMotif_pkey" PRIMARY KEY ("faitsId","motifId")
+);
+
+-- CreateTable
+CREATE TABLE "DescriptionFaitsConsequence" (
+    "faitsId" TEXT NOT NULL,
+    "consequenceId" TEXT NOT NULL,
+
+    CONSTRAINT "DescriptionFaitsConsequence_pkey" PRIMARY KEY ("faitsId","consequenceId")
+);
+
+-- CreateTable
+CREATE TABLE "DescriptionFaitsMaltraitanceType" (
+    "faitsId" TEXT NOT NULL,
+    "MaltraitanceTypeId" TEXT NOT NULL,
+
+    CONSTRAINT "DescriptionFaitsMaltraitanceType_pkey" PRIMARY KEY ("faitsId","MaltraitanceTypeId")
+);
+
+-- CreateTable
+CREATE TABLE "LieuIncident" (
+    "id" TEXT NOT NULL,
+    "nom" TEXT,
+    "lieu" TEXT,
+    "finess" TEXT,
+    "commentaire" TEXT,
+    "lieuTypeId" TEXT,
+    "natureLieuId" TEXT,
+    "serviceDomicileId" TEXT,
+    "transportTypeId" TEXT,
+    "requeteEntiteStateId" TEXT NOT NULL,
+
+    CONSTRAINT "LieuIncident_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "NatureLieuEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "NatureLieuEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "LieuTypeEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "LieuTypeEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ServiceDomicileEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "ServiceDomicileEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TransportTypeEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "TransportTypeEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MisEnCause" (
+    "id" TEXT NOT NULL,
+    "estIdentifie" BOOLEAN,
+    "type" TEXT,
+    "identite" TEXT,
+    "rpps" TEXT,
+    "commentaire" TEXT,
+    "professionTypeId" TEXT,
+    "requeteEntiteStateId" TEXT NOT NULL,
+
+    CONSTRAINT "MisEnCause_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProfessionTypeEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "ProfessionTypeEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DemarchesEngagees" (
+    "requeteEntiteStateId" TEXT NOT NULL,
+    "estDemarcheEngage" BOOLEAN,
+    "aContacte" BOOLEAN,
+    "dateContact" TIMESTAMP(3),
+    "aRepondu" BOOLEAN,
+    "aContacteAutre" BOOLEAN,
+    "autreOrganisation" TEXT,
+    "aDeposePlainte" BOOLEAN,
+    "plainteDeposeDate" TIMESTAMP(3),
+    "plainteDeposeLocation" TEXT,
+    "comment" TEXT,
+
+    CONSTRAINT "DemarchesEngagees_pkey" PRIMARY KEY ("requeteEntiteStateId")
+);
+
+-- CreateTable
+CREATE TABLE "InfoComplementaire" (
+    "requeteEntiteStateId" TEXT NOT NULL,
+    "receptionDate" TIMESTAMP(3),
+    "comments" TEXT,
+    "receptionTypeId" TEXT,
+
+    CONSTRAINT "InfoComplementaire_pkey" PRIMARY KEY ("requeteEntiteStateId")
+);
+
+-- CreateTable
+CREATE TABLE "ReceptionTypeEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "ReceptionTypeEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Victime_requeteEntiteStateId_key" ON "Victime"("requeteEntiteStateId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Victime_identiteId_key" ON "Victime"("identiteId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Declarant_requeteEntiteStateId_key" ON "Declarant"("requeteEntiteStateId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Declarant_identiteId_key" ON "Declarant"("identiteId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Declarant_adresseId_key" ON "Declarant"("adresseId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CiviliteEnum_label_key" ON "CiviliteEnum"("label");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "LienVictimeEnum_label_key" ON "LienVictimeEnum"("label");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MotifEnum_label_key" ON "MotifEnum"("label");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ConsequenceEnum_label_key" ON "ConsequenceEnum"("label");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MaltraitanceTypeEnum_label_key" ON "MaltraitanceTypeEnum"("label");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ProfessionTypeEnum_label_key" ON "ProfessionTypeEnum"("label");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ReceptionTypeEnum_label_key" ON "ReceptionTypeEnum"("label");
+
+-- AddForeignKey
+ALTER TABLE "RequeteEntite" ADD CONSTRAINT "RequeteEntite_requeteId_fkey" FOREIGN KEY ("requeteId") REFERENCES "Requete"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RequeteState" ADD CONSTRAINT "RequeteState_requeteEntiteId_fkey" FOREIGN KEY ("requeteEntiteId") REFERENCES "RequeteEntite"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RequeteState" ADD CONSTRAINT "RequeteState_statutId_fkey" FOREIGN KEY ("statutId") REFERENCES "RequeteStatutEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Victime" ADD CONSTRAINT "Victime_requeteEntiteStateId_fkey" FOREIGN KEY ("requeteEntiteStateId") REFERENCES "RequeteState"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Victime" ADD CONSTRAINT "Victime_identiteId_fkey" FOREIGN KEY ("identiteId") REFERENCES "Identite"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Victime" ADD CONSTRAINT "Victime_adresseId_fkey" FOREIGN KEY ("adresseId") REFERENCES "Adresse"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Victime" ADD CONSTRAINT "Victime_ageId_fkey" FOREIGN KEY ("ageId") REFERENCES "AgeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Victime" ADD CONSTRAINT "Victime_civiliteId_fkey" FOREIGN KEY ("civiliteId") REFERENCES "CiviliteEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Declarant" ADD CONSTRAINT "Declarant_requeteEntiteStateId_fkey" FOREIGN KEY ("requeteEntiteStateId") REFERENCES "RequeteState"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Declarant" ADD CONSTRAINT "Declarant_identiteId_fkey" FOREIGN KEY ("identiteId") REFERENCES "Identite"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Declarant" ADD CONSTRAINT "Declarant_adresseId_fkey" FOREIGN KEY ("adresseId") REFERENCES "Adresse"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Declarant" ADD CONSTRAINT "Declarant_lienVictimeId_fkey" FOREIGN KEY ("lienVictimeId") REFERENCES "LienVictimeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Declarant" ADD CONSTRAINT "Declarant_civiliteId_fkey" FOREIGN KEY ("civiliteId") REFERENCES "CiviliteEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DescriptionFaits" ADD CONSTRAINT "DescriptionFaits_requeteEntiteStateId_fkey" FOREIGN KEY ("requeteEntiteStateId") REFERENCES "RequeteState"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DescriptionFaitsMotif" ADD CONSTRAINT "DescriptionFaitsMotif_faitsId_fkey" FOREIGN KEY ("faitsId") REFERENCES "DescriptionFaits"("requeteEntiteStateId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DescriptionFaitsMotif" ADD CONSTRAINT "DescriptionFaitsMotif_motifId_fkey" FOREIGN KEY ("motifId") REFERENCES "MotifEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DescriptionFaitsConsequence" ADD CONSTRAINT "DescriptionFaitsConsequence_faitsId_fkey" FOREIGN KEY ("faitsId") REFERENCES "DescriptionFaits"("requeteEntiteStateId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DescriptionFaitsConsequence" ADD CONSTRAINT "DescriptionFaitsConsequence_consequenceId_fkey" FOREIGN KEY ("consequenceId") REFERENCES "ConsequenceEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DescriptionFaitsMaltraitanceType" ADD CONSTRAINT "DescriptionFaitsMaltraitanceType_faitsId_fkey" FOREIGN KEY ("faitsId") REFERENCES "DescriptionFaits"("requeteEntiteStateId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DescriptionFaitsMaltraitanceType" ADD CONSTRAINT "DescriptionFaitsMaltraitanceType_MaltraitanceTypeId_fkey" FOREIGN KEY ("MaltraitanceTypeId") REFERENCES "MaltraitanceTypeEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LieuIncident" ADD CONSTRAINT "LieuIncident_lieuTypeId_fkey" FOREIGN KEY ("lieuTypeId") REFERENCES "LieuTypeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LieuIncident" ADD CONSTRAINT "LieuIncident_natureLieuId_fkey" FOREIGN KEY ("natureLieuId") REFERENCES "NatureLieuEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LieuIncident" ADD CONSTRAINT "LieuIncident_serviceDomicileId_fkey" FOREIGN KEY ("serviceDomicileId") REFERENCES "ServiceDomicileEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LieuIncident" ADD CONSTRAINT "LieuIncident_transportTypeId_fkey" FOREIGN KEY ("transportTypeId") REFERENCES "TransportTypeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LieuIncident" ADD CONSTRAINT "LieuIncident_requeteEntiteStateId_fkey" FOREIGN KEY ("requeteEntiteStateId") REFERENCES "RequeteState"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MisEnCause" ADD CONSTRAINT "MisEnCause_professionTypeId_fkey" FOREIGN KEY ("professionTypeId") REFERENCES "ProfessionTypeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MisEnCause" ADD CONSTRAINT "MisEnCause_requeteEntiteStateId_fkey" FOREIGN KEY ("requeteEntiteStateId") REFERENCES "RequeteState"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DemarchesEngagees" ADD CONSTRAINT "DemarchesEngagees_requeteEntiteStateId_fkey" FOREIGN KEY ("requeteEntiteStateId") REFERENCES "RequeteState"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "InfoComplementaire" ADD CONSTRAINT "InfoComplementaire_receptionTypeId_fkey" FOREIGN KEY ("receptionTypeId") REFERENCES "ReceptionTypeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "InfoComplementaire" ADD CONSTRAINT "InfoComplementaire_requeteEntiteStateId_fkey" FOREIGN KEY ("requeteEntiteStateId") REFERENCES "RequeteState"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -1,7 +1,7 @@
-import { RoleSchema, UserSchema, z } from '@/libs/zod';
+import { RoleEnumSchema, UserSchema, z } from '@/libs/zod';
 
 export const UserWithRoleSchema = UserSchema.extend({
-  role: RoleSchema.nullable(),
+  role: RoleEnumSchema.nullable(),
 });
 
 export const GetUserResponseSchema = UserWithRoleSchema;

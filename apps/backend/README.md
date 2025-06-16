@@ -124,5 +124,8 @@ pnpm db:execute prisma/migrations/<timestamp>_<name>/down.sql
 2 Mark the migration as rolled back
 
 ```bash
+# in pgsql
+DELETE FROM "_prisma_migrations" WHERE migration_name = <timestamp>_<name>;
+# or if migration failed
 pnpm db:migrate:resolve <timestamp>_<name>
 ```
