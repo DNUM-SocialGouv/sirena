@@ -52,5 +52,5 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cd gitops-repo
           git add .
-          git commit -m 'Déploiement manifestes home environnement "developpement"'
+          git commit -m '[test] new version ${{ env.SHORT_SHA }}'
           git push 
