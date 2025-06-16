@@ -30,7 +30,7 @@ model User {
   active    Boolean   @default(false)
   pcData    Json?
   roleId    String?
-  role      Role?     @relation(fields: [roleId], references: [id])
+  role      RoleEnum? @relation(fields: [roleId], references: [id])
   Sessions  Session[]
 }
 
@@ -44,7 +44,7 @@ model Session {
   createdAt DateTime @default(now())
 }
 
-model Role {
+model RoleEnum {
   id          String @id @default(cuid())
   roleName    String @unique
   description String
