@@ -1,0 +1,6 @@
+language: typescript
+app: npx ts-node main.ts
+imports:
+  - k8s
+  - ./crd/cnpg-cluster-crd.yaml
+  - ./crd/externalsecret-crd.yaml
