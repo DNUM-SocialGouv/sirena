@@ -5,7 +5,7 @@ export const UserWithRoleSchema = UserSchema.extend({
 });
 
 export const GetUserResponseSchema = UserWithRoleSchema;
-export const GetUsersResponseSchema = z.array(UserSchema);
+export const GetUsersResponseSchema = z.array(UserWithRoleSchema);
 
 export const UserParamsIdSchema = z.object({
   id: z.string(),
