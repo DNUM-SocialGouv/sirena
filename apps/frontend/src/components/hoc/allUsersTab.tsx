@@ -42,14 +42,13 @@ export function AllUsersTab() {
   const columns: Column<User>[] = [
     { key: 'lastName', label: 'Nom' },
     { key: 'firstName', label: 'Prénom' },
-    { key: 'custom:role', label: 'Rôle' },
+    { key: 'role.description', label: 'Rôle' },
     { key: 'custom:status', label: 'Statut' },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 
   const cells: Cells<User> = {
     'custom:status': (row: User) => (row.active ? 'Actif' : 'Inactif'),
-    'custom:role': (row: User) => row.role?.description,
     'custom:editionLabel': (row: User) => (
       <Link to="/user/$userId" params={{ userId: row.id }}>
         Gérer l'utilisateur

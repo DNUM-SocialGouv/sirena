@@ -36,6 +36,7 @@ describe('User Endpoint', () => {
       roleId: 'role1',
       active: true,
       pcData: {},
+      role: null,
     },
     {
       id: 'id2',
@@ -48,6 +49,7 @@ describe('User Endpoint', () => {
       roleId: 'role2',
       active: false,
       pcData: {},
+      role: null,
     },
   ];
 
@@ -71,7 +73,7 @@ describe('User Endpoint', () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json).toEqual({ data: convertDatesToStrings(filteredData) });
-    expect(getUsers).toHaveBeenCalledWith({ roleId: 'role1', active: undefined });
+    expect(getUsers).toHaveBeenCalledWith({ roleId: ['role1'], active: undefined });
   });
 
   it('GET / Should filter users by active status (true)', async () => {
@@ -112,7 +114,7 @@ describe('User Endpoint', () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json).toEqual({ data: convertDatesToStrings(filteredData) });
-    expect(getUsers).toHaveBeenCalledWith({ roleId: 'role1', active: true });
+    expect(getUsers).toHaveBeenCalledWith({ roleId: ['role1'], active: true });
   });
 
   it('GET / Should return empty array when no users match filters', async () => {
@@ -127,6 +129,6 @@ describe('User Endpoint', () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json).toEqual({ data: [] });
-    expect(getUsers).toHaveBeenCalledWith({ roleId: 'nonexistent-role', active: undefined });
+    expect(getUsers).toHaveBeenCalledWith({ roleId: ['nonexistent-role'], active: undefined });
   });
 });
