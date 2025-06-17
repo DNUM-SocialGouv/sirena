@@ -26,9 +26,6 @@ ALTER TABLE "MisEnCause" DROP COLUMN "type",
 ADD COLUMN     "misEnCauseTypeEnumId" TEXT,
 ADD COLUMN     "professionDomicileTypeEnumId" TEXT;
 
--- AlterTable
-ALTER TABLE "RequeteState" ADD COLUMN     "commentaire" TEXT;
-
 -- DropTable
 DROP TABLE "NatureLieuEnum";
 
@@ -62,4 +59,4 @@ ALTER TABLE "MisEnCause" ADD CONSTRAINT "MisEnCause_professionDomicileTypeEnumId
 
 
 -- Custom
-TRUNCATE TABLE "CiviliteEnum";
+TRUNCATE TABLE "CiviliteEnum" CASCADE;
