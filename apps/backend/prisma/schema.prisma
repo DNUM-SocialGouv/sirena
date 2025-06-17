@@ -78,9 +78,10 @@ model RequeteStatutEnum {
 }
 
 model RequeteState {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  commentaire String?
 
   requeteEntiteId String
   requeteEntite   RequeteEntite @relation(fields: [requeteEntiteId], references: [id])
@@ -250,17 +251,16 @@ model DescriptionFaitsMaltraitanceType {
 }
 
 model LieuIncident {
-  id          String  @id @default(uuid())
-  nom         String?
-  lieu        String?
-  finess      String?
-  commentaire String?
+  id               String  @id @default(uuid())
+  nom              String?
+  adresse          String?
+  codePostal       String?
+  societeTransport String?
+  finess           String?
+  commentaire      String?
 
   lieuTypeId String?
   lieuType   LieuTypeEnum? @relation(fields: [lieuTypeId], references: [id])
-
-  natureLieuId String?
-  natureLieu   NatureLieuEnum? @relation(fields: [natureLieuId], references: [id])
 
   serviceDomicileId String?
   serviceDomicile   ServiceDomicileEnum? @relation(fields: [serviceDomicileId], references: [id])
@@ -270,13 +270,6 @@ model LieuIncident {
 
   requeteEntiteStateId String
   requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
-}
-
-model NatureLieuEnum {
-  id    String @id
-  label String
-
-  lieuxIncident LieuIncident[]
 }
 
 model LieuTypeEnum {
@@ -303,7 +296,6 @@ model TransportTypeEnum {
 model MisEnCause {
   id           String   @id @default(uuid())
   estIdentifie Boolean?
-  type         String?
   identite     String?
   rpps         String?
   commentaire  String?
@@ -313,6 +305,19 @@ model MisEnCause {
 
   requeteEntiteStateId String
   requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
+
+  misEnCauseTypeEnumId String?
+  misEnCauseTypeEnum   MisEnCauseTypeEnum? @relation(fields: [misEnCauseTypeEnumId], references: [id])
+
+  professionDomicileTypeEnumId String?
+  professionDomicileTypeEnum   ProfessionDomicileTypeEnum? @relation(fields: [professionDomicileTypeEnumId], references: [id])
+}
+
+model MisEnCauseTypeEnum {
+  id    String @id @default(uuid())
+  label String @unique
+
+  misEnCause MisEnCause[]
 }
 
 model ProfessionTypeEnum {
@@ -322,9 +327,15 @@ model ProfessionTypeEnum {
   misEnCause MisEnCause[]
 }
 
+model ProfessionDomicileTypeEnum {
+  id    String @id @default(uuid())
+  label String @unique
+
+  misEnCause MisEnCause[]
+}
+
 model DemarchesEngagees {
   requeteEntiteStateId  String    @id
-  estDemarcheEngagee    Boolean?
   aContacte             Boolean?
   dateContact           DateTime?
   aRepondu              Boolean?

@@ -8,9 +8,10 @@ export const ages = {
 } as const;
 
 export const civilites = {
-  M: 'M.',
-  Mme: 'Mme',
-  Mx: 'Mx',
+  M: 'Monsieur',
+  Mme: 'Madame',
+  Mx: 'autre',
+  nsp: 'Je ne souhaite pas répondre',
 } as const;
 
 export const liensVictime = {
@@ -59,7 +60,7 @@ export const maltraitanceTypes = {
   AUTRE: 'Autre type de maltraitance',
 } as const;
 
-export const natureLieux = {
+export const lieuTypes = {
   DOMICILE: "Au domicile (domicile de la victime, domicile d'un membre de la famille, domicile d'un aidant...)",
   ETABLISSEMENT_SANTE: 'Dans un établissement de santé (hôpital, clinique, laboratoire, pharmacie ...)',
   ETABLISSEMENT_HEBERGEMENT: "Dans un établissement d'hébergement (EHPAD, foyer d'accueil et d'hébergement ...)",
@@ -70,9 +71,7 @@ export const natureLieux = {
   AUTRE: "Autre (institut d'esthétique, salon de tatouage, prison)",
 } as const;
 
-export const lieuTypes = {};
-
-export const servicesDomicile = {
+export const professionDomicileTypes = {
   HAD: 'Hospitalisation à domicile',
   SESSAD: "Service d'éducation spéciale et de soins",
   AIDE_MENAGERE: "Service d'aide ménagère",
@@ -103,6 +102,14 @@ export const professionTypes = {
   TRAVAILLEUR_SOCIAL: 'Travailleur social (éducateur, assistant social...)',
   MJPM: 'Mandataire Judiciaire à la Protection des Majeurs (curatelle, tutelle)',
   AUTRE: 'Autre Professionnel',
+} as const;
+
+export const misEnCauseTypes = {
+  MEMBRE_FAMILLE: 'Membre de la famille',
+  PROCHE: 'Proche (ami, voisin...)',
+  PROFESSIONNEL: 'Professionnel',
+  PROFESSIONNEL_DOMICILE: "Professionnel dans le cadre d'un service ou d'une intervention à domicile",
+  AUTRE: 'Autre',
 } as const;
 
 export const receptionTypes = {

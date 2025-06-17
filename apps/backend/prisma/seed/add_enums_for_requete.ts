@@ -6,10 +6,9 @@ import {
   lieuTypes,
   maltraitanceTypes,
   motifs,
-  natureLieux,
   professionTypes,
   receptionTypes,
-  servicesDomicile,
+  professionDomicileTypes,
   transportTypes,
 } from '@sirena/common/constants';
 
@@ -72,7 +71,7 @@ async function seedLieuTypes(prisma: PrismaClient) {
       added++;
     }
   }
-  return { table: 'consequenceEnum', added };
+  return { table: 'lieuTypesEnum', added };
 }
 
 async function seedMaltraitanceTypeEnum(prisma: PrismaClient) {
@@ -99,18 +98,6 @@ async function seedMotifEnum(prisma: PrismaClient) {
   return { table: 'motifEnum', added };
 }
 
-async function seedNatureLieuEnum(prisma: PrismaClient) {
-  let added = 0;
-  for (const [id, label] of Object.entries(natureLieux)) {
-    const exists = await prisma.natureLieuEnum.findUnique({ where: { id } });
-    if (!exists) {
-      await prisma.natureLieuEnum.create({ data: { id, label } });
-      added++;
-    }
-  }
-  return { table: 'natureLieuEnum', added };
-}
-
 async function seedProfessionTypeEnum(prisma: PrismaClient) {
   let added = 0;
   for (const [id, label] of Object.entries(professionTypes)) {
@@ -135,16 +122,16 @@ async function seedReceptionTypeEnum(prisma: PrismaClient) {
   return { table: 'receptionTypeEnum', added };
 }
 
-async function seedServiceDomicileEnum(prisma: PrismaClient) {
+async function seedProfessionDomicileTypesEnum(prisma: PrismaClient) {
   let added = 0;
-  for (const [id, label] of Object.entries(servicesDomicile)) {
-    const exists = await prisma.serviceDomicileEnum.findUnique({ where: { id } });
+  for (const [id, label] of Object.entries(professionDomicileTypes)) {
+    const exists = await prisma.professionDomicileTypeEnum.findUnique({ where: { id } });
     if (!exists) {
-      await prisma.serviceDomicileEnum.create({ data: { id, label } });
+      await prisma.professionDomicileTypeEnum.create({ data: { id, label } });
       added++;
     }
   }
-  return { table: 'serviceDomicileEnum', added };
+  return { table: 'professionDomicileTypes', added };
 }
 
 async function seedTransportTypeEnum(prisma: PrismaClient) {
@@ -170,10 +157,9 @@ export async function seed_enums_for_requete(prisma: PrismaClient) {
     seedLieuTypes(prisma),
     seedMaltraitanceTypeEnum(prisma),
     seedMotifEnum(prisma),
-    seedNatureLieuEnum(prisma),
     seedProfessionTypeEnum(prisma),
     seedReceptionTypeEnum(prisma),
-    seedServiceDomicileEnum(prisma),
+    seedProfessionDomicileTypesEnum(prisma),
     seedTransportTypeEnum(prisma),
   ]);
 
