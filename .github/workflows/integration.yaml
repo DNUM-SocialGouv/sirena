@@ -1,4 +1,4 @@
-name: Build docker images
+name: Integration - build and deploy
 
 on:
   push:
@@ -6,9 +6,10 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  GITOPS_REPO: fabrique-atlas/org-sdpsn-ws-sirena
   
 jobs:
-  build:
+  build-docker:
     name: Build docker images
     runs-on: ubuntu-latest
     permissions:
@@ -62,3 +63,47 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
+            
+  deploy:
+    name: Generate kubernetes manifests and deploy
+    needs: build-docker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          cd deploy
+          npm ci
+      
+      - name: Check format and lint
+        run: |
+          cd deploy
+          npm run lint
+
+      - name: Render manifests
+        run: |
+          cd deploy
+          npm run build
+
+      - name: Checkout GitOps repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITOPS_REPO }}
+          path: gitops-repo
+          ssh-key: ${{ secrets.GITOPS_REPO_KEY }}
+
+      - run: |
+          rm -f gitops-repo/deployment-targets/test
+          cp -r deploy/dist gitops-repo/deployment-targets/test
+
+          git config --global user.name "github-actions[bot]"
+          # mail standard bot github Actions  
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cd gitops-repo
+          git add .
+          git commit -m '[test] new version ${{ env.SHORT_SHA }}'
+          git push 
