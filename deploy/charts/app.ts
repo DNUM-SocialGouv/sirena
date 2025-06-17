@@ -97,7 +97,7 @@ function createDatabaseEnvVars(): k8s.EnvVar[] {
 
 function createContainer(props: AppProps): k8s.Container {
   const isBackend = props.name === "backend"
-  
+
   return {
     name: props.name,
     resources: {
@@ -112,12 +112,17 @@ function createContainer(props: AppProps): k8s.Container {
     },
     image: props.image,
     ports: [{ containerPort: Number(props.targetPort.value) }],
-    env: isBackend ? [...createBackendEnvVars(props.host), ...createDatabaseEnvVars()] : [],
+    env: isBackend
+      ? [...createBackendEnvVars(props.host), ...createDatabaseEnvVars()]
+      : [],
     envFrom: isBackend ? [{ secretRef: { name: "backend" } }] : undefined,
   }
 }
 
-function createIngressAnnotations(isBackend: boolean, namespace: string): Record<string, string> {
+function createIngressAnnotations(
+  isBackend: boolean,
+  namespace: string,
+): Record<string, string> {
   const baseAnnotations = {
     "cert-manager.io/cluster-issuer": "letsencrypt",
     "nginx.ingress.kubernetes.io/proxy-body-size": "60m",
@@ -151,7 +156,8 @@ function createConfigMap(scope: Construct, isBackend: boolean) {
         "X-XSS-Protection": "1; mode=block",
         "Referrer-Policy": "strict-origin-when-cross-origin",
         "X-Robots-Tag": "noindex, nofollow, nosnippet, noarchive",
-        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'",
+        "Content-Security-Policy":
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'",
         "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
       },
     })
@@ -159,7 +165,11 @@ function createConfigMap(scope: Construct, isBackend: boolean) {
   return undefined
 }
 
-function createDeployment(scope: Construct, props: AppProps, labels: Record<string, string>) {
+function createDeployment(
+  scope: Construct,
+  props: AppProps,
+  labels: Record<string, string>,
+) {
   return new k8s.KubeDeployment(scope, "deployment", {
     metadata: {
       name: props.name,
@@ -187,7 +197,11 @@ function createDeployment(scope: Construct, props: AppProps, labels: Record<stri
   })
 }
 
-function createService(scope: Construct, props: AppProps, labels: Record<string, string>) {
+function createService(
+  scope: Construct,
+  props: AppProps,
+  labels: Record<string, string>,
+) {
   return new k8s.KubeService(scope, "service", {
     metadata: {
       name: props.name,
@@ -200,7 +214,13 @@ function createService(scope: Construct, props: AppProps, labels: Record<string,
   })
 }
 
-function createIngress(scope: Construct, props: AppProps, isBackend: boolean, namespace: string, service: k8s.KubeService) {
+function createIngress(
+  scope: Construct,
+  props: AppProps,
+  isBackend: boolean,
+  namespace: string,
+  service: k8s.KubeService,
+) {
   return new k8s.KubeIngress(scope, "ingress", {
     metadata: {
       name: props.name,
@@ -257,4 +277,4 @@ export class App extends Chart {
     const service = createService(this, props, labels)
     createIngress(this, props, isBackend, namespace, service)
   }
-} 
+}

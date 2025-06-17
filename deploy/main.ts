@@ -1,9 +1,7 @@
 import { App as CdkApp, YamlOutputType } from "cdk8s"
-import * as k8s from "./imports/k8s"
 import { App } from "./charts/app"
 import { SharedResources } from "./charts/shared-resources"
-
-
+import * as k8s from "./imports/k8s"
 
 if (!process.env.IMAGE_TAG) {
   console.error("IMAGE_TAG non défini")
@@ -69,7 +67,7 @@ function createApps(
   app: CdkApp,
   envConfig: EnvironmentConfig,
   imageTag: string,
-  namespace: string
+  namespace: string,
 ): void {
   const hostUrl = getHostUrl(envConfig)
 
@@ -103,12 +101,13 @@ const app = new CdkApp({
   yamlOutputType: YamlOutputType.FOLDER_PER_CHART_FILE_PER_RESOURCE,
 })
 
-
 // Deploy applications based on environment
 const envConfig = ENV_CONFIGS[environnement]
 if (!envConfig) {
   console.error(`Environnement non supporté: ${environnement}`)
-  console.error(`Environnements supportés: ${Object.keys(ENV_CONFIGS).join(", ")}`)
+  console.error(
+    `Environnements supportés: ${Object.keys(ENV_CONFIGS).join(", ")}`,
+  )
   process.exit(1)
 }
 
@@ -116,4 +115,3 @@ const namespace = `org-sdpsn-ws-sirena-${environnement}`
 createApps(app, envConfig, imageTag, namespace)
 
 app.synth()
-

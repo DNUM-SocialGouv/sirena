@@ -81,7 +81,8 @@ export class SharedResources extends Chart {
           name: "ghcr-registry",
           template: {
             data: {
-              ".dockerconfigjson": '{"auths":{"{{ .host }}":{"auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}',
+              ".dockerconfigjson":
+                '{"auths":{"{{ .host }}":{"auth":"{{ printf "%s:%s" .username .password | b64enc }}"}}}',
             },
             type: "kubernetes.io/dockerconfigjson",
           },
@@ -89,4 +90,4 @@ export class SharedResources extends Chart {
       },
     })
   }
-} 
+}
