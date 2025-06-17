@@ -2,10 +2,11 @@ name: Lint and Unit Tests
 
 on:
   push:
-    branches: ['**']
+  pull_request:
 
 jobs:
-  build:
+  lint-and-build:
+    name: Lint and Unit Tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4

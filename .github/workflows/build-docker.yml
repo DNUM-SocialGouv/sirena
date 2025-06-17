@@ -1,6 +1,8 @@
 name: Build docker images
 
-on: push
+on:
+  push:
+  pull_request:
 
 env:
   REGISTRY: ghcr.io
