@@ -87,6 +87,8 @@ jobs:
       - name: Render manifests
         run: |
           cd deploy
+          export IMAGE_TAG=${{ env.IMAGE_TAG }}
+          export ENVIRONNEMENT=test
           npm run build
 
       - name: Checkout GitOps repository
