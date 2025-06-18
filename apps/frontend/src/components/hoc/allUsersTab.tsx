@@ -50,7 +50,7 @@ export function AllUsersTab() {
   const cells: Cells<User> = {
     'custom:status': (row: User) => (row.active ? 'Actif' : 'Inactif'),
     'custom:editionLabel': (row: User) => (
-      <Link to="/user/$userId" params={{ userId: row.id }}>
+      <Link to="/user/$userId" className="fr-link" params={{ userId: row.id }}>
         Gérer l'utilisateur
       </Link>
     ),

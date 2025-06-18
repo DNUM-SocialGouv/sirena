@@ -7,7 +7,7 @@ export const Route = createFileRoute('/_auth/__users/users/all')({
   head: () => ({
     meta: [
       {
-        title: 'Gérer tous les utilisateurs - SIRENA',
+        title: 'Gérer les utilisateurs - SIRENA',
       },
     ],
   }),
