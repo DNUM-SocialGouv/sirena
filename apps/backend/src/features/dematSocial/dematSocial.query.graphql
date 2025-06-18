@@ -1,0 +1,114 @@
+fragment RootChampFragment on Champ {
+  ...ChampFragment
+  ... on RepetitionChamp {
+    champs {
+      ...ChampFragment
+    }
+  }
+}
+
+fragment AddressFragment on Address {
+  label
+  type
+  streetAddress
+  streetNumber
+  streetName
+  postalCode
+  cityName
+  cityCode
+  departmentName
+  departmentCode
+  regionName
+  regionCode
+}
+
+fragment ChampFragment on Champ {
+  id
+  label
+  stringValue
+  ... on DateChamp {
+    date
+  }
+  ... on DatetimeChamp {
+    datetime
+  }
+  ... on CheckboxChamp {
+    checked: value
+  }
+  ... on DecimalNumberChamp {
+    decimalNumber: value
+  }
+  ... on IntegerNumberChamp {
+    integerNumber: value
+  }
+  ... on CiviliteChamp {
+    civilite: value
+  }
+  ... on LinkedDropDownListChamp {
+    primaryValue
+    secondaryValue
+  }
+  ... on MultipleDropDownListChamp {
+    values
+  }
+  ... on PieceJustificativeChamp {
+    file {
+      filename
+      url
+    }
+  }
+  ... on AddressChamp {
+    address {
+      ...AddressFragment
+    }
+  }
+}
+
+query getDossiersMetadata($demarcheNumber: Int!) {
+  demarche(number: $demarcheNumber) {
+    dossiers {
+      edges {
+        node {
+          dateCreation
+          id
+          number
+          dateDerniereModification
+          champs {
+            __typename
+            ...RootChampFragment
+          }
+        }
+      }
+    }
+  }
+}
+
+query getDossiers($demarcheNumber: Int!) {
+  demarche(number: $demarcheNumber) {
+    dossiers {
+      edges {
+        node {
+          id
+          number
+          state
+          dateCreation
+          dateDerniereModification
+        }
+      }
+    }
+  }
+}
+
+query getDossier($dossierNumber: Int!) {
+  dossier(number: $dossierNumber) {
+    id
+    number
+    dateCreation
+    state
+    dateDerniereModification
+    champs {
+      __typename
+      ...RootChampFragment
+    }
+  }
+}

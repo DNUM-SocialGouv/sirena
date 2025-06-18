@@ -94,6 +94,14 @@ export const transportTypes = {
   AUTRE: 'Autre type de transport',
 } as const;
 
+export const responsableTypes = {
+  MEMBRE_FAMILLE: 'Membre de la famille',
+  PROCHE: 'Proche (ami, voisin...)',
+  PROFESSIONNEL: 'Professionnel',
+  PROFESSIONNEL_DOMICILE: "Professionnel dans le cadre d'un service ou d'une intervention à domicile",
+  AUTRE: 'Autre',
+} as const;
+
 export const professionTypes = {
   PROF_SANTE: 'Un professionnel de santé (médecin, infirmier, aide-soignant, kiné, ostéopathe...)',
   PROF_SOIN: 'Un professionnel du soin (coiffeur, esthéticienne, naturopathe, ...)',
@@ -110,6 +118,12 @@ export const misEnCauseTypes = {
   PROFESSIONNEL: 'Professionnel',
   PROFESSIONNEL_DOMICILE: "Professionnel dans le cadre d'un service ou d'une intervention à domicile",
   AUTRE: 'Autre',
+} as const;
+
+export const institutionPlainteTypes = {
+  GENDARMERIE: 'Gendarmerie',
+  COMMISSARIAT: 'Commissariat',
+  TRIBUNAL: 'Tribunal',
 } as const;
 
 export const receptionTypes = {

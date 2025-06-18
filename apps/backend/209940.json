@@ -1,0 +1,276 @@
+{
+  "dossier": {
+    "id": "RG9zc2llci0yMDk5NDA=",
+    "number": 209940,
+    "champs": [
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc2OTQ=",
+        "label": "Introduction",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc2OTY=",
+        "label": "Vous êtes sur le point de remplir un formulaire de réclamation suite à une expérience dans le secteur sanitaire, médico-social ou social",
+        "stringValue": ""
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMjc2OTc=",
+        "label": "En cochant cette case, je confirme ne pas être concerné(e) par les cas suivants :",
+        "stringValue": "true",
+        "checked": true
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDQ=",
+        "label": "Identité de la personne victime",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0ODU=",
+        "label": "Êtes vous la personne victime ?",
+        "stringValue": "Oui, je suis la personne victime"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0ODg=",
+        "label": "Votre numéro de téléphone",
+        "stringValue": "01 02 03 04 05"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTA=",
+        "label": "Votre âge",
+        "stringValue": "Entre 60 et 79 ans"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNDk=",
+        "label": "Êtes-vous en situation de handicap ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjY1MzU=",
+        "label": "Souhaitez-vous rester anonyme vis-à-vis du ou des responsable(s) de(s) fait(s) ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMjc2MDU=",
+        "label": "A votre connaissance, d'autres personnes ont-elles également été victimes ?",
+        "stringValue": "true",
+        "checked": true
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc2MDY=",
+        "label": "Précisions sur les autres personnes victimes :",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MjQ=",
+        "label": "Description des faits",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgxODI=",
+        "label": "Qu'est-ce que la maltraitance ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNTU=",
+        "label": "Des actes de maltraitance ont-ils eu lieu ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMjcxNTY=",
+        "label": "Si oui, veuillez sélectionner le(s) type(s) de maltraitance subi(s) :",
+        "stringValue": "Maltraitance physique (châtiments corporels, agressions physiques, intervention médicale sans consentement éclairé, enfermement...), Maltraitance psychologique (humiliations, insulte, intimidation, harcèlement, menaces, dénigrement, isolement...)",
+        "values": [
+          "Maltraitance physique (châtiments corporels, agressions physiques, intervention médicale sans consentement éclairé, enfermement...)",
+          "Maltraitance psychologique (humiliations, insulte, intimidation, harcèlement, menaces, dénigrement, isolement...)"
+        ]
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMTk1MjY=",
+        "label": "Le ou les types de fait(s)",
+        "stringValue": "Problème de qualité des soins médicaux ou paramédicaux (ex: soins et/ou interventions inadaptés, absents ou abusifs...)",
+        "values": [
+          "Problème de qualité des soins médicaux ou paramédicaux (ex: soins et/ou interventions inadaptés, absents ou abusifs...)"
+        ]
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMjc1NzI=",
+        "label": "Quelles sont les conséquences sur vous ou sur la personne victime ?",
+        "stringValue": "Sur la santé physique et/ou psychique (blessures, troubles de la santé ou mentaux...), Sur les droits (violation du droit de la protection et sécurité, accès limité à la justice...), Sur le développement, la participation sociale (isolement, rejet...)",
+        "values": [
+          "Sur la santé physique et/ou psychique (blessures, troubles de la santé ou mentaux...)",
+          "Sur les droits (violation du droit de la protection et sécurité, accès limité à la justice...)",
+          "Sur le développement, la participation sociale (isolement, rejet...)"
+        ]
+      },
+      {
+        "__typename": "DateChamp",
+        "id": "Q2hhbXAtMTk1Mjc=",
+        "label": "A quelle date ou à partir de quelle date le fait a-t-il eu lieu ?",
+        "stringValue": "28 février 2025",
+        "date": "2025-02-28"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNTc=",
+        "label": "Cette situation est-elle toujours d'actualité ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1Mjg=",
+        "label": "Expliquez-nous en détails les faits",
+        "stringValue": "Test"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDE=",
+        "label": "Lieu(x) de survenue du ou des fait(s)",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDU=",
+        "label": "Lieu principal de survenue",
+        "stringValue": "Dans un établissement de santé (hôpital, clinique, laboratoire, pharmacie ...)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDg=",
+        "label": "Sélectionnez l'établissement concerné",
+        "stringValue": "HOPITAL INSTRUCTION DES ARMEES BEGIN, ST MANDE CEDEX 94163 (940120017)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgxNzc=",
+        "label": "Nom de la structure concernée",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgzNjc=",
+        "label": "Code postal",
+        "stringValue": "Saint-Mandé (94160)"
+      },
+      {
+        "__typename": "RepetitionChamp",
+        "id": "Q2hhbXAtMjgxNzQ=",
+        "label": "Autres lieux de survenue à déclarer",
+        "stringValue": "",
+        "champs": []
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MzU=",
+        "label": "Identité de l'auteur du ou des fait(s)",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgzNjg=",
+        "label": "Personne responsable des faits",
+        "stringValue": "Professionnel"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MTU=",
+        "label": "Professionnel responsable des faits",
+        "stringValue": "Un professionnel de santé (médecin, infirmier, aide-soignant, kiné, ostéopathe...)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MTE=",
+        "label": "Identité du professionnel de santé",
+        "stringValue": "Madame DOCTEUR BERENICE, Infirmier, 75908 Paris 15e  Arrondissement (10105308349) "
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNzA=",
+        "label": "Précisions sur la personne responsable des faits",
+        "stringValue": ""
+      },
+      {
+        "__typename": "RepetitionChamp",
+        "id": "Q2hhbXAtMjgxNzk=",
+        "label": "Autres personnes responsables des faits à déclarer",
+        "stringValue": "",
+        "champs": []
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MzM=",
+        "label": "Démarches déjà engagées",
+        "stringValue": ""
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk1MzI=",
+        "label": "Avez-vous déjà pris contact avec l’établissement ou la personne responsable des faits ?",
+        "stringValue": "false",
+        "checked": false
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3Mzg=",
+        "label": "Avez-vous déjà engagé des démarches auprès d’autres organismes ?",
+        "stringValue": "false",
+        "checked": false
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3NDA=",
+        "label": "Avez-vous engagé des démarches auprès de la gendarmerie et/ou du commissariat ?",
+        "stringValue": "false",
+        "checked": false
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc4ODE=",
+        "label": "Complément d'information",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc4ODI=",
+        "label": "Précisions à ajouter",
+        "stringValue": "Test"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk3NDM=",
+        "label": "Validation",
+        "stringValue": ""
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3NDQ=",
+        "label": "Je certifie sur l’honneur l’exactitude des renseignements fournis.",
+        "stringValue": "true",
+        "checked": true
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3NDU=",
+        "label": "J'ai pris connaissance que l'administration en charge de ma réclamation procède à un traitement de mes données personnelles pour sa gestion et son suivi.",
+        "stringValue": "true",
+        "checked": true
+      }
+    ]
+  }
+}

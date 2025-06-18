@@ -7,5 +7,7 @@
   },
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
-  }
+  },
+  "biome.lsp.bin": "/home/ineoo/scripts/biome",
+  "cSpell.language": "en,fr"
 }

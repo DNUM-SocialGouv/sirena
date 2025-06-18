@@ -31,6 +31,7 @@ COPY --chown=node:node ./packages/common packages/common
 RUN pnpm --filter @sirena/backend-utils build
 RUN pnpm --filter @sirena/common build
 RUN pnpm --filter @sirena/backend db:generate
+RUN pnpm --filter @sirena/backend codegen
 RUN pnpm --filter @sirena/backend build
 
 # Stage final
