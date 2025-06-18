@@ -115,7 +115,7 @@ model Victime {
   estNonIdentifiee Boolean?
   estAnonyme       Boolean?
   estHandicapee    Boolean?
-  estInformee      Boolean?
+  commentaire      String?
 
   requeteEntiteStateId String       @unique
   requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
@@ -137,13 +137,20 @@ model AgeEnum {
   id    String @id
   label String
 
-  victimes Victime[]
+  victimes  Victime[]
+  Declarant Declarant[]
 }
 
 model Declarant {
-  id                  String   @id @default(uuid())
-  estIdentifie        Boolean?
-  veutGarderAnonnymat Boolean?
+  id                        String   @id @default(uuid())
+  estIdentifie              Boolean?
+  estVictime                Boolean?
+  estVictimeInformee        Boolean?
+  estAnonyme                Boolean?
+  estHandicapee             Boolean?
+  vitimeInformeeCommentaire String?
+  veutGarderAnonnymat       Boolean?
+  commentaire               String?
 
   requeteEntiteStateId String       @unique
   requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
@@ -153,6 +160,9 @@ model Declarant {
 
   adresseId String  @unique
   adresse   Adresse @relation(fields: [adresseId], references: [id])
+
+  ageId String?
+  age   AgeEnum? @relation(fields: [ageId], references: [id])
 
   lienVictimeId String?
   lienVictime   LienVictimeEnum? @relation(fields: [lienVictimeId], references: [id])
@@ -261,9 +271,6 @@ model LieuIncident {
   lieuTypeId String?
   lieuType   LieuTypeEnum? @relation(fields: [lieuTypeId], references: [id])
 
-  serviceDomicileId String?
-  serviceDomicile   ServiceDomicileEnum? @relation(fields: [serviceDomicileId], references: [id])
-
   transportTypeId String?
   transportType   TransportTypeEnum? @relation(fields: [transportTypeId], references: [id])
 
@@ -272,13 +279,6 @@ model LieuIncident {
 }
 
 model LieuTypeEnum {
-  id    String @id
-  label String
-
-  lieuxIncident LieuIncident[]
-}
-
-model ServiceDomicileEnum {
   id    String @id
   label String
 
@@ -305,11 +305,11 @@ model MisEnCause {
   requeteEntiteStateId String
   requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
 
-  misEnCauseTypeEnumId String?
-  misEnCauseTypeEnum   MisEnCauseTypeEnum? @relation(fields: [misEnCauseTypeEnumId], references: [id])
+  misEnCauseTypeId String?
+  misEnCauseType   MisEnCauseTypeEnum? @relation(fields: [misEnCauseTypeId], references: [id])
 
-  professionDomicileTypeEnumId String?
-  professionDomicileTypeEnum   ProfessionDomicileTypeEnum? @relation(fields: [professionDomicileTypeEnumId], references: [id])
+  professionDomicileTypeId String?
+  professionDomicileType   ProfessionDomicileTypeEnum? @relation(fields: [professionDomicileTypeId], references: [id])
 }
 
 model MisEnCauseTypeEnum {
