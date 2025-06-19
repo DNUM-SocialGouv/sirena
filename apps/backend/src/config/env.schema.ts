@@ -58,6 +58,23 @@ export const AppEnvSchema = z.object({
   IS_LOGGED_TOKEN_NAME: z.string({
     required_error: "La variable d'environnement IS_LOGGED_TOKEN_NAME est requise",
   }),
+  DEMAT_SOCIAL_API_URL: z.string({
+    required_error: "La variable d'environnement DEMAT_SOCIAL_API_URL est requise",
+  }),
+  DEMAT_SOCIAL_API_TOKEN: z.string({
+    required_error: "La variable d'environnement DEMAT_SOCIAL_API_TOKEN est requise",
+  }),
+  DEMAT_SOCIAL_API_DIRECTORY: z
+    .string({
+      required_error: "La variable d'environnement DEMAT_SOCIAL_API_DIRECTORY est requise",
+    })
+    .transform((val) => {
+      const parsed = Number.parseInt(val, 10);
+      if (Number.isNaN(parsed)) {
+        throw new Error("La variable d'environnement DEMAT_SOCIAL_API_DIRECTORY doit etre un integer");
+      }
+      return parsed;
+    }),
   LOG_FORMAT: z
     .enum(['json', 'pretty'], {
       invalid_type_error: "La variable d'environnement LOG_FORMAT doit être 'json' ou 'pretty'",
