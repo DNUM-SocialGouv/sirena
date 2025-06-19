@@ -7,8 +7,14 @@ import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { z } from 'zod';
 
 export const Route = createFileRoute('/_auth/user/$userId')({
+  params: {
+    parse: (params) => ({
+      userId: z.string().parse(params.userId),
+    }),
+  },
   beforeLoad: requireAuthAndAdmin,
   head: () => ({
     meta: [
@@ -21,11 +27,11 @@ export const Route = createFileRoute('/_auth/user/$userId')({
 });
 
 function RouteComponent() {
-  const { userId } = Route.useParams() as { userId: string };
+  const { userId } = Route.useParams();
   const { data: user, isLoading, error } = useUserById(userId);
   const [role, setRole] = useState('');
   useEffect(() => {
-    setRole(user?.data?.role?.roleName || '');
+    setRole(user?.data?.roleId || '');
   }, [user]);
   if (isLoading) {
     return (

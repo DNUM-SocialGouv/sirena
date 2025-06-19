@@ -31,10 +31,8 @@ vi.mock('@tanstack/react-router', () => ({
   },
 }));
 
-import { useRoles } from '@/hooks/queries/useRoles';
 import { useUser } from '@/hooks/queries/useUser';
 
-const mockUseRoles = vi.mocked(useRoles);
 const mockUseUser = vi.mocked(useUser);
 
 const renderWithProviders = (component: React.ReactElement) => {
@@ -80,46 +78,7 @@ describe('PendingUsersTab Component', () => {
   });
 
   describe('State of loading', () => {
-    it('display the loader during role loading', () => {
-      mockUseRoles.mockReturnValue({
-        data: undefined,
-        isLoading: true,
-        error: null,
-      } as unknown as UseQueryResult<{ data: { id: string; roleName: string; description: string }[] }, Error>);
-
-      mockUseUser.mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<
-        {
-          data: {
-            id: string;
-            email: string;
-            firstName: string;
-            lastName: string;
-            uid: string;
-            sub: string;
-            createdAt: string;
-            active: boolean;
-            roleId: string | null;
-          }[];
-        },
-        Error
-      >);
-
-      renderWithProviders(<PendingUsersTab />);
-
-      expect(screen.getByTestId('loader')).toBeInTheDocument();
-    });
-
     it('display loader during users loading', () => {
-      mockUseRoles.mockReturnValue({
-        data: mockRolesData,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<{ data: { id: string; roleName: string; description: string }[] }, Error>);
-
       mockUseUser.mockReturnValue({
         data: undefined,
         isLoading: true,
@@ -135,7 +94,8 @@ describe('PendingUsersTab Component', () => {
             sub: string;
             createdAt: string;
             active: boolean;
-            roleId: string | null;
+            roleId: string;
+            pcData: Record<string, unknown>;
           }[];
         },
         Error
@@ -149,16 +109,10 @@ describe('PendingUsersTab Component', () => {
 
   describe('Errors display', () => {
     it('display an error message when role loading fails', () => {
-      mockUseRoles.mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: new Error('Erreur de réseau'),
-      } as unknown as UseQueryResult<{ data: { id: string; roleName: string; description: string }[] }, Error>);
-
       mockUseUser.mockReturnValue({
         data: undefined,
         isLoading: false,
-        error: null,
+        error: true,
       } as unknown as UseQueryResult<
         {
           data: {
@@ -170,7 +124,8 @@ describe('PendingUsersTab Component', () => {
             sub: string;
             createdAt: string;
             active: boolean;
-            roleId: string | null;
+            roleId: string;
+            pcData: Record<string, unknown>;
           }[];
         },
         Error
@@ -182,12 +137,6 @@ describe('PendingUsersTab Component', () => {
     });
 
     it('display an error message when users loading fails', () => {
-      mockUseRoles.mockReturnValue({
-        data: mockRolesData,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<{ data: { id: string; roleName: string; description: string }[] }, Error>);
-
       mockUseUser.mockReturnValue({
         data: undefined,
         isLoading: false,
@@ -203,7 +152,8 @@ describe('PendingUsersTab Component', () => {
             sub: string;
             createdAt: string;
             active: boolean;
-            roleId: string | null;
+            roleId: string;
+            pcData: Record<string, unknown>;
           }[];
         },
         Error
@@ -217,12 +167,6 @@ describe('PendingUsersTab Component', () => {
 
   describe('Empty states', () => {
     it('Display a message when no data are available', () => {
-      mockUseRoles.mockReturnValue({
-        data: null,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<{ data: { id: string; roleName: string; description: string }[] }, Error>);
-
       mockUseUser.mockReturnValue({
         data: undefined,
         isLoading: false,
@@ -238,7 +182,8 @@ describe('PendingUsersTab Component', () => {
             sub: string;
             createdAt: string;
             active: boolean;
-            roleId: string | null;
+            roleId: string;
+            pcData: Record<string, unknown>;
           }[];
         },
         Error
@@ -251,55 +196,7 @@ describe('PendingUsersTab Component', () => {
   });
 
   describe('business logic', () => {
-    it('does not trigger the users request when PENDING role does not exist (should never happen)', () => {
-      const rolesDataWithoutPending = {
-        data: [
-          { id: '1', roleName: 'ADMIN' },
-          { id: '3', roleName: 'USER' },
-        ],
-      };
-
-      mockUseRoles.mockReturnValue({
-        data: rolesDataWithoutPending,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<{ data: { id: string; roleName: string; description: string }[] }, Error>);
-
-      const mockUseUserCall = vi.fn().mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: null,
-      } as UseQueryResult<
-        {
-          data: {
-            id: string;
-            email: string;
-            firstName: string;
-            lastName: string;
-            uid: string;
-            sub: string;
-            createdAt: string;
-            active: boolean;
-            roleId: string | null;
-          }[];
-        },
-        Error
-      >);
-
-      mockUseUser.mockImplementation(mockUseUserCall);
-
-      renderWithProviders(<PendingUsersTab />);
-
-      expect(mockUseUserCall).toHaveBeenCalledWith(undefined, false);
-    });
-
     it('call useUser with the roleId of PENDING role', () => {
-      mockUseRoles.mockReturnValue({
-        data: mockRolesData,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<{ data: { id: string; roleName: string; description: string }[] }, Error>);
-
       const mockUseUserCall = vi.fn().mockReturnValue({
         data: mockUsersData,
         isLoading: false,
@@ -315,7 +212,8 @@ describe('PendingUsersTab Component', () => {
             sub: string;
             createdAt: string;
             active: boolean;
-            roleId: string | null;
+            roleId: string;
+            pcData: Record<string, unknown>;
           }[];
         },
         Error
@@ -325,18 +223,12 @@ describe('PendingUsersTab Component', () => {
 
       renderWithProviders(<PendingUsersTab />);
 
-      expect(mockUseUserCall).toHaveBeenCalledWith({ roleId: '2' }, true);
+      expect(mockUseUserCall).toHaveBeenCalledWith({ roleId: 'PENDING' }, true);
     });
   });
 
   describe('display the table', () => {
     beforeEach(() => {
-      mockUseRoles.mockReturnValue({
-        data: mockRolesData,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<{ data: { id: string; roleName: string; description: string }[] }, Error>);
-
       mockUseUser.mockReturnValue({
         data: mockUsersData,
         isLoading: false,
@@ -352,7 +244,8 @@ describe('PendingUsersTab Component', () => {
             sub: string;
             createdAt: string;
             active: boolean;
-            roleId: string | null;
+            roleId: string;
+            pcData: Record<string, unknown>;
           }[];
         },
         Error
@@ -414,7 +307,8 @@ describe('PendingUsersTab Component', () => {
             sub: string;
             createdAt: string;
             active: boolean;
-            roleId: string | null;
+            roleId: string;
+            pcData: Record<string, unknown>;
           }[];
         },
         Error
