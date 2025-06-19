@@ -41,8 +41,10 @@ jobs:
             type=raw,value=${{ env.SHORT_SHA }}
             
       - name: Save image tag in an env var
+        id: save_image_tag
         run: |
-          echo "IMAGE_TAG=${{ steps.meta.outputs.tags }}" | tee -a $GITHUB_ENV
+          echo "IMAGE_TAG=${{ steps.meta.outputs.tags }}" >> $GITHUB_ENV
+          echo "image_tag=${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker backend image
         uses: docker/build-push-action@v5
@@ -64,12 +66,17 @@ jobs:
           build-args: |
             VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
             
+    outputs:
+      image_tag: ${{ steps.save_image_tag.outputs.image_tag }}
+
   deploy:
     name: Generate kubernetes manifests and deploy
     needs: build-docker
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      IMAGE_TAG: ${{ needs.build-docker.outputs.image_tag }}
 
     steps:
       - uses: actions/checkout@v4
