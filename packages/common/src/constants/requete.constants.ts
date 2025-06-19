@@ -8,9 +8,10 @@ export const ages = {
 } as const;
 
 export const civilites = {
-  M: 'M.',
-  Mme: 'Mme',
-  Mx: 'Mx',
+  M: 'Monsieur',
+  MME: 'Madame',
+  MX: 'autre',
+  NSP: 'Je ne souhaite pas répondre',
 } as const;
 
 export const misEnCauseTypes = {
