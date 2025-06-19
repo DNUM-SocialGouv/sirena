@@ -21,9 +21,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compute image tag
+      - name: Compute short sha
+        id: compute_short_sha
         run: |
-          echo "SHORT_SHA=${GITHUB_SHA::8}" | tee -a "$GITHUB_ENV"
+          echo "SHORT_SHA=${GITHUB_SHA::7}" | tee -a "$GITHUB_ENV"
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_OUTPUT
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -41,10 +43,8 @@ jobs:
             type=raw,value=${{ env.SHORT_SHA }}
             
       - name: Save image tag in an env var
-        id: save_image_tag
         run: |
           echo "IMAGE_TAG=${{ steps.meta.outputs.tags }}" >> $GITHUB_ENV
-          echo "image_tag=${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker backend image
         uses: docker/build-push-action@v5
@@ -65,9 +65,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
-            
+
     outputs:
-      image_tag: ${{ steps.save_image_tag.outputs.image_tag }}
+      short_sha: ${{ steps.compute_short_sha.outputs.short_sha }}
+            
 
   deploy:
     name: Generate kubernetes manifests and deploy
@@ -76,7 +77,7 @@ jobs:
     permissions:
       contents: read
     env:
-      IMAGE_TAG: ${{ needs.build-docker.outputs.image_tag }}
+      SHORT_SHA: ${{ needs.build-docker.outputs.short_sha }}
 
     steps:
       - uses: actions/checkout@v4
@@ -94,9 +95,9 @@ jobs:
       - name: Render manifests
         run: |
           cd deploy
-          export IMAGE_TAG=${{ env.IMAGE_TAG }}
+          export IMAGE_TAG=${{ env.SHORT_SHA }}
           export ENVIRONNEMENT=test
-          echo "IMAGE_TAG=${{ env.IMAGE_TAG }}"
+          echo "IMAGE_TAG=${{ env.SHORT_SHA }}"
           echo "ENVIRONNEMENT=${{ env.ENVIRONNEMENT }}"
           npm run build
 
