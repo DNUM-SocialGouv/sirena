@@ -96,6 +96,8 @@ jobs:
           cd deploy
           export IMAGE_TAG=${{ env.IMAGE_TAG }}
           export ENVIRONNEMENT=test
+          echo "IMAGE_TAG=${{ env.IMAGE_TAG }}"
+          echo "ENVIRONNEMENT=${{ env.ENVIRONNEMENT }}"
           npm run build
 
       - name: Checkout GitOps repository
