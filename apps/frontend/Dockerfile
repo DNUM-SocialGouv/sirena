@@ -34,6 +34,7 @@ COPY --chown=node:node ./apps/frontend apps/frontend
 RUN pnpm --filter @sirena/backend-utils build
 RUN pnpm --filter @sirena/common build
 RUN pnpm --filter @sirena/backend db:generate
+RUN pnpm --filter @sirena/backend codegen
 RUN pnpm --filter @sirena/backend build
 RUN pnpm --filter @sirena/frontend build
 
