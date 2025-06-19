@@ -7,6 +7,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   GITOPS_REPO: fabrique-atlas/org-sdpsn-ws-sirena
+  ENVIRONNEMENT: test
   
 jobs:
   build-docker:
@@ -67,7 +68,7 @@ jobs:
             VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
 
     outputs:
-      short_sha: ${{ steps.compute_short_sha.outputs.short_sha }}
+      SHORT_SHA: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
             
 
   deploy:
@@ -77,7 +78,7 @@ jobs:
     permissions:
       contents: read
     env:
-      SHORT_SHA: ${{ needs.build-docker.outputs.short_sha }}
+      SHORT_SHA: ${{ needs.build-docker.outputs.SHORT_SHA }}
 
     steps:
       - uses: actions/checkout@v4
