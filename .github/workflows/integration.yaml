@@ -102,7 +102,7 @@ jobs:
           cd deploy
           export IMAGE_TAG=${{ env.SHORT_SHA }}
           export ENVIRONNEMENT=test
-          echo "IMAGE_TAG=${{ env.IMAGE_TAG }}"
+          echo "IMAGE_TAG=$IMAGE_TAG"
           echo "ENVIRONNEMENT=${{ env.ENVIRONNEMENT }}"
           npm run build
 
