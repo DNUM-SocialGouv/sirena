@@ -1,14 +1,10 @@
 import { Loader } from '@/components/loader.tsx';
-import { useRoles } from '@/hooks/queries/useRoles';
 import { useUser } from '@/hooks/queries/useUser';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
 
 export function PendingUsersTab() {
-  const { data: rolesData, isLoading: rolesLoading, error: rolesError } = useRoles();
-
-  const pendingRole = rolesData?.data?.find((role) => role.roleName === 'PENDING');
-  const pendingRoleId = pendingRole?.id;
+  const pendingRoleId = 'PENDING';
 
   const {
     data: usersData,
@@ -16,11 +12,11 @@ export function PendingUsersTab() {
     error: usersError,
   } = useUser(pendingRoleId ? { roleId: pendingRoleId } : undefined, !!pendingRoleId);
 
-  if (rolesLoading || (pendingRoleId && usersLoading)) {
+  if (usersLoading) {
     return <Loader />;
   }
 
-  if (rolesError || usersError) {
+  if (usersError) {
     return (
       <div className="error-state">
         <p>Erreur lors du chargement des utilisateurs en attente</p>
@@ -28,7 +24,7 @@ export function PendingUsersTab() {
     );
   }
 
-  if (!rolesData || !usersData) {
+  if (!usersData) {
     return (
       <div className="empty-state">
         <p>Aucune donnée disponible</p>
