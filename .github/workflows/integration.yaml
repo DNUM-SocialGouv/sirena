@@ -114,7 +114,7 @@ jobs:
           ssh-key: ${{ secrets.GITOPS_REPO_KEY }}
 
       - run: |
-          rm -f gitops-repo/deployment-targets/test
+          rm -r gitops-repo/deployment-targets/test
           cp -r deploy/dist gitops-repo/deployment-targets/test
 
           git config --global user.name "github-actions[bot]"
