@@ -1,5 +1,5 @@
 import { type Prisma, type User, prisma } from '@/libs/prisma';
-import type { CreateUserDto } from '@/types/user.d';
+import type { CreateUserDto } from './user.type';
 
 interface GetUsersFilters {
   roleId?: string | string[];
