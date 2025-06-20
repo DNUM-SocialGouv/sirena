@@ -44,15 +44,15 @@ model Entite {
 
   services Entite[] @relation("EntiteMereToServices")
 
-  entiteEnumId String?
-  entiteEnum   EntiteEnum? @relation(fields: [entiteEnumId], references: [id])
+  entiteTypeId String
+  entiteType   EntiteTypeEnum @relation(fields: [entiteTypeId], references: [id])
   entiteMereId String?
-  entiteMere   Entite?     @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
+  entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
 
   user User[]
 }
 
-model EntiteEnum {
+model EntiteTypeEnum {
   id    String @id @default(uuid())
   label String @unique
 

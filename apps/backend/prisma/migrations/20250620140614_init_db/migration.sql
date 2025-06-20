@@ -21,18 +21,18 @@ CREATE TABLE "Entite" (
     "nomComplet" TEXT NOT NULL,
     "label" TEXT NOT NULL,
     "email" TEXT,
-    "entiteEnumId" TEXT,
+    "entiteTypeId" TEXT,
     "entiteMereId" TEXT,
 
     CONSTRAINT "Entite_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "EntiteEnum" (
+CREATE TABLE "EntiteTypeEnum" (
     "id" TEXT NOT NULL,
     "label" TEXT NOT NULL,
 
-    CONSTRAINT "EntiteEnum_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "EntiteTypeEnum_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -352,7 +352,7 @@ CREATE UNIQUE INDEX "User_uid_key" ON "User"("uid");
 CREATE UNIQUE INDEX "User_sub_key" ON "User"("sub");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "EntiteEnum_label_key" ON "EntiteEnum"("label");
+CREATE UNIQUE INDEX "EntiteTypeEnum_label_key" ON "EntiteTypeEnum"("label");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Session_token_key" ON "Session"("token");
@@ -412,7 +412,7 @@ ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFE
 ALTER TABLE "User" ADD CONSTRAINT "User_entiteId_fkey" FOREIGN KEY ("entiteId") REFERENCES "Entite"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Entite" ADD CONSTRAINT "Entite_entiteEnumId_fkey" FOREIGN KEY ("entiteEnumId") REFERENCES "EntiteEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Entite" ADD CONSTRAINT "Entite_entiteTypeId_fkey" FOREIGN KEY ("entiteTypeId") REFERENCES "EntiteTypeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Entite" ADD CONSTRAINT "Entite_entiteMereId_fkey" FOREIGN KEY ("entiteMereId") REFERENCES "Entite"("id") ON DELETE SET NULL ON UPDATE CASCADE;

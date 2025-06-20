@@ -2,7 +2,7 @@ import {
   ages,
   civilites,
   consequences,
-  entites,
+  entiteTypes,
   liensVictime,
   lieuTypes,
   maltraitanceTypes,
@@ -53,12 +53,12 @@ async function seedConsequenceEnum(prisma: PrismaClient) {
   return { table: 'consequenceEnum', added };
 }
 
-async function seedEntiteEnum(prisma: PrismaClient) {
+async function seedEntiteTypeEnum(prisma: PrismaClient) {
   let added = 0;
-  for (const [id, label] of Object.entries(entites)) {
-    const exists = await prisma.entiteEnum.findUnique({ where: { id } });
+  for (const [id, label] of Object.entries(entiteTypes)) {
+    const exists = await prisma.entiteTypeEnum.findUnique({ where: { id } });
     if (!exists) {
-      await prisma.entiteEnum.create({ data: { id, label } });
+      await prisma.entiteTypeEnum.create({ data: { id, label } });
       added++;
     }
   }
@@ -192,7 +192,7 @@ export async function seedEnums(prisma: PrismaClient) {
     seedAgeEnum(prisma),
     seedCiviliteEnum(prisma),
     seedConsequenceEnum(prisma),
-    seedEntiteEnum(prisma),
+    seedEntiteTypeEnum(prisma),
     seedLienVictimeEnum(prisma),
     seedLieuTypeEnum(prisma),
     seedMaltraitanceTypeEnum(prisma),

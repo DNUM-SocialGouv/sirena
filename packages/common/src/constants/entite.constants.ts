@@ -1,5 +1,5 @@
-export const entites = {
+export const entiteTypes = {
   ARS: 'ARS',
-  DETS: 'DETS',
+  DDETS: 'DDETS',
   CD: 'CD',
 } as const;
