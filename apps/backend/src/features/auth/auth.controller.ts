@@ -121,6 +121,7 @@ const app = factoryWithLogs
           firstName: userInfo.given_name,
           lastName: String(userInfo.usual_name),
           pcData: userInfo,
+          entiteId: null,
         });
       } catch (error) {
         if (isPrismaUniqueConstraintError(error)) {

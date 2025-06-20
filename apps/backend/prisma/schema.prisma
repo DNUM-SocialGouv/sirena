@@ -32,6 +32,8 @@ model User {
   roleId    String?
   role      RoleEnum? @relation(fields: [roleId], references: [id])
   Sessions  Session[]
+  entiteId  String?
+  entite    entite?   @relation(fields: [entiteId], references: [id])
 }
 
 model Session {
@@ -354,4 +356,15 @@ model ReceptionTypeEnum {
   label String @unique
 
   infos InfoComplementaire[]
+}
+
+model entite {
+  id           String   @id @default(uuid())
+  nomComplet   String
+  label        String
+  email        String?
+  EntiteMereId String?
+  EntiteMere   entite?  @relation("EntiteMereToServices", fields: [EntiteMereId], references: [id])
+  services     entite[] @relation("EntiteMereToServices")
+  User         User[]
 }
