@@ -32,6 +32,31 @@ model User {
   roleId    String
   role      RoleEnum? @relation(fields: [roleId], references: [id])
   Sessions  Session[]
+  entiteId  String?
+  entite    Entite?   @relation(fields: [entiteId], references: [id])
+}
+
+model Entite {
+  id         String  @id @default(uuid())
+  nomComplet String
+  label      String
+  email      String?
+
+  services Entite[] @relation("EntiteMereToServices")
+
+  entiteEnumId String?
+  entiteEnum   EntiteEnum? @relation(fields: [entiteEnumId], references: [id])
+  entiteMereId String?
+  entiteMere   Entite?     @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
+
+  user User[]
+}
+
+model EntiteEnum {
+  id    String @id @default(uuid())
+  label String @unique
+
+  entites Entite[]
 }
 
 model Session {

@@ -36,6 +36,7 @@ describe('User Endpoint', () => {
       roleId: 'role1',
       active: true,
       pcData: {},
+      entiteId: null,
     },
     {
       id: 'id2',
@@ -48,6 +49,7 @@ describe('User Endpoint', () => {
       roleId: 'role2',
       active: false,
       pcData: {},
+      entiteId: null,
     },
   ];
 
