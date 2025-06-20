@@ -7,7 +7,7 @@ export const Route = createFileRoute('/_auth/__users/users/all')({
   head: () => ({
     meta: [
       {
-        title: 'Gérer tous les utilisateurs - SIRENA',
+        title: 'Gérer les utilisateurs - SIRENA',
       },
     ],
   }),
@@ -17,7 +17,6 @@ export const Route = createFileRoute('/_auth/__users/users/all')({
 export function RouteComponent() {
   return (
     <div>
-      <h3>Tous les utilisateurs</h3>
       <AllUsersTab />
     </div>
   );

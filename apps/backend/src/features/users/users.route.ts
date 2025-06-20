@@ -4,7 +4,10 @@ import { openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers
 import { GetUserResponseSchema, GetUsersResponseSchema } from './users.schema';
 
 export const GetUsersQuerySchema = z.object({
-  roleId: z.string().optional(),
+  roleId: z
+    .string()
+    .transform((val) => val.split(',').map((id) => id.trim()))
+    .optional(),
   active: z
     .string()
     .transform((val) => val === 'true')

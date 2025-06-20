@@ -12,10 +12,10 @@ export type RowWithId<RowId extends string> = Row & {
 
 export type NestedKeys<T> = {
   [K in keyof T]: K extends string
-    ? T[K] extends Primitive
+    ? NonNullable<T[K]> extends Primitive
       ? K
-      : T[K] extends Row
-        ? `${K}.${NestedKeys<T[K]>}`
+      : NonNullable<T[K]> extends Row
+        ? `${K}.${NestedKeys<NonNullable<T[K]>>}`
         : never
     : never;
 }[keyof T & string];
