@@ -1,4 +1,5 @@
 import AuthApp from '@/features/auth/auth.controller';
+import ProfileApp from '@/features/profile/profile.controller';
 import RolesApp from '@/features/roles/roles.controller';
 import UsersApp from '@/features/users/users.controller';
 import appFactory from '@/helpers/factories/appWithLogs';
@@ -18,4 +19,5 @@ export const app = appFactory
   .route('/auth', AuthApp)
   .route('/roles', RolesApp)
   .route('/users', UsersApp)
+  .route('/profile', ProfileApp)
   .onError(errorHandler);
