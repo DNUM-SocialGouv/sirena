@@ -26,16 +26,16 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.14.0
-        version: 1.14.0(hono@4.7.5)
+        version: 1.14.0(hono@4.8.1)
       '@hono/zod-validator':
         specifier: ^0.4.3
-        version: 0.4.3(hono@4.7.5)(zod@3.24.2)
+        version: 0.4.3(hono@4.8.1)(zod@3.24.2)
       '@prisma/client':
         specifier: 6.6.0
         version: 6.6.0(prisma@6.8.2(typescript@5.7.3))(typescript@5.7.3)
       '@scalar/hono-api-reference':
         specifier: ^0.8.0
-        version: 0.8.0(hono@4.7.5)
+        version: 0.8.0(hono@4.8.1)
       '@sirena/backend-utils':
         specifier: workspace:*
         version: link:../../packages/backend-utils
@@ -49,14 +49,14 @@ importers:
         specifier: ^16.11.0
         version: 16.11.0
       hono:
-        specifier: ^4.7.5
-        version: 4.7.5
+        specifier: ^4.8.1
+        version: 4.8.1
       hono-openapi:
         specifier: ^0.4.6
-        version: 0.4.6(@hono/zod-validator@0.4.3(hono@4.7.5)(zod@3.24.2))(hono@4.7.5)(zod-openapi@4.2.4(zod@3.24.2))(zod@3.24.2)
+        version: 0.4.6(@hono/zod-validator@0.4.3(hono@4.8.1)(zod@3.24.2))(hono@4.8.1)(zod-openapi@4.2.4(zod@3.24.2))(zod@3.24.2)
       hono-pino:
         specifier: ^0.8.0
-        version: 0.8.0(hono@4.7.5)(pino@9.6.0)
+        version: 0.8.0(hono@4.8.1)(pino@9.6.0)
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -134,8 +134,8 @@ importers:
         specifier: ^1.115.0
         version: 1.115.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       hono:
-        specifier: ^4.7.5
-        version: 4.7.5
+        specifier: ^4.8.1
+        version: 4.8.1
       react:
         specifier: ^19.0.0
         version: 19.1.0
@@ -207,11 +207,11 @@ importers:
   packages/backend-utils:
     dependencies:
       hono:
-        specifier: ^4.7.5
-        version: 4.7.5
+        specifier: ^4.8.1
+        version: 4.8.1
       hono-openapi:
         specifier: ^0.4.6
-        version: 0.4.6(@hono/zod-validator@0.4.3(hono@4.7.5)(zod@3.24.2))(hono@4.7.5)(zod-openapi@4.2.4(zod@3.24.2))(zod@3.24.2)
+        version: 0.4.6(@hono/zod-validator@0.4.3(hono@4.8.1)(zod@3.24.2))(hono@4.8.1)(zod-openapi@4.2.4(zod@3.24.2))(zod@3.24.2)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -2325,8 +2325,8 @@ packages:
       hono: '>=4.0.0'
       pino: '>=7.1.0'
 
-  hono@4.7.5:
-    resolution: {integrity: sha512-fDOK5W2C1vZACsgLONigdZTRZxuBqFtcKh7bUQ5cVSbwI2RWjloJDcgFOVzbQrlI6pCmhlTsVYZ7zpLj4m4qMQ==}
+  hono@4.8.1:
+    resolution: {integrity: sha512-ErA2ifywnSmcnB5XDuFqGDfXJ9xuAJR2C/8cZAk6vDaOCzofB8eNlha/wZWIiamREzWk94S9Z7wHsnKQHn7Niw==}
     engines: {node: '>=16.9.0'}
 
   hookable@5.5.3:
@@ -4617,13 +4617,13 @@ snapshots:
     dependencies:
       graphql: 16.11.0
 
-  '@hono/node-server@1.14.0(hono@4.7.5)':
+  '@hono/node-server@1.14.0(hono@4.8.1)':
     dependencies:
-      hono: 4.7.5
+      hono: 4.8.1
 
-  '@hono/zod-validator@0.4.3(hono@4.7.5)(zod@3.24.2)':
+  '@hono/zod-validator@0.4.3(hono@4.8.1)(zod@3.24.2)':
     dependencies:
-      hono: 4.7.5
+      hono: 4.8.1
       zod: 3.24.2
 
   '@isaacs/cliui@8.0.2':
@@ -4847,10 +4847,10 @@ snapshots:
     dependencies:
       '@scalar/types': 0.1.6
 
-  '@scalar/hono-api-reference@0.8.0(hono@4.7.5)':
+  '@scalar/hono-api-reference@0.8.0(hono@4.8.1)':
     dependencies:
       '@scalar/core': 0.2.6
-      hono: 4.7.5
+      hono: 4.8.1
 
   '@scalar/openapi-types@0.2.0':
     dependencies:
@@ -5979,22 +5979,22 @@ snapshots:
 
   help-me@5.0.0: {}
 
-  hono-openapi@0.4.6(@hono/zod-validator@0.4.3(hono@4.7.5)(zod@3.24.2))(hono@4.7.5)(zod-openapi@4.2.4(zod@3.24.2))(zod@3.24.2):
+  hono-openapi@0.4.6(@hono/zod-validator@0.4.3(hono@4.8.1)(zod@3.24.2))(hono@4.8.1)(zod-openapi@4.2.4(zod@3.24.2))(zod@3.24.2):
     dependencies:
       json-schema-walker: 2.0.0
     optionalDependencies:
-      '@hono/zod-validator': 0.4.3(hono@4.7.5)(zod@3.24.2)
-      hono: 4.7.5
+      '@hono/zod-validator': 0.4.3(hono@4.8.1)(zod@3.24.2)
+      hono: 4.8.1
       zod: 3.24.2
       zod-openapi: 4.2.4(zod@3.24.2)
 
-  hono-pino@0.8.0(hono@4.7.5)(pino@9.6.0):
+  hono-pino@0.8.0(hono@4.8.1)(pino@9.6.0):
     dependencies:
       defu: 6.1.4
-      hono: 4.7.5
+      hono: 4.8.1
       pino: 9.6.0
 
-  hono@4.7.5: {}
+  hono@4.8.1: {}
 
   hookable@5.5.3: {}
 
