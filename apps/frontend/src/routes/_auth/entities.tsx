@@ -1,4 +1,3 @@
-import { LoggedLayout } from '@/components/layout/logged/logged';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/entities')({
@@ -22,10 +21,8 @@ export const Route = createFileRoute('/_auth/entities')({
 
 function RouteComponent() {
   return (
-    <LoggedLayout>
-      <div className="home">
-        <h2>Welcome to entities</h2>
-      </div>
-    </LoggedLayout>
+    <div className="home">
+      <h2>Welcome to entities</h2>
+    </div>
   );
 }
