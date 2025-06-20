@@ -56,7 +56,7 @@ describe('auth.helper.ts Auth Helpers', () => {
 
     // Build a tiny Hono app that calls authUser inside a GET /test route
     const app = new Hono<{ Bindings: AppBindings }>().get('/test', async (c: Context<AppBindings>) => {
-      await authUser(c, userId, idToken);
+      await authUser(c, { id: userId, roleId: 'PENDING' }, idToken);
       return c.json({ ok: true });
     });
 
@@ -72,7 +72,7 @@ describe('auth.helper.ts Auth Helpers', () => {
     expect(getJwtExpirationDate).toHaveBeenCalledWith(envVars.REFRESH_TOKEN_EXPIRATION);
 
     expect(signAuthCookie).toHaveBeenCalledTimes(1);
-    expect(signAuthCookie).toHaveBeenCalledWith(userId, fakeAuthExpiry);
+    expect(signAuthCookie).toHaveBeenCalledWith({ id: userId, roleId: 'PENDING' }, fakeAuthExpiry);
 
     expect(signRefreshCookie).toHaveBeenCalledTimes(1);
     expect(signRefreshCookie).toHaveBeenCalledWith(userId, fakeRefreshExpiry);

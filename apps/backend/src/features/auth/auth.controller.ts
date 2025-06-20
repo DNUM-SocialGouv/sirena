@@ -101,7 +101,6 @@ const app = factoryWithLogs
     }
 
     if (!userInfo.email || !userInfo.given_name || !userInfo.usual_name || !userInfo.sub || !userInfo.uid) {
-      // TODO : Check RGPD
       logger.error(
         { userInfo: getPropertyTypes(userInfo) },
         'Error in callback from PC, userInfo are missing elements',
@@ -133,8 +132,8 @@ const app = factoryWithLogs
         return c.redirect(errorPageUrl, 302);
       }
     }
-
-    await authUser(c, user.id, tokens.id_token);
+    // TODO handle roleId properly
+    await authUser(c, { id: user.id, roleId: user.roleId || 'PENDING' }, tokens.id_token);
 
     return c.redirect(envVars.FRONTEND_REDIRECT_URI, 302);
   })

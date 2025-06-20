@@ -22,7 +22,9 @@ const app = factoryWithLogs
     const id = c.req.param('id');
     const user = await getUserById(id);
     if (!user) {
-      throwHTTPException404NotFound();
+      throwHTTPException404NotFound('User not found', {
+        res: c.res,
+      });
     }
     return c.json({ data: user }, 200);
   });
