@@ -3,6 +3,7 @@ import { createSession } from '@/features/sessions/sessions.service';
 import type { AppBindings } from '@/helpers/factories/appWithLogs';
 import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
 import { isPrismaUniqueConstraintError } from '@/helpers/prisma';
+import type { RoleEnum, User } from '@/libs/prisma';
 import { ERROR_CODES } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
@@ -21,12 +22,14 @@ export const createRedirectUrl = ({ error, errorDescription }: ErrorParams) => {
   return url;
 };
 
-export const authUser = async (c: Context<AppBindings>, userId: string, idToken: string) => {
+type authUserParams = { id: User['id']; roleId: RoleEnum['id'] };
+
+export const authUser = async (c: Context<AppBindings>, { id, roleId }: authUserParams, idToken: string) => {
   const authTokenExpirationDate = getJwtExpirationDate(envVars.AUTH_TOKEN_EXPIRATION);
   const refreshTokenExpirationDate = getJwtExpirationDate(envVars.REFRESH_TOKEN_EXPIRATION);
 
-  const refreshToken = signRefreshCookie(userId, refreshTokenExpirationDate);
-  const authToken = signAuthCookie(userId, authTokenExpirationDate);
+  const refreshToken = signRefreshCookie(id, refreshTokenExpirationDate);
+  const authToken = signAuthCookie({ id, roleId }, authTokenExpirationDate);
 
   setCookie(c, envVars.AUTH_TOKEN_NAME, authToken, {
     path: '/',
@@ -53,7 +56,7 @@ export const authUser = async (c: Context<AppBindings>, userId: string, idToken:
 
   try {
     await createSession({
-      userId: userId,
+      userId: id,
       token: refreshToken,
       pcIdToken: idToken,
       expiresAt: refreshTokenExpirationDate,

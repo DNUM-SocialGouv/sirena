@@ -6,6 +6,7 @@ export type AppBindings = {
   Variables: {
     logger: PinoLogger;
     userId: string;
+    roleId: string;
   };
 };
 
