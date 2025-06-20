@@ -13,12 +13,16 @@ export const civilites = {
   Mx: 'Mx',
 } as const;
 
-export const liensVictime = {
-  FAMILLE: 'Membre de la famille',
-  PROCHE: 'Proche',
+export const misEnCauseTypes = {
+  MEMBRE_FAMILLE: 'Membre de la famille',
+  PROCHE: 'Proche (ami, voisin...)',
   PROFESSIONNEL: 'Professionnel',
+  PROFESSIONNEL_DOMICILE: "Professionnel dans le cadre d'un service ou d'une intervention à domicile",
   AUTRE: 'Autre',
 } as const;
+
+// actually it's the same
+export const liensVictime = misEnCauseTypes;
 
 export const motifs = {
   PROBLEME_COMPORTEMENTAL: 'Problème comportemental, relationnel ou de communication avec une personne',
@@ -59,7 +63,7 @@ export const maltraitanceTypes = {
   AUTRE: 'Autre type de maltraitance',
 } as const;
 
-export const natureLieux = {
+export const lieuTypes = {
   DOMICILE: "Au domicile (domicile de la victime, domicile d'un membre de la famille, domicile d'un aidant...)",
   ETABLISSEMENT_SANTE: 'Dans un établissement de santé (hôpital, clinique, laboratoire, pharmacie ...)',
   ETABLISSEMENT_HEBERGEMENT: "Dans un établissement d'hébergement (EHPAD, foyer d'accueil et d'hébergement ...)",
@@ -70,9 +74,7 @@ export const natureLieux = {
   AUTRE: "Autre (institut d'esthétique, salon de tatouage, prison)",
 } as const;
 
-export const lieuTypes = {};
-
-export const servicesDomicile = {
+export const professionDomicileTypes = {
   HAD: 'Hospitalisation à domicile',
   SESSAD: "Service d'éducation spéciale et de soins",
   AIDE_MENAGERE: "Service d'aide ménagère",
