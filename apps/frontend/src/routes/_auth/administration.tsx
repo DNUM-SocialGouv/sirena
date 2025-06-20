@@ -1,4 +1,3 @@
-import { LoggedLayout } from '@/components/layout/logged/logged';
 import { Link, createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/administration')({
@@ -22,12 +21,10 @@ export const Route = createFileRoute('/_auth/administration')({
 
 function RouteComponent() {
   return (
-    <LoggedLayout>
-      <div className="administration">
-        <h2>Welcome to administration</h2>
-        <p>This is the administration page.</p>
-        <Link to="/home">Home</Link>
-      </div>
-    </LoggedLayout>
+    <div className="administration">
+      <h2>Welcome to administration</h2>
+      <p>This is the administration page.</p>
+      <Link to="/home">Home</Link>
+    </div>
   );
 }

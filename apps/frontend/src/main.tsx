@@ -1,23 +1,22 @@
+import { router } from '@/lib/router';
 import { useUserStore } from '@/stores/userStore';
 import { startReactDsfr } from '@codegouvfr/react-dsfr/spa';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Link, type LinkProps, RouterProvider, createRouter } from '@tanstack/react-router';
+import { Link, type LinkProps, RouterProvider } from '@tanstack/react-router';
 import { type JSX, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { routeTree } from './routeTree.gen';
-
-const queryClient = new QueryClient();
-
-const router = createRouter({
-  routeTree,
-  context: {
-    // biome-ignore lint/style/noNonNullAssertion: store is provided in App()
-    userStore: undefined!,
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+    mutations: {
+      onError: (error) => {
+        console.error(error);
+      },
+    },
   },
-  defaultPreload: 'intent',
-  defaultPreloadStaleTime: 0,
-  scrollRestoration: true,
 });
 
 declare module '@tanstack/react-router' {
