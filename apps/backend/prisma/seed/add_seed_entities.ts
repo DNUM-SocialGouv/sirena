@@ -21,7 +21,11 @@ async function seedStructure(prisma: PrismaClient) {
     }
 
     const obj = Object.fromEntries(headers.map((h, idx) => [h.trim(), values[idx].trim()]));
-    return obj as StructureRow;
+    return {
+      Structure: obj.Structure,
+      'Code court': obj['Code court'],
+      Famille: obj.Famille,
+    };
   });
 
   let added = 0;
@@ -66,7 +70,11 @@ async function seedService(prisma: PrismaClient) {
     }
 
     const obj = Object.fromEntries(headers.map((h, idx) => [h.trim(), values[idx].trim()]));
-    return obj as ServiceRow;
+    return {
+      Structure: obj.Structure,
+      Service: obj.Service,
+      Catégorie: obj.Catégorie,
+    };
   });
 
   let added = 0;
@@ -102,15 +110,18 @@ async function seedService(prisma: PrismaClient) {
 
 export async function seedEntites(prisma: PrismaClient) {
   console.log('🌱 Début du seeding des des entites...');
+  const results: { table: string; added: number }[] = [];
 
-  const results = await Promise.allSettled([seedService(prisma)]);
+  try {
+    results.push(await seedService(prisma));
+    results.push(await seedStructure(prisma));
+  } catch (error) {
+    console.error('❌ Erreur pendant le seeding des entites:', error);
+    throw error;
+  }
 
   for (const result of results) {
-    if (result.status === 'fulfilled') {
-      console.log(`✅ ${result.value.table} : ${result.value.added} ajoutés`);
-    } else {
-      console.log('❌ Erreur pendant le seeding :', result.reason);
-    }
+    console.log(`✅ ${result.table} : ${result.added} ajoutés`);
   }
 
   console.log('🎉 Seeding pour des entites terminé !');
