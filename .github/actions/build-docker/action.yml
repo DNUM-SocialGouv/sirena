@@ -1,0 +1,61 @@
+name: 'Build and Push Docker Images'
+description: 'Build and push backend and frontend Docker images to GitHub Container Registry'
+
+inputs:
+  registry:
+    description: 'Container registry URL'
+    required: false
+    default: 'ghcr.io'
+  image-name:
+    description: 'Base image name'
+    required: false
+    default: '${{ github.repository }}'
+  short-sha:
+    description: 'Short SHA for tagging'
+    required: true
+  github-token:
+    description: 'GitHub token for registry login'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Log in to the Container registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ github.actor }}
+        password: ${{ inputs.github-token }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ inputs.registry }}/${{ inputs.image-name }}
+        tags: |
+          type=raw,value=${{ inputs.short-sha }}
+
+    - name: Save image tag in an env var
+      shell: bash
+      run: |
+        echo "IMAGE_TAG=${{ steps.meta.outputs.tags }}" >> $GITHUB_ENV
+
+    - name: Build and push Docker backend image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: apps/backend/Dockerfile
+        push: true
+        tags: ${{ env.IMAGE_TAG }}-backend
+        labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Build and push Docker frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: apps/frontend/Dockerfile
+        push: true
+        tags: ${{ env.IMAGE_TAG }}-frontend
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          VITE_IS_LOGGED_TOKEN_NAME=is_logged_token 

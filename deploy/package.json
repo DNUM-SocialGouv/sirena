@@ -9,7 +9,8 @@
     "import": "cdk8s import",
     "synth": "cdk8s synth",
     "build": "npm run import && npm run synth",
-    "lint": "biome check"
+    "lint": "biome check",
+    "lint:fix": "biome check --write"
   },
   "dependencies": {
     "cdk8s": "^2.69.54",
