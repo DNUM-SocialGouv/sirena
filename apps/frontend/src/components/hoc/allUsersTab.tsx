@@ -8,7 +8,7 @@ export function AllUsersTab() {
   const { data: rolesData, isLoading: rolesLoading, error: rolesError } = useRoles();
 
   const nonPendingRoleIds = rolesData?.data
-    .filter((role) => role.label !== 'PENDING')
+    .filter((role) => role.id !== 'PENDING')
     .map((role) => role.id)
     .join(',');
 
