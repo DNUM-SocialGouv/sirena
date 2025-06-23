@@ -1,9 +1,25 @@
-name: Integration - build and deploy
+name: Build and Deploy
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment name (test, integration, etc.)'
+        required: false
+        type: string
+      deploy:
+        description: 'Whether to deploy to GitOps after building'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+      GITOPS_REPO_KEY:
+        required: false
+
+env:
+  GITOPS_REPO: fabrique-atlas/org-sdpsn-ws-sirena
 
 jobs:
   build-docker:
@@ -36,16 +52,26 @@ jobs:
   deploy:
     name: Deploy to GitOps
     needs: build-docker
+    if: ${{ inputs.deploy }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
+      - name: Validate environment parameter
+        run: |
+          if [ -z "${{ inputs.environment }}" ]; then
+            echo "Error: environment parameter is required when deploy is true"
+            exit 1
+          fi
+          echo "Environment: ${{ inputs.environment }}"
+
       - uses: actions/checkout@v4
 
       - name: Deploy to GitOps
         uses: ./.github/actions/deploy-gitops
         with:
-          environment: integration
+          environment: ${{ inputs.environment }}
           short-sha: ${{ needs.build-docker.outputs.SHORT_SHA }}
+          gitops-repo: ${{ env.GITOPS_REPO }}
           gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }} 
