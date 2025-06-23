@@ -47,14 +47,6 @@ const renderWithProviders = (component: React.ReactElement) => {
   return render(<QueryClientProvider client={queryClient}>{component}</QueryClientProvider>);
 };
 
-const mockRolesData = {
-  data: [
-    { id: '1', roleName: 'ADMIN' },
-    { id: '2', roleName: 'PENDING' },
-    { id: '3', roleName: 'USER' },
-  ],
-};
-
 const mockUsersData = {
   data: [
     {
@@ -95,7 +87,10 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
+            role: { id: string; label: string } | null;
             pcData: Record<string, unknown>;
+            statutId: string;
+            entiteId: string | null;
           }[];
         },
         Error
@@ -125,7 +120,10 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
+            role: { id: string; label: string } | null;
             pcData: Record<string, unknown>;
+            statutId: string;
+            entiteId: string | null;
           }[];
         },
         Error
@@ -153,7 +151,10 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
+            role: { id: string; label: string } | null;
             pcData: Record<string, unknown>;
+            statutId: string;
+            entiteId: string | null;
           }[];
         },
         Error
@@ -183,7 +184,10 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
+            role: { id: string; label: string } | null;
             pcData: Record<string, unknown>;
+            statutId: string;
+            entiteId: string | null;
           }[];
         },
         Error
@@ -245,7 +249,10 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
+            role: { id: string; label: string } | null;
             pcData: Record<string, unknown>;
+            statutId: string;
+            entiteId: string | null;
           }[];
         },
         Error
@@ -308,7 +315,10 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
+            role: { id: string; label: string } | null;
             pcData: Record<string, unknown>;
+            statutId: string;
+            entiteId: string | null;
           }[];
         },
         Error
