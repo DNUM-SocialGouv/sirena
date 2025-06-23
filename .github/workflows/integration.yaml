@@ -98,7 +98,7 @@ jobs:
         run: |
           cd deploy
           export IMAGE_TAG=${{ env.SHORT_SHA }}
-          export ENVIRONNEMENT=test
+          export ENVIRONNEMENT=${{ env.ENVIRONNEMENT }}
           npm run build
 
       - name: Checkout GitOps repository
@@ -109,13 +109,13 @@ jobs:
           ssh-key: ${{ secrets.GITOPS_REPO_KEY }}
 
       - run: |
-          rm -r gitops-repo/deployment-targets/test
-          cp -r deploy/dist gitops-repo/deployment-targets/test
+          rm -r gitops-repo/deployment-targets/${{ env.ENVIRONNEMENT }}
+          cp -r deploy/dist gitops-repo/deployment-targets/${{ env.ENVIRONNEMENT }}
 
           git config --global user.name "github-actions[bot]"
           # mail standard bot github Actions  
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cd gitops-repo
           git add .
-          git commit -m '[test] new version ${{ env.SHORT_SHA }}'
+          git commit -m '[${{ env.ENVIRONNEMENT }}] new version ${{ env.SHORT_SHA }}'
           git push 
