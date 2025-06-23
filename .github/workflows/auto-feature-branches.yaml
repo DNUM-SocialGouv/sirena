@@ -10,9 +10,26 @@ on:
       - chore/deploy
 
 jobs:
-  build-and-deploy:
-    uses: ./.github/workflows/reusable-build-and-deploy.yml
-    with:
-      deploy: false
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+  build-docker:
+    name: Build docker images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute short sha
+        id: compute_short_sha
+        run: |
+          SHORT_SHA=${GITHUB_SHA::7}
+          echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker images
+        uses: ./.github/actions/build-docker
+        with:
+          short-sha: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
+          github-token: ${{ secrets.GITHUB_TOKEN }} 

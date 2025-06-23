@@ -6,11 +6,46 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
-    uses: ./.github/workflows/reusable-build-and-deploy.yml
-    with:
-      environment: integration
-      deploy: true
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITOPS_REPO_KEY: ${{ secrets.GITOPS_REPO_KEY }} 
+  build-docker:
+    name: Build docker images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute short sha
+        id: compute_short_sha
+        run: |
+          SHORT_SHA=${GITHUB_SHA::7}
+          echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker images
+        uses: ./.github/actions/build-docker
+        with:
+          short-sha: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    outputs:
+      SHORT_SHA: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
+
+  deploy:
+    name: Deploy to GitOps
+    needs: build-docker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to GitOps
+        uses: ./.github/actions/deploy-gitops
+        with:
+          environment: integration
+          short-sha: ${{ needs.build-docker.outputs.SHORT_SHA }}
+          gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }} 
