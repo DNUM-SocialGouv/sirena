@@ -28,6 +28,7 @@ jobs:
         uses: ./.github/actions/build-docker
         with:
           short-sha: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
     outputs:
       SHORT_SHA: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
