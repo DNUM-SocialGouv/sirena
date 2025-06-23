@@ -113,8 +113,8 @@ export async function seedEntites(prisma: PrismaClient) {
   const results: { table: string; added: number }[] = [];
 
   try {
-    results.push(await seedService(prisma));
     results.push(await seedStructure(prisma));
+    results.push(await seedService(prisma));
   } catch (error) {
     console.error('❌ Erreur pendant le seeding des entites:', error);
     throw error;

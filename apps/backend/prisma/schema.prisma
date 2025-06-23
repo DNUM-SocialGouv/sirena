@@ -31,7 +31,7 @@ model User {
   pcData    Json
   roleId    String
   role      RoleEnum? @relation(fields: [roleId], references: [id])
-  Sessions  Session[]
+  sessions  Session[]
   entiteId  String?
   entite    Entite?   @relation(fields: [entiteId], references: [id])
 }
@@ -49,7 +49,7 @@ model Entite {
   entiteMereId String?
   entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
 
-  user User[]
+  users User[]
 }
 
 model EntiteTypeEnum {
@@ -82,7 +82,7 @@ model Requete {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  requeteEntite RequeteEntite[]
+  requetesEntite RequeteEntite[]
 }
 
 model RequeteEntite {
@@ -91,16 +91,16 @@ model RequeteEntite {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  requeteEntiteState RequeteState[]
-  requeteId          String?
-  requete            Requete?       @relation(fields: [requeteId], references: [id])
+  requetesEntiteStates RequeteState[]
+  requeteId            String?
+  requete              Requete?       @relation(fields: [requeteId], references: [id])
 }
 
 model RequeteStatutEnum {
   id    String @id
   label String
 
-  requeteEntiteState RequeteState[]
+  requetesEntiteState RequeteState[]
 }
 
 model RequeteState {
@@ -119,7 +119,7 @@ model RequeteState {
 
   descriptionFaits   DescriptionFaits?
   lieuxIncident      LieuIncident[]
-  misEnCause         MisEnCause[]
+  misEnCauses        MisEnCause[]
   demarchesEngagees  DemarchesEngagees?
   infoComplementaire InfoComplementaire?
 }
@@ -164,19 +164,19 @@ model AgeEnum {
   label String
 
   victimes  Victime[]
-  Declarant Declarant[]
+  declarant Declarant[]
 }
 
 model Declarant {
-  id                        String   @id @default(uuid())
-  estIdentifie              Boolean?
-  estVictime                Boolean?
-  estVictimeInformee        Boolean?
-  estAnonyme                Boolean?
-  estHandicapee             Boolean?
-  vitimeInformeeCommentaire String?
-  veutGarderAnonnymat       Boolean?
-  commentaire               String?
+  id                         String   @id @default(uuid())
+  estIdentifie               Boolean?
+  estVictime                 Boolean?
+  estVictimeInformee         Boolean?
+  estAnonyme                 Boolean?
+  estHandicapee              Boolean?
+  victimeInformeeCommentaire String?
+  veutGarderAnonymat         Boolean?
+  commentaire                String?
 
   requeteEntiteStateId String       @unique
   requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
@@ -213,13 +213,15 @@ model LienVictimeEnum {
 
 model Adresse {
   id         String  @id @default(uuid())
+  label      String?
+  numero     String?
   rue        String?
   codePostal String?
   ville      String?
 
-  victimes     Victime[]
-  declarants   Declarant[]
-  LieuIncident LieuIncident[]
+  victimes      Victime[]
+  declarants    Declarant[]
+  lieuxIncident LieuIncident[]
 }
 
 model DescriptionFaits {
@@ -239,21 +241,21 @@ model MotifEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  faits DescriptionFaitsMotif[]
+  descriptionFaits DescriptionFaitsMotif[]
 }
 
 model ConsequenceEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  faits DescriptionFaitsConsequence[]
+  descriptionFaits DescriptionFaitsConsequence[]
 }
 
 model MaltraitanceTypeEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  faits DescriptionFaitsMaltraitanceType[]
+  descriptionFaits DescriptionFaitsMaltraitanceType[]
 }
 
 model DescriptionFaitsMotif {
@@ -345,21 +347,21 @@ model MisEnCauseTypeEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  misEnCause MisEnCause[]
+  misEnCauses MisEnCause[]
 }
 
 model ProfessionTypeEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  misEnCause MisEnCause[]
+  misEnCauses MisEnCause[]
 }
 
 model ProfessionDomicileTypeEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  misEnCause MisEnCause[]
+  misEnCauses MisEnCause[]
 }
 
 model DemarchesEngagees {
@@ -392,5 +394,5 @@ model ReceptionTypeEnum {
   id    String @id
   label String @unique
 
-  infos InfoComplementaire[]
+  infoirmations InfoComplementaire[]
 }

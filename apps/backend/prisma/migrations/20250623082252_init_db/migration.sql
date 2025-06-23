@@ -21,7 +21,7 @@ CREATE TABLE "Entite" (
     "nomComplet" TEXT NOT NULL,
     "label" TEXT NOT NULL,
     "email" TEXT,
-    "entiteTypeId" TEXT,
+    "entiteTypeId" TEXT NOT NULL,
     "entiteMereId" TEXT,
 
     CONSTRAINT "Entite_pkey" PRIMARY KEY ("id")
@@ -139,8 +139,8 @@ CREATE TABLE "Declarant" (
     "estVictimeInformee" BOOLEAN,
     "estAnonyme" BOOLEAN,
     "estHandicapee" BOOLEAN,
-    "vitimeInformeeCommentaire" TEXT,
-    "veutGarderAnonnymat" BOOLEAN,
+    "victimeInformeeCommentaire" TEXT,
+    "veutGarderAnonymat" BOOLEAN,
     "commentaire" TEXT,
     "requeteEntiteStateId" TEXT NOT NULL,
     "identiteId" TEXT NOT NULL,
@@ -171,6 +171,8 @@ CREATE TABLE "LienVictimeEnum" (
 -- CreateTable
 CREATE TABLE "Adresse" (
     "id" TEXT NOT NULL,
+    "label" TEXT,
+    "numero" TEXT,
     "rue" TEXT,
     "codePostal" TEXT,
     "ville" TEXT,
@@ -412,7 +414,7 @@ ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFE
 ALTER TABLE "User" ADD CONSTRAINT "User_entiteId_fkey" FOREIGN KEY ("entiteId") REFERENCES "Entite"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Entite" ADD CONSTRAINT "Entite_entiteTypeId_fkey" FOREIGN KEY ("entiteTypeId") REFERENCES "EntiteTypeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Entite" ADD CONSTRAINT "Entite_entiteTypeId_fkey" FOREIGN KEY ("entiteTypeId") REFERENCES "EntiteTypeEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Entite" ADD CONSTRAINT "Entite_entiteMereId_fkey" FOREIGN KEY ("entiteMereId") REFERENCES "Entite"("id") ON DELETE SET NULL ON UPDATE CASCADE;
