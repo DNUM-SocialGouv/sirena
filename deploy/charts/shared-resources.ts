@@ -60,6 +60,39 @@ export class SharedResources extends Chart {
       },
     });
 
+    // Database External Secret
+    new externalSecrets.ExternalSecret(this, 'database-external-secret', {
+      metadata: {
+        name: 'database',
+      },
+      spec: {
+        dataFrom: [
+          {
+            extract: {
+              key: 'databases/sirena',
+            },
+          },
+        ],
+        refreshInterval: '1h',
+        secretStoreRef: {
+          name: 'local-secret-store',
+        },
+        target: {
+          name: 'db',
+          template: {
+            data: {
+              dbname: '{{ .dbname }}',
+              username: '{{ .username }}',
+              password: '{{ .password }}',
+              host: '{{ .host }}',
+              port: '{{ .port }}',
+              url: '{{ .url }}',
+            },
+          },
+        },
+      },
+    });
+
     // GHCR Registry External Secret
     new externalSecrets.ExternalSecret(this, 'ghcr-registry-external-secret', {
       metadata: {

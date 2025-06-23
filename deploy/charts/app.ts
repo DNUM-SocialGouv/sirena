@@ -74,14 +74,14 @@ function createBackendEnvVars(host: string): k8s.EnvVar[] {
 }
 
 function createDatabaseEnvVars(): k8s.EnvVar[] {
-  const dbSecretName = 'db-app';
+  const dbSecretName = 'db';
   const dbEnvMappings = [
     { envName: 'PG_SIRENA_DB', secretKey: 'dbname' },
     { envName: 'PG_SIRENA_USER', secretKey: 'username' },
     { envName: 'PG_SIRENA_PASSWORD', secretKey: 'password' },
     { envName: 'PG_PORT', secretKey: 'port' },
     { envName: 'PG_HOST', secretKey: 'host' },
-    { envName: 'PG_URL', secretKey: 'uri' },
+    { envName: 'PG_URL', secretKey: 'url' },
   ];
 
   return dbEnvMappings.map(({ envName, secretKey }) => ({
@@ -112,17 +112,12 @@ function createContainer(props: AppProps): k8s.Container {
     },
     image: props.image,
     ports: [{ containerPort: Number(props.targetPort.value) }],
-    env: isBackend
-      ? [...createBackendEnvVars(props.host), ...createDatabaseEnvVars()]
-      : [],
+    env: isBackend ? [...createBackendEnvVars(props.host), ...createDatabaseEnvVars()] : [],
     envFrom: isBackend ? [{ secretRef: { name: 'backend' } }] : undefined,
   };
 }
 
-function createIngressAnnotations(
-  isBackend: boolean,
-  namespace: string,
-): Record<string, string> {
+function createIngressAnnotations(isBackend: boolean, namespace: string): Record<string, string> {
   const baseAnnotations = {
     'cert-manager.io/cluster-issuer': 'letsencrypt',
     'nginx.ingress.kubernetes.io/proxy-body-size': '60m',
@@ -165,11 +160,7 @@ function createConfigMap(scope: Construct, isBackend: boolean) {
   return undefined;
 }
 
-function createDeployment(
-  scope: Construct,
-  props: AppProps,
-  labels: Record<string, string>,
-) {
+function createDeployment(scope: Construct, props: AppProps, labels: Record<string, string>) {
   return new k8s.KubeDeployment(scope, 'deployment', {
     metadata: {
       name: props.name,
@@ -197,11 +188,7 @@ function createDeployment(
   });
 }
 
-function createService(
-  scope: Construct,
-  props: AppProps,
-  labels: Record<string, string>,
-) {
+function createService(scope: Construct, props: AppProps, labels: Record<string, string>) {
   return new k8s.KubeService(scope, 'service', {
     metadata: {
       name: props.name,

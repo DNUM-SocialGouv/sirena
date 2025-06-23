@@ -63,12 +63,7 @@ function getHostUrl(envConfig: EnvironmentConfig): string {
   return `https://${envConfig.subdomain}.${envConfig.domain}`;
 }
 
-function createApps(
-  app: CdkApp,
-  envConfig: EnvironmentConfig,
-  imageTag: string,
-  namespace: string,
-): void {
+function createApps(app: CdkApp, envConfig: EnvironmentConfig, imageTag: string, namespace: string): void {
   const hostUrl = getHostUrl(envConfig);
 
   // Shared resources (database and external secrets)
@@ -105,9 +100,7 @@ const app = new CdkApp({
 const envConfig = ENV_CONFIGS[environnement];
 if (!envConfig) {
   console.error(`Environnement non supporté: ${environnement}`);
-  console.error(
-    `Environnements supportés: ${Object.keys(ENV_CONFIGS).join(', ')}`,
-  );
+  console.error(`Environnements supportés: ${Object.keys(ENV_CONFIGS).join(', ')}`);
   process.exit(1);
 }
 
