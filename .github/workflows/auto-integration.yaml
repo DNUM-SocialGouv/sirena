@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-deploy:
-    uses: ./.github/workflows/reusable-workflows/build-and-deploy.yml
+    uses: ./.github/workflows/reusable-build-and-deploy.yml
     with:
       environment: integration
       deploy: true
