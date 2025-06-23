@@ -9,8 +9,6 @@ import type { Session } from '@/libs/prisma';
 import { throwHTTPException401Unauthorized } from '@sirena/backend-utils/helpers';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
-import { HTTPException } from 'hono/http-exception';
-import { set } from 'zod';
 
 const cleanAnSendError = (c: Context<AppBindings>, error: unknown, errorMessage: string, errorResponse: string) => {
   const logger = c.get('logger');

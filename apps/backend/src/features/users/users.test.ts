@@ -15,7 +15,7 @@ vi.mock('@/config/env', () => ({
 
 vi.mock('@/middlewares/auth.middleware', () => {
   return {
-    default: (c: Context, next: () => Promise<Next>) => {
+    default: (c: Context, next: Next) => {
       return next();
     },
   };

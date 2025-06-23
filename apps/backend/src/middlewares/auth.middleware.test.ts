@@ -1,9 +1,11 @@
 import { envVars } from '@/config/env';
 import { getSession } from '@/features/sessions/sessions.service';
-import type { AppBindings } from '@/helpers/factories/appWithAuth';
+import { errorHandler } from '@/helpers/errors';
+import appWithAuth from '@/helpers/factories/appWithAuth';
+import appWithLogs from '@/helpers/factories/appWithLogs';
 import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
 import authMiddleware from '@/middlewares/auth.middleware';
-import { Hono } from 'hono';
+import pinoLogger from '@/middlewares/pino.middleware';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -29,18 +31,22 @@ describe('auth.middleware.ts Auth Helpers', () => {
   });
 
   it('should handle auth token verification and refresh token logic', async () => {
-    const app = new Hono<{ Bindings: AppBindings }>()
+    const route = appWithAuth
+      .createApp()
       .use(authMiddleware)
-      .get('/test', async (c) => c.json({ ok: true }));
+      .get('/', async (c) => c.json({ ok: true }));
+
+    const app = appWithLogs.createApp().use(pinoLogger()).route('/test', route).onError(errorHandler);
 
     const client = testClient(app);
 
     const userId = '1';
+    const roleId = '1';
     const authTokenExpirationDate = getJwtExpirationDate(envVars.AUTH_TOKEN_EXPIRATION);
     const refreshTokenExpirationDate = getJwtExpirationDate(envVars.REFRESH_TOKEN_EXPIRATION);
 
     const refreshToken = signRefreshCookie(userId, refreshTokenExpirationDate);
-    const authToken = signAuthCookie(userId, authTokenExpirationDate);
+    const authToken = signAuthCookie({ id: userId, roleId }, authTokenExpirationDate);
 
     const fakeSession = {
       id: '1',
@@ -62,15 +68,23 @@ describe('auth.middleware.ts Auth Helpers', () => {
   });
 
   it('should handle auth token verification failure (no tokens)', async () => {
-    const app = new Hono<{ Bindings: AppBindings }>()
+    const route = appWithAuth
+      .createApp()
+      .use(pinoLogger())
       .use(authMiddleware)
-      .get('/test', async (c) => c.json({ ok: true }));
+      .get('/', async (c) => c.json({ ok: true }));
+
+    const app = appWithLogs.createApp().route('/test', route).onError(errorHandler);
 
     const client = testClient(app);
 
     const res = await client.test.$get();
+    const body = await res.json();
 
-    const body = await res.text();
-    expect(body).toBe('Unauthorized, Refresh token is invalid or expired');
+    if ('message' in body) {
+      expect(body.message).toBe('Unauthorized, Refresh token is invalid or expired');
+    } else {
+      throw new Error('Expected error message in response');
+    }
   });
 });

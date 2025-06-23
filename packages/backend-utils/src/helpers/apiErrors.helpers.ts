@@ -17,40 +17,61 @@ const MESSAGES = {
   SERVICE_NOT_AVAILABLE: 'Service not available',
 };
 
-const getParamsOptions = (message: string, options?: ErrorOptions) => {
-  const params: { message: string; cause?: unknown; res?: Response } = { message };
+const getParamsOptions = (status: number, message: string, options?: ErrorOptions) => {
+  const params: { message: string; cause?: unknown } = { message };
   if (options?.cause) {
     params.cause = options.cause;
   }
+
+  let res: Response;
   if (options?.res) {
-    params.res = options.res;
+    res = new Response(JSON.stringify({ ...params }), {
+      status,
+      headers: {
+        ...Object.fromEntries(options.res.headers),
+        'Content-Type': 'application/json',
+      },
+    });
+  } else {
+    res = new Response(JSON.stringify({ ...params }), {
+      status: status,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
-  return params;
+
+  return { ...params, res };
 };
 
 export const throwHTTPException400BadRequest = (msg = MESSAGES.BAD_REQUEST, options?: ErrorOptions) => {
-  const params = getParamsOptions(msg, options);
-  throw new HTTPException(400, params);
+  const status = 400;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
 };
 
 export const throwHTTPException401Unauthorized = (msg = MESSAGES.UNAUTHORIZED, options?: ErrorOptions) => {
-  const params = getParamsOptions(msg, options);
-  throw new HTTPException(401, params);
+  const status = 401;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
 };
 
 export const throwHTTPException403Forbidden = (msg = MESSAGES.FORBIDDEN, options?: ErrorOptions) => {
-  const params = getParamsOptions(msg, options);
-  throw new HTTPException(403, { message: msg });
+  const status = 403;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
 };
 
 export const throwHTTPException404NotFound = (msg = MESSAGES.NOT_FOUND, options?: ErrorOptions) => {
-  const params = getParamsOptions(msg, options);
-  throw new HTTPException(404, { message: msg });
+  const status = 404;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
 };
 
 export const throwHTTPException503ServiceUnavailable = (msg = MESSAGES.NOT_FOUND, options?: ErrorOptions) => {
-  const params = getParamsOptions(msg, options);
-  throw new HTTPException(503, { message: msg });
+  const status = 503;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
 };
 
 export const apiErrorResolver = (): ResolverResult => resolver(ErrorSchema);
