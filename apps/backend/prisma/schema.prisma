@@ -20,20 +20,29 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique /// @zod.string.email({ message: 'Invalid email address' }),
+  id        String      @id @default(cuid())
+  email     String      @unique /// @zod.string.email({ message: 'Invalid email address' }),
   firstName String
   lastName  String
-  uid       String    @unique
-  sub       String    @unique
-  createdAt DateTime  @default(now())
-  active    Boolean   @default(false)
+  uid       String      @unique
+  sub       String      @unique
+  createdAt DateTime    @default(now())
+  active    Boolean     @default(false)
   pcData    Json
   roleId    String
-  role      RoleEnum? @relation(fields: [roleId], references: [id])
+  role      RoleEnum?   @relation(fields: [roleId], references: [id])
   sessions  Session[]
+  statutId  String
+  statut    StatutEnum? @relation(fields: [statutId], references: [id])
   entiteId  String?
-  entite    Entite?   @relation(fields: [entiteId], references: [id])
+  entite    Entite?     @relation(fields: [entiteId], references: [id])
+}
+
+model StatutEnum {
+  id    String @id
+  label String
+
+  users User[]
 }
 
 model Entite {
@@ -53,8 +62,8 @@ model Entite {
 }
 
 model EntiteTypeEnum {
-  id    String @id @default(uuid())
-  label String @unique
+  id    String @id
+  label String
 
   entites Entite[]
 }

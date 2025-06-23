@@ -12,6 +12,7 @@ import {
   professionTypes,
   receptionTypes,
   roles,
+  statutTypes,
   transportTypes,
 } from '@sirena/common/constants';
 
@@ -173,6 +174,18 @@ async function seedRoleEnum(prisma: PrismaClient) {
   return { table: 'roleEnum', added };
 }
 
+async function seedStatutEnum(prisma: PrismaClient) {
+  let added = 0;
+  for (const [id, label] of Object.entries(statutTypes)) {
+    const exists = await prisma.statutEnum.findUnique({ where: { id } });
+    if (!exists) {
+      await prisma.statutEnum.create({ data: { id, label } });
+      added++;
+    }
+  }
+  return { table: 'statutEnum', added };
+}
+
 async function seedTransportTypeEnum(prisma: PrismaClient) {
   let added = 0;
   for (const [id, label] of Object.entries(transportTypes)) {
@@ -202,6 +215,7 @@ export async function seedEnums(prisma: PrismaClient) {
     seedProfessionTypeEnum(prisma),
     seedReceptionTypeEnum(prisma),
     seedRoleEnum(prisma),
+    seedStatutEnum(prisma),
     seedTransportTypeEnum(prisma),
   ]);
 

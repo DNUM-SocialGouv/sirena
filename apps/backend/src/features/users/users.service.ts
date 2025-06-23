@@ -27,8 +27,10 @@ export const getUserBySub = async (sub: User['sub']) => await prisma.user.findUn
 
 export const createUser = async (newUser: CreateUserDto) => {
   const roleId = 'PENDING';
+  const statutId = 'NON_RENSEIGNE';
   return prisma.user.create({
     data: {
+      statutId,
       ...newUser,
       roleId,
       pcData: newUser.pcData as Prisma.JsonObject,

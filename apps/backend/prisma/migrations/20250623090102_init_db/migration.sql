@@ -10,9 +10,18 @@ CREATE TABLE "User" (
     "active" BOOLEAN NOT NULL DEFAULT false,
     "pcData" JSONB NOT NULL,
     "roleId" TEXT NOT NULL,
+    "statutId" TEXT NOT NULL,
     "entiteId" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "StatutEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "StatutEnum_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -354,9 +363,6 @@ CREATE UNIQUE INDEX "User_uid_key" ON "User"("uid");
 CREATE UNIQUE INDEX "User_sub_key" ON "User"("sub");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "EntiteTypeEnum_label_key" ON "EntiteTypeEnum"("label");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Session_token_key" ON "Session"("token");
 
 -- CreateIndex
@@ -409,6 +415,9 @@ CREATE UNIQUE INDEX "ReceptionTypeEnum_label_key" ON "ReceptionTypeEnum"("label"
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "RoleEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "User" ADD CONSTRAINT "User_statutId_fkey" FOREIGN KEY ("statutId") REFERENCES "StatutEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_entiteId_fkey" FOREIGN KEY ("entiteId") REFERENCES "Entite"("id") ON DELETE SET NULL ON UPDATE CASCADE;
