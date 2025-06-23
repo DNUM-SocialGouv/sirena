@@ -8,7 +8,7 @@ export function AllUsersTab() {
   const { data: rolesData, isLoading: rolesLoading, error: rolesError } = useRoles();
 
   const nonPendingRoleIds = rolesData?.data
-    .filter((role) => role.roleName !== 'PENDING')
+    .filter((role) => role.id !== 'PENDING')
     .map((role) => role.id)
     .join(',');
 
@@ -42,7 +42,7 @@ export function AllUsersTab() {
   const columns: Column<User>[] = [
     { key: 'lastName', label: 'Nom' },
     { key: 'firstName', label: 'Prénom' },
-    { key: 'role.description', label: 'Rôle' },
+    { key: 'role.label', label: 'Rôle' },
     { key: 'custom:status', label: 'Statut' },
     { key: 'custom:editionLabel', label: 'Action' },
   ];

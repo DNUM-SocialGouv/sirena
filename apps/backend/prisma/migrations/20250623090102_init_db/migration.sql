@@ -1,6 +1,73 @@
 -- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "uid" TEXT NOT NULL,
+    "sub" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "active" BOOLEAN NOT NULL DEFAULT false,
+    "pcData" JSONB NOT NULL,
+    "roleId" TEXT NOT NULL,
+    "statutId" TEXT NOT NULL,
+    "entiteId" TEXT,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "StatutEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "StatutEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Entite" (
+    "id" TEXT NOT NULL,
+    "nomComplet" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+    "email" TEXT,
+    "entiteTypeId" TEXT NOT NULL,
+    "entiteMereId" TEXT,
+
+    CONSTRAINT "Entite_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "EntiteTypeEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "EntiteTypeEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Session" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "pcIdToken" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "RoleEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "RoleEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Requete" (
     "id" TEXT NOT NULL,
+    "dematSocialId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -54,8 +121,8 @@ CREATE TABLE "Victime" (
     "id" TEXT NOT NULL,
     "estNonIdentifiee" BOOLEAN,
     "estAnonyme" BOOLEAN,
-    "estHandicape" BOOLEAN,
-    "estInforme" BOOLEAN,
+    "estHandicapee" BOOLEAN,
+    "commentaire" TEXT,
     "requeteEntiteStateId" TEXT NOT NULL,
     "identiteId" TEXT NOT NULL,
     "adresseId" TEXT,
@@ -76,11 +143,18 @@ CREATE TABLE "AgeEnum" (
 -- CreateTable
 CREATE TABLE "Declarant" (
     "id" TEXT NOT NULL,
-    "estIdentife" BOOLEAN,
-    "veutGarderAnonnymat" BOOLEAN,
+    "estIdentifie" BOOLEAN,
+    "estVictime" BOOLEAN,
+    "estVictimeInformee" BOOLEAN,
+    "estAnonyme" BOOLEAN,
+    "estHandicapee" BOOLEAN,
+    "victimeInformeeCommentaire" TEXT,
+    "veutGarderAnonymat" BOOLEAN,
+    "commentaire" TEXT,
     "requeteEntiteStateId" TEXT NOT NULL,
     "identiteId" TEXT NOT NULL,
-    "adresseId" TEXT NOT NULL,
+    "adresseId" TEXT,
+    "ageId" TEXT,
     "lienVictimeId" TEXT,
     "civiliteId" TEXT,
 
@@ -106,6 +180,8 @@ CREATE TABLE "LienVictimeEnum" (
 -- CreateTable
 CREATE TABLE "Adresse" (
     "id" TEXT NOT NULL,
+    "label" TEXT,
+    "numero" TEXT,
     "rue" TEXT,
     "codePostal" TEXT,
     "ville" TEXT,
@@ -116,7 +192,7 @@ CREATE TABLE "Adresse" (
 -- CreateTable
 CREATE TABLE "DescriptionFaits" (
     "estMaltraitance" BOOLEAN,
-    "DateDebut" TIMESTAMP(3),
+    "dateDebut" TIMESTAMP(3),
     "dateFin" TIMESTAMP(3),
     "commentaire" TEXT,
     "requeteEntiteStateId" TEXT NOT NULL,
@@ -167,33 +243,25 @@ CREATE TABLE "DescriptionFaitsConsequence" (
 -- CreateTable
 CREATE TABLE "DescriptionFaitsMaltraitanceType" (
     "faitsId" TEXT NOT NULL,
-    "MaltraitanceTypeId" TEXT NOT NULL,
+    "maltraitanceTypeId" TEXT NOT NULL,
 
-    CONSTRAINT "DescriptionFaitsMaltraitanceType_pkey" PRIMARY KEY ("faitsId","MaltraitanceTypeId")
+    CONSTRAINT "DescriptionFaitsMaltraitanceType_pkey" PRIMARY KEY ("faitsId","maltraitanceTypeId")
 );
 
 -- CreateTable
 CREATE TABLE "LieuIncident" (
     "id" TEXT NOT NULL,
     "nom" TEXT,
-    "lieu" TEXT,
+    "codePostal" TEXT,
+    "societeTransport" TEXT,
     "finess" TEXT,
     "commentaire" TEXT,
+    "adresseId" TEXT,
     "lieuTypeId" TEXT,
-    "natureLieuId" TEXT,
-    "serviceDomicileId" TEXT,
     "transportTypeId" TEXT,
     "requeteEntiteStateId" TEXT NOT NULL,
 
     CONSTRAINT "LieuIncident_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "NatureLieuEnum" (
-    "id" TEXT NOT NULL,
-    "label" TEXT NOT NULL,
-
-    CONSTRAINT "NatureLieuEnum_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -202,14 +270,6 @@ CREATE TABLE "LieuTypeEnum" (
     "label" TEXT NOT NULL,
 
     CONSTRAINT "LieuTypeEnum_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "ServiceDomicileEnum" (
-    "id" TEXT NOT NULL,
-    "label" TEXT NOT NULL,
-
-    CONSTRAINT "ServiceDomicileEnum_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -224,14 +284,23 @@ CREATE TABLE "TransportTypeEnum" (
 CREATE TABLE "MisEnCause" (
     "id" TEXT NOT NULL,
     "estIdentifie" BOOLEAN,
-    "type" TEXT,
     "identite" TEXT,
     "rpps" TEXT,
     "commentaire" TEXT,
     "professionTypeId" TEXT,
     "requeteEntiteStateId" TEXT NOT NULL,
+    "misEnCauseTypeId" TEXT,
+    "professionDomicileTypeId" TEXT,
 
     CONSTRAINT "MisEnCause_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MisEnCauseTypeEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "MisEnCauseTypeEnum_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -243,9 +312,16 @@ CREATE TABLE "ProfessionTypeEnum" (
 );
 
 -- CreateTable
+CREATE TABLE "ProfessionDomicileTypeEnum" (
+    "id" TEXT NOT NULL,
+    "label" TEXT NOT NULL,
+
+    CONSTRAINT "ProfessionDomicileTypeEnum_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "DemarchesEngagees" (
     "requeteEntiteStateId" TEXT NOT NULL,
-    "estDemarcheEngage" BOOLEAN,
     "aContacte" BOOLEAN,
     "dateContact" TIMESTAMP(3),
     "aRepondu" BOOLEAN,
@@ -254,7 +330,7 @@ CREATE TABLE "DemarchesEngagees" (
     "aDeposePlainte" BOOLEAN,
     "plainteDeposeDate" TIMESTAMP(3),
     "plainteDeposeLocation" TEXT,
-    "comment" TEXT,
+    "commentaire" TEXT,
 
     CONSTRAINT "DemarchesEngagees_pkey" PRIMARY KEY ("requeteEntiteStateId")
 );
@@ -263,7 +339,7 @@ CREATE TABLE "DemarchesEngagees" (
 CREATE TABLE "InfoComplementaire" (
     "requeteEntiteStateId" TEXT NOT NULL,
     "receptionDate" TIMESTAMP(3),
-    "comments" TEXT,
+    "commentaire" TEXT,
     "receptionTypeId" TEXT,
 
     CONSTRAINT "InfoComplementaire_pkey" PRIMARY KEY ("requeteEntiteStateId")
@@ -276,6 +352,24 @@ CREATE TABLE "ReceptionTypeEnum" (
 
     CONSTRAINT "ReceptionTypeEnum_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_uid_key" ON "User"("uid");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_sub_key" ON "User"("sub");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_token_key" ON "Session"("token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_pcIdToken_key" ON "Session"("pcIdToken");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Requete_dematSocialId_key" ON "Requete"("dematSocialId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Victime_requeteEntiteStateId_key" ON "Victime"("requeteEntiteStateId");
@@ -308,10 +402,34 @@ CREATE UNIQUE INDEX "ConsequenceEnum_label_key" ON "ConsequenceEnum"("label");
 CREATE UNIQUE INDEX "MaltraitanceTypeEnum_label_key" ON "MaltraitanceTypeEnum"("label");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "MisEnCauseTypeEnum_label_key" ON "MisEnCauseTypeEnum"("label");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ProfessionTypeEnum_label_key" ON "ProfessionTypeEnum"("label");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "ProfessionDomicileTypeEnum_label_key" ON "ProfessionDomicileTypeEnum"("label");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ReceptionTypeEnum_label_key" ON "ReceptionTypeEnum"("label");
+
+-- AddForeignKey
+ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "RoleEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "User" ADD CONSTRAINT "User_statutId_fkey" FOREIGN KEY ("statutId") REFERENCES "StatutEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "User" ADD CONSTRAINT "User_entiteId_fkey" FOREIGN KEY ("entiteId") REFERENCES "Entite"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Entite" ADD CONSTRAINT "Entite_entiteTypeId_fkey" FOREIGN KEY ("entiteTypeId") REFERENCES "EntiteTypeEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Entite" ADD CONSTRAINT "Entite_entiteMereId_fkey" FOREIGN KEY ("entiteMereId") REFERENCES "Entite"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "RequeteEntite" ADD CONSTRAINT "RequeteEntite_requeteId_fkey" FOREIGN KEY ("requeteId") REFERENCES "Requete"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -344,7 +462,10 @@ ALTER TABLE "Declarant" ADD CONSTRAINT "Declarant_requeteEntiteStateId_fkey" FOR
 ALTER TABLE "Declarant" ADD CONSTRAINT "Declarant_identiteId_fkey" FOREIGN KEY ("identiteId") REFERENCES "Identite"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Declarant" ADD CONSTRAINT "Declarant_adresseId_fkey" FOREIGN KEY ("adresseId") REFERENCES "Adresse"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Declarant" ADD CONSTRAINT "Declarant_adresseId_fkey" FOREIGN KEY ("adresseId") REFERENCES "Adresse"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Declarant" ADD CONSTRAINT "Declarant_ageId_fkey" FOREIGN KEY ("ageId") REFERENCES "AgeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Declarant" ADD CONSTRAINT "Declarant_lienVictimeId_fkey" FOREIGN KEY ("lienVictimeId") REFERENCES "LienVictimeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -371,16 +492,13 @@ ALTER TABLE "DescriptionFaitsConsequence" ADD CONSTRAINT "DescriptionFaitsConseq
 ALTER TABLE "DescriptionFaitsMaltraitanceType" ADD CONSTRAINT "DescriptionFaitsMaltraitanceType_faitsId_fkey" FOREIGN KEY ("faitsId") REFERENCES "DescriptionFaits"("requeteEntiteStateId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "DescriptionFaitsMaltraitanceType" ADD CONSTRAINT "DescriptionFaitsMaltraitanceType_MaltraitanceTypeId_fkey" FOREIGN KEY ("MaltraitanceTypeId") REFERENCES "MaltraitanceTypeEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "DescriptionFaitsMaltraitanceType" ADD CONSTRAINT "DescriptionFaitsMaltraitanceType_maltraitanceTypeId_fkey" FOREIGN KEY ("maltraitanceTypeId") REFERENCES "MaltraitanceTypeEnum"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LieuIncident" ADD CONSTRAINT "LieuIncident_adresseId_fkey" FOREIGN KEY ("adresseId") REFERENCES "Adresse"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "LieuIncident" ADD CONSTRAINT "LieuIncident_lieuTypeId_fkey" FOREIGN KEY ("lieuTypeId") REFERENCES "LieuTypeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "LieuIncident" ADD CONSTRAINT "LieuIncident_natureLieuId_fkey" FOREIGN KEY ("natureLieuId") REFERENCES "NatureLieuEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "LieuIncident" ADD CONSTRAINT "LieuIncident_serviceDomicileId_fkey" FOREIGN KEY ("serviceDomicileId") REFERENCES "ServiceDomicileEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "LieuIncident" ADD CONSTRAINT "LieuIncident_transportTypeId_fkey" FOREIGN KEY ("transportTypeId") REFERENCES "TransportTypeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -393,6 +511,12 @@ ALTER TABLE "MisEnCause" ADD CONSTRAINT "MisEnCause_professionTypeId_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "MisEnCause" ADD CONSTRAINT "MisEnCause_requeteEntiteStateId_fkey" FOREIGN KEY ("requeteEntiteStateId") REFERENCES "RequeteState"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MisEnCause" ADD CONSTRAINT "MisEnCause_misEnCauseTypeId_fkey" FOREIGN KEY ("misEnCauseTypeId") REFERENCES "MisEnCauseTypeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MisEnCause" ADD CONSTRAINT "MisEnCause_professionDomicileTypeId_fkey" FOREIGN KEY ("professionDomicileTypeId") REFERENCES "ProfessionDomicileTypeEnum"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "DemarchesEngagees" ADD CONSTRAINT "DemarchesEngagees_requeteEntiteStateId_fkey" FOREIGN KEY ("requeteEntiteStateId") REFERENCES "RequeteState"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
