@@ -84,9 +84,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug
-        run: echo "SHORT_SHA=${{ env.SHORT_SHA }}"
-
       - name: Install dependencies
         run: |
           cd deploy
@@ -102,8 +99,6 @@ jobs:
           cd deploy
           export IMAGE_TAG=${{ env.SHORT_SHA }}
           export ENVIRONNEMENT=test
-          echo "IMAGE_TAG=$IMAGE_TAG"
-          echo "ENVIRONNEMENT=${{ env.ENVIRONNEMENT }}"
           npm run build
 
       - name: Checkout GitOps repository
