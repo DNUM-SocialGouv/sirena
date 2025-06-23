@@ -1,7 +1,9 @@
-name: Integration - build and deploy
+name: Test - build and deploy
 
 on:
   push:
+    branches:
+      - chore/deploy
 
 env:
   REGISTRY: ghcr.io
