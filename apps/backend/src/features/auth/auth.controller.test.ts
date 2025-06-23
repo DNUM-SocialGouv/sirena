@@ -176,7 +176,8 @@ describe('auth.controller.ts Auth Endpoints', () => {
       lastName: fakeUserInfo.usual_name,
       createdAt: new Date(),
       active: false,
-      roleId: '1234',
+      roleId: 'PENDING',
+      pcData: {},
     };
     vi.mocked(createUser).mockResolvedValueOnce(createdUser);
 
@@ -195,8 +196,6 @@ describe('auth.controller.ts Auth Endpoints', () => {
         },
       },
     );
-
-    const expectedRedirectUri = new URL(envVars.PC_REDIRECT_URI);
 
     expect(fetchUserInfo).toHaveBeenCalledTimes(1);
     expect(fetchUserInfo).toHaveBeenCalledWith(fakeTokens.access_token, fakeTokens.claims());

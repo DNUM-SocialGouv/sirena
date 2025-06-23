@@ -14,8 +14,8 @@ export const Route = createFileRoute('/login')({
   }),
 
   validateSearch: z.object({
-    redirect: z.string().optional().catch(''),
-    state: z.string().optional().catch(''),
+    redirect: z.string().optional(),
+    state: z.string().optional(),
   }),
   beforeLoad: ({ context, search }) => {
     if (context.userStore.isLogged) {

@@ -20,18 +20,52 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique /// @zod.string.email({ message: 'Invalid email address' }),
+  id        String      @id @default(cuid())
+  email     String      @unique /// @zod.string.email({ message: 'Invalid email address' }),
   firstName String
   lastName  String
-  uid       String    @unique
-  sub       String    @unique
-  createdAt DateTime  @default(now())
-  active    Boolean   @default(false)
-  pcData    Json?
-  roleId    String?
-  role      RoleEnum? @relation(fields: [roleId], references: [id])
-  Sessions  Session[]
+  uid       String      @unique
+  sub       String      @unique
+  createdAt DateTime    @default(now())
+  active    Boolean     @default(false)
+  pcData    Json
+  roleId    String
+  role      RoleEnum?   @relation(fields: [roleId], references: [id])
+  sessions  Session[]
+  statutId  String
+  statut    StatutEnum? @relation(fields: [statutId], references: [id])
+  entiteId  String?
+  entite    Entite?     @relation(fields: [entiteId], references: [id])
+}
+
+model StatutEnum {
+  id    String @id
+  label String
+
+  users User[]
+}
+
+model Entite {
+  id         String  @id @default(uuid())
+  nomComplet String
+  label      String
+  email      String?
+
+  services Entite[] @relation("EntiteMereToServices")
+
+  entiteTypeId String
+  entiteType   EntiteTypeEnum @relation(fields: [entiteTypeId], references: [id])
+  entiteMereId String?
+  entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
+
+  users User[]
+}
+
+model EntiteTypeEnum {
+  id    String @id
+  label String
+
+  entites Entite[]
 }
 
 model Session {
@@ -45,18 +79,19 @@ model Session {
 }
 
 model RoleEnum {
-  id          String @id @default(cuid())
-  roleName    String @unique
-  description String
-  users       User[]
+  id    String @id
+  label String
+
+  users User[]
 }
 
 model Requete {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(uuid())
+  dematSocialId String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  requeteEntite RequeteEntite[]
+  requetesEntite RequeteEntite[]
 }
 
 model RequeteEntite {
@@ -65,16 +100,16 @@ model RequeteEntite {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  requeteEntiteState RequeteState[]
-  requeteId          String?
-  requete            Requete?       @relation(fields: [requeteId], references: [id])
+  requetesEntiteStates RequeteState[]
+  requeteId            String?
+  requete              Requete?       @relation(fields: [requeteId], references: [id])
 }
 
 model RequeteStatutEnum {
   id    String @id
   label String
 
-  requeteEntiteState RequeteState[]
+  requetesEntiteState RequeteState[]
 }
 
 model RequeteState {
@@ -92,8 +127,8 @@ model RequeteState {
   declarant Declarant?
 
   descriptionFaits   DescriptionFaits?
-  lieuIncident       LieuIncident[]
-  misEnCause         MisEnCause[]
+  lieuxIncident      LieuIncident[]
+  misEnCauses        MisEnCause[]
   demarchesEngagees  DemarchesEngagees?
   infoComplementaire InfoComplementaire?
 }
@@ -114,8 +149,8 @@ model Victime {
   id               String   @id @default(uuid())
   estNonIdentifiee Boolean?
   estAnonyme       Boolean?
-  estHandicape     Boolean?
-  estInforme       Boolean?
+  estHandicapee    Boolean?
+  commentaire      String?
 
   requeteEntiteStateId String       @unique
   requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
@@ -124,7 +159,7 @@ model Victime {
   identite   Identite @relation(fields: [identiteId], references: [id])
 
   adresseId String?
-  address   Adresse? @relation(fields: [adresseId], references: [id])
+  adresse   Adresse? @relation(fields: [adresseId], references: [id])
 
   ageId String?
   age   AgeEnum? @relation(fields: [ageId], references: [id])
@@ -137,13 +172,20 @@ model AgeEnum {
   id    String @id
   label String
 
-  victime Victime[]
+  victimes  Victime[]
+  declarant Declarant[]
 }
 
 model Declarant {
-  id                  String   @id @default(uuid())
-  estIdentife         Boolean?
-  veutGarderAnonnymat Boolean?
+  id                         String   @id @default(uuid())
+  estIdentifie               Boolean?
+  estVictime                 Boolean?
+  estVictimeInformee         Boolean?
+  estAnonyme                 Boolean?
+  estHandicapee              Boolean?
+  victimeInformeeCommentaire String?
+  veutGarderAnonymat         Boolean?
+  commentaire                String?
 
   requeteEntiteStateId String       @unique
   requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
@@ -151,8 +193,11 @@ model Declarant {
   identiteId String   @unique
   identite   Identite @relation(fields: [identiteId], references: [id])
 
-  adresseId String  @unique
-  adresse   Adresse @relation(fields: [adresseId], references: [id])
+  adresseId String?  @unique
+  adresse   Adresse? @relation(fields: [adresseId], references: [id])
+
+  ageId String?
+  age   AgeEnum? @relation(fields: [ageId], references: [id])
 
   lienVictimeId String?
   lienVictime   LienVictimeEnum? @relation(fields: [lienVictimeId], references: [id])
@@ -177,17 +222,20 @@ model LienVictimeEnum {
 
 model Adresse {
   id         String  @id @default(uuid())
+  label      String?
+  numero     String?
   rue        String?
   codePostal String?
   ville      String?
 
-  victimes   Victime[]
-  declarants Declarant[]
+  victimes      Victime[]
+  declarants    Declarant[]
+  lieuxIncident LieuIncident[]
 }
 
 model DescriptionFaits {
   estMaltraitance Boolean?
-  DateDebut       DateTime?
+  dateDebut       DateTime?
   dateFin         DateTime?
   commentaire     String?
 
@@ -195,28 +243,28 @@ model DescriptionFaits {
   requeteEntiteState   RequeteState                       @relation(fields: [requeteEntiteStateId], references: [id])
   motifs               DescriptionFaitsMotif[]
   consequences         DescriptionFaitsConsequence[]
-  MaltraitanceTypes    DescriptionFaitsMaltraitanceType[]
+  maltraitanceTypes    DescriptionFaitsMaltraitanceType[]
 }
 
 model MotifEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  faits DescriptionFaitsMotif[]
+  descriptionFaits DescriptionFaitsMotif[]
 }
 
 model ConsequenceEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  faits DescriptionFaitsConsequence[]
+  descriptionFaits DescriptionFaitsConsequence[]
 }
 
 model MaltraitanceTypeEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  faits DescriptionFaitsMaltraitanceType[]
+  descriptionFaits DescriptionFaitsMaltraitanceType[]
 }
 
 model DescriptionFaitsMotif {
@@ -243,27 +291,25 @@ model DescriptionFaitsMaltraitanceType {
   faitsId          String
   descriptionFaits DescriptionFaits @relation(fields: [faitsId], references: [requeteEntiteStateId])
 
-  MaltraitanceTypeId String
-  MaltraitanceType   MaltraitanceTypeEnum @relation(fields: [MaltraitanceTypeId], references: [id])
+  maltraitanceTypeId String
+  maltraitanceType   MaltraitanceTypeEnum @relation(fields: [maltraitanceTypeId], references: [id])
 
-  @@id([faitsId, MaltraitanceTypeId])
+  @@id([faitsId, maltraitanceTypeId])
 }
 
 model LieuIncident {
-  id          String  @id @default(uuid())
-  nom         String?
-  lieu        String?
-  finess      String?
-  commentaire String?
+  id               String  @id @default(uuid())
+  nom              String?
+  codePostal       String?
+  societeTransport String?
+  finess           String?
+  commentaire      String?
+
+  adresseId String?
+  adresse   Adresse? @relation(fields: [adresseId], references: [id])
 
   lieuTypeId String?
   lieuType   LieuTypeEnum? @relation(fields: [lieuTypeId], references: [id])
-
-  natureLieuId String?
-  natureLieu   NatureLieuEnum? @relation(fields: [natureLieuId], references: [id])
-
-  serviceDomicileId String?
-  serviceDomicile   ServiceDomicileEnum? @relation(fields: [serviceDomicileId], references: [id])
 
   transportTypeId String?
   transportType   TransportTypeEnum? @relation(fields: [transportTypeId], references: [id])
@@ -272,21 +318,7 @@ model LieuIncident {
   requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
 }
 
-model NatureLieuEnum {
-  id    String @id
-  label String
-
-  lieuxIncident LieuIncident[]
-}
-
 model LieuTypeEnum {
-  id    String @id
-  label String
-
-  lieuxIncident LieuIncident[]
-}
-
-model ServiceDomicileEnum {
   id    String @id
   label String
 
@@ -303,7 +335,6 @@ model TransportTypeEnum {
 model MisEnCause {
   id           String   @id @default(uuid())
   estIdentifie Boolean?
-  type         String?
   identite     String?
   rpps         String?
   commentaire  String?
@@ -313,6 +344,19 @@ model MisEnCause {
 
   requeteEntiteStateId String
   requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
+
+  misEnCauseTypeId String?
+  misEnCauseType   MisEnCauseTypeEnum? @relation(fields: [misEnCauseTypeId], references: [id])
+
+  professionDomicileTypeId String?
+  professionDomicileType   ProfessionDomicileTypeEnum? @relation(fields: [professionDomicileTypeId], references: [id])
+}
+
+model MisEnCauseTypeEnum {
+  id    String @id @default(uuid())
+  label String @unique
+
+  misEnCauses MisEnCause[]
 }
 
 model ProfessionTypeEnum {
@@ -322,9 +366,15 @@ model ProfessionTypeEnum {
   misEnCauses MisEnCause[]
 }
 
+model ProfessionDomicileTypeEnum {
+  id    String @id @default(uuid())
+  label String @unique
+
+  misEnCauses MisEnCause[]
+}
+
 model DemarchesEngagees {
   requeteEntiteStateId  String    @id
-  estDemarcheEngage     Boolean?
   aContacte             Boolean?
   dateContact           DateTime?
   aRepondu              Boolean?
@@ -333,7 +383,7 @@ model DemarchesEngagees {
   aDeposePlainte        Boolean?
   plainteDeposeDate     DateTime?
   plainteDeposeLocation String?
-  comment               String?
+  commentaire           String?
 
   requeteEntiteState RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
 }
@@ -341,7 +391,7 @@ model DemarchesEngagees {
 model InfoComplementaire {
   requeteEntiteStateId String    @id
   receptionDate        DateTime?
-  comments             String?
+  commentaire          String?
 
   receptionTypeId String?
   receptionType   ReceptionTypeEnum? @relation(fields: [receptionTypeId], references: [id])
@@ -353,5 +403,5 @@ model ReceptionTypeEnum {
   id    String @id
   label String @unique
 
-  infos InfoComplementaire[]
+  infoirmations InfoComplementaire[]
 }

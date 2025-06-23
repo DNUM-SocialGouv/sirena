@@ -1,4 +1,3 @@
-import { Role } from '@/libs/prisma';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
@@ -27,9 +26,8 @@ describe('Roles Endpoint', () => {
   it('GET / Should return a list of Roles', async () => {
     const fakeData = [
       {
-        id: 'cmbi355wi0000qcaf39i0gylp',
-        roleName: 'PENDING',
-        description: "En attente d'affectation (rôle technique)",
+        id: 'PENDING',
+        label: 'pending',
       },
     ];
 

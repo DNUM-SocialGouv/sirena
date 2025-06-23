@@ -1,19 +1,31 @@
 import { Loader } from '@/components/loader.tsx';
+import { useRoles } from '@/hooks/queries/useRoles.ts';
 import { useUser } from '@/hooks/queries/useUser';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
 
 export function AllUsersTab() {
-  const { data: usersData, isLoading: usersLoading, error: usersError } = useUser();
+  const { data: rolesData, isLoading: rolesLoading, error: rolesError } = useRoles();
 
-  if (usersLoading) {
+  const nonPendingRoleIds = rolesData?.data
+    .filter((role) => role.id !== 'PENDING')
+    .map((role) => role.id)
+    .join(',');
+
+  const {
+    data: usersData,
+    isLoading: usersLoading,
+    error: usersError,
+  } = useUser(nonPendingRoleIds ? { roleId: nonPendingRoleIds } : undefined);
+
+  if (rolesLoading || usersLoading) {
     return <Loader />;
   }
 
-  if (usersError) {
+  if (rolesError || usersError) {
     return (
       <div className="error-state">
-        <p>Erreur lors du chargement des utilisateurs en attente</p>
+        <p>Erreur lors du chargement des utilisateurs</p>
       </div>
     );
   }
@@ -30,22 +42,15 @@ export function AllUsersTab() {
   const columns: Column<User>[] = [
     { key: 'lastName', label: 'Nom' },
     { key: 'firstName', label: 'Prénom' },
-    { key: 'createdAt', label: 'Date de création' },
+    { key: 'role.label', label: 'Rôle' },
+    { key: 'custom:status', label: 'Statut' },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 
   const cells: Cells<User> = {
-    createdAt: (row: User) => (
-      <div>
-        {new Date(row.createdAt).toLocaleDateString('fr-FR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        })}
-      </div>
-    ),
+    'custom:status': (row: User) => (row.active ? 'Actif' : 'Inactif'),
     'custom:editionLabel': (row: User) => (
-      <Link to="/user/$userId" params={{ userId: row.id }}>
+      <Link to="/user/$userId" className="fr-link" params={{ userId: row.id }}>
         Gérer l'utilisateur
       </Link>
     ),
