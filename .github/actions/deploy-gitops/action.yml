@@ -1,0 +1,61 @@
+name: 'Deploy to GitOps'
+description: 'Generate Kubernetes manifests and deploy to GitOps repository'
+
+inputs:
+  environment:
+    description: 'Environment name (test, integration, etc.)'
+    required: true
+  short-sha:
+    description: 'Short SHA for versioning'
+    required: true
+  gitops-repo:
+    description: 'GitOps repository name'
+    required: false
+    default: 'fabrique-atlas/org-sdpsn-ws-sirena'
+  gitops-repo-key:
+    description: 'SSH key for GitOps repository access'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install dependencies
+      shell: bash
+      run: |
+        cd deploy
+        npm ci
+
+    - name: Check format and lint
+      shell: bash
+      run: |
+        cd deploy
+        npm run lint
+
+    - name: Render manifests
+      shell: bash
+      run: |
+        cd deploy
+        export IMAGE_TAG=${{ inputs.short-sha }}
+        export ENVIRONNEMENT=${{ inputs.environment }}
+        npm run build
+
+    - name: Checkout GitOps repository
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.gitops-repo }}
+        path: gitops-repo
+        ssh-key: ${{ inputs.gitops-repo-key }}
+
+    - name: Deploy to GitOps
+      shell: bash
+      run: |
+        rm -r gitops-repo/deployment-targets/${{ inputs.environment }}
+        cp -r deploy/dist gitops-repo/deployment-targets/${{ inputs.environment }}
+
+        git config --global user.name "github-actions[bot]"
+        # mail standard bot github Actions  
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        cd gitops-repo
+        git add .
+        git commit -m '[${{ inputs.environment }}] new version ${{ inputs.short-sha }}'
+        git push 

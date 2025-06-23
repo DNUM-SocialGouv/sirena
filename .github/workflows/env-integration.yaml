@@ -5,12 +5,6 @@ on:
     branches:
       - main
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  GITOPS_REPO: fabrique-atlas/org-sdpsn-ws-sirena
-  ENVIRONNEMENT: integration
-  
 jobs:
   build-docker:
     name: Build docker images
@@ -28,96 +22,29 @@ jobs:
         id: compute_short_sha
         run: |
           SHORT_SHA=${GITHUB_SHA::7}
-          echo "SHORT_SHA=${SHORT_SHA}" | tee -a "$GITHUB_ENV"
           echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_OUTPUT
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
+      - name: Build and push Docker images
+        uses: ./.github/actions/build-docker
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ env.SHORT_SHA }}
-            
-      - name: Save image tag in an env var
-        run: |
-          echo "IMAGE_TAG=${{ steps.meta.outputs.tags }}" >> $GITHUB_ENV
-
-      - name: Build and push Docker backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: . 
-          file: apps/backend/Dockerfile
-          push: true
-          tags: ${{ env.IMAGE_TAG }}-backend
-          labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Build and push Docker frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: apps/frontend/Dockerfile
-          push: true
-          tags: ${{ env.IMAGE_TAG }}-frontend
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
+          short-sha: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
 
     outputs:
       SHORT_SHA: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
-            
 
   deploy:
-    name: Generate kubernetes manifests and deploy
+    name: Deploy to GitOps
     needs: build-docker
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      SHORT_SHA: ${{ needs.build-docker.outputs.SHORT_SHA }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          cd deploy
-          npm ci
-      
-      - name: Check format and lint
-        run: |
-          cd deploy
-          npm run lint
-
-      - name: Render manifests
-        run: |
-          cd deploy
-          export IMAGE_TAG=${{ env.SHORT_SHA }}
-          export ENVIRONNEMENT=${{ env.ENVIRONNEMENT }}
-          npm run build
-
-      - name: Checkout GitOps repository
-        uses: actions/checkout@v4
+      - name: Deploy to GitOps
+        uses: ./.github/actions/deploy-gitops
         with:
-          repository: ${{ env.GITOPS_REPO }}
-          path: gitops-repo
-          ssh-key: ${{ secrets.GITOPS_REPO_KEY }}
-
-      - run: |
-          rm -r gitops-repo/deployment-targets/${{ env.ENVIRONNEMENT }}
-          cp -r deploy/dist gitops-repo/deployment-targets/${{ env.ENVIRONNEMENT }}
-
-          git config --global user.name "github-actions[bot]"
-          # mail standard bot github Actions  
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          cd gitops-repo
-          git add .
-          git commit -m '[${{ env.ENVIRONNEMENT }}] new version ${{ env.SHORT_SHA }}'
-          git push 
+          environment: integration
+          short-sha: ${{ needs.build-docker.outputs.SHORT_SHA }}
+          gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }} 
