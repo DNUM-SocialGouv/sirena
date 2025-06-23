@@ -12,6 +12,7 @@ export type UserState = {
   updateIsLogged: (isLogged: boolean) => void;
   setRole: (role: string | null) => void;
   setProfile: (profile: Profile | null) => void;
+  logout: () => void;
 };
 
 const isLoggedTokenName = import.meta.env.VITE_IS_LOGGED_TOKEN_NAME;
