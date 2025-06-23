@@ -1,6 +1,6 @@
 import { LoggedLayout } from '@/components/layout/logged/logged';
 import { Loader } from '@/components/loader';
-import { useProfile } from '@/hooks//queries/useProfile';
+import { useProfile } from '@/hooks/queries/useProfile';
 import { useUserStore } from '@/stores/userStore';
 import { Outlet, createFileRoute } from '@tanstack/react-router';
 import { useEffect } from 'react';

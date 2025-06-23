@@ -1,4 +1,4 @@
-import { fetchProfile } from '@/lib/api/fetcProfile';
+import { fetchProfile } from '@/lib/api/fetchProfile';
 import { useQuery } from '@tanstack/react-query';
 
 export const useProfile = () =>

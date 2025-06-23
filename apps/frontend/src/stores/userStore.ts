@@ -1,4 +1,4 @@
-import type { fetchProfile } from '@/lib/api/fetcProfile';
+import type { fetchProfile } from '@/lib/api/fetchProfile';
 import { create } from 'zustand';
 
 type Profile = Awaited<ReturnType<typeof fetchProfile>>;
