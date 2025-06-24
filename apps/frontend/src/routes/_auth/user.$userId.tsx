@@ -1,4 +1,3 @@
-import { LoggedLayout } from '@/components/layout/logged/logged';
 import { Loader } from '@/components/loader.tsx';
 import { useUserById } from '@/hooks/queries/useUserById';
 import { requireAuthAndAdmin } from '@/lib/auth-guards';
@@ -34,95 +33,79 @@ function RouteComponent() {
     setRole(user?.data?.roleId || '');
   }, [user]);
   if (isLoading) {
-    return (
-      <LoggedLayout>
-        <Loader />
-      </LoggedLayout>
-    );
+    return <Loader />;
   }
 
   if (error) {
     return (
-      <LoggedLayout>
-        <Badge noIcon severity="error">
-          Erreur lors du chargement de l'utilisateur: {error.message}
-        </Badge>
-      </LoggedLayout>
+      <Badge noIcon severity="error">
+        Erreur lors du chargement de l'utilisateur: {error.message}
+      </Badge>
     );
   }
 
   if (!user) {
-    return (
-      <LoggedLayout>
-        <div>Utilisateur non trouvé</div>
-      </LoggedLayout>
-    );
+    return <div>Utilisateur non trouvé</div>;
   }
 
   if (!user.data) {
-    return (
-      <LoggedLayout>
-        <div>Données utilisateur non disponibles</div>
-      </LoggedLayout>
-    );
+    return <div>Données utilisateur non disponibles</div>;
   }
 
   return (
-    <LoggedLayout>
+    <div>
+      <h1>Modifier un utilisateur</h1>
       <div>
-        <h1>Modifier un utilisateur</h1>
-        <div>
-          <form>
-            <fieldset className="fr-fieldset">
-              <legend className="fr-fieldset__legend">Identifiant de l'utilisateur</legend>
-              <Input
-                className="fr-fieldset__content"
-                label="Nom"
-                disabled={true}
-                nativeInputProps={{ value: user.data.lastName }}
-              />
-              <Input
-                className="fr-fieldset__content"
-                label="Prénom"
-                disabled={true}
-                nativeInputProps={{ value: user.data.firstName }}
-              />
-            </fieldset>
-            <fieldset className="fr-fieldset">
-              <legend className="fr-fieldset__legend">Coordonnées de l'utilisateur</legend>
-              <Input
-                className="fr-fieldset__content"
-                label="Email"
-                disabled={true}
-                nativeInputProps={{ value: user.data.email }}
-              />
-            </fieldset>
-            <fieldset className="fr-fieldset">
-              <legend className="fr-fieldset__legend">Paramètres de profil de l'utilisateur</legend>
-              <Select
-                className="fr-fieldset__content"
-                label="Rôle*"
-                nativeSelectProps={{
-                  onChange: (event) => setRole(event.target.value),
-                  value: role,
-                }}
-              >
-                <option value="" disabled hidden>
-                  Sélectionnez une option
-                </option>
-                <option value="PENDING" disabled>
-                  Attente d'affectation{' '}
-                </option>
-                <option value="READER">Agent en lecture</option>
-                <option value="WRITER">Agent en écriture</option>
-                <option value="NATIONAL_STEERING">Pilotage national</option>
-                <option value="ENTITY_ADMIN">Admin local</option>
-                <option value="SUPER_ADMIN">Super admin</option>
-              </Select>
-            </fieldset>
-          </form>
-        </div>
+        <form>
+          <fieldset className="fr-fieldset">
+            <legend className="fr-fieldset__legend">Identifiant de l'utilisateur</legend>
+            <Input
+              className="fr-fieldset__content"
+              label="Nom"
+              disabled={true}
+              nativeInputProps={{ value: user.data.lastName }}
+            />
+            <Input
+              className="fr-fieldset__content"
+              label="Prénom"
+              disabled={true}
+              nativeInputProps={{ value: user.data.firstName }}
+            />
+          </fieldset>
+          <fieldset className="fr-fieldset">
+            <legend className="fr-fieldset__legend">Coordonnées de l'utilisateur</legend>
+            <Input
+              className="fr-fieldset__content"
+              label="Email"
+              disabled={true}
+              nativeInputProps={{ value: user.data.email }}
+            />
+          </fieldset>
+          <fieldset className="fr-fieldset">
+            <legend className="fr-fieldset__legend">Paramètres de profil de l'utilisateur</legend>
+            <Select
+              className="fr-fieldset__content"
+              label="Rôle*"
+              nativeSelectProps={{
+                onChange: (event) => setRole(event.target.value),
+                value: role,
+              }}
+            >
+              <option value="" disabled hidden>
+                Sélectionnez une option
+              </option>
+              <option value="PENDING" disabled>
+                Attente d'affectation{' '}
+              </option>
+              <option value="READER">Agent en lecture</option>
+              <option value="WRITER">Agent en écriture</option>
+              <option value="NATIONAL_STEERING">Pilotage national</option>
+              <option value="ENTITY_ADMIN">Admin local</option>
+              <option value="SUPER_ADMIN">Super admin</option>
+            </Select>
+          </fieldset>
+        </form>
       </div>
-    </LoggedLayout>
+    </div>
   );
 }

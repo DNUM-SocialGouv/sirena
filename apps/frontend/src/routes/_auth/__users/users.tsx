@@ -1,4 +1,3 @@
-import { LoggedLayout } from '@/components/layout/logged/logged';
 import { requireAuthAndAdmin } from '@/lib/auth-guards';
 import { type TabDescriptor, Tabs } from '@sirena/ui';
 import { Outlet, createFileRoute, useLocation, useNavigate } from '@tanstack/react-router';
@@ -25,13 +24,11 @@ export function RouteComponent() {
   };
 
   return (
-    <LoggedLayout>
-      <div className="home">
-        <h2>Gestion des utilisateurs</h2>
-        <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
-          <Outlet />
-        </Tabs>
-      </div>
-    </LoggedLayout>
+    <div className="home">
+      <h2>Gestion des utilisateurs</h2>
+      <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
+        <Outlet />
+      </Tabs>
+    </div>
   );
 }

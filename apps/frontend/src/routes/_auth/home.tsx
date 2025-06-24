@@ -1,4 +1,3 @@
-import { LoggedLayout } from '@/components/layout/logged/logged';
 import { requireAuth } from '@/lib/auth-guards';
 import { useUserStore } from '@/stores/userStore';
 import { Button } from '@codegouvfr/react-dsfr/Button';
@@ -23,26 +22,24 @@ function RouteComponent() {
   };
 
   return (
-    <LoggedLayout>
-      <div className="home">
-        <h2>Welcome to home</h2>
-        <div className="fr-m-1w">
-          <Link to="/administration">Administration</Link>
-        </div>
-        <div className="fr-m-1w">
-          <Button onClick={() => handlePermissionsChange()}> Change permissions </Button>
-        </div>
-        <form action="/api/auth/logout-proconnect" method="POST">
-          <Button className="fr-m-1w" type="submit">
-            Proconnect Logout
-          </Button>
-        </form>
-        <form action="/api/auth/logout" method="POST">
-          <Button className="fr-m-1w" type="submit">
-            Logout
-          </Button>
-        </form>
+    <div className="home">
+      <h2>Welcome to home</h2>
+      <div className="fr-m-1w">
+        <Link to="/administration">Administration</Link>
       </div>
-    </LoggedLayout>
+      <div className="fr-m-1w">
+        <Button onClick={() => handlePermissionsChange()}> Change permissions </Button>
+      </div>
+      <form action="/api/auth/logout-proconnect" method="POST">
+        <Button className="fr-m-1w" type="submit">
+          Proconnect Logout
+        </Button>
+      </form>
+      <form action="/api/auth/logout" method="POST">
+        <Button className="fr-m-1w" type="submit">
+          Logout
+        </Button>
+      </form>
+    </div>
   );
 }

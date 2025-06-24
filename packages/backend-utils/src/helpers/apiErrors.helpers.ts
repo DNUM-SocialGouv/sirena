@@ -3,6 +3,11 @@ import { resolver } from 'hono-openapi/zod';
 import { HTTPException } from 'hono/http-exception';
 import { ErrorSchema, ZodSafeParseErrorSchema } from '../schemas/apiErrors.schema';
 
+type ErrorOptions = {
+  cause?: { name?: string; message?: string; stack?: string };
+  res?: Response;
+};
+
 const MESSAGES = {
   BAD_REQUEST: 'Bad request',
   UNAUTHORIZED: 'Unauthorized',
@@ -12,31 +17,64 @@ const MESSAGES = {
   SERVICE_NOT_AVAILABLE: 'Service not available',
 };
 
-export const throwHTTPException400BadRequest = (msg = MESSAGES.BAD_REQUEST) => {
-  throw new HTTPException(400, { message: msg });
-};
-
-export const throwHTTPException401Unauthorized = (
-  msg = MESSAGES.UNAUTHORIZED,
-  cause?: { name?: string; message?: string; stack?: string },
-) => {
-  const params: { message: string; cause?: unknown } = { message: msg };
-  if (cause) {
-    params.cause = cause;
+const getParamsOptions = (status: number, message: string, options?: ErrorOptions) => {
+  const params: { message: string; cause?: unknown } = { message };
+  if (options?.cause) {
+    params.cause = options.cause;
   }
-  throw new HTTPException(401, params);
+
+  let res: Response;
+  if (options?.res) {
+    res = new Response(JSON.stringify({ ...params }), {
+      status,
+      headers: {
+        ...Object.fromEntries(options.res.headers),
+        'Content-Type': 'application/json',
+      },
+    });
+  } else {
+    res = new Response(JSON.stringify({ ...params }), {
+      status: status,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  return { ...params, res };
 };
 
-export const throwHTTPException403Forbidden = (msg = MESSAGES.FORBIDDEN) => {
-  throw new HTTPException(403, { message: msg });
+export const throwHTTPException400BadRequest = (msg = MESSAGES.BAD_REQUEST, options?: ErrorOptions) => {
+  const status = 400;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
 };
 
-export const throwHTTPException404NotFound = (msg = MESSAGES.NOT_FOUND) => {
-  throw new HTTPException(404, { message: msg });
+export const throwHTTPException401Unauthorized = (msg = MESSAGES.UNAUTHORIZED, options?: ErrorOptions) => {
+  const status = 401;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
 };
 
-export const throwHTTPException503ServiceUnavailable = (msg = MESSAGES.NOT_FOUND) => {
-  throw new HTTPException(503, { message: msg });
+export const throwHTTPException403Forbidden = (msg = MESSAGES.FORBIDDEN, options?: ErrorOptions) => {
+  const status = 403;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
+};
+
+export const throwHTTPException404NotFound = (msg = MESSAGES.NOT_FOUND, options?: ErrorOptions) => {
+  const status = 404;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
+};
+
+export const throwHTTPException503ServiceUnavailable = (
+  msg = MESSAGES.SERVICE_NOT_AVAILABLE,
+  options?: ErrorOptions,
+) => {
+  const status = 503;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
 };
 
 export const apiErrorResolver = (): ResolverResult => resolver(ErrorSchema);

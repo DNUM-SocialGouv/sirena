@@ -1,5 +1,6 @@
 import { envVars } from '@/config/env';
 import { getSession } from '@/features/sessions/sessions.service';
+import { getUserById } from '@/features/users/users.service';
 import factoryWithAuth from '@/helpers/factories/appWithAuth';
 import type { AppBindings } from '@/helpers/factories/appWithAuth';
 import { getJwtExpirationDate, isJwtError, verify } from '@/helpers/jsonwebtoken';
@@ -14,7 +15,7 @@ const cleanAnSendError = (c: Context<AppBindings>, error: unknown, errorMessage:
   deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
   deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
   logger.info({ err: error }, errorMessage);
-  return throwHTTPException401Unauthorized(errorResponse);
+  throwHTTPException401Unauthorized(errorResponse, { res: c.res });
 };
 
 const app = factoryWithAuth.createMiddleware(async (c, next) => {
@@ -23,8 +24,9 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
   const authToken = getCookie(c, envVars.AUTH_TOKEN_NAME);
   if (authToken) {
     try {
-      const decoded = verify<{ id: string }>(authToken, envVars.AUTH_TOKEN_SECRET_KEY);
+      const decoded = verify<{ id: string; roleId: string }>(authToken, envVars.AUTH_TOKEN_SECRET_KEY);
       c.set('userId', decoded.id);
+      c.set('roleId', decoded.roleId || 'PENDING'); // TODO handle roleId properly
       return next();
     } catch (error) {
       if (!isJwtError(error)) {
@@ -53,14 +55,18 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
     if (session === null) {
       deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
       deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-      throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired');
+      throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired', { res: c.res });
     }
 
     try {
-      const decoded = verify<{ id: string }>(refreshToken, envVars.REFRESH_TOKEN_SECRET_KEY);
+      const decoded = verify<{ id: string; roleId: string }>(refreshToken, envVars.REFRESH_TOKEN_SECRET_KEY);
       const newAuthTokenDate = getJwtExpirationDate(envVars.AUTH_TOKEN_EXPIRATION);
-
-      const newAuthToken = signAuthCookie(decoded.id, newAuthTokenDate);
+      const user = await getUserById(decoded.id);
+      if (!user) {
+        throw new Error(`User with ID ${decoded.id} not found`);
+      }
+      const roleId = user.roleId || 'PENDING'; // TODO handle roleId properly
+      const newAuthToken = signAuthCookie({ id: decoded.id, roleId }, newAuthTokenDate);
       setCookie(c, envVars.AUTH_TOKEN_NAME, newAuthToken, {
         path: '/',
         secure: true,
@@ -69,13 +75,14 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
         sameSite: 'Strict',
       });
       c.set('userId', decoded.id);
+      c.set('roleId', roleId);
       return next();
     } catch (error) {
       if (!isJwtError(error)) {
         logger.error({ err: error }, 'Error in auth token verification - not a JWT error');
         deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
         deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-        throw error;
+        throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired', { res: c.res });
       }
       cleanAnSendError(
         c,
@@ -86,7 +93,7 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
     }
   } else {
     deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-    throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired');
+    throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired', { res: c.res });
   }
 });
 
