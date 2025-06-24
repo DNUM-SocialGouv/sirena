@@ -177,5 +177,6 @@ dist
 
 # personal
 
-apps/backend/generated/*
+apps/backend/generated/client
+apps/backend/generated/zod
 .env.docker

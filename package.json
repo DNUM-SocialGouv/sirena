@@ -22,7 +22,7 @@
     "db:deploy": "dotenv -e .env -- pnpm --filter @sirena/backend db:deploy",
     "db:generate": "dotenv -e .env -- pnpm --filter @sirena/backend db:generate",
     "db:reset": "dotenv -e .env -- pnpm --filter @sirena/backend db:reset",
-    "backend:codegen": "dotenv -e .env -- pnpm --filter @sirena/backend codegen",
+    "backend:codegen": "dotenv -e .env -- pnpm --filter @sirena/backend generate:codegen",
     "backend:gql": "dotenv -e .env -- pnpm --filter @sirena/backend gql",
     "test:e2e": "pnpm --filter @sirena/frontend test:e2e",
     "test:e2e:ui": "pnpm --filter @sirena/frontend test:e2e:ui",
