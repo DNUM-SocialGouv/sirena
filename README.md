@@ -83,13 +83,16 @@ packages/
 | `pnpm dev:ui`                          | Start storybook (`@sirena/ui`)                                                       |
 | `pnpm build:backend`                   | Build backend to `dist/` (RPC + OpenAPI ready)                                       |
 | `pnpm build:frontend`                  | Build frontend to `dist/`                                                            |
-| `pnpm build:backend-utils`             | Build backend-utils to `dist/`                                                        |
-| `pnpm build:common`                    | Build common to `dist/`                                                               |
+| `pnpm build:backend-utils`             | Build backend-utils to `dist/`                                                       |
+| `pnpm build:common`                    | Build common to `dist/`                                                              |
 | `pnpm db:migrate`                      | Run dev migrations (`@sirena/backend`) with `.env`                                   |
+| `pnpm db:migrate:resolve`              | Run dev migrations (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:generate`                     | Generate Prisma client from schema (`@sirena/backend`) with `.env`                   |
+| `pnpm db:seed`                         | Apply seeds to the database (`@sirena/backend`) with `.env`                          |
 | `pnpm db:deploy`                       | Deploy pending migrations to DB (`@sirena/backend`) with `.env`                      |
 | `pnpm db:studio`                       | Open Prisma Studio (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:reset`                        | Reset the database (`@sirena/backend`) with `.env`                                   |
+| `pnpm backend:codegen`                 | Generate clients for graphql requests                                                |
 | `pnpm test:e2e`                        | Run end-to-end tests for frontend (`@sirena/frontend`)                               |
 | `pnpm test:e2e:ui`                     | Run end-to-end tests with UI for frontend (`@sirena/frontend`)                       |
 | `pnpm test:unit`                       | Run unit tests across all packages                                                   |
@@ -122,6 +125,8 @@ packages/
 - **[Prisma](https://prisma.io)** — Type-safe ORM for database modeling and access.
 - **[Zod](https://github.com/colinhacks/zod)** — Runtime schema validation.
 - **[zod-openapi](https://github.com/asteasolutions/zod-to-openapi)** — Generate OpenAPI schemas from Zod.
+- **[graffle](https://graffle.js.org/)** — Client to make Graphql calls.
+- **[graphql-codegen](https://the-guild.dev/graphql/codegen)** — Client to generate code for Graphql schemas. 
 
 ### 🎨 Frontend
 
