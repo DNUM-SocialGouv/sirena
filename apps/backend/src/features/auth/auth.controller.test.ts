@@ -1,29 +1,30 @@
 import { envVars } from '@/config/env';
 import { deleteSession, getSession } from '@/features/sessions/sessions.service';
-import { createUser, getUserBySub } from '@/features/users/users.service';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import type { IDToken, TokenEndpointResponse, TokenEndpointResponseHelpers } from 'openid-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import app from './auth.controller';
 import { authUser } from './auth.helper';
-import { authorizationCodeGrant, buildAuthorizationUrl, buildEndSessionUrl, fetchUserInfo } from './auth.service';
+import {
+  authorizationCodeGrant,
+  buildAuthorizationUrl,
+  buildEndSessionUrl,
+  fetchUserInfo,
+  getOrCreateUser,
+} from './auth.service';
 
 vi.mock('./auth.service', () => ({
   buildAuthorizationUrl: vi.fn(),
   buildEndSessionUrl: vi.fn(),
   authorizationCodeGrant: vi.fn(),
   fetchUserInfo: vi.fn(),
+  getOrCreateUser: vi.fn(),
 }));
 
 vi.mock('./auth.helper', () => ({
   authUser: vi.fn(),
   createRedirectUrl: vi.fn(),
-}));
-
-vi.mock('@/features/users/users.service', () => ({
-  createUser: vi.fn(),
-  getUserBySub: vi.fn(),
 }));
 
 vi.mock('@/features/sessions/sessions.service', () => ({
@@ -165,8 +166,6 @@ describe('auth.controller.ts Auth Endpoints', () => {
     };
     vi.mocked(fetchUserInfo).mockResolvedValueOnce(fakeUserInfo);
 
-    vi.mocked(getUserBySub).mockResolvedValueOnce(null);
-
     const createdUser = {
       id: 'new-user',
       sub: fakeUserInfo.sub,
@@ -177,9 +176,11 @@ describe('auth.controller.ts Auth Endpoints', () => {
       createdAt: new Date(),
       active: false,
       roleId: 'PENDING',
+      statutId: 'NON_RENSEIGNE',
+      entiteId: null,
       pcData: {},
     };
-    vi.mocked(createUser).mockResolvedValueOnce(createdUser);
+    vi.mocked(getOrCreateUser).mockResolvedValueOnce(createdUser);
 
     vi.mocked(authUser).mockResolvedValueOnce(undefined);
 

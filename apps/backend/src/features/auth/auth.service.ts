@@ -1,6 +1,9 @@
 import { envVars } from '@/config/env';
 import { authorizationParams } from '@/config/openID';
+import { getEntiteForUser } from '@/features/entites/entites.service';
+import { createUser, getUserBySub } from '@/features/users/users.service';
 import * as client from 'openid-client';
+import type { UserInfo } from './auth.type';
 
 export const configOptions =
   process.env.IS_HTTP_PROTOCOL_FORBIDDEN === 'True' ? undefined : { execute: [client.allowInsecureRequests] };
@@ -92,4 +95,23 @@ export const authorizationCodeGrant = async (currentUrl: URL, state: string, non
   });
 
   return tokens;
+};
+
+export const getOrCreateUser = async (userInfo: UserInfo) => {
+  const user = await getUserBySub(userInfo.sub);
+  if (user) {
+    return user;
+  }
+
+  const entite = await getEntiteForUser(userInfo.organizationUnit, userInfo.email);
+
+  return await createUser({
+    sub: userInfo.sub,
+    uid: userInfo.uid,
+    email: userInfo.email,
+    firstName: userInfo.firstName,
+    lastName: userInfo.lastName,
+    pcData: userInfo,
+    entiteId: entite?.id ?? null,
+  });
 };

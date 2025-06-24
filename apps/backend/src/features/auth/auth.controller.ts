@@ -1,16 +1,22 @@
 import { envVars } from '@/config/env';
 import { deleteSession, getSession } from '@/features/sessions/sessions.service';
-import { createUser, getUserBySub } from '@/features/users/users.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { getPropertyTypes } from '@/helpers/logs';
 import { isPrismaUniqueConstraintError } from '@/helpers/prisma';
+import type { User } from '@/libs/prisma';
 import logoutMiddleware from '@/middlewares/logout.middleware';
 import { ERROR_CODES } from '@sirena/common/constants';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
 import { authUser, createRedirectUrl } from './auth.helper';
 import { getCallbackRoute, postLoginRoute, postLogoutProconnectRoute, postLogoutRoute } from './auth.route';
-import { authorizationCodeGrant, buildAuthorizationUrl, buildEndSessionUrl, fetchUserInfo } from './auth.service';
+import {
+  authorizationCodeGrant,
+  buildAuthorizationUrl,
+  buildEndSessionUrl,
+  fetchUserInfo,
+  getOrCreateUser,
+} from './auth.service';
 
 const app = factoryWithLogs
   .createApp()
@@ -109,28 +115,26 @@ const app = factoryWithLogs
       return c.redirect(errorPageUrl, 302);
     }
 
-    let user = await getUserBySub(userInfo.sub);
-
-    if (!user) {
-      try {
-        user = await createUser({
-          sub: userInfo.sub,
-          uid: String(userInfo.uid),
-          email: userInfo.email,
-          firstName: userInfo.given_name,
-          lastName: String(userInfo.usual_name),
-          pcData: userInfo,
-        });
-      } catch (error) {
-        if (isPrismaUniqueConstraintError(error)) {
-          logger.error({ err: error }, 'Error in creating new user in database, email already exists');
-          const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_ALREADY_EXISTS });
-          return c.redirect(errorPageUrl, 302);
-        }
-        logger.error({ err: error }, 'Error in creating new user in database');
-        const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_CREATE_ERROR });
+    let user: User;
+    try {
+      user = await getOrCreateUser({
+        sub: userInfo.sub,
+        uid: String(userInfo.uid),
+        email: userInfo.email,
+        firstName: userInfo.given_name,
+        lastName: String(userInfo.usual_name),
+        pcData: userInfo,
+        organizationUnit: userInfo.organizational_unit ? String(userInfo.organizational_unit) : null,
+      });
+    } catch (error) {
+      if (isPrismaUniqueConstraintError(error)) {
+        logger.error({ err: error }, 'Error in creating new user in database, email already exists');
+        const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_ALREADY_EXISTS });
         return c.redirect(errorPageUrl, 302);
       }
+      logger.error({ err: error }, 'Error in creating new user in database');
+      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_CREATE_ERROR });
+      return c.redirect(errorPageUrl, 302);
     }
     // TODO handle roleId properly
     await authUser(c, { id: user.id, roleId: user.roleId || 'PENDING' }, tokens.id_token);

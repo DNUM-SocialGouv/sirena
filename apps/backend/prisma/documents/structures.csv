@@ -1,13 +1,13 @@
-Structure,Code court,Famille
-ARS - Normandie,ARS NORM,ARS
-CD - Calvados,CD CAL,CD
-CD - Eure,CD EURE,CD
-DDETS - Calvados,DDETS CAL,DDETS
-DDETS Eure,DDETS EURE,DDETS
-DDETS Manche,DDETS MAN,DDETS
-DDETS - Seine-Maritime,DDETS SEINE-M,DDETS
-ARS - Nouvelle-Aquitaine,ARS NA,ARS
-ARS - Corse,ARS CORSE,ARS
-ARS - Hauts-de-France,ARS HDF,ARS
-ARS - Auvergne-Rhône-Alpes,ARS ARA,ARS
-CD - Haute-Garonne,CD HG,CD
+Libellé;Libéllé court;Type d'entité;Domaine mail;Organizational_unit
+ARS - Normandie;ARS NORM;ARS;;ARS-NORMANDIE
+CD - Calvados;CD CAL;CD;@calvados.fr;
+CD - Eure;CD EURE;CD;@eure.fr;
+DDETS - Calvados;DDETS CAL;DDETS;@calvados.gouv.fr;
+DDETS Eure;DDETS EURE;DDETS;@eure.gouv.fr;
+DDETS Manche;DDETS MAN;DDETS;@manche.gouv.fr;
+DDETS - Seine-Maritime;DDETS SEINE-M;DDETS;@seine-maritime.gouv.fr;
+ARS - Nouvelle-Aquitaine;ARS NA;ARS;;ARS-NA,ARS NA
+ARS - Corse;ARS CORSE;ARS;;ARS-CORSE
+ARS - Hauts-de-France;ARS HDF;ARS;;ARS-HDF
+ARS - Auvergne-Rhône-Alpes;ARS ARA;ARS;;ARS-ARA
+CD - Haute-Garonne;CD HG;CD;@cd31.fr;
