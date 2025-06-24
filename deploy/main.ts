@@ -1,6 +1,6 @@
 import { App as CdkApp, YamlOutputType } from 'cdk8s';
 import { App } from './charts/app';
-import { SharedResources } from './charts/shared-resources';
+import { ExternalSecrets } from './charts/external-secrets';
 import * as k8s from './imports/k8s';
 
 if (!process.env.IMAGE_TAG) {
@@ -66,8 +66,8 @@ function getHostUrl(envConfig: EnvironmentConfig): string {
 function createApps(app: CdkApp, envConfig: EnvironmentConfig, imageTag: string, namespace: string): void {
   const hostUrl = getHostUrl(envConfig);
 
-  // Shared resources (database and external secrets)
-  new SharedResources(app, 'shared-resources');
+  // External secrets (database and backend secrets)
+  new ExternalSecrets(app, 'external-secrets', environnement);
 
   // Backend
   new App(app, 'backend', {

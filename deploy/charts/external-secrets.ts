@@ -2,8 +2,8 @@ import { Chart } from 'cdk8s';
 import type { Construct } from 'constructs';
 import * as externalSecrets from '../imports/external-secrets.io';
 
-export class SharedResources extends Chart {
-  constructor(scope: Construct, id: string) {
+export class ExternalSecrets extends Chart {
+  constructor(scope: Construct, id: string, environnement: string) {
     super(scope, id, {
       disableResourceNameHashes: true,
     });
@@ -48,7 +48,7 @@ export class SharedResources extends Chart {
         dataFrom: [
           {
             extract: {
-              key: 'databases/sirena',
+              key: `databases/sirena-${environnement}`,
             },
           },
         ],
