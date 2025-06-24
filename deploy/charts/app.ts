@@ -70,6 +70,14 @@ function createBackendEnvVars(host: string): k8s.EnvVar[] {
       name: 'FRONTEND_URI',
       value: host,
     },
+    {
+      name: 'DEMAT_SOCIAL_API_URL',
+      value: 'https://demat.social.gouv.fr/api/v2/graphql ',
+    },
+    {
+      name: 'DEMAT_SOCIAL_API_DIRECTORY',
+      value: '661',
+    },
   ];
 }
 

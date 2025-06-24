@@ -33,6 +33,7 @@ export class ExternalSecrets extends Chart {
               PC_CLIENT_SECRET: '{{ .PC_CLIENT_SECRET }}',
               AUTH_TOKEN_SECRET_KEY: '{{ .AUTH_TOKEN_SECRET_KEY }}',
               REFRESH_TOKEN_SECRET_KEY: '{{ .REFRESH_TOKEN_SECRET_KEY }}',
+              DEMAT_SOCIAL_API_TOKEN: '{{ .DEMAT_SOCIAL_API_TOKEN }}',
             },
           },
         },
