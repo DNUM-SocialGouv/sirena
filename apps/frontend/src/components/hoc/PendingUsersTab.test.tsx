@@ -217,7 +217,10 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
+            role: { id: string; label: string } | null;
             pcData: Record<string, unknown>;
+            statutId: string;
+            entiteId: string | null;
           }[];
         },
         Error

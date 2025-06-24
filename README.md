@@ -126,7 +126,7 @@ packages/
 - **[Zod](https://github.com/colinhacks/zod)** — Runtime schema validation.
 - **[zod-openapi](https://github.com/asteasolutions/zod-to-openapi)** — Generate OpenAPI schemas from Zod.
 - **[graffle](https://graffle.js.org/)** — Client to make Graphql calls.
-- **[grafql-codegen](https://the-guild.dev/graphql/codegen)** — Client to generate code for Graphql schemas. 
+- **[graphql-codegen](https://the-guild.dev/graphql/codegen)** — Client to generate code for Graphql schemas. 
 
 ### 🎨 Frontend
 
