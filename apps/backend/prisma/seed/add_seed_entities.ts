@@ -1,47 +1,63 @@
 import { readFile } from 'node:fs/promises';
+import { z } from '@/libs/zod';
 import type { PrismaClient } from 'generated/client';
 
-type StructureRow = {
-  Structure: string;
-  'Code court': string;
-  Famille: string;
-};
+const StructureRowSchema = z.object({
+  Libellé: z.string().min(1),
+  'Libéllé court': z.string().min(1),
+  "Type d'entité": z.string().min(1),
+  'Domaine mail': z
+    .string()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
+  Organizational_unit: z
+    .string()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
+});
+
+type StructureRow = z.infer<typeof StructureRowSchema>;
 
 async function seedStructure(prisma: PrismaClient) {
   const csvRaw = await readFile('./prisma/documents/structures.csv', 'utf8');
 
   const [headerLine, ...lines] = csvRaw.trim().split('\n');
-  const headers = headerLine.split(',');
+  const headers = headerLine.split(';');
 
   const rows: StructureRow[] = lines.map((line, i) => {
-    const values = line.split(',');
+    const values = line.split(';');
 
     if (values.length !== headers.length) {
       throw new Error(`Malformed CSV on line ${i + 2}: "${line}"`);
     }
 
-    const obj = Object.fromEntries(headers.map((h, idx) => [h.trim(), values[idx].trim()]));
-    return {
-      Structure: obj.Structure,
-      'Code court': obj['Code court'],
-      Famille: obj.Famille,
-    };
+    const raw = Object.fromEntries(headers.map((h, idx) => [h.trim(), values[idx]?.trim() ?? '']));
+
+    const result = StructureRowSchema.safeParse(raw);
+
+    if (!result.success) {
+      throw new Error(`Invalid data on line ${i + 2}: ${JSON.stringify(result.error.format(), null, 2)}`);
+    }
+
+    return result.data;
   });
 
   let added = 0;
 
   for (const row of rows) {
     const entite = await prisma.entite.findFirst({
-      where: { nomComplet: row.Structure },
+      where: { nomComplet: row.Libellé },
     });
 
     if (!entite) {
       added++;
       await prisma.entite.create({
         data: {
-          nomComplet: row.Structure,
-          label: row['Code court'],
-          entiteType: { connect: { id: row.Famille } },
+          nomComplet: row.Libellé,
+          label: row['Libéllé court'],
+          emailDomain: row['Domaine mail'],
+          organizationUnit: row.Organizational_unit,
+          entiteType: { connect: { id: row["Type d'entité"] } },
         },
       });
     }

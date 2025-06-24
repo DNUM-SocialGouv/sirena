@@ -46,10 +46,12 @@ model StatutEnum {
 }
 
 model Entite {
-  id         String  @id @default(uuid())
-  nomComplet String
-  label      String
-  email      String?
+  id               String  @id @default(uuid())
+  nomComplet       String
+  label            String
+  email            String?
+  emailDomain      String?
+  organizationUnit String?
 
   services Entite[] @relation("EntiteMereToServices")
 

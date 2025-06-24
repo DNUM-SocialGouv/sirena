@@ -30,6 +30,8 @@ CREATE TABLE "Entite" (
     "nomComplet" TEXT NOT NULL,
     "label" TEXT NOT NULL,
     "email" TEXT,
+    "emailDomain" TEXT,
+    "organizationUnit" TEXT,
     "entiteTypeId" TEXT NOT NULL,
     "entiteMereId" TEXT,
 
