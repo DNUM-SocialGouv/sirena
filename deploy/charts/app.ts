@@ -127,7 +127,7 @@ function createContainer(props: AppProps): k8s.Container {
 
 function createIngressAnnotations(isBackend: boolean, namespace: string): Record<string, string> {
   const baseAnnotations = {
-    'cert-manager.io/cluster-issuer': 'letsencrypt',
+    'cert-manager.io/cluster-issuer': 'letsencrypt-http01',
     'nginx.ingress.kubernetes.io/proxy-body-size': '60m',
   };
 
