@@ -1,0 +1,63 @@
+name: Manual Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - validation
+          - preprod
+          - prod
+        default: 'validation'
+
+jobs:
+  build-docker:
+    name: Build docker images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute version identifier
+        id: compute_version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${GITHUB_SHA::7}
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker images
+        uses: ./.github/actions/build-docker
+        with:
+          short-sha: ${{ steps.compute_version.outputs.VERSION }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    outputs:
+      VERSION: ${{ steps.compute_version.outputs.VERSION }}
+
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment }}
+    needs: build-docker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to GitOps
+        uses: ./.github/actions/deploy-gitops
+        with:
+          environment: ${{ github.event.inputs.environment }}
+          short-sha: ${{ needs.build-docker.outputs.VERSION }}
+          gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }} 
