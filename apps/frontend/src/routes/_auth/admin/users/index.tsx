@@ -1,9 +1,10 @@
 import { PendingUsersTab } from '@/components/hoc/PendingUsersTab';
-import { requireAuthAndAdmin } from '@/lib/auth-guards';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
+import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_auth/__users/users/')({
-  beforeLoad: requireAuthAndAdmin,
+export const Route = createFileRoute('/_auth/admin/users/')({
+  beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
   head: () => ({
     meta: [
       {

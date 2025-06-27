@@ -131,6 +131,7 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsPro
       </ul>
 
       <SwitchTransition mode="out-in">
+        {/* TODO: Find away to prevent 2x render caused by key */}
         <CSSTransition key={activeTab} classNames={`fade-${direction}`} timeout={400} nodeRef={panelRef}>
           <div
             ref={panelRef}

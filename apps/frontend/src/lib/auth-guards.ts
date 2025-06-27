@@ -1,55 +1,66 @@
-import type { UserState } from '@/stores/userStore';
+import { type UserState, useUserStore } from '@/stores/userStore';
 import { redirect } from '@tanstack/react-router';
 
-export type BeforeLoadContext = {
+const fallback = '/home' as const;
+
+export type BeforeLoad = {
   location: {
     href: string;
     pathname: string;
-    search: Record<string, unknown>;
-  };
-  context: {
-    userStore: UserState;
+    search: Record<string, unknown> & { redirect?: string | undefined };
   };
   params?: Record<string, unknown>;
 };
 
-export type AuthGuardFunction = (params: BeforeLoadContext) => undefined | never;
-
-export const requireAuth: AuthGuardFunction = ({ location, context }) => {
-  if (!context.userStore.isLogged) {
+export const checkAuth = (params: BeforeLoad, userStore: UserState) => {
+  if (!userStore.isLogged) {
     throw redirect({
       to: '/login',
       search: {
-        redirect: location.href,
+        redirect: params.location.href,
       },
     });
   }
 };
 
-export const requireAdmin: AuthGuardFunction = ({ location, context }) => {
-  requireAuth({ location, context });
+const getFallbackByRole = (role: string | null) => {
+  if (role === 'SUPER_ADMIN') {
+    return '/admin/administration';
+  }
+  return fallback;
+};
 
-  if (!context.userStore.isAdmin) {
+export const checkNotAuth = (params: BeforeLoad, userStore: UserState) => {
+  if (userStore.isLogged) {
+    const redirectUrl = params.location.search?.redirect
+      ? params.location.search?.redirect
+      : getFallbackByRole(userStore.role);
+    throw redirect({ to: redirectUrl });
+  }
+};
+
+export const checkRoles = (userStore: UserState, roles: string[]) => {
+  if (userStore.role && !roles.includes(userStore.role)) {
     throw redirect({
-      to: '/home',
+      to: fallback,
     });
   }
 };
 
-export const requireAuthAndAdmin: AuthGuardFunction = (params) => {
-  requireAdmin(params); // requireAdmin inclut déjà requireAuth
+export const requireAuthAndRoles = (roles: string[]) => {
+  return (params: BeforeLoad) => {
+    const userStore = useUserStore.getState();
+    checkAuth(params, userStore);
+    checkRoles(userStore, roles);
+  };
 };
 
-export const createAuthGuard = (
-  authCheck: (context: UserState) => boolean,
-  redirectTo = '/login',
-): AuthGuardFunction => {
-  return ({ location, context }) => {
-    if (!authCheck(context.userStore)) {
-      throw redirect({
-        to: redirectTo,
-        search: redirectTo === '/login' ? { redirect: location.href } : undefined,
-      });
-    }
-  };
+export const requireAuth = (params: BeforeLoad) => {
+  const userStore = useUserStore.getState();
+  checkAuth(params, userStore);
+};
+
+export const requireNotAuth = (params: BeforeLoad) => {
+  const userStore = useUserStore.getState();
+  checkNotAuth(params, userStore);
 };

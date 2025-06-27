@@ -5,7 +5,6 @@ import appWithAuth from '@/helpers/factories/appWithAuth';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
 import authMiddleware from '@/middlewares/auth.middleware';
-import pinoLogger from '@/middlewares/pino.middleware';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -36,7 +35,7 @@ describe('auth.middleware.ts Auth Helpers', () => {
       .use(authMiddleware)
       .get('/', async (c) => c.json({ ok: true }));
 
-    const app = appWithLogs.createApp().use(pinoLogger()).route('/test', route).onError(errorHandler);
+    const app = appWithLogs.createApp().route('/test', route).onError(errorHandler);
 
     const client = testClient(app);
 
@@ -70,7 +69,6 @@ describe('auth.middleware.ts Auth Helpers', () => {
   it('should handle auth token verification failure (no tokens)', async () => {
     const route = appWithAuth
       .createApp()
-      .use(pinoLogger())
       .use(authMiddleware)
       .get('/', async (c) => c.json({ ok: true }));
 
@@ -79,6 +77,7 @@ describe('auth.middleware.ts Auth Helpers', () => {
     const client = testClient(app);
 
     const res = await client.test.$get();
+    expect(res.status).toBe(401);
     const body = await res.json();
 
     if ('message' in body) {

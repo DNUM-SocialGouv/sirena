@@ -14,14 +14,16 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as LoginImport } from './routes/login'
 import { Route as AuthRouteImport } from './routes/_auth/route'
 import { Route as IndexImport } from './routes/index'
-import { Route as AuthHomeImport } from './routes/_auth/home'
-import { Route as AuthEntitiesImport } from './routes/_auth/entities'
-import { Route as AuthCasesImport } from './routes/_auth/cases'
-import { Route as AuthAdministrationImport } from './routes/_auth/administration'
-import { Route as AuthUserUserIdImport } from './routes/_auth/user.$userId'
-import { Route as AuthusersUsersImport } from './routes/_auth/__users/users'
-import { Route as AuthusersUsersIndexImport } from './routes/_auth/__users/users.index'
-import { Route as AuthusersUsersAllImport } from './routes/_auth/__users/users.all'
+import { Route as AuthAdminRouteImport } from './routes/_auth/admin/route'
+import { Route as AuthUserRouteImport } from './routes/_auth/_user/route'
+import { Route as AuthAdminEntitiesImport } from './routes/_auth/admin/entities'
+import { Route as AuthAdminAdministrationImport } from './routes/_auth/admin/administration'
+import { Route as AuthUserHomeImport } from './routes/_auth/_user/home'
+import { Route as AuthUserCasesImport } from './routes/_auth/_user/cases'
+import { Route as AuthAdminUsersRouteImport } from './routes/_auth/admin/users/route'
+import { Route as AuthAdminUsersIndexImport } from './routes/_auth/admin/users/index'
+import { Route as AuthAdminUsersAllImport } from './routes/_auth/admin/users/all'
+import { Route as AuthAdminUserUserIdImport } from './routes/_auth/admin/user/$userId'
 
 // Create/Update Routes
 
@@ -42,52 +44,63 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthHomeRoute = AuthHomeImport.update({
-  id: '/home',
-  path: '/home',
+const AuthAdminRouteRoute = AuthAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 
-const AuthEntitiesRoute = AuthEntitiesImport.update({
+const AuthUserRouteRoute = AuthUserRouteImport.update({
+  id: '/_user',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+
+const AuthAdminEntitiesRoute = AuthAdminEntitiesImport.update({
   id: '/entities',
   path: '/entities',
-  getParentRoute: () => AuthRouteRoute,
+  getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 
-const AuthCasesRoute = AuthCasesImport.update({
-  id: '/cases',
-  path: '/cases',
-  getParentRoute: () => AuthRouteRoute,
-} as any)
-
-const AuthAdministrationRoute = AuthAdministrationImport.update({
+const AuthAdminAdministrationRoute = AuthAdminAdministrationImport.update({
   id: '/administration',
   path: '/administration',
-  getParentRoute: () => AuthRouteRoute,
+  getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 
-const AuthUserUserIdRoute = AuthUserUserIdImport.update({
-  id: '/user/$userId',
-  path: '/user/$userId',
-  getParentRoute: () => AuthRouteRoute,
+const AuthUserHomeRoute = AuthUserHomeImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AuthUserRouteRoute,
 } as any)
 
-const AuthusersUsersRoute = AuthusersUsersImport.update({
-  id: '/__users/users',
+const AuthUserCasesRoute = AuthUserCasesImport.update({
+  id: '/cases',
+  path: '/cases',
+  getParentRoute: () => AuthUserRouteRoute,
+} as any)
+
+const AuthAdminUsersRouteRoute = AuthAdminUsersRouteImport.update({
+  id: '/users',
   path: '/users',
-  getParentRoute: () => AuthRouteRoute,
+  getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 
-const AuthusersUsersIndexRoute = AuthusersUsersIndexImport.update({
+const AuthAdminUsersIndexRoute = AuthAdminUsersIndexImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthusersUsersRoute,
+  getParentRoute: () => AuthAdminUsersRouteRoute,
 } as any)
 
-const AuthusersUsersAllRoute = AuthusersUsersAllImport.update({
+const AuthAdminUsersAllRoute = AuthAdminUsersAllImport.update({
   id: '/all',
   path: '/all',
-  getParentRoute: () => AuthusersUsersRoute,
+  getParentRoute: () => AuthAdminUsersRouteRoute,
+} as any)
+
+const AuthAdminUserUserIdRoute = AuthAdminUserUserIdImport.update({
+  id: '/user/$userId',
+  path: '/user/$userId',
+  getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -115,97 +128,134 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
-    '/_auth/administration': {
-      id: '/_auth/administration'
-      path: '/administration'
-      fullPath: '/administration'
-      preLoaderRoute: typeof AuthAdministrationImport
+    '/_auth/_user': {
+      id: '/_auth/_user'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthUserRouteImport
       parentRoute: typeof AuthRouteImport
     }
-    '/_auth/cases': {
-      id: '/_auth/cases'
+    '/_auth/admin': {
+      id: '/_auth/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthAdminRouteImport
+      parentRoute: typeof AuthRouteImport
+    }
+    '/_auth/admin/users': {
+      id: '/_auth/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthAdminUsersRouteImport
+      parentRoute: typeof AuthAdminRouteImport
+    }
+    '/_auth/_user/cases': {
+      id: '/_auth/_user/cases'
       path: '/cases'
       fullPath: '/cases'
-      preLoaderRoute: typeof AuthCasesImport
-      parentRoute: typeof AuthRouteImport
+      preLoaderRoute: typeof AuthUserCasesImport
+      parentRoute: typeof AuthUserRouteImport
     }
-    '/_auth/entities': {
-      id: '/_auth/entities'
-      path: '/entities'
-      fullPath: '/entities'
-      preLoaderRoute: typeof AuthEntitiesImport
-      parentRoute: typeof AuthRouteImport
-    }
-    '/_auth/home': {
-      id: '/_auth/home'
+    '/_auth/_user/home': {
+      id: '/_auth/_user/home'
       path: '/home'
       fullPath: '/home'
-      preLoaderRoute: typeof AuthHomeImport
-      parentRoute: typeof AuthRouteImport
+      preLoaderRoute: typeof AuthUserHomeImport
+      parentRoute: typeof AuthUserRouteImport
     }
-    '/_auth/__users/users': {
-      id: '/_auth/__users/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AuthusersUsersImport
-      parentRoute: typeof AuthRouteImport
+    '/_auth/admin/administration': {
+      id: '/_auth/admin/administration'
+      path: '/administration'
+      fullPath: '/admin/administration'
+      preLoaderRoute: typeof AuthAdminAdministrationImport
+      parentRoute: typeof AuthAdminRouteImport
     }
-    '/_auth/user/$userId': {
-      id: '/_auth/user/$userId'
+    '/_auth/admin/entities': {
+      id: '/_auth/admin/entities'
+      path: '/entities'
+      fullPath: '/admin/entities'
+      preLoaderRoute: typeof AuthAdminEntitiesImport
+      parentRoute: typeof AuthAdminRouteImport
+    }
+    '/_auth/admin/user/$userId': {
+      id: '/_auth/admin/user/$userId'
       path: '/user/$userId'
-      fullPath: '/user/$userId'
-      preLoaderRoute: typeof AuthUserUserIdImport
-      parentRoute: typeof AuthRouteImport
+      fullPath: '/admin/user/$userId'
+      preLoaderRoute: typeof AuthAdminUserUserIdImport
+      parentRoute: typeof AuthAdminRouteImport
     }
-    '/_auth/__users/users/all': {
-      id: '/_auth/__users/users/all'
+    '/_auth/admin/users/all': {
+      id: '/_auth/admin/users/all'
       path: '/all'
-      fullPath: '/users/all'
-      preLoaderRoute: typeof AuthusersUsersAllImport
-      parentRoute: typeof AuthusersUsersImport
+      fullPath: '/admin/users/all'
+      preLoaderRoute: typeof AuthAdminUsersAllImport
+      parentRoute: typeof AuthAdminUsersRouteImport
     }
-    '/_auth/__users/users/': {
-      id: '/_auth/__users/users/'
+    '/_auth/admin/users/': {
+      id: '/_auth/admin/users/'
       path: '/'
-      fullPath: '/users/'
-      preLoaderRoute: typeof AuthusersUsersIndexImport
-      parentRoute: typeof AuthusersUsersImport
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AuthAdminUsersIndexImport
+      parentRoute: typeof AuthAdminUsersRouteImport
     }
   }
 }
 
 // Create and export the route tree
 
-interface AuthusersUsersRouteChildren {
-  AuthusersUsersAllRoute: typeof AuthusersUsersAllRoute
-  AuthusersUsersIndexRoute: typeof AuthusersUsersIndexRoute
+interface AuthUserRouteRouteChildren {
+  AuthUserCasesRoute: typeof AuthUserCasesRoute
+  AuthUserHomeRoute: typeof AuthUserHomeRoute
 }
 
-const AuthusersUsersRouteChildren: AuthusersUsersRouteChildren = {
-  AuthusersUsersAllRoute: AuthusersUsersAllRoute,
-  AuthusersUsersIndexRoute: AuthusersUsersIndexRoute,
+const AuthUserRouteRouteChildren: AuthUserRouteRouteChildren = {
+  AuthUserCasesRoute: AuthUserCasesRoute,
+  AuthUserHomeRoute: AuthUserHomeRoute,
 }
 
-const AuthusersUsersRouteWithChildren = AuthusersUsersRoute._addFileChildren(
-  AuthusersUsersRouteChildren,
+const AuthUserRouteRouteWithChildren = AuthUserRouteRoute._addFileChildren(
+  AuthUserRouteRouteChildren,
+)
+
+interface AuthAdminUsersRouteRouteChildren {
+  AuthAdminUsersAllRoute: typeof AuthAdminUsersAllRoute
+  AuthAdminUsersIndexRoute: typeof AuthAdminUsersIndexRoute
+}
+
+const AuthAdminUsersRouteRouteChildren: AuthAdminUsersRouteRouteChildren = {
+  AuthAdminUsersAllRoute: AuthAdminUsersAllRoute,
+  AuthAdminUsersIndexRoute: AuthAdminUsersIndexRoute,
+}
+
+const AuthAdminUsersRouteRouteWithChildren =
+  AuthAdminUsersRouteRoute._addFileChildren(AuthAdminUsersRouteRouteChildren)
+
+interface AuthAdminRouteRouteChildren {
+  AuthAdminUsersRouteRoute: typeof AuthAdminUsersRouteRouteWithChildren
+  AuthAdminAdministrationRoute: typeof AuthAdminAdministrationRoute
+  AuthAdminEntitiesRoute: typeof AuthAdminEntitiesRoute
+  AuthAdminUserUserIdRoute: typeof AuthAdminUserUserIdRoute
+}
+
+const AuthAdminRouteRouteChildren: AuthAdminRouteRouteChildren = {
+  AuthAdminUsersRouteRoute: AuthAdminUsersRouteRouteWithChildren,
+  AuthAdminAdministrationRoute: AuthAdminAdministrationRoute,
+  AuthAdminEntitiesRoute: AuthAdminEntitiesRoute,
+  AuthAdminUserUserIdRoute: AuthAdminUserUserIdRoute,
+}
+
+const AuthAdminRouteRouteWithChildren = AuthAdminRouteRoute._addFileChildren(
+  AuthAdminRouteRouteChildren,
 )
 
 interface AuthRouteRouteChildren {
-  AuthAdministrationRoute: typeof AuthAdministrationRoute
-  AuthCasesRoute: typeof AuthCasesRoute
-  AuthEntitiesRoute: typeof AuthEntitiesRoute
-  AuthHomeRoute: typeof AuthHomeRoute
-  AuthusersUsersRoute: typeof AuthusersUsersRouteWithChildren
-  AuthUserUserIdRoute: typeof AuthUserUserIdRoute
+  AuthUserRouteRoute: typeof AuthUserRouteRouteWithChildren
+  AuthAdminRouteRoute: typeof AuthAdminRouteRouteWithChildren
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
-  AuthAdministrationRoute: AuthAdministrationRoute,
-  AuthCasesRoute: AuthCasesRoute,
-  AuthEntitiesRoute: AuthEntitiesRoute,
-  AuthHomeRoute: AuthHomeRoute,
-  AuthusersUsersRoute: AuthusersUsersRouteWithChildren,
-  AuthUserUserIdRoute: AuthUserUserIdRoute,
+  AuthUserRouteRoute: AuthUserRouteRouteWithChildren,
+  AuthAdminRouteRoute: AuthAdminRouteRouteWithChildren,
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
@@ -214,29 +264,31 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '': typeof AuthRouteRouteWithChildren
+  '': typeof AuthUserRouteRouteWithChildren
   '/login': typeof LoginRoute
-  '/administration': typeof AuthAdministrationRoute
-  '/cases': typeof AuthCasesRoute
-  '/entities': typeof AuthEntitiesRoute
-  '/home': typeof AuthHomeRoute
-  '/users': typeof AuthusersUsersRouteWithChildren
-  '/user/$userId': typeof AuthUserUserIdRoute
-  '/users/all': typeof AuthusersUsersAllRoute
-  '/users/': typeof AuthusersUsersIndexRoute
+  '/admin': typeof AuthAdminRouteRouteWithChildren
+  '/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
+  '/cases': typeof AuthUserCasesRoute
+  '/home': typeof AuthUserHomeRoute
+  '/admin/administration': typeof AuthAdminAdministrationRoute
+  '/admin/entities': typeof AuthAdminEntitiesRoute
+  '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
+  '/admin/users/all': typeof AuthAdminUsersAllRoute
+  '/admin/users/': typeof AuthAdminUsersIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '': typeof AuthRouteRouteWithChildren
+  '': typeof AuthUserRouteRouteWithChildren
   '/login': typeof LoginRoute
-  '/administration': typeof AuthAdministrationRoute
-  '/cases': typeof AuthCasesRoute
-  '/entities': typeof AuthEntitiesRoute
-  '/home': typeof AuthHomeRoute
-  '/user/$userId': typeof AuthUserUserIdRoute
-  '/users/all': typeof AuthusersUsersAllRoute
-  '/users': typeof AuthusersUsersIndexRoute
+  '/admin': typeof AuthAdminRouteRouteWithChildren
+  '/cases': typeof AuthUserCasesRoute
+  '/home': typeof AuthUserHomeRoute
+  '/admin/administration': typeof AuthAdminAdministrationRoute
+  '/admin/entities': typeof AuthAdminEntitiesRoute
+  '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
+  '/admin/users/all': typeof AuthAdminUsersAllRoute
+  '/admin/users': typeof AuthAdminUsersIndexRoute
 }
 
 export interface FileRoutesById {
@@ -244,14 +296,16 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteRouteWithChildren
   '/login': typeof LoginRoute
-  '/_auth/administration': typeof AuthAdministrationRoute
-  '/_auth/cases': typeof AuthCasesRoute
-  '/_auth/entities': typeof AuthEntitiesRoute
-  '/_auth/home': typeof AuthHomeRoute
-  '/_auth/__users/users': typeof AuthusersUsersRouteWithChildren
-  '/_auth/user/$userId': typeof AuthUserUserIdRoute
-  '/_auth/__users/users/all': typeof AuthusersUsersAllRoute
-  '/_auth/__users/users/': typeof AuthusersUsersIndexRoute
+  '/_auth/_user': typeof AuthUserRouteRouteWithChildren
+  '/_auth/admin': typeof AuthAdminRouteRouteWithChildren
+  '/_auth/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
+  '/_auth/_user/cases': typeof AuthUserCasesRoute
+  '/_auth/_user/home': typeof AuthUserHomeRoute
+  '/_auth/admin/administration': typeof AuthAdminAdministrationRoute
+  '/_auth/admin/entities': typeof AuthAdminEntitiesRoute
+  '/_auth/admin/user/$userId': typeof AuthAdminUserUserIdRoute
+  '/_auth/admin/users/all': typeof AuthAdminUsersAllRoute
+  '/_auth/admin/users/': typeof AuthAdminUsersIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -260,39 +314,43 @@ export interface FileRouteTypes {
     | '/'
     | ''
     | '/login'
-    | '/administration'
+    | '/admin'
+    | '/admin/users'
     | '/cases'
-    | '/entities'
     | '/home'
-    | '/users'
-    | '/user/$userId'
-    | '/users/all'
-    | '/users/'
+    | '/admin/administration'
+    | '/admin/entities'
+    | '/admin/user/$userId'
+    | '/admin/users/all'
+    | '/admin/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | ''
     | '/login'
-    | '/administration'
+    | '/admin'
     | '/cases'
-    | '/entities'
     | '/home'
-    | '/user/$userId'
-    | '/users/all'
-    | '/users'
+    | '/admin/administration'
+    | '/admin/entities'
+    | '/admin/user/$userId'
+    | '/admin/users/all'
+    | '/admin/users'
   id:
     | '__root__'
     | '/'
     | '/_auth'
     | '/login'
-    | '/_auth/administration'
-    | '/_auth/cases'
-    | '/_auth/entities'
-    | '/_auth/home'
-    | '/_auth/__users/users'
-    | '/_auth/user/$userId'
-    | '/_auth/__users/users/all'
-    | '/_auth/__users/users/'
+    | '/_auth/_user'
+    | '/_auth/admin'
+    | '/_auth/admin/users'
+    | '/_auth/_user/cases'
+    | '/_auth/_user/home'
+    | '/_auth/admin/administration'
+    | '/_auth/admin/entities'
+    | '/_auth/admin/user/$userId'
+    | '/_auth/admin/users/all'
+    | '/_auth/admin/users/'
   fileRoutesById: FileRoutesById
 }
 
@@ -329,52 +387,66 @@ export const routeTree = rootRoute
     "/_auth": {
       "filePath": "_auth/route.tsx",
       "children": [
-        "/_auth/administration",
-        "/_auth/cases",
-        "/_auth/entities",
-        "/_auth/home",
-        "/_auth/__users/users",
-        "/_auth/user/$userId"
+        "/_auth/_user",
+        "/_auth/admin"
       ]
     },
     "/login": {
       "filePath": "login.tsx"
     },
-    "/_auth/administration": {
-      "filePath": "_auth/administration.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/cases": {
-      "filePath": "_auth/cases.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/entities": {
-      "filePath": "_auth/entities.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/home": {
-      "filePath": "_auth/home.tsx",
-      "parent": "/_auth"
-    },
-    "/_auth/__users/users": {
-      "filePath": "_auth/__users/users.tsx",
+    "/_auth/_user": {
+      "filePath": "_auth/_user/route.tsx",
       "parent": "/_auth",
       "children": [
-        "/_auth/__users/users/all",
-        "/_auth/__users/users/"
+        "/_auth/_user/cases",
+        "/_auth/_user/home"
       ]
     },
-    "/_auth/user/$userId": {
-      "filePath": "_auth/user.$userId.tsx",
-      "parent": "/_auth"
+    "/_auth/admin": {
+      "filePath": "_auth/admin/route.tsx",
+      "parent": "/_auth",
+      "children": [
+        "/_auth/admin/users",
+        "/_auth/admin/administration",
+        "/_auth/admin/entities",
+        "/_auth/admin/user/$userId"
+      ]
     },
-    "/_auth/__users/users/all": {
-      "filePath": "_auth/__users/users.all.tsx",
-      "parent": "/_auth/__users/users"
+    "/_auth/admin/users": {
+      "filePath": "_auth/admin/users/route.tsx",
+      "parent": "/_auth/admin",
+      "children": [
+        "/_auth/admin/users/all",
+        "/_auth/admin/users/"
+      ]
     },
-    "/_auth/__users/users/": {
-      "filePath": "_auth/__users/users.index.tsx",
-      "parent": "/_auth/__users/users"
+    "/_auth/_user/cases": {
+      "filePath": "_auth/_user/cases.tsx",
+      "parent": "/_auth/_user"
+    },
+    "/_auth/_user/home": {
+      "filePath": "_auth/_user/home.tsx",
+      "parent": "/_auth/_user"
+    },
+    "/_auth/admin/administration": {
+      "filePath": "_auth/admin/administration.tsx",
+      "parent": "/_auth/admin"
+    },
+    "/_auth/admin/entities": {
+      "filePath": "_auth/admin/entities.tsx",
+      "parent": "/_auth/admin"
+    },
+    "/_auth/admin/user/$userId": {
+      "filePath": "_auth/admin/user/$userId.tsx",
+      "parent": "/_auth/admin"
+    },
+    "/_auth/admin/users/all": {
+      "filePath": "_auth/admin/users/all.tsx",
+      "parent": "/_auth/admin/users"
+    },
+    "/_auth/admin/users/": {
+      "filePath": "_auth/admin/users/index.tsx",
+      "parent": "/_auth/admin/users"
     }
   }
 }

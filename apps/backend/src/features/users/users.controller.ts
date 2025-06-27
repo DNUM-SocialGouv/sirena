@@ -1,6 +1,8 @@
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
+import roleMiddleware from '@/middlewares/role.middleware';
 import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
+import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { GetUsersQuerySchema, getUserRoute, getUsersRoute } from './users.route';
 import { getUserById, getUsers } from './users.service';
@@ -8,6 +10,7 @@ import { getUserById, getUsers } from './users.service';
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
+  .use(roleMiddleware([ROLES.SUPER_ADMIN]))
 
   .get('/', getUsersRoute, zValidator('query', GetUsersQuerySchema), async (c) => {
     const { roleId, active } = c.req.valid('query');

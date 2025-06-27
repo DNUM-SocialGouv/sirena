@@ -1,9 +1,8 @@
 import { requireAuth } from '@/lib/auth-guards';
-import { useUserStore } from '@/stores/userStore';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Link, createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_auth/home')({
+export const Route = createFileRoute('/_auth/_user/home')({
   beforeLoad: requireAuth,
   head: () => ({
     meta: [
@@ -16,19 +15,11 @@ export const Route = createFileRoute('/_auth/home')({
 });
 
 function RouteComponent() {
-  const { updateIsAdmin, isAdmin } = useUserStore();
-  const handlePermissionsChange = () => {
-    updateIsAdmin(!isAdmin);
-  };
-
   return (
     <div className="home">
       <h2>Welcome to home</h2>
       <div className="fr-m-1w">
-        <Link to="/administration">Administration</Link>
-      </div>
-      <div className="fr-m-1w">
-        <Button onClick={() => handlePermissionsChange()}> Change permissions </Button>
+        <Link to="/admin/administration">Administration</Link>
       </div>
       <form action="/api/auth/logout-proconnect" method="POST">
         <Button className="fr-m-1w" type="submit">

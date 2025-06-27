@@ -1,16 +1,13 @@
 import { Loader } from '@/components/loader.tsx';
 import { useUser } from '@/hooks/queries/useUser';
+import { ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
 
 export function PendingUsersTab() {
-  const pendingRoleId = 'PENDING';
+  const pendingRoleId = ROLES.PENDING;
 
-  const {
-    data: usersData,
-    isLoading: usersLoading,
-    error: usersError,
-  } = useUser(pendingRoleId ? { roleId: pendingRoleId } : undefined, !!pendingRoleId);
+  const { data: usersData, isLoading: usersLoading, error: usersError } = useUser({ roleId: pendingRoleId });
 
   if (usersLoading) {
     return <Loader />;
@@ -51,7 +48,7 @@ export function PendingUsersTab() {
       </div>
     ),
     'custom:editionLabel': (row: User) => (
-      <Link to="/user/$userId" params={{ userId: row.id }}>
+      <Link to="/admin/user/$userId" params={{ userId: row.id }}>
         Traiter la demande
       </Link>
     ),
@@ -59,7 +56,7 @@ export function PendingUsersTab() {
 
   return (
     <DataTable
-      title="Liste des utilisateurs en attente de validation"
+      title="Demande d'habilitation en attente"
       rowId="id"
       data={usersData.data}
       columns={columns}

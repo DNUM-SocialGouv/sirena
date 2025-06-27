@@ -1,4 +1,4 @@
-.logged-layout__container {
+.auth-layout__container {
   display: grid;
   height: 100vh;
   grid-template-areas:
@@ -8,16 +8,16 @@
   grid-template-columns: 240px 1fr;
 }
 
-.logged-layout__header {
+.auth-layout__header {
   grid-area: header;
 }
 
-.logged-layout__nav {
+.auth-layout__nav {
   grid-area: nav;
   padding: 1rem;
 }
 
-.logged-layout__main {
+.auth-layout__main {
   grid-area: main;
   padding: 1rem;
   overflow-y: auto;
