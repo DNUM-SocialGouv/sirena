@@ -16,6 +16,8 @@
     "build-storybook": "storybook build",
     "test": "vitest --typecheck",
     "test:browser": "vitest --workspace=vitest.workspace.ts",
+    "prestorybook": "react-dsfr update-icons",
+    "prebuild": "react-dsfr update-icons",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/ui/' | sed 's|^packages/ui/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
     "lint": "biome check"
   },
@@ -42,6 +44,7 @@
     "vitest-browser-react": "^0.1.1"
   },
   "dependencies": {
+    "@base-ui-components/react": "1.0.0-beta.0",
     "@codegouvfr/react-dsfr": "^1.22.5",
     "react": "^19.0.0",
     "react-transition-group": "^4.4.5"
