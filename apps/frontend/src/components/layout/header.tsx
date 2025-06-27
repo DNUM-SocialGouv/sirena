@@ -1,4 +1,5 @@
 import { Header } from '@codegouvfr/react-dsfr/Header';
+import { UserMenu } from './userMenu';
 
 type HeaderMenuProps = {
   homeHref: string;
@@ -25,6 +26,7 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
       serviceTagline="précisions sur l'organisation"
       serviceTitle="Sirena"
       id="fr-header-header"
+      quickAccessItems={[UserMenu()]}
     />
   );
 };
