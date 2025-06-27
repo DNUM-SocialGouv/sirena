@@ -31,7 +31,7 @@ const mockUser = {
   role: { id: 'PENDING', label: 'Pending' },
 };
 
-describe('user.service', () => {
+describe('user.service.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

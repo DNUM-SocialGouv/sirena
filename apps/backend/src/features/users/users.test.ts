@@ -22,6 +22,16 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
+vi.mock('@/middlewares/role.middleware', () => {
+  return {
+    default: () => {
+      return (c: Context, next: Next) => {
+        return next();
+      };
+    },
+  };
+});
+
 describe('User Endpoint', () => {
   const client = testClient(app);
 
