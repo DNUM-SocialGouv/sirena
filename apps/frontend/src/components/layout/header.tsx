@@ -26,7 +26,7 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
       serviceTagline="précisions sur l'organisation"
       serviceTitle="Sirena"
       id="fr-header-header"
-      quickAccessItems={[UserMenu()]}
+      quickAccessItems={[<UserMenu key="menu" />]}
     />
   );
 };
