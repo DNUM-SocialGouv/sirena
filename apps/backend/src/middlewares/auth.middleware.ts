@@ -26,7 +26,7 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
     try {
       const decoded = verify<{ id: string; roleId: string }>(authToken, envVars.AUTH_TOKEN_SECRET_KEY);
       c.set('userId', decoded.id);
-      c.set('roleId', decoded.roleId || 'PENDING'); // TODO handle roleId properly
+      c.set('roleId', decoded.roleId);
       return next();
     } catch (error) {
       if (!isJwtError(error)) {
@@ -65,7 +65,7 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
       if (!user) {
         throw new Error(`User with ID ${decoded.id} not found`);
       }
-      const roleId = user.roleId || 'PENDING'; // TODO handle roleId properly
+      const roleId = user.roleId;
       const newAuthToken = signAuthCookie({ id: decoded.id, roleId }, newAuthTokenDate);
       setCookie(c, envVars.AUTH_TOKEN_NAME, newAuthToken, {
         path: '/',

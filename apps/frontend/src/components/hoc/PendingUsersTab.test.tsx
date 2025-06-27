@@ -87,7 +87,7 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
-            role: { id: string; label: string } | null;
+            role: { id: string; label: string };
             pcData: Record<string, unknown>;
             statutId: string;
             entiteId: string | null;
@@ -120,7 +120,7 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
-            role: { id: string; label: string } | null;
+            role: { id: string; label: string };
             pcData: Record<string, unknown>;
             statutId: string;
             entiteId: string | null;
@@ -151,7 +151,7 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
-            role: { id: string; label: string } | null;
+            role: { id: string; label: string };
             pcData: Record<string, unknown>;
             statutId: string;
             entiteId: string | null;
@@ -184,7 +184,7 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
-            role: { id: string; label: string } | null;
+            role: { id: string; label: string };
             pcData: Record<string, unknown>;
             statutId: string;
             entiteId: string | null;
@@ -217,7 +217,7 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
-            role: { id: string; label: string } | null;
+            role: { id: string; label: string };
             pcData: Record<string, unknown>;
             statutId: string;
             entiteId: string | null;
@@ -252,7 +252,7 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
-            role: { id: string; label: string } | null;
+            role: { id: string; label: string };
             pcData: Record<string, unknown>;
             statutId: string;
             entiteId: string | null;
@@ -318,7 +318,7 @@ describe('PendingUsersTab Component', () => {
             createdAt: string;
             active: boolean;
             roleId: string;
-            role: { id: string; label: string } | null;
+            role: { id: string; label: string };
             pcData: Record<string, unknown>;
             statutId: string;
             entiteId: string | null;

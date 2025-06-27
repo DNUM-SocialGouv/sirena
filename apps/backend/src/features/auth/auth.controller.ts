@@ -136,8 +136,7 @@ const app = factoryWithLogs
       const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_CREATE_ERROR });
       return c.redirect(errorPageUrl, 302);
     }
-    // TODO handle roleId properly
-    await authUser(c, { id: user.id, roleId: user.roleId || 'PENDING' }, tokens.id_token);
+    await authUser(c, { id: user.id, roleId: user.roleId }, tokens.id_token);
 
     return c.redirect(envVars.FRONTEND_REDIRECT_URI, 302);
   })

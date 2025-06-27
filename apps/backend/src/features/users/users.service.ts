@@ -1,4 +1,5 @@
 import { type Prisma, type User, prisma } from '@/libs/prisma';
+import { ROLES } from '@sirena/common/constants';
 import type { CreateUserDto } from './user.type';
 
 interface GetUsersFilters {
@@ -26,7 +27,7 @@ export const getUserById = async (id: User['id']) =>
 export const getUserBySub = async (sub: User['sub']) => await prisma.user.findUnique({ where: { sub } });
 
 export const createUser = async (newUser: CreateUserDto) => {
-  const roleId = 'PENDING';
+  const roleId = ROLES.PENDING;
   const statutId = 'NON_RENSEIGNE';
   return prisma.user.create({
     data: {

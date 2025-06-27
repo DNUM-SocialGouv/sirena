@@ -1,28 +1,21 @@
 import { Loader } from '@/components/loader.tsx';
-import { useRoles } from '@/hooks/queries/useRoles.ts';
 import { useUser } from '@/hooks/queries/useUser';
+import { ROLES, roles } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
 
 export function AllUsersTab() {
-  const { data: rolesData, isLoading: rolesLoading, error: rolesError } = useRoles();
-
-  const nonPendingRoleIds = rolesData?.data
-    .filter((role) => role.id !== 'PENDING')
-    .map((role) => role.id)
+  const nonPendingRoleIds = Object.keys(roles)
+    .filter((roleId) => roleId !== ROLES.PENDING)
     .join(',');
 
-  const {
-    data: usersData,
-    isLoading: usersLoading,
-    error: usersError,
-  } = useUser(nonPendingRoleIds ? { roleId: nonPendingRoleIds } : undefined);
+  const { data: usersData, isLoading: usersLoading, error: usersError } = useUser({ roleId: nonPendingRoleIds });
 
-  if (rolesLoading || usersLoading) {
+  if (usersLoading) {
     return <Loader />;
   }
 
-  if (rolesError || usersError) {
+  if (usersError) {
     return (
       <div className="error-state">
         <p>Erreur lors du chargement des utilisateurs</p>
@@ -43,14 +36,14 @@ export function AllUsersTab() {
     { key: 'lastName', label: 'Nom' },
     { key: 'firstName', label: 'Prénom' },
     { key: 'role.label', label: 'Rôle' },
-    { key: 'custom:status', label: 'Statut' },
+    { key: 'active', label: 'Statut' },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 
   const cells: Cells<User> = {
-    'custom:status': (row: User) => (row.active ? 'Actif' : 'Inactif'),
+    active: (row: User) => (row.active ? 'Actif' : 'Inactif'),
     'custom:editionLabel': (row: User) => (
-      <Link to="/user/$userId" className="fr-link" params={{ userId: row.id }}>
+      <Link to="/admin/user/$userId" className="fr-link" params={{ userId: row.id }}>
         Gérer l'utilisateur
       </Link>
     ),
