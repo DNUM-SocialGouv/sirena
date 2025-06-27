@@ -8,6 +8,6 @@ export async function fetchProfile() {
   } catch (error) {
     console.log('Error fetching profile:', error);
   }
-  const data = await res.json();
-  return data;
+  const response = await res.json();
+  return response.data;
 }

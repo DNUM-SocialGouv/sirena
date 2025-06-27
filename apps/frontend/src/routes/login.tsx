@@ -1,8 +1,7 @@
-import { NotLoggedLayout } from '@/components/layout/notLogged';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { NotAuth } from '@/components/layout/notAuth/layout';
+import { requireNotAuth } from '@/lib/auth-guards';
+import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-
-const fallback = '/home' as const;
 
 export const Route = createFileRoute('/login')({
   head: () => ({
@@ -17,11 +16,7 @@ export const Route = createFileRoute('/login')({
     redirect: z.string().optional(),
     state: z.string().optional(),
   }),
-  beforeLoad: ({ context, search }) => {
-    if (context.userStore.isLogged) {
-      throw redirect({ to: search.redirect || fallback });
-    }
-  },
+  beforeLoad: requireNotAuth,
   component: RouteComponent,
 });
 
@@ -29,7 +24,7 @@ function RouteComponent() {
   // TODO handle errors
 
   return (
-    <NotLoggedLayout>
+    <NotAuth>
       <div className="fr-grid-row fr-grid-row-gutters fr-grid-row--center">
         <div className="fr-col-12 fr-col-md-8 fr-col-lg-6">
           <div className="fr-container fr-background-alt--grey fr-px-md-0 fr-py-10v fr-py-md-14v">
@@ -63,6 +58,6 @@ function RouteComponent() {
           </div>
         </div>
       </div>
-    </NotLoggedLayout>
+    </NotAuth>
   );
 }

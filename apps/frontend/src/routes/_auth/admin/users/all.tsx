@@ -1,9 +1,10 @@
 import { AllUsersTab } from '@/components/hoc/allUsersTab.tsx';
-import { requireAuthAndAdmin } from '@/lib/auth-guards';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
+import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_auth/__users/users/all')({
-  beforeLoad: requireAuthAndAdmin,
+export const Route = createFileRoute('/_auth/admin/users/all')({
+  beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
   head: () => ({
     meta: [
       {
