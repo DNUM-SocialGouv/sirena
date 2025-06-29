@@ -49,7 +49,7 @@
     "graffle": "8.0.0-next.164",
     "graphql": "^16.11.0",
     "hono": "^4.8.1",
-    "hono-openapi": "^0.4.6",
+    "hono-openapi": "^0.4.8",
     "hono-pino": "^0.8.0",
     "jsonwebtoken": "^9.0.2",
     "openid-client": "^6.5.0",
