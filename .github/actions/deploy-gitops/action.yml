@@ -5,8 +5,8 @@ inputs:
   environment:
     description: 'Environment name (test, integration, etc.)'
     required: true
-  short-sha:
-    description: 'Short SHA for versioning'
+  version:
+    description: 'Version identifier for versioning (tag name or short SHA)'
     required: true
   gitops-repo:
     description: 'GitOps repository name'
@@ -35,7 +35,7 @@ runs:
       shell: bash
       run: |
         cd deploy
-        export IMAGE_TAG=${{ inputs.short-sha }}
+        export IMAGE_TAG=${{ inputs.version }}
         export ENVIRONNEMENT=${{ inputs.environment }}
         npm run build
 
@@ -57,5 +57,5 @@ runs:
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         cd gitops-repo
         git add .
-        git commit -m '[${{ inputs.environment }}] new version ${{ inputs.short-sha }}'
+        git commit -m '[${{ inputs.environment }}] new version ${{ inputs.version }}'
         git push 

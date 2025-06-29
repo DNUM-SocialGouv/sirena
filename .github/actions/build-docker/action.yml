@@ -10,8 +10,8 @@ inputs:
     description: 'Base image name'
     required: false
     default: '${{ github.repository }}'
-  short-sha:
-    description: 'Short SHA for tagging'
+  version:
+    description: 'Version identifier for tagging (tag name or short SHA)'
     required: true
   github-token:
     description: 'GitHub token for registry login'
@@ -33,7 +33,7 @@ runs:
       with:
         images: ${{ inputs.registry }}/${{ inputs.image-name }}
         tags: |
-          type=raw,value=${{ inputs.short-sha }}
+          type=raw,value=${{ inputs.version }}
 
     - name: Save image tag in an env var
       shell: bash
