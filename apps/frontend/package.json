@@ -35,7 +35,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@playwright/test": "^1.52.0",
-    "@tanstack/react-router-devtools": "^1.115.0",
+    "@tanstack/react-router-devtools": "^1.122.0",
     "@tanstack/router-plugin": "^1.115.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
