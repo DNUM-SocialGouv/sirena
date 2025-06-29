@@ -57,5 +57,11 @@ runs:
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         cd gitops-repo
         git add .
-        git commit -m '[${{ inputs.environment }}] new version ${{ inputs.version }}'
-        git push 
+        
+        # Check if there are changes to commit
+        if git diff --staged --quiet; then
+          echo "No changes to commit, skipping commit and push"
+        else
+          git commit -m '[${{ inputs.environment }}] new version ${{ inputs.version }}'
+          git push 
+        fi 
