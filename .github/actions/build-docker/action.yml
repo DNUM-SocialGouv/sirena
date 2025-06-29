@@ -51,8 +51,12 @@ runs:
         push: true
         tags: ${{ env.IMAGE_TAG }}-backend
         labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: |
+          type=gha,scope=backend
+          type=registry,ref=${{ inputs.registry }}/${{ inputs.image-name }}:cache-backend
+        cache-to: |
+          type=gha,mode=max,scope=backend
+          type=registry,ref=${{ inputs.registry }}/${{ inputs.image-name }}:cache-backend,mode=max
         platforms: linux/amd64
 
     - name: Build and push Docker frontend image
@@ -65,6 +69,10 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: |
+          type=gha,scope=frontend
+          type=registry,ref=${{ inputs.registry }}/${{ inputs.image-name }}:cache-frontend
+        cache-to: |
+          type=gha,mode=max,scope=frontend
+          type=registry,ref=${{ inputs.registry }}/${{ inputs.image-name }}:cache-frontend,mode=max
         platforms: linux/amd64 
