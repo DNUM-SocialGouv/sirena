@@ -65,7 +65,7 @@
     "@graphql-codegen/typescript": "^4.1.6",
     "@graphql-codegen/typescript-operations": "^4.6.1",
     "@graphql-typed-document-node/core": "^3.2.0",
-    "@types/jsonwebtoken": "^9.0.9",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.11.17",
     "@vitest/coverage-v8": "^3.2.4",
     "prisma": "^6.8.2",
