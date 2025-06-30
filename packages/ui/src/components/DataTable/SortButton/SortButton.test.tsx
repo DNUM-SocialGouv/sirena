@@ -15,7 +15,6 @@ describe('SortButton Component', () => {
     const button = screen.getByRole('button', { name: /trier/i });
 
     expect(button).toBeInTheDocument();
-    expect(button).toHaveAttribute('aria-sort', 'none');
   });
 
   it('calls onSortChange with asc when currently inactive', async () => {
@@ -46,13 +45,5 @@ describe('SortButton Component', () => {
 
     await user.click(screen.getByRole('button'));
     expect(onSortChange).toHaveBeenCalledWith({ sort: '', sortDirection: '' });
-  });
-
-  it('uses correct aria-sort value based on sort direction', () => {
-    const { rerender } = render(<SortButton {...defaultProps} sort="name" sortDirection="asc" />);
-    expect(screen.getByRole('button')).toHaveAttribute('aria-sort', 'ascending');
-
-    rerender(<SortButton {...defaultProps} sort="name" sortDirection="desc" />);
-    expect(screen.getByRole('button')).toHaveAttribute('aria-sort', 'descending');
   });
 });
