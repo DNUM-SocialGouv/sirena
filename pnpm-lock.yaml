@@ -4,6 +4,24 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@codegouvfr/react-dsfr':
+      specifier: ^1.25.3
+      version: 1.25.3
+    hono:
+      specifier: ^4.8.3
+      version: 4.8.3
+    react:
+      specifier: ^19.1.0
+      version: 19.1.0
+    react-dom:
+      specifier: ^19.1.0
+      version: 19.1.0
+    zod:
+      specifier: ^3.25.67
+      version: 3.25.67
+
 importers:
 
   .:
@@ -49,7 +67,7 @@ importers:
         specifier: ^16.11.0
         version: 16.11.0
       hono:
-        specifier: ^4.8.3
+        specifier: 'catalog:'
         version: 4.8.3
       hono-openapi:
         specifier: ^0.4.8
@@ -70,7 +88,7 @@ importers:
         specifier: ^13.0.0
         version: 13.0.0
       zod:
-        specifier: ^3.25.67
+        specifier: 'catalog:'
         version: 3.25.67
       zod-openapi:
         specifier: ^4.2.4
@@ -119,7 +137,7 @@ importers:
   apps/frontend:
     dependencies:
       '@codegouvfr/react-dsfr':
-        specifier: ^1.22.5
+        specifier: 'catalog:'
         version: 1.25.3
       '@sirena/backend':
         specifier: workspace:*
@@ -137,16 +155,16 @@ importers:
         specifier: ^1.123.0
         version: 1.123.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       hono:
-        specifier: ^4.8.3
+        specifier: 'catalog:'
         version: 4.8.3
       react:
-        specifier: ^19.1.0
+        specifier: 'catalog:'
         version: 19.1.0
       react-dom:
-        specifier: ^19.1.0
+        specifier: 'catalog:'
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.25.67
+        specifier: 'catalog:'
         version: 3.25.67
       zustand:
         specifier: ^5.0.6
@@ -210,13 +228,13 @@ importers:
   packages/backend-utils:
     dependencies:
       hono:
-        specifier: ^4.8.3
+        specifier: 'catalog:'
         version: 4.8.3
       hono-openapi:
         specifier: ^0.4.8
         version: 0.4.8(@hono/zod-validator@0.4.3(hono@4.8.3)(zod@3.25.67))(hono@4.8.3)(openapi-types@12.1.3)(zod-openapi@4.2.4(zod@3.25.67))(zod@3.25.67)
       zod:
-        specifier: ^3.25.67
+        specifier: 'catalog:'
         version: 3.25.67
       zod-openapi:
         specifier: ^4.2.4
@@ -244,10 +262,10 @@ importers:
         specifier: 1.0.0-beta.0
         version: 1.0.0-beta.0(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@codegouvfr/react-dsfr':
-        specifier: ^1.25.3
+        specifier: 'catalog:'
         version: 1.25.3
       react:
-        specifier: ^19.1.0
+        specifier: 'catalog:'
         version: 19.1.0
       react-transition-group:
         specifier: ^4.4.5
