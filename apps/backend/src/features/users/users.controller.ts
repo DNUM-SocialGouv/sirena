@@ -1,11 +1,13 @@
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
+import { isOperationDependsOnRecordNotFoundError } from '@/helpers/prisma';
 import authMiddleware from '@/middlewares/auth.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
-import { GetUsersQuerySchema, getUserRoute, getUsersRoute } from './users.route';
-import { getUserById, getUsers } from './users.service';
+import { getUserRoute, getUsersRoute, patchUserRoute } from './users.route';
+import { GetUsersQuerySchema, PatchUserSchema } from './users.schema';
+import { getUserById, getUsers, patchUser } from './users.service';
 
 const app = factoryWithLogs
   .createApp()
@@ -30,6 +32,23 @@ const app = factoryWithLogs
       });
     }
     return c.json({ data: user }, 200);
+  })
+
+  .patch('/:id', patchUserRoute, zValidator('json', PatchUserSchema), async (c) => {
+    const json = c.req.valid('json');
+    const id = c.req.param('id');
+    try {
+      const user = await patchUser(id, json);
+      return c.json({ data: user }, 200);
+    } catch (error) {
+      if (isOperationDependsOnRecordNotFoundError(error)) {
+        throwHTTPException404NotFound('User not found', {
+          res: c.res,
+        });
+      } else {
+        throw error;
+      }
+    }
   });
 
 export default app;

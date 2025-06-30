@@ -18,3 +18,19 @@ export const UserParamsIdSchema = z.object({
 });
 
 export const UserIdSchema = UserSchema.shape.id;
+
+export const GetUsersQuerySchema = z.object({
+  roleId: z
+    .string()
+    .transform((val) => val.split(',').map((id) => id.trim()))
+    .optional(),
+  active: z
+    .string()
+    .transform((val) => val === 'true')
+    .optional(),
+});
+export const PatchUserSchema = UserSchema.pick({
+  entiteId: true,
+  roleId: true,
+  statutId: true,
+}).partial();
