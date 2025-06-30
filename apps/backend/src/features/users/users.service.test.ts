@@ -13,6 +13,12 @@ vi.mock('@/libs/prisma', () => ({
   },
 }));
 
+vi.mock('@/config/env', () => ({
+  envVars: {
+    SUPER_ADMIN_LIST_EMAIL: '',
+  },
+}));
+
 const mockedUser = vi.mocked(prisma.user);
 
 const mockUser = {
