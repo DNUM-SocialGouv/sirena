@@ -80,7 +80,7 @@ export const throwHTTPException503ServiceUnavailable = (
 export const apiErrorResolver = (): ResolverResult => resolver(ErrorSchema);
 export const apiZodErrorResolver = (): ResolverResult => resolver(ZodSafeParseErrorSchema);
 
-export const openApi401Unauthorized = (description = MESSAGES.BAD_REQUEST) => ({
+export const openApi401Unauthorized = (description = MESSAGES.UNAUTHORIZED) => ({
   401: {
     description,
     content: {

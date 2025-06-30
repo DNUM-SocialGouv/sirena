@@ -3,6 +3,7 @@ import { describeRoute } from 'hono-openapi';
 import { resolver } from 'hono-openapi/zod';
 import { MetaSchema } from '../schemas/apiResponses.schema';
 import { type ZodSchema, z } from '../utils/zod';
+import { openApi401Unauthorized } from './apiErrors.helpers';
 
 type OpenApiResponse = {
   [code: number]: {
@@ -89,7 +90,7 @@ export const openApiProtectedRoute = ({ description, responses, tags = [] }: Ope
     description,
     tags,
     responses: {
-      ...openApiRedirect(401, 'Unauthorized'),
+      ...openApi401Unauthorized('Unauthorized'),
       ...responses,
     },
   });
