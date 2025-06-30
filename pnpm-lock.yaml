@@ -210,17 +210,17 @@ importers:
   packages/backend-utils:
     dependencies:
       hono:
-        specifier: ^4.8.1
-        version: 4.8.1
+        specifier: ^4.8.3
+        version: 4.8.3
       hono-openapi:
-        specifier: ^0.4.6
-        version: 0.4.6(@hono/zod-validator@0.4.3(hono@4.8.1)(zod@3.24.2))(hono@4.8.1)(openapi-types@12.1.3)(zod-openapi@4.2.4(zod@3.24.2))(zod@3.24.2)
+        specifier: ^0.4.8
+        version: 0.4.8(@hono/zod-validator@0.4.3(hono@4.8.3)(zod@3.25.67))(hono@4.8.3)(openapi-types@12.1.3)(zod-openapi@4.2.4(zod@3.25.67))(zod@3.25.67)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: ^3.25.67
+        version: 3.25.67
       zod-openapi:
         specifier: ^4.2.4
-        version: 4.2.4(zod@3.24.2)
+        version: 4.2.4(zod@3.25.67)
     devDependencies:
       '@biomejs/biome':
         specifier: 2.0.6
@@ -2616,53 +2616,6 @@ packages:
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
 
-  hono-openapi@0.4.6:
-    resolution: {integrity: sha512-wSDySp2cS5Zcf1OeLG7nCP3eMsCpcDomN137T9B6/Z5Qq3D0nWgMf0I3Gl41SE1rE37OBQ0Smqx3LOP9Hk//7A==}
-    peerDependencies:
-      '@hono/arktype-validator': ^2.0.0
-      '@hono/effect-validator': ^1.2.0
-      '@hono/typebox-validator': ^0.2.0 || ^0.3.0
-      '@hono/valibot-validator': ^0.5.1
-      '@hono/zod-validator': ^0.4.1
-      '@sinclair/typebox': ^0.34.9
-      '@valibot/to-json-schema': ^1.0.0-beta.3
-      arktype: ^2.0.0-rc.25
-      effect: ^3.11.3
-      hono: ^4.6.13
-      openapi-types: ^12.1.3
-      valibot: ^1.0.0-beta.9
-      zod: ^3.23.8
-      zod-openapi: ^4.0.0
-    peerDependenciesMeta:
-      '@hono/arktype-validator':
-        optional: true
-      '@hono/effect-validator':
-        optional: true
-      '@hono/typebox-validator':
-        optional: true
-      '@hono/valibot-validator':
-        optional: true
-      '@hono/zod-validator':
-        optional: true
-      '@sinclair/typebox':
-        optional: true
-      '@valibot/to-json-schema':
-        optional: true
-      arktype:
-        optional: true
-      effect:
-        optional: true
-      hono:
-        optional: true
-      openapi-types:
-        optional: true
-      valibot:
-        optional: true
-      zod:
-        optional: true
-      zod-openapi:
-        optional: true
-
   hono-openapi@0.4.8:
     resolution: {integrity: sha512-LYr5xdtD49M7hEAduV1PftOMzuT8ZNvkyWfh1DThkLsIr4RkvDb12UxgIiFbwrJB6FLtFXLoOZL9x4IeDk2+VA==}
     peerDependencies:
@@ -2714,10 +2667,6 @@ packages:
     peerDependencies:
       hono: '>=4.0.0'
       pino: '>=7.1.0'
-
-  hono@4.8.1:
-    resolution: {integrity: sha512-ErA2ifywnSmcnB5XDuFqGDfXJ9xuAJR2C/8cZAk6vDaOCzofB8eNlha/wZWIiamREzWk94S9Z7wHsnKQHn7Niw==}
-    engines: {node: '>=16.9.0'}
 
   hono@4.8.3:
     resolution: {integrity: sha512-jYZ6ZtfWjzBdh8H/0CIFfCBHaFL75k+KMzaM177hrWWm2TWL39YMYaJgB74uK/niRc866NMlH9B8uCvIo284WQ==}
@@ -4200,9 +4149,6 @@ packages:
   zod@3.24.1:
     resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
 
-  zod@3.24.2:
-    resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
-
   zod@3.25.67:
     resolution: {integrity: sha512-idA2YXwpCdqUSKRCACDE6ItZD9TZzy3OZMtpfLoh6oPR47lipysRrJfjzMqFxQ3uJuUPyUeWe1r9vLH33xO/Qw==}
 
@@ -5393,10 +5339,10 @@ snapshots:
     dependencies:
       hono: 4.8.3
 
-  '@hono/zod-validator@0.4.3(hono@4.8.1)(zod@3.24.2)':
+  '@hono/zod-validator@0.4.3(hono@4.8.3)(zod@3.25.67)':
     dependencies:
-      hono: 4.8.1
-      zod: 3.24.2
+      hono: 4.8.3
+      zod: 3.25.67
     optional: true
 
   '@hono/zod-validator@0.7.0(hono@4.8.3)(zod@3.25.67)':
@@ -6814,15 +6760,15 @@ snapshots:
 
   help-me@5.0.0: {}
 
-  hono-openapi@0.4.6(@hono/zod-validator@0.4.3(hono@4.8.1)(zod@3.24.2))(hono@4.8.1)(openapi-types@12.1.3)(zod-openapi@4.2.4(zod@3.24.2))(zod@3.24.2):
+  hono-openapi@0.4.8(@hono/zod-validator@0.4.3(hono@4.8.3)(zod@3.25.67))(hono@4.8.3)(openapi-types@12.1.3)(zod-openapi@4.2.4(zod@3.25.67))(zod@3.25.67):
     dependencies:
       json-schema-walker: 2.0.0
-    optionalDependencies:
-      '@hono/zod-validator': 0.4.3(hono@4.8.1)(zod@3.24.2)
-      hono: 4.8.1
       openapi-types: 12.1.3
-      zod: 3.24.2
-      zod-openapi: 4.2.4(zod@3.24.2)
+    optionalDependencies:
+      '@hono/zod-validator': 0.4.3(hono@4.8.3)(zod@3.25.67)
+      hono: 4.8.3
+      zod: 3.25.67
+      zod-openapi: 4.2.4(zod@3.25.67)
 
   hono-openapi@0.4.8(@hono/zod-validator@0.7.0(hono@4.8.3)(zod@3.25.67))(hono@4.8.3)(openapi-types@12.1.3)(zod-openapi@4.2.4(zod@3.25.67))(zod@3.25.67):
     dependencies:
@@ -6839,8 +6785,6 @@ snapshots:
       defu: 6.1.4
       hono: 4.8.3
       pino: 9.7.0
-
-  hono@4.8.1: {}
 
   hono@4.8.3: {}
 
@@ -8197,10 +8141,6 @@ snapshots:
 
   yocto-queue@1.2.1: {}
 
-  zod-openapi@4.2.4(zod@3.24.2):
-    dependencies:
-      zod: 3.24.2
-
   zod-openapi@4.2.4(zod@3.25.67):
     dependencies:
       zod: 3.25.67
@@ -8215,8 +8155,6 @@ snapshots:
       zod: 3.25.67
 
   zod@3.24.1: {}
-
-  zod@3.24.2: {}
 
   zod@3.25.67: {}
 
