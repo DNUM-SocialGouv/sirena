@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "hono": "^4.8.1",
-    "hono-openapi": "^0.4.6",
+    "hono-openapi": "^0.4.8",
     "zod": "^3.24.2",
     "zod-openapi": "^4.2.4"
   }
