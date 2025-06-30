@@ -26,6 +26,7 @@ const processEnv = {
   DEMAT_SOCIAL_API_DIRECTORY: process.env.DEMAT_SOCIAL_API_DIRECTORY,
   // Internal
   LOG_FORMAT: process.env.LOG_FORMAT,
+  SUPER_ADMIN_LIST_EMAIL: process.env.SUPER_ADMIN_LIST_EMAIL,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);

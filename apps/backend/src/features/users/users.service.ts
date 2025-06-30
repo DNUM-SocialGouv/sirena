@@ -1,3 +1,4 @@
+import { envVars } from '@/config/env';
 import { type Prisma, type User, prisma } from '@/libs/prisma';
 import { ROLES } from '@sirena/common/constants';
 import type { CreateUserDto, PatchUserDto } from './user.type';
@@ -27,7 +28,8 @@ export const getUserById = async (id: User['id']) =>
 export const getUserBySub = async (sub: User['sub']) => await prisma.user.findUnique({ where: { sub } });
 
 export const createUser = async (newUser: CreateUserDto) => {
-  const roleId = ROLES.PENDING;
+  const adminEmails = envVars.SUPER_ADMIN_LIST_EMAIL.split(';');
+  const roleId = adminEmails.find((adminEmail) => adminEmail === newUser.email) ? ROLES.SUPER_ADMIN : ROLES.PENDING;
   const statutId = 'NON_RENSEIGNE';
   return prisma.user.create({
     data: {
