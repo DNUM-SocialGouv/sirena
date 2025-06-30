@@ -7,11 +7,27 @@ export const ROLES = {
   SUPER_ADMIN: 'SUPER_ADMIN',
 } as const;
 
-export const roles: Record<keyof typeof ROLES, string> = {
-  PENDING: "En attente d'affectation",
-  READER: 'Agent en lecture',
-  WRITER: 'Agent en écriture',
-  NATIONAL_STEERING: 'Pilotage national',
-  ENTITY_ADMIN: 'Admin local',
-  SUPER_ADMIN: 'Super administrateur',
+export type Role = keyof typeof ROLES;
+
+export const roles: Record<Role, string> = {
+  [ROLES.PENDING]: "En attente d'affectation",
+  [ROLES.READER]: 'Agent en lecture',
+  [ROLES.WRITER]: 'Agent en écriture',
+  [ROLES.NATIONAL_STEERING]: 'Pilotage national',
+  [ROLES.ENTITY_ADMIN]: 'Admin local',
+  [ROLES.SUPER_ADMIN]: 'Super administrateur',
 } as const;
+
+export const roleRanks = {
+  [ROLES.SUPER_ADMIN]: 5,
+  [ROLES.ENTITY_ADMIN]: 4,
+  [ROLES.NATIONAL_STEERING]: 3,
+  [ROLES.WRITER]: 2,
+  [ROLES.READER]: 1,
+  [ROLES.PENDING]: 0,
+};
+
+export type RoleOption = {
+  key: Role;
+  value: string;
+};
