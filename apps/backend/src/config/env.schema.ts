@@ -80,10 +80,7 @@ export const AppEnvSchema = z.object({
       invalid_type_error: "La variable d'environnement LOG_FORMAT doit être 'json' ou 'pretty'",
     })
     .optional(),
-  SUPER_ADMIN_LIST_EMAIL: z
-    .string()
-    .optional()
-    .transform((val) => (val ? val : '')),
+  SUPER_ADMIN_LIST_EMAIL: z.string().default(''),
 });
 
 /**
