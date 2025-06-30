@@ -1,8 +1,8 @@
+import * as client from 'openid-client';
 import { envVars } from '@/config/env';
 import { authorizationParams } from '@/config/openID';
 import { getEntiteForUser } from '@/features/entites/entites.service';
 import { createUser, getUserBySub } from '@/features/users/users.service';
-import * as client from 'openid-client';
 import type { UserInfo } from './auth.type';
 
 export const configOptions =

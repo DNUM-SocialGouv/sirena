@@ -1,4 +1,4 @@
-import { type ReactNode, memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import type { Column, ColumnKey, RowWithId } from '../DataTable.types';
 
 type DataCellProps<Datum extends RowWithId<RowId>, RowId extends string> = {

@@ -1,5 +1,5 @@
-import { memo } from 'react';
 import type { ReactNode } from 'react';
+import { memo } from 'react';
 import { CheckboxCell } from '../CheckboxCell/CheckboxCell';
 import { DataCell } from '../DataCell/DataCell';
 import type { Column, ColumnKey, RowWithId } from '../DataTable.types';

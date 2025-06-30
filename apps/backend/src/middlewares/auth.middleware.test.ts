@@ -1,3 +1,5 @@
+import { testClient } from 'hono/testing';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { envVars } from '@/config/env';
 import { getSession } from '@/features/sessions/sessions.service';
 import { errorHandler } from '@/helpers/errors';
@@ -5,8 +7,6 @@ import appWithAuth from '@/helpers/factories/appWithAuth';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
 import authMiddleware from '@/middlewares/auth.middleware';
-import { testClient } from 'hono/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/config/env', () => ({
   envVars: {

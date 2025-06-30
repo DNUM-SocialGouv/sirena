@@ -1,12 +1,12 @@
+import { ERROR_CODES } from '@sirena/common/constants';
+import type { Context } from 'hono';
+import { setCookie } from 'hono/cookie';
 import { envVars } from '@//config/env';
 import { createSession } from '@/features/sessions/sessions.service';
 import type { AppBindings } from '@/helpers/factories/appWithLogs';
 import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
 import { isPrismaUniqueConstraintError } from '@/helpers/prisma';
 import type { RoleEnum, User } from '@/libs/prisma';
-import { ERROR_CODES } from '@sirena/common/constants';
-import type { Context } from 'hono';
-import { setCookie } from 'hono/cookie';
 
 type ErrorParams = {
   error: string;

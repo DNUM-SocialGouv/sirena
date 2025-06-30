@@ -1,5 +1,5 @@
-import { prisma } from '@/libs/prisma';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { prisma } from '@/libs/prisma';
 import { SessionCreationSchema } from './sessions.schema';
 import { createSession, deleteSession, getSession } from './sessions.service';
 

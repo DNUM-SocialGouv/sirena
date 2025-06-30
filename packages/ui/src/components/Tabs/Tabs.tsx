@@ -1,4 +1,4 @@
-import { type KeyboardEvent as ReactKeyboardEvent, type ReactNode, memo, useEffect, useRef, useState } from 'react';
+import { memo, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import { TabsItem } from './TabsItem';
 import './Tabs.css';
@@ -113,6 +113,7 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsPro
       <ul
         ref={tablistRef}
         className="fr-tabs__list"
+        // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: needed by the dsfr
         role="tablist"
         aria-label="[A modifier | nom du système d’onglet]"
         onKeyDownCapture={onKeyDownCapture}

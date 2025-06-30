@@ -1,6 +1,6 @@
-import { requireAuth } from '@/lib/auth-guards';
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { requireAuth } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/_user/home')({
   beforeLoad: requireAuth,

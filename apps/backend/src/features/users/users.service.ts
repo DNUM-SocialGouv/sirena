@@ -1,6 +1,6 @@
-import { envVars } from '@/config/env';
-import { type Prisma, type User, prisma } from '@/libs/prisma';
 import { ROLES } from '@sirena/common/constants';
+import { envVars } from '@/config/env';
+import { type Prisma, prisma, type User } from '@/libs/prisma';
 import type { CreateUserDto, PatchUserDto } from './user.type';
 
 interface GetUsersFilters {

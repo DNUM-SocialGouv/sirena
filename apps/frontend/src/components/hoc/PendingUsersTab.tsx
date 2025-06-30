@@ -1,8 +1,8 @@
-import { Loader } from '@/components/loader.tsx';
-import { useUsers } from '@/hooks/queries/useUser';
 import { ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
+import { Loader } from '@/components/loader.tsx';
+import { useUsers } from '@/hooks/queries/useUser';
 
 export function PendingUsersTab() {
   const pendingRoleId = ROLES.PENDING;

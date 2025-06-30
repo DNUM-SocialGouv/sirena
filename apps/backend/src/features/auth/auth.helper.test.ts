@@ -1,11 +1,11 @@
+import type { Context } from 'hono';
+import { Hono } from 'hono';
+import { testClient } from 'hono/testing';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { envVars } from '@//config/env';
 import { createSession } from '@/features/sessions/sessions.service';
 import type { AppBindings } from '@/helpers/factories/appWithLogs';
 import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
-import { Hono } from 'hono';
-import type { Context } from 'hono';
-import { testClient } from 'hono/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authUser, createRedirectUrl } from './auth.helper';
 
 vi.mock('@/helpers/jsonwebtoken', () => ({

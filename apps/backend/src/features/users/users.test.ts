@@ -1,7 +1,7 @@
-import { convertDatesToStrings } from '@/tests/formatter';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
+import { convertDatesToStrings } from '@/tests/formatter';
 import app from './users.controller';
 import { getUserById, getUsers } from './users.service';
 
@@ -16,7 +16,7 @@ vi.mock('@/config/env', () => ({
 
 vi.mock('@/middlewares/auth.middleware', () => {
   return {
-    default: (c: Context, next: Next) => {
+    default: (_c: Context, next: Next) => {
       return next();
     },
   };
@@ -25,7 +25,7 @@ vi.mock('@/middlewares/auth.middleware', () => {
 vi.mock('@/middlewares/role.middleware', () => {
   return {
     default: () => {
-      return (c: Context, next: Next) => {
+      return (_c: Context, next: Next) => {
         return next();
       };
     },

@@ -1,6 +1,6 @@
-import { prisma } from '@/libs/prisma';
 import { roles } from '@sirena/common/constants';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { prisma } from '@/libs/prisma';
 import { getRoles } from './roles.service';
 
 vi.mock('@/libs/prisma', () => ({

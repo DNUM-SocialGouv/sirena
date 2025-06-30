@@ -39,7 +39,7 @@ describe('Type‐level tests for ./DataTable.types', () => {
     expectTypeOf<'list.0'>().toEqualTypeOf<Keys>();
   });
 
-  it('ColumnKey is either NestedKeys<T> or `custom:${string}`', () => {
+  it('ColumnKey is either NestedKeys<T> or `custom:<string>`', () => {
     type SampleRow = { foo: number };
     type CK = ColumnKey<SampleRow>;
     expectTypeOf<'foo'>().toMatchTypeOf<CK>();

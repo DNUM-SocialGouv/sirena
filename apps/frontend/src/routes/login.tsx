@@ -1,7 +1,7 @@
-import { NotAuth } from '@/components/layout/notAuth/layout';
-import { requireNotAuth } from '@/lib/auth-guards';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
+import { NotAuth } from '@/components/layout/notAuth/layout';
+import { requireNotAuth } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/login')({
   head: () => ({

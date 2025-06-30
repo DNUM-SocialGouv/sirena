@@ -1,6 +1,6 @@
-import { z } from '@/libs/zod';
 import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { z } from '@/libs/zod';
 import type { AppBindings } from './factories/appWithLogs';
 
 export const errorHandler: ErrorHandler<AppBindings> = (err, c) => {

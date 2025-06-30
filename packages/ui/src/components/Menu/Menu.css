@@ -11,11 +11,12 @@
 }
 
 .menu__popup {
-  background-color: var(--grey-1000-50);
   background-color: var(--background-raised-grey);
   filter: drop-shadow(var(--raised-shadow));
 
-  transition: transform 150ms, opacity 150ms;
+  transition:
+    transform 150ms,
+    opacity 150ms;
 
   &[data-starting-style],
   &[data-ending-style] {

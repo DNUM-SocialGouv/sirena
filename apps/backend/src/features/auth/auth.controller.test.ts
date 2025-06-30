@@ -1,9 +1,9 @@
-import { envVars } from '@/config/env';
-import { deleteSession, getSession } from '@/features/sessions/sessions.service';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import type { IDToken, TokenEndpointResponse, TokenEndpointResponseHelpers } from 'openid-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { envVars } from '@/config/env';
+import { deleteSession, getSession } from '@/features/sessions/sessions.service';
 import app from './auth.controller';
 import { authUser } from './auth.helper';
 import {
@@ -45,7 +45,7 @@ vi.mock('@/config/env', () => ({
 
 vi.mock('@/middlewares/logout.middleware', () => {
   return {
-    default: (c: Context, next: () => Promise<Next>) => {
+    default: (_c: Context, next: () => Promise<Next>) => {
       return next();
     },
   };

@@ -10,10 +10,15 @@
 }
 
 .fr-table__content .fr-cell--fixed-right {
-  background-image: linear-gradient(0deg, var(--border-contrast-grey), var(--border-contrast-grey)),
+  background-image:
+    linear-gradient(0deg, var(--border-contrast-grey), var(--border-contrast-grey)),
     linear-gradient(0deg, var(var(--border-plain-grey)), var(var(--border-plain-grey)));
-  background-position: 0px 100%, 0px 0px !important;
-  background-size: 100% 1px, 1px 100% !important;
+  background-position:
+    0px 100%,
+    0px 0px !important;
+  background-size:
+    100% 1px,
+    1px 100% !important;
   position: sticky;
   right: 0;
   z-index: 1;
