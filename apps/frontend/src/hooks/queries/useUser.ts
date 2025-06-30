@@ -4,7 +4,7 @@ import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
 
 export const useUsers = (query?: { roleId?: string; active?: 'true' | 'false' }, enabled = true) =>
   useQuery({
-    queryKey: ['user', query],
+    queryKey: ['users', query],
     queryFn: () => fetchUsers(query || {}),
     enabled,
   });
