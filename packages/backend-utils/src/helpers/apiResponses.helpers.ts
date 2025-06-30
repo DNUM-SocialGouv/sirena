@@ -61,9 +61,11 @@ export const openApiResponse = <T extends ZodSchema>(schema: T, code = 200, desc
 export const openApiRedirect = (code = 302, description = 'Redirect') => ({
   [code]: {
     description,
-    headers: z.object({
-      Location: z.string().url(),
-    }),
+    headers: {
+      Location: {
+        description: 'Redirection url',
+      },
+    },
   },
 });
 

@@ -5,12 +5,12 @@ catalogs:
   prisma:
     prisma: latest
   zod:
-    zod: 3.24.2,
+    zod: 3.25.67,
   react:
     react: 19.1.0,
   react-dsfr:
     "@codegouvfr/react-dsfr": 1.25.3
   hono:
-    hono: 4.8.1,
+    hono: 4.8.3,
 onlyBuiltDependencies:
   - '@prisma/client'
