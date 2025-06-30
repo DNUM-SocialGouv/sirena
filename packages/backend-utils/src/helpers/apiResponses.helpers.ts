@@ -1,9 +1,8 @@
 import type { ResolverResult } from 'hono-openapi';
 import { describeRoute } from 'hono-openapi';
 import { resolver } from 'hono-openapi/zod';
-import { type ZodSchema, z } from '../utils/zod';
-
 import { MetaSchema } from '../schemas/apiResponses.schema';
+import { type ZodSchema, z } from '../utils/zod';
 
 type OpenApiResponse = {
   [code: number]: {

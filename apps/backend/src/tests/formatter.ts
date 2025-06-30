@@ -15,7 +15,7 @@ export function convertDatesToStrings<T>(obj: T): ConvertDatesToStrings<T> {
   if (typeof obj === 'object' && obj !== null) {
     const result: Partial<ConvertDatesToStrings<T>> = {};
     for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (Object.hasOwn(obj, key)) {
         const value = obj[key];
         if (value instanceof Date) {
           result[key] = value.toISOString() as ConvertDatesToStrings<T>[typeof key];

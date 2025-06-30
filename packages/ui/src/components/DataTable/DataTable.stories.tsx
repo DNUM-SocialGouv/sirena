@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { DataTable } from './DataTable';
 import type { Column, DataTableProps, OnSortChangeParams } from './DataTable';
+import { DataTable } from './DataTable';
 
 type MyRow = { id: number; name: string; info: { foo: number }; test: number[] };
 

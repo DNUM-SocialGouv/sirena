@@ -1,8 +1,8 @@
-import { profileQueryOptions } from '@/hooks/queries/useProfile';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Menu } from '@sirena/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { profileQueryOptions } from '@/hooks/queries/useProfile';
 
 export const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);

@@ -1,3 +1,6 @@
+import { ERROR_CODES } from '@sirena/common/constants';
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
+import type { TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
 import { envVars } from '@/config/env';
 import { deleteSession, getSession } from '@/features/sessions/sessions.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
@@ -5,9 +8,6 @@ import { getPropertyTypes } from '@/helpers/logs';
 import { isPrismaUniqueConstraintError } from '@/helpers/prisma';
 import type { User } from '@/libs/prisma';
 import logoutMiddleware from '@/middlewares/logout.middleware';
-import { ERROR_CODES } from '@sirena/common/constants';
-import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
-import type { TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
 import { authUser, createRedirectUrl } from './auth.helper';
 import { getCallbackRoute, postLoginRoute, postLogoutProconnectRoute, postLogoutRoute } from './auth.route';
 import {

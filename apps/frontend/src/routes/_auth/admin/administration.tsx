@@ -1,6 +1,6 @@
-import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { ROLES } from '@sirena/common/constants';
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/admin/administration')({
   beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),

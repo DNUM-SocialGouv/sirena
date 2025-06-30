@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/config/env', () => ({
   envVars: {},
 }));
+
 import { objectToQueryParams } from './auth.service';
 
 describe('auth.service', () => {

@@ -1,6 +1,6 @@
-import { type PatchUserJson, fetchUserById, fetchUsers, patchUserById } from '@/lib/api/fetchUsers';
-import { queryClient } from '@/lib/queryClient';
 import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
+import { fetchUserById, fetchUsers, type PatchUserJson, patchUserById } from '@/lib/api/fetchUsers';
+import { queryClient } from '@/lib/queryClient';
 
 export const useUsers = (query?: { roleId?: string; active?: 'true' | 'false' }, enabled = true) =>
   useQuery({

@@ -1,5 +1,5 @@
-import { useUserStore } from '@/stores/userStore';
 import { Header } from '@codegouvfr/react-dsfr/Header';
+import { useUserStore } from '@/stores/userStore';
 import { UserMenu } from './userMenu';
 
 type HeaderMenuProps = {

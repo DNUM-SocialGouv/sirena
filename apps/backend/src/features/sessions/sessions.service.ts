@@ -1,5 +1,5 @@
 import type { SessionCreationDto } from '@/features/sessions/sessions.schema';
-import { type Session, prisma } from '@/libs/prisma';
+import { prisma, type Session } from '@/libs/prisma';
 
 export const createSession = (sessionDto: SessionCreationDto) =>
   prisma.session.create({

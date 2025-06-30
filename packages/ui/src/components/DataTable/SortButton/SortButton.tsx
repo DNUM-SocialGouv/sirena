@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ARIA_SORT_VALUES, type AriaSort, SORT_DIRECTIONS, type SortDirection } from './SortButton.constants.tsx';
+import { SORT_DIRECTIONS, type SortDirection } from './SortButton.constants.tsx';
 
 export type OnSortChangeParams<T extends string> = {
   sort: T | '';
@@ -22,11 +22,6 @@ const getNextDirection = (current: SortDirection): SortDirection => {
   return directions[current];
 };
 
-const getAriaSort = (isActive: boolean, sortDirection: SortDirection): AriaSort => {
-  if (!isActive) return ARIA_SORT_VALUES.NONE;
-  return ARIA_SORT_VALUES[sortDirection.toUpperCase() as keyof typeof ARIA_SORT_VALUES];
-};
-
 export const SortButtonComponent = <T extends string>({
   sortKey,
   sort,
@@ -41,10 +36,8 @@ export const SortButtonComponent = <T extends string>({
     onSortChange({ sort: nextSort, sortDirection: nextDirection });
   };
 
-  const ariaSort = getAriaSort(isActive, sortDirection);
-
   return (
-    <button type="button" onClick={onClick} className="fr-btn--sort fr-btn fr-btn--sm" aria-sort={ariaSort}>
+    <button type="button" onClick={onClick} className="fr-btn--sort fr-btn fr-btn--sm">
       Trier
     </button>
   );

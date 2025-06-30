@@ -1,5 +1,5 @@
-import { type UserState, useUserStore } from '@/stores/userStore';
 import { redirect } from '@tanstack/react-router';
+import { type UserState, useUserStore } from '@/stores/userStore';
 
 const fallback = '/home' as const;
 

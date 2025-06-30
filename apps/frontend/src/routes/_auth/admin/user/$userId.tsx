@@ -1,7 +1,3 @@
-import { Loader } from '@/components/loader.tsx';
-import { usePatchUser, useUserById } from '@/hooks/queries/useUser';
-import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { useUserStore } from '@/stores/userStore';
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
@@ -9,15 +5,19 @@ import {
   ROLES,
   type Role,
   type RoleOption,
-  STATUT_TYPES,
-  type StatutType,
   roleRanks,
   roles,
+  STATUT_TYPES,
+  type StatutType,
   statutTypes,
 } from '@sirena/common/constants';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { Loader } from '@/components/loader.tsx';
+import { usePatchUser, useUserById } from '@/hooks/queries/useUser';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
+import { useUserStore } from '@/stores/userStore';
 import './$userId.css';
 import { z } from 'zod';
 

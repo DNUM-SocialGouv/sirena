@@ -1,10 +1,10 @@
+import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
+import { ROLES } from '@sirena/common/constants';
+import { validator as zValidator } from 'hono-openapi/zod';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { isOperationDependsOnRecordNotFoundError } from '@/helpers/prisma';
 import authMiddleware from '@/middlewares/auth.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
-import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ROLES } from '@sirena/common/constants';
-import { validator as zValidator } from 'hono-openapi/zod';
 import { getUserRoute, getUsersRoute, patchUserRoute } from './users.route';
 import { GetUsersQuerySchema, PatchUserSchema } from './users.schema';
 import { getUserById, getUsers, patchUser } from './users.service';

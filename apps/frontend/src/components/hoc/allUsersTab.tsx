@@ -1,8 +1,8 @@
-import { Loader } from '@/components/loader.tsx';
-import { useUsers } from '@/hooks/queries/useUser';
 import { ROLES, roles } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
+import { Loader } from '@/components/loader.tsx';
+import { useUsers } from '@/hooks/queries/useUser';
 
 export function AllUsersTab() {
   const nonPendingRoleIds = Object.keys(roles)

@@ -1,11 +1,11 @@
+import type { Context, Next } from 'hono';
+import { testClient } from 'hono/testing';
+import { describe, expect, it, vi } from 'vitest';
 import { getUserById } from '@/features/users/users.service';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
-import type { Context, Next } from 'hono';
-import { testClient } from 'hono/testing';
-import { describe, expect, it, vi } from 'vitest';
 import profileController from './profile.controller';
 
 vi.mock('@/config/env', () => ({

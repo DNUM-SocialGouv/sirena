@@ -1,7 +1,7 @@
-import { useUserStore } from '@/stores/userStore';
 import { SideMenu, type SideMenuProps } from '@codegouvfr/react-dsfr/SideMenu';
 import { ROLES } from '@sirena/common/constants';
 import { useMatchRoute } from '@tanstack/react-router';
+import { useUserStore } from '@/stores/userStore';
 import './sidenav.css';
 
 const useIsOnUserPage = () => {
@@ -29,9 +29,5 @@ export const SideNav = () => {
       : []),
   ];
 
-  return (
-    <>
-      <SideMenu align="left" burgerMenuButtonText="Dans cette rubrique" items={items} />
-    </>
-  );
+  return <SideMenu align="left" burgerMenuButtonText="Dans cette rubrique" items={items} />;
 };

@@ -1,6 +1,6 @@
+import type { ReactNode } from 'react';
 import { HeaderMenu } from '@/components/layout/header';
 import { SideNav } from '@/components/layout/sidenav';
-import type { ReactNode } from 'react';
 import './layout.css';
 
 type AdminLayoutProps = {

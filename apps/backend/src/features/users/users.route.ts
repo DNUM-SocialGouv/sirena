@@ -1,6 +1,9 @@
-import { z } from '@/libs/zod';
-import { openApi404NotFound, openApiProtectedRoute } from '@sirena/backend-utils/helpers';
-import { openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
+import {
+  openApi404NotFound,
+  openApiProtectedRoute,
+  openApiResponse,
+  openApiResponses,
+} from '@sirena/backend-utils/helpers';
 import { GetUserResponseSchema, GetUsersResponseSchema } from './users.schema';
 
 export const getUserRoute = openApiProtectedRoute({

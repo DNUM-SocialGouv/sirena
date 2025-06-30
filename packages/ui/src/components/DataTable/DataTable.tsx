@@ -73,8 +73,8 @@ function getTableClasses(size: 'sm' | 'md' | 'lg', isBordered: boolean): string 
 
 export const DataTableComponent = <RowId extends string, Datum extends RowWithId<RowId>>({
   title,
-  id = useId(),
   columns,
+  id,
   data,
   rowId,
   cells = {},
@@ -87,6 +87,8 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
   onSortChange = () => {},
   onSelectedValuesChange = () => {},
 }: DataTableProps<RowId, Datum>): JSX.Element => {
+  const fallbackId = useId();
+  const tableId = id || fallbackId;
   const getCell = useMemo(() => {
     return (row: Datum, column: ColumnKey<Datum>) =>
       column in cells && cells[column] ? cells[column](row) : getNestedValue(row, column);
@@ -99,12 +101,12 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
   }, [selectedValues]);
 
   useEffect(() => {
-    const table = document.getElementById(id);
+    const table = document.getElementById(tableId);
 
     const resizeObserver = new ResizeObserver((entries) => {
       entries.forEach(() => {
         selectedValuesRef.current.forEach((_, index) => {
-          const element = document.getElementById(`${id}-row-key-${index}`);
+          const element = document.getElementById(`${tableId}-row-key-${index}`);
           if (element) {
             const height = element.getBoundingClientRect().height + 2;
             element.style.setProperty('--row-height', `${height}px`);
@@ -119,7 +121,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
         resizeObserver.unobserve(table);
       };
     }
-  }, [id]);
+  }, [tableId]);
 
   const handleToggleSelect = useCallback(
     (value: Datum[RowId]) => {
@@ -138,7 +140,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
     [onSortChange],
   );
 
-  const { allSelected, isIndeterminate, toggleAll } = useSelectAll(data, rowId, selectedValues, id);
+  const { allSelected, isIndeterminate, toggleAll } = useSelectAll(data, rowId, selectedValues, tableId);
 
   const tableClasses = useMemo(() => getTableClasses(size, isBordered), [size, isBordered]);
 
@@ -149,7 +151,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
         row={row}
         rowIndex={index}
         rowId={rowId}
-        id={id}
+        id={tableId}
         selected={selectedValues.includes(row[rowId])}
         isSelectable={isSelectable}
         onToggleSelect={handleToggleSelect}
@@ -157,17 +159,17 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
         getCell={getCell}
       />
     ));
-  }, [data, columns, selectedValues, handleToggleSelect, getCell, rowId, id, isSelectable]);
+  }, [data, columns, selectedValues, handleToggleSelect, getCell, rowId, tableId, isSelectable]);
 
   return (
-    <div className={tableClasses} id={`${id}-component`}>
+    <div className={tableClasses} id={`${tableId}-component`}>
       <div className="fr-table__wrapper">
         <div className="fr-table__container">
           <div className="fr-table__content">
-            <table id={`${id}`}>
+            <table id={tableId}>
               <caption>{title}</caption>
               <DataTableHeader
-                id={id}
+                id={tableId}
                 isSelectable={isSelectable}
                 allSelected={allSelected}
                 isIndeterminate={isIndeterminate}

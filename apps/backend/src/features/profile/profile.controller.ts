@@ -1,7 +1,7 @@
+import { throwHTTPException401Unauthorized } from '@sirena/backend-utils/helpers';
 import { getUserById } from '@/features/users/users.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
-import { throwHTTPException401Unauthorized } from '@sirena/backend-utils/helpers';
 import { getProfileRoute } from './profile.route';
 
 const app = factoryWithLogs

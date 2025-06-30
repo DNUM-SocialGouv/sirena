@@ -1,7 +1,7 @@
-import { envVars } from '@/config/env';
 import { pinoLogger } from 'hono-pino';
 import pino from 'pino';
 import pretty from 'pino-pretty';
+import { envVars } from '@/config/env';
 
 export default () => {
   return pinoLogger({
