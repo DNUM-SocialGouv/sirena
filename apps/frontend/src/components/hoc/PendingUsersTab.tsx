@@ -1,5 +1,5 @@
 import { Loader } from '@/components/loader.tsx';
-import { useUser } from '@/hooks/queries/useUser';
+import { useUsers } from '@/hooks/queries/useUser';
 import { ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
@@ -7,7 +7,7 @@ import { Link } from '@tanstack/react-router';
 export function PendingUsersTab() {
   const pendingRoleId = ROLES.PENDING;
 
-  const { data: usersData, isLoading: usersLoading, error: usersError } = useUser({ roleId: pendingRoleId });
+  const { data, isLoading: usersLoading, error: usersError } = useUsers({ roleId: pendingRoleId });
 
   if (usersLoading) {
     return <Loader />;
@@ -21,14 +21,14 @@ export function PendingUsersTab() {
     );
   }
 
-  if (!usersData) {
+  if (!data) {
     return (
       <div className="empty-state">
         <p>Aucune donnée disponible</p>
       </div>
     );
   }
-  type User = (typeof usersData.data)[number];
+  type User = (typeof data)[number];
 
   const columns: Column<User>[] = [
     { key: 'lastName', label: 'Nom' },
@@ -54,13 +54,5 @@ export function PendingUsersTab() {
     ),
   };
 
-  return (
-    <DataTable
-      title="Demande d'habilitation en attente"
-      rowId="id"
-      data={usersData.data}
-      columns={columns}
-      cells={cells}
-    />
-  );
+  return <DataTable title="Demande d'habilitation en attente" rowId="id" data={data} columns={columns} cells={cells} />;
 }

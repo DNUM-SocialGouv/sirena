@@ -1,3 +1,4 @@
+import { useUserStore } from '@/stores/userStore';
 import { Header } from '@codegouvfr/react-dsfr/Header';
 import { UserMenu } from './userMenu';
 
@@ -6,6 +7,10 @@ type HeaderMenuProps = {
 };
 
 export const HeaderMenu = (props: HeaderMenuProps) => {
+  const userStore = useUserStore();
+
+  const quickAccessItems = userStore.isLogged ? [<UserMenu key="menu" />] : [];
+
   return (
     <Header
       brandTop={
@@ -26,7 +31,7 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
       serviceTagline="précisions sur l'organisation"
       serviceTitle="Sirena"
       id="fr-header-header"
-      quickAccessItems={[<UserMenu key="menu" />]}
+      quickAccessItems={quickAccessItems}
     />
   );
 };
