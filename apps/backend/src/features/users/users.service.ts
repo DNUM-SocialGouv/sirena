@@ -1,6 +1,6 @@
 import { type Prisma, type User, prisma } from '@/libs/prisma';
 import { ROLES } from '@sirena/common/constants';
-import type { CreateUserDto } from './user.type';
+import type { CreateUserDto, PatchUserDto } from './user.type';
 
 interface GetUsersFilters {
   roleId?: string | string[];
@@ -39,3 +39,12 @@ export const createUser = async (newUser: CreateUserDto) => {
   });
 };
 export const deleteUser = async (id: User['id']) => await prisma.user.delete({ where: { id } });
+
+export const patchUser = async (id: User['id'], data: PatchUserDto) => {
+  return prisma.user.update({
+    where: { id },
+    data: {
+      ...data,
+    },
+  });
+};

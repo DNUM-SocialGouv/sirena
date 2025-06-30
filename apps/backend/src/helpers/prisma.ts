@@ -5,3 +5,7 @@ export const isPrismaError = (error: unknown): error is Prisma.PrismaClientKnown
 
 export const isPrismaUniqueConstraintError = (error: unknown): error is Prisma.PrismaClientKnownRequestError =>
   isPrismaError(error) && error.code === 'P2002';
+
+export const isOperationDependsOnRecordNotFoundError = (
+  error: unknown,
+): error is Prisma.PrismaClientKnownRequestError => isPrismaError(error) && error.code === 'P2025';
