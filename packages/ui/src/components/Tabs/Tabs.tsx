@@ -35,7 +35,6 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsPro
   const [direction, setDirection] = useState<'right' | 'left'>('right');
   const pendingIndexRef = useRef<number | null>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we need to trigger this when direction change even if we don't use direction
   useEffect(() => {
     if (pendingIndexRef.current !== null) {
       onUpdateActiveTab(pendingIndexRef.current);

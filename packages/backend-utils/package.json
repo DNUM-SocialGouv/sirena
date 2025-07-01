@@ -39,9 +39,9 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "hono": "^4.8.1",
-    "hono-openapi": "^0.4.6",
-    "zod": "^3.24.2",
+    "hono": "catalog:",
+    "hono-openapi": "^0.4.8",
+    "zod": "catalog:",
     "zod-openapi": "^4.2.4"
   }
 }

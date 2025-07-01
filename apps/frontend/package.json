@@ -17,16 +17,16 @@
     "generate:openAPI": "tsx ./src/scripts/openAPI.ts"
   },
   "dependencies": {
-    "@codegouvfr/react-dsfr": "^1.22.5",
+    "@codegouvfr/react-dsfr": "catalog:",
     "@sirena/backend": "workspace:*",
     "@sirena/common": "workspace:*",
     "@sirena/ui": "workspace:*",
     "@tanstack/react-query": "^5.81.5",
     "@tanstack/react-router": "^1.123.0",
-    "hono": "^4.8.3",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "zod": "^3.25.67",
+    "hono": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:",
     "zustand": "^5.0.6"
   },
   "devDependencies": {

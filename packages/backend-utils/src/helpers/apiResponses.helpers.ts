@@ -3,6 +3,7 @@ import { describeRoute } from 'hono-openapi';
 import { resolver } from 'hono-openapi/zod';
 import { MetaSchema } from '../schemas/apiResponses.schema';
 import { type ZodSchema, z } from '../utils/zod';
+import { openApi401Unauthorized } from './apiErrors.helpers';
 
 type OpenApiResponse = {
   [code: number]: {
@@ -61,9 +62,11 @@ export const openApiResponse = <T extends ZodSchema>(schema: T, code = 200, desc
 export const openApiRedirect = (code = 302, description = 'Redirect') => ({
   [code]: {
     description,
-    headers: z.object({
-      Location: z.string().url(),
-    }),
+    headers: {
+      Location: {
+        description: 'Redirection url',
+      },
+    },
   },
 });
 
@@ -87,7 +90,7 @@ export const openApiProtectedRoute = ({ description, responses, tags = [] }: Ope
     description,
     tags,
     responses: {
-      ...openApiRedirect(401, 'Unauthorized'),
+      ...openApi401Unauthorized('Unauthorized'),
       ...responses,
     },
   });
