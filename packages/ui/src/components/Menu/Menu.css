@@ -49,9 +49,3 @@
 .menu__popup__separator {
   border-top: 1px solid var(--border-default-grey);
 }
-
-.menu__popup__disconnect-btn {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}

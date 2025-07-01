@@ -42,7 +42,7 @@ export const checkNotAuth = (params: BeforeLoad, userStore: UserState) => {
 export const checkRoles = (userStore: UserState, roles: string[]) => {
   if (userStore.role && !roles.includes(userStore.role)) {
     throw redirect({
-      to: fallback,
+      to: getFallbackByRole(userStore.role),
     });
   }
 };

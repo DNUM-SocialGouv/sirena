@@ -3,6 +3,7 @@ import { Menu } from '@sirena/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { profileQueryOptions } from '@/hooks/queries/useProfile';
+import './userMenu.css';
 
 export const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,16 +29,28 @@ export const UserMenu = () => {
               {label}
               <span className="fr-hint-text">{email}</span>
             </Menu.Header>
-            <Menu.Footer>
-              <form action="/api/auth/logout-proconnect" method="POST">
+            <Menu.Separator />
+            <Menu.Footer className="user-menu__footer">
+              <form action="/api/auth/logout" method="POST">
                 <Button
                   type="submit"
-                  className="menu__popup__disconnect-btn"
-                  iconId="fr-icon-checkbox-circle-line"
+                  className="user-menu__disconnect-btn"
+                  iconId="fr-icon-logout-box-r-line"
                   priority="tertiary"
                   size="small"
                 >
                   Se déconnecter
+                </Button>
+              </form>
+              <form action="/api/auth/logout-proconnect" method="POST">
+                <Button
+                  type="submit"
+                  className="user-menu__disconnect-btn"
+                  iconId="fr-icon-logout-box-r-line"
+                  priority="tertiary"
+                  size="small"
+                >
+                  Se déconnecter de proconnect
                 </Button>
               </form>
             </Menu.Footer>

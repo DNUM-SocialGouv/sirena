@@ -1,0 +1,11 @@
+.user-menu__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.user-menu__disconnect-btn {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
