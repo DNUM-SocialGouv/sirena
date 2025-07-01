@@ -13,7 +13,7 @@
     "lint:fix": "biome check --write"
   },
   "dependencies": {
-    "cdk8s": "^2.69.54",
+    "cdk8s": "^2.69.75",
     "constructs": "^10.4.2"
   },
   "devDependencies": {
