@@ -50,24 +50,24 @@ const Header = ({ children, className, ...props }: HeaderProps) => {
   );
 };
 
-const Footer = ({ children, ...props }: HTMLAttributes<HTMLDivElement>) => {
+const Footer = ({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) => {
   return (
-    <div className="menu__popup__footer" {...props}>
+    <div className={`menu__popup__footer ${className || ''}`} {...props}>
       {children}
     </div>
   );
 };
 
-const Item = ({ children, ...props }: Menu.Item.Props) => {
+const Item = ({ children, className, ...props }: Menu.Item.Props) => {
   return (
-    <Menu.Item className="menu__popup__item" {...props}>
+    <Menu.Item className={`menu__popup__item ${className || ''}`} {...props}>
       {children}
     </Menu.Item>
   );
 };
 
-const Separator = ({ ...props }: Menu.Separator.Props) => {
-  return <Menu.Separator className="menu__popup__separator" {...props} />;
+const Separator = ({ className, ...props }: Menu.Separator.Props) => {
+  return <Menu.Separator className={`menu__popup__separator ${className || ''}`} {...props} />;
 };
 
 export default {
