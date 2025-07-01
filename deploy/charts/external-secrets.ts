@@ -34,6 +34,7 @@ export class ExternalSecrets extends Chart {
               AUTH_TOKEN_SECRET_KEY: '{{ .AUTH_TOKEN_SECRET_KEY }}',
               REFRESH_TOKEN_SECRET_KEY: '{{ .REFRESH_TOKEN_SECRET_KEY }}',
               DEMAT_SOCIAL_API_TOKEN: '{{ .DEMAT_SOCIAL_API_TOKEN }}',
+              SUPER_ADMIN_LIST_EMAIL: '{{ .SUPER_ADMIN_LIST_EMAIL }}',
             },
           },
         },
