@@ -12,6 +12,9 @@ catalogs:
     hono:
       specifier: ^4.8.3
       version: 4.8.3
+    hono-openapi:
+      specifier: ^0.4.8
+      version: 0.4.8
     react:
       specifier: ^19.1.0
       version: 19.1.0
@@ -70,7 +73,7 @@ importers:
         specifier: 'catalog:'
         version: 4.8.3
       hono-openapi:
-        specifier: ^0.4.8
+        specifier: 'catalog:'
         version: 0.4.8(@hono/zod-validator@0.7.0(hono@4.8.3)(zod@3.25.67))(hono@4.8.3)(openapi-types@12.1.3)(zod-openapi@4.2.4(zod@3.25.67))(zod@3.25.67)
       hono-pino:
         specifier: ^0.9.1
