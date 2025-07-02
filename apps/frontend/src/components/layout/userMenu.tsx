@@ -50,7 +50,7 @@ export const UserMenu = () => {
                   priority="tertiary"
                   size="small"
                 >
-                  Se déconnecter de proconnect
+                  Se déconnecter de ProConnect
                 </Button>
               </form>
             </Menu.Footer>
