@@ -29,7 +29,7 @@ export function EntityHierarchySelectorComponent({ id, setLevel }: EntityHierarc
           setLevel={setLevel1}
           name="entite-administrative"
           label="Entité administrative"
-          nullPlaceholder="Pas d'entité admnistrative sélectionnée"
+          nullPlaceholder="Pas d'entité administrative sélectionnée"
         />
       </fieldset>
       {level1 && (
