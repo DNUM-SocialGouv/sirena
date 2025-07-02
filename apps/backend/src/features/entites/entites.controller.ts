@@ -3,7 +3,7 @@ import { validator as zValidator } from 'hono-openapi/zod';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
-import { getEntitesRoute, getEntitieChainRoute } from './entites.route';
+import { getEntiteChainRoute, getEntitesRoute } from './entites.route';
 import { GetEntitiesQuerySchema } from './entites.schema';
 import { getEntiteChain, getEntites } from './entites.service';
 
@@ -12,7 +12,7 @@ const app = factoryWithLogs
   .use(authMiddleware)
   .use(roleMiddleware([ROLES.SUPER_ADMIN]))
 
-  .get('/chain/:id?', getEntitieChainRoute, async (c) => {
+  .get('/chain/:id?', getEntiteChainRoute, async (c) => {
     const id = c.req.param('id');
     if (!id) {
       return c.json({ data: [] });

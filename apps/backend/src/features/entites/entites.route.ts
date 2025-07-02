@@ -8,7 +8,7 @@ export const getEntitesRoute = openApiProtectedRoute({
   },
 });
 
-export const getEntitieChainRoute = openApiProtectedRoute({
+export const getEntiteChainRoute = openApiProtectedRoute({
   description: 'Get entity chain',
   responses: {
     ...openApiResponse(GetEntitiesChainResponseSchema),
