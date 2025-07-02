@@ -35,6 +35,7 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsPro
   const [direction, setDirection] = useState<'right' | 'left'>('right');
   const pendingIndexRef = useRef<number | null>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: needed to change the direction of the animation
   useEffect(() => {
     if (pendingIndexRef.current !== null) {
       onUpdateActiveTab(pendingIndexRef.current);

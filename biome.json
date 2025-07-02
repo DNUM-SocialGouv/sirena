@@ -26,6 +26,9 @@
   },
   "linter": {
     "enabled": true,
+    "domains": {
+      "react": "all"
+    },
     "rules": {
       "recommended": true,
       "complexity": {
