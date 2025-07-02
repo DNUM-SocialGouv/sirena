@@ -9,13 +9,11 @@ const useIsOnUserPage = () => {
   );
 };
 export const SideNav = () => {
-  const ADMIN = '/admin/administration' as const;
   const ENTITIES = '/admin/entities' as const;
   const USERS = '/admin/users' as const;
 
   const isOnUserPage = useIsOnUserPage();
   const items: SideMenuProps.Item[] = [
-    { linkProps: { to: ADMIN }, text: 'Administration' },
     { isActive: isOnUserPage, linkProps: { to: USERS }, text: 'Gestion des utilisateurs et des habilitations' },
     { linkProps: { to: ENTITIES }, text: 'Gestion des entités administratives' },
   ];

@@ -25,7 +25,7 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
-describe('Endpoint Profile', () => {
+describe('Profile endpoints: /profile', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/profile', profileController).onError(errorHandler);
 
   const client = testClient(app);
@@ -46,28 +46,30 @@ describe('Endpoint Profile', () => {
     role: { id: 'role1', label: 'Admin' },
   };
 
-  it('should return user profile if found', async () => {
-    vi.mocked(getUserById).mockResolvedValue(fakeUser);
+  describe('GET /', () => {
+    it('should return user profile if found', async () => {
+      vi.mocked(getUserById).mockResolvedValue(fakeUser);
 
-    const res = await client.profile.$get('/');
-    const json = await res.json();
+      const res = await client.profile.$get('/');
+      const json = await res.json();
 
-    expect(res.status).toBe(200);
-    expect(json).toEqual({ data: convertDatesToStrings(fakeUser) });
-    expect(getUserById).toHaveBeenCalledWith('id1');
-  });
+      expect(res.status).toBe(200);
+      expect(json).toEqual({ data: convertDatesToStrings(fakeUser) });
+      expect(getUserById).toHaveBeenCalledWith('id1');
+    });
 
-  it('should return 401 if user not found', async () => {
-    vi.mocked(getUserById).mockResolvedValue(null);
+    it('should return 401 if user not found', async () => {
+      vi.mocked(getUserById).mockResolvedValue(null);
 
-    const res = await client.profile.$get('/');
-    const json = await res.json();
+      const res = await client.profile.$get('/');
+      const json = await res.json();
 
-    expect(res.status).toBe(401);
-    if ('message' in json) {
-      expect(json.message).toBe('Unauthorized, User not found');
-    } else {
-      throw new Error('Response does not contain message property');
-    }
+      expect(res.status).toBe(401);
+      if ('message' in json) {
+        expect(json.message).toBe('Unauthorized, User not found');
+      } else {
+        throw new Error('Response does not contain message property');
+      }
+    });
   });
 });

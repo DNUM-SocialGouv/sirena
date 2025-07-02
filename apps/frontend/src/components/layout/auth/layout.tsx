@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { HeaderMenu } from '@/components/layout/header';
-import './layout.css';
 
 type AdminLayoutProps = {
   children: ReactNode;

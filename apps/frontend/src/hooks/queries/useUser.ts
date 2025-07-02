@@ -1,6 +1,5 @@
-import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
-import { fetchUserById, fetchUsers, type PatchUserJson, patchUserById } from '@/lib/api/fetchUsers';
-import { queryClient } from '@/lib/queryClient';
+import { queryOptions, useQuery } from '@tanstack/react-query';
+import { fetchUserById, fetchUsers } from '@/lib/api/fetchUsers';
 
 export const useUsers = (query?: { roleId?: string; active?: 'true' | 'false' }, enabled = true) =>
   useQuery({
@@ -9,7 +8,7 @@ export const useUsers = (query?: { roleId?: string; active?: 'true' | 'false' },
     enabled,
   });
 
-const useUserByIdQueryOptions = (userId: string) =>
+export const useUserByIdQueryOptions = (userId: string) =>
   queryOptions({
     queryKey: ['user', userId],
     queryFn: () => fetchUserById(userId),
@@ -17,33 +16,3 @@ const useUserByIdQueryOptions = (userId: string) =>
   });
 
 export const useUserById = (userId: string) => useQuery(useUserByIdQueryOptions(userId));
-
-export const usePatchUser = () => {
-  return useMutation({
-    mutationFn: ({ id, json }: { id: string; json: PatchUserJson }) => patchUserById(id, json),
-    onMutate: async ({ id, json }) => {
-      const queryOpts = useUserByIdQueryOptions(id);
-      await queryClient.cancelQueries(queryOpts);
-
-      const previousUser = queryClient.getQueryData(queryOpts.queryKey);
-
-      if (previousUser) {
-        queryClient.setQueryData(queryOpts.queryKey, {
-          ...previousUser,
-          ...json,
-        });
-      }
-
-      return { id, previousUser };
-    },
-    onSettled: (_data, _err, { id }) => queryClient.invalidateQueries({ queryKey: ['user', id] }),
-    onError: (_err, variables, context) => {
-      if (context?.previousUser) {
-        queryClient.setQueryData(['user', variables.id], context.previousUser);
-      }
-    },
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData(['user', variables.id], data);
-    },
-  });
-};

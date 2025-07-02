@@ -15,7 +15,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
 import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
 import { Route as AuthAdminEntitiesRouteImport } from './routes/_auth/admin/entities'
-import { Route as AuthAdminAdministrationRouteImport } from './routes/_auth/admin/administration'
 import { Route as AuthUserHomeRouteImport } from './routes/_auth/_user/home'
 import { Route as AuthUserCasesRouteImport } from './routes/_auth/_user/cases'
 import { Route as AuthAdminUsersRouteRouteImport } from './routes/_auth/admin/users/route'
@@ -49,11 +48,6 @@ const AuthUserRouteRoute = AuthUserRouteRouteImport.update({
 const AuthAdminEntitiesRoute = AuthAdminEntitiesRouteImport.update({
   id: '/entities',
   path: '/entities',
-  getParentRoute: () => AuthAdminRouteRoute,
-} as any)
-const AuthAdminAdministrationRoute = AuthAdminAdministrationRouteImport.update({
-  id: '/administration',
-  path: '/administration',
   getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 const AuthUserHomeRoute = AuthUserHomeRouteImport.update({
@@ -94,7 +88,6 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/cases': typeof AuthUserCasesRoute
   '/home': typeof AuthUserHomeRoute
-  '/admin/administration': typeof AuthAdminAdministrationRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
@@ -106,7 +99,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/cases': typeof AuthUserCasesRoute
   '/home': typeof AuthUserHomeRoute
-  '/admin/administration': typeof AuthAdminAdministrationRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
@@ -122,7 +114,6 @@ export interface FileRoutesById {
   '/_auth/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/_auth/_user/cases': typeof AuthUserCasesRoute
   '/_auth/_user/home': typeof AuthUserHomeRoute
-  '/_auth/admin/administration': typeof AuthAdminAdministrationRoute
   '/_auth/admin/entities': typeof AuthAdminEntitiesRoute
   '/_auth/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/_auth/admin/users/all': typeof AuthAdminUsersAllRoute
@@ -137,7 +128,6 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/cases'
     | '/home'
-    | '/admin/administration'
     | '/admin/entities'
     | '/admin/user/$userId'
     | '/admin/users/all'
@@ -149,7 +139,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cases'
     | '/home'
-    | '/admin/administration'
     | '/admin/entities'
     | '/admin/user/$userId'
     | '/admin/users/all'
@@ -164,7 +153,6 @@ export interface FileRouteTypes {
     | '/_auth/admin/users'
     | '/_auth/_user/cases'
     | '/_auth/_user/home'
-    | '/_auth/admin/administration'
     | '/_auth/admin/entities'
     | '/_auth/admin/user/$userId'
     | '/_auth/admin/users/all'
@@ -219,13 +207,6 @@ declare module '@tanstack/react-router' {
       path: '/entities'
       fullPath: '/admin/entities'
       preLoaderRoute: typeof AuthAdminEntitiesRouteImport
-      parentRoute: typeof AuthAdminRouteRoute
-    }
-    '/_auth/admin/administration': {
-      id: '/_auth/admin/administration'
-      path: '/administration'
-      fullPath: '/admin/administration'
-      preLoaderRoute: typeof AuthAdminAdministrationRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
     '/_auth/_user/home': {
@@ -302,14 +283,12 @@ const AuthAdminUsersRouteRouteWithChildren =
 
 interface AuthAdminRouteRouteChildren {
   AuthAdminUsersRouteRoute: typeof AuthAdminUsersRouteRouteWithChildren
-  AuthAdminAdministrationRoute: typeof AuthAdminAdministrationRoute
   AuthAdminEntitiesRoute: typeof AuthAdminEntitiesRoute
   AuthAdminUserUserIdRoute: typeof AuthAdminUserUserIdRoute
 }
 
 const AuthAdminRouteRouteChildren: AuthAdminRouteRouteChildren = {
   AuthAdminUsersRouteRoute: AuthAdminUsersRouteRouteWithChildren,
-  AuthAdminAdministrationRoute: AuthAdminAdministrationRoute,
   AuthAdminEntitiesRoute: AuthAdminEntitiesRoute,
   AuthAdminUserUserIdRoute: AuthAdminUserUserIdRoute,
 }

@@ -1,6 +1,11 @@
-import { Button } from '@codegouvfr/react-dsfr/Button';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { Alert } from '@codegouvfr/react-dsfr/Alert';
+import { ROLES } from '@sirena/common/constants';
+import { useQuery } from '@tanstack/react-query';
+import { createFileRoute } from '@tanstack/react-router';
+import { useMemo } from 'react';
+import { profileQueryOptions } from '@/hooks/queries/useProfile';
 import { requireAuth } from '@/lib/auth-guards';
+import { useUserStore } from '@/stores/userStore';
 
 export const Route = createFileRoute('/_auth/_user/home')({
   beforeLoad: requireAuth,
@@ -15,22 +20,25 @@ export const Route = createFileRoute('/_auth/_user/home')({
 });
 
 function RouteComponent() {
+  const { data } = useQuery({ ...profileQueryOptions(), enabled: false });
+  const userStore = useUserStore();
+
+  const label = useMemo(() => (data ? `${data.firstName} ${data.lastName}` : ''), [data]);
+
   return (
     <div className="home">
-      <h2>Welcome to home</h2>
-      <div className="fr-m-1w">
-        <Link to="/admin/administration">Administration</Link>
-      </div>
-      <form action="/api/auth/logout-proconnect" method="POST">
-        <Button className="fr-m-1w" type="submit">
-          Proconnect Logout
-        </Button>
-      </form>
-      <form action="/api/auth/logout" method="POST">
-        <Button className="fr-m-1w" type="submit">
-          Logout
-        </Button>
-      </form>
+      <h2>Welcome to home {label}</h2>
+      {userStore.role === ROLES.PENDING && <PendingAlert />}
     </div>
+  );
+}
+
+function PendingAlert() {
+  return (
+    <Alert
+      severity="info"
+      title="Contactez votre administrateur"
+      description="Votre compte a SIRENA a bien été créé. Veuillez contacter votre administrateur pour qu'il vous attribue les droits nécessaires à l'utilisation de l'application."
+    />
   );
 }

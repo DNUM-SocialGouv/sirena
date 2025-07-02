@@ -1,6 +1,7 @@
 import type { ResolverResult } from 'hono-openapi';
 import { describeRoute } from 'hono-openapi';
 import { resolver } from 'hono-openapi/zod';
+import type { OpenAPIV3 } from 'openapi-types';
 import { MetaSchema } from '../schemas/apiResponses.schema';
 import { type ZodSchema, z } from '../utils/zod';
 import { openApi401Unauthorized } from './apiErrors.helpers';
@@ -82,13 +83,20 @@ export const openApiDeleteResponse = <T extends ZodSchema>(id: T, code = 200, de
 type OpenApiProtectedRouteParams = {
   description: string;
   responses: OpenApiResponse;
+  parameters?: OpenAPIV3.ParameterObject[];
   tags?: string[];
 };
 
-export const openApiProtectedRoute = ({ description, responses, tags = [] }: OpenApiProtectedRouteParams) =>
+export const openApiProtectedRoute = ({
+  description,
+  responses,
+  tags = [],
+  parameters = [],
+}: OpenApiProtectedRouteParams) =>
   describeRoute({
     description,
     tags,
+    parameters,
     responses: {
       ...openApi401Unauthorized('Unauthorized'),
       ...responses,
