@@ -2,16 +2,16 @@ import { openApiRedirect } from '@sirena/backend-utils/helpers';
 import { describeRoute } from 'hono-openapi';
 
 export const postLoginRoute = describeRoute({
-  description: 'Login with redirection on proconnect',
+  description: 'Login with redirection on ProConnect',
   responses: {
-    ...openApiRedirect(302, 'Redirect to proconnect'),
+    ...openApiRedirect(302, 'Redirect to ProConnect'),
   },
 });
 
 export const getCallbackRoute = describeRoute({
-  description: 'Redirection from proconnect to login',
+  description: 'Redirection from ProConnect to login',
   responses: {
-    ...openApiRedirect(302, 'Redirect to frontend from proconnect'),
+    ...openApiRedirect(302, 'Redirect to frontend from ProConnect'),
   },
 });
 
@@ -23,8 +23,8 @@ export const postLogoutRoute = describeRoute({
 });
 
 export const postLogoutProconnectRoute = describeRoute({
-  description: 'Logout with redirection on proconnect if possible',
+  description: 'Logout with redirection on ProConnect if possible',
   responses: {
-    ...openApiRedirect(302, 'Redirect to proconnect or login page if no sesssion'),
+    ...openApiRedirect(302, 'Redirect to ProConnect or login page if no sesssion'),
   },
 });

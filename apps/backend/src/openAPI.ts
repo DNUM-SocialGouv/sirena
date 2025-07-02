@@ -24,7 +24,7 @@ export function setupOpenAPI(app: Hono<AppBindings>, prefix = '/openapi') {
     `${prefix}/ui`,
     Scalar({
       theme: 'deepSpace',
-      url: `${prefix}/spec`,
+      url: `/api/${prefix}/spec`,
     }),
   );
 }
