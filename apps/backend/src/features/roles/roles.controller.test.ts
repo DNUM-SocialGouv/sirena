@@ -20,23 +20,25 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
-describe('Roles Endpoint', () => {
+describe('Roles endpoints: /roles', () => {
   const client = testClient(app);
 
-  it('GET / Should return a list of Roles', async () => {
-    const fakeData = [
-      {
-        id: 'PENDING',
-        label: 'pending',
-      },
-    ];
+  describe('GET /', () => {
+    it('should return a list of Roles', async () => {
+      const fakeData = [
+        {
+          id: 'PENDING',
+          label: 'pending',
+        },
+      ];
 
-    vi.mocked(getRoles).mockResolvedValue(fakeData);
+      vi.mocked(getRoles).mockResolvedValue(fakeData);
 
-    const res = await client.index.$get();
+      const res = await client.index.$get();
 
-    expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json).toEqual({ data: fakeData });
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({ data: fakeData });
+    });
   });
 });
