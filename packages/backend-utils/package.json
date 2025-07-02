@@ -18,6 +18,13 @@
         "require": "./dist/helpers/index.js"
       }
     },
+    "./types": {
+      "import": {
+        "types": "./dist/types/index.d.js",
+        "import": "./dist/types/index.js",
+        "require": "./dist/types/index.js"
+      }
+    },
     "./schemas": {
       "import": {
         "types": "./dist/schemas/index.d.js",
@@ -41,6 +48,7 @@
   "dependencies": {
     "hono": "catalog:",
     "hono-openapi": "^0.4.8",
+    "openapi-types": "^12.1.3",
     "zod": "catalog:",
     "zod-openapi": "^4.2.4"
   }
