@@ -11,9 +11,9 @@ export function setupOpenAPI(app: Hono<AppBindings>, prefix = '/openapi') {
     openAPISpecs(app, {
       documentation: {
         info: {
-          title: `starter-monorepo's backend`,
+          title: 'Sirena backend',
           version: '1.0.0',
-          description: 'My amazing API',
+          description: 'Sirena backend API',
         },
       },
     }),

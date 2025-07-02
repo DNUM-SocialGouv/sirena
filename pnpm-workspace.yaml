@@ -8,5 +8,6 @@ catalog:
     react-dom: ^19.1.0
     "@codegouvfr/react-dsfr": ^1.25.3
     hono: "^4.8.3"
+    hono-openapi: ^0.4.8
 onlyBuiltDependencies:
   - '@prisma/client'

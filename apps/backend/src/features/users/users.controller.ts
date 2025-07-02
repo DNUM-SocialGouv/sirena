@@ -9,6 +9,8 @@ import { getUserRoute, getUsersRoute, patchUserRoute } from './users.route';
 import { GetUsersQuerySchema, PatchUserSchema } from './users.schema';
 import { getUserById, getUsers, patchUser } from './users.service';
 
+console.log(getUserRoute);
+
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
