@@ -25,7 +25,7 @@ export const checkAuth = (params: BeforeLoad, userStore: UserState) => {
 
 const getFallbackByRole = (role: string | null) => {
   if (role === 'SUPER_ADMIN') {
-    return '/admin/administration';
+    return '/admin/users';
   }
   return fallback;
 };

@@ -1,6 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
-import { AllUsersTab } from '@/components/hoc/allUsersTab.tsx';
+import { AllUsersTab } from '@/components/common/tables/allUsersTab';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/admin/users/all')({
