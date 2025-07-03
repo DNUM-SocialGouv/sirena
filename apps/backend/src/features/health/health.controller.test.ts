@@ -29,7 +29,7 @@ describe('Health endpoints: /health', () => {
         reason: 'DB timeout',
       });
 
-      const res = await await client.health.$get();
+      const res = await client.health.$get();
       expect(res.status).toBe(500);
       const body = await res.json();
       expect(body).toEqual({ status: 'error', message: 'DB timeout' });
