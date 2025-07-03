@@ -4,7 +4,7 @@ import type { IDToken, TokenEndpointResponse, TokenEndpointResponseHelpers } fro
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { envVars } from '@/config/env';
 import { deleteSession, getSession } from '@/features/sessions/sessions.service';
-import app from './auth.controller';
+import AuthController from './auth.controller';
 import { authUser } from './auth.helper';
 import {
   authorizationCodeGrant,
@@ -56,7 +56,7 @@ describe('Auth endpoints: /auth', () => {
     vi.resetAllMocks();
   });
 
-  const client = testClient(app);
+  const client = testClient(AuthController);
 
   describe('POST /login', () => {
     it('should redirect to the authorization URL and set cookies', async () => {

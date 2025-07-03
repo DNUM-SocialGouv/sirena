@@ -2,7 +2,7 @@ import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { convertDatesToStrings } from '@/tests/formatter';
-import app from './users.controller';
+import UsersController from './users.controller';
 import { getUserById, getUsers } from './users.service';
 
 vi.mock('./users.service', () => ({
@@ -33,7 +33,7 @@ vi.mock('@/middlewares/role.middleware', () => {
 });
 
 describe('Users endpoints: /users', () => {
-  const client = testClient(app);
+  const client = testClient(UsersController);
 
   const fakeData = [
     {

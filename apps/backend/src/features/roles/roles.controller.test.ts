@@ -1,7 +1,7 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
-import app from './roles.controller';
+import RolesController from './roles.controller';
 import { getRoles } from './roles.service';
 
 vi.mock('./roles.service', () => ({
@@ -21,7 +21,7 @@ vi.mock('@/middlewares/auth.middleware', () => {
 });
 
 describe('Roles endpoints: /roles', () => {
-  const client = testClient(app);
+  const client = testClient(RolesController);
 
   describe('GET /', () => {
     it('should return a list of Roles', async () => {

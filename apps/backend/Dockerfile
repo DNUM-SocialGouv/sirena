@@ -1,9 +1,12 @@
 ARG NODE_VERSION=23-alpine
 FROM node:$NODE_VERSION AS base
 
+ARG APP_VERSION
+
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV NODE_ENV=production
+ENV APP_VERSION=$APP_VERSION
 
 RUN npm install --global corepack@latest && \
     corepack enable pnpm
