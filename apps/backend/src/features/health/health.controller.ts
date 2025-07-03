@@ -10,10 +10,10 @@ const app = factoryWithLogs
     if (!result.healthy) {
       const logger = c.get('logger');
       logger.error({ err: result.reason }, 'Health check failed');
-      return c.json({ status: 'error', message: result.reason }, 500);
+      return c.json({ data: { status: 'error', message: result.reason } }, 500);
     }
 
-    return c.json({ status: 'ok' });
+    return c.json({ data: { status: 'ok' } });
   });
 
 export default app;
