@@ -1,9 +1,10 @@
 import { csrf } from 'hono/csrf';
-import AuthApp from '@/features/auth/auth.controller';
-import EntitesApp from '@/features/entites/entites.controller';
-import ProfileApp from '@/features/profile/profile.controller';
-import RolesApp from '@/features/roles/roles.controller';
-import UsersApp from '@/features/users/users.controller';
+import AuthController from '@/features/auth/auth.controller';
+import EntitesController from '@/features/entites/entites.controller';
+import HealthController from '@/features/health/health.controller';
+import ProfileController from '@/features/profile/profile.controller';
+import RolesController from '@/features/roles/roles.controller';
+import UsersController from '@/features/users/users.controller';
 import appFactory from '@/helpers/factories/appWithLogs';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { envVars } from './config/env';
@@ -17,9 +18,10 @@ export const app = appFactory
       origin: [envVars.FRONTEND_URI],
     }),
   )
-  .route('/auth', AuthApp)
-  .route('/roles', RolesApp)
-  .route('/users', UsersApp)
-  .route('/entites', EntitesApp)
-  .route('/profile', ProfileApp)
+  .route('/auth', AuthController)
+  .route('/roles', RolesController)
+  .route('/users', UsersController)
+  .route('/entites', EntitesController)
+  .route('/profile', ProfileController)
+  .route('/health', HealthController)
   .onError(errorHandler);

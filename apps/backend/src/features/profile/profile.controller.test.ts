@@ -6,7 +6,7 @@ import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
-import profileController from './profile.controller';
+import ProfileController from './profile.controller';
 
 vi.mock('@/config/env', () => ({
   envVars: {},
@@ -26,7 +26,7 @@ vi.mock('@/middlewares/auth.middleware', () => {
 });
 
 describe('Profile endpoints: /profile', () => {
-  const app = appWithLogs.createApp().use(pinoLogger()).route('/profile', profileController).onError(errorHandler);
+  const app = appWithLogs.createApp().use(pinoLogger()).route('/profile', ProfileController).onError(errorHandler);
 
   const client = testClient(app);
 

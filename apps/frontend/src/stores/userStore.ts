@@ -1,5 +1,6 @@
 import type { Role } from '@sirena/common/constants';
 import { create } from 'zustand';
+import { LOGGED_TOKEN_NAME } from '@/config/token.constant';
 
 export type UserState = {
   isLogged: boolean;
@@ -9,10 +10,8 @@ export type UserState = {
   logout: () => void;
 };
 
-const isLoggedTokenName = import.meta.env.VITE_IS_LOGGED_TOKEN_NAME;
-
 export const useUserStore = create<UserState>((set) => ({
-  isLogged: isLoggedTokenName ? document.cookie.includes(isLoggedTokenName) : false,
+  isLogged: LOGGED_TOKEN_NAME ? document.cookie.includes(LOGGED_TOKEN_NAME) : false,
   role: null,
   setRole: (role: Role | null) => set(() => ({ role })),
   updateIsLogged: (isLogged: boolean) => set(() => ({ isLogged })),
