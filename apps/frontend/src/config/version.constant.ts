@@ -1,1 +1,1 @@
-export const APP_VERSION = import.meta.env.APP_VERSION ?? 'unknown';
+export const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? 'unknown';
