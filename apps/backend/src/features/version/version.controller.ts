@@ -6,7 +6,7 @@ const app = factoryWithLogs
   .createApp()
 
   .get('/', getVersionRoute, async (c) => {
-    return c.json({ version: `${APP_VERSION}` });
+    return c.json({ data: { version: `${APP_VERSION}` } });
   });
 
 export default app;

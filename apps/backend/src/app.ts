@@ -5,6 +5,7 @@ import HealthController from '@/features/health/health.controller';
 import ProfileController from '@/features/profile/profile.controller';
 import RolesController from '@/features/roles/roles.controller';
 import UsersController from '@/features/users/users.controller';
+import VersionController from '@/features/version/version.controller';
 import appFactory from '@/helpers/factories/appWithLogs';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { envVars } from './config/env';
@@ -24,4 +25,5 @@ export const app = appFactory
   .route('/entites', EntitesController)
   .route('/profile', ProfileController)
   .route('/health', HealthController)
+  .route('/version', VersionController)
   .onError(errorHandler);

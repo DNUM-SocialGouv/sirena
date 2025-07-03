@@ -20,7 +20,7 @@ describe('Health endpoints: /health', () => {
       const res = await client.health.$get();
       expect(res.status).toBe(200);
       const body = await res.json();
-      expect(body).toEqual({ status: 'ok' });
+      expect(body).toEqual({ data: { status: 'ok' } });
     });
 
     it('returns 500 when unhealthy', async () => {
@@ -32,7 +32,7 @@ describe('Health endpoints: /health', () => {
       const res = await client.health.$get();
       expect(res.status).toBe(500);
       const body = await res.json();
-      expect(body).toEqual({ status: 'error', message: 'DB timeout' });
+      expect(body).toEqual({ data: { status: 'error', message: 'DB timeout' } });
     });
   });
 });

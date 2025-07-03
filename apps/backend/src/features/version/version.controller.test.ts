@@ -13,6 +13,6 @@ describe('GET /version', () => {
     const res = await client.index.$get();
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json).toEqual({ version: '1.0.0' });
+    expect(json).toEqual({ data: { version: '1.0.0' } });
   });
 });
