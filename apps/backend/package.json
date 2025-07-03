@@ -41,7 +41,6 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.4",
-    "@hono/zod-validator": "^0.7.0",
     "@prisma/client": "6.10.1",
     "@scalar/hono-api-reference": "^0.9.7",
     "@sirena/backend-utils": "workspace:*",

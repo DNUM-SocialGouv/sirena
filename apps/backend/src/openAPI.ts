@@ -15,6 +15,12 @@ export function setupOpenAPI(app: Hono<AppBindings>, prefix = '/openapi') {
           version: '1.0.0',
           description: 'Sirena backend API',
         },
+        servers: [
+          {
+            url: '/api',
+            description: 'API server',
+          },
+        ],
       },
     }),
   );
@@ -24,7 +30,7 @@ export function setupOpenAPI(app: Hono<AppBindings>, prefix = '/openapi') {
     `${prefix}/ui`,
     Scalar({
       theme: 'deepSpace',
-      url: `/api/${prefix}/spec`,
+      url: `/api${prefix}/spec`,
     }),
   );
 }
