@@ -9,7 +9,7 @@ type NotAuthProps = {
 
 export const NotAuth = ({ children }: NotAuthProps) => {
   return (
-    <div className="">
+    <div>
       <HeaderMenu homeHref="/" />
       <main className={'fr-container not-auth-main fr-my-15w'}>{children}</main>
       <AppFooter />

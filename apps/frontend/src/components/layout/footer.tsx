@@ -1,11 +1,11 @@
 import { Footer } from '@codegouvfr/react-dsfr/Footer';
-import { APP_VERSION, GIT_COMMIT } from '@/config/version.constant';
+import { APP_VERSION } from '@/config/version.constant';
 
 export function AppFooter() {
   return (
     <Footer
       accessibility="non compliant"
-      contentDescription={`version: ${APP_VERSION}@${GIT_COMMIT}`}
+      contentDescription={`version: ${APP_VERSION}`}
       termsLinkProps={{
         href: '#',
       }}
