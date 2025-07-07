@@ -54,6 +54,8 @@ runs:
         push: true
         tags: ${{ env.IMAGE_TAG }}-backend
         labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          APP_VERSION=${{ inputs.version }}
         cache-from: |
           type=gha,scope=backend
         cache-to: |
@@ -70,6 +72,7 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
+          APP_VERSION=${{ inputs.version }}
         cache-from: |
           type=gha,scope=frontend
         cache-to: |
