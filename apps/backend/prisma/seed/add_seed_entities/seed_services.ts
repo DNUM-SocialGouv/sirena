@@ -16,8 +16,10 @@ export async function seedServices(prisma: PrismaClient) {
         OR: rows.map((row) => ({
           nomComplet: row['Direction (libellé long)'],
           entiteMere: {
-            nomComplet: row['Entité administrative'],
-            entiteMereId: null,
+            is: {
+              nomComplet: row['Entité administrative'],
+              entiteMereId: null,
+            },
           },
         })),
       },
