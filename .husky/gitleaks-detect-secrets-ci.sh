@@ -12,38 +12,20 @@ if [[ ! -f "${ROOT_DIR}/${BASELINE_FILE}" ]]; then
   exit 1
 fi
 
-# Get all tracked files (ignores .gitignored and untracked files)
-ALL_FILES=$(git ls-files \
-  | grep -v "^${BASELINE_FILE}$" || true)
+echo "🔍 Scanning entire codebase with Gitleaks:"
 
-if [[ -z "$ALL_FILES" ]]; then
-  echo "✅  No files to scan."
-  exit 0
+if command -v gitleaks &> /dev/null; then
+  gitleaks detect \
+    --source "${ROOT_DIR}" \
+    --baseline-path "${ROOT_DIR}/${BASELINE_FILE}" \
+    --redact \
+    --no-git
+else
+  docker run --rm \
+    -v "${ROOT_DIR}:/src" \
+    zricethezav/gitleaks:latest detect \
+      --source "/src" \
+      --baseline-path "/src/${BASELINE_FILE}" \
+      --redact \
+      --no-git
 fi
-
-echo "🔍 Scanning all tracked files with Gitleaks:"
-
-scan_file() {
-  local file="$1"
-  echo "—> Scanning ${file}"
-
-  if command -v gitleaks &> /dev/null; then
-    gitleaks detect \
-      --no-git \
-      --source "${ROOT_DIR}/${file}" \
-      --baseline-path "${ROOT_DIR}/${BASELINE_FILE}" \
-      --redact
-  else
-    docker run --rm \
-      -v "${ROOT_DIR}:/src" \
-      zricethezav/gitleaks:latest detect \
-        --no-git \
-        --source "/src/${file}" \
-        --baseline-path "/src/${BASELINE_FILE}" \
-        --redact
-  fi
-}
-
-while IFS= read -r file; do
-  scan_file "$file"
-done <<< "$ALL_FILES"
