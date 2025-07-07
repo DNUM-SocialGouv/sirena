@@ -1,4 +1,4 @@
 import 'zod-openapi/extend';
 
-export { ZodSchema, z } from 'zod';
+export { ZodSchema, ZodType, z } from 'zod';
 export * from '../../generated/zod';

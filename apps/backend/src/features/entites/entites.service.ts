@@ -2,11 +2,16 @@ import type { Pagination } from '@sirena/backend-utils/types';
 import { type Entite, prisma } from '@/libs/prisma';
 import type { EntiteChain } from './entites.type';
 
-export const getEntiteForUser = async (organizationUnit: string | null, emails: string) => {
+export const getEntiteForUser = async (organizationUnit: string | null, email: string) => {
   if (organizationUnit) {
     const entites = await prisma.entite.findMany({
       where: {
-        organizationUnit,
+        OR: [
+          { organizationUnit },
+          { organizationUnit: { startsWith: `${organizationUnit},` } },
+          { organizationUnit: { endsWith: `,${organizationUnit}` } },
+          { organizationUnit: { contains: `,${organizationUnit},` } },
+        ],
       },
     });
 
@@ -16,20 +21,15 @@ export const getEntiteForUser = async (organizationUnit: string | null, emails: 
     return null;
   }
 
-  if (emails) {
-    for (const email of emails.split(',')) {
-      const trimmedEmail = email.trim();
-      if (trimmedEmail) {
-        const entite = await prisma.entite.findMany({
-          where: {
-            emailDomain: trimmedEmail.split('@')[1],
-          },
-        });
-        if (entite.length === 1) {
-          return entite[0];
-        }
-      }
-    }
+  const trimmedEmail = email.trim();
+
+  const entite = await prisma.entite.findMany({
+    where: {
+      emailDomain: trimmedEmail.split('@')[1],
+    },
+  });
+  if (entite.length === 1) {
+    return entite[0];
   }
   return null;
 };

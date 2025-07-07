@@ -43,7 +43,17 @@ describe('entites.service', () => {
       vi.mocked(prisma.entite.findMany).mockResolvedValue([mockEntite1]);
 
       const result = await getEntiteForUser('ARS-CORSE', '');
-      expect(prisma.entite.findMany).toHaveBeenCalledWith({ where: { organizationUnit: 'ARS-CORSE' } });
+      expect(prisma.entite.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({
+                organizationUnit: expect.stringContaining('ARS-CORSE'),
+              }),
+            ]),
+          }),
+        }),
+      );
       expect(result).toEqual(mockEntite1);
     });
 
