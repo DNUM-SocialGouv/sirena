@@ -47,7 +47,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.14.4
-        version: 1.14.4(hono@4.8.3)
+        version: 1.15.0(hono@4.8.3)
       '@hono/zod-validator':
         specifier: ^0.7.0
         version: 0.7.0(hono@4.8.3)(zod@3.25.67)
@@ -1321,8 +1321,8 @@ packages:
     peerDependencies:
       graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
 
-  '@hono/node-server@1.14.4':
-    resolution: {integrity: sha512-DnxpshhYewr2q9ZN8ez/M5mmc3sucr8CT1sIgIy1bkeUXut9XWDkqHoFHRhWIQgkYnKpVRxunyhK7WzpJeJ6qQ==}
+  '@hono/node-server@1.15.0':
+    resolution: {integrity: sha512-MjmK4l5N4dQpZ9OSWN0tCj7ejuc7WvuWMzSKtc89bnknJykAeHxzRigXBTYZk85H6Awrii6RM59iUiUluApu2A==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
@@ -3555,14 +3555,14 @@ packages:
   sentence-case@3.0.4:
     resolution: {integrity: sha512-8LS0JInaQMCRoQ7YUytAo/xUu5W2XnQxV2HI/6uM6U7CITS1RqPElr30V6uIqyMKM9lJGRVFy5/4CuzcixNYSg==}
 
-  seroval-plugins@1.2.1:
-    resolution: {integrity: sha512-H5vs53+39+x4Udwp4J5rNZfgFuA+Lt+uU+09w1gYBVWomtAl98B+E9w7yC05Xc81/HgLvJdlyqJbU0fJCKCmdw==}
+  seroval-plugins@1.3.2:
+    resolution: {integrity: sha512-0QvCV2lM3aj/U3YozDiVwx9zpH0q8A60CTWIv4Jszj/givcudPb48B+rkU5D51NJ0pTpweGMttHjboPa9/zoIQ==}
     engines: {node: '>=10'}
     peerDependencies:
       seroval: ^1.0
 
-  seroval@1.2.1:
-    resolution: {integrity: sha512-yBxFFs3zmkvKNmR0pFSU//rIsYjuX418TnlDmc2weaq5XFDqDIV/NOMPBoLrbxjLH42p4UzRuXHryXh9dYcKcw==}
+  seroval@1.3.2:
+    resolution: {integrity: sha512-RbcPH1n5cfwKrru7v7+zrZvjLurgHhGyso3HTyGtRivGWgYjbOmGuivCQaORNELjNONoK35nj28EoWul9sb1zQ==}
     engines: {node: '>=10'}
 
   setimmediate@1.0.5:
@@ -5356,7 +5356,7 @@ snapshots:
     dependencies:
       graphql: 16.11.0
 
-  '@hono/node-server@1.14.4(hono@4.8.3)':
+  '@hono/node-server@1.15.0(hono@4.8.3)':
     dependencies:
       hono: 4.8.3
 
@@ -5934,26 +5934,6 @@ snapshots:
       - utf-8-validate
       - vite
 
-  '@vitest/browser@3.2.4(playwright@1.53.1)(vite@7.0.0(@types/node@24.0.7)(jiti@2.4.2)(tsx@4.20.3)(yaml@2.7.1))(vitest@3.2.4)':
-    dependencies:
-      '@testing-library/dom': 10.4.0
-      '@testing-library/user-event': 14.6.1(@testing-library/dom@10.4.0)
-      '@vitest/mocker': 3.2.4(vite@7.0.0(@types/node@24.0.7)(jiti@2.4.2)(tsx@4.20.3)(yaml@2.7.1))
-      '@vitest/utils': 3.2.4
-      magic-string: 0.30.17
-      sirv: 3.0.1
-      tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@24.0.7)(@vitest/browser@3.2.4)(jiti@2.4.2)(jsdom@26.1.0)(tsx@4.20.3)(yaml@2.7.1)
-      ws: 8.18.3
-    optionalDependencies:
-      playwright: 1.53.1
-    transitivePeerDependencies:
-      - bufferutil
-      - msw
-      - utf-8-validate
-      - vite
-    optional: true
-
   '@vitest/coverage-v8@3.2.4(@vitest/browser@3.2.4)(vitest@3.2.4)':
     dependencies:
       '@ampproject/remapping': 2.3.0
@@ -5971,7 +5951,7 @@ snapshots:
       tinyrainbow: 2.0.0
       vitest: 3.2.4(@types/node@24.0.7)(@vitest/browser@3.2.4)(jiti@2.4.2)(jsdom@26.1.0)(tsx@4.20.3)(yaml@2.7.1)
     optionalDependencies:
-      '@vitest/browser': 3.2.4(playwright@1.53.1)(vite@7.0.0(@types/node@24.0.7)(jiti@2.4.2)(tsx@4.20.3)(yaml@2.7.1))(vitest@3.2.4)
+      '@vitest/browser': 3.2.4(playwright@1.53.1)(vite@6.3.5(@types/node@24.0.7)(jiti@2.4.2)(tsx@4.20.3)(yaml@2.7.1))(vitest@3.2.4)
     transitivePeerDependencies:
       - supports-color
 
@@ -5997,15 +5977,6 @@ snapshots:
       magic-string: 0.30.17
     optionalDependencies:
       vite: 6.3.5(@types/node@24.0.7)(jiti@2.4.2)(tsx@4.20.3)(yaml@2.7.1)
-
-  '@vitest/mocker@3.2.4(vite@7.0.0(@types/node@24.0.7)(jiti@2.4.2)(tsx@4.20.3)(yaml@2.7.1))':
-    dependencies:
-      '@vitest/spy': 3.2.4
-      estree-walker: 3.0.3
-      magic-string: 0.30.17
-    optionalDependencies:
-      vite: 7.0.0(@types/node@24.0.7)(jiti@2.4.2)(tsx@4.20.3)(yaml@2.7.1)
-    optional: true
 
   '@vitest/pretty-format@3.0.9':
     dependencies:
@@ -7668,11 +7639,11 @@ snapshots:
       tslib: 2.8.1
       upper-case-first: 2.0.2
 
-  seroval-plugins@1.2.1(seroval@1.2.1):
+  seroval-plugins@1.3.2(seroval@1.3.2):
     dependencies:
-      seroval: 1.2.1
+      seroval: 1.3.2
 
-  seroval@1.2.1: {}
+  seroval@1.3.2: {}
 
   setimmediate@1.0.5: {}
 
@@ -7720,8 +7691,8 @@ snapshots:
   solid-js@1.9.5:
     dependencies:
       csstype: 3.1.3
-      seroval: 1.2.1
-      seroval-plugins: 1.2.1(seroval@1.2.1)
+      seroval: 1.3.2
+      seroval-plugins: 1.3.2(seroval@1.3.2)
 
   sonic-boom@4.2.0:
     dependencies:
