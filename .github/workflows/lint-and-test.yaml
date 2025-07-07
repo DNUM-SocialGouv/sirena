@@ -21,7 +21,7 @@ jobs:
     - name: Run linter
       run: pnpm lint
     - name: Run gitLeaks
-      run: pnpm gitleaks:detect-secrets
+      run: pnpm gitleaks:ci
     - name: Build backend-utils
       run: pnpm build:backend-utils
     - name: Build common
