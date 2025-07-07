@@ -20,6 +20,8 @@ jobs:
       run: pnpm install
     - name: Run linter
       run: pnpm lint
+    - name: Run gitLeaks
+      run: pnpm gitleaks:detect-secrets
     - name: Build backend-utils
       run: pnpm build:backend-utils
     - name: Build common
