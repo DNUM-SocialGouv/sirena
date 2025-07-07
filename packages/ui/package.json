@@ -36,14 +36,14 @@
     "@vitejs/plugin-react": "^4.6.0",
     "@vitest/browser": "^3.2.4",
     "jsdom": "^26.1.0",
-    "playwright": "^1.53.1",
+    "playwright": "^1.53.2",
     "storybook": "^9.1.0-alpha.6",
     "vite": "^6.3.5",
     "vitest": "^3.2.4",
     "vitest-browser-react": "^1.0.0"
   },
   "dependencies": {
-    "@base-ui-components/react": "1.0.0-beta.0",
+    "@base-ui-components/react": "1.0.0-beta.1",
     "@codegouvfr/react-dsfr": "catalog:",
     "react": "catalog:",
     "react-transition-group": "^4.4.5"
