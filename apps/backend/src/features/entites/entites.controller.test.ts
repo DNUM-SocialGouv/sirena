@@ -1,7 +1,7 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import app from './entites.controller';
+import EntitesController from './entites.controller';
 import { getEntiteChain, getEntites } from './entites.service';
 
 vi.mock('@/config/env', () => ({
@@ -33,7 +33,7 @@ vi.mock('@/middlewares/role.middleware', () => {
 });
 
 describe('Entites endpoints: /entites', () => {
-  const client = testClient(app);
+  const client = testClient(EntitesController);
 
   const mockEntite = {
     id: '2',
