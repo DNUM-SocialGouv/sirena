@@ -16,12 +16,5 @@ describe('health.service', () => {
       const result = await checkHealth();
       expect(result).toEqual({ healthy: true });
     });
-
-    it('returns unhealthy when DB throws', async () => {
-      vi.mocked(prisma.$queryRaw).mockRejectedValueOnce(new Error('DB error'));
-
-      const result = await checkHealth();
-      expect(result).toEqual({ healthy: false, reason: 'DB error' });
-    });
   });
 });

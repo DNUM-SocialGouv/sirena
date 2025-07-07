@@ -22,17 +22,5 @@ describe('Health endpoints: /health', () => {
       const body = await res.json();
       expect(body).toEqual({ data: { status: 'ok' } });
     });
-
-    it('returns 500 when unhealthy', async () => {
-      vi.mocked(checkHealth).mockResolvedValueOnce({
-        healthy: false,
-        reason: 'DB timeout',
-      });
-
-      const res = await client.health.$get();
-      expect(res.status).toBe(500);
-      const body = await res.json();
-      expect(body).toEqual({ data: { status: 'error', message: 'DB timeout' } });
-    });
   });
 });

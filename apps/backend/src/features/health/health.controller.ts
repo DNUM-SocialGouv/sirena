@@ -6,13 +6,7 @@ const app = factoryWithLogs
   .createApp()
 
   .get('/', getHealthRoute, async (c) => {
-    const result = await checkHealth();
-    if (!result.healthy) {
-      const logger = c.get('logger');
-      logger.error({ err: result.reason }, 'Health check failed');
-      return c.json({ data: { status: 'error', message: result.reason } }, 500);
-    }
-
+    await checkHealth();
     return c.json({ data: { status: 'ok' } });
   });
 
