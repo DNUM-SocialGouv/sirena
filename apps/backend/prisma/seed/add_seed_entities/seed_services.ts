@@ -11,48 +11,63 @@ const ServiceRowSchema = z.object({
 
 export async function seedServices(prisma: PrismaClient) {
   return await parseCsv('./prisma/documents/services.csv', ServiceRowSchema, async (rows) => {
-    let added = 0;
-
-    for (const row of rows) {
-      const entite = await prisma.entite.findFirst({
-        where: {
-          nomComplet: row['Service (libellé long)'],
+    const parentEntities = await prisma.entite.findMany({
+      where: {
+        OR: rows.map((row) => ({
+          nomComplet: row['Direction (libellé long)'],
           entiteMere: {
-            nomComplet: row['Direction (libellé long)'],
-            entiteMere: {
-              nomComplet: row['Entité administrative'],
-              entiteMereId: null,
-            },
+            nomComplet: row['Entité administrative'],
+            entiteMereId: null,
           },
-        },
-      });
+        })),
+      },
+      select: {
+        nomComplet: true,
+        id: true,
+        entiteTypeId: true,
+        entiteMere: true,
+      },
+    });
 
-      if (!entite) {
-        const entiteParent = await prisma.entite.findFirst({
-          where: {
-            nomComplet: row['Direction (libellé long)'],
-            entiteMere: {
-              nomComplet: row['Entité administrative'],
-              entiteMereId: null,
-            },
-          },
-        });
-
-        if (!entiteParent) {
-          throw new Error(`Parent structure not found for service: ${row['Direction (libellé long)']}`);
-        }
-
-        added++;
-        await prisma.entite.create({
-          data: {
-            nomComplet: row['Service (libellé long)'],
-            label: row['Service (libellé court)'],
-            entiteType: { connect: { id: entiteParent.entiteTypeId } },
-            entiteMere: { connect: { id: entiteParent.id } },
-          },
-        });
+    const servicesWithParents = rows.map((row) => {
+      const parent = parentEntities.find(
+        (p) =>
+          p.nomComplet === row['Direction (libellé long)'] && p.entiteMere?.nomComplet === row['Entité administrative'],
+      );
+      if (!parent) {
+        throw new Error(`Parent not found for service: ${row['Service (libellé long)']}`);
       }
-    }
-    return { table: 'services in entite', added };
+
+      return {
+        nomComplet: row['Service (libellé long)'],
+        label: row['Service (libellé court)'],
+        entiteTypeId: parent.entiteTypeId,
+        entiteMereId: parent.id,
+      };
+    });
+
+    const existing = await prisma.entite.findMany({
+      where: {
+        OR: servicesWithParents.map((s) => ({
+          nomComplet: s.nomComplet,
+          entiteMereId: s.entiteMereId,
+        })),
+      },
+      select: {
+        nomComplet: true,
+        entiteMereId: true,
+      },
+    });
+
+    const newEntities = servicesWithParents.filter(
+      (s) => !existing.find((e) => e.nomComplet === s.nomComplet && e.entiteMereId === s.entiteMereId),
+    );
+
+    const createdEntities = await prisma.entite.createMany({
+      data: newEntities,
+      skipDuplicates: true,
+    });
+
+    return { table: 'services in entite', added: createdEntities.count };
   });
 }

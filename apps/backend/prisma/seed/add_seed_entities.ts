@@ -4,7 +4,7 @@ import { seedDirections } from './add_seed_entities/seed_directions';
 import { seedServices } from './add_seed_entities/seed_services';
 
 export async function seedEntites(prisma: PrismaClient) {
-  console.log('🌱 Début du seeding des des entites...');
+  console.log('🌱 Début du seeding des entites...');
   const results: { table: string; added: number }[] = [];
 
   try {

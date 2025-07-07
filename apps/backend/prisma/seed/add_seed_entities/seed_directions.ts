@@ -10,39 +10,55 @@ const AdministrativeRowSchema = z.object({
 
 export async function seedDirections(prisma: PrismaClient) {
   return await parseCsv('./prisma/documents/directions.csv', AdministrativeRowSchema, async (rows) => {
-    let added = 0;
+    const parentEntities = await prisma.entite.findMany({
+      where: {
+        OR: rows.map((row) => ({
+          nomComplet: row['Entité administrative (parent)'],
+          entiteMereId: null,
+        })),
+      },
+      select: {
+        nomComplet: true,
+        id: true,
+        entiteTypeId: true,
+        entiteMere: true,
+      },
+    });
 
-    for (const row of rows) {
-      const entite = await prisma.entite.findFirst({
-        where: {
-          nomComplet: row['Direction (libellé long)'],
-          entiteMere: {
-            nomComplet: row['Entité administrative (parent)'],
-          },
-        },
-      });
-
-      if (!entite) {
-        const entiteParent = await prisma.entite.findFirst({
-          where: { nomComplet: row['Entité administrative (parent)'], entiteMereId: null },
-        });
-
-        if (!entiteParent) {
-          throw new Error(`Parent structure not found for entite: ${row['Entité administrative (parent)']}`);
-        }
-
-        added++;
-        await prisma.entite.create({
-          data: {
-            nomComplet: row['Direction (libellé long)'],
-            label: row['Direction (libéllé court)'],
-            entiteType: { connect: { id: entiteParent.entiteTypeId } },
-            entiteMere: { connect: { id: entiteParent.id } },
-          },
-        });
+    const directionsWithParents = rows.map((row) => {
+      const parent = parentEntities.find((p) => p.nomComplet === row['Entité administrative (parent)']);
+      if (!parent) {
+        throw new Error(`Missing parent for: ${row['Direction (libellé long)']}`);
       }
-    }
+      return {
+        nomComplet: row['Direction (libellé long)'],
+        label: row['Direction (libéllé court)'],
+        entiteTypeId: parent.entiteTypeId,
+        entiteMereId: parent.id,
+      };
+    });
 
-    return { table: 'directions in entite', added };
+    const existing = await prisma.entite.findMany({
+      where: {
+        OR: directionsWithParents.map((dir) => ({
+          nomComplet: dir.nomComplet,
+          entiteMereId: dir.entiteMereId,
+        })),
+      },
+      select: {
+        nomComplet: true,
+        entiteMereId: true,
+      },
+    });
+
+    const newEntities = directionsWithParents.filter(
+      (dir) => !existing.find((e) => e.nomComplet === dir.nomComplet && e.entiteMereId === dir.entiteMereId),
+    );
+
+    const createdEntities = await prisma.entite.createMany({
+      data: newEntities,
+    });
+
+    return { table: 'directions in entite', added: createdEntities.count };
   });
 }

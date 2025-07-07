@@ -18,25 +18,34 @@ const AdministrativeRowSchema = z.object({
 
 export async function seedAdministratives(prisma: PrismaClient) {
   return await parseCsv('./prisma/documents/administratives.csv', AdministrativeRowSchema, async (rows) => {
-    let added = 0;
-    for (const row of rows) {
-      const entite = await prisma.entite.findFirst({
-        where: { nomComplet: row.Libellé, entiteMereId: null },
-      });
+    const existing = await prisma.entite.findMany({
+      where: {
+        OR: rows.map((row) => ({
+          nomComplet: row.Libellé,
+          entiteMereId: null,
+        })),
+      },
+      select: {
+        nomComplet: true,
+        entiteMereId: true,
+      },
+    });
 
-      if (!entite) {
-        added++;
-        await prisma.entite.create({
-          data: {
-            nomComplet: row.Libellé,
-            label: row['Libéllé court'],
-            emailDomain: row['Domaine mail'],
-            organizationUnit: row.Organizational_unit,
-            entiteType: { connect: { id: row["Type d'entité"] } },
-          },
-        });
-      }
-    }
-    return { table: 'administratives in entite', added };
+    const newEntities = rows
+      .filter((row) => !existing.find((e) => e.nomComplet === row.Libellé && e.entiteMereId === null))
+      .map((row) => ({
+        nomComplet: row.Libellé,
+        label: row['Libéllé court'],
+        emailDomain: row['Domaine mail'],
+        organizationUnit: row.Organizational_unit,
+        entiteTypeId: row["Type d'entité"],
+      }));
+
+    const createdEntities = await prisma.entite.createMany({
+      data: newEntities,
+      skipDuplicates: true,
+    });
+
+    return { table: 'administratives in entite', added: createdEntities.count };
   });
 }
