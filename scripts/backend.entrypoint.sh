@@ -1,10 +1,6 @@
 #!/bin/sh
 set -e
 
-# TODO: remove when data should not be deleted
-echo "Reset database"
-pnpm --filter @sirena/backend db:reset
-
 echo "Init migrations"
 pnpm --filter @sirena/backend db:deploy
 
