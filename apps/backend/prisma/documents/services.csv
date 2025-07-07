@@ -1,23 +1,13 @@
-Structure,Service,Catégorie
-ARS - Normandie,Direction d'appui à la performance (ARS) - Normandie,Performance
-ARS - Normandie,Direction de la santé publique (ARS) - Normandie,Santé publique
-ARS - Normandie,Direction de la stratégie (ARS) - Normandie,Stratégie
-ARS - Normandie,Direction de l’autonomie (ARS) - Normandie,Autonomie
-ARS - Normandie,Direction de l’offre de soins (ARS) - Normandie,Offre de soins
-CD - Calvados,Service traitement des réclamations,Traitement
-CD - Eure,Service traitement des réclamations,Traitement
-DDETS - Calvados,Service traitement des réclamations,Traitement
-DDETS Eure,Service traitement des réclamations,Traitement
-DDETS Manche,Service traitement des réclamations,Traitement
-DDETS - Seine-Maritime,Service traitement des réclamations,Traitement
-ARS - Corse,Service inspection et contrôle qualité,Inspection
-ARS - Corse,Direction de l'offre médico-sociale,Médico-social
-ARS - Hauts-de-France,Direction de l'offre de soins,Offre de soins
-ARS - Hauts-de-France,Direction de l'offre médico-sociale,Médico-social
-ARS - Nouvelle-Aquitaine,Direction de l'Offre de Soins,DOS
-ARS - Nouvelle-Aquitaine,Direction de la Protection de la Santé et de l'Autonomie,DPSA
-ARS - Auvergne-Rhône-Alpes,Direction inspection justice usagers,Inspection
-ARS - Auvergne-Rhône-Alpes,Direction Autonomie,Autonomie
-ARS - Auvergne-Rhône-Alpes,Direction Offre de Soins,Offre de soins
-CD - Haute-Garonne,Direction de l'autonomie,Autonomie
-CD - Haute-Garonne,Direction de l'offre médico-sociale,Médico-social
+﻿Entité administrative;Direction (libellé long);Service (libellé long);Service (libellé court);
+ARS - Normandie;Direction de l'Autonomie;UA 14;UA 14;
+ARS - Normandie;Direction de l'Autonomie;UA 61;UA 61;
+ARS - Normandie;Direction de l'Autonomie;UA 27;UA 27;
+ARS - Normandie;Direction de l'Autonomie;UA 50;UA 50;
+ARS - Normandie;Direction de l'Autonomie;UA 76;UA 76;
+CD - Eure;Direction Autonomie Santé;Pôle Hébergement et service;Hébergement;
+CD - Eure;Direction Autonomie Santé;Pôle Domicile;Domicile;
+CD - Eure;Direction Autonomie Santé;Pôle Prévention et Parcours autonomie;Prévention;
+CD - Manche;Maison Départementale de l’autonomie;Service soutien au parcours et transformation de l’offre  ;Soutien au parcours;
+CD - Manche;Maison Départementale de l’autonomie;Pôle EHPAD, RA et SAD;EHPAD, RA et SAD;
+CD - Manche;Maison Départementale de l’autonomie;Pôle PH et AF;PH et AF;
+DDETS - Calvados;Pôle hébergement/logement;Mission Territoires et promotion des mobilités résidentielles;Territoires;

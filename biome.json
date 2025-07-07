@@ -11,6 +11,7 @@
       "./deploy/**/*",
       "!deploy/imports/**/*",
       "./apps/backend/src/**/*",
+      "./apps/backend/prisma/**/*.ts",
       "./apps/frontend/src/**/*",
       "./packages/common/src/**/*",
       "./packages/backend-utils/src/**/*",
