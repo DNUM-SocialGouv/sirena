@@ -10,7 +10,7 @@ export const Route = createFileRoute('/_auth/admin/entities')({
 function RouteComponent() {
   return (
     <div className="home">
-      <h2>Welcome to entities</h2>
+      <h1>Welcome to entities</h1>
     </div>
   );
 }

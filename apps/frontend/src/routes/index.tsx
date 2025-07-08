@@ -32,7 +32,7 @@ function RouteComponent() {
               <div className="fr-col-12 fr-col-md-9 fr-col-lg-8">
                 <h1>Connexion à SIRENA</h1>
                 <div className="fr-mb-6v">
-                  <h2>Se connecter avec ProConnect</h2>
+                  <h1>Se connecter avec ProConnect</h1>
                   <div className="fr-connect-group">
                     <form action="/api/auth/login" method="post">
                       <button className="fr-btn fr-connect pro-connect" type="submit">

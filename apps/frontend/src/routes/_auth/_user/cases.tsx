@@ -7,7 +7,7 @@ export const Route = createFileRoute('/_auth/_user/cases')({
 function RouteComponent() {
   return (
     <div className="home">
-      <h2>Welcome to cases</h2>
+      <h1>Welcome to cases</h1>
       <Link to="/home">Home</Link>
     </div>
   );
