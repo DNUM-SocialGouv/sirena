@@ -41,6 +41,7 @@ jobs:
         with:
           version: ${{ steps.compute_version.outputs.VERSION }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
     outputs:
       VERSION: ${{ steps.compute_version.outputs.VERSION }}

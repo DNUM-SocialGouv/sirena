@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@codegouvfr/react-dsfr": "catalog:",
+    "@sentry/react": "^9.35.0",
     "@sirena/backend": "workspace:*",
     "@sirena/common": "workspace:*",
     "@sirena/ui": "workspace:*",
@@ -34,6 +35,7 @@
     "@playwright/test": "^1.54.1",
     "@tanstack/react-router-devtools": "^1.127.3",
     "@tanstack/router-plugin": "^1.127.3",
+    "@sentry/vite-plugin": "^3.5.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
