@@ -20,6 +20,7 @@ import { useUserById } from '@/hooks/queries/useUser';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { useUserStore } from '@/stores/userStore';
 import './$userId.css';
+import { Toast } from '@sirena/ui';
 import { z } from 'zod';
 import { EntityHierarchySelector } from '@/components/userId/entityHierarchySelector';
 
@@ -57,6 +58,7 @@ function SubmitButton() {
 
 function RouteComponent() {
   const { userId } = Route.useParams();
+  const toastManager = Toast.useToastManager();
   const navigate = useNavigate();
   const router = useRouter();
   const userStore = useUserStore();
@@ -92,6 +94,17 @@ function RouteComponent() {
       id: userId,
       json: { roleId: role, statutId: statut, entiteId: entite || null },
     });
+    toastManager.add({
+      title: 'Utilisateur modifié',
+      description: 'Les modifications ont été enregistrées avec succès.',
+      timeout: 5000,
+      data: { icon: 'fr-alert--success' },
+    });
+    if (window.history.length > 1) {
+      router.history.back();
+    } else {
+      router.navigate({ to: '/admin/users' });
+    }
   };
 
   const handleBack = () => {
