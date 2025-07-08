@@ -27,7 +27,7 @@ function RouteComponent() {
 
   return (
     <div className="home">
-      <h2>Welcome to home {label}</h2>
+      <h1>Welcome to home {label}</h1>
       {userStore.role === ROLES.PENDING && <PendingAlert />}
     </div>
   );
