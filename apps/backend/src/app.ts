@@ -1,4 +1,5 @@
 import { csrf } from 'hono/csrf';
+import '@/libs/instrument';
 import AuthController from '@/features/auth/auth.controller';
 import DematSocialMapperController from '@/features/dematSocialMapping/dematSocialMapping.controller';
 import EntitesController from '@/features/entites/entites.controller';

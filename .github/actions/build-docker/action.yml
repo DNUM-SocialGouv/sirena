@@ -16,10 +16,24 @@ inputs:
   github-token:
     description: 'GitHub token for registry login'
     required: true
+  sentry-auth-token:
+    description: 'Sentry auth token'
+    required: true
 
 runs:
   using: 'composite'
   steps:
+    - name: Debug Sentry tokens
+      shell: bash
+      run: |
+        echo "=== Debug Sentry Tokens ==="
+        echo "Backend token length: ${#SENTRY_AUTH_TOKEN}"
+        echo "Backend token first 5 chars: ${SENTRY_AUTH_TOKEN:0:5}"
+        echo "Backend token last 5 chars: ${SENTRY_AUTH_TOKEN: -5}"
+        echo "=========================="
+      env:
+        SENTRY_AUTH_TOKEN: ${{ inputs.sentry-auth-token }}
+
     - name: Log in to the Container registry
       uses: docker/login-action@v3
       with:
@@ -56,6 +70,8 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           APP_VERSION=${{ inputs.version }}
+        secrets: |
+          SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
         cache-from: |
           type=gha,scope=backend
         cache-to: |
@@ -73,6 +89,8 @@ runs:
         build-args: |
           VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
           APP_VERSION=${{ inputs.version }}
+        secrets: |
+          SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
         cache-from: |
           type=gha,scope=frontend
         cache-to: |

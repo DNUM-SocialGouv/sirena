@@ -14,7 +14,6 @@ RUN npm install --global corepack@latest && \
 
 FROM base AS builder
 
-USER node
 WORKDIR /app
 
 COPY --chown=node:node package*.json pnpm* ./
@@ -37,17 +36,22 @@ RUN pnpm --filter @sirena/backend-utils build
 RUN pnpm --filter @sirena/common build
 RUN pnpm --filter @sirena/backend db:generate
 RUN pnpm --filter @sirena/backend build
-RUN pnpm --filter @sirena/frontend build
+RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
+    export SENTRY_AUTH_TOKEN=$(cat /run/secrets/SENTRY_AUTH_TOKEN) \
+    export APP_VERSION=$APP_VERSION \
+    export SENTRY_ENABLED=true \
+    && pnpm --filter pnpm --filter @sirena/frontend build
 
 FROM nginx:stable-alpine AS frontend
 
 RUN rm /etc/nginx/conf.d/default.conf
 
+USER nginx
 
 COPY ./nginx/frontend.conf /etc/nginx/conf.d/
 
 # copy React build output
-COPY --from=builder /app/apps/frontend/dist   /usr/share/nginx/html
+COPY --from=builder --chown=nginx:nginx /app/apps/frontend/dist   /usr/share/nginx/html
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

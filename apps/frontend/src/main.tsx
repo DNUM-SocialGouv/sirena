@@ -7,6 +7,8 @@ import { createRoot } from 'react-dom/client';
 import { queryClient } from '@/lib/queryClient';
 import { router } from '@/lib/router';
 import { toastManager } from '@/lib/toastManager';
+import '@/lib/instrument';
+import * as Sentry from '@sentry/react';
 
 declare module '@tanstack/react-router' {
   interface Register {
@@ -26,7 +28,16 @@ function App() {
   return <RouterProvider router={router} />;
 }
 
-createRoot(document.getElementById('root') as HTMLElement).render(
+createRoot(document.getElementById('root') as HTMLElement, {
+  // Callback called when an error is thrown and not caught by an ErrorBoundary.
+  onUncaughtError: Sentry.reactErrorHandler((error, errorInfo) => {
+    console.warn('Uncaught error', error, errorInfo.componentStack);
+  }),
+  // Callback called when React catches an error in an ErrorBoundary.
+  onCaughtError: Sentry.reactErrorHandler(),
+  // Callback called when React automatically recovers from errors.
+  onRecoverableError: Sentry.reactErrorHandler(),
+}).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <Toast.Provider limit={Infinity} toastManager={toastManager}>
