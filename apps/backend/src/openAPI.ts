@@ -17,7 +17,7 @@ export function setupOpenAPI(app: Hono<AppBindings>, prefix = '/openapi') {
         },
         servers: [
           {
-            url: '/api',
+            url: `${process.env.FRONTEND_URI}/api`,
             description: 'API server',
           },
         ],
