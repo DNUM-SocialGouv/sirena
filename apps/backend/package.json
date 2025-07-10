@@ -19,6 +19,7 @@
     "db:reset": "prisma migrate reset --force",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
+    "script:update-demat-social-mapper": "tsx scripts/updateDematSocial-mapper.ts",
     "generate:codegen": "graphql-codegen --config codegen.ts",
     "generate:openAPI": "tsx src/swagger/gen-openAPI-swagger.ts",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/backend/' | sed 's|^packages/backend/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",

@@ -407,3 +407,13 @@ model ReceptionTypeEnum {
 
   infoirmations InfoComplementaire[]
 }
+
+model DematSocialMapping {
+  id            String   @id @default(uuid())
+  dematSocialId String   @unique
+  key           String
+  label         String
+  comment       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

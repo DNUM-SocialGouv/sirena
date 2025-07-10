@@ -116,3 +116,9 @@ export const receptionTypes = {
   TELEPHONE: 'Téléphone',
   AUTRE: 'Autre',
 } as const;
+
+export const institutionPlainteTypes = {
+  GENDARMERIE: 'Gendarmerie',
+  COMMISSARIAT: 'Commissariat',
+  TRIBUNAL: 'Tribunal',
+} as const;

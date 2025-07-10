@@ -182,7 +182,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
                 {renderedRows}
                 {data.length === 0 && (
                   <tr>
-                    <td colSpan={columns.length + +isSelectable} className="fr-text--sm">
+                    <td colSpan={columns.length + +isSelectable} className="fr-text--sm fr-table__empty">
                       {emptyPlaceholder}
                     </td>
                   </tr>
