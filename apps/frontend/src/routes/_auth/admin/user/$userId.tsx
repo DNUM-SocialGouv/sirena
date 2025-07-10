@@ -13,7 +13,6 @@ import {
 } from '@sirena/common/constants';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useFormStatus } from 'react-dom';
 import { Loader } from '@/components/loader.tsx';
 import { usePatchUser } from '@/hooks/mutations/useUpdateUser';
 import { useUserById } from '@/hooks/queries/useUser';
@@ -47,11 +46,10 @@ const getAssignableRoles = (currentRole: Role): RoleOption[] => {
     .map(([role]) => ({ key: role, value: roles[role] }));
 };
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
+function SubmitButton({ isPending }: { isPending: boolean }) {
   return (
-    <Button type="submit" disabled={pending}>
-      {pending ? 'Mise à jour...' : 'Valider les modifications'}
+    <Button type="submit" disabled={isPending}>
+      {isPending ? 'Mise à jour...' : 'Valider les modifications'}
     </Button>
   );
 }
@@ -100,11 +98,7 @@ function RouteComponent() {
       timeout: 5000,
       data: { icon: 'fr-alert--success' },
     });
-    if (window.history.length > 1) {
-      router.history.back();
-    } else {
-      router.navigate({ to: '/admin/users' });
-    }
+    handleBack();
   };
 
   const handleBack = () => {
@@ -127,7 +121,7 @@ function RouteComponent() {
   }
 
   return (
-    <div>
+    <div className="user">
       <h1>Modifier un utilisateur</h1>
       <div>
         <form onSubmit={handleSubmit}>
@@ -206,7 +200,7 @@ function RouteComponent() {
             <Button priority="secondary" onClick={handleBack} type="button">
               Annuler les modifications
             </Button>
-            <SubmitButton />
+            <SubmitButton isPending={patchUser.isPending} />
           </div>
         </form>
       </div>
