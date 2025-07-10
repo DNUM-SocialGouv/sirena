@@ -1,13 +1,15 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
+import { Prisma } from '@/libs/prisma';
 import { convertDatesToStrings } from '@/tests/formatter';
 import UsersController from './users.controller';
-import { getUserById, getUsers } from './users.service';
+import { getUserById, getUsers, patchUser } from './users.service';
 
 vi.mock('./users.service', () => ({
   getUsers: vi.fn(),
   getUserById: vi.fn(),
+  patchUser: vi.fn(),
 }));
 
 vi.mock('@/config/env', () => ({
@@ -171,6 +173,30 @@ describe('Users endpoints: /users', () => {
       } else {
         throw new Error('Expected error message in response');
       }
+    });
+  });
+
+  describe('PATCH /:id', () => {
+    const updateData = { roleId: 'ADMIN' };
+
+    it('should update a user by ID', async () => {
+      vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeData[0], ...updateData });
+
+      const res = await client[':id'].$patch({ param: { id: 'user-id-1' }, json: updateData });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ data: convertDatesToStrings({ ...fakeData[0], ...updateData }) });
+    });
+
+    it('should return 404 if user not found', async () => {
+      const err = new Prisma.PrismaClientKnownRequestError('record not found', {
+        code: 'P2025',
+        clientVersion: '4.0.0',
+      });
+
+      vi.mocked(patchUser).mockRejectedValueOnce(err);
+
+      const res = await client[':id'].$patch({ param: { id: 'nonexistent' }, json: updateData });
+      expect(res.status).toBe(404);
     });
   });
 });

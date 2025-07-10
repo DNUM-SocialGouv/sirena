@@ -1,6 +1,6 @@
 import type { PrismaClient } from 'generated/client';
 
-export async function seed_super_admin(prisma: PrismaClient) {
+export async function seedSuperAdmin(prisma: PrismaClient) {
   console.log('🌱 Début du seeding des super admin...');
   const superAdminRole = await prisma.roleEnum.findUnique({
     where: { id: 'SUPER_ADMIN' },
