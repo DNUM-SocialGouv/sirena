@@ -1,8 +1,8 @@
 import { PrismaClient } from '../generated/client';
 import { seedSuperAdmin } from './seed/add_default_super_admin';
-import { seedEnums } from './seed/add_enums';
-import { seedEntites } from './seed/add_entities';
 import { seedDematSocialMapper } from './seed/add_demat_social_mapper';
+import { seedEntites } from './seed/add_entities';
+import { seedEnums } from './seed/add_enums';
 
 const prisma = new PrismaClient();
 
