@@ -10,9 +10,10 @@ interface AppProps {
   port: number;
   targetPort: k8s.IntOrString;
   namespace: string;
+  environment: string;
 }
 
-function createBackendEnvVars(host: string): k8s.EnvVar[] {
+function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
   return [
     {
       name: 'HOST',
@@ -78,6 +79,14 @@ function createBackendEnvVars(host: string): k8s.EnvVar[] {
       name: 'DEMAT_SOCIAL_API_DIRECTORY',
       value: '661',
     },
+    {
+      name: 'SENTRY_ENABLED',
+      value: 'true',
+    },
+    {
+      name: 'SENTRY_ENVIRONMENT',
+      value: environment,
+    },
   ];
 }
 
@@ -120,7 +129,7 @@ function createContainer(props: AppProps): k8s.Container {
     },
     image: props.image,
     ports: [{ containerPort: Number(props.targetPort.value) }],
-    env: isBackend ? [...createBackendEnvVars(props.host), ...createDatabaseEnvVars()] : [],
+    env: isBackend ? [...createBackendEnvVars(props.host, props.environment), ...createDatabaseEnvVars()] : [],
     envFrom: isBackend ? [{ secretRef: { name: 'backend' } }] : undefined,
   };
 }

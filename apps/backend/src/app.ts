@@ -29,4 +29,7 @@ export const app = appFactory
   .route('/profile', ProfileController)
   .route('/health', HealthController)
   .route('/version', VersionController)
+  .get('/sentry', (c) => {
+    throw new Error('Sentry test error');
+  })
   .onError(errorHandler);

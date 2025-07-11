@@ -34,3 +34,4 @@ jobs:
           version: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
           github-token: ${{ secrets.GITHUB_TOKEN }} 
           sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }} 
+          environment: ${{ github.event.inputs.environment }}

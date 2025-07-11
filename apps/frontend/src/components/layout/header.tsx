@@ -1,6 +1,8 @@
 import { Header } from '@codegouvfr/react-dsfr/Header';
+import { Button } from '@codegouvfr/react-dsfr/Button';
 import { useUserStore } from '@/stores/userStore';
 import { UserMenu } from './userMenu';
+import { ROLES } from '@sirena/common/constants';
 
 type HeaderMenuProps = {
   homeHref: string;
@@ -12,6 +14,7 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
   const quickAccessItems = userStore.isLogged ? [<UserMenu key="menu" />] : [];
 
   return (
+    <>
     <Header
       brandTop={
         <>
@@ -33,5 +36,9 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
       id="fr-header-header"
       quickAccessItems={quickAccessItems}
     />
+    {userStore.isLogged && userStore.role === ROLES.SUPER_ADMIN && (
+      <Button type="button" onClick={() => { throw new Error('test sentry')} }>Test gestion d'érreur</Button>
+    )}
+    </>
   );
 };
