@@ -63,7 +63,13 @@ function getHostUrl(envConfig: EnvironmentConfig): string {
   return `https://${envConfig.subdomain}.${envConfig.domain}`;
 }
 
-function createApps(app: CdkApp, envConfig: EnvironmentConfig, imageTag: string, namespace: string): void {
+function createApps(
+  app: CdkApp,
+  envConfig: EnvironmentConfig,
+  imageTag: string,
+  namespace: string,
+  environment: string,
+): void {
   const hostUrl = getHostUrl(envConfig);
 
   // External secrets (database and backend secrets)
@@ -78,6 +84,7 @@ function createApps(app: CdkApp, envConfig: EnvironmentConfig, imageTag: string,
     targetPort: COMMON_CONFIG.targetPorts.backend,
     image: `${COMMON_CONFIG.imageRegistry}:${imageTag}-backend`,
     namespace,
+    environment,
   });
 
   // Frontend
@@ -89,6 +96,7 @@ function createApps(app: CdkApp, envConfig: EnvironmentConfig, imageTag: string,
     targetPort: COMMON_CONFIG.targetPorts.frontend,
     image: `${COMMON_CONFIG.imageRegistry}:${imageTag}-frontend`,
     namespace,
+    environment,
   });
 }
 
@@ -105,6 +113,6 @@ if (!envConfig) {
 }
 
 const namespace = `org-sdpsn-ws-sirena-${environnement}`;
-createApps(app, envConfig, imageTag, namespace);
+createApps(app, envConfig, imageTag, namespace, environnement);
 
 app.synth();

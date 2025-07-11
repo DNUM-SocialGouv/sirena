@@ -10,6 +10,9 @@ inputs:
     description: 'Base image name'
     required: false
     default: '${{ github.repository }}'
+  environment:
+    description: 'Environment name (test, integration, etc.)'
+    required: true
   version:
     description: 'Version identifier for tagging (tag name or short SHA)'
     required: true
@@ -88,7 +91,10 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
+          SENTRY_ENABLED=true
+          SENTRY_ENVIRONEMENT=${{ inputs.environment }}
           APP_VERSION=${{ inputs.version }}
+          SENTRY_DSN_FRONTEND=https://343eb82fc1395b23dc747ac7d2fac3d6@sentry2.fabrique.social.gouv.fr/49
         secrets: |
           SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
         cache-from: |
