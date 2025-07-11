@@ -1,3 +1,5 @@
+import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
+import { Prisma } from '@/libs/prisma';
 import { RoleEnumSchema, UserSchema, z } from '@/libs/zod';
 
 export const UserWithRoleSchema = UserSchema.extend({
@@ -19,7 +21,13 @@ export const UserParamsIdSchema = z.object({
 
 export const UserIdSchema = UserSchema.shape.id;
 
-export const GetUsersQuerySchema = z.object({
+const columns = [
+  Prisma.UserScalarFieldEnum.email,
+  Prisma.UserScalarFieldEnum.firstName,
+  Prisma.UserScalarFieldEnum.lastName,
+] as const;
+
+export const GetUsersQuerySchema = paginationQueryParamsSchema(columns).extend({
   roleId: z
     .string()
     .transform((val) => val.split(',').map((id) => id.trim()))
@@ -29,6 +37,7 @@ export const GetUsersQuerySchema = z.object({
     .transform((val) => val === 'true')
     .optional(),
 });
+
 export const PatchUserSchema = UserSchema.pick({
   entiteId: true,
   roleId: true,

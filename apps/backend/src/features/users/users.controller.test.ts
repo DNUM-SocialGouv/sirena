@@ -1,7 +1,6 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
-import { Prisma } from '@/libs/prisma';
 import { convertDatesToStrings } from '@/tests/formatter';
 import UsersController from './users.controller';
 import { getUserById, getUsers, patchUser } from './users.service';
@@ -18,7 +17,8 @@ vi.mock('@/config/env', () => ({
 
 vi.mock('@/middlewares/auth.middleware', () => {
   return {
-    default: (_c: Context, next: Next) => {
+    default: (c: Context, next: Next) => {
+      c.set('userId', 'id10');
       return next();
     },
   };
@@ -27,9 +27,19 @@ vi.mock('@/middlewares/auth.middleware', () => {
 vi.mock('@/middlewares/role.middleware', () => {
   return {
     default: () => {
-      return (_c: Context, next: Next) => {
+      return (c: Context, next: Next) => {
+        c.set('roleId', 'ENTITY_ADMIN');
         return next();
       };
+    },
+  };
+});
+
+vi.mock('@/middlewares/entites.middleware', () => {
+  return {
+    default: (c: Context, next: Next) => {
+      c.set('entiteIds', ['e1', 'e2']);
+      return next();
     },
   };
 });
@@ -71,99 +81,58 @@ describe('Users endpoints: /users', () => {
   ];
 
   describe('GET /', () => {
-    it('should return a list of users without filters', async () => {
-      vi.mocked(getUsers).mockResolvedValue(fakeData);
+    it('should return a list of users with filters', async () => {
+      vi.mocked(getUsers).mockResolvedValueOnce({ data: fakeData, total: 2 });
 
-      const res = await client.index.$get({ query: {} });
-
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json).toEqual({ data: convertDatesToStrings(fakeData) });
-      expect(getUsers).toHaveBeenCalledWith({ roleId: undefined, active: undefined });
-    });
-
-    it('should filter users by roleId', async () => {
-      const filteredData = [fakeData[0]];
-      vi.mocked(getUsers).mockResolvedValue(filteredData);
-
-      const res = await client.index.$get({ query: { roleId: 'role1' } });
+      const res = await client.index.$get({ query: { roleId: 'role1', active: 'true' } });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json).toEqual({ data: convertDatesToStrings(filteredData) });
-      expect(getUsers).toHaveBeenCalledWith({ roleId: ['role1'], active: undefined });
+      expect(json).toEqual({ data: convertDatesToStrings(fakeData), meta: { total: 2 } });
+      expect(getUsers).toHaveBeenCalledWith(['e1', 'e2'], { roleId: ['role1'], active: true });
     });
 
-    it('should filter users by active status (true)', async () => {
-      const filteredData = [fakeData[0]];
-      vi.mocked(getUsers).mockResolvedValue(filteredData);
-
-      const res = await client.index.$get({ query: { active: 'true' } });
-
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json).toEqual({ data: convertDatesToStrings(filteredData) });
-      expect(getUsers).toHaveBeenCalledWith({ roleId: undefined, active: true });
-    });
-
-    it('should filter users by active status (false)', async () => {
-      const filteredData = [fakeData[1]];
-      vi.mocked(getUsers).mockResolvedValue(filteredData);
-
-      const res = await client.index.$get({ query: { active: 'false' } });
-
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json).toEqual({ data: convertDatesToStrings(filteredData) });
-      expect(getUsers).toHaveBeenCalledWith({ roleId: undefined, active: false });
-    });
-
-    it('should filter users by both roleId and active status', async () => {
-      const filteredData = [fakeData[0]];
-      vi.mocked(getUsers).mockResolvedValue(filteredData);
+    it('should return meta with offset and limit when provided in query', async () => {
+      vi.mocked(getUsers).mockResolvedValueOnce({ data: fakeData, total: 2 });
 
       const res = await client.index.$get({
         query: {
           roleId: 'role1',
           active: 'true',
+          offset: '10',
+          limit: '5',
         },
       });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json).toEqual({ data: convertDatesToStrings(filteredData) });
-      expect(getUsers).toHaveBeenCalledWith({ roleId: ['role1'], active: true });
-    });
-
-    it('should return empty array when no users match filters', async () => {
-      vi.mocked(getUsers).mockResolvedValue([]);
-
-      const res = await client.index.$get({
-        query: {
-          roleId: 'nonexistent-role',
-        },
+      expect(json).toEqual({
+        data: convertDatesToStrings(fakeData),
+        meta: { offset: 10, limit: 5, total: 2 },
       });
 
-      expect(res.status).toBe(200);
-      const json = await res.json();
-      expect(json).toEqual({ data: [] });
-      expect(getUsers).toHaveBeenCalledWith({ roleId: ['nonexistent-role'], active: undefined });
+      expect(getUsers).toHaveBeenCalledWith(['e1', 'e2'], {
+        roleId: ['role1'],
+        active: true,
+        offset: 10,
+        limit: 5,
+      });
     });
   });
 
   describe('GET /:id', () => {
     it('should return 200 and the user if found', async () => {
-      vi.mocked(getUserById).mockResolvedValue(fakeData[0]);
+      vi.mocked(getUserById).mockResolvedValueOnce(fakeData[0]);
 
       const res = await client[':id'].$get({ param: { id: fakeData[0].id } });
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeData[0]) });
-      expect(getUserById).toHaveBeenCalledWith(fakeData[0].id);
+      expect(getUserById).toHaveBeenCalledWith(fakeData[0].id, ['e1', 'e2']);
     });
 
     it('should return 404 if user is not found', async () => {
-      vi.mocked(getUserById).mockResolvedValue(null);
+      vi.mocked(getUserById).mockResolvedValueOnce(null);
 
       const res = await client[':id'].$get({ param: { id: 'nonexistent-id' } });
       expect(res.status).toBe(404);
@@ -177,26 +146,63 @@ describe('Users endpoints: /users', () => {
   });
 
   describe('PATCH /:id', () => {
-    const updateData = { roleId: 'ADMIN' };
-
     it('should update a user by ID', async () => {
-      vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeData[0], ...updateData });
+      vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeData[0], roleId: 'ENTITY_ADMIN', entiteId: 'e1' });
 
-      const res = await client[':id'].$patch({ param: { id: 'user-id-1' }, json: updateData });
+      const res = await client[':id'].$patch({
+        param: { id: 'user-id-1' },
+        json: { roleId: 'ENTITY_ADMIN', entiteId: 'e1' },
+      });
+
       expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({ data: convertDatesToStrings({ ...fakeData[0], ...updateData }) });
+      expect(await res.json()).toEqual({
+        data: convertDatesToStrings({ ...fakeData[0], roleId: 'ENTITY_ADMIN', entiteId: 'e1' }),
+      });
+    });
+
+    it('should return 400 if role is not assignable', async () => {
+      const res = await client[':id'].$patch({
+        param: { id: 'user-id-1' },
+        json: { roleId: 'SUPER_ADMIN' },
+      });
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ message: 'Role not assignable' });
+    });
+
+    it('should return 400 if entité is not assignable', async () => {
+      const res = await client[':id'].$patch({
+        param: { id: 'user-id-1' },
+        json: { entiteId: 'e99' }, // pas dans ['e1', 'e2']
+      });
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ message: 'Entité not assignable' });
     });
 
     it('should return 404 if user not found', async () => {
-      const err = new Prisma.PrismaClientKnownRequestError('record not found', {
-        code: 'P2025',
-        clientVersion: '4.0.0',
+      vi.mocked(patchUser).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].$patch({
+        param: { id: 'unknown' },
+        json: { roleId: 'ENTITY_ADMIN' },
       });
 
-      vi.mocked(patchUser).mockRejectedValueOnce(err);
-
-      const res = await client[':id'].$patch({ param: { id: 'nonexistent' }, json: updateData });
       expect(res.status).toBe(404);
+      expect(await res.json()).toMatchObject({ message: 'User not found' });
+    });
+
+    it('should prevent user from changing their own role', async () => {
+      vi.resetAllMocks();
+      vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeData[0] });
+
+      const res = await client[':id'].$patch({
+        param: { id: 'id10' },
+        json: { roleId: 'SUPER_ADMIN' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(patchUser).toHaveBeenCalledWith('id10', {}, ['e1', 'e2']);
     });
   });
 });

@@ -30,7 +30,7 @@ describe('sessions.service.ts', () => {
     };
 
     const created = { id: 'sess-1', ...sessionDto };
-    mockedSession.create.mockResolvedValue(created);
+    mockedSession.create.mockResolvedValueOnce(created);
 
     const result = await createSession(sessionDto);
 
@@ -56,7 +56,7 @@ describe('sessions.service.ts', () => {
       pcIdToken: 'pc-id-token',
     };
 
-    mockedSession.findUnique.mockResolvedValue(session);
+    mockedSession.findUnique.mockResolvedValueOnce(session);
 
     const result = await getSession(token);
 
@@ -77,7 +77,7 @@ describe('sessions.service.ts', () => {
       pcIdToken: 'pc-id-token',
     };
 
-    mockedSession.delete.mockResolvedValue(deleted);
+    mockedSession.delete.mockResolvedValueOnce(deleted);
 
     const result = await deleteSession(token);
 

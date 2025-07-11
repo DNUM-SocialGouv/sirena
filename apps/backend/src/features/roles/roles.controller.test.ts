@@ -32,7 +32,7 @@ describe('Roles endpoints: /roles', () => {
         },
       ];
 
-      vi.mocked(getRoles).mockResolvedValue(fakeData);
+      vi.mocked(getRoles).mockResolvedValueOnce(fakeData);
 
       const res = await client.index.$get();
 

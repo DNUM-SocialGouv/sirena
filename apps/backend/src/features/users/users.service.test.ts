@@ -1,12 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { entitesDescendantIdsCache } from '@/features/entites/entites.cache';
 import { prisma } from '@/libs/prisma';
-import { createUser, deleteUser, getUserById, getUserBySub, getUsers } from './users.service';
+import {
+  createUser,
+  deleteUser,
+  getUserById,
+  getUserBySub,
+  getUserEntities,
+  getUsers,
+  patchUser,
+} from './users.service';
 
 vi.mock('@/libs/prisma', () => ({
   prisma: {
     user: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
+      count: vi.fn(),
       create: vi.fn(),
       delete: vi.fn(),
     },
@@ -15,7 +26,16 @@ vi.mock('@/libs/prisma', () => ({
 
 vi.mock('@/config/env', () => ({
   envVars: {
-    SUPER_ADMIN_LIST_EMAIL: '',
+    SUPER_ADMIN_LIST_EMAIL: 'coucou@test.fr;user@admin.fr',
+  },
+}));
+
+vi.mock('@/features/entites/entites.cache', () => ({
+  entitesDescendantIdsCache: {
+    get: vi.fn(),
+    set: vi.fn(),
+    clear: vi.fn(),
+    has: vi.fn(),
   },
 }));
 
@@ -42,60 +62,248 @@ describe('user.service.ts', () => {
     vi.clearAllMocks();
   });
 
-  it('getUsers - should call findMany with correct filters', async () => {
-    mockedUser.findMany.mockResolvedValue([mockUser]);
-    const result = await getUsers({ roleId: 'PENDING', active: true });
-    expect(mockedUser.findMany).toHaveBeenCalledWith({
-      where: { roleId: 'PENDING', active: true },
-      include: { role: true },
+  describe('getUsers()', () => {
+    it('should call findMany with correct filters', async () => {
+      mockedUser.findMany.mockResolvedValueOnce([mockUser]);
+      mockedUser.count.mockResolvedValueOnce(1);
+      const result = await getUsers(null, { roleId: ['PENDING'], active: true });
+      expect(mockedUser.findMany).toHaveBeenCalledWith({
+        where: {
+          roleId: { in: ['PENDING'] },
+          active: true,
+        },
+        skip: 0,
+        orderBy: { lastName: 'asc' },
+        include: { role: true },
+      });
+      expect(result).toEqual({ data: [mockUser], total: 1 });
     });
-    expect(result).toEqual([mockUser]);
-  });
 
-  it('getUserById - should call findUnique with id', async () => {
-    mockedUser.findUnique.mockResolvedValue(mockUser);
-    const result = await getUserById('user1');
-    expect(mockedUser.findUnique).toHaveBeenCalledWith({
-      where: { id: 'user1' },
-      include: { role: true },
+    it('should call findMany with correct filters when RoleId[]', async () => {
+      mockedUser.findMany.mockResolvedValueOnce([mockUser]);
+      mockedUser.count.mockResolvedValueOnce(1);
+      const result = await getUsers(['e1'], { roleId: ['PENDING', 'SUPER_ADMIN'], active: true });
+      expect(mockedUser.findMany).toHaveBeenCalledWith({
+        where: { roleId: { in: ['PENDING', 'SUPER_ADMIN'] }, active: true, entiteId: { in: ['e1'] } },
+        skip: 0,
+        orderBy: { lastName: 'asc' },
+        include: { role: true },
+      });
+      expect(result).toEqual({ data: [mockUser], total: 1 });
     });
-    expect(result).toEqual(mockUser);
+
+    it('should call find many with correct entiteId', async () => {
+      mockedUser.findMany.mockResolvedValueOnce([mockUser]);
+      mockedUser.count.mockResolvedValueOnce(1);
+      const result = await getUsers(['e1']);
+      expect(mockedUser.findMany).toHaveBeenCalledWith({
+        where: { entiteId: { in: ['e1'] } },
+        skip: 0,
+        orderBy: { lastName: 'asc' },
+        include: { role: true },
+      });
+      expect(result).toEqual({ data: [mockUser], total: 1 });
+    });
+
+    it('should filter users by search string (firstName, lastName, email)', async () => {
+      mockedUser.findMany.mockResolvedValueOnce([mockUser]);
+      mockedUser.count.mockResolvedValueOnce(1);
+
+      const result = await getUsers(null, { search: 'doe', limit: 10 });
+
+      expect(mockedUser.findMany).toHaveBeenCalledWith({
+        where: {
+          OR: [
+            { firstName: { contains: 'doe', mode: 'insensitive' } },
+            { lastName: { contains: 'doe', mode: 'insensitive' } },
+            { email: { contains: 'doe', mode: 'insensitive' } },
+          ],
+        },
+        skip: 0,
+        take: 10,
+        orderBy: { lastName: 'asc' },
+        include: { role: true },
+      });
+
+      expect(result).toEqual({ data: [mockUser], total: 1 });
+    });
   });
 
-  it('getUserBySub - should call findUnique with sub', async () => {
-    mockedUser.findUnique.mockResolvedValue(mockUser);
-    const result = await getUserBySub('sub1');
-    expect(mockedUser.findUnique).toHaveBeenCalledWith({ where: { sub: 'sub1' } });
-    expect(result).toEqual(mockUser);
+  describe('getUserById()', () => {
+    it('should call findFirst with id', async () => {
+      mockedUser.findFirst.mockResolvedValueOnce(mockUser);
+      const result = await getUserById('user1', null);
+      expect(mockedUser.findFirst).toHaveBeenCalledWith({
+        where: { id: 'user1' },
+        include: { role: true },
+      });
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should call findFirst with id and entitesId', async () => {
+      mockedUser.findFirst.mockResolvedValueOnce(mockUser);
+      const result = await getUserById('user1', ['e1']);
+      expect(mockedUser.findFirst).toHaveBeenCalledWith({
+        where: { id: 'user1', entiteId: { in: ['e1'] } },
+        include: { role: true },
+      });
+      expect(result).toEqual(mockUser);
+    });
   });
 
-  it('createUser - should call create with default roleId and statutId', async () => {
-    mockedUser.create.mockResolvedValue(mockUser);
-    const dto = {
-      sub: 'sub1',
-      uid: 'uid1',
-      email: 'john@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      pcData: {},
-      entiteId: null,
-    };
-    const result = await createUser(dto);
-    expect(mockedUser.create).toHaveBeenCalledWith({
-      data: {
-        ...dto,
+  describe('getUserBySub()', () => {
+    it('should call findUnique with sub', async () => {
+      mockedUser.findUnique.mockResolvedValueOnce(mockUser);
+      const result = await getUserBySub('sub1');
+      expect(mockedUser.findUnique).toHaveBeenCalledWith({ where: { sub: 'sub1' } });
+      expect(result).toEqual(mockUser);
+    });
+  });
+
+  describe('createUser()', () => {
+    it('should call create with default roleId and statutId', async () => {
+      mockedUser.create.mockResolvedValueOnce(mockUser);
+      const dto = {
+        sub: 'sub1',
+        uid: 'uid1',
+        email: 'john@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        pcData: {},
+        entiteId: null,
+      };
+      const result = await createUser(dto);
+      expect(mockedUser.create).toHaveBeenCalledWith({
+        data: {
+          ...dto,
+          roleId: 'PENDING',
+          statutId: 'NON_RENSEIGNE',
+          pcData: dto.pcData,
+        },
+      });
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should call create with SUPER_ADMIN role if email is in SUPER_ADMIN_LIST_EMAIL', async () => {
+      mockedUser.create.mockResolvedValueOnce(mockUser);
+      const dto = {
+        sub: 'sub1',
+        uid: 'uid1',
+        email: 'user@admin.fr',
+        firstName: 'John',
+        lastName: 'Doe',
+        pcData: {},
+        entiteId: null,
+      };
+      const result = await createUser(dto);
+      expect(mockedUser.create).toHaveBeenCalledWith({
+        data: {
+          ...dto,
+          roleId: 'SUPER_ADMIN',
+          statutId: 'NON_RENSEIGNE',
+          pcData: dto.pcData,
+        },
+      });
+      expect(result).toEqual(mockUser);
+    });
+  });
+
+  describe('deleteUser()', () => {
+    it('should call delete with id', async () => {
+      mockedUser.delete.mockResolvedValueOnce(mockUser);
+      const result = await deleteUser('user1');
+      expect(mockedUser.delete).toHaveBeenCalledWith({ where: { id: 'user1' } });
+      expect(result).toEqual(mockUser);
+    });
+  });
+
+  describe('patchUser()', () => {
+    it('should call update when user is accessible', async () => {
+      mockedUser.findFirst.mockResolvedValueOnce(mockUser);
+      mockedUser.update = vi.fn().mockResolvedValueOnce({ ...mockUser, roleId: 'SUPER_ADMIN' });
+
+      const result = await patchUser('user1', { roleId: 'SUPER_ADMIN' }, null);
+
+      expect(mockedUser.findFirst).toHaveBeenCalledWith({
+        where: { id: 'user1' },
+        include: { role: true },
+      });
+
+      expect(mockedUser.update).toHaveBeenCalledWith({
+        where: { id: 'user1' },
+        data: { roleId: 'SUPER_ADMIN' },
+      });
+
+      expect(result).toEqual({ ...mockUser, roleId: 'SUPER_ADMIN' });
+    });
+
+    it('should return null when user is not accessible', async () => {
+      mockedUser.findFirst.mockResolvedValueOnce(null);
+
+      const result = await patchUser('user1', { roleId: 'SUPER_ADMIN' }, null);
+
+      expect(mockedUser.findFirst).toHaveBeenCalledWith({
+        where: { id: 'user1' },
+        include: { role: true },
+      });
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getUserEntities()', () => {
+    it('should return descendant entites when entiteId exists', async () => {
+      const mockEntiteList = ['e1'];
+
+      mockedUser.findFirst.mockResolvedValueOnce({
+        ...mockUser,
+        entiteId: 'entite-root',
         roleId: 'PENDING',
-        statutId: 'NON_RENSEIGNE',
-        pcData: dto.pcData,
-      },
-    });
-    expect(result).toEqual(mockUser);
-  });
+      });
+      vi.mocked(entitesDescendantIdsCache.get).mockResolvedValueOnce(mockEntiteList);
 
-  it('deleteUser - should call delete with id', async () => {
-    mockedUser.delete.mockResolvedValue(mockUser);
-    const result = await deleteUser('user1');
-    expect(mockedUser.delete).toHaveBeenCalledWith({ where: { id: 'user1' } });
-    expect(result).toEqual(mockUser);
+      const result = await getUserEntities('user1', null);
+
+      expect(mockedUser.findFirst).toHaveBeenCalledWith({
+        where: { id: 'user1' },
+        include: { role: true },
+      });
+
+      expect(entitesDescendantIdsCache.get).toHaveBeenCalledWith('entite-root');
+      expect(result).toEqual(mockEntiteList);
+    });
+
+    it('should return null if user is SUPER_ADMIN', async () => {
+      mockedUser.findFirst.mockResolvedValueOnce({
+        ...mockUser,
+        entiteId: 'entite-root',
+        roleId: 'SUPER_ADMIN',
+      });
+
+      const result = await getUserEntities('user1', null);
+
+      expect(result).toBeNull();
+      expect(entitesDescendantIdsCache.get).not.toHaveBeenCalled();
+    });
+
+    it('should return empty array if user has no entiteId and is not SUPER_ADMIN', async () => {
+      mockedUser.findFirst.mockResolvedValueOnce({
+        ...mockUser,
+        entiteId: null,
+        roleId: 'PENDING',
+      });
+
+      const result = await getUserEntities('user1', null);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty array if user does not exist', async () => {
+      mockedUser.findFirst.mockResolvedValueOnce(null);
+
+      const result = await getUserEntities('user1', null);
+
+      expect(result).toEqual([]);
+    });
   });
 });
