@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/admin/users')({
-  beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
+  beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN]),
   component: RouteComponent,
 });
 

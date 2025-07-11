@@ -10,7 +10,7 @@ const app = factoryWithLogs
 
   .get('/', getProfileRoute, async (c) => {
     const userId = c.get('userId');
-    const user = await getUserById(userId);
+    const user = await getUserById(userId, null);
     if (!user) {
       // never should happen
       const logger = c.get('logger');

@@ -2,22 +2,25 @@ import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
+import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import { getEntiteChainRoute, getEntitesRoute } from './entites.route';
 import { GetEntitiesQuerySchema } from './entites.schema';
-import { getEntiteChain, getEntites } from './entites.service';
+import { getEditableEntitiesChain, getEntites } from './entites.service';
 
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
-  .use(roleMiddleware([ROLES.SUPER_ADMIN]))
+  .use(roleMiddleware([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN]))
+  .use(entitesMiddleware)
 
   .get('/chain/:id?', getEntiteChainRoute, async (c) => {
     const id = c.req.param('id');
     if (!id) {
       return c.json({ data: [] });
     }
-    const chains = await getEntiteChain(id);
+    const entiteIds = c.get('entiteIds');
+    const chains = await getEditableEntitiesChain(id, entiteIds);
     return c.json({ data: chains });
   })
 

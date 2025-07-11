@@ -55,7 +55,7 @@ describe('auth.middleware.ts Auth Helpers', () => {
       pcIdToken: '1',
       createdAt: new Date(),
     };
-    vi.mocked(getSession).mockResolvedValue(fakeSession);
+    vi.mocked(getSession).mockResolvedValueOnce(fakeSession);
 
     const res = await client.test.$get(undefined, {
       headers: {

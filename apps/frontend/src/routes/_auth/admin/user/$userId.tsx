@@ -1,16 +1,8 @@
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
-import {
-  ROLES,
-  type Role,
-  type RoleOption,
-  roleRanks,
-  roles,
-  STATUT_TYPES,
-  type StatutType,
-  statutTypes,
-} from '@sirena/common/constants';
+import { ROLES, type Role, STATUT_TYPES, type StatutType, statutTypes } from '@sirena/common/constants';
+import { getAssignableRoles } from '@sirena/common/utils';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader } from '@/components/loader.tsx';
@@ -20,8 +12,10 @@ import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { useUserStore } from '@/stores/userStore';
 import './$userId.css';
 import { Toast } from '@sirena/ui';
+import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { EntityHierarchySelector } from '@/components/userId/entityHierarchySelector';
+import { profileQueryOptions } from '@/hooks/queries/useProfile.ts';
 
 export const Route = createFileRoute('/_auth/admin/user/$userId')({
   params: {
@@ -29,7 +23,7 @@ export const Route = createFileRoute('/_auth/admin/user/$userId')({
       userId: z.string().parse(params.userId),
     }),
   },
-  beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
+  beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN]),
   head: () => ({
     meta: [
       {
@@ -39,12 +33,6 @@ export const Route = createFileRoute('/_auth/admin/user/$userId')({
   }),
   component: RouteComponent,
 });
-
-const getAssignableRoles = (currentRole: Role): RoleOption[] => {
-  return (Object.entries(roleRanks) as [Role, number][])
-    .filter(([role]) => roleRanks[role] <= roleRanks[currentRole])
-    .map(([role]) => ({ key: role, value: roles[role] }));
-};
 
 function SubmitButton({ isPending }: { isPending: boolean }) {
   return (
@@ -62,6 +50,7 @@ function RouteComponent() {
   const userStore = useUserStore();
   const { data: user, isLoading, error } = useUserById(userId);
   const patchUser = usePatchUser();
+  const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
 
   const [role, setRole] = useState<Role>(ROLES.PENDING);
   const [statut, setStatut] = useState<StatutType>(STATUT_TYPES.NON_RENSEIGNE);
@@ -154,6 +143,7 @@ function RouteComponent() {
             <Select
               className="fr-fieldset__content"
               label="Rôle*"
+              disabled={profile?.id === userId}
               nativeSelectProps={{
                 name: 'role',
                 value: role,

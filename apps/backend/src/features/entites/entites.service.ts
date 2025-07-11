@@ -88,11 +88,59 @@ export async function* getEntiteChainGenerator(entiteId: string) {
 }
 
 export const getEntiteChain = async (entiteId: string) => {
-  const result: { id: string; nomComplet: string }[] = [];
+  const results: { id: string; nomComplet: string }[] = [];
 
   for await (const entite of getEntiteChainGenerator(entiteId)) {
-    result.push(entite);
+    results.push(entite);
   }
 
-  return result.reverse();
+  return results.reverse();
+};
+
+export const getEditableEntitiesChain = async (entiteId: string, editableEntiteIds: string[] | null) => {
+  const chain = await getEntiteChain(entiteId);
+  const isSuperAdmin = editableEntiteIds === null;
+
+  const shouldDisable = (id: string): boolean => {
+    if (isSuperAdmin) return false;
+    if (editableEntiteIds.length === 0) return true;
+    const isPivot = id === editableEntiteIds[0];
+    const isIncluded = editableEntiteIds.includes(id);
+    return !isIncluded || isPivot;
+  };
+
+  return chain.map((entite) => ({
+    ...entite,
+    disabled: shouldDisable(entite.id),
+  }));
+};
+
+export async function* getEntiteDescendantIdsGenerator(entiteId: string) {
+  const stack: string[] = [entiteId];
+
+  while (stack.length > 0) {
+    const currentId = stack.pop();
+
+    const children = await prisma.entite.findMany({
+      where: { entiteMereId: currentId },
+      select: { id: true },
+    });
+    for (const child of children) {
+      stack.push(child.id);
+    }
+    yield children.map((child) => child.id);
+  }
+}
+
+export const getEntiteDescendantIds = async (entiteId: string | null) => {
+  // Should be SUPER_ADMIN
+  if (!entiteId) {
+    return null;
+  }
+  const results: string[] = [entiteId];
+  for await (const entite of getEntiteDescendantIdsGenerator(entiteId)) {
+    results.push(...entite);
+  }
+
+  return results;
 };

@@ -28,8 +28,8 @@ vi.mock('./auth.helper', () => ({
 }));
 
 vi.mock('@/features/sessions/sessions.service', () => ({
-  getSession: vi.fn().mockResolvedValue(null),
-  deleteSession: vi.fn().mockResolvedValue(undefined),
+  getSession: vi.fn(),
+  deleteSession: vi.fn(),
 }));
 
 vi.mock('@/config/env', () => ({
@@ -66,7 +66,7 @@ describe('Auth endpoints: /auth', () => {
         state: 'fakeState',
       };
 
-      vi.mocked(buildAuthorizationUrl).mockResolvedValue(fakeData);
+      vi.mocked(buildAuthorizationUrl).mockResolvedValueOnce(fakeData);
 
       const res = await client.login.$post();
       expect(res.status).toBe(302);
@@ -112,10 +112,10 @@ describe('Auth endpoints: /auth', () => {
         pcIdToken: '1',
         createdAt: new Date(),
       };
-      vi.mocked(getSession).mockResolvedValue(fakeSession);
+      vi.mocked(getSession).mockResolvedValueOnce(fakeSession);
 
       const fakeEndUrl = new URL('https://connect.example.com/end-session?foo=bar');
-      vi.mocked(buildEndSessionUrl).mockResolvedValue(fakeEndUrl);
+      vi.mocked(buildEndSessionUrl).mockResolvedValueOnce(fakeEndUrl);
 
       const res = await client['logout-proconnect'].$post(undefined, {
         headers: {

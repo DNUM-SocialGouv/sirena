@@ -48,18 +48,18 @@ describe('Profile endpoints: /profile', () => {
 
   describe('GET /', () => {
     it('should return user profile if found', async () => {
-      vi.mocked(getUserById).mockResolvedValue(fakeUser);
+      vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
 
       const res = await client.profile.$get('/');
       const json = await res.json();
 
       expect(res.status).toBe(200);
       expect(json).toEqual({ data: convertDatesToStrings(fakeUser) });
-      expect(getUserById).toHaveBeenCalledWith('id1');
+      expect(getUserById).toHaveBeenCalledWith('id1', null);
     });
 
     it('should return 401 if user not found', async () => {
-      vi.mocked(getUserById).mockResolvedValue(null);
+      vi.mocked(getUserById).mockResolvedValueOnce(null);
 
       const res = await client.profile.$get('/');
       const json = await res.json();

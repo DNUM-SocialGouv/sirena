@@ -1,4 +1,4 @@
-import { ROLES, roles } from '@sirena/common/constants';
+import { ROLES, roles, type StatutType, statutTypes } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
 import { Loader } from '@/components/loader.tsx';
@@ -36,12 +36,12 @@ export function AllUsersTab() {
     { key: 'lastName', label: 'Nom' },
     { key: 'firstName', label: 'Prénom' },
     { key: 'role.label', label: 'Rôle' },
-    { key: 'active', label: 'Statut' },
+    { key: 'statutId', label: 'Statut' },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 
   const cells: Cells<User> = {
-    active: (row: User) => (row.active ? 'Actif' : 'Inactif'),
+    statutId: (row: User) => statutTypes[row.statutId as StatutType],
     'custom:editionLabel': (row: User) => (
       <Link to="/admin/user/$userId" className="fr-link" params={{ userId: row.id }}>
         Gérer l'utilisateur

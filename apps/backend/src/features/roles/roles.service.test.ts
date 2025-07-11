@@ -16,7 +16,7 @@ const mockedRoles = vi.mocked(prisma.roleEnum);
 describe('role.service.ts', () => {
   it('getRoles - should call findMany', async () => {
     const mockRoles = Object.entries(roles).map(([id, label]) => ({ id, label }));
-    mockedRoles.findMany.mockResolvedValue(mockRoles);
+    mockedRoles.findMany.mockResolvedValueOnce(mockRoles);
     const result = await getRoles();
     expect(mockedRoles.findMany).toHaveBeenCalled();
     expect(result).toEqual(mockRoles);

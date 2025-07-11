@@ -16,5 +16,7 @@ export const GetEntitiesChainResponseSchema = z.array(
   EntiteSchema.pick({
     nomComplet: true,
     id: true,
+  }).extend({
+    disabled: z.boolean(),
   }),
 );
