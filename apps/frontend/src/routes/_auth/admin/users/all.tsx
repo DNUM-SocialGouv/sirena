@@ -4,7 +4,7 @@ import { AllUsersTab } from '@/components/common/tables/allUsersTab';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/admin/users/all')({
-  beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
+  beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN]),
   head: () => ({
     meta: [
       {
