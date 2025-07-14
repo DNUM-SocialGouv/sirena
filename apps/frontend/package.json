@@ -21,7 +21,7 @@
     "@sirena/backend": "workspace:*",
     "@sirena/common": "workspace:*",
     "@sirena/ui": "workspace:*",
-    "@tanstack/react-query": "^5.81.5",
+    "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-router": "^1.125.4",
     "hono": "catalog:",
     "react": "catalog:",
