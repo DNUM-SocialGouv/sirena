@@ -1,4 +1,5 @@
 import Select from '@codegouvfr/react-dsfr/Select';
+import type React from 'react';
 import { memo } from 'react';
 import { useEntites } from '@/hooks/queries/useEntite';
 
@@ -18,13 +19,15 @@ export function EntityLevelSelectComponent({
   label,
   nullPlaceholder,
   parentLevel,
-}: EntityLevelSelectProps) {
+  disabled,
+}: EntityLevelSelectProps & React.SelectHTMLAttributes<HTMLSelectElement>) {
   const { data: entites } = useEntites(parentLevel);
 
   return (
     <Select
       className="fr-fieldset__content"
       label={label}
+      disabled={disabled}
       nativeSelectProps={{
         name,
         value: level,

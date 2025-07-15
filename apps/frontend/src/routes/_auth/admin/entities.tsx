@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/admin/entities')({
-  beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
+  beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN]),
   component: RouteComponent,
 });
 

@@ -18,6 +18,13 @@
         "require": "./dist/constants/index.js"
       }
     },
+    "./utils": {
+      "import": {
+        "types": "./dist/utils/index.d.js",
+        "import": "./dist/utils/index.js",
+        "require": "./dist/utils/index.js"
+      }
+    },
     "./types": {
       "import": {
         "types": "./dist/types/index.d.js",

@@ -27,6 +27,7 @@ export function EntityHierarchySelectorComponent({ id, setLevel }: EntityHierarc
           level={level1}
           parentLevel={undefined}
           setLevel={setLevel1}
+          disabled={chain?.[0]?.disabled}
           name="entite-administrative"
           label="Entité administrative"
           nullPlaceholder="Pas d'entité administrative sélectionnée"
@@ -38,6 +39,7 @@ export function EntityHierarchySelectorComponent({ id, setLevel }: EntityHierarc
             level={level2}
             parentLevel={level1}
             setLevel={setLevel2}
+            disabled={chain?.[1]?.disabled}
             name="direction"
             label="Direction"
             nullPlaceholder="Pas de service direction sélectionnée"
@@ -50,6 +52,7 @@ export function EntityHierarchySelectorComponent({ id, setLevel }: EntityHierarc
             level={level3}
             parentLevel={level2}
             setLevel={setLevel3}
+            disabled={chain?.[2]?.disabled}
             name="service"
             label="Service"
             nullPlaceholder="Pas de service sélectionnée"

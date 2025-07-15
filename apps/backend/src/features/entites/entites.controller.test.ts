@@ -2,15 +2,15 @@ import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import EntitesController from './entites.controller';
-import { getEntiteChain, getEntites } from './entites.service';
+import { getEditableEntitiesChain, getEntites } from './entites.service';
 
 vi.mock('@/config/env', () => ({
   envVars: {},
 }));
 
 vi.mock('./entites.service', () => ({
-  getEntiteChain: vi.fn(),
   getEntites: vi.fn(),
+  getEditableEntitiesChain: vi.fn(),
 }));
 
 vi.mock('@/middlewares/auth.middleware', () => {
@@ -28,6 +28,15 @@ vi.mock('@/middlewares/role.middleware', () => {
       return (_c: Context, next: Next) => {
         return next();
       };
+    },
+  };
+});
+
+vi.mock('@/middlewares/entites.middleware', () => {
+  return {
+    default: async (c: Context, next: Next) => {
+      c.set('entiteIds', ['id1', 'id2']);
+      return next();
     },
   };
 });
@@ -103,24 +112,24 @@ describe('Entites endpoints: /entites', () => {
 
     it('should return the entity chain for given ID', async () => {
       const mockData = [
-        { id: '1', nomComplet: 'Root' },
-        { id: '2', nomComplet: 'Child' },
+        { id: '1', nomComplet: 'Root', disabled: true },
+        { id: '2', nomComplet: 'Child', disabled: false },
       ];
 
-      vi.mocked(getEntiteChain).mockResolvedValueOnce(mockData);
+      vi.mocked(getEditableEntitiesChain).mockResolvedValueOnce(mockData);
 
       const res = await client.chain[':id?'].$get({ param: { id: '1' } });
 
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ data: mockData });
-      expect(getEntiteChain).toHaveBeenCalledWith('1');
+      expect(getEditableEntitiesChain).toHaveBeenCalledWith('1', ['id1', 'id2']);
     });
 
     it('should return empty array if no ID is provided', async () => {
       const res = await client.chain[':id?'].$get({ param: { id: undefined } });
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ data: [] });
-      expect(getEntiteChain).not.toHaveBeenCalled();
+      expect(getEditableEntitiesChain).not.toHaveBeenCalled();
     });
   });
 });

@@ -51,8 +51,8 @@ describe('auth.helper.ts Auth Helpers', () => {
       duration === envVars.AUTH_TOKEN_EXPIRATION ? fakeAuthExpiry : fakeRefreshExpiry,
     );
 
-    vi.mocked(signRefreshCookie).mockReturnValue('SIGNED_REFRESH_TOKEN_VALUE');
-    vi.mocked(signAuthCookie).mockReturnValue('SIGNED_AUTH_TOKEN_VALUE');
+    vi.mocked(signRefreshCookie).mockReturnValueOnce('SIGNED_REFRESH_TOKEN_VALUE');
+    vi.mocked(signAuthCookie).mockReturnValueOnce('SIGNED_AUTH_TOKEN_VALUE');
 
     // Build a tiny Hono app that calls authUser inside a GET /test route
     const app = new Hono<{ Bindings: AppBindings }>().get('/test', async (c: Context<AppBindings>) => {

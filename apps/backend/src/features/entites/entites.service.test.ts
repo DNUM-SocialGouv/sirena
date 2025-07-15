@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/libs/prisma';
-import { getEntiteChain, getEntiteForUser, getEntites } from './entites.service';
+import {
+  getEditableEntitiesChain,
+  getEntiteChain,
+  getEntiteDescendantIds,
+  getEntiteForUser,
+  getEntites,
+} from './entites.service';
 
 vi.mock('@/libs/prisma', () => ({
   prisma: {
@@ -40,7 +46,7 @@ describe('entites.service', () => {
     });
 
     it('should return entite if organizationUnit matches a single entite', async () => {
-      vi.mocked(prisma.entite.findMany).mockResolvedValue([mockEntite1]);
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite1]);
 
       const result = await getEntiteForUser('ARS-CORSE', '');
       expect(prisma.entite.findMany).toHaveBeenCalledWith(
@@ -66,13 +72,13 @@ describe('entites.service', () => {
     });
 
     it('should return null if multiple entites match orgUnit', async () => {
-      vi.mocked(prisma.entite.findMany).mockResolvedValue([mockEntite1, mockEntite2]);
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite1, mockEntite2]);
       const result = await getEntiteForUser('DUPLICATE', '');
       expect(result).toBeNull();
     });
 
     it('should return null if no matches found', async () => {
-      vi.mocked(prisma.entite.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([]);
       const result = await getEntiteForUser(null, 'nobody@nothing.com');
       expect(result).toBeNull();
     });
@@ -195,6 +201,158 @@ describe('entites.service', () => {
       const result = await getEntiteChain('unknown-id');
       expect(result).toEqual([]);
       expect(prisma.entite.findUnique).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getEntiteDescendantIds()', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should return all descendant IDs for a given entite', async () => {
+      const mockEntite2 = {
+        id: '2',
+        label: 'A',
+        email: 'test@domain.fr',
+        entiteTypeId: 'ENTITE_TYPE_A',
+        entiteMereId: '1',
+        nomComplet: 'Entite A',
+        organizationUnit: '',
+        emailDomain: 'domain.fr',
+      };
+      const mockEntite3 = {
+        id: '3',
+        label: 'A',
+        email: 'test@domain.fr',
+        entiteTypeId: 'ENTITE_TYPE_A',
+        entiteMereId: '2',
+        nomComplet: 'Entite A',
+        organizationUnit: '',
+        emailDomain: 'domain.fr',
+      };
+
+      vi.mocked(prisma.entite.findMany)
+        .mockResolvedValueOnce([mockEntite2])
+        .mockResolvedValueOnce([mockEntite3])
+        .mockResolvedValueOnce([]);
+
+      const results = await getEntiteDescendantIds('1');
+
+      expect(results).toEqual(['1', '2', '3']);
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(3);
+    });
+
+    it('should return empty array if no descendants found', async () => {
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([]);
+
+      const results = await getEntiteDescendantIds('unknown-id');
+
+      expect(results).toEqual(['unknown-id']);
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return null if null provided', async () => {
+      const results = await getEntiteDescendantIds(null);
+
+      expect(results).toEqual(null);
+    });
+  });
+
+  describe('getEditableEntitiesChain()', () => {
+    const chainFromFindUnique = [
+      {
+        id: '5',
+        nomComplet: 'Child B',
+        label: '',
+        entiteMereId: '4',
+        email: '',
+        emailDomain: '',
+        entiteTypeId: '',
+        organizationUnit: '',
+      },
+      {
+        id: '4',
+        nomComplet: 'Child A',
+        label: '',
+        entiteMereId: '3',
+        email: '',
+        emailDomain: '',
+        entiteTypeId: '',
+        organizationUnit: '',
+      },
+      {
+        id: '3',
+        nomComplet: 'Current',
+        label: '',
+        entiteMereId: '2',
+        email: '',
+        emailDomain: '',
+        entiteTypeId: '',
+        organizationUnit: '',
+      },
+      {
+        id: '2',
+        nomComplet: 'Intermediate',
+        label: '',
+        entiteMereId: '1',
+        email: '',
+        emailDomain: '',
+        entiteTypeId: '',
+        organizationUnit: '',
+      },
+      {
+        id: '1',
+        nomComplet: 'Root',
+        label: '',
+        entiteMereId: null,
+        email: '',
+        emailDomain: '',
+        entiteTypeId: '',
+        organizationUnit: '',
+      },
+    ];
+
+    const mockChain = () => {
+      vi.mocked(prisma.entite.findUnique).mockReset();
+      chainFromFindUnique.forEach((entite) => {
+        vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(entite);
+      });
+    };
+
+    it('should return all entities with disabled: false for super admin', async () => {
+      mockChain();
+
+      const result = await getEditableEntitiesChain('5', null);
+      expect(result).toEqual(chainFromFindUnique.toReversed().map((e) => ({ ...e, disabled: false })));
+    });
+
+    it('should disable all if editableEntiteIds is empty', async () => {
+      mockChain();
+
+      const result = await getEditableEntitiesChain('5', []);
+      expect(result).toEqual(chainFromFindUnique.toReversed().map((e) => ({ ...e, disabled: true })));
+    });
+
+    it('should disable everything except allowed and not pivot', async () => {
+      mockChain();
+
+      const result = await getEditableEntitiesChain('5', ['3', '4']);
+
+      expect(result).toEqual(
+        chainFromFindUnique.toReversed().map(({ id, ...rest }) => ({
+          id,
+          ...rest,
+          disabled: id === '3' || !['3', '4'].includes(id),
+        })),
+      );
+    });
+
+    it('should disable everything if only pivot is present', async () => {
+      mockChain();
+
+      const result = await getEditableEntitiesChain('3', ['3']);
+
+      expect(result).toEqual(chainFromFindUnique.toReversed().map((e) => ({ ...e, disabled: true })));
     });
   });
 });
