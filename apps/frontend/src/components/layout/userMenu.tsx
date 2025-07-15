@@ -5,12 +5,13 @@ import { useMemo, useState } from 'react';
 import { profileQueryOptions } from '@/hooks/queries/useProfile';
 import './userMenu.css';
 import { ROLES, type Role } from '@sirena/common/constants';
-import { useNavigate } from '@tanstack/react-router';
+import { useMatches, useNavigate } from '@tanstack/react-router';
 
 export const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { data } = useQuery({ ...profileQueryOptions(), enabled: false });
   const navigate = useNavigate();
+  const matches = useMatches();
 
   const label = useMemo(() => {
     if (!data) {
@@ -27,6 +28,14 @@ export const UserMenu = () => {
     });
   };
 
+  const redirectToHome = () => {
+    navigate({
+      to: '/home',
+    });
+  };
+
+  const isAdminRoute = matches.some((m) => m.routeId.startsWith('/_auth/admin/'));
+
   return (
     <Menu.Root onOpenChange={setIsOpen}>
       <Menu.Trigger isOpen={isOpen} className="fr-icon-account-circle-fill fr-btn--icon-left">
@@ -39,15 +48,28 @@ export const UserMenu = () => {
               {label}
               <span className="fr-hint-text">{email}</span>
             </Menu.Header>
-            <Menu.Separator />
-            {role === ROLES.ENTITY_ADMIN && (
-              <Menu.Item onClick={() => redirectToAdminUsers()}>
-                <div className="user-menu__item">
-                  <span className="fr-icon-user-line user-menu__item__icon" aria-hidden="true" />
-                  Administration
-                </div>
-              </Menu.Item>
-            )}
+            {role === ROLES.ENTITY_ADMIN &&
+              (isAdminRoute ? (
+                <>
+                  <Menu.Separator />
+                  <Menu.Item onClick={redirectToHome}>
+                    <div className="user-menu__item">
+                      <span className="fr-icon-user-line user-menu__item__icon" aria-hidden="true" />
+                      Traiter les requêtes
+                    </div>
+                  </Menu.Item>
+                </>
+              ) : (
+                <>
+                  <Menu.Separator />
+                  <Menu.Item onClick={redirectToAdminUsers}>
+                    <div className="user-menu__item">
+                      <span className="fr-icon-user-line user-menu__item__icon" aria-hidden="true" />
+                      Administration
+                    </div>
+                  </Menu.Item>
+                </>
+              ))}
             <Menu.Separator />
             <Menu.Footer className="user-menu__footer">
               <form action="/api/auth/logout" method="POST">
