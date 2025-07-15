@@ -66,7 +66,9 @@ const app = factoryWithLogs
 
     // check user can assignes permitted entites
     const entiteIds = c.get('entiteIds');
-    if (json.entiteId && entiteIds !== null && !entiteIds.includes(json.entiteId)) {
+    // Only allow assigning descendant entities (not same-level)
+    const assignableEntites = entiteIds === null || entiteIds.length === 0 ? [] : entiteIds.slice(1);
+    if (json.entiteId && entiteIds !== null && !assignableEntites.includes(json.entiteId)) {
       throwHTTPException400BadRequest('Entité not assignable', {
         res: c.res,
       });

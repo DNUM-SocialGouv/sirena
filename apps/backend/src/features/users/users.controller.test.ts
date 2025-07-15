@@ -38,7 +38,7 @@ vi.mock('@/middlewares/role.middleware', () => {
 vi.mock('@/middlewares/entites.middleware', () => {
   return {
     default: (c: Context, next: Next) => {
-      c.set('entiteIds', ['e1', 'e2']);
+      c.set('entiteIds', ['e1', 'e2', 'e3']);
       return next();
     },
   };
@@ -89,7 +89,7 @@ describe('Users endpoints: /users', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeData), meta: { total: 2 } });
-      expect(getUsers).toHaveBeenCalledWith(['e1', 'e2'], { roleId: ['role1'], active: true });
+      expect(getUsers).toHaveBeenCalledWith(['e1', 'e2', 'e3'], { roleId: ['role1'], active: true });
     });
 
     it('should return meta with offset and limit when provided in query', async () => {
@@ -111,7 +111,7 @@ describe('Users endpoints: /users', () => {
         meta: { offset: 10, limit: 5, total: 2 },
       });
 
-      expect(getUsers).toHaveBeenCalledWith(['e1', 'e2'], {
+      expect(getUsers).toHaveBeenCalledWith(['e1', 'e2', 'e3'], {
         roleId: ['role1'],
         active: true,
         offset: 10,
@@ -128,7 +128,7 @@ describe('Users endpoints: /users', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeData[0]) });
-      expect(getUserById).toHaveBeenCalledWith(fakeData[0].id, ['e1', 'e2']);
+      expect(getUserById).toHaveBeenCalledWith(fakeData[0].id, ['e1', 'e2', 'e3']);
     });
 
     it('should return 404 if user is not found', async () => {
@@ -147,16 +147,16 @@ describe('Users endpoints: /users', () => {
 
   describe('PATCH /:id', () => {
     it('should update a user by ID', async () => {
-      vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeData[0], roleId: 'ENTITY_ADMIN', entiteId: 'e1' });
+      vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeData[0], roleId: 'ENTITY_ADMIN', entiteId: 'e2' });
 
       const res = await client[':id'].$patch({
         param: { id: 'user-id-1' },
-        json: { roleId: 'ENTITY_ADMIN', entiteId: 'e1' },
+        json: { roleId: 'ENTITY_ADMIN', entiteId: 'e2' },
       });
 
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({
-        data: convertDatesToStrings({ ...fakeData[0], roleId: 'ENTITY_ADMIN', entiteId: 'e1' }),
+        data: convertDatesToStrings({ ...fakeData[0], roleId: 'ENTITY_ADMIN', entiteId: 'e2' }),
       });
     });
 
@@ -173,7 +173,7 @@ describe('Users endpoints: /users', () => {
     it('should return 400 if entité is not assignable', async () => {
       const res = await client[':id'].$patch({
         param: { id: 'user-id-1' },
-        json: { entiteId: 'e99' }, // pas dans ['e1', 'e2']
+        json: { entiteId: 'e99' },
       });
 
       expect(res.status).toBe(400);
@@ -202,7 +202,7 @@ describe('Users endpoints: /users', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(patchUser).toHaveBeenCalledWith('id10', {}, ['e1', 'e2']);
+      expect(patchUser).toHaveBeenCalledWith('id10', {}, ['e1', 'e2', 'e3']);
     });
   });
 });
