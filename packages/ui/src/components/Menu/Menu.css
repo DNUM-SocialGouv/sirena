@@ -44,6 +44,10 @@
   color: var(--text-label-grey);
   line-height: 1.5rem;
   cursor: pointer;
+
+  &[data-highlighted] {
+    background-color: var(--background-action-low-blue-france-hover);
+  }
 }
 
 .menu__popup__separator {

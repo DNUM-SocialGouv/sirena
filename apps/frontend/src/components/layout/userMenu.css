@@ -9,3 +9,12 @@
   display: flex;
   justify-content: center;
 }
+
+.user-menu__item {
+  & .user-menu__item__icon {
+    margin-right: 0.5rem;
+    &::before {
+      --icon-size: 1rem;
+    }
+  }
+}
