@@ -50,6 +50,9 @@ FROM nginx:stable-alpine AS frontend
 
 RUN rm /etc/nginx/conf.d/default.conf
 
+RUN mkdir -p /var/cache/nginx/client_temp && \
+    chown -R nginx:nginx /var/cache/nginx
+
 USER nginx
 
 COPY ./nginx/frontend.conf /etc/nginx/conf.d/
