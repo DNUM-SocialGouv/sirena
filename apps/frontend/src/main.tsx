@@ -9,6 +9,7 @@ import { router } from '@/lib/router';
 import { toastManager } from '@/lib/toastManager';
 import '@/lib/instrument';
 import * as Sentry from '@sentry/react';
+import '@/styles/main.css';
 
 declare module '@tanstack/react-router' {
   interface Register {

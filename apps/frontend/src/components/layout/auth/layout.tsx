@@ -8,9 +8,9 @@ type AdminLayoutProps = {
 
 export const AuthLayout = ({ children }: AdminLayoutProps) => {
   return (
-    <div>
+    <div className="layout">
       <HeaderMenu homeHref="/" />
-      <main className={'fr-container not-logged-main fr-my-15w'}>{children}</main>
+      <main className={'fr-container main fr-my-15w'}>{children}</main>
       <AppFooter />
     </div>
   );

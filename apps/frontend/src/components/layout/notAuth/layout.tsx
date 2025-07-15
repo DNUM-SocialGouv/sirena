@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { HeaderMenu } from '@/components/layout/header';
-import './layout.css';
 import { AppFooter } from '../footer';
 
 type NotAuthProps = {
@@ -9,7 +8,7 @@ type NotAuthProps = {
 
 export const NotAuth = ({ children }: NotAuthProps) => {
   return (
-    <div>
+    <div className="layout">
       <HeaderMenu homeHref="/" />
       <main className={'fr-container not-auth-main fr-my-15w'}>{children}</main>
       <AppFooter />
