@@ -42,11 +42,11 @@
   "license": "MIT",
   "packageManager": "pnpm@10.11.0",
   "devDependencies": {
-    "@biomejs/biome": "2.0.6",
+    "@biomejs/biome": "catalog:",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@hono/zod-validator": "^0.7.0",
+    "@hono/zod-validator": "^0.7.1",
     "hono": "catalog:",
     "hono-openapi": "catalog:",
     "openapi-types": "^12.1.3",
