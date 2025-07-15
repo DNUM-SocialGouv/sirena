@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import { HeaderMenu } from '@/components/layout/header';
-import './layout.css';
 import { AppFooter } from '@/components/layout/footer';
+import { HeaderMenu } from '@/components/layout/header';
 
 type AdminLayoutProps = {
   children: ReactNode;
@@ -9,10 +8,10 @@ type AdminLayoutProps = {
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
   return (
-    <>
+    <div className="layout">
       <HeaderMenu homeHref="/" />
-      <main className={'fr-container not-logged-main fr-mt-15w'}>{children}</main>
+      <main className={'fr-container main fr-my-15w'}>{children}</main>
       <AppFooter />
-    </>
+    </div>
   );
 };
