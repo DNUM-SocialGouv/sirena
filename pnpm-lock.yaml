@@ -153,7 +153,7 @@ importers:
         version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^5.81.5
-        version: 5.81.5(react@19.1.0)
+        version: 5.83.0(react@19.1.0)
       '@tanstack/react-router':
         specifier: ^1.125.4
         version: 1.125.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1648,11 +1648,11 @@ packages:
     resolution: {integrity: sha512-YL8dGi5ZU+xvtav2boRlw4zrRghkY6hvdcmHhA0RGSJ/CBgzv+cbADW9eYJLx74XMZvIQ1pp6VMbrpXnnM5gHA==}
     engines: {node: '>=12'}
 
-  '@tanstack/query-core@5.81.5':
-    resolution: {integrity: sha512-ZJOgCy/z2qpZXWaj/oxvodDx07XcQa9BF92c0oINjHkoqUPsmm3uG08HpTaviviZ/N9eP1f9CM7mKSEkIo7O1Q==}
+  '@tanstack/query-core@5.83.0':
+    resolution: {integrity: sha512-0M8dA+amXUkyz5cVUm/B+zSk3xkQAcuXuz5/Q/LveT4ots2rBpPTZOzd7yJa2Utsf8D2Upl5KyjhHRY+9lB/XA==}
 
-  '@tanstack/react-query@5.81.5':
-    resolution: {integrity: sha512-lOf2KqRRiYWpQT86eeeftAGnjuTR35myTP8MXyvHa81VlomoAWNEd8x5vkcAfQefu0qtYCvyqLropFZqgI2EQw==}
+  '@tanstack/react-query@5.83.0':
+    resolution: {integrity: sha512-/XGYhZ3foc5H0VM2jLSD/NyBRIOK4q9kfeml4+0x2DlL6xVuAcVEW+hTlTapAmejObg0i3eNqhkr2dT+eciwoQ==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -3556,14 +3556,14 @@ packages:
   sentence-case@3.0.4:
     resolution: {integrity: sha512-8LS0JInaQMCRoQ7YUytAo/xUu5W2XnQxV2HI/6uM6U7CITS1RqPElr30V6uIqyMKM9lJGRVFy5/4CuzcixNYSg==}
 
-  seroval-plugins@1.2.1:
-    resolution: {integrity: sha512-H5vs53+39+x4Udwp4J5rNZfgFuA+Lt+uU+09w1gYBVWomtAl98B+E9w7yC05Xc81/HgLvJdlyqJbU0fJCKCmdw==}
+  seroval-plugins@1.3.2:
+    resolution: {integrity: sha512-0QvCV2lM3aj/U3YozDiVwx9zpH0q8A60CTWIv4Jszj/givcudPb48B+rkU5D51NJ0pTpweGMttHjboPa9/zoIQ==}
     engines: {node: '>=10'}
     peerDependencies:
       seroval: ^1.0
 
-  seroval@1.2.1:
-    resolution: {integrity: sha512-yBxFFs3zmkvKNmR0pFSU//rIsYjuX418TnlDmc2weaq5XFDqDIV/NOMPBoLrbxjLH42p4UzRuXHryXh9dYcKcw==}
+  seroval@1.3.2:
+    resolution: {integrity: sha512-RbcPH1n5cfwKrru7v7+zrZvjLurgHhGyso3HTyGtRivGWgYjbOmGuivCQaORNELjNONoK35nj28EoWul9sb1zQ==}
     engines: {node: '>=10'}
 
   setimmediate@1.0.5:
@@ -5672,11 +5672,11 @@ snapshots:
 
   '@tanstack/history@1.121.34': {}
 
-  '@tanstack/query-core@5.81.5': {}
+  '@tanstack/query-core@5.83.0': {}
 
-  '@tanstack/react-query@5.81.5(react@19.1.0)':
+  '@tanstack/react-query@5.83.0(react@19.1.0)':
     dependencies:
-      '@tanstack/query-core': 5.81.5
+      '@tanstack/query-core': 5.83.0
       react: 19.1.0
 
   '@tanstack/react-router-devtools@1.125.4(@tanstack/react-router@1.125.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@tanstack/router-core@1.125.4)(csstype@3.1.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(solid-js@1.9.5)(tiny-invariant@1.3.3)':
@@ -7638,11 +7638,11 @@ snapshots:
       tslib: 2.8.1
       upper-case-first: 2.0.2
 
-  seroval-plugins@1.2.1(seroval@1.2.1):
+  seroval-plugins@1.3.2(seroval@1.3.2):
     dependencies:
-      seroval: 1.2.1
+      seroval: 1.3.2
 
-  seroval@1.2.1: {}
+  seroval@1.3.2: {}
 
   setimmediate@1.0.5: {}
 
@@ -7690,8 +7690,8 @@ snapshots:
   solid-js@1.9.5:
     dependencies:
       csstype: 3.1.3
-      seroval: 1.2.1
-      seroval-plugins: 1.2.1(seroval@1.2.1)
+      seroval: 1.3.2
+      seroval-plugins: 1.3.2(seroval@1.3.2)
 
   sonic-boom@4.2.0:
     dependencies:
