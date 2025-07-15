@@ -35,6 +35,7 @@ export class ExternalSecrets extends Chart {
               REFRESH_TOKEN_SECRET_KEY: '{{ .REFRESH_TOKEN_SECRET_KEY }}',
               DEMAT_SOCIAL_API_TOKEN: '{{ .DEMAT_SOCIAL_API_TOKEN }}',
               SUPER_ADMIN_LIST_EMAIL: '{{ .SUPER_ADMIN_LIST_EMAIL }}',
+              SENTRY_DSN_BACKEND: '{{ .SENTRY_DSN_BACKEND }}',
             },
           },
         },

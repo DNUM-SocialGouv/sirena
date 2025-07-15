@@ -4,6 +4,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "build:ci": "tsc -p tsconfig.build.json && pnpm sentry:sourcemaps",
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "gql": "tsx src/gql.ts",
     "test": "vitest",
@@ -23,7 +24,8 @@
     "generate:codegen": "graphql-codegen --config codegen.ts",
     "generate:openAPI": "tsx src/swagger/gen-openAPI-swagger.ts",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/backend/' | sed 's|^packages/backend/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
-    "lint": "biome check"
+    "lint": "biome check",
+    "sentry:sourcemaps": "sh -c 'SHORT=$(echo \"$APP_VERSION\" | cut -c1-7) && sentry-cli sourcemaps inject --release \"$SHORT\" --org incubateur --project psn-sirena-backend ./dist && sentry-cli --url https://sentry2.fabrique.social.gouv.fr/ sourcemaps upload --release \"$SHORT\" --org incubateur --project psn-sirena-backend ./dist'"
   },
   "exports": {
     ".": {
@@ -45,6 +47,8 @@
     "@hono/zod-validator": "^0.7.1",
     "@prisma/client": "6.11.1",
     "@scalar/hono-api-reference": "^0.9.10",
+    "@sentry/cli": "^2.46.0",
+    "@sentry/node": "^9.35.0",
     "@sirena/backend-utils": "workspace:*",
     "@sirena/common": "workspace:*",
     "graffle": "8.0.0-next.164",

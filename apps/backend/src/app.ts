@@ -1,4 +1,5 @@
 import { csrf } from 'hono/csrf';
+import '@/libs/instrument';
 import AuthController from '@/features/auth/auth.controller';
 import DematSocialMapperController from '@/features/dematSocialMapping/dematSocialMapping.controller';
 import EntitesController from '@/features/entites/entites.controller';
@@ -28,4 +29,7 @@ export const app = appFactory
   .route('/profile', ProfileController)
   .route('/health', HealthController)
   .route('/version', VersionController)
+  .get('/sentry', (_c) => {
+    throw new Error('Sentry test error');
+  })
   .onError(errorHandler);

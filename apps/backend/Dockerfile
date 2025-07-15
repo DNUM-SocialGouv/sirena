@@ -14,7 +14,6 @@ RUN npm install --global corepack@latest && \
 # Stage pour les dépendances
 FROM base AS deps
 
-USER node
 WORKDIR /app
 
 COPY --chown=node:node package*.json pnpm* ./
@@ -34,7 +33,10 @@ COPY --chown=node:node ./packages/common packages/common
 RUN pnpm --filter @sirena/backend-utils build
 RUN pnpm --filter @sirena/common build
 RUN pnpm --filter @sirena/backend db:generate
-RUN pnpm --filter @sirena/backend build
+RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
+    export SENTRY_AUTH_TOKEN=$(cat /run/secrets/SENTRY_AUTH_TOKEN) \
+    export APP_VERSION=$APP_VERSION \
+    && pnpm --filter @sirena/backend build:ci
 
 # Stage final
 FROM base AS server
