@@ -24,7 +24,7 @@ const COMMON_CONFIG = {
   },
   targetPorts: {
     backend: k8s.IntOrString.fromNumber(4000),
-    frontend: k8s.IntOrString.fromNumber(80),
+    frontend: k8s.IntOrString.fromNumber(8080),
   },
 } as const;
 
