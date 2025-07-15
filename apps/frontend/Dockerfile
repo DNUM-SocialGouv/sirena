@@ -46,19 +46,16 @@ RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
     export SENTRY_AUTH_TOKEN=$(cat /run/secrets/SENTRY_AUTH_TOKEN) \
     && pnpm --filter pnpm --filter @sirena/frontend build
 
-FROM nginx:stable-alpine AS frontend
+FROM nginxinc/nginx-unprivileged:stable-alpine AS frontend
 
 RUN rm /etc/nginx/conf.d/default.conf
 
-RUN mkdir -p /var/cache/nginx/client_temp && \
-    chown -R nginx:nginx /var/cache/nginx
+COPY ./nginx/frontend.conf /etc/nginx/conf.d/
 
 USER nginx
-
-COPY ./nginx/frontend.conf /etc/nginx/conf.d/
 
 # copy React build output
 COPY --from=builder --chown=nginx:nginx /app/apps/frontend/dist   /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
