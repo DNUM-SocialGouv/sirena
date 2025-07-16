@@ -1,3 +1,4 @@
+import { type RequeteStatutType, requeteStatutType } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -33,6 +34,7 @@ export function RequetesEntite() {
     { key: 'custom:lieu', label: 'Lieu de survenue' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },
     { key: 'custom:Attribution', label: 'Attribution' },
+    { key: 'custom:statut', label: 'Statut' },
     { key: 'custom:action', label: 'Action' },
   ];
 
@@ -42,6 +44,10 @@ export function RequetesEntite() {
         Éditer mapping
       </Link>
     ),
+    'custom:statut': (row) =>
+      row.requetesEntiteStates[0]?.statutId
+        ? requeteStatutType[row.requetesEntiteStates[0]?.statutId as RequeteStatutType]
+        : '',
   };
 
   return (
