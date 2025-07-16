@@ -22,10 +22,10 @@ export async function seedSuperAdmin(prisma: PrismaClient) {
           where: { email: superAdminEmail },
           data: { roleId: superAdminId },
         });
-        console.log(`👑 Rôle SUPER_ADMIN assigné à: ${superAdminEmail}`);
+        console.log(`  👑 Rôle SUPER_ADMIN assigné à: ${superAdminEmail}`);
       }
     } else {
-      console.log(`❌ Utilisateur non trouvé: ${superAdminEmail}`);
+      console.log(`  ❌ Utilisateur non trouvé: ${superAdminEmail}`);
     }
   }
 

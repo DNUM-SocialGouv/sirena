@@ -5,6 +5,7 @@ import DematSocialMapperController from '@/features/dematSocialMapping/dematSoci
 import EntitesController from '@/features/entites/entites.controller';
 import HealthController from '@/features/health/health.controller';
 import ProfileController from '@/features/profile/profile.controller';
+import RequetesEntiteController from '@/features/requetesEntite/requetesEntite.controller';
 import RolesController from '@/features/roles/roles.controller';
 import UsersController from '@/features/users/users.controller';
 import VersionController from '@/features/version/version.controller';
@@ -26,10 +27,11 @@ export const app = appFactory
   .route('/users', UsersController)
   .route('/entites', EntitesController)
   .route('/demat-social-mapping', DematSocialMapperController)
+  .route('/requetes-entite', RequetesEntiteController)
   .route('/profile', ProfileController)
   .route('/health', HealthController)
   .route('/version', VersionController)
-  .get('/sentry', (_c) => {
+  .get('/sentry', () => {
     throw new Error('Sentry test error');
   })
   .onError(errorHandler);

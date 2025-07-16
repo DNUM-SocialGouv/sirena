@@ -1,7 +1,7 @@
 import Select from '@codegouvfr/react-dsfr/Select';
 import type React from 'react';
 import { memo } from 'react';
-import { useEntites } from '@/hooks/queries/useEntite';
+import { useEntites } from '@/hooks/queries/useEntites';
 
 type EntityLevelSelectProps = {
   parentLevel: string | undefined;
@@ -21,7 +21,7 @@ export function EntityLevelSelectComponent({
   parentLevel,
   disabled,
 }: EntityLevelSelectProps & React.SelectHTMLAttributes<HTMLSelectElement>) {
-  const { data: entites } = useEntites(parentLevel);
+  const { data: response } = useEntites(parentLevel);
 
   return (
     <Select
@@ -35,7 +35,7 @@ export function EntityLevelSelectComponent({
       }}
     >
       <option value="">{nullPlaceholder}</option>
-      {entites?.map((entite) => (
+      {response?.data?.map((entite) => (
         <option key={entite.id} value={entite.id}>
           {entite.nomComplet}
         </option>

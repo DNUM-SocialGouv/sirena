@@ -1,5 +1,5 @@
 import { memo, useEffect } from 'react';
-import { useEntiteChain } from '@/hooks/queries/useEntite';
+import { useEntiteChain } from '@/hooks/queries/useEntites';
 import { useEntityLevels } from '@/hooks/useEntitiesLevel';
 import { EntityLevelSelect } from './entityLevelSelect';
 

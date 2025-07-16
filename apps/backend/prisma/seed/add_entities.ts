@@ -17,7 +17,7 @@ export async function seedEntites(prisma: PrismaClient) {
   }
 
   for (const result of results) {
-    console.log(`✅ ${result.table} : ${result.added} ajoutés`);
+    console.log(`  ✅ ${result.table} : ${result.added} ajoutés`);
   }
 
   console.log('🎉 Seeding pour des entites terminé !');

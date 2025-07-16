@@ -9,7 +9,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 export function DematSocialMappings() {
   const queries = useSearch({ from: '/_auth/admin/demat-social-mappings' });
 
-  const { data, isLoading, error } = useDematSocialMappings(queries);
+  const { data: response, isLoading, error } = useDematSocialMappings(queries);
   const [search, setSearch] = useState(queries.search ?? '');
   const debouncedSearch = useDebounce(search, 300);
   const navigate = useNavigate({ from: '/admin/demat-social-mappings' });
@@ -33,7 +33,7 @@ export function DematSocialMappings() {
     );
   }
 
-  type DematSocialMapping = Exclude<typeof data, undefined>[number];
+  type DematSocialMapping = Exclude<typeof response, undefined>['data'][number];
 
   const columns: Column<DematSocialMapping>[] = [
     { key: 'id', label: 'Sirena id' },
@@ -85,7 +85,13 @@ export function DematSocialMappings() {
       {isLoading ? (
         <Loader />
       ) : (
-        <DataTable title="Mappings de dematSocial" rowId="id" data={data ?? []} columns={columns} cells={cells} />
+        <DataTable
+          title="Mappings de dematSocial"
+          rowId="id"
+          data={response?.data ?? []}
+          columns={columns}
+          cells={cells}
+        />
       )}
     </>
   );

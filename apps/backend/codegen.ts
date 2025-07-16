@@ -19,6 +19,12 @@ const config: CodegenConfig = {
       plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
       config: {
         useTypeImports: true,
+        scalars: {
+          ISO8601DateTime: 'string',
+          ISO8601Date: 'string',
+          BigInt: 'bigint',
+          URL: 'string',
+        },
       },
     },
   },

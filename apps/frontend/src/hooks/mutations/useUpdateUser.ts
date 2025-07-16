@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { type PatchUserJson, patchUserById } from '@/lib/api/fetchUsers';
 import { queryClient } from '@/lib/queryClient';
-import { useUserByIdQueryOptions } from '../queries/useUser';
+import { useUserByIdQueryOptions } from '../queries/useUsers';
 
 export const usePatchUser = () => {
   return useMutation({

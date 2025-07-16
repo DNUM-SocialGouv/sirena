@@ -5,8 +5,8 @@ import type { QueryParams } from '@/types/pagination.type.ts';
 export async function fetchDematSocialMappings(query: QueryParams = {}) {
   const res = await client['demat-social-mapping'].$get({ query });
   await handleRequestErrors(res);
-  const { data } = await res.json();
-  return data;
+  const { data, meta } = await res.json();
+  return { data, meta };
 }
 export async function fetchDematSocialMappingById(id: string) {
   const res = await client['demat-social-mapping'][':id'].$get({ param: { id } });

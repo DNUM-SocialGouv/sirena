@@ -1,11 +1,12 @@
 import { client } from '@/lib/api/hc.ts';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery';
+import type { GetUsersQuery } from '@/types/queries.type';
 
-export async function fetchUsers(query: { roleId?: string; active?: 'true' | 'false' }) {
+export async function fetchUsers(query: GetUsersQuery) {
   const res = await client.users.$get({ query });
   await handleRequestErrors(res);
-  const { data } = await res.json();
-  return data;
+  const { data, meta } = await res.json();
+  return { data, meta };
 }
 
 export async function fetchUserById(id: string) {

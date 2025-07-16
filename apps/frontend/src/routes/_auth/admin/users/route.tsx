@@ -28,7 +28,7 @@ export function RouteComponent() {
 
   return (
     <div className="home">
-      <h2>Gestion des utilisateurs et des habilitations</h2>
+      <h1>Gestion des utilisateurs et des habilitations</h1>
       <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
         <Outlet />
       </Tabs>

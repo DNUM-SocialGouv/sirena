@@ -3,8 +3,10 @@ import { ROLES } from '@sirena/common/constants';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useMemo } from 'react';
+import { RequetesEntite } from '@/components/common/tables/requetesEntites.tsx';
 import { profileQueryOptions } from '@/hooks/queries/useProfile';
 import { requireAuth } from '@/lib/auth-guards';
+import { QueryParamsSchema } from '@/schemas/pagination.schema';
 import { useUserStore } from '@/stores/userStore';
 
 export const Route = createFileRoute('/_auth/_user/home')({
@@ -16,6 +18,7 @@ export const Route = createFileRoute('/_auth/_user/home')({
       },
     ],
   }),
+  validateSearch: QueryParamsSchema,
   component: RouteComponent,
 });
 
@@ -28,7 +31,7 @@ function RouteComponent() {
   return (
     <div className="home">
       <h1>Bienvenue {label}</h1>
-      {userStore.role === ROLES.PENDING && <PendingAlert />}
+      {userStore.role === ROLES.PENDING ? <PendingAlert /> : <RequetesEntite />}
     </div>
   );
 }
