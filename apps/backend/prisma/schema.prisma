@@ -89,7 +89,8 @@ model RoleEnum {
 
 model Requete {
   id            String   @id @default(uuid())
-  dematSocialId String   @unique
+  number        Int      @default(autoincrement())
+  dematSocialId Int?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -98,7 +99,7 @@ model Requete {
 
 model RequeteEntite {
   id        String   @id @default(uuid())
-  number    String
+  number    Int      @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

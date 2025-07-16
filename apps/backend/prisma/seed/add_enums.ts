@@ -11,6 +11,7 @@ import {
   professionDomicileTypes,
   professionTypes,
   receptionTypes,
+  requeteStatutType,
   roles,
   statutTypes,
   transportTypes,
@@ -162,6 +163,18 @@ async function seedReceptionTypeEnum(prisma: PrismaClient) {
   return { table: 'receptionTypeEnum', added };
 }
 
+async function seedRequeteStatutEnum(prisma: PrismaClient) {
+  let added = 0;
+  for (const [id, label] of Object.entries(requeteStatutType)) {
+    const exists = await prisma.requeteStatutEnum.findUnique({ where: { id } });
+    if (!exists) {
+      await prisma.requeteStatutEnum.create({ data: { id, label } });
+      added++;
+    }
+  }
+  return { table: 'requeteStatutEnum', added };
+}
+
 async function seedRoleEnum(prisma: PrismaClient) {
   let added = 0;
   for (const [id, label] of Object.entries(roles)) {
@@ -214,6 +227,7 @@ export async function seedEnums(prisma: PrismaClient) {
     seedProfessionDomicileTypeEnum(prisma),
     seedProfessionTypeEnum(prisma),
     seedReceptionTypeEnum(prisma),
+    seedRequeteStatutEnum(prisma),
     seedRoleEnum(prisma),
     seedStatutEnum(prisma),
     seedTransportTypeEnum(prisma),
@@ -221,9 +235,9 @@ export async function seedEnums(prisma: PrismaClient) {
 
   for (const result of results) {
     if (result.status === 'fulfilled') {
-      console.log(`✅ ${result.value.table} : ${result.value.added} ajoutés`);
+      console.log(`  ✅ ${result.value.table} : ${result.value.added} ajoutés`);
     } else {
-      console.log('❌ Erreur pendant le seeding :', result.reason);
+      console.log('  ❌ Erreur pendant le seeding :', result.reason);
     }
   }
 
