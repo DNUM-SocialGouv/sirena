@@ -83,17 +83,15 @@ query getDossiersMetadata($demarcheNumber: Int!) {
   }
 }
 
-query getDossiers($demarcheNumber: Int!) {
+query getDossiersByDate($demarcheNumber: Int!, $createdSince: ISO8601DateTime) {
   demarche(number: $demarcheNumber) {
-    dossiers {
-      edges {
-        node {
-          id
-          number
-          state
-          dateDerniereModification
-          dateDepot
-        }
+    dossiers(createdSince: $createdSince) {
+      nodes {
+        id
+        number
+        dateDepot
+        dateDerniereModification
+        state
       }
     }
   }

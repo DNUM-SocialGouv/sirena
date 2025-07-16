@@ -1,3 +1,3 @@
-import { getRequetesMetaData } from '@/features/dematSocial/dematSocial.service';
+import { importRequetes } from '@/features/dematSocial/dematSocial.service';
 
-getRequetesMetaData();
+importRequetes();
