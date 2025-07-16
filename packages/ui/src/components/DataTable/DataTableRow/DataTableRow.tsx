@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { memo } from 'react';
 import { CheckboxCell } from '../CheckboxCell/CheckboxCell';
 import { DataCell } from '../DataCell/DataCell';
-import type { Column, ColumnKey, RowWithId } from '../DataTable.types';
+import type { Column, ColumnKey, RowWithId } from '../DataTable.type';
 
 type DataTableRowProps<Datum extends RowWithId<RowId>, RowId extends string> = {
   row: Datum;

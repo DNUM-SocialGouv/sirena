@@ -1,4 +1,4 @@
-import type { Column, ColumnKey, NestedKeys, OnSortChangeParams, Row, RowWithId } from './DataTable.types';
+import type { Column, ColumnKey, NestedKeys, OnSortChangeParams, Row, RowWithId } from './DataTable.type';
 import type { OnSortChangeParams as BaseSortParams } from './SortButton/SortButton';
 
 describe('Type‐level tests for ./DataTable.types', () => {
