@@ -13,16 +13,16 @@ export function RequetesEntite() {
   if (error) {
     return (
       <div className="error-state">
-        <p>Erreur lors du chargement des requetes</p>
+        <p>Erreur lors du chargement des requêtes</p>
       </div>
     );
   }
 
-  const [title, setTitle] = useState('Requetes');
+  const [title, setTitle] = useState('Requêtes');
 
   useEffect(() => {
     if (data) {
-      setTitle(`Requetes: ${data.meta.total}`);
+      setTitle(`Requêtes: ${data.meta.total}`);
     }
   }, [data]);
 
