@@ -4,7 +4,7 @@ import { resolver } from 'hono-openapi/zod';
 import type { OpenAPIV3 } from 'openapi-types';
 import { MetaSchema } from '../schemas/apiResponses.schema';
 import { type ZodSchema, z } from '../utils/zod';
-import { openApi401Unauthorized } from './apiErrors.helpers';
+import { openApi401Unauthorized } from './apiErrors.helper';
 
 type OpenApiResponse = {
   [code: number]: {

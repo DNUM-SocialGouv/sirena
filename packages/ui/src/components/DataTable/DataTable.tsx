@@ -1,7 +1,7 @@
 import { type JSX, memo, useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import { isPrimitive } from '../../utils/guards';
 import type { Primitive } from '../../utils/types';
-import type { Cells, Column, ColumnKey, OnSortChangeParams, Row, RowWithId } from './DataTable.types';
+import type { Cells, Column, ColumnKey, OnSortChangeParams, Row, RowWithId } from './DataTable.type';
 import { DataTableHeader } from './DataTableHeader/DataTableHeader';
 import { DataTableRow } from './DataTableRow/DataTableRow';
 import type { SortDirection } from './SortButton/SortButton';
@@ -197,4 +197,4 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
 };
 
 export const DataTable = memo(DataTableComponent) as typeof DataTableComponent;
-export * from './DataTable.types';
+export * from './DataTable.type';

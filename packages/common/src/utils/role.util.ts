@@ -1,5 +1,5 @@
-import { type RoleOption, roleRanks, roles } from '../constants/roles.constants';
-import type { Role } from '../types/roles.types';
+import { type RoleOption, roleRanks, roles } from '../constants/role.constant';
+import type { Role } from '../types/role.type';
 
 export const getAssignableRoles = (currentRole: Role): RoleOption[] => {
   return (Object.entries(roleRanks) as [Role, number][])
