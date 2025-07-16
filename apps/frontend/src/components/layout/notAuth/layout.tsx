@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { HeaderMenu } from '@/components/layout/header';
 import { AppFooter } from '../footer';
+import './layout.css';
 
 type NotAuthProps = {
   children: ReactNode;

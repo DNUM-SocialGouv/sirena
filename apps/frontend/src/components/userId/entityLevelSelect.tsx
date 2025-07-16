@@ -1,7 +1,7 @@
 import Select from '@codegouvfr/react-dsfr/Select';
 import type React from 'react';
 import { memo } from 'react';
-import { useEntites } from '@/hooks/queries/useEntite';
+import { useEntites } from '@/hooks/queries/useEntites';
 
 type EntityLevelSelectProps = {
   parentLevel: string | undefined;

@@ -1,7 +1,8 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { fetchUserById, fetchUsers } from '@/lib/api/fetchUsers';
+import type { GetUsersQuery } from '@/types/queries.type';
 
-export const useUsers = (query?: { roleId?: string; active?: 'true' | 'false' }, enabled = true) =>
+export const useUsers = (query?: GetUsersQuery, enabled = true) =>
   useQuery({
     queryKey: ['users', query],
     queryFn: () => fetchUsers(query || {}),

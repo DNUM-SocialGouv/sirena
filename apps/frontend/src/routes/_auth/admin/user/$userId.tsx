@@ -7,7 +7,7 @@ import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader } from '@/components/loader.tsx';
 import { usePatchUser } from '@/hooks/mutations/useUpdateUser';
-import { useUserById } from '@/hooks/queries/useUser';
+import { useUserById } from '@/hooks/queries/useUsers';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { useUserStore } from '@/stores/userStore';
 import './$userId.css';
