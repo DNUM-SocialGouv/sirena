@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { envVars } from '@/config/env';
-import { createRequeteFromDematSocial } from '@/features/requetes/requetes.service';
+import { createOrGetFromDematSocial } from '@/features/requetes/requetes.service';
 import { GetDossierDocument, GetDossiersByDateDocument, GetDossiersMetadataDocument, graffle } from '@/libs/graffle';
 
 export const getRequetes = async (createdSince?: Date) => {
@@ -30,11 +30,22 @@ export const getRequete = async (id: number) => {
 };
 
 export const importRequetes = async (createdSince?: Date) => {
+  if (createdSince) {
+    console.log(`Importing requetes from ${createdSince.toUTCString()}`);
+  } else {
+    console.log('Importing all requetes');
+  }
   const dossiers = await getRequetes(createdSince);
+  let i = 0;
   for (const dossier of dossiers) {
     // const data = await getRequete(dossier.number);
-    await createRequeteFromDematSocial({
+    const requete = await createOrGetFromDematSocial({
       dematSocialId: dossier.number,
     });
+
+    if (requete) {
+      i += 1;
+    }
   }
+  console.log(`${i} Requete(s) added`);
 };
