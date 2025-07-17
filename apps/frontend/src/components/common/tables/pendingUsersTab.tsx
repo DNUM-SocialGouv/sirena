@@ -2,7 +2,7 @@ import { ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
 import { Loader } from '@/components/loader.tsx';
-import { useUsers } from '@/hooks/queries/useUsers';
+import { useUsers } from '@/hooks/queries/users.hook';
 
 export function PendingUsersTab() {
   const pendingRoleId = ROLES.PENDING;
@@ -21,14 +21,7 @@ export function PendingUsersTab() {
     );
   }
 
-  if (!response) {
-    return (
-      <div className="empty-state">
-        <p>Aucune donnée disponible</p>
-      </div>
-    );
-  }
-  type User = (typeof response)['data'][number];
+  type User = (typeof response.data)[number];
 
   const columns: Column<User>[] = [
     { key: 'lastName', label: 'Nom' },

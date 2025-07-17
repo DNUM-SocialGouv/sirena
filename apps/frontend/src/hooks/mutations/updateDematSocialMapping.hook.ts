@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { type PatchDematSocialMappingJson, patchDematSocialMappingById } from '@/lib/api/fetchDematSocialMappings';
 import { queryClient } from '@/lib/queryClient';
-import { useDematSocialMappingQueryOptions } from '../queries/useDematSocialMapping';
+import { useDematSocialMappingQueryOptions } from '../queries/dematSocialMapping.hook';
 
 export const usePatchDematSocialMapping = () => {
   return useMutation({

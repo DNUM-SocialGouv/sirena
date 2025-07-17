@@ -6,8 +6,8 @@ import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { Loader } from '@/components/loader.tsx';
-import { usePatchDematSocialMapping } from '@/hooks/mutations/useUpdateDematSocialMapping';
-import { useDematSocialMapping } from '@/hooks/queries/useDematSocialMapping';
+import { usePatchDematSocialMapping } from '@/hooks/mutations/updateDematSocialMapping.hook';
+import { useDematSocialMapping } from '@/hooks/queries/dematSocialMapping.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import './$dematSocialMappingId.css';
 

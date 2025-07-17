@@ -2,7 +2,7 @@ import { ROLES, roles, type StatutType, statutTypes } from '@sirena/common/const
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
 import { Loader } from '@/components/loader.tsx';
-import { useUsers } from '@/hooks/queries/useUsers';
+import { useUsers } from '@/hooks/queries/users.hook';
 
 export function AllUsersTab() {
   const nonPendingRoleIds = Object.keys(roles)
@@ -23,13 +23,6 @@ export function AllUsersTab() {
     );
   }
 
-  if (!response) {
-    return (
-      <div className="empty-state">
-        <p>Aucune donnée disponible</p>
-      </div>
-    );
-  }
   type User = (typeof response.data)[number];
 
   const columns: Column<User>[] = [

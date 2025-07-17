@@ -3,7 +3,7 @@ import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Loader } from '@/components/loader.tsx';
-import { useDematSocialMappings } from '@/hooks/queries/useDematSocialMapping';
+import { useDematSocialMappings } from '@/hooks/queries/dematSocialMapping.hook';
 import { useDebounce } from '@/hooks/useDebounce';
 
 export function DematSocialMappings() {
@@ -33,6 +33,7 @@ export function DematSocialMappings() {
     );
   }
 
+  // TODO check why undefined
   type DematSocialMapping = Exclude<typeof response, undefined>['data'][number];
 
   const columns: Column<DematSocialMapping>[] = [
