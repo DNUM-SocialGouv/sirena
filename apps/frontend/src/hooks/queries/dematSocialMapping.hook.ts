@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchDematSocialMappingById, fetchDematSocialMappings } from '@/lib/api/fetchDematSocialMappings';
 import type { QueryParams } from '@/types/pagination.type.ts';
 
+type FetchDematSocialMappingsReturn = Awaited<ReturnType<typeof fetchDematSocialMappings>>;
+
 export const useDematSocialMappingsQueryOptions = (query: QueryParams = {}) => ({
   queryKey: ['dematSocialMappings', query],
   queryFn: () => fetchDematSocialMappings(query),
@@ -9,7 +11,8 @@ export const useDematSocialMappingsQueryOptions = (query: QueryParams = {}) => (
   initialData: { data: [], meta: { total: 0 } },
 });
 
-export const useDematSocialMappings = (query: QueryParams = {}) => useQuery(useDematSocialMappingsQueryOptions(query));
+export const useDematSocialMappings = (query: QueryParams = {}) =>
+  useQuery<FetchDematSocialMappingsReturn>(useDematSocialMappingsQueryOptions(query));
 
 export const useDematSocialMappingQueryOptions = (id: string) => ({
   queryKey: ['dematSocialMapping', id],

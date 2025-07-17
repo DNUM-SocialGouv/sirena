@@ -33,8 +33,7 @@ export function DematSocialMappings() {
     );
   }
 
-  // TODO check why undefined
-  type DematSocialMapping = Exclude<typeof response, undefined>['data'][number];
+  type DematSocialMapping = (typeof response.data)[number];
 
   const columns: Column<DematSocialMapping>[] = [
     { key: 'id', label: 'Sirena id' },
@@ -86,13 +85,7 @@ export function DematSocialMappings() {
       {isLoading ? (
         <Loader />
       ) : (
-        <DataTable
-          title="Mappings de dematSocial"
-          rowId="id"
-          data={response?.data ?? []}
-          columns={columns}
-          cells={cells}
-        />
+        <DataTable title="Mappings de dematSocial" rowId="id" data={response.data} columns={columns} cells={cells} />
       )}
     </>
   );
