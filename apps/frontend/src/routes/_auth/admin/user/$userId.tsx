@@ -6,8 +6,8 @@ import { getAssignableRoles } from '@sirena/common/utils';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader } from '@/components/loader.tsx';
-import { usePatchUser } from '@/hooks/mutations/useUpdateUser';
-import { useUserById } from '@/hooks/queries/useUsers';
+import { usePatchUser } from '@/hooks/mutations/updateUser.hook';
+import { useUserById } from '@/hooks/queries/users.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { useUserStore } from '@/stores/userStore';
 import './$userId.css';
@@ -15,7 +15,7 @@ import { Toast } from '@sirena/ui';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { EntityHierarchySelector } from '@/components/userId/entityHierarchySelector';
-import { profileQueryOptions } from '@/hooks/queries/useProfile.ts';
+import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 
 export const Route = createFileRoute('/_auth/admin/user/$userId')({
   params: {

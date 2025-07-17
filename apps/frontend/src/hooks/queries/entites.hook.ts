@@ -6,6 +6,7 @@ export const useEntitesQueryOptions = (id: string | undefined, query: QueryParam
   queryKey: id ? ['entites', id, query] : ['entites', query],
   queryFn: () => fetchEntites(id, query),
   retry: false,
+  initialData: { data: [], meta: { total: 0 } },
 });
 
 export const useEntites = (id: string | undefined, query: QueryParams = {}) =>

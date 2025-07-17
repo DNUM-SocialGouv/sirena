@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { RequetesEntite } from '@/components/common/tables/requetesEntites.tsx';
-import { profileQueryOptions } from '@/hooks/queries/useProfile';
+import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { requireAuth } from '@/lib/auth-guards';
 import { QueryParamsSchema } from '@/schemas/pagination.schema';
 import { useUserStore } from '@/stores/userStore';

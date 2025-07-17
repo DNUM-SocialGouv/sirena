@@ -3,12 +3,12 @@ import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Loader } from '@/components/loader.tsx';
-import { useRequetesEntite } from '@/hooks/queries/useRequetesEntite';
+import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 
 export function RequetesEntite() {
   const queries = useSearch({ from: '/_auth/_user/home' });
 
-  const { data, isLoading, error } = useRequetesEntite(queries);
+  const { data: response, isLoading, error } = useRequetesEntite(queries);
 
   if (error) {
     return (
@@ -21,12 +21,12 @@ export function RequetesEntite() {
   const [title, setTitle] = useState('Requêtes');
 
   useEffect(() => {
-    if (data) {
-      setTitle(`Requêtes: ${data.meta.total}`);
+    if (response) {
+      setTitle(`Requêtes: ${response.meta.total}`);
     }
-  }, [data]);
+  }, [response]);
 
-  type DematSocialMapping = Exclude<typeof data, undefined>['data'][number];
+  type DematSocialMapping = (typeof response.data)[number];
 
   const columns: Column<DematSocialMapping>[] = [
     { key: 'number', label: 'Numero' },
@@ -55,7 +55,7 @@ export function RequetesEntite() {
       {isLoading ? (
         <Loader />
       ) : (
-        <DataTable title={title} rowId="id" data={data?.data ?? []} columns={columns} cells={cells} />
+        <DataTable title={title} rowId="id" data={response.data} columns={columns} cells={cells} />
       )}
     </>
   );

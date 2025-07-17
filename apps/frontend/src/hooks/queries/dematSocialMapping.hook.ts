@@ -6,6 +6,7 @@ export const useDematSocialMappingsQueryOptions = (query: QueryParams = {}) => (
   queryKey: ['dematSocialMappings', query],
   queryFn: () => fetchDematSocialMappings(query),
   retry: false,
+  initialData: { data: [], meta: { total: 0 } },
 });
 
 export const useDematSocialMappings = (query: QueryParams = {}) => useQuery(useDematSocialMappingsQueryOptions(query));
