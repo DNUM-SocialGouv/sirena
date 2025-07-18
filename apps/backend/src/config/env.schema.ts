@@ -81,6 +81,40 @@ export const AppEnvSchema = z.object({
     })
     .optional(),
   SUPER_ADMIN_LIST_EMAIL: z.string().default(''),
+  HEALTHCHECK: z
+    .string()
+    .default('disabled')
+    .transform((val) => val.toLowerCase() === 'enabled'),
+  HEALTHCHECK_PORT: z
+    .string()
+    .default('4001')
+    .transform((val) => {
+      const parsed = Number.parseInt(val, 10);
+      if (Number.isNaN(parsed)) {
+        throw new Error("La variable d'environnement HEALTHCHECK_PORT doit être un integer");
+      }
+      return parsed;
+    }),
+  HEALTHCHECK_EVENT_LOOP_THRESHOLD: z
+    .string()
+    .default('500')
+    .transform((val) => {
+      const parsed = Number.parseInt(val, 10);
+      if (Number.isNaN(parsed)) {
+        throw new Error("La variable d'environnement HEALTHCHECK_EVENT_LOOP_THRESHOLD doit être un integer");
+      }
+      return parsed;
+    }),
+  HEALTHCHECK_MAX_CONNECTIONS_THRESHOLD: z
+    .string()
+    .default('1000')
+    .transform((val) => {
+      const parsed = Number.parseInt(val, 10);
+      if (Number.isNaN(parsed)) {
+        throw new Error("La variable d'environnement HEALTHCHECK_MAX_CONNECTIONS_THRESHOLD doit être un integer");
+      }
+      return parsed;
+    }),
 });
 
 /**

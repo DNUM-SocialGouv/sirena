@@ -2,8 +2,10 @@ import { serve } from '@hono/node-server';
 import { app } from './app';
 import { setupOpenAPI } from './openAPI';
 import '@/config/env.ts';
+import { startHealthcheckServer } from './healthcheck-server';
 
 setupOpenAPI(app);
+startHealthcheckServer();
 
 serve(
   {
