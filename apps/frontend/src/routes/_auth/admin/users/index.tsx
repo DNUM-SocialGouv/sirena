@@ -1,6 +1,5 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
-import { PendingUsersTab } from '@/components/common/tables/pendingUsersTab';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/admin/users/')({
@@ -12,9 +11,5 @@ export const Route = createFileRoute('/_auth/admin/users/')({
       },
     ],
   }),
-  component: RouteComponent,
+  component: () => null,
 });
-
-export function RouteComponent() {
-  return <PendingUsersTab />;
-}

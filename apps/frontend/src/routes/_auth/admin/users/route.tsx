@@ -1,7 +1,8 @@
 import { ROLES } from '@sirena/common/constants';
 import { type TabDescriptor, Tabs } from '@sirena/ui';
-import { createFileRoute, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { createFileRoute, useMatchRoute, useNavigate } from '@tanstack/react-router';
+import { AllUsersTab } from '@/components/common/tables/allUsersTab';
+import { PendingUsersTab } from '@/components/common/tables/pendingUsersTab';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/admin/users')({
@@ -10,27 +11,28 @@ export const Route = createFileRoute('/_auth/admin/users')({
 });
 
 export function RouteComponent() {
-  const location = useLocation();
   const navigate = useNavigate();
+  const matchRoute = useMatchRoute();
+  const isAllRoute = matchRoute({ to: '/admin/users/all', fuzzy: false });
 
-  const [activeTab, setActiveTab] = useState(location.pathname.includes('/admin/users/all') ? 1 : 0);
+  const activeTab = isAllRoute ? 1 : 0;
 
   const tabs: TabDescriptor[] = [
     { label: "Gestion des demandes d'habilitations", tabPanelId: 'panel-pending', tabId: 'tab-pending' },
     { label: 'Gestion des utilisateurs', tabPanelId: 'panel-all', tabId: 'tab-all' },
   ];
 
+  const tabPaths = ['/admin/users', '/admin/users/all'];
+
   const handleTabChange = (newTabIndex: number) => {
-    const newPath = newTabIndex === 0 ? '/admin/users' : '/admin/users/all';
-    setActiveTab(newTabIndex);
-    navigate({ to: newPath });
+    navigate({ to: tabPaths[newTabIndex] });
   };
 
   return (
     <div className="home">
       <h1>Gestion des utilisateurs et des habilitations</h1>
       <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
-        <Outlet />
+        {activeTab === 0 ? <PendingUsersTab /> : <AllUsersTab />}
       </Tabs>
     </div>
   );
