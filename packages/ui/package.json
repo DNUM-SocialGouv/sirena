@@ -44,6 +44,7 @@
   "dependencies": {
     "@base-ui-components/react": "1.0.0-beta.1",
     "@codegouvfr/react-dsfr": "catalog:",
+    "clsx": "^2.1.1",
     "react": "catalog:",
     "react-transition-group": "^4.4.5"
   }

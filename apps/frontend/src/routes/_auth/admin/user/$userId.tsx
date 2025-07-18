@@ -5,13 +5,12 @@ import { ROLES, type Role, STATUT_TYPES, type StatutType, statutTypes } from '@s
 import { getAssignableRoles } from '@sirena/common/utils';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader } from '@/components/loader.tsx';
 import { usePatchUser } from '@/hooks/mutations/updateUser.hook';
 import { useUserById } from '@/hooks/queries/users.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { useUserStore } from '@/stores/userStore';
 import './$userId.css';
-import { Toast } from '@sirena/ui';
+import { Loader, Toast } from '@sirena/ui';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { EntityHierarchySelector } from '@/components/userId/entityHierarchySelector';

@@ -1,0 +1,33 @@
+.loader {
+  border: 4px solid var(--background-default-grey);
+  border-top: 4px solid var(--text-action-high-blue-france);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: auto;
+  width: 48px;
+  height: 48px;
+}
+
+.loader--sm {
+  width: 32px;
+  height: 32px;
+  border-width: 4px;
+}
+
+.loader--md {
+  width: 72px;
+  height: 72px;
+  border-width: 5px;
+}
+
+.loader--lg {
+  width: 120px;
+  height: 120px;
+  border-width: 7px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
