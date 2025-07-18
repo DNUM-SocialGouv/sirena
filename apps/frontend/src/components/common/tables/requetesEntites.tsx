@@ -1,8 +1,7 @@
 import { type RequeteStatutType, requeteStatutType } from '@sirena/common/constants';
-import { type Cells, type Column, DataTable } from '@sirena/ui';
+import { type Cells, type Column, DataTable, Loader } from '@sirena/ui';
 import { Link, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Loader } from '@/components/loader.tsx';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 
 export function RequetesEntite() {
