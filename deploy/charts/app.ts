@@ -87,6 +87,10 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
       name: 'SENTRY_ENVIRONMENT',
       value: environment,
     },
+    {
+      name: 'HEALTHCHECK',
+      value: 'enabled',
+    },
   ];
 }
 
@@ -128,9 +132,44 @@ function createContainer(props: AppProps): k8s.Container {
       },
     },
     image: props.image,
-    ports: [{ containerPort: Number(props.targetPort.value) }],
+    ports: isBackend 
+      ? [
+          { containerPort: Number(props.targetPort.value) },
+          { containerPort: 4001, name: 'healthcheck' }
+        ]
+      : [{ containerPort: Number(props.targetPort.value) }],
     env: isBackend ? [...createBackendEnvVars(props.host, props.environment), ...createDatabaseEnvVars()] : [],
     envFrom: isBackend ? [{ secretRef: { name: 'backend' } }] : undefined,
+    livenessProbe: isBackend ? {
+      httpGet: {
+        path: '/alive',
+        port: k8s.IntOrString.fromNumber(4001),
+      },
+      initialDelaySeconds: 30,
+      periodSeconds: 10,
+      timeoutSeconds: 5,
+      failureThreshold: 3,
+    } : undefined,
+    readinessProbe: isBackend ? {
+      httpGet: {
+        path: '/ready',
+        port: k8s.IntOrString.fromNumber(4001),
+      },
+      initialDelaySeconds: 5,
+      periodSeconds: 5,
+      timeoutSeconds: 3,
+      failureThreshold: 3,
+    } : undefined,
+    startupProbe: isBackend ? {
+      httpGet: {
+        path: '/alive',
+        port: k8s.IntOrString.fromNumber(4001),
+      },
+      initialDelaySeconds: 10,
+      periodSeconds: 5,
+      timeoutSeconds: 3,
+      failureThreshold: 6,
+    } : undefined,
   };
 }
 
