@@ -1,7 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
-import { type Cells, type Column, DataTable } from '@sirena/ui';
+import { type Cells, type Column, DataTable, Loader } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
-import { Loader } from '@/components/loader.tsx';
 import { useUsers } from '@/hooks/queries/users.hook';
 
 export function PendingUsersTab() {

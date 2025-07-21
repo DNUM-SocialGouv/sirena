@@ -1,11 +1,10 @@
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { ROLES } from '@sirena/common/constants';
-import { Toast } from '@sirena/ui';
+import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
-import { Loader } from '@/components/loader.tsx';
 import { usePatchDematSocialMapping } from '@/hooks/mutations/updateDematSocialMapping.hook';
 import { useDematSocialMapping } from '@/hooks/queries/dematSocialMapping.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
