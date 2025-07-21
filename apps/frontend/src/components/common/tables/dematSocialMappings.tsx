@@ -1,8 +1,7 @@
 import { Input } from '@codegouvfr/react-dsfr/Input';
-import { type Cells, type Column, DataTable } from '@sirena/ui';
+import { type Cells, type Column, DataTable, Loader } from '@sirena/ui';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Loader } from '@/components/loader.tsx';
 import { useDematSocialMappings } from '@/hooks/queries/dematSocialMapping.hook';
 import { useDebounce } from '@/hooks/useDebounce';
 
