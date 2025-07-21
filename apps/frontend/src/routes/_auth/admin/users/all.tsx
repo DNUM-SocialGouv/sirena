@@ -1,6 +1,5 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
-import { AllUsersTab } from '@/components/common/tables/allUsersTab';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/admin/users/all')({
@@ -12,13 +11,5 @@ export const Route = createFileRoute('/_auth/admin/users/all')({
       },
     ],
   }),
-  component: RouteComponent,
+  component: () => null, // TODO: SIRENA-194 => Render a null component here because apps/frontend/src/routes/_auth/admin/users/route.tsx handles rendering the correct Tab. We keep these routes to be able to have different routing/url based on the selected tab and prevent double rendering of sub-components. A better solution is surely possible in the future
 });
-
-export function RouteComponent() {
-  return (
-    <div>
-      <AllUsersTab />
-    </div>
-  );
-}
