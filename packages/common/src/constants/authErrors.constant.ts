@@ -12,14 +12,14 @@ export const ERROR_CODES = {
 };
 
 export const ERROR_MESSAGES: Record<keyof typeof ERROR_CODES, string> = {
-  PC_ERROR: 'pc returned an error',
-  USER_INFOS_ERROR: 'pc returned an error while fetching user infos',
-  STATE_NOT_VALID: 'state is not valid',
-  TOKENS_NOT_VALID: 'tokens are not valid',
-  CLAIMS_NOT_VALID: 'claims are not valid',
-  USER_NOT_FOUND: 'user not found',
-  USER_ALREADY_EXISTS: 'user already exists',
-  USER_CREATE_ERROR: 'error while creating user',
-  SESSION_ALREADY_EXISTS: 'session already exists',
-  SESSION_CREATE_ERROR: 'error while creating session',
+  PC_ERROR: 'PC a retourné une erreur',
+  USER_INFOS_ERROR: 'PC a retourné une erreur lors de la récupération des informations utilisateur',
+  STATE_NOT_VALID: "L'état n'est pas valide",
+  TOKENS_NOT_VALID: 'Les jetons ne sont pas valides',
+  CLAIMS_NOT_VALID: 'Les revendications ne sont pas valides',
+  USER_NOT_FOUND: 'Utilisateur non trouvé',
+  USER_ALREADY_EXISTS: "L'utilisateur existe déjà",
+  USER_CREATE_ERROR: "Erreur lors de la création de l'utilisateur",
+  SESSION_ALREADY_EXISTS: 'La session existe déjà',
+  SESSION_CREATE_ERROR: 'Erreur lors de la création de la session',
 };
