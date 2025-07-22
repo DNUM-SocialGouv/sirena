@@ -28,29 +28,29 @@ describe('QueryStateHandler', () => {
   describe('empty state handling', () => {
     it('should display "Aucune donnée" when data is null', () => {
       render(<QueryStateHandler query={createMockQuery({ data: null })}>{mockChildren}</QueryStateHandler>);
-      expect(screen.getByText('Aucune donnée')).toBeInTheDocument();
+      expect(screen.getByText('Aucune donnée à afficher')).toBeInTheDocument();
     });
 
     it('should display "Aucune donnée" when data is an empty array', () => {
       render(<QueryStateHandler query={createMockQuery({ data: [] })}>{mockChildren}</QueryStateHandler>);
-      expect(screen.getByText('Aucune donnée')).toBeInTheDocument();
+      expect(screen.getByText('Aucune donnée à afficher')).toBeInTheDocument();
     });
 
     it('should display "Aucune donnée" when data object has a null "data" property', () => {
       render(<QueryStateHandler query={createMockQuery({ data: { data: null } })}>{mockChildren}</QueryStateHandler>);
-      expect(screen.getByText('Aucune donnée')).toBeInTheDocument();
+      expect(screen.getByText('Aucune donnée à afficher')).toBeInTheDocument();
     });
 
     it('should display "Aucune donnée" when data object has an undefined "data" property', () => {
       render(
         <QueryStateHandler query={createMockQuery({ data: { data: undefined } })}>{mockChildren}</QueryStateHandler>,
       );
-      expect(screen.getByText('Aucune donnée')).toBeInTheDocument();
+      expect(screen.getByText('Aucune donnée à afficher')).toBeInTheDocument();
     });
 
     it('should display "Aucune donnée" when data object has an empty array in "data" property', () => {
       render(<QueryStateHandler query={createMockQuery({ data: { data: [] } })}>{mockChildren}</QueryStateHandler>);
-      expect(screen.getByText('Aucune donnée')).toBeInTheDocument();
+      expect(screen.getByText('Aucune donnée à afficher')).toBeInTheDocument();
     });
   });
 
