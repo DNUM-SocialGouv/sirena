@@ -31,7 +31,14 @@ export const loginWithProconnect = async (
   logButton.click();
 
   await page.waitForLoadState('networkidle');
-  const locationSelector = page.getByRole('button', { name: organisation });
+  
+  let locationSelector = page.locator(`[role="button"][aria-label*="${organisation}"]`).first();
+  
+  const count = await locationSelector.count();
+  if (count === 0) {
+    locationSelector = page.locator('[role="button"][aria-label*="(choisir cette organisation)"]').first();
+  }
+  
   locationSelector.click();
 
   await page.waitForLoadState('networkidle');
