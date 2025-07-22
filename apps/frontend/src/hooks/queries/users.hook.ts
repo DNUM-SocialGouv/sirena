@@ -6,7 +6,7 @@ export const useUsers = (query: GetUsersQuery = {}) =>
   useQuery({
     queryKey: ['users', query],
     queryFn: () => fetchUsers(query),
-    initialData: { data: [], meta: { total: 0 } },
+    staleTime: 1000 * 60, // 1 minute
   });
 
 export const useUserByIdQueryOptions = (userId: string) =>
