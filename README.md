@@ -21,6 +21,10 @@ cp .env.example .env
 and edit .env as needed (at least the PG_* variables).
 you can create an application for the login [here](https://partenaires.proconnect.gouv.fr/) to complete the required informations on the frontend .env
 
+Additional environment variables:
+- `LOG_EXTRA_CONTEXT` - Include extra context in logs (tags, comma separated, e.g., `foo=bar,baz=bat`)
+- `TRUSTED_IP_HEADERS` - Comma-separated list of trusted IP headers (e.g., `x-forwarded-for,x-real-ip`)
+
 ### 1. Install dependencies
 
 ```bash
