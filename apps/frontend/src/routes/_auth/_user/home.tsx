@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { RequetesEntite } from '@/components/common/tables/requetesEntites.tsx';
+import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { requireAuth } from '@/lib/auth-guards';
 import { QueryParamsSchema } from '@/schemas/pagination.schema';
@@ -23,15 +24,24 @@ export const Route = createFileRoute('/_auth/_user/home')({
 });
 
 function RouteComponent() {
-  const { data } = useQuery({ ...profileQueryOptions(), enabled: false });
+  const profileQuery = useQuery({ ...profileQueryOptions(), enabled: false });
   const userStore = useUserStore();
 
-  const label = useMemo(() => (data ? `${data.firstName} ${data.lastName}` : ''), [data]);
+  const label = useMemo(
+    () => (profileQuery.data ? `${profileQuery.data.firstName} ${profileQuery.data.lastName}` : ''),
+    [profileQuery.data],
+  );
 
   return (
     <div className="home">
-      <h1>Bienvenue {label}</h1>
-      {userStore.role === ROLES.PENDING ? <PendingAlert /> : <RequetesEntite />}
+      <QueryStateHandler query={profileQuery}>
+        {() => (
+          <>
+            <h1>Bienvenue {label}</h1>
+            {userStore.role === ROLES.PENDING ? <PendingAlert /> : <RequetesEntite />}
+          </>
+        )}
+      </QueryStateHandler>
     </div>
   );
 }

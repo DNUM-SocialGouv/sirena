@@ -10,9 +10,10 @@ import { useUserById } from '@/hooks/queries/users.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { useUserStore } from '@/stores/userStore';
 import './$userId.css';
-import { Loader, Toast } from '@sirena/ui';
+import { Toast } from '@sirena/ui';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
+import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { EntityHierarchySelector } from '@/components/userId/entityHierarchySelector';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 
@@ -47,7 +48,7 @@ function RouteComponent() {
   const navigate = useNavigate();
   const router = useRouter();
   const userStore = useUserStore();
-  const { data: user, isLoading, error } = useUserById(userId);
+  const userQuery = useUserById(userId);
   const patchUser = usePatchUser();
   const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
 
@@ -59,18 +60,18 @@ function RouteComponent() {
   const userRole: Role = userStore.role || ROLES.PENDING;
 
   useEffect(() => {
-    if (error && 'status' in error && error.status === 404) {
+    if (userQuery.error && 'status' in userQuery.error && userQuery.error.status === 404) {
       navigate({ to: '/admin/users' });
     }
-  }, [error, navigate]);
+  }, [userQuery.error, navigate]);
 
   useEffect(() => {
-    if (user) {
-      setRole(user.roleId as Role);
-      setStatut(user.statutId as StatutType);
-      setEntite(user.entiteId || '');
+    if (userQuery.data) {
+      setRole(userQuery.data.roleId as Role);
+      setStatut(userQuery.data.statutId as StatutType);
+      setEntite(userQuery.data.entiteId || '');
     }
-  }, [user]);
+  }, [userQuery.data]);
 
   const handleSetEntite = useCallback((id: string) => setEntite(id), []);
 
@@ -99,100 +100,95 @@ function RouteComponent() {
 
   const filteredRoles = useMemo(() => getAssignableRoles(userRole), [userRole]);
 
-  if (isLoading) {
-    return <Loader />;
-  }
-
-  if (!user) {
-    // shouldn't happen
-    return <div>Données utilisateur non disponibles</div>;
-  }
-
   return (
-    <div className="user">
-      <h1>Modifier un utilisateur</h1>
-      <div>
-        <form onSubmit={handleSubmit}>
-          <fieldset className="fr-fieldset">
-            <legend className="fr-fieldset__legend">Identifiant de l'utilisateur</legend>
-            <Input
-              className="fr-fieldset__content"
-              label="Nom"
-              disabled={true}
-              nativeInputProps={{ defaultValue: user.lastName }}
-            />
-            <Input
-              className="fr-fieldset__content"
-              label="Prénom"
-              disabled={true}
-              nativeInputProps={{ defaultValue: user.firstName }}
-            />
-          </fieldset>
-          <fieldset className="fr-fieldset">
-            <legend className="fr-fieldset__legend">Coordonnées de l'utilisateur</legend>
-            <Input
-              className="fr-fieldset__content"
-              label="Email"
-              disabled={true}
-              nativeInputProps={{ defaultValue: user.email }}
-            />
-          </fieldset>
-          <EntityHierarchySelector id={user.entiteId} setLevel={handleSetEntite} />
-          <fieldset className="fr-fieldset">
-            <Select
-              className="fr-fieldset__content"
-              label="Rôle*"
-              disabled={profile?.id === userId}
-              nativeSelectProps={{
-                name: 'role',
-                value: role,
-                onChange: (e) => setRole(e.target.value as Role),
-                required: true,
-              }}
-            >
-              <option value="" disabled hidden>
-                Sélectionnez une option
-              </option>
-              {filteredRoles.map(({ key, value }) => {
-                return (
-                  <option key={key} value={key}>
-                    {value}
+    <QueryStateHandler query={userQuery}>
+      {({ data: user }) => (
+        <div className="user">
+          <h1>Modifier un utilisateur</h1>
+          <div>
+            <form onSubmit={handleSubmit}>
+              <fieldset className="fr-fieldset">
+                <legend className="fr-fieldset__legend">Identifiant de l'utilisateur</legend>
+                <Input
+                  className="fr-fieldset__content"
+                  label="Nom"
+                  disabled={true}
+                  nativeInputProps={{ defaultValue: user.lastName }}
+                />
+                <Input
+                  className="fr-fieldset__content"
+                  label="Prénom"
+                  disabled={true}
+                  nativeInputProps={{ defaultValue: user.firstName }}
+                />
+              </fieldset>
+              <fieldset className="fr-fieldset">
+                <legend className="fr-fieldset__legend">Coordonnées de l'utilisateur</legend>
+                <Input
+                  className="fr-fieldset__content"
+                  label="Email"
+                  disabled={true}
+                  nativeInputProps={{ defaultValue: user.email }}
+                />
+              </fieldset>
+              <EntityHierarchySelector id={user.entiteId} setLevel={handleSetEntite} />
+              <fieldset className="fr-fieldset">
+                <Select
+                  className="fr-fieldset__content"
+                  label="Rôle*"
+                  disabled={profile?.id === userId}
+                  nativeSelectProps={{
+                    name: 'role',
+                    value: role,
+                    onChange: (e) => setRole(e.target.value as Role),
+                    required: true,
+                  }}
+                >
+                  <option value="" disabled hidden>
+                    Sélectionnez une option
                   </option>
-                );
-              })}
-            </Select>
-          </fieldset>
-          <fieldset className="fr-fieldset">
-            <Select
-              className="fr-fieldset__content"
-              label="Statut*"
-              nativeSelectProps={{
-                name: 'statut',
-                value: statut,
-                onChange: (e) => setStatut(e.target.value as StatutType),
-                required: true,
-              }}
-            >
-              <option value="" disabled hidden>
-                Sélectionnez une option
-              </option>
-              {Object.entries(statutTypes).map(([key, value]) => {
-                return (
-                  <option key={key} value={key}>
-                    {value}
+                  {filteredRoles.map(({ key, value }) => {
+                    return (
+                      <option key={key} value={key}>
+                        {value}
+                      </option>
+                    );
+                  })}
+                </Select>
+              </fieldset>
+              <fieldset className="fr-fieldset">
+                <Select
+                  className="fr-fieldset__content"
+                  label="Statut*"
+                  nativeSelectProps={{
+                    name: 'statut',
+                    value: statut,
+                    onChange: (e) => setStatut(e.target.value as StatutType),
+                    required: true,
+                  }}
+                >
+                  <option value="" disabled hidden>
+                    Sélectionnez une option
                   </option>
-                );
-              })}
-            </Select>
-          </fieldset>
-          <div className="form-actions">
-            <Button priority="secondary" onClick={handleBack} type="button">
-              Annuler les modifications
-            </Button>
-            <SubmitButton isPending={patchUser.isPending} />
+                  {Object.entries(statutTypes).map(([key, value]) => {
+                    return (
+                      <option key={key} value={key}>
+                        {value}
+                      </option>
+                    );
+                  })}
+                </Select>
+              </fieldset>
+              <div className="form-actions">
+                <Button priority="secondary" onClick={handleBack} type="button">
+                  Annuler les modifications
+                </Button>
+                <SubmitButton isPending={patchUser.isPending} />
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      )}
+    </QueryStateHandler>
   );
 }

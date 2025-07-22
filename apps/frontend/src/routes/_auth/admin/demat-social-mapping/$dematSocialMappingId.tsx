@@ -1,10 +1,11 @@
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import { ROLES } from '@sirena/common/constants';
-import { Loader, Toast } from '@sirena/ui';
+import { Toast } from '@sirena/ui';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
+import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { usePatchDematSocialMapping } from '@/hooks/mutations/updateDematSocialMapping.hook';
 import { useDematSocialMapping } from '@/hooks/queries/dematSocialMapping.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
@@ -35,12 +36,13 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
   );
 }
 
+// TODO: A TESTER DEV Mode : how can i render this component . need to be SUPER_ADMIN . but need to be ADMIN to go to /home
 function RouteComponent() {
   const { dematSocialMappingId } = Route.useParams();
   const toastManager = Toast.useToastManager();
   const navigate = useNavigate();
   const router = useRouter();
-  const { data: dematSocialMapping, isLoading, error } = useDematSocialMapping(dematSocialMappingId);
+  const dematSocialMappingQuery = useDematSocialMapping(dematSocialMappingId);
   const patchDematSocialMapping = usePatchDematSocialMapping();
 
   const [label, setLabel] = useState<string>('');
@@ -48,24 +50,28 @@ function RouteComponent() {
   const [dematSocialId, setDematSocialId] = useState<string>('');
 
   useEffect(() => {
-    if (error && 'status' in error && error.status === 404) {
+    if (
+      dematSocialMappingQuery.error &&
+      'status' in dematSocialMappingQuery.error &&
+      dematSocialMappingQuery.error.status === 404
+    ) {
       navigate({ to: '/admin/demat-social-mappings' });
     }
-  }, [error, navigate]);
+  }, [dematSocialMappingQuery.error, navigate]);
 
   useEffect(() => {
-    if (dematSocialMapping) {
-      setLabel(dematSocialMapping.label);
-      setComment(dematSocialMapping.comment);
-      setDematSocialId(dematSocialMapping.dematSocialId);
+    if (dematSocialMappingQuery.data) {
+      setLabel(dematSocialMappingQuery.data.label);
+      setComment(dematSocialMappingQuery.data.comment);
+      setDematSocialId(dematSocialMappingQuery.data.dematSocialId);
     }
-  }, [dematSocialMapping]);
+  }, [dematSocialMappingQuery.data]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (dematSocialMapping) {
+    if (dematSocialMappingQuery.data) {
       await patchDematSocialMapping.mutateAsync({
-        id: dematSocialMapping.id,
+        id: dematSocialMappingQuery.data.id,
         json: { label, comment, dematSocialId },
       });
       toastManager.add({
@@ -86,69 +92,64 @@ function RouteComponent() {
     }
   };
 
-  if (isLoading) {
-    return <Loader />;
-  }
-
-  if (!dematSocialMapping) {
-    // shouldn't happen
-    return <div>Données utilisateur non disponibles</div>;
-  }
-
   return (
-    <div className="demat-social-mapping">
-      <h1>Modifier un mapping dematSocial</h1>
-      <div>
-        <form onSubmit={handleSubmit}>
-          <fieldset className="fr-fieldset">
-            <legend className="fr-fieldset__legend">Informations du mapping</legend>
-            <Input
-              className="fr-fieldset__content"
-              label="key"
-              disabled={true}
-              nativeInputProps={{
-                value: dematSocialMapping.key,
-              }}
-            />
-          </fieldset>
-          <fieldset className="fr-fieldset">
-            <Input
-              className="fr-fieldset__content"
-              label="Label"
-              nativeInputProps={{
-                value: label,
-                onChange: (e) => setLabel(e.target.value),
-              }}
-            />
-          </fieldset>
-          <fieldset className="fr-fieldset">
-            <Input
-              className="fr-fieldset__content"
-              label="Commentaire"
-              nativeInputProps={{
-                value: comment,
-                onChange: (e) => setComment(e.target.value),
-              }}
-            />
-          </fieldset>
-          <fieldset className="fr-fieldset">
-            <Input
-              className="fr-fieldset__content"
-              label="ID Demat Social"
-              nativeInputProps={{
-                value: dematSocialId,
-                onChange: (e) => setDematSocialId(e.target.value),
-              }}
-            />
-          </fieldset>
-          <div className="form-actions">
-            <Button priority="secondary" onClick={handleBack} type="button">
-              Annuler les modifications
-            </Button>
-            <SubmitButton isPending={patchDematSocialMapping.isPending} />
+    <QueryStateHandler query={dematSocialMappingQuery}>
+      {({ data: dematSocialMapping }) => (
+        <div className="demat-social-mapping">
+          <h1>Modifier un mapping dematSocial</h1>
+          <div>
+            <form onSubmit={handleSubmit}>
+              <fieldset className="fr-fieldset">
+                <legend className="fr-fieldset__legend">Informations du mapping</legend>
+                <Input
+                  className="fr-fieldset__content"
+                  label="key"
+                  disabled={true}
+                  nativeInputProps={{
+                    value: dematSocialMapping.key,
+                  }}
+                />
+              </fieldset>
+              <fieldset className="fr-fieldset">
+                <Input
+                  className="fr-fieldset__content"
+                  label="Label"
+                  nativeInputProps={{
+                    value: label,
+                    onChange: (e) => setLabel(e.target.value),
+                  }}
+                />
+              </fieldset>
+              <fieldset className="fr-fieldset">
+                <Input
+                  className="fr-fieldset__content"
+                  label="Commentaire"
+                  nativeInputProps={{
+                    value: comment,
+                    onChange: (e) => setComment(e.target.value),
+                  }}
+                />
+              </fieldset>
+              <fieldset className="fr-fieldset">
+                <Input
+                  className="fr-fieldset__content"
+                  label="ID Demat Social"
+                  nativeInputProps={{
+                    value: dematSocialId,
+                    onChange: (e) => setDematSocialId(e.target.value),
+                  }}
+                />
+              </fieldset>
+              <div className="form-actions">
+                <Button priority="secondary" onClick={handleBack} type="button">
+                  Annuler les modifications
+                </Button>
+                <SubmitButton isPending={patchDematSocialMapping.isPending} />
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      )}
+    </QueryStateHandler>
   );
 }
