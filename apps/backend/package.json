@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.16.0",
+    "@hono/sentry": "^1.2.2",
     "@hono/zod-validator": "^0.7.1",
     "@prisma/client": "6.11.1",
     "@scalar/hono-api-reference": "^0.9.10",
@@ -72,10 +73,10 @@
     "@graphql-typed-document-node/core": "^3.2.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.13",
-    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/coverage-v8": "catalog:",
     "prisma": "^6.10.1",
     "tsx": "^4.20.3",
     "typescript": "~5.8.3",
-    "vitest": "^3.2.4"
+    "vitest": "catalog:"
   }
 }

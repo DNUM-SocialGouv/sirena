@@ -80,7 +80,54 @@ export const AppEnvSchema = z.object({
       invalid_type_error: "La variable d'environnement LOG_FORMAT doit être 'json' ou 'pretty'",
     })
     .optional(),
+  LOG_LEVEL: z
+    .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'], {
+      invalid_type_error:
+        "La variable d'environnement LOG_LEVEL doit être 'trace', 'debug', 'info', 'warn', 'error', ou 'fatal'",
+    })
+    .default('info')
+    .describe('Niveau de log pour la console et sortie standard'),
+  LOG_LEVEL_SENTRY: z
+    .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'], {
+      invalid_type_error:
+        "La variable d'environnement LOG_LEVEL_SENTRY doit être 'trace', 'debug', 'info', 'warn', 'error', ou 'fatal'",
+    })
+    .default('warn')
+    .describe('Niveau de log minimum pour envoyer vers Sentry (indépendant de LOG_LEVEL)'),
+  TRUSTED_IP_HEADERS: z
+    .string()
+    .optional()
+    .describe(
+      "Liste des en-têtes HTTP de confiance pour l'extraction d'IP (séparés par des virgules). Aucun par défaut pour la sécurité - configuration explicite requise.",
+    )
+    .transform((val) => {
+      if (!val) return [];
+      return val
+        .split(',')
+        .map((header) => header.trim().toLowerCase())
+        .filter((header) => header.length > 0);
+    }),
   SUPER_ADMIN_LIST_EMAIL: z.string().default(''),
+  LOG_EXTRA_CONTEXT: z
+    .string()
+    .optional()
+    .describe(
+      'Contexte supplémentaire pour les logs sous forme de tags key=value séparés par des virgules (ex: "env=prod,service=api,version=1.2.3")',
+    )
+    .transform((val) => {
+      if (!val) return {};
+      const context: Record<string, string> = {};
+      const pairs = val.split(',').map((pair) => pair.trim());
+      for (const pair of pairs) {
+        const [key, value] = pair.split('=').map((part) => part.trim());
+        if (key && value) {
+          context[key] = value;
+        }
+      }
+      return context;
+    }),
+  SENTRY_DSN_BACKEND: z.string().optional(),
+  SENTRY_ENVIRONMENT: z.string().optional(),
 });
 
 /**
