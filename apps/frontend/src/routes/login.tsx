@@ -1,3 +1,5 @@
+import { Alert } from '@codegouvfr/react-dsfr/Alert';
+import { ERROR_CODES, ERROR_MESSAGES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { NotAuth } from '@/components/layout/notAuth/layout';
@@ -15,13 +17,21 @@ export const Route = createFileRoute('/login')({
   validateSearch: z.object({
     redirect: z.string().optional(),
     state: z.string().optional(),
+    error: z.string().optional(),
   }),
   beforeLoad: requireNotAuth,
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  // TODO handle errors
+  const { error } = Route.useSearch();
+
+  const getErrorMessage = (errorCode: string) => {
+    if (errorCode in ERROR_CODES) {
+      return ERROR_MESSAGES[errorCode as keyof typeof ERROR_CODES];
+    }
+    return errorCode;
+  };
 
   return (
     <NotAuth>
@@ -31,6 +41,14 @@ function RouteComponent() {
             <div className="fr-grid-row fr-grid-row-gutters fr-grid-row--center">
               <div className="fr-col-12 fr-col-md-9 fr-col-lg-8">
                 <h1>Connexion à SIRENA</h1>
+                {error && (
+                  <Alert
+                    severity="error"
+                    title="Erreur de connexion"
+                    description={getErrorMessage(error)}
+                    className="fr-mb-4v"
+                  />
+                )}
                 <div className="fr-mb-6v">
                   <h1>Se connecter avec ProConnect</h1>
                   <div className="fr-connect-group">

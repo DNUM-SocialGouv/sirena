@@ -1,26 +1,14 @@
 import { ROLES } from '@sirena/common/constants';
-import { type Cells, type Column, DataTable, Loader } from '@sirena/ui';
+import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
 import { useUsers } from '@/hooks/queries/users.hook';
+
+type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
 
 export function PendingUsersTab() {
   const pendingRoleId = ROLES.PENDING;
 
-  const { data: response, isLoading: usersLoading, error: usersError } = useUsers({ roleId: pendingRoleId });
-
-  if (usersLoading) {
-    return <Loader />;
-  }
-
-  if (usersError) {
-    return (
-      <div className="error-state">
-        <p>Erreur lors du chargement des utilisateurs en attente</p>
-      </div>
-    );
-  }
-
-  type User = (typeof response.data)[number];
+  const { data: users, isFetching } = useUsers({ roleId: pendingRoleId });
 
   const columns: Column<User>[] = [
     { key: 'lastName', label: 'Nom' },
@@ -50,9 +38,10 @@ export function PendingUsersTab() {
     <DataTable
       title="Demande d'habilitation en attente"
       rowId="id"
-      data={response.data}
+      data={users?.data ?? []}
       columns={columns}
       cells={cells}
+      isLoading={isFetching}
     />
   );
 }

@@ -1,28 +1,16 @@
 import { ROLES, roles, type StatutType, statutTypes } from '@sirena/common/constants';
-import { type Cells, type Column, DataTable, Loader } from '@sirena/ui';
+import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
 import { useUsers } from '@/hooks/queries/users.hook';
+
+type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
 
 export function AllUsersTab() {
   const nonPendingRoleIds = Object.keys(roles)
     .filter((roleId) => roleId !== ROLES.PENDING)
     .join(',');
 
-  const { data: response, isLoading: usersLoading, error: usersError } = useUsers({ roleId: nonPendingRoleIds });
-
-  if (usersLoading) {
-    return <Loader />;
-  }
-
-  if (usersError) {
-    return (
-      <div className="error-state">
-        <p>Erreur lors du chargement des utilisateurs</p>
-      </div>
-    );
-  }
-
-  type User = (typeof response.data)[number];
+  const { data: users, isFetching } = useUsers({ roleId: nonPendingRoleIds });
 
   const columns: Column<User>[] = [
     { key: 'lastName', label: 'Nom' },
@@ -41,5 +29,14 @@ export function AllUsersTab() {
     ),
   };
 
-  return <DataTable title="Liste des utilisateurs" rowId="id" data={response.data} columns={columns} cells={cells} />;
+  return (
+    <DataTable
+      title="Liste des utilisateurs"
+      rowId="id"
+      data={users?.data ?? []}
+      columns={columns}
+      cells={cells}
+      isLoading={isFetching}
+    />
+  );
 }

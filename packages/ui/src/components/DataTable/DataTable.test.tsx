@@ -19,6 +19,14 @@ vi.mock('./DataTableRow/DataTableRow', () => ({
   ),
 }));
 
+vi.mock('../Loader/Loader', () => ({
+  Loader: ({ size }: { size?: string }) => (
+    <div data-testid="loader" data-size={size}>
+      Loading...
+    </div>
+  ),
+}));
+
 beforeAll(() => {
   global.ResizeObserver = class {
     observe() {}
@@ -62,5 +70,25 @@ describe('DataTable Component', () => {
     );
 
     expect(screen.getByText('Nothing here')).toBeInTheDocument();
+  });
+
+  it('shows loader when isLoading is true', () => {
+    render(<DataTable title="User Table" rowId="id" id="test-table" data={data} columns={columns} isLoading={true} />);
+
+    const loader = screen.getByTestId('loader');
+    expect(loader).toBeInTheDocument();
+    expect(loader).toHaveAttribute('data-size', 'sm');
+  });
+
+  it('does not show loader when isLoading is false', () => {
+    render(<DataTable title="User Table" rowId="id" id="test-table" data={data} columns={columns} isLoading={false} />);
+
+    expect(screen.queryByTestId('loader')).not.toBeInTheDocument();
+  });
+
+  it('does not show loader when isLoading is not provided', () => {
+    render(<DataTable title="User Table" rowId="id" id="test-table" data={data} columns={columns} />);
+
+    expect(screen.queryByTestId('loader')).not.toBeInTheDocument();
   });
 });

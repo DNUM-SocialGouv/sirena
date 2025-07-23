@@ -6,5 +6,4 @@ export const useRequetesEntite = (query?: QueryParams) =>
   useQuery({
     queryKey: ['requetesEntite', query],
     queryFn: () => fetchRequetesEntite(query || {}),
-    initialData: { data: [], meta: { total: 0 } },
   });

@@ -1,14 +1,15 @@
 import { Input } from '@codegouvfr/react-dsfr/Input';
-import { type Cells, type Column, DataTable, Loader } from '@sirena/ui';
+import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useDematSocialMappings } from '@/hooks/queries/dematSocialMapping.hook';
 import { useDebounce } from '@/hooks/useDebounce';
 
+type DematSocialMapping = NonNullable<Awaited<ReturnType<typeof useDematSocialMappings>>['data']>['data'][number];
+
 export function DematSocialMappings() {
   const queries = useSearch({ from: '/_auth/admin/demat-social-mappings' });
-
-  const { data: response, isLoading, error } = useDematSocialMappings(queries);
+  const { data: dematSocialMappings, isFetching } = useDematSocialMappings(queries);
   const [search, setSearch] = useState(queries.search ?? '');
   const debouncedSearch = useDebounce(search, 300);
   const navigate = useNavigate({ from: '/admin/demat-social-mappings' });
@@ -23,17 +24,6 @@ export function DematSocialMappings() {
       });
     }
   }, [debouncedSearch, queries.search, navigate]);
-
-  if (error) {
-    return (
-      <div className="error-state">
-        <p>Erreur lors du chargement des mappings dematSocial</p>
-      </div>
-    );
-  }
-
-  // TODO check why undefined
-  type DematSocialMapping = Exclude<typeof response, undefined>['data'][number];
 
   const columns: Column<DematSocialMapping>[] = [
     { key: 'id', label: 'Sirena id' },
@@ -82,17 +72,14 @@ export function DematSocialMappings() {
           />
         </fieldset>
       </form>
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <DataTable
-          title="Mappings de dematSocial"
-          rowId="id"
-          data={response?.data ?? []}
-          columns={columns}
-          cells={cells}
-        />
-      )}
+      <DataTable
+        title="Mappings de dematSocial"
+        rowId="id"
+        data={dematSocialMappings?.data ?? []}
+        columns={columns}
+        cells={cells}
+        isLoading={isFetching}
+      />
     </>
   );
 }
