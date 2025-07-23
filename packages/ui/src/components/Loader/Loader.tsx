@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import './Loader.css';
 
-type LoaderSize = 'sm' | 'md' | 'lg';
+type LoaderSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 
 interface LoaderProps {
   size?: LoaderSize;
