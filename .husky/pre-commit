@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
 
 pnpm lint
+cd deploy && [ ! -d "node_modules" ] && npm install; npm run lint && cd ..
 pnpm run gitleaks:detect-secrets

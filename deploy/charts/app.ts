@@ -134,28 +134,30 @@ function createContainer(props: AppProps): k8s.Container {
     envFrom: isBackend ? [{ secretRef: { name: 'backend' } }] : undefined,
     livenessProbe: {
       httpGet: {
-        path: isBackend ? "/version" : "/",
+        path: isBackend ? '/version' : '/',
         port: k8s.IntOrString.fromNumber(containerPort),
-        scheme: "HTTP",
+        scheme: 'HTTP',
       },
       initialDelaySeconds: 30,
       periodSeconds: 30,
       timeoutSeconds: 5,
       failureThreshold: 3,
     },
-    ...(isBackend ? {
-      readinessProbe: {
-        httpGet: {
-          path: "/health",
-            port: k8s.IntOrString.fromNumber(containerPort),
-              scheme: "HTTP",
-      },
-        initialDelaySeconds: 10,
-          periodSeconds: 10,
+    ...(isBackend
+      ? {
+          readinessProbe: {
+            httpGet: {
+              path: '/health',
+              port: k8s.IntOrString.fromNumber(containerPort),
+              scheme: 'HTTP',
+            },
+            initialDelaySeconds: 10,
+            periodSeconds: 10,
             timeoutSeconds: 5,
-              failureThreshold: 3,
-    }
-  } : {}),
+            failureThreshold: 3,
+          },
+        }
+      : {}),
   };
 }
 
