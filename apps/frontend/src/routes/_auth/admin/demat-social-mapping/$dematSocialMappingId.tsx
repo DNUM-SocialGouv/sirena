@@ -36,7 +36,6 @@ function SubmitButton({ isPending }: { isPending: boolean }) {
   );
 }
 
-// TODO: A TESTER DEV Mode : how can i render this component . need to be SUPER_ADMIN . but need to be ADMIN to go to /home
 function RouteComponent() {
   const { dematSocialMappingId } = Route.useParams();
   const toastManager = Toast.useToastManager();

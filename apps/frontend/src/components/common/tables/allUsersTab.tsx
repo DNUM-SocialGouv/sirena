@@ -1,7 +1,6 @@
 import { ROLES, roles, type StatutType, statutTypes } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
-import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { useUsers } from '@/hooks/queries/users.hook';
 
 type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
@@ -11,7 +10,7 @@ export function AllUsersTab() {
     .filter((roleId) => roleId !== ROLES.PENDING)
     .join(',');
 
-  const query = useUsers({ roleId: nonPendingRoleIds });
+  const { data: users, isFetching } = useUsers({ roleId: nonPendingRoleIds });
 
   const columns: Column<User>[] = [
     { key: 'lastName', label: 'Nom' },
@@ -31,10 +30,13 @@ export function AllUsersTab() {
   };
 
   return (
-    <QueryStateHandler query={query}>
-      {({ data: { data } }) => (
-        <DataTable title="Liste des utilisateurs" rowId="id" data={data} columns={columns} cells={cells} />
-      )}
-    </QueryStateHandler>
+    <DataTable
+      title="Liste des utilisateurs"
+      rowId="id"
+      data={users?.data ?? []}
+      columns={columns}
+      cells={cells}
+      isLoading={isFetching}
+    />
   );
 }

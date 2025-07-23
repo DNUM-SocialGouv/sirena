@@ -2,12 +2,10 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { useDematSocialMappings } from '@/hooks/queries/dematSocialMapping.hook';
 import { useDebounce } from '@/hooks/useDebounce';
 
 // TODO: check why undefined
-// TODO: DEV Mode : how can i render this component . need to be SUPER_ADMIN . but need to be ADMIN to go to /home
 type DematSocialMapping = Exclude<
   Awaited<ReturnType<typeof useDematSocialMappings>>['data'],
   undefined
@@ -15,7 +13,7 @@ type DematSocialMapping = Exclude<
 
 export function DematSocialMappings() {
   const queries = useSearch({ from: '/_auth/admin/demat-social-mappings' });
-  const dematSocialQuery = useDematSocialMappings(queries);
+  const { data: dematSocialMappings, isFetching } = useDematSocialMappings(queries);
   const [search, setSearch] = useState(queries.search ?? '');
   const debouncedSearch = useDebounce(search, 300);
   const navigate = useNavigate({ from: '/admin/demat-social-mappings' });
@@ -78,17 +76,14 @@ export function DematSocialMappings() {
           />
         </fieldset>
       </form>
-      <QueryStateHandler query={dematSocialQuery}>
-        {({ data: response }) => (
-          <DataTable
-            title="Mappings de dematSocial"
-            rowId="id"
-            data={response?.data ?? []}
-            columns={columns}
-            cells={cells}
-          />
-        )}
-      </QueryStateHandler>
+      <DataTable
+        title="Mappings de dematSocial"
+        rowId="id"
+        data={dematSocialMappings?.data ?? []}
+        columns={columns}
+        cells={cells}
+        isLoading={isFetching}
+      />
     </>
   );
 }

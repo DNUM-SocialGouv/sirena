@@ -2,21 +2,21 @@ import { type RequeteStatutType, requeteStatutType } from '@sirena/common/consta
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 
 type DematSocialMapping = Exclude<Awaited<ReturnType<typeof useRequetesEntite>>['data'], undefined>['data'][number];
 
 export function RequetesEntite() {
   const queries = useSearch({ from: '/_auth/_user/home' });
-  const requetesQuery = useRequetesEntite(queries);
+  const { data: requetes, isFetching } = useRequetesEntite(queries);
   const [title, setTitle] = useState('Requêtes');
 
   useEffect(() => {
-    if (requetesQuery.data) {
-      setTitle(`Requêtes: ${requetesQuery.data.meta.total}`);
+    if (requetes) {
+      setTitle(`Requêtes: ${requetes.meta.total}`);
     }
-  }, [requetesQuery.data]);
+  }, [requetes]);
+
   const columns: Column<DematSocialMapping>[] = [
     { key: 'number', label: 'Numero' },
     { key: 'custom:reception', label: 'Réception' },
@@ -40,10 +40,13 @@ export function RequetesEntite() {
   };
 
   return (
-    <QueryStateHandler query={requetesQuery}>
-      {({ data: response }) => (
-        <DataTable title={title} rowId="id" data={response.data} columns={columns} cells={cells} />
-      )}
-    </QueryStateHandler>
+    <DataTable
+      title={title}
+      rowId="id"
+      data={requetes?.data ?? []}
+      columns={columns}
+      cells={cells}
+      isLoading={isFetching}
+    />
   );
 }
