@@ -27,6 +27,8 @@ const processEnv = {
   // Internal
   LOG_FORMAT: process.env.LOG_FORMAT,
   SUPER_ADMIN_LIST_EMAIL: process.env.SUPER_ADMIN_LIST_EMAIL,
+  // Cron
+  CRON_DEMAT_SOCIAL: process.env.CRON_DEMAT_SOCIAL,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);

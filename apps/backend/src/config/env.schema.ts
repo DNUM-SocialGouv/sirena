@@ -83,10 +83,16 @@ export const AppEnvSchema = z.object({
   SUPER_ADMIN_LIST_EMAIL: z.string().default(''),
 });
 
+export const CronEnvSchema = z.object({
+  CRON_DEMAT_SOCIAL: z.string({
+    required_error: "La variable d'environnement CRON_DEMAT_SOCIAL est requise",
+  }),
+});
+
 /**
  * Schéma global de toutes les variables d'environnement
  */
-export const EnvSchema = ProConnectEnvSchema.merge(AppEnvSchema);
+export const EnvSchema = ProConnectEnvSchema.merge(AppEnvSchema).merge(CronEnvSchema);
 
 /**
  * Type extrait du schéma pour les variables ProConnect
