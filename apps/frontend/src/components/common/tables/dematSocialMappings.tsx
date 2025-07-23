@@ -5,11 +5,7 @@ import { useEffect, useState } from 'react';
 import { useDematSocialMappings } from '@/hooks/queries/dematSocialMapping.hook';
 import { useDebounce } from '@/hooks/useDebounce';
 
-// TODO: check why undefined
-type DematSocialMapping = Exclude<
-  Awaited<ReturnType<typeof useDematSocialMappings>>['data'],
-  undefined
->['data'][number];
+type DematSocialMapping = NonNullable<Awaited<ReturnType<typeof useDematSocialMappings>>['data']>['data'][number];
 
 export function DematSocialMappings() {
   const queries = useSearch({ from: '/_auth/admin/demat-social-mappings' });
