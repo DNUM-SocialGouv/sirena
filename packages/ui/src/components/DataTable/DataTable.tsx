@@ -1,6 +1,7 @@
 import { type JSX, memo, useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import { isPrimitive } from '../../utils/guards';
 import type { Primitive } from '../../utils/types';
+import { Loader } from '../Loader/Loader';
 import type { Cells, Column, ColumnKey, OnSortChangeParams, Row, RowWithId } from './DataTable.type';
 import { DataTableHeader } from './DataTableHeader/DataTableHeader';
 import { DataTableRow } from './DataTableRow/DataTableRow';
@@ -22,6 +23,7 @@ export type DataTableProps<K extends string, T extends RowWithId<K>> = {
   sort?: OnSortChangeParams<T>;
   onSortChange?: (params: OnSortChangeParams<T>) => void;
   onSelectedValuesChange?: (selectedValues: T[K][]) => void;
+  isLoading?: boolean;
 };
 
 function isRow(x: Row | Primitive | unknown[]): x is Row {
@@ -86,6 +88,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
   sort = { sort: '', sortDirection: '' },
   onSortChange = () => {},
   onSelectedValuesChange = () => {},
+  isLoading = false,
 }: DataTableProps<RowId, Datum>): JSX.Element => {
   const fallbackId = useId();
   const tableId = id || fallbackId;
@@ -167,7 +170,12 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
         <div className="fr-table__container">
           <div className="fr-table__content">
             <table id={tableId}>
-              <caption>{title}</caption>
+              <caption>
+                <div className="fr-table__caption-with-loader">
+                  <span>{title}</span>
+                  {isLoading && <Loader size="sm" />}
+                </div>
+              </caption>
               <DataTableHeader
                 id={tableId}
                 isSelectable={isSelectable}

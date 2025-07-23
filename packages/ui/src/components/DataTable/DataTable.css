@@ -27,3 +27,15 @@
 .fr-table__empty {
   text-align: center !important;
 }
+
+.fr-table__caption-with-loader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.fr-table__caption-with-loader .loader {
+  margin: 0;
+  flex-shrink: 0;
+}
