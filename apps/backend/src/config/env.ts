@@ -34,6 +34,7 @@ const processEnv = {
   // Sentry
   SENTRY_DSN_BACKEND: process.env.SENTRY_DSN_BACKEND,
   SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
+  SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);
