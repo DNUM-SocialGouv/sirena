@@ -126,6 +126,8 @@ export const AppEnvSchema = z.object({
       }
       return context;
     }),
+  SENTRY_DSN_BACKEND: z.string().optional(),
+  SENTRY_ENVIRONMENT: z.string().optional(),
 });
 
 /**

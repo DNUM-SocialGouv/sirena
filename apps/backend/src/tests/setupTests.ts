@@ -78,7 +78,12 @@ vi.mock('hono-pino', () => ({
 }));
 
 // Create a mock pino with stdSerializers
-const mockPino = vi.fn(() => fakeLogger);
+const mockPino = Object.assign(
+  vi.fn(() => fakeLogger),
+  {
+    stdSerializers: {} as Record<string, unknown>,
+  },
+);
 
 vi.mock('pino', () => {
   // Attach stdSerializers to the function itself (like real pino)

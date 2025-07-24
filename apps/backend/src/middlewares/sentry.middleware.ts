@@ -101,7 +101,7 @@ export const sentryMiddleware = () => {
  * Helper function to set user context in Sentry
  * Extracted from the old sentryUserMiddleware for reuse
  */
-const setUserContext = (c: Context, user: User, context: any) => {
+const setUserContext = (c: Context, user: User, context: ReturnType<typeof extractRequestContext>) => {
   const anonymizedIp = extractClientIp(c);
 
   // Set user context

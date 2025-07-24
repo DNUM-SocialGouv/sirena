@@ -31,6 +31,9 @@ const processEnv = {
   TRUSTED_IP_HEADERS: process.env.TRUSTED_IP_HEADERS,
   LOG_EXTRA_CONTEXT: process.env.LOG_EXTRA_CONTEXT,
   SUPER_ADMIN_LIST_EMAIL: process.env.SUPER_ADMIN_LIST_EMAIL,
+  // Sentry
+  SENTRY_DSN_BACKEND: process.env.SENTRY_DSN_BACKEND,
+  SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);

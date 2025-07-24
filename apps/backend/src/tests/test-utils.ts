@@ -231,7 +231,12 @@ export const setupPinoMocks = () => {
       level: 'info',
     };
 
-    const mockPino = vi.fn(() => innerMockLogger);
+    const mockPino = Object.assign(
+      vi.fn(() => innerMockLogger),
+      {
+        stdSerializers: {} as Record<string, unknown>,
+      },
+    );
     mockPino.stdSerializers = {
       err: vi.fn((err) => ({
         type: err?.constructor?.name || 'Error',

@@ -12,7 +12,6 @@ const {
   extractClientIp,
   extractRequestContext,
   extractRequestHeaders,
-  generateUUID,
   getCaller,
   getLogExtraContext,
   getLogLevelConfig,
@@ -20,7 +19,6 @@ const {
   LOG_LEVELS,
   SOURCE_BACKEND,
   setSentryCorrelationTags,
-  shouldLog,
   shouldSendToSentry,
   UNKNOWN_VALUE,
 } = originalMiddleware;
