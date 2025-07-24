@@ -114,6 +114,7 @@ function createDatabaseEnvVars(): k8s.EnvVar[] {
 
 function createContainer(props: AppProps): k8s.Container {
   const isBackend = props.name === 'backend';
+  const containerPort = Number(props.targetPort.value);
 
   return {
     name: props.name,
@@ -131,6 +132,32 @@ function createContainer(props: AppProps): k8s.Container {
     ports: [{ containerPort: Number(props.targetPort.value) }],
     env: isBackend ? [...createBackendEnvVars(props.host, props.environment), ...createDatabaseEnvVars()] : [],
     envFrom: isBackend ? [{ secretRef: { name: 'backend' } }] : undefined,
+    livenessProbe: {
+      httpGet: {
+        path: isBackend ? '/version' : '/',
+        port: k8s.IntOrString.fromNumber(containerPort),
+        scheme: 'HTTP',
+      },
+      initialDelaySeconds: 30,
+      periodSeconds: 30,
+      timeoutSeconds: 5,
+      failureThreshold: 3,
+    },
+    ...(isBackend
+      ? {
+          readinessProbe: {
+            httpGet: {
+              path: '/health',
+              port: k8s.IntOrString.fromNumber(containerPort),
+              scheme: 'HTTP',
+            },
+            initialDelaySeconds: 10,
+            periodSeconds: 10,
+            timeoutSeconds: 5,
+            failureThreshold: 3,
+          },
+        }
+      : {}),
   };
 }
 
