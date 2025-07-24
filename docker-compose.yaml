@@ -55,10 +55,19 @@ services:
       MINIO_REGION: ${S3_BUCKET_REGION}
     command: server /data --console-address ":9001"
 
+  redis:
+    image: redis:8-alpine
+    container_name: sirena-redis-dev
+    ports:
+    - "127.0.0.1:6379:6379"
+    volumes: 
+      - redisdata:/data
+
 
 volumes:
   pgdata:
   miniodata:
+  redisdata:
 
 networks:
   sirena-postgres-network:
