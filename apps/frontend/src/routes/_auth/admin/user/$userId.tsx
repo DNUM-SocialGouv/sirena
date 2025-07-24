@@ -5,6 +5,7 @@ import { ROLES, type Role, STATUT_TYPES, type StatutType, statutTypes } from '@s
 import { getAssignableRoles } from '@sirena/common/utils';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { z } from 'zod';
 import { usePatchUser } from '@/hooks/mutations/updateUser.hook';
 import { useUserById } from '@/hooks/queries/users.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
@@ -12,7 +13,6 @@ import { useUserStore } from '@/stores/userStore';
 import './$userId.css';
 import { Toast } from '@sirena/ui';
 import { useQuery } from '@tanstack/react-query';
-import { z } from 'zod';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { EntityHierarchySelector } from '@/components/userId/entityHierarchySelector';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
@@ -34,6 +34,31 @@ export const Route = createFileRoute('/_auth/admin/user/$userId')({
   component: RouteComponent,
 });
 
+const userFormSchema = z
+  .object({
+    roleId: z.string().min(1, 'Le rôle est obligatoire'),
+    statutId: z.enum([STATUT_TYPES.ACTIF, STATUT_TYPES.INACTIF, STATUT_TYPES.NON_RENSEIGNE]),
+    entiteId: z.string().nullable(),
+  })
+  .refine(
+    (data) => {
+      // If a role is selected (other than PENDING), the status must be ACTIF or INACTIF only
+      if (data.roleId !== ROLES.PENDING) {
+        return [STATUT_TYPES.ACTIF, STATUT_TYPES.INACTIF].includes(
+          data.statutId as Exclude<StatutType, 'NON_RENSEIGNE'>,
+        );
+      }
+
+      return true;
+    },
+    {
+      message: 'Le champ "Statut" est obligatoire. Veuillez sélectionner une valeur dans la liste déroulante.',
+      path: ['statutId'],
+    },
+  );
+
+type UserFormData = z.infer<typeof userFormSchema>;
+
 function SubmitButton({ isPending }: { isPending: boolean }) {
   return (
     <Button type="submit" disabled={isPending}>
@@ -52,12 +77,16 @@ function RouteComponent() {
   const patchUser = usePatchUser();
   const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
 
-  const [role, setRole] = useState<Role>(ROLES.PENDING);
-  const [statut, setStatut] = useState<StatutType>(STATUT_TYPES.NON_RENSEIGNE);
-  const [entite, setEntite] = useState('');
+  const [formData, setFormData] = useState<UserFormData>({
+    roleId: ROLES.PENDING,
+    statutId: STATUT_TYPES.NON_RENSEIGNE,
+    entiteId: null,
+  });
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   // userStore.role should always be defined, but we provide a fallback to avoid TypeScript errors
   const userRole: Role = userStore.role || ROLES.PENDING;
+  const shouldShowStatut = useMemo(() => formData.roleId !== ROLES.PENDING, [formData.roleId]);
 
   useEffect(() => {
     if (userQuery.error && 'status' in userQuery.error && userQuery.error.status === 404) {
@@ -67,19 +96,45 @@ function RouteComponent() {
 
   useEffect(() => {
     if (userQuery.data) {
-      setRole(userQuery.data.roleId as Role);
-      setStatut(userQuery.data.statutId as StatutType);
-      setEntite(userQuery.data.entiteId || '');
+      setFormData({
+        roleId: userQuery.data.roleId,
+        statutId: userQuery.data.statutId as StatutType,
+        entiteId: userQuery.data.entiteId,
+      });
     }
   }, [userQuery.data]);
 
-  const handleSetEntite = useCallback((id: string) => setEntite(id), []);
+  useEffect(() => {
+    setValidationErrors({});
+  }, []);
+
+  const handleSetEntite = useCallback((id: string) => {
+    setFormData((prev) => ({ ...prev, entiteId: id }));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validationResult = userFormSchema.safeParse(formData);
+    if (!validationResult.success) {
+      const errors: Record<string, string> = {};
+      validationResult.error.errors.forEach((error) => {
+        const field = error.path[0] as string;
+        errors[field] = error.message;
+      });
+      setValidationErrors(errors);
+      return;
+    }
+
+    setValidationErrors({});
+
     await patchUser.mutateAsync({
       id: userId,
-      json: { roleId: role, statutId: statut, entiteId: entite || null },
+      json: {
+        roleId: validationResult.data.roleId,
+        statutId: validationResult.data.statutId,
+        entiteId: validationResult.data.entiteId || null,
+      },
     });
     toastManager.add({
       title: 'Utilisateur modifié',
@@ -138,13 +193,19 @@ function RouteComponent() {
                   label="Rôle*"
                   disabled={profile?.id === userId}
                   nativeSelectProps={{
-                    name: 'role',
-                    value: role,
-                    onChange: (e) => setRole(e.target.value as Role),
+                    name: 'roleId',
+                    value: formData.roleId,
+                    onChange: (e) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        roleId: e.target.value,
+                        statutId: e.target.value === ROLES.PENDING ? STATUT_TYPES.NON_RENSEIGNE : prev.statutId,
+                      }));
+                    },
                     required: true,
                   }}
                 >
-                  <option value="" disabled hidden>
+                  <option value="" disabled>
                     Sélectionnez une option
                   </option>
                   {filteredRoles.map(({ key, value }) => {
@@ -156,29 +217,44 @@ function RouteComponent() {
                   })}
                 </Select>
               </fieldset>
-              <fieldset className="fr-fieldset">
-                <Select
-                  className="fr-fieldset__content"
-                  label="Statut*"
-                  nativeSelectProps={{
-                    name: 'statut',
-                    value: statut,
-                    onChange: (e) => setStatut(e.target.value as StatutType),
-                    required: true,
-                  }}
-                >
-                  <option value="" disabled hidden>
-                    Sélectionnez une option
-                  </option>
-                  {Object.entries(statutTypes).map(([key, value]) => {
-                    return (
-                      <option key={key} value={key}>
-                        {value}
-                      </option>
-                    );
-                  })}
-                </Select>
-              </fieldset>
+              {shouldShowStatut && (
+                <fieldset className="fr-fieldset">
+                  <Select
+                    className="fr-fieldset__content"
+                    label="Statut*"
+                    state={validationErrors.statutId ? 'error' : 'default'}
+                    stateRelatedMessage={validationErrors.statutId}
+                    nativeSelectProps={{
+                      name: 'statutId',
+                      value: formData.statutId,
+                      onChange: (e) => {
+                        setFormData((prev) => ({ ...prev, statutId: e.target.value as StatutType }));
+                        if (validationErrors.statutId) {
+                          setValidationErrors((prev) => {
+                            const newErrors = { ...prev };
+                            delete newErrors.statutId;
+                            return newErrors;
+                          });
+                        }
+                      },
+                      required: true,
+                    }}
+                  >
+                    <option value={STATUT_TYPES.NON_RENSEIGNE} disabled>
+                      Sélectionnez une option
+                    </option>
+                    {Object.entries(statutTypes)
+                      .filter(([key]) => key !== STATUT_TYPES.NON_RENSEIGNE)
+                      .map(([key, value]) => {
+                        return (
+                          <option key={key} value={key}>
+                            {value}
+                          </option>
+                        );
+                      })}
+                  </Select>
+                </fieldset>
+              )}
               <div className="form-actions">
                 <Button priority="secondary" onClick={handleBack} type="button">
                   Annuler les modifications
