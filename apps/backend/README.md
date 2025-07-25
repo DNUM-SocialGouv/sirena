@@ -94,6 +94,23 @@ export async function fetchUserById(id: string) {
 }
 ```
 
+## Environment Variables
+
+### Logging Configuration
+
+The backend supports several logging-related environment variables:
+
+- `LOG_LEVEL`: Controls console log output level (`trace`, `debug`, `info`, `warn`, `error`, `fatal`). Default: `info`
+- `LOG_LEVEL_SENTRY`: Controls minimum level for Sentry integration (`trace`, `debug`, `info`, `warn`, `error`, `fatal`). Default: `warn`
+- `LOG_FORMAT`: Output format (`json` or `pretty`). Default: `json`
+- `LOG_EXTRA_CONTEXT`: Additional context tags for logs in `key=value` comma-separated format
+
+#### LOG_EXTRA_CONTEXT
+
+You can add custom context tags to all log entries using the `LOG_EXTRA_CONTEXT` environment variable. This is particularly useful for container deployments where you want to add environment, service, or deployment-specific context.
+
+**Format**: `key1=value1,key2=value2,key3=value3`
+
 ## Prisma Migration Guide
 
 ### Create an Up Migration
