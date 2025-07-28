@@ -35,53 +35,15 @@ export interface RequestHeaders {
 }
 
 /**
- * Anonymizes an IP address for GDPR compliance
- * - IPv4: Replaces first 3 octets with xxx (e.g., 192.168.1.100 -> xxx.xxx.xxx.100)
- * - IPv6: Replaces first 6 groups with xxx (e.g., 2001:db8::1 -> xxx:xxx:xxx:xxx:xxx:xxx::1)
+ * Returns the raw IP address
  * - Returns 'unknown' for invalid or missing IP addresses
  */
-export const anonymizeIpAddress = (rawIp: string | undefined): string => {
+export const getRawIpAddress = (rawIp: string | undefined): string => {
   if (!rawIp || rawIp === UNKNOWN_VALUE) {
     return UNKNOWN_VALUE;
   }
 
-  // IPv4 anonymization: replace first 3 octets with xxx
-  const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-  const ipv4Match = rawIp.match(ipv4Regex);
-  if (ipv4Match) {
-    return `xxx.xxx.xxx.${ipv4Match[4]}`;
-  }
-
-  // IPv6 anonymization: replace first 6 groups with xxx
-  const ipv6Regex =
-    /^([0-9a-fA-F]{1,4}):([0-9a-fA-F]{1,4}):([0-9a-fA-F]{1,4}):([0-9a-fA-F]{1,4}):([0-9a-fA-F]{1,4}):([0-9a-fA-F]{1,4}):([0-9a-fA-F]{1,4}):([0-9a-fA-F]{1,4})$/;
-  const ipv6Match = rawIp.match(ipv6Regex);
-  if (ipv6Match) {
-    return `xxx:xxx:xxx:xxx:xxx:xxx:${ipv6Match[7]}:${ipv6Match[8]}`;
-  }
-
-  // Handle IPv6 compressed format (::)
-  if (rawIp.includes('::')) {
-    const parts = rawIp.split('::');
-    if (parts.length === 2) {
-      const rightPart = parts[1];
-      if (rightPart) {
-        const rightGroups = rightPart.split(':').filter((g) => g);
-        if (rightGroups.length >= 2) {
-          const lastTwo = rightGroups.slice(-2).join(':');
-          return `xxx:xxx:xxx:xxx:xxx:xxx::${lastTwo}`;
-        } else if (rightGroups.length === 1) {
-          // Handle case with only one group after ::
-          return `xxx:xxx:xxx:xxx:xxx:xxx::${rightGroups[0]}`;
-        }
-      } else {
-        // Handle :: at the end (e.g., 2001:db8::)
-        return `xxx:xxx:xxx:xxx:xxx:xxx::`;
-      }
-    }
-  }
-
-  return UNKNOWN_VALUE;
+  return rawIp;
 };
 
 // Constants for IP validation
@@ -121,7 +83,7 @@ const isValidIpFormat = (ip: string): boolean => {
  * Includes security validation to prevent header injection attacks
  * SECURITY: No headers are trusted by default - explicit configuration required
  * @param c Hono context
- * @returns Anonymized IP address or 'unknown' if not found
+ * @returns Raw IP address or 'unknown' if not found
  */
 export const extractClientIp = (c: Context): string => {
   const trustedHeaders = getTrustedIpHeaders();
@@ -131,7 +93,7 @@ export const extractClientIp = (c: Context): string => {
     // Only use connection remote address as last resort
     const remoteAddress = c.env?.remoteAddress;
     if (remoteAddress && isValidIpFormat(remoteAddress)) {
-      return anonymizeIpAddress(remoteAddress);
+      return getRawIpAddress(remoteAddress);
     }
     return UNKNOWN_VALUE;
   }
@@ -147,13 +109,13 @@ export const extractClientIp = (c: Context): string => {
 
     for (const ip of ips) {
       if (ip && !isPrivateIp(ip) && isValidIpFormat(ip)) {
-        return anonymizeIpAddress(ip);
+        return getRawIpAddress(ip);
       }
     }
 
     for (const ip of ips) {
       if (ip && isValidIpFormat(ip)) {
-        return anonymizeIpAddress(ip);
+        return getRawIpAddress(ip);
       }
     }
   }
@@ -161,7 +123,7 @@ export const extractClientIp = (c: Context): string => {
   // Fallback to connection remote address if available
   const remoteAddress = c.env?.remoteAddress;
   if (remoteAddress && isValidIpFormat(remoteAddress)) {
-    return anonymizeIpAddress(remoteAddress);
+    return getRawIpAddress(remoteAddress);
   }
 
   return UNKNOWN_VALUE;
@@ -214,16 +176,16 @@ export const extractRequestContext = (c: Context): RequestContext => {
 };
 
 /**
- * Creates Sentry-compatible user context with anonymized IP
+ * Creates Sentry-compatible user context with raw IP
  */
-export const createSentryUserContext = (user: User, anonymizedIp: string) => {
+export const createSentryUserContext = (user: User, rawIp: string) => {
   return {
     id: user.id,
     email: user.email,
     username: user.email,
-    ...(anonymizedIp &&
-      anonymizedIp !== UNKNOWN_VALUE && {
-        ip_address: anonymizedIp,
+    ...(rawIp &&
+      rawIp !== UNKNOWN_VALUE && {
+        ip_address: rawIp,
       }),
   };
 };

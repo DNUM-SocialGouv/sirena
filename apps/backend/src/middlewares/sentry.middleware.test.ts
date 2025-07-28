@@ -10,7 +10,7 @@ vi.unmock('@sentry/node');
 vi.unmock('@/helpers/middleware');
 
 // Set up mocks with vi.hoisted
-const { mockScope, mockSpan, sentryMocks, helperMocks, testContext } = vi.hoisted(() => {
+const { mockScope, mockSpan, sentryMocks, helperMocks, testContext, honoSentryMocks } = vi.hoisted(() => {
   const mockScope = {
     setContext: vi.fn(),
     setTag: vi.fn(),
@@ -86,11 +86,43 @@ const { mockScope, mockSpan, sentryMocks, helperMocks, testContext } = vi.hoiste
     captureMessage: vi.fn(),
   };
 
-  return { mockScope, mockSpan, sentryMocks, helperMocks, testContext };
+  const honoSentryMocks = {
+    sentry: vi.fn((_config) => {
+      return async (c, next) => {
+        // Simulate the @hono/sentry middleware behavior more accurately
+        await sentryMocks.startSpan(
+          {
+            name: `${c.req.method} ${c.req.path}`,
+            op: 'http.server',
+            attributes: {
+              'http.method': c.req.method,
+              'http.route': c.req.path,
+              'http.url': c.req.url,
+            },
+          },
+          async (_span) => {
+            // Set up tags like the real middleware would
+            mockScope.setTag('method', c.req.method);
+            mockScope.setTag('route', c.req.path);
+
+            await next();
+
+            // Set response status after the request
+            mockSpan.setAttributes({
+              'http.status_code': c.res.status,
+            });
+          },
+        );
+      };
+    }),
+  };
+
+  return { mockScope, mockSpan, sentryMocks, helperMocks, testContext, honoSentryMocks };
 });
 
 vi.mock('@sentry/node', () => sentryMocks);
 vi.mock('@/helpers/middleware', () => helperMocks);
+vi.mock('@hono/sentry', () => honoSentryMocks);
 
 describe('sentry.middleware.ts', () => {
   let app: Hono;
@@ -484,16 +516,16 @@ describe('sentry.middleware.ts', () => {
   });
 
   describe('IP address handling', () => {
-    it('should anonymize IP addresses in user context', async () => {
+    it('should handle raw IP addresses in user context', async () => {
       const mockUser = createTestUser();
-      const anonymizedIp = 'xxx.xxx.xxx.100';
+      const rawIp = '192.168.1.100';
 
-      helperMocks.extractClientIp.mockReturnValue(anonymizedIp);
+      helperMocks.extractClientIp.mockReturnValue(rawIp);
 
-      const contextWithAnonymizedIp = createTestRequestContext({
-        ip: anonymizedIp,
+      const contextWithRawIp = createTestRequestContext({
+        ip: rawIp,
       });
-      helperMocks.extractRequestContext.mockReturnValue(contextWithAnonymizedIp);
+      helperMocks.extractRequestContext.mockReturnValue(contextWithRawIp);
 
       app.use(sentryMiddleware());
       app.use(async (c, next) => {
@@ -508,14 +540,14 @@ describe('sentry.middleware.ts', () => {
       const client = testClient(app);
       await client['ip-test'].$get();
 
-      expect(helperMocks.createSentryUserContext).toHaveBeenCalledWith(mockUser, anonymizedIp);
+      expect(helperMocks.createSentryUserContext).toHaveBeenCalledWith(mockUser, rawIp);
     });
 
     it('should handle requests with different IP sources', async () => {
       const testCases = [
-        { header: 'x-forwarded-for', ip: 'xxx.xxx.xxx.101' },
-        { header: 'x-real-ip', ip: 'xxx.xxx.xxx.102' },
-        { header: 'cf-connecting-ip', ip: 'xxx.xxx.xxx.103' },
+        { header: 'x-forwarded-for', ip: '192.168.1.101' },
+        { header: 'x-real-ip', ip: '192.168.1.102' },
+        { header: 'cf-connecting-ip', ip: '192.168.1.103' },
       ];
 
       for (const testCase of testCases) {

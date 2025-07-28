@@ -5,7 +5,7 @@ import type { Env } from '@/config/env.schema';
 // Import original implementations directly to bypass global mocks
 const originalMiddleware = await vi.importActual<typeof import('./middleware')>('./middleware');
 const {
-  anonymizeIpAddress,
+  getRawIpAddress,
   createSentryBusinessContext,
   createSentryRequestContext,
   createSentryUserContext,
@@ -201,7 +201,7 @@ function createTestRequestContext(overrides: Partial<TestRequestContext> = {}): 
     requestId: TEST_HEADERS.REQUEST_ID,
     traceId: TEST_HEADERS.TRACE_ID,
     sessionId: TEST_HEADERS.SESSION_ID,
-    ip: 'xxx.xxx.xxx.100',
+    ip: '192.168.1.100',
     userAgent: TEST_HEADERS.USER_AGENT,
     userId: TEST_USER.id,
     entiteId: TEST_USER.entiteId,
@@ -252,24 +252,23 @@ describe('middleware utilities', () => {
     vi.resetModules();
   });
 
-  describe('anonymizeIpAddress', () => {
+  describe('getRawIpAddress', () => {
     const testCases: Array<[string, string | undefined, string]> = [
       ['null IP', undefined, UNKNOWN_VALUE],
       ['empty IP', '', UNKNOWN_VALUE],
       ['unknown value', UNKNOWN_VALUE, UNKNOWN_VALUE],
-      ['IPv4 public', TEST_IPS.IPV4_PUBLIC, 'xxx.xxx.xxx.1'],
-      ['IPv4 private', TEST_IPS.IPV4_PRIVATE, 'xxx.xxx.xxx.100'],
-      ['IPv4 localhost', TEST_IPS.IPV4_LOCALHOST, 'xxx.xxx.xxx.1'],
-      ['IPv6 compressed', TEST_IPS.IPV6_COMPRESSED, 'xxx:xxx:xxx:xxx:xxx:xxx::1234:5678'],
-      ['IPv6 mixed notation', TEST_IPS.IPV6_MIXED, 'xxx:xxx:xxx:xxx:xxx:xxx::ffff:192.0.2.1'],
-      ['IPv6 full format', TEST_IPS.IPV6_FULL, 'xxx:xxx:xxx:xxx:xxx:xxx:0370:7334'],
-      ['invalid IP format', TEST_IPS.INVALID, UNKNOWN_VALUE],
-      ['incomplete IPv4', '192.168.1', UNKNOWN_VALUE],
+      ['IPv4 public', TEST_IPS.IPV4_PUBLIC, TEST_IPS.IPV4_PUBLIC],
+      ['IPv4 private', TEST_IPS.IPV4_PRIVATE, TEST_IPS.IPV4_PRIVATE],
+      ['IPv4 localhost', TEST_IPS.IPV4_LOCALHOST, TEST_IPS.IPV4_LOCALHOST],
+      ['IPv6 compressed', TEST_IPS.IPV6_COMPRESSED, TEST_IPS.IPV6_COMPRESSED],
+      ['IPv6 mixed notation', TEST_IPS.IPV6_MIXED, TEST_IPS.IPV6_MIXED],
+      ['IPv6 full format', TEST_IPS.IPV6_FULL, TEST_IPS.IPV6_FULL],
+      ['valid IP format', '10.0.0.1', '10.0.0.1'],
     ];
 
     testCases.forEach(([description, input, expected]) => {
       it(`should handle ${description}`, () => {
-        expect(anonymizeIpAddress(input)).toBe(expected);
+        expect(getRawIpAddress(input)).toBe(expected);
       });
     });
   });
@@ -315,7 +314,7 @@ describe('middleware utilities', () => {
         'x-forwarded-for': TEST_IPS.IPV4_PRIVATE,
       });
 
-      expect(middleware.extractClientIp(context as unknown as Context)).toBe('xxx.xxx.xxx.100');
+      expect(middleware.extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PRIVATE);
     });
 
     it('should handle comma-separated IPs in x-forwarded-for header when trusted', async () => {
@@ -326,7 +325,7 @@ describe('middleware utilities', () => {
         'x-forwarded-for': `${TEST_IPS.IPV4_PUBLIC}, ${TEST_IPS.IPV4_PRIVATE}`,
       });
 
-      expect(middleware.extractClientIp(context as unknown as Context)).toBe('xxx.xxx.xxx.1');
+      expect(middleware.extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PUBLIC);
     });
 
     it('should skip private network IPs in comma-separated list when trusted', async () => {
@@ -337,7 +336,7 @@ describe('middleware utilities', () => {
         'x-forwarded-for': `${TEST_IPS.IPV4_PRIVATE_10}, ${TEST_IPS.IPV4_PRIVATE_172}, ${TEST_IPS.IPV4_PUBLIC}`,
       });
 
-      expect(middleware.extractClientIp(context as unknown as Context)).toBe('xxx.xxx.xxx.1');
+      expect(middleware.extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PUBLIC);
     });
 
     it('should use first valid IP if no public IPs found when trusted', async () => {
@@ -348,7 +347,7 @@ describe('middleware utilities', () => {
         'x-forwarded-for': `${TEST_IPS.IPV4_PRIVATE_10}, ${TEST_IPS.IPV4_PRIVATE}`,
       });
 
-      expect(middleware.extractClientIp(context as unknown as Context)).toBe('xxx.xxx.xxx.1');
+      expect(middleware.extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PRIVATE_10);
     });
 
     it('should reject invalid IP formats for security when trusted', async () => {
@@ -359,7 +358,7 @@ describe('middleware utilities', () => {
         'x-forwarded-for': `${TEST_IPS.INVALID}, script-injection, ${TEST_IPS.IPV4_PUBLIC}`,
       });
 
-      expect(middleware.extractClientIp(context as unknown as Context)).toBe('xxx.xxx.xxx.1');
+      expect(middleware.extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PUBLIC);
     });
 
     it('should handle IPv6 addresses correctly when trusted', async () => {
@@ -370,7 +369,7 @@ describe('middleware utilities', () => {
         'x-forwarded-for': TEST_IPS.IPV6_PUBLIC,
       });
 
-      expect(middleware.extractClientIp(context as unknown as Context)).toBe('xxx:xxx:xxx:xxx:xxx:xxx::1');
+      expect(middleware.extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV6_PUBLIC);
     });
 
     it('should extract IP from x-real-ip header if x-forwarded-for not available when trusted', async () => {
@@ -381,7 +380,7 @@ describe('middleware utilities', () => {
         'x-real-ip': TEST_IPS.IPV4_PRIVATE_10,
       });
 
-      expect(middleware.extractClientIp(context as unknown as Context)).toBe('xxx.xxx.xxx.1');
+      expect(middleware.extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PRIVATE_10);
     });
 
     it('should respect trusted headers order', async () => {
@@ -395,7 +394,7 @@ describe('middleware utilities', () => {
         'x-forwarded-for': '198.51.100.1',
       });
 
-      expect(middleware.extractClientIp(context as unknown as Context)).toBe('xxx.xxx.xxx.1');
+      expect(middleware.extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PUBLIC);
     });
 
     it('should only trust configured headers', async () => {
@@ -407,7 +406,7 @@ describe('middleware utilities', () => {
         'x-real-ip': '198.51.100.1',
       });
 
-      expect(middleware.extractClientIp(context as unknown as Context)).toBe('xxx.xxx.xxx.1');
+      expect(middleware.extractClientIp(context as unknown as Context)).toBe('198.51.100.1');
     });
 
     it('should extract IP from env.remoteAddress if headers not available', () => {
@@ -415,7 +414,7 @@ describe('middleware utilities', () => {
         env: { remoteAddress: TEST_IPS.IPV4_PRIVATE_172 },
       });
 
-      expect(extractClientIp(context as unknown as Context)).toBe('xxx.xxx.xxx.1');
+      expect(extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PRIVATE_172);
     });
 
     it('should validate remoteAddress format', () => {
@@ -521,14 +520,14 @@ describe('middleware utilities', () => {
   });
 
   describe('createSentryUserContext', () => {
-    it('should create Sentry user context with anonymized IP', () => {
-      const userContext = createSentryUserContext(TEST_USER, 'xxx.xxx.xxx.100');
+    it('should create Sentry user context with raw IP', () => {
+      const userContext = createSentryUserContext(TEST_USER, '192.168.1.100');
 
       expect(userContext).toEqual({
         id: TEST_USER.id,
         email: TEST_USER.email,
         username: TEST_USER.email,
-        ip_address: 'xxx.xxx.xxx.100',
+        ip_address: '192.168.1.100',
       });
     });
 
@@ -544,13 +543,13 @@ describe('middleware utilities', () => {
 
     it('should handle user without email', () => {
       const userWithoutEmail: TestUser = { id: TEST_USER.id };
-      const userContext = createSentryUserContext(userWithoutEmail, 'xxx.xxx.xxx.100');
+      const userContext = createSentryUserContext(userWithoutEmail, '192.168.1.100');
 
       expect(userContext).toEqual({
         id: TEST_USER.id,
         email: undefined,
         username: undefined,
-        ip_address: 'xxx.xxx.xxx.100',
+        ip_address: '192.168.1.100',
       });
     });
   });
@@ -579,7 +578,7 @@ describe('middleware utilities', () => {
         method: 'POST',
         url: 'https://example.com/api/test',
         path: '/api/test',
-        ip: 'xxx.xxx.xxx.100',
+        ip: '192.168.1.100',
         userAgent: TEST_HEADERS.USER_AGENT,
         source: SOURCE_BACKEND,
       });

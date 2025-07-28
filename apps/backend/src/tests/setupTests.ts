@@ -62,7 +62,7 @@ vi.mock('@/helpers/middleware', () => ({
   createSentryRequestContext: vi.fn(() => ({})),
   createSentryBusinessContext: vi.fn(() => ({})),
   createSentryUserContext: vi.fn(() => ({})),
-  anonymizeIpAddress: vi.fn((ip) => (ip ? 'xxx.xxx.xxx.100' : 'unknown')),
+  getRawIpAddress: vi.fn((ip) => ip || 'unknown'),
   UNKNOWN_VALUE: 'unknown',
   SOURCE_BACKEND: 'backend',
 }));

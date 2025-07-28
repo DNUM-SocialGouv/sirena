@@ -122,7 +122,7 @@ const sendToSentry = (level: SentryLevel, message: string, enrichedData: Enriche
         id: enrichedData.userId,
         ...(enrichedData.ip &&
           enrichedData.ip !== UNKNOWN_VALUE && {
-            ip_address: enrichedData.ip, // This is already anonymized
+            ip_address: enrichedData.ip, // Raw IP address
           }),
       });
     }

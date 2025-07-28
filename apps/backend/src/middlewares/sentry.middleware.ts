@@ -18,7 +18,7 @@ import {
  * Combines official @hono/sentry package with project-specific features:
  * - Request context correlation
  * - User context integration
- * - GDPR-compliant IP anonymization
+ * - Raw IP address logging
  * - Business context for French government compliance
  */
 export const sentryMiddleware = () => {
@@ -72,9 +72,9 @@ export const sentryMiddleware = () => {
  * Extracted from the old sentryUserMiddleware for reuse
  */
 const setUserContext = (c: Context, user: User, context: ReturnType<typeof extractRequestContext>) => {
-  const anonymizedIp = extractClientIp(c);
+  const rawIp = extractClientIp(c);
 
-  Sentry.getCurrentScope().setUser(createSentryUserContext(user, anonymizedIp));
+  Sentry.getCurrentScope().setUser(createSentryUserContext(user, rawIp));
 
   const businessContext = createSentryBusinessContext(context);
   if (businessContext) {
