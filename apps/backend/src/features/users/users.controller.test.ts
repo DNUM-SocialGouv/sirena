@@ -1,6 +1,9 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
+import { errorHandler } from '@/helpers/errors';
+import appWithLogs from '@/helpers/factories/appWithLogs';
+import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
 import UsersController from './users.controller';
 import { getUserById, getUsers, patchUser } from './users.service';
@@ -45,7 +48,8 @@ vi.mock('@/middlewares/entites.middleware', () => {
 });
 
 describe('Users endpoints: /users', () => {
-  const client = testClient(UsersController);
+  const app = appWithLogs.createApp().use(pinoLogger()).route('/', UsersController).onError(errorHandler);
+  const client = testClient(app);
 
   const fakeData = [
     {

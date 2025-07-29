@@ -1,7 +1,10 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { errorHandler } from '@/helpers/errors';
+import appWithLogs from '@/helpers/factories/appWithLogs';
 import { Prisma } from '@/libs/prisma';
+import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
 import DematSocialMappingController from './dematSocialMapping.controller';
 import {
@@ -38,7 +41,8 @@ vi.mock('@/middlewares/role.middleware', () => {
 });
 
 describe('DematSocialMapping endpoints', () => {
-  const client = testClient(DematSocialMappingController);
+  const app = appWithLogs.createApp().use(pinoLogger()).route('/', DematSocialMappingController).onError(errorHandler);
+  const client = testClient(app);
   const mockMapping = {
     id: '1',
     key: 'abc',

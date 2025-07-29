@@ -8,7 +8,10 @@ const app = factoryWithLogs
   .use(authMiddleware)
 
   .get('/', getRolesRoute, async (c) => {
+    const logger = c.get('logger');
     const roles = await getRoles();
+    logger.info({ roleCount: roles.length }, 'Roles list retrieved successfully');
+
     return c.json({ data: roles }, 200);
   });
 

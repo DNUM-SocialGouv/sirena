@@ -1,6 +1,9 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
+import { errorHandler } from '@/helpers/errors';
+import appWithLogs from '@/helpers/factories/appWithLogs';
+import pinoLogger from '@/middlewares/pino.middleware';
 import RolesController from './roles.controller';
 import { getRoles } from './roles.service';
 
@@ -21,7 +24,8 @@ vi.mock('@/middlewares/auth.middleware', () => {
 });
 
 describe('Roles endpoints: /roles', () => {
-  const client = testClient(RolesController);
+  const app = appWithLogs.createApp().use(pinoLogger()).route('/', RolesController).onError(errorHandler);
+  const client = testClient(app);
 
   describe('GET /', () => {
     it('should return a list of Roles', async () => {

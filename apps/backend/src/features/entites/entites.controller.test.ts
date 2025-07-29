@@ -1,6 +1,9 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { errorHandler } from '@/helpers/errors';
+import appWithLogs from '@/helpers/factories/appWithLogs';
+import pinoLogger from '@/middlewares/pino.middleware';
 import EntitesController from './entites.controller';
 import { getEditableEntitiesChain, getEntites } from './entites.service';
 
@@ -42,7 +45,8 @@ vi.mock('@/middlewares/entites.middleware', () => {
 });
 
 describe('Entites endpoints: /entites', () => {
-  const client = testClient(EntitesController);
+  const app = appWithLogs.createApp().use(pinoLogger()).route('/', EntitesController).onError(errorHandler);
+  const client = testClient(app);
 
   const mockEntite = {
     id: '2',

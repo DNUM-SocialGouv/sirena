@@ -22,6 +22,7 @@ const app = factoryWithLogs
   .createApp()
 
   .post('/login', postLoginRoute, async (c) => {
+    const logger = c.get('logger');
     let redirectTo: URL;
     let nonce: string;
     let state: string;
@@ -31,8 +32,8 @@ const app = factoryWithLogs
       redirectTo = authorizationUrl.redirectTo;
       nonce = authorizationUrl.nonce;
       state = authorizationUrl.state;
+      logger.info('Authorization URL generated successfully');
     } catch (error) {
-      const logger = c.get('logger');
       logger.error({ err: error }, 'Error in buildAuthorizationUrl');
       const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.PC_ERROR });
       return c.redirect(errorPageUrl, 302);
@@ -40,6 +41,7 @@ const app = factoryWithLogs
 
     setCookie(c, 'state', state, { path: '/', httpOnly: true });
     setCookie(c, 'nonce', nonce, { path: '/', httpOnly: true });
+    logger.info('OAuth state and nonce cookies set');
 
     return c.redirect(redirectTo.href, 302);
   })
@@ -53,6 +55,7 @@ const app = factoryWithLogs
     });
 
     const logger = c.get('logger');
+    logger.info('OAuth callback received from ProConnect');
 
     const error = c.req.query('error');
 
@@ -78,6 +81,7 @@ const app = factoryWithLogs
 
     try {
       tokens = await authorizationCodeGrant(updatedUrl, state, nonce);
+      logger.info('OAuth tokens obtained successfully');
     } catch (error) {
       logger.error({ err: error }, 'Error in callback from PC, tokens are missing');
       const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.TOKENS_NOT_VALID });
@@ -100,6 +104,7 @@ const app = factoryWithLogs
     let userInfo: UserInfoResponse;
     try {
       userInfo = await fetchUserInfo(tokens.access_token, claims);
+      logger.info('User info retrieved from ProConnect');
     } catch (error) {
       logger.error({ err: error }, 'Error in callback from PC, userInfo is missing from tokens');
       const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_INFOS_ERROR });
@@ -126,6 +131,7 @@ const app = factoryWithLogs
         pcData: userInfo,
         organizationUnit: userInfo.organizational_unit ? String(userInfo.organizational_unit) : null,
       });
+      logger.info({ userId: user.id, email: user.email }, 'User authenticated successfully');
     } catch (error) {
       if (isPrismaUniqueConstraintError(error)) {
         logger.error({ err: error }, 'Error in creating new user in database, email already exists');
@@ -137,6 +143,7 @@ const app = factoryWithLogs
       return c.redirect(errorPageUrl, 302);
     }
     await authUser(c, { id: user.id, roleId: user.roleId }, tokens.id_token);
+    logger.info({ userId: user.id }, 'User session created successfully');
 
     return c.redirect(envVars.FRONTEND_REDIRECT_URI, 302);
   })
@@ -144,42 +151,52 @@ const app = factoryWithLogs
   .use(logoutMiddleware)
 
   .post('/logout', postLogoutRoute, async (c) => {
+    const logger = c.get('logger');
+
     const token = getCookie(c, envVars.REFRESH_TOKEN_NAME);
 
     deleteCookie(c, envVars.AUTH_TOKEN_NAME);
     deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
     deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
+    logger.info('Authentication cookies cleared');
 
     if (token) {
       try {
         await deleteSession(token);
+        logger.info('User session deleted successfully');
       } catch (error) {
-        const logger = c.get('logger');
         if (isPrismaUniqueConstraintError(error)) {
           logger.info({ err: error }, 'Error in deleting session, session not found');
         } else {
           logger.error({ err: error }, 'Error in deleting session');
         }
       }
+    } else {
+      logger.info('No session token found during logout');
     }
 
     return c.redirect(envVars.FRONTEND_REDIRECT_LOGIN_URI, 302);
   })
 
   .post('/logout-proconnect', postLogoutProconnectRoute, async (c) => {
+    const logger = c.get('logger');
+
     const token = getCookie(c, envVars.REFRESH_TOKEN_NAME);
 
     deleteCookie(c, envVars.AUTH_TOKEN_NAME);
     deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
     deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
+    logger.info('Authentication cookies cleared for ProConnect logout');
 
     if (!token) {
+      logger.warn('No session token found during ProConnect logout');
       return c.redirect(envVars.FRONTEND_REDIRECT_LOGIN_URI, 302);
     }
 
     const session = await getSession(token);
 
     if (!session) {
+      logger.warn('No session found during ProConnect logout');
       return c.redirect(envVars.FRONTEND_REDIRECT_LOGIN_URI, 302);
     }
 
@@ -187,8 +204,8 @@ const app = factoryWithLogs
 
     try {
       endSessionUrl = await buildEndSessionUrl(session.pcIdToken);
+      logger.info('ProConnect end session URL generated successfully');
     } catch (error) {
-      const logger = c.get('logger');
       logger.error({ err: error }, 'Error in buildEndSessionUrl');
       const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.PC_ERROR });
       return c.redirect(errorPageUrl, 302);
@@ -196,6 +213,7 @@ const app = factoryWithLogs
 
     if (session) {
       await deleteSession(token);
+      logger.info('Session deleted during ProConnect logout');
     }
 
     return c.redirect(endSessionUrl, 302);

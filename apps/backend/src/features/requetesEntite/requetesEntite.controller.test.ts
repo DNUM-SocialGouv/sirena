@@ -1,6 +1,9 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
+import { errorHandler } from '@/helpers/errors';
+import appWithLogs from '@/helpers/factories/appWithLogs';
+import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
 import RequetesEntiteController from './requetesEntite.controller';
 import { getRequetesEntite } from './requetesEntite.service';
@@ -39,7 +42,8 @@ vi.mock('@/middlewares/entites.middleware', () => {
 });
 
 describe('RequetesEntite endpoints: /', () => {
-  const client = testClient(RequetesEntiteController);
+  const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequetesEntiteController).onError(errorHandler);
+  const client = testClient(app);
 
   const fakeData = [
     {

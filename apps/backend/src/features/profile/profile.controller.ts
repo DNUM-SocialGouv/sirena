@@ -9,14 +9,18 @@ const app = factoryWithLogs
   .use(authMiddleware)
 
   .get('/', getProfileRoute, async (c) => {
+    const logger = c.get('logger');
     const userId = c.get('userId');
+
+    logger.info({ userId }, 'User profile requested');
     const user = await getUserById(userId, null);
+
     if (!user) {
-      // never should happen
-      const logger = c.get('logger');
-      logger.error(`User with ID ${userId} not found in profile controller.`);
+      logger.error({ userId }, 'User not found in profile controller - authentication inconsistency');
       throwHTTPException401Unauthorized('Unauthorized, User not found', { res: c.res });
     }
+
+    logger.info({ userId }, 'User profile retrieved successfully');
     return c.json({ data: user }, 200);
   });
 
