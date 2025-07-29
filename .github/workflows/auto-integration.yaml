@@ -81,7 +81,7 @@ jobs:
       - name: Wait for deployment
         run: |
           cd apps/frontend
-          npx tsx scripts/wait-for-deployment.ts
+          npx tsx tests/ci/wait-for-deployment.ts
         env:
           EXPECTED_VERSION: ${{ needs.build-docker.outputs.SHORT_SHA }}
           BACKEND_URL: ${{ secrets.INTEGRATION_BACKEND_URL }}
