@@ -35,7 +35,7 @@ describe('crons.service', () => {
       const result = await getLastCron('fetch-data');
 
       expect(prisma.crons.findFirst).toHaveBeenCalledWith({
-        where: { name: 'fetch-data', state: 'finished' },
+        where: { name: 'fetch-data', state: 'success' },
         orderBy: { createdAt: 'desc' },
       });
 
