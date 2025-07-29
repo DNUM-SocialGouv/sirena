@@ -13,24 +13,10 @@ import {
   type User,
 } from '@/helpers/middleware';
 
-/**
- * Sentry middleware using @hono/sentry with custom context enrichment
- * Combines official @hono/sentry package with project-specific features:
- * - Request context correlation
- * - User context integration
- * - Raw IP address logging
- * - Business context for French government compliance
- */
 export const sentryMiddleware = () => {
   const baseSentryMiddleware = sentry({
     dsn: envVars.SENTRY_DSN_BACKEND,
     environment: envVars.SENTRY_ENVIRONMENT,
-    beforeSend: (event) => {
-      if (event.user?.email) {
-        // Email will be automatically sanitized by Sentry's beforeSend
-      }
-      return event;
-    },
   });
 
   return createMiddleware(async (c: Context, next: Next) => {
@@ -67,10 +53,6 @@ export const sentryMiddleware = () => {
   });
 };
 
-/**
- * Helper function to set user context in Sentry
- * Extracted from the old sentryUserMiddleware for reuse
- */
 const setUserContext = (c: Context, user: User, context: ReturnType<typeof extractRequestContext>) => {
   const rawIp = extractClientIp(c);
 
@@ -80,20 +62,9 @@ const setUserContext = (c: Context, user: User, context: ReturnType<typeof extra
   if (businessContext) {
     Sentry.getCurrentScope().setContext('business', {
       ...businessContext,
-      userEmail: user.email, // Will be sanitized by Sentry's beforeSend
+      userEmail: user.email,
     });
   }
 
   Sentry.getCurrentScope().setFingerprint(['user', user.id]);
-};
-
-/**
- * Legacy user middleware - now integrated into the main sentryMiddleware
- * @deprecated User context is now handled automatically in sentryMiddleware
- */
-export const sentryUserMiddleware = () => {
-  return createMiddleware(async (_c: Context, next: Next) => {
-    // No-op: user context is now handled in the main middleware
-    await next();
-  });
 };

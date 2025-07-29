@@ -7,7 +7,6 @@ import pretty from 'pino-pretty';
 import { envVars } from '@/config/env';
 import {
   extractRequestContext,
-  generateUUID,
   getCaller,
   getLogExtraContext,
   getLogLevelConfig,
@@ -122,12 +121,11 @@ const sendToSentry = (level: SentryLevel, message: string, enrichedData: Enriche
         id: enrichedData.userId,
         ...(enrichedData.ip &&
           enrichedData.ip !== UNKNOWN_VALUE && {
-            ip_address: enrichedData.ip, // Raw IP address
+            ip_address: enrichedData.ip,
           }),
       });
     }
 
-    // Set tags for correlation with frontend using shared utility
     const context: RequestContext = {
       requestId: enrichedData.requestId || UNKNOWN_VALUE,
       traceId: enrichedData.traceId || UNKNOWN_VALUE,
@@ -218,13 +216,13 @@ const createPinoLogger = (messageFormat: string, reqIdGenerator: (c?: Context) =
   });
 
 export default () => {
-  return createPinoLogger('[{requestId}] {req.method} {req.url} {res.statusCode}', () => generateUUID());
+  return createPinoLogger('[{requestId}] {req.method} {req.url} {res.statusCode}', () => crypto.randomUUID());
 };
 
 export const enhancedPinoMiddleware = () => {
   const basePinoMiddleware = createPinoLogger(
     '[{requestId}] {message}',
-    (c) => c?.req.header('x-request-id') || generateUUID(),
+    (c) => c?.req.header('x-request-id') || crypto.randomUUID(),
   );
 
   return createMiddleware(async (c: Context, next: () => Promise<void>) => {

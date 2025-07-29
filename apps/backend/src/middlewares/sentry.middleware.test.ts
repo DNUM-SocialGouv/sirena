@@ -1,15 +1,13 @@
 import { Hono } from 'hono';
 import { testClient } from 'hono/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createTestRequestContext, createTestUser, expectSentryContextSet } from '../tests/test-utils';
+import { createTestRequestContext, createTestUser } from '../tests/test-utils';
 import type { TestUser } from '../tests/types';
-import { sentryMiddleware, sentryUserMiddleware } from './sentry.middleware';
+import { sentryMiddleware } from './sentry.middleware';
 
-// Clear the global mocks before setting up test-specific ones
 vi.unmock('@sentry/node');
 vi.unmock('@/helpers/middleware');
 
-// Set up mocks with vi.hoisted
 const { mockScope, mockSpan, sentryMocks, helperMocks, testContext, honoSentryMocks } = vi.hoisted(() => {
   const mockScope = {
     setContext: vi.fn(),
@@ -36,7 +34,6 @@ const { mockScope, mockSpan, sentryMocks, helperMocks, testContext, honoSentryMo
 
   const helperMocks = {
     extractRequestContext: vi.fn(() => testContext),
-    generateUUID: vi.fn(() => 'test-uuid'),
     getLogLevelConfig: vi.fn(() => ({
       console: 'info',
       sentry: 'warn',
@@ -77,8 +74,6 @@ const { mockScope, mockSpan, sentryMocks, helperMocks, testContext, honoSentryMo
   const sentryMocks = {
     getCurrentScope: vi.fn(() => mockScope),
     startSpan: vi.fn(async (_config, callback) => {
-      // Simulate how real Sentry.startSpan works: it catches errors from the callback
-      // and re-throws them so the middleware's catch block can handle them
       return await callback(mockSpan);
     }),
     withScope: vi.fn((callback) => callback(mockScope)),
@@ -89,7 +84,6 @@ const { mockScope, mockSpan, sentryMocks, helperMocks, testContext, honoSentryMo
   const honoSentryMocks = {
     sentry: vi.fn((_config) => {
       return async (c, next) => {
-        // Simulate the @hono/sentry middleware behavior more accurately
         await sentryMocks.startSpan(
           {
             name: `${c.req.method} ${c.req.path}`,
@@ -101,13 +95,11 @@ const { mockScope, mockSpan, sentryMocks, helperMocks, testContext, honoSentryMo
             },
           },
           async (_span) => {
-            // Set up tags like the real middleware would
             mockScope.setTag('method', c.req.method);
             mockScope.setTag('route', c.req.path);
 
             await next();
 
-            // Set response status after the request
             mockSpan.setAttributes({
               'http.status_code': c.res.status,
             });
@@ -215,20 +207,13 @@ describe('sentry.middleware.ts', () => {
 
       const response = await client.error.$get();
 
-      // Should return 500 for unhandled errors
       expect(response.status).toBe(500);
 
-      // Verify that startSpan was called (middleware executed)
       expect(sentryMocks.startSpan).toHaveBeenCalled();
 
-      // Note: Route handler errors are handled by Hono's error handling,
-      // not by middleware catch blocks, so withScope should NOT be called
       expect(sentryMocks.withScope).not.toHaveBeenCalled();
       expect(sentryMocks.captureException).not.toHaveBeenCalled();
     });
-
-    // Note: Test for string exceptions removed as they cause test framework crashes.
-    // In practice, Error objects are the primary concern for error handling.
 
     it('should handle requests with custom headers', async () => {
       const customRequestContext = createTestRequestContext({
@@ -260,7 +245,6 @@ describe('sentry.middleware.ts', () => {
         }),
       );
 
-      // Reset mock for subsequent tests
       helperMocks.extractRequestContext.mockReturnValue(testContext);
     });
 
@@ -286,170 +270,6 @@ describe('sentry.middleware.ts', () => {
     });
   });
 
-  describe('sentryUserMiddleware', () => {
-    it('should set user context when user is present', async () => {
-      const mockUser = createTestUser({
-        id: 'user-123',
-        email: 'test@example.com',
-        entiteId: 'entite-456',
-        roleId: 'role-789',
-      });
-
-      app.use(sentryMiddleware());
-      app.use(async (c, next) => {
-        c.set('user', mockUser);
-        await next();
-      });
-      app.use(sentryUserMiddleware());
-      app.get('/test', (c) => {
-        return c.json({ success: true });
-      });
-
-      const client = testClient(app);
-      await client.test.$get();
-
-      expect(helperMocks.createSentryUserContext).toHaveBeenCalledWith(mockUser, 'xxx.xxx.xxx.100');
-      expect(mockScope.setUser).toHaveBeenCalled();
-    });
-
-    it('should set business context when user has business data', async () => {
-      const mockUser = createTestUser({
-        id: 'user-123',
-        email: 'test@example.com',
-        entiteId: 'entite-456',
-        roleId: 'role-789',
-      });
-
-      const expectedBusinessContext = {
-        source: 'backend',
-        userId: 'user-123',
-        entiteId: 'entite-456',
-        roleId: 'role-789',
-        userEmail: 'test@example.com',
-      };
-
-      helperMocks.createSentryBusinessContext.mockReturnValue(expectedBusinessContext);
-
-      app.use(sentryMiddleware());
-      app.use(async (c, next) => {
-        c.set('user', mockUser);
-        await next();
-      });
-      app.use(sentryUserMiddleware());
-      app.get('/test', (c) => {
-        return c.json({ success: true });
-      });
-
-      const client = testClient(app);
-      await client.test.$get();
-
-      expectSentryContextSet(mockScope, 'business', expectedBusinessContext);
-    });
-
-    it('should set user fingerprint for correlation', async () => {
-      const mockUser = createTestUser({
-        id: 'user-456',
-        email: 'fingerprint@example.com',
-      });
-
-      app.use(sentryMiddleware());
-      app.use(async (c, next) => {
-        c.set('user', mockUser);
-        await next();
-      });
-      app.use(sentryUserMiddleware());
-      app.get('/test', (c) => {
-        return c.json({ success: true });
-      });
-
-      const client = testClient(app);
-      await client.test.$get();
-
-      expect(mockScope.setFingerprint).toHaveBeenCalledWith(['user', 'user-456']);
-    });
-
-    it('should skip user context when no user is present', async () => {
-      app.use(sentryMiddleware());
-      app.use(sentryUserMiddleware());
-      app.get('/test', (c) => c.json({ success: true }));
-
-      const client = testClient(app);
-      await client.test.$get();
-
-      // Should not call user-related Sentry methods
-      expect(mockScope.setUser).not.toHaveBeenCalled();
-      expect(mockScope.setFingerprint).not.toHaveBeenCalled();
-    });
-
-    it('should handle user without optional fields', async () => {
-      const mockUser: TestUser = {
-        id: 'user-minimal',
-        email: 'minimal@example.com',
-        // No entiteId or roleId
-      };
-
-      const expectedBusinessContext = {
-        source: 'backend',
-        userId: 'user-minimal',
-        userEmail: 'minimal@example.com',
-      };
-
-      helperMocks.createSentryBusinessContext.mockReturnValue(expectedBusinessContext);
-
-      app.use(sentryMiddleware());
-      app.use(async (c, next) => {
-        c.set('user', mockUser);
-        await next();
-      });
-      app.use(sentryUserMiddleware());
-      app.get('/test', (c) => {
-        return c.json({ success: true });
-      });
-
-      const client = testClient(app);
-      await client.test.$get();
-
-      expect(helperMocks.createSentryBusinessContext).toHaveBeenCalledWith(testContext);
-
-      // Should still set user context
-      expect(mockScope.setUser).toHaveBeenCalled();
-      expect(mockScope.setFingerprint).toHaveBeenCalledWith(['user', 'user-minimal']);
-    });
-
-    it('should handle user with partial business context', async () => {
-      const mockUser = createTestUser({
-        id: 'user-partial',
-        email: 'partial@example.com',
-        entiteId: 'entite-789',
-        // No roleId
-      });
-
-      const expectedBusinessContext = {
-        source: 'backend',
-        userId: 'user-partial',
-        entiteId: 'entite-789',
-        userEmail: 'partial@example.com',
-      };
-
-      helperMocks.createSentryBusinessContext.mockReturnValue(expectedBusinessContext);
-
-      app.use(sentryMiddleware());
-      app.use(async (c, next) => {
-        c.set('user', mockUser);
-        await next();
-      });
-      app.use(sentryUserMiddleware());
-      app.get('/test', (c) => {
-        return c.json({ success: true });
-      });
-
-      const client = testClient(app);
-      await client.test.$get();
-
-      expectSentryContextSet(mockScope, 'business', expectedBusinessContext);
-    });
-  });
-
   describe('middleware combination', () => {
     it('should work together correctly', async () => {
       const mockUser = createTestUser();
@@ -461,7 +281,6 @@ describe('sentry.middleware.ts', () => {
         c.set('user', mockUser);
         await next();
       });
-      app.use(sentryUserMiddleware());
       app.get('/combined', (c) => {
         capturedUser = c.get('user');
         return c.json({ combined: true });
@@ -470,15 +289,12 @@ describe('sentry.middleware.ts', () => {
       const client = testClient(app);
       await client.combined.$get();
 
-      // Verify both middlewares ran
       expect(helperMocks.extractRequestContext).toHaveBeenCalled();
       expect(helperMocks.createSentryRequestContext).toHaveBeenCalled();
       expect(helperMocks.createSentryUserContext).toHaveBeenCalledWith(mockUser, 'xxx.xxx.xxx.100');
 
-      // Verify user was captured correctly
       expect(capturedUser).toEqual(mockUser);
 
-      // Verify Sentry contexts were set
       expect(mockScope.setContext).toHaveBeenCalledWith('request', expect.any(Object));
       expect(mockScope.setContext).toHaveBeenCalledWith('business', expect.any(Object));
       expect(mockScope.setUser).toHaveBeenCalled();
@@ -493,7 +309,6 @@ describe('sentry.middleware.ts', () => {
         c.set('user', mockUser);
         await next();
       });
-      app.use(sentryUserMiddleware());
       app.get('/user-error', (_c) => {
         throw testError;
       });
@@ -502,15 +317,11 @@ describe('sentry.middleware.ts', () => {
 
       const response = await client['user-error'].$get();
 
-      // Should return 500 for unhandled errors
       expect(response.status).toBe(500);
 
-      // Verify user context was set before error occurred
       expect(mockScope.setUser).toHaveBeenCalled();
       expect(mockScope.setFingerprint).toHaveBeenCalledWith(['user', mockUser.id]);
 
-      // Note: Route handler errors are handled by Hono's error handling,
-      // not by middleware catch blocks, so withScope should NOT be called
       expect(sentryMocks.withScope).not.toHaveBeenCalled();
     });
   });
@@ -532,7 +343,6 @@ describe('sentry.middleware.ts', () => {
         c.set('user', mockUser);
         await next();
       });
-      app.use(sentryUserMiddleware());
       app.get('/ip-test', (c) => {
         return c.json({ success: true });
       });
@@ -583,7 +393,6 @@ describe('sentry.middleware.ts', () => {
     it('should handle middleware errors gracefully', async () => {
       const middlewareError = new Error('Middleware setup error');
 
-      // Mock a middleware helper to throw an error
       helperMocks.extractRequestContext.mockImplementation(() => {
         throw middlewareError;
       });
@@ -599,7 +408,6 @@ describe('sentry.middleware.ts', () => {
         expect(error).toBe(middlewareError);
       }
 
-      // Reset the mock for subsequent tests
       helperMocks.extractRequestContext.mockImplementation(() => testContext);
     });
 
@@ -608,7 +416,6 @@ describe('sentry.middleware.ts', () => {
 
       app.use(sentryMiddleware());
       app.get('/async-error', async (c) => {
-        // Simulate async operation that fails
         await Promise.reject(asyncError);
         return c.json({ success: true });
       });
@@ -617,20 +424,11 @@ describe('sentry.middleware.ts', () => {
 
       const response = await client['async-error'].$get();
 
-      // Should return 500 for unhandled errors
       expect(response.status).toBe(500);
 
-      // Verify that startSpan was called (middleware executed)
       expect(sentryMocks.startSpan).toHaveBeenCalled();
-
-      // Note: Route handler errors are handled by Hono's error handling,
-      // not by middleware catch blocks, so withScope should NOT be called
       expect(sentryMocks.withScope).not.toHaveBeenCalled();
     });
-
-    // Note: Tests for null/undefined errors are not included as they cause
-    // test framework crashes. In practice, middleware error handling focuses
-    // on Error objects and string messages which are covered by other tests.
   });
 
   describe('request context extraction', () => {

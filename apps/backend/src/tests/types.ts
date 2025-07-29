@@ -1,13 +1,6 @@
-/**
- * Type-safe mock interfaces and utilities for middleware testing
- * This file provides strongly typed mocks to replace any types in tests
- */
-
 import type { Context, Next } from 'hono';
 import type { MockedFunction } from 'vitest';
 import type { LogLevel, LogLevelConfig, RequestContext, User } from '@/helpers/middleware';
-
-// ===== SENTRY TYPES =====
 
 export interface SentryScope {
   setContext(name: string, context: Record<string, unknown>): void;
@@ -32,8 +25,6 @@ export interface MockedSentryScope extends SentryScope {
 export interface MockedSentrySpan extends SentrySpan {
   setAttributes: MockedFunction<SentrySpan['setAttributes']>;
 }
-
-// ===== LOGGER TYPES =====
 
 export interface PinoLogger {
   info(data: Record<string, unknown>, message: string): void;
@@ -65,8 +56,6 @@ export interface EnhancedLogger extends PinoLogger {
   fatal(data: string | Record<string, unknown>, message?: string): void;
 }
 
-// ===== CONTEXT TYPES =====
-
 export interface RequestHeaders {
   'x-request-id'?: string;
   'x-trace-id'?: string;
@@ -93,11 +82,8 @@ export interface MockedContext {
   req: MockRequest;
 }
 
-// ===== MIDDLEWARE HELPER TYPES =====
-
 export interface MiddlewareHelpers {
   extractRequestContext: (c: Context) => RequestContext;
-  generateUUID: () => string;
   getLogLevelConfig: () => LogLevelConfig;
   shouldSendToSentry: (level: LogLevel, config?: LogLevelConfig) => boolean;
   getCaller: () => string;
@@ -113,7 +99,6 @@ export interface MiddlewareHelpers {
 
 export interface MockedMiddlewareHelpers extends MiddlewareHelpers {
   extractRequestContext: MockedFunction<MiddlewareHelpers['extractRequestContext']>;
-  generateUUID: MockedFunction<MiddlewareHelpers['generateUUID']>;
   getLogLevelConfig: MockedFunction<MiddlewareHelpers['getLogLevelConfig']>;
   shouldSendToSentry: MockedFunction<MiddlewareHelpers['shouldSendToSentry']>;
   getCaller: MockedFunction<MiddlewareHelpers['getCaller']>;
@@ -124,8 +109,6 @@ export interface MockedMiddlewareHelpers extends MiddlewareHelpers {
   createSentryUserContext: MockedFunction<MiddlewareHelpers['createSentryUserContext']>;
   extractClientIp: MockedFunction<MiddlewareHelpers['extractClientIp']>;
 }
-
-// ===== SENTRY CONTEXT TYPES =====
 
 export interface SentryRequestContext {
   id: string;
@@ -155,8 +138,6 @@ export interface SentryUserContext {
   ip_address: string;
 }
 
-// ===== TEST DATA TYPES =====
-
 export interface TestUser extends User {
   email: string;
 }
@@ -168,8 +149,6 @@ export interface TestRequestContext extends RequestContext {
   ip: string;
   userAgent: string;
 }
-
-// ===== LOG TEST TYPES =====
 
 export interface LogTestCase {
   level: LogLevel;
@@ -187,8 +166,6 @@ export interface LogExpectations {
   sentryException?: Error;
 }
 
-// ===== MIDDLEWARE FUNCTION TYPES =====
-
 export type MiddlewareFunction = (c: Context, next: Next) => Promise<undefined | Response>;
 
 export interface MockedMiddlewareFunction {
@@ -197,8 +174,6 @@ export interface MockedMiddlewareFunction {
   mockReturnValue?: (value: Promise<undefined | Response>) => void;
 }
 
-// ===== ENVIRONMENT TYPES =====
-
 export interface EnvironmentVariables {
   LOG_LEVEL: LogLevel;
   LOG_LEVEL_SENTRY: LogLevel;
@@ -206,15 +181,11 @@ export interface EnvironmentVariables {
   NODE_ENV?: 'development' | 'production' | 'test';
 }
 
-// ===== ERROR TYPES =====
-
 export interface TestError extends Error {
   code?: string;
   statusCode?: number;
   details?: Record<string, unknown>;
 }
-
-// ===== ASSERTION HELPERS TYPES =====
 
 export interface LogAssertionOptions {
   expectRequestContext?: boolean;
@@ -229,12 +200,8 @@ export interface SentryAssertionOptions {
   expectedFingerprint?: string[];
 }
 
-// ===== FACTORY TYPES =====
-
 export type MockFactory<T> = (overrides?: Partial<T>) => T;
 export type MockedFactory<T> = (overrides?: Partial<T>) => MockedFunction<() => T>;
-
-// ===== UTILITY TYPES =====
 
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];

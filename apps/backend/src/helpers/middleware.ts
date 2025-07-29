@@ -34,10 +34,6 @@ export interface RequestHeaders {
   'user-agent'?: string;
 }
 
-/**
- * Returns the raw IP address
- * - Returns 'unknown' for invalid or missing IP addresses
- */
 export const getRawIpAddress = (rawIp: string | undefined): string => {
   if (!rawIp || rawIp === UNKNOWN_VALUE) {
     return UNKNOWN_VALUE;
@@ -46,12 +42,10 @@ export const getRawIpAddress = (rawIp: string | undefined): string => {
   return rawIp;
 };
 
-// Constants for IP validation
 const MAX_IP_LENGTH = 45;
 const PRIVATE_IP_PREFIXES = ['10.', '172.', '192.168.', '127.', '::1'] as const;
 const DEFAULT_STACK_DEPTH = 5;
 
-// IP validation patterns
 const IP_PATTERNS = {
   IPV4: /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
   IPV6: /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$/,
@@ -88,9 +82,7 @@ const isValidIpFormat = (ip: string): boolean => {
 export const extractClientIp = (c: Context): string => {
   const trustedHeaders = getTrustedIpHeaders();
 
-  // If no headers are trusted, skip header processing for security
   if (trustedHeaders.length === 0) {
-    // Only use connection remote address as last resort
     const remoteAddress = c.env?.remoteAddress;
     if (remoteAddress && isValidIpFormat(remoteAddress)) {
       return getRawIpAddress(remoteAddress);
@@ -98,7 +90,6 @@ export const extractClientIp = (c: Context): string => {
     return UNKNOWN_VALUE;
   }
 
-  // Try each trusted header in order
   for (const headerName of trustedHeaders) {
     const headerValue = c.req.header(headerName);
     if (!headerValue) {
@@ -120,7 +111,6 @@ export const extractClientIp = (c: Context): string => {
     }
   }
 
-  // Fallback to connection remote address if available
   const remoteAddress = c.env?.remoteAddress;
   if (remoteAddress && isValidIpFormat(remoteAddress)) {
     return getRawIpAddress(remoteAddress);
@@ -129,9 +119,6 @@ export const extractClientIp = (c: Context): string => {
   return UNKNOWN_VALUE;
 };
 
-/**
- * Extracts common request headers with fallbacks
- */
 export const extractRequestHeaders = (c: Context): RequestHeaders => {
   return {
     'x-request-id': c.req.header('x-request-id'),
@@ -143,22 +130,12 @@ export const extractRequestHeaders = (c: Context): RequestHeaders => {
   };
 };
 
-/**
- * Generates a UUID v4 string
- */
-export const generateUUID = (): string => {
-  return crypto.randomUUID();
-};
-
-/**
- * Extracts complete request context from Hono context
- */
 export const extractRequestContext = (c: Context): RequestContext => {
   const headers = extractRequestHeaders(c);
   const user = c.get('user') as User | undefined;
 
-  const requestId = headers['x-request-id'] || c.get('requestId') || generateUUID();
-  const traceId = headers['x-trace-id'] || generateUUID();
+  const requestId = headers['x-request-id'] || c.get('requestId') || crypto.randomUUID();
+  const traceId = headers['x-trace-id'] || crypto.randomUUID();
   const sessionId = headers['x-session-id'] || UNKNOWN_VALUE;
   const ip = extractClientIp(c);
   const userAgent = headers['user-agent'] || UNKNOWN_VALUE;
@@ -175,9 +152,6 @@ export const extractRequestContext = (c: Context): RequestContext => {
   };
 };
 
-/**
- * Creates Sentry-compatible user context with raw IP
- */
 export const createSentryUserContext = (user: User, rawIp: string) => {
   return {
     id: user.id,
@@ -190,9 +164,6 @@ export const createSentryUserContext = (user: User, rawIp: string) => {
   };
 };
 
-/**
- * Creates Sentry-compatible request context
- */
 export const createSentryRequestContext = (c: Context, context: RequestContext) => {
   return {
     id: context.requestId,
@@ -211,9 +182,6 @@ export const createSentryRequestContext = (c: Context, context: RequestContext) 
   };
 };
 
-/**
- * Creates Sentry-compatible business context
- */
 export const createSentryBusinessContext = (context: RequestContext) => {
   const businessContext: Record<string, string> = {
     source: SOURCE_BACKEND,
@@ -231,13 +199,9 @@ export const createSentryBusinessContext = (context: RequestContext) => {
     businessContext.roleId = context.roleId;
   }
 
-  // Only return if we have meaningful business data
   return Object.keys(businessContext).length > 1 ? businessContext : undefined;
 };
 
-/**
- * Sets common Sentry tags for correlation
- */
 export const setSentryCorrelationTags = (
   scope: { setTag: (key: string, value: string) => void },
   context: RequestContext,
@@ -260,9 +224,6 @@ export const setSentryCorrelationTags = (
   }
 };
 
-/**
- * Utility to get caller information from stack trace
- */
 export const getCaller = (stackDepth: number = DEFAULT_STACK_DEPTH): string => {
   const stack = new Error().stack;
   if (!stack) return UNKNOWN_VALUE;
@@ -301,7 +262,6 @@ export const shouldLog = (level: LogLevel, minLevel: LogLevel): boolean => {
   const levelIndex = LOG_LEVELS.indexOf(level);
   const minLevelIndex = LOG_LEVELS.indexOf(minLevel);
 
-  // Lower index means higher severity, so we log if level index <= min level index
   return levelIndex <= minLevelIndex;
 };
 

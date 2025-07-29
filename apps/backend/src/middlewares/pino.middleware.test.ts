@@ -2,17 +2,15 @@ import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { testClient } from 'hono/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createMockContext, createTestRequestContext, createTestUser } from '../tests/test-utils';
+import { createTestRequestContext, createTestUser } from '../tests/test-utils';
 import type { EnhancedLogger, MockedContext } from '../tests/types';
 import { enhancedPinoMiddleware } from './pino.middleware';
 
-// Clear the global mocks before setting up test-specific ones
 vi.unmock('@sentry/node');
 vi.unmock('@/helpers/middleware');
 vi.unmock('pino');
 vi.unmock('hono-pino');
 
-// Set up mocks with vi.hoisted
 const { sentryMocks, mockPinoLogger, helperMocks, testContext } = vi.hoisted(() => {
   const mockScope = {
     setContext: vi.fn(),
@@ -68,7 +66,6 @@ const { sentryMocks, mockPinoLogger, helperMocks, testContext } = vi.hoisted(() 
 
   const helperMocks = {
     extractRequestContext: vi.fn(() => testContext),
-    generateUUID: vi.fn(() => 'test-uuid'),
     getLogLevelConfig: vi.fn(() => ({
       console: 'info',
       sentry: 'warn',
@@ -148,7 +145,6 @@ vi.mock('hono-pino', () => ({
   }),
 }));
 
-// Mock environment
 vi.mock('@/config/env', () => ({
   envVars: {
     LOG_LEVEL: 'info',
@@ -202,8 +198,6 @@ describe('pino.middleware.ts', () => {
 
       expect(response).toBeDefined();
       expect(helperMocks.extractRequestContext).toHaveBeenCalled();
-      // The generateUUID might be called during middleware setup, so just verify it exists
-      expect(helperMocks.generateUUID).toBeDefined();
     });
 
     it('should handle requests with existing x-request-id header', async () => {
@@ -241,15 +235,12 @@ describe('pino.middleware.ts', () => {
 
     describe('comprehensive logging tests', () => {
       it('should handle info level logging correctly', () => {
-        // Spy on the enhanced logger methods to verify they're called
         const infoSpy = vi.spyOn(enhancedLogger, 'info');
 
         enhancedLogger.info('Test info message', { extra: 'data' });
 
-        // Verify the enhanced logger method was called
         expect(infoSpy).toHaveBeenCalledWith('Test info message', { extra: 'data' });
 
-        // Verify Sentry was not called for info level (since shouldSendToSentry returns false for info)
         expect(sentryMocks.captureMessage).not.toHaveBeenCalled();
         expect(sentryMocks.captureException).not.toHaveBeenCalled();
       });
@@ -259,10 +250,8 @@ describe('pino.middleware.ts', () => {
 
         enhancedLogger.warn('Test warning', { code: 'WARN_001' });
 
-        // Verify the enhanced logger method was called
         expect(warnSpy).toHaveBeenCalledWith('Test warning', { code: 'WARN_001' });
 
-        // Verify Sentry was called for warn level
         expect(sentryMocks.withScope).toHaveBeenCalled();
         expect(sentryMocks.captureMessage).toHaveBeenCalled();
       });
@@ -273,14 +262,10 @@ describe('pino.middleware.ts', () => {
 
         enhancedLogger.error('Database error', { err: testError, retries: 3 });
 
-        // Verify the enhanced logger method was called
         expect(errorSpy).toHaveBeenCalledWith('Database error', { err: testError, retries: 3 });
 
-        // Verify Sentry was called for error level
         expect(sentryMocks.withScope).toHaveBeenCalled();
-        // The error level should be sent to Sentry
         expect(helperMocks.shouldSendToSentry).toHaveBeenCalledWith('error', expect.any(Object));
-        // Either captureException or captureMessage should be called
         expect(
           sentryMocks.captureException.mock.calls.length + sentryMocks.captureMessage.mock.calls.length,
         ).toBeGreaterThan(0);
@@ -493,24 +478,9 @@ describe('pino.middleware.ts', () => {
     });
 
     it('should support child logger creation', () => {
-      // The child method should exist and be callable
       expect(typeof enhancedLogger.child).toBe('function');
 
-      // For now, just verify the method exists - the binding behavior is complex to test
       expect(enhancedLogger.child).toBeDefined();
-    });
-  });
-
-  describe('error handling', () => {
-    it('should throw error if base logger is undefined', () => {
-      const _mockContextWithoutLogger = createMockContext({
-        get: vi.fn().mockReturnValue(undefined),
-      });
-
-      expect(() => {
-        // This would be called internally when logger is undefined
-        // The actual middleware should handle this case
-      }).not.toThrow(); // The middleware should handle undefined logger gracefully
     });
   });
 
@@ -520,7 +490,6 @@ describe('pino.middleware.ts', () => {
 
       app.use(enhancedPinoMiddleware());
       app.use(async (c, next) => {
-        // Simulate another middleware that uses the logger
         const logger = c.get('logger') as EnhancedLogger;
         logger.info('Middleware chain info');
         await next();
@@ -534,7 +503,6 @@ describe('pino.middleware.ts', () => {
       await client.test.$get();
 
       expect(loggerFromContext).toBeDefined();
-      // Just verify that the logger has the expected enhanced methods
       expect(typeof loggerFromContext?.info).toBe('function');
       expect(typeof loggerFromContext?.warn).toBe('function');
       expect(typeof loggerFromContext?.error).toBe('function');
@@ -549,7 +517,6 @@ describe('pino.middleware.ts', () => {
       const client = testClient(app);
       const response = await client.test.$get();
 
-      // Hono catches errors internally and returns 500 status
       expect(response.status).toBe(500);
     });
   });

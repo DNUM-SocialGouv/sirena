@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock the tracking module before importing the client
 const mockGetTrackingHeaders = vi.fn(() => ({
   'x-request-id': 'mock-request-id',
   'x-trace-id': 'mock-trace-id',
@@ -11,7 +10,6 @@ vi.mock('@/lib/tracking', () => ({
   getTrackingHeaders: mockGetTrackingHeaders,
 }));
 
-// Mock the backend hc module
 const mockHcWithType = vi.fn(() => ({
   profile: { $get: vi.fn() },
 }));
@@ -26,7 +24,6 @@ describe('API client', () => {
   });
 
   it('should configure hcWithType with tracking headers', async () => {
-    // Import after mocks are set up
     await import('./hc');
 
     expect(mockHcWithType).toHaveBeenCalledWith('/api', {

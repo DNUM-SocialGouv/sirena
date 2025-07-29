@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock crypto.randomUUID
 const mockUUIDs = ['uuid-1', 'uuid-2', 'uuid-3', 'uuid-4'];
 let uuidCallCount = 0;
 
@@ -10,7 +9,6 @@ Object.defineProperty(global, 'crypto', {
   },
 });
 
-// Mock sessionStorage
 const mockSessionStorage = {
   getItem: vi.fn(),
   setItem: vi.fn(),
@@ -33,16 +31,13 @@ describe('Tracking Integration', () => {
     it('should generate and persist sessionId across multiple calls', async () => {
       const { getSessionId } = await import('./tracking');
 
-      // First call should generate and store
       const firstSessionId = getSessionId();
       expect(firstSessionId).toBe('uuid-1');
       expect(mockSessionStorage.setItem).toHaveBeenCalledWith('sessionId', 'uuid-1');
 
-      // Mock that sessionStorage now has the value
       mockSessionStorage.getItem.mockReturnValue('uuid-1');
       vi.clearAllMocks();
 
-      // Second call should retrieve from storage
       const secondSessionId = getSessionId();
       expect(secondSessionId).toBe('uuid-1');
       expect(mockSessionStorage.getItem).toHaveBeenCalledWith('sessionId');
@@ -50,7 +45,6 @@ describe('Tracking Integration', () => {
     });
 
     it('should generate unique request and trace IDs but reuse session ID', async () => {
-      // Set up existing session
       mockSessionStorage.getItem.mockReturnValue('existing-session');
 
       const { getTrackingHeaders } = await import('./tracking');
@@ -97,29 +91,25 @@ describe('Tracking Integration', () => {
 
       generateUUID();
       generateUUID();
-      createTrackingContext(); // This creates requestId + traceId, getSessionId also calls it once
+      createTrackingContext();
 
-      // 2 direct calls + 2 from createTrackingContext + 1 for new sessionId = 5
       expect(crypto.randomUUID).toHaveBeenCalledTimes(5);
     });
   });
 
   describe('API client integration', () => {
     it('should integrate with API client configuration', async () => {
-      // Mock the backend hc module
       const mockHcWithType = vi.fn(() => ({ profile: { $get: vi.fn() } }));
       vi.doMock('@sirena/backend/hc', () => ({ hcWithType: mockHcWithType }));
 
       mockSessionStorage.getItem.mockReturnValue('api-session');
 
-      // Import the client after setting up mocks
       await import('./api/hc');
 
       expect(mockHcWithType).toHaveBeenCalledWith('/api', {
         headers: expect.any(Function) as () => Record<string, string>,
       });
 
-      // Test the headers function
       const config = mockHcWithType.mock.calls[0][1];
       const headers = config.headers();
 

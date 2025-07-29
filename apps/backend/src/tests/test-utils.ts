@@ -2,8 +2,6 @@ import type { Context } from 'hono';
 import { expect, vi } from 'vitest';
 import type { LogLevel, RequestContext, User } from '@/helpers/middleware';
 
-// ===== TYPE DEFINITIONS =====
-
 export interface MockSentryScope {
   setContext: ReturnType<typeof vi.fn>;
   setTag: ReturnType<typeof vi.fn>;
@@ -43,8 +41,6 @@ export interface MockContext {
 export interface TestUser extends User {
   email: string;
 }
-
-// ===== MOCK FACTORIES =====
 
 export const createMockSentryScope = (): MockSentryScope => ({
   setContext: vi.fn(),
@@ -99,8 +95,6 @@ export const createMockContext = (overrides: Partial<MockContext> = {}): MockCon
   };
 };
 
-// ===== TEST DATA FACTORIES =====
-
 export const createTestRequestContext = (overrides: Partial<RequestContext> = {}): RequestContext => ({
   requestId: 'test-request-id',
   traceId: 'test-trace-id',
@@ -124,8 +118,6 @@ export const createTestUser = (overrides: Partial<TestUser> = {}): TestUser => (
 export const createTestError = (message = 'Test error'): Error => {
   return new Error(message);
 };
-
-// ===== MOCK SETUP UTILITIES =====
 
 export const setupSentryMocks = () => {
   const mockScope = createMockSentryScope();
@@ -151,7 +143,6 @@ export const setupMiddlewareHelperMocks = (requestContext?: Partial<RequestConte
 
   const helperMocks = {
     extractRequestContext: vi.fn(() => testContext),
-    generateUUID: vi.fn(() => 'test-uuid'),
     getLogLevelConfig: vi.fn(() => ({
       console: 'info' as LogLevel,
       sentry: 'warn' as LogLevel,
@@ -198,7 +189,6 @@ export const setupPinoMocks = () => {
   const mockPinoLogger = createMockPinoLogger();
 
   vi.mock('hono-pino', () => {
-    // Create logger instance inside the mock callback to avoid reference errors
     const mockLogger = {
       info: vi.fn(),
       warn: vi.fn(),
@@ -219,7 +209,6 @@ export const setupPinoMocks = () => {
   });
 
   vi.mock('pino', () => {
-    // Create a fresh mock logger inside the mock callback
     const innerMockLogger = {
       info: vi.fn(),
       warn: vi.fn(),
@@ -275,8 +264,6 @@ export const setupEnvironmentMocks = () => {
   }));
 };
 
-// ===== TEST ASSERTION HELPERS =====
-
 export const expectLogMethodCalled = (
   mockLogger: MockPinoLogger,
   level: keyof MockPinoLogger,
@@ -302,8 +289,6 @@ export const expectSentryTagsSet = (mockScope: MockSentryScope, expectedTags: Re
     expect(mockScope.setTag).toHaveBeenCalledWith(key, value);
   });
 };
-
-// ===== LOGGING TEST UTILITIES =====
 
 export interface LogTestCase {
   level: LogLevel;
@@ -366,14 +351,12 @@ export const runLogLevelTest = (
 ) => {
   const { level, message, data = {}, shouldSendToSentry, sentryLevel, expectSentryException } = testCase;
 
-  // Execute the log call
   if (data && Object.keys(data).length > 0) {
     enhancedLogger[level](message, data);
   } else {
     enhancedLogger[level](message);
   }
 
-  // Verify pino logger was called
   const expectedData = {
     message,
     ...data,
@@ -389,7 +372,6 @@ export const runLogLevelTest = (
 
   expectLogMethodCalled(mockPinoLogger, level as keyof MockPinoLogger, expectedData, message);
 
-  // Verify Sentry integration
   if (shouldSendToSentry) {
     expect(vi.mocked(require('@sentry/node')).withScope).toHaveBeenCalled();
 
@@ -404,8 +386,6 @@ export const runLogLevelTest = (
   }
 };
 
-// ===== CLEANUP UTILITIES =====
-
 export const resetAllMocks = () => {
   vi.resetAllMocks();
 };
@@ -413,8 +393,6 @@ export const resetAllMocks = () => {
 export const clearAllMocks = () => {
   vi.clearAllMocks();
 };
-
-// ===== APP SETUP UTILITIES =====
 
 import { Hono } from 'hono';
 import { testClient } from 'hono/testing';

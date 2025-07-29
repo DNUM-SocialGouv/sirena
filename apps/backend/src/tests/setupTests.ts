@@ -12,7 +12,6 @@ const fakeLogger = {
   level: 'info',
 };
 
-// Mock Sentry
 vi.mock('@sentry/node', () => ({
   getCurrentScope: vi.fn(() => ({
     setContext: vi.fn(),
@@ -38,7 +37,6 @@ vi.mock('@sentry/node', () => ({
   captureMessage: vi.fn(),
 }));
 
-// Mock middleware utilities
 vi.mock('@/helpers/middleware', () => ({
   extractRequestContext: vi.fn(() => ({
     requestId: 'test-request-id',
@@ -50,7 +48,6 @@ vi.mock('@/helpers/middleware', () => ({
     entiteId: 'test-entite-id',
     roleId: 'test-role-id',
   })),
-  generateUUID: vi.fn(() => 'test-uuid'),
   getLogLevelConfig: vi.fn(() => ({
     console: 'info',
     sentry: 'warn',
@@ -67,7 +64,6 @@ vi.mock('@/helpers/middleware', () => ({
   SOURCE_BACKEND: 'backend',
 }));
 
-// Mock pino and hono-pino
 const mockPinoMiddleware = vi.fn(async (c: Context, next: () => Promise<void>) => {
   c.set('logger', fakeLogger);
   return next();
@@ -77,7 +73,6 @@ vi.mock('hono-pino', () => ({
   pinoLogger: vi.fn(() => mockPinoMiddleware),
 }));
 
-// Create a mock pino with stdSerializers
 const mockPino = Object.assign(
   vi.fn(() => fakeLogger),
   {
@@ -86,7 +81,6 @@ const mockPino = Object.assign(
 );
 
 vi.mock('pino', () => {
-  // Attach stdSerializers to the function itself (like real pino)
   mockPino.stdSerializers = {
     err: vi.fn((err) => ({
       type: err?.constructor?.name || 'Error',
@@ -107,7 +101,6 @@ vi.mock('pino-pretty', () => ({
   default: vi.fn(),
 }));
 
-// Mock environment variables
 vi.mock('@/config/env', () => ({
   envVars: {
     // PC
@@ -142,5 +135,3 @@ vi.mock('@/config/env', () => ({
     SUPER_ADMIN_LIST_EMAIL: 'admin@test.com',
   },
 }));
-
-// Don't mock the middlewares globally - let individual tests handle their own mocks

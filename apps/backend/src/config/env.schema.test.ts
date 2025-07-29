@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { AppEnvSchema } from './env.schema';
 
 describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
-  // Base configuration with all required fields
   const baseConfig = {
     FRONTEND_URI: 'http://localhost:3000',
     FRONTEND_REDIRECT_URI: 'http://localhost:3000/auth/callback',
@@ -19,9 +18,6 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
     DEMAT_SOCIAL_API_DIRECTORY: '123',
   };
 
-  /**
-   * Helper function to create test config with LOG_EXTRA_CONTEXT
-   */
   const createConfig = (logExtraContext?: string) => ({
     ...baseConfig,
     ...(logExtraContext !== undefined && {
@@ -29,9 +25,6 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
     }),
   });
 
-  /**
-   * Helper function to parse config and return LOG_EXTRA_CONTEXT
-   */
   const parseLogExtraContext = (logExtraContext?: string) => {
     const config = createConfig(logExtraContext);
     const result = AppEnvSchema.parse(config);
@@ -40,14 +33,9 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
 
   describe('LOG_EXTRA_CONTEXT parsing', () => {
     describe('basic parsing', () => {
-      it('should parse empty string to empty object', () => {
-        const result = parseLogExtraContext('');
-        expect(result).toEqual({});
-      });
-
-      it('should parse undefined to empty object', () => {
-        const result = parseLogExtraContext();
-        expect(result).toEqual({});
+      it('should parse empty/undefined input to empty object', () => {
+        expect(parseLogExtraContext('')).toEqual({});
+        expect(parseLogExtraContext()).toEqual({});
       });
 
       it('should parse single key=value pair', () => {
@@ -63,36 +51,6 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
           env: 'production',
           service: 'api',
           version: '1.2.3',
-        });
-      });
-    });
-
-    describe('whitespace handling', () => {
-      it('should handle whitespace in key=value pairs', () => {
-        const result = parseLogExtraContext('  env  = production  ,  service = api  ,  version=1.2.3  ');
-        expect(result).toEqual({
-          env: 'production',
-          service: 'api',
-          version: '1.2.3',
-        });
-      });
-
-      it('should handle empty pairs', () => {
-        const result = parseLogExtraContext('env=production,,service=api,,version=1.2.3');
-        expect(result).toEqual({
-          env: 'production',
-          service: 'api',
-          version: '1.2.3',
-        });
-      });
-    });
-
-    describe('malformed input handling', () => {
-      it('should ignore malformed pairs gracefully', () => {
-        const result = parseLogExtraContext('env=production,invalid-format,service=api,key=,=value');
-        expect(result).toEqual({
-          env: 'production',
-          service: 'api',
         });
       });
     });

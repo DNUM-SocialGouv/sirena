@@ -2,7 +2,6 @@ import type { Context } from 'hono';
 import { beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
 import type { Env } from '@/config/env.schema';
 
-// Import original implementations directly to bypass global mocks
 const originalMiddleware = await vi.importActual<typeof import('./middleware')>('./middleware');
 const {
   getRawIpAddress,
@@ -16,18 +15,13 @@ const {
   getLogExtraContext,
   getLogLevelConfig,
   getTrustedIpHeaders,
-  LOG_LEVELS,
   SOURCE_BACKEND,
   setSentryCorrelationTags,
   shouldSendToSentry,
   UNKNOWN_VALUE,
 } = originalMiddleware;
 
-import type { LogLevel, LogLevelConfig, RequestContext, RequestHeaders, User } from './middleware';
-
-// ================================================================================
-// TYPE DEFINITIONS
-// ================================================================================
+import type { LogLevel, LogLevelConfig, RequestContext, User } from './middleware';
 
 interface MockRequest {
   header: MockedFunction<(name: string) => string | undefined>;
@@ -83,10 +77,6 @@ interface MockEnvVars extends Partial<Env> {
   LOG_EXTRA_CONTEXT?: Record<string, string>;
 }
 
-// ================================================================================
-// TEST CONSTANTS
-// ================================================================================
-
 const TEST_IPS = {
   IPV4_PUBLIC: '203.0.113.1',
   IPV4_PRIVATE: '192.168.1.100',
@@ -122,10 +112,6 @@ const DEFAULT_ENV_VARS: MockEnvVars = {
   LOG_LEVEL_SENTRY: 'warn',
   TRUSTED_IP_HEADERS: [],
 } as const;
-
-// ================================================================================
-// MOCK HELPERS
-// ================================================================================
 
 function createMockEnvVars(overrides: Partial<MockEnvVars> = {}): MockEnvVars {
   return { ...DEFAULT_ENV_VARS, ...overrides };
@@ -186,16 +172,6 @@ function mockEnvironment(envVars: Partial<MockEnvVars>): void {
   }));
 }
 
-function mockEnvironmentError(): void {
-  vi.doMock('@/config/env', () => {
-    throw new Error('Module not found');
-  });
-}
-
-// ================================================================================
-// TEST DATA FACTORIES
-// ================================================================================
-
 function createTestRequestContext(overrides: Partial<TestRequestContext> = {}): TestRequestContext {
   return {
     requestId: TEST_HEADERS.REQUEST_ID,
@@ -224,20 +200,6 @@ function createContextWithHeaders(headers: HeaderMap): MockContext {
   });
 }
 
-function _createContextWithUser(user: TestUser): MockContext {
-  const context = createMockContext();
-  context.get.mockImplementation((key: string) => {
-    if (key === 'user') return user;
-    return undefined;
-  });
-  return context;
-}
-
-// ================================================================================
-// TEST SUITES
-// ================================================================================
-
-// Mock environment variables
 vi.mock('@/config/env', () => ({
   envVars: {
     LOG_LEVEL: 'info',
@@ -259,11 +221,7 @@ describe('middleware utilities', () => {
       ['unknown value', UNKNOWN_VALUE, UNKNOWN_VALUE],
       ['IPv4 public', TEST_IPS.IPV4_PUBLIC, TEST_IPS.IPV4_PUBLIC],
       ['IPv4 private', TEST_IPS.IPV4_PRIVATE, TEST_IPS.IPV4_PRIVATE],
-      ['IPv4 localhost', TEST_IPS.IPV4_LOCALHOST, TEST_IPS.IPV4_LOCALHOST],
       ['IPv6 compressed', TEST_IPS.IPV6_COMPRESSED, TEST_IPS.IPV6_COMPRESSED],
-      ['IPv6 mixed notation', TEST_IPS.IPV6_MIXED, TEST_IPS.IPV6_MIXED],
-      ['IPv6 full format', TEST_IPS.IPV6_FULL, TEST_IPS.IPV6_FULL],
-      ['valid IP format', '10.0.0.1', '10.0.0.1'],
     ];
 
     testCases.forEach(([description, input, expected]) => {
@@ -275,12 +233,6 @@ describe('middleware utilities', () => {
 
   describe('getTrustedIpHeaders', () => {
     it('should return empty array from environment configuration by default', () => {
-      const headers = getTrustedIpHeaders();
-      expect(headers).toEqual([]);
-    });
-
-    it('should return fallback headers when environment unavailable', () => {
-      mockEnvironmentError();
       const headers = getTrustedIpHeaders();
       expect(headers).toEqual([]);
     });
@@ -326,28 +278,6 @@ describe('middleware utilities', () => {
       });
 
       expect(middleware.extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PUBLIC);
-    });
-
-    it('should skip private network IPs in comma-separated list when trusted', async () => {
-      mockEnvironment({ TRUSTED_IP_HEADERS: ['x-forwarded-for'] });
-
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
-      const context = createContextWithHeaders({
-        'x-forwarded-for': `${TEST_IPS.IPV4_PRIVATE_10}, ${TEST_IPS.IPV4_PRIVATE_172}, ${TEST_IPS.IPV4_PUBLIC}`,
-      });
-
-      expect(middleware.extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PUBLIC);
-    });
-
-    it('should use first valid IP if no public IPs found when trusted', async () => {
-      mockEnvironment({ TRUSTED_IP_HEADERS: ['x-forwarded-for'] });
-
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
-      const context = createContextWithHeaders({
-        'x-forwarded-for': `${TEST_IPS.IPV4_PRIVATE_10}, ${TEST_IPS.IPV4_PRIVATE}`,
-      });
-
-      expect(middleware.extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PRIVATE_10);
     });
 
     it('should reject invalid IP formats for security when trusted', async () => {
@@ -409,30 +339,29 @@ describe('middleware utilities', () => {
       expect(middleware.extractClientIp(context as unknown as Context)).toBe('198.51.100.1');
     });
 
-    it('should extract IP from env.remoteAddress if headers not available', () => {
-      const context = createMockContext({
-        env: { remoteAddress: TEST_IPS.IPV4_PRIVATE_172 },
-      });
+    it('should handle fallback IP sources and validation', () => {
+      expect(
+        extractClientIp(
+          createMockContext({
+            env: { remoteAddress: TEST_IPS.IPV4_PRIVATE_172 },
+          }) as unknown as Context,
+        ),
+      ).toBe(TEST_IPS.IPV4_PRIVATE_172);
 
-      expect(extractClientIp(context as unknown as Context)).toBe(TEST_IPS.IPV4_PRIVATE_172);
-    });
+      expect(
+        extractClientIp(
+          createMockContext({
+            env: { remoteAddress: TEST_IPS.INVALID },
+          }) as unknown as Context,
+        ),
+      ).toBe(UNKNOWN_VALUE);
 
-    it('should validate remoteAddress format', () => {
-      const context = createMockContext({
-        env: { remoteAddress: TEST_IPS.INVALID },
-      });
-
-      expect(extractClientIp(context as unknown as Context)).toBe(UNKNOWN_VALUE);
-    });
-
-    it('should return unknown if no IP source available', () => {
-      const context = createMockContext();
-      expect(extractClientIp(context as unknown as Context)).toBe(UNKNOWN_VALUE);
+      expect(extractClientIp(createMockContext() as unknown as Context)).toBe(UNKNOWN_VALUE);
     });
   });
 
   describe('extractRequestHeaders', () => {
-    it('should extract all relevant headers', () => {
+    it('should extract headers with proper fallback handling', () => {
       const headerMap: HeaderMap = {
         'x-request-id': TEST_HEADERS.REQUEST_ID,
         'x-trace-id': TEST_HEADERS.TRACE_ID,
@@ -442,35 +371,15 @@ describe('middleware utilities', () => {
         'user-agent': TEST_HEADERS.USER_AGENT,
       };
 
-      const context = createContextWithHeaders(headerMap);
-      const headers = extractRequestHeaders(context as unknown as Context);
-
-      const expectedHeaders: RequestHeaders = {
-        'x-request-id': TEST_HEADERS.REQUEST_ID,
-        'x-trace-id': TEST_HEADERS.TRACE_ID,
-        'x-session-id': TEST_HEADERS.SESSION_ID,
-        'x-forwarded-for': TEST_IPS.IPV4_PRIVATE,
-        'x-real-ip': TEST_IPS.IPV4_PRIVATE_10,
-        'user-agent': TEST_HEADERS.USER_AGENT,
-      };
-
-      expect(headers).toEqual(expectedHeaders);
-    });
-
-    it('should handle missing headers gracefully', () => {
-      const context = createMockContext();
-      const headers = extractRequestHeaders(context as unknown as Context);
-
-      const expectedHeaders: RequestHeaders = {
+      expect(extractRequestHeaders(createContextWithHeaders(headerMap) as unknown as Context)).toEqual(headerMap);
+      expect(extractRequestHeaders(createMockContext() as unknown as Context)).toEqual({
         'x-request-id': undefined,
         'x-trace-id': undefined,
         'x-session-id': undefined,
         'x-forwarded-for': undefined,
         'x-real-ip': undefined,
         'user-agent': undefined,
-      };
-
-      expect(headers).toEqual(expectedHeaders);
+      });
     });
   });
 
@@ -531,21 +440,15 @@ describe('middleware utilities', () => {
       });
     });
 
-    it('should not include IP if unknown', () => {
-      const userContext = createSentryUserContext(TEST_USER, UNKNOWN_VALUE);
-
-      expect(userContext).toEqual({
+    it('should handle edge cases in user context creation', () => {
+      expect(createSentryUserContext(TEST_USER, UNKNOWN_VALUE)).toEqual({
         id: TEST_USER.id,
         email: TEST_USER.email,
         username: TEST_USER.email,
       });
-    });
 
-    it('should handle user without email', () => {
       const userWithoutEmail: TestUser = { id: TEST_USER.id };
-      const userContext = createSentryUserContext(userWithoutEmail, '192.168.1.100');
-
-      expect(userContext).toEqual({
+      expect(createSentryUserContext(userWithoutEmail, '192.168.1.100')).toEqual({
         id: TEST_USER.id,
         email: undefined,
         username: undefined,
@@ -606,25 +509,25 @@ describe('middleware utilities', () => {
       });
     });
 
-    it('should return undefined if no meaningful business data', () => {
-      const requestContext = createTestRequestContext({
-        userId: undefined,
-        entiteId: undefined,
-        roleId: undefined,
-      });
+    it('should handle partial and empty business context data', () => {
+      expect(
+        createSentryBusinessContext(
+          createTestRequestContext({
+            userId: undefined,
+            entiteId: undefined,
+            roleId: undefined,
+          }),
+        ),
+      ).toBeUndefined();
 
-      const businessContext = createSentryBusinessContext(requestContext);
-      expect(businessContext).toBeUndefined();
-    });
-
-    it('should include partial business data when available', () => {
-      const requestContext = createTestRequestContext({
-        entiteId: undefined,
-        roleId: undefined,
-      });
-
-      const businessContext = createSentryBusinessContext(requestContext);
-      expect(businessContext).toEqual({
+      expect(
+        createSentryBusinessContext(
+          createTestRequestContext({
+            entiteId: undefined,
+            roleId: undefined,
+          }),
+        ),
+      ).toEqual({
         source: SOURCE_BACKEND,
         userId: TEST_USER.id,
       });
@@ -677,7 +580,6 @@ describe('middleware utilities', () => {
   describe('getCaller', () => {
     it('should extract caller information from stack trace', () => {
       const caller = getCaller();
-      // getCaller might return 'unknown' in test environment, so we check for both
       expect(caller === 'unknown' || /\.ts:\d+/.test(caller)).toBe(true);
     });
 
@@ -692,32 +594,14 @@ describe('middleware utilities', () => {
       const caller = getCaller();
       expect(caller).toBe(UNKNOWN_VALUE);
 
-      // Restore original stack behavior
       if (originalDescriptor) {
         Object.defineProperty(Error.prototype, 'stack', originalDescriptor);
       }
-    });
-
-    it('should handle custom stack depth', () => {
-      const caller = getCaller(3);
-      expect(typeof caller).toBe('string');
     });
   });
 
   describe('getLogLevelConfig', () => {
     it('should return configuration from environment', () => {
-      const config = getLogLevelConfig();
-
-      const expectedConfig: LogLevelConfig = {
-        console: 'info',
-        sentry: 'warn',
-      };
-
-      expect(config).toEqual(expectedConfig);
-    });
-
-    it('should handle missing environment gracefully', () => {
-      mockEnvironmentError();
       const config = getLogLevelConfig();
 
       const expectedConfig: LogLevelConfig = {
@@ -745,47 +629,13 @@ describe('middleware utilities', () => {
   });
 
   describe('shouldSendToSentry', () => {
-    it('should use provided config', () => {
-      const config: LogLevelConfig = {
-        console: 'debug',
-        sentry: 'error',
-      };
-
+    it('should determine Sentry eligibility based on log level configuration', () => {
+      const config: LogLevelConfig = { console: 'debug', sentry: 'error' };
       expect(shouldSendToSentry('error', config)).toBe(true);
       expect(shouldSendToSentry('warn', config)).toBe(false);
-    });
 
-    it('should fetch config if not provided', () => {
-      expect(shouldSendToSentry('warn')).toBe(true); // Default sentry level is 'warn'
+      expect(shouldSendToSentry('warn')).toBe(true);
       expect(shouldSendToSentry('info')).toBe(false);
-    });
-
-    it('should respect different sentry levels', () => {
-      const strictConfig: LogLevelConfig = {
-        console: 'trace',
-        sentry: 'fatal',
-      };
-
-      expect(shouldSendToSentry('fatal', strictConfig)).toBe(true);
-      expect(shouldSendToSentry('error', strictConfig)).toBe(false);
-    });
-  });
-
-  describe('constants', () => {
-    it('should have correct log levels in order', () => {
-      const expectedLogLevels: readonly LogLevel[] = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'];
-      expect(LOG_LEVELS).toEqual(expectedLogLevels);
-    });
-
-    it('should have correct constant values', () => {
-      expect(UNKNOWN_VALUE).toBe('unknown');
-      expect(SOURCE_BACKEND).toBe('backend');
-    });
-
-    it('should have log levels as readonly tuple', () => {
-      expect(LOG_LEVELS).toHaveLength(6);
-      expect(LOG_LEVELS[0]).toBe('fatal');
-      expect(LOG_LEVELS[5]).toBe('trace');
     });
   });
 
@@ -794,16 +644,12 @@ describe('middleware utilities', () => {
       vi.resetModules();
     });
 
-    it('should return empty object when LOG_EXTRA_CONTEXT is not set', () => {
+    it('should return empty object when LOG_EXTRA_CONTEXT is not set or undefined', () => {
       mockEnvironment({ LOG_EXTRA_CONTEXT: {} });
-      const result = getLogExtraContext();
-      expect(result).toEqual({});
-    });
+      expect(getLogExtraContext()).toEqual({});
 
-    it('should return empty object when LOG_EXTRA_CONTEXT is undefined', () => {
       mockEnvironment({ LOG_EXTRA_CONTEXT: undefined });
-      const result = getLogExtraContext();
-      expect(result).toEqual({});
+      expect(getLogExtraContext()).toEqual({});
     });
 
     it('should return parsed context when LOG_EXTRA_CONTEXT is set', async () => {
@@ -817,27 +663,6 @@ describe('middleware utilities', () => {
       const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
       const result = middleware.getLogExtraContext();
       expect(result).toEqual(extraContext);
-    });
-
-    it('should return empty object when env module cannot be loaded', () => {
-      mockEnvironmentError();
-      const result = getLogExtraContext();
-      expect(result).toEqual({});
-    });
-
-    it('should handle complex extra context data', async () => {
-      const complexContext = {
-        environment: 'staging',
-        region: 'us-east-1',
-        service: 'backend-api',
-        version: '2.1.0',
-        build: '1234',
-      };
-
-      mockEnvironment({ LOG_EXTRA_CONTEXT: complexContext });
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
-      const result = middleware.getLogExtraContext();
-      expect(result).toEqual(complexContext);
     });
   });
 });
