@@ -5,6 +5,17 @@ import { getLogLevelConfig } from './helpers/middleware';
 import { prisma } from './libs/prisma';
 import { setupOpenAPI } from './openAPI';
 import '@/config/env.ts';
+import { startScheduler } from '@/jobs/scheduler.job';
+
+startScheduler()
+  .then(() => {
+    console.log('[Scheduler] All jobs scheduled');
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('[Scheduler] Failed to start', err);
+    process.exit(1);
+  });
 
 const createDefaultLogger = () => {
   const logConfig = getLogLevelConfig();

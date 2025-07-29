@@ -171,12 +171,35 @@ export const AppEnvSchema = z.object({
     })
     .optional()
     .default(''),
+  REDIS_HOST: z.string({
+    required_error: "La variable d'environnement REDIS_HOST est requise",
+  }),
+  REDIS_PORT: z
+    .string({
+      required_error: "La variable d'environnement REDIS_PORT est requise",
+    })
+    .transform((val) => {
+      const parsed = Number.parseInt(val, 10);
+      if (Number.isNaN(parsed)) {
+        throw new Error("La variable d'environnement REDIS_PORT doit etre un integer");
+      }
+      return parsed;
+    }),
+  REDIS_PASSWORD: z.string({
+    required_error: "La variable d'environnement REDIS_PASSWORD est requise",
+  }),
+});
+
+export const CronEnvSchema = z.object({
+  CRON_DEMAT_SOCIAL: z.string({
+    required_error: "La variable d'environnement CRON_DEMAT_SOCIAL est requise",
+  }),
 });
 
 /**
  * Schéma global de toutes les variables d'environnement
  */
-export const EnvSchema = ProConnectEnvSchema.merge(AppEnvSchema);
+export const EnvSchema = ProConnectEnvSchema.merge(AppEnvSchema).merge(CronEnvSchema);
 
 /**
  * Type extrait du schéma pour les variables ProConnect

@@ -45,6 +45,12 @@ const processEnv = {
   // Sarbacane
   SARBACANE_API_URL: process.env.SARBACANE_API_URL,
   SARBACANE_API_KEY: process.env.SARBACANE_API_KEY,
+  // Cron
+  CRON_DEMAT_SOCIAL: process.env.CRON_DEMAT_SOCIAL,
+  // Redis
+  REDIS_HOST: process.env.REDIS_HOST,
+  REDIS_PORT: process.env.REDIS_PORT,
+  REDIS_PASSWORD: process.env.REDIS_PASSWORD,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);
