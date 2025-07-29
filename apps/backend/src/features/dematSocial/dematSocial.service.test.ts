@@ -1,22 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createRequeteFromDematSocial } from '@/features/requetes/requetes.service';
+import { createOrGetFromDematSocial } from '@/features/requetes/requetes.service';
 import { graffle } from '@/libs/graffle';
 import { getRequetes, importRequetes } from './dematSocial.service';
 
 const sendMock = vi.fn();
 
-vi.mock('@/libs/graffle', () => ({
-  graffle: {
-    gql: vi.fn(() => ({
-      send: sendMock,
-    })),
-  },
-  GetDossiersByDateDocument: vi.fn(),
-}));
+vi.mock('@/libs/graffle', () => {
+  const gqlMock = vi.fn(() => ({ send: sendMock }));
+  const transportMock = vi.fn(() => ({ gql: gqlMock }));
 
-vi.mock('@/features/requetes/requetes.service', () => ({
-  createRequeteFromDematSocial: vi.fn(),
-}));
+  return {
+    graffle: {
+      transport: transportMock,
+      gql: gqlMock,
+    },
+    GetDossiersByDateDocument: {},
+    GetDossiersMetadataDocument: {},
+    GetDossierDocument: {},
+  };
+});
 
 vi.mock('@/config/env', () => ({
   envVars: {
@@ -24,7 +26,9 @@ vi.mock('@/config/env', () => ({
   },
 }));
 
-const mockedCreate = vi.mocked(createRequeteFromDematSocial);
+vi.mock('@/features/requetes/requetes.service', () => ({
+  createOrGetFromDematSocial: vi.fn(),
+}));
 
 describe('dematSocial.service.ts', () => {
   beforeEach(() => {
@@ -72,11 +76,30 @@ describe('dematSocial.service.ts', () => {
         },
       });
 
-      await importRequetes(new Date('2024-01-01'));
+      vi.mocked(createOrGetFromDematSocial)
+        .mockResolvedValueOnce({
+          number: 1,
+          dematSocialId: 101,
+          id: '1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          requetesEntite: [],
+        })
+        .mockResolvedValueOnce({
+          number: 2,
+          dematSocialId: 102,
+          id: '2',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          requetesEntite: [],
+        });
 
-      expect(mockedCreate).toHaveBeenCalledTimes(2);
-      expect(mockedCreate).toHaveBeenCalledWith({ dematSocialId: 101, createdAt: dateDepot });
-      expect(mockedCreate).toHaveBeenCalledWith({ dematSocialId: 102, createdAt: dateDepot });
+      const result = await importRequetes(new Date('2024-01-01'));
+
+      expect(createOrGetFromDematSocial).toHaveBeenCalledTimes(2);
+      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({ dematSocialId: 101 });
+      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({ dematSocialId: 102 });
+      expect(result).toEqual({ count: 2 });
     });
 
     it('should do nothing if no dossiers returned', async () => {
@@ -84,8 +107,9 @@ describe('dematSocial.service.ts', () => {
         demarche: { dossiers: { nodes: null } },
       });
 
-      await importRequetes();
-      expect(mockedCreate).not.toHaveBeenCalled();
+      const result = await importRequetes();
+      expect(createOrGetFromDematSocial).not.toHaveBeenCalled();
+      expect(result).toEqual({ count: 0 });
     });
   });
 });
