@@ -2,15 +2,21 @@ import { Chart } from 'cdk8s';
 import type { Construct } from 'constructs';
 import * as k8s from '../imports/k8s';
 
-interface AppProps {
+interface SharedProps {
   name: string;
-  host: string;
   image: string;
   replicas: number;
-  port: number;
-  targetPort: k8s.IntOrString;
   namespace: string;
   environment: string;
+}
+interface AppProps extends SharedProps {
+  host: string;
+  port: number;
+  targetPort: k8s.IntOrString;
+}
+
+interface WorkerProps extends SharedProps {
+  host: '';
 }
 
 function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
@@ -103,6 +109,10 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
       name: 'S3_BUCKET_PORT',
       value: '443',
     },
+    {
+      name: 'CRON_DEMAT_SOCIAL',
+      value: '3600',
+    },
   ];
 }
 
@@ -147,6 +157,26 @@ function createBucketEnvVars(): k8s.EnvVar[] {
   }));
 }
 
+function createRedisEnvVars(): k8s.EnvVar[] {
+  const redisSecretName = 'redis';
+  const redisEnvMappings = [
+    { envName: 'REDIS_HOST', secretKey: 'host' },
+    { envName: 'REDIS_PORT', secretKey: 'port' },
+    { envName: 'REDIS_PASSWORD', secretKey: 'password' },
+    { envName: 'REDIS_URL', secretKey: 'url' },
+  ];
+
+  return redisEnvMappings.map(({ envName, secretKey }) => ({
+    name: envName,
+    valueFrom: {
+      secretKeyRef: {
+        name: redisSecretName,
+        key: secretKey,
+      },
+    },
+  }));
+}
+
 function createContainer(props: AppProps): k8s.Container {
   const isBackend = props.name === 'backend';
   const containerPort = Number(props.targetPort.value);
@@ -164,9 +194,14 @@ function createContainer(props: AppProps): k8s.Container {
       },
     },
     image: props.image,
-    ports: [{ containerPort: Number(props.targetPort.value) }],
+    ...('targetPort' in props ? { ports: [{ containerPort: Number(props.targetPort.value) }] } : {}),
     env: isBackend
-      ? [...createBackendEnvVars(props.host, props.environment), ...createDatabaseEnvVars(), ...createBucketEnvVars()]
+      ? [
+          ...createBackendEnvVars(props.host, props.environment),
+          ...createDatabaseEnvVars(),
+          ...createRedisEnvVars(),
+          ...createBucketEnvVars(),
+        ]
       : [],
     envFrom: isBackend ? [{ secretRef: { name: 'backend' } }] : undefined,
     livenessProbe: {
@@ -269,6 +304,49 @@ function createDeployment(scope: Construct, props: AppProps, labels: Record<stri
   });
 }
 
+function createWorkerDeployment(scope: Construct, props: WorkerProps, labels: Record<string, string>) {
+  return new k8s.KubeDeployment(scope, 'worker-deployment', {
+    metadata: {
+      name: props.name,
+      labels: labels,
+    },
+    spec: {
+      replicas: props.replicas,
+      selector: {
+        matchLabels: labels,
+      },
+      template: {
+        metadata: {
+          labels: labels,
+        },
+        spec: {
+          containers: [
+            {
+              name: props.name,
+              image: props.image,
+              resources: {
+                limits: {
+                  cpu: k8s.Quantity.fromString('250m'),
+                  memory: k8s.Quantity.fromString('500Mi'),
+                },
+                requests: {
+                  cpu: k8s.Quantity.fromString('250m'),
+                  memory: k8s.Quantity.fromString('500Mi'),
+                },
+              },
+            },
+          ],
+          imagePullSecrets: [
+            {
+              name: 'ghcr-registry',
+            },
+          ],
+        },
+      },
+    },
+  });
+}
+
 function createService(scope: Construct, props: AppProps, labels: Record<string, string>) {
   return new k8s.KubeService(scope, 'service', {
     metadata: {
@@ -337,12 +415,26 @@ export class App extends Chart {
       app: props.name,
     };
 
-    const isBackend = props.name === 'backend';
+    const isBackend = ['backend', 'worker'].includes(props.name);
     const namespace = props.namespace;
 
     createConfigMap(this, isBackend);
     createDeployment(this, props, labels);
     const service = createService(this, props, labels);
     createIngress(this, props, isBackend, namespace, service);
+  }
+}
+
+export class Worker extends Chart {
+  constructor(scope: Construct, props: WorkerProps) {
+    super(scope, 'worker', {
+      disableResourceNameHashes: true,
+    });
+
+    const labels = {
+      app: props.name,
+    };
+
+    createWorkerDeployment(this, props, labels);
   }
 }

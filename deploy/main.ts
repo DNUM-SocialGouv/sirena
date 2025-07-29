@@ -1,5 +1,5 @@
 import { App as CdkApp, YamlOutputType } from 'cdk8s';
-import { App } from './charts/app';
+import { App, Worker } from './charts/app';
 import { ExternalSecrets } from './charts/external-secrets';
 import * as k8s from './imports/k8s';
 
@@ -74,6 +74,15 @@ function createApps(
 
   // External secrets (database and backend secrets)
   new ExternalSecrets(app, 'external-secrets', environnement);
+
+  new Worker(app, {
+    name: 'worker',
+    replicas: envConfig.replicas,
+    image: `${COMMON_CONFIG.imageRegistry}:${imageTag}-worker`,
+    namespace,
+    environment,
+    host: '',
+  });
 
   // Backend
   new App(app, 'backend', {

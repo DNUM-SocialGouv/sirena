@@ -105,6 +105,36 @@ export class ExternalSecrets extends Chart {
       },
     });
 
+    new externalSecrets.ExternalSecret(this, 'redis-external-secret', {
+      metadata: {
+        name: 'redis',
+      },
+      spec: {
+        dataFrom: [
+          {
+            extract: {
+              key: `redis/sirena-${environnement}`,
+            },
+          },
+        ],
+        refreshInterval: '1h',
+        secretStoreRef: {
+          name: 'local-secret-store',
+        },
+        target: {
+          name: 'redis',
+          template: {
+            data: {
+              host: '{{ .host }}',
+              port: '{{ .port }}',
+              password: '{{ .password }}',
+              url: '{{ .url }}',
+            },
+          },
+        },
+      },
+    });
+
     // GHCR Registry External Secret
     new externalSecrets.ExternalSecret(this, 'ghcr-registry-external-secret', {
       metadata: {
