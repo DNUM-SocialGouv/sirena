@@ -1,11 +1,15 @@
 import { expect, test } from '@playwright/test';
-import { baseUrl, loginUrl, password, user } from './utils/constants';
+import { baseUrl, ENTITY_ADMIN_USER, loginUrl } from './utils/constants';
 import { loginWithProconnect } from './utils/login';
 
 test('login', async ({ browser }) => {
   const context = await browser.newContext();
   const page = await context.newPage();
-  await loginWithProconnect(page, { password, user, organisation: 'ville de paris'  });
+  await loginWithProconnect(page, {
+    password: ENTITY_ADMIN_USER.password,
+    user: ENTITY_ADMIN_USER.user,
+    organisation: 'ville de paris',
+  });
 
   await page.waitForLoadState('networkidle');
   await expect(page).toHaveURL(`${baseUrl}/home`);
