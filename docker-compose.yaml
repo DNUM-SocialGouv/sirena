@@ -31,7 +31,6 @@ services:
     environment:
       PG_URL: postgres://${PG_SIRENA_USER}:${PG_SIRENA_PASSWORD}@postgres:5432/${PG_SIRENA_DB}
 
-
   maildev:
     container_name: sirena-maildev-dev
     image: maildev/maildev:2.2.1
@@ -55,10 +54,27 @@ services:
       MINIO_REGION: ${S3_BUCKET_REGION}
     command: server /data --console-address ":9001"
 
+  redis:
+    image: redis:8-alpine
+    container_name: sirena-redis-dev
+    ports:
+    - "127.0.0.1:6379:6379"
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes: 
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 
 volumes:
   pgdata:
   miniodata:
+  redisdata:
 
 networks:
   sirena-postgres-network:
