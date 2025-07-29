@@ -28,6 +28,7 @@ export const usePatchUser = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.setQueryData(['user', variables.id], data);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 };
