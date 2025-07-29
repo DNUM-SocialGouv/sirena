@@ -51,3 +51,57 @@ jobs:
           environment: integration
           version: ${{ needs.build-docker.outputs.SHORT_SHA }}
           gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }} 
+
+  e2e-tests:
+    name: End-to-End Tests
+    needs: [build-docker, deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          cd apps/frontend
+          pnpm install
+
+      - name: Install Playwright Browsers
+        run: |
+          cd apps/frontend
+          npx playwright install --with-deps chromium
+
+      - name: Wait for deployment
+        run: |
+          cd apps/frontend
+          npx tsx scripts/wait-for-deployment.ts
+        env:
+          EXPECTED_VERSION: ${{ needs.build-docker.outputs.SHORT_SHA }}
+          BACKEND_URL: ${{ secrets.INTEGRATION_BACKEND_URL }}
+          FRONTEND_URL: ${{ secrets.INTEGRATION_FRONTEND_URL }}
+
+      - name: Run Playwright tests
+        run: |
+          cd apps/frontend
+          pnpm run test:e2e
+        env:
+          FRONTEND_URI: ${{ secrets.INTEGRATION_FRONTEND_URL }}
+          E2E_CI: true
+          E2E_ENTITY_ADMIN_USER_1_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          E2E_ENTITY_ADMIN_USER_1_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: playwright-report
+          path: apps/frontend/playwright-report/
+          retention-days: 1
