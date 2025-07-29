@@ -4,7 +4,7 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 
-type DematSocialMapping = Exclude<Awaited<ReturnType<typeof useRequetesEntite>>['data'], undefined>['data'][number];
+type DematSocialMapping = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number];
 
 export function RequetesEntite() {
   const queries = useSearch({ from: '/_auth/_user/home' });
@@ -19,7 +19,7 @@ export function RequetesEntite() {
 
   const columns: Column<DematSocialMapping>[] = [
     { key: 'number', label: 'Numero' },
-    { key: 'custom:reception', label: 'Réception' },
+    { key: 'createdAt', label: 'Réception' },
     { key: 'custom:lieu', label: 'Lieu de survenue' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },
     { key: 'custom:Attribution', label: 'Attribution' },
@@ -32,6 +32,15 @@ export function RequetesEntite() {
       <Link to="/request/$requestId" params={{ requestId: row.id }}>
         Voir la requête
       </Link>
+    ),
+    createdAt: (row) => (
+      <div>
+        {new Date(row.createdAt).toLocaleDateString('fr-FR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        })}
+      </div>
     ),
     'custom:statut': (row) =>
       row.requetesEntiteStates[0]?.statutId
