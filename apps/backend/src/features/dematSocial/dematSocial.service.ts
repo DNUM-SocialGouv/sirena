@@ -6,7 +6,6 @@ import { GetDossierDocument, GetDossiersByDateDocument, GetDossiersMetadataDocum
 
 export const getRequetes = async (createdSince?: Date) => {
   const abortController = abortControllerStorage.getStore();
-  console.log('abortController:', abortController);
   const data = await graffle
     .transport({ raw: { signal: abortController?.signal } })
     .gql(GetDossiersByDateDocument)

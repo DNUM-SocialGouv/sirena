@@ -26,6 +26,12 @@ process.env = {
   DEMAT_SOCIAL_API_DIRECTORY: '123',
 
   LOG_FORMAT: 'json',
+
+  CRON_DEMAT_SOCIAL: '',
+
+  REDIS_HOST: 'localhost',
+  REDIS_PORT: '6379',
+  REDIS_PASSWORD: 'redis-password',
 };
 
 describe('env.ts', () => {
@@ -52,6 +58,10 @@ describe('env.ts', () => {
       DEMAT_SOCIAL_API_TOKEN: 'token',
       DEMAT_SOCIAL_API_DIRECTORY: 'not-a-number',
       LOG_FORMAT: 'json',
+      CRON_DEMAT_SOCIAL: '',
+      REDIS_HOST: 'localhost',
+      REDIS_PORT: '6379',
+      REDIS_PASSWORD: 'redis-password',
     };
 
     expect(() => AppEnvSchema.parse(invalidEnv)).toThrowError(
