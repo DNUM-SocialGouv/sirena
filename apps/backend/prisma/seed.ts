@@ -3,7 +3,7 @@ import { seedSuperAdmin } from './seed/add_default_super_admin';
 import { seedDematSocialMapper } from './seed/add_demat_social_mapper';
 import { seedEntites } from './seed/add_entities';
 import { seedEnums } from './seed/add_enums';
-import { seedRequeteFromDematSocial } from './seed/get_first_time_demat_social';
+import { seedRequeteFromDematSocial } from './seed/get_demat_social';
 
 const prisma = new PrismaClient();
 
@@ -24,7 +24,7 @@ async function seeding() {
     console.error('❌ Erreur lors du seeding du mapper Demat Social:', e);
     process.exit(1);
   });
-  await seedRequeteFromDematSocial(prisma).catch((e) => {
+  await seedRequeteFromDematSocial().catch((e) => {
     console.error('❌ Erreur lors du seeding des requêtes depuis Demat Social:', e);
     process.exit(1);
   });
