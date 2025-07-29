@@ -1,4 +1,4 @@
-import { type Page, expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { baseUrl, loginUrl } from './constants';
 
 type LoginWithProconnectParams = {
@@ -7,10 +7,28 @@ type LoginWithProconnectParams = {
   organisation?: string;
 };
 
+// Simple rate limiter to avoid AgentConnect issues with concurrent sessions
+let lastLoginTime = 0;
+const MIN_LOGIN_INTERVAL = 1000; // 1 second
+
+const waitForRateLimit = async () => {
+  const now = Date.now();
+  const timeSinceLastLogin = now - lastLoginTime;
+
+  if (timeSinceLastLogin < MIN_LOGIN_INTERVAL) {
+    const waitTime = MIN_LOGIN_INTERVAL - timeSinceLastLogin;
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
+  }
+
+  lastLoginTime = Date.now();
+};
+
 export const loginWithProconnect = async (
   page: Page,
   { password, user, organisation = 'Ville de paris - Mairie' }: LoginWithProconnectParams,
 ) => {
+  await waitForRateLimit();
+
   await page.goto(loginUrl);
   await page.waitForLoadState('networkidle');
 
@@ -31,14 +49,14 @@ export const loginWithProconnect = async (
   logButton.click();
 
   await page.waitForLoadState('networkidle');
-  
+
   let locationSelector = page.locator(`[role="button"][aria-label*="${organisation}"]`).first();
-  
+
   const count = await locationSelector.count();
   if (count === 0) {
     locationSelector = page.locator('[role="button"][aria-label*="(choisir cette organisation)"]').first();
   }
-  
+
   locationSelector.click();
 
   await page.waitForLoadState('networkidle');
