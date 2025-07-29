@@ -14,6 +14,7 @@
       "./apps/backend/prisma/**/*.ts",
       "./apps/backend/scripts/**/*",
       "./apps/frontend/src/**/*",
+      "./apps/frontend/tests/**/*",
       "./packages/common/src/**/*",
       "./packages/backend-utils/src/**/*",
       "./packages/ui/src/**/*",
