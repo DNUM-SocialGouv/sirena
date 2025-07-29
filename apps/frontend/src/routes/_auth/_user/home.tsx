@@ -27,10 +27,7 @@ function RouteComponent() {
   const profileQuery = useQuery({ ...profileQueryOptions(), enabled: false });
   const userStore = useUserStore();
 
-  const label = useMemo(
-    () => (profileQuery.data ? `${profileQuery.data.firstName} ${profileQuery.data.lastName}` : ''),
-    [profileQuery.data],
-  );
+  const label = useMemo(() => (profileQuery.data ? profileQuery.data.firstName : ''), [profileQuery.data]);
 
   return (
     <div className="home">
