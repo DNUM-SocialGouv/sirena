@@ -11,7 +11,7 @@ import type { GetRequetesEntiteQuery } from './requetesEntite.type';
 // TODO handle entiteIds
 // TODO handle search
 export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
-  const { offset = 0, limit, sort = 'createdAt', order = 'asc' } = query;
+  const { offset = 0, limit, sort = 'createdAt', order = 'desc' } = query;
 
   // const entiteFilter = filterByEntities(entiteIds);
 
