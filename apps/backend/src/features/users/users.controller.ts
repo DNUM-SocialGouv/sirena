@@ -17,10 +17,13 @@ const app = factoryWithLogs
   .use(entitesMiddleware)
 
   .get('/', getUsersRoute, zValidator('query', GetUsersQuerySchema), async (c) => {
+    const logger = c.get('logger');
     const query = c.req.valid('query');
     const entiteIds = c.get('entiteIds');
 
     const { data, total } = await getUsers(entiteIds, query);
+    logger.info({ userCount: data.length, total }, 'Users list retrieved successfully');
+
     return c.json({
       data,
       meta: {
@@ -32,25 +35,32 @@ const app = factoryWithLogs
   })
 
   .get('/:id', getUserRoute, async (c) => {
+    const logger = c.get('logger');
     const id = c.req.param('id');
     const entiteIds = c.get('entiteIds');
 
     const user = await getUserById(id, entiteIds);
     if (!user) {
+      logger.warn({ userId: id }, 'User not found or unauthorized access');
       throwHTTPException404NotFound('User not found', {
         res: c.res,
       });
     }
+    logger.info({ userId: id }, 'User details retrieved successfully');
     return c.json({ data: user }, 200);
   })
 
   .patch('/:id', patchUserRoute, zValidator('json', PatchUserSchema), async (c) => {
+    const logger = c.get('logger');
     const json = c.req.valid('json');
     const id = c.req.param('id');
     const userId = c.get('userId');
 
+    logger.info({ targetUserId: id, requestedChanges: Object.keys(json) }, 'User update requested');
+
     // user cannot update their own role
     if (userId === id && 'roleId' in json) {
+      logger.warn({ userId: id }, 'User attempted to modify own role');
       delete json.roleId;
     }
 
@@ -80,6 +90,8 @@ const app = factoryWithLogs
         res: c.res,
       });
     }
+
+    logger.info({ userId: id }, 'User updated successfully');
     return c.json({ data: user });
   });
 

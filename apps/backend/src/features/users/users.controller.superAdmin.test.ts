@@ -1,6 +1,9 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
+import { errorHandler } from '@/helpers/errors';
+import appWithLogs from '@/helpers/factories/appWithLogs';
+import pinoLogger from '@/middlewares/pino.middleware';
 import UsersController from './users.controller';
 import { patchUser } from './users.service';
 
@@ -59,7 +62,8 @@ const fakeUser = {
 
 describe('Users endpoints as admin: /users', () => {
   describe('PATCH /:id as super admin', () => {
-    const client = testClient(UsersController);
+    const app = appWithLogs.createApp().use(pinoLogger()).route('/', UsersController).onError(errorHandler);
+    const client = testClient(app);
 
     it('should allow patch if entiteIds is null', async () => {
       vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeUser, entiteId: 'whatever' });

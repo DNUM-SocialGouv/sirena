@@ -34,5 +34,7 @@ jobs:
       run: pnpm build:common
     - name: Generate types
       run: pnpm db:generate
+    - name: Build backend
+      run: pnpm build:backend
     - name: Run tests
       run: pnpm test:unit

@@ -10,13 +10,15 @@ import RolesController from '@/features/roles/roles.controller';
 import UsersController from '@/features/users/users.controller';
 import VersionController from '@/features/version/version.controller';
 import appFactory from '@/helpers/factories/appWithLogs';
-import pinoLogger from '@/middlewares/pino.middleware';
+import { enhancedPinoMiddleware } from '@/middlewares/pino.middleware';
+import { sentryMiddleware } from '@/middlewares/sentry.middleware';
 import { envVars } from './config/env';
 import { errorHandler } from './helpers/errors';
 
 export const app = appFactory
   .createApp()
-  .use(pinoLogger())
+  .use(sentryMiddleware())
+  .use(enhancedPinoMiddleware())
   .use(
     csrf({
       origin: [envVars.FRONTEND_URI],

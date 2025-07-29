@@ -1,8 +1,22 @@
 import { serve } from '@hono/node-server';
+import pino from 'pino';
 import { app } from './app';
+import { getLogLevelConfig } from './helpers/middleware';
 import { prisma } from './libs/prisma';
 import { setupOpenAPI } from './openAPI';
 import '@/config/env.ts';
+
+const createDefaultLogger = () => {
+  const logConfig = getLogLevelConfig();
+  return pino({
+    level: logConfig.console,
+    serializers: {
+      err: pino.stdSerializers.err,
+    },
+  });
+};
+
+const logger = createDefaultLogger();
 
 setupOpenAPI(app);
 
@@ -12,13 +26,13 @@ const server = serve(
     port: 4000,
   },
   (info) => {
-    console.log(`Server is running on http://localhost:${info.port}`);
+    logger.info({ port: info.port }, `Server is running on http://localhost:${info.port}`);
   },
 );
 
 // Graceful shutdown handling
 const gracefulShutdown = async (signal: string) => {
-  console.log(`Received ${signal}. Starting graceful shutdown...`);
+  logger.info({ signal }, 'Graceful shutdown initiated');
 
   try {
     // Close HTTP server
@@ -27,7 +41,7 @@ const gracefulShutdown = async (signal: string) => {
         if (err) {
           reject(err);
         } else {
-          console.log('HTTP server closed');
+          logger.info('HTTP server closed');
           resolve();
         }
       });
@@ -35,12 +49,12 @@ const gracefulShutdown = async (signal: string) => {
 
     // Close database connection
     await prisma.$disconnect();
-    console.log('Database connection closed');
+    logger.info('Database connection closed');
 
-    console.log('Graceful shutdown completed');
+    logger.info('Graceful shutdown completed');
     process.exit(0);
   } catch (error) {
-    console.error('Error during graceful shutdown:', error);
+    logger.error({ err: error }, 'Error during graceful shutdown');
     process.exit(1);
   }
 };

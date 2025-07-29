@@ -4,6 +4,9 @@ import type { IDToken, TokenEndpointResponse, TokenEndpointResponseHelpers } fro
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { envVars } from '@/config/env';
 import { deleteSession, getSession } from '@/features/sessions/sessions.service';
+import { errorHandler } from '@/helpers/errors';
+import appWithLogs from '@/helpers/factories/appWithLogs';
+import pinoLogger from '@/middlewares/pino.middleware';
 import AuthController from './auth.controller';
 import { authUser } from './auth.helper';
 import {
@@ -56,7 +59,8 @@ describe('Auth endpoints: /auth', () => {
     vi.resetAllMocks();
   });
 
-  const client = testClient(AuthController);
+  const app = appWithLogs.createApp().use(pinoLogger()).route('/', AuthController).onError(errorHandler);
+  const client = testClient(app);
 
   describe('POST /login', () => {
     it('should redirect to the authorization URL and set cookies', async () => {
