@@ -89,6 +89,7 @@ jobs:
         env:
           EXPECTED_VERSION: ${{ needs.build-docker.outputs.SHORT_SHA }}
           BACKEND_URL: ${{ env.INTEGRATION_BACKEND_URL }}
+          FRONTEND_URL: ${{ env.INTEGRATION_FRONTEND_URL }}
 
       - name: Run Playwright tests
         run: |
