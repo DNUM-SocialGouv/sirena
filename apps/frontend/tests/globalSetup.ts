@@ -1,8 +1,5 @@
 import type { FullConfig } from '@playwright/test';
 
-/**
- * Required environment variables for E2E tests
- */
 const REQUIRED_ENV_VARS = [
   'FRONTEND_URI',
   'E2E_CI',
@@ -19,7 +16,7 @@ export default async function globalSetup(_config: FullConfig) {
   // Check required variables
   for (const varName of REQUIRED_ENV_VARS) {
     if (!process.env[varName]) {
-      console.error(varName);
+      console.error(`Missing required environment variable: ${varName}`);
       missingVars = true;
     }
   }
