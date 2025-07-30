@@ -110,8 +110,13 @@ describe('Tracking Integration', () => {
         headers: expect.any(Function) as () => Record<string, string>,
       });
 
-      const config = mockHcWithType.mock.calls[0][1];
-      const headers = config.headers();
+      const calls = mockHcWithType.mock.calls;
+      if (calls.length === 0 || !calls[0]) {
+        throw new Error('mockHcWithType was not called');
+      }
+      const args = calls[0] as unknown[];
+      const config = args.length > 1 && args[1] ? (args[1] as { headers: () => Record<string, string> }) : undefined;
+      const headers = config?.headers?.();
 
       expect(headers).toEqual({
         'x-request-id': 'uuid-1',

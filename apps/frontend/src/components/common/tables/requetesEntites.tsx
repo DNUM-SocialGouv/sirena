@@ -29,8 +29,8 @@ export function RequetesEntite() {
 
   const cells: Cells<DematSocialMapping> = {
     'custom:action': (row) => (
-      <Link to="/admin/demat-social-mapping/$dematSocialMappingId" params={{ dematSocialMappingId: row.id }}>
-        Éditer mapping
+      <Link to="/request/$requestId" params={{ requestId: row.id }}>
+        Voir la requête
       </Link>
     ),
     'custom:statut': (row) =>
