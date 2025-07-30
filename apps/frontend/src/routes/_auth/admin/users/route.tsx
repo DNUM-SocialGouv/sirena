@@ -4,9 +4,11 @@ import { createFileRoute, useMatchRoute, useNavigate } from '@tanstack/react-rou
 import { AllUsersTab } from '@/components/common/tables/allUsersTab';
 import { PendingUsersTab } from '@/components/common/tables/pendingUsersTab';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+import { QueryParamsSchema } from '@/schemas/pagination.schema';
 
 export const Route = createFileRoute('/_auth/admin/users')({
   beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN]),
+  validateSearch: QueryParamsSchema,
   component: RouteComponent,
 });
 
