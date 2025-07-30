@@ -1,5 +1,5 @@
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
-import { AUTH_CONFIGS, ensureAuthenticated, getCurrentUserId } from './utils/authHelper';
+import { AUTH_CONFIGS, ensureAuthenticationFileExists, getCurrentUserId } from './utils/authHelper';
 import { baseUrl } from './utils/constants';
 
 /**
@@ -14,18 +14,9 @@ import { baseUrl } from './utils/constants';
  * Helper function to navigate to a random user edit page (excluding the current user)
  */
 async function navigateToUserEditPage(page: Page, context: BrowserContext): Promise<string> {
-  await page.goto(`${baseUrl}/admin/users`);
-  await page.waitForLoadState('networkidle');
-  await expect(page).toHaveURL(`${baseUrl}/admin/users`);
-
-  // Click on all users tab
-  const allUsersTab = page.locator('#tab-all');
-  await allUsersTab.click();
-  await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
-
+  await page.goto(`${baseUrl}/admin/users/all`);
   const allUsersTable = page.getByRole('table');
   await expect(allUsersTable).toBeVisible();
-  await page.waitForLoadState('networkidle');
 
   // Find a user that is not the current user (can't update our own user)
   const currentUserId = await getCurrentUserId(context);
@@ -44,9 +35,10 @@ async function navigateToUserEditPage(page: Page, context: BrowserContext): Prom
     throw new Error('No target user ID found');
   }
 
-  const manageUserLink = firstOtherUserRow.getByRole('link', { name: "Gérer l'utilisateur" });
+  await firstOtherUserRow.getByRole('link', { name: "Gérer l'utilisateur" }).click();
 
-  await Promise.all([page.waitForURL(`${baseUrl}/admin/user/${targetUserId}`), manageUserLink.click()]);
+  await page.waitForURL(`${baseUrl}/admin/user/${targetUserId}`);
+  await expect(page.getByRole('heading', { name: 'Modifier un utilisateur', level: 1 })).toBeVisible();
 
   return targetUserId;
 }
@@ -58,7 +50,7 @@ test.describe('Admin Feature', () => {
 
   // Setup authentication once for all tests
   test.beforeAll(async ({ browser }) => {
-    authFile = await ensureAuthenticated(browser, AUTH_CONFIGS.ENTITY_ADMIN_USER_1);
+    authFile = await ensureAuthenticationFileExists(browser, AUTH_CONFIGS.ENTITY_ADMIN_USER_1);
   });
 
   test.beforeEach(async ({ browser }) => {
@@ -66,9 +58,7 @@ test.describe('Admin Feature', () => {
     page = await context.newPage();
 
     await page.goto(`${baseUrl}/admin/users`);
-    await page.waitForLoadState('networkidle');
-
-    await expect(page).toHaveURL(`${baseUrl}/admin/users`);
+    await expect(page.getByText("Demande d'habilitation en attente")).toBeVisible();
   });
 
   test.afterEach(async () => {
@@ -183,17 +173,16 @@ test.describe('Admin Feature', () => {
 
     const pendingTable = page.getByRole('table');
     await expect(pendingTable).toBeVisible();
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByText("Demande d'habilitation en attente")).toBeVisible();
 
     // Verify the user appears in the pending tab
     const targetUserRowInPending = pendingTable.locator(`tr[data-row-key="${targetUserId}"]`);
     await expect(targetUserRowInPending).toBeVisible();
 
-    const actionLink = targetUserRowInPending.getByRole('link', { name: 'Traiter la demande' });
-    await expect(actionLink).toBeVisible();
+    await targetUserRowInPending.getByRole('link', { name: 'Traiter la demande' }).click();
 
     // === PART 2: Move user back to active role ===
-    await Promise.all([page.waitForURL(`${baseUrl}/admin/user/${targetUserId}`), actionLink.click()]);
+    await page.waitForURL(`${baseUrl}/admin/user/${targetUserId}`);
 
     // Set back to original active role
     const resetRoleSelect = page.locator('select[name="roleId"]');
@@ -214,8 +203,7 @@ test.describe('Admin Feature', () => {
     await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
 
     const allUsersTable = page.getByRole('table');
-    await expect(allUsersTable).toBeVisible();
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('Liste des utilisateurs')).toBeVisible();
 
     // Verify the user appears in the all users tab with original role
     const targetUserRowInAll = allUsersTable.locator(`tr[data-row-key="${targetUserId}"]`);

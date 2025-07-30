@@ -19,15 +19,7 @@ export const AUTH_CONFIGS = {
   },
 } as const;
 
-/**
- * Ensures authentication file exists, creating it if necessary with proper locking
- * to prevent race conditions between parallel workers.
- *
- * @param browser Playwright browser instance
- * @param config Authentication configuration
- * @returns Path to the authentication file
- */
-export async function ensureAuthenticated(browser: Browser, config: AuthConfig): Promise<string> {
+export async function ensureAuthenticationFileExists(browser: Browser, config: AuthConfig): Promise<string> {
   const authFile = `playwright/.auth/${config.fileName}`;
   const lockFile = `${authFile}.lock`;
 
@@ -115,7 +107,7 @@ export async function forceNewAuthentication(browser: Browser, config: AuthConfi
     }
   });
 
-  return ensureAuthenticated(browser, config);
+  return ensureAuthenticationFileExists(browser, config);
 }
 
 export async function getCurrentUserId(context: BrowserContext): Promise<string> {
