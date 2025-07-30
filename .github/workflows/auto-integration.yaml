@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+env:
+  INTEGRATION_BACKEND_URL: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr/api
+  INTEGRATION_FRONTEND_URL: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr
+
 jobs:
   build-docker:
     name: Build docker images
@@ -84,18 +88,17 @@ jobs:
           npx tsx tests/ci/wait-for-deployment.ts
         env:
           EXPECTED_VERSION: ${{ needs.build-docker.outputs.SHORT_SHA }}
-          BACKEND_URL: ${{ secrets.INTEGRATION_BACKEND_URL }}
-          FRONTEND_URL: ${{ secrets.INTEGRATION_FRONTEND_URL }}
+          BACKEND_URL: ${{ env.INTEGRATION_BACKEND_URL }}
 
       - name: Run Playwright tests
         run: |
           cd apps/frontend
           pnpm run test:e2e
         env:
-          FRONTEND_URI: ${{ secrets.INTEGRATION_FRONTEND_URL }}
+          FRONTEND_URI: ${{ env.INTEGRATION_FRONTEND_URL }}
           E2E_CI: true
-          E2E_ENTITY_ADMIN_USER_1_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
-          E2E_ENTITY_ADMIN_USER_1_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          E2E_ENTITY_ADMIN_USER_1_EMAIL: ${{ vars.TEST_USER_EMAIL }}
+          E2E_ENTITY_ADMIN_USER_1_PASSWORD: ${{ vars.TEST_USER_PASSWORD }}
 
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4
