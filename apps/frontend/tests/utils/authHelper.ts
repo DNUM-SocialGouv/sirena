@@ -127,7 +127,14 @@ export async function getCurrentUserId(context: BrowserContext): Promise<string>
     throw new Error('No JWT cookie found');
   }
 
-  const payload = JSON.parse(atob(currentUserId));
+  let payload: { id?: string };
+
+  try {
+    payload = JSON.parse(atob(currentUserId));
+  } catch {
+    throw new Error('Invalid JWT payload');
+  }
+
   if (!payload.id) {
     throw new Error('No user ID found in JWT payload');
   }
