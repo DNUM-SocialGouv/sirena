@@ -3,28 +3,11 @@ import { AUTH_CONFIGS, ensureAuthenticated, getCurrentUserId } from './utils/aut
 import { baseUrl } from './utils/constants';
 
 /**
- * ADMIN E2E TESTS - DATA SEEDING & ISOLATION LIMITATIONS
+ * ADMIN E2E TESTS
  *
- * ⚠️  These tests currently lack proper data seeding and state reset between test runs.
- *     Tests perform their own cleanup through e2e workflows to reset data state (bidirectional testing)
- *
- * DESIGN PHILOSOPHY:
- * This simplified approach is intentional to quickly catch critical regressions while keeping
- * maintenance overhead low and tests easy to manage, saving development time. We prioritize
- * rapid feedback over perfect test isolation for now.
- *
- * PREREQUISITES FOR THESE TESTS:
- * - At least 2 users must exist in the "Gestion des utilisateurs" table
- * - The authenticated user must have ENTITY_ADMIN role (to manage other users)
- * - The target user being modified must have a role below ENTITY_ADMIN level
- *   (WRITER, READER, NATIONAL_STEERING, ...)
- *
- * IMPROVEMENT NEEDED:
- * - Backend API or seeds for data seeding/reset between tests (isolation)
- *
- * CURRENT APPROACH:
- * - Tests use e2e workflows to reset data state (bidirectional testing)
- * - Dedicated user on testing environment
+ * Prerequisites:
+ * - At least 2 users in "Gestion des utilisateurs" table
+ * - Authenticated user has ENTITY_ADMIN role
  */
 
 /**
