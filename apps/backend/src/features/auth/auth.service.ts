@@ -2,7 +2,7 @@ import * as client from 'openid-client';
 import { envVars } from '@/config/env';
 import { authorizationParams } from '@/config/openID';
 import { getEntiteForUser } from '@/features/entites/entites.service';
-import { createUser, getUserBySub } from '@/features/users/users.service';
+import { createUser, getUserByEmail } from '@/features/users/users.service';
 import type { UserInfo } from './auth.type';
 
 export const configOptions =
@@ -98,7 +98,7 @@ export const authorizationCodeGrant = async (currentUrl: URL, state: string, non
 };
 
 export const getOrCreateUser = async (userInfo: UserInfo) => {
-  const user = await getUserBySub(userInfo.sub);
+  const user = await getUserByEmail(userInfo.email);
   if (user) {
     return user;
   }
