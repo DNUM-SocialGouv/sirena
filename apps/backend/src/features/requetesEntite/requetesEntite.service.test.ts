@@ -50,7 +50,7 @@ describe('getRequetesEntite', () => {
 
     expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
       skip: 0,
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
       include: {
         requete: true,
         requetesEntiteStates: {

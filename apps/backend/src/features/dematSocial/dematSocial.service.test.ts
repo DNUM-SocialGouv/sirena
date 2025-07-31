@@ -60,10 +60,14 @@ describe('dematSocial.service.ts', () => {
 
   describe('importRequetes()', () => {
     it('should call createRequeteFromDematSocial for each dossier number', async () => {
+      const dateDepot = new Date('2024-01-01');
       sendMock.mockResolvedValueOnce({
         demarche: {
           dossiers: {
-            nodes: [{ number: 101 }, { number: 102 }],
+            nodes: [
+              { number: 101, dateDepot },
+              { number: 102, dateDepot },
+            ],
           },
         },
       });
@@ -71,8 +75,8 @@ describe('dematSocial.service.ts', () => {
       await importRequetes(new Date('2024-01-01'));
 
       expect(mockedCreate).toHaveBeenCalledTimes(2);
-      expect(mockedCreate).toHaveBeenCalledWith({ dematSocialId: 101 });
-      expect(mockedCreate).toHaveBeenCalledWith({ dematSocialId: 102 });
+      expect(mockedCreate).toHaveBeenCalledWith({ dematSocialId: 101, createdAt: dateDepot });
+      expect(mockedCreate).toHaveBeenCalledWith({ dematSocialId: 102, createdAt: dateDepot });
     });
 
     it('should do nothing if no dossiers returned', async () => {

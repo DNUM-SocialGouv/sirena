@@ -35,6 +35,7 @@ export const importRequetes = async (createdSince?: Date) => {
     // const data = await getRequete(dossier.number);
     await createRequeteFromDematSocial({
       dematSocialId: dossier.number,
+      createdAt: new Date(dossier.dateDepot),
     });
   }
 };
