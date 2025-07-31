@@ -2,15 +2,15 @@ import type { Job } from 'bullmq';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getLastCron } from '@/crons/crons.service';
 import { importRequetes } from '@/features/dematSocial/dematSocial.service';
-import { withCronLifecycle } from '@/jobs/jobs.utils';
-import { abortControllerStorage } from '@/libs/asyncLocalStorage';
-import { fetchRequests } from './fetchRequests';
+import { withCronLifecycle } from '@/jobs/config/job.utils';
+import { abortControllerStorage, loggerStorage } from '@/libs/asyncLocalStorage';
+import { fetchRequetes } from './fetchRequetes.task';
 
 vi.mock('@/crons/crons.service', () => ({
   getLastCron: vi.fn(),
 }));
 
-vi.mock('@/jobs/jobs.utils', () => ({
+vi.mock('@/jobs/config/job.utils', () => ({
   withCronLifecycle: vi.fn(),
 }));
 
@@ -22,9 +22,16 @@ vi.mock('@/libs/asyncLocalStorage', () => ({
   abortControllerStorage: {
     run: vi.fn(),
   },
+  loggerStorage: {
+    run: vi.fn(),
+    getStore: vi.fn(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+    })),
+  },
 }));
 
-describe('fetchRequests', () => {
+describe('fetchRequetes.task', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
@@ -40,7 +47,7 @@ describe('fetchRequests', () => {
     const resultData = { count: 1 };
 
     const mockJob = {
-      name: 'fetch-requests',
+      name: 'fetch-requetes',
       id: 'job-123',
       data: {
         timeoutMs: 5000,
@@ -49,7 +56,7 @@ describe('fetchRequests', () => {
 
     const lastCron = {
       params: null,
-      name: 'fetch-requests',
+      name: 'fetch-requetes',
       result: null,
       id: '1',
       createdAt: new Date(),
@@ -61,14 +68,15 @@ describe('fetchRequests', () => {
     vi.mocked(getLastCron).mockResolvedValueOnce(lastCron);
 
     vi.mocked(abortControllerStorage.run).mockImplementationOnce(async (_, fn) => await fn());
+    vi.mocked(loggerStorage.run).mockImplementationOnce(async (_, fn) => await fn());
 
     vi.mocked(importRequetes).mockResolvedValueOnce(resultData);
 
     vi.mocked(withCronLifecycle).mockImplementationOnce(async (_job, _params, fn) => await fn(mockJob));
 
-    await fetchRequests(mockJob);
+    await fetchRequetes(mockJob);
 
-    expect(getLastCron).toHaveBeenCalledWith('fetch-requests');
+    expect(getLastCron).toHaveBeenCalledWith('fetch-requetes');
 
     expect(withCronLifecycle).toHaveBeenCalledWith(mockJob, { date: cronDate }, expect.any(Function));
 
@@ -84,7 +92,7 @@ describe('fetchRequests', () => {
     vi.setSystemTime(cronDate);
 
     const mockJob = {
-      name: 'fetch-requests',
+      name: 'fetch-requetes',
       id: 'job-456',
       data: {
         timeoutMs: 2000,
@@ -93,7 +101,7 @@ describe('fetchRequests', () => {
 
     const lastCron = {
       params: null,
-      name: 'fetch-requests',
+      name: 'fetch-requetes',
       result: null,
       id: '1',
       createdAt: new Date(),
@@ -115,7 +123,7 @@ describe('fetchRequests', () => {
       return await fn(mockJob);
     });
 
-    const promise = fetchRequests(mockJob);
+    const promise = fetchRequetes(mockJob);
 
     vi.advanceTimersByTime(5000);
     await vi.runOnlyPendingTimersAsync();

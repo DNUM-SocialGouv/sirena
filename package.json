@@ -13,7 +13,6 @@
     "dev:common": "pnpm --filter @sirena/common dev",
     "dev:backend": "dotenv -e .env -- pnpm --filter @sirena/backend dev",
     "dev:worker": "dotenv -e .env -- pnpm --filter @sirena/backend worker",
-    "dev:crons": "dotenv -e .env -- pnpm --filter @sirena/backend startCrons",
     "dev:ui": "pnpm --filter @sirena/ui storybook",
     "db:studio": "dotenv -e .env -- pnpm --filter @sirena/backend db:studio",
     "db:migrate": "dotenv -e .env -- pnpm --filter @sirena/backend db:migrate",

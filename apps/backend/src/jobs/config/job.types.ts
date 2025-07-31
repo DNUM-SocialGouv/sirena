@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq';
 
 export type JobDataMap = {
-  'fetch-requests': {
+  'fetch-requetes': {
     timeoutMs: number;
   };
 };
@@ -14,6 +14,7 @@ export type JobHandler<N extends JobName = JobName> = {
   name: N;
   task: (job: Job<JobDataMap[N]>) => JobResult;
   repeatEveryMs: number;
+  data: JobDataMap[N];
 };
 
 export type CronContext<J extends Job> = {

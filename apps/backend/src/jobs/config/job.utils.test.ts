@@ -3,7 +3,7 @@ import type { Job } from 'bullmq';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { endCron, startCron } from '@/crons/crons.service';
 import { serializeError } from '@/helpers/errors';
-import { withCronLifecycle } from './jobs.utils';
+import { withCronLifecycle } from './job.utils';
 
 vi.mock('@/crons/crons.service', () => ({
   startCron: vi.fn(),
