@@ -1,8 +1,10 @@
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
-import { ROLES, roles, type StatutType, statutTypes } from '@sirena/common/constants';
+import { ROLES, type Role, roles, type StatutType, statutTypes } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
+import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { useUsers } from '@/hooks/queries/users.hook';
 
 type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
@@ -10,18 +12,21 @@ type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][nu
 const PAGE_SIZE = 10;
 
 export function AllUsersTab() {
-  const nonPendingRoleIds = Object.keys(roles)
-    .filter((roleId) => roleId !== ROLES.PENDING)
-    .join(',');
+  const { data } = useQuery({ ...profileQueryOptions(), enabled: false });
 
   const queries = useSearch({ from: '/_auth/admin/users' });
   const navigate = useNavigate({ from: '/admin/users' });
+
+  const rolesToFilter: Role[] =
+    data?.role?.id === ROLES.ENTITY_ADMIN ? [ROLES.SUPER_ADMIN, ROLES.PENDING] : [ROLES.PENDING];
+
+  const filteredRoles = (Object.keys(roles) as Role[]).filter((roleId) => !rolesToFilter.includes(roleId)).join(',');
 
   const offset = useMemo(() => parseInt(queries.offset || '0', 10), [queries.offset]);
   const currentPage = useMemo(() => Math.floor(offset / PAGE_SIZE) + 1, [offset]);
 
   const { data: users, isFetching } = useUsers({
-    roleId: nonPendingRoleIds,
+    roleId: filteredRoles,
     limit: PAGE_SIZE.toString(),
     offset: offset.toString(),
   });

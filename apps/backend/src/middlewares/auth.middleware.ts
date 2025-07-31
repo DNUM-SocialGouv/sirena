@@ -60,7 +60,7 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
     try {
       const decoded = verify<{ id: string; roleId: string }>(refreshToken, envVars.REFRESH_TOKEN_SECRET_KEY);
       const newAuthTokenDate = getJwtExpirationDate(envVars.AUTH_TOKEN_EXPIRATION);
-      const user = await getUserById(decoded.id, null);
+      const user = await getUserById(decoded.id, null, null);
       if (!user) {
         throw new Error(`User with ID ${decoded.id} not found`);
       }

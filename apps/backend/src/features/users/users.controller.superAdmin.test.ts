@@ -5,10 +5,11 @@ import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import pinoLogger from '@/middlewares/pino.middleware';
 import UsersController from './users.controller';
-import { patchUser } from './users.service';
+import { getUserById, patchUser } from './users.service';
 
 vi.mock('./users.service', () => ({
   patchUser: vi.fn(),
+  getUserById: vi.fn(),
 }));
 
 vi.mock('@/config/env', () => ({
@@ -66,6 +67,7 @@ describe('Users endpoints as admin: /users', () => {
     const client = testClient(app);
 
     it('should allow patch if entiteIds is null', async () => {
+      vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
       vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeUser, entiteId: 'whatever' });
 
       const res = await client[':id'].$patch({
@@ -74,7 +76,7 @@ describe('Users endpoints as admin: /users', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(patchUser).toHaveBeenCalledWith('id1', { entiteId: 'whatever' }, null);
+      expect(patchUser).toHaveBeenCalledWith('id1', { entiteId: 'whatever' });
     });
   });
 });
