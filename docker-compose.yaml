@@ -62,8 +62,6 @@ services:
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-    volumes: 
-      - redisdata:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -74,7 +72,6 @@ services:
 volumes:
   pgdata:
   miniodata:
-  redisdata:
 
 networks:
   sirena-postgres-network:
