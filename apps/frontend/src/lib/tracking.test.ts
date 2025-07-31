@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTrackingContext, generateUUID, getSessionId, getTrackingHeaders } from './tracking';
 
-// Mock crypto.randomUUID
+type UUIDString = `${string}-${string}-${string}-${string}-${string}`;
 const mockUUID = 'mock-uuid-123';
 const mockCrypto = {
   randomUUID: vi.fn(() => mockUUID),
@@ -60,7 +60,7 @@ describe('tracking utilities', () => {
     it('should fallback when crypto is undefined', () => {
       // Temporarily remove crypto entirely
       const originalCrypto = global.crypto;
-      delete (global as typeof global & { crypto?: Crypto }).crypto;
+      Reflect.deleteProperty(global as typeof global & { crypto?: Crypto }, 'crypto');
 
       const uuid = generateUUID();
 
@@ -161,7 +161,7 @@ describe('tracking utilities', () => {
     it('should create unique requestId and traceId for each call', () => {
       let callCount = 0;
       const mockUUIDs = ['request-id-1', 'trace-id-1', 'request-id-2', 'trace-id-2'];
-      vi.mocked(crypto.randomUUID).mockImplementation(() => mockUUIDs[callCount++]);
+      vi.mocked(crypto.randomUUID).mockImplementation(() => mockUUIDs[callCount++] as UUIDString);
 
       const existingSessionId = 'existing-session-id';
       mockSessionStorage.getItem.mockReturnValue(existingSessionId);
@@ -192,7 +192,7 @@ describe('tracking utilities', () => {
       let callCount = 0;
       vi.mocked(crypto.randomUUID).mockImplementation(() => {
         const ids = [mockRequestId, mockTraceId];
-        return ids[callCount++];
+        return ids[callCount++] as UUIDString;
       });
 
       mockSessionStorage.getItem.mockReturnValue(mockSessionId);
@@ -212,7 +212,7 @@ describe('tracking utilities', () => {
 
       let callCount = 0;
       const mockUUIDs = ['req-1', 'trace-1', 'req-2', 'trace-2'];
-      vi.mocked(crypto.randomUUID).mockImplementation(() => mockUUIDs[callCount++]);
+      vi.mocked(crypto.randomUUID).mockImplementation(() => mockUUIDs[callCount++] as UUIDString);
 
       const headers1 = getTrackingHeaders();
       const headers2 = getTrackingHeaders();

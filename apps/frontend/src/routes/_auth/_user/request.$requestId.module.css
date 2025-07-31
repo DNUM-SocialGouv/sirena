@@ -1,0 +1,74 @@
+.request-header {
+  background-color: var(--blue-france-975-75);
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  margin-top: -7.5rem;
+  padding: 0;
+  padding-top: 1rem;
+}
+
+.request-details-content {
+  padding: 1rem 2rem;
+  margin-top: 4rem;
+  border: 1px solid var(--border-default-grey);
+}
+
+.request-processing-tab {
+  margin-top: 4rem;
+}
+
+.timeline-container {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline-line {
+  position: absolute;
+  left: calc(1.5rem + 1px);
+  top: 1.5rem;
+  bottom: 1rem;
+  width: 2px;
+  background-color: var(--border-default-grey);
+}
+
+.timeline-step {
+  position: relative;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -0.875rem;
+  top: 0.5rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background-color: var(--background-default-grey);
+  border: 2px solid var(--border-default-grey);
+}
+
+.timeline-card {
+  background-color: transparent;
+}
+
+.timeline-card-body {
+  background-color: transparent;
+}
+
+.step {
+  background-color: transparent;
+  border-radius: 0.25rem;
+  padding: 0rem 1.5rem;
+}
+
+.tabs-custom:global(.fr-tabs)::before {
+  box-shadow: none;
+}
+
+.tabs-custom :global(.fr-tabs__panel) {
+  padding: 0;
+}
+
+.tabs-custom :global(.fr-tabs__list) {
+  padding: 0;
+}

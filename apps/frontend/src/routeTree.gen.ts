@@ -23,6 +23,9 @@ import { Route as AuthAdminUsersIndexRouteImport } from './routes/_auth/admin/us
 import { Route as AuthAdminUsersAllRouteImport } from './routes/_auth/admin/users/all'
 import { Route as AuthAdminUserUserIdRouteImport } from './routes/_auth/admin/user/$userId'
 import { Route as AuthAdminDematSocialMappingDematSocialMappingIdRouteImport } from './routes/_auth/admin/demat-social-mapping/$dematSocialMappingId'
+import { Route as AuthUserRequestRequestIdRouteImport } from './routes/_auth/_user/request.$requestId'
+import { Route as AuthUserRequestRequestIdIndexRouteImport } from './routes/_auth/_user/request.$requestId/index'
+import { Route as AuthUserRequestRequestIdProcessingRouteImport } from './routes/_auth/_user/request.$requestId/processing'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -94,6 +97,24 @@ const AuthAdminDematSocialMappingDematSocialMappingIdRoute =
     path: '/demat-social-mapping/$dematSocialMappingId',
     getParentRoute: () => AuthAdminRouteRoute,
   } as any)
+const AuthUserRequestRequestIdRoute =
+  AuthUserRequestRequestIdRouteImport.update({
+    id: '/request/$requestId',
+    path: '/request/$requestId',
+    getParentRoute: () => AuthUserRouteRoute,
+  } as any)
+const AuthUserRequestRequestIdIndexRoute =
+  AuthUserRequestRequestIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthUserRequestRequestIdRoute,
+  } as any)
+const AuthUserRequestRequestIdProcessingRoute =
+  AuthUserRequestRequestIdProcessingRouteImport.update({
+    id: '/processing',
+    path: '/processing',
+    getParentRoute: () => AuthUserRequestRequestIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -104,10 +125,13 @@ export interface FileRoutesByFullPath {
   '/home': typeof AuthUserHomeRoute
   '/admin/demat-social-mappings': typeof AuthAdminDematSocialMappingsRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
+  '/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/admin/demat-social-mapping/$dematSocialMappingId': typeof AuthAdminDematSocialMappingDematSocialMappingIdRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
   '/admin/users/': typeof AuthAdminUsersIndexRoute
+  '/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
+  '/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -121,6 +145,8 @@ export interface FileRoutesByTo {
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
   '/admin/users': typeof AuthAdminUsersIndexRoute
+  '/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
+  '/request/$requestId': typeof AuthUserRequestRequestIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,10 +160,13 @@ export interface FileRoutesById {
   '/_auth/_user/home': typeof AuthUserHomeRoute
   '/_auth/admin/demat-social-mappings': typeof AuthAdminDematSocialMappingsRoute
   '/_auth/admin/entities': typeof AuthAdminEntitiesRoute
+  '/_auth/_user/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/_auth/admin/demat-social-mapping/$dematSocialMappingId': typeof AuthAdminDematSocialMappingDematSocialMappingIdRoute
   '/_auth/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/_auth/admin/users/all': typeof AuthAdminUsersAllRoute
   '/_auth/admin/users/': typeof AuthAdminUsersIndexRoute
+  '/_auth/_user/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
+  '/_auth/_user/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -150,10 +179,13 @@ export interface FileRouteTypes {
     | '/home'
     | '/admin/demat-social-mappings'
     | '/admin/entities'
+    | '/request/$requestId'
     | '/admin/demat-social-mapping/$dematSocialMappingId'
     | '/admin/user/$userId'
     | '/admin/users/all'
     | '/admin/users/'
+    | '/request/$requestId/processing'
+    | '/request/$requestId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -167,6 +199,8 @@ export interface FileRouteTypes {
     | '/admin/user/$userId'
     | '/admin/users/all'
     | '/admin/users'
+    | '/request/$requestId/processing'
+    | '/request/$requestId'
   id:
     | '__root__'
     | '/'
@@ -179,10 +213,13 @@ export interface FileRouteTypes {
     | '/_auth/_user/home'
     | '/_auth/admin/demat-social-mappings'
     | '/_auth/admin/entities'
+    | '/_auth/_user/request/$requestId'
     | '/_auth/admin/demat-social-mapping/$dematSocialMappingId'
     | '/_auth/admin/user/$userId'
     | '/_auth/admin/users/all'
     | '/_auth/admin/users/'
+    | '/_auth/_user/request/$requestId/processing'
+    | '/_auth/_user/request/$requestId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -291,17 +328,57 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAdminDematSocialMappingDematSocialMappingIdRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
+    '/_auth/_user/request/$requestId': {
+      id: '/_auth/_user/request/$requestId'
+      path: '/request/$requestId'
+      fullPath: '/request/$requestId'
+      preLoaderRoute: typeof AuthUserRequestRequestIdRouteImport
+      parentRoute: typeof AuthUserRouteRoute
+    }
+    '/_auth/_user/request/$requestId/': {
+      id: '/_auth/_user/request/$requestId/'
+      path: '/'
+      fullPath: '/request/$requestId/'
+      preLoaderRoute: typeof AuthUserRequestRequestIdIndexRouteImport
+      parentRoute: typeof AuthUserRequestRequestIdRoute
+    }
+    '/_auth/_user/request/$requestId/processing': {
+      id: '/_auth/_user/request/$requestId/processing'
+      path: '/processing'
+      fullPath: '/request/$requestId/processing'
+      preLoaderRoute: typeof AuthUserRequestRequestIdProcessingRouteImport
+      parentRoute: typeof AuthUserRequestRequestIdRoute
+    }
   }
 }
+
+interface AuthUserRequestRequestIdRouteChildren {
+  AuthUserRequestRequestIdProcessingRoute: typeof AuthUserRequestRequestIdProcessingRoute
+  AuthUserRequestRequestIdIndexRoute: typeof AuthUserRequestRequestIdIndexRoute
+}
+
+const AuthUserRequestRequestIdRouteChildren: AuthUserRequestRequestIdRouteChildren =
+  {
+    AuthUserRequestRequestIdProcessingRoute:
+      AuthUserRequestRequestIdProcessingRoute,
+    AuthUserRequestRequestIdIndexRoute: AuthUserRequestRequestIdIndexRoute,
+  }
+
+const AuthUserRequestRequestIdRouteWithChildren =
+  AuthUserRequestRequestIdRoute._addFileChildren(
+    AuthUserRequestRequestIdRouteChildren,
+  )
 
 interface AuthUserRouteRouteChildren {
   AuthUserCasesRoute: typeof AuthUserCasesRoute
   AuthUserHomeRoute: typeof AuthUserHomeRoute
+  AuthUserRequestRequestIdRoute: typeof AuthUserRequestRequestIdRouteWithChildren
 }
 
 const AuthUserRouteRouteChildren: AuthUserRouteRouteChildren = {
   AuthUserCasesRoute: AuthUserCasesRoute,
   AuthUserHomeRoute: AuthUserHomeRoute,
+  AuthUserRequestRequestIdRoute: AuthUserRequestRequestIdRouteWithChildren,
 }
 
 const AuthUserRouteRouteWithChildren = AuthUserRouteRoute._addFileChildren(
