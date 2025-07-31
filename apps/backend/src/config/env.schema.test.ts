@@ -16,6 +16,9 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
     DEMAT_SOCIAL_API_URL: 'http://api.example.com',
     DEMAT_SOCIAL_API_TOKEN: 'token',
     DEMAT_SOCIAL_API_DIRECTORY: '123',
+    REDIS_HOST: 'localhost',
+    REDIS_PORT: '6379',
+    REDIS_PASSWORD: '',
   };
 
   const createConfig = (logExtraContext?: string) => ({

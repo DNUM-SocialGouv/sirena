@@ -75,6 +75,12 @@ describe('logging configuration', () => {
       DEMAT_SOCIAL_API_DIRECTORY: '123',
 
       SUPER_ADMIN_LIST_EMAIL: 'admin@test.com',
+
+      REDIS_HOST: 'localhost',
+      REDIS_PORT: '6379',
+      REDIS_PASSWORD: '',
+
+      CRON_DEMAT_SOCIAL: '10000',
     };
   }
 });
