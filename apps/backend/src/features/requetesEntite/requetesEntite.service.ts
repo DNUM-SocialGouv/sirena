@@ -1,3 +1,4 @@
+import type { User } from '@/libs/prisma';
 import { prisma } from '@/libs/prisma';
 import type { GetRequetesEntiteQuery } from './requetesEntite.type';
 
@@ -36,4 +37,45 @@ export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetR
     data,
     total,
   };
+};
+
+export const addProcessingStep = async (requeteEntiteId: string, data: { stepName: string }, _user: User | null) => {
+  const requeteEntite = await prisma.requeteEntite.findUnique({
+    where: { id: requeteEntiteId },
+    include: {
+      requetesEntiteStates: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
+    },
+  });
+
+  if (!requeteEntite) {
+    throw new Error('Requete entite not found');
+  }
+
+  const latestStatutId = requeteEntite.requetesEntiteStates[0]?.statutId || 'EN_COURS';
+
+  const newStep = await prisma.requeteState.create({
+    data: {
+      requeteEntiteId,
+      stepName: data.stepName,
+      stepStatus: 'A_FAIRE',
+      statutId: latestStatutId,
+    },
+  });
+
+  return newStep;
+};
+
+export const getProcessingSteps = async (requeteEntiteId: string) => {
+  const steps = await prisma.requeteState.findMany({
+    where: {
+      requeteEntiteId,
+      stepName: { not: null },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return steps;
 };
