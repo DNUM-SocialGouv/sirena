@@ -9,7 +9,7 @@ import { useUsers } from '@/hooks/queries/users.hook';
 
 type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
 
 export function AllUsersTab() {
   const { data } = useQuery({ ...profileQueryOptions(), enabled: false });
@@ -22,12 +22,13 @@ export function AllUsersTab() {
 
   const filteredRoles = (Object.keys(roles) as Role[]).filter((roleId) => !rolesToFilter.includes(roleId)).join(',');
 
+  const limit = useMemo(() => parseInt(queries.limit || DEFAULT_PAGE_SIZE.toString(), 10), [queries.limit]);
   const offset = useMemo(() => parseInt(queries.offset || '0', 10), [queries.offset]);
-  const currentPage = useMemo(() => Math.floor(offset / PAGE_SIZE) + 1, [offset]);
+  const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
   const { data: users, isFetching } = useUsers({
     roleId: filteredRoles,
-    limit: PAGE_SIZE.toString(),
+    limit: limit.toString(),
     offset: offset.toString(),
   });
 
@@ -49,12 +50,12 @@ export function AllUsersTab() {
   };
 
   const total = useMemo(() => users?.meta?.total ?? 0, [users?.meta?.total]);
-  const totalPages = useMemo(() => Math.ceil(total / PAGE_SIZE), [total]);
-  const shouldShowPagination = useMemo(() => total > PAGE_SIZE, [total]);
+  const totalPages = useMemo(() => Math.ceil(total / limit), [total, limit]);
+  const shouldShowPagination = useMemo(() => total > limit, [total, limit]);
 
   const getPageLinkProps = useCallback(
     (pageNumber: number) => {
-      const newOffset = (pageNumber - 1) * PAGE_SIZE;
+      const newOffset = (pageNumber - 1) * limit;
 
       return {
         href: '#',
@@ -64,14 +65,14 @@ export function AllUsersTab() {
             search: (prev) => ({
               ...prev,
               offset: newOffset === 0 ? undefined : newOffset.toString(),
-              limit: PAGE_SIZE.toString(),
+              limit: limit === DEFAULT_PAGE_SIZE ? undefined : limit.toString(),
             }),
           });
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
       };
     },
-    [navigate],
+    [navigate, limit],
   );
 
   return (
