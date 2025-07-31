@@ -25,6 +25,9 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
     S3_BUCKET_ROOT_DIR: 'uploads',
     SARBACANE_API_URL: 'http://localhost:3003',
     SARBACANE_API_KEY: 'token',
+    REDIS_HOST: 'localhost',
+    REDIS_PORT: '6379',
+    REDIS_PASSWORD: '',
   };
 
   const createConfig = (logExtraContext?: string) => ({
