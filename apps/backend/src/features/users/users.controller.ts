@@ -20,6 +20,14 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const query = c.req.valid('query');
     const entiteIds = c.get('entiteIds');
+    const roleId = c.get('roleId') as Role;
+    const roles: string[] = getAssignableRoles(roleId).map(({ key }) => key);
+
+    if (query.roleId?.some((roleOption) => !roles.includes(roleOption))) {
+      throwHTTPException400BadRequest('You are not allowed to filter on this role.', {
+        res: c.res,
+      });
+    }
 
     const { data, total } = await getUsers(entiteIds, query);
     logger.info({ userCount: data.length, total }, 'Users list retrieved successfully');
@@ -38,8 +46,10 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const id = c.req.param('id');
     const entiteIds = c.get('entiteIds');
+    const roleId = c.get('roleId') as Role;
+    const roles = getAssignableRoles(roleId).map(({ key }) => key);
 
-    const user = await getUserById(id, entiteIds);
+    const user = await getUserById(id, entiteIds, roles);
     if (!user) {
       logger.warn({ userId: id }, 'User not found or unauthorized access');
       throwHTTPException404NotFound('User not found', {
@@ -55,6 +65,10 @@ const app = factoryWithLogs
     const json = c.req.valid('json');
     const id = c.req.param('id');
     const userId = c.get('userId');
+    const entiteIds = c.get('entiteIds');
+    const roleId = c.get('roleId') as Role;
+
+    const roles = getAssignableRoles(roleId).map(({ key }) => key);
 
     logger.info({ targetUserId: id, requestedChanges: Object.keys(json) }, 'User update requested');
 
@@ -64,34 +78,33 @@ const app = factoryWithLogs
       delete json.roleId;
     }
 
-    // check user can assignes permitted roles
-    const roleId = c.get('roleId') as Role;
-    const roles = getAssignableRoles(roleId);
-
-    if (json.roleId && !roles.find((roleOption) => roleOption.key === json.roleId)) {
-      throwHTTPException400BadRequest('Role not assignable', {
-        res: c.res,
-      });
-    }
-
-    // check user can assignes permitted entites
-    const entiteIds = c.get('entiteIds');
-    // Only allow assigning descendant entities (not same-level)
-    const assignableEntites = entiteIds === null || entiteIds.length === 0 ? [] : entiteIds.slice(1);
-    if (json.entiteId && entiteIds !== null && !assignableEntites.includes(json.entiteId)) {
-      throwHTTPException400BadRequest('Entité not assignable', {
-        res: c.res,
-      });
-    }
-    const user = await patchUser(id, json, entiteIds);
-
-    if (!user) {
+    // check user can patch this user with applicable roles
+    const userToPatch = await getUserById(id, entiteIds, roles);
+    if (!userToPatch) {
       throwHTTPException404NotFound('User not found', {
         res: c.res,
       });
     }
 
+    if (json.roleId && !(roles as string[]).includes(json.roleId)) {
+      throwHTTPException400BadRequest('No permissions', {
+        res: c.res,
+      });
+    }
+
+    const newEntiteId = json.entiteId ?? undefined;
+    const currentEntiteId = userToPatch.entiteId ?? undefined;
+
+    if (newEntiteId === currentEntiteId) {
+      delete json.entiteId;
+    } else if (newEntiteId && entiteIds !== null && !entiteIds.includes(newEntiteId)) {
+      throwHTTPException400BadRequest('No permissions');
+    }
+
+    const user = await patchUser(id, json);
+
     logger.info({ userId: id }, 'User updated successfully');
+
     return c.json({ data: user });
   });
 

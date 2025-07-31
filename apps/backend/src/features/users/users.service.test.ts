@@ -132,7 +132,7 @@ describe('user.service.ts', () => {
   describe('getUserById()', () => {
     it('should call findFirst with id', async () => {
       mockedUser.findFirst.mockResolvedValueOnce(mockUser);
-      const result = await getUserById('user1', null);
+      const result = await getUserById('user1', null, null);
       expect(mockedUser.findFirst).toHaveBeenCalledWith({
         where: { id: 'user1' },
         include: { role: true },
@@ -142,9 +142,9 @@ describe('user.service.ts', () => {
 
     it('should call findFirst with id and entitesId', async () => {
       mockedUser.findFirst.mockResolvedValueOnce(mockUser);
-      const result = await getUserById('user1', ['e1']);
+      const result = await getUserById('user1', ['e1'], ['PENDING']);
       expect(mockedUser.findFirst).toHaveBeenCalledWith({
-        where: { id: 'user1', entiteId: { in: ['e1'] } },
+        where: { id: 'user1', roleId: { in: ['PENDING'] }, entiteId: { in: ['e1'] } },
         include: { role: true },
       });
       expect(result).toEqual(mockUser);
@@ -219,15 +219,9 @@ describe('user.service.ts', () => {
 
   describe('patchUser()', () => {
     it('should call update when user is accessible', async () => {
-      mockedUser.findFirst.mockResolvedValueOnce(mockUser);
       mockedUser.update = vi.fn().mockResolvedValueOnce({ ...mockUser, roleId: 'SUPER_ADMIN' });
 
-      const result = await patchUser('user1', { roleId: 'SUPER_ADMIN' }, null);
-
-      expect(mockedUser.findFirst).toHaveBeenCalledWith({
-        where: { id: 'user1' },
-        include: { role: true },
-      });
+      const result = await patchUser('user1', { roleId: 'SUPER_ADMIN' });
 
       expect(mockedUser.update).toHaveBeenCalledWith({
         where: { id: 'user1' },
@@ -235,19 +229,6 @@ describe('user.service.ts', () => {
       });
 
       expect(result).toEqual({ ...mockUser, roleId: 'SUPER_ADMIN' });
-    });
-
-    it('should return null when user is not accessible', async () => {
-      mockedUser.findFirst.mockResolvedValueOnce(null);
-
-      const result = await patchUser('user1', { roleId: 'SUPER_ADMIN' }, null);
-
-      expect(mockedUser.findFirst).toHaveBeenCalledWith({
-        where: { id: 'user1' },
-        include: { role: true },
-      });
-
-      expect(result).toBeNull();
     });
   });
 

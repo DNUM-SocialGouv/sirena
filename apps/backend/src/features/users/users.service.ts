@@ -1,4 +1,4 @@
-import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
+import { ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
 import { envVars } from '@/config/env';
 import { entitesDescendantIdsCache } from '@/features/entites/entites.cache';
 import { type Prisma, prisma, type User } from '@/libs/prisma';
@@ -11,10 +11,18 @@ const filterByEntities = (entiteIds: string[] | null) => {
   return { entiteId: { in: entiteIds } };
 };
 
+const filterByRoles = (roles: string[] | null) => {
+  if (!roles) {
+    return null;
+  }
+  return { roleId: { in: roles } };
+};
+
 export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery = {}) => {
   const { offset = 0, limit, sort = 'lastName', order = 'asc', roleId, active, search } = query;
 
   const entiteFilter = filterByEntities(entiteIds);
+  const roleFilter = filterByRoles(roleId ?? null);
 
   const searchConditions: Prisma.UserWhereInput[] | undefined = search?.trim()
     ? [
@@ -26,7 +34,7 @@ export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery 
 
   const where: Prisma.UserWhereInput = {
     ...(entiteFilter ?? {}),
-    ...(roleId?.length ? { roleId: { in: roleId } } : {}),
+    ...(roleFilter ?? {}),
     ...(active !== undefined ? { active } : {}),
     ...(searchConditions ? { OR: searchConditions } : {}),
   };
@@ -48,12 +56,14 @@ export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery 
   };
 };
 
-export const getUserById = async (id: User['id'], entiteIds: string[] | null) => {
+export const getUserById = async (id: User['id'], entiteIds: string[] | null, roles: Role[] | null) => {
   const entiteFilter = filterByEntities(entiteIds);
+  const roleFilter = filterByRoles(roles);
   return prisma.user.findFirst({
     where: {
       id,
       ...(entiteFilter ?? {}),
+      ...(roleFilter ?? {}),
     },
     include: { role: true },
   });
@@ -76,13 +86,7 @@ export const createUser = async (newUser: CreateUserDto) => {
 };
 export const deleteUser = async (id: User['id']) => await prisma.user.delete({ where: { id } });
 
-export const patchUser = async (id: User['id'], data: PatchUserDto, entiteIds: string[] | null) => {
-  const user = await getUserById(id, entiteIds);
-
-  if (!user) {
-    return null;
-  }
-
+export const patchUser = async (id: User['id'], data: PatchUserDto) => {
   return prisma.user.update({
     where: { id },
     data: {
@@ -92,7 +96,7 @@ export const patchUser = async (id: User['id'], data: PatchUserDto, entiteIds: s
 };
 
 export const getUserEntities = async (userId: User['id'], entiteIds: string[] | null) => {
-  const user = await getUserById(userId, entiteIds);
+  const user = await getUserById(userId, entiteIds, null);
   if (!user) {
     return [];
   }

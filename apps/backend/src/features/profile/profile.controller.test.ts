@@ -55,7 +55,7 @@ describe('Profile endpoints: /profile', () => {
 
       expect(res.status).toBe(200);
       expect(json).toEqual({ data: convertDatesToStrings(fakeUser) });
-      expect(getUserById).toHaveBeenCalledWith('id1', null);
+      expect(getUserById).toHaveBeenCalledWith('id1', null, null);
     });
 
     it('should return 401 if user not found', async () => {

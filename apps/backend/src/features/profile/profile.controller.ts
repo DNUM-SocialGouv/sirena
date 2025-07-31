@@ -13,7 +13,7 @@ const app = factoryWithLogs
     const userId = c.get('userId');
 
     logger.info({ userId }, 'User profile requested');
-    const user = await getUserById(userId, null);
+    const user = await getUserById(userId, null, null);
 
     if (!user) {
       logger.error({ userId }, 'User not found in profile controller - authentication inconsistency');

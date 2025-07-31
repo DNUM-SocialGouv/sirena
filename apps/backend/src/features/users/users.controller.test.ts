@@ -1,3 +1,4 @@
+import { ROLES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
@@ -65,7 +66,7 @@ describe('Users endpoints: /users', () => {
       pcData: {},
       statutId: '1',
       entiteId: null,
-      role: { id: 'role1', label: 'Admin' },
+      role: { id: ROLES.NATIONAL_STEERING, label: 'Admin' },
     },
     {
       id: 'id2',
@@ -80,7 +81,7 @@ describe('Users endpoints: /users', () => {
       pcData: {},
       statutId: '1',
       entiteId: null,
-      role: { id: 'role1', label: 'Admin' },
+      role: { id: ROLES.READER, label: 'Admin' },
     },
   ];
 
@@ -88,12 +89,20 @@ describe('Users endpoints: /users', () => {
     it('should return a list of users with filters', async () => {
       vi.mocked(getUsers).mockResolvedValueOnce({ data: fakeData, total: 2 });
 
-      const res = await client.index.$get({ query: { roleId: 'role1', active: 'true' } });
+      const res = await client.index.$get({ query: { roleId: ROLES.NATIONAL_STEERING, active: 'true' } });
 
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeData), meta: { total: 2 } });
-      expect(getUsers).toHaveBeenCalledWith(['e1', 'e2', 'e3'], { roleId: ['role1'], active: true });
+      expect(getUsers).toHaveBeenCalledWith(['e1', 'e2', 'e3'], { roleId: [ROLES.NATIONAL_STEERING], active: true });
+    });
+
+    it('should return an error, "You are not allowed to filter on this role."', async () => {
+      const res = await client.index.$get({ query: { roleId: ROLES.SUPER_ADMIN, active: 'true' } });
+
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json).toEqual({ message: 'You are not allowed to filter on this role.' });
     });
 
     it('should return meta with offset and limit when provided in query', async () => {
@@ -101,7 +110,7 @@ describe('Users endpoints: /users', () => {
 
       const res = await client.index.$get({
         query: {
-          roleId: 'role1',
+          roleId: `${ROLES.ENTITY_ADMIN},${ROLES.PENDING}`,
           active: 'true',
           offset: '10',
           limit: '5',
@@ -116,7 +125,7 @@ describe('Users endpoints: /users', () => {
       });
 
       expect(getUsers).toHaveBeenCalledWith(['e1', 'e2', 'e3'], {
-        roleId: ['role1'],
+        roleId: [ROLES.ENTITY_ADMIN, ROLES.PENDING],
         active: true,
         offset: 10,
         limit: 5,
@@ -132,7 +141,11 @@ describe('Users endpoints: /users', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeData[0]) });
-      expect(getUserById).toHaveBeenCalledWith(fakeData[0].id, ['e1', 'e2', 'e3']);
+      expect(getUserById).toHaveBeenCalledWith(
+        fakeData[0].id,
+        ['e1', 'e2', 'e3'],
+        [ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER, ROLES.READER, ROLES.PENDING],
+      );
     });
 
     it('should return 404 if user is not found', async () => {
@@ -151,41 +164,34 @@ describe('Users endpoints: /users', () => {
 
   describe('PATCH /:id', () => {
     it('should update a user by ID', async () => {
-      vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeData[0], roleId: 'ENTITY_ADMIN', entiteId: 'e2' });
+      vi.mocked(getUserById).mockResolvedValueOnce(fakeData[0]);
+      vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeData[0], roleId: ROLES.ENTITY_ADMIN, entiteId: 'e2' });
 
       const res = await client[':id'].$patch({
         param: { id: 'user-id-1' },
-        json: { roleId: 'ENTITY_ADMIN', entiteId: 'e2' },
+        json: { roleId: ROLES.ENTITY_ADMIN, entiteId: 'e2' },
       });
 
       expect(res.status).toBe(200);
-      expect(await res.json()).toEqual({
-        data: convertDatesToStrings({ ...fakeData[0], roleId: 'ENTITY_ADMIN', entiteId: 'e2' }),
+      const json = await res.json();
+      expect(json).toEqual({
+        data: convertDatesToStrings({ ...fakeData[0], roleId: ROLES.ENTITY_ADMIN, entiteId: 'e2' }),
       });
     });
 
     it('should return 400 if role is not assignable', async () => {
+      vi.mocked(getUserById).mockResolvedValueOnce({ ...fakeData[0], roleId: ROLES.SUPER_ADMIN });
       const res = await client[':id'].$patch({
         param: { id: 'user-id-1' },
         json: { roleId: 'SUPER_ADMIN' },
       });
 
       expect(res.status).toBe(400);
-      expect(await res.json()).toMatchObject({ message: 'Role not assignable' });
-    });
-
-    it('should return 400 if entité is not assignable', async () => {
-      const res = await client[':id'].$patch({
-        param: { id: 'user-id-1' },
-        json: { entiteId: 'e99' },
-      });
-
-      expect(res.status).toBe(400);
-      expect(await res.json()).toMatchObject({ message: 'Entité not assignable' });
+      expect(await res.json()).toMatchObject({ message: 'No permissions' });
     });
 
     it('should return 404 if user not found', async () => {
-      vi.mocked(patchUser).mockResolvedValueOnce(null);
+      vi.mocked(getUserById).mockResolvedValueOnce(null);
 
       const res = await client[':id'].$patch({
         param: { id: 'unknown' },
@@ -196,8 +202,33 @@ describe('Users endpoints: /users', () => {
       expect(await res.json()).toMatchObject({ message: 'User not found' });
     });
 
+    it('should silently ignore entiteId if unchanged', async () => {
+      vi.mocked(getUserById).mockResolvedValueOnce(fakeData[0]);
+      vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeData[0] });
+
+      const res = await client[':id'].$patch({
+        param: { id: fakeData[0].id },
+        json: { entiteId: fakeData[0].entiteId },
+      });
+
+      expect(res.status).toBe(200);
+      expect(patchUser).toHaveBeenCalledWith(fakeData[0].id, {});
+    });
+
+    it('should prevent user from setting not permit entityId', async () => {
+      vi.mocked(getUserById).mockResolvedValueOnce({ ...fakeData[0], entiteId: 'e3' });
+
+      const res = await client[':id'].$patch({
+        param: { id: 'user-id-1' },
+        json: { entiteId: 'e5' },
+      });
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ message: 'No permissions' });
+    });
+
     it('should prevent user from changing their own role', async () => {
-      vi.resetAllMocks();
+      vi.mocked(getUserById).mockResolvedValueOnce(fakeData[0]);
       vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeData[0] });
 
       const res = await client[':id'].$patch({
@@ -206,7 +237,7 @@ describe('Users endpoints: /users', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(patchUser).toHaveBeenCalledWith('id10', {}, ['e1', 'e2', 'e3']);
+      expect(patchUser).toHaveBeenCalledWith('id10', {});
     });
   });
 });
