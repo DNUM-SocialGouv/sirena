@@ -101,7 +101,7 @@ const app = factoryWithLogs
       throwHTTPException400BadRequest('No permissions');
     }
 
-    const user = await patchUser(id, json);
+    const user = await patchUser(id, json, userId);
 
     logger.info({ userId: id }, 'User updated successfully');
 

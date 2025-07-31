@@ -68,7 +68,10 @@ describe('Users endpoints as admin: /users', () => {
 
     it('should allow patch if entiteIds is null', async () => {
       vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
-      vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeUser, entiteId: 'whatever' });
+      vi.mocked(patchUser).mockResolvedValueOnce({
+        ...fakeUser,
+        entiteId: 'whatever',
+      });
 
       const res = await client[':id'].$patch({
         param: { id: 'id1' },
@@ -76,7 +79,7 @@ describe('Users endpoints as admin: /users', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(patchUser).toHaveBeenCalledWith('id1', { entiteId: 'whatever' });
+      expect(patchUser).toHaveBeenCalledWith('id1', { entiteId: 'whatever' }, 'id10');
     });
   });
 });
