@@ -17,7 +17,7 @@ export const UserMenu = () => {
     if (!data) {
       return '';
     }
-    return `${data?.firstName} ${data?.lastName}`;
+    return data?.firstName;
   }, [data]);
   const email = useMemo(() => data?.email ?? '', [data?.email]);
   const role = useMemo(() => (data?.role?.id ?? '') as Role | '', [data?.role]);
@@ -65,7 +65,7 @@ export const UserMenu = () => {
                   <Menu.Item onClick={redirectToAdminUsers}>
                     <div className="user-menu__item">
                       <span className="fr-icon-user-line user-menu__item__icon" aria-hidden="true" />
-                      Administration
+                      Administrer
                     </div>
                   </Menu.Item>
                 </>
