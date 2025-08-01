@@ -85,6 +85,9 @@ jobs:
           cd apps/frontend
           npx playwright install --with-deps chromium
 
+      - name: Install tsx
+        run: pnpm add -g tsx
+
       - name: Wait for deployment
         run: |
           cd apps/frontend
