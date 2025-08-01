@@ -28,7 +28,7 @@ sequenceDiagram
     Proconnect-->>App: userInfo
 
     %% 4. User lookup / creation
-    App->>UserSvc: getUserBySub(userInfo.sub)
+    App->>UserSvc: getUserByEmail(userInfo.email)
     alt utilisateur existant
         UserSvc-->>App: user
     else nouvel utilisateur

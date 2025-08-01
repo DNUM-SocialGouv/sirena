@@ -69,7 +69,7 @@ export const getUserById = async (id: User['id'], entiteIds: string[] | null, ro
   });
 };
 
-export const getUserBySub = async (sub: User['sub']) => await prisma.user.findUnique({ where: { sub } });
+export const getUserByEmail = async (email: User['email']) => await prisma.user.findFirst({ where: { email } });
 
 export const createUser = async (newUser: CreateUserDto) => {
   const adminEmails = envVars.SUPER_ADMIN_LIST_EMAIL.split(';');

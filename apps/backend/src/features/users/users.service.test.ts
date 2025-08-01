@@ -4,8 +4,8 @@ import { prisma } from '@/libs/prisma';
 import {
   createUser,
   deleteUser,
+  getUserByEmail,
   getUserById,
-  getUserBySub,
   getUserEntities,
   getUsers,
   patchUser,
@@ -151,11 +151,11 @@ describe('user.service.ts', () => {
     });
   });
 
-  describe('getUserBySub()', () => {
-    it('should call findUnique with sub', async () => {
-      mockedUser.findUnique.mockResolvedValueOnce(mockUser);
-      const result = await getUserBySub('sub1');
-      expect(mockedUser.findUnique).toHaveBeenCalledWith({ where: { sub: 'sub1' } });
+  describe('getUserByEmail()', () => {
+    it('should call findFirst with email', async () => {
+      mockedUser.findFirst.mockResolvedValueOnce(mockUser);
+      const result = await getUserByEmail('sub@email.fr');
+      expect(mockedUser.findFirst).toHaveBeenCalledWith({ where: { email: 'sub@email.fr' } });
       expect(result).toEqual(mockUser);
     });
   });
