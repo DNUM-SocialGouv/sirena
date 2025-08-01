@@ -34,6 +34,12 @@ const processEnv = {
   // Sentry
   SENTRY_DSN_BACKEND: process.env.SENTRY_DSN_BACKEND,
   SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
+  // Cron
+  CRON_DEMAT_SOCIAL: process.env.CRON_DEMAT_SOCIAL,
+  // Redis
+  REDIS_HOST: process.env.REDIS_HOST,
+  REDIS_PORT: process.env.REDIS_PORT,
+  REDIS_PASSWORD: process.env.REDIS_PASSWORD,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);
