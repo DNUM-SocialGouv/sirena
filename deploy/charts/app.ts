@@ -158,23 +158,20 @@ function createBucketEnvVars(): k8s.EnvVar[] {
 }
 
 function createRedisEnvVars(): k8s.EnvVar[] {
-  const redisSecretName = 'redis';
-  const redisEnvMappings = [
-    { envName: 'REDIS_HOST', secretKey: 'host' },
-    { envName: 'REDIS_PORT', secretKey: 'port' },
-    { envName: 'REDIS_PASSWORD', secretKey: 'password' },
-    { envName: 'REDIS_URL', secretKey: 'url' },
-  ];
-
-  return redisEnvMappings.map(({ envName, secretKey }) => ({
-    name: envName,
-    valueFrom: {
-      secretKeyRef: {
-        name: redisSecretName,
-        key: secretKey,
-      },
+  return [
+    {
+      name: 'REDIS_HOST',
+      value: 'redis-master',
     },
-  }));
+    {
+      name: 'REDIS_PORT',
+      value: '6379',
+    },
+    {
+      name: 'REDIS_URL',
+      value: 'redis://redis-master:6379',
+    },
+  ];
 }
 
 function createContainer(props: AppProps): k8s.Container {
@@ -334,6 +331,7 @@ function createWorkerDeployment(scope: Construct, props: WorkerProps, labels: Re
                   memory: k8s.Quantity.fromString('500Mi'),
                 },
               },
+              env: [...createRedisEnvVars()],
             },
           ],
           imagePullSecrets: [
