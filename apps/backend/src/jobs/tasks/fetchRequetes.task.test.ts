@@ -24,10 +24,12 @@ vi.mock('@/libs/asyncLocalStorage', () => ({
   },
   loggerStorage: {
     run: vi.fn(),
-    getStore: vi.fn(() => ({
-      info: vi.fn(),
+  },
+  getLoggerStore: () => {
+    return {
       warn: vi.fn(),
-    })),
+      info: vi.fn(),
+    };
   },
 }));
 
