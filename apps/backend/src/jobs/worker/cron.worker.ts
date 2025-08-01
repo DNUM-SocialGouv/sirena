@@ -16,5 +16,5 @@ export const cronWorker = new Worker(
     }
     return loggerStorage.run(createDefaultLogger(), async () => await handler(job));
   },
-  { connection },
+  { connection, concurrency: 5 },
 );
