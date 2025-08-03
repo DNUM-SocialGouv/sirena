@@ -1,6 +1,5 @@
 import type { Job } from 'bullmq';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getLastCron } from '@/crons/crons.service';
 import { importRequetes } from '@/features/dematSocial/dematSocial.service';
 import { withCronLifecycle } from '@/jobs/config/job.utils';
 import { abortControllerStorage, loggerStorage } from '@/libs/asyncLocalStorage';

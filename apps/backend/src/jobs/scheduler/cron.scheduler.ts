@@ -1,23 +1,43 @@
+import * as Sentry from '@sentry/node';
+import { envVars } from '@/config/env';
 import { createDefaultLogger } from '@/helpers/pino';
-import { getLoggerStore, loggerStorage } from '@/libs/asyncLocalStorage';
+import { getLoggerStore, loggerStorage, sentryStorage } from '@/libs/asyncLocalStorage';
 import { jobHandlers } from '../config/job.definitions';
 import { cronQueue } from '../config/job.queues';
 
 export async function startScheduler() {
-  loggerStorage.run(createDefaultLogger(), async () => {
+  return loggerStorage.run(createDefaultLogger(), async () => {
     const logger = getLoggerStore();
-    const jobs = await cronQueue.getJobSchedulers();
-    for (const { name, repeatEveryMs, data } of jobHandlers) {
-      const job = jobs.find((j) => j.name === name);
-      if (job) {
-        await cronQueue.removeJobScheduler(job.key);
-        logger.info(`[Scheduler] Removed previous repeat for ${name}`);
+
+    const runScheduler = async () => {
+      const jobs = await cronQueue.getJobSchedulers();
+
+      for (const { name, repeatEveryMs, data } of jobHandlers) {
+        const job = jobs.find((j) => j.name === name);
+        if (job) {
+          await cronQueue.removeJobScheduler(job.key);
+          logger.info(`[Scheduler] Removed previous repeat for ${name}`);
+        }
+        await cronQueue.add(name, data, {
+          repeat: { every: repeatEveryMs },
+          removeOnComplete: true,
+        });
+        logger.info(`[Scheduler] Scheduled ${name}`);
       }
-      await cronQueue.add(name, data, {
-        repeat: { every: repeatEveryMs },
-        removeOnComplete: true,
+    };
+
+    if (envVars.SENTRY_ENABLED) {
+      return sentryStorage.run(Sentry, async () => {
+        Sentry.setContext('scheduler', {
+          action: 'start_scheduler',
+          jobCount: jobHandlers.length,
+          timestamp: new Date().toISOString(),
+        });
+
+        return runScheduler();
       });
-      logger.info(`[Scheduler] Scheduled ${name}`);
     }
+
+    return runScheduler();
   });
 }
