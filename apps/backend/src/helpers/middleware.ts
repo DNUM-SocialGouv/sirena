@@ -1,18 +1,12 @@
 import type { Context } from 'hono';
 import { envVars } from '@/config/env';
+import type { User } from '@/libs/prisma';
 
 export const UNKNOWN_VALUE = 'unknown';
 export const SOURCE_BACKEND = 'backend';
 
 export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'] as const;
 export type LogLevel = (typeof LOG_LEVELS)[number];
-
-export interface User {
-  id: string;
-  email?: string;
-  entiteId?: string;
-  roleId?: string;
-}
 
 export interface RequestContext {
   requestId: string;
@@ -21,7 +15,7 @@ export interface RequestContext {
   userId?: string;
   ip: string;
   userAgent: string;
-  entiteId?: string;
+  entiteIds?: string[] | null;
   roleId?: string;
 }
 
@@ -132,7 +126,9 @@ export const extractRequestHeaders = (c: Context): RequestHeaders => {
 
 export const extractRequestContext = (c: Context): RequestContext => {
   const headers = extractRequestHeaders(c);
-  const user = c.get('user') as User | undefined;
+  const userId = c.get('userId') as string | undefined;
+  const roleId = c.get('roleId') as string | undefined;
+  const entiteIds = c.get('entiteIds') as string[] | null | undefined;
 
   const requestId = headers['x-request-id'] || c.get('requestId') || crypto.randomUUID();
   const traceId = headers['x-trace-id'] || crypto.randomUUID();
@@ -144,11 +140,11 @@ export const extractRequestContext = (c: Context): RequestContext => {
     requestId,
     traceId,
     sessionId,
-    userId: user?.id,
+    userId,
     ip,
     userAgent,
-    entiteId: user?.entiteId,
-    roleId: user?.roleId,
+    entiteIds,
+    roleId,
   };
 };
 
@@ -173,55 +169,10 @@ export const createSentryRequestContext = (c: Context, context: RequestContext) 
     url: c.req.url,
     path: c.req.path,
     headers: Object.fromEntries(c.req.raw.headers.entries()),
-    ...(context.ip &&
-      context.ip !== UNKNOWN_VALUE && {
-        ip: context.ip,
-      }),
+    ip: context.ip, // Always include IP (even if "unknown")
     userAgent: context.userAgent,
     source: SOURCE_BACKEND,
   };
-};
-
-export const createSentryBusinessContext = (context: RequestContext) => {
-  const businessContext: Record<string, string> = {
-    source: SOURCE_BACKEND,
-  };
-
-  if (context.userId) {
-    businessContext.userId = context.userId;
-  }
-
-  if (context.entiteId) {
-    businessContext.entiteId = context.entiteId;
-  }
-
-  if (context.roleId) {
-    businessContext.roleId = context.roleId;
-  }
-
-  return Object.keys(businessContext).length > 1 ? businessContext : undefined;
-};
-
-export const setSentryCorrelationTags = (
-  scope: { setTag: (key: string, value: string) => void },
-  context: RequestContext,
-): void => {
-  scope.setTag('requestId', context.requestId);
-  scope.setTag('traceId', context.traceId);
-  scope.setTag('sessionId', context.sessionId);
-  scope.setTag('source', SOURCE_BACKEND);
-
-  if (context.userId) {
-    scope.setTag('userId', context.userId);
-  }
-
-  if (context.entiteId) {
-    scope.setTag('entiteId', context.entiteId);
-  }
-
-  if (context.roleId) {
-    scope.setTag('roleId', context.roleId);
-  }
 };
 
 export const getCaller = (stackDepth: number = DEFAULT_STACK_DEPTH): string => {
@@ -244,13 +195,11 @@ export const getCaller = (stackDepth: number = DEFAULT_STACK_DEPTH): string => {
 
 export interface LogLevelConfig {
   console: LogLevel;
-  sentry: LogLevel;
 }
 
 export const getLogLevelConfig = (): LogLevelConfig => {
   return {
     console: envVars.LOG_LEVEL,
-    sentry: envVars.LOG_LEVEL_SENTRY,
   };
 };
 
@@ -265,7 +214,71 @@ export const shouldLog = (level: LogLevel, minLevel: LogLevel): boolean => {
   return levelIndex <= minLevelIndex;
 };
 
-export const shouldSendToSentry = (level: LogLevel, config?: LogLevelConfig): boolean => {
-  const logConfig = config || getLogLevelConfig();
-  return shouldLog(level, logConfig.sentry);
+export interface EnrichedUserContext {
+  userId: string;
+  roleId?: string;
+  entiteIds?: string[] | null;
+}
+
+export interface EnrichedRequestContext extends RequestContext {
+  caller?: string;
+  extraContext?: Record<string, string>;
+}
+
+export const enrichUserContext = (context: RequestContext): EnrichedUserContext | null => {
+  if (!context.userId) {
+    return null;
+  }
+
+  return {
+    userId: context.userId,
+    roleId: context.roleId,
+    entiteIds: context.entiteIds,
+  };
+};
+
+export const enrichRequestContext = (context: RequestContext): EnrichedRequestContext => {
+  const caller = getCaller();
+  const extraContext = getLogExtraContext();
+
+  return {
+    ...context,
+    caller,
+    ...(Object.keys(extraContext).length > 0 && { extraContext }),
+  };
+};
+
+export const createSentryUserFromContext = (userContext: EnrichedUserContext, rawIp: string) => {
+  return {
+    id: userContext.userId,
+    ...(rawIp && rawIp !== UNKNOWN_VALUE && { ip_address: rawIp }),
+  };
+};
+
+export const createSentryBusinessContext = (userContext: EnrichedUserContext) => {
+  return {
+    userId: userContext.userId,
+    ...(userContext.roleId && { roleId: userContext.roleId }),
+    ...(userContext.entiteIds && userContext.entiteIds.length > 0 && { entiteIds: userContext.entiteIds }),
+  };
+};
+
+export const createPinoContextData = (
+  requestContext: EnrichedRequestContext,
+  userContext: EnrichedUserContext | null,
+): Record<string, unknown> => {
+  return {
+    requestId: requestContext.requestId,
+    traceId: requestContext.traceId,
+    sessionId: requestContext.sessionId,
+    ip: requestContext.ip,
+    userAgent: requestContext.userAgent,
+    ...(userContext && {
+      userId: userContext.userId,
+      roleId: userContext.roleId,
+      entiteIds: userContext.entiteIds,
+    }),
+    ...(requestContext.caller && { caller: requestContext.caller }),
+    ...(requestContext.extraContext && { extraContext: requestContext.extraContext }),
+  };
 };
