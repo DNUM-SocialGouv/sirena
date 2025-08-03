@@ -27,13 +27,13 @@ const processEnv = {
   // Internal
   LOG_FORMAT: process.env.LOG_FORMAT,
   LOG_LEVEL: process.env.LOG_LEVEL,
-  LOG_LEVEL_SENTRY: process.env.LOG_LEVEL_SENTRY,
   TRUSTED_IP_HEADERS: process.env.TRUSTED_IP_HEADERS,
   LOG_EXTRA_CONTEXT: process.env.LOG_EXTRA_CONTEXT,
   SUPER_ADMIN_LIST_EMAIL: process.env.SUPER_ADMIN_LIST_EMAIL,
   // Sentry
   SENTRY_DSN_BACKEND: process.env.SENTRY_DSN_BACKEND,
   SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
+  SENTRY_ENABLED: process.env.SENTRY_ENABLED,
   // Cron
   CRON_DEMAT_SOCIAL: process.env.CRON_DEMAT_SOCIAL,
   // Redis
