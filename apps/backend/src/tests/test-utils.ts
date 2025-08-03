@@ -102,7 +102,7 @@ export const createTestRequestContext = (overrides: Partial<RequestContext> = {}
   userId: 'test-user-id',
   ip: 'xxx.xxx.xxx.100',
   userAgent: 'Mozilla/5.0',
-  entiteId: 'test-entite-id',
+  entiteIds: ['test-entite-id'],
   roleId: 'test-role-id',
   ...overrides,
 });
@@ -166,7 +166,7 @@ export const setupMiddlewareHelperMocks = (requestContext?: Partial<RequestConte
     createSentryBusinessContext: vi.fn((context: RequestContext) => ({
       source: 'backend',
       userId: context.userId,
-      entiteId: context.entiteId,
+      entiteIds: context.entiteIds,
       roleId: context.roleId,
     })),
     createSentryUserContext: vi.fn((user: User, ip: string) => ({
@@ -366,7 +366,7 @@ export const runLogLevelTest = (
     userId: requestContext.userId,
     ip: requestContext.ip,
     userAgent: requestContext.userAgent,
-    entiteId: requestContext.entiteId,
+    entiteIds: requestContext.entiteIds,
     caller: 'test.ts:123',
   };
 
