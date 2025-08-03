@@ -87,13 +87,6 @@ export const AppEnvSchema = z.object({
     })
     .default('info')
     .describe('Niveau de log pour la console et sortie standard'),
-  LOG_LEVEL_SENTRY: z
-    .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'], {
-      invalid_type_error:
-        "La variable d'environnement LOG_LEVEL_SENTRY doit être 'trace', 'debug', 'info', 'warn', 'error', ou 'fatal'",
-    })
-    .default('warn')
-    .describe('Niveau de log minimum pour envoyer vers Sentry (indépendant de LOG_LEVEL)'),
   TRUSTED_IP_HEADERS: z
     .string()
     .optional()
@@ -126,6 +119,12 @@ export const AppEnvSchema = z.object({
       }
       return context;
     }),
+  SENTRY_ENABLED: z
+    .string()
+    .optional()
+    .default('false')
+    .transform((val) => val === 'true')
+    .describe('Enable Sentry error tracking'),
   SENTRY_DSN_BACKEND: z.string().optional(),
   SENTRY_ENVIRONMENT: z.string().optional(),
   S3_BUCKET_ACCESS_KEY: z
