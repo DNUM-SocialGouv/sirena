@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { expect, vi } from 'vitest';
-import type { LogLevel, RequestContext, User } from '@/helpers/middleware';
+import type { LogLevel, RequestContext } from '@/helpers/middleware';
+import type { User } from '@/libs/prisma';
 
 export interface MockSentryScope {
   setContext: ReturnType<typeof vi.fn>;
@@ -102,7 +103,7 @@ export const createTestRequestContext = (overrides: Partial<RequestContext> = {}
   userId: 'test-user-id',
   ip: 'xxx.xxx.xxx.100',
   userAgent: 'Mozilla/5.0',
-  entiteId: 'test-entite-id',
+  entiteIds: ['test-entite-id'] as string[],
   roleId: 'test-role-id',
   ...overrides,
 });
@@ -110,8 +111,16 @@ export const createTestRequestContext = (overrides: Partial<RequestContext> = {}
 export const createTestUser = (overrides: Partial<TestUser> = {}): TestUser => ({
   id: 'user-123',
   email: 'test@example.com',
-  entiteId: 'entite-456',
+  firstName: 'Test',
+  lastName: 'User',
+  uid: 'test-uid',
+  sub: 'test-sub',
+  createdAt: new Date(),
+  active: true,
+  pcData: {},
   roleId: 'role-789',
+  statutId: 'statut-123',
+  entiteId: 'entite-456',
   ...overrides,
 });
 
@@ -166,7 +175,7 @@ export const setupMiddlewareHelperMocks = (requestContext?: Partial<RequestConte
     createSentryBusinessContext: vi.fn((context: RequestContext) => ({
       source: 'backend',
       userId: context.userId,
-      entiteId: context.entiteId,
+      entiteIds: context.entiteIds,
       roleId: context.roleId,
     })),
     createSentryUserContext: vi.fn((user: User, ip: string) => ({
@@ -366,7 +375,7 @@ export const runLogLevelTest = (
     userId: requestContext.userId,
     ip: requestContext.ip,
     userAgent: requestContext.userAgent,
-    entiteId: requestContext.entiteId,
+    entiteIds: requestContext.entiteIds,
     caller: 'test.ts:123',
   };
 
