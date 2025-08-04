@@ -46,7 +46,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@hono/zod-validator": "^0.7.1",
+    "@hono/zod-validator": "^0.7.2",
     "hono": "catalog:",
     "hono-openapi": "catalog:",
     "openapi-types": "^12.1.3",
