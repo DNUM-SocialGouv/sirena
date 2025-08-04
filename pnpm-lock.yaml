@@ -97,8 +97,8 @@ importers:
         specifier: 'catalog:'
         version: 0.4.8(@hono/zod-validator@0.7.1(hono@4.8.3)(zod@3.25.67))(hono@4.8.3)(openapi-types@12.1.3)(zod-openapi@4.2.4(zod@3.25.67))(zod@3.25.67)
       hono-pino:
-        specifier: ^0.9.1
-        version: 0.9.1(hono@4.8.3)(pino@9.7.0)
+        specifier: ^0.10.1
+        version: 0.10.1(hono@4.8.3)(pino@9.7.0)
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -3114,8 +3114,8 @@ packages:
       zod-openapi:
         optional: true
 
-  hono-pino@0.9.1:
-    resolution: {integrity: sha512-5HopJgf7FBAHw1NBXNSDMB9Iuxp6RD0IkXDqmA+MxNQk6s566B0a8GtdSkApbow9wbrhghtHE8aLri9RsvzG1A==}
+  hono-pino@0.10.1:
+    resolution: {integrity: sha512-kkm5A5YHsXFBcmPMZ9VTV4A1HMdcQ2HmfogI9oitE4jWa91gTHuvFFuILuD+Bo0pU33cGyF+NfWeq3fo2LNmSg==}
     engines: {node: '>=18'}
     peerDependencies:
       hono: '>=4.0.0'
@@ -7826,7 +7826,7 @@ snapshots:
       zod: 3.25.67
       zod-openapi: 4.2.4(zod@3.25.67)
 
-  hono-pino@0.9.1(hono@4.8.3)(pino@9.7.0):
+  hono-pino@0.10.1(hono@4.8.3)(pino@9.7.0):
     dependencies:
       defu: 6.1.4
       hono: 4.8.3
