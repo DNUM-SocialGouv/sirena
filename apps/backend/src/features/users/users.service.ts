@@ -1,9 +1,6 @@
 import { ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
 import { envVars } from '@/config/env';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { entitesDescendantIdsCache } from '@/features/entites/entites.cache';
-import { pick } from '@/helpers/object';
 import { type Prisma, prisma, type User } from '@/libs/prisma';
 import type { CreateUserDto, GetUsersQuery, PatchUserDto } from './users.type';
 
@@ -89,39 +86,13 @@ export const createUser = async (newUser: CreateUserDto) => {
 };
 export const deleteUser = async (id: User['id']) => await prisma.user.delete({ where: { id } });
 
-export const patchUser = async (id: User['id'], data: PatchUserDto, changedById?: User['id']) => {
-  const haveRightsChanged = (before: User, after: User): boolean => {
-    const trackedFields: (keyof User)[] = ['roleId', 'entiteId', 'statutId', 'active'];
-    const pickedBefore = pick(before, trackedFields);
-    const pickedAfter = pick(after, trackedFields);
-    return JSON.stringify(pickedBefore) !== JSON.stringify(pickedAfter);
-  };
-
-  const userBefore = await getUserById(id, null, null);
-
-  if (!userBefore) {
-    return null;
-  }
-
-  const updatedUser = await prisma.user.update({
+export const patchUser = async (id: User['id'], data: PatchUserDto) => {
+  return prisma.user.update({
     where: { id },
     data: {
       ...data,
     },
   });
-
-  if (changedById && haveRightsChanged(userBefore, updatedUser)) {
-    await createChangeLog({
-      entity: 'User',
-      entityId: id,
-      action: ChangeLogAction.UPDATED,
-      before: pick(userBefore, ['roleId', 'entiteId', 'statutId', 'active']),
-      after: pick(updatedUser, ['roleId', 'entiteId', 'statutId', 'active']),
-      changedById,
-    });
-  }
-
-  return updatedUser;
 };
 
 export const getUserEntities = async (userId: User['id'], entiteIds: string[] | null) => {

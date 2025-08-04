@@ -48,6 +48,15 @@ vi.mock('@/middlewares/entites.middleware', () => {
   };
 });
 
+vi.mock('@/middlewares/changelog/changelog.user.middleware', () => {
+  return {
+    default: async (_: Context, next: Next) => {
+      console.log('userChangelogMiddleware');
+      await next();
+    },
+  };
+});
+
 describe('Users endpoints: /users', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', UsersController).onError(errorHandler);
   const client = testClient(app);
@@ -235,7 +244,7 @@ describe('Users endpoints: /users', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(patchUser).toHaveBeenCalledWith(fakeData[0].id, {}, 'id10');
+      expect(patchUser).toHaveBeenCalledWith(fakeData[0].id, {});
     });
 
     it('should prevent user from setting not permit entityId', async () => {
@@ -263,7 +272,7 @@ describe('Users endpoints: /users', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(patchUser).toHaveBeenCalledWith('id10', {}, 'id10');
+      expect(patchUser).toHaveBeenCalledWith('id10', {});
     });
   });
 });
