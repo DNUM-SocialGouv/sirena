@@ -33,7 +33,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/react-transition-group": "^4.4.12",
-    "@vitejs/plugin-react": "^4.6.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "@vitest/browser": "catalog:",
     "jsdom": "^26.1.0",
     "storybook": "^9.1.0-alpha.7",
