@@ -36,7 +36,7 @@
     "@vitejs/plugin-react": "^4.6.0",
     "@vitest/browser": "catalog:",
     "jsdom": "^26.1.0",
-    "storybook": "^9.1.0-alpha.7",
+    "storybook": "^9.1.1",
     "vite": "^6.3.5",
     "vitest": "catalog:",
     "vitest-browser-react": "^1.0.0"
