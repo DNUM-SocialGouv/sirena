@@ -85,8 +85,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/common
       graffle:
-        specifier: 8.0.0-next.164
-        version: 8.0.0-next.164(@opentelemetry/api@1.9.0)(graphql@16.11.0)(prettier@3.5.3)
+        specifier: 8.0.0-next.168
+        version: 8.0.0-next.168(@opentelemetry/api@1.9.0)(graphql@16.11.0)(prettier@3.5.3)
       graphql:
         specifier: ^16.11.0
         version: 16.11.0
@@ -364,8 +364,8 @@ importers:
 
 packages:
 
-  '@0no-co/graphql.web@1.1.2':
-    resolution: {integrity: sha512-N2NGsU5FLBhT8NZ+3l2YrzZSHITjNXNuDhC4iDiikv0IujaJ0Xc6xIxQZ/Ek3Cb+rgPjnLHYyJm11tInuJn+cw==}
+  '@0no-co/graphql.web@1.2.0':
+    resolution: {integrity: sha512-/1iHy9TTr63gE1YcR5idjx8UREz1s0kFhydf3bBLCXyqjhkIc6igAzTOx3zPifCwFR87tsh/4Pa9cNts6d2otw==}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
     peerDependenciesMeta:
@@ -2497,6 +2497,10 @@ packages:
     resolution: {integrity: sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
 
+  chalk@5.5.0:
+    resolution: {integrity: sha512-1tm8DTaJhPBG3bIkVeZt1iZM9GfSX2lzOeDVZH9R9ffRHpmHvxZ/QhgQH/aDTkswQVt+YHdXAdS/In/30OjCbg==}
+    engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
+
   change-case-all@1.0.15:
     resolution: {integrity: sha512-3+GIFhk3sNuvFAJKU46o26OdzudQlPNBCu1ZQi3cMeMHhty1bhDxu2WrEilVNYaGvqUtR1VSigFcJOiS13dRhQ==}
 
@@ -2796,8 +2800,8 @@ packages:
   es-module-lexer@1.7.0:
     resolution: {integrity: sha512-jEQoCwk8hyb2AZziIOLhDqpm5+2ww5uIE6lkO/6jcOCusfk6LhMHpXXfBLXTZ7Ydyt0j4VoUQv6uGNYbdW+kBA==}
 
-  es-toolkit@1.39.3:
-    resolution: {integrity: sha512-Qb/TCFCldgOy8lZ5uC7nLGdqJwSabkQiYQShmw4jyiPk1pZzaYWTwaYKYP7EgLccWYgZocMrtItrwh683voaww==}
+  es-toolkit@1.39.8:
+    resolution: {integrity: sha512-A8QO9TfF+rltS8BXpdu8OS+rpGgEdnRhqIVxO/ZmNvnXBYgOdSsxukT55ELyP94gZIntWJ+Li9QRrT2u1Kitpg==}
 
   esbuild-register@3.6.0:
     resolution: {integrity: sha512-H2/S7Pm8a9CL1uhp9OvjwrBh5Pvx0H8qVOxNu8Wed9Y7qv56MPtq+GGM8RJpq6glYJn9Wspr8uw7l55uyinNeg==}
@@ -2989,8 +2993,8 @@ packages:
     peerDependencies:
       csstype: ^3.0.10
 
-  graffle@8.0.0-next.164:
-    resolution: {integrity: sha512-8nweSNsPY3Yodvr6F+dIgZolVKA0AQl3z315K5ezZKpG5H8J5QKBr/TKribqfLwrHcoedUdXipccr8ekjvM4jA==}
+  graffle@8.0.0-next.168:
+    resolution: {integrity: sha512-4/jUEMJ/C4o6m9jT4sYyhIkoX6fttVhijX+njUvULgqtKGxoZEvlnHRrprBNLCkZj0vNXYqhPwYSv7nzjlGaUA==}
     hasBin: true
     peerDependencies:
       '@dprint/formatter': ^0.4.0
@@ -4713,7 +4717,7 @@ packages:
 
 snapshots:
 
-  '@0no-co/graphql.web@1.1.2(graphql@16.11.0)':
+  '@0no-co/graphql.web@1.2.0(graphql@16.11.0)':
     optionalDependencies:
       graphql: 16.11.0
 
@@ -5935,7 +5939,7 @@ snapshots:
     dependencies:
       '@molt/types': 0.2.0
       alge: 0.8.1
-      chalk: 5.4.1
+      chalk: 5.5.0
       lodash.camelcase: 4.3.0
       lodash.snakecase: 4.1.1
       readline-sync: 1.4.10
@@ -7226,6 +7230,8 @@ snapshots:
 
   chalk@5.4.1: {}
 
+  chalk@5.5.0: {}
+
   change-case-all@1.0.15:
     dependencies:
       change-case: 4.1.2
@@ -7507,7 +7513,7 @@ snapshots:
 
   es-module-lexer@1.7.0: {}
 
-  es-toolkit@1.39.3: {}
+  es-toolkit@1.39.8: {}
 
   esbuild-register@3.6.0(esbuild@0.25.5):
     dependencies:
@@ -7742,12 +7748,12 @@ snapshots:
     dependencies:
       csstype: 3.1.3
 
-  graffle@8.0.0-next.164(@opentelemetry/api@1.9.0)(graphql@16.11.0)(prettier@3.5.3):
+  graffle@8.0.0-next.168(@opentelemetry/api@1.9.0)(graphql@16.11.0)(prettier@3.5.3):
     dependencies:
-      '@0no-co/graphql.web': 1.1.2(graphql@16.11.0)
+      '@0no-co/graphql.web': 1.2.0(graphql@16.11.0)
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.11.0)
       '@molt/command': 0.9.0
-      es-toolkit: 1.39.3
+      es-toolkit: 1.39.8
       graphql: 16.11.0
       is-plain-obj: 4.1.0
       type-fest: 4.41.0
