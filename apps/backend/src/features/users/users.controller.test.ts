@@ -48,6 +48,15 @@ vi.mock('@/middlewares/entites.middleware', () => {
   };
 });
 
+vi.mock('@/middlewares/changelog/changelog.user.middleware', () => {
+  return {
+    default: async (_: Context, next: Next) => {
+      console.log('userChangelogMiddleware');
+      await next();
+    },
+  };
+});
+
 describe('Users endpoints: /users', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', UsersController).onError(errorHandler);
   const client = testClient(app);
@@ -89,20 +98,32 @@ describe('Users endpoints: /users', () => {
     it('should return a list of users with filters', async () => {
       vi.mocked(getUsers).mockResolvedValueOnce({ data: fakeData, total: 2 });
 
-      const res = await client.index.$get({ query: { roleId: ROLES.NATIONAL_STEERING, active: 'true' } });
+      const res = await client.index.$get({
+        query: { roleId: ROLES.NATIONAL_STEERING, active: 'true' },
+      });
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json).toEqual({ data: convertDatesToStrings(fakeData), meta: { total: 2 } });
-      expect(getUsers).toHaveBeenCalledWith(['e1', 'e2', 'e3'], { roleId: [ROLES.NATIONAL_STEERING], active: true });
+      expect(json).toEqual({
+        data: convertDatesToStrings(fakeData),
+        meta: { total: 2 },
+      });
+      expect(getUsers).toHaveBeenCalledWith(['e1', 'e2', 'e3'], {
+        roleId: [ROLES.NATIONAL_STEERING],
+        active: true,
+      });
     });
 
     it('should return an error, "You are not allowed to filter on this role."', async () => {
-      const res = await client.index.$get({ query: { roleId: ROLES.SUPER_ADMIN, active: 'true' } });
+      const res = await client.index.$get({
+        query: { roleId: ROLES.SUPER_ADMIN, active: 'true' },
+      });
 
       expect(res.status).toBe(400);
       const json = await res.json();
-      expect(json).toEqual({ message: 'You are not allowed to filter on this role.' });
+      expect(json).toEqual({
+        message: 'You are not allowed to filter on this role.',
+      });
     });
 
     it('should return meta with offset and limit when provided in query', async () => {
@@ -165,7 +186,11 @@ describe('Users endpoints: /users', () => {
   describe('PATCH /:id', () => {
     it('should update a user by ID', async () => {
       vi.mocked(getUserById).mockResolvedValueOnce(fakeData[0]);
-      vi.mocked(patchUser).mockResolvedValueOnce({ ...fakeData[0], roleId: ROLES.ENTITY_ADMIN, entiteId: 'e2' });
+      vi.mocked(patchUser).mockResolvedValueOnce({
+        ...fakeData[0],
+        roleId: ROLES.ENTITY_ADMIN,
+        entiteId: 'e2',
+      });
 
       const res = await client[':id'].$patch({
         param: { id: 'user-id-1' },
@@ -175,12 +200,19 @@ describe('Users endpoints: /users', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json).toEqual({
-        data: convertDatesToStrings({ ...fakeData[0], roleId: ROLES.ENTITY_ADMIN, entiteId: 'e2' }),
+        data: convertDatesToStrings({
+          ...fakeData[0],
+          roleId: ROLES.ENTITY_ADMIN,
+          entiteId: 'e2',
+        }),
       });
     });
 
     it('should return 400 if role is not assignable', async () => {
-      vi.mocked(getUserById).mockResolvedValueOnce({ ...fakeData[0], roleId: ROLES.SUPER_ADMIN });
+      vi.mocked(getUserById).mockResolvedValueOnce({
+        ...fakeData[0],
+        roleId: ROLES.SUPER_ADMIN,
+      });
       const res = await client[':id'].$patch({
         param: { id: 'user-id-1' },
         json: { roleId: 'SUPER_ADMIN' },
@@ -216,7 +248,10 @@ describe('Users endpoints: /users', () => {
     });
 
     it('should prevent user from setting not permit entityId', async () => {
-      vi.mocked(getUserById).mockResolvedValueOnce({ ...fakeData[0], entiteId: 'e3' });
+      vi.mocked(getUserById).mockResolvedValueOnce({
+        ...fakeData[0],
+        entiteId: 'e3',
+      });
 
       const res = await client[':id'].$patch({
         param: { id: 'user-id-1' },
