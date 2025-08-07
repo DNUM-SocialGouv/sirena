@@ -7,6 +7,7 @@ import HealthController from '@/features/health/health.controller';
 import ProfileController from '@/features/profile/profile.controller';
 import RequetesEntiteController from '@/features/requetesEntite/requetesEntite.controller';
 import RolesController from '@/features/roles/roles.controller';
+import UploadedFilesController from '@/features/uploadedFiles/uploadedFiles.controller';
 import UsersController from '@/features/users/users.controller';
 import VersionController from '@/features/version/version.controller';
 import appFactory from '@/helpers/factories/appWithLogs';
@@ -28,6 +29,7 @@ export const app = appFactory
   .route('/roles', RolesController)
   .route('/users', UsersController)
   .route('/entites', EntitesController)
+  .route('/uploaded-files', UploadedFilesController)
   .route('/demat-social-mapping', DematSocialMapperController)
   .route('/requetes-entite', RequetesEntiteController)
   .route('/profile', ProfileController)
