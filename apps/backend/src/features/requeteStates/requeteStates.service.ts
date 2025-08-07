@@ -44,3 +44,8 @@ export const getRequeteStates = async (requeteEntiteId: string, query: GetRequet
     total,
   };
 };
+
+export const getRequeteStateById = async (id: string) =>
+  await prisma.requeteState.findUnique({
+    where: { id },
+  });

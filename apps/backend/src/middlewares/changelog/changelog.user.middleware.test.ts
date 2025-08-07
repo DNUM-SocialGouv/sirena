@@ -1,10 +1,12 @@
+import { testClient } from 'hono/testing';
+import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createChangeLog } from '@/features/changelog/changelog.service';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { getUserById } from '@/features/users/users.service';
+import appWithAuth from '@/helpers/factories/appWithAuth';
 import type { Prisma } from '@/libs/prisma';
-import { createTestApp } from '@/tests/test-utils';
-import { userChangelogMiddleware } from './changelog.user.middleware';
+import userChangelogMiddleware from './changelog.user.middleware';
 
 vi.mock('@/features/changelog/changelog.service', () => ({
   createChangeLog: vi.fn(),
@@ -39,14 +41,24 @@ describe('changelog.user.middleware.ts', () => {
   });
 
   const createUserTestApp = () => {
-    return createTestApp([
-      async (c, next) => {
+    const app = appWithAuth
+      .createApp()
+      .use((c, next) => {
+        const logger = {
+          warn: vi.fn(),
+        };
+        c.set('logger', logger as unknown as PinoLogger);
+        return next();
+      })
+      .use((c, next) => {
         c.set('userId', 'admin-user-id');
-        await next();
-      },
-    ]).put('/users/:id', userChangelogMiddleware, async (c) => {
-      return c.json({ success: true });
-    });
+        return next();
+      })
+      .patch('/:id', userChangelogMiddleware({ action: ChangeLogAction.UPDATED }), async (c) => {
+        return c.json({ ok: true });
+      });
+
+    return testClient(app);
   };
 
   describe('userChangelogMiddleware', () => {
@@ -56,11 +68,7 @@ describe('changelog.user.middleware.ts', () => {
 
       const app = createUserTestApp();
 
-      const response = await app.request('/users/1', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roleId: 'role2', active: false }),
-      });
+      const response = await app[':id'].$patch({ param: { id: '1' } });
 
       expect(response.status).toBe(200);
       expect(mockGetUserById).toHaveBeenCalledWith('1', null, null);
