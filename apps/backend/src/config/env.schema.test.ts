@@ -16,6 +16,13 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
     DEMAT_SOCIAL_API_URL: 'http://api.example.com',
     DEMAT_SOCIAL_API_TOKEN: 'token',
     DEMAT_SOCIAL_API_DIRECTORY: '123',
+    S3_BUCKET_ACCESS_KEY: 'root',
+    S3_BUCKET_SECRET_KEY: 'rootroot',
+    S3_BUCKET_ENDPOINT: 'localhost',
+    S3_BUCKET_PORT: '9000',
+    S3_BUCKET_NAME: 'files',
+    S3_BUCKET_REGION: 'us-east-1',
+    S3_BUCKET_ROOT_DIR: 'uploads',
   };
 
   const createConfig = (logExtraContext?: string) => ({

@@ -34,6 +34,14 @@ const processEnv = {
   // Sentry
   SENTRY_DSN_BACKEND: process.env.SENTRY_DSN_BACKEND,
   SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
+  // Minio
+  S3_BUCKET_ACCESS_KEY: process.env.S3_BUCKET_ACCESS_KEY,
+  S3_BUCKET_SECRET_KEY: process.env.S3_BUCKET_SECRET_KEY,
+  S3_BUCKET_ENDPOINT: process.env.S3_BUCKET_ENDPOINT,
+  S3_BUCKET_NAME: process.env.S3_BUCKET_NAME,
+  S3_BUCKET_REGION: process.env.S3_BUCKET_REGION,
+  S3_BUCKET_ROOT_DIR: process.env.S3_BUCKET_ROOT_DIR,
+  S3_BUCKET_PORT: process.env.S3_BUCKET_PORT,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);
