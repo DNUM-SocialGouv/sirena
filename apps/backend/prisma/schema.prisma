@@ -37,6 +37,7 @@ model User {
   entiteId  String?
   entite    Entite?     @relation(fields: [entiteId], references: [id])
   changeLogs ChangeLog[]
+  uploads   UploadedFile[]
 }
 
 model StatutEnum {
@@ -61,7 +62,8 @@ model Entite {
   entiteMereId String?
   entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
 
-  users User[]
+  users   User[]
+  uploads UploadedFile[]
 }
 
 model EntiteTypeEnum {
@@ -434,4 +436,22 @@ model ChangeLog {
 
   @@index([entity, entityId])
   @@index([changedById])
+}
+
+model UploadedFile {
+  id            String   @id @default(uuid())
+  fileName      String
+  filePath      String @unique
+  mimeType      String
+  size          Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  metadata      Json?
+
+  entiteId      String?
+  entite        Entite? @relation(fields: [entiteId], references: [id])
+
+  uploadedById  String
+  uploadedBy    User    @relation(fields: [uploadedById], references: [id])
 }
