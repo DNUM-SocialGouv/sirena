@@ -75,6 +75,13 @@ describe('logging configuration', () => {
       DEMAT_SOCIAL_API_DIRECTORY: '123',
 
       SUPER_ADMIN_LIST_EMAIL: 'admin@test.com',
+      S3_BUCKET_ACCESS_KEY: 'root',
+      S3_BUCKET_SECRET_KEY: 'rootroot',
+      S3_BUCKET_ENDPOINT: 'localhost',
+      S3_BUCKET_PORT: '9000',
+      S3_BUCKET_NAME: 'files',
+      S3_BUCKET_REGION: 'us-east-1',
+      S3_BUCKET_ROOT_DIR: 'uploads',
     };
   }
 });
