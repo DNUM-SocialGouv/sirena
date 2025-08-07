@@ -7,6 +7,12 @@ export type AppBindings = {
     logger: PinoLogger;
     userId: string;
     roleId: string;
+    uploadedFile?: {
+      tempFilePath: string;
+      fileName: string;
+      contentType: string;
+      size: number;
+    };
   };
 };
 
