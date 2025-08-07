@@ -128,6 +128,25 @@ export const AppEnvSchema = z.object({
     }),
   SENTRY_DSN_BACKEND: z.string().optional(),
   SENTRY_ENVIRONMENT: z.string().optional(),
+  S3_BUCKET_ACCESS_KEY: z.string({
+    required_error: "La variable d'environnement S3_BUCKET_ACCESS_KEY est requise",
+  }),
+  S3_BUCKET_SECRET_KEY: z.string({
+    required_error: "La variable d'environnement S3_BUCKET_SECRET_KEY est requise",
+  }),
+  S3_BUCKET_ENDPOINT: z.string({
+    required_error: "La variable d'environnement S3_BUCKET_ENDPOINT est requise",
+  }),
+  S3_BUCKET_NAME: z.string({
+    required_error: "La variable d'environnement S3_BUCKET_NAME est requise",
+  }),
+  S3_BUCKET_REGION: z.string().optional(),
+  S3_BUCKET_ROOT_DIR: z.string({
+    required_error: "La variable d'environnement S3_BUCKET_ROOT_DIR est requise",
+  }),
+  S3_BUCKET_PORT: z.string({
+    required_error: "La variable d'environnement S3_BUCKET_PORT est requise",
+  }),
 });
 
 /**
