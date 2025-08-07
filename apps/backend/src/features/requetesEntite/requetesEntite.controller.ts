@@ -1,9 +1,11 @@
 import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
+import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { addProcessingState, getRequeteStates } from '@/features/requeteStates/requeteStates.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
+import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStep.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import { addProcessingStepRoute, getRequetesEntiteRoute } from './requetesEntite.route';
@@ -59,36 +61,44 @@ const app = factoryWithLogs
   // Roles with edit permissions
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]))
 
-  .post('/:id/processing-steps', addProcessingStepRoute, zValidator('json', AddProcessingStepBodySchema), async (c) => {
-    const logger = c.get('logger');
-    const { id } = c.req.param();
-    const body = c.req.valid('json');
-    const userId = c.get('userId');
-    // const entiteIds = c.get('entiteIds');
+  .post(
+    '/:id/processing-steps',
+    addProcessingStepRoute,
+    zValidator('json', AddProcessingStepBodySchema),
+    requeteStatesChangelogMiddleware({ action: ChangeLogAction.CREATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const body = c.req.valid('json');
+      const userId = c.get('userId');
+      // const entiteIds = c.get('entiteIds');
 
-    // TODO Use real entiteIds when implemented
-    const hasAccess = await hasAccessToRequete(id, null);
+      // TODO Use real entiteIds when implemented
+      const hasAccess = await hasAccessToRequete(id, null);
 
-    if (!hasAccess) {
-      return throwHTTPException404NotFound('Requete entite not found', {
-        res: c.res,
+      if (!hasAccess) {
+        return throwHTTPException404NotFound('Requete entite not found', {
+          res: c.res,
+        });
+      }
+
+      const step = await addProcessingState(id, {
+        stepName: body.stepName,
       });
-    }
 
-    const step = await addProcessingState(id, {
-      stepName: body.stepName,
-    });
+      if (!step) {
+        logger.error({ requestId: id, userId }, 'Inconsistent state: step not created');
+        return throwHTTPException404NotFound('Requete entite not found', {
+          res: c.res,
+        });
+      }
 
-    if (!step) {
-      logger.error({ requestId: id, userId }, 'Inconsistent state: step not created');
-      return throwHTTPException404NotFound('Requete entite not found', {
-        res: c.res,
-      });
-    }
+      c.set('changelogId', step.id);
 
-    logger.info({ requestId: id, stepId: step.id, userId }, 'Processing step added successfully');
+      logger.info({ requestId: id, stepId: step.id, userId }, 'Processing step added successfully');
 
-    return c.json({ data: step }, 201);
-  });
+      return c.json({ data: step }, 201);
+    },
+  );
 
 export default app;

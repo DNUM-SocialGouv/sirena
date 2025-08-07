@@ -48,6 +48,14 @@ vi.mock('@/middlewares/entites.middleware', () => {
   };
 });
 
+vi.mock('@/middlewares/changelog/changelog.requeteStep.middleware', () => {
+  return {
+    default: () => (_c: Context, next: Next) => {
+      return next();
+    },
+  };
+});
+
 describe('RequetesEntite endpoints: /', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequetesEntiteController).onError(errorHandler);
   const client = testClient(app);
