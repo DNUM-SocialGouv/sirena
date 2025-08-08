@@ -1,4 +1,12 @@
-import { memo, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, useEffect, useRef, useState } from 'react';
+import {
+  type HTMLAttributes,
+  memo,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import { TabsItem } from './TabsItem';
 import './Tabs.css';
@@ -24,9 +32,9 @@ export type TabsProps = {
   activeTab: number;
   onUpdateActiveTab: (newIndex: number) => void;
   children: ReactNode;
-};
+} & HTMLAttributes<HTMLDivElement>;
 
-const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsProps) => {
+const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children, className, ...props }: TabsProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const tablistRef = useRef<HTMLUListElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -109,7 +117,7 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children }: TabsPro
   };
 
   return (
-    <div ref={containerRef} className="fr-tabs">
+    <div ref={containerRef} className={`fr-tabs ${className || ''}`} {...props}>
       <ul
         ref={tablistRef}
         className="fr-tabs__list"

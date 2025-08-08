@@ -2,6 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Header } from '@codegouvfr/react-dsfr/Header';
 import { ROLES } from '@sirena/common/constants';
 import { useUserStore } from '@/stores/userStore';
+import style from './header.module.css';
 import { UserMenu } from './userMenu';
 
 type HeaderMenuProps = {
@@ -46,6 +47,7 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
           Test gestion d'érreur
         </Button>
       )}
+      <div className={style['header-separator']} />
     </>
   );
 };

@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/libs/prisma';
-import { getRequetesEntite } from './requetesEntite.service';
+import { getRequestEntiteById, getRequetesEntite, hasAccessToRequete } from './requetesEntite.service';
 
 vi.mock('@/libs/prisma', () => ({
   prisma: {
     requeteEntite: {
       findMany: vi.fn(),
       count: vi.fn(),
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
     },
   },
 }));
@@ -37,57 +39,94 @@ const mockRequeteEntite = {
 
 const mockedRequeteEntite = vi.mocked(prisma.requeteEntite);
 
-describe('getRequetesEntite', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+describe('requetesEntite.service', () => {
+  describe('getRequetesEntite', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should fetch requetesEntite with default sort and pagination', async () => {
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
+      mockedRequeteEntite.count.mockResolvedValueOnce(1);
+
+      const result = await getRequetesEntite(null, {});
+
+      expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
+        skip: 0,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          requete: true,
+          requetesEntiteStates: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      });
+
+      expect(mockedRequeteEntite.count).toHaveBeenCalled();
+      expect(result).toEqual({ data: [mockRequeteEntite], total: 1 });
+    });
+
+    it('should respect offset, limit, sort and order', async () => {
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
+      mockedRequeteEntite.count.mockResolvedValueOnce(1);
+
+      const result = await getRequetesEntite(null, {
+        offset: 10,
+        limit: 5,
+        sort: 'updatedAt',
+        order: 'desc',
+      });
+
+      expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
+        skip: 10,
+        take: 5,
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          requete: true,
+          requetesEntiteStates: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      });
+
+      expect(result.total).toBe(1);
+    });
   });
 
-  it('should fetch requetesEntite with default sort and pagination', async () => {
-    mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
-    mockedRequeteEntite.count.mockResolvedValueOnce(1);
-
-    const result = await getRequetesEntite(null, {});
-
-    expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
-      skip: 0,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        requete: true,
-        requetesEntiteStates: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-      },
+  describe('hasAccessToRequete(id, entiteIds)', () => {
+    it('should return true if requeteEntite exists for given id and entiteIds', async () => {
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce(mockRequeteEntite);
+      const result = await hasAccessToRequete(mockRequeteEntite.id, null);
+      expect(result).toBe(true);
     });
 
-    expect(mockedRequeteEntite.count).toHaveBeenCalled();
-    expect(result).toEqual({ data: [mockRequeteEntite], total: 1 });
+    it('should return false if requeteEntite does not exist for given id', async () => {
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce(null);
+      const result = await hasAccessToRequete(mockRequeteEntite.id, ['entite1']);
+      expect(result).toBe(false);
+    });
   });
 
-  it('should respect offset, limit, sort and order', async () => {
-    mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
-    mockedRequeteEntite.count.mockResolvedValueOnce(1);
+  describe('getRequestEntiteById(id)', () => {
+    it('should fetch requeteEntite by id with related data', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
 
-    const result = await getRequetesEntite(null, {
-      offset: 10,
-      limit: 5,
-      sort: 'updatedAt',
-      order: 'desc',
-    });
+      const result = await getRequestEntiteById(mockRequeteEntite.id);
 
-    expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
-      skip: 10,
-      take: 5,
-      orderBy: { updatedAt: 'desc' },
-      include: {
-        requete: true,
-        requetesEntiteStates: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
+      expect(prisma.requeteEntite.findUnique).toHaveBeenCalledWith({
+        where: { id: mockRequeteEntite.id },
+        include: {
+          requete: true,
+          requetesEntiteStates: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
         },
-      },
-    });
+      });
 
-    expect(result.total).toBe(1);
+      expect(result).toEqual(mockRequeteEntite);
+    });
   });
 });

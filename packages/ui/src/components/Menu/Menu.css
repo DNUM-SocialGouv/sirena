@@ -53,3 +53,13 @@
 .menu__popup__separator {
   border-top: 1px solid var(--border-default-grey);
 }
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
