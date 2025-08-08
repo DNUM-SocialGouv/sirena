@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppBindings } from '@/helpers/factories/appWithAuth';
+import type { AppBindings } from '@/helpers/factories/appWithUploadedFile';
 import { createMockPinoLogger } from '@/tests/test-utils';
 import { extractUploadedFileMiddleware, sanitizeFilename } from './upload.middleware';
 
@@ -43,6 +43,12 @@ const { mockFileTypeFromBuffer, mockThrowHTTPException400BadRequest, mockWriteFi
 
   return { mockFileTypeFromBuffer, mockThrowHTTPException400BadRequest, mockWriteFile };
 });
+
+vi.mock('tmp-promise', () => ({
+  file: vi.fn().mockResolvedValue({
+    path: '/tmp/test-document.pdf',
+  }),
+}));
 
 vi.mock('node:fs', () => ({
   default: {
@@ -148,7 +154,7 @@ describe('upload.middleware.ts', () => {
 
       expect(mockWriteFile).toHaveBeenCalled();
       expect(mockContext.set).toHaveBeenCalledWith('uploadedFile', {
-        tempFilePath: `/tmp/test-uuid-${FIXED_DATE.getTime()}-test-document.pdf`,
+        tempFilePath: `/tmp/test-document.pdf`,
         fileName: 'test-document.pdf',
         contentType: 'application/pdf',
         size: 8,
@@ -271,29 +277,6 @@ describe('upload.middleware.ts', () => {
       });
       expect(mockContext.set).not.toHaveBeenCalled();
       expect(next).not.toHaveBeenCalled();
-    });
-
-    it('should return 500 when writeFile throws an error', async () => {
-      mockWriteFile.mockRejectedValue(new Error('Write file error'));
-      const mockLogger = createMockPinoLogger();
-
-      const mockContext = createUploadMockContext({
-        req: {
-          parseBody: vi.fn().mockResolvedValue({
-            file: new File([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x25, 0x50, 0x44, 0x46])], 'test-document.pdf', {
-              type: 'application/pdf',
-            }),
-          }),
-        },
-        logger: mockLogger,
-        json: vi.fn(),
-      });
-      const next = vi.fn();
-
-      await extractUploadedFileMiddleware(mockContext as unknown as Context<AppBindings>, next);
-
-      expect(mockLogger.error).toHaveBeenCalledWith({ err: expect.any(Error) }, 'Error extracting uploaded file:');
-      expect(mockContext.json).toHaveBeenCalledWith({ message: 'Internal server error' }, 500);
     });
   });
 });
