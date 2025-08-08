@@ -126,6 +126,7 @@ model RequeteState {
 
   statutId String
   statut   RequeteStatutEnum @relation(fields: [statutId], references: [id])
+  stepName String?
 
   victimes  Victime[]
   declarant Declarant?

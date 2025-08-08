@@ -2,6 +2,10 @@
   transition: transform 0.2s ease;
 }
 
+.menu__trigger__icon-loading {
+  margin-left: 0.5rem;
+}
+
 .menu__trigger__icon--is-open {
   transform: rotate(-180deg);
 }

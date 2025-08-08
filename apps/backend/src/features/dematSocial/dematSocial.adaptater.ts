@@ -307,7 +307,7 @@
 //     commentaire: champsById[mapping.precisions.id]?.stringValue ?? null,
 //     receptionType: {
 //       connect: {
-//         id: receptionTypes.FORUMULAIRE,
+//         id: receptionTypes.FORMULAIRE,
 //       },
 //     },
 //   };
