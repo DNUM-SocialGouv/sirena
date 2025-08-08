@@ -1,6 +1,10 @@
-import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
+import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
+import { CreateStep } from '@/components/request/processing/createStep';
+import { Step } from '@/components/request/processing/Step';
+import { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import styles from '../request.$requestId.module.css';
 
 export const Route = createFileRoute('/_auth/_user/request/$requestId/processing')({
@@ -8,6 +12,23 @@ export const Route = createFileRoute('/_auth/_user/request/$requestId/processing
 });
 
 function RouteComponent() {
+  const { requestId } = useParams({ from: '/_auth/_user/request/$requestId' });
+  const navigate = useNavigate();
+
+  const [isAddingStep, setIsAddingStep] = useState(false);
+
+  const queryProcessingSteps = useProcessingSteps(requestId);
+
+  useEffect(() => {
+    if (
+      queryProcessingSteps.error &&
+      'status' in queryProcessingSteps.error &&
+      queryProcessingSteps.error.status === 404
+    ) {
+      navigate({ to: '/admin/demat-social-mappings' });
+    }
+  }, [queryProcessingSteps.error, navigate]);
+
   return (
     <div className={styles['request-processing-tab']}>
       <div className="fr-container--fluid">
@@ -19,7 +40,12 @@ function RouteComponent() {
                   <h2 className="fr-mb-0">Étapes du traitement</h2>
                 </div>
                 <div className="fr-col-auto">
-                  <Button priority="secondary" size="small">
+                  <Button
+                    priority="secondary"
+                    size="small"
+                    onClick={() => setIsAddingStep(true)}
+                    disabled={isAddingStep}
+                  >
                     Ajouter une étape
                   </Button>
                 </div>
@@ -28,71 +54,15 @@ function RouteComponent() {
               <div className={styles['timeline-container']}>
                 <div className={styles['timeline-line']} />
 
-                <div className={`fr-mb-4w ${styles['timeline-step']}`}>
-                  <div className={styles['timeline-dot']} />
+                <CreateStep isAddingStep={isAddingStep} setIsAddingStep={setIsAddingStep} />
 
-                  <div className={styles.step}>
-                    <div className="fr-grid-row fr-grid-row--middle fr-mb-2w">
-                      <div className="fr-col">
-                        <h3 className="fr-h6 fr-mb-0">Envoyer un accusé de réception au déclarant</h3>
-                      </div>
-                      <div className="fr-col-auto">
-                        <Badge severity="success" small>
-                          À FAIRE
-                        </Badge>
-                      </div>
-                      <div className="fr-col-auto">
-                        <Button
-                          priority="tertiary no outline"
-                          size="small"
-                          iconId="fr-icon-arrow-down-s-line"
-                          iconPosition="right"
-                          title="Afficher/Masquer"
-                        >
-                          <span className="fr-sr-only">Afficher/Masquer</span>
-                        </Button>
-                      </div>
-                      <div className="fr-col-auto">
-                        <Button priority="tertiary no outline" size="small" iconId="fr-icon-edit-line" title="Éditer">
-                          <span className="fr-sr-only">Éditer</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`fr-mb-4w ${styles['timeline-step']}`}>
-                  <div className={styles['timeline-dot']} />
-
-                  <div className={styles.step}>
-                    <div className="fr-grid-row fr-grid-row--middle fr-mb-2w">
-                      <div className="fr-col">
-                        <h3 className="fr-h6 fr-mb-0">Création de la requête le x/x/x</h3>
-                      </div>
-                      <div className="fr-col-auto">
-                        <Badge severity="warning" small>
-                          FAIT
-                        </Badge>
-                      </div>
-                      <div className="fr-col-auto">
-                        <Button
-                          priority="tertiary no outline"
-                          size="small"
-                          iconId="fr-icon-arrow-down-s-line"
-                          iconPosition="right"
-                          title="Afficher/Masquer"
-                        >
-                          <span className="fr-sr-only">Afficher/Masquer</span>
-                        </Button>
-                      </div>
-                      <div className="fr-col-auto">
-                        <Button priority="tertiary no outline" size="small" iconId="fr-icon-edit-line" title="Éditer">
-                          <span className="fr-sr-only">Éditer</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <QueryStateHandler query={queryProcessingSteps}>
+                  {({ data }) =>
+                    data.data.map((step, index) => (
+                      <Step key={step.id} {...step} disabled={index === data.data.length - 1} />
+                    ))
+                  }
+                </QueryStateHandler>
               </div>
             </div>
           </div>

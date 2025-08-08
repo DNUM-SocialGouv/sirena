@@ -16,3 +16,9 @@ export const GetRequeteEntiteSchema = RequeteEntiteSchema.extend({
 });
 
 export const GetRequetesEntiteResponseSchema = z.array(GetRequeteEntiteSchema);
+
+export const AddProcessingStepBodySchema = z.object({
+  stepName: z
+    .string()
+    .min(1, { message: "Le champ 'Nom de l'étape' est obligatoire. Veuillez le renseigner pour ajouter une étape." }),
+});

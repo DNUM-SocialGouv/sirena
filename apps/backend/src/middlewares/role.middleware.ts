@@ -1,13 +1,15 @@
 import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
-import type { ROLES } from '@sirena/common/constants';
+import type { Role } from '@sirena/common/constants';
 import factoryWithAuth from '@/helpers/factories/appWithAuth';
 
-const app = (roles: (keyof typeof ROLES)[]) =>
+const app = (roles: Role[]) =>
   factoryWithAuth.createMiddleware(async (c, next) => {
-    const userRole = c.get('roleId') as keyof typeof ROLES;
+    const userRole = c.get('roleId') as Role;
 
     if (!userRole || !roles.includes(userRole)) {
-      return throwHTTPException403Forbidden('Forbidden, you do not have the required role to access this resource');
+      return throwHTTPException403Forbidden('Forbidden, you do not have the required role to access this resource', {
+        res: c.res,
+      });
     }
 
     return next();
