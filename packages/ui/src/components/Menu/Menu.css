@@ -2,6 +2,10 @@
   transition: transform 0.2s ease;
 }
 
+.menu__trigger__icon-loading {
+  margin-left: 0.5rem;
+}
+
 .menu__trigger__icon--is-open {
   transform: rotate(-180deg);
 }
@@ -52,14 +56,4 @@
 
 .menu__popup__separator {
   border-top: 1px solid var(--border-default-grey);
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
