@@ -63,6 +63,7 @@
     "pino": "^9.8.0",
     "minio": "^8.0.5",
     "pino-pretty": "^13.1.1",
+    "tmp-promise": "^3.0.3",
     "zod": "catalog:",
     "zod-openapi": "^4.2.4",
     "zod-prisma-types": "^3.2.4"
