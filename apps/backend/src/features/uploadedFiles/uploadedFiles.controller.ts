@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ROLES, type Role } from '@sirena/common/constants';
+import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { getSignedUrl, uploadFileToMinio } from '@/libs/minio';
@@ -21,17 +21,16 @@ import { createUploadedFile, deleteUploadedFile, getUploadedFileById, getUploade
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
-  .use(roleMiddleware([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]))
+  .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]))
   .use(entitesMiddleware)
 
   .get('/', getUploadedFilesRoute, zValidator('query', GetUploadedFilesQuerySchema), async (c) => {
     const logger = c.get('logger');
     const query = c.req.valid('query');
     const entiteIds = c.get('entiteIds');
-    const roleId = c.get('roleId') as Role;
 
-    if (roleId !== ROLES.SUPER_ADMIN && !entiteIds?.length) {
-      throwHTTPException400BadRequest('You are not allowed to read all entities on this role.', {
+    if (!entiteIds?.length) {
+      throwHTTPException400BadRequest('You are not allowed to read uploaded files without entiteIds.', {
         res: c.res,
       });
     }
@@ -53,10 +52,9 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const id = c.req.valid('param').id;
     const entiteIds = c.get('entiteIds');
-    const roleId = c.get('roleId') as Role;
 
-    if (roleId !== ROLES.SUPER_ADMIN && !entiteIds?.length) {
-      throwHTTPException400BadRequest('You are not allowed to read all entities on this role.', {
+    if (!entiteIds?.length) {
+      throwHTTPException400BadRequest('You are not allowed to read uploaded files without entiteIds.', {
         res: c.res,
       });
     }
@@ -76,10 +74,9 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const id = c.req.valid('param').id;
     const entiteIds = c.get('entiteIds');
-    const roleId = c.get('roleId') as Role;
 
-    if (roleId !== ROLES.SUPER_ADMIN && !entiteIds?.length) {
-      throwHTTPException400BadRequest('You are not allowed to read all entities on this role.', {
+    if (!entiteIds?.length) {
+      throwHTTPException400BadRequest('You are not allowed to read uploaded files without entiteIds.', {
         res: c.res,
       });
     }
@@ -111,13 +108,11 @@ const app = factoryWithLogs
 
     try {
       const userId = c.get('userId');
-      const roleId = c.get('roleId') as Role;
       const entiteIds = c.get('entiteIds');
 
-      // SUPER_ADMIN can create files with any entiteId (including null)
-      // Other roles have their entiteId FORCED automatically
-      const fileEntiteId = roleId === ROLES.SUPER_ADMIN ? null : entiteIds?.[0] || null;
-      if (roleId !== ROLES.SUPER_ADMIN && !fileEntiteId) {
+      // Force parent/main entiteId
+      const fileEntiteId = entiteIds?.[0];
+      if (!fileEntiteId) {
         throwHTTPException400BadRequest('You must have an assigned entite to create an uploaded file.', {
           res: c.res,
         });
@@ -167,10 +162,9 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const id = c.req.valid('param').id;
     const entiteIds = c.get('entiteIds');
-    const roleId = c.get('roleId') as Role;
 
-    if (roleId !== ROLES.SUPER_ADMIN && !entiteIds?.length) {
-      throwHTTPException400BadRequest('You are not allowed to delete uploaded file without an entite.', {
+    if (!entiteIds?.length) {
+      throwHTTPException400BadRequest('You are not allowed to delete uploaded file without entiteIds.', {
         res: c.res,
       });
     }
