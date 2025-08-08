@@ -51,7 +51,7 @@ describe('requetes.service.ts', () => {
                   infoComplementaire: {
                     create: {
                       receptionDate: new Date(),
-                      receptionTypeId: RECEPTION_TYPES.FORUMULAIRE,
+                      receptionTypeId: RECEPTION_TYPES.FORMULAIRE,
                     },
                   },
                 },

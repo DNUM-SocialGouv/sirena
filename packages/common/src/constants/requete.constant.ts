@@ -111,7 +111,7 @@ export const professionTypes = {
 export const RECEPTION_TYPES = {
   EMAIL: 'EMAIL',
   COURRIER: 'COURRIER',
-  FORUMULAIRE: 'FORUMULAIRE',
+  FORMULAIRE: 'FORMULAIRE',
   PLATEFORME: 'PLATEFORME',
   TELEPHONE: 'TELEPHONE',
   AUTRE: 'AUTRE',
@@ -122,7 +122,7 @@ type ReceptionType = keyof typeof RECEPTION_TYPES;
 export const receptionTypes: Record<ReceptionType, string> = {
   EMAIL: 'Courrier électronique',
   COURRIER: 'Courrier postal',
-  FORUMULAIRE: 'Formulaire',
+  FORMULAIRE: 'Formulaire',
   PLATEFORME: 'Plateforme téléphonique',
   TELEPHONE: 'Téléphone',
   AUTRE: 'Autre',

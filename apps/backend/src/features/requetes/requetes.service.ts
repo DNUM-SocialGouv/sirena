@@ -20,7 +20,7 @@ export const createRequeteFromDematSocial = async ({ dematSocialId, createdAt }:
               infoComplementaire: {
                 create: {
                   receptionDate: new Date(),
-                  receptionTypeId: RECEPTION_TYPES.FORUMULAIRE,
+                  receptionTypeId: RECEPTION_TYPES.FORMULAIRE,
                 },
               },
             },
