@@ -48,7 +48,6 @@ vi.mock('@/middlewares/entites.middleware', () => {
 vi.mock('@/middlewares/changelog/changelog.user.middleware', () => {
   return {
     default: async (_: Context, next: Next) => {
-      console.log('userChangelogMiddleware');
       await next();
     },
   };
