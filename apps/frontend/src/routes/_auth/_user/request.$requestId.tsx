@@ -47,7 +47,7 @@ function RouteComponent() {
   };
 
   return (
-    <div className={styles['request-header']}>
+    <div>
       <div className="fr-container">
         <div className="fr-mb-2w">
           <Breadcrumb
@@ -65,7 +65,7 @@ function RouteComponent() {
 
         <RequestInfos />
 
-        <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
+        <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange} className={styles['request-tabs']}>
           {activeTab === 0 ? <Details /> : <Processing />}
         </Tabs>
       </div>
