@@ -2,6 +2,7 @@ import { Menu } from '@base-ui-components/react/menu';
 import './Menu.css';
 import { clsx } from 'clsx';
 import type { HTMLAttributes, ReactNode } from 'react';
+import { Loader } from '../Loader/Loader';
 
 const Root = ({ children, ...props }: Menu.Root.Props) => {
   return <Menu.Root {...props}>{children}</Menu.Root>;
@@ -13,14 +14,14 @@ const Trigger = ({ children, className, isOpen, isLoading, ...props }: TriggerPr
   return (
     <Menu.Trigger className={`${className || ''}`} {...props}>
       {children}
-      <span
-        aria-hidden="true"
-        className={clsx(
-          isLoading && 'fr-icon-refresh-line spin',
-          !isLoading && 'fr-icon-arrow-down-s-line menu__trigger__icon',
-          !isLoading && isOpen && 'menu__trigger__icon--is-open',
-        )}
-      />
+      {isLoading ? (
+        <Loader size="xs" className="menu__trigger__icon-loading" />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={clsx('fr-icon-arrow-down-s-line menu__trigger__icon', isOpen && 'menu__trigger__icon--is-open')}
+        />
+      )}
     </Menu.Trigger>
   );
 };
