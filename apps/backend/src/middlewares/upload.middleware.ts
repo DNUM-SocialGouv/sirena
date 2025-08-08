@@ -1,11 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
-import path from 'node:path';
 import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
 import { fileTypeFromBuffer } from 'file-type';
-import { HTTPException } from 'hono/http-exception';
-import factoryWithAuth from '@/helpers/factories/appWithAuth';
+import { file as tmpAsync } from 'tmp-promise';
+import factoryWithUploadedFile from '@/helpers/factories/appWithUploadedFile';
 
 const ALLOWED_MIME_TYPES = [
   // PDF
@@ -58,9 +57,8 @@ export const sanitizeFilename = (originalName: string, detectedExtension: string
 /**
  * @description Extracts the uploaded file from the request body and sets it in the context. You must delete the temp file in the controller.
  */
-export const extractUploadedFileMiddleware = factoryWithAuth.createMiddleware(async (c, next) => {
+export const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(async (c, next) => {
   const body = await c.req.parseBody();
-  const logger = c.get('logger');
   const file = body.file;
 
   if (!(file instanceof File)) {
@@ -71,39 +69,36 @@ export const extractUploadedFileMiddleware = factoryWithAuth.createMiddleware(as
 
   const tempDir = os.tmpdir();
 
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
 
-    if (buffer.length > MAX_FILE_SIZE) {
-      throwHTTPException400BadRequest('File size exceeds the maximum allowed', { res: c.res });
-    }
-
-    const detectedType = await fileTypeFromBuffer(buffer);
-
-    if (!detectedType?.mime || !ALLOWED_MIME_TYPES.includes(detectedType.mime)) {
-      throwHTTPException400BadRequest(`File type "${detectedType?.mime}" is not allowed`, { res: c.res });
-    }
-
-    const sanitizedFilename = sanitizeFilename(file.name, detectedType.ext);
-    const tempFilePath = path.join(tempDir, `${randomUUID()}-${Date.now()}-${sanitizedFilename}`);
-
-    await fs.promises.writeFile(tempFilePath, buffer);
-
-    c.set('uploadedFile', {
-      tempFilePath,
-      fileName: sanitizedFilename,
-      contentType: detectedType.mime,
-      size: buffer.length,
-    });
-
-    await next();
-  } catch (err) {
-    if (err instanceof HTTPException) {
-      throw err;
-    } else {
-      logger.error({ err }, 'Error extracting uploaded file:');
-      return c.json({ message: 'Internal server error' }, 500);
-    }
+  if (buffer.length > MAX_FILE_SIZE) {
+    throwHTTPException400BadRequest('File size exceeds the maximum allowed', { res: c.res });
   }
+
+  const detectedType = await fileTypeFromBuffer(buffer);
+
+  if (!detectedType?.mime || !ALLOWED_MIME_TYPES.includes(detectedType.mime)) {
+    throwHTTPException400BadRequest(`File type "${detectedType?.mime}" is not allowed`, { res: c.res });
+  }
+
+  const sanitizedFilename = sanitizeFilename(file.name, detectedType.ext);
+  const tmpFile = await tmpAsync({
+    prefix: `${randomUUID()}-`,
+    postfix: `-${sanitizedFilename}`,
+    discardDescriptor: true,
+    mode: 0o600,
+    dir: tempDir,
+  });
+
+  await fs.promises.writeFile(tmpFile.path, buffer);
+
+  c.set('uploadedFile', {
+    tempFilePath: tmpFile.path,
+    fileName: sanitizedFilename,
+    contentType: detectedType.mime,
+    size: buffer.length,
+  });
+
+  await next();
 });
