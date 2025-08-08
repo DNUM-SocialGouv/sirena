@@ -4,6 +4,7 @@ import { getAssignableRoles } from '@sirena/common/utils';
 import { validator as zValidator } from 'hono-openapi/zod';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
+import userChangelogMiddleware from '@/middlewares/changelog/changelog.user.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import { getUserRoute, getUsersRoute, patchUserRoute } from './users.route';
@@ -60,7 +61,7 @@ const app = factoryWithLogs
     return c.json({ data: user }, 200);
   })
 
-  .patch('/:id', patchUserRoute, zValidator('json', PatchUserSchema), async (c) => {
+  .patch('/:id', patchUserRoute, zValidator('json', PatchUserSchema), userChangelogMiddleware, async (c) => {
     const logger = c.get('logger');
     const json = c.req.valid('json');
     const id = c.req.param('id');
