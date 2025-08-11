@@ -26,7 +26,7 @@ export const Processing = () => {
   }, [queryProcessingSteps.error, navigate]);
 
   return (
-    <div className={styles['request-processing-tab']}>
+    <div>
       <div className="fr-container--fluid">
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col">
