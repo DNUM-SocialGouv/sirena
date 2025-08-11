@@ -1,21 +1,6 @@
-.request-header {
-  background-color: var(--blue-france-975-75);
-  width: 100vw;
-  margin-left: calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
-  margin-top: -7.5rem;
-  padding: 0;
-  padding-top: 1rem;
-}
-
 .request-details-content {
   padding: 1rem 2rem;
-  margin-top: 4rem;
   border: 1px solid var(--border-default-grey);
-}
-
-.request-processing-tab {
-  margin-top: 4rem;
 }
 
 .timeline-container {
@@ -60,14 +45,13 @@
   padding-left: 1.5rem;
 }
 
-.tabs-custom:global(.fr-tabs)::before {
+.request-tabs {
   box-shadow: none;
 }
 
-.tabs-custom :global(.fr-tabs__panel) {
-  padding: 0;
+.request-tabs::before {
+  box-shadow: none;
 }
-
-.tabs-custom :global(.fr-tabs__list) {
-  padding: 0;
+.request-tabs :global(.fr-tabs__panel) {
+  padding: 2rem 0;
 }

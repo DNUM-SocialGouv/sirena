@@ -1,11 +1,11 @@
-import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Breadcrumb } from '@codegouvfr/react-dsfr/Breadcrumb';
-import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Tabs } from '@codegouvfr/react-dsfr/Tabs';
-import { Tag } from '@codegouvfr/react-dsfr/Tag';
 import { ROLES } from '@sirena/common/constants';
-import { createFileRoute, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
+import { type TabDescriptor, Tabs } from '@sirena/ui';
+import { createFileRoute, useMatchRoute, useNavigate } from '@tanstack/react-router';
 import { z } from 'zod';
+import { Details } from '@/components/requestId/details';
+import { Processing } from '@/components/requestId/processing';
+import { RequestInfos } from '@/components/requestId/requestInfos';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import styles from './request.$requestId.module.css';
 
@@ -27,102 +27,48 @@ export const Route = createFileRoute('/_auth/_user/request/$requestId')({
 });
 
 function RouteComponent() {
-  const params = Route.useParams();
-  const requestId = typeof params?.requestId === 'string' ? params.requestId : '';
-  const location = useLocation();
+  const { requestId } = Route.useParams();
   const navigate = useNavigate();
+  const matchRoute = useMatchRoute();
 
-  // Determine active tab based on current path
-  const activeTabId = location.pathname.includes('/processing') ? 'processing' : 'details';
+  const isAllRoute = matchRoute({ to: '/request/$requestId/processing', fuzzy: false });
+
+  const activeTab = isAllRoute ? 1 : 0;
+
+  const tabs: TabDescriptor[] = [
+    { label: 'Détails de la requête', tabPanelId: 'panel-details', tabId: 'tab-details' },
+    { label: 'Traitement', tabPanelId: 'panel-traitement', tabId: 'tab-traitement' },
+  ];
+
+  const tabPaths = ['/request/$requestId', '/request/$requestId/processing'];
+
+  const handleTabChange = (newTabIndex: number) => {
+    navigate({ to: tabPaths[newTabIndex] });
+  };
 
   return (
-    <>
-      <div className={styles['request-header']}>
-        <div className="fr-container">
-          <div className="fr-mb-2w">
-            <Breadcrumb
-              currentPageLabel={`Requête n°${requestId}`}
-              segments={[
-                {
-                  label: 'Liste des requêtes',
-                  linkProps: {
-                    to: '/home',
-                  },
+    <div>
+      <div className="fr-container">
+        <div className="fr-mb-2w">
+          <Breadcrumb
+            currentPageLabel={`Requête n°${requestId}`}
+            segments={[
+              {
+                label: 'Liste des requêtes',
+                linkProps: {
+                  to: '/home',
                 },
-              ]}
-            />
-          </div>
-
-          <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
-            <div className="fr-col">
-              <h1 className="fr-mb-2w">
-                Requête n°{requestId}
-                <Badge severity="success" className="fr-ml-2w">
-                  À QUALIFIER
-                </Badge>
-              </h1>
-              <div className="fr-text--sm fr-text--grey">
-                <span className="fr-icon-map-pin-2-line fr-mr-1v" aria-hidden="true"></span>
-                [Nom de la personne]
-                <span className="fr-mx-2v">•</span>
-                <span className="fr-icon-building-line fr-mr-1v" aria-hidden="true"></span>
-                [Nom de l'établissement]
-                <span className="fr-mx-2v">•</span>
-                <span className="fr-icon-alarm-warning-line fr-mr-1v" aria-hidden="true"></span>
-                Priorité
-              </div>
-              <div className="fr-text--sm fr-text--grey fr-mt-1w">
-                <span className="fr-icon-folder-2-line fr-mr-1v" aria-hidden="true"></span>
-                Motifs : <Tag small>[Motif]</Tag>
-              </div>
-            </div>
-            <div className="fr-col-auto">
-              <div className="fr-grid-row fr-grid-row--middle fr-grid-row--gutters">
-                <div className="fr-col-auto">
-                  <Tag>[Entité]</Tag>
-                </div>
-                <div className="fr-col-auto">
-                  <div className="fr-btns-group fr-btns-group--inline-sm" style={{ marginBottom: 0 }}>
-                    <Button priority="secondary" size="small">
-                      Attribuer
-                    </Button>
-                    <Button priority="primary" size="small">
-                      Clôturer
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <Tabs
-            className={styles['tabs-custom']}
-            selectedTabId={activeTabId}
-            tabs={[
-              {
-                label: 'Détails de la requête',
-                tabId: 'details',
-              },
-              {
-                label: 'Traitement',
-                tabId: 'processing',
               },
             ]}
-            onTabChange={(tabId) => {
-              navigate({
-                to: tabId === 'processing' ? '/request/$requestId/processing' : '/request/$requestId',
-                params: { requestId },
-              });
-            }}
-          >
-            {/** biome-ignore lint/complexity/noUselessFragments: Required for typescript validation */}
-            <></>
-          </Tabs>
+          />
         </div>
-      </div>
 
-      <div className="request-details">
-        <Outlet />
+        <RequestInfos />
+
+        <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange} className={styles['request-tabs']}>
+          {activeTab === 0 ? <Details /> : <Processing />}
+        </Tabs>
       </div>
-    </>
+    </div>
   );
 }
