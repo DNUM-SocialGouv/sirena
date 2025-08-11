@@ -57,8 +57,7 @@
 
 .step {
   background-color: transparent;
-  border-radius: 0.25rem;
-  padding: 0rem 1.5rem;
+  padding-left: 1.5rem;
 }
 
 .tabs-custom:global(.fr-tabs)::before {

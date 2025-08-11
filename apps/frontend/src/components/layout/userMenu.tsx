@@ -38,7 +38,7 @@ export const UserMenu = () => {
 
   return (
     <Menu.Root onOpenChange={setIsOpen}>
-      <Menu.Trigger isOpen={isOpen} className="fr-icon-account-circle-fill fr-btn--icon-left">
+      <Menu.Trigger isOpen={isOpen} className="fr-btn fr-btn--tertiary fr-icon-account-circle-fill fr-btn--icon-left">
         Mon espace
       </Menu.Trigger>
       <Menu.Portal>

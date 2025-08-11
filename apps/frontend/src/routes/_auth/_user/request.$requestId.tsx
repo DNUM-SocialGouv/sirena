@@ -3,16 +3,23 @@ import { Breadcrumb } from '@codegouvfr/react-dsfr/Breadcrumb';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Tabs } from '@codegouvfr/react-dsfr/Tabs';
 import { Tag } from '@codegouvfr/react-dsfr/Tag';
+import { ROLES } from '@sirena/common/constants';
 import { createFileRoute, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
-import { requireAuth } from '@/lib/auth-guards';
+import { z } from 'zod';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
 import styles from './request.$requestId.module.css';
 
 export const Route = createFileRoute('/_auth/_user/request/$requestId')({
-  beforeLoad: requireAuth,
+  beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]),
+  params: {
+    parse: (params) => ({
+      requestId: z.string().parse(params.requestId),
+    }),
+  },
   head: ({ params }) => ({
     meta: [
       {
-        title: `Requête ${params?.requestId || ''} - SIRENA`,
+        title: `Requête ${params.requestId || ''} - SIRENA`,
       },
     ],
   }),

@@ -11,11 +11,16 @@ export const createRequeteFromDematSocial = async ({ dematSocialId, createdAt }:
         create: {
           requetesEntiteStates: {
             create: {
-              statutId: REQUETE_STATUT_TYPES.A_QUALIFIER,
+              statutId: REQUETE_STATUT_TYPES.FAIT,
+              stepName: `Création de la requête le ${createdAt.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })}`,
               infoComplementaire: {
                 create: {
                   receptionDate: new Date(),
-                  receptionTypeId: RECEPTION_TYPES.FORUMULAIRE,
+                  receptionTypeId: RECEPTION_TYPES.FORMULAIRE,
                 },
               },
             },

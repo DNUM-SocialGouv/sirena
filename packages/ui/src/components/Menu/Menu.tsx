@@ -1,21 +1,27 @@
 import { Menu } from '@base-ui-components/react/menu';
 import './Menu.css';
+import { clsx } from 'clsx';
 import type { HTMLAttributes, ReactNode } from 'react';
+import { Loader } from '../Loader/Loader';
 
 const Root = ({ children, ...props }: Menu.Root.Props) => {
   return <Menu.Root {...props}>{children}</Menu.Root>;
 };
 
-type TriggerProps = Menu.Trigger.Props & { isOpen?: boolean };
+type TriggerProps = Menu.Trigger.Props & { isOpen?: boolean; isLoading?: boolean };
 
-const Trigger = ({ children, className, isOpen, ...props }: TriggerProps) => {
+const Trigger = ({ children, className, isOpen, isLoading, ...props }: TriggerProps) => {
   return (
-    <Menu.Trigger className={`${className || ''} fr-btn fr-btn--tertiary`} {...props}>
+    <Menu.Trigger className={`${className || ''}`} {...props}>
       {children}
-      <span
-        aria-hidden="true"
-        className={`fr-icon-arrow-down-s-line menu__trigger__icon ${isOpen ? 'menu__trigger__icon--is-open' : ''}`}
-      />
+      {isLoading ? (
+        <Loader size="xs" className="menu__trigger__icon-loading" />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={clsx('fr-icon-arrow-down-s-line menu__trigger__icon', isOpen && 'menu__trigger__icon--is-open')}
+        />
+      )}
     </Menu.Trigger>
   );
 };

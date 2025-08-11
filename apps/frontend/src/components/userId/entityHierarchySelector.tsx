@@ -42,7 +42,7 @@ export function EntityHierarchySelectorComponent({ id, setLevel }: EntityHierarc
             disabled={chain?.[1]?.disabled}
             name="direction"
             label="Direction"
-            nullPlaceholder="Pas de service direction sélectionnée"
+            nullPlaceholder="Pas de service direction sélectionné"
           />
         </fieldset>
       )}
@@ -55,7 +55,7 @@ export function EntityHierarchySelectorComponent({ id, setLevel }: EntityHierarc
             disabled={chain?.[2]?.disabled}
             name="service"
             label="Service"
-            nullPlaceholder="Pas de service sélectionnée"
+            nullPlaceholder="Pas de service sélectionné"
           />
         </fieldset>
       )}

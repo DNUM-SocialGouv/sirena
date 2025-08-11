@@ -1,1 +1,2 @@
-export * from './role.util';
+export * from './role.utils';
+export * from './types.utils';

@@ -14,3 +14,7 @@ body {
     flex: 1;
   }
 }
+
+.center-icon-with-sr-only:before {
+  margin: auto !important;
+}
