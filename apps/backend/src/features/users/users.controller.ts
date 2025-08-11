@@ -7,6 +7,7 @@ import authMiddleware from '@/middlewares/auth.middleware';
 import userChangelogMiddleware from '@/middlewares/changelog/changelog.user.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
+import { ChangeLogAction } from '../changelog/changelog.type';
 import { getUserRoute, getUsersRoute, patchUserRoute } from './users.route';
 import { GetUsersQuerySchema, PatchUserSchema } from './users.schema';
 import { getUserById, getUsers, patchUser } from './users.service';
@@ -61,52 +62,58 @@ const app = factoryWithLogs
     return c.json({ data: user }, 200);
   })
 
-  .patch('/:id', patchUserRoute, zValidator('json', PatchUserSchema), userChangelogMiddleware, async (c) => {
-    const logger = c.get('logger');
-    const json = c.req.valid('json');
-    const id = c.req.param('id');
-    const userId = c.get('userId');
-    const entiteIds = c.get('entiteIds');
-    const roleId = c.get('roleId') as Role;
+  .patch(
+    '/:id',
+    patchUserRoute,
+    zValidator('json', PatchUserSchema),
+    userChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const json = c.req.valid('json');
+      const id = c.req.param('id');
+      const userId = c.get('userId');
+      const entiteIds = c.get('entiteIds');
+      const roleId = c.get('roleId') as Role;
 
-    const roles = getAssignableRoles(roleId).map(({ key }) => key);
+      const roles = getAssignableRoles(roleId).map(({ key }) => key);
 
-    logger.info({ targetUserId: id, requestedChanges: Object.keys(json) }, 'User update requested');
+      logger.info({ targetUserId: id, requestedChanges: Object.keys(json) }, 'User update requested');
 
-    // user cannot update their own role
-    if (userId === id && 'roleId' in json) {
-      logger.warn({ userId: id }, 'User attempted to modify own role');
-      delete json.roleId;
-    }
+      // user cannot update their own role
+      if (userId === id && 'roleId' in json) {
+        logger.warn({ userId: id }, 'User attempted to modify own role');
+        delete json.roleId;
+      }
 
-    // check user can patch this user with applicable roles
-    const userToPatch = await getUserById(id, entiteIds, roles);
-    if (!userToPatch) {
-      throwHTTPException404NotFound('User not found', {
-        res: c.res,
-      });
-    }
+      // check user can patch this user with applicable roles
+      const userToPatch = await getUserById(id, entiteIds, roles);
+      if (!userToPatch) {
+        throwHTTPException404NotFound('User not found', {
+          res: c.res,
+        });
+      }
 
-    if (json.roleId && !(roles as string[]).includes(json.roleId)) {
-      throwHTTPException400BadRequest('No permissions', {
-        res: c.res,
-      });
-    }
+      if (json.roleId && !(roles as string[]).includes(json.roleId)) {
+        throwHTTPException400BadRequest('No permissions', {
+          res: c.res,
+        });
+      }
 
-    const newEntiteId = json.entiteId ?? undefined;
-    const currentEntiteId = userToPatch.entiteId ?? undefined;
+      const newEntiteId = json.entiteId ?? undefined;
+      const currentEntiteId = userToPatch.entiteId ?? undefined;
 
-    if (newEntiteId === currentEntiteId) {
-      delete json.entiteId;
-    } else if (newEntiteId && entiteIds !== null && !entiteIds.includes(newEntiteId)) {
-      throwHTTPException400BadRequest('No permissions');
-    }
+      if (newEntiteId === currentEntiteId) {
+        delete json.entiteId;
+      } else if (newEntiteId && entiteIds !== null && !entiteIds.includes(newEntiteId)) {
+        throwHTTPException400BadRequest('No permissions');
+      }
 
-    const user = await patchUser(id, json);
+      const user = await patchUser(id, json);
 
-    logger.info({ userId: id }, 'User updated successfully');
+      logger.info({ userId: id }, 'User updated successfully');
 
-    return c.json({ data: user });
-  });
+      return c.json({ data: user });
+    },
+  );
 
 export default app;
