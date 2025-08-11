@@ -47,7 +47,7 @@
     "@hono/sentry": "^1.2.2",
     "@hono/zod-validator": "^0.7.2",
     "@prisma/client": "6.13.0",
-    "@scalar/hono-api-reference": "^0.9.10",
+    "@scalar/hono-api-reference": "^0.9.13",
     "@sentry/cli": "^2.50.2",
     "@sentry/node": "^9.44.1",
     "@sirena/backend-utils": "workspace:*",
