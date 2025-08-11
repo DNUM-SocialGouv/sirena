@@ -35,7 +35,7 @@
     "@biomejs/biome": "catalog:",
     "@playwright/test": "^1.54.2",
     "@tanstack/react-router-devtools": "^1.131.4",
-    "@tanstack/router-plugin": "^1.131.4",
+    "@tanstack/router-plugin": "^1.131.5",
     "@sentry/vite-plugin": "^3.6.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
