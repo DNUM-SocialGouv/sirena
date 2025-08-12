@@ -27,8 +27,9 @@ export const uploadFileToMinio = async (
   originalName: string,
   contentType?: string,
 ): Promise<{ objectPath: string; rollback: (logger: PinoLogger) => Promise<void> }> => {
+  const fileId = randomUUID();
   const fileExtension = path.extname(originalName);
-  const filename = `${randomUUID()}${fileExtension}`;
+  const filename = `${fileId}${fileExtension}`;
   const objectPath = `${S3_BUCKET_ROOT_DIR}/${filename}`;
 
   const stream = fs.createReadStream(filePath);
@@ -36,6 +37,7 @@ export const uploadFileToMinio = async (
   await minioClient.putObject(S3_BUCKET_NAME, objectPath, stream, undefined, {
     'Content-Type': contentType || 'application/octet-stream',
     'x-amz-meta-filename': originalName,
+    uploadedFileId: fileId,
   });
 
   return {

@@ -28,14 +28,6 @@ export const createUploadedFileRoute = openApiProtectedRoute({
   },
 });
 
-export const deleteUploadedFileRoute = openApiProtectedRoute({
-  description: 'Delete uploaded file by id',
-  responses: {
-    ...openApiResponse(GetUploadedFileResponseSchema),
-    ...openApi404NotFound('Uploaded file not found'),
-  },
-});
-
 export const getUploadedFileSignedUrlRoute = openApiProtectedRoute({
   description: 'Get signed url for uploaded file by id',
   responses: {

@@ -73,7 +73,6 @@ export const createUploadedFile = async (
   const { metadata, ...rest } = uploadedFileData;
   return prisma.uploadedFile.create({
     data: {
-      id: rest.fileName.split('.').shift(),
       ...rest,
       metadata: metadata as Prisma.InputJsonValue,
     },

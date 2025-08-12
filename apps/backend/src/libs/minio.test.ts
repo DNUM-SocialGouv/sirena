@@ -66,6 +66,7 @@ describe('minio.ts', () => {
         {
           'Content-Type': contentType,
           'x-amz-meta-filename': originalName,
+          uploadedFileId: 'test-uuid',
         },
       );
       expect(objectPath).toBe('uploads/test-uuid.pdf');
@@ -85,6 +86,7 @@ describe('minio.ts', () => {
         {
           'Content-Type': 'application/octet-stream',
           'x-amz-meta-filename': originalName,
+          uploadedFileId: 'test-uuid',
         },
       );
       expect(objectPath).toBe('uploads/test-uuid.pdf');

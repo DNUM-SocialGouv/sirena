@@ -153,6 +153,7 @@ describe('uploadedFiles.service.ts', () => {
       mockedUploadedFile.create.mockResolvedValueOnce(mockUploadedFile);
 
       const uploadedFileData = {
+        id: 'test',
         fileName: 'test.pdf',
         filePath: '/uploads/test.pdf',
         mimeType: 'application/pdf',
@@ -166,7 +167,6 @@ describe('uploadedFiles.service.ts', () => {
 
       expect(mockedUploadedFile.create).toHaveBeenCalledWith({
         data: {
-          id: 'test',
           ...uploadedFileData,
           metadata: null,
         },
@@ -179,6 +179,7 @@ describe('uploadedFiles.service.ts', () => {
       mockedUploadedFile.create.mockResolvedValueOnce(mockUploadedFile);
 
       const uploadedFileData = {
+        id: 'test',
         fileName: 'test.pdf',
         filePath: '/uploads/test.pdf',
         mimeType: 'application/pdf',

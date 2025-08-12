@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
-import os from 'node:os';
 import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
 import { fileTypeFromBuffer } from 'file-type';
 import { file as tmpAsync } from 'tmp-promise';
@@ -57,7 +56,7 @@ export const sanitizeFilename = (originalName: string, detectedExtension: string
 /**
  * @description Extracts the uploaded file from the request body and sets it in the context. You must delete the temp file in the controller.
  */
-export const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(async (c, next) => {
+const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(async (c, next) => {
   const body = await c.req.parseBody();
   const file = body.file;
 
@@ -66,8 +65,6 @@ export const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddl
       res: c.res,
     });
   }
-
-  const tempDir = os.tmpdir();
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
@@ -88,7 +85,6 @@ export const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddl
     postfix: `-${sanitizedFilename}`,
     discardDescriptor: true,
     mode: 0o600,
-    dir: tempDir,
   });
 
   await fs.promises.writeFile(tmpFile.path, buffer);
@@ -102,3 +98,5 @@ export const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddl
 
   await next();
 });
+
+export default extractUploadedFileMiddleware;

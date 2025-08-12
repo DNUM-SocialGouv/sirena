@@ -7,16 +7,15 @@ import { getSignedUrl, uploadFileToMinio } from '@/libs/minio';
 import authMiddleware from '@/middlewares/auth.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
-import { extractUploadedFileMiddleware } from '@/middlewares/upload.middleware';
+import extractUploadedFileMiddleware from '@/middlewares/upload.middleware';
 import {
   createUploadedFileRoute,
-  deleteUploadedFileRoute,
   getUploadedFileRoute,
   getUploadedFileSignedUrlRoute,
   getUploadedFilesRoute,
 } from './uploadedFiles.route';
 import { GetUploadedFilesQuerySchema, UploadedFileParamsIdSchema } from './uploadedFiles.schema';
-import { createUploadedFile, deleteUploadedFile, getUploadedFileById, getUploadedFiles } from './uploadedFiles.service';
+import { createUploadedFile, getUploadedFileById, getUploadedFiles } from './uploadedFiles.service';
 
 const app = factoryWithLogs
   .createApp()
@@ -99,7 +98,6 @@ const app = factoryWithLogs
   .post('/', createUploadedFileRoute, extractUploadedFileMiddleware, async (c) => {
     const logger = c.get('logger');
     const uploadedFile = c.get('uploadedFile');
-
     if (!uploadedFile) {
       throwHTTPException400BadRequest('No file uploaded', {
         res: c.res,
@@ -109,7 +107,6 @@ const app = factoryWithLogs
     try {
       const userId = c.get('userId');
       const entiteIds = c.get('entiteIds');
-
       // Force parent/main entiteId
       const fileEntiteId = entiteIds?.[0];
       if (!fileEntiteId) {
@@ -117,7 +114,6 @@ const app = factoryWithLogs
           res: c.res,
         });
       }
-
       logger.info({ fileName: uploadedFile.fileName }, 'Uploaded file creation requested');
 
       const { objectPath, rollback: rollbackMinio } = await uploadFileToMinio(
@@ -126,8 +122,16 @@ const app = factoryWithLogs
         uploadedFile.contentType,
       );
 
+      const fileName = objectPath.split('/')?.[1] || '';
+      const id = fileName.split('.')?.[0] || '';
+
+      if (!fileName || !id) {
+        throw new Error('File name is not valid');
+      }
+
       const uploadedFileRecord = await createUploadedFile({
-        fileName: objectPath.split('/').pop() || uploadedFile.fileName,
+        id,
+        fileName,
         filePath: objectPath,
         mimeType: uploadedFile.contentType,
         size: uploadedFile.size,
@@ -142,46 +146,9 @@ const app = factoryWithLogs
       logger.info({ uploadedFileId: uploadedFileRecord.id }, 'Uploaded file created successfully');
 
       return c.json({ data: uploadedFileRecord }, 201);
-    } catch (err) {
-      logger.error({ err }, 'Error creating uploaded file');
-      throwHTTPException400BadRequest('Error creating uploaded file', {
-        res: c.res,
-      });
     } finally {
-      await fs.promises.unlink(uploadedFile.tempFilePath).catch((err) => {
-        if (err.code === 'ENOENT') {
-          logger.warn({ filePath: uploadedFile.tempFilePath }, 'Temp file already deleted or never existed');
-        } else {
-          logger.error({ err, filePath: uploadedFile.tempFilePath }, 'Error deleting temp file');
-        }
-      });
+      await fs.promises.unlink(uploadedFile.tempFilePath);
     }
-  })
-
-  .delete('/:id', deleteUploadedFileRoute, zValidator('param', UploadedFileParamsIdSchema), async (c) => {
-    const logger = c.get('logger');
-    const id = c.req.valid('param').id;
-    const entiteIds = c.get('entiteIds');
-
-    if (!entiteIds?.length) {
-      throwHTTPException400BadRequest('You are not allowed to delete uploaded file without entiteIds.', {
-        res: c.res,
-      });
-    }
-
-    const uploadedFile = await getUploadedFileById(id, entiteIds);
-    if (!uploadedFile) {
-      logger.warn({ uploadedFileId: id }, 'Uploaded file not found or unauthorized access');
-      throwHTTPException404NotFound('Uploaded file not found', {
-        res: c.res,
-      });
-    }
-
-    const deletedUploadedFile = await deleteUploadedFile(id);
-
-    logger.info({ uploadedFileId: id }, 'Uploaded file deleted successfully');
-
-    return c.json({ data: deletedUploadedFile });
   });
 
 export default app;
