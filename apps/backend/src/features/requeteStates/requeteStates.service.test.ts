@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { getRequestEntiteById } from '@/features/requetesEntite/requetesEntite.service';
 import { prisma } from '@/libs/prisma';
-import { addProcessingState, getRequeteStates } from './requeteStates.service';
+import { addProcessingState, getRequeteStateById, getRequeteStates } from './requeteStates.service';
 
 vi.mock('@/libs/prisma', () => ({
   prisma: {
@@ -9,6 +9,7 @@ vi.mock('@/libs/prisma', () => ({
       create: vi.fn(),
       findMany: vi.fn(),
       count: vi.fn(),
+      findUnique: vi.fn(),
     },
   },
 }));
@@ -124,6 +125,28 @@ describe('requeteStates.service.ts', () => {
         where: { requeteEntiteId: 'requeteEntiteId', stepName: { not: null } },
         skip: 0,
         orderBy: { createdAt: 'desc' },
+      });
+    });
+  });
+
+  describe('getRequeteStateById()', () => {
+    it('should retrieve a RequeteState by its ID', async () => {
+      const mockState = {
+        id: '1',
+        requeteEntiteId: 'requeteEntiteId',
+        stepName: 'Step 1',
+        statutId: 'EN_COURS',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      vi.mocked(prisma.requeteState.findUnique).mockResolvedValueOnce(mockState);
+
+      const result = await getRequeteStateById('1');
+
+      expect(result).toEqual(mockState);
+      expect(prisma.requeteState.findUnique).toHaveBeenCalledWith({
+        where: { id: '1' },
       });
     });
   });
