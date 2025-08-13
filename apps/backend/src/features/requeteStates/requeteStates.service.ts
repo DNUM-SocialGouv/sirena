@@ -1,6 +1,6 @@
 import { getRequestEntiteById } from '@/features/requetesEntite/requetesEntite.service';
-import { prisma } from '@/libs/prisma';
-import type { GetRequeteStatesQuery, RequeteStateCreationDto } from './requeteStates.type';
+import { prisma, type RequeteState } from '@/libs/prisma';
+import type { GetRequeteStatesQuery, RequeteStateCreationDto, UpdateRequeteStateStatutDto } from './requeteStates.type';
 
 export const addProcessingState = async (requeteEntiteId: string, data: RequeteStateCreationDto) => {
   const requeteEntite = await getRequestEntiteById(requeteEntiteId);
@@ -49,3 +49,22 @@ export const getRequeteStateById = async (id: string) =>
   await prisma.requeteState.findUnique({
     where: { id },
   });
+
+export const updateRequeteStateStatut = async (
+  id: string,
+  data: UpdateRequeteStateStatutDto,
+): Promise<RequeteState | null> => {
+  const requeteState = await getRequeteStateById(id);
+  if (!requeteState) {
+    return null;
+  }
+
+  const updatedRequeteState = await prisma.requeteState.update({
+    where: { id },
+    data: {
+      statutId: data.statutId,
+    },
+  });
+
+  return updatedRequeteState;
+};
