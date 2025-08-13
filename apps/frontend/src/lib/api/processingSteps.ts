@@ -21,3 +21,16 @@ export async function addProcessingStep(requestId: string, data: AddProcessingSt
   await handleRequestErrors(res);
   return res.json();
 }
+
+export type UpdateProcessingStepStatusData = {
+  statutId: 'A_FAIRE' | 'EN_COURS' | 'FAIT';
+};
+
+export async function updateProcessingStepStatus(stepId: string, data: UpdateProcessingStepStatusData) {
+  const res = await client['requete-states'][':id'].statut.$patch({
+    param: { id: stepId },
+    json: data,
+  });
+  await handleRequestErrors(res);
+  return res.json();
+}
