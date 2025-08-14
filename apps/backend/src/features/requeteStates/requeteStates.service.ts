@@ -1,6 +1,6 @@
 import { getRequestEntiteById } from '@/features/requetesEntite/requetesEntite.service';
 import { prisma } from '@/libs/prisma';
-import type { GetRequeteStatesQuery, RequeteStateCreationDto } from './requeteStates.type';
+import type { CreateRequeteStateNoteDto, GetRequeteStatesQuery, RequeteStateCreationDto } from './requeteStates.type';
 
 export const addProcessingState = async (requeteEntiteId: string, data: RequeteStateCreationDto) => {
   const requeteEntite = await getRequestEntiteById(requeteEntiteId);
@@ -33,6 +33,27 @@ export const getRequeteStates = async (requeteEntiteId: string, query: GetRequet
       skip: offset,
       ...(typeof limit === 'number' ? { take: limit } : {}),
       orderBy: { [sort]: order },
+      select: {
+        id: true,
+        stepName: true,
+        statutId: true,
+        createdAt: true,
+        updatedAt: true,
+        notes: {
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            author: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+        requeteEntiteId: true,
+      },
     }),
     prisma.requeteState.count({
       where,
@@ -48,4 +69,13 @@ export const getRequeteStates = async (requeteEntiteId: string, query: GetRequet
 export const getRequeteStateById = async (id: string) =>
   await prisma.requeteState.findUnique({
     where: { id },
+  });
+
+export const addNote = async (data: CreateRequeteStateNoteDto) =>
+  await prisma.requeteStateNote.create({
+    data: {
+      authorId: data.userId,
+      content: data.content,
+      requeteEntiteStateId: data.requeteEntiteStateId,
+    },
   });

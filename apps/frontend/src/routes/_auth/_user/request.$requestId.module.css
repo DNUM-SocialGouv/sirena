@@ -55,3 +55,17 @@
 .request-tabs :global(.fr-tabs__panel) {
   padding: 2rem 0;
 }
+
+.request-note {
+  padding: 1rem 0;
+  border-radius: 0.25rem;
+  background-color: var(--background-default-grey);
+}
+
+.request-note__from {
+  font-size: 0.8rem;
+}
+
+.request-note__content {
+  margin: 1rem 0;
+}

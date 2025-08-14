@@ -1,17 +1,21 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
-import { CreateStep } from '@/components/request/processing/createStep';
-import { Step } from '@/components/request/processing/Step';
+import { CreateStep } from '@/components/requestId/processing/createStep';
+import { Step } from '@/components/requestId/processing/Step';
 import { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
+import { StepDrawer, type StepDrawerRef } from './processing/StepDrawer';
+
+type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
 export const Processing = () => {
   const { requestId } = useParams({ from: '/_auth/_user/request/$requestId' });
   const navigate = useNavigate();
 
   const [isAddingStep, setIsAddingStep] = useState(false);
+  const stepDrawerRef = useRef<StepDrawerRef>(null);
 
   const queryProcessingSteps = useProcessingSteps(requestId);
 
@@ -24,6 +28,12 @@ export const Processing = () => {
       navigate({ to: '/home' });
     }
   }, [queryProcessingSteps.error, navigate]);
+
+  const handleOpenEdit = (step: StepType) => {
+    if (stepDrawerRef.current) {
+      stepDrawerRef.current.openDrawer(step);
+    }
+  };
 
   return (
     <div>
@@ -55,7 +65,12 @@ export const Processing = () => {
                 <QueryStateHandler query={queryProcessingSteps}>
                   {({ data }) =>
                     data.data.map((step, index) => (
-                      <Step key={step.id} {...step} disabled={index === data.data.length - 1} />
+                      <Step
+                        key={step.id}
+                        {...step}
+                        disabled={index === data.data.length - 1}
+                        openEdit={handleOpenEdit}
+                      />
                     ))
                   }
                 </QueryStateHandler>
@@ -64,6 +79,7 @@ export const Processing = () => {
           </div>
         </div>
       </div>
+      <StepDrawer ref={stepDrawerRef} />
     </div>
   );
 };
