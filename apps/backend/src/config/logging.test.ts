@@ -82,6 +82,8 @@ describe('logging configuration', () => {
       S3_BUCKET_NAME: 'files',
       S3_BUCKET_REGION: 'us-east-1',
       S3_BUCKET_ROOT_DIR: 'uploads',
+      SARBACANE_API_URL: 'https://api.sarbacane.com/sendkit',
+      SARBACANE_API_KEY: 'test-api-key',
     };
   }
 });

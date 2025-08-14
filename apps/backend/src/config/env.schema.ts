@@ -147,6 +147,12 @@ export const AppEnvSchema = z.object({
   S3_BUCKET_PORT: z.string({
     required_error: "La variable d'environnement S3_BUCKET_PORT est requise",
   }),
+  SARBACANE_API_URL: z.string({
+    required_error: "La variable d'environnement SARBACANE_API_URL est requise",
+  }),
+  SARBACANE_API_KEY: z.string({
+    required_error: "La variable d'environnement SARBACANE_API_KEY est requise",
+  }),
 });
 
 /**

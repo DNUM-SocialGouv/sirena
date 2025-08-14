@@ -23,6 +23,8 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
     S3_BUCKET_NAME: 'files',
     S3_BUCKET_REGION: 'us-east-1',
     S3_BUCKET_ROOT_DIR: 'uploads',
+    SARBACANE_API_URL: 'http://localhost:3003',
+    SARBACANE_API_KEY: 'token',
   };
 
   const createConfig = (logExtraContext?: string) => ({

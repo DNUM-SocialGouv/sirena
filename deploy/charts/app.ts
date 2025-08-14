@@ -87,6 +87,10 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
       name: 'SENTRY_ENVIRONMENT',
       value: environment,
     },
+    {
+      name: 'SARBACANE_API_URL',
+      value: 'https://api.sarbacane.com/sendkit',
+    },
   ];
 }
 
