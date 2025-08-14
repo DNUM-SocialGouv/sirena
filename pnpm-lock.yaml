@@ -178,6 +178,9 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 3.2.4(@types/node@24.2.1)(@vitest/browser@3.2.4)(jiti@2.4.2)(jsdom@26.1.0)(tsx@4.20.3)(yaml@2.7.1)
+      vitest-mock-extended:
+        specifier: ^3.1.0
+        version: 3.1.0(typescript@5.9.2)(vitest@3.2.4)
 
   apps/frontend:
     dependencies:
@@ -4665,6 +4668,14 @@ packages:
     resolution: {integrity: sha512-q5W7tVM71e2xjHZTlgfTDoPF/SmqKG5hddq9SzR49CH2hayqRKJtQ4mtRlSxKaJlR/+9rEM+mnBHf7I2/BQcpQ==}
     engines: {node: '>=6.10'}
 
+  ts-essentials@10.1.1:
+    resolution: {integrity: sha512-4aTB7KLHKmUvkjNj8V+EdnmuVTiECzn3K+zIbRthumvHu+j44x3w63xpfs0JL3NGIzGXqoQ7AV591xHO+XrOTw==}
+    peerDependencies:
+      typescript: '>=4.5.0'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   ts-log@2.2.7:
     resolution: {integrity: sha512-320x5Ggei84AxzlXp91QkIGSw5wgaLT6GeAH0KsqDmRZdVWW2OiSeVvElVoatk3f7nicwXlElXsoFkARiGE2yg==}
 
@@ -4878,6 +4889,12 @@ packages:
         optional: true
       '@types/react-dom':
         optional: true
+
+  vitest-mock-extended@3.1.0:
+    resolution: {integrity: sha512-vCM0VkuocOUBwwqwV7JB7YStw07pqeKvEIrZnR8l3PtwYi6rAAJAyJACeC1UYNfbQWi85nz7EdiXWBFI5hll2g==}
+    peerDependencies:
+      typescript: 3.x || 4.x || 5.x
+      vitest: '>=3.0.0'
 
   vitest@3.2.4:
     resolution: {integrity: sha512-LUCP5ev3GURDysTWiP47wRRUpLKMOfPh+yKTx3kVIEiu5KOMeqzpnYNsKyOoVrULivR8tLcks4+lga33Whn90A==}
@@ -9829,6 +9846,10 @@ snapshots:
 
   ts-dedent@2.2.0: {}
 
+  ts-essentials@10.1.1(typescript@5.9.2):
+    optionalDependencies:
+      typescript: 5.9.2
+
   ts-log@2.2.7: {}
 
   ts-toolbelt@9.6.0: {}
@@ -9988,6 +10009,12 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.9
       '@types/react-dom': 19.1.7(@types/react@19.1.9)
+
+  vitest-mock-extended@3.1.0(typescript@5.9.2)(vitest@3.2.4):
+    dependencies:
+      ts-essentials: 10.1.1(typescript@5.9.2)
+      typescript: 5.9.2
+      vitest: 3.2.4(@types/node@24.2.1)(@vitest/browser@3.2.4)(jiti@2.4.2)(jsdom@26.1.0)(tsx@4.20.3)(yaml@2.7.1)
 
   vitest@3.2.4(@types/node@24.2.1)(@vitest/browser@3.2.4)(jiti@2.4.2)(jsdom@26.1.0)(tsx@4.20.3)(yaml@2.7.1):
     dependencies:
