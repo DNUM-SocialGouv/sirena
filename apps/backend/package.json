@@ -49,7 +49,7 @@
     "@prisma/client": "6.13.0",
     "@scalar/hono-api-reference": "^0.9.13",
     "@sentry/cli": "^2.51.1",
-    "@sentry/node": "^9.44.1",
+    "@sentry/node": "^9.46.0",
     "@sirena/backend-utils": "workspace:*",
     "@sirena/common": "workspace:*",
     "graffle": "8.0.0-next.168",
