@@ -6,3 +6,9 @@ export type RequeteStateCreationDto = {
 };
 export type GetRequeteStatesQuery = z.infer<typeof GetRequeteStatesQuerySchema>;
 export type UpdateRequeteStateStatutDto = z.infer<typeof UpdateRequeteStateStatutSchema>;
+
+export type CreateRequeteStateNoteDto = {
+  content: string;
+  userId: string;
+  requeteEntiteStateId: string;
+};
