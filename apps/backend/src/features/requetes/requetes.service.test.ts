@@ -1,67 +1,97 @@
 import { RECEPTION_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
-import { describe, expect, it, vi } from 'vitest';
-import { prisma } from '@/libs/prisma';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { prisma } from '@/libs/__mocks__/prisma';
 import { createRequeteFromDematSocial } from './requetes.service';
 
-vi.mock('@/libs/prisma', () => ({
-  prisma: {
-    requete: {
-      create: vi.fn(),
-    },
-  },
-}));
+vi.mock('@/libs/prisma');
 
 describe('requetes.service.ts', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
   describe('createRequeteFromDematSocial()', () => {
-    it('should create a Requete with nested RequeteEntite and RequeteEntiteState with infoComplementaire', async () => {
-      const mockedCreate = vi.mocked(prisma.requete.create);
-      vi.useFakeTimers();
+    describe('createRequeteFromDematSocial', async () => {
+      it('creates requete + one entite + two states with infoComplementaire inside a single transaction', async () => {
+        vi.useFakeTimers();
 
-      const createdAt = new Date('2025-01-01');
+        const createdAt = new Date('2025-01-01T00:00:00.000Z');
+        const fakeNow = new Date('2025-08-06T12:34:56.000Z');
+        vi.setSystemTime(fakeNow);
 
-      const date = new Date('2025-08-06');
-      vi.setSystemTime(date);
+        const dematSocialId = 123;
 
-      const dematSocialId = 123;
-      const fakeResult = {
-        number: 1,
-        dematSocialId,
-        id: '1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      mockedCreate.mockResolvedValueOnce(fakeResult);
-
-      const result = await createRequeteFromDematSocial({ dematSocialId, createdAt });
-
-      expect(mockedCreate).toHaveBeenCalledWith({
-        data: {
-          createdAt,
+        const entiteId = 42;
+        const fakeRequete = {
+          id: '1',
+          number: 1,
           dematSocialId,
-          requetesEntite: {
-            create: {
-              requetesEntiteStates: {
+          createdAt: new Date('2025-01-02T00:00:00.000Z'),
+          updatedAt: new Date('2025-01-02T00:00:00.000Z'),
+          requetesEntite: [{ id: entiteId }],
+        };
+
+        vi.mocked(prisma.requete.create).mockResolvedValueOnce(fakeRequete);
+        vi.mocked(prisma.requete.create).mockResolvedValueOnce(fakeRequete);
+
+        const transactionSpy = vi.mocked(prisma.$transaction);
+        transactionSpy.mockImplementation(async (cb) => cb(prisma));
+
+        const result = await createRequeteFromDematSocial({ dematSocialId, createdAt });
+
+        expect(prisma.requete.create).toHaveBeenCalledTimes(1);
+        expect(prisma.requete.create).toHaveBeenCalledWith({
+          data: {
+            dematSocialId,
+            createdAt,
+            requetesEntite: { create: {} },
+          },
+          include: { requetesEntite: true },
+        });
+
+        expect(prisma.requeteState.create).toHaveBeenCalledTimes(2);
+
+        expect(prisma.requeteState.create).toHaveBeenNthCalledWith(
+          1,
+          expect.objectContaining({
+            data: {
+              requeteEntiteId: entiteId,
+              statutId: REQUETE_STATUT_TYPES.FAIT,
+              stepName: `Création de la requête le ${createdAt.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })}`,
+              infoComplementaire: {
                 create: {
-                  statutId: REQUETE_STATUT_TYPES.FAIT,
-                  stepName: `Création de la requête le ${createdAt.toLocaleDateString('fr-FR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  })}`,
-                  infoComplementaire: {
-                    create: {
-                      receptionDate: new Date(),
-                      receptionTypeId: RECEPTION_TYPES.FORMULAIRE,
-                    },
-                  },
+                  receptionDate: expect.any(Date), // equals fakeNow internally
+                  receptionTypeId: RECEPTION_TYPES.FORMULAIRE,
                 },
               },
             },
-          },
-        },
-      });
+          }),
+        );
 
-      expect(result).toBe(fakeResult);
+        // 2nd state
+        expect(prisma.requeteState.create).toHaveBeenNthCalledWith(
+          2,
+          expect.objectContaining({
+            data: {
+              requeteEntiteId: entiteId,
+              statutId: REQUETE_STATUT_TYPES.A_FAIRE,
+              stepName: 'Envoyer un accuser de réception au déclarant', // <-- match your exact string
+              infoComplementaire: {
+                create: {
+                  receptionDate: expect.any(Date),
+                  receptionTypeId: RECEPTION_TYPES.FORMULAIRE,
+                },
+              },
+            },
+          }),
+        );
+        expect(result).toBe(fakeRequete);
+      });
     });
   });
 });

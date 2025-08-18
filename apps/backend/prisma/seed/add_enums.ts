@@ -165,12 +165,6 @@ async function seedReceptionTypeEnum(prisma: PrismaClient) {
 
 async function seedRequeteStatutEnum(prisma: PrismaClient) {
   let added = 0;
-  // TODO: remove this (we purge the actual status for new one)
-  await prisma.infoComplementaire.deleteMany({});
-  await prisma.requeteState.deleteMany({});
-  await prisma.requeteEntite.deleteMany({});
-  await prisma.requete.deleteMany({});
-  await prisma.requeteStatutEnum.deleteMany({});
   for (const [id, label] of Object.entries(requeteStatutType)) {
     const exists = await prisma.requeteStatutEnum.findUnique({ where: { id } });
     if (!exists) {
@@ -219,6 +213,14 @@ async function seedTransportTypeEnum(prisma: PrismaClient) {
 
 export async function seedEnums(prisma: PrismaClient) {
   console.log('🌱 Début du seeding des enums...');
+
+  // TODO: remove this (we purge the actual status for new one)
+  await prisma.infoComplementaire.deleteMany({});
+  await prisma.requeteState.deleteMany({});
+  await prisma.requeteEntite.deleteMany({});
+  await prisma.requete.deleteMany({});
+  await prisma.requeteStatutEnum.deleteMany({});
+  await prisma.receptionTypeEnum.deleteMany({});
 
   const results = await Promise.allSettled([
     seedAgeEnum(prisma),
