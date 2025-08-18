@@ -2,18 +2,14 @@ import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { addNote, addProcessingState, getRequeteStates } from '@/features/requeteStates/requeteStates.service';
+import { addProcessingState, getRequeteStates } from '@/features/requeteStates/requeteStates.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
 import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStep.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
-import { addProcessingStepNoteRoute, addProcessingStepRoute, getRequetesEntiteRoute } from './requetesEntite.route';
-import {
-  AddProcessingStepBodySchema,
-  addProcessingStepNoteBodySchema,
-  GetRequetesEntiteQuerySchema,
-} from './requetesEntite.schema';
+import { addProcessingStepRoute, getRequetesEntiteRoute } from './requetesEntite.route';
+import { AddProcessingStepBodySchema, GetRequetesEntiteQuerySchema } from './requetesEntite.schema';
 import { getRequetesEntite, hasAccessToRequete } from './requetesEntite.service';
 
 const app = factoryWithLogs
@@ -102,38 +98,6 @@ const app = factoryWithLogs
       logger.info({ requestId: id, stepId: step.id, userId }, 'Processing step added successfully');
 
       return c.json({ data: step }, 201);
-    },
-  )
-
-  .post(
-    '/:id/processing-steps/:stateId/note',
-    addProcessingStepNoteRoute,
-    zValidator('json', addProcessingStepNoteBodySchema),
-    async (c) => {
-      const logger = c.get('logger');
-      const { id, stateId } = c.req.param();
-      const body = c.req.valid('json');
-      const userId = c.get('userId');
-      // const entiteIds = c.get('entiteIds');
-
-      // TODO Use real entiteIds when implemented
-      const hasAccess = await hasAccessToRequete(id, null);
-
-      if (!hasAccess) {
-        return throwHTTPException404NotFound('Requete entite not found', {
-          res: c.res,
-        });
-      }
-
-      const note = await addNote({
-        userId,
-        requeteEntiteStateId: stateId,
-        content: body.content,
-      });
-
-      logger.info({ requestId: id, stepId: stateId, noteId: note.id, userId }, 'note added successfully');
-
-      return c.json({ data: note }, 201);
     },
   );
 

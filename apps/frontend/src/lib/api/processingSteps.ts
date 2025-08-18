@@ -38,15 +38,12 @@ export async function updateProcessingStepStatus(stepId: string, data: UpdatePro
 
 export type AddProcessingStepNoteData = {
   content: string;
-  requeteStateId: string;
 };
 
-export async function addProcessingStepNote(requestid: string, data: AddProcessingStepNoteData) {
-  const res = await client['requetes-states'][':id'].note.$post({
-    param: { id: requestid, stateId: data.requeteStateId },
-    json: {
-      content: data.content,
-    },
+export async function addProcessingStepNote(stepId: string, data: AddProcessingStepNoteData) {
+  const res = await client['requete-states'][':id'].note.$post({
+    param: { id: stepId },
+    json: data,
   });
   await handleRequestErrors(res);
   return res.json();

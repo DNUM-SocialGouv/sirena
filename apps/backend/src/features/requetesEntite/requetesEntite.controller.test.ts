@@ -1,7 +1,7 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
-import { addNote, addProcessingState, getRequeteStates } from '@/features/requeteStates/requeteStates.service';
+import { addProcessingState, getRequeteStates } from '@/features/requeteStates/requeteStates.service';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import pinoLogger from '@/middlewares/pino.middleware';
@@ -17,7 +17,6 @@ vi.mock('./requetesEntite.service', () => ({
 vi.mock('@/features/requeteStates/requeteStates.service', () => ({
   addProcessingState: vi.fn(),
   getRequeteStates: vi.fn(),
-  addNote: vi.fn(),
 }));
 
 vi.mock('@/middlewares/auth.middleware', () => {
@@ -221,51 +220,6 @@ describe('RequetesEntite endpoints: /', () => {
       const json = await res.json();
       expect(json).toEqual({ message: 'Requete entite not found' });
       expect(addProcessingState).toHaveBeenCalledWith('1', { stepName: 'Step 1' });
-    });
-  });
-
-  describe('POST /:id/processing-steps/:stateId/note', () => {
-    it('should add a note to a processing step', async () => {
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-
-      const fakeNote = {
-        id: 'note1',
-        content: 'My note content',
-        authorId: 'id1',
-        requeteEntiteStateId: 'state1',
-        createdAt: new Date(0),
-        updatedAt: new Date(0),
-      };
-
-      vi.mocked(addNote).mockResolvedValueOnce(fakeNote);
-
-      const res = await client[':id']['processing-steps'][':stateId'].note.$post({
-        param: { id: '1', stateId: 'state1' },
-        json: { content: 'My note content' },
-      });
-
-      expect(res.status).toBe(201);
-      const json = await res.json();
-      expect(json).toEqual({ data: convertDatesToStrings(fakeNote) });
-
-      expect(addNote).toHaveBeenCalledWith({
-        userId: 'id1', // from mocked auth middleware
-        requeteEntiteStateId: 'state1',
-        content: 'My note content',
-      });
-    });
-
-    it('should return 404 if requete does not exist / no access', async () => {
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
-
-      const res = await client[':id']['processing-steps'][':stateId'].note.$post({
-        param: { id: 'nonexistent', stateId: 'state1' },
-        json: { content: 'anything' },
-      });
-
-      expect(res.status).toBe(404);
-      const json = await res.json();
-      expect(json).toEqual({ message: 'Requete entite not found' });
     });
   });
 });

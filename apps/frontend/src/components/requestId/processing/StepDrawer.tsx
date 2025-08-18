@@ -4,7 +4,7 @@ import { Drawer } from '@sirena/ui';
 import { useParams } from '@tanstack/react-router';
 
 import { forwardRef, useImperativeHandle, useState } from 'react';
-import { useAddProcessingStepNote } from '@/hooks/mutations/addProcessingStep.hook';
+import { useAddProcessingStepNote } from '@/hooks/mutations/processingStep.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
@@ -57,7 +57,7 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
     }
 
     addStepNoteMutation.mutate(
-      { content: content.trim(), requeteStateId: step.id },
+      { content: content.trim(), id: step.id },
       {
         onSuccess: () => {
           handleCancel();

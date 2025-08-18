@@ -15,3 +15,9 @@ export const GetRequeteStatesQuerySchema = paginationQueryParamsSchema(columns);
 export const UpdateRequeteStateStatutSchema = z.object({
   statutId: z.enum([REQUETE_STATUT_TYPES.A_FAIRE, REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.FAIT]),
 });
+
+export const addRequeteStatesNoteBodySchema = z.object({
+  content: z.string().min(1, {
+    message: "Le champ 'content' est obligatoire. Veuillez le renseigner pour ajouter une note à l'étape.",
+  }),
+});

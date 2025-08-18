@@ -2,15 +2,15 @@ import { throwHTTPException401Unauthorized, throwHTTPException404NotFound } from
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getRequeteStateById, updateRequeteStateStatut } from '@/features/requeteStates/requeteStates.service';
+import { addNote, getRequeteStateById, updateRequeteStateStatut } from '@/features/requeteStates/requeteStates.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
 import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStep.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service';
-import { updateRequeteStateStatutRoute } from './requeteStates.route';
-import { UpdateRequeteStateStatutSchema } from './requeteStates.schema';
+import { addRequeteStatesNoteRoute, updateRequeteStateStatutRoute } from './requeteStates.route';
+import { addRequeteStatesNoteBodySchema, UpdateRequeteStateStatutSchema } from './requeteStates.schema';
 
 const app = factoryWithLogs
   .createApp()
@@ -67,6 +67,46 @@ const app = factoryWithLogs
       );
 
       return c.json({ data: updatedRequeteState });
+    },
+  )
+
+  .post(
+    '/:id/note',
+    addRequeteStatesNoteRoute,
+    zValidator('json', addRequeteStatesNoteBodySchema),
+    requeteStatesChangelogMiddleware({ action: ChangeLogAction.CREATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const body = c.req.valid('json');
+      const userId = c.get('userId');
+
+      const requeteState = await getRequeteStateById(id);
+
+      if (!requeteState) {
+        return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+      }
+
+      // TODO: check real access with entiteIds when implemented
+      //   const entiteIds = c.get('entiteIds');
+      const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+      if (!hasAccess) {
+        return throwHTTPException401Unauthorized('You are not allowed to update this requete state', {
+          res: c.res,
+        });
+      }
+
+      const note = await addNote({
+        userId,
+        requeteEntiteStateId: id,
+        content: body.content,
+      });
+
+      c.set('changelogId', note.id);
+
+      logger.info({ requeteStateId: id, noteId: note.id, userId }, 'note added successfully');
+
+      return c.json({ data: note }, 201);
     },
   );
 

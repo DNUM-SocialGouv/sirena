@@ -9,7 +9,7 @@ import appWithLogs from '@/helpers/factories/appWithLogs';
 import type { RequeteState } from '@/libs/prisma';
 import { convertDatesToStrings } from '@/tests/formatter';
 import RequeteStatesController from './requeteStates.controller';
-import { getRequeteStateById, updateRequeteStateStatut } from './requeteStates.service';
+import { addNote, getRequeteStateById, updateRequeteStateStatut } from './requeteStates.service';
 
 const fakeRequeteState: RequeteState = {
   id: 'step1',
@@ -29,6 +29,7 @@ const fakeUpdatedRequeteState: RequeteState = {
 vi.mock('./requeteStates.service', () => ({
   getRequeteStateById: vi.fn(() => Promise.resolve(fakeRequeteState)),
   updateRequeteStateStatut: vi.fn(() => Promise.resolve(fakeUpdatedRequeteState)),
+  addNote: vi.fn(),
 }));
 
 vi.mock('@/features/requetesEntite/requetesEntite.service', () => ({
@@ -162,6 +163,67 @@ describe('requeteStates.controller.ts', () => {
       });
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe('POST /:id/note', () => {
+    it('should add a note to a processing step', async () => {
+      const fakeData = {
+        createdAt: new Date(),
+        id: 'note1',
+        requeteEntiteStateId: 'step1',
+        content: 'test',
+        updatedAt: new Date(),
+        authorId: 'test-user-id',
+      };
+      vi.mocked(addNote).mockResolvedValueOnce(fakeData);
+
+      const res = await client[':id'].note.$post({
+        param: { id: 'step1' },
+        json: { content: 'test' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(201);
+      expect(body).toEqual({
+        data: convertDatesToStrings(fakeData),
+      });
+      expect(addNote).toHaveBeenCalledWith({ requeteEntiteStateId: 'step1', content: 'test', userId: 'test-user-id' });
+    });
+
+    it('should return 404 if RequeteState not found', async () => {
+      vi.mocked(getRequeteStateById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].note.$post({
+        param: { id: 'step1' },
+        json: { content: 'test' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'RequeteState not found',
+      });
+      expect(addNote).not.toHaveBeenCalled();
+    });
+
+    it('should return 401 if user has no access to requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id'].note.$post({
+        param: { id: 'step1' },
+        json: { content: 'test' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(401);
+      expect(body).toEqual({
+        message: 'You are not allowed to update this requete state',
+      });
+      expect(addNote).not.toHaveBeenCalled();
     });
   });
 });
