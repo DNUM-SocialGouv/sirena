@@ -1,9 +1,10 @@
+import type { RequeteStatutType } from '@sirena/common/constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateProcessingStepStatus } from '@/lib/api/processingSteps';
 
 type UpdateProcessingStepStatusParams = {
   id: string;
-  statutId: 'A_FAIRE' | 'EN_COURS' | 'FAIT';
+  statutId: RequeteStatutType;
 };
 
 export const useUpdateProcessingStepStatus = (requestId: string) => {

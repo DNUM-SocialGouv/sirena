@@ -1,5 +1,5 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_STATUT_TYPES, type RequeteStatutType } from '@sirena/common/constants';
 import type { RequiredByKey } from '@sirena/common/utils';
 import { useParams } from '@tanstack/react-router';
 import { memo } from 'react';
@@ -40,7 +40,7 @@ const StepComponent = ({ stepName, statutId, disabled, id }: StepProps) => {
     if (newStatutId !== statutId && id) {
       updateStatusMutation.mutate({
         id,
-        statutId: newStatutId as 'A_FAIRE' | 'EN_COURS' | 'FAIT',
+        statutId: newStatutId as RequeteStatutType,
       });
     }
   };
