@@ -1,3 +1,4 @@
+import Breadcrumb from '@codegouvfr/react-dsfr/Breadcrumb';
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
@@ -156,115 +157,132 @@ function RouteComponent() {
   const filteredRoles = useMemo(() => getAssignableRoles(userRole), [userRole]);
 
   return (
-    <QueryStateHandler query={userQuery}>
-      {({ data: user }) => (
-        <div className="user">
-          <h1>Modifier un utilisateur</h1>
-          <div>
-            <form onSubmit={handleSubmit}>
-              <fieldset className="fr-fieldset">
-                <legend className="fr-fieldset__legend">Identifiant de l'utilisateur</legend>
-                <Input
-                  className="fr-fieldset__content"
-                  label="Nom"
-                  disabled={true}
-                  nativeInputProps={{ defaultValue: user.lastName }}
-                />
-                <Input
-                  className="fr-fieldset__content"
-                  label="Prénom"
-                  disabled={true}
-                  nativeInputProps={{ defaultValue: user.firstName }}
-                />
-              </fieldset>
-              <fieldset className="fr-fieldset">
-                <legend className="fr-fieldset__legend">Coordonnées de l'utilisateur</legend>
-                <Input
-                  className="fr-fieldset__content"
-                  label="Email"
-                  disabled={true}
-                  nativeInputProps={{ defaultValue: user.email }}
-                />
-              </fieldset>
-              <EntityHierarchySelector id={user.entiteId} setLevel={handleSetEntite} />
-              <fieldset className="fr-fieldset">
-                <Select
-                  className="fr-fieldset__content"
-                  label="Rôle*"
-                  disabled={profile?.id === userId}
-                  nativeSelectProps={{
-                    name: 'roleId',
-                    value: formData.roleId,
-                    onChange: (e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        roleId: e.target.value,
-                        statutId: e.target.value === ROLES.PENDING ? STATUT_TYPES.NON_RENSEIGNE : prev.statutId,
-                      }));
+    <div className="fr-container">
+      <div className="fr-mb-2w">
+        <QueryStateHandler query={userQuery}>
+          {({ data: user }) => (
+            <div className="fr-container">
+              <Breadcrumb
+                currentPageLabel={`Utilisateur ${user.lastName}`}
+                segments={[
+                  {
+                    label: 'Liste des utilisateurs',
+                    linkProps: {
+                      to: '/admin/users',
                     },
-                    required: true,
-                  }}
-                >
-                  <option value="" disabled>
-                    Sélectionnez une option
-                  </option>
-                  {filteredRoles.map(({ key, value }) => {
-                    return (
-                      <option key={key} value={key}>
-                        {value}
-                      </option>
-                    );
-                  })}
-                </Select>
-              </fieldset>
-              {shouldShowStatut && (
-                <fieldset className="fr-fieldset">
-                  <Select
-                    className="fr-fieldset__content"
-                    label="Statut*"
-                    state={validationErrors.statutId ? 'error' : 'default'}
-                    stateRelatedMessage={validationErrors.statutId}
-                    nativeSelectProps={{
-                      name: 'statutId',
-                      value: formData.statutId,
-                      onChange: (e) => {
-                        setFormData((prev) => ({ ...prev, statutId: e.target.value as StatutType }));
-                        if (validationErrors.statutId) {
-                          setValidationErrors((prev) => {
-                            const newErrors = { ...prev };
-                            delete newErrors.statutId;
-                            return newErrors;
-                          });
-                        }
-                      },
-                      required: true,
-                    }}
-                  >
-                    <option value={STATUT_TYPES.NON_RENSEIGNE} disabled>
-                      Sélectionnez une option
-                    </option>
-                    {Object.entries(statutTypes)
-                      .filter(([key]) => key !== STATUT_TYPES.NON_RENSEIGNE)
-                      .map(([key, value]) => {
-                        return (
-                          <option key={key} value={key}>
-                            {value}
+                  },
+                ]}
+              />
+              <div className="user">
+                <h1>Modifier un utilisateur</h1>
+                <div>
+                  <form onSubmit={handleSubmit}>
+                    <fieldset className="fr-fieldset">
+                      <legend className="fr-fieldset__legend">Identifiant de l'utilisateur</legend>
+                      <Input
+                        className="fr-fieldset__content"
+                        label="Nom"
+                        disabled={true}
+                        nativeInputProps={{ defaultValue: user.lastName }}
+                      />
+                      <Input
+                        className="fr-fieldset__content"
+                        label="Prénom"
+                        disabled={true}
+                        nativeInputProps={{ defaultValue: user.firstName }}
+                      />
+                    </fieldset>
+                    <fieldset className="fr-fieldset">
+                      <legend className="fr-fieldset__legend">Coordonnées de l'utilisateur</legend>
+                      <Input
+                        className="fr-fieldset__content"
+                        label="Email"
+                        disabled={true}
+                        nativeInputProps={{ defaultValue: user.email }}
+                      />
+                    </fieldset>
+                    <EntityHierarchySelector id={user.entiteId} setLevel={handleSetEntite} />
+                    <fieldset className="fr-fieldset">
+                      <Select
+                        className="fr-fieldset__content"
+                        label="Rôle*"
+                        disabled={profile?.id === userId}
+                        nativeSelectProps={{
+                          name: 'roleId',
+                          value: formData.roleId,
+                          onChange: (e) => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              roleId: e.target.value,
+                              statutId: e.target.value === ROLES.PENDING ? STATUT_TYPES.NON_RENSEIGNE : prev.statutId,
+                            }));
+                          },
+                          required: true,
+                        }}
+                      >
+                        <option value="" disabled>
+                          Sélectionnez une option
+                        </option>
+                        {filteredRoles.map(({ key, value }) => {
+                          return (
+                            <option key={key} value={key}>
+                              {value}
+                            </option>
+                          );
+                        })}
+                      </Select>
+                    </fieldset>
+                    {shouldShowStatut && (
+                      <fieldset className="fr-fieldset">
+                        <Select
+                          className="fr-fieldset__content"
+                          label="Statut*"
+                          state={validationErrors.statutId ? 'error' : 'default'}
+                          stateRelatedMessage={validationErrors.statutId}
+                          nativeSelectProps={{
+                            name: 'statutId',
+                            value: formData.statutId,
+                            onChange: (e) => {
+                              setFormData((prev) => ({ ...prev, statutId: e.target.value as StatutType }));
+                              if (validationErrors.statutId) {
+                                setValidationErrors((prev) => {
+                                  const newErrors = { ...prev };
+                                  delete newErrors.statutId;
+                                  return newErrors;
+                                });
+                              }
+                            },
+                            required: true,
+                          }}
+                        >
+                          <option value={STATUT_TYPES.NON_RENSEIGNE} disabled>
+                            Sélectionnez une option
                           </option>
-                        );
-                      })}
-                  </Select>
-                </fieldset>
-              )}
-              <div className="form-actions">
-                <Button priority="secondary" onClick={handleBack} type="button">
-                  Annuler les modifications
-                </Button>
-                <SubmitButton isPending={patchUser.isPending} />
+                          {Object.entries(statutTypes)
+                            .filter(([key]) => key !== STATUT_TYPES.NON_RENSEIGNE)
+                            .map(([key, value]) => {
+                              return (
+                                <option key={key} value={key}>
+                                  {value}
+                                </option>
+                              );
+                            })}
+                        </Select>
+                      </fieldset>
+                    )}
+                    <div className="form-actions">
+                      <Button priority="secondary" onClick={handleBack} type="button">
+                        Annuler les modifications
+                      </Button>
+                      <SubmitButton isPending={patchUser.isPending} />
+                    </div>
+                  </form>
+                </div>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </QueryStateHandler>
+            </div>
+          )}
+        </QueryStateHandler>
+      </div>
+    </div>
   );
 }
