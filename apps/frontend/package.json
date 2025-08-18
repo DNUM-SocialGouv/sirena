@@ -47,7 +47,7 @@
     "dotenv": "^17.2.1",
     "globals": "^16.3.0",
     "jsdom": "^26.1.0",
-    "openapi-typescript": "^7.9.0",
+    "openapi-typescript": "^7.9.1",
     "playwright": "^1.54.2",
     "typescript": "~5.9.2",
     "vite": "^7.0.0",
