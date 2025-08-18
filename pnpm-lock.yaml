@@ -189,7 +189,7 @@ importers:
         version: 1.26.0
       '@sentry/react':
         specifier: ^9.44.1
-        version: 9.45.0(react@19.1.1)
+        version: 9.46.0(react@19.1.1)
       '@sirena/backend':
         specifier: workspace:*
         version: link:../backend
@@ -1889,28 +1889,28 @@ packages:
   '@selderee/plugin-htmlparser2@0.11.0':
     resolution: {integrity: sha512-P33hHGdldxGabLFjPPpaTxVolMrzrcegejx+0GxjrIb9Zv48D8yAIA/QTDR2dFl7Uz7urX8aX6+5bCZslr+gWQ==}
 
-  '@sentry-internal/browser-utils@9.45.0':
-    resolution: {integrity: sha512-L1+lak0ZBCfaGBW37NxRDsl1Gbu5edMsCT/TcWlNfexFRWka3mYwOAqpdIIHD+uDbcSe/U06+oVQHoGM64habg==}
+  '@sentry-internal/browser-utils@9.46.0':
+    resolution: {integrity: sha512-Q0CeHym9wysku8mYkORXmhtlBE0IrafAI+NiPSqxOBKXGOCWKVCvowHuAF56GwPFic2rSrRnub5fWYv7T1jfEQ==}
     engines: {node: '>=18'}
 
-  '@sentry-internal/feedback@9.45.0':
-    resolution: {integrity: sha512-nirzAIAnS0CAmBZ6ZNEPfeKoR7v2jyipTLt2RAdLZAZv2ZPTVeUaVPjbUdBlmDx9Rp622vUDVtlESDXrNLkDMg==}
+  '@sentry-internal/feedback@9.46.0':
+    resolution: {integrity: sha512-KLRy3OolDkGdPItQ3obtBU2RqDt9+KE8z7r7Gsu7c6A6A89m8ZVlrxee3hPQt6qp0YY0P8WazpedU3DYTtaT8w==}
     engines: {node: '>=18'}
 
-  '@sentry-internal/replay-canvas@9.45.0':
-    resolution: {integrity: sha512-gHlR5D5zy8e0macrOBqD+x11sdHyX5Xgkh7NCft1H5LXOtvp6dMSafLRidpFltZWFjsUhLQ8/O1bXyzNuDIq9Q==}
+  '@sentry-internal/replay-canvas@9.46.0':
+    resolution: {integrity: sha512-QcBjrdRWFJrrrjbmrr2bbrp2R9RYj1KMEbhHNT2Lm1XplIQw+tULEKOHxNtkUFSLR1RNje7JQbxhzM1j95FxVQ==}
     engines: {node: '>=18'}
 
-  '@sentry-internal/replay@9.45.0':
-    resolution: {integrity: sha512-HrSenUmkGX++53pbF2veaC2JodYLAmFOQHKiJyhmmQuNpAwncdIAQ3An3VIb4A3qXrPTEincWZrgNH896JaKeA==}
+  '@sentry-internal/replay@9.46.0':
+    resolution: {integrity: sha512-+8JUblxSSnN0FXcmOewbN+wIc1dt6/zaSeAvt2xshrfrLooVullcGsuLAiPhY0d/e++Fk06q1SAl9g4V0V13gg==}
     engines: {node: '>=18'}
 
   '@sentry/babel-plugin-component-annotate@3.6.1':
     resolution: {integrity: sha512-zmvUa4RpzDG3LQJFpGCE8lniz8Rk1Wa6ZvvK+yEH+snZeaHHRbSnAQBMR607GOClP+euGHNO2YtaY4UAdNTYbg==}
     engines: {node: '>= 14'}
 
-  '@sentry/browser@9.45.0':
-    resolution: {integrity: sha512-7h9X7CmT6dI/cjzz6MdkHm7Qp6QAf4o/qPrHh47u1ZWJi4B4OxGnCTjVoOoIcwPdSNfXsl0q8LpaJa9wHXrVbQ==}
+  '@sentry/browser@9.46.0':
+    resolution: {integrity: sha512-NOnCTQCM0NFuwbyt4DYWDNO2zOTj1mCf43hJqGDFb1XM9F++7zAmSNnCx4UrEoBTiFOy40McJwBBk9D1blSktA==}
     engines: {node: '>=18'}
 
   '@sentry/bundler-plugin-core@3.6.1':
@@ -1977,6 +1977,10 @@ packages:
     resolution: {integrity: sha512-yTpB53fBEWTMzltD/8f/qI2MFTwgd2vSkn7pOZQusSOMtyt0Bsm/77oqXldIt+eMBAImZalzZaxmaN7RyiRKWQ==}
     engines: {node: '>=18'}
 
+  '@sentry/core@9.46.0':
+    resolution: {integrity: sha512-it7JMFqxVproAgEtbLgCVBYtQ9fIb+Bu0JD+cEplTN/Ukpe6GaolyYib5geZqslVxhp2sQgT+58aGvfd/k0N8Q==}
+    engines: {node: '>=18'}
+
   '@sentry/node-core@9.45.0':
     resolution: {integrity: sha512-tzt60LO7P1m+0OLEqtL5Fd71PwKpg7dSOn3rqB7T6AJeDDiHsXV/yhUZiye1EWHTi0/yOcb0M1Ncjs8Cdyz9Nw==}
     engines: {node: '>=18'}
@@ -2003,8 +2007,8 @@ packages:
       '@opentelemetry/sdk-trace-base': ^1.30.1 || ^2.0.0
       '@opentelemetry/semantic-conventions': ^1.34.0
 
-  '@sentry/react@9.45.0':
-    resolution: {integrity: sha512-Sma+x1r0KNoTJe1AFXWeBbeh9W3jFuT+X7s02JBe2NP3sCB2mrOBTzGWNCojrD5T4hW9vkkToY+iNRFzZdeFEA==}
+  '@sentry/react@9.46.0':
+    resolution: {integrity: sha512-2NTlke1rKAJO2JIY1RCrv8EjfXXkLc+AC61PpgF1QjH/cz0NuCZ6gpQi6M5qS7anAGPjaOE1t3QdLeOEI/Q3kA==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^16.14.0 || 17.x || 18.x || 19.x
@@ -6868,33 +6872,33 @@ snapshots:
       domhandler: 5.0.3
       selderee: 0.11.0
 
-  '@sentry-internal/browser-utils@9.45.0':
+  '@sentry-internal/browser-utils@9.46.0':
     dependencies:
-      '@sentry/core': 9.45.0
+      '@sentry/core': 9.46.0
 
-  '@sentry-internal/feedback@9.45.0':
+  '@sentry-internal/feedback@9.46.0':
     dependencies:
-      '@sentry/core': 9.45.0
+      '@sentry/core': 9.46.0
 
-  '@sentry-internal/replay-canvas@9.45.0':
+  '@sentry-internal/replay-canvas@9.46.0':
     dependencies:
-      '@sentry-internal/replay': 9.45.0
-      '@sentry/core': 9.45.0
+      '@sentry-internal/replay': 9.46.0
+      '@sentry/core': 9.46.0
 
-  '@sentry-internal/replay@9.45.0':
+  '@sentry-internal/replay@9.46.0':
     dependencies:
-      '@sentry-internal/browser-utils': 9.45.0
-      '@sentry/core': 9.45.0
+      '@sentry-internal/browser-utils': 9.46.0
+      '@sentry/core': 9.46.0
 
   '@sentry/babel-plugin-component-annotate@3.6.1': {}
 
-  '@sentry/browser@9.45.0':
+  '@sentry/browser@9.46.0':
     dependencies:
-      '@sentry-internal/browser-utils': 9.45.0
-      '@sentry-internal/feedback': 9.45.0
-      '@sentry-internal/replay': 9.45.0
-      '@sentry-internal/replay-canvas': 9.45.0
-      '@sentry/core': 9.45.0
+      '@sentry-internal/browser-utils': 9.46.0
+      '@sentry-internal/feedback': 9.46.0
+      '@sentry-internal/replay': 9.46.0
+      '@sentry-internal/replay-canvas': 9.46.0
+      '@sentry/core': 9.46.0
 
   '@sentry/bundler-plugin-core@3.6.1':
     dependencies:
@@ -6961,6 +6965,8 @@ snapshots:
 
   '@sentry/core@9.45.0': {}
 
+  '@sentry/core@9.46.0': {}
+
   '@sentry/node-core@9.45.0(@opentelemetry/api@1.9.0)(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.0))(@opentelemetry/resources@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.34.0)':
     dependencies:
       '@opentelemetry/api': 1.9.0
@@ -7023,10 +7029,10 @@ snapshots:
       '@opentelemetry/semantic-conventions': 1.34.0
       '@sentry/core': 9.45.0
 
-  '@sentry/react@9.45.0(react@19.1.1)':
+  '@sentry/react@9.46.0(react@19.1.1)':
     dependencies:
-      '@sentry/browser': 9.45.0
-      '@sentry/core': 9.45.0
+      '@sentry/browser': 9.46.0
+      '@sentry/core': 9.46.0
       hoist-non-react-statics: 3.3.2
       react: 19.1.1
 
