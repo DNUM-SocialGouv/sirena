@@ -4,6 +4,7 @@
   "description": "",
   "main": "src/index.ts",
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./src/index.d.ts",
@@ -33,12 +34,12 @@
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
     "@types/react-transition-group": "^4.4.12",
-    "@vitejs/plugin-react": "^4.7.0",
+    "@vitejs/plugin-react": "^5.0.0",
     "@vitest/browser": "catalog:",
     "jsdom": "^26.1.0",
     "react-dom": "catalog:",
     "storybook": "^9.1.1",
-    "vite": "^6.3.5",
+    "vite": "^7.0.0",
     "vitest": "catalog:",
     "vitest-browser-react": "^1.0.1"
   },

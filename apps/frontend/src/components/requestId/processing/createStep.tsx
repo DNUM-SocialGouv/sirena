@@ -2,7 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { useParams } from '@tanstack/react-router';
 import { memo, useState } from 'react';
-import { useAddProcessingStep } from '@/hooks/mutations/addProcessingStep.hook';
+import { useAddProcessingStep } from '@/hooks/mutations/processingStep.hook';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 
 type CreateStepProps = {

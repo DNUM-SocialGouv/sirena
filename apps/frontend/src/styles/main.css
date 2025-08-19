@@ -18,3 +18,9 @@ body {
 .center-icon-with-sr-only:before {
   margin: auto !important;
 }
+
+.display-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
