@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import Drawer from './Drawer';
 
-// Polyfill rAF (ton code l'utilise pour l'anim d'entrée)
+// Polyfill rAF
 beforeAll(() => {
   // @ts-ignore
   global.requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(cb, 0);
@@ -140,9 +140,8 @@ describe('Drawer', () => {
   });
 
   it('respects maskClosable=false (backdrop click ignored)', () => {
-    vi.useRealTimers(); // pas besoin de fake timers ici
+    vi.useRealTimers();
 
-    // vrai noeud hors du panel
     const outside = document.createElement('div');
     document.body.appendChild(outside);
 
