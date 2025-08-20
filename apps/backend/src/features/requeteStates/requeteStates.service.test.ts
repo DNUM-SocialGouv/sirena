@@ -98,6 +98,7 @@ describe('requeteStates.service.ts', () => {
           statutId: 'EN_COURS',
           createdAt: new Date(),
           updatedAt: new Date(),
+          notes: [],
         },
       ];
 
@@ -114,6 +115,9 @@ describe('requeteStates.service.ts', () => {
           createdAt: true,
           id: true,
           notes: {
+            orderBy: {
+              createdAt: 'desc',
+            },
             select: {
               author: {
                 select: {
@@ -124,6 +128,13 @@ describe('requeteStates.service.ts', () => {
               content: true,
               createdAt: true,
               id: true,
+              uploadedFiles: {
+                select: {
+                  id: true,
+                  metadata: true,
+                  size: true,
+                },
+              },
             },
           },
           requeteEntiteId: true,
@@ -147,6 +158,26 @@ describe('requeteStates.service.ts', () => {
           statutId: 'EN_COURS',
           createdAt: new Date(),
           updatedAt: new Date(),
+          notes: [
+            {
+              id: 'n1',
+              content: 'note',
+              createdAt: new Date(),
+              uploadedFiles: [
+                {
+                  id: 'f1',
+                  size: 123,
+                  metadata: { originalName: 'rapport.pdf' },
+                },
+                {
+                  id: 'f2',
+                  size: 456,
+                  metadata: null,
+                },
+              ],
+              author: { firstName: 'Ada', lastName: 'Lovelace' },
+            },
+          ],
         },
       ];
 
@@ -155,7 +186,22 @@ describe('requeteStates.service.ts', () => {
 
       const result = await getRequeteStates('requeteEntiteId', { offset: 0 });
 
-      expect(result.data).toEqual(mockStates);
+      const expectedData = [
+        {
+          ...mockStates[0],
+          notes: [
+            {
+              ...mockStates[0].notes[0],
+              uploadedFiles: [
+                { id: 'f1', size: 123, originalName: 'rapport.pdf' },
+                { id: 'f2', size: 456, originalName: 'Unknown' },
+              ],
+            },
+          ],
+        },
+      ];
+
+      expect(result.data).toEqual(expectedData);
       expect(result.total).toBe(mockStates.length);
       expect(prisma.requeteState.findMany).toHaveBeenCalledWith({
         where: { requeteEntiteId: 'requeteEntiteId', stepName: { not: null } },
@@ -163,6 +209,9 @@ describe('requeteStates.service.ts', () => {
           createdAt: true,
           id: true,
           notes: {
+            orderBy: {
+              createdAt: 'desc',
+            },
             select: {
               author: {
                 select: {
@@ -173,6 +222,13 @@ describe('requeteStates.service.ts', () => {
               content: true,
               createdAt: true,
               id: true,
+              uploadedFiles: {
+                select: {
+                  id: true,
+                  metadata: true,
+                  size: true,
+                },
+              },
             },
           },
           requeteEntiteId: true,
@@ -184,7 +240,7 @@ describe('requeteStates.service.ts', () => {
         orderBy: { createdAt: 'desc' },
       });
     });
-  }); // <-- missing brace/paren was here
+  });
 
   describe('getRequeteStateById()', () => {
     it('should return a RequeteState by id', async () => {
@@ -287,6 +343,7 @@ describe('requeteStates.service.ts', () => {
         userId: 'user-1',
         content: 'A note',
         requeteEntiteStateId: 'state-1',
+        fileIds: [],
       });
 
       expect(result).toEqual({
@@ -303,6 +360,9 @@ describe('requeteStates.service.ts', () => {
           authorId: 'user-1',
           content: 'A note',
           requeteEntiteStateId: 'state-1',
+          uploadedFiles: {
+            connect: [],
+          },
         },
       });
 

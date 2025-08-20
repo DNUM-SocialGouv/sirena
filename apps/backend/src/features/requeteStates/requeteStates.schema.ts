@@ -1,7 +1,7 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
-import { z } from 'zod';
 import { Prisma } from '@/libs/prisma';
+import { z } from '@/libs/zod';
 
 const columns = [
   Prisma.RequeteStateScalarFieldEnum.stepName,
@@ -17,7 +17,6 @@ export const UpdateRequeteStateStatutSchema = z.object({
 });
 
 export const addRequeteStatesNoteBodySchema = z.object({
-  content: z.string().min(1, {
-    message: "Le champ 'content' est obligatoire. Veuillez le renseigner pour ajouter une note à l'étape.",
-  }),
+  content: z.string(),
+  fileIds: z.array(z.string()).optional(),
 });

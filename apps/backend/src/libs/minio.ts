@@ -59,3 +59,8 @@ export const getSignedUrl = async (filePath: string, expirySeconds = 60 * 60): P
 export const deleteFileFromMinio = async (filePath: string): Promise<void> => {
   await minioClient.removeObject(S3_BUCKET_NAME, filePath);
 };
+
+export const getFileStream = async (filePath: string) => {
+  const stream = await minioClient.getObject(S3_BUCKET_NAME, filePath);
+  return stream;
+};

@@ -24,6 +24,8 @@ const fakeFile = {
   updatedAt: new Date(),
   metadata: null,
   entiteId: 'e1',
+  status: 'PENDING',
+  requeteStateNoteId: null,
   uploadedById: 'id10',
 };
 

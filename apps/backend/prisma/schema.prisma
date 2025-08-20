@@ -154,7 +154,8 @@ model RequeteStateNote {
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
 
-  content String
+  content       String
+  uploadedFiles UploadedFile[]
 }
 
 model Identite {
@@ -463,12 +464,15 @@ model UploadedFile {
   size      Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  status    String   @default("PENDING") // e.g. "PENDING", "COMPLETED", "FAILED"
 
   metadata Json?
 
   entiteId String?
   entite   Entite? @relation(fields: [entiteId], references: [id])
 
-  uploadedById String
-  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+  uploadedById       String
+  uploadedBy         User              @relation(fields: [uploadedById], references: [id])
+  RequeteStateNote   RequeteStateNote? @relation(fields: [requeteStateNoteId], references: [id])
+  requeteStateNoteId String?
 }

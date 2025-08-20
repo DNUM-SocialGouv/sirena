@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/libs/prisma';
-import { createUploadedFile, deleteUploadedFile, getUploadedFileById, getUploadedFiles } from './uploadedFiles.service';
+import {
+  createUploadedFile,
+  deleteUploadedFile,
+  getUploadedFileById,
+  getUploadedFiles,
+  isUserOwner,
+  setNoteFile,
+} from './uploadedFiles.service';
 
 vi.mock('@/libs/prisma', () => ({
   prisma: {
@@ -10,6 +17,7 @@ vi.mock('@/libs/prisma', () => ({
       count: vi.fn(),
       create: vi.fn(),
       delete: vi.fn(),
+      updateMany: vi.fn(),
     },
   },
 }));
@@ -27,6 +35,8 @@ const mockUploadedFile = {
   metadata: null,
   entiteId: 'entite1',
   uploadedById: 'user1',
+  status: 'PENDING',
+  requeteStateNoteId: '1',
 };
 
 describe('uploadedFiles.service.ts', () => {
@@ -61,12 +71,13 @@ describe('uploadedFiles.service.ts', () => {
       mockedUploadedFile.findMany.mockResolvedValueOnce([mockUploadedFile]);
       mockedUploadedFile.count.mockResolvedValueOnce(1);
 
-      const result = await getUploadedFiles(['entite1'], { mimeType: 'application/pdf' });
+      const result = await getUploadedFiles(['entite1'], { mimeType: 'application/pdf', fileName: 'file1' });
 
       expect(mockedUploadedFile.findMany).toHaveBeenCalledWith({
         where: {
           entiteId: { in: ['entite1'] },
           mimeType: 'application/pdf',
+          fileName: 'file1',
         },
         skip: 0,
         orderBy: { createdAt: 'desc' },
@@ -161,6 +172,8 @@ describe('uploadedFiles.service.ts', () => {
         metadata: null,
         entiteId: 'entite1',
         uploadedById: 'user1',
+        status: 'PENDING',
+        requeteStateNoteId: null,
       };
 
       const result = await createUploadedFile(uploadedFileData);
@@ -187,6 +200,8 @@ describe('uploadedFiles.service.ts', () => {
         metadata: { key: 'value' },
         entiteId: 'entite1',
         uploadedById: 'user1',
+        status: 'PENDING',
+        requeteStateNoteId: null,
       };
 
       const result = await createUploadedFile(uploadedFileData);
@@ -201,6 +216,8 @@ describe('uploadedFiles.service.ts', () => {
           metadata: { key: 'value' },
           entiteId: 'entite1',
           uploadedById: 'user1',
+          status: 'PENDING',
+          requeteStateNoteId: null,
         },
       });
 
@@ -216,6 +233,118 @@ describe('uploadedFiles.service.ts', () => {
 
       expect(mockedUploadedFile.delete).toHaveBeenCalledWith({ where: { id: 'file1' } });
       expect(result).toEqual(mockUploadedFile);
+    });
+  });
+
+  describe('isUserOwner()', () => {
+    it('returns true when all files are owned by the user', async () => {
+      mockedUploadedFile.count.mockResolvedValueOnce(2);
+
+      const res = await isUserOwner('user1', ['f1', 'f2']);
+
+      expect(mockedUploadedFile.count).toHaveBeenCalledWith({
+        where: {
+          id: { in: ['f1', 'f2'] },
+          uploadedById: 'user1',
+        },
+      });
+      expect(res).toBe(true);
+    });
+
+    it('returns false when at least one file is not owned by the user', async () => {
+      mockedUploadedFile.count.mockResolvedValueOnce(1);
+
+      const res = await isUserOwner('user1', ['f1', 'f2']);
+
+      expect(mockedUploadedFile.count).toHaveBeenCalledWith({
+        where: {
+          id: { in: ['f1', 'f2'] },
+          uploadedById: 'user1',
+        },
+      });
+      expect(res).toBe(false);
+    });
+  });
+
+  describe('setNoteFile()', () => {
+    it('updates files with note + status + entiteId, then returns updated rows', async () => {
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 2 });
+      const updatedRows = [
+        {
+          id: 'f1',
+          requeteStateNoteId: 'n1',
+          status: 'COMPLETED',
+          entiteId: 'entite1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          fileName: 'test.pdf',
+          filePath: '/uploads/test.pdf',
+          mimeType: 'application/pdf',
+          size: 1024,
+          metadata: { originalName: 'test.pdf' },
+          uploadedById: 'user1',
+        },
+        {
+          id: 'f2',
+          requeteStateNoteId: 'n1',
+          status: 'COMPLETED',
+          entiteId: 'entite1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          fileName: 'test2.pdf',
+          filePath: '/uploads/test2.pdf',
+          mimeType: 'application/pdf',
+          size: 2048,
+          metadata: { originalName: 'test2.pdf' },
+          uploadedById: 'user1',
+        },
+      ];
+      mockedUploadedFile.findMany.mockResolvedValueOnce(updatedRows);
+
+      const res = await setNoteFile('n1', ['f1', 'f2'], 'entite1');
+
+      expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['f1', 'f2'] } },
+        data: { requeteStateNoteId: 'n1', status: 'COMPLETED', entiteId: 'entite1' },
+      });
+      expect(mockedUploadedFile.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['f1', 'f2'] } },
+      });
+      expect(res).toEqual(updatedRows);
+    });
+
+    it('sets entiteId to null when not provided', async () => {
+      mockedUploadedFile.updateMany.mockResolvedValueOnce({ count: 1 });
+      const updatedRows = [
+        {
+          id: 'f1',
+          requeteStateNoteId: 'n1',
+          status: 'COMPLETED',
+          entiteId: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          fileName: 'test.pdf',
+          filePath: '/uploads/test.pdf',
+          mimeType: 'application/pdf',
+          size: 1024,
+          metadata: {
+            originalName: 'test.pdf',
+          },
+          uploadedById: ' user1',
+        },
+      ];
+      mockedUploadedFile.findMany.mockResolvedValueOnce(updatedRows);
+
+      const res = await setNoteFile('n1', ['f1']);
+
+      expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['f1'] } },
+        data: { requeteStateNoteId: 'n1', status: 'COMPLETED', entiteId: null },
+      });
+      expect(mockedUploadedFile.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['f1'] } },
+      });
+      expect(res).toEqual(updatedRows);
     });
   });
 });
