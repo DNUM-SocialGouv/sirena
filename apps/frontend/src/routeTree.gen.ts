@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as InactiveRouteImport } from './routes/inactive'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
@@ -30,6 +31,11 @@ import { Route as AuthUserRequestRequestIdProcessingRouteImport } from './routes
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InactiveRoute = InactiveRouteImport.update({
+  id: '/inactive',
+  path: '/inactive',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRouteRoute = AuthRouteRouteImport.update({
@@ -118,6 +124,7 @@ const AuthUserRequestRequestIdProcessingRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/inactive': typeof InactiveRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
@@ -135,6 +142,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/inactive': typeof InactiveRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/cases': typeof AuthUserCasesRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteRouteWithChildren
+  '/inactive': typeof InactiveRoute
   '/login': typeof LoginRoute
   '/_auth/_user': typeof AuthUserRouteRouteWithChildren
   '/_auth/admin': typeof AuthAdminRouteRouteWithChildren
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/inactive'
     | '/login'
     | '/admin'
     | '/admin/users'
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/inactive'
     | '/login'
     | '/admin'
     | '/cases'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_auth'
+    | '/inactive'
     | '/login'
     | '/_auth/_user'
     | '/_auth/admin'
@@ -225,6 +237,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
+  InactiveRoute: typeof InactiveRoute
   LoginRoute: typeof LoginRoute
 }
 
@@ -235,6 +248,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inactive': {
+      id: '/inactive'
+      path: '/inactive'
+      fullPath: '/inactive'
+      preLoaderRoute: typeof InactiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth': {
@@ -436,6 +456,7 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRouteRoute: AuthRouteRouteWithChildren,
+  InactiveRoute: InactiveRoute,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
