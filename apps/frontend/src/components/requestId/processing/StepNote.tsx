@@ -6,13 +6,19 @@ type StepNoteProps = {
   id: string;
   content: string;
   createdAt: string;
+  requeteStateId: string;
   author: {
     firstName: string;
     lastName: string;
   };
+  files: {
+    id: string;
+    size: number;
+    originalName: string;
+  }[];
 };
 
-export const StepNote = ({ author, content }: StepNoteProps) => {
+export const StepNote = ({ author, content, createdAt, requeteStateId, files }: StepNoteProps) => {
   return (
     <div className={styles['request-note']}>
       <div className='fr-grid-row fr-grid-row--middle fr-mb-2w"'>
@@ -20,7 +26,7 @@ export const StepNote = ({ author, content }: StepNoteProps) => {
           Le
           <span>
             {' '}
-            {new Date().toLocaleDateString('fr-FR', {
+            {new Date(createdAt).toLocaleDateString('fr-FR', {
               day: '2-digit',
               month: '2-digit',
               year: 'numeric',
@@ -44,6 +50,21 @@ export const StepNote = ({ author, content }: StepNoteProps) => {
         </div>
       </div>
       <p className={styles['request-note__content']}>{content}</p>
+      {files.length > 0 && (
+        <ul>
+          {files.map((file) => (
+            <li key={file.id} className={styles['request-note__file']}>
+              <a
+                href={`/api/requete-states/${requeteStateId}/file/${file.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {String(file.originalName)} ({(file.size / 1024).toFixed(2)} Ko)
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

@@ -27,7 +27,8 @@ export const useAddProcessingStepNote = (requestId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, content }: AddProcessingStepNoteDataParams) => addProcessingStepNote(id, { content }),
+    mutationFn: ({ id, content, fileIds }: AddProcessingStepNoteDataParams) =>
+      addProcessingStepNote(id, { content, fileIds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
     },

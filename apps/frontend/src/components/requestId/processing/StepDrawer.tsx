@@ -1,10 +1,12 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
+import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Drawer } from '@sirena/ui';
 import { useParams } from '@tanstack/react-router';
 
 import { forwardRef, useImperativeHandle, useState } from 'react';
-import { useAddProcessingStepNote } from '@/hooks/mutations/processingStep.hook';
+import { useAddProcessingStepNote } from '@/hooks/mutations/updateProcessingStep.hook';
+import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
@@ -20,9 +22,11 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<StepType | null>(null);
   const [content, setContent] = useState<string>('');
-  const [contentError, setContentError] = useState<string | null>();
+  const [isLoading, setIsLoading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
 
   const addStepNoteMutation = useAddProcessingStepNote(requestId);
+  const uploadFileMutation = useUploadFile();
 
   const openDrawer = (step: StepType) => {
     setStep(step ?? '');
@@ -32,7 +36,6 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
   const handleCancel = () => {
     setContent('');
     setStep(null);
-    setContentError(null);
   };
 
   useImperativeHandle(ref, () => ({
@@ -46,18 +49,22 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
     setIsOpen(open);
   };
 
-  const handleSubmit = () => {
-    if (!content.trim()) {
-      setContentError("Le champ 'Détails de la note' est obligatoire. Veuillez le renseigner pour ajouter une note.");
-      return;
-    }
-
+  const handleSubmit = async () => {
     if (!step) {
       return;
     }
 
-    addStepNoteMutation.mutate(
-      { content: content.trim(), id: step.id },
+    setIsLoading(true);
+    const fileIds = [];
+    if (files.length > 0) {
+      const data = await Promise.all(files.map((file) => uploadFileMutation.mutateAsync(file)));
+      for (let i = 0; i < data.length; i += 1) {
+        fileIds.push(data[i].id);
+      }
+    }
+
+    await addStepNoteMutation.mutate(
+      { content: content.trim(), id: step.id, fileIds },
       {
         onSuccess: () => {
           handleCancel();
@@ -65,6 +72,8 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
         },
       },
     );
+
+    setIsLoading(false);
   };
 
   return (
@@ -78,17 +87,37 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
                 hintText="Informations à ajouter"
                 label="Détails de la note"
                 textArea={true}
+                disabled={isLoading}
                 nativeTextAreaProps={{
                   rows: 8,
                   value: content,
                   onChange: (e) => setContent(e.target.value),
                 }}
-                state={contentError ? 'error' : 'default'}
-                stateRelatedMessage={contentError}
+              />
+              <Upload
+                label="Ajouter un ou plusieurs fichiers"
+                hint="Taille maximale: 10 Mo. Formats supportés: jpg, png, pdf."
+                multiple
+                disabled={isLoading}
+                nativeInputProps={{
+                  onChange: (e) => {
+                    const files = e.target.files;
+                    if (files) {
+                      const fileArray = Array.from(files);
+                      setFiles(fileArray.map((file) => new File([file], file.name, { type: file.type })));
+                    }
+                  },
+                }}
               />
               <div className="display-end">
-                <Button type="button" priority="primary" size="small" onClick={handleSubmit}>
-                  Ajouter à l'étape
+                <Button
+                  type="button"
+                  priority="primary"
+                  size="small"
+                  onClick={handleSubmit}
+                  disabled={isLoading || (!content.trim() && files.length === 0)}
+                >
+                  {isLoading ? 'En cours...' : 'Ajouter la note'}
                 </Button>
               </div>
             </form>
