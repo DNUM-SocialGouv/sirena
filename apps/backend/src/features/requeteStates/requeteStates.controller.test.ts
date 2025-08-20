@@ -47,6 +47,14 @@ vi.mock('@/features/requetesEntite/requetesEntite.service', () => ({
   hasAccessToRequete: vi.fn(() => Promise.resolve(true)),
 }));
 
+vi.mock('@/middlewares/userStatus.middleware', () => {
+  return {
+    default: (_: Context, next: Next) => {
+      return next();
+    },
+  };
+});
+
 vi.mock('@/middlewares/auth.middleware', () => {
   return {
     default: (c: Context, next: Next) => {

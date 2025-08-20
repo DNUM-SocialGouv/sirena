@@ -8,6 +8,7 @@ import authMiddleware from '@/middlewares/auth.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import extractUploadedFileMiddleware from '@/middlewares/upload.middleware';
+import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import {
   createUploadedFileRoute,
   getUploadedFileRoute,
@@ -20,6 +21,7 @@ import { createUploadedFile, getUploadedFileById, getUploadedFiles } from './upl
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
+  .use(userStatusMiddleware)
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]))
   .use(entitesMiddleware)
 

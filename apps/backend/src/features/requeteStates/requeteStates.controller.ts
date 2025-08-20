@@ -14,6 +14,7 @@ import authMiddleware from '@/middlewares/auth.middleware';
 import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStep.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
+import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service';
 import { addRequeteStatesNoteRoute, updateRequeteStateStatutRoute } from './requeteStates.route';
 import { addRequeteStatesNoteBodySchema, UpdateRequeteStateStatutSchema } from './requeteStates.schema';
@@ -22,6 +23,7 @@ const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER, ROLES.READER]))
+  .use(userStatusMiddleware)
   .use(entitesMiddleware)
 
   .get('/:id/file/:fileId', async (c) => {
