@@ -25,6 +25,14 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
+vi.mock('@/middlewares/userStatus.middleware', () => {
+  return {
+    default: (_: Context, next: Next) => {
+      return next();
+    },
+  };
+});
+
 vi.mock('@/middlewares/role.middleware', () => {
   return {
     default: () => {

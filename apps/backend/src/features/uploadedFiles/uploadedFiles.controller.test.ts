@@ -63,6 +63,14 @@ vi.mock('@/middlewares/upload.middleware', () => ({
   }),
 }));
 
+vi.mock('@/middlewares/userStatus.middleware', () => {
+  return {
+    default: (_: Context, next: Next) => {
+      return next();
+    },
+  };
+});
+
 vi.mock('@/middlewares/entites.middleware', () => {
   return {
     default: vi.fn((c: Context, next: Next) => {

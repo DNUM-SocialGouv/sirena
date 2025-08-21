@@ -7,6 +7,7 @@ import authMiddleware from '@/middlewares/auth.middleware';
 import userChangelogMiddleware from '@/middlewares/changelog/changelog.user.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
+import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { ChangeLogAction } from '../changelog/changelog.type';
 import { getUserRoute, getUsersRoute, patchUserRoute } from './users.route';
 import { GetUsersQuerySchema, PatchUserSchema } from './users.schema';
@@ -15,6 +16,7 @@ import { getUserById, getUsers, patchUser } from './users.service';
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
+  .use(userStatusMiddleware)
   .use(roleMiddleware([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN]))
   .use(entitesMiddleware)
 

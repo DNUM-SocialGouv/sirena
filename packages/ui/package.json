@@ -28,7 +28,7 @@
     "@biomejs/biome": "catalog:",
     "@storybook/addon-docs": "^9.1.1",
     "@storybook/react-vite": "^9.1.1",
-    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/jest-dom": "^6.7.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.1.9",

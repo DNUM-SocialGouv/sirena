@@ -128,85 +128,75 @@ test.describe('Admin Feature', () => {
     await expect(statutSelect).toBeVisible();
 
     const currentStatus = await statutSelect.inputValue();
-
-    // Determine opposite status
     const oppositeStatus = currentStatus === 'ACTIF' ? 'INACTIF' : 'ACTIF';
-    const oppositeStatusLabel = oppositeStatus === 'ACTIF' ? 'Actif' : 'Inactif';
 
-    // Apply the opposite status
     await statutSelect.selectOption(oppositeStatus);
-
-    const submitButton = page.getByRole('button', { name: 'Valider' });
-    await Promise.all([submitButton.click()]);
-
+    await page.getByRole('button', { name: 'Valider' }).click();
     await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
 
-    const allUsersTable = page.getByRole('table');
-    await expect(allUsersTable).toBeVisible();
+    const [userResponse] = await Promise.all([
+      page.waitForResponse((res) => res.url().includes(`/users/${targetUserId}`) && res.request().method() === 'GET'),
+      page.goto(`${baseUrl}/admin/user/${targetUserId}`),
+    ]);
 
-    // Verify the change is reflected specifically in the target user's row
-    const targetUserRow = allUsersTable.locator(`tr[data-row-key="${targetUserId}"]`);
-    const statutCell = targetUserRow.getByRole('cell', { name: oppositeStatusLabel });
-    await expect(statutCell).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Modifier un utilisateur', level: 1 })).toBeVisible();
+
+    const { data: userData } = await userResponse.json();
+    expect(userData).toBeTruthy();
+    expect(userData.id).toBe(targetUserId);
+    expect(userData.statutId).toBe(oppositeStatus);
   });
 
-  test('should move user from active role to pending and back to active role', async () => {
+  test('should toggle user role and reset to original after verification', async () => {
     const targetUserId = await navigateToUserEditPage(page, context);
 
     const roleSelect = page.locator('select[name="roleId"]');
     await expect(roleSelect).toBeVisible();
 
-    // Store original role for later verification
     const originalRole = await roleSelect.inputValue();
+    const oppositeRole = originalRole === 'PENDING' ? 'ENTITY_ADMIN' : 'PENDING';
 
-    // === PART 1: Set role to "En attente d'affectation" (PENDING) ===
-    await roleSelect.selectOption('PENDING');
-
+    // PART 1: Set to opposite role
+    await roleSelect.selectOption(oppositeRole);
     await page.getByRole('button', { name: 'Valider' }).click();
-
     await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
 
-    // Navigate to pending tab to verify user appears there
-    const pendingTab = page.locator('#tab-pending');
-    await pendingTab.click();
-    await expect(page).toHaveURL(`${baseUrl}/admin/users`);
+    const [responseAfterChange] = await Promise.all([
+      page.waitForResponse((res) => res.url().includes(`/users/${targetUserId}`) && res.request().method() === 'GET'),
+      page.goto(`${baseUrl}/admin/user/${targetUserId}`),
+    ]);
 
-    const pendingTable = page.getByRole('table');
-    await expect(pendingTable).toBeVisible();
-    await expect(page.getByText("Demande d'habilitation en attente")).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Modifier un utilisateur', level: 1 })).toBeVisible();
 
-    // Verify the user appears in the pending tab
-    const targetUserRowInPending = pendingTable.locator(`tr[data-row-key="${targetUserId}"]`);
-    await expect(targetUserRowInPending).toBeVisible();
+    const { data: updatedUser } = await responseAfterChange.json();
+    expect(updatedUser).toBeTruthy();
+    expect(updatedUser.id).toBe(targetUserId);
+    expect(updatedUser.roleId).toBe(oppositeRole);
 
-    await targetUserRowInPending.getByRole('link', { name: 'Traiter la demande' }).click();
-
-    // === PART 2: Move user back to active role ===
-    await page.waitForURL(`${baseUrl}/admin/user/${targetUserId}`);
-
-    // Set back to original active role
+    // PART 2: Revert to original role
     const resetRoleSelect = page.locator('select[name="roleId"]');
     await expect(resetRoleSelect).toBeVisible();
     await resetRoleSelect.selectOption(originalRole);
 
-    // Set status to INACTIF (required when moving from pending)
-    const statutSelect = page.locator('select[name="statutId"]');
-    await expect(statutSelect).toBeVisible();
-    await statutSelect.selectOption('INACTIF');
+    if (oppositeRole === 'PENDING') {
+      const statutSelect = page.locator('select[name="statutId"]');
+      await expect(statutSelect).toBeVisible();
+      await statutSelect.selectOption('ACTIF');
+    }
 
     await page.getByRole('button', { name: 'Valider' }).click();
-
-    await expect(page).toHaveURL(`${baseUrl}/admin/users`);
-
-    // === PART 3: Verify user is back in "all users" tab ===
-    await page.locator('#tab-all').click();
     await expect(page).toHaveURL(`${baseUrl}/admin/users/all`);
 
-    const allUsersTable = page.getByRole('table');
-    await expect(page.getByText('Liste des utilisateurs')).toBeVisible();
+    const [responseAfterReset] = await Promise.all([
+      page.waitForResponse((res) => res.url().includes(`/users/${targetUserId}`) && res.request().method() === 'GET'),
+      page.goto(`${baseUrl}/admin/user/${targetUserId}`),
+    ]);
 
-    // Verify the user appears in the all users tab with original role
-    const targetUserRowInAll = allUsersTable.locator(`tr[data-row-key="${targetUserId}"]`);
-    await expect(targetUserRowInAll).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Modifier un utilisateur', level: 1 })).toBeVisible();
+
+    const { data: revertedUser } = await responseAfterReset.json();
+    expect(revertedUser).toBeTruthy();
+    expect(revertedUser.id).toBe(targetUserId);
+    expect(revertedUser.roleId).toBe(originalRole);
   });
 });

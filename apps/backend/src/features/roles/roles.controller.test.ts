@@ -23,6 +23,14 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
+vi.mock('@/middlewares/userStatus.middleware', () => {
+  return {
+    default: (_: Context, next: Next) => {
+      return next();
+    },
+  };
+});
+
 describe('Roles endpoints: /roles', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RolesController).onError(errorHandler);
   const client = testClient(app);

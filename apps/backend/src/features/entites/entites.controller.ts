@@ -4,6 +4,7 @@ import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
+import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { getEntiteChainRoute, getEntitesRoute } from './entites.route';
 import { GetEntitiesQuerySchema } from './entites.schema';
 import { getEditableEntitiesChain, getEntites } from './entites.service';
@@ -11,6 +12,7 @@ import { getEditableEntitiesChain, getEntites } from './entites.service';
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
+  .use(userStatusMiddleware)
   .use(roleMiddleware([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN]))
   .use(entitesMiddleware)
 
