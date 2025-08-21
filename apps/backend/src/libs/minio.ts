@@ -75,6 +75,10 @@ export const deleteFileFromMinio = async (filePath: string): Promise<void> => {
 };
 
 export const getFileStream = async (filePath: string) => {
+  if (!minioClient) {
+    throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
+  }
+
   const stream = await minioClient.getObject(S3_BUCKET_NAME, filePath);
   return stream;
 };
