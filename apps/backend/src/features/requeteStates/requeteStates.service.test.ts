@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getRequestEntiteById } from '@/features/requetesEntite/requetesEntite.service';
 import { prisma, type RequeteState } from '@/libs/prisma';
 import {
+  addNote,
   addProcessingState,
   getRequeteStateById,
   getRequeteStates,
@@ -16,6 +17,9 @@ vi.mock('@/libs/prisma', () => ({
       count: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
+    },
+    requeteStateNote: {
+      create: vi.fn(),
     },
   },
 }));
@@ -71,6 +75,7 @@ describe('requeteStates.service.ts', () => {
       });
       vi.mocked(prisma.requeteState.create).mockRestore();
     });
+
     it('should return null if RequeteEntite does not exist', async () => {
       vi.mocked(getRequestEntiteById).mockResolvedValueOnce(null);
 
@@ -93,6 +98,7 @@ describe('requeteStates.service.ts', () => {
           statutId: 'EN_COURS',
           createdAt: new Date(),
           updatedAt: new Date(),
+          notes: [],
         },
       ];
 
@@ -105,6 +111,37 @@ describe('requeteStates.service.ts', () => {
       expect(result.total).toBe(mockStates.length);
       expect(prisma.requeteState.findMany).toHaveBeenCalledWith({
         where: { requeteEntiteId: 'requeteEntiteId', stepName: { not: null } },
+        select: {
+          createdAt: true,
+          id: true,
+          notes: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+            select: {
+              author: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              content: true,
+              createdAt: true,
+              id: true,
+              uploadedFiles: {
+                select: {
+                  id: true,
+                  metadata: true,
+                  size: true,
+                },
+              },
+            },
+          },
+          requeteEntiteId: true,
+          statutId: true,
+          stepName: true,
+          updatedAt: true,
+        },
         skip: 0,
         take: 10,
         orderBy: { createdAt: 'desc' },
@@ -121,6 +158,26 @@ describe('requeteStates.service.ts', () => {
           statutId: 'EN_COURS',
           createdAt: new Date(),
           updatedAt: new Date(),
+          notes: [
+            {
+              id: 'n1',
+              content: 'note',
+              createdAt: new Date(),
+              uploadedFiles: [
+                {
+                  id: 'f1',
+                  size: 123,
+                  metadata: { originalName: 'rapport.pdf' },
+                },
+                {
+                  id: 'f2',
+                  size: 456,
+                  metadata: null,
+                },
+              ],
+              author: { firstName: 'Ada', lastName: 'Lovelace' },
+            },
+          ],
         },
       ];
 
@@ -129,10 +186,56 @@ describe('requeteStates.service.ts', () => {
 
       const result = await getRequeteStates('requeteEntiteId', { offset: 0 });
 
-      expect(result.data).toEqual(mockStates);
+      const expectedData = [
+        {
+          ...mockStates[0],
+          notes: [
+            {
+              ...mockStates[0].notes[0],
+              uploadedFiles: [
+                { id: 'f1', size: 123, originalName: 'rapport.pdf' },
+                { id: 'f2', size: 456, originalName: 'Unknown' },
+              ],
+            },
+          ],
+        },
+      ];
+
+      expect(result.data).toEqual(expectedData);
       expect(result.total).toBe(mockStates.length);
       expect(prisma.requeteState.findMany).toHaveBeenCalledWith({
         where: { requeteEntiteId: 'requeteEntiteId', stepName: { not: null } },
+        select: {
+          createdAt: true,
+          id: true,
+          notes: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+            select: {
+              author: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              content: true,
+              createdAt: true,
+              id: true,
+              uploadedFiles: {
+                select: {
+                  id: true,
+                  metadata: true,
+                  size: true,
+                },
+              },
+            },
+          },
+          requeteEntiteId: true,
+          statutId: true,
+          stepName: true,
+          updatedAt: true,
+        },
         skip: 0,
         orderBy: { createdAt: 'desc' },
       });
@@ -140,11 +243,11 @@ describe('requeteStates.service.ts', () => {
   });
 
   describe('getRequeteStateById()', () => {
-    it('should retrieve a RequeteState by its ID', async () => {
+    it('should return a RequeteState by id', async () => {
       const mockState = {
-        id: '1',
+        id: 'state-1',
         requeteEntiteId: 'requeteEntiteId',
-        stepName: 'Step 1',
+        stepName: 'Any step',
         statutId: 'EN_COURS',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -152,11 +255,31 @@ describe('requeteStates.service.ts', () => {
 
       vi.mocked(prisma.requeteState.findUnique).mockResolvedValueOnce(mockState);
 
-      const result = await getRequeteStateById('1');
+      const result = await getRequeteStateById('state-1');
 
-      expect(result).toEqual(mockState);
+      expect(result).toEqual({
+        id: 'state-1',
+        requeteEntiteId: 'requeteEntiteId',
+        stepName: 'Any step',
+        statutId: 'EN_COURS',
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+      });
       expect(prisma.requeteState.findUnique).toHaveBeenCalledWith({
-        where: { id: '1' },
+        where: { id: 'state-1' },
+      });
+
+      vi.mocked(prisma.requeteState.findUnique).mockRestore();
+    });
+
+    it('should return null when not found', async () => {
+      vi.mocked(prisma.requeteState.findUnique).mockResolvedValueOnce(null);
+
+      const result = await getRequeteStateById('missing');
+
+      expect(result).toBeNull();
+      expect(prisma.requeteState.findUnique).toHaveBeenCalledWith({
+        where: { id: 'missing' },
       });
     });
   });
@@ -199,6 +322,51 @@ describe('requeteStates.service.ts', () => {
 
       expect(result).toBeNull();
       expect(prisma.requeteState.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('addNote()', () => {
+    it('should create a note linked to a RequeteEntiteState', async () => {
+      const now = new Date();
+      const mockNote = {
+        id: 'note-1',
+        content: 'A note',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      vi.mocked(prisma.requeteStateNote.create).mockResolvedValueOnce(mockNote);
+
+      const result = await addNote({
+        userId: 'user-1',
+        content: 'A note',
+        requeteEntiteStateId: 'state-1',
+        fileIds: [],
+      });
+
+      expect(result).toEqual({
+        id: 'note-1',
+        content: 'A note',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+      });
+
+      expect(prisma.requeteStateNote.create).toHaveBeenCalledWith({
+        data: {
+          authorId: 'user-1',
+          content: 'A note',
+          requeteEntiteStateId: 'state-1',
+          uploadedFiles: {
+            connect: [],
+          },
+        },
+      });
+
+      vi.mocked(prisma.requeteStateNote.create).mockRestore();
     });
   });
 });

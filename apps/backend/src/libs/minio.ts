@@ -14,19 +14,25 @@ const {
   S3_BUCKET_ROOT_DIR,
 } = envVars;
 
-const minioClient = new Client({
-  endPoint: S3_BUCKET_ENDPOINT,
-  port: parseInt(S3_BUCKET_PORT, 10),
-  useSSL: S3_BUCKET_ENDPOINT.startsWith('https'),
-  accessKey: S3_BUCKET_ACCESS_KEY,
-  secretKey: S3_BUCKET_SECRET_KEY,
-});
+const minioClient = S3_BUCKET_ENDPOINT
+  ? new Client({
+      endPoint: S3_BUCKET_ENDPOINT,
+      port: parseInt(S3_BUCKET_PORT, 10),
+      useSSL: S3_BUCKET_ENDPOINT.startsWith('https'),
+      accessKey: S3_BUCKET_ACCESS_KEY,
+      secretKey: S3_BUCKET_SECRET_KEY,
+    })
+  : null;
 
 export const uploadFileToMinio = async (
   filePath: string,
   originalName: string,
   contentType?: string,
 ): Promise<{ objectPath: string; rollback: (logger: PinoLogger) => Promise<void> }> => {
+  if (!minioClient) {
+    throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
+  }
+
   const fileId = randomUUID();
   const fileExtension = path.extname(originalName);
   const filename = `${fileId}${fileExtension}`;
@@ -53,9 +59,22 @@ export const uploadFileToMinio = async (
 };
 
 export const getSignedUrl = async (filePath: string, expirySeconds = 60 * 60): Promise<string> => {
+  if (!minioClient) {
+    throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
+  }
+
   return minioClient.presignedUrl('GET', S3_BUCKET_NAME, filePath, expirySeconds);
 };
 
 export const deleteFileFromMinio = async (filePath: string): Promise<void> => {
+  if (!minioClient) {
+    throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
+  }
+
   await minioClient.removeObject(S3_BUCKET_NAME, filePath);
+};
+
+export const getFileStream = async (filePath: string) => {
+  const stream = await minioClient.getObject(S3_BUCKET_NAME, filePath);
+  return stream;
 };

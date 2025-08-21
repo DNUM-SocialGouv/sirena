@@ -25,6 +25,7 @@
     "@sirena/ui": "workspace:*",
     "@tanstack/react-query": "^5.84.2",
     "@tanstack/react-router": "^1.131.4",
+    "clsx": "^2.1.1",
     "hono": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
@@ -34,9 +35,9 @@
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@playwright/test": "^1.54.2",
+    "@sentry/vite-plugin": "^3.6.1",
     "@tanstack/react-router-devtools": "^1.131.4",
     "@tanstack/router-plugin": "^1.131.4",
-    "@sentry/vite-plugin": "^3.6.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

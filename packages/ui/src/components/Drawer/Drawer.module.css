@@ -1,0 +1,81 @@
+:root {
+  --drawer-duration: 240ms;
+  --drawer-bg: #fff;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity var(--drawer-duration) ease;
+}
+.backdrop[data-state="entering"] {
+  opacity: 0;
+}
+.backdrop[data-state="open"] {
+  opacity: 1;
+}
+.backdrop[data-state="closing"] {
+  opacity: 0;
+}
+
+.container {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--ground) + 751);
+}
+
+.panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  max-width: 100%;
+  background: var(--drawer-bg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  will-change: transform;
+  transition: transform var(--drawer-duration) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.panel[data-side="right"] {
+  right: 0;
+  transform: translateX(100%);
+}
+.panel[data-side="left"] {
+  left: 0;
+  transform: translateX(-100%);
+}
+.panel[data-state="open"] {
+  transform: translateX(0);
+}
+.panel[data-state="entering"][data-side="right"] {
+  transform: translateX(100%);
+}
+.panel[data-state="entering"][data-side="left"] {
+  transform: translateX(-100%);
+}
+.panel[data-state="closing"][data-side="right"] {
+  transform: translateX(100%);
+}
+.panel[data-state="closing"][data-side="left"] {
+  transform: translateX(-100%);
+}
+
+.containerNoMask {
+  pointer-events: none;
+}
+.panel {
+  pointer-events: auto;
+}
+
+.close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}

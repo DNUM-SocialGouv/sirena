@@ -20,24 +20,25 @@ datasource db {
 }
 
 model User {
-  id        String      @id @default(cuid())
-  email     String      @unique /// @zod.string.email({ message: 'Invalid email address' }),
-  firstName String
-  lastName  String
-  uid       String      @unique
-  sub       String      @unique
-  createdAt DateTime    @default(now())
-  active    Boolean     @default(false)
-  pcData    Json
-  roleId    String
-  role      RoleEnum?   @relation(fields: [roleId], references: [id])
-  sessions  Session[]
-  statutId  String
-  statut    StatutEnum? @relation(fields: [statutId], references: [id])
-  entiteId  String?
-  entite    Entite?     @relation(fields: [entiteId], references: [id])
-  changeLogs ChangeLog[]
-  uploads   UploadedFile[]
+  id               String             @id @default(cuid())
+  email            String             @unique /// @zod.string.email({ message: 'Invalid email address' }),
+  firstName        String
+  lastName         String
+  uid              String             @unique
+  sub              String             @unique
+  createdAt        DateTime           @default(now())
+  active           Boolean            @default(false)
+  pcData           Json
+  roleId           String
+  role             RoleEnum?          @relation(fields: [roleId], references: [id])
+  sessions         Session[]
+  statutId         String
+  statut           StatutEnum?        @relation(fields: [statutId], references: [id])
+  entiteId         String?
+  entite           Entite?            @relation(fields: [entiteId], references: [id])
+  changeLogs       ChangeLog[]
+  uploads          UploadedFile[]
+  RequeteStateNote RequeteStateNote[]
 }
 
 model StatutEnum {
@@ -133,11 +134,28 @@ model RequeteState {
   victimes  Victime[]
   declarant Declarant?
 
+  notes RequeteStateNote[]
+
   descriptionFaits   DescriptionFaits?
   lieuxIncident      LieuIncident[]
   misEnCauses        MisEnCause[]
   demarchesEngagees  DemarchesEngagees?
   infoComplementaire InfoComplementaire?
+}
+
+model RequeteStateNote {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  requeteEntiteStateId String
+  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  content       String
+  uploadedFiles UploadedFile[]
 }
 
 model Identite {
@@ -427,7 +445,7 @@ model ChangeLog {
   id          String   @id @default(cuid())
   entity      String
   entityId    String
-  action      String   // e.g. "ADDED", "EDITED", "DELETED"
+  action      String // e.g. "ADDED", "EDITED", "DELETED"
   before      Json?
   after       Json?
   changedById String
@@ -439,19 +457,22 @@ model ChangeLog {
 }
 
 model UploadedFile {
-  id            String   @id @default(uuid())
-  fileName      String
-  filePath      String @unique
-  mimeType      String
-  size          Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String   @id @default(uuid())
+  fileName  String
+  filePath  String   @unique
+  mimeType  String
+  size      Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  status    String   @default("PENDING") // e.g. "PENDING", "COMPLETED", "FAILED"
 
-  metadata      Json?
+  metadata Json?
 
-  entiteId      String?
-  entite        Entite? @relation(fields: [entiteId], references: [id])
+  entiteId String?
+  entite   Entite? @relation(fields: [entiteId], references: [id])
 
-  uploadedById  String
-  uploadedBy    User    @relation(fields: [uploadedById], references: [id])
+  uploadedById       String
+  uploadedBy         User              @relation(fields: [uploadedById], references: [id])
+  RequeteStateNote   RequeteStateNote? @relation(fields: [requeteStateNoteId], references: [id])
+  requeteStateNoteId String?
 }

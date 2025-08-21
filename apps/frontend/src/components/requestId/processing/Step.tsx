@@ -1,20 +1,21 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { REQUETE_STATUT_TYPES, type RequeteStatutType } from '@sirena/common/constants';
-import type { RequiredByKey } from '@sirena/common/utils';
 import { useParams } from '@tanstack/react-router';
 import { memo } from 'react';
 import { StatusMenu } from '@/components/common/statusMenu';
-import type { useAddProcessingStep } from '@/hooks/mutations/addProcessingStep.hook';
-import { useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStepStatus.hook';
+import { useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStep.hook';
+import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
+import { StepNote } from './StepNote';
 
-type Step = NonNullable<ReturnType<typeof useAddProcessingStep>['data']>['data'];
+type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
-type StepProps = RequiredByKey<Step, 'stepName' | 'statutId' | 'id'> & {
+type StepProps = StepType & {
   disabled?: boolean;
+  openEdit?(step: StepType): void;
 };
 
-const StepComponent = ({ stepName, statutId, disabled, id }: StepProps) => {
+const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...rest }: StepProps) => {
   const { requestId } = useParams({ from: '/_auth/_user/request/$requestId' });
   const updateStatusMutation = useUpdateProcessingStepStatus(requestId);
 
@@ -73,6 +74,25 @@ const StepComponent = ({ stepName, statutId, disabled, id }: StepProps) => {
             </Button>
           </div>
         </div>
+        {notes.map((note) => (
+          <StepNote
+            key={note.id}
+            content={note.content}
+            author={note.author}
+            id={note.id}
+            createdAt={note.createdAt}
+            files={note.uploadedFiles}
+            requeteStateId={id}
+          />
+        ))}
+        <Button
+          type="button"
+          priority="tertiary"
+          iconId="fr-icon-add-line"
+          onClick={() => openEdit?.({ id, stepName, statutId, notes, ...rest })}
+        >
+          Note ou fichier
+        </Button>
       </div>
     </div>
   );

@@ -80,7 +80,7 @@ const app = factoryWithLogs
       });
     }
 
-    const uploadedFile = await getUploadedFileById(id, entiteIds);
+    const uploadedFile = await getUploadedFileById(id, null);
 
     if (!uploadedFile) {
       logger.warn({ uploadedFileId: id }, 'Uploaded file not found or unauthorized access');
@@ -138,6 +138,8 @@ const app = factoryWithLogs
         metadata: { originalName: uploadedFile.fileName },
         entiteId: fileEntiteId,
         uploadedById: userId,
+        requeteStateNoteId: null,
+        status: 'PENDING',
       }).catch(async (err) => {
         await rollbackMinio(logger);
         throw err;
