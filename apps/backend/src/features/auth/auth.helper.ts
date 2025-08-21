@@ -63,13 +63,15 @@ export const authUser = async (c: Context<AppBindings>, { id, roleId }: authUser
     });
   } catch (error) {
     const logger = c.get('logger');
-    if (isPrismaUniqueConstraintError(error)) {
-      logger.error({ err: error }, 'Error in creating new session in database');
-      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.SESSION_ALREADY_EXISTS });
-      return c.redirect(errorPageUrl, 302);
-    }
+
+    const errorCode = isPrismaUniqueConstraintError(error)
+      ? ERROR_CODES.SESSION_ALREADY_EXISTS
+      : ERROR_CODES.SESSION_CREATE_ERROR;
+
     logger.error({ err: error }, 'Error in creating new session in database');
-    const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.SESSION_CREATE_ERROR });
+
+    const errorPageUrl = createRedirectUrl({ error: errorCode });
+
     return c.redirect(errorPageUrl, 302);
   }
 };
