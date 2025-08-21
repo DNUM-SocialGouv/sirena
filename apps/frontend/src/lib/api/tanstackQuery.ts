@@ -3,12 +3,21 @@ import { toastManager } from '@/lib/toastManager';
 import { useUserStore } from '@/stores/userStore';
 
 export const handleRequestErrors = async (res: Response) => {
+  const isAccountInactiveError = (res: Response): boolean => {
+    return res.status === 403 && res.headers.get('X-Error-Code') === 'ACCOUNT_INACTIVE';
+  };
+
   if (res.ok) return;
 
   if (res.status === 401) {
     const userStore = useUserStore.getState();
     userStore.logout();
     router.navigate({ to: '/login', search: { redirect: window.location.pathname } });
+  }
+
+  if (isAccountInactiveError(res)) {
+    router.navigate({ to: '/inactive' });
+    return;
   }
 
   let data: unknown;

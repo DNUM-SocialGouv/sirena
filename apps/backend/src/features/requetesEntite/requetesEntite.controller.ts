@@ -8,6 +8,7 @@ import authMiddleware from '@/middlewares/auth.middleware';
 import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStep.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
+import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { addProcessingStepRoute, getRequetesEntiteRoute } from './requetesEntite.route';
 import { AddProcessingStepBodySchema, GetRequetesEntiteQuerySchema } from './requetesEntite.schema';
 import { getRequetesEntite, hasAccessToRequete } from './requetesEntite.service';
@@ -15,6 +16,7 @@ import { getRequetesEntite, hasAccessToRequete } from './requetesEntite.service'
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
+  .use(userStatusMiddleware)
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]))
   .use(entitesMiddleware)
 
