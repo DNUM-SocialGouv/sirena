@@ -3,7 +3,7 @@ import { REQUETE_STATUT_TYPES, type RequeteStatutType } from '@sirena/common/con
 import { useParams } from '@tanstack/react-router';
 import { memo } from 'react';
 import { StatusMenu } from '@/components/common/statusMenu';
-import { useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStepStatus.hook';
+import { useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStep.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { StepNote } from './StepNote';
@@ -75,7 +75,15 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
           </div>
         </div>
         {notes.map((note) => (
-          <StepNote key={note.id} content={note.content} author={note.author} id={note.id} createdAt={note.createdAt} />
+          <StepNote
+            key={note.id}
+            content={note.content}
+            author={note.author}
+            id={note.id}
+            createdAt={note.createdAt}
+            files={note.uploadedFiles}
+            requeteStateId={id}
+          />
         ))}
         <Button
           type="button"

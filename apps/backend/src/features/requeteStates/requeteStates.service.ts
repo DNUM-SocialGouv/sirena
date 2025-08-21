@@ -1,4 +1,5 @@
 import { getRequestEntiteById } from '@/features/requetesEntite/requetesEntite.service';
+import type { Prisma } from '@/libs/prisma';
 import { prisma, type RequeteState } from '@/libs/prisma';
 import type {
   CreateRequeteStateNoteDto,
@@ -32,7 +33,7 @@ export const getRequeteStates = async (requeteEntiteId: string, query: GetRequet
     stepName: { not: null },
   };
 
-  const [data, total] = await Promise.all([
+  const [raw, total] = await Promise.all([
     prisma.requeteState.findMany({
       where,
       skip: offset,
@@ -49,6 +50,13 @@ export const getRequeteStates = async (requeteEntiteId: string, query: GetRequet
             id: true,
             content: true,
             createdAt: true,
+            uploadedFiles: {
+              select: {
+                id: true,
+                size: true,
+                metadata: true,
+              },
+            },
             author: {
               select: {
                 firstName: true,
@@ -56,6 +64,7 @@ export const getRequeteStates = async (requeteEntiteId: string, query: GetRequet
               },
             },
           },
+          orderBy: { createdAt: 'desc' },
         },
         requeteEntiteId: true,
       },
@@ -64,6 +73,21 @@ export const getRequeteStates = async (requeteEntiteId: string, query: GetRequet
       where,
     }),
   ]);
+
+  const data = raw.map((rs) => ({
+    ...rs,
+    notes: rs.notes.map((n) => ({
+      ...n,
+      uploadedFiles: n.uploadedFiles.map((f) => {
+        const m = f.metadata as Prisma.JsonObject;
+        return {
+          id: f.id,
+          size: f.size,
+          originalName: (m?.originalName as string) ?? 'Unknown',
+        };
+      }),
+    })),
+  }));
 
   return {
     data,
@@ -101,5 +125,8 @@ export const addNote = async (data: CreateRequeteStateNoteDto) =>
       authorId: data.userId,
       content: data.content,
       requeteEntiteStateId: data.requeteEntiteStateId,
+      uploadedFiles: {
+        connect: data.fileIds.map((fileId) => ({ id: fileId })),
+      },
     },
   });

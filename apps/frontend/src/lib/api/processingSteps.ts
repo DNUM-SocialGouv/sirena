@@ -38,6 +38,7 @@ export async function updateProcessingStepStatus(stepId: string, data: UpdatePro
 
 export type AddProcessingStepNoteData = {
   content: string;
+  fileIds: string[];
 };
 
 export async function addProcessingStepNote(stepId: string, data: AddProcessingStepNoteData) {

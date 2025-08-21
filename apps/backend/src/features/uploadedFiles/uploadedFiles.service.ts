@@ -78,3 +78,27 @@ export const createUploadedFile = async (
     },
   });
 };
+
+export const isUserOwner = async (userId: string, uploadedFileIds: UploadedFile['id'][]): Promise<boolean> => {
+  const count = await prisma.uploadedFile.count({
+    where: {
+      id: { in: uploadedFileIds },
+      uploadedById: userId,
+    },
+  });
+
+  return count === uploadedFileIds.length;
+};
+
+export const setNoteFile = async (
+  noteId: string,
+  uploadedFileId: UploadedFile['id'][],
+  entiteId: string | null = null,
+) => {
+  await prisma.uploadedFile.updateMany({
+    where: { id: { in: uploadedFileId } },
+    data: { requeteStateNoteId: noteId, status: 'COMPLETED', entiteId: entiteId },
+  });
+
+  return await prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileId } } });
+};

@@ -1,15 +1,12 @@
 -- DropForeignKey
-ALTER TABLE "RequeteStateNote" DROP CONSTRAINT "RequeteStateNote_requeteEntiteStateId_fkey";
+ALTER TABLE "public"."UploadedFile" DROP CONSTRAINT "UploadedFile_entiteId_fkey";
 
 -- DropForeignKey
-ALTER TABLE "RequeteStateNote" DROP CONSTRAINT "RequeteStateNote_authorId_fkey";
+ALTER TABLE "public"."UploadedFile" DROP CONSTRAINT "UploadedFile_uploadedById_fkey";
 
 -- DropForeignKey
-ALTER TABLE "ChangeLog" DROP CONSTRAINT "ChangeLog_changedById_fkey";
+ALTER TABLE "public"."UploadedFile" DROP CONSTRAINT "UploadedFile_requeteStateNoteId_fkey";
 
 -- DropTable
-DROP TABLE "RequeteStateNote";
-
--- DropTable
-DROP TABLE "ChangeLog";
+DROP TABLE "public"."UploadedFile";
 

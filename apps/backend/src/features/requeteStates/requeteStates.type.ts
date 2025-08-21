@@ -11,4 +11,5 @@ export type CreateRequeteStateNoteDto = {
   content: string;
   userId: string;
   requeteEntiteStateId: string;
+  fileIds: string[];
 };
