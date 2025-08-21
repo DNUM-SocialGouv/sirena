@@ -5,6 +5,7 @@ import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { isOperationDependsOnRecordNotFoundError } from '@/helpers/prisma';
 import authMiddleware from '@/middlewares/auth.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
+import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import {
   getDematSocialMappingRoute,
   getDematSocialMappingsRoute,
@@ -20,6 +21,7 @@ import {
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
+  .use(userStatusMiddleware)
   .use(roleMiddleware([ROLES.SUPER_ADMIN]))
 
   .get('/', getDematSocialMappingsRoute, zValidator('query', GetDematSocialMappingsQuerySchema), async (c) => {
