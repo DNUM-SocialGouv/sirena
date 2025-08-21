@@ -6,6 +6,7 @@ import type {
   GetRequeteStatesQuery,
   RequeteStateCreationDto,
   UpdateRequeteStateStatutDto,
+  UpdateRequeteStateStepNameDto,
 } from './requeteStates.type';
 
 export const addProcessingState = async (requeteEntiteId: string, data: RequeteStateCreationDto) => {
@@ -117,6 +118,23 @@ export const updateRequeteStateStatut = async (
   });
 
   return updatedRequeteState;
+};
+
+export const updateRequeteStateStepName = async (
+  id: string,
+  data: UpdateRequeteStateStepNameDto,
+): Promise<RequeteState | null> => {
+  const requeteState = await getRequeteStateById(id);
+  if (!requeteState) {
+    return null;
+  }
+
+  return prisma.requeteState.update({
+    where: { id },
+    data: {
+      stepName: data.stepName,
+    },
+  });
 };
 
 export const addNote = async (data: CreateRequeteStateNoteDto) =>

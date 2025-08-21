@@ -49,3 +49,16 @@ export async function addProcessingStepNote(stepId: string, data: AddProcessingS
   await handleRequestErrors(res);
   return res.json();
 }
+
+export type UpdateProcessingStepNameData = {
+  stepName: string;
+};
+
+export async function updateProcessingStepName(stepId: string, data: UpdateProcessingStepNameData) {
+  const res = await client['requete-states'][':id'].stepName.$patch({
+    param: { id: stepId },
+    json: data,
+  });
+  await handleRequestErrors(res);
+  return res.json();
+}

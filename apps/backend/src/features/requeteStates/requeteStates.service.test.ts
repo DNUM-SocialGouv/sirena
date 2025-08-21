@@ -7,6 +7,7 @@ import {
   getRequeteStateById,
   getRequeteStates,
   updateRequeteStateStatut,
+  updateRequeteStateStepName,
 } from './requeteStates.service';
 
 vi.mock('@/libs/prisma', () => ({
@@ -319,6 +320,47 @@ describe('requeteStates.service.ts', () => {
       vi.mocked(prisma.requeteState.findUnique).mockResolvedValueOnce(null);
 
       const result = await updateRequeteStateStatut('999', { statutId: 'EN_COURS' });
+
+      expect(result).toBeNull();
+      expect(prisma.requeteState.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateRequeteStateStepName()', () => {
+    it('should update the stepName of a RequeteState', async () => {
+      const mockState: RequeteState = {
+        id: '1',
+        requeteEntiteId: 'requeteEntiteId',
+        stepName: 'Old Step Name',
+        statutId: 'EN_COURS',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const mockUpdatedState = {
+        ...mockState,
+        stepName: 'New Step Name',
+        updatedAt: new Date(),
+      };
+
+      vi.mocked(prisma.requeteState.findUnique).mockResolvedValueOnce(mockState);
+      vi.mocked(prisma.requeteState.update).mockResolvedValueOnce(mockUpdatedState);
+
+      const result = await updateRequeteStateStepName('1', { stepName: 'New Step Name' });
+
+      expect(result).toEqual(mockUpdatedState);
+      expect(prisma.requeteState.update).toHaveBeenCalledWith({
+        where: { id: '1' },
+        data: {
+          stepName: 'New Step Name',
+        },
+      });
+    });
+
+    it('should return null if RequeteState not found', async () => {
+      vi.mocked(prisma.requeteState.findUnique).mockResolvedValueOnce(null);
+
+      const result = await updateRequeteStateStepName('999', { stepName: 'New Step Name' });
 
       expect(result).toBeNull();
       expect(prisma.requeteState.update).not.toHaveBeenCalled();

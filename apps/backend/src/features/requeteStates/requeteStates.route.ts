@@ -8,6 +8,13 @@ export const updateRequeteStateStatutRoute = openApiProtectedRoute({
   },
 });
 
+export const updateRequeteStateStepNameRoute = openApiProtectedRoute({
+  description: 'Update the stepName of a RequeteState',
+  responses: {
+    ...openApiResponse(RequeteStateSchema),
+  },
+});
+
 export const addRequeteStatesNoteRoute = openApiProtectedRoute({
   description: 'Add a processing note to a step of a request',
   responses: {

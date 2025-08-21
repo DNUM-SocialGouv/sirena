@@ -1,11 +1,20 @@
 import { Readable } from 'node:stream';
 import * as Sentry from '@sentry/node';
-import { throwHTTPException403Forbidden, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
+import {
+  throwHTTPException401Unauthorized,
+  throwHTTPException403Forbidden,
+  throwHTTPException404NotFound,
+} from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { stream as honoStream } from 'hono/streaming';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { addNote, getRequeteStateById, updateRequeteStateStatut } from '@/features/requeteStates/requeteStates.service';
+import {
+  addNote,
+  getRequeteStateById,
+  updateRequeteStateStatut,
+  updateRequeteStateStepName,
+} from '@/features/requeteStates/requeteStates.service';
 import { getUploadedFileById, isUserOwner, setNoteFile } from '@/features/uploadedFiles/uploadedFiles.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { getFileStream } from '@/libs/minio';
@@ -16,8 +25,16 @@ import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service';
-import { addRequeteStatesNoteRoute, updateRequeteStateStatutRoute } from './requeteStates.route';
-import { addRequeteStatesNoteBodySchema, UpdateRequeteStateStatutSchema } from './requeteStates.schema';
+import {
+  addRequeteStatesNoteRoute,
+  updateRequeteStateStatutRoute,
+  updateRequeteStateStepNameRoute,
+} from './requeteStates.route';
+import {
+  addRequeteStatesNoteBodySchema,
+  UpdateRequeteStateStatutSchema,
+  UpdateRequeteStateStepNameSchema,
+} from './requeteStates.schema';
 
 const app = factoryWithLogs
   .createApp()
@@ -135,6 +152,58 @@ const app = factoryWithLogs
           userId,
         },
         'RequeteState statut updated successfully',
+      );
+
+      return c.json({ data: updatedRequeteState });
+    },
+  )
+
+  .patch(
+    '/:id/stepName',
+    updateRequeteStateStepNameRoute,
+    zValidator('json', UpdateRequeteStateStepNameSchema),
+    requeteStatesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const body = c.req.valid('json');
+      const userId = c.get('userId');
+
+      const requeteState = await getRequeteStateById(id);
+
+      if (!requeteState) {
+        return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+      }
+
+      // TODO: check real access with entiteIds when implemented
+      //   const entiteIds = c.get('entiteIds');
+      const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+      if (!hasAccess) {
+        return throwHTTPException401Unauthorized('You are not allowed to update this requete state', {
+          res: c.res,
+        });
+      }
+
+      const updatedRequeteState = await updateRequeteStateStepName(id, {
+        stepName: body.stepName,
+      });
+
+      if (!updatedRequeteState) {
+        return throwHTTPException404NotFound('RequeteState not found', {
+          res: c.res,
+        });
+      }
+
+      c.set('changelogId', updatedRequeteState.id);
+
+      logger.info(
+        {
+          requeteStateId: id,
+          oldStepName: requeteState.stepName,
+          newStepName: body.stepName,
+          userId,
+        },
+        'RequeteState stepName updated successfully',
       );
 
       return c.json({ data: updatedRequeteState });
