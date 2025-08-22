@@ -8,6 +8,7 @@ import { useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessin
 import { useUpdateProcessingStepName } from '@/hooks/mutations/updateProcessingStepName.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
+import { UpdateProcessingStepNameSchema } from '@/schemas/processingSteps.schema';
 import { StepNote } from './StepNote';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
@@ -60,14 +61,17 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
   };
 
   const handleSaveEdit = () => {
-    if (!editStepName.trim()) {
-      setEditError("Le champ 'Nom de l'étape' est obligatoire. Veuillez le renseigner.");
+    const validationResult = UpdateProcessingStepNameSchema.safeParse({ stepName: editStepName });
+
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
+      setEditError(firstError.message);
       return;
     }
 
     updateStepNameMutation.mutate({
       id,
-      stepName: editStepName,
+      stepName: validationResult.data.stepName,
     });
 
     setIsEditing(false);
@@ -97,8 +101,13 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
               <Button priority="secondary" size="small" onClick={() => handleEditButton(false)}>
                 Annuler
               </Button>
-              <Button priority="primary" size="small" onClick={handleSaveEdit}>
-                Enregistrer
+              <Button
+                priority="primary"
+                size="small"
+                onClick={handleSaveEdit}
+                disabled={updateStepNameMutation.isPending}
+              >
+                {updateStepNameMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
               </Button>
             </div>
           </div>
