@@ -50,7 +50,7 @@ describe('requeteStates.service.ts', () => {
         id: '1',
         requeteEntiteId: 'requeteEntiteId',
         stepName: 'Processing Step',
-        statutId: 'EN_COURS',
+        statutId: 'A_FAIRE',
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -63,7 +63,7 @@ describe('requeteStates.service.ts', () => {
         id: '1',
         requeteEntiteId: 'requeteEntiteId',
         stepName: 'Processing Step',
-        statutId: 'EN_COURS',
+        statutId: 'A_FAIRE',
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
       });
@@ -71,7 +71,7 @@ describe('requeteStates.service.ts', () => {
         data: {
           requeteEntiteId: 'requeteEntiteId',
           stepName: 'Processing Step',
-          statutId: 'EN_COURS',
+          statutId: 'A_FAIRE',
         },
       });
       vi.mocked(prisma.requeteState.create).mockRestore();

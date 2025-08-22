@@ -65,7 +65,7 @@ describe('requetes.service.ts', () => {
               })}`,
               infoComplementaire: {
                 create: {
-                  receptionDate: expect.any(Date), // equals fakeNow internally
+                  receptionDate: expect.any(Date),
                   receptionTypeId: RECEPTION_TYPES.FORMULAIRE,
                 },
               },
@@ -73,14 +73,13 @@ describe('requetes.service.ts', () => {
           }),
         );
 
-        // 2nd state
         expect(prisma.requeteState.create).toHaveBeenNthCalledWith(
           2,
           expect.objectContaining({
             data: {
               requeteEntiteId: entiteId,
               statutId: REQUETE_STATUT_TYPES.A_FAIRE,
-              stepName: 'Envoyer un accuser de réception au déclarant', // <-- match your exact string
+              stepName: 'Envoyer un accusé de réception au déclarant',
               infoComplementaire: {
                 create: {
                   receptionDate: expect.any(Date),

@@ -5,7 +5,7 @@
   bottom: auto;
   top: 2rem;
   right: 2rem;
-  z-index: 750;
+  z-index: 1000;
 
   @media (min-width: 500px) {
     top: 2rem;
