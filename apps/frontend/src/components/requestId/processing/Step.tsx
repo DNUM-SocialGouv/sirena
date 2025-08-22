@@ -143,7 +143,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
       </div>
       <div className={styles['request-step']}>
         <div className={styles['request-notes']}>
-          {notes.slice(0, isOpen ? notes.length - 1 : 3).map((note) => (
+          {notes.slice(0, isOpen ? notes.length : 3).map((note) => (
             <StepNote
               key={note.id}
               content={note.content}
