@@ -42,7 +42,7 @@ export const handleRequestErrors = async (res: Response) => {
   toastManager.add({
     title: 'Erreur',
     description: `Une erreur s'est produite : ${res.status} ${res.statusText}`,
-    timeout: 5000,
+    timeout: 0,
     data: { icon: 'fr-alert--error' },
   });
 

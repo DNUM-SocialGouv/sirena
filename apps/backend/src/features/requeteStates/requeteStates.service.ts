@@ -1,6 +1,8 @@
+import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { getRequestEntiteById } from '@/features/requetesEntite/requetesEntite.service';
 import type { Prisma } from '@/libs/prisma';
 import { prisma, type RequeteState } from '@/libs/prisma';
+
 import type {
   CreateRequeteStateNoteDto,
   GetRequeteStatesQuery,
@@ -19,7 +21,7 @@ export const addProcessingState = async (requeteEntiteId: string, data: RequeteS
     data: {
       requeteEntiteId,
       stepName: data.stepName,
-      statutId: 'EN_COURS',
+      statutId: REQUETE_STATUT_TYPES.A_FAIRE,
     },
   });
 

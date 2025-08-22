@@ -2,6 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { REQUETE_STATUT_TYPES, type RequeteStatutType } from '@sirena/common/constants';
 import { useParams } from '@tanstack/react-router';
+import { clsx } from 'clsx';
 import { memo, useState } from 'react';
 import { StatusMenu } from '@/components/common/statusMenu';
 import { useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStep.hook';
@@ -20,6 +21,7 @@ type StepProps = StepType & {
 
 const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...rest }: StepProps) => {
   const { requestId } = useParams({ from: '/_auth/_user/request/$requestId' });
+  const [isOpen, setIsOpen] = useState(false);
   const updateStatusMutation = useUpdateProcessingStepStatus(requestId);
   const updateStepNameMutation = useUpdateProcessingStepName(requestId);
 
@@ -138,17 +140,31 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
             </div>
           </div>
         )}
-        {notes.map((note) => (
-          <StepNote
-            key={note.id}
-            content={note.content}
-            author={note.author}
-            id={note.id}
-            createdAt={note.createdAt}
-            files={note.uploadedFiles}
-            requeteStateId={id}
-          />
-        ))}
+      </div>
+      <div className={styles['request-step']}>
+        <div className={styles['request-notes']}>
+          {notes.slice(0, isOpen ? notes.length - 1 : 3).map((note) => (
+            <StepNote
+              key={note.id}
+              content={note.content}
+              author={note.author}
+              id={note.id}
+              createdAt={note.createdAt}
+              files={note.uploadedFiles}
+              requeteStateId={id}
+            />
+          ))}
+        </div>
+        <div className={styles['request-notes-distplay']}>
+          {notes.length > 3 && (
+            <button type="button" className="fr-btn-link" onClick={() => setIsOpen(!isOpen)}>
+              {isOpen ? 'Masquer' : 'Afficher'} les notes précédentes{' '}
+              <span
+                className={clsx('fr-icon-arrow-down-s-line fr-btn-link__icon', isOpen && 'fr-btn-link__icon--is-open')}
+              />
+            </button>
+          )}
+        </div>
         <Button
           type="button"
           priority="tertiary"

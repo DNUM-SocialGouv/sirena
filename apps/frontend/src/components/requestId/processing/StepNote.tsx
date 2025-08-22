@@ -58,6 +58,7 @@ export const StepNote = ({ author, content, createdAt, requeteStateId, files }: 
                 href={`/api/requete-states/${requeteStateId}/file/${file.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                className="fr-link"
               >
                 {String(file.originalName)} ({(file.size / 1024).toFixed(2)} Ko)
               </a>

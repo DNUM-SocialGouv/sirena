@@ -48,7 +48,7 @@ const CreateStepComponent = ({ isAddingStep, setIsAddingStep }: CreateStepProps)
         <div className={styles.step}>
           <div className="fr-mb-2w">
             <Input
-              label="Nom de l'étape"
+              label="Nom de l'étape (obligatoire)"
               nativeInputProps={{
                 value: stepName,
                 onChange: (e) => {
