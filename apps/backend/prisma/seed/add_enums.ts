@@ -215,6 +215,7 @@ export async function seedEnums(prisma: PrismaClient) {
   console.log('🌱 Début du seeding des enums...');
 
   // TODO: remove this (we purge the actual status for new one)
+  await prisma.requeteStateNote.deleteMany({});
   await prisma.infoComplementaire.deleteMany({});
   await prisma.requeteState.deleteMany({});
   await prisma.requeteEntite.deleteMany({});
