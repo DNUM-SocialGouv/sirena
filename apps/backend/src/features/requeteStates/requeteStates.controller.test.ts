@@ -12,7 +12,12 @@ import { getFileStream } from '@/libs/minio';
 import type { RequeteState } from '@/libs/prisma';
 import { convertDatesToStrings } from '@/tests/formatter';
 import RequeteStatesController from './requeteStates.controller';
-import { addNote, getRequeteStateById, updateRequeteStateStatut } from './requeteStates.service';
+import {
+  addNote,
+  getRequeteStateById,
+  updateRequeteStateStatut,
+  updateRequeteStateStepName,
+} from './requeteStates.service';
 
 const fakeRequeteState: RequeteState = {
   id: 'step1',
@@ -29,9 +34,16 @@ const fakeUpdatedRequeteState: RequeteState = {
   updatedAt: new Date(),
 };
 
+const fakeUpdatedStepNameRequeteState: RequeteState = {
+  ...fakeRequeteState,
+  stepName: 'Updated Step Name',
+  updatedAt: new Date(),
+};
+
 vi.mock('./requeteStates.service', () => ({
   getRequeteStateById: vi.fn(() => Promise.resolve(fakeRequeteState)),
   updateRequeteStateStatut: vi.fn(() => Promise.resolve(fakeUpdatedRequeteState)),
+  updateRequeteStateStepName: vi.fn(() => Promise.resolve(fakeUpdatedStepNameRequeteState)),
   addNote: vi.fn(),
   isUserOwner: vi.fn(),
   setNoteFile: vi.fn(),
@@ -183,6 +195,113 @@ describe('requeteStates.controller.ts', () => {
       const res = await client[':id'].statut.$patch({
         param: { id: 'step1' },
         json: { statutId: 'INVALID_STATUS' as never },
+      });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('PATCH /:id/stepName', () => {
+    it('should update the stepName of a RequeteState', async () => {
+      const res = await client[':id'].stepName.$patch({
+        param: { id: 'step1' },
+        json: { stepName: 'Updated Step Name' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body).toEqual({
+        data: convertDatesToStrings(fakeUpdatedStepNameRequeteState),
+      });
+      expect(updateRequeteStateStepName).toHaveBeenCalledWith('step1', { stepName: 'Updated Step Name' });
+    });
+
+    it('should return 404 if RequeteState not found', async () => {
+      vi.mocked(getRequeteStateById).mockImplementationOnce(() => Promise.resolve(null));
+
+      const res = await client[':id'].stepName.$patch({
+        param: { id: 'step1' },
+        json: { stepName: 'Updated Step Name' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'RequeteState not found',
+      });
+      expect(updateRequeteStateStepName).not.toHaveBeenCalled();
+    });
+
+    it('should return 404 if update fails', async () => {
+      vi.mocked(updateRequeteStateStepName).mockImplementationOnce(() => Promise.resolve(null));
+
+      const res = await client[':id'].stepName.$patch({
+        param: { id: 'step1' },
+        json: { stepName: 'Updated Step Name' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'RequeteState not found',
+      });
+    });
+
+    it('should return 401 if user has no access to requete', async () => {
+      vi.mocked(hasAccessToRequete).mockImplementationOnce(() => Promise.resolve(false));
+
+      const res = await client[':id'].stepName.$patch({
+        param: { id: 'step1' },
+        json: { stepName: 'Updated Step Name' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(401);
+      expect(body).toEqual({
+        message: 'You are not allowed to update this requete state',
+      });
+      expect(updateRequeteStateStepName).not.toHaveBeenCalled();
+    });
+
+    it('should validate the request body - stepName is required', async () => {
+      const res = await client[':id'].stepName.$patch({
+        param: { id: 'step1' },
+        json: { stepName: '' },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should validate the request body - stepName has max length', async () => {
+      const longStepName = 'a'.repeat(301);
+      const res = await client[':id'].stepName.$patch({
+        param: { id: 'step1' },
+        json: { stepName: longStepName },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should sanitize the stepName input', async () => {
+      const res = await client[':id'].stepName.$patch({
+        param: { id: 'step1' },
+        json: { stepName: '  <script>  alert("xss")</script>  ' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(updateRequeteStateStepName).toHaveBeenCalledWith('step1', {
+        stepName: 'script alert("xss")/script',
+      });
+    });
+
+    it('should reject stepName with only spaces after sanitization', async () => {
+      const res = await client[':id'].stepName.$patch({
+        param: { id: 'step1' },
+        json: { stepName: '   <><>   ' },
       });
 
       expect(res.status).toBe(400);
