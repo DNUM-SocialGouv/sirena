@@ -1,12 +1,12 @@
-import { Alert } from '@codegouvfr/react-dsfr/Alert';
-import { ROLES } from '@sirena/common/constants';
+import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { RequetesEntite } from '@/components/common/tables/requetesEntites.tsx';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { requireAuth } from '@/lib/auth-guards';
+import { router } from '@/lib/router';
 import { QueryParamsSchema } from '@/schemas/pagination.schema';
 import { useUserStore } from '@/stores/userStore';
 
@@ -29,26 +29,22 @@ function RouteComponent() {
 
   const label = useMemo(() => (profileQuery.data ? profileQuery.data.firstName : ''), [profileQuery.data]);
 
+  useEffect(() => {
+    if (userStore.role === ROLES.PENDING || profileQuery.data?.statutId !== STATUT_TYPES.ACTIF) {
+      router.navigate({ to: '/inactive' });
+    }
+  }, [profileQuery.data, userStore.role]);
+
   return (
     <div className="home">
       <QueryStateHandler query={profileQuery}>
         {() => (
           <>
             <h1>Bienvenue {label}</h1>
-            {userStore.role === ROLES.PENDING ? <PendingAlert /> : <RequetesEntite />}
+            <RequetesEntite />
           </>
         )}
       </QueryStateHandler>
     </div>
-  );
-}
-
-function PendingAlert() {
-  return (
-    <Alert
-      severity="info"
-      title="Contactez votre administrateur"
-      description="Votre compte a SIRENA a bien été créé. Veuillez contacter votre administrateur pour qu'il vous attribue les droits nécessaires à l'utilisation de l'application."
-    />
   );
 }

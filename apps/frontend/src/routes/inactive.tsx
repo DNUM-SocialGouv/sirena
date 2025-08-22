@@ -1,10 +1,20 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
+import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
+import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { NotAuth } from '@/components/layout/notAuth/layout';
+import { useEffect, useMemo } from 'react';
+import { AuthLayout } from '@/components/layout/auth/layout';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
+import { requireAuth } from '@/lib/auth-guards';
 import { queryClient } from '@/lib/queryClient';
+import { router } from '@/lib/router';
+import { useUserStore } from '@/stores/userStore';
 
 export const Route = createFileRoute('/inactive')({
+  beforeLoad: async () => {
+    await queryClient.ensureQueryData(profileQueryOptions());
+    return requireAuth;
+  },
   head: () => ({
     meta: [
       {
@@ -12,24 +22,29 @@ export const Route = createFileRoute('/inactive')({
       },
     ],
   }),
-  beforeLoad: async () => queryClient.ensureQueryData(profileQueryOptions()),
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const profileQuery = useQuery({ ...profileQueryOptions(), enabled: false });
+  const userStore = useUserStore();
+
+  const label = useMemo(() => (profileQuery.data ? profileQuery.data.firstName : ''), [profileQuery.data]);
+
+  useEffect(() => {
+    if (profileQuery.data?.statutId === STATUT_TYPES.ACTIF && userStore.role !== ROLES.PENDING) {
+      router.navigate({ to: '/home' });
+    }
+  }, [profileQuery.data, userStore.role]);
+
   return (
-    <NotAuth>
-      <div className="fr-grid-row fr-grid-row-gutters fr-grid-row--center">
-        <div className="fr-col-12 fr-col-md-8 fr-col-lg-6">
-          <div className="fr-container fr-px-md-0  fr-py-md-14v">
-            <Alert
-              severity="info"
-              title="Compte inactif"
-              description="Votre compte SIRENA a bien été créé. Veuillez contacter votre administrateur pour qu'il vous attribue les droits nécessaires à l'utilisation de l'application."
-            />
-          </div>
-        </div>
-      </div>
-    </NotAuth>
+    <AuthLayout>
+      <h1>Bienvenue {label}</h1>
+      <Alert
+        severity="info"
+        title="Contactez votre administrateur"
+        description="Votre compte SIRENA est inactif. Veuillez contacter votre administrateur pour qu’il vous attribue les droits nécessaires à l’utilisation de l’application."
+      />
+    </AuthLayout>
   );
 }
