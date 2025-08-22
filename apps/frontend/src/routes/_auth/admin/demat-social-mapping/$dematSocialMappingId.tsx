@@ -76,7 +76,7 @@ function RouteComponent() {
       toastManager.add({
         title: 'Mapping demat social modifié',
         description: 'Les modifications ont été enregistrées avec succès.',
-        timeout: 5000,
+        timeout: 0,
         data: { icon: 'fr-alert--success' },
       });
       handleBack();

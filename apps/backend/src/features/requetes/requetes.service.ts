@@ -33,7 +33,7 @@ export const createRequeteFromDematSocial = async ({ dematSocialId, createdAt }:
         data: {
           requeteEntiteId: entite.id,
           statutId: REQUETE_STATUT_TYPES.A_FAIRE,
-          stepName: 'Envoyer un accuser de réception au déclarant',
+          stepName: 'Envoyer un accusé de réception au déclarant',
           infoComplementaire: {
             create: { receptionDate: new Date(), receptionTypeId: RECEPTION_TYPES.FORMULAIRE },
           },

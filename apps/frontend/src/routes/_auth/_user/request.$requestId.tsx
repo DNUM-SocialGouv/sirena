@@ -1,7 +1,6 @@
-import { Breadcrumb } from '@codegouvfr/react-dsfr/Breadcrumb';
 import { ROLES } from '@sirena/common/constants';
 import { type TabDescriptor, Tabs } from '@sirena/ui';
-import { createFileRoute, useMatchRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useMatchRoute, useNavigate } from '@tanstack/react-router';
 import { z } from 'zod';
 import { Details } from '@/components/requestId/details';
 import { Processing } from '@/components/requestId/processing';
@@ -16,10 +15,10 @@ export const Route = createFileRoute('/_auth/_user/request/$requestId')({
       requestId: z.string().parse(params.requestId),
     }),
   },
-  head: ({ params }) => ({
+  head: () => ({
     meta: [
       {
-        title: `Requête ${params.requestId || ''} - SIRENA`,
+        title: 'Traitement requête - SIRENA',
       },
     ],
   }),
@@ -27,7 +26,6 @@ export const Route = createFileRoute('/_auth/_user/request/$requestId')({
 });
 
 function RouteComponent() {
-  const { requestId } = Route.useParams();
   const navigate = useNavigate();
   const matchRoute = useMatchRoute();
 
@@ -50,17 +48,9 @@ function RouteComponent() {
     <div>
       <div className="fr-container">
         <div className="fr-mb-2w">
-          <Breadcrumb
-            currentPageLabel={`Requête n°${requestId}`}
-            segments={[
-              {
-                label: 'Liste des requêtes',
-                linkProps: {
-                  to: '/home',
-                },
-              },
-            ]}
-          />
+          <Link className="fr-link" to="/home">
+            Liste des requêtes
+          </Link>
         </div>
 
         <RequestInfos />

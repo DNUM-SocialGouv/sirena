@@ -66,6 +66,9 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
     await addStepNoteMutation.mutate(
       { content: content.trim(), id: step.id, fileIds },
       {
+        onError: () => {
+          setIsLoading(false);
+        },
         onSuccess: () => {
           handleCancel();
           setIsOpen(false);
