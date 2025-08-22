@@ -1,3 +1,4 @@
+import { STATUT_TYPES } from '@sirena/common/constants';
 import type { PrismaClient } from 'generated/client';
 
 export async function seedSuperAdmin(prisma: PrismaClient) {
@@ -20,7 +21,7 @@ export async function seedSuperAdmin(prisma: PrismaClient) {
       if (user.roleId !== superAdminId) {
         await prisma.user.update({
           where: { email: superAdminEmail },
-          data: { roleId: superAdminId },
+          data: { roleId: superAdminId, statutId: STATUT_TYPES.ACTIF },
         });
         console.log(`  👑 Rôle SUPER_ADMIN assigné à: ${superAdminEmail}`);
       }
