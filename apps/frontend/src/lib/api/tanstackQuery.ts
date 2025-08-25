@@ -1,6 +1,53 @@
+import type { Cause } from '@sirena/common/types';
 import { router } from '@/lib/router';
 import { toastManager } from '@/lib/toastManager';
 import { useUserStore } from '@/stores/userStore';
+
+const getDataResposne = (data: unknown): data is { cause?: Cause; message: string } => {
+  if (typeof data !== 'object' || data === null) return false;
+
+  const d = data as Record<string, unknown>;
+
+  if (d.message === undefined || typeof d.message !== 'string') return false;
+  if (d.cause !== undefined && !getCauseResponse(d.cause)) return false;
+
+  return true;
+};
+
+const getCauseResponse = (cause: unknown): cause is Cause => {
+  if (typeof cause !== 'object' || cause === null) return false;
+
+  const d = cause as Record<string, unknown>;
+
+  if (d.name !== undefined && typeof d.name !== 'string') return false;
+  if (d.message !== undefined && typeof d.message !== 'string') return false;
+  if (d.stack !== undefined && typeof d.stack !== 'string') return false;
+
+  return true;
+};
+
+export class HttpError extends Error {
+  status: number;
+  rawData: unknown;
+  data: Cause | undefined;
+
+  constructor(message: string, status: number, data?: unknown) {
+    let finalMessage = message;
+    let d: Cause | undefined;
+    if (getDataResposne(data)) {
+      if (data.cause) {
+        d = data.cause;
+      }
+      finalMessage = data.message;
+    }
+    super(finalMessage);
+    this.name = 'HttpError';
+    this.status = status;
+    this.rawData = data;
+    if (d) this.data = d;
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
 
 export const handleRequestErrors = async (res: Response) => {
   const isAccountInactiveError = (res: Response): boolean => {
@@ -31,14 +78,6 @@ export const handleRequestErrors = async (res: Response) => {
     }
   }
 
-  const error = new Error(`HTTP ${res.status}`) as Error & {
-    status: number;
-    data: unknown;
-  };
-
-  error.status = res.status;
-  error.data = data;
-
   toastManager.add({
     title: 'Erreur',
     description: `Une erreur s'est produite : ${res.status} ${res.statusText}`,
@@ -46,5 +85,5 @@ export const handleRequestErrors = async (res: Response) => {
     data: { icon: 'fr-alert--error' },
   });
 
-  throw error;
+  throw new HttpError(`HTTP ${res.status}`, res.status, data);
 };
