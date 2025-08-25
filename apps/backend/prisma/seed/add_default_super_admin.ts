@@ -18,7 +18,7 @@ export async function seedSuperAdmin(prisma: PrismaClient) {
     });
 
     if (user) {
-      if (user.roleId !== superAdminId) {
+      if (user.roleId !== superAdminId || user.statutId !== STATUT_TYPES.ACTIF) {
         await prisma.user.update({
           where: { email: superAdminEmail },
           data: { roleId: superAdminId, statutId: STATUT_TYPES.ACTIF },
