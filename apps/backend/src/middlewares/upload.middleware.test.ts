@@ -211,6 +211,7 @@ describe('upload.middleware.ts', () => {
       );
       expect(mockThrowHTTPException400BadRequest).toHaveBeenCalledWith('File size exceeds the maximum allowed', {
         res: mockContext.res,
+        cause: { name: 'FILE_MAX_SIZE' },
       });
       expect(mockContext.set).not.toHaveBeenCalled();
       expect(next).not.toHaveBeenCalled();
@@ -241,6 +242,7 @@ describe('upload.middleware.ts', () => {
       );
       expect(mockThrowHTTPException400BadRequest).toHaveBeenCalledWith('File type "undefined" is not allowed', {
         res: mockContext.res,
+        cause: { name: 'FILE_TYPE' },
       });
       expect(mockContext.set).not.toHaveBeenCalled();
       expect(next).not.toHaveBeenCalled();
@@ -273,6 +275,7 @@ describe('upload.middleware.ts', () => {
         'File type "application/toto" is not allowed',
       );
       expect(mockThrowHTTPException400BadRequest).toHaveBeenCalledWith('File type "application/toto" is not allowed', {
+        cause: { name: 'FILE_TYPE' },
         res: mockContext.res,
       });
       expect(mockContext.set).not.toHaveBeenCalled();

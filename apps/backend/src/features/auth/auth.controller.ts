@@ -1,4 +1,4 @@
-import { ERROR_CODES } from '@sirena/common/constants';
+import { AUTH_ERROR_CODES } from '@sirena/common/constants';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
 import { envVars } from '@/config/env';
@@ -35,7 +35,7 @@ const app = factoryWithLogs
       logger.info('Authorization URL generated successfully');
     } catch (error) {
       logger.error({ err: error }, 'Error in buildAuthorizationUrl');
-      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.PC_ERROR });
+      const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.PC_ERROR });
       return c.redirect(errorPageUrl, 302);
     }
 
@@ -61,7 +61,7 @@ const app = factoryWithLogs
 
     if (error) {
       logger.error({ err: error }, 'Error in callback from PC');
-      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.PC_ERROR, errorDescription: error });
+      const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.PC_ERROR, errorDescription: error });
       return c.redirect(errorPageUrl, 302);
     }
 
@@ -70,7 +70,7 @@ const app = factoryWithLogs
 
     if (!state || !nonce) {
       logger.error('Error in callback from PC, state is missing from user cookie');
-      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.STATE_NOT_VALID });
+      const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.STATE_NOT_VALID });
       return c.redirect(errorPageUrl, 302);
     }
 
@@ -84,20 +84,20 @@ const app = factoryWithLogs
       logger.info('OAuth tokens obtained successfully');
     } catch (error) {
       logger.error({ err: error }, 'Error in callback from PC, tokens are missing');
-      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.TOKENS_NOT_VALID });
+      const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.TOKENS_NOT_VALID });
       return c.redirect(errorPageUrl, 302);
     }
 
     if (!tokens.id_token || !tokens.refresh_token) {
       logger.error('Error in callback from PC, state is missing from storage states');
-      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.TOKENS_NOT_VALID });
+      const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.TOKENS_NOT_VALID });
       return c.redirect(errorPageUrl, 302);
     }
 
     const claims = tokens.claims();
     if (!claims) {
       logger.error('Error in callback from PC, claims are missing from tokens');
-      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.CLAIMS_NOT_VALID });
+      const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.CLAIMS_NOT_VALID });
       return c.redirect(errorPageUrl, 302);
     }
 
@@ -107,7 +107,7 @@ const app = factoryWithLogs
       logger.info('User info retrieved from ProConnect');
     } catch (error) {
       logger.error({ err: error }, 'Error in callback from PC, userInfo is missing from tokens');
-      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_INFOS_ERROR });
+      const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.USER_INFOS_ERROR });
       return c.redirect(errorPageUrl, 302);
     }
 
@@ -116,7 +116,7 @@ const app = factoryWithLogs
         { userInfo: getPropertyTypes(userInfo) },
         'Error in callback from PC, userInfo are missing elements',
       );
-      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.CLAIMS_NOT_VALID });
+      const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.CLAIMS_NOT_VALID });
       return c.redirect(errorPageUrl, 302);
     }
 
@@ -135,11 +135,11 @@ const app = factoryWithLogs
     } catch (error) {
       if (isPrismaUniqueConstraintError(error)) {
         logger.error({ err: error }, 'Error in creating new user in database, email already exists');
-        const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_ALREADY_EXISTS });
+        const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.USER_ALREADY_EXISTS });
         return c.redirect(errorPageUrl, 302);
       }
       logger.error({ err: error }, 'Error in creating new user in database');
-      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.USER_CREATE_ERROR });
+      const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.USER_CREATE_ERROR });
       return c.redirect(errorPageUrl, 302);
     }
     await authUser(c, { id: user.id, roleId: user.roleId }, tokens.id_token);
@@ -207,7 +207,7 @@ const app = factoryWithLogs
       logger.info('ProConnect end session URL generated successfully');
     } catch (error) {
       logger.error({ err: error }, 'Error in buildEndSessionUrl');
-      const errorPageUrl = createRedirectUrl({ error: ERROR_CODES.PC_ERROR });
+      const errorPageUrl = createRedirectUrl({ error: AUTH_ERROR_CODES.PC_ERROR });
       return c.redirect(errorPageUrl, 302);
     }
 

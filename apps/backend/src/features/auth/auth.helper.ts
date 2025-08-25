@@ -1,4 +1,4 @@
-import { ERROR_CODES } from '@sirena/common/constants';
+import { AUTH_ERROR_CODES } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
 import { envVars } from '@//config/env';
@@ -65,8 +65,8 @@ export const authUser = async (c: Context<AppBindings>, { id, roleId }: authUser
     const logger = c.get('logger');
 
     const errorCode = isPrismaUniqueConstraintError(error)
-      ? ERROR_CODES.SESSION_ALREADY_EXISTS
-      : ERROR_CODES.SESSION_CREATE_ERROR;
+      ? AUTH_ERROR_CODES.SESSION_ALREADY_EXISTS
+      : AUTH_ERROR_CODES.SESSION_CREATE_ERROR;
 
     logger.error({ err: error }, 'Error in creating new session in database');
 

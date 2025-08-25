@@ -1,4 +1,4 @@
-export const ERROR_CODES = {
+export const AUTH_ERROR_CODES = {
   PC_ERROR: 'PC_ERROR',
   USER_INFOS_ERROR: 'USER_INFOS_ERROR',
   STATE_NOT_VALID: 'STATE_NOT_VALID',
@@ -11,7 +11,7 @@ export const ERROR_CODES = {
   SESSION_CREATE_ERROR: 'SESSION_CREATE_ERROR',
 };
 
-export const ERROR_MESSAGES: Record<keyof typeof ERROR_CODES, string> = {
+export const AUTH_ERROR_MESSAGES: Record<keyof typeof AUTH_ERROR_CODES, string> = {
   PC_ERROR: 'PC a retourné une erreur',
   USER_INFOS_ERROR: 'PC a retourné une erreur lors de la récupération des informations utilisateur',
   STATE_NOT_VALID: "L'état n'est pas valide",

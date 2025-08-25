@@ -28,10 +28,10 @@ jobs:
       run: npm run lint
     - name: Run gitLeaks
       run: pnpm gitleaks:ci
-    - name: Build backend-utils
-      run: pnpm build:backend-utils
     - name: Build common
       run: pnpm build:common
+    - name: Build backend-utils
+      run: pnpm build:backend-utils
     - name: Generate types
       run: pnpm db:generate
     - name: Build backend

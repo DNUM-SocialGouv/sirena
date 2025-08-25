@@ -30,8 +30,8 @@ COPY --chown=node:node ./apps/backend apps/backend
 COPY --chown=node:node ./packages/backend-utils packages/backend-utils
 COPY --chown=node:node ./packages/common packages/common
 
-RUN pnpm --filter @sirena/backend-utils build
 RUN pnpm --filter @sirena/common build
+RUN pnpm --filter @sirena/backend-utils build
 RUN pnpm --filter @sirena/backend db:generate
 RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
     export SENTRY_AUTH_TOKEN=$(cat /run/secrets/SENTRY_AUTH_TOKEN) \

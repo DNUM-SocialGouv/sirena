@@ -56,3 +56,7 @@ body {
 .fr-btn-link__icon--is-open::before {
   transform: rotate(-180deg);
 }
+
+.relative {
+  position: relative;
+}

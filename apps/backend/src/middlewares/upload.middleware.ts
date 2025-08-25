@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
+import { API_ERROR_CODES } from '@sirena/common/constants';
 import { fileTypeFromBuffer } from 'file-type';
 import { file as tmpAsync } from 'tmp-promise';
 import factoryWithUploadedFile from '@/helpers/factories/appWithUploadedFile';
@@ -70,13 +71,19 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
   const buffer = Buffer.from(arrayBuffer);
 
   if (buffer.length > MAX_FILE_SIZE) {
-    throwHTTPException400BadRequest('File size exceeds the maximum allowed', { res: c.res });
+    throwHTTPException400BadRequest('File size exceeds the maximum allowed', {
+      cause: { name: API_ERROR_CODES.FILE_MAX_SIZE },
+      res: c.res,
+    });
   }
 
   const detectedType = await fileTypeFromBuffer(buffer);
 
   if (!detectedType?.mime || !ALLOWED_MIME_TYPES.includes(detectedType.mime)) {
-    throwHTTPException400BadRequest(`File type "${detectedType?.mime}" is not allowed`, { res: c.res });
+    throwHTTPException400BadRequest(`File type "${detectedType?.mime}" is not allowed`, {
+      cause: { name: API_ERROR_CODES.FILE_TYPE },
+      res: c.res,
+    });
   }
 
   const sanitizedFilename = sanitizeFilename(file.name, detectedType.ext);

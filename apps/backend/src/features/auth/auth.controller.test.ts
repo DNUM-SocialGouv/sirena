@@ -1,4 +1,4 @@
-import { ERROR_CODES } from '@sirena/common/constants';
+import { AUTH_ERROR_CODES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import type { IDToken, TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
@@ -90,7 +90,7 @@ describe('Auth endpoints: /auth', () => {
 
       const res = await client.login.$post();
       expect(res.status).toBe(302);
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.PC_ERROR });
+      expect(createRedirectUrl).toHaveBeenCalledWith({ error: AUTH_ERROR_CODES.PC_ERROR });
     });
   });
 
@@ -258,7 +258,7 @@ describe('Auth endpoints: /auth', () => {
       expect(buildEndSessionUrl).toHaveBeenCalledTimes(1);
       expect(buildEndSessionUrl).toHaveBeenCalledWith(fakeSession.pcIdToken);
       expect(deleteSession).not.toHaveBeenCalled();
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.PC_ERROR });
+      expect(createRedirectUrl).toHaveBeenCalledWith({ error: AUTH_ERROR_CODES.PC_ERROR });
     });
   });
 
@@ -352,7 +352,10 @@ describe('Auth endpoints: /auth', () => {
         },
       );
 
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.PC_ERROR, errorDescription: 'ERROR_CODE' });
+      expect(createRedirectUrl).toHaveBeenCalledWith({
+        error: AUTH_ERROR_CODES.PC_ERROR,
+        errorDescription: 'ERROR_CODE',
+      });
       expect(res.status).toBe(302);
     });
 
@@ -374,7 +377,7 @@ describe('Auth endpoints: /auth', () => {
         },
       );
 
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.STATE_NOT_VALID });
+      expect(createRedirectUrl).toHaveBeenCalledWith({ error: AUTH_ERROR_CODES.STATE_NOT_VALID });
       expect(res.status).toBe(302);
     });
 
@@ -396,7 +399,7 @@ describe('Auth endpoints: /auth', () => {
         },
       );
 
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.STATE_NOT_VALID });
+      expect(createRedirectUrl).toHaveBeenCalledWith({ error: AUTH_ERROR_CODES.STATE_NOT_VALID });
       expect(res.status).toBe(302);
     });
 
@@ -421,7 +424,7 @@ describe('Auth endpoints: /auth', () => {
         },
       );
 
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.TOKENS_NOT_VALID });
+      expect(createRedirectUrl).toHaveBeenCalledWith({ error: AUTH_ERROR_CODES.TOKENS_NOT_VALID });
       expect(res.status).toBe(302);
     });
 
@@ -448,7 +451,7 @@ describe('Auth endpoints: /auth', () => {
         },
       );
 
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.TOKENS_NOT_VALID });
+      expect(createRedirectUrl).toHaveBeenCalledWith({ error: AUTH_ERROR_CODES.TOKENS_NOT_VALID });
       expect(res.status).toBe(302);
     });
 
@@ -478,7 +481,7 @@ describe('Auth endpoints: /auth', () => {
         },
       );
 
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.CLAIMS_NOT_VALID });
+      expect(createRedirectUrl).toHaveBeenCalledWith({ error: AUTH_ERROR_CODES.CLAIMS_NOT_VALID });
       expect(res.status).toBe(302);
     });
 
@@ -517,7 +520,7 @@ describe('Auth endpoints: /auth', () => {
         },
       );
 
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.USER_INFOS_ERROR });
+      expect(createRedirectUrl).toHaveBeenCalledWith({ error: AUTH_ERROR_CODES.USER_INFOS_ERROR });
       expect(res.status).toBe(302);
     });
 
@@ -556,7 +559,7 @@ describe('Auth endpoints: /auth', () => {
         },
       );
 
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.CLAIMS_NOT_VALID });
+      expect(createRedirectUrl).toHaveBeenCalledWith({ error: AUTH_ERROR_CODES.CLAIMS_NOT_VALID });
       expect(res.status).toBe(302);
     });
 
@@ -683,7 +686,7 @@ describe('Auth endpoints: /auth', () => {
         },
       );
 
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.USER_CREATE_ERROR });
+      expect(createRedirectUrl).toHaveBeenCalledWith({ error: AUTH_ERROR_CODES.USER_CREATE_ERROR });
       expect(res.status).toBe(302);
     });
 
@@ -734,7 +737,7 @@ describe('Auth endpoints: /auth', () => {
         },
       );
 
-      expect(createRedirectUrl).toHaveBeenCalledWith({ error: ERROR_CODES.USER_ALREADY_EXISTS });
+      expect(createRedirectUrl).toHaveBeenCalledWith({ error: AUTH_ERROR_CODES.USER_ALREADY_EXISTS });
       expect(res.status).toBe(302);
     });
   });

@@ -1,5 +1,5 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
-import { ERROR_CODES, ERROR_MESSAGES } from '@sirena/common/constants';
+import { AUTH_ERROR_CODES, AUTH_ERROR_MESSAGES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { NotAuth } from '@/components/layout/notAuth/layout';
@@ -27,8 +27,8 @@ function RouteComponent() {
   const { error } = Route.useSearch();
 
   const getErrorMessage = (errorCode: string) => {
-    if (errorCode in ERROR_CODES) {
-      return ERROR_MESSAGES[errorCode as keyof typeof ERROR_CODES];
+    if (errorCode in AUTH_ERROR_CODES) {
+      return AUTH_ERROR_MESSAGES[errorCode as keyof typeof AUTH_ERROR_CODES];
     }
     return errorCode;
   };
