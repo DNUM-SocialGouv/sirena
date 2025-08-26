@@ -46,15 +46,17 @@ function RouteComponent() {
 
   return (
     <div>
-      <div className="fr-container">
-        <div className="fr-mb-2w">
-          <Link className="fr-link" to="/home">
-            Liste des requêtes
-          </Link>
+      <div className="bg-cumulus fr-mb-4w">
+        <div className="fr-container fr-py-2w">
+          <div className="fr-mb-2w">
+            <Link className="fr-link fr-mb-1w" to="/home">
+              <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
+            </Link>
+          </div>
+          <RequestInfos />
         </div>
-
-        <RequestInfos />
-
+      </div>
+      <div className="fr-container">
         <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange} className={styles['request-tabs']}>
           {activeTab === 0 ? <Details /> : <Processing />}
         </Tabs>

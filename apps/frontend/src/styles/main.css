@@ -60,3 +60,7 @@ body {
 .relative {
   position: relative;
 }
+
+.bg-cumulus {
+  background-color: var(--background-alt-blue-cumulus);
+}
