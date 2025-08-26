@@ -393,16 +393,3 @@ export const resetAllMocks = () => {
 export const clearAllMocks = () => {
   vi.clearAllMocks();
 };
-
-import { Hono } from 'hono';
-import { testClient } from 'hono/testing';
-
-export const createTestApp = (middlewares: Array<(c: Context, next: () => Promise<void>) => Promise<void>> = []) => {
-  const app = new Hono();
-  middlewares.forEach((middleware) => app.use(middleware));
-  return app;
-};
-
-export const createHonoTestClient = (app: Hono) => {
-  return testClient(app);
-};

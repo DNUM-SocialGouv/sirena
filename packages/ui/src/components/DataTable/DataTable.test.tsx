@@ -47,7 +47,8 @@ describe('DataTable Component', () => {
   ];
 
   it('renders the table with caption and mocked header/rows', () => {
-    render(<DataTable title="User Table" rowId="id" id="test-table" data={data} columns={columns} />);
+    const id = 'test-table';
+    render(<DataTable title="User Table" rowId="id" id={id} data={data} columns={columns} />);
 
     expect(screen.getByText('User Table')).toBeInTheDocument(); // caption
     expect(screen.getByText('Mock Header')).toBeInTheDocument();
@@ -58,11 +59,12 @@ describe('DataTable Component', () => {
   it('renders empty placeholder if no data is provided', () => {
     type Data = typeof data;
     const emptyData: Data = [];
+    const id = 'test-table';
     render(
       <DataTable
         title="Empty Table"
         rowId="id"
-        id="empty-table"
+        id={id}
         data={emptyData}
         columns={columns}
         emptyPlaceholder="Nothing here"
@@ -73,7 +75,8 @@ describe('DataTable Component', () => {
   });
 
   it('shows loader when isLoading is true', () => {
-    render(<DataTable title="User Table" rowId="id" id="test-table" data={data} columns={columns} isLoading={true} />);
+    const id = 'test-table';
+    render(<DataTable title="User Table" rowId="id" id={id} data={data} columns={columns} isLoading={true} />);
 
     const loader = screen.getByTestId('loader');
     expect(loader).toBeInTheDocument();
@@ -81,13 +84,15 @@ describe('DataTable Component', () => {
   });
 
   it('does not show loader when isLoading is false', () => {
-    render(<DataTable title="User Table" rowId="id" id="test-table" data={data} columns={columns} isLoading={false} />);
+    const id = 'test-table';
+    render(<DataTable title="User Table" rowId="id" id={id} data={data} columns={columns} isLoading={false} />);
 
     expect(screen.queryByTestId('loader')).not.toBeInTheDocument();
   });
 
   it('does not show loader when isLoading is not provided', () => {
-    render(<DataTable title="User Table" rowId="id" id="test-table" data={data} columns={columns} />);
+    const id = 'test-table';
+    render(<DataTable title="User Table" rowId="id" id={id} data={data} columns={columns} />);
 
     expect(screen.queryByTestId('loader')).not.toBeInTheDocument();
   });
