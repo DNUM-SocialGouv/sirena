@@ -1,8 +1,11 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import type { PinoLogger } from 'hono-pino';
+import { createChangeLog } from '@/features/changelog/changelog.service';
+import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { getRequestEntiteById } from '@/features/requetesEntite/requetesEntite.service';
+import { deleteFileFromMinio } from '@/libs/minio';
 import type { Prisma } from '@/libs/prisma';
 import { prisma, type RequeteState } from '@/libs/prisma';
-
 import type {
   CreateRequeteStateNoteDto,
   GetRequeteStatesQuery,
@@ -150,3 +153,82 @@ export const addNote = async (data: CreateRequeteStateNoteDto) =>
       },
     },
   });
+
+export const deleteRequeteState = async (id: string, logger: PinoLogger, changedById?: string): Promise<void> => {
+  const { notes, files, filePaths } = await prisma.$transaction(async (tx) => {
+    const requeteState = await tx.requeteState.findUnique({
+      where: { id },
+      include: {
+        notes: { include: { uploadedFiles: true } },
+      },
+    });
+
+    if (!requeteState) {
+      return { notes: [], files: [], filePaths: [] };
+    }
+
+    const notes = requeteState.notes.map(({ uploadedFiles, ...note }) => note);
+    const files = requeteState.notes.flatMap((n) => n.uploadedFiles);
+    const filePaths = files.map((f) => f.filePath);
+
+    const noteIds = notes.map((n) => n.id);
+    if (noteIds.length > 0) {
+      await tx.uploadedFile.deleteMany({ where: { requeteStateNoteId: { in: noteIds } } });
+    }
+
+    await tx.requeteStateNote.deleteMany({ where: { requeteEntiteStateId: id } });
+    await tx.requeteState.delete({ where: { id } });
+
+    return { notes, files, filePaths };
+  });
+
+  if (changedById && notes.length > 0) {
+    await Promise.allSettled(
+      notes.map(async (note) => {
+        try {
+          await createChangeLog({
+            entity: 'RequeteStateNote',
+            entityId: note.id,
+            action: ChangeLogAction.DELETED,
+            before: note as unknown as Prisma.JsonObject,
+            after: {},
+            changedById,
+          });
+        } catch (err) {
+          logger.error({ err, noteId: note.id }, 'Failed to create changelog for note');
+        }
+      }),
+    );
+  }
+
+  if (changedById && files.length > 0) {
+    await Promise.allSettled(
+      files.map(async (file) => {
+        try {
+          await createChangeLog({
+            entity: 'UploadedFile',
+            entityId: file.id,
+            action: ChangeLogAction.DELETED,
+            before: file as unknown as Prisma.JsonObject,
+            after: {},
+            changedById,
+          });
+        } catch (err) {
+          logger.error({ err, fileId: file.id }, 'Failed to create changelog for file');
+        }
+      }),
+    );
+  }
+
+  if (filePaths.length > 0) {
+    await Promise.allSettled(
+      filePaths.map(async (filePath) => {
+        try {
+          await deleteFileFromMinio(filePath);
+        } catch (err) {
+          logger.error({ err, filePath }, 'Failed to delete MinIO file');
+        }
+      }),
+    );
+  }
+};

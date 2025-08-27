@@ -14,6 +14,7 @@ import { convertDatesToStrings } from '@/tests/formatter';
 import RequeteStatesController from './requeteStates.controller';
 import {
   addNote,
+  deleteRequeteState,
   getRequeteStateById,
   updateRequeteStateStatut,
   updateRequeteStateStepName,
@@ -47,6 +48,7 @@ vi.mock('./requeteStates.service', () => ({
   addNote: vi.fn(),
   isUserOwner: vi.fn(),
   setNoteFile: vi.fn(),
+  deleteRequeteState: vi.fn(),
 }));
 
 vi.mock('@/features/uploadedFiles/uploadedFiles.service', () => ({
@@ -595,6 +597,66 @@ describe('requeteStates.controller.ts', () => {
 
       expect(res.status).toBe(200);
       expect(res.headers.get('content-disposition')).toBe('inline; filename="fallback.pdf"');
+    });
+  });
+
+  describe('DELETE /:id', () => {
+    it('should delete a RequeteState successfully', async () => {
+      vi.mocked(deleteRequeteState).mockResolvedValueOnce();
+
+      const res = await client[':id'].$delete({
+        param: { id: 'step1' },
+      });
+
+      expect(res.status).toBe(204);
+      expect(await res.text()).toBe('');
+      expect(deleteRequeteState).toHaveBeenCalledWith('step1', expect.any(Object), 'test-user-id');
+    });
+
+    it('should return 404 if RequeteState not found', async () => {
+      vi.mocked(getRequeteStateById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].$delete({
+        param: { id: 'step1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'RequeteState not found',
+      });
+      expect(deleteRequeteState).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 if user has no access to requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id'].$delete({
+        param: { id: 'step1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(body).toEqual({
+        message: 'You are not allowed to delete this requete state',
+      });
+      expect(deleteRequeteState).not.toHaveBeenCalled();
+    });
+
+    it('should handle service errors gracefully', async () => {
+      vi.mocked(deleteRequeteState).mockRejectedValueOnce(new Error('Database error'));
+
+      const res = await client[':id'].$delete({
+        param: { id: 'step1' },
+      });
+
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body).toEqual({
+        message: 'Internal server error',
+      });
     });
   });
 });

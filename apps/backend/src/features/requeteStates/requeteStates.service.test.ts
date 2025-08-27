@@ -1,9 +1,11 @@
+import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getRequestEntiteById } from '@/features/requetesEntite/requetesEntite.service';
-import { prisma, type RequeteState } from '@/libs/prisma';
+import { type ChangeLog, prisma, type RequeteState } from '@/libs/prisma';
 import {
   addNote,
   addProcessingState,
+  deleteRequeteState,
   getRequeteStateById,
   getRequeteStates,
   updateRequeteStateStatut,
@@ -12,6 +14,7 @@ import {
 
 vi.mock('@/libs/prisma', () => ({
   prisma: {
+    $transaction: vi.fn(),
     requeteState: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -22,11 +25,22 @@ vi.mock('@/libs/prisma', () => ({
     requeteStateNote: {
       create: vi.fn(),
     },
+    uploadedFile: {
+      deleteMany: vi.fn(),
+    },
   },
 }));
 
 vi.mock('@/features/requetesEntite/requetesEntite.service', () => ({
   getRequestEntiteById: vi.fn(),
+}));
+
+vi.mock('@/features/changelog/changelog.service', () => ({
+  createChangeLog: vi.fn(),
+}));
+
+vi.mock('@/libs/minio', () => ({
+  deleteFileFromMinio: vi.fn(),
 }));
 
 describe('requeteStates.service.ts', () => {
@@ -409,6 +423,434 @@ describe('requeteStates.service.ts', () => {
       });
 
       vi.mocked(prisma.requeteStateNote.create).mockRestore();
+    });
+  });
+
+  describe('deleteRequeteState()', () => {
+    const mockLogger = {
+      error: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+    } as unknown as PinoLogger;
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should delete RequeteState with notes and files successfully', async () => {
+      const mockRequeteState = {
+        id: 'state-1',
+        stepName: 'Test Step',
+        statutId: 'EN_COURS',
+        requeteEntiteId: 'entite-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        notes: [
+          {
+            id: 'note-1',
+            content: 'Test note',
+            requeteEntiteStateId: 'state-1',
+            authorId: 'user-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            uploadedFiles: [
+              {
+                id: 'file-1',
+                filePath: 'path/to/file1.pdf',
+                size: 1024,
+                metadata: { originalName: 'file1.pdf' },
+                requeteStateNoteId: 'note-1',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+          },
+        ],
+      };
+
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          requeteState: {
+            findUnique: vi.fn().mockResolvedValue(mockRequeteState),
+            delete: vi.fn().mockResolvedValue({}),
+          },
+          uploadedFile: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+          requeteStateNote: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+        };
+        return await callback(tx);
+      });
+
+      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+
+      await deleteRequeteState('state-1', mockLogger, 'user-1');
+
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(mockTransaction).toHaveBeenCalledWith(expect.any(Function));
+    });
+
+    it('should handle RequeteState not found', async () => {
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          requeteState: {
+            findUnique: vi.fn().mockResolvedValue(null),
+          },
+        };
+        return await callback(tx);
+      });
+
+      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+
+      await deleteRequeteState('non-existent', mockLogger, 'user-1');
+
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('should handle RequeteState with no notes', async () => {
+      const mockRequeteState = {
+        id: 'state-1',
+        stepName: 'Test Step',
+        statutId: 'EN_COURS',
+        requeteEntiteId: 'entite-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        notes: [],
+      };
+
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          requeteState: {
+            findUnique: vi.fn().mockResolvedValue(mockRequeteState),
+            delete: vi.fn().mockResolvedValue({}),
+          },
+          uploadedFile: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+          requeteStateNote: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+        };
+        return await callback(tx);
+      });
+
+      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+
+      await deleteRequeteState('state-1', mockLogger, 'user-1');
+
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('should handle RequeteState with notes but no files', async () => {
+      const mockRequeteState = {
+        id: 'state-1',
+        stepName: 'Test Step',
+        statutId: 'EN_COURS',
+        requeteEntiteId: 'entite-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        notes: [
+          {
+            id: 'note-1',
+            content: 'Test note',
+            requeteEntiteStateId: 'state-1',
+            authorId: 'user-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            uploadedFiles: [],
+          },
+        ],
+      };
+
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          requeteState: {
+            findUnique: vi.fn().mockResolvedValue(mockRequeteState),
+            delete: vi.fn().mockResolvedValue({}),
+          },
+          uploadedFile: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+          requeteStateNote: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+        };
+        return await callback(tx);
+      });
+
+      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+
+      await deleteRequeteState('state-1', mockLogger, 'user-1');
+
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('should handle changelog creation errors gracefully', async () => {
+      const { createChangeLog } = await import('@/features/changelog/changelog.service');
+      const { deleteFileFromMinio } = await import('@/libs/minio');
+
+      const mockRequeteState = {
+        id: 'state-1',
+        stepName: 'Test Step',
+        statutId: 'EN_COURS',
+        requeteEntiteId: 'entite-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        notes: [
+          {
+            id: 'note-1',
+            content: 'Test note',
+            requeteEntiteStateId: 'state-1',
+            authorId: 'user-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            uploadedFiles: [
+              {
+                id: 'file-1',
+                filePath: 'path/to/file1.pdf',
+                size: 1024,
+                metadata: { originalName: 'file1.pdf' },
+                requeteStateNoteId: 'note-1',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+          },
+        ],
+      };
+
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          requeteState: {
+            findUnique: vi.fn().mockResolvedValue(mockRequeteState),
+            delete: vi.fn().mockResolvedValue({}),
+          },
+          uploadedFile: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+          requeteStateNote: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+        };
+        return await callback(tx);
+      });
+
+      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+      vi.mocked(createChangeLog).mockRejectedValueOnce(new Error('Changelog error'));
+      vi.mocked(deleteFileFromMinio).mockResolvedValue();
+
+      await deleteRequeteState('state-1', mockLogger, 'user-1');
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error), noteId: 'note-1' }),
+        'Failed to create changelog for note',
+      );
+    });
+
+    it('should handle MinIO deletion errors gracefully', async () => {
+      const { deleteFileFromMinio } = await import('@/libs/minio');
+
+      const mockRequeteState = {
+        id: 'state-1',
+        stepName: 'Test Step',
+        statutId: 'EN_COURS',
+        requeteEntiteId: 'entite-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        notes: [
+          {
+            id: 'note-1',
+            content: 'Test note',
+            requeteEntiteStateId: 'state-1',
+            authorId: 'user-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            uploadedFiles: [
+              {
+                id: 'file-1',
+                filePath: 'path/to/file1.pdf',
+                size: 1024,
+                metadata: { originalName: 'file1.pdf' },
+                requeteStateNoteId: 'note-1',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+          },
+        ],
+      };
+
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          requeteState: {
+            findUnique: vi.fn().mockResolvedValue(mockRequeteState),
+            delete: vi.fn().mockResolvedValue({}),
+          },
+          uploadedFile: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+          requeteStateNote: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+        };
+        return await callback(tx);
+      });
+
+      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+      vi.mocked(deleteFileFromMinio).mockRejectedValueOnce(new Error('MinIO error'));
+
+      await deleteRequeteState('state-1', mockLogger, 'user-1');
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error), filePath: 'path/to/file1.pdf' }),
+        'Failed to delete MinIO file',
+      );
+    });
+
+    it('should not create changelogs when changedById is not provided', async () => {
+      const { createChangeLog } = await import('@/features/changelog/changelog.service');
+
+      const mockRequeteState = {
+        id: 'state-1',
+        stepName: 'Test Step',
+        statutId: 'EN_COURS',
+        requeteEntiteId: 'entite-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        notes: [
+          {
+            id: 'note-1',
+            content: 'Test note',
+            requeteEntiteStateId: 'state-1',
+            authorId: 'user-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            uploadedFiles: [
+              {
+                id: 'file-1',
+                filePath: 'path/to/file1.pdf',
+                size: 1024,
+                metadata: { originalName: 'file1.pdf' },
+                requeteStateNoteId: 'note-1',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+          },
+        ],
+      };
+
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          requeteState: {
+            findUnique: vi.fn().mockResolvedValue(mockRequeteState),
+            delete: vi.fn().mockResolvedValue({}),
+          },
+          uploadedFile: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+          requeteStateNote: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+        };
+        return await callback(tx);
+      });
+
+      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+
+      await deleteRequeteState('state-1', mockLogger);
+
+      expect(createChangeLog).not.toHaveBeenCalled();
+    });
+
+    it('should handle multiple notes and files correctly', async () => {
+      const { createChangeLog } = await import('@/features/changelog/changelog.service');
+      const { deleteFileFromMinio } = await import('@/libs/minio');
+
+      const mockRequeteState = {
+        id: 'state-1',
+        stepName: 'Test Step',
+        statutId: 'EN_COURS',
+        requeteEntiteId: 'entite-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        notes: [
+          {
+            id: 'note-1',
+            content: 'Test note 1',
+            requeteEntiteStateId: 'state-1',
+            authorId: 'user-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            uploadedFiles: [
+              {
+                id: 'file-1',
+                filePath: 'path/to/file1.pdf',
+                size: 1024,
+                metadata: { originalName: 'file1.pdf' },
+                requeteStateNoteId: 'note-1',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+          },
+          {
+            id: 'note-2',
+            content: 'Test note 2',
+            requeteEntiteStateId: 'state-1',
+            authorId: 'user-2',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            uploadedFiles: [
+              {
+                id: 'file-2',
+                filePath: 'path/to/file2.pdf',
+                size: 2048,
+                metadata: { originalName: 'file2.pdf' },
+                requeteStateNoteId: 'note-2',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              {
+                id: 'file-3',
+                filePath: 'path/to/file3.pdf',
+                size: 3072,
+                metadata: { originalName: 'file3.pdf' },
+                requeteStateNoteId: 'note-2',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+          },
+        ],
+      };
+
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
+        const tx = {
+          requeteState: {
+            findUnique: vi.fn().mockResolvedValue(mockRequeteState),
+            delete: vi.fn().mockResolvedValue({}),
+          },
+          uploadedFile: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+          requeteStateNote: {
+            deleteMany: vi.fn().mockResolvedValue({}),
+          },
+        };
+        return await callback(tx);
+      });
+
+      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+      vi.mocked(createChangeLog).mockResolvedValue({} as unknown as ChangeLog);
+      vi.mocked(deleteFileFromMinio).mockResolvedValue();
+
+      await deleteRequeteState('state-1', mockLogger, 'user-1');
+
+      expect(createChangeLog).toHaveBeenCalledTimes(5);
+      expect(deleteFileFromMinio).toHaveBeenCalledTimes(3);
     });
   });
 });

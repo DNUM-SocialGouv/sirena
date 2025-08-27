@@ -62,3 +62,11 @@ export async function updateProcessingStepName(stepId: string, data: UpdateProce
   await handleRequestErrors(res);
   return res.json();
 }
+
+export async function deleteProcessingStep(stepId: string) {
+  const res = await client['requete-states'][':id'].$delete({
+    param: { id: stepId },
+  });
+  await handleRequestErrors(res);
+  return;
+}

@@ -1,10 +1,13 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
+import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { REQUETE_STATUT_TYPES, type RequeteStatutType } from '@sirena/common/constants';
 import { useParams } from '@tanstack/react-router';
 import { clsx } from 'clsx';
 import { memo, useState } from 'react';
+import { ButtonLink } from '@/components/common/ButtonLink';
 import { StatusMenu } from '@/components/common/statusMenu';
+import { useDeleteProcessingStep } from '@/hooks/mutations/deleteProcessingStep.hook';
 import { useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useUpdateProcessingStepName } from '@/hooks/mutations/updateProcessingStepName.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
@@ -13,6 +16,11 @@ import { UpdateProcessingStepNameSchema } from '@/schemas/processingSteps.schema
 import { StepNote } from './StepNote';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
+
+const deleteStepModal = createModal({
+  id: 'delete-step-modal',
+  isOpenedByDefault: false,
+});
 
 type StepProps = StepType & {
   disabled?: boolean;
@@ -24,6 +32,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
   const [isOpen, setIsOpen] = useState(false);
   const updateStatusMutation = useUpdateProcessingStepStatus(requestId);
   const updateStepNameMutation = useUpdateProcessingStepName(requestId);
+  const deleteStepMutation = useDeleteProcessingStep(requestId);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editStepName, setEditStepName] = useState(stepName ?? '');
@@ -80,6 +89,19 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
     setEditError(null);
   };
 
+  const handleDeleteStep = async () => {
+    if (id) {
+      deleteStepMutation.mutate(
+        { id },
+        {
+          onSuccess: () => {
+            deleteStepModal.close();
+          },
+        },
+      );
+    }
+  };
+
   return (
     <div className={`fr-mb-4w ${styles['timeline-step']}`}>
       <div className={styles['timeline-dot']} />
@@ -99,18 +121,27 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
               state={editError ? 'error' : 'default'}
               stateRelatedMessage={editError}
             />
-            <div className="fr-btns-group fr-btns-group--inline fr-grid-row--right fr-mt-2w">
-              <Button priority="secondary" size="small" onClick={() => handleEditButton(false)}>
-                Annuler
-              </Button>
-              <Button
-                priority="primary"
-                size="small"
-                onClick={handleSaveEdit}
-                disabled={updateStepNameMutation.isPending}
-              >
-                {updateStepNameMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
-              </Button>
+            <div className="fr-grid-row fr-grid-row--middle fr-mt-2w">
+              <div className="fr-col">
+                <ButtonLink icon="fr-icon-close-line" onClick={() => deleteStepModal.open()}>
+                  Supprimer l'étape
+                </ButtonLink>
+              </div>
+              <div className="fr-col-auto">
+                <div className="fr-btns-group fr-btns-group--inline">
+                  <Button priority="secondary" size="small" onClick={() => handleEditButton(false)}>
+                    Annuler
+                  </Button>
+                  <Button
+                    priority="primary"
+                    size="small"
+                    onClick={handleSaveEdit}
+                    disabled={updateStepNameMutation.isPending}
+                  >
+                    {updateStepNameMutation.isPending ? 'Enregistrement...' : 'Modifier'}
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -174,6 +205,26 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
           Note ou fichier
         </Button>
       </div>
+
+      <deleteStepModal.Component
+        title="Suppression d'une étape"
+        buttons={[
+          {
+            doClosesModal: true,
+            children: 'Annuler',
+          },
+          {
+            doClosesModal: false,
+            children: 'Supprimer',
+            onClick: handleDeleteStep,
+          },
+        ]}
+      >
+        <p>
+          Êtes-vous sûr de vouloir supprimer cette étape ? La suppression de l'étape entraîne la suppression de toutes
+          les notes et fichiers liés à cette étape.
+        </p>
+      </deleteStepModal.Component>
     </div>
   );
 };
