@@ -269,38 +269,31 @@ const app = factoryWithLogs
     },
   )
 
-  .delete(
-    '/:id',
-    deleteRequeteStateRoute,
-    requeteStatesChangelogMiddleware({ action: ChangeLogAction.DELETED }),
-    async (c) => {
-      const logger = c.get('logger');
-      const { id } = c.req.param();
-      const userId = c.get('userId');
+  .delete('/:id', deleteRequeteStateRoute, async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
 
-      const requeteState = await getRequeteStateById(id);
+    const requeteState = await getRequeteStateById(id);
 
-      if (!requeteState) {
-        return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
-      }
+    if (!requeteState) {
+      return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+    }
 
-      // TODO: check real access with entiteIds when implemented
-      //   const entiteIds = c.get('entiteIds');
-      const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
-      if (!hasAccess) {
-        return throwHTTPException403Forbidden('You are not allowed to delete this requete state', {
-          res: c.res,
-        });
-      }
+    // TODO: check real access with entiteIds when implemented
+    //   const entiteIds = c.get('entiteIds');
+    const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+    if (!hasAccess) {
+      return throwHTTPException403Forbidden('You are not allowed to delete this requete state', {
+        res: c.res,
+      });
+    }
 
-      await deleteRequeteState(id, logger, userId);
+    await deleteRequeteState(id, logger, userId);
 
-      c.set('changelogId', id);
+    logger.info({ requeteStateId: id, userId }, 'RequeteState deleted successfully');
 
-      logger.info({ requeteStateId: id, userId }, 'RequeteState deleted successfully');
-
-      return c.body(null, 204);
-    },
-  );
+    return c.body(null, 204);
+  });
 
 export default app;
