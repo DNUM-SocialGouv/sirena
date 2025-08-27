@@ -31,7 +31,7 @@ export const StatusMenu = ({ badges, value, onBadgeClick, isLoading, disabled }:
         isOpen={isOpen}
         isLoading={isLoading}
         disabled={disabled}
-        className={`fr-badge  fr-badge--sm ${badgeSelectedClassName}`}
+        className={`fr-badge fr-badge--no-icon fr-badge--sm ${badgeSelectedClassName}`}
       >
         {badgeSelectedText}
       </Menu.Trigger>
@@ -41,7 +41,7 @@ export const StatusMenu = ({ badges, value, onBadgeClick, isLoading, disabled }:
             {badgesFiltred.map((badge) => (
               <Menu.Item
                 key={badge.value}
-                className={`${styles['status-menu__item']} fr-badge fr-badge--sm fr-badge--${badge.type}`}
+                className={`${styles['status-menu__item']} fr-badge fr-badge--no-icon fr-badge--sm fr-badge--${badge.type}`}
                 onClick={() => onBadgeClick?.(badge.value)}
               >
                 {badge.text}

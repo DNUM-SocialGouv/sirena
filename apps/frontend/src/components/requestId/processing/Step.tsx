@@ -44,7 +44,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
       value: REQUETE_STATUT_TYPES.FAIT,
     },
     {
-      type: 'warning',
+      type: 'new',
       text: 'En cours',
       value: REQUETE_STATUT_TYPES.EN_COURS,
     },
