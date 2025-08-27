@@ -11,7 +11,7 @@ cronWorker.on('completed', (job) => {
 });
 
 cronWorker.on('failed', (job, err) => {
-  logger.error(`[worker] Job "${job?.name}" failed:`, err);
+  logger.error({ err }, `[worker] Job "${job?.name}" failed:`);
 });
 
 const shutdown = async () => {
