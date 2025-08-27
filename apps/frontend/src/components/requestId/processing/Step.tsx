@@ -17,17 +17,16 @@ import { StepNote } from './StepNote';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
-const deleteStepModal = createModal({
-  id: 'delete-step-modal',
-  isOpenedByDefault: false,
-});
-
 type StepProps = StepType & {
   disabled?: boolean;
   openEdit?(step: StepType): void;
 };
 
 const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...rest }: StepProps) => {
+  const deleteStepModal = createModal({
+    id: `delete-step-modal-${id}`,
+    isOpenedByDefault: false,
+  });
   const { requestId } = useParams({ from: '/_auth/_user/request/$requestId' });
   const [isOpen, setIsOpen] = useState(false);
   const updateStatusMutation = useUpdateProcessingStepStatus(requestId);
