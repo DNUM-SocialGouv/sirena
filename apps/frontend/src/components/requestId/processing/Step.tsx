@@ -123,7 +123,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
             />
             <div className="fr-grid-row fr-grid-row--middle fr-mt-2w">
               <div className="fr-col">
-                <ButtonLink icon="fr-icon-close-line" onClick={() => deleteStepModal.open()}>
+                <ButtonLink icon="fr-icon-delete-line" onClick={() => deleteStepModal.open()}>
                   Supprimer l'étape
                 </ButtonLink>
               </div>
