@@ -2,6 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { REQUETE_STATUT_TYPES, type RequeteStatutType } from '@sirena/common/constants';
+import { Toast } from '@sirena/ui';
 import { useParams } from '@tanstack/react-router';
 import { clsx } from 'clsx';
 import { memo, useState } from 'react';
@@ -32,6 +33,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
   const updateStatusMutation = useUpdateProcessingStepStatus(requestId);
   const updateStepNameMutation = useUpdateProcessingStepName(requestId);
   const deleteStepMutation = useDeleteProcessingStep(requestId);
+  const toastManager = Toast.useToastManager();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editStepName, setEditStepName] = useState(stepName ?? '');
@@ -95,6 +97,12 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
         {
           onSuccess: () => {
             deleteStepModal.close();
+            toastManager.add({
+              title: 'Étape supprimée',
+              description: "L'étape a été supprimée avec succès.",
+              timeout: 0,
+              data: { icon: 'fr-alert--success' },
+            });
           },
         },
       );
