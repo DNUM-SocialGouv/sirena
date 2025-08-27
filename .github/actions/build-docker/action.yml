@@ -52,6 +52,22 @@ runs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
+    - name: Build and push Docker worker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: apps/backend/Dockerfile.worker
+        push: true
+        tags: ${{ env.IMAGE_TAG }}-worker
+        labels: ${{ steps.meta.outputs.labels }}
+        secrets: |
+          SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
+        cache-from: |
+          type=gha,scope=worker
+        cache-to: |
+          type=gha,mode=max,scope=worker
+        platforms: linux/amd64
+
     - name: Build and push Docker backend image
       uses: docker/build-push-action@v5
       with:

@@ -1,10 +1,13 @@
 import { writeFile } from 'node:fs/promises';
 import { envVars } from '@/config/env';
-import { createRequeteFromDematSocial } from '@/features/requetes/requetes.service';
+import { createOrGetFromDematSocial } from '@/features/requetes/requetes.service';
+import { abortControllerStorage } from '@/libs/asyncLocalStorage';
 import { GetDossierDocument, GetDossiersByDateDocument, GetDossiersMetadataDocument, graffle } from '@/libs/graffle';
 
 export const getRequetes = async (createdSince?: Date) => {
+  const abortController = abortControllerStorage.getStore();
   const data = await graffle
+    .transport({ raw: { signal: abortController?.signal } })
     .gql(GetDossiersByDateDocument)
     .send({ demarcheNumber: envVars.DEMAT_SOCIAL_API_DIRECTORY, createdSince: createdSince?.toISOString() });
   return data?.demarche.dossiers?.nodes?.filter((node) => !!node) || [];
@@ -22,7 +25,6 @@ export const getRequetesMetaData = async () => {
 
 export const getRequete = async (id: number) => {
   console.time('getRequete');
-
   const data = await graffle.gql(GetDossierDocument).send({ dossierNumber: id });
   console.timeEnd('getRequete');
   console.log('Data from graffle:', data);
@@ -30,12 +32,24 @@ export const getRequete = async (id: number) => {
 };
 
 export const importRequetes = async (createdSince?: Date) => {
+  if (createdSince) {
+    console.log(`Importing requetes from ${createdSince.toUTCString()}`);
+  } else {
+    console.log('Importing all requetes');
+  }
   const dossiers = await getRequetes(createdSince);
+  let i = 0;
   for (const dossier of dossiers) {
     // const data = await getRequete(dossier.number);
-    await createRequeteFromDematSocial({
+    const requete = await createOrGetFromDematSocial({
       dematSocialId: dossier.number,
       createdAt: new Date(dossier.dateDepot),
     });
+
+    if (requete) {
+      i += 1;
+    }
   }
+  console.log(`${i} Requete(s) added`);
+  return { count: i };
 };
