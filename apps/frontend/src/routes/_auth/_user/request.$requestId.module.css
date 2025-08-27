@@ -61,7 +61,12 @@
   border-bottom: 1px solid var(--border-default-grey);
 }
 
+.request-step__add-note {
+  margin-left: 1rem;
+}
+
 .request-notes-distplay {
+  margin: 0 1rem;
   margin-bottom: 1rem;
 }
 

@@ -31,7 +31,18 @@ export const UpdateRequeteStateStepNameSchema = z.object({
     }),
 });
 
-export const addRequeteStatesNoteBodySchema = z.object({
-  content: z.string(),
-  fileIds: z.array(z.string()).optional(),
-});
+export const addRequeteStatesNoteBodySchema = z
+  .object({
+    content: z.string().transform((s) => s.trim()),
+    fileIds: z.array(z.string().min(1, 'id vide')).optional(),
+  })
+  .superRefine((val, ctx) => {
+    const hasContent = val.content.length > 0;
+    const hasFiles = (val.fileIds?.length ?? 0) > 0;
+
+    if (!hasContent && !hasFiles) {
+      const message = 'Renseigne du texte OU au moins 1 fichier.';
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ['content'] });
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ['fileIds'] });
+    }
+  });

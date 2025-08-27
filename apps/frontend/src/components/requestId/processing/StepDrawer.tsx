@@ -1,6 +1,7 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
+import { API_ERROR_MESSAGES, type ApiErrorCodes } from '@sirena/common/constants';
 import { Drawer } from '@sirena/ui';
 import { useParams } from '@tanstack/react-router';
 
@@ -8,6 +9,7 @@ import { forwardRef, useImperativeHandle, useState } from 'react';
 import { useAddProcessingStepNote } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
+import { HttpError } from '@/lib/api/tanstackQuery';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 export type StepDrawerRef = {
@@ -24,6 +26,7 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
   const [content, setContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const addStepNoteMutation = useAddProcessingStepNote(requestId);
   const uploadFileMutation = useUploadFile();
@@ -36,6 +39,9 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
   const handleCancel = () => {
     setContent('');
     setStep(null);
+    setFiles([]);
+    setIsLoading(false);
+    setErrorMessage(null);
   };
 
   useImperativeHandle(ref, () => ({
@@ -57,17 +63,30 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
     setIsLoading(true);
     const fileIds = [];
     if (files.length > 0) {
-      const data = await Promise.all(files.map((file) => uploadFileMutation.mutateAsync(file)));
-      for (let i = 0; i < data.length; i += 1) {
-        fileIds.push(data[i].id);
+      try {
+        const data = await Promise.all(files.map((file) => uploadFileMutation.mutateAsync(file)));
+        for (let i = 0; i < data.length; i += 1) {
+          fileIds.push(data[i].id);
+        }
+      } catch (error) {
+        setIsLoading(false);
+        if (error instanceof HttpError) {
+          if (error.status === 400 && error.data?.name && error.data.name in API_ERROR_MESSAGES) {
+            setErrorMessage(API_ERROR_MESSAGES[error.data.name as ApiErrorCodes]);
+            throw error;
+          }
+        }
+        setErrorMessage("Une erreur est survenue lors de l'upload des fichiers. Veuillez réessayer.");
+        throw error;
       }
     }
 
-    await addStepNoteMutation.mutate(
+    addStepNoteMutation.mutate(
       { content: content.trim(), id: step.id, fileIds },
       {
         onError: () => {
           setIsLoading(false);
+          setErrorMessage("Une erreur est survenue lors de l'upload des fichiers. Veuillez réessayer.");
         },
         onSuccess: () => {
           handleCancel();
@@ -75,8 +94,6 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
         },
       },
     );
-
-    setIsLoading(false);
   };
 
   return (
@@ -99,10 +116,14 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
               />
               <Upload
                 label="Ajouter un ou plusieurs fichiers"
-                hint="Taille maximale: 10 Mo. Formats supportés: jpg, png, pdf."
+                hint="Taille maximale: 10 Mo. Formats supportés: .pdf, .png, .jpeg, .eml, .xlsx, .docx"
                 multiple
                 disabled={isLoading}
+                state={errorMessage ? 'error' : undefined}
+                stateRelatedMessage={errorMessage ?? undefined}
+                className="relative"
                 nativeInputProps={{
+                  accept: '.pdf,.png,.jpeg,.eml,.xlsx,.docx',
                   onChange: (e) => {
                     const files = e.target.files;
                     if (files) {
@@ -112,7 +133,7 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
                   },
                 }}
               />
-              <div className="display-end">
+              <div className="display-end fr-mt-2w">
                 <Button
                   type="button"
                   priority="primary"
