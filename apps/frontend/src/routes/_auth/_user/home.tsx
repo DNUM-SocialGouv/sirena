@@ -36,7 +36,7 @@ function RouteComponent() {
   }, [profileQuery.data, userStore.role]);
 
   return (
-    <div className="home">
+    <div className="fr-container fr-mt-4w">
       <QueryStateHandler query={profileQuery}>
         {() => (
           <>

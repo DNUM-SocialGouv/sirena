@@ -10,7 +10,7 @@ export const AuthLayout = ({ children }: AdminLayoutProps) => {
   return (
     <div className="layout">
       <HeaderMenu homeHref="/" />
-      <main className={'fr-container main fr-my-15w'}>{children}</main>
+      <main>{children}</main>
       <AppFooter />
     </div>
   );

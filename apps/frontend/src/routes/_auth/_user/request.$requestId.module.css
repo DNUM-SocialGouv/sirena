@@ -50,10 +50,18 @@
 }
 
 .request-tabs::before {
-  box-shadow: none;
+  box-shadow: inset 0 1px 0 0 var(--border-default-grey);
 }
 .request-tabs :global(.fr-tabs__panel) {
   padding: 2rem 0;
+}
+.request-tabs :global(.fr-tabs__list) {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.request-tabs :global(.fr-tabs__list > button:first-child) {
+  margin-left: 0;
 }
 
 .request-step {
