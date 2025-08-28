@@ -68,4 +68,30 @@ describe('env.ts', () => {
       "La variable d'environnement DEMAT_SOCIAL_API_DIRECTORY doit etre un integer",
     );
   });
+
+  it('should allow optional REDIS_PASSWORD', () => {
+    const envWithoutRedisPassword = {
+      FRONTEND_URI: 'https://front.com',
+      FRONTEND_REDIRECT_URI: 'https://front.com/callback',
+      FRONTEND_REDIRECT_LOGIN_URI: 'https://front.com/login',
+      AUTH_TOKEN_SECRET_KEY: 'secret1',
+      REFRESH_TOKEN_SECRET_KEY: 'secret2',
+      AUTH_TOKEN_EXPIRATION: '3600',
+      REFRESH_TOKEN_EXPIRATION: '86400',
+      AUTH_TOKEN_NAME: 'auth',
+      REFRESH_TOKEN_NAME: 'refresh',
+      IS_LOGGED_TOKEN_NAME: 'is_logged',
+      DEMAT_SOCIAL_API_URL: 'https://demat.api',
+      DEMAT_SOCIAL_API_TOKEN: 'token',
+      DEMAT_SOCIAL_API_DIRECTORY: '123',
+      LOG_FORMAT: 'json',
+      REDIS_HOST: 'localhost',
+      REDIS_PORT: '6379',
+    };
+
+    const result = AppEnvSchema.parse(envWithoutRedisPassword);
+    expect(result.REDIS_PASSWORD).toBeUndefined();
+    expect(result.REDIS_HOST).toBe('localhost');
+    expect(result.REDIS_PORT).toBe(6379);
+  });
 });
