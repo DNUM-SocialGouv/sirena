@@ -1,4 +1,4 @@
-import { ERROR_CODES } from '@sirena/common/constants';
+import { AUTH_ERROR_CODES } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { testClient } from 'hono/testing';
@@ -169,7 +169,7 @@ describe('auth.helper.ts Auth Helpers', () => {
     const res = await client.test.$get();
 
     expect(res.status).toBe(302);
-    expect(res.headers.get('Location')).toMatch(ERROR_CODES.SESSION_ALREADY_EXISTS);
+    expect(res.headers.get('Location')).toMatch(AUTH_ERROR_CODES.SESSION_ALREADY_EXISTS);
   });
 
   it('authUser: should redirect to error page when createSession fails with an SESSION_CREATE_ERROR error code', async () => {
@@ -213,6 +213,6 @@ describe('auth.helper.ts Auth Helpers', () => {
     const res = await client.test.$get();
 
     expect(res.status).toBe(302);
-    expect(res.headers.get('Location')).toMatch(ERROR_CODES.SESSION_CREATE_ERROR);
+    expect(res.headers.get('Location')).toMatch(AUTH_ERROR_CODES.SESSION_CREATE_ERROR);
   });
 });

@@ -7,7 +7,7 @@ export const RequestInfos = () => {
   const { requestId } = useParams({ from: '/_auth/_user/request/$requestId' });
 
   return (
-    <div className="fr-grid-row fr-grid-row--gutters fr-mb-4w">
+    <div className="fr-grid-row fr-grid-row--gutters">
       <div className="fr-col">
         <h1 className="fr-mb-2w">
           Requête n°{requestId}
@@ -25,7 +25,7 @@ export const RequestInfos = () => {
           <span className="fr-icon-alarm-warning-line fr-mr-1v" aria-hidden="true"></span>
           Priorité
         </div>
-        <div className="fr-text--sm fr-text--grey fr-mt-1w">
+        <div className="fr-text--sm fr-text--grey fr-mb-0">
           <span className="fr-icon-folder-2-line fr-mr-1v" aria-hidden="true"></span>
           Motifs : <Tag small>[Motif]</Tag>
         </div>

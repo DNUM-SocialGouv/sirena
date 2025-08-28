@@ -204,6 +204,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
           )}
         </div>
         <Button
+          className={styles['request-step__add-note']}
           type="button"
           priority="tertiary"
           iconId="fr-icon-add-line"

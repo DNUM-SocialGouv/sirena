@@ -1,10 +1,11 @@
+import type { Cause } from '@sirena/common/types';
 import { HTTPException } from 'hono/http-exception';
 import type { ResolverResult } from 'hono-openapi';
 import { resolver } from 'hono-openapi/zod';
 import { ErrorSchema, ZodSafeParseErrorSchema } from '../schemas/apiErrors.schema';
 
 type ErrorOptions = {
-  cause?: { name?: string; message?: string; stack?: string };
+  cause?: Cause;
   res?: Response;
 };
 

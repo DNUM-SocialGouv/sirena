@@ -1,6 +1,7 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Header } from '@codegouvfr/react-dsfr/Header';
 import { ROLES } from '@sirena/common/constants';
+import { useId } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import style from './header.module.css';
 import { UserMenu } from './userMenu';
@@ -13,7 +14,7 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
   const userStore = useUserStore();
 
   const quickAccessItems = userStore.isLogged ? [<UserMenu key="menu" />] : [];
-
+  const id = useId();
   return (
     <>
       <Header
@@ -34,7 +35,7 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
         }}
         serviceTagline="précisions sur l'organisation"
         serviceTitle="Sirena"
-        id="fr-header-header"
+        id={id}
         quickAccessItems={quickAccessItems}
       />
       {userStore.isLogged && userStore.role === ROLES.SUPER_ADMIN && (

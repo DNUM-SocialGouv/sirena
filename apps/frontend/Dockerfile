@@ -38,8 +38,8 @@ COPY --chown=node:node ./packages/backend-utils packages/backend-utils
 COPY --chown=node:node ./packages/common packages/common
 COPY --chown=node:node ./apps/frontend apps/frontend
 
-RUN pnpm --filter @sirena/backend-utils build
 RUN pnpm --filter @sirena/common build
+RUN pnpm --filter @sirena/backend-utils build
 RUN pnpm --filter @sirena/backend db:generate
 RUN pnpm --filter @sirena/backend build
 RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \

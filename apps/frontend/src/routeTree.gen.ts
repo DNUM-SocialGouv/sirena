@@ -18,7 +18,6 @@ import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
 import { Route as AuthAdminEntitiesRouteImport } from './routes/_auth/admin/entities'
 import { Route as AuthAdminDematSocialMappingsRouteImport } from './routes/_auth/admin/demat-social-mappings'
 import { Route as AuthUserHomeRouteImport } from './routes/_auth/_user/home'
-import { Route as AuthUserCasesRouteImport } from './routes/_auth/_user/cases'
 import { Route as AuthAdminUsersRouteRouteImport } from './routes/_auth/admin/users/route'
 import { Route as AuthAdminUsersIndexRouteImport } from './routes/_auth/admin/users/index'
 import { Route as AuthAdminUsersAllRouteImport } from './routes/_auth/admin/users/all'
@@ -72,11 +71,6 @@ const AuthUserHomeRoute = AuthUserHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AuthUserRouteRoute,
 } as any)
-const AuthUserCasesRoute = AuthUserCasesRouteImport.update({
-  id: '/cases',
-  path: '/cases',
-  getParentRoute: () => AuthUserRouteRoute,
-} as any)
 const AuthAdminUsersRouteRoute = AuthAdminUsersRouteRouteImport.update({
   id: '/users',
   path: '/users',
@@ -128,7 +122,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
-  '/cases': typeof AuthUserCasesRoute
   '/home': typeof AuthUserHomeRoute
   '/admin/demat-social-mappings': typeof AuthAdminDematSocialMappingsRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
@@ -145,7 +138,6 @@ export interface FileRoutesByTo {
   '/inactive': typeof InactiveRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
-  '/cases': typeof AuthUserCasesRoute
   '/home': typeof AuthUserHomeRoute
   '/admin/demat-social-mappings': typeof AuthAdminDematSocialMappingsRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
@@ -165,7 +157,6 @@ export interface FileRoutesById {
   '/_auth/_user': typeof AuthUserRouteRouteWithChildren
   '/_auth/admin': typeof AuthAdminRouteRouteWithChildren
   '/_auth/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
-  '/_auth/_user/cases': typeof AuthUserCasesRoute
   '/_auth/_user/home': typeof AuthUserHomeRoute
   '/_auth/admin/demat-social-mappings': typeof AuthAdminDematSocialMappingsRoute
   '/_auth/admin/entities': typeof AuthAdminEntitiesRoute
@@ -185,7 +176,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin'
     | '/admin/users'
-    | '/cases'
     | '/home'
     | '/admin/demat-social-mappings'
     | '/admin/entities'
@@ -202,7 +192,6 @@ export interface FileRouteTypes {
     | '/inactive'
     | '/login'
     | '/admin'
-    | '/cases'
     | '/home'
     | '/admin/demat-social-mappings'
     | '/admin/entities'
@@ -221,7 +210,6 @@ export interface FileRouteTypes {
     | '/_auth/_user'
     | '/_auth/admin'
     | '/_auth/admin/users'
-    | '/_auth/_user/cases'
     | '/_auth/_user/home'
     | '/_auth/admin/demat-social-mappings'
     | '/_auth/admin/entities'
@@ -306,13 +294,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUserHomeRouteImport
       parentRoute: typeof AuthUserRouteRoute
     }
-    '/_auth/_user/cases': {
-      id: '/_auth/_user/cases'
-      path: '/cases'
-      fullPath: '/cases'
-      preLoaderRoute: typeof AuthUserCasesRouteImport
-      parentRoute: typeof AuthUserRouteRoute
-    }
     '/_auth/admin/users': {
       id: '/_auth/admin/users'
       path: '/users'
@@ -390,13 +371,11 @@ const AuthUserRequestRequestIdRouteWithChildren =
   )
 
 interface AuthUserRouteRouteChildren {
-  AuthUserCasesRoute: typeof AuthUserCasesRoute
   AuthUserHomeRoute: typeof AuthUserHomeRoute
   AuthUserRequestRequestIdRoute: typeof AuthUserRequestRequestIdRouteWithChildren
 }
 
 const AuthUserRouteRouteChildren: AuthUserRouteRouteChildren = {
-  AuthUserCasesRoute: AuthUserCasesRoute,
   AuthUserHomeRoute: AuthUserHomeRoute,
   AuthUserRequestRequestIdRoute: AuthUserRequestRequestIdRouteWithChildren,
 }

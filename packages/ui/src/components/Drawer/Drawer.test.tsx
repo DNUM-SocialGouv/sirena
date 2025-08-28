@@ -6,12 +6,11 @@ import Drawer from './Drawer';
 
 // Polyfill rAF
 beforeAll(() => {
-  // @ts-ignore
   global.requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(cb, 0);
 });
 
 afterAll(() => {
-  // @ts-ignore
+  // @ts-expect-error
   delete global.requestAnimationFrame;
 });
 
