@@ -181,9 +181,9 @@ export const AppEnvSchema = z.object({
     required_error: "La variable d'environnement REDIS_HOST est requise",
   }),
   REDIS_PORT: z
-    .string({
-      required_error: "La variable d'environnement REDIS_PORT est requise",
-    })
+    .string()
+    .optional()
+    .default('6379')
     .transform((val) => {
       const parsed = Number.parseInt(val, 10);
       if (Number.isNaN(parsed)) {
@@ -191,9 +191,7 @@ export const AppEnvSchema = z.object({
       }
       return parsed;
     }),
-  REDIS_PASSWORD: z.string({
-    required_error: "La variable d'environnement REDIS_PASSWORD est requise",
-  }),
+  REDIS_PASSWORD: z.string().optional(),
 });
 
 export const CronEnvSchema = z.object({
