@@ -91,6 +91,18 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
       name: 'SARBACANE_API_URL',
       value: 'https://api.sarbacane.com/sendkit',
     },
+    {
+      name: 'S3_BUCKET_ENDPOINT',
+      value: 'localhost',
+    },
+    {
+      name: 'S3_BUCKET_ROOT_DIR',
+      value: environment,
+    },
+    {
+      name: 'S3_BUCKET_PORT',
+      value: '9000',
+    },
   ];
 }
 
@@ -103,6 +115,25 @@ function createDatabaseEnvVars(): k8s.EnvVar[] {
     { envName: 'PG_PORT', secretKey: 'port' },
     { envName: 'PG_HOST', secretKey: 'host' },
     { envName: 'PG_URL', secretKey: 'url' },
+  ];
+
+  return dbEnvMappings.map(({ envName, secretKey }) => ({
+    name: envName,
+    valueFrom: {
+      secretKeyRef: {
+        name: dbSecretName,
+        key: secretKey,
+      },
+    },
+  }));
+}
+
+function createBucketEnvVars(): k8s.EnvVar[] {
+  const dbSecretName = 'buckets';
+  const dbEnvMappings = [
+    { envName: 'S3_BUCKET_ACCESS_KEY', secretKey: 'accessKey' },
+    { envName: 'S3_BUCKET_NAME', secretKey: 'name' },
+    { envName: 'S3_BUCKET_SECRET_KEY', secretKey: 'secretKey' },
   ];
 
   return dbEnvMappings.map(({ envName, secretKey }) => ({
@@ -134,7 +165,9 @@ function createContainer(props: AppProps): k8s.Container {
     },
     image: props.image,
     ports: [{ containerPort: Number(props.targetPort.value) }],
-    env: isBackend ? [...createBackendEnvVars(props.host, props.environment), ...createDatabaseEnvVars()] : [],
+    env: isBackend
+      ? [...createBackendEnvVars(props.host, props.environment), ...createDatabaseEnvVars(), ...createBucketEnvVars()]
+      : [],
     envFrom: isBackend ? [{ secretRef: { name: 'backend' } }] : undefined,
     livenessProbe: {
       httpGet: {
