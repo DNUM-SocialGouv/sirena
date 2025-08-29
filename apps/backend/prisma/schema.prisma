@@ -149,7 +149,7 @@ model RequeteStateNote {
   updatedAt DateTime @updatedAt
 
   requeteEntiteStateId String
-  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
+  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
 
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
@@ -178,7 +178,7 @@ model Victime {
   commentaire      String?
 
   requeteEntiteStateId String       @unique
-  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
+  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
 
   identiteId String   @unique
   identite   Identite @relation(fields: [identiteId], references: [id])
@@ -213,7 +213,7 @@ model Declarant {
   commentaire                String?
 
   requeteEntiteStateId String       @unique
-  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
+  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
 
   identiteId String   @unique
   identite   Identite @relation(fields: [identiteId], references: [id])
@@ -265,7 +265,7 @@ model DescriptionFaits {
   commentaire     String?
 
   requeteEntiteStateId String                             @id
-  requeteEntiteState   RequeteState                       @relation(fields: [requeteEntiteStateId], references: [id])
+  requeteEntiteState   RequeteState                       @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
   motifs               DescriptionFaitsMotif[]
   consequences         DescriptionFaitsConsequence[]
   maltraitanceTypes    DescriptionFaitsMaltraitanceType[]
@@ -294,7 +294,7 @@ model MaltraitanceTypeEnum {
 
 model DescriptionFaitsMotif {
   faitsId          String
-  descriptionFaits DescriptionFaits @relation(fields: [faitsId], references: [requeteEntiteStateId])
+  descriptionFaits DescriptionFaits @relation(fields: [faitsId], references: [requeteEntiteStateId], onDelete: Cascade)
 
   motifId String
   motif   MotifEnum @relation(fields: [motifId], references: [id])
@@ -304,7 +304,7 @@ model DescriptionFaitsMotif {
 
 model DescriptionFaitsConsequence {
   faitsId          String
-  descriptionFaits DescriptionFaits @relation(fields: [faitsId], references: [requeteEntiteStateId])
+  descriptionFaits DescriptionFaits @relation(fields: [faitsId], references: [requeteEntiteStateId], onDelete: Cascade)
 
   consequenceId String
   consequence   ConsequenceEnum @relation(fields: [consequenceId], references: [id])
@@ -314,7 +314,7 @@ model DescriptionFaitsConsequence {
 
 model DescriptionFaitsMaltraitanceType {
   faitsId          String
-  descriptionFaits DescriptionFaits @relation(fields: [faitsId], references: [requeteEntiteStateId])
+  descriptionFaits DescriptionFaits @relation(fields: [faitsId], references: [requeteEntiteStateId], onDelete: Cascade)
 
   maltraitanceTypeId String
   maltraitanceType   MaltraitanceTypeEnum @relation(fields: [maltraitanceTypeId], references: [id])
@@ -340,7 +340,7 @@ model LieuIncident {
   transportType   TransportTypeEnum? @relation(fields: [transportTypeId], references: [id])
 
   requeteEntiteStateId String
-  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
+  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
 }
 
 model LieuTypeEnum {
@@ -368,7 +368,7 @@ model MisEnCause {
   professionType   ProfessionTypeEnum? @relation(fields: [professionTypeId], references: [id])
 
   requeteEntiteStateId String
-  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
+  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
 
   misEnCauseTypeId String?
   misEnCauseType   MisEnCauseTypeEnum? @relation(fields: [misEnCauseTypeId], references: [id])
@@ -410,7 +410,7 @@ model DemarchesEngagees {
   plainteDeposeLocation String?
   commentaire           String?
 
-  requeteEntiteState RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
+  requeteEntiteState RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
 }
 
 model InfoComplementaire {
@@ -421,7 +421,7 @@ model InfoComplementaire {
   receptionTypeId String?
   receptionType   ReceptionTypeEnum? @relation(fields: [receptionTypeId], references: [id])
 
-  requeteEntiteState RequeteState @relation(fields: [requeteEntiteStateId], references: [id])
+  requeteEntiteState RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
 }
 
 model ReceptionTypeEnum {
@@ -473,6 +473,6 @@ model UploadedFile {
 
   uploadedById       String
   uploadedBy         User              @relation(fields: [uploadedById], references: [id])
-  RequeteStateNote   RequeteStateNote? @relation(fields: [requeteStateNoteId], references: [id])
+  RequeteStateNote   RequeteStateNote? @relation(fields: [requeteStateNoteId], references: [id], onDelete: Cascade)
   requeteStateNoteId String?
 }

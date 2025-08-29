@@ -38,8 +38,8 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
 
   const handleCancel = () => {
     setContent('');
-    setStep(null);
     setFiles([]);
+    setStep(null);
     setIsLoading(false);
     setErrorMessage(null);
   };

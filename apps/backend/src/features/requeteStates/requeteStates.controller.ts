@@ -11,6 +11,7 @@ import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import {
   addNote,
+  deleteRequeteState,
   getRequeteStateById,
   updateRequeteStateStatut,
   updateRequeteStateStepName,
@@ -27,6 +28,7 @@ import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service';
 import {
   addRequeteStatesNoteRoute,
+  deleteRequeteStateRoute,
   updateRequeteStateStatutRoute,
   updateRequeteStateStepNameRoute,
 } from './requeteStates.route';
@@ -265,6 +267,33 @@ const app = factoryWithLogs
 
       return c.json({ data: note }, 201);
     },
-  );
+  )
+
+  .delete('/:id', deleteRequeteStateRoute, async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
+
+    const requeteState = await getRequeteStateById(id);
+
+    if (!requeteState) {
+      return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+    }
+
+    // TODO: check real access with entiteIds when implemented
+    //   const entiteIds = c.get('entiteIds');
+    const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+    if (!hasAccess) {
+      return throwHTTPException403Forbidden('You are not allowed to delete this requete state', {
+        res: c.res,
+      });
+    }
+
+    await deleteRequeteState(id, logger, userId);
+
+    logger.info({ requeteStateId: id, userId }, 'RequeteState deleted successfully');
+
+    return c.body(null, 204);
+  });
 
 export default app;
