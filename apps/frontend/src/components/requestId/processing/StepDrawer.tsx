@@ -40,7 +40,6 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
     setContent('');
     setFiles([]);
     setStep(null);
-    setFiles([]);
     setIsLoading(false);
     setErrorMessage(null);
   };
@@ -87,7 +86,6 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
       {
         onError: () => {
           setIsLoading(false);
-          handleCancel();
           setErrorMessage("Une erreur est survenue lors de l'upload des fichiers. Veuillez réessayer.");
         },
         onSuccess: () => {
