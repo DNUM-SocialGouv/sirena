@@ -132,38 +132,32 @@ export const AppEnvSchema = z.object({
     .string({
       required_error: "La variable d'environnement S3_BUCKET_ACCESS_KEY est requise",
     })
-    .optional()
     .default(''),
   S3_BUCKET_SECRET_KEY: z
     .string({
       required_error: "La variable d'environnement S3_BUCKET_SECRET_KEY est requise",
     })
-    .optional()
     .default(''),
   S3_BUCKET_ENDPOINT: z
     .string({
       required_error: "La variable d'environnement S3_BUCKET_ENDPOINT est requise",
     })
-    .optional()
     .default(''),
   S3_BUCKET_NAME: z
     .string({
       required_error: "La variable d'environnement S3_BUCKET_NAME est requise",
     })
-    .optional()
     .default(''),
   S3_BUCKET_REGION: z.string().optional().default(''),
   S3_BUCKET_ROOT_DIR: z
     .string({
       required_error: "La variable d'environnement S3_BUCKET_ROOT_DIR est requise",
     })
-    .optional()
     .default(''),
   S3_BUCKET_PORT: z
     .string({
       required_error: "La variable d'environnement S3_BUCKET_PORT est requise",
     })
-    .optional()
     .default(''),
   SARBACANE_API_URL: z
     .string({

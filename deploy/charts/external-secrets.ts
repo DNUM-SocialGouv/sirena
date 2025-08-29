@@ -37,12 +37,35 @@ export class ExternalSecrets extends Chart {
               SUPER_ADMIN_LIST_EMAIL: '{{ .SUPER_ADMIN_LIST_EMAIL }}',
               SENTRY_DSN_BACKEND: '{{ .SENTRY_DSN_BACKEND }}',
               SARBACANE_API_KEY: '{{ .SARBACANE_API_KEY }}',
-              S3_BUCKET_ACCESS_KEY: '{{ .S3_BUCKET_ACCESS_KEY }}',
-              S3_BUCKET_SECRET_KEY: '{{ .S3_BUCKET_SECRET_KEY }}',
-              S3_BUCKET_ENDPOINT: '{{ .S3_BUCKET_ENDPOINT }}',
-              S3_BUCKET_NAME: '{{ .S3_BUCKET_NAME }}',
-              S3_BUCKET_ROOT_DIR: '{{ .S3_BUCKET_ROOT_DIR }}',
-              S3_BUCKET_PORT: '{{ .S3_BUCKET_PORT }}',
+            },
+          },
+        },
+      },
+    });
+
+    new externalSecrets.ExternalSecret(this, 'bucket-external-secret', {
+      metadata: {
+        name: 'buckets',
+      },
+      spec: {
+        dataFrom: [
+          {
+            extract: {
+              key: 'buckets/sirena-integration-s3',
+            },
+          },
+        ],
+        refreshInterval: '1h',
+        secretStoreRef: {
+          name: 'local-secret-store',
+        },
+        target: {
+          name: 'buckets',
+          template: {
+            data: {
+              accessKey: '{{ .accessKey }}',
+              name: '{{ .name }}',
+              secretKey: '{{ .secretKey }}',
             },
           },
         },
