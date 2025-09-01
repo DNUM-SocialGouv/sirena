@@ -51,7 +51,7 @@ export class ExternalSecrets extends Chart {
         dataFrom: [
           {
             extract: {
-              key: 'buckets/sirena-integration-s3',
+              key: `buckets/sirena-${environnement}-s3`,
             },
           },
         ],

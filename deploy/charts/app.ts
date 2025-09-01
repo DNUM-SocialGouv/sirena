@@ -93,15 +93,15 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
     },
     {
       name: 'S3_BUCKET_ENDPOINT',
-      value: 'localhost',
+      value: 'https://s3.gra.io.cloud.ovh.net/',
     },
     {
       name: 'S3_BUCKET_ROOT_DIR',
-      value: environment,
+      value: '/',
     },
     {
       name: 'S3_BUCKET_PORT',
-      value: '9000',
+      value: '443',
     },
   ];
 }
