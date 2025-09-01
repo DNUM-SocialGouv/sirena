@@ -97,7 +97,7 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
     },
     {
       name: 'S3_BUCKET_ROOT_DIR',
-      value: '/',
+      value: '',
     },
     {
       name: 'S3_BUCKET_PORT',
