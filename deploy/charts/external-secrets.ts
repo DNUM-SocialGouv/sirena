@@ -43,6 +43,35 @@ export class ExternalSecrets extends Chart {
       },
     });
 
+    new externalSecrets.ExternalSecret(this, 'bucket-external-secret', {
+      metadata: {
+        name: 'buckets',
+      },
+      spec: {
+        dataFrom: [
+          {
+            extract: {
+              key: 'buckets/sirena-integration-s3',
+            },
+          },
+        ],
+        refreshInterval: '1h',
+        secretStoreRef: {
+          name: 'local-secret-store',
+        },
+        target: {
+          name: 'buckets',
+          template: {
+            data: {
+              accessKey: '{{ .accessKey }}',
+              name: '{{ .name }}',
+              secretKey: '{{ .secretKey }}',
+            },
+          },
+        },
+      },
+    });
+
     // Database External Secret
     new externalSecrets.ExternalSecret(this, 'database-external-secret', {
       metadata: {
