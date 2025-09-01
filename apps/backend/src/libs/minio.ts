@@ -17,10 +17,11 @@ const {
 const minioClient = S3_BUCKET_ENDPOINT
   ? new Client({
       endPoint: S3_BUCKET_ENDPOINT,
-      port: parseInt(S3_BUCKET_PORT, 10),
-      useSSL: S3_BUCKET_ENDPOINT.startsWith('https'),
+      port: parseInt(S3_BUCKET_PORT, 10) || 443,
+      useSSL: S3_BUCKET_PORT === '443',
       accessKey: S3_BUCKET_ACCESS_KEY,
       secretKey: S3_BUCKET_SECRET_KEY,
+      pathStyle: true,
     })
   : null;
 
