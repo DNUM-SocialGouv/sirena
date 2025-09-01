@@ -53,10 +53,15 @@ export default () => {
 };
 
 export const enhancedPinoMiddleware = () => {
-  const basePinoMiddleware = createPinoLogger(
-    '[{requestId}] {message}',
-    (c) => c?.req.header('x-request-id') || crypto.randomUUID(),
-  );
+  // Create base pino instance
+  const basePino = pino(createPinoConfig(), createPrettyConfig('[{requestId}] {message}'));
+
+  const basePinoMiddleware = pinoLogger({
+    pino: basePino,
+    http: {
+      reqId: (c?: Context) => c?.req.header('x-request-id') || crypto.randomUUID(),
+    },
+  });
 
   return createMiddleware(async (c: Context, next: () => Promise<void>) => {
     return basePinoMiddleware(c, async () => {
@@ -64,9 +69,14 @@ export const enhancedPinoMiddleware = () => {
       const enrichedRequestContext = enrichRequestContext(context);
       const userContext = enrichUserContext(context);
 
-      // Create contextual logger with enriched context
+      // Get the logger that was set by pinoLogger middleware
       const baseLogger = c.get('logger');
-      const contextualLogger = createContextualLogger(baseLogger, enrichedRequestContext, userContext);
+
+      // Check if logger exists and has child method, fallback to base pino instance if not
+      const effectiveLogger = !baseLogger || typeof baseLogger.child !== 'function' ? basePino : baseLogger;
+
+      // Create contextual logger with enriched context
+      const contextualLogger = createContextualLogger(effectiveLogger, enrichedRequestContext, userContext);
 
       // Store the contextual logger in asyncLocalStorage
       await loggerStorage.run(contextualLogger, async () => {
