@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/client"
@@ -19,59 +13,39 @@ datasource db {
   url      = env("PG_URL")
 }
 
-model User {
-  id               String             @id @default(cuid())
-  email            String             @unique /// @zod.string.email({ message: 'Invalid email address' }),
-  firstName        String
-  lastName         String
-  uid              String             @unique
-  sub              String             @unique
-  createdAt        DateTime           @default(now())
-  active           Boolean            @default(false)
-  pcData           Json
-  roleId           String
-  role             RoleEnum?          @relation(fields: [roleId], references: [id])
-  sessions         Session[]
-  statutId         String
-  statut           StatutEnum?        @relation(fields: [statutId], references: [id])
-  entiteId         String?
-  entite           Entite?            @relation(fields: [entiteId], references: [id])
-  changeLogs       ChangeLog[]
-  uploads          UploadedFile[]
-  RequeteStateNote RequeteStateNote[]
-}
-
 model StatutEnum {
   id    String @id
-  label String
+  label String @unique
 
   users User[]
 }
 
-model Entite {
-  id               String  @id @default(uuid())
-  nomComplet       String
-  label            String
-  email            String?
-  emailDomain      String?
-  organizationUnit String?
+model User {
+  id        String  @id @default(cuid())
+  email     String  @unique /// @zod.string.email({ message: 'Invalid email address' }),
+  firstName String
+  lastName  String
+  uid       String  @unique
+  sub       String  @unique
+  active    Boolean @default(false)
+  pcData    Json
 
-  services Entite[] @relation("EntiteMereToServices")
+  roleId String
+  role   RoleEnum @relation(fields: [roleId], references: [id])
 
-  entiteTypeId String
-  entiteType   EntiteTypeEnum @relation(fields: [entiteTypeId], references: [id])
-  entiteMereId String?
-  entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
+  statutId String
+  statut   StatutEnum @relation(fields: [statutId], references: [id])
 
-  users   User[]
-  uploads UploadedFile[]
-}
+  entiteId String?
+  entite   Entite? @relation(fields: [entiteId], references: [id])
 
-model EntiteTypeEnum {
-  id    String @id
-  label String
+  sessions   Session[]
+  changeLogs ChangeLog[]
+  uploads    UploadedFile[]
+  notes      RequeteEtapeNote[]
 
-  entites Entite[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Session {
@@ -81,280 +55,222 @@ model Session {
   token     String   @unique
   expiresAt DateTime
   pcIdToken String   @unique
+
   createdAt DateTime @default(now())
+}
+
+model Entite {
+  id               String @id @default(uuid())
+  nomComplet       String
+  label            String
+  email            String @default("")
+  emailDomain      String @default("")
+  organizationUnit String @default("")
+
+  services Entite[] @relation("EntiteMereToServices")
+
+  entiteTypeId String
+  entiteType   EntiteTypeEnum @relation(fields: [entiteTypeId], references: [id])
+  entiteMereId String?
+  entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
+
+  requetes     Requete[]
+  users        User[]
+  uploads      UploadedFile[]
+  RequeteEtape RequeteEtape[]
+}
+
+model EntiteTypeEnum {
+  id    String @id
+  label String @unique
+
+  entites Entite[]
 }
 
 model RoleEnum {
   id    String @id
-  label String
+  label String @unique
 
   users User[]
 }
 
 model Requete {
-  id            String   @id @default(uuid())
-  number        Int      @default(autoincrement())
+  id            String    @id @default(uuid())
+  numero        Int       @default(autoincrement())
+  commentaire   String    @default("")
+  receptionDate DateTime?
   dematSocialId Int?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
 
-  requetesEntite RequeteEntite[]
-}
+  receptionTypeId String
+  receptionType   ReceptionTypeEnum @relation(fields: [receptionTypeId], references: [id])
 
-model RequeteEntite {
-  id        String   @id @default(uuid())
-  number    Int      @default(autoincrement())
+  Entite   Entite? @relation(fields: [entiteId], references: [id])
+  entiteId String?
+
+  declarant PersonneConcernee? @relation("DeclarantRequete")
+
+  personnesConcernees PersonneConcernee[] @relation("ParticipantsRequete")
+
+  demarchesEngagees DemarchesEngagees?
+
+  etapes     RequeteEtape[]
+  situations Situation[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  requetesEntiteStates RequeteState[]
-  requeteId            String?
-  requete              Requete?       @relation(fields: [requeteId], references: [id])
 }
 
-model RequeteStatutEnum {
+model ReceptionTypeEnum {
   id    String @id
-  label String
+  label String @unique
 
-  requetesEntiteState RequeteState[]
+  requete Requete[]
 }
 
-model RequeteState {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model DemarchesEngagees {
+  aContacte             Boolean?
+  dateContact           DateTime?
+  aRepondu              Boolean?
+  aContacteAutre        Boolean?
+  autreOrganisation     String    @default("")
+  aDeposePlainte        Boolean?
+  plainteDeposeDate     DateTime?
+  plainteDeposeLocation String    @default("")
+  commentaire           String    @default("")
 
-  requeteEntiteId String
-  requeteEntite   RequeteEntite @relation(fields: [requeteEntiteId], references: [id])
-
-  statutId String
-  statut   RequeteStatutEnum @relation(fields: [statutId], references: [id])
-  stepName String?
-
-  victimes  Victime[]
-  declarant Declarant?
-
-  notes RequeteStateNote[]
-
-  descriptionFaits   DescriptionFaits?
-  lieuxIncident      LieuIncident[]
-  misEnCauses        MisEnCause[]
-  demarchesEngagees  DemarchesEngagees?
-  infoComplementaire InfoComplementaire?
+  RequeteId String  @id
+  Requete   Requete @relation(fields: [RequeteId], references: [id], onDelete: Cascade)
 }
 
-model RequeteStateNote {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  requeteEntiteStateId String
-  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
-
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id])
-
-  content       String
-  uploadedFiles UploadedFile[]
-}
-
-model Identite {
-  id          String  @id @default(uuid())
-  prenom      String?
-  nom         String?
-  telephone   String?
-  email       String?
-  commentaire String?
-
-  victime   Victime?
-  declarant Declarant?
-}
-
-model Victime {
-  id               String   @id @default(uuid())
-  estNonIdentifiee Boolean?
-  estAnonyme       Boolean?
-  estHandicapee    Boolean?
-  commentaire      String?
-
-  requeteEntiteStateId String       @unique
-  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
-
-  identiteId String   @unique
-  identite   Identite @relation(fields: [identiteId], references: [id])
-
-  adresseId String?
-  adresse   Adresse? @relation(fields: [adresseId], references: [id])
-
-  ageId String?
-  age   AgeEnum? @relation(fields: [ageId], references: [id])
-
-  civiliteId String?
-  civilite   CiviliteEnum? @relation(fields: [civiliteId], references: [id])
-}
-
-model AgeEnum {
-  id    String @id
-  label String
-
-  victimes  Victime[]
-  declarant Declarant[]
-}
-
-model Declarant {
+model PersonneConcernee {
   id                         String   @id @default(uuid())
+  estNonIdentifiee           Boolean?
+  estAnonyme                 Boolean?
+  estHandicapee              Boolean?
   estIdentifie               Boolean?
   estVictime                 Boolean?
   estVictimeInformee         Boolean?
-  estAnonyme                 Boolean?
-  estHandicapee              Boolean?
-  victimeInformeeCommentaire String?
+  victimeInformeeCommentaire String   @default("")
   veutGarderAnonymat         Boolean?
-  commentaire                String?
+  commentaire                String   @default("")
 
-  requeteEntiteStateId String       @unique
-  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
-
-  identiteId String   @unique
-  identite   Identite @relation(fields: [identiteId], references: [id])
-
-  adresseId String?  @unique
-  adresse   Adresse? @relation(fields: [adresseId], references: [id])
+  identite Identite? @relation("PersonneIdentite")
 
   ageId String?
   age   AgeEnum? @relation(fields: [ageId], references: [id])
+
+  adresse Adresse? @relation("PersonneAdresse")
+
+  civiliteId String?
+  civilite   CiviliteEnum? @relation(fields: [civiliteId], references: [id])
 
   lienVictimeId String?
   lienVictime   LienVictimeEnum? @relation(fields: [lienVictimeId], references: [id])
 
-  civiliteId String?
-  civilite   CiviliteEnum? @relation(fields: [civiliteId], references: [id])
-}
+  declarantDeId String?  @unique
+  declarantDe   Requete? @relation("DeclarantRequete", fields: [declarantDeId], references: [id], onDelete: Cascade)
 
-model CiviliteEnum {
-  id    String @id @default(uuid())
-  label String @unique
+  requeteEntiteId String
+  requete         Requete @relation("ParticipantsRequete", fields: [requeteEntiteId], references: [id], onDelete: Cascade)
 
-  victimes   Victime[]
-  declarants Declarant[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model LienVictimeEnum {
-  id         String      @id @default(uuid())
-  label      String      @unique
-  declarants Declarant[]
+  id    String @id @default(uuid())
+  label String @unique
+
+  PersonneConcernees PersonneConcernee[]
+}
+
+model AgeEnum {
+  id    String @id
+  label String @unique
+
+  PersonneConcernees PersonneConcernee[]
+}
+
+model CiviliteEnum {
+  id    String @id
+  label String @unique
+
+  personneConcernee PersonneConcernee[]
+}
+
+model Identite {
+  id          String @id @default(uuid())
+  prenom      String @default("")
+  nom         String @default("")
+  email       String @default("")
+  telephone   String @default("")
+  commentaire String @default("")
+
+  personneConcerneeId String            @unique
+  personneConcernee   PersonneConcernee @relation("PersonneIdentite", fields: [personneConcerneeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Adresse {
-  id         String  @id @default(uuid())
-  label      String?
-  numero     String?
-  rue        String?
-  codePostal String?
-  ville      String?
+  id         String @id @default(uuid())
+  label      String @default("")
+  numero     String @default("")
+  rue        String @default("")
+  codePostal String @default("")
+  ville      String @default("")
 
-  victimes      Victime[]
-  declarants    Declarant[]
-  lieuxIncident LieuIncident[]
+  personneConcerneeId String?            @unique
+  personneConcernee   PersonneConcernee? @relation("PersonneAdresse", fields: [personneConcerneeId], references: [id], onDelete: Cascade)
+
+  lieuDeSurvenueId String?         @unique
+  lieuDeSurvenue   LieuDeSurvenue? @relation("LieuAdresse", fields: [lieuDeSurvenueId], references: [id], onDelete: Cascade)
 }
 
-model DescriptionFaits {
-  estMaltraitance Boolean?
-  dateDebut       DateTime?
-  dateFin         DateTime?
-  commentaire     String?
+model Situation {
+  id String @id @default(uuid())
 
-  requeteEntiteStateId String                             @id
-  requeteEntiteState   RequeteState                       @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
-  motifs               DescriptionFaitsMotif[]
-  consequences         DescriptionFaitsConsequence[]
-  maltraitanceTypes    DescriptionFaitsMaltraitanceType[]
+  lieuDeSurvenueId String         @unique
+  lieuDeSurvenue   LieuDeSurvenue @relation("SituationLieu", fields: [lieuDeSurvenueId], references: [id], onDelete: Cascade)
+
+  misEnCauses MisEnCause[]
+  faits       Fait[]
+  Requete     Requete?     @relation(fields: [requeteId], references: [id], onDelete: Cascade)
+  requeteId   String?
 }
 
-model MotifEnum {
-  id    String @id @default(uuid())
-  label String @unique
+model LieuDeSurvenue {
+  id               String @id @default(uuid())
+  nom              String @default("")
+  codePostal       String @default("")
+  societeTransport String @default("")
+  finess           String @default("")
+  commentaire      String @default("")
 
-  descriptionFaits DescriptionFaitsMotif[]
-}
-
-model ConsequenceEnum {
-  id    String @id @default(uuid())
-  label String @unique
-
-  descriptionFaits DescriptionFaitsConsequence[]
-}
-
-model MaltraitanceTypeEnum {
-  id    String @id @default(uuid())
-  label String @unique
-
-  descriptionFaits DescriptionFaitsMaltraitanceType[]
-}
-
-model DescriptionFaitsMotif {
-  faitsId          String
-  descriptionFaits DescriptionFaits @relation(fields: [faitsId], references: [requeteEntiteStateId], onDelete: Cascade)
-
-  motifId String
-  motif   MotifEnum @relation(fields: [motifId], references: [id])
-
-  @@id([faitsId, motifId])
-}
-
-model DescriptionFaitsConsequence {
-  faitsId          String
-  descriptionFaits DescriptionFaits @relation(fields: [faitsId], references: [requeteEntiteStateId], onDelete: Cascade)
-
-  consequenceId String
-  consequence   ConsequenceEnum @relation(fields: [consequenceId], references: [id])
-
-  @@id([faitsId, consequenceId])
-}
-
-model DescriptionFaitsMaltraitanceType {
-  faitsId          String
-  descriptionFaits DescriptionFaits @relation(fields: [faitsId], references: [requeteEntiteStateId], onDelete: Cascade)
-
-  maltraitanceTypeId String
-  maltraitanceType   MaltraitanceTypeEnum @relation(fields: [maltraitanceTypeId], references: [id])
-
-  @@id([faitsId, maltraitanceTypeId])
-}
-
-model LieuIncident {
-  id               String  @id @default(uuid())
-  nom              String?
-  codePostal       String?
-  societeTransport String?
-  finess           String?
-  commentaire      String?
-
-  adresseId String?
-  adresse   Adresse? @relation(fields: [adresseId], references: [id])
+  adresse Adresse? @relation("LieuAdresse")
 
   lieuTypeId String?
   lieuType   LieuTypeEnum? @relation(fields: [lieuTypeId], references: [id])
 
+  situation Situation? @relation("SituationLieu")
+
   transportTypeId String?
   transportType   TransportTypeEnum? @relation(fields: [transportTypeId], references: [id])
-
-  requeteEntiteStateId String
-  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
 }
 
 model LieuTypeEnum {
   id    String @id
   label String
 
-  lieuxIncident LieuIncident[]
+  lieuxDeSurvenue LieuDeSurvenue[]
 }
 
 model TransportTypeEnum {
   id    String @id
   label String
 
-  lieuxIncident LieuIncident[]
+  lieuxDeSurvenue LieuDeSurvenue[]
 }
 
 model MisEnCause {
@@ -362,13 +278,13 @@ model MisEnCause {
   estIdentifie Boolean?
   identite     String?
   rpps         String?
-  commentaire  String?
+  commentaire  String   @default("")
+
+  situationId String
+  situation   Situation @relation(fields: [situationId], references: [id], onDelete: Cascade)
 
   professionTypeId String?
   professionType   ProfessionTypeEnum? @relation(fields: [professionTypeId], references: [id])
-
-  requeteEntiteStateId String
-  requeteEntiteState   RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
 
   misEnCauseTypeId String?
   misEnCauseType   MisEnCauseTypeEnum? @relation(fields: [misEnCauseTypeId], references: [id])
@@ -398,47 +314,137 @@ model ProfessionDomicileTypeEnum {
   misEnCauses MisEnCause[]
 }
 
-model DemarchesEngagees {
-  requeteEntiteStateId  String    @id
-  aContacte             Boolean?
-  dateContact           DateTime?
-  aRepondu              Boolean?
-  aContacteAutre        Boolean?
-  autreOrganisation     String?
-  aDeposePlainte        Boolean?
-  plainteDeposeDate     DateTime?
-  plainteDeposeLocation String?
-  commentaire           String?
+model Fait {
+  situationId String    @id
+  situation   Situation @relation(fields: [situationId], references: [id], onDelete: Cascade)
 
-  requeteEntiteState RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
+  estMaltraitance Boolean?
+  dateDebut       DateTime?
+  dateFin         DateTime?
+  commentaire     String    @default("")
+
+  motifs            FaitMotif[]
+  consequences      FaitConsequence[]
+  maltraitanceTypes FaitMaltraitanceType[]
 }
 
-model InfoComplementaire {
-  requeteEntiteStateId String    @id
-  receptionDate        DateTime?
-  commentaire          String?
-
-  receptionTypeId String?
-  receptionType   ReceptionTypeEnum? @relation(fields: [receptionTypeId], references: [id])
-
-  requeteEntiteState RequeteState @relation(fields: [requeteEntiteStateId], references: [id], onDelete: Cascade)
-}
-
-model ReceptionTypeEnum {
-  id    String @id
+model MotifEnum {
+  id    String @id @default(uuid())
   label String @unique
 
-  infoirmations InfoComplementaire[]
+  faits FaitMotif[]
 }
 
-model DematSocialMapping {
-  id            String   @id @default(uuid())
-  dematSocialId String   @unique
-  key           String
-  label         String
-  comment       String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+model ConsequenceEnum {
+  id    String @id @default(uuid())
+  label String @unique
+
+  faits FaitConsequence[]
+}
+
+model MaltraitanceTypeEnum {
+  id    String @id @default(uuid())
+  label String @unique
+
+  faits FaitMaltraitanceType[]
+}
+
+model FaitMotif {
+  situationId String
+  fait        Fait   @relation(fields: [situationId], references: [situationId], onDelete: Cascade)
+
+  motifId String
+  motif   MotifEnum @relation(fields: [motifId], references: [id])
+
+  @@id([situationId, motifId])
+}
+
+model FaitConsequence {
+  situationId String
+  fait        Fait   @relation(fields: [situationId], references: [situationId], onDelete: Cascade)
+
+  consequenceId String
+  consequence   ConsequenceEnum @relation(fields: [consequenceId], references: [id])
+
+  @@id([situationId, consequenceId])
+}
+
+model FaitMaltraitanceType {
+  situationId String
+  fait        Fait   @relation(fields: [situationId], references: [situationId], onDelete: Cascade)
+
+  maltraitanceTypeId String
+  maltraitanceType   MaltraitanceTypeEnum @relation(fields: [maltraitanceTypeId], references: [id])
+
+  @@id([situationId, maltraitanceTypeId])
+}
+
+model RequeteEtape {
+  id          String  @id @default(uuid())
+  nom         String
+  estPartagee Boolean @default(false)
+
+  statutId String
+  statut   RequeteStatutEnum @relation(fields: [statutId], references: [id])
+
+  requeteId String
+  Requete   Requete @relation(fields: [requeteId], references: [id], onDelete: Cascade)
+
+  notes RequeteEtapeNote[]
+
+  entiteId String
+  entite   Entite @relation(fields: [entiteId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RequeteStatutEnum {
+  id    String @id
+  label String
+
+  requeteEtapes RequeteEtape[]
+}
+
+model RequeteEtapeNote {
+  id      String @id @default(uuid())
+  content String
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  uploadedFiles UploadedFile[]
+
+  requeteEtapeId String
+  requeteEtape   RequeteEtape @relation(fields: [requeteEtapeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UploadedFile {
+  id       String @id @default(uuid())
+  fileName String
+  filePath String @unique
+  mimeType String
+  size     Int
+  status   String @default("PENDING") // e.g. "PENDING", "COMPLETED", "FAILED"
+
+  metadata Json?
+
+  entiteId String?
+  entite   Entite? @relation(fields: [entiteId], references: [id])
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  requeteEtapeNoteId String?
+  requeteEtapeNote   RequeteEtapeNote? @relation(fields: [requeteEtapeNoteId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([entiteId])
 }
 
 model ChangeLog {
@@ -454,27 +460,6 @@ model ChangeLog {
 
   @@index([entity, entityId])
   @@index([changedById])
-}
-
-model UploadedFile {
-  id        String   @id @default(uuid())
-  fileName  String
-  filePath  String   @unique
-  mimeType  String
-  size      Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  status    String   @default("PENDING") // e.g. "PENDING", "COMPLETED", "FAILED"
-
-  metadata Json?
-
-  entiteId String?
-  entite   Entite? @relation(fields: [entiteId], references: [id])
-
-  uploadedById       String
-  uploadedBy         User              @relation(fields: [uploadedById], references: [id])
-  RequeteStateNote   RequeteStateNote? @relation(fields: [requeteStateNoteId], references: [id], onDelete: Cascade)
-  requeteStateNoteId String?
 }
 
 model Crons {
