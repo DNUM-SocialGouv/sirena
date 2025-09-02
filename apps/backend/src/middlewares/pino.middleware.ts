@@ -1,9 +1,11 @@
-import type { Context } from 'hono';
-import { createMiddleware } from 'hono/factory';
+import type { Context, MiddlewareHandler } from 'hono';
+import { createFactory } from 'hono/factory';
 import { pinoLogger } from 'hono-pino';
 import pino from 'pino';
 import pretty from 'pino-pretty';
 import { envVars } from '@/config/env';
+import type { AppBindings as AuthAppBindings } from '@/helpers/factories/appWithAuth';
+import type { AppBindings as LogsAppBindings } from '@/helpers/factories/appWithLogs';
 import {
   enrichRequestContext,
   enrichUserContext,
@@ -12,6 +14,13 @@ import {
 } from '@/helpers/middleware';
 import { createContextualLogger } from '@/helpers/pino';
 import { loggerStorage } from '@/libs/asyncLocalStorage';
+
+// Pino middleware provides logging and can access optional auth data
+type PinoAppBindings = {
+  Variables: LogsAppBindings['Variables'] & Partial<AuthAppBindings['Variables']>;
+};
+
+const factory = createFactory<PinoAppBindings>();
 
 const createPinoConfig = (): pino.LoggerOptions => {
   const logConfig = getLogLevelConfig();
@@ -48,11 +57,18 @@ const createPinoLogger = (messageFormat: string, reqIdGenerator: (c?: Context) =
     },
   });
 
-export default () => {
-  return createPinoLogger('[{requestId}] {req.method} {req.url} {res.statusCode}', () => crypto.randomUUID());
+const defaultFactory = createFactory<LogsAppBindings>();
+
+const defaultPinoMiddleware = (): MiddlewareHandler<LogsAppBindings> => {
+  const pinoMiddleware = createPinoLogger('[{requestId}] {req.method} {req.url} {res.statusCode}', () =>
+    crypto.randomUUID(),
+  );
+  return defaultFactory.createMiddleware(pinoMiddleware);
 };
 
-export const enhancedPinoMiddleware = () => {
+export default defaultPinoMiddleware;
+
+export const enhancedPinoMiddleware = (): MiddlewareHandler<PinoAppBindings> => {
   // Create base pino instance
   const basePino = pino(createPinoConfig(), createPrettyConfig('[{requestId}] {message}'));
 
@@ -63,7 +79,7 @@ export const enhancedPinoMiddleware = () => {
     },
   });
 
-  return createMiddleware(async (c: Context, next: () => Promise<void>) => {
+  return factory.createMiddleware(async (c, next) => {
     return basePinoMiddleware(c, async () => {
       const context = extractRequestContext(c);
       const enrichedRequestContext = enrichRequestContext(context);
