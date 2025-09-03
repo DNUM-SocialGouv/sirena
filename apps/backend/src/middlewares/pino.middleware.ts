@@ -7,12 +7,12 @@ import { envVars } from '@/config/env';
 import type { AppBindings as AuthAppBindings } from '@/helpers/factories/appWithAuth';
 import type { AppBindings as LogsAppBindings } from '@/helpers/factories/appWithLogs';
 import {
+  createPinoContextData,
   enrichRequestContext,
   enrichUserContext,
   extractRequestContext,
   getLogLevelConfig,
 } from '@/helpers/middleware';
-import { createContextualLogger } from '@/helpers/pino';
 import { loggerStorage } from '@/libs/asyncLocalStorage';
 
 // Pino middleware provides logging and can access optional auth data
@@ -88,17 +88,15 @@ export const enhancedPinoMiddleware = (): MiddlewareHandler<PinoAppBindings> => 
       // Get the logger that was set by pinoLogger middleware
       const baseLogger = c.get('logger');
 
-      // Check if logger exists and has child method, fallback to base pino instance if not
-      const effectiveLogger = !baseLogger || typeof baseLogger.child !== 'function' ? basePino : baseLogger;
+      const contextData = createPinoContextData(enrichedRequestContext, userContext);
 
-      // Create contextual logger with enriched context
-      const contextualLogger = createContextualLogger(effectiveLogger, enrichedRequestContext, userContext);
+      if (baseLogger) {
+        baseLogger.assign(contextData);
+      }
 
-      // Store the contextual logger in asyncLocalStorage
-      await loggerStorage.run(contextualLogger, async () => {
-        // Set the logger in Hono context for backward compatibility
-        c.set('logger', contextualLogger);
+      const pinoInstance = baseLogger?._logger || basePino;
 
+      await loggerStorage.run(pinoInstance, async () => {
         // Set headers for tracing
         c.header('x-request-id', context.requestId);
         c.header('x-trace-id', context.traceId);
