@@ -23,6 +23,7 @@ export interface MockPinoLogger {
   trace: ReturnType<typeof vi.fn>;
   fatal: ReturnType<typeof vi.fn>;
   child: ReturnType<typeof vi.fn>;
+  assign: ReturnType<typeof vi.fn>;
   level: string;
 }
 
@@ -63,6 +64,7 @@ export const createMockPinoLogger = (): MockPinoLogger => ({
   trace: vi.fn(),
   fatal: vi.fn(),
   child: vi.fn().mockReturnThis(),
+  assign: vi.fn(),
   level: 'info',
 });
 
@@ -206,6 +208,7 @@ export const setupPinoMocks = () => {
       trace: vi.fn(),
       fatal: vi.fn(),
       child: vi.fn().mockReturnThis(),
+      assign: vi.fn(),
       level: 'info',
     };
 
