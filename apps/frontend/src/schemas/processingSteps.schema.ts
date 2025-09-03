@@ -4,7 +4,7 @@ export const UpdateProcessingStepNameSchema = z.object({
   stepName: z
     .string()
     .min(1, {
-      message: "Le champ 'stepName' est obligatoire. Veuillez le renseigner pour mettre à jour l'étape.",
+      message: "Le nom de l'étape est obligatoire. Veuillez le renseigner pour mettre à jour l'étape.",
     })
     .max(300, {
       message: `Le nom de l'étape ne peut pas dépasser 300 caractères.`,

@@ -115,7 +115,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
         {isEditing ? (
           <div className="fr-mb-2w">
             <Input
-              label="Nom de l'étape"
+              label="Nom de l'étape (obligatoire)"
               nativeInputProps={{
                 value: editStepName,
                 onChange: (e) => {
