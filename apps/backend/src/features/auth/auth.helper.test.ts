@@ -160,7 +160,6 @@ describe('auth.helper.ts Auth Helpers', () => {
       .use(pinoLogger())
       .get('/test', async (c: Context<AppBindings>) => {
         const res = await authHelper.authUser(c, { id: userId, roleId: 'PENDING' }, idToken);
-        console.log('res', res);
         return res;
       });
 
@@ -204,7 +203,6 @@ describe('auth.helper.ts Auth Helpers', () => {
       .use(pinoLogger())
       .get('/test', async (c: Context<AppBindings>) => {
         const res = await authHelper.authUser(c, { id: userId, roleId: 'PENDING' }, idToken);
-        console.log('res', res);
         return res;
       });
 

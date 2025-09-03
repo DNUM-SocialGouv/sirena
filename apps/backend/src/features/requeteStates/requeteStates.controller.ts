@@ -21,7 +21,9 @@ import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { getFileStream } from '@/libs/minio';
 import type { Prisma } from '@/libs/prisma';
 import authMiddleware from '@/middlewares/auth.middleware';
+import requeteStateNoteChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStateNote.middleware';
 import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStep.middleware';
+
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
@@ -216,7 +218,7 @@ const app = factoryWithLogs
     '/:id/note',
     addRequeteStatesNoteRoute,
     zValidator('json', addRequeteStatesNoteBodySchema),
-    requeteStatesChangelogMiddleware({ action: ChangeLogAction.CREATED }),
+    requeteStateNoteChangelogMiddleware({ action: ChangeLogAction.CREATED }),
     async (c) => {
       const logger = c.get('logger');
       const { id } = c.req.param();

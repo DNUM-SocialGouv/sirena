@@ -106,6 +106,14 @@ vi.mock('@/middlewares/changelog/changelog.requeteStep.middleware', () => {
   };
 });
 
+vi.mock('@/middlewares/changelog/changelog.requeteStateNote.middleware', () => {
+  return {
+    default: () => (_: Context, next: Next) => {
+      return next();
+    },
+  };
+});
+
 vi.mock('@/libs/minio', () => ({
   getFileStream: vi.fn(),
 }));
