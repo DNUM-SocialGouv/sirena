@@ -95,8 +95,7 @@ model RoleEnum {
 }
 
 model Requete {
-  id            String    @id @default(uuid())
-  numero        Int       @default(autoincrement())
+  id            String    @id
   commentaire   String    @default("")
   receptionDate DateTime?
   dematSocialId Int?
