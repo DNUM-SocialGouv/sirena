@@ -28,7 +28,7 @@ export class RedisChart extends Chart {
             },
             requests: {
               cpu: '100m',
-              memory: '128Mi',
+              memory: '256Mi',
             },
           },
         },

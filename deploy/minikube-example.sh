@@ -1,4 +1,9 @@
 #!/bin/bash
+# 
+# This script sets up a local Kubernetes environment for testing the Sirena application.
+# You will certainly have to tune it.
+# It assumes you have a running minikube, and some CLI like `gh`.
+# 
 set -euo pipefail
 
 # Colors for output
