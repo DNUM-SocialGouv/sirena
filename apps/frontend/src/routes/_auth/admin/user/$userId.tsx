@@ -1,10 +1,9 @@
-import Breadcrumb from '@codegouvfr/react-dsfr/Breadcrumb';
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES, type Role, STATUT_TYPES, type StatutType, statutTypes } from '@sirena/common/constants';
 import { getAssignableRoles } from '@sirena/common/utils';
-import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
 import { usePatchUser } from '@/hooks/mutations/updateUser.hook';
@@ -162,17 +161,12 @@ function RouteComponent() {
         <QueryStateHandler query={userQuery}>
           {({ data: user }) => (
             <div className="fr-container">
-              <Breadcrumb
-                currentPageLabel={`Utilisateur ${user.lastName}`}
-                segments={[
-                  {
-                    label: 'Liste des utilisateurs',
-                    linkProps: {
-                      to: '/admin/users',
-                    },
-                  },
-                ]}
-              />
+              <div className="fr-mb-2w">
+                <Link className="fr-link fr-mb-1w" to="/admin/users">
+                  <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des
+                  utilisateurs
+                </Link>
+              </div>
               <div className="user">
                 <h1>Modifier un utilisateur</h1>
                 <div>
