@@ -74,7 +74,6 @@ model Entite {
   entiteMereId String?
   entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
 
-  requetes     Requete[]
   users        User[]
   uploads      UploadedFile[]
   RequeteEtape RequeteEtape[]
@@ -103,14 +102,13 @@ model Requete {
   receptionTypeId String
   receptionType   ReceptionTypeEnum @relation(fields: [receptionTypeId], references: [id])
 
-  Entite   Entite? @relation(fields: [entiteId], references: [id])
-  entiteId String?
-
   declarant PersonneConcernee? @relation("DeclarantRequete")
 
-  personnesConcernees PersonneConcernee[] @relation("ParticipantsRequete")
+  participant PersonneConcernee? @relation("ParticipantRequete")
 
   demarchesEngagees DemarchesEngagees?
+
+  fichiersRequeteOriginale UploadedFile[]
 
   etapes     RequeteEtape[]
   situations Situation[]
@@ -152,6 +150,7 @@ model PersonneConcernee {
   victimeInformeeCommentaire String   @default("")
   veutGarderAnonymat         Boolean?
   commentaire                String   @default("")
+  autrePersonnes             String   @default("")
 
   identite Identite? @relation("PersonneIdentite")
 
@@ -169,8 +168,8 @@ model PersonneConcernee {
   declarantDeId String?  @unique
   declarantDe   Requete? @relation("DeclarantRequete", fields: [declarantDeId], references: [id], onDelete: Cascade)
 
-  requeteEntiteId String
-  requete         Requete @relation("ParticipantsRequete", fields: [requeteEntiteId], references: [id], onDelete: Cascade)
+  participantDeId String?  @unique
+  ParticipantDe   Requete? @relation("ParticipantRequete", fields: [participantDeId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -322,6 +321,8 @@ model Fait {
   dateFin         DateTime?
   commentaire     String    @default("")
 
+  fichiers UploadedFile[]
+
   motifs            FaitMotif[]
   consequences      FaitConsequence[]
   maltraitanceTypes FaitMaltraitanceType[]
@@ -396,6 +397,10 @@ model RequeteEtape {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([requeteId, entiteId, createdAt])
+  @@index([entiteId, createdAt])
+  @@index([requeteId, createdAt])
 }
 
 model RequeteStatutEnum {
@@ -439,6 +444,12 @@ model UploadedFile {
 
   requeteEtapeNoteId String?
   requeteEtapeNote   RequeteEtapeNote? @relation(fields: [requeteEtapeNoteId], references: [id], onDelete: Cascade)
+
+  requeteId String?
+  Requete   Requete? @relation(fields: [requeteId], references: [id], onDelete: Cascade)
+
+  Fait            Fait?   @relation(fields: [faitSituationId], references: [situationId], onDelete: Cascade)
+  faitSituationId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
