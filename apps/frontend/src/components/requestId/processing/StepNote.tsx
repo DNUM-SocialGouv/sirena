@@ -1,5 +1,6 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import clsx from 'clsx';
+import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 
 type StepNoteProps = {
@@ -54,14 +55,11 @@ export const StepNote = ({ author, content, createdAt, requeteStateId, files }: 
         <ul>
           {files.map((file) => (
             <li key={file.id} className={styles['request-note__file']}>
-              <a
+              <FileDownloadLink
                 href={`/api/requete-states/${requeteStateId}/file/${file.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="fr-link"
-              >
-                {String(file.originalName)} ({(file.size / 1024).toFixed(2)} Ko)
-              </a>
+                fileName={file.originalName}
+                fileSize={file.size}
+              />
             </li>
           ))}
         </ul>
