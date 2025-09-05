@@ -7,6 +7,7 @@
     "build:ci": "tsc -p tsconfig.build.json && pnpm sentry:sourcemaps",
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "gql": "tsx src/gql.ts",
+    "worker": "tsx src/start-worker.ts",
     "test": "vitest",
     "coverage": "vitest run --coverage",
     "db:generate": "prisma generate",
@@ -54,6 +55,7 @@
     "@sirena/common": "workspace:*",
     "graffle": "8.0.0-next.168",
     "file-type": "^21.0.0",
+    "bullmq": "^5.56.5",
     "graphql": "^16.11.0",
     "handlebars": "^4.7.8",
     "hono": "catalog:",
@@ -67,6 +69,7 @@
     "minio": "^8.0.5",
     "pino-pretty": "^13.1.1",
     "tmp-promise": "^3.0.3",
+    "ioredis": "^5.6.1",
     "zod": "catalog:",
     "zod-openapi": "^4.2.4",
     "zod-prisma-types": "^3.2.4"

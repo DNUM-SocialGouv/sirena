@@ -2,6 +2,13 @@ import { RECEPTION_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants'
 import { prisma } from '@/libs/prisma';
 import type { CreateRequeteFromDematSocialDto } from './requetes.type';
 
+export const getRequeteByDematSocialId = async (id: number) =>
+  await prisma.requete.findFirst({
+    where: {
+      dematSocialId: id,
+    },
+  });
+
 export const createRequeteFromDematSocial = async ({ dematSocialId, createdAt }: CreateRequeteFromDematSocialDto) => {
   return prisma.$transaction(async (tx) => {
     const requete = await tx.requete.create({
@@ -43,4 +50,14 @@ export const createRequeteFromDematSocial = async ({ dematSocialId, createdAt }:
 
     return requete;
   });
+};
+
+export const createOrGetFromDematSocial = async ({ dematSocialId, createdAt }: CreateRequeteFromDematSocialDto) => {
+  const requete = await getRequeteByDematSocialId(dematSocialId);
+
+  if (requete) {
+    return null;
+  }
+
+  return await createRequeteFromDematSocial({ dematSocialId, createdAt });
 };

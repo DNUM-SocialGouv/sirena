@@ -476,3 +476,14 @@ model UploadedFile {
   RequeteStateNote   RequeteStateNote? @relation(fields: [requeteStateNoteId], references: [id], onDelete: Cascade)
   requeteStateNoteId String?
 }
+
+model Crons {
+  id        String    @id @default(uuid())
+  name      String
+  params    Json?
+  result    Json?
+  state     String
+  createdAt DateTime  @default(now())
+  startedAt DateTime
+  endedAt   DateTime?
+}

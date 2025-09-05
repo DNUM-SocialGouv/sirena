@@ -1,6 +1,7 @@
 import { App as CdkApp, YamlOutputType } from 'cdk8s';
-import { App } from './charts/app';
+import { App, Worker } from './charts/app';
 import { ExternalSecrets } from './charts/external-secrets';
+import { RedisChart } from './charts/redis';
 import * as k8s from './imports/k8s';
 
 if (!process.env.IMAGE_TAG) {
@@ -74,6 +75,22 @@ function createApps(
 
   // External secrets (database and backend secrets)
   new ExternalSecrets(app, 'external-secrets', environnement);
+
+  // Redis
+  new RedisChart(app, 'redis', {
+    namespace,
+    environment,
+  });
+
+  // Worker
+  new Worker(app, {
+    name: 'worker',
+    replicas: envConfig.replicas,
+    image: `${COMMON_CONFIG.imageRegistry}:${imageTag}-worker`,
+    namespace,
+    environment,
+    host: '',
+  });
 
   // Backend
   new App(app, 'backend', {
