@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { uploadFile } from '@/lib/api/fetchUploadedFiles';
+import type { RequestErrorOptions } from '@/lib/api/tanstackQuery';
 
-export const useUploadFile = (options?: { silentToastError?: boolean }) => {
+export const useUploadFile = (options: Partial<RequestErrorOptions> = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({

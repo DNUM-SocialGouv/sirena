@@ -3,6 +3,10 @@ import { router } from '@/lib/router';
 import { toastManager } from '@/lib/toastManager';
 import { useUserStore } from '@/stores/userStore';
 
+export interface RequestErrorOptions {
+  silentToastError?: boolean;
+}
+
 const getDataResposne = (data: unknown): data is { cause?: Cause; message: string } => {
   if (typeof data !== 'object' || data === null) return false;
 
@@ -49,7 +53,7 @@ export class HttpError extends Error {
   }
 }
 
-export const handleRequestErrors = async (res: Response, options?: { silentToastError?: boolean }) => {
+export const handleRequestErrors = async (res: Response, options: RequestErrorOptions = {}) => {
   const isAccountInactiveError = (res: Response): boolean => {
     return res.status === 403 && res.headers.get('X-Error-Code') === 'ACCOUNT_INACTIVE';
   };
@@ -78,7 +82,7 @@ export const handleRequestErrors = async (res: Response, options?: { silentToast
     }
   }
 
-  if (!options?.silentToastError) {
+  if (!options.silentToastError) {
     toastManager.add({
       title: 'Erreur',
       description: `Une erreur s'est produite : ${res.status} ${res.statusText}`,
