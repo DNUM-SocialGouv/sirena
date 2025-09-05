@@ -142,6 +142,14 @@ export const updateRequeteStateStepName = async (
   });
 };
 
+export const getNoteById = async (id: string) =>
+  await prisma.requeteStateNote.findUnique({
+    where: { id },
+    include: {
+      uploadedFiles: true,
+    },
+  });
+
 export const addNote = async (data: CreateRequeteStateNoteDto) =>
   await prisma.requeteStateNote.create({
     data: {

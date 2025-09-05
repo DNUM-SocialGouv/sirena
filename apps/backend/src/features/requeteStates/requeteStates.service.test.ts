@@ -6,6 +6,7 @@ import {
   addNote,
   addProcessingState,
   deleteRequeteState,
+  getNoteById,
   getRequeteStateById,
   getRequeteStates,
   updateRequeteStateStatut,
@@ -25,6 +26,7 @@ vi.mock('@/libs/prisma', () => ({
     },
     requeteStateNote: {
       create: vi.fn(),
+      findUnique: vi.fn(),
     },
     uploadedFile: {
       deleteMany: vi.fn(),
@@ -931,6 +933,30 @@ describe('requeteStates.service.ts', () => {
 
       expect(createChangeLog).toHaveBeenCalledTimes(3); // 1 note + 1 file + 1 requeteState (with all entities)
       expect(deleteFileFromMinio).toHaveBeenCalledWith('path/to/file1.pdf');
+    });
+  });
+
+  describe('getNoteById()', () => {
+    it('should return a RequeteStateNote by id with uploaded files', async () => {
+      const fakeNote = {
+        id: 'note-1',
+        content: 'A note',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      vi.mocked(prisma.requeteStateNote.findUnique).mockResolvedValueOnce(fakeNote);
+
+      const result = await getNoteById('note-1');
+
+      expect(result).toEqual(fakeNote);
+      expect(prisma.requeteStateNote.findUnique).toHaveBeenCalledWith({
+        where: { id: fakeNote.id },
+        include: {
+          uploadedFiles: true,
+        },
+      });
     });
   });
 });
