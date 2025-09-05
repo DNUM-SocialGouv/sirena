@@ -223,14 +223,8 @@ describe('pino.middleware.ts', () => {
     });
 
     it('should add request-id and trace-id headers', async () => {
-      let _responseHeaders: Record<string, string | null>;
-
       app.use(enhancedPinoMiddleware());
       app.get('/test', (c) => {
-        _responseHeaders = {
-          'x-request-id': c.res.headers.get('x-request-id'),
-          'x-trace-id': c.res.headers.get('x-trace-id'),
-        };
         return c.json({ success: true });
       });
 
