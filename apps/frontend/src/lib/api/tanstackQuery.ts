@@ -49,7 +49,7 @@ export class HttpError extends Error {
   }
 }
 
-export const handleRequestErrors = async (res: Response) => {
+export const handleRequestErrors = async (res: Response, options?: { silentToastError?: boolean }) => {
   const isAccountInactiveError = (res: Response): boolean => {
     return res.status === 403 && res.headers.get('X-Error-Code') === 'ACCOUNT_INACTIVE';
   };
@@ -78,12 +78,14 @@ export const handleRequestErrors = async (res: Response) => {
     }
   }
 
-  toastManager.add({
-    title: 'Erreur',
-    description: `Une erreur s'est produite : ${res.status} ${res.statusText}`,
-    timeout: 0,
-    data: { icon: 'fr-alert--error' },
-  });
+  if (!options?.silentToastError) {
+    toastManager.add({
+      title: 'Erreur',
+      description: `Une erreur s'est produite : ${res.status} ${res.statusText}`,
+      timeout: 0,
+      data: { icon: 'fr-alert--error' },
+    });
+  }
 
   throw new HttpError(`HTTP ${res.status}`, res.status, data);
 };

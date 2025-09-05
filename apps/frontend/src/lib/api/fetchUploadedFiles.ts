@@ -1,11 +1,11 @@
 import { client } from '@/lib/api/hc';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery';
 
-export async function uploadFile(file: File) {
+export async function uploadFile(file: File, options?: { silentToastError?: boolean }) {
   const res = await client['uploaded-files'].$post({
     form: { file },
   });
-  await handleRequestErrors(res);
+  await handleRequestErrors(res, options);
   const { data } = await res.json();
   return data;
 }
