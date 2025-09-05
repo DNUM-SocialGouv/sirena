@@ -169,6 +169,21 @@ function createContainer(props: AppProps): k8s.Container {
       ? [...createBackendEnvVars(props.host, props.environment), ...createDatabaseEnvVars(), ...createBucketEnvVars()]
       : [],
     envFrom: isBackend ? [{ secretRef: { name: 'backend' } }] : undefined,
+    ...(isBackend
+      ? {
+          startupProbe: {
+            httpGet: {
+              path: '/health',
+              port: k8s.IntOrString.fromNumber(containerPort),
+              scheme: 'HTTP',
+            },
+            initialDelaySeconds: 5,
+            periodSeconds: 5,
+            timeoutSeconds: 3,
+            failureThreshold: 12,
+          },
+        }
+      : {}),
     livenessProbe: {
       httpGet: {
         path: isBackend ? '/version' : '/',
@@ -191,10 +206,20 @@ function createContainer(props: AppProps): k8s.Container {
             initialDelaySeconds: 10,
             periodSeconds: 10,
             timeoutSeconds: 5,
-            failureThreshold: 3,
+            successThreshold: 2, // Require 2 successful checks
+            failureThreshold: 6, // Allow more retries during startup
           },
         }
       : {}),
+    lifecycle: isBackend
+      ? {
+          preStop: {
+            exec: {
+              command: ['/bin/sh', '-c', 'sleep 15'], // Give time for load balancer to drain connections
+            },
+          },
+        }
+      : undefined,
   };
 }
 
@@ -252,12 +277,22 @@ function createDeployment(scope: Construct, props: AppProps, labels: Record<stri
       selector: {
         matchLabels: labels,
       },
+      strategy: {
+        type: 'RollingUpdate',
+        rollingUpdate: {
+          maxSurge: k8s.IntOrString.fromString('1'),
+          maxUnavailable: k8s.IntOrString.fromString('0'),
+        },
+      },
+      minReadySeconds: 10,
+      progressDeadlineSeconds: 600,
       template: {
         metadata: {
           labels: labels,
         },
         spec: {
           containers: [createContainer(props)],
+          terminationGracePeriodSeconds: 30,
           imagePullSecrets: [
             {
               name: 'ghcr-registry',
@@ -327,6 +362,22 @@ function createIngress(
   });
 }
 
+function createPodDisruptionBudget(scope: Construct, props: AppProps, labels: Record<string, string>) {
+  if (props.replicas > 1) {
+    return new k8s.KubePodDisruptionBudget(scope, 'pdb', {
+      metadata: {
+        name: `${props.name}-pdb`,
+      },
+      spec: {
+        minAvailable: k8s.IntOrString.fromNumber(1),
+        selector: {
+          matchLabels: labels,
+        },
+      },
+    });
+  }
+}
+
 export class App extends Chart {
   constructor(scope: Construct, id: string, props: AppProps) {
     super(scope, id, {
@@ -334,7 +385,8 @@ export class App extends Chart {
     });
 
     const labels = {
-      app: props.name,
+      app: 'sirena',
+      component: props.name,
     };
 
     const isBackend = props.name === 'backend';
@@ -342,6 +394,7 @@ export class App extends Chart {
 
     createConfigMap(this, isBackend);
     createDeployment(this, props, labels);
+    createPodDisruptionBudget(this, props, labels);
     const service = createService(this, props, labels);
     createIngress(this, props, isBackend, namespace, service);
   }
