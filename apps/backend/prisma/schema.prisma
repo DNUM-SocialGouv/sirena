@@ -74,9 +74,9 @@ model Entite {
   entiteMereId String?
   entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
 
-  users        User[]
-  uploads      UploadedFile[]
-  RequeteEtape RequeteEtape[]
+  users         User[]
+  uploads       UploadedFile[]
+  RequeteEntite RequeteEntite[]
 }
 
 model EntiteTypeEnum {
@@ -110,11 +110,23 @@ model Requete {
 
   fichiersRequeteOriginale UploadedFile[]
 
-  etapes     RequeteEtape[]
-  situations Situation[]
+  etapes         RequeteEtape[]
+  situations     Situation[]
+  RequeteEntites RequeteEntite[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model RequeteEntite {
+  requeteId String
+  requete   Requete @relation(fields: [requeteId], references: [id], onDelete: Cascade)
+
+  entiteId     String
+  entite       Entite         @relation(fields: [entiteId], references: [id])
+  RequeteEtape RequeteEtape[]
+
+  @@id([requeteId, entiteId])
 }
 
 model ReceptionTypeEnum {
@@ -390,17 +402,17 @@ model RequeteEtape {
   requeteId String
   Requete   Requete @relation(fields: [requeteId], references: [id], onDelete: Cascade)
 
-  notes RequeteEtapeNote[]
-
   entiteId String
-  entite   Entite @relation(fields: [entiteId], references: [id])
+
+  requeteEntite RequeteEntite @relation(fields: [requeteId, entiteId], references: [requeteId, entiteId])
+
+  notes RequeteEtapeNote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([requeteId, entiteId, createdAt])
-  @@index([entiteId, createdAt])
-  @@index([requeteId, createdAt])
+  @@index([requeteId, entiteId])
 }
 
 model RequeteStatutEnum {
