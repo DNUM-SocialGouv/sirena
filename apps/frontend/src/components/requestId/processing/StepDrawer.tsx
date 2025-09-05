@@ -29,7 +29,7 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const addStepNoteMutation = useAddProcessingStepNote(requestId);
-  const uploadFileMutation = useUploadFile();
+  const uploadFileMutation = useUploadFile({ silentToastError: true });
 
   const openDrawer = (step: StepType) => {
     setStep(step ?? '');
