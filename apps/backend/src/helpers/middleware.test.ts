@@ -5,9 +5,6 @@ import type { Env } from '@/config/env.schema';
 const originalMiddleware = await vi.importActual<typeof import('./middleware')>('./middleware');
 const {
   getRawIpAddress,
-  createSentryBusinessContext,
-  createSentryRequestContext,
-  createSentryUserContext,
   enrichUserContext,
   extractClientIp,
   extractRequestContext,
@@ -16,7 +13,6 @@ const {
   getLogExtraContext,
   getLogLevelConfig,
   getTrustedIpHeaders,
-  SOURCE_BACKEND,
   UNKNOWN_VALUE,
 } = originalMiddleware;
 
@@ -42,10 +38,6 @@ interface MockContext {
   set: MockedFunction<(key: string, value: unknown) => void>;
   header: MockedFunction<(name: string, value?: string) => void>;
   env: Record<string, unknown>;
-}
-
-interface MockSentryScope {
-  setTag: MockedFunction<(key: string, value: string) => void>;
 }
 
 interface TestUser extends User {
@@ -156,12 +148,6 @@ function createMockContext(overrides: Partial<MockContext> = {}): MockContext {
       ...defaultContext.env,
       ...overrides.env,
     },
-  };
-}
-
-function _createMockSentryScope(): MockSentryScope {
-  return {
-    setTag: vi.fn(),
   };
 }
 
@@ -430,116 +416,40 @@ describe('middleware utilities', () => {
     });
   });
 
-  describe('createSentryUserContext', () => {
-    it('should create Sentry user context with raw IP', () => {
-      const userContext = createSentryUserContext(TEST_USER, '192.168.1.100');
-
-      expect(userContext).toEqual({
-        id: TEST_USER.id,
-        email: TEST_USER.email,
-        username: TEST_USER.email,
-        ip_address: '192.168.1.100',
-      });
-    });
-
-    it('should handle edge cases in user context creation', () => {
-      expect(createSentryUserContext(TEST_USER, UNKNOWN_VALUE)).toEqual({
-        id: TEST_USER.id,
-        email: TEST_USER.email,
-        username: TEST_USER.email,
-      });
-
-      const userWithoutEmail: TestUser = { id: TEST_USER.id };
-      expect(createSentryUserContext(userWithoutEmail, '192.168.1.100')).toEqual({
-        id: TEST_USER.id,
-        email: undefined,
-        username: undefined,
-        ip_address: '192.168.1.100',
-      });
-    });
-  });
-
-  describe('createSentryRequestContext', () => {
-    it('should create complete Sentry request context', () => {
-      const context = createMockContext({
-        req: {
-          header: createMockHeaders(),
-          method: 'POST',
-          url: 'https://example.com/api/test',
-          path: '/api/test',
-          raw: {
-            headers: new Headers([['content-type', 'application/json']]),
-          },
-        },
-      });
-
-      const requestContext = createTestRequestContext();
-      const sentryContext = createSentryRequestContext(context as unknown as Context, requestContext);
-
-      expect(sentryContext).toMatchObject({
-        id: TEST_HEADERS.REQUEST_ID,
-        traceId: TEST_HEADERS.TRACE_ID,
-        sessionId: TEST_HEADERS.SESSION_ID,
-        method: 'POST',
-        url: 'https://example.com/api/test',
-        path: '/api/test',
-        ip: '192.168.1.100',
-        userAgent: TEST_HEADERS.USER_AGENT,
-        source: SOURCE_BACKEND,
-      });
-    });
-
-    it('should include IP even if unknown', () => {
-      const context = createMockContext();
-      const requestContext = createTestRequestContext({ ip: UNKNOWN_VALUE });
-      const sentryContext = createSentryRequestContext(context as unknown as Context, requestContext);
-
-      expect(sentryContext).toHaveProperty('ip', UNKNOWN_VALUE);
-    });
-  });
-
-  describe('createSentryBusinessContext', () => {
-    it('should create business context with all fields', () => {
-      const requestContext = createTestRequestContext();
-      const enrichedUserContext = enrichUserContext(requestContext);
-
-      // enrichUserContext returns null when no userId, so we need to handle it
-      if (!enrichedUserContext) {
-        throw new Error('Expected enrichedUserContext to be defined');
-      }
-
-      const businessContext = createSentryBusinessContext(enrichedUserContext);
-
-      expect(businessContext).toEqual({
-        userId: TEST_USER.id,
-        entiteIds: TEST_USER.entiteIds,
-        roleId: TEST_USER.roleId,
-      });
-    });
-
-    it('should handle partial and empty business context data', () => {
-      const requestContextWithoutUser = createTestRequestContext({
+  describe('enrichUserContext', () => {
+    it('should return null when no userId', () => {
+      const context = createTestRequestContext({
         userId: undefined,
         entiteIds: undefined,
         roleId: undefined,
       });
-      const enrichedUserContext1 = enrichUserContext(requestContextWithoutUser);
-      expect(enrichedUserContext1).toBeNull();
 
-      const requestContextWithUser = createTestRequestContext({
+      const enriched = enrichUserContext(context);
+      expect(enriched).toBeNull();
+    });
+
+    it('should return enriched context when userId exists', () => {
+      const context = createTestRequestContext();
+
+      const enriched = enrichUserContext(context);
+      expect(enriched).toEqual({
+        userId: TEST_USER.id,
+        roleId: TEST_USER.roleId,
+        entiteIds: TEST_USER.entiteIds,
+      });
+    });
+
+    it('should handle partial data', () => {
+      const context = createTestRequestContext({
         entiteIds: undefined,
         roleId: undefined,
       });
-      const enrichedUserContext2 = enrichUserContext(requestContextWithUser);
 
-      // enrichUserContext should return a value for a context with user
-      if (!enrichedUserContext2) {
-        throw new Error('Expected enrichedUserContext2 to be defined');
-      }
-
-      const businessContext = createSentryBusinessContext(enrichedUserContext2);
-      expect(businessContext).toEqual({
+      const enriched = enrichUserContext(context);
+      expect(enriched).toEqual({
         userId: TEST_USER.id,
+        roleId: undefined,
+        entiteIds: undefined,
       });
     });
   });
