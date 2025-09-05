@@ -1,3 +1,5 @@
+// les termes métieres sont en français, les termes techniques en anglais
+
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/client"
@@ -21,14 +23,14 @@ model StatutEnum {
 }
 
 model User {
-  id        String  @id @default(cuid())
-  email     String  @unique /// @zod.string.email({ message: 'Invalid email address' }),
-  firstName String
-  lastName  String
-  uid       String  @unique
-  sub       String  @unique
-  active    Boolean @default(false)
-  pcData    Json
+  id     String  @id @default(cuid())
+  email  String  @unique /// @zod.string.email({ message: 'Invalid email address' }),
+  prenom String
+  nom    String
+  uid    String  @unique
+  sub    String  @unique
+  active Boolean @default(false)
+  pcData Json
 
   roleId String
   role   RoleEnum @relation(fields: [roleId], references: [id])
@@ -60,12 +62,12 @@ model Session {
 }
 
 model Entite {
-  id               String @id @default(uuid())
-  nomComplet       String
-  label            String
-  email            String @default("")
-  emailDomain      String @default("")
-  organizationUnit String @default("")
+  id                 String @id @default(uuid())
+  nomComplet         String
+  label              String
+  email              String @default("")
+  emailDomain        String @default("")
+  organizationalUnit String @default("")
 
   services Entite[] @relation("EntiteMereToServices")
 
@@ -423,8 +425,8 @@ model RequeteStatutEnum {
 }
 
 model RequeteEtapeNote {
-  id      String @id @default(uuid())
-  content String
+  id    String @id @default(uuid())
+  texte String
 
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
