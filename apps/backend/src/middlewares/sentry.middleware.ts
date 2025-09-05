@@ -1,70 +1,93 @@
-import { sentry } from '@hono/sentry';
-import * as Sentry from '@sentry/node';
-import type { Context, Next } from 'hono';
-import { createMiddleware } from 'hono/factory';
-import { envVars } from '@/config/env';
+import type { Context, MiddlewareHandler } from 'hono';
+import { createFactory } from 'hono/factory';
+import type { AppBindings as AuthAppBindings } from '@/helpers/factories/appWithAuth';
+import type { AppBindings as LogsAppBindings } from '@/helpers/factories/appWithLogs';
 import {
-  createSentryBusinessContext,
-  createSentryRequestContext,
-  createSentryUserContext,
-  extractClientIp,
+  type EnrichedUserContext,
+  enrichUserContext,
   extractRequestContext,
-  setSentryCorrelationTags,
-  type User,
+  type RequestContext,
+  SOURCE_BACKEND,
+  UNKNOWN_VALUE,
 } from '@/helpers/middleware';
 
-export const sentryMiddleware = () => {
-  const baseSentryMiddleware = sentry({
-    dsn: envVars.SENTRY_DSN_BACKEND,
-    environment: envVars.SENTRY_ENVIRONMENT,
-  });
+export interface SentryHub {
+  setContext: (key: string, context: Record<string, unknown>) => void;
+  setUser: (user: Record<string, unknown>) => void;
+  setTag: (key: string, value: string) => void;
+  captureException: (error: Error) => void;
+}
 
-  return createMiddleware(async (c: Context, next: Next) => {
-    await baseSentryMiddleware(c, async () => {
+export const createSentryRequestContext = (c: Context, context: RequestContext) => {
+  return {
+    id: context.requestId,
+    traceId: context.traceId,
+    sessionId: context.sessionId,
+    method: c.req.method,
+    url: c.req.url,
+    path: c.req.path,
+    headers: Object.fromEntries(c.req.raw.headers.entries()),
+    ip: context.ip,
+    userAgent: context.userAgent,
+    source: SOURCE_BACKEND,
+  };
+};
+
+export const createSentryUserFromContext = (userContext: EnrichedUserContext, rawIp: string) => {
+  return {
+    id: userContext.userId,
+    email: userContext.email,
+    ...(rawIp && rawIp !== UNKNOWN_VALUE && { ip_address: rawIp }),
+    ...(userContext.roleId && { roleId: userContext.roleId }),
+    ...(userContext.entiteIds && userContext.entiteIds.length > 0 && { entiteIds: userContext.entiteIds }),
+  };
+};
+
+// Define Sentry-specific variables
+type SentryVariables = {
+  sentry?: SentryHub;
+};
+
+// Combine types: Sentry middleware needs logs + optional auth data + sentry instance
+type SentryAppBindings = {
+  Variables: LogsAppBindings['Variables'] & Partial<AuthAppBindings['Variables']> & SentryVariables;
+};
+
+const factory = createFactory<SentryAppBindings>();
+
+export const sentryContextMiddleware = (): MiddlewareHandler<SentryAppBindings> =>
+  factory.createMiddleware(async (c, next) => {
+    const sentry: SentryHub | undefined = c.get('sentry');
+    if (!sentry) {
+      await next();
+      return;
+    }
+
+    try {
       const context = extractRequestContext(c);
+      const sentryRequestContext = createSentryRequestContext(c, context);
+      sentry.setContext('request', sentryRequestContext);
 
-      Sentry.getCurrentScope().setContext('request', createSentryRequestContext(c, context));
+      const userContext = enrichUserContext(context);
+      if (userContext) {
+        const sentryUser = createSentryUserFromContext(userContext, context.ip);
+        sentry.setUser(sentryUser);
 
-      setSentryCorrelationTags(Sentry.getCurrentScope(), context);
-
-      try {
-        await next();
-
-        const user = c.get('user') as User | undefined;
-        if (user) {
-          setUserContext(c, user, context);
+        if (userContext.roleId) {
+          sentry.setTag('roleId', userContext.roleId);
         }
-      } catch (error) {
-        Sentry.withScope((scope) => {
-          scope.setContext('response', {
-            statusCode: c.res.status,
-          });
 
-          if (error instanceof Error) {
-            Sentry.captureException(error);
-          } else {
-            Sentry.captureMessage(`Non-Error exception: ${String(error)}`);
-          }
-        });
-
-        throw error;
+        if (userContext.entiteIds && userContext.entiteIds.length > 0) {
+          sentry.setTag('entiteIds', userContext.entiteIds.join(','));
+        }
       }
-    });
+    } catch (error) {
+      const logger = c.get('logger');
+      if (logger) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        logger.warn({ error: errorMsg }, 'Failed to set Sentry context');
+      }
+    }
+
+    await next();
   });
-};
-
-const setUserContext = (c: Context, user: User, context: ReturnType<typeof extractRequestContext>) => {
-  const rawIp = extractClientIp(c);
-
-  Sentry.getCurrentScope().setUser(createSentryUserContext(user, rawIp));
-
-  const businessContext = createSentryBusinessContext(context);
-  if (businessContext) {
-    Sentry.getCurrentScope().setContext('business', {
-      ...businessContext,
-      userEmail: user.email,
-    });
-  }
-
-  Sentry.getCurrentScope().setFingerprint(['user', user.id]);
-};

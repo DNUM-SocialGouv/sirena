@@ -1,6 +1,7 @@
 import type { Context, Next } from 'hono';
 import type { MockedFunction } from 'vitest';
-import type { LogLevel, LogLevelConfig, RequestContext, User } from '@/helpers/middleware';
+import type { LogLevel, LogLevelConfig, RequestContext } from '@/helpers/middleware';
+import type { User } from '@/libs/prisma';
 
 export interface SentryScope {
   setContext(name: string, context: Record<string, unknown>): void;
@@ -91,7 +92,6 @@ export interface MiddlewareHelpers {
   getLogExtraContext: () => Record<string, string>;
   createSentryRequestContext: (c: Context, context: RequestContext) => SentryRequestContext;
   createSentryBusinessContext: (context: RequestContext, userEmail?: string) => SentryBusinessContext;
-  createSentryUserContext: (user: User, ip: string) => SentryUserContext;
   extractClientIp: (c: Context) => string;
   UNKNOWN_VALUE: string;
   SOURCE_BACKEND: string;
@@ -106,7 +106,6 @@ export interface MockedMiddlewareHelpers extends MiddlewareHelpers {
   getLogExtraContext: MockedFunction<MiddlewareHelpers['getLogExtraContext']>;
   createSentryRequestContext: MockedFunction<MiddlewareHelpers['createSentryRequestContext']>;
   createSentryBusinessContext: MockedFunction<MiddlewareHelpers['createSentryBusinessContext']>;
-  createSentryUserContext: MockedFunction<MiddlewareHelpers['createSentryUserContext']>;
   extractClientIp: MockedFunction<MiddlewareHelpers['extractClientIp']>;
 }
 

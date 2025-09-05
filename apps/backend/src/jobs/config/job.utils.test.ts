@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/node';
 import type { Job } from 'bullmq';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { endCron, startCron } from '@/crons/crons.service';
@@ -10,12 +9,28 @@ vi.mock('@/crons/crons.service', () => ({
   endCron: vi.fn(),
 }));
 
-vi.mock('@sentry/node', () => ({
+const mockSentry = {
   captureException: vi.fn(),
-}));
+};
+
+vi.mock('@sentry/node', () => mockSentry);
 
 vi.mock('@/helpers/errors', () => ({
   serializeError: vi.fn((err) => ({ message: err.message })),
+}));
+
+vi.mock('@/libs/asyncLocalStorage', () => ({
+  getSentryStore: vi.fn(() => mockSentry),
+}));
+
+const mockEnvVars = {
+  SENTRY_ENABLED: false,
+};
+
+vi.mock('@/config/env', () => ({
+  get envVars() {
+    return mockEnvVars;
+  },
 }));
 
 describe('job.utils', () => {
@@ -23,7 +38,7 @@ describe('job.utils', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       vi.useFakeTimers();
-      process.env.SENTRY_ENABLED = 'false';
+      mockEnvVars.SENTRY_ENABLED = false;
     });
 
     afterEach(() => {
@@ -115,7 +130,7 @@ describe('job.utils', () => {
         state: 'error',
       });
 
-      expect(Sentry.captureException).not.toHaveBeenCalled();
+      expect(mockSentry.captureException).not.toHaveBeenCalled();
     });
 
     it('should send error to Sentry if enabled', async () => {
@@ -141,7 +156,7 @@ describe('job.utils', () => {
         state: 'started',
       };
 
-      process.env.SENTRY_ENABLED = 'true';
+      mockEnvVars.SENTRY_ENABLED = true;
       vi.mocked(startCron).mockResolvedValueOnce(startedCron);
       const error = new Error('Oops');
 
@@ -151,10 +166,13 @@ describe('job.utils', () => {
         }),
       ).rejects.toThrow();
 
-      expect(Sentry.captureException).toHaveBeenCalledWith(error, {
+      expect(mockSentry.captureException).toHaveBeenCalledWith(error, {
         extra: {
           jobName: mockJob.name,
           jobId: mockJob.id,
+          params: {},
+          startedAt: startedAt.toISOString(),
+          endedAt: new Date().toISOString(),
         },
       });
     });
