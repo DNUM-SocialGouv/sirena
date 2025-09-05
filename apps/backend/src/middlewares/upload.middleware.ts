@@ -77,7 +77,12 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
     });
   }
 
-  const detectedType = await fileTypeFromBuffer(buffer);
+  let detectedType = await fileTypeFromBuffer(buffer);
+
+  // Handle text-based files that fileTypeFromBuffer can't detect
+  if (!detectedType && file.name.toLowerCase().endsWith('.eml')) {
+    detectedType = { mime: 'text/plain', ext: 'eml' };
+  }
 
   if (!detectedType?.mime || !ALLOWED_MIME_TYPES.includes(detectedType.mime)) {
     throwHTTPException400BadRequest(`File type "${detectedType?.mime}" is not allowed`, {
