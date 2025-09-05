@@ -152,7 +152,7 @@ export const setupSentryMocks = () => {
 export const setupMiddlewareHelperMocks = (requestContext?: Partial<RequestContext>) => {
   const testContext = createTestRequestContext(requestContext);
 
-  const helperMocks = {
+  const middlewareHelpers = {
     extractRequestContext: vi.fn(() => testContext),
     getLogLevelConfig: vi.fn(() => ({
       console: 'info' as LogLevel,
@@ -162,6 +162,16 @@ export const setupMiddlewareHelperMocks = (requestContext?: Partial<RequestConte
     getCaller: vi.fn(() => 'test.ts:123'),
     setSentryCorrelationTags: vi.fn(),
     getLogExtraContext: vi.fn(() => ({})),
+    extractClientIp: vi.fn(() => 'xxx.xxx.xxx.100'),
+    enrichUserContext: vi.fn((context: RequestContext) =>
+      context.userId ? { userId: context.userId, roleId: context.roleId, entiteIds: context.entiteIds } : null,
+    ),
+    enrichRequestContext: vi.fn((context: RequestContext) => ({ ...context, caller: 'test.ts:123' })),
+    UNKNOWN_VALUE: 'unknown',
+    SOURCE_BACKEND: 'backend',
+  };
+
+  const sentryHelpers = {
     createSentryRequestContext: vi.fn((c: Context, context: RequestContext) => ({
       id: context.requestId,
       traceId: context.traceId,
@@ -174,25 +184,21 @@ export const setupMiddlewareHelperMocks = (requestContext?: Partial<RequestConte
       userAgent: context.userAgent,
       source: 'backend',
     })),
-    createSentryBusinessContext: vi.fn((context: RequestContext) => ({
-      source: 'backend',
-      userId: context.userId,
-      entiteIds: context.entiteIds,
-      roleId: context.roleId,
-    })),
-    createSentryUserContext: vi.fn((user: User, ip: string) => ({
-      id: user.id,
-      email: user.email,
-      username: user.email,
-      ip_address: ip,
-    })),
-    extractClientIp: vi.fn(() => 'xxx.xxx.xxx.100'),
-    UNKNOWN_VALUE: 'unknown',
-    SOURCE_BACKEND: 'backend',
+
+    createSentryUserFromContext: vi.fn(
+      (userContext: { userId: string; roleId?: string; entiteIds?: string[] | null }, ip: string) => ({
+        id: userContext.userId,
+        ...(ip && ip !== 'unknown' && { ip_address: ip }),
+        ...(userContext.roleId && { roleId: userContext.roleId }),
+        ...(userContext.entiteIds && userContext.entiteIds.length > 0 && { entiteIds: userContext.entiteIds }),
+      }),
+    ),
   };
 
-  vi.doMock('@/helpers/middleware', () => helperMocks);
+  vi.doMock('@/helpers/middleware', () => middlewareHelpers);
+  vi.doMock('@/middlewares/sentry.middleware', () => sentryHelpers);
 
+  const helperMocks = { ...middlewareHelpers, ...sentryHelpers };
   return { helperMocks, testContext };
 };
 

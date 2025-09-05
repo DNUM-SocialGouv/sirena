@@ -1,6 +1,5 @@
 import type { Context } from 'hono';
 import { envVars } from '@/config/env';
-import type { User } from '@/libs/prisma';
 
 export const UNKNOWN_VALUE = 'unknown';
 export const SOURCE_BACKEND = 'backend';
@@ -148,33 +147,6 @@ export const extractRequestContext = (c: Context): RequestContext => {
   };
 };
 
-export const createSentryUserContext = (user: User, rawIp: string) => {
-  return {
-    id: user.id,
-    email: user.email,
-    username: user.email,
-    ...(rawIp &&
-      rawIp !== UNKNOWN_VALUE && {
-        ip_address: rawIp,
-      }),
-  };
-};
-
-export const createSentryRequestContext = (c: Context, context: RequestContext) => {
-  return {
-    id: context.requestId,
-    traceId: context.traceId,
-    sessionId: context.sessionId,
-    method: c.req.method,
-    url: c.req.url,
-    path: c.req.path,
-    headers: Object.fromEntries(c.req.raw.headers.entries()),
-    ip: context.ip, // Always include IP (even if "unknown")
-    userAgent: context.userAgent,
-    source: SOURCE_BACKEND,
-  };
-};
-
 export const getCaller = (stackDepth: number = DEFAULT_STACK_DEPTH): string => {
   const stack = new Error().stack;
   if (!stack) return UNKNOWN_VALUE;
@@ -216,6 +188,7 @@ export const shouldLog = (level: LogLevel, minLevel: LogLevel): boolean => {
 
 export interface EnrichedUserContext {
   userId: string;
+  email?: string;
   roleId?: string;
   entiteIds?: string[] | null;
 }
@@ -245,21 +218,6 @@ export const enrichRequestContext = (context: RequestContext): EnrichedRequestCo
     ...context,
     caller,
     ...(Object.keys(extraContext).length > 0 && { extraContext }),
-  };
-};
-
-export const createSentryUserFromContext = (userContext: EnrichedUserContext, rawIp: string) => {
-  return {
-    id: userContext.userId,
-    ...(rawIp && rawIp !== UNKNOWN_VALUE && { ip_address: rawIp }),
-  };
-};
-
-export const createSentryBusinessContext = (userContext: EnrichedUserContext) => {
-  return {
-    userId: userContext.userId,
-    ...(userContext.roleId && { roleId: userContext.roleId }),
-    ...(userContext.entiteIds && userContext.entiteIds.length > 0 && { entiteIds: userContext.entiteIds }),
   };
 };
 

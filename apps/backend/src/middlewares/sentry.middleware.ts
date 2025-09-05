@@ -1,10 +1,15 @@
-import type { MiddlewareHandler } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
 import { createFactory } from 'hono/factory';
-import type { PinoLogger } from 'hono-pino';
 import type { AppBindings as AuthAppBindings } from '@/helpers/factories/appWithAuth';
 import type { AppBindings as LogsAppBindings } from '@/helpers/factories/appWithLogs';
-import { createSentryRequestContext, createSentryUserContext, extractRequestContext } from '@/helpers/middleware';
-import type { User } from '@/libs/prisma';
+import {
+  type EnrichedUserContext,
+  enrichUserContext,
+  extractRequestContext,
+  type RequestContext,
+  SOURCE_BACKEND,
+  UNKNOWN_VALUE,
+} from '@/helpers/middleware';
 
 export interface SentryHub {
   setContext: (key: string, context: Record<string, unknown>) => void;
@@ -12,6 +17,31 @@ export interface SentryHub {
   setTag: (key: string, value: string) => void;
   captureException: (error: Error) => void;
 }
+
+export const createSentryRequestContext = (c: Context, context: RequestContext) => {
+  return {
+    id: context.requestId,
+    traceId: context.traceId,
+    sessionId: context.sessionId,
+    method: c.req.method,
+    url: c.req.url,
+    path: c.req.path,
+    headers: Object.fromEntries(c.req.raw.headers.entries()),
+    ip: context.ip,
+    userAgent: context.userAgent,
+    source: SOURCE_BACKEND,
+  };
+};
+
+export const createSentryUserFromContext = (userContext: EnrichedUserContext, rawIp: string) => {
+  return {
+    id: userContext.userId,
+    email: userContext.email,
+    ...(rawIp && rawIp !== UNKNOWN_VALUE && { ip_address: rawIp }),
+    ...(userContext.roleId && { roleId: userContext.roleId }),
+    ...(userContext.entiteIds && userContext.entiteIds.length > 0 && { entiteIds: userContext.entiteIds }),
+  };
+};
 
 // Define Sentry-specific variables
 type SentryVariables = {
@@ -38,31 +68,25 @@ export const sentryContextMiddleware = (): MiddlewareHandler<SentryAppBindings> 
       const sentryRequestContext = createSentryRequestContext(c, context);
       sentry.setContext('request', sentryRequestContext);
 
-      // Get auth data directly from context (available after auth middleware)
-      const userId: string | undefined = c.get('userId');
-      const roleId: string | undefined = c.get('roleId');
-      const entiteIds: string[] | null | undefined = c.get('entiteIds');
+      const userContext = enrichUserContext(context);
+      if (userContext) {
+        const sentryUser = createSentryUserFromContext(userContext, context.ip);
+        sentry.setUser(sentryUser);
 
-      if (userId) {
-        const user: Pick<User, 'id' | 'email'> = {
-          id: userId,
-          email: userId,
-        };
-        const sentryUserContext = createSentryUserContext(user as User, context.ip);
-        sentry.setUser(sentryUserContext);
-      }
+        if (userContext.roleId) {
+          sentry.setTag('roleId', userContext.roleId);
+        }
 
-      if (roleId) {
-        sentry.setTag('roleId', roleId);
-      }
-
-      if (entiteIds && entiteIds.length > 0) {
-        sentry.setTag('entiteIds', entiteIds.join(','));
+        if (userContext.entiteIds && userContext.entiteIds.length > 0) {
+          sentry.setTag('entiteIds', userContext.entiteIds.join(','));
+        }
       }
     } catch (error) {
-      const logger: PinoLogger = c.get('logger');
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.warn({ error: errorMessage }, 'Failed to set Sentry context');
+      const logger = c.get('logger');
+      if (logger) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        logger.warn({ error: errorMsg }, 'Failed to set Sentry context');
+      }
     }
 
     await next();
