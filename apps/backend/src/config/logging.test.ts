@@ -84,6 +84,12 @@ describe('logging configuration', () => {
       S3_BUCKET_ROOT_DIR: 'uploads',
       SARBACANE_API_URL: 'https://api.sarbacane.com/sendkit',
       SARBACANE_API_KEY: 'test-api-key',
+
+      REDIS_HOST: 'localhost',
+      REDIS_PORT: '6379',
+      REDIS_PASSWORD: '',
+
+      CRON_DEMAT_SOCIAL: '10000',
     };
   }
 });

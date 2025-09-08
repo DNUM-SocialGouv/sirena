@@ -12,6 +12,7 @@
     "dev:backend-utils": "pnpm --filter @sirena/backend-utils dev",
     "dev:common": "pnpm --filter @sirena/common dev",
     "dev:backend": "dotenv -e .env -- pnpm --filter @sirena/backend dev",
+    "dev:worker": "dotenv -e .env -- pnpm --filter @sirena/backend worker",
     "dev:ui": "pnpm --filter @sirena/ui storybook",
     "db:studio": "dotenv -e .env -- pnpm --filter @sirena/backend db:studio",
     "db:migrate": "dotenv -e .env -- pnpm --filter @sirena/backend db:migrate",

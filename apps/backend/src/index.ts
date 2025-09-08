@@ -1,23 +1,12 @@
 import { serve } from '@hono/node-server';
-import pino from 'pino';
 import { app } from './app';
-import { getLogLevelConfig } from './helpers/middleware';
 import { prisma } from './libs/prisma';
 import { setupOpenAPI } from './openAPI';
 import '@/config/env.ts';
-
-const createDefaultLogger = () => {
-  const logConfig = getLogLevelConfig();
-  return pino({
-    level: logConfig.console,
-    serializers: {
-      err: pino.stdSerializers.err,
-    },
-  });
-};
+import { createDefaultLogger } from '@/helpers/pino';
+import '@/jobs/scheduler';
 
 const logger = createDefaultLogger();
-
 setupOpenAPI(app);
 
 const server = serve(
