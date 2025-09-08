@@ -488,6 +488,7 @@ describe('requeteStates.controller.ts', () => {
       content: 'Original note content',
       authorId: 'test-user-id',
       requeteEntiteStateId: 'step1',
+      uploadedFiles: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -789,6 +790,7 @@ describe('requeteStates.controller.ts', () => {
       content: 'Original note content',
       authorId: 'test-user-id',
       requeteEntiteStateId: 'step1',
+      uploadedFiles: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
