@@ -1,14 +1,14 @@
 import type { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { getNoteById } from '@/features/requeteStates/requeteStates.service';
-import type { RequeteStateNote, UploadedFile } from '@/libs/prisma';
+import type { RequeteStateNote } from '@/libs/prisma';
 import createChangelogMiddleware from './changelog.middleware';
 
-type RequeteStateNoteChangelogMiddleware = {
+type requeteStatesNotesChangelogMiddleware = {
   action: ChangeLogAction;
 };
 
-const requeteStateNoteChangelogMiddleware = ({ action }: RequeteStateNoteChangelogMiddleware) =>
-  createChangelogMiddleware<RequeteStateNote & { uploadedFiles: UploadedFile[] }>({
+const requeteStatesNotesChangelogMiddleware = ({ action }: requeteStatesNotesChangelogMiddleware) =>
+  createChangelogMiddleware<RequeteStateNote>({
     action,
     entity: 'RequeteStateNote',
     getEntityById: async (c) => {
@@ -29,6 +29,7 @@ const requeteStateNoteChangelogMiddleware = ({ action }: RequeteStateNoteChangel
       }
       return c.req.param('id');
     },
+    trackedFields: ['content', 'authorId'],
   });
 
-export default requeteStateNoteChangelogMiddleware;
+export default requeteStatesNotesChangelogMiddleware;

@@ -9,3 +9,11 @@ export async function uploadFile(file: File, options: RequestErrorOptions = {}) 
   const { data } = await res.json();
   return data;
 }
+
+export async function deleteUploadedFile(id: string) {
+  const res = await client['uploaded-files'][':id'].$delete({
+    param: { id },
+  });
+  await handleRequestErrors(res);
+  return;
+}

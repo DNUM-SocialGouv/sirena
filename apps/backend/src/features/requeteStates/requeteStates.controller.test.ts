@@ -14,11 +14,15 @@ import { convertDatesToStrings } from '@/tests/formatter';
 import RequeteStatesController from './requeteStates.controller';
 import {
   addNote,
+  deleteNote,
   deleteRequeteState,
+  getNoteById,
   getRequeteStateById,
+  updateNote,
   updateRequeteStateStatut,
   updateRequeteStateStepName,
 } from './requeteStates.service';
+import type { UpdateRequeteStateNoteDto } from './requeteStates.type';
 
 const fakeRequeteState: RequeteState = {
   id: 'step1',
@@ -46,6 +50,9 @@ vi.mock('./requeteStates.service', () => ({
   updateRequeteStateStatut: vi.fn(() => Promise.resolve(fakeUpdatedRequeteState)),
   updateRequeteStateStepName: vi.fn(() => Promise.resolve(fakeUpdatedStepNameRequeteState)),
   addNote: vi.fn(),
+  getNoteById: vi.fn(),
+  updateNote: vi.fn(),
+  deleteNote: vi.fn(),
   isUserOwner: vi.fn(),
   setNoteFile: vi.fn(),
   deleteRequeteState: vi.fn(),
@@ -475,6 +482,115 @@ describe('requeteStates.controller.ts', () => {
     });
   });
 
+  describe('PATCH /:id/note/:noteId', () => {
+    const fakeNote = {
+      id: 'note1',
+      content: 'Original note content',
+      authorId: 'test-user-id',
+      requeteEntiteStateId: 'step1',
+      uploadedFiles: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const fakeUpdatedNote = {
+      ...fakeNote,
+      content: 'Updated note content',
+      updatedAt: new Date(),
+    };
+
+    it('should update the content of a note', async () => {
+      vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
+      vi.mocked(updateNote).mockResolvedValueOnce(fakeUpdatedNote);
+
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: { content: 'Updated note content' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body).toEqual({
+        data: convertDatesToStrings(fakeUpdatedNote),
+      });
+      expect(getRequeteStateById).toHaveBeenCalledWith('step1');
+      expect(getNoteById).toHaveBeenCalledWith('note1');
+      expect(updateNote).toHaveBeenCalledWith('note1', 'Updated note content');
+    });
+
+    it('should return 404 if RequeteState not found', async () => {
+      vi.mocked(getRequeteStateById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: { content: 'Updated note content' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'RequeteState not found',
+      });
+      expect(getNoteById).not.toHaveBeenCalled();
+      expect(updateNote).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 if user has no access to requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: { content: 'Updated note content' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(body).toEqual({
+        message: 'You are not allowed to update this requete state',
+      });
+      expect(getNoteById).not.toHaveBeenCalled();
+      expect(updateNote).not.toHaveBeenCalled();
+    });
+
+    it('should return 404 if note not found', async () => {
+      vi.mocked(getNoteById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: { content: 'Updated note content' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'Note not found',
+      });
+      expect(updateNote).not.toHaveBeenCalled();
+    });
+
+    it('should validate the request body - content is required', async () => {
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: { content: '' },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should validate the request body - content is required', async () => {
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: {} as unknown as UpdateRequeteStateNoteDto,
+      });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe('GET /:id/file/:fileId', () => {
     const baseFile = {
       id: 'file1',
@@ -658,6 +774,98 @@ describe('requeteStates.controller.ts', () => {
 
       const res = await client[':id'].$delete({
         param: { id: 'step1' },
+      });
+
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body).toEqual({
+        message: 'Internal server error',
+      });
+    });
+  });
+
+  describe('DELETE /:id/note/:noteId', () => {
+    const fakeNote = {
+      id: 'note1',
+      content: 'Original note content',
+      authorId: 'test-user-id',
+      requeteEntiteStateId: 'step1',
+      uploadedFiles: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should delete a note successfully', async () => {
+      vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
+      vi.mocked(deleteNote).mockResolvedValueOnce();
+
+      const res = await client[':id'].note[':noteId'].$delete({
+        param: { id: 'step1', noteId: 'note1' },
+      });
+
+      expect(res.status).toBe(204);
+      expect(await res.text()).toBe('');
+      expect(getRequeteStateById).toHaveBeenCalledWith('step1');
+      expect(getNoteById).toHaveBeenCalledWith('note1');
+      expect(deleteNote).toHaveBeenCalledWith('note1', expect.any(Object), 'test-user-id');
+    });
+
+    it('should return 404 if RequeteState not found', async () => {
+      vi.mocked(getRequeteStateById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].note[':noteId'].$delete({
+        param: { id: 'step1', noteId: 'note1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'RequeteState not found',
+      });
+      expect(getNoteById).not.toHaveBeenCalled();
+      expect(deleteNote).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 if user has no access to requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id'].note[':noteId'].$delete({
+        param: { id: 'step1', noteId: 'note1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(body).toEqual({
+        message: 'You are not allowed to delete notes from this requete state',
+      });
+      expect(getNoteById).not.toHaveBeenCalled();
+      expect(deleteNote).not.toHaveBeenCalled();
+    });
+
+    it('should return 404 if note not found', async () => {
+      vi.mocked(getNoteById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].note[':noteId'].$delete({
+        param: { id: 'step1', noteId: 'note1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'Note not found',
+      });
+      expect(deleteNote).not.toHaveBeenCalled();
+    });
+
+    it('should handle service errors gracefully', async () => {
+      vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
+      vi.mocked(deleteNote).mockRejectedValueOnce(new Error('Database error'));
+
+      const res = await client[':id'].note[':noteId'].$delete({
+        param: { id: 'step1', noteId: 'note1' },
       });
 
       expect(res.status).toBe(500);

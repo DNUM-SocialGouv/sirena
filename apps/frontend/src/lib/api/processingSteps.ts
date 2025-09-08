@@ -50,6 +50,28 @@ export async function addProcessingStepNote(stepId: string, data: AddProcessingS
   return res.json();
 }
 
+export type UpdateProcessingStepNoteData = {
+  content: string;
+  fileIds: string[];
+};
+
+export async function updateProcessingStepNote(stepId: string, noteId: string, data: UpdateProcessingStepNoteData) {
+  const res = await client['requete-states'][':id'].note[':noteId'].$patch({
+    param: { id: stepId, noteId: noteId },
+    json: data,
+  });
+  await handleRequestErrors(res);
+  return res.json();
+}
+
+export async function deleteProcessingStepNote(stepId: string, noteId: string) {
+  const res = await client['requete-states'][':id'].note[':noteId'].$delete({
+    param: { id: stepId, noteId: noteId },
+  });
+  await handleRequestErrors(res);
+  return;
+}
+
 export type UpdateProcessingStepNameData = {
   stepName: string;
 };

@@ -162,6 +162,77 @@ export const addNote = async (data: CreateRequeteStateNoteDto) =>
     },
   });
 
+export const updateNote = async (noteId: string, content: string) =>
+  await prisma.requeteStateNote.update({
+    where: { id: noteId },
+    data: { content },
+  });
+
+export const deleteNote = async (noteId: string, logger: PinoLogger, changedById?: string) => {
+  const note = await prisma.requeteStateNote.findUnique({
+    where: { id: noteId },
+    include: { uploadedFiles: true },
+  });
+
+  if (!note) {
+    return;
+  }
+
+  const files = note.uploadedFiles;
+  const filePaths = files.map((f) => f.filePath);
+
+  await prisma.requeteStateNote.delete({ where: { id: noteId } });
+
+  if (changedById) {
+    // Create changelogs for  files (individual entities)
+    if (files.length > 0) {
+      await Promise.allSettled(
+        files.map(async (file) => {
+          try {
+            await createChangeLog({
+              entity: 'UploadedFile',
+              entityId: file.id,
+              action: ChangeLogAction.DELETED,
+              before: file as unknown as Prisma.JsonObject,
+              after: {},
+              changedById,
+            });
+          } catch (err) {
+            logger.error({ err, fileId: file.id }, 'Failed to create changelog for file');
+          }
+        }),
+      );
+    }
+
+    // Create changelog for the RequeteStateNote
+    try {
+      await createChangeLog({
+        entity: 'RequeteStateNote',
+        entityId: noteId,
+        action: ChangeLogAction.DELETED,
+        before: note as unknown as Prisma.JsonObject,
+        after: {},
+        changedById,
+      });
+    } catch (err) {
+      logger.error({ err, noteId }, 'Failed to create changelog for requeteStateNote');
+    }
+  }
+
+  // Delete physical files from MinIO
+  if (filePaths.length > 0) {
+    await Promise.allSettled(
+      filePaths.map(async (filePath) => {
+        try {
+          await deleteFileFromMinio(filePath);
+        } catch (err) {
+          logger.error({ err, filePath }, 'Failed to delete MinIO file');
+        }
+      }),
+    );
+  }
+};
+
 export const deleteRequeteState = async (id: string, logger: PinoLogger, changedById?: string): Promise<void> => {
   const requeteState = await prisma.requeteState.findUnique({
     where: { id },
