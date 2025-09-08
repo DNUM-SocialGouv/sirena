@@ -21,6 +21,7 @@ export const useDeleteUploadedFile = () => {
     mutationFn: deleteUploadedFile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['uploaded-files'] });
+      queryClient.invalidateQueries({ queryKey: ['processingSteps'] });
     },
   });
 };

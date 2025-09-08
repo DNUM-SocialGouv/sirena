@@ -237,7 +237,10 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
       <Drawer.Root mask={false} open={isOpen} onOpenChange={handleOpenChange}>
         <Drawer.Portal>
           <Drawer.Panel>
-            <div className="fr-container fr-mt-8w">
+            <div
+              className="fr-container fr-mt-8w"
+              style={{ height: 'calc(100vh - 4rem)', overflowY: 'auto', paddingBottom: '2rem' }}
+            >
               <h3 className="fr-h6">Modifier la note de l'étape "{noteData.step?.stepName ?? ''}"</h3>
               {(modifications.content || modifications.filesAdded || modifications.filesDeleted) && (
                 <div className="fr-alert fr-alert--warning fr-mb-2w">
