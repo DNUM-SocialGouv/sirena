@@ -1,14 +1,18 @@
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createChangeLog } from '@/features/changelog/changelog.service';
 import { getRequestEntiteById } from '@/features/requetesEntite/requetesEntite.service';
+import { deleteFileFromMinio } from '@/libs/minio';
 import { type ChangeLog, prisma, type RequeteState } from '@/libs/prisma';
 import {
   addNote,
   addProcessingState,
+  deleteNote,
   deleteRequeteState,
   getNoteById,
   getRequeteStateById,
   getRequeteStates,
+  updateNote,
   updateRequeteStateStatut,
   updateRequeteStateStepName,
 } from './requeteStates.service';
@@ -27,6 +31,8 @@ vi.mock('@/libs/prisma', () => ({
     requeteStateNote: {
       create: vi.fn(),
       findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     },
     uploadedFile: {
       deleteMany: vi.fn(),
@@ -91,7 +97,6 @@ describe('requeteStates.service.ts', () => {
           statutId: 'A_FAIRE',
         },
       });
-      vi.mocked(prisma.requeteState.create).mockRestore();
     });
 
     it('should return null if RequeteEntite does not exist', async () => {
@@ -164,7 +169,6 @@ describe('requeteStates.service.ts', () => {
         take: 10,
         orderBy: { createdAt: 'desc' },
       });
-      vi.mocked(prisma.requeteState.findMany).mockRestore();
     });
 
     it('should retrieve RequeteStates for a given RequeteEntite with no limit', async () => {
@@ -286,8 +290,6 @@ describe('requeteStates.service.ts', () => {
       expect(prisma.requeteState.findUnique).toHaveBeenCalledWith({
         where: { id: 'state-1' },
       });
-
-      vi.mocked(prisma.requeteState.findUnique).mockRestore();
     });
 
     it('should return null when not found', async () => {
@@ -424,8 +426,6 @@ describe('requeteStates.service.ts', () => {
           },
         },
       });
-
-      vi.mocked(prisma.requeteStateNote.create).mockRestore();
     });
   });
 
@@ -441,9 +441,6 @@ describe('requeteStates.service.ts', () => {
     });
 
     it('should delete RequeteState with notes and files successfully', async () => {
-      const { createChangeLog } = await import('@/features/changelog/changelog.service');
-      const { deleteFileFromMinio } = await import('@/libs/minio');
-
       const mockRequeteState = {
         id: 'state-1',
         stepName: 'Test Step',
@@ -522,8 +519,6 @@ describe('requeteStates.service.ts', () => {
     });
 
     it('should handle RequeteState with no notes', async () => {
-      const { createChangeLog } = await import('@/features/changelog/changelog.service');
-
       const mockRequeteState = {
         id: 'state-1',
         stepName: 'Test Step',
@@ -552,8 +547,6 @@ describe('requeteStates.service.ts', () => {
     });
 
     it('should handle RequeteState with notes but no files', async () => {
-      const { createChangeLog } = await import('@/features/changelog/changelog.service');
-
       const mockRequeteState = {
         id: 'state-1',
         stepName: 'Test Step',
@@ -592,9 +585,6 @@ describe('requeteStates.service.ts', () => {
     });
 
     it('should handle changelog creation errors gracefully', async () => {
-      const { createChangeLog } = await import('@/features/changelog/changelog.service');
-      const { deleteFileFromMinio } = await import('@/libs/minio');
-
       const mockRequeteState = {
         id: 'state-1',
         stepName: 'Test Step',
@@ -646,9 +636,6 @@ describe('requeteStates.service.ts', () => {
     });
 
     it('should handle MinIO deletion errors gracefully', async () => {
-      const { createChangeLog } = await import('@/features/changelog/changelog.service');
-      const { deleteFileFromMinio } = await import('@/libs/minio');
-
       const mockRequeteState = {
         id: 'state-1',
         stepName: 'Test Step',
@@ -700,8 +687,6 @@ describe('requeteStates.service.ts', () => {
     });
 
     it('should not create changelogs when changedById is not provided', async () => {
-      const { createChangeLog } = await import('@/features/changelog/changelog.service');
-
       const mockRequeteState = {
         id: 'state-1',
         stepName: 'Test Step',
@@ -749,9 +734,6 @@ describe('requeteStates.service.ts', () => {
     });
 
     it('should handle multiple notes and files correctly', async () => {
-      const { createChangeLog } = await import('@/features/changelog/changelog.service');
-      const { deleteFileFromMinio } = await import('@/libs/minio');
-
       const mockRequeteState = {
         id: 'state-1',
         stepName: 'Test Step',
@@ -829,9 +811,6 @@ describe('requeteStates.service.ts', () => {
     });
 
     it('should handle RequeteState with all related entities', async () => {
-      const { createChangeLog } = await import('@/features/changelog/changelog.service');
-      const { deleteFileFromMinio } = await import('@/libs/minio');
-
       const mockRequeteState = {
         id: 'state-1',
         stepName: 'Test Step',
@@ -937,26 +916,296 @@ describe('requeteStates.service.ts', () => {
   });
 
   describe('getNoteById()', () => {
-    it('should return a RequeteStateNote by id with uploaded files', async () => {
-      const fakeNote = {
+    it('should return a note by id', async () => {
+      const mockNote = {
         id: 'note-1',
-        content: 'A note',
+        content: 'Test note content',
         authorId: 'user-1',
         requeteEntiteStateId: 'state-1',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      vi.mocked(prisma.requeteStateNote.findUnique).mockResolvedValueOnce(fakeNote);
+
+      vi.mocked(prisma.requeteStateNote.findUnique).mockResolvedValueOnce(mockNote);
 
       const result = await getNoteById('note-1');
 
-      expect(result).toEqual(fakeNote);
+      expect(result).toEqual({
+        id: 'note-1',
+        content: 'Test note content',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+      });
       expect(prisma.requeteStateNote.findUnique).toHaveBeenCalledWith({
-        where: { id: fakeNote.id },
+        where: { id: 'note-1' },
         include: {
           uploadedFiles: true,
         },
       });
+    });
+
+    it('should return null when note not found', async () => {
+      vi.mocked(prisma.requeteStateNote.findUnique).mockResolvedValueOnce(null);
+
+      const result = await getNoteById('missing');
+
+      expect(result).toBeNull();
+      expect(prisma.requeteStateNote.findUnique).toHaveBeenCalledWith({
+        where: { id: 'missing' },
+        include: {
+          uploadedFiles: true,
+        },
+      });
+    });
+  });
+
+  describe('updateNote()', () => {
+    it('should update the content of a note', async () => {
+      const mockUpdatedNote = {
+        id: 'note-1',
+        content: 'Updated note content',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      vi.mocked(prisma.requeteStateNote.update).mockResolvedValueOnce(mockUpdatedNote);
+
+      const result = await updateNote('note-1', 'Updated note content');
+
+      expect(result).toEqual({
+        id: 'note-1',
+        content: 'Updated note content',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+      });
+      expect(prisma.requeteStateNote.update).toHaveBeenCalledWith({
+        where: { id: 'note-1' },
+        data: { content: 'Updated note content' },
+      });
+    });
+  });
+
+  describe('deleteNote()', () => {
+    const mockLogger = {
+      error: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+    } as unknown as PinoLogger;
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should delete a note with files successfully', async () => {
+      const mockNote = {
+        id: 'note-1',
+        content: 'Test note',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        uploadedFiles: [
+          {
+            id: 'file-1',
+            filePath: 'path/to/file1.pdf',
+            size: 1024,
+            metadata: { originalName: 'file1.pdf' },
+            requeteStateNoteId: 'note-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      };
+
+      vi.mocked(prisma.requeteStateNote.findUnique).mockResolvedValueOnce(mockNote);
+      vi.mocked(prisma.requeteStateNote.delete).mockResolvedValueOnce({} as unknown as never);
+      vi.mocked(createChangeLog).mockResolvedValue({} as unknown as ChangeLog);
+      vi.mocked(deleteFileFromMinio).mockResolvedValue();
+
+      await deleteNote('note-1', mockLogger, 'user-1');
+
+      expect(prisma.requeteStateNote.findUnique).toHaveBeenCalledWith({
+        where: { id: 'note-1' },
+        include: { uploadedFiles: true },
+      });
+      expect(prisma.requeteStateNote.delete).toHaveBeenCalledWith({ where: { id: 'note-1' } });
+      expect(createChangeLog).toHaveBeenCalledTimes(2); // 1 file + 1 note
+      expect(deleteFileFromMinio).toHaveBeenCalledWith('path/to/file1.pdf');
+    });
+
+    it('should handle note not found', async () => {
+      vi.mocked(prisma.requeteStateNote.findUnique).mockResolvedValueOnce(null);
+
+      await deleteNote('non-existent', mockLogger, 'user-1');
+
+      expect(prisma.requeteStateNote.findUnique).toHaveBeenCalled();
+      expect(prisma.requeteStateNote.delete).not.toHaveBeenCalled();
+    });
+
+    it('should handle note with no files', async () => {
+      const mockNote = {
+        id: 'note-1',
+        content: 'Test note',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        uploadedFiles: [],
+      };
+
+      vi.mocked(prisma.requeteStateNote.findUnique).mockResolvedValueOnce(mockNote);
+      vi.mocked(prisma.requeteStateNote.delete).mockResolvedValueOnce({} as unknown as never);
+      vi.mocked(createChangeLog).mockResolvedValue({} as unknown as ChangeLog);
+
+      await deleteNote('note-1', mockLogger, 'user-1');
+
+      expect(prisma.requeteStateNote.delete).toHaveBeenCalled();
+      expect(createChangeLog).toHaveBeenCalledTimes(1); // 1 note only
+    });
+
+    it('should handle changelog creation errors gracefully', async () => {
+      const mockNote = {
+        id: 'note-1',
+        content: 'Test note',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        uploadedFiles: [
+          {
+            id: 'file-1',
+            filePath: 'path/to/file1.pdf',
+            size: 1024,
+            metadata: { originalName: 'file1.pdf' },
+            requeteStateNoteId: 'note-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      };
+
+      vi.mocked(prisma.requeteStateNote.findUnique).mockResolvedValueOnce(mockNote);
+      vi.mocked(prisma.requeteStateNote.delete).mockResolvedValueOnce({} as unknown as never);
+      vi.mocked(createChangeLog).mockRejectedValueOnce(new Error('Changelog error'));
+      vi.mocked(deleteFileFromMinio).mockResolvedValue();
+
+      await deleteNote('note-1', mockLogger, 'user-1');
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error), fileId: 'file-1' }),
+        'Failed to create changelog for file',
+      );
+    });
+
+    it('should handle MinIO deletion errors gracefully', async () => {
+      const mockNote = {
+        id: 'note-1',
+        content: 'Test note',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        uploadedFiles: [
+          {
+            id: 'file-1',
+            filePath: 'path/to/file1.pdf',
+            size: 1024,
+            metadata: { originalName: 'file1.pdf' },
+            requeteStateNoteId: 'note-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      };
+
+      vi.mocked(prisma.requeteStateNote.findUnique).mockResolvedValueOnce(mockNote);
+      vi.mocked(prisma.requeteStateNote.delete).mockResolvedValueOnce({} as unknown as never);
+      vi.mocked(createChangeLog).mockResolvedValue({} as unknown as ChangeLog);
+      vi.mocked(deleteFileFromMinio).mockRejectedValueOnce(new Error('MinIO error'));
+
+      await deleteNote('note-1', mockLogger, 'user-1');
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error), filePath: 'path/to/file1.pdf' }),
+        'Failed to delete MinIO file',
+      );
+    });
+
+    it('should not create changelogs when changedById is not provided', async () => {
+      const mockNote = {
+        id: 'note-1',
+        content: 'Test note',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        uploadedFiles: [
+          {
+            id: 'file-1',
+            filePath: 'path/to/file1.pdf',
+            size: 1024,
+            metadata: { originalName: 'file1.pdf' },
+            requeteStateNoteId: 'note-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      };
+
+      vi.mocked(prisma.requeteStateNote.findUnique).mockResolvedValueOnce(mockNote);
+      vi.mocked(prisma.requeteStateNote.delete).mockResolvedValueOnce({} as unknown as never);
+
+      await deleteNote('note-1', mockLogger);
+
+      expect(prisma.requeteStateNote.delete).toHaveBeenCalled();
+      expect(createChangeLog).not.toHaveBeenCalled();
+    });
+
+    it('should handle multiple files correctly', async () => {
+      const mockNote = {
+        id: 'note-1',
+        content: 'Test note',
+        authorId: 'user-1',
+        requeteEntiteStateId: 'state-1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        uploadedFiles: [
+          {
+            id: 'file-1',
+            filePath: 'path/to/file1.pdf',
+            size: 1024,
+            metadata: { originalName: 'file1.pdf' },
+            requeteStateNoteId: 'note-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            id: 'file-2',
+            filePath: 'path/to/file2.pdf',
+            size: 2048,
+            metadata: { originalName: 'file2.pdf' },
+            requeteStateNoteId: 'note-1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      };
+
+      vi.mocked(prisma.requeteStateNote.findUnique).mockResolvedValueOnce(mockNote);
+      vi.mocked(prisma.requeteStateNote.delete).mockResolvedValueOnce({} as unknown as never);
+      vi.mocked(createChangeLog).mockResolvedValue({} as unknown as ChangeLog);
+      vi.mocked(deleteFileFromMinio).mockResolvedValue();
+
+      await deleteNote('note-1', mockLogger, 'user-1');
+
+      expect(createChangeLog).toHaveBeenCalledTimes(3); // 2 files + 1 note
+      expect(deleteFileFromMinio).toHaveBeenCalledTimes(2);
     });
   });
 });

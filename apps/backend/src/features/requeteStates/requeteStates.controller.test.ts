@@ -14,6 +14,7 @@ import { convertDatesToStrings } from '@/tests/formatter';
 import RequeteStatesController from './requeteStates.controller';
 import {
   addNote,
+  deleteNote,
   deleteRequeteState,
   getNoteById,
   getRequeteStateById,
@@ -51,6 +52,7 @@ vi.mock('./requeteStates.service', () => ({
   addNote: vi.fn(),
   getNoteById: vi.fn(),
   updateNote: vi.fn(),
+  deleteNote: vi.fn(),
   isUserOwner: vi.fn(),
   setNoteFile: vi.fn(),
   deleteRequeteState: vi.fn(),
@@ -771,6 +773,97 @@ describe('requeteStates.controller.ts', () => {
 
       const res = await client[':id'].$delete({
         param: { id: 'step1' },
+      });
+
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body).toEqual({
+        message: 'Internal server error',
+      });
+    });
+  });
+
+  describe('DELETE /:id/note/:noteId', () => {
+    const fakeNote = {
+      id: 'note1',
+      content: 'Original note content',
+      authorId: 'test-user-id',
+      requeteEntiteStateId: 'step1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should delete a note successfully', async () => {
+      vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
+      vi.mocked(deleteNote).mockResolvedValueOnce();
+
+      const res = await client[':id'].note[':noteId'].$delete({
+        param: { id: 'step1', noteId: 'note1' },
+      });
+
+      expect(res.status).toBe(204);
+      expect(await res.text()).toBe('');
+      expect(getRequeteStateById).toHaveBeenCalledWith('step1');
+      expect(getNoteById).toHaveBeenCalledWith('note1');
+      expect(deleteNote).toHaveBeenCalledWith('note1', expect.any(Object), 'test-user-id');
+    });
+
+    it('should return 404 if RequeteState not found', async () => {
+      vi.mocked(getRequeteStateById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].note[':noteId'].$delete({
+        param: { id: 'step1', noteId: 'note1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'RequeteState not found',
+      });
+      expect(getNoteById).not.toHaveBeenCalled();
+      expect(deleteNote).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 if user has no access to requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id'].note[':noteId'].$delete({
+        param: { id: 'step1', noteId: 'note1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(body).toEqual({
+        message: 'You are not allowed to delete notes from this requete state',
+      });
+      expect(getNoteById).not.toHaveBeenCalled();
+      expect(deleteNote).not.toHaveBeenCalled();
+    });
+
+    it('should return 404 if note not found', async () => {
+      vi.mocked(getNoteById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].note[':noteId'].$delete({
+        param: { id: 'step1', noteId: 'note1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'Note not found',
+      });
+      expect(deleteNote).not.toHaveBeenCalled();
+    });
+
+    it('should handle service errors gracefully', async () => {
+      vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
+      vi.mocked(deleteNote).mockRejectedValueOnce(new Error('Database error'));
+
+      const res = await client[':id'].note[':noteId'].$delete({
+        param: { id: 'step1', noteId: 'note1' },
       });
 
       expect(res.status).toBe(500);

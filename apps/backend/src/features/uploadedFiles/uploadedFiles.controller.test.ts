@@ -6,13 +6,13 @@ import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
-import { uploadFileToMinio } from '@/libs/minio';
+import { deleteFileFromMinio, uploadFileToMinio } from '@/libs/minio';
 import type { UploadedFile } from '@/libs/prisma';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import extractUploadedFileMiddleware from '@/middlewares/upload.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
 import UploadedFilesController from './uploadedFiles.controller';
-import { createUploadedFile, getUploadedFileById } from './uploadedFiles.service';
+import { createUploadedFile, deleteUploadedFile, getUploadedFileById } from './uploadedFiles.service';
 
 const fakeFile = {
   id: 'file1',
@@ -48,7 +48,7 @@ vi.mock('./uploadedFiles.service', () => ({
   createUploadedFile: vi.fn(() => Promise.resolve(fakeFile)),
   getUploadedFiles: vi.fn(() => Promise.resolve({ data: fakeData, total: 1 })),
   getUploadedFileById: vi.fn(() => Promise.resolve(fakeFile)),
-  deleteUploadedFile: vi.fn(() => Promise.resolve(fakeFile)),
+  deleteUploadedFile: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock('@/middlewares/upload.middleware', () => ({
@@ -360,6 +360,85 @@ describe('uploadedFiles.controller.ts', () => {
 
       expect(errorHandler).toHaveBeenCalledWith(new Error('File name is not valid'), expect.anything());
       expect(res.status).toBe(500);
+      expect(body).toEqual({
+        message: 'Internal server error',
+      });
+    });
+  });
+
+  describe('DELETE /:id', () => {
+    it('should delete an uploaded file successfully', async () => {
+      const res = await client[':id'].$delete({
+        param: { id: 'file1' },
+      });
+
+      expect(res.status).toBe(204);
+      expect(await res.text()).toBe('');
+      expect(getUploadedFileById).toHaveBeenCalledWith('file1', null);
+      expect(deleteUploadedFile).toHaveBeenCalledWith('file1');
+      expect(deleteFileFromMinio).toHaveBeenCalledWith('uploads/test.pdf');
+    });
+
+    it('should return 400 if entiteIds is not set', async () => {
+      vi.mocked(entitesMiddleware).mockImplementationOnce((c: Context, next: Next) => {
+        c.set('entiteIds', null);
+        return next();
+      });
+
+      const res = await client[':id'].$delete({
+        param: { id: 'file1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(body).toEqual({
+        message: 'You are not allowed to delete uploaded files without entiteIds.',
+      });
+      expect(deleteUploadedFile).not.toHaveBeenCalled();
+      expect(deleteFileFromMinio).not.toHaveBeenCalled();
+    });
+
+    it('should return 404 if uploaded file not found', async () => {
+      vi.mocked(getUploadedFileById).mockImplementationOnce(() => Promise.resolve(null));
+
+      const res = await client[':id'].$delete({
+        param: { id: 'file1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'Uploaded file not found',
+      });
+      expect(deleteUploadedFile).not.toHaveBeenCalled();
+      expect(deleteFileFromMinio).not.toHaveBeenCalled();
+    });
+
+    it('should handle service errors gracefully', async () => {
+      vi.mocked(deleteUploadedFile).mockRejectedValueOnce(new Error('Database error'));
+
+      const res = await client[':id'].$delete({
+        param: { id: 'file1' },
+      });
+
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body).toEqual({
+        message: 'Internal server error',
+      });
+    });
+
+    it('should handle MinIO deletion errors gracefully', async () => {
+      vi.mocked(deleteFileFromMinio).mockRejectedValueOnce(new Error('MinIO error'));
+
+      const res = await client[':id'].$delete({
+        param: { id: 'file1' },
+      });
+
+      expect(res.status).toBe(500);
+      const body = await res.json();
       expect(body).toEqual({
         message: 'Internal server error',
       });
