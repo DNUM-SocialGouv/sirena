@@ -17,9 +17,24 @@ type StepNoteProps = {
     size: number;
     originalName: string;
   }[];
+  onEdit?: (noteData: {
+    id: string;
+    requeteStateId: string;
+    content: string;
+    files: { id: string; size: number; originalName: string }[];
+  }) => void;
 };
 
-export const StepNote = ({ author, content, createdAt, requeteStateId, files }: StepNoteProps) => {
+export const StepNote = ({ id, author, content, createdAt, requeteStateId, files, onEdit }: StepNoteProps) => {
+  const handleEdit = () => {
+    onEdit?.({
+      id,
+      requeteStateId,
+      content,
+      files,
+    });
+  };
+
   return (
     <div className={styles['request-note']}>
       <div className='fr-grid-row fr-grid-row--middle fr-mb-2w"'>
@@ -43,10 +58,11 @@ export const StepNote = ({ author, content, createdAt, requeteStateId, files }: 
             priority="tertiary no outline"
             size="small"
             iconId="fr-icon-edit-line"
-            title="Éditer"
+            title="Modifier la note"
             className="fr-btn--icon-center center-icon-with-sr-only"
+            onClick={handleEdit}
           >
-            <span className="fr-sr-only">Éditer</span>
+            <span className="fr-sr-only">Modifier la note</span>
           </Button>
         </div>
       </div>

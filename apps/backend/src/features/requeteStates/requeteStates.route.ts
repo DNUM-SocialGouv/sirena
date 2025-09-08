@@ -23,6 +23,20 @@ export const addRequeteStatesNoteRoute = openApiProtectedRoute({
   },
 });
 
+export const updateRequeteStatesNoteRoute = openApiProtectedRoute({
+  description: 'Update the content of a processing note and optionally add new files',
+  responses: {
+    ...openApiResponse(RequeteStateNoteSchema),
+  },
+});
+
+export const deleteRequeteStatesNoteRoute = openApiProtectedRoute({
+  description: 'Delete a processing note from a step of a request (and all its associated files)',
+  responses: {
+    ...openApiDeleteResponse(z.string(), 204, 'Note deleted successfully'),
+  },
+});
+
 export const deleteRequeteStateRoute = openApiProtectedRoute({
   description: 'Delete a RequeteState and all its associated notes and files',
   responses: {

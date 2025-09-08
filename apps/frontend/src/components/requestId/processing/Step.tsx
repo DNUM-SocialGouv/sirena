@@ -20,9 +20,16 @@ type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data
 type StepProps = StepType & {
   disabled?: boolean;
   openEdit?(step: StepType): void;
+  openEditNote?(
+    step: StepType,
+    noteData: {
+      content: string;
+      files: { id: string; size: number; originalName: string }[];
+    },
+  ): void;
 };
 
-const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...rest }: StepProps) => {
+const StepComponent = ({ stepName, statutId, disabled, openEdit, openEditNote, notes, id, ...rest }: StepProps) => {
   const deleteStepModal = createModal({
     id: `delete-step-modal-${id}`,
     isOpenedByDefault: false,
@@ -72,7 +79,9 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
   };
 
   const handleSaveEdit = () => {
-    const validationResult = UpdateProcessingStepNameSchema.safeParse({ stepName: editStepName });
+    const validationResult = UpdateProcessingStepNameSchema.safeParse({
+      stepName: editStepName,
+    });
 
     if (!validationResult.success) {
       const firstError = validationResult.error.errors[0];
@@ -189,6 +198,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, notes, id, ...r
               createdAt={note.createdAt}
               files={note.uploadedFiles}
               requeteStateId={id}
+              onEdit={(noteData) => openEditNote?.({ id, stepName, statutId, notes, ...rest }, noteData)}
             />
           ))}
         </div>

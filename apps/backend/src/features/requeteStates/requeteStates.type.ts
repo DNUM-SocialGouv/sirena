@@ -3,6 +3,7 @@ import type {
   GetRequeteStatesQuerySchema,
   UpdateRequeteStateStatutSchema,
   UpdateRequeteStateStepNameSchema,
+  updateRequeteStatesNoteBodySchema,
 } from './requeteStates.schema';
 
 export type RequeteStateCreationDto = {
@@ -19,3 +20,5 @@ export type CreateRequeteStateNoteDto = {
   requeteEntiteStateId: string;
   fileIds: string[];
 };
+
+export type UpdateRequeteStateNoteDto = z.infer<typeof updateRequeteStatesNoteBodySchema>;

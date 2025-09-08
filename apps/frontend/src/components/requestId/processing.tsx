@@ -6,7 +6,8 @@ import { CreateStep } from '@/components/requestId/processing/createStep';
 import { Step } from '@/components/requestId/processing/Step';
 import { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
-import { StepDrawer, type StepDrawerRef } from './processing/StepDrawer';
+import { CreateNoteDrawer, type CreateNoteDrawerRef } from './processing/CreateNoteDrawer';
+import { EditNoteDrawer, type EditNoteDrawerRef } from './processing/EditNoteDrawer';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
@@ -15,8 +16,8 @@ export const Processing = () => {
   const navigate = useNavigate();
 
   const [isAddingStep, setIsAddingStep] = useState(false);
-  const stepDrawerRef = useRef<StepDrawerRef>(null);
-
+  const createNoteDrawerRef = useRef<CreateNoteDrawerRef>(null);
+  const editNoteDrawerRef = useRef<EditNoteDrawerRef>(null);
   const queryProcessingSteps = useProcessingSteps(requestId);
 
   useEffect(() => {
@@ -30,8 +31,26 @@ export const Processing = () => {
   }, [queryProcessingSteps.error, navigate]);
 
   const handleOpenEdit = (step: StepType) => {
-    if (stepDrawerRef.current) {
-      stepDrawerRef.current.openDrawer(step);
+    if (createNoteDrawerRef.current) {
+      createNoteDrawerRef.current.openDrawer(step);
+    }
+  };
+
+  const handleOpenEditNote = (
+    step: StepType,
+    noteData: {
+      requeteStateId: string;
+      id: string;
+      content: string;
+      files: {
+        id: string;
+        size: number;
+        originalName: string;
+      }[];
+    },
+  ) => {
+    if (editNoteDrawerRef.current) {
+      editNoteDrawerRef.current.openDrawer(step, noteData);
     }
   };
 
@@ -70,6 +89,7 @@ export const Processing = () => {
                         {...step}
                         disabled={index === data.data.length - 1}
                         openEdit={handleOpenEdit}
+                        openEditNote={handleOpenEditNote}
                       />
                     ))
                   }
@@ -79,7 +99,8 @@ export const Processing = () => {
           </div>
         </div>
       </div>
-      <StepDrawer ref={stepDrawerRef} />
+      <CreateNoteDrawer ref={createNoteDrawerRef} />
+      <EditNoteDrawer ref={editNoteDrawerRef} />
     </div>
   );
 };

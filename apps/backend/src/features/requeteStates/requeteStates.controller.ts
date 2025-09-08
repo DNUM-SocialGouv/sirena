@@ -11,8 +11,11 @@ import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import {
   addNote,
+  deleteNote,
   deleteRequeteState,
+  getNoteById,
   getRequeteStateById,
+  updateNote,
   updateRequeteStateStatut,
   updateRequeteStateStepName,
 } from '@/features/requeteStates/requeteStates.service';
@@ -21,7 +24,7 @@ import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { getFileStream } from '@/libs/minio';
 import type { Prisma } from '@/libs/prisma';
 import authMiddleware from '@/middlewares/auth.middleware';
-import requeteStateNoteChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStateNote.middleware';
+import requeteStatesNotesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStateNote.middleware';
 import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStep.middleware';
 
 import entitesMiddleware from '@/middlewares/entites.middleware';
@@ -31,13 +34,16 @@ import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service';
 import {
   addRequeteStatesNoteRoute,
   deleteRequeteStateRoute,
+  deleteRequeteStatesNoteRoute,
   updateRequeteStateStatutRoute,
   updateRequeteStateStepNameRoute,
+  updateRequeteStatesNoteRoute,
 } from './requeteStates.route';
 import {
   addRequeteStatesNoteBodySchema,
   UpdateRequeteStateStatutSchema,
   UpdateRequeteStateStepNameSchema,
+  updateRequeteStatesNoteBodySchema,
 } from './requeteStates.schema';
 
 const app = factoryWithLogs
@@ -218,7 +224,7 @@ const app = factoryWithLogs
     '/:id/note',
     addRequeteStatesNoteRoute,
     zValidator('json', addRequeteStatesNoteBodySchema),
-    requeteStateNoteChangelogMiddleware({ action: ChangeLogAction.CREATED }),
+    requeteStatesNotesChangelogMiddleware({ action: ChangeLogAction.CREATED }),
     async (c) => {
       const logger = c.get('logger');
       const { id } = c.req.param();
@@ -271,6 +277,99 @@ const app = factoryWithLogs
     },
   )
 
+  .patch(
+    '/:id/note/:noteId',
+    updateRequeteStatesNoteRoute,
+    zValidator('json', updateRequeteStatesNoteBodySchema),
+    requeteStatesNotesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id, noteId } = c.req.param();
+      const body = c.req.valid('json');
+      const userId = c.get('userId');
+
+      const requeteState = await getRequeteStateById(id);
+
+      if (!requeteState) {
+        return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+      }
+
+      // TODO: check real access with entiteIds when implemented
+      const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+      if (!hasAccess) {
+        return throwHTTPException403Forbidden('You are not allowed to update this requete state', {
+          res: c.res,
+        });
+      }
+
+      const existingNote = await getNoteById(noteId);
+
+      if (!existingNote) {
+        return throwHTTPException404NotFound('Note not found', { res: c.res });
+      }
+
+      const updatedNote = await updateNote(noteId, body.content);
+
+      const fileIds = body.fileIds || [];
+      if (fileIds.length > 0) {
+        const isAllowed = await isUserOwner(userId, fileIds);
+
+        if (!isAllowed) {
+          return throwHTTPException403Forbidden('You are not allowed to add these files to the note', {
+            res: c.res,
+          });
+        }
+
+        // TODO: set requeteEntite entiteId to the note
+        await setNoteFile(noteId, fileIds, null);
+      }
+
+      c.set('changelogId', noteId);
+
+      logger.info({ requeteStateId: id, noteId, userId, fileIdsAdded: fileIds.length }, 'note updated successfully');
+
+      return c.json({ data: updatedNote });
+    },
+  )
+
+  .delete(
+    '/:id/note/:noteId',
+    deleteRequeteStatesNoteRoute,
+    requeteStatesNotesChangelogMiddleware({ action: ChangeLogAction.DELETED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id, noteId } = c.req.param();
+      const userId = c.get('userId');
+
+      const requeteState = await getRequeteStateById(id);
+
+      if (!requeteState) {
+        return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+      }
+
+      // TODO: check real access with entiteIds when implemented
+      const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+      if (!hasAccess) {
+        return throwHTTPException403Forbidden('You are not allowed to delete notes from this requete state', {
+          res: c.res,
+        });
+      }
+
+      const existingNote = await getNoteById(noteId);
+
+      if (!existingNote) {
+        return throwHTTPException404NotFound('Note not found', { res: c.res });
+      }
+
+      await deleteNote(noteId, logger, userId);
+
+      c.set('changelogId', noteId);
+
+      logger.info({ requeteStateId: id, noteId, userId }, 'note deleted successfully');
+
+      return c.body(null, 204);
+    },
+  )
   .delete('/:id', deleteRequeteStateRoute, async (c) => {
     const logger = c.get('logger');
     const { id } = c.req.param();

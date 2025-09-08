@@ -46,3 +46,13 @@ export const addRequeteStatesNoteBodySchema = z
       ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ['fileIds'] });
     }
   });
+
+export const updateRequeteStatesNoteBodySchema = z.object({
+  content: z
+    .string()
+    .min(1, {
+      message: 'Le contenu de la note ne peut pas être vide.',
+    })
+    .transform((s) => s.trim()),
+  fileIds: z.array(z.string().min(1, 'Un fichier est requis')).optional(),
+});

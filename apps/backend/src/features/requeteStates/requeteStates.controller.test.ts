@@ -15,10 +15,13 @@ import RequeteStatesController from './requeteStates.controller';
 import {
   addNote,
   deleteRequeteState,
+  getNoteById,
   getRequeteStateById,
+  updateNote,
   updateRequeteStateStatut,
   updateRequeteStateStepName,
 } from './requeteStates.service';
+import type { UpdateRequeteStateNoteDto } from './requeteStates.type';
 
 const fakeRequeteState: RequeteState = {
   id: 'step1',
@@ -46,6 +49,8 @@ vi.mock('./requeteStates.service', () => ({
   updateRequeteStateStatut: vi.fn(() => Promise.resolve(fakeUpdatedRequeteState)),
   updateRequeteStateStepName: vi.fn(() => Promise.resolve(fakeUpdatedStepNameRequeteState)),
   addNote: vi.fn(),
+  getNoteById: vi.fn(),
+  updateNote: vi.fn(),
   isUserOwner: vi.fn(),
   setNoteFile: vi.fn(),
   deleteRequeteState: vi.fn(),
@@ -472,6 +477,114 @@ describe('requeteStates.controller.ts', () => {
       });
 
       expect(setNoteFile).toHaveBeenCalledWith('note1', ['f1', 'f2'], null);
+    });
+  });
+
+  describe('PATCH /:id/note/:noteId', () => {
+    const fakeNote = {
+      id: 'note1',
+      content: 'Original note content',
+      authorId: 'test-user-id',
+      requeteEntiteStateId: 'step1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const fakeUpdatedNote = {
+      ...fakeNote,
+      content: 'Updated note content',
+      updatedAt: new Date(),
+    };
+
+    it('should update the content of a note', async () => {
+      vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
+      vi.mocked(updateNote).mockResolvedValueOnce(fakeUpdatedNote);
+
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: { content: 'Updated note content' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body).toEqual({
+        data: convertDatesToStrings(fakeUpdatedNote),
+      });
+      expect(getRequeteStateById).toHaveBeenCalledWith('step1');
+      expect(getNoteById).toHaveBeenCalledWith('note1');
+      expect(updateNote).toHaveBeenCalledWith('note1', 'Updated note content');
+    });
+
+    it('should return 404 if RequeteState not found', async () => {
+      vi.mocked(getRequeteStateById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: { content: 'Updated note content' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'RequeteState not found',
+      });
+      expect(getNoteById).not.toHaveBeenCalled();
+      expect(updateNote).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 if user has no access to requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: { content: 'Updated note content' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(body).toEqual({
+        message: 'You are not allowed to update this requete state',
+      });
+      expect(getNoteById).not.toHaveBeenCalled();
+      expect(updateNote).not.toHaveBeenCalled();
+    });
+
+    it('should return 404 if note not found', async () => {
+      vi.mocked(getNoteById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: { content: 'Updated note content' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'Note not found',
+      });
+      expect(updateNote).not.toHaveBeenCalled();
+    });
+
+    it('should validate the request body - content is required', async () => {
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: { content: '' },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should validate the request body - content is required', async () => {
+      const res = await client[':id'].note[':noteId'].$patch({
+        param: { id: 'step1', noteId: 'note1' },
+        json: {} as unknown as UpdateRequeteStateNoteDto,
+      });
+
+      expect(res.status).toBe(400);
     });
   });
 

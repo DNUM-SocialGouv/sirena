@@ -71,6 +71,7 @@ export const createUploadedFile = async (
   uploadedFileData: CreateUploadedFileDto,
 ): Promise<UploadedFileCreateResult> => {
   const { metadata, ...rest } = uploadedFileData;
+
   return prisma.uploadedFile.create({
     data: {
       ...rest,

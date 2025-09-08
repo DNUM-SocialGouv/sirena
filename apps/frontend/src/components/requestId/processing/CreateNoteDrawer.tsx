@@ -12,14 +12,16 @@ import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { HttpError } from '@/lib/api/tanstackQuery';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
-export type StepDrawerRef = {
+export type CreateNoteDrawerRef = {
   openDrawer: (step: StepType) => void;
 };
 // biome-ignore lint/complexity/noBannedTypes: react doesn't handle well Record<string, never>
-export type StepDrawerProps = {};
+export type CreateNoteDrawerProps = {};
 
-export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, ref) => {
-  const { requestId } = useParams({ from: '/_auth/_user/request/$requestId' });
+export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawerProps>((_props, ref) => {
+  const { requestId } = useParams({
+    from: '/_auth/_user/request/$requestId',
+  });
 
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<StepType | null>(null);
@@ -101,7 +103,7 @@ export const StepDrawer = forwardRef<StepDrawerRef, StepDrawerProps>((_props, re
       <Drawer.Portal>
         <Drawer.Panel>
           <div className="fr-container fr-mt-8w">
-            <h3 className="fr-h6">Ajotuer une note ou un fichier à l'étape "{step?.stepName ?? ''}"</h3>
+            <h3 className="fr-h6">Ajouter une note ou un fichier à l'étape "{step?.stepName ?? ''}"</h3>
             <form>
               <Input
                 hintText="Informations à ajouter"

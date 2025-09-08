@@ -3,7 +3,7 @@ import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import { getSignedUrl, uploadFileToMinio } from '@/libs/minio';
+import { deleteFileFromMinio, getSignedUrl, uploadFileToMinio } from '@/libs/minio';
 import authMiddleware from '@/middlewares/auth.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
@@ -11,12 +11,13 @@ import extractUploadedFileMiddleware from '@/middlewares/upload.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import {
   createUploadedFileRoute,
+  deleteUploadedFileRoute,
   getUploadedFileRoute,
   getUploadedFileSignedUrlRoute,
   getUploadedFilesRoute,
 } from './uploadedFiles.route';
 import { GetUploadedFilesQuerySchema, UploadedFileParamsIdSchema } from './uploadedFiles.schema';
-import { createUploadedFile, getUploadedFileById, getUploadedFiles } from './uploadedFiles.service';
+import { createUploadedFile, deleteUploadedFile, getUploadedFileById, getUploadedFiles } from './uploadedFiles.service';
 
 const app = factoryWithLogs
   .createApp()
@@ -153,6 +154,35 @@ const app = factoryWithLogs
     } finally {
       await fs.promises.unlink(uploadedFile.tempFilePath);
     }
+  })
+  .delete('/:id', deleteUploadedFileRoute, zValidator('param', UploadedFileParamsIdSchema), async (c) => {
+    const logger = c.get('logger');
+    const id = c.req.valid('param').id;
+    const userId = c.get('userId');
+    const entiteIds = c.get('entiteIds');
+
+    if (!entiteIds?.length) {
+      throwHTTPException400BadRequest('You are not allowed to delete uploaded files without entiteIds.', {
+        res: c.res,
+      });
+    }
+
+    // TODO: temporarily remove entiteIds filter. We need to check if the uploaded file is within the EntiteId scope for the user
+    const uploadedFile = await getUploadedFileById(id, null);
+    if (!uploadedFile) {
+      logger.warn({ uploadedFileId: id }, 'Uploaded file not found or unauthorized access');
+      throwHTTPException404NotFound('Uploaded file not found', {
+        res: c.res,
+      });
+    }
+
+    await deleteUploadedFile(id);
+
+    await deleteFileFromMinio(uploadedFile.filePath);
+
+    logger.info({ uploadedFileId: id, userId }, 'Uploaded file deleted successfully');
+
+    return c.body(null, 204);
   });
 
 export default app;

@@ -6,6 +6,9 @@ import {
   addProcessingStep,
   addProcessingStepNote,
   deleteProcessingStep,
+  deleteProcessingStepNote,
+  type UpdateProcessingStepNoteData,
+  updateProcessingStepNote,
   updateProcessingStepStatus,
 } from '@/lib/api/processingSteps';
 
@@ -30,6 +33,39 @@ export const useAddProcessingStepNote = (requestId: string) => {
   return useMutation({
     mutationFn: ({ id, content, fileIds }: AddProcessingStepNoteDataParams) =>
       addProcessingStepNote(id, { content, fileIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
+    },
+  });
+};
+
+type UpdateProcessingStepNoteDataParams = {
+  id: string;
+  noteId: string;
+} & UpdateProcessingStepNoteData;
+
+export const useUpdateProcessingStepNote = (requestId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, noteId, content, fileIds }: UpdateProcessingStepNoteDataParams) =>
+      updateProcessingStepNote(id, noteId, { content, fileIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
+    },
+  });
+};
+
+type DeleteProcessingStepNoteDataParams = {
+  id: string;
+  noteId: string;
+};
+
+export const useDeleteProcessingStepNote = (requestId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, noteId }: DeleteProcessingStepNoteDataParams) => deleteProcessingStepNote(id, noteId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
     },

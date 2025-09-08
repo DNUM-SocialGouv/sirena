@@ -10,6 +10,9 @@ const ALLOWED_MIME_TYPES = [
   // PDF
   'application/pdf',
 
+  // EML
+  'message/rfc822',
+
   // Word
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

@@ -1,9 +1,11 @@
 import {
   openApi404NotFound,
+  openApiDeleteResponse,
   openApiProtectedRoute,
   openApiResponse,
   openApiResponses,
 } from '@sirena/backend-utils/helpers';
+import z from 'zod';
 import { GetUploadedFileResponseSchema, GetUploadedFilesResponseSchema } from './uploadedFiles.schema';
 
 export const getUploadedFileRoute = openApiProtectedRoute({
@@ -33,5 +35,12 @@ export const getUploadedFileSignedUrlRoute = openApiProtectedRoute({
   responses: {
     ...openApiResponse(GetUploadedFileResponseSchema),
     ...openApi404NotFound('Uploaded file not found'),
+  },
+});
+
+export const deleteUploadedFileRoute = openApiProtectedRoute({
+  description: 'Delete uploaded file by id',
+  responses: {
+    ...openApiDeleteResponse(z.string(), 204, 'Uploaded file deleted successfully'),
   },
 });
