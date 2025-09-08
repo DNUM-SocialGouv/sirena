@@ -17,7 +17,7 @@
     "constructs": "^10.4.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.2",
+    "@biomejs/biome": "^2.2.3",
     "@types/node": "^14",
     "cdk8s-cli": "^2.201.19",
     "ts-node": "^10",
