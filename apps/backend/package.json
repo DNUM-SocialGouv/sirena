@@ -55,7 +55,7 @@
     "@sirena/common": "workspace:*",
     "graffle": "8.0.0-next.168",
     "file-type": "^21.0.0",
-    "bullmq": "^5.56.5",
+    "bullmq": "^5.58.5",
     "graphql": "^16.11.0",
     "handlebars": "^4.7.8",
     "hono": "catalog:",
