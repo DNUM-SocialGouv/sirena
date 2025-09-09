@@ -63,8 +63,8 @@ describe('Entites endpoints: /entites', () => {
     entiteTypeId: 'ENTITE_TYPE_A',
     entiteMereId: null,
     nomComplet: 'Entite B',
-    organizationUnit: 'ARS-CORSE',
-    emailDomain: null,
+    organizationalUnit: 'ARS-CORSE',
+    emailDomain: '',
   };
 
   describe('GET /:id?', () => {
