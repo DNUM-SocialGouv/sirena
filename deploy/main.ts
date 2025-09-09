@@ -79,7 +79,6 @@ function createApps(
   // Redis
   new RedisChart(app, 'redis', {
     namespace,
-    environment,
   });
 
   // Worker
