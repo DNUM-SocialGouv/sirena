@@ -1,7 +1,0 @@
-.demat-social-mapping {
-  & .form-actions {
-    display: flex;
-    justify-content: end;
-    gap: 1rem;
-  }
-}
