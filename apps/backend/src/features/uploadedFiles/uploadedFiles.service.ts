@@ -98,7 +98,7 @@ export const setNoteFile = async (
 ) => {
   await prisma.uploadedFile.updateMany({
     where: { id: { in: uploadedFileId } },
-    data: { requeteStateNoteId: noteId, status: 'COMPLETED', entiteId: entiteId },
+    data: { requeteEtapeNoteId: noteId, status: 'COMPLETED', entiteId: entiteId },
   });
 
   return await prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileId } } });
