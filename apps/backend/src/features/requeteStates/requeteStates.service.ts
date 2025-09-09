@@ -65,8 +65,8 @@ export const getRequeteStates = async (requeteEntiteId: string, query: GetRequet
             },
             author: {
               select: {
-                firstName: true,
-                lastName: true,
+                prenom: true,
+                nom: true,
               },
             },
           },
