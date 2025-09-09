@@ -2,15 +2,15 @@ import type { Pagination } from '@sirena/backend-utils/types';
 import { type Entite, prisma } from '@/libs/prisma';
 import type { EntiteChain } from './entites.type';
 
-export const getEntiteForUser = async (organizationUnit: string | null, email: string) => {
-  if (organizationUnit) {
+export const getEntiteForUser = async (organizationalUnit: string | null, email: string) => {
+  if (organizationalUnit) {
     const entites = await prisma.entite.findMany({
       where: {
         OR: [
-          { organizationUnit },
-          { organizationUnit: { startsWith: `${organizationUnit},` } },
-          { organizationUnit: { endsWith: `,${organizationUnit}` } },
-          { organizationUnit: { contains: `,${organizationUnit},` } },
+          { organizationalUnit },
+          { organizationalUnit: { startsWith: `${organizationalUnit},` } },
+          { organizationalUnit: { endsWith: `,${organizationalUnit}` } },
+          { organizationalUnit: { contains: `,${organizationalUnit},` } },
         ],
       },
     });
