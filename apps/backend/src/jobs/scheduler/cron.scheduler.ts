@@ -27,14 +27,16 @@ export async function startScheduler() {
     };
 
     if (envVars.SENTRY_ENABLED) {
-      return sentryStorage.run(Sentry, async () => {
-        Sentry.setContext('scheduler', {
-          action: 'start_scheduler',
-          jobCount: jobHandlers.length,
-          timestamp: new Date().toISOString(),
-        });
+      return Sentry.withScope(async (scope) => {
+        return sentryStorage.run(scope, async () => {
+          scope.setContext('scheduler', {
+            action: 'start_scheduler',
+            jobCount: jobHandlers.length,
+            timestamp: new Date().toISOString(),
+          });
 
-        return runScheduler();
+          return runScheduler();
+        });
       });
     }
 

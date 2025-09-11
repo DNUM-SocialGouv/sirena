@@ -19,16 +19,18 @@ export const cronWorker = new Worker(
 
     return loggerStorage.run(createDefaultLogger(), async () => {
       if (envVars.SENTRY_ENABLED) {
-        return sentryStorage.run(Sentry, async () => {
-          Sentry.setContext('cron_job', {
-            name: job.name,
-            id: job.id,
-            attemptsMade: job.attemptsMade,
-            processedOn: job.processedOn,
-            timestamp: job.timestamp,
-          });
+        return Sentry.withScope(async (scope) => {
+          return sentryStorage.run(scope, async () => {
+            scope.setContext('cron_job', {
+              name: job.name,
+              id: job.id,
+              attemptsMade: job.attemptsMade,
+              processedOn: job.processedOn,
+              timestamp: job.timestamp,
+            });
 
-          return await handler(job);
+            return await handler(job);
+          });
         });
       }
 

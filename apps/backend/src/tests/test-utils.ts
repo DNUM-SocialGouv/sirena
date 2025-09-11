@@ -42,6 +42,7 @@ export interface MockContext {
 
 export interface TestUser extends User {
   email: string;
+  entiteIds?: string[];
 }
 
 export const createMockSentryScope = (): MockSentryScope => ({
@@ -123,6 +124,7 @@ export const createTestUser = (overrides: Partial<TestUser> = {}): TestUser => (
   roleId: 'role-789',
   statutId: 'statut-123',
   entiteId: 'entite-456',
+  entiteIds: ['entite-456'],
   ...overrides,
 });
 
