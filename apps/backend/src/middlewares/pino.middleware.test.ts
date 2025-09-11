@@ -1,6 +1,10 @@
+import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { testClient } from 'hono/testing';
+import type pino from 'pino';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { EnrichedUserContext, RequestContext } from '@/helpers/middleware';
+import type { createDefaultLogger } from '@/helpers/pino';
 import { createTestRequestContext, createTestUser } from '../tests/test-utils';
 import { enhancedPinoMiddleware } from './pino.middleware';
 
@@ -57,7 +61,6 @@ const {
     userId: 'test-user-id',
     ip: 'xxx.xxx.xxx.100',
     userAgent: 'Mozilla/5.0',
-    entiteId: 'test-entite-id',
     entiteIds: ['test-entite-id'],
     roleId: 'test-role-id',
   };
@@ -75,7 +78,7 @@ const {
   };
 
   const helperMocks = {
-    extractRequestContext: vi.fn(() => testContext),
+    extractRequestContext: vi.fn(() => testContext as RequestContext),
     enrichRequestContext: vi.fn(() => enrichedRequestContext),
     enrichUserContext: vi.fn(() => enrichedUserContext),
     createPinoContextData: vi.fn(() => ({
@@ -107,7 +110,7 @@ const {
     },
   };
 
-  let storedLogger = null;
+  let storedLogger: ReturnType<typeof createDefaultLogger> | null = null;
   const mockLoggerStorage = {
     run: vi.fn(async (value, callback) => {
       // Store the logger value for the callback
@@ -153,8 +156,12 @@ vi.mock('pino', () => {
     level: 'info',
   };
 
-  const mockPino = vi.fn(() => basePinoInstance);
-  mockPino.stdSerializers = pinoMocks.stdSerializers;
+  const mockPino = Object.assign(
+    vi.fn(() => basePinoInstance),
+    {
+      stdSerializers: pinoMocks.stdSerializers,
+    },
+  ) as unknown as typeof pino;
 
   return {
     default: mockPino,
@@ -165,7 +172,7 @@ vi.mock('pino', () => {
 vi.mock('hono-pino', () => ({
   pinoLogger: vi.fn((config) => {
     // Return a middleware function that sets the logger before calling next
-    return async (c, next) => {
+    return async (c: Context, next: () => Promise<void>) => {
       // The logger should be the pino instance passed in config.pino
       const logger = config?.pino;
       if (logger) {
@@ -188,11 +195,8 @@ vi.mock('@/config/env', () => ({
 }));
 
 describe('pino.middleware.ts', () => {
-  let app: Hono;
-
   beforeEach(() => {
     vi.resetAllMocks();
-    app = new Hono();
   });
 
   afterEach(() => {
@@ -201,14 +205,13 @@ describe('pino.middleware.ts', () => {
 
   describe('enhancedPinoMiddleware', () => {
     it('should set up logger with request context', async () => {
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => {
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => {
         // Just return success - we'll check the middleware behavior via mocks
         return c.json({ success: true });
       });
 
-      const client = testClient(app);
-      await client.test.$get();
+      const client = testClient(testApp);
+      const _res = await client.test.$get();
 
       expect(helperMocks.extractRequestContext).toHaveBeenCalled();
       expect(helperMocks.enrichRequestContext).toHaveBeenCalledWith(testContext);
@@ -223,12 +226,11 @@ describe('pino.middleware.ts', () => {
     });
 
     it('should add request-id and trace-id headers', async () => {
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => {
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => {
         return c.json({ success: true });
       });
 
-      const client = testClient(app);
+      const client = testClient(testApp);
       const response = await client.test.$get();
 
       expect(response).toBeDefined();
@@ -242,10 +244,9 @@ describe('pino.middleware.ts', () => {
     it('should handle requests with existing x-request-id header', async () => {
       const existingRequestId = 'existing-request-id';
 
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => c.json({ success: true }));
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => c.json({ success: true }));
 
-      const client = testClient(app);
+      const client = testClient(testApp);
       await client.test.$get({
         headers: {
           'x-request-id': existingRequestId,
@@ -256,10 +257,9 @@ describe('pino.middleware.ts', () => {
     });
 
     it('should run logger storage with contextual logger', async () => {
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => c.json({ success: true }));
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => c.json({ success: true }));
 
-      const client = testClient(app);
+      const client = testClient(testApp);
       await client.test.$get();
 
       expect(mockLoggerStorage.run).toHaveBeenCalled();
@@ -285,34 +285,39 @@ describe('pino.middleware.ts', () => {
     });
 
     it('should create contextual logger with enriched context', async () => {
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => c.json({ success: true }));
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => c.json({ success: true }));
 
-      const client = testClient(app);
+      const client = testClient(testApp);
       await client.test.$get();
 
       // Check the pino context data was created with proper values
       expect(helperMocks.createPinoContextData).toHaveBeenCalled();
-      const [enrichedCtx, userCtx] = helperMocks.createPinoContextData.mock.calls[0];
-      // Check the enriched context has the expected request ID
-      expect(enrichedCtx.requestId).toBe(testContext.requestId);
-      // Check the user context has the expected user ID
-      expect(userCtx.userId).toBe(testContext.userId);
+      const mockCalls = helperMocks.createPinoContextData.mock.calls;
+      if (mockCalls.length > 0) {
+        const [enrichedCtx, userCtx] = mockCalls[0] as unknown as [RequestContext, EnrichedUserContext | null];
+        // Check the enriched context has the expected request ID
+        expect(enrichedCtx.requestId).toBe(testContext.requestId);
+        // Check the user context has the expected user ID
+        if (userCtx) {
+          expect(userCtx.userId).toBe(testContext.userId);
+        }
+      }
     });
   });
 
   describe('middleware integration', () => {
     it('should work with other middlewares', async () => {
-      app.use(enhancedPinoMiddleware());
-      app.use(async (_c, next) => {
-        // Middleware executes but we'll verify through mocks
-        await next();
-      });
-      app.get('/test', (c) => {
-        return c.json({ success: true });
-      });
+      const testApp = new Hono()
+        .use(enhancedPinoMiddleware())
+        .use(async (_c, next) => {
+          // Middleware executes but we'll verify through mocks
+          await next();
+        })
+        .get('/test', (c) => {
+          return c.json({ success: true });
+        });
 
-      const client = testClient(app);
+      const client = testClient(testApp);
       await client.test.$get();
 
       // Verify the middleware chain executed properly
@@ -321,12 +326,11 @@ describe('pino.middleware.ts', () => {
     });
 
     it('should handle errors in next middleware', async () => {
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', () => {
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (_c) => {
         throw new Error('Test middleware error');
       });
 
-      const client = testClient(app);
+      const client = testClient(testApp);
       const response = await client.test.$get();
 
       expect(response.status).toBe(500);
@@ -345,14 +349,13 @@ describe('pino.middleware.ts', () => {
       helperMocks.extractRequestContext.mockReturnValue(contextWithUser);
       helperMocks.enrichUserContext.mockReturnValue({
         userId: testUser.id,
-        entiteIds: testUser.entiteIds,
+        entiteIds: testUser.entiteIds || [],
         roleId: testUser.roleId,
       });
 
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => c.json({ success: true }));
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => c.json({ success: true }));
 
-      const client = testClient(app);
+      const client = testClient(testApp);
       await client.test.$get();
 
       expect(helperMocks.enrichUserContext).toHaveBeenCalledWith(contextWithUser);
@@ -366,12 +369,15 @@ describe('pino.middleware.ts', () => {
       });
 
       helperMocks.extractRequestContext.mockReturnValue(contextWithoutUser);
-      helperMocks.enrichUserContext.mockReturnValue(null);
+      helperMocks.enrichUserContext.mockReturnValue({
+        userId: '',
+        entiteIds: [],
+        roleId: '',
+      });
 
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => c.json({ success: true }));
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => c.json({ success: true }));
 
-      const client = testClient(app);
+      const client = testClient(testApp);
       await client.test.$get();
 
       expect(helperMocks.enrichUserContext).toHaveBeenCalledWith(contextWithoutUser);
@@ -413,6 +419,7 @@ describe('pino.middleware.ts', () => {
       helperMocks.enrichRequestContext.mockReturnValue({
         ...testContext,
         caller: 'test.ts:123',
+        extraContext: {},
       });
 
       expect(helperMocks.getLogExtraContext()).toEqual({});

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import type { Job } from 'bullmq';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { endCron, startCron } from '@/crons/crons.service';
@@ -9,18 +10,20 @@ vi.mock('@/crons/crons.service', () => ({
   endCron: vi.fn(),
 }));
 
-const mockSentry = {
+vi.mock('@sentry/node', () => ({
   captureException: vi.fn(),
-};
-
-vi.mock('@sentry/node', () => mockSentry);
+}));
 
 vi.mock('@/helpers/errors', () => ({
   serializeError: vi.fn((err) => ({ message: err.message })),
 }));
 
+const mockSentryScope = {
+  setContext: vi.fn(),
+};
+
 vi.mock('@/libs/asyncLocalStorage', () => ({
-  getSentryStore: vi.fn(() => mockSentry),
+  getSentryStore: vi.fn(() => mockSentryScope),
 }));
 
 const mockEnvVars = {
@@ -130,7 +133,7 @@ describe('job.utils', () => {
         state: 'error',
       });
 
-      expect(mockSentry.captureException).not.toHaveBeenCalled();
+      expect(Sentry.captureException).not.toHaveBeenCalled();
     });
 
     it('should send error to Sentry if enabled', async () => {
@@ -166,15 +169,14 @@ describe('job.utils', () => {
         }),
       ).rejects.toThrow();
 
-      expect(mockSentry.captureException).toHaveBeenCalledWith(error, {
-        extra: {
-          jobName: mockJob.name,
-          jobId: mockJob.id,
-          params: {},
-          startedAt: startedAt.toISOString(),
-          endedAt: new Date().toISOString(),
-        },
+      expect(mockSentryScope.setContext).toHaveBeenCalledWith('job', {
+        jobName: mockJob.name,
+        jobId: mockJob.id,
+        params: {},
+        startedAt: startedAt.toISOString(),
+        endedAt: new Date().toISOString(),
       });
+      expect(Sentry.captureException).toHaveBeenCalledWith(error, mockSentryScope);
     });
   });
 });

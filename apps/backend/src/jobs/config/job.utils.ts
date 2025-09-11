@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import type { Job } from 'bullmq';
 import { envVars } from '@/config/env';
 import { endCron, startCron } from '@/crons/crons.service';
@@ -41,16 +42,29 @@ export async function withCronLifecycle<R extends Record<string, unknown>, J ext
 
     if (envVars.SENTRY_ENABLED) {
       try {
-        const sentry = getSentryStore();
-        sentry.captureException(error, {
-          extra: {
+        const sentryScope = getSentryStore();
+        if (sentryScope) {
+          sentryScope.setContext('job', {
             jobName: job.name,
             jobId: job.id,
             params,
             startedAt: startedAt.toISOString(),
             endedAt: endedAt.toISOString(),
-          },
-        });
+          });
+          Sentry.captureException(error, sentryScope);
+        } else {
+          Sentry.captureException(error, {
+            contexts: {
+              job: {
+                jobName: job.name,
+                jobId: job.id,
+                params,
+                startedAt: startedAt.toISOString(),
+                endedAt: endedAt.toISOString(),
+              },
+            },
+          });
+        }
       } catch (sentryError) {
         console.error('Failed to capture exception in Sentry:', sentryError);
       }

@@ -1,6 +1,5 @@
 import { csrf } from 'hono/csrf';
 import '@/libs/instrument';
-import { sentry } from '@hono/sentry';
 import AuthController from '@/features/auth/auth.controller';
 import DematSocialMapperController from '@/features/dematSocialMapping/dematSocialMapping.controller';
 import EntitesController from '@/features/entites/entites.controller';
@@ -19,16 +18,8 @@ import { envVars } from './config/env';
 import { errorHandler } from './helpers/errors';
 
 const baseApp = appFactory.createApp();
-const appWithSentry = envVars.SENTRY_ENABLED
-  ? baseApp.use(
-      sentry({
-        dsn: envVars.SENTRY_DSN_BACKEND,
-        environment: envVars.SENTRY_ENVIRONMENT,
-      }),
-    )
-  : baseApp;
 
-export const app = appWithSentry
+export const app = baseApp
   .use(enhancedPinoMiddleware())
   .use(sentryContextMiddleware())
   .use(
@@ -47,8 +38,7 @@ export const app = appWithSentry
   .route('/profile', ProfileController)
   .route('/health', HealthController)
   .route('/version', VersionController)
-  .get('/sentry', (c) => {
-    const sentry = c.get('sentry');
-    throw new Error(`Sentry test error - Sentry ${sentry ? 'enabled' : 'disabled'}`);
+  .get('/sentry', () => {
+    throw new Error(`Sentry test error - Sentry ${envVars.SENTRY_ENABLED ? 'enabled' : 'disabled'}`);
   })
   .onError(errorHandler);
