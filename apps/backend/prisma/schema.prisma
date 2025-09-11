@@ -1,4 +1,18 @@
-// les termes métieres sont en français, les termes techniques en anglais
+// =============================================================================
+// DATABASE SCHEMA DESIGN
+// =============================================================================
+// 
+// This schema follows a hybrid naming convention:
+// - Business domain terms: French
+// - Technical terms: English
+//
+// Benefits of this approach:
+// - Domain clarity: Business stakeholders can directly understand entity names and relationships
+// - Technical consistency: Infrastructure terms (id, createdAt, updatedAt, etc.) remain universal
+// - Maintainability: Clear separation between business logic and technical implementation
+// - Developer experience: Technical aspects follow widely adopted conventions
+// - Natural documentation: Schema serves as a bridge between business and technical teams
+// =============================================================================
 
 generator client {
   provider = "prisma-client-js"
