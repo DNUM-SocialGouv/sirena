@@ -14,6 +14,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/libs/__mocks__/prisma';
 import type { Requete } from '../../../generated/client';
+import * as functionalIdService from './functionalId.service';
 import {
   createOrGetFromDematSocial,
   createRequeteFromDematSocial,
@@ -22,6 +23,7 @@ import {
 import type { CreateRequeteFromDematSocialDto } from './requetes.type';
 
 vi.mock('@/libs/prisma');
+vi.mock('./functionalId.service');
 
 const getfakeRequeteDto = () => {
   const adresse = {
@@ -182,6 +184,8 @@ describe('requetes.service.ts', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.useRealTimers();
+    vi.mocked(functionalIdService.generateRequeteId).mockResolvedValue('RS-2025-01-1');
+    vi.mocked(functionalIdService.determineSource).mockReturnValue('SIRENA');
   });
 
   describe('createRequeteFromDematSocial()', () => {
@@ -858,6 +862,7 @@ describe('requetes.service.ts', () => {
       expect(mockRequeteCreate).toHaveBeenCalledTimes(1);
       expect(mockRequeteCreate).toHaveBeenCalledWith({
         data: {
+          id: 'RS-2025-01-1',
           dematSocialId,
           receptionDate: new Date(),
           receptionType: { connect: { id: RECEPTION_TYPE.FORMULAIRE } },
