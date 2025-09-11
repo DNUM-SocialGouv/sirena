@@ -33,8 +33,8 @@ export function AllUsersTab() {
   });
 
   const columns: Column<User>[] = [
-    { key: 'lastName', label: 'Nom' },
-    { key: 'firstName', label: 'Prénom' },
+    { key: 'nom', label: 'Nom' },
+    { key: 'prenom', label: 'Prénom' },
     { key: 'role.label', label: 'Rôle' },
     { key: 'statutId', label: 'Statut' },
     { key: 'custom:editionLabel', label: 'Action' },

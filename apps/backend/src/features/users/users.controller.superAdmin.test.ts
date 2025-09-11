@@ -64,8 +64,8 @@ vi.mock('@/middlewares/changelog/changelog.user.middleware', () => {
 const fakeUser = {
   id: 'id1',
   email: 'admin@example.com',
-  firstName: 'Super',
-  lastName: 'Admin',
+  prenom: 'Super',
+  nom: 'Admin',
   sub: 'sub1',
   uid: 'uid1',
   createdAt: new Date(0),

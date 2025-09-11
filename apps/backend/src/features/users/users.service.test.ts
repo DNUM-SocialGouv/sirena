@@ -44,11 +44,12 @@ const mockedUser = vi.mocked(prisma.user);
 const mockUser = {
   id: 'user1',
   email: 'john@example.com',
-  firstName: 'John',
-  lastName: 'Doe',
+  prenom: 'John',
+  nom: 'Doe',
   uid: 'uid1',
   sub: 'sub1',
   createdAt: new Date(),
+  updatedAt: new Date(),
   active: true,
   pcData: {},
   roleId: 'PENDING',
@@ -73,7 +74,7 @@ describe('user.service.ts', () => {
           active: true,
         },
         skip: 0,
-        orderBy: { lastName: 'asc' },
+        orderBy: { nom: 'asc' },
         include: { role: true },
       });
       expect(result).toEqual({ data: [mockUser], total: 1 });
@@ -86,7 +87,7 @@ describe('user.service.ts', () => {
       expect(mockedUser.findMany).toHaveBeenCalledWith({
         where: { roleId: { in: ['PENDING', 'SUPER_ADMIN'] }, active: true, entiteId: { in: ['e1'] } },
         skip: 0,
-        orderBy: { lastName: 'asc' },
+        orderBy: { nom: 'asc' },
         include: { role: true },
       });
       expect(result).toEqual({ data: [mockUser], total: 1 });
@@ -99,7 +100,7 @@ describe('user.service.ts', () => {
       expect(mockedUser.findMany).toHaveBeenCalledWith({
         where: { entiteId: { in: ['e1'] } },
         skip: 0,
-        orderBy: { lastName: 'asc' },
+        orderBy: { nom: 'asc' },
         include: { role: true },
       });
       expect(result).toEqual({ data: [mockUser], total: 1 });
@@ -114,14 +115,14 @@ describe('user.service.ts', () => {
       expect(mockedUser.findMany).toHaveBeenCalledWith({
         where: {
           OR: [
-            { firstName: { contains: 'doe', mode: 'insensitive' } },
-            { lastName: { contains: 'doe', mode: 'insensitive' } },
+            { prenom: { contains: 'doe', mode: 'insensitive' } },
+            { nom: { contains: 'doe', mode: 'insensitive' } },
             { email: { contains: 'doe', mode: 'insensitive' } },
           ],
         },
         skip: 0,
         take: 10,
-        orderBy: { lastName: 'asc' },
+        orderBy: { nom: 'asc' },
         include: { role: true },
       });
 
@@ -167,8 +168,8 @@ describe('user.service.ts', () => {
         sub: 'sub1',
         uid: 'uid1',
         email: 'john@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
+        prenom: 'John',
+        nom: 'Doe',
         pcData: {},
         entiteId: null,
       };
@@ -190,8 +191,8 @@ describe('user.service.ts', () => {
         sub: 'sub1',
         uid: 'uid1',
         email: 'user@admin.fr',
-        firstName: 'John',
-        lastName: 'Doe',
+        prenom: 'John',
+        nom: 'Doe',
         pcData: {},
         entiteId: null,
       };

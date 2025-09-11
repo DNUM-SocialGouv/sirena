@@ -9,8 +9,8 @@ type StepNoteProps = {
   createdAt: string;
   requeteStateId: string;
   author: {
-    firstName: string;
-    lastName: string;
+    prenom: string;
+    nom: string;
   };
   files: {
     id: string;
@@ -50,7 +50,7 @@ export const StepNote = ({ id, author, content, createdAt, requeteStateId, files
           </span>
           par{' '}
           <span className="fr-text--bold">
-            {author.firstName} {author.lastName}
+            {author.prenom} {author.nom}
           </span>
         </div>
         <div className="fr-col-auto">

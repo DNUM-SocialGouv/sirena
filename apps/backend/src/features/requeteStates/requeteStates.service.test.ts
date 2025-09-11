@@ -144,8 +144,8 @@ describe('requeteStates.service.ts', () => {
             select: {
               author: {
                 select: {
-                  firstName: true,
-                  lastName: true,
+                  prenom: true,
+                  nom: true,
                 },
               },
               content: true,
@@ -197,7 +197,7 @@ describe('requeteStates.service.ts', () => {
                   metadata: null,
                 },
               ],
-              author: { firstName: 'Ada', lastName: 'Lovelace' },
+              author: { prenom: 'Ada', nom: 'Lovelace' },
             },
           ],
         },
@@ -237,8 +237,8 @@ describe('requeteStates.service.ts', () => {
             select: {
               author: {
                 select: {
-                  firstName: true,
-                  lastName: true,
+                  prenom: true,
+                  nom: true,
                 },
               },
               content: true,
