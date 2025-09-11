@@ -1,5 +1,6 @@
 import { RECEPTION_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { prisma } from '@/libs/prisma';
+import { determineSource, generateRequeteId } from './functionalId.service';
 import type { CreateRequeteFromDematSocialDto } from './requetes.type';
 
 export const getRequeteByDematSocialId = async (id: number) =>
@@ -11,8 +12,12 @@ export const getRequeteByDematSocialId = async (id: number) =>
 
 export const createRequeteFromDematSocial = async ({ dematSocialId, createdAt }: CreateRequeteFromDematSocialDto) => {
   return prisma.$transaction(async (tx) => {
+    const source = determineSource(dematSocialId);
+    const id = await generateRequeteId(source);
+
     const requete = await tx.requete.create({
       data: {
+        id,
         dematSocialId,
         createdAt,
         requetesEntite: { create: {} },
