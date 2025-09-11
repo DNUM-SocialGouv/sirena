@@ -1,12 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import type * as Sentry from '@sentry/node';
+import type { Scope } from '@sentry/node';
 import type { createDefaultLogger } from '@/helpers/pino';
 
 export const abortControllerStorage = new AsyncLocalStorage<AbortController>();
 
 export const loggerStorage = new AsyncLocalStorage<ReturnType<typeof createDefaultLogger>>();
 
-export const sentryStorage = new AsyncLocalStorage<typeof Sentry>();
+export const sentryStorage = new AsyncLocalStorage<Scope>();
 
 export const getLoggerStore = () => {
   const logger = loggerStorage.getStore();
