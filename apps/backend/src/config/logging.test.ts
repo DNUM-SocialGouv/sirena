@@ -16,20 +16,17 @@ describe('logging configuration', () => {
       const result = EnvSchema.parse(mockEnv);
 
       expect(result.LOG_LEVEL).toBe('info');
-      expect(result.LOG_LEVEL_SENTRY).toBe('warn');
     });
 
-    it('should use both custom values when provided', () => {
+    it('should use custom values when provided', () => {
       const mockEnv = {
         ...createMinimalValidEnv(),
         LOG_LEVEL: 'trace',
-        LOG_LEVEL_SENTRY: 'fatal',
       };
 
       const result = EnvSchema.parse(mockEnv);
 
       expect(result.LOG_LEVEL).toBe('trace');
-      expect(result.LOG_LEVEL_SENTRY).toBe('fatal');
     });
 
     it('should reject invalid log level values', () => {
@@ -39,13 +36,6 @@ describe('logging configuration', () => {
           LOG_LEVEL: 'invalid',
         }),
       ).toThrow(/LOG_LEVEL/);
-
-      expect(() =>
-        EnvSchema.parse({
-          ...createMinimalValidEnv(),
-          LOG_LEVEL_SENTRY: 'invalid',
-        }),
-      ).toThrow(/LOG_LEVEL_SENTRY/);
     });
   });
 
