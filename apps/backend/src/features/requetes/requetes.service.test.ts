@@ -1,6 +1,7 @@
 import { RECEPTION_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/libs/__mocks__/prisma';
+import * as functionalIdService from './functionalId.service';
 import {
   createOrGetFromDematSocial,
   createRequeteFromDematSocial,
@@ -8,11 +9,14 @@ import {
 } from './requetes.service';
 
 vi.mock('@/libs/prisma');
+vi.mock('./functionalId.service');
 
 describe('requetes.service.ts', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.useRealTimers();
+    vi.mocked(functionalIdService.generateRequeteId).mockResolvedValue('RS-2025-01-1');
+    vi.mocked(functionalIdService.determineSource).mockReturnValue('SIRENA');
   });
 
   describe('createRequeteFromDematSocial()', () => {
@@ -47,6 +51,7 @@ describe('requetes.service.ts', () => {
         expect(prisma.requete.create).toHaveBeenCalledTimes(1);
         expect(prisma.requete.create).toHaveBeenCalledWith({
           data: {
+            id: 'RS-2025-01-1',
             dematSocialId,
             createdAt,
             requetesEntite: { create: {} },
@@ -185,6 +190,7 @@ describe('requetes.service.ts', () => {
       expect(mockedCreate).toHaveBeenCalledTimes(1);
       expect(mockedCreate).toHaveBeenCalledWith({
         data: {
+          id: 'RS-2025-01-1',
           dematSocialId,
           createdAt,
           requetesEntite: { create: {} },
