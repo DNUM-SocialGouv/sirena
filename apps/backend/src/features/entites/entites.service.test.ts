@@ -27,8 +27,8 @@ describe('entites.service', () => {
       entiteTypeId: 'ENTITE_TYPE_A',
       entiteMereId: null,
       nomComplet: 'Entite B',
-      organizationUnit: 'ARS-CORSE',
-      emailDomain: null,
+      organizationalUnit: 'ARS-CORSE',
+      emailDomain: '',
     };
     const mockEntite2 = {
       id: '1',
@@ -37,7 +37,7 @@ describe('entites.service', () => {
       entiteTypeId: 'ENTITE_TYPE_A',
       entiteMereId: null,
       nomComplet: 'Entite A',
-      organizationUnit: '',
+      organizationalUnit: '',
       emailDomain: 'domain.fr',
     };
 
@@ -54,7 +54,7 @@ describe('entites.service', () => {
           where: expect.objectContaining({
             OR: expect.arrayContaining([
               expect.objectContaining({
-                organizationUnit: expect.stringContaining('ARS-CORSE'),
+                organizationalUnit: expect.stringContaining('ARS-CORSE'),
               }),
             ]),
           }),
@@ -93,8 +93,8 @@ describe('entites.service', () => {
         entiteTypeId: 'ENTITE_TYPE_A',
         entiteMereId: null,
         nomComplet: 'Entite B',
-        organizationUnit: 'ARS-CORSE',
-        emailDomain: null,
+        organizationalUnit: 'ARS-CORSE',
+        emailDomain: '',
       };
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite]);
       vi.mocked(prisma.entite.count).mockResolvedValueOnce(1);
@@ -125,8 +125,8 @@ describe('entites.service', () => {
         entiteTypeId: 'ENTITE_TYPE_A',
         entiteMereId: '1',
         nomComplet: 'Entite B',
-        organizationUnit: 'ARS-CORSE',
-        emailDomain: null,
+        organizationalUnit: 'ARS-CORSE',
+        emailDomain: '',
       };
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite]);
       vi.mocked(prisma.entite.count).mockResolvedValueOnce(1);
@@ -169,8 +169,8 @@ describe('entites.service', () => {
         entiteTypeId: 'ENTITE_TYPE_A',
         entiteMereId: null,
         nomComplet: 'Entite B',
-        organizationUnit: 'ARS-CORSE',
-        emailDomain: null,
+        organizationalUnit: 'ARS-CORSE',
+        emailDomain: '',
       };
       const mockEntite2 = {
         id: '1',
@@ -179,7 +179,7 @@ describe('entites.service', () => {
         entiteTypeId: 'ENTITE_TYPE_A',
         entiteMereId: '2',
         nomComplet: 'Entite A',
-        organizationUnit: '',
+        organizationalUnit: '',
         emailDomain: 'domain.fr',
       };
 
@@ -217,7 +217,7 @@ describe('entites.service', () => {
         entiteTypeId: 'ENTITE_TYPE_A',
         entiteMereId: '1',
         nomComplet: 'Entite A',
-        organizationUnit: '',
+        organizationalUnit: '',
         emailDomain: 'domain.fr',
       };
       const mockEntite3 = {
@@ -227,7 +227,7 @@ describe('entites.service', () => {
         entiteTypeId: 'ENTITE_TYPE_A',
         entiteMereId: '2',
         nomComplet: 'Entite A',
-        organizationUnit: '',
+        organizationalUnit: '',
         emailDomain: 'domain.fr',
       };
 
@@ -268,7 +268,7 @@ describe('entites.service', () => {
         email: '',
         emailDomain: '',
         entiteTypeId: '',
-        organizationUnit: '',
+        organizationalUnit: '',
       },
       {
         id: '4',
@@ -278,7 +278,7 @@ describe('entites.service', () => {
         email: '',
         emailDomain: '',
         entiteTypeId: '',
-        organizationUnit: '',
+        organizationalUnit: '',
       },
       {
         id: '3',
@@ -288,7 +288,7 @@ describe('entites.service', () => {
         email: '',
         emailDomain: '',
         entiteTypeId: '',
-        organizationUnit: '',
+        organizationalUnit: '',
       },
       {
         id: '2',
@@ -298,7 +298,7 @@ describe('entites.service', () => {
         email: '',
         emailDomain: '',
         entiteTypeId: '',
-        organizationUnit: '',
+        organizationalUnit: '',
       },
       {
         id: '1',
@@ -308,7 +308,7 @@ describe('entites.service', () => {
         email: '',
         emailDomain: '',
         entiteTypeId: '',
-        organizationUnit: '',
+        organizationalUnit: '',
       },
     ];
 
