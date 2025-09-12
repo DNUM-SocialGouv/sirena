@@ -3,28 +3,30 @@ import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createChangeLog } from '@/features/changelog/changelog.service';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getNoteById } from '@/features/requeteStates/requeteStates.service';
+import { getRequeteEtapeById } from '@/features/requeteEtapes/requetesEtapes.service';
 import appWithAuth from '@/helpers/factories/appWithAuth';
-import requeteStatesNotesChangelogMiddleware from './changelog.requeteStateNote.middleware';
+import type { RequeteEtape } from '@/libs/prisma';
+import requeteEtapesChangelogMiddleware from './changelog.requeteEtape.middleware';
 
 vi.mock('@/features/changelog/changelog.service', () => ({
   createChangeLog: vi.fn(),
 }));
 
-vi.mock('@/features/requeteStates/requeteStates.service', () => ({
-  getNoteById: vi.fn(),
+vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
+  getRequeteEtapeById: vi.fn(),
 }));
 
-describe('changelog.requeteStateNote.middleware.ts', () => {
+describe('changelog.requeteEtapes.middleware.ts', () => {
   const mockCreateChangeLog = vi.mocked(createChangeLog);
-  const mockGetNoteById = vi.mocked(getNoteById);
+  const mockGetRequeteEtapeById = vi.mocked(getRequeteEtapeById);
 
-  const testRequeteStateNote = {
-    id: 'note-1',
-    content: 'Initial note content',
-    authorId: 'author-1',
-    requeteEntiteStateId: 'rs-1',
-    uploadedFiles: [],
+  const testRequeteEtape: RequeteEtape = {
+    id: 'rs-1',
+    requeteId: 'requete-1',
+    entiteId: 'entite-1',
+    nom: 'Initial Step',
+    statutId: 'EN_ATTENTE',
+    estPartagee: false,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -33,7 +35,7 @@ describe('changelog.requeteStateNote.middleware.ts', () => {
     vi.resetAllMocks();
   });
 
-  const createRequeteStateNoteTestAppWithParams = () => {
+  const createRequeteEtapeTestAppWithParams = () => {
     const app = appWithAuth
       .createApp()
       .use((c, next) => {
@@ -47,14 +49,14 @@ describe('changelog.requeteStateNote.middleware.ts', () => {
         c.set('userId', 'user123');
         return next();
       })
-      .patch('/:id', requeteStatesNotesChangelogMiddleware({ action: ChangeLogAction.UPDATED }), async (c) => {
+      .patch('/:id', requeteEtapesChangelogMiddleware({ action: ChangeLogAction.UPDATED }), async (c) => {
         return c.json({ ok: true });
       });
 
     return testClient(app);
   };
 
-  const createRequeteStateNoteTestAppWithContext = () => {
+  const createRequeteEtapeTestAppWithContext = () => {
     const app = appWithAuth
       .createApp()
       .use((c, next) => {
@@ -68,15 +70,15 @@ describe('changelog.requeteStateNote.middleware.ts', () => {
         c.set('userId', 'user123');
         return next();
       })
-      .patch('/', requeteStatesNotesChangelogMiddleware({ action: ChangeLogAction.CREATED }), async (c) => {
-        c.set('changelogId', 'note-2');
+      .patch('/', requeteEtapesChangelogMiddleware({ action: ChangeLogAction.CREATED }), async (c) => {
+        c.set('changelogId', 'rs-2');
         return c.json({ ok: true });
       });
 
     return testClient(app);
   };
 
-  const createRequeteStateNoteTestWithNoId = () => {
+  const createRequeteEtapeTestWithNoId = () => {
     const app = appWithAuth
       .createApp()
       .use((c, next) => {
@@ -90,68 +92,64 @@ describe('changelog.requeteStateNote.middleware.ts', () => {
         c.set('userId', 'user123');
         return next();
       })
-      .patch('/', requeteStatesNotesChangelogMiddleware({ action: ChangeLogAction.CREATED }), async (c) => {
+      .patch('/', requeteEtapesChangelogMiddleware({ action: ChangeLogAction.CREATED }), async (c) => {
         return c.json({ ok: true });
       });
 
     return testClient(app);
   };
 
-  describe('requeteStatesNotesChangelogMiddleware', () => {
-    it('should track changes to RequeteStateNote fields with params', async () => {
-      const updatedRequeteStateNote = {
-        ...testRequeteStateNote,
-        content: 'Updated note content',
-        authorId: 'author-2',
-      };
+  describe('requeteEtapesChangelogMiddleware', () => {
+    it('should track changes to RequeteEtape fields with params', async () => {
+      const updatedRequeteEtape = { ...testRequeteEtape, nom: 'Updated Step', statutId: 'EN_COURS' };
 
-      mockGetNoteById.mockResolvedValueOnce(testRequeteStateNote).mockResolvedValueOnce(updatedRequeteStateNote);
+      mockGetRequeteEtapeById.mockResolvedValueOnce(testRequeteEtape).mockResolvedValueOnce(updatedRequeteEtape);
 
-      const app = createRequeteStateNoteTestAppWithParams();
+      const app = createRequeteEtapeTestAppWithParams();
 
       const response = await app[':id'].$patch({
-        param: { id: 'note-1' },
+        param: { id: 'rs-1' },
       });
 
       expect(response.status).toBe(200);
-      expect(mockGetNoteById).toHaveBeenCalledWith('note-1');
+      expect(mockGetRequeteEtapeById).toHaveBeenCalledWith('rs-1');
       expect(mockCreateChangeLog).toHaveBeenCalledWith({
         action: ChangeLogAction.UPDATED,
-        entity: 'RequeteStateNote',
-        entityId: 'note-1',
+        entity: 'RequeteEtape',
+        entityId: 'rs-1',
         changedById: 'user123',
         before: {
-          content: testRequeteStateNote.content,
-          authorId: testRequeteStateNote.authorId,
+          nom: testRequeteEtape.nom,
+          statutId: testRequeteEtape.statutId,
         },
         after: {
-          content: updatedRequeteStateNote.content,
-          authorId: updatedRequeteStateNote.authorId,
+          nom: updatedRequeteEtape.nom,
+          statutId: updatedRequeteEtape.statutId,
         },
       });
     });
 
-    it('should track changes to RequeteStateNote fields with context', async () => {
-      mockGetNoteById.mockResolvedValueOnce(testRequeteStateNote);
+    it('should track changes to RequeteEtape fields with context', async () => {
+      mockGetRequeteEtapeById.mockResolvedValueOnce(testRequeteEtape);
 
-      const app = createRequeteStateNoteTestAppWithContext();
+      const app = createRequeteEtapeTestAppWithContext();
 
       await app.index.$patch();
 
-      expect(mockGetNoteById).toHaveBeenCalledWith('note-2');
+      expect(mockGetRequeteEtapeById).toHaveBeenCalledWith('rs-2');
     });
 
     it('should handle entity not found', async () => {
-      mockGetNoteById.mockResolvedValueOnce(null);
+      mockGetRequeteEtapeById.mockResolvedValueOnce(null);
 
-      const app = createRequeteStateNoteTestWithNoId();
+      const app = createRequeteEtapeTestWithNoId();
 
       const response = await app.index.$patch({
         param: { id: 'non-existent-id' },
       });
 
       expect(response.status).toBe(200);
-      expect(mockGetNoteById).not.toHaveBeenCalled();
+      expect(mockGetRequeteEtapeById).not.toHaveBeenCalled();
       expect(mockCreateChangeLog).not.toHaveBeenCalled();
     });
   });

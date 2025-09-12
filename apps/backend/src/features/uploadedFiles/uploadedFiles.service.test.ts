@@ -1,3 +1,4 @@
+// TODO:
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/libs/prisma';
 import {
@@ -36,7 +37,9 @@ const mockUploadedFile = {
   entiteId: 'entite1',
   uploadedById: 'user1',
   status: 'PENDING',
-  requeteStateNoteId: '1',
+  requeteEtapeNoteId: '1',
+  requeteId: '1',
+  faitSituationId: '1',
 };
 
 describe('uploadedFiles.service.ts', () => {
@@ -173,7 +176,9 @@ describe('uploadedFiles.service.ts', () => {
         entiteId: 'entite1',
         uploadedById: 'user1',
         status: 'PENDING',
-        requeteStateNoteId: null,
+        requeteEtapeNoteId: null,
+        requeteId: null,
+        faitSituationId: null,
       };
 
       const result = await createUploadedFile(uploadedFileData);
@@ -201,7 +206,9 @@ describe('uploadedFiles.service.ts', () => {
         entiteId: 'entite1',
         uploadedById: 'user1',
         status: 'PENDING',
-        requeteStateNoteId: null,
+        requeteEtapeNoteId: null,
+        requeteId: null,
+        faitSituationId: null,
       };
 
       const result = await createUploadedFile(uploadedFileData);
@@ -217,7 +224,9 @@ describe('uploadedFiles.service.ts', () => {
           entiteId: 'entite1',
           uploadedById: 'user1',
           status: 'PENDING',
-          requeteStateNoteId: null,
+          requeteEtapeNoteId: null,
+          requeteId: null,
+          faitSituationId: null,
         },
       });
 
@@ -272,7 +281,7 @@ describe('uploadedFiles.service.ts', () => {
       const updatedRows = [
         {
           id: 'f1',
-          requeteStateNoteId: 'n1',
+          requeteEtapeNoteId: 'n1',
           status: 'COMPLETED',
           entiteId: 'entite1',
           createdAt: new Date(),
@@ -286,7 +295,7 @@ describe('uploadedFiles.service.ts', () => {
         },
         {
           id: 'f2',
-          requeteStateNoteId: 'n1',
+          requeteEtapeNoteId: 'n1',
           status: 'COMPLETED',
           entiteId: 'entite1',
           createdAt: new Date(),
@@ -305,7 +314,7 @@ describe('uploadedFiles.service.ts', () => {
 
       expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1', 'f2'] } },
-        data: { requeteStateNoteId: 'n1', status: 'COMPLETED', entiteId: 'entite1' },
+        data: { requeteEtapeNoteId: 'n1', status: 'COMPLETED', entiteId: 'entite1' },
       });
       expect(mockedUploadedFile.findMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1', 'f2'] } },
@@ -318,7 +327,7 @@ describe('uploadedFiles.service.ts', () => {
       const updatedRows = [
         {
           id: 'f1',
-          requeteStateNoteId: 'n1',
+          requeteEtapeNoteId: 'n1',
           status: 'COMPLETED',
           entiteId: null,
           createdAt: new Date(),
@@ -339,7 +348,7 @@ describe('uploadedFiles.service.ts', () => {
 
       expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1'] } },
-        data: { requeteStateNoteId: 'n1', status: 'COMPLETED', entiteId: null },
+        data: { requeteEtapeNoteId: 'n1', status: 'COMPLETED', entiteId: null },
       });
       expect(mockedUploadedFile.findMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1'] } },

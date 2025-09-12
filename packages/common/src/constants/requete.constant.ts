@@ -115,7 +115,7 @@ export const RECEPTION_TYPES = {
   PLATEFORME: 'PLATEFORME',
   TELEPHONE: 'TELEPHONE',
   AUTRE: 'AUTRE',
-};
+} as const;
 
 type ReceptionType = keyof typeof RECEPTION_TYPES;
 
