@@ -1,7 +1,7 @@
 import {
   ages,
-  civilites,
   consequences,
+  demarchesTypes,
   institutionPlainteTypes,
   liensVictime,
   lieuTypes,
@@ -16,15 +16,15 @@ import {
 const estVictime = {
   id: 'Champ-19485',
   type: 'CheckboxChamp',
-  label: 'Êtes-vous la personne victime ?',
+  label: 'Êtes-vous la personne concernée ?',
   options: [
     {
       key: true,
-      label: 'Oui, je suis la personne victime',
+      label: 'Oui, je suis la personne concernée',
     },
     {
       key: false,
-      label: "Non, je suis témoin, aidant ou proche d'une personne victime",
+      label: "Non, je suis témoin, aidant ou proche d'une personne concernée",
     },
   ],
 };
@@ -34,7 +34,7 @@ const estVictime = {
 const telephone = {
   id: 'Champ-19488',
   type: 'TextChamp',
-  label: 'Votre numéro de téléphone',
+  label: "Votre numéro de téléphone (à seul usage de l'administration)",
 };
 
 const victimeAdresse = {
@@ -76,7 +76,8 @@ const estHandicape = {
 const estAnonyme = {
   id: 'Champ-26535',
   type: 'CheckboxChamp',
-  label: 'Souhaitez-vous rester anonyme vis-à-vis du ou des responsable(s) de(s) fait(s) ?',
+  label:
+    "Acceptez-vous que votre identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
   options: [
     {
       key: true,
@@ -86,38 +87,11 @@ const estAnonyme = {
       key: false,
       label: 'Non',
     },
-    {
-      key: null,
-      label: "Je ne sais pas (votre identité sera d'abord anonyme pour le moment)",
-    },
   ],
 };
 
 /* estVictime = true end */
 /* estVictime = false start */
-
-const victimeNom = {
-  id: 'Champ-19491',
-  type: 'TextChamp',
-  label: 'Son nom',
-};
-
-const victimePrenom = {
-  id: 'Champ-19492',
-  type: 'TextChamp',
-  label: 'Son prénom',
-};
-
-// Sa civilité
-const victimeCivilite = {
-  id: 'Champ-19494',
-  type: 'TextChamp',
-  label: 'Sa civilité',
-  options: Object.entries(civilites).map(([key, label]) => ({
-    key,
-    label,
-  })),
-};
 
 const victimeAge = {
   id: 'Champ-19493',
@@ -132,7 +106,7 @@ const victimeAge = {
 const victimeTelephone = {
   id: 'Champ-19495',
   type: 'TextChamp',
-  label: 'Son numéro de téléphone',
+  label: "Son numéro de téléphone (à seul usage de l'administration)",
 };
 
 const victimeEmail = {
@@ -162,15 +136,20 @@ const victimeEstHandicape = {
     },
     {
       key: null,
+      label: 'Je ne sais pas',
+    },
+    {
+      key: null,
       label: 'Je ne souhaite pas répondre',
     },
   ],
 };
 
 const victimeEstAnonyme = {
-  id: 'Champ-27293',
+  id: 'Champ-34248',
   type: 'CheckboxChamp',
-  label: "Souhaitez-vous garder l'anonymat de la personne victime, vis-à-vis du ou des responsable(s) des faits ?",
+  label:
+    "La personne concernée accepte-t-elle que son identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
   options: [
     {
       key: true,
@@ -179,20 +158,17 @@ const victimeEstAnonyme = {
     {
       key: false,
       label: 'Non',
-    },
-    {
-      key: null,
-      label: "Je ne sais pas (votre identité sera d'abord anonyme pour le moment)",
     },
   ],
 };
 
 /* estVictime = false end */
+/* estVictime = true || estVictime = false start */
 
 const autreVictimes = {
   id: 'Champ-27605',
   type: 'CheckboxChamp',
-  label: "D'autres personnes ont-elles également été victimes ?",
+  label: "D'autres personnes sont-elles concernées par la réclamation ?",
   options: [
     {
       key: true,
@@ -202,19 +178,15 @@ const autreVictimes = {
       key: false,
       label: 'Non',
     },
-    {
-      key: null,
-      label: 'Je ne sais pas',
-    },
   ],
 };
-
+/* estVictime = true || estVictime = false end */
 /* autreVictimes = true start */
 
 const autreVictimesDetails = {
   id: 'Champ-27606',
   type: 'TextChamp',
-  label: 'Précisions sur les autres personnes victimes',
+  label: 'Précisions sur les autres personnes concernées :',
 };
 
 /* autreVictimes = true end */
@@ -223,7 +195,7 @@ const autreVictimesDetails = {
 const lienVictime = {
   id: 'Champ-19497',
   type: 'TextChamp',
-  label: 'Votre lien avec la personne victime',
+  label: 'Votre lien avec la personne concernée',
   options: Object.entries(liensVictime).map(([key, label]) => ({
     key,
     label,
@@ -233,13 +205,13 @@ const lienVictime = {
 const declarantTelephone = {
   id: 'Champ-19498',
   type: 'TextChamp',
-  label: 'Votre numéro de téléphone',
+  label: "Votre numéro de téléphone (à seul usage de l'administration)",
 };
 
 const estVictimeInformee = {
   id: 'Champ-19499',
   type: 'CheckboxChamp',
-  label: 'La personne victime est-elle au courant de votre démarche ?',
+  label: 'La personne concernée est-elle au courant de votre démarche ?',
   options: [
     {
       key: true,
@@ -258,59 +230,147 @@ const estVictimeInformee = {
 
 /* estVictimeInformee = false start */
 
-const estVictimeInformeeComment = {
+const estVictimeInformeeCommentaire = {
   id: 'Champ-32074',
   type: 'TextChamp',
-  label: "Pourquoi la personne victime n'est-elle pas au courant de votre démarche ?",
+  label: "Pourquoi la personne concernée n'est-elle pas au courant de votre démarche ?",
 };
 
 /* estVictimeInformee = false end */
-/* estVictimeInformee = null start */
-
-const estVictimeInformeeComment2 = {
-  id: 'Champ-32075',
-  type: 'TextChamp',
-  label: "Pourquoi la personne victime n'est-elle pas au courant de votre démarche ?",
-};
-
-/* estVictimeInformee = null end */
-
-const estDeclarantAnonyme = {
-  id: 'Champ-26534',
-  type: 'CheckboxChamp',
-  label: 'Souhaitez-vous rester anonyme vis-à-vis de la personne responsable des faits ?',
-  options: [
-    {
-      key: true,
-      label: 'Oui',
-    },
-    {
-      key: false,
-      label: 'Non',
-    },
-    {
-      key: null,
-      label: "Je ne sais pas (votre identité sera d'abord anonyme pour le moment)",
-    },
-  ],
-};
-
 /* estVictime = false end */
 
-const motifsMap = {
-  id: 'Champ-19526',
-  type: 'MultipleDropDownListChamp',
-  label: 'Le ou les types de fait(s)',
-  options: Object.entries(motifs).map(([key, label]) => ({
+const lieuCodePostal = {
+  id: 'Champ-28367',
+  type: 'TextChamp',
+  label: 'Code postal du lieu où se sont passés les faits',
+};
+
+const lieuType = {
+  id: 'Champ-19505',
+  type: 'TextChamp',
+  label: 'Type de lieu',
+  options: Object.entries(lieuTypes).map(([key, label]) => ({
     key,
     label,
   })),
 };
 
-const estMaltraitance = {
-  id: 'Champ-27155',
+/* lieuType = Autre || Au domicile... || Dans un cabinet... start */
+
+const lieuCommentaire = {
+  id: 'Champ-27607',
+  type: 'TextChamp',
+  label: 'Précisions sur le lieu de survenue',
+};
+
+const lieuAdresse = {
+  id: 'Champ-27161',
+  type: 'TextChamp',
+  label: 'Adresse concernée',
+};
+
+/* lieuType = Autre || Au domicile... || Dans un cabinet... end */
+/* lieuType = 'Durant le trajet... start */
+
+const transportType = {
+  id: 'Champ-27166',
+  type: 'TextChamp',
+  label: 'Type de transport concerné',
+  options: Object.entries(transportTypes).map(([key, label]) => ({
+    key,
+    label,
+  })),
+};
+
+const transportSociété = {
+  id: 'Champ-27588',
+  type: 'TextChamp',
+  label: 'Société de transport concernée',
+};
+
+/* lieuType = 'Durant le trajet... end */
+/* lieuType = 'Dans un établissement... start */
+
+const finess = {
+  id: 'Champ-19508',
+  type: 'TextChamp',
+  label: "Recherchez l'établissement concerné",
+};
+
+/* lieuType = 'Dans un établissement... end */
+
+const responsableType = {
+  id: 'Champ-28368',
+  type: 'TextChamp',
+  label: 'Responsable des faits',
+  options: Object.entries(misEnCauseTypes).map(([key, label]) => ({
+    key,
+    label,
+  })),
+};
+
+/*  responsableType = Professionel... start */
+/* lieuType != Au domicile... start */
+
+const professionnelResponsable = {
+  id: 'Champ-19515',
+  type: 'TextChamp',
+  label: 'Professionnel responsable des faits',
+  options: Object.entries(professionTypes).map(([key, label]) => ({
+    key,
+    label,
+  })),
+};
+
+/* lieuType != Au domicile... end */
+/* lieuType = Au domicile... start */
+
+const professionnelResponsableDomicile = {
+  id: 'Champ-27168',
+  type: 'TextChamp',
+  label: "Professionnel dans le cadre d'un service ou d'une intervention à domicile",
+  options: Object.entries(professionDomicileTypes).map(([key, label]) => ({
+    key,
+    label,
+  })),
+};
+
+/* lieuType = Au domicile... end */
+
+/* professionnelResponsable = Professionnel... || professionnelResponsableDomicile = Intervention d'un ... start */
+
+// RPPS
+const professionnelResponsableIdentite = {
+  id: 'Champ-19511',
+  type: 'TextChamp',
+  label: 'Nom du professionnel de santé',
+};
+
+/* professionnelResponsable = Professionnel... || professionnelResponsableDomicile = Intervention d'un ... end */
+/* responsableType = Etablissement start */
+
+const nomEtablissement = {
+  id: 'Champ-37818',
+  type: 'TextChamp',
+  label: "Précisez le nom de l'établissement",
+};
+
+/* responsableType = Etablissement end */
+/* responsableType != Etablissement start */
+
+const responssableComment = {
+  id: 'Champ-37819',
+  type: 'TextChamp',
+  label: 'Précisions sur le responsable des faits',
+};
+
+/* responsableType != Etablissement end */
+/* responsableType = Etablissement start */
+
+const etablissementResponssable = {
+  id: 'Champ-37811',
   type: 'CheckboxChamp',
-  label: 'Des actes de maltraitance ont-ils eu lieu ?',
+  label: "L'établissement responsable est-il celui où se sont passés les faits ?",
   options: [
     {
       key: true,
@@ -320,18 +380,16 @@ const estMaltraitance = {
       key: false,
       label: 'Non',
     },
-    {
-      key: null,
-      label: 'Je ne sais pas',
-    },
   ],
 };
 
-const maltraitanceTypesMap = {
-  id: 'Champ-27156',
+/* responsableType = Etablissement end */
+
+const motifsMap = {
+  id: 'Champ-19526',
   type: 'MultipleDropDownListChamp',
-  label: 'Si oui, veuillez sélectionner le(s) type(s) de maltraitance subi(s) :',
-  options: Object.entries(maltraitanceTypes).map(([key, label]) => ({
+  label: 'Type(s) de faits',
+  options: Object.entries(motifs).map(([key, label]) => ({
     key,
     label,
   })),
@@ -340,8 +398,28 @@ const maltraitanceTypesMap = {
 const consequencesMap = {
   id: 'Champ-27572',
   type: 'MultipleDropDownListChamp',
-  label: 'Quelles sont les conséquences sur vous ou sur la personne victime ?',
+  label: 'Conséquences pour vous ou la personne concernée',
   options: Object.entries(consequences).map(([key, label]) => ({
+    key,
+    label,
+  })),
+};
+
+/* consequencesMap = Autre... start */
+
+const consequenceComment = {
+  id: 'Champ-37526',
+  type: 'TextChamp',
+  label: 'Précisez "Autre conséquence"',
+};
+
+/* consequencesMap = Autre... end */
+
+const maltraitanceTypesMap = {
+  id: 'Champ-27156',
+  type: 'MultipleDropDownListChamp',
+  label: 'Avez-vous, ou la personne concernée, subi des actes de maltraitance ?',
+  options: Object.entries(maltraitanceTypes).map(([key, label]) => ({
     key,
     label,
   })),
@@ -350,7 +428,7 @@ const consequencesMap = {
 const dateDebut = {
   id: 'Champ-19527',
   type: 'DateChamp',
-  label: 'A quelle date ou à partir de quelle date le fait a-t-il eu lieu ?',
+  label: 'Date de début des faits (la date peut être approximative)',
 };
 
 const estSituationActuelle = {
@@ -386,207 +464,150 @@ const DateFin = {
 const faitsCommentaire = {
   id: 'Champ-19528',
   type: 'TextChamp',
-  label: 'Expliquez-nous en détails les faits',
+  label: 'Expliquez-nous en détail les faits (ce qui est arrivé, qui était présent, ce que vous avez fait,...)',
 };
 
-const lieuType = {
-  id: 'Champ-19505',
-  type: 'TextChamp',
-  label: 'Type de lieu où se sont passés les faits',
-  options: Object.entries(lieuTypes).map(([key, label]) => ({
-    key,
-    label,
-  })),
+const faitsFichiers = {
+  id: 'Champ-37252',
+  type: 'PieceJustificativeChamp',
+  label: 'Si vous les pensez utiles au traitement de votre dossier, vous pouvez ajouter des pièces jointes (3 maximum)',
 };
 
-/* lieuType = Autre || Au domicile... || Dans un cabinet... start */
-
-const lieuCommentaire = {
-  id: 'Champ-27607',
-  type: 'TextChamp',
-  label: 'Précisions sur le lieu de survenue',
-};
-
-const adresseLieu = {
-  id: 'Champ-27161',
-  type: 'TextChamp',
-  label: 'Adresse concernée',
-};
-
-/* lieuType = Autre || Au domicile... || Dans un cabinet... end */
-/* lieuType = 'Durant le trajet... start */
-
-const transportType = {
-  id: 'Champ-27166',
-  type: 'TextChamp',
-  label: 'Type de transport concerné',
-  options: Object.entries(transportTypes).map(([key, label]) => ({
-    key,
-    label,
-  })),
-};
-
-const transportSociété = {
-  id: 'Champ-27588',
-  type: 'TextChamp',
-  label: 'Société de transport concernée',
-};
-
-/* lieuType = 'Durant le trajet... end */
-/* lieuType = 'Dans un établissement... start */
-
-const nomEtablissement = {
-  id: 'Champ-28177',
-  type: 'TextChamp',
-  label: "Nom de l'établissement concerné",
-};
-
-const finess = {
-  id: 'Champ-19508',
-  type: 'TextChamp',
-  label: "Recherchez l'établissement concerné",
-};
-
-/* lieuType = 'Dans un établissement... end */
-
-const lieuCodePostal = {
-  id: 'Champ-28367',
-  type: 'TextChamp',
-  label: 'Code postal',
-};
-
-const lieuAutre = {
-  id: 'Champ-28174',
+const autreResponsables = {
+  id: 'Champ-37050',
   type: 'RepetitionChamp',
-  label: 'Autres lieux de survenue à déclarer',
+  label: 'Autre responsable',
   champs: [
     {
-      id: 'Champ-28175|01JXWEP1DBRHX3NZ9FDKPWC2B6',
-      label: 'Autre lieu de survenue',
+      ...responsableType,
+      id: 'Champ-37055',
+    },
+    /*  responsableType = Professionel... start */
+    /* lieuType != Au domicile... start */
+    {
+      ...professionnelResponsable,
+      id: 'Champ-37056',
+    },
+    /* lieuType != Au domicile... end */
+    /* lieuType = Au domicile... start */
+    {
+      ...professionnelResponsableDomicile,
+      id: 'Champ-37057',
+    },
+    /* lieuType = Au domicile... end */
+    /* professionnelResponsable = Professionnel... start || professionnelResponsableDomicile = Intervention d'un ... start */
+    {
+      ...professionnelResponsableIdentite,
+      id: 'Champ-37058',
+    },
+    /* professionnelResponsable = Professionnel... start || professionnelResponsableDomicile = Intervention d'un ... end */
+    /* responsableType = Etablissement start */
+    {
+      ...etablissementResponssable,
+      id: 'Champ-37813',
+    },
+    /* responsableType = Etablissement end */
+    /* etablissementResponssable = false start */
+    {
+      ...nomEtablissement,
+      id: 'Champ-37817',
+    },
+    /* etablissementResponssable = false end */
+    /* responsableType != Etablissement start */
+    {
+      ...responssableComment,
+      id: 'Champ-37059',
+    },
+    /* responsableType != Etablissement end */
+    {
+      id: 'Champ-37158',
+      label: 'Les faits à déclarer pour ce responsable sont-ils similaires à ceux déclarés pour le précédent ?',
+      type: 'CheckboxChamp',
+      options: [
+        {
+          key: true,
+          label: 'Oui',
+        },
+        {
+          key: false,
+          label: 'Non',
+        },
+      ],
+    },
+    /* Similaires = false start */
+    {
+      id: 'Champ-37270',
+      label: "Que s'est-il passé ?",
       type: 'TextChamp',
-      options: Object.entries(lieuTypes).map(([key, label]) => ({
-        key,
-        label,
-      })),
+    },
+    /* Similaires = false end */
+    {
+      ...motifsMap,
+      id: 'Champ-37271',
     },
     {
-      id: 'Champ-28176|01JXWEP1DBRHX3NZ9FDKPWC2B6',
-      type: 'TextChamp',
-      label: 'Précisions sur le lieu de survenue',
+      ...consequencesMap,
+      id: 'Champ-37272',
+    },
+    /* consequencesMap = Autre... start */
+    {
+      ...consequenceComment,
+      id: 'Champ-37527',
+    },
+    /* consequencesMap = Autre... end */
+    {
+      ...maltraitanceTypesMap,
+      id: 'Champ-37273',
+    },
+    {
+      ...dateDebut,
+      id: 'Champ-37325',
+    },
+    {
+      ...estSituationActuelle,
+      id: 'Champ-37326',
+    },
+    /* estSituationActuelle = false start */
+    {
+      ...DateFin,
+      id: 'Champ-37327',
+    },
+    /* estSituationActuelle = false end */
+    {
+      ...faitsCommentaire,
+      id: 'Champ-37328',
+    },
+    {
+      ...faitsFichiers,
+      id: 'Champ-37329',
     },
   ],
 };
 
-// lieuType != Au domicile... start'
-
-const responsableType = {
-  id: 'Champ-28368',
-  type: 'TextChamp',
-  label: 'Personne responsable des faits',
-  options: Object.entries(misEnCauseTypes).map(([key, label]) => ({
+const demarchesEngagees = {
+  id: 'Champ-37048',
+  type: 'MultipleDropDownListChamp',
+  label:
+    "Si vous ou la personne concernée avez déjà engagé des démarches pour ces faits (à l'écrit ou à l'oral), cochez la ou les cases correspondantes :",
+  options: Object.entries(demarchesTypes).map(([key, label]) => ({
     key,
     label,
   })),
 };
 
-/* lieuType != Au domicile... end */
-/* lieuType = Au domicile... start */
+/* demarcheEngage = Prise de contact... start */
 
-const responsableTypeDomicile = {
-  id: 'Champ-28781',
-  type: 'TextChamp',
-  label: 'Personne responsable des faits',
-  options: Object.entries(misEnCauseTypes).map(([key, label]) => ({
-    key,
-    label,
-  })),
-};
-
-/* lieuType = Au domicile... end */
-/* responsableType = professionnel start */
-
-const professionnelResponsable = {
-  id: 'Champ-27170',
-  type: 'TextChamp',
-  label: 'Professionnel responsable des faits',
-  options: Object.entries(professionTypes).map(([key, label]) => ({
-    key,
-    label,
-  })),
-};
-
-/* responsableType = professionnel end */
-/* responsableTypeDomicile = Professionnel dans le ... start */
-
-const professionnelResponsableDomicile = {
-  id: 'Champ-27168',
-  type: 'TextChamp',
-  label: "Professionnel dans le cadre d'un service ou d'une intervention à domicile",
-  options: Object.entries(professionDomicileTypes).map(([key, label]) => ({
-    key,
-    label,
-  })),
-};
-
-/* professionnelResponsable = Un professionnel de santé (médecin ... start */
-/* professionnelResponsableDomicile = Intervention d'un ... start */
-
-// RPPS
-const professionnelResponsableIdentite = {
-  id: 'Champ-19511',
-  type: 'TextChamp',
-  label: 'Identité du professionnel de santé',
-};
-
-/* professionnelResponsable = Un professionnel de santé (médecin ... end */
-/* professionnelResponsableDomicile = Intervention d'un ... end */
-
-const responsableComment = {
-  id: 'Champ-27170',
-  type: 'TextChamp',
-  label: 'Précisions sur la personne responsable des faits',
-};
-
-const responsableAutre = {
-  id: 'Q2hhbXAtMjgxNzk',
-  type: 'RepetitionChamp',
-  label: 'Autres personnes responsables des faits à déclarer',
-  champs: [
-    {
-      label: 'Identité ou précisions sur un autre responsable des faits',
-      type: 'TextChamp',
-    },
-  ],
-};
-
-const estDemarcheEngage = {
-  id: 'Champ-28179',
-  type: 'CheckboxChamp',
-  label: 'Avez-vous déjà pris contact avec l’établissement ou la personne responsable des faits ?',
-  options: [
-    {
-      key: true,
-      label: 'Oui',
-    },
-    {
-      key: false,
-      label: 'Non',
-    },
-  ],
-};
-
-/* estDemarcheEngage = true start */
-
-const demarcheEngageDate = {
+const demarchesEngageesDate = {
   id: 'Champ-19735',
   type: 'DateChamp',
-  label: 'À quelle date ?',
+  label:
+    "À quelle date la prise de contact avec l'établissement ou les responsables des faits a-t-elle été effectuée ?",
 };
 
-const demarcheEngageReponse = {
+const demarchesEngageesReponse = {
   id: 'Champ-19736',
   type: 'CheckboxChamp',
-  label: 'Avez-vous obtenu une réponse ?',
+  label: 'Une réponse a-t-elle été obtenue ?',
   options: [
     {
       key: true,
@@ -599,65 +620,31 @@ const demarcheEngageReponse = {
   ],
 };
 
-/* estDemarcheEngage = true end */
-/* demarcheEngageReponse = true start */
+/* demarchesEngageesReponse = true start */
 
-const demarcheEngageReponseFile = {
+const demarchesEngageesReponseFile = {
   id: 'Champ-19737',
   type: 'PieceJustificativeChamp',
   label: 'Merci de joindre la réponse obtenue',
 };
 
-/* demarcheEngageReponse = true end */
+/* demarchesEngageesReponse = true end */
+/* demarcheEngage = Prise de contact... end */
+/* demarchesEngagees = Demarches... start */
 
-const demarcheEngageAutre = {
-  id: 'Champ-19738',
-  type: 'CheckboxChamp',
-  label: 'Avez-vous déjà engagé des démarches auprès d’autres organismes ?',
-  options: [
-    {
-      key: true,
-      label: 'Oui',
-    },
-    {
-      key: false,
-      label: 'Non',
-    },
-  ],
-};
-
-/* demarcheEngageAutre = true start */
-
-const demarcheEngageOrganisme = {
+const demarchesEngageesOrganisme = {
   id: 'Champ-20005',
   type: 'TextChamp',
-  label: "Précisez l'organisme concerné",
+  label: 'Auprès de quel organisme les démarches ont-elles été engagées ?',
 };
 
-/* demarcheEngageAutre = true end */
-
-const demarcheEngagePlainte = {
-  id: 'Champ-19740',
-  type: 'CheckboxChamp',
-  label: 'Avez-vous déposé une plainte ?',
-  options: [
-    {
-      key: true,
-      label: 'Oui',
-    },
-    {
-      key: false,
-      label: 'Non',
-    },
-  ],
-};
-
-/* demarcheEngagePlainte = true start */
+/* demarchesEngagees = Demarches... end */
+/* demarchesEngagees = Depot... start */
 
 const demarcheEngagePlainteDate = {
   id: 'Champ-19741',
   type: 'DateChamp',
-  label: 'À quelle date ?',
+  label: 'À quelle date la plainte a-t-elle été déposée ?',
 };
 
 const demarcheEngagePlainteContact = {
@@ -670,12 +657,170 @@ const demarcheEngagePlainteContact = {
   })),
 };
 
-/* demarcheEngagePlainte = true end */
+/* demarchesEngagees = Depot... end */
 
-const precisions = {
-  id: 'Champ-27882',
-  type: 'TextChamp',
-  label: 'Précisions à ajouter',
+const autreFaits = {
+  id: 'Champ-37253',
+  type: 'RepetitionChamp',
+  label: 'Autres faits',
+  champs: [
+    {
+      ...lieuCodePostal,
+      id: 'Champ-37257',
+    },
+    {
+      ...lieuType,
+      id: 'Champ-37256',
+    },
+    /* lieuType = Autre || Au domicile... || Dans un cabinet... start */
+    {
+      ...lieuCommentaire,
+      id: 'Champ-37353',
+    },
+    {
+      ...lieuAdresse,
+      id: 'Champ-37354',
+    },
+    /* lieuType = Autre || Au domicile... || Dans un cabinet... end */
+    /* lieuType = 'Durant le trajet... start */
+    {
+      ...transportType,
+      id: 'Champ-37355',
+    },
+    {
+      ...transportSociété,
+      id: 'Champ-37260',
+    },
+    /* lieuType = 'Durant le trajet... end */
+    /* lieuType = 'Dans un établissement... start */
+    {
+      ...finess,
+      id: 'Champ-37350',
+    },
+    /* lieuType = 'Dans un établissement... end */
+    {
+      ...responsableType,
+      id: 'Champ-37258',
+    },
+    /*  responsableType = Professionel... start */
+    /* lieuType != Au domicile... start */
+    {
+      ...professionnelResponsable,
+      id: 'Champ-37312',
+    },
+    /* lieuType != Au domicile... end */
+    /* lieuType = Au domicile... start */
+    {
+      ...professionnelResponsableDomicile,
+      id: 'Champ-37313',
+    },
+    /* lieuType = Au domicile... end */
+    /* professionnelResponsable = Professionnel... || professionnelResponsableDomicile = Intervention d'un ... start */
+    {
+      ...professionnelResponsableIdentite,
+      id: 'Champ-37314',
+    },
+    /* professionnelResponsable = Professionnel... || professionnelResponsableDomicile = Intervention d'un ... end */
+    /* responsableType = Etablissement start */
+    {
+      ...nomEtablissement,
+      id: 'Champ-37834',
+    },
+    /* responsableType = Etablissement end */
+    /* responsableType != Etablissement start */
+    {
+      ...responssableComment,
+      id: 'Champ-37259',
+    },
+    /* responsableType != Etablissement end */
+    /* responsableType = Etablissement start */
+    {
+      ...etablissementResponssable,
+      id: 'Champ-37833',
+    },
+    /* responsableType = Etablissement end */
+    {
+      ...motifsMap,
+      id: 'Champ-37263',
+    },
+    {
+      ...consequencesMap,
+      id: 'Champ-37317',
+    },
+    /* consequencesMap = Autre... start */
+    {
+      ...consequenceComment,
+      id: 'Champ-37530',
+    },
+    /* consequencesMap = Autre... end */
+    {
+      ...maltraitanceTypesMap,
+      id: 'Champ-37319',
+    },
+    {
+      ...dateDebut,
+      id: 'Champ-37320',
+    },
+    {
+      ...estSituationActuelle,
+      id: 'Champ-37321',
+    },
+    /* estSituationActuelle = false start */
+    {
+      ...DateFin,
+      id: 'Champ-37322',
+    },
+    /* estSituationActuelle = false end */
+    {
+      ...faitsCommentaire,
+      id: 'Champ-37323',
+    },
+    {
+      ...faitsFichiers,
+      id: 'Champ-37324',
+    },
+    {
+      id: 'Champ-37282',
+      type: 'TextChamp',
+      label: 'Précisions sur les autres responsables des faits (types de responsables, nom, prénom...)',
+    },
+    {
+      ...demarchesEngagees,
+      id: 'Champ-37340',
+    },
+    /* demarcheEngage = Prise de contact... start */
+    {
+      ...demarchesEngageesDate,
+      id: 'Champ-37341',
+    },
+    {
+      ...demarchesEngageesReponse,
+      id: 'Champ-37342',
+    },
+    /* demarchesEngageesReponse = true start */
+    {
+      ...demarchesEngageesReponseFile,
+      id: 'Champ-37343',
+    },
+    /* demarchesEngageesReponse = true end */
+    /* demarcheEngage = Prise de contact... end */
+    /* demarchesEngagees = Demarches... start */
+    {
+      ...demarchesEngageesOrganisme,
+      id: 'Champ-37344',
+    },
+    /* demarchesEngagees = Demarches... end */
+    /* demarchesEngagees = Depot... start */
+    {
+      ...demarcheEngagePlainteDate,
+      id: 'Champ-37345',
+    },
+    {
+      ...demarcheEngagePlainteContact,
+      id: 'Champ-37346',
+    },
+    /* demarchesEngagees = Depot... end */
+  ],
 };
 
 export default {
@@ -688,9 +833,6 @@ export default {
   estAnonyme,
 
   // Victime non concernée
-  victimeNom,
-  victimePrenom,
-  victimeCivilite,
   victimeAge,
   victimeTelephone,
   victimeEmail,
@@ -706,63 +848,45 @@ export default {
   lienVictime,
   declarantTelephone,
   estVictimeInformee,
-  estVictimeInformeeComment,
+  estVictimeInformeeCommentaire,
 
-  // Déclarant non concerné
-  estVictimeInformeeComment2,
-  estDeclarantAnonyme,
+  // Lieux
+  lieuCodePostal,
+  lieuType,
+  lieuCommentaire,
+  lieuAdresse,
+  transportType,
+  transportSociété,
+  finess,
+
+  // Responsable
+  responsableType,
+  professionnelResponsable,
+  professionnelResponsableDomicile,
+  professionnelResponsableIdentite,
+  nomEtablissement,
+  responssableComment,
+  etablissementResponssable,
 
   // Faits
   motifsMap,
-  estMaltraitance,
-  maltraitanceTypesMap,
   consequencesMap,
+  consequenceComment,
+  maltraitanceTypesMap,
   dateDebut,
   estSituationActuelle,
   DateFin,
   faitsCommentaire,
-
-  // Lieux
-  lieuType,
-  lieuCommentaire,
-  adresseLieu,
-
-  // Lieux - Transport
-  transportType,
-  transportSociété,
-
-  // Lieux - Etablissement
-  nomEtablissement,
-  finess,
-
-  // Lieux - Code postal
-  lieuCodePostal,
-
-  // Autres lieux de survenue à déclarer
-  lieuAutre,
-
-  // Responsable des faits
-  responsableType,
-  responsableTypeDomicile,
-
-  professionnelResponsable,
-  professionnelResponsableDomicile,
-
-  professionnelResponsableIdentite,
-
-  responsableComment,
-
-  responsableAutre,
+  faitsFichiers,
+  autreResponsables,
+  autreFaits,
 
   // Demarches engagées
-  estDemarcheEngage,
-  demarcheEngageDate,
-  demarcheEngageReponse,
-  demarcheEngageReponseFile,
-  demarcheEngageAutre,
-  demarcheEngageOrganisme,
-  demarcheEngagePlainte,
+  demarchesEngagees,
+  demarchesEngageesDate,
+  demarchesEngageesReponse,
+  demarchesEngageesReponseFile,
+  demarchesEngageesOrganisme,
   demarcheEngagePlainteDate,
   demarcheEngagePlainteContact,
-  precisions,
 };
