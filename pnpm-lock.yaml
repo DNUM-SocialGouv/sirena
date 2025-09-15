@@ -12,6 +12,9 @@ catalogs:
     '@codegouvfr/react-dsfr':
       specifier: ^1.26.0
       version: 1.26.0
+    '@types/node':
+      specifier: ^24.3.1
+      version: 24.3.1
     '@types/react':
       specifier: ^19.1.11
       version: 19.1.11
@@ -173,7 +176,7 @@ importers:
         specifier: ^9.0.10
         version: 9.0.10
       '@types/node':
-        specifier: ^24.3.1
+        specifier: 'catalog:'
         version: 24.3.1
       '@vitest/coverage-v8':
         specifier: 'catalog:'
@@ -261,7 +264,7 @@ importers:
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       '@types/node':
-        specifier: ^24.3.1
+        specifier: 'catalog:'
         version: 24.3.1
       '@types/react':
         specifier: 'catalog:'

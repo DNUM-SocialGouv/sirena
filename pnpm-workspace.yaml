@@ -7,6 +7,7 @@ catalog:
     react: ^19.1.1
     "@types/react": ^19.1.11
     "@types/react-dom": ^19.1.8
+    "@types/node": ^24.3.1
     react-dom: ^19.1.1
     "@codegouvfr/react-dsfr": ^1.26.0
     hono: ^4.9.0
