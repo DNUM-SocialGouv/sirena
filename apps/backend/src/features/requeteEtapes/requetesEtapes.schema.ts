@@ -4,20 +4,20 @@ import { Prisma } from '@/libs/prisma';
 import { z } from '@/libs/zod';
 
 const columns = [
-  Prisma.RequeteStateScalarFieldEnum.stepName,
-  Prisma.RequeteStateScalarFieldEnum.createdAt,
-  Prisma.RequeteStateScalarFieldEnum.updatedAt,
-  Prisma.RequeteStateScalarFieldEnum.statutId,
+  Prisma.RequeteEtapeScalarFieldEnum.nom,
+  Prisma.RequeteEtapeScalarFieldEnum.createdAt,
+  Prisma.RequeteEtapeScalarFieldEnum.updatedAt,
+  Prisma.RequeteEtapeScalarFieldEnum.statutId,
 ] as const;
 
-export const GetRequeteStatesQuerySchema = paginationQueryParamsSchema(columns);
+export const GetRequeteEtapesQuerySchema = paginationQueryParamsSchema(columns);
 
-export const UpdateRequeteStateStatutSchema = z.object({
+export const UpdateRequeteEtapeStatutSchema = z.object({
   statutId: z.enum([REQUETE_STATUT_TYPES.A_FAIRE, REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.FAIT]),
 });
 
-export const UpdateRequeteStateStepNameSchema = z.object({
-  stepName: z
+export const UpdateRequeteEtapeNomSchema = z.object({
+  nom: z
     .string()
     .min(1, {
       message: "Le nom de l'étape est obligatoire. Veuillez le renseigner pour mettre à jour l'étape.",
@@ -31,24 +31,24 @@ export const UpdateRequeteStateStepNameSchema = z.object({
     }),
 });
 
-export const addRequeteStatesNoteBodySchema = z
+export const addRequeteEtapeNoteBodySchema = z
   .object({
-    content: z.string().transform((s) => s.trim()),
+    texte: z.string().transform((s) => s.trim()),
     fileIds: z.array(z.string().min(1, 'id vide')).optional(),
   })
   .superRefine((val, ctx) => {
-    const hasContent = val.content.length > 0;
+    const hasContent = val.texte.length > 0;
     const hasFiles = (val.fileIds?.length ?? 0) > 0;
 
     if (!hasContent && !hasFiles) {
       const message = 'Renseigne du texte OU au moins 1 fichier.';
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ['content'] });
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ['texte'] });
       ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: ['fileIds'] });
     }
   });
 
-export const updateRequeteStatesNoteBodySchema = z.object({
-  content: z
+export const updateRequeteEtapeNoteBodySchema = z.object({
+  texte: z
     .string()
     .min(1, {
       message: 'Le contenu de la note ne peut pas être vide.',

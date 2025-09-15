@@ -1,5 +1,5 @@
 import { openApiProtectedRoute, openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
-import { RequeteStateNoteSchema, RequeteStateSchema } from '@/libs/zod';
+import { RequeteEtapeNoteSchema, RequeteEtapeSchema } from '@/libs/zod';
 import { GetRequetesEntiteResponseSchema } from './requetesEntite.schema';
 
 export const getRequetesEntiteRoute = openApiProtectedRoute({
@@ -12,14 +12,14 @@ export const getRequetesEntiteRoute = openApiProtectedRoute({
 export const addProcessingStepRoute = openApiProtectedRoute({
   description: 'Add a processing step to a request',
   responses: {
-    ...openApiResponse(RequeteStateSchema),
+    ...openApiResponse(RequeteEtapeSchema),
   },
 });
 
 export const addProcessingStepNoteRoute = openApiProtectedRoute({
   description: 'Add a processing note to a step of a request',
   responses: {
-    ...openApiResponse(RequeteStateNoteSchema),
+    ...openApiResponse(RequeteEtapeNoteSchema),
   },
 });
 
@@ -27,6 +27,6 @@ export const addProcessingStepNoteRoute = openApiProtectedRoute({
 export const getProcessingStepsRoute = openApiProtectedRoute({
   description: 'Get processing steps for a request',
   responses: {
-    ...openApiResponses(RequeteStateSchema.array()),
+    ...openApiResponses(RequeteEtapeSchema.array()),
   },
 });
