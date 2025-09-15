@@ -106,7 +106,7 @@ describe('user.service.ts', () => {
       expect(result).toEqual({ data: [mockUser], total: 1 });
     });
 
-    it('should filter users by search string (firstName, lastName, email)', async () => {
+    it('should filter users by search string (prenom, nom, email)', async () => {
       mockedUser.findMany.mockResolvedValueOnce([mockUser]);
       mockedUser.count.mockResolvedValueOnce(1);
 
