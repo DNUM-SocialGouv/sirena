@@ -23,8 +23,8 @@ export const UserIdSchema = UserSchema.shape.id;
 
 const columns = [
   Prisma.UserScalarFieldEnum.email,
-  Prisma.UserScalarFieldEnum.firstName,
-  Prisma.UserScalarFieldEnum.lastName,
+  Prisma.UserScalarFieldEnum.prenom,
+  Prisma.UserScalarFieldEnum.nom,
 ] as const;
 
 export const GetUsersQuerySchema = paginationQueryParamsSchema(columns).extend({

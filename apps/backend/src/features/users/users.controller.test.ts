@@ -72,8 +72,8 @@ describe('Users endpoints: /users', () => {
     {
       id: 'id1',
       email: 'user1@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
+      prenom: 'John',
+      nom: 'Doe',
       sub: 'sub1',
       uid: 'uid1',
       createdAt: new Date(0),
@@ -87,8 +87,8 @@ describe('Users endpoints: /users', () => {
     {
       id: 'id2',
       email: 'user2@example.com',
-      firstName: 'Jane',
-      lastName: 'Smith',
+      prenom: 'Jane',
+      nom: 'Smith',
       sub: 'sub2',
       uid: 'uid2',
       createdAt: new Date(0),

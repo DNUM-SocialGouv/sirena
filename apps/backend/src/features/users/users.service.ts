@@ -19,15 +19,15 @@ const filterByRoles = (roles: string[] | null) => {
 };
 
 export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery = {}) => {
-  const { offset = 0, limit, sort = 'lastName', order = 'asc', roleId, active, search } = query;
+  const { offset = 0, limit, sort = 'nom', order = 'asc', roleId, active, search } = query;
 
   const entiteFilter = filterByEntities(entiteIds);
   const roleFilter = filterByRoles(roleId ?? null);
 
   const searchConditions: Prisma.UserWhereInput[] | undefined = search?.trim()
     ? [
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
+        { prenom: { contains: search, mode: 'insensitive' } },
+        { nom: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
       ]
     : undefined;

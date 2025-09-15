@@ -126,8 +126,8 @@ const app = factoryWithLogs
         sub: userInfo.sub,
         uid: String(userInfo.uid),
         email: userInfo.email,
-        firstName: userInfo.given_name,
-        lastName: String(userInfo.usual_name),
+        prenom: userInfo.given_name,
+        nom: String(userInfo.usual_name),
         pcData: userInfo,
         organizationUnit: userInfo.organizational_unit ? String(userInfo.organizational_unit) : null,
       });
