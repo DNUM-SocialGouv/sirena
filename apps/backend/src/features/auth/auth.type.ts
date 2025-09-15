@@ -4,8 +4,8 @@ export type UserInfo = {
   sub: string;
   uid: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  prenom: string;
+  nom: string;
   organizationUnit: string | null;
   pcData: UserInfoResponse;
 };

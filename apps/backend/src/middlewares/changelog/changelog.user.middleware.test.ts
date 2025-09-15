@@ -22,8 +22,8 @@ describe('changelog.user.middleware.ts', () => {
 
   const testUser: Prisma.UserGetPayload<{ include: { role: true } }> = {
     id: '1',
-    firstName: 'John',
-    lastName: 'Doe',
+    prenom: 'John',
+    nom: 'Doe',
     email: 'test@example.com',
     uid: 'uid-123',
     sub: 'sub-123',
@@ -32,6 +32,7 @@ describe('changelog.user.middleware.ts', () => {
     statutId: 'statut1',
     active: true,
     createdAt: new Date(),
+    updatedAt: new Date(),
     pcData: {},
     role: { id: 'role1', label: 'Test Role' },
   };

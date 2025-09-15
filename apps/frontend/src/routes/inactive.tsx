@@ -29,7 +29,7 @@ function RouteComponent() {
   const profileQuery = useQuery({ ...profileQueryOptions(), enabled: false });
   const userStore = useUserStore();
 
-  const label = useMemo(() => (profileQuery.data ? profileQuery.data.firstName : ''), [profileQuery.data]);
+  const label = useMemo(() => (profileQuery.data ? profileQuery.data.prenom : ''), [profileQuery.data]);
 
   useEffect(() => {
     if (profileQuery.data?.statutId === STATUT_TYPES.ACTIF && userStore.role !== ROLES.PENDING) {

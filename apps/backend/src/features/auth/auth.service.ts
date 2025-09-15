@@ -110,8 +110,8 @@ export const getOrCreateUser = async (userInfo: UserInfo) => {
     sub: userInfo.sub,
     uid: userInfo.uid,
     email: userInfo.email,
-    firstName: userInfo.firstName,
-    lastName: userInfo.lastName,
+    prenom: userInfo.prenom,
+    nom: userInfo.nom,
     pcData: userInfo,
     entiteId: entite?.id ?? null,
   });

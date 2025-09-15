@@ -26,8 +26,8 @@ export function PendingUsersTab() {
   });
 
   const columns: Column<User>[] = [
-    { key: 'lastName', label: 'Nom' },
-    { key: 'firstName', label: 'Prénom' },
+    { key: 'nom', label: 'Nom' },
+    { key: 'prenom', label: 'Prénom' },
     { key: 'createdAt', label: 'Date de création' },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
