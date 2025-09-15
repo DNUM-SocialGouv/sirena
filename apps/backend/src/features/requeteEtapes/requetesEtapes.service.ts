@@ -2,59 +2,60 @@ import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
 import { createChangeLog } from '@/features/changelog/changelog.service';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getRequestEntiteById } from '@/features/requetesEntite/requetesEntite.service';
+import { getRequeteEntiteById } from '@/features/requetesEntite/requetesEntite.service';
 import { deleteFileFromMinio } from '@/libs/minio';
 import type { Prisma } from '@/libs/prisma';
-import { prisma, type RequeteState } from '@/libs/prisma';
+import { prisma, type RequeteEtape } from '@/libs/prisma';
 import type {
-  CreateRequeteStateNoteDto,
-  GetRequeteStatesQuery,
-  RequeteStateCreationDto,
-  UpdateRequeteStateStatutDto,
-  UpdateRequeteStateStepNameDto,
-} from './requeteStates.type';
+  CreateRequeteEtapeNoteDto,
+  GetRequeteEtapesQuery,
+  RequeteEtapeCreationDto,
+  UpdateRequeteEtapeNomDto,
+  UpdateRequeteEtapeStatutDto,
+} from './requetesEtapes.type';
 
-export const addProcessingState = async (requeteEntiteId: string, data: RequeteStateCreationDto) => {
-  const requeteEntite = await getRequestEntiteById(requeteEntiteId);
+export const addProcessingEtape = async (requeteId: string, entiteId: string, data: RequeteEtapeCreationDto) => {
+  const requeteEntite = await getRequeteEntiteById({ requeteId, entiteId });
   if (!requeteEntite) {
     return null;
   }
 
-  const newStep = await prisma.requeteState.create({
+  const etape = await prisma.requeteEtape.create({
     data: {
-      requeteEntiteId,
-      stepName: data.stepName,
+      requeteId,
+      entiteId,
+      nom: data.nom,
       statutId: REQUETE_STATUT_TYPES.A_FAIRE,
     },
   });
 
-  return newStep;
+  return etape;
 };
 
-export const getRequeteStates = async (requeteEntiteId: string, query: GetRequeteStatesQuery) => {
+export const getRequeteEtapes = async (requeteId: string, entiteId: string, query: GetRequeteEtapesQuery) => {
   const { offset = 0, limit, sort = 'createdAt', order = 'desc' } = query;
 
   const where = {
-    requeteEntiteId,
-    stepName: { not: null },
+    requeteId,
+    entiteId,
   };
 
   const [raw, total] = await Promise.all([
-    prisma.requeteState.findMany({
+    prisma.requeteEtape.findMany({
       where,
       skip: offset,
       ...(typeof limit === 'number' ? { take: limit } : {}),
       orderBy: { [sort]: order },
       select: {
         id: true,
-        stepName: true,
+        nom: true,
         statutId: true,
         createdAt: true,
         updatedAt: true,
         notes: {
           select: {
             id: true,
-            content: true,
+            texte: true,
             createdAt: true,
             uploadedFiles: {
               select: {
@@ -72,104 +73,90 @@ export const getRequeteStates = async (requeteEntiteId: string, query: GetRequet
           },
           orderBy: { createdAt: 'desc' },
         },
-        requeteEntiteId: true,
+        requeteId: true,
+        entiteId: true,
       },
     }),
-    prisma.requeteState.count({
+    prisma.requeteEtape.count({
       where,
     }),
   ]);
 
-  const data = raw.map((rs) => ({
-    ...rs,
-    notes: rs.notes.map((n) => ({
-      ...n,
-      uploadedFiles: n.uploadedFiles.map((f) => {
-        const m = f.metadata as Prisma.JsonObject;
-        return {
-          id: f.id,
-          size: f.size,
-          originalName: (m?.originalName as string) ?? 'Unknown',
-        };
-      }),
-    })),
-  }));
-
   return {
-    data,
+    data: raw,
     total,
   };
 };
 
-export const getRequeteStateById = async (id: string) =>
-  await prisma.requeteState.findUnique({
+export const getRequeteEtapeById = async (id: string) =>
+  await prisma.requeteEtape.findUnique({
     where: { id },
   });
 
-export const updateRequeteStateStatut = async (
+export const updateRequeteEtapeStatut = async (
   id: string,
-  data: UpdateRequeteStateStatutDto,
-): Promise<RequeteState | null> => {
-  const requeteState = await getRequeteStateById(id);
-  if (!requeteState) {
+  data: UpdateRequeteEtapeStatutDto,
+): Promise<RequeteEtape | null> => {
+  const requeteEtape = await getRequeteEtapeById(id);
+  if (!requeteEtape) {
     return null;
   }
 
-  const updatedRequeteState = await prisma.requeteState.update({
+  const updatedRequeteEtape = await prisma.requeteEtape.update({
     where: { id },
     data: {
       statutId: data.statutId,
     },
   });
 
-  return updatedRequeteState;
+  return updatedRequeteEtape;
 };
 
-export const updateRequeteStateStepName = async (
+export const updateRequeteEtapeNom = async (
   id: string,
-  data: UpdateRequeteStateStepNameDto,
-): Promise<RequeteState | null> => {
-  const requeteState = await getRequeteStateById(id);
-  if (!requeteState) {
+  data: UpdateRequeteEtapeNomDto,
+): Promise<RequeteEtape | null> => {
+  const requeteEtape = await getRequeteEtapeById(id);
+  if (!requeteEtape) {
     return null;
   }
 
-  return prisma.requeteState.update({
+  return prisma.requeteEtape.update({
     where: { id },
     data: {
-      stepName: data.stepName,
+      nom: data.nom,
     },
   });
 };
 
 export const getNoteById = async (id: string) =>
-  await prisma.requeteStateNote.findUnique({
+  await prisma.requeteEtapeNote.findUnique({
     where: { id },
     include: {
       uploadedFiles: true,
     },
   });
 
-export const addNote = async (data: CreateRequeteStateNoteDto) =>
-  await prisma.requeteStateNote.create({
+export const addNote = async (data: CreateRequeteEtapeNoteDto) =>
+  await prisma.requeteEtapeNote.create({
     data: {
       authorId: data.userId,
-      content: data.content,
-      requeteEntiteStateId: data.requeteEntiteStateId,
+      texte: data.texte,
+      requeteEtapeId: data.requeteEtapeId,
       uploadedFiles: {
         connect: data.fileIds.map((fileId) => ({ id: fileId })),
       },
     },
   });
 
-export const updateNote = async (noteId: string, content: string) =>
-  await prisma.requeteStateNote.update({
+export const updateNote = async (noteId: string, texte: string) =>
+  await prisma.requeteEtapeNote.update({
     where: { id: noteId },
-    data: { content },
+    data: { texte },
   });
 
 export const deleteNote = async (noteId: string, logger: PinoLogger, changedById?: string) => {
-  const note = await prisma.requeteStateNote.findUnique({
+  const note = await prisma.requeteEtapeNote.findUnique({
     where: { id: noteId },
     include: { uploadedFiles: true },
   });
@@ -181,7 +168,7 @@ export const deleteNote = async (noteId: string, logger: PinoLogger, changedById
   const files = note.uploadedFiles;
   const filePaths = files.map((f) => f.filePath);
 
-  await prisma.requeteStateNote.delete({ where: { id: noteId } });
+  await prisma.requeteEtapeNote.delete({ where: { id: noteId } });
 
   if (changedById) {
     // Create changelogs for  files (individual entities)
@@ -204,10 +191,10 @@ export const deleteNote = async (noteId: string, logger: PinoLogger, changedById
       );
     }
 
-    // Create changelog for the RequeteStateNote
+    // Create changelog for the RequeteEtapeNote
     try {
       await createChangeLog({
-        entity: 'RequeteStateNote',
+        entity: 'RequeteEtapeNote',
         entityId: noteId,
         action: ChangeLogAction.DELETED,
         before: note as unknown as Prisma.JsonObject,
@@ -215,7 +202,7 @@ export const deleteNote = async (noteId: string, logger: PinoLogger, changedById
         changedById,
       });
     } catch (err) {
-      logger.error({ err, noteId }, 'Failed to create changelog for requeteStateNote');
+      logger.error({ err, noteId }, 'Failed to create changelog for requeteEtapeNote');
     }
   }
 
@@ -233,37 +220,24 @@ export const deleteNote = async (noteId: string, logger: PinoLogger, changedById
   }
 };
 
-export const deleteRequeteState = async (id: string, logger: PinoLogger, changedById?: string): Promise<void> => {
-  const requeteState = await prisma.requeteState.findUnique({
+export const deleteRequeteEtape = async (id: string, logger: PinoLogger, changedById?: string): Promise<void> => {
+  const requeteEtape = await prisma.requeteEtape.findUnique({
     where: { id },
     include: {
       notes: { include: { uploadedFiles: true } },
-      declarant: true,
-      infoComplementaire: true,
-      demarchesEngagees: true,
-      victimes: true,
-      lieuxIncident: true,
-      misEnCauses: true,
-      descriptionFaits: {
-        include: {
-          motifs: true,
-          consequences: true,
-          maltraitanceTypes: true,
-        },
-      },
     },
   });
 
-  if (!requeteState) {
+  if (!requeteEtape) {
     return;
   }
 
-  const notes = requeteState.notes.map(({ uploadedFiles, ...note }) => note);
-  const files = requeteState.notes.flatMap((n) => n.uploadedFiles);
+  const notes = requeteEtape.notes.map(({ uploadedFiles, ...note }) => note);
+  const files = requeteEtape.notes.flatMap((n) => n.uploadedFiles);
   const filePaths = files.map((f) => f.filePath);
 
-  // Delete RequeteState (all related entities will be deleted in cascade)
-  await prisma.requeteState.delete({ where: { id } });
+  // Delete RequeteEtape (all related entities will be deleted in cascade)
+  await prisma.requeteEtape.delete({ where: { id } });
 
   if (changedById) {
     // Create changelogs for notes and files (individual entities)
@@ -272,7 +246,7 @@ export const deleteRequeteState = async (id: string, logger: PinoLogger, changed
         notes.map(async (note) => {
           try {
             await createChangeLog({
-              entity: 'RequeteStateNote',
+              entity: 'RequeteEtapeNote',
               entityId: note.id,
               action: ChangeLogAction.DELETED,
               before: note as unknown as Prisma.JsonObject,
@@ -305,20 +279,20 @@ export const deleteRequeteState = async (id: string, logger: PinoLogger, changed
       );
     }
 
-    // Create changelog for the complete RequeteState (all other entities)
-    const { notes: _, ...requeteStateWithoutNotes } = requeteState;
+    // Create changelog for the complete RequeteEtape (all other entities)
+    const { notes: _, ...requeteEtapeWithoutNotes } = requeteEtape;
 
     try {
       await createChangeLog({
-        entity: 'RequeteState',
+        entity: 'RequeteEtape',
         entityId: id,
         action: ChangeLogAction.DELETED,
-        before: requeteStateWithoutNotes as unknown as Prisma.JsonObject,
+        before: requeteEtapeWithoutNotes as unknown as Prisma.JsonObject,
         after: {},
         changedById,
       });
     } catch (err) {
-      logger.error({ err, requeteStateId: id }, 'Failed to create changelog for requeteState');
+      logger.error({ err, requeteEtapeId: id }, 'Failed to create changelog for requeteEtape');
     }
   }
 
