@@ -4,58 +4,37 @@ import { HTTPException } from 'hono/http-exception';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  addNote,
+  deleteNote,
+  deleteRequeteEtape,
+  getNoteById,
+  getRequeteEtapeById,
+  updateNote,
+  updateRequeteEtapeNom,
+  updateRequeteEtapeStatut,
+} from '@/features/requeteEtapes/requetesEtapes.service';
 import { hasAccessToRequete } from '@/features/requetesEntite/requetesEntite.service';
 import { getUploadedFileById, isUserOwner, setNoteFile } from '@/features/uploadedFiles/uploadedFiles.service';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import { getFileStream } from '@/libs/minio';
-import type { RequeteState } from '@/libs/prisma';
+import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
 import { convertDatesToStrings } from '@/tests/formatter';
-import RequeteStatesController from './requeteStates.controller';
-import {
-  addNote,
-  deleteNote,
-  deleteRequeteState,
-  getNoteById,
-  getRequeteStateById,
-  updateNote,
-  updateRequeteStateStatut,
-  updateRequeteStateStepName,
-} from './requeteStates.service';
-import type { UpdateRequeteStateNoteDto } from './requeteStates.type';
+import RequeteEtapesController from './requetesEtapes.controller';
+import type { UpdateRequeteEtapeNoteDto } from './requetesEtapes.type';
 
-const fakeRequeteState: RequeteState = {
-  id: 'step1',
-  requeteEntiteId: 'requeteEntiteId',
-  stepName: 'Test Step',
-  statutId: 'A_FAIRE',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
-
-const fakeUpdatedRequeteState: RequeteState = {
-  ...fakeRequeteState,
-  statutId: 'EN_COURS',
-  updatedAt: new Date(),
-};
-
-const fakeUpdatedStepNameRequeteState: RequeteState = {
-  ...fakeRequeteState,
-  stepName: 'Updated Step Name',
-  updatedAt: new Date(),
-};
-
-vi.mock('./requeteStates.service', () => ({
-  getRequeteStateById: vi.fn(() => Promise.resolve(fakeRequeteState)),
-  updateRequeteStateStatut: vi.fn(() => Promise.resolve(fakeUpdatedRequeteState)),
-  updateRequeteStateStepName: vi.fn(() => Promise.resolve(fakeUpdatedStepNameRequeteState)),
+vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
+  getRequeteEtapeById: vi.fn(),
+  updateRequeteEtapeStatut: vi.fn(),
+  updateRequeteEtapeNom: vi.fn(() => Promise.resolve(fakeUpdatedNomRequeteEtape)),
   addNote: vi.fn(),
   getNoteById: vi.fn(),
   updateNote: vi.fn(),
   deleteNote: vi.fn(),
   isUserOwner: vi.fn(),
   setNoteFile: vi.fn(),
-  deleteRequeteState: vi.fn(),
+  deleteRequeteEtape: vi.fn(),
 }));
 
 vi.mock('@/features/uploadedFiles/uploadedFiles.service', () => ({
@@ -105,7 +84,7 @@ vi.mock('@/middlewares/entites.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/changelog/changelog.requeteStep.middleware', () => {
+vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
   return {
     default: () => (_: Context, next: Next) => {
       return next();
@@ -113,7 +92,7 @@ vi.mock('@/middlewares/changelog/changelog.requeteStep.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/changelog/changelog.requeteStateNote.middleware', () => {
+vi.mock('@/middlewares/changelog/changelog.requeteEtapeNote.middleware', () => {
   return {
     default: () => (_: Context, next: Next) => {
       return next();
@@ -134,16 +113,58 @@ vi.mock('@/helpers/errors', () => ({
   }),
 }));
 
-describe('requeteStates.controller.ts', () => {
-  const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequeteStatesController).onError(errorHandler);
+const fakeRequeteEtape: RequeteEtape = {
+  id: 'step1',
+  requeteId: 'requeteId',
+  entiteId: 'entiteId',
+  nom: 'Test FAKE Step',
+  statutId: 'A_FAIRE',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  estPartagee: false,
+};
+
+const fakeUpdatedRequeteEtape: RequeteEtape = {
+  ...fakeRequeteEtape,
+  statutId: 'EN_COURS',
+  updatedAt: new Date(),
+};
+
+const fakeUpdatedNomRequeteEtape: RequeteEtape = {
+  ...fakeRequeteEtape,
+  nom: 'Updated Step Name',
+  updatedAt: new Date(),
+};
+
+describe('requeteEtapes.controller.ts', () => {
+  const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequeteEtapesController).onError(errorHandler);
   const client = testClient(app);
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getRequeteEtapeById).mockResolvedValue(fakeRequeteEtape);
+    vi.mocked(updateRequeteEtapeStatut).mockResolvedValue(fakeUpdatedRequeteEtape);
   });
 
   describe('PATCH /:id/statut', () => {
-    it('should update the statut of a RequeteState', async () => {
+    it('should return 404 if RequeteEtape not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].statut.$patch({
+        param: { id: 'step1' },
+        json: { statutId: 'EN_COURS' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'RequeteEtape not found',
+      });
+      expect(updateRequeteEtapeStatut).not.toHaveBeenCalled();
+    });
+
+    it('should update the statut of a RequeteEtape', async () => {
       const res = await client[':id'].statut.$patch({
         param: { id: 'step1' },
         json: { statutId: 'EN_COURS' },
@@ -153,30 +174,13 @@ describe('requeteStates.controller.ts', () => {
 
       expect(res.status).toBe(200);
       expect(body).toEqual({
-        data: convertDatesToStrings(fakeUpdatedRequeteState),
+        data: convertDatesToStrings(fakeUpdatedRequeteEtape),
       });
-      expect(updateRequeteStateStatut).toHaveBeenCalledWith('step1', { statutId: 'EN_COURS' });
-    });
-
-    it('should return 404 if RequeteState not found', async () => {
-      vi.mocked(getRequeteStateById).mockImplementationOnce(() => Promise.resolve(null));
-
-      const res = await client[':id'].statut.$patch({
-        param: { id: 'step1' },
-        json: { statutId: 'EN_COURS' },
-      });
-
-      const body = await res.json();
-
-      expect(res.status).toBe(404);
-      expect(body).toEqual({
-        message: 'RequeteState not found',
-      });
-      expect(updateRequeteStateStatut).not.toHaveBeenCalled();
+      expect(updateRequeteEtapeStatut).toHaveBeenCalledWith('step1', { statutId: 'EN_COURS' });
     });
 
     it('should return 404 if update fails', async () => {
-      vi.mocked(updateRequeteStateStatut).mockImplementationOnce(() => Promise.resolve(null));
+      vi.mocked(updateRequeteEtapeStatut).mockImplementationOnce(() => Promise.resolve(null));
 
       const res = await client[':id'].statut.$patch({
         param: { id: 'step1' },
@@ -187,7 +191,7 @@ describe('requeteStates.controller.ts', () => {
 
       expect(res.status).toBe(404);
       expect(body).toEqual({
-        message: 'RequeteState not found',
+        message: 'RequeteEtape not found',
       });
     });
 
@@ -203,9 +207,9 @@ describe('requeteStates.controller.ts', () => {
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to update this requete state',
+        message: 'You are not allowed to update this requete etape',
       });
-      expect(updateRequeteStateStatut).not.toHaveBeenCalled();
+      expect(updateRequeteEtapeStatut).not.toHaveBeenCalled();
     });
 
     it('should validate the request body', async () => {
@@ -218,107 +222,107 @@ describe('requeteStates.controller.ts', () => {
     });
   });
 
-  describe('PATCH /:id/stepName', () => {
-    it('should update the stepName of a RequeteState', async () => {
-      const res = await client[':id'].stepName.$patch({
+  describe('PATCH /:id/nom', () => {
+    it('should update the nom of a RequeteEtape', async () => {
+      const res = await client[':id'].nom.$patch({
         param: { id: 'step1' },
-        json: { stepName: 'Updated Step Name' },
+        json: { nom: 'Updated Step Name' },
       });
 
       const body = await res.json();
 
       expect(res.status).toBe(200);
       expect(body).toEqual({
-        data: convertDatesToStrings(fakeUpdatedStepNameRequeteState),
+        data: convertDatesToStrings(fakeUpdatedNomRequeteEtape),
       });
-      expect(updateRequeteStateStepName).toHaveBeenCalledWith('step1', { stepName: 'Updated Step Name' });
+      expect(updateRequeteEtapeNom).toHaveBeenCalledWith('step1', { nom: 'Updated Step Name' });
     });
 
-    it('should return 404 if RequeteState not found', async () => {
-      vi.mocked(getRequeteStateById).mockImplementationOnce(() => Promise.resolve(null));
+    it('should return 404 if RequeteEtape not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockImplementationOnce(() => Promise.resolve(null));
 
-      const res = await client[':id'].stepName.$patch({
+      const res = await client[':id'].nom.$patch({
         param: { id: 'step1' },
-        json: { stepName: 'Updated Step Name' },
+        json: { nom: 'Updated Step Name' },
       });
 
       const body = await res.json();
 
       expect(res.status).toBe(404);
       expect(body).toEqual({
-        message: 'RequeteState not found',
+        message: 'RequeteEtape not found',
       });
-      expect(updateRequeteStateStepName).not.toHaveBeenCalled();
+      expect(updateRequeteEtapeNom).not.toHaveBeenCalled();
     });
 
     it('should return 404 if update fails', async () => {
-      vi.mocked(updateRequeteStateStepName).mockImplementationOnce(() => Promise.resolve(null));
+      vi.mocked(updateRequeteEtapeNom).mockImplementationOnce(() => Promise.resolve(null));
 
-      const res = await client[':id'].stepName.$patch({
+      const res = await client[':id'].nom.$patch({
         param: { id: 'step1' },
-        json: { stepName: 'Updated Step Name' },
+        json: { nom: 'Updated Step Name' },
       });
 
       const body = await res.json();
 
       expect(res.status).toBe(404);
       expect(body).toEqual({
-        message: 'RequeteState not found',
+        message: 'RequeteEtape not found',
       });
     });
 
     it('should return 401 if user has no access to requete', async () => {
       vi.mocked(hasAccessToRequete).mockImplementationOnce(() => Promise.resolve(false));
 
-      const res = await client[':id'].stepName.$patch({
+      const res = await client[':id'].nom.$patch({
         param: { id: 'step1' },
-        json: { stepName: 'Updated Step Name' },
+        json: { nom: 'Updated Step Name' },
       });
 
       const body = await res.json();
 
       expect(res.status).toBe(401);
       expect(body).toEqual({
-        message: 'You are not allowed to update this requete state',
+        message: 'You are not allowed to update this requete etape',
       });
-      expect(updateRequeteStateStepName).not.toHaveBeenCalled();
+      expect(updateRequeteEtapeNom).not.toHaveBeenCalled();
     });
 
-    it('should validate the request body - stepName is required', async () => {
-      const res = await client[':id'].stepName.$patch({
+    it('should validate the request body - nom is required', async () => {
+      const res = await client[':id'].nom.$patch({
         param: { id: 'step1' },
-        json: { stepName: '' },
-      });
-
-      expect(res.status).toBe(400);
-    });
-
-    it('should validate the request body - stepName has max length', async () => {
-      const longStepName = 'a'.repeat(301);
-      const res = await client[':id'].stepName.$patch({
-        param: { id: 'step1' },
-        json: { stepName: longStepName },
+        json: { nom: '' },
       });
 
       expect(res.status).toBe(400);
     });
 
-    it('should sanitize the stepName input', async () => {
-      const res = await client[':id'].stepName.$patch({
+    it('should validate the request body - nom has max length', async () => {
+      const longNom = 'a'.repeat(301);
+      const res = await client[':id'].nom.$patch({
         param: { id: 'step1' },
-        json: { stepName: '  <script>  alert("xss")</script>  ' },
+        json: { nom: longNom },
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should sanitize the nom input', async () => {
+      const res = await client[':id'].nom.$patch({
+        param: { id: 'step1' },
+        json: { nom: '  <script>  alert("xss")</script>  ' },
       });
 
       expect(res.status).toBe(200);
-      expect(updateRequeteStateStepName).toHaveBeenCalledWith('step1', {
-        stepName: 'script alert("xss")/script',
+      expect(updateRequeteEtapeNom).toHaveBeenCalledWith('step1', {
+        nom: 'script alert("xss")/script',
       });
     });
 
-    it('should reject stepName with only spaces after sanitization', async () => {
-      const res = await client[':id'].stepName.$patch({
+    it('should reject nom with only spaces after sanitization', async () => {
+      const res = await client[':id'].nom.$patch({
         param: { id: 'step1' },
-        json: { stepName: '   <><>   ' },
+        json: { nom: '   <><>   ' },
       });
 
       expect(res.status).toBe(400);
@@ -326,21 +330,21 @@ describe('requeteStates.controller.ts', () => {
   });
 
   describe('POST /:id/note', () => {
-    it('should add a note to a processing step', async () => {
-      const fakeData = {
+    it('should add a note to a processing Etape', async () => {
+      const fakeData: RequeteEtapeNote = {
         createdAt: new Date(),
         id: 'note1',
-        requeteEntiteStateId: 'step1',
-        content: 'test',
+        requeteEtapeId: 'step1',
+        texte: 'test',
         updatedAt: new Date(),
         authorId: 'test-user-id',
-        fileIds: [],
       };
+
       vi.mocked(addNote).mockResolvedValueOnce(fakeData);
 
       const res = await client[':id'].note.$post({
         param: { id: 'step1' },
-        json: { content: 'test' },
+        json: { texte: 'test' },
       });
 
       const body = await res.json();
@@ -350,26 +354,26 @@ describe('requeteStates.controller.ts', () => {
         data: convertDatesToStrings(fakeData),
       });
       expect(addNote).toHaveBeenCalledWith({
-        requeteEntiteStateId: 'step1',
-        content: 'test',
+        requeteEtapeId: 'step1',
+        texte: 'test',
         userId: 'test-user-id',
         fileIds: [],
       });
     });
 
-    it('should return 404 if RequeteState not found', async () => {
-      vi.mocked(getRequeteStateById).mockResolvedValueOnce(null);
+    it('should return 404 if RequeteEtape not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
 
       const res = await client[':id'].note.$post({
         param: { id: 'step1' },
-        json: { content: 'test' },
+        json: { texte: 'test' },
       });
 
       const body = await res.json();
 
       expect(res.status).toBe(404);
       expect(body).toEqual({
-        message: 'RequeteState not found',
+        message: 'RequeteEtape not found',
       });
       expect(addNote).not.toHaveBeenCalled();
     });
@@ -379,14 +383,14 @@ describe('requeteStates.controller.ts', () => {
 
       const res = await client[':id'].note.$post({
         param: { id: 'step1' },
-        json: { content: 'test' },
+        json: { texte: 'test' },
       });
 
       const body = await res.json();
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to update this requete state',
+        message: 'You are not allowed to add notes to this requete etape',
       });
       expect(addNote).not.toHaveBeenCalled();
     });
@@ -396,7 +400,7 @@ describe('requeteStates.controller.ts', () => {
 
       const res = await client[':id'].note.$post({
         param: { id: 'step1' },
-        json: { content: 'test with files', fileIds: ['f1', 'f2'] },
+        json: { texte: 'test with files', fileIds: ['f1', 'f2'] },
       });
 
       const body = await res.json();
@@ -417,8 +421,8 @@ describe('requeteStates.controller.ts', () => {
 
       const fakeNote = {
         id: 'note1',
-        requeteEntiteStateId: 'step1',
-        content: 'test with files',
+        requeteEtapeId: 'step1',
+        texte: 'test with files',
         authorId: 'test-user-id',
         fileIds: ['f1', 'f2'],
         createdAt: new Date(),
@@ -429,7 +433,9 @@ describe('requeteStates.controller.ts', () => {
       vi.mocked(setNoteFile).mockResolvedValueOnce([
         {
           id: 'f1',
-          requeteStateNoteId: 'note1',
+          requeteEtapeNoteId: 'note1',
+          requeteId: null,
+          faitSituationId: null,
           status: 'COMPLETED',
           entiteId: null,
           createdAt: new Date(),
@@ -443,7 +449,9 @@ describe('requeteStates.controller.ts', () => {
         },
         {
           id: 'f2',
-          requeteStateNoteId: 'note1',
+          requeteEtapeNoteId: 'note1',
+          requeteId: null,
+          faitSituationId: null,
           status: 'COMPLETED',
           entiteId: null,
           createdAt: new Date(),
@@ -459,7 +467,7 @@ describe('requeteStates.controller.ts', () => {
 
       const res = await client[':id'].note.$post({
         param: { id: 'step1' },
-        json: { content: 'test with files', fileIds: ['f1', 'f2'] },
+        json: { texte: 'test with files', fileIds: ['f1', 'f2'] },
       });
 
       const body = await res.json();
@@ -473,8 +481,8 @@ describe('requeteStates.controller.ts', () => {
 
       expect(addNote).toHaveBeenCalledWith({
         userId: 'test-user-id',
-        requeteEntiteStateId: 'step1',
-        content: 'test with files',
+        requeteEtapeId: 'step1',
+        texte: 'test with files',
         fileIds: ['f1', 'f2'],
       });
 
@@ -483,11 +491,11 @@ describe('requeteStates.controller.ts', () => {
   });
 
   describe('PATCH /:id/note/:noteId', () => {
-    const fakeNote = {
+    const fakeNote: RequeteEtapeNote & { uploadedFiles: UploadedFile[] } = {
       id: 'note1',
-      content: 'Original note content',
+      texte: 'Original note content',
       authorId: 'test-user-id',
-      requeteEntiteStateId: 'step1',
+      requeteEtapeId: 'step1',
       uploadedFiles: [],
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -495,7 +503,7 @@ describe('requeteStates.controller.ts', () => {
 
     const fakeUpdatedNote = {
       ...fakeNote,
-      content: 'Updated note content',
+      texte: 'Updated note content',
       updatedAt: new Date(),
     };
 
@@ -505,7 +513,7 @@ describe('requeteStates.controller.ts', () => {
 
       const res = await client[':id'].note[':noteId'].$patch({
         param: { id: 'step1', noteId: 'note1' },
-        json: { content: 'Updated note content' },
+        json: { texte: 'Updated note content' },
       });
 
       const body = await res.json();
@@ -514,24 +522,24 @@ describe('requeteStates.controller.ts', () => {
       expect(body).toEqual({
         data: convertDatesToStrings(fakeUpdatedNote),
       });
-      expect(getRequeteStateById).toHaveBeenCalledWith('step1');
+      expect(getRequeteEtapeById).toHaveBeenCalledWith('step1');
       expect(getNoteById).toHaveBeenCalledWith('note1');
       expect(updateNote).toHaveBeenCalledWith('note1', 'Updated note content');
     });
 
-    it('should return 404 if RequeteState not found', async () => {
-      vi.mocked(getRequeteStateById).mockResolvedValueOnce(null);
+    it('should return 404 if RequeteEtape not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
 
       const res = await client[':id'].note[':noteId'].$patch({
         param: { id: 'step1', noteId: 'note1' },
-        json: { content: 'Updated note content' },
+        json: { texte: 'Updated note content' },
       });
 
       const body = await res.json();
 
       expect(res.status).toBe(404);
       expect(body).toEqual({
-        message: 'RequeteState not found',
+        message: 'RequeteEtape not found',
       });
       expect(getNoteById).not.toHaveBeenCalled();
       expect(updateNote).not.toHaveBeenCalled();
@@ -542,14 +550,14 @@ describe('requeteStates.controller.ts', () => {
 
       const res = await client[':id'].note[':noteId'].$patch({
         param: { id: 'step1', noteId: 'note1' },
-        json: { content: 'Updated note content' },
+        json: { texte: 'Updated note content' },
       });
 
       const body = await res.json();
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to update this requete state',
+        message: 'You are not allowed to update this requete etape',
       });
       expect(getNoteById).not.toHaveBeenCalled();
       expect(updateNote).not.toHaveBeenCalled();
@@ -560,7 +568,7 @@ describe('requeteStates.controller.ts', () => {
 
       const res = await client[':id'].note[':noteId'].$patch({
         param: { id: 'step1', noteId: 'note1' },
-        json: { content: 'Updated note content' },
+        json: { texte: 'Updated note content' },
       });
 
       const body = await res.json();
@@ -575,7 +583,7 @@ describe('requeteStates.controller.ts', () => {
     it('should validate the request body - content is required', async () => {
       const res = await client[':id'].note[':noteId'].$patch({
         param: { id: 'step1', noteId: 'note1' },
-        json: { content: '' },
+        json: { texte: '' },
       });
 
       expect(res.status).toBe(400);
@@ -584,7 +592,7 @@ describe('requeteStates.controller.ts', () => {
     it('should validate the request body - content is required', async () => {
       const res = await client[':id'].note[':noteId'].$patch({
         param: { id: 'step1', noteId: 'note1' },
-        json: {} as unknown as UpdateRequeteStateNoteDto,
+        json: {} as unknown as UpdateRequeteEtapeNoteDto,
       });
 
       expect(res.status).toBe(400);
@@ -592,23 +600,25 @@ describe('requeteStates.controller.ts', () => {
   });
 
   describe('GET /:id/file/:fileId', () => {
-    const baseFile = {
+    const baseFile: UploadedFile = {
       id: 'file1',
       fileName: 'test.pdf',
       filePath: '/uploads/test.pdf',
       mimeType: 'application/pdf',
       size: 5,
+      requeteId: null,
+      faitSituationId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
       metadata: { originalName: 'report.pdf' },
       entiteId: 'entite1',
       uploadedById: 'user1',
       status: 'PENDING',
-      requeteStateNoteId: 'step1',
+      requeteEtapeNoteId: 'step1',
     };
 
     it('streams the file with correct headers (inline) and body content', async () => {
-      vi.mocked(getRequeteStateById).mockResolvedValueOnce(fakeRequeteState);
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(baseFile);
@@ -633,7 +643,7 @@ describe('requeteStates.controller.ts', () => {
     });
 
     it('returns 200 with empty body when file size is 0 (no streaming)', async () => {
-      vi.mocked(getRequeteStateById).mockResolvedValueOnce(fakeRequeteState);
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       const emptyFile = { ...baseFile, size: 0 };
@@ -653,8 +663,8 @@ describe('requeteStates.controller.ts', () => {
       expect(getFileStream).not.toHaveBeenCalled();
     });
 
-    it('returns 404 when RequeteState not found', async () => {
-      vi.mocked(getRequeteStateById).mockResolvedValueOnce(null);
+    it('returns 404 when RequeteEtape not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
 
       const res = await client[':id'].file[':fileId'].$get({
         param: { id: 'step1', fileId: 'file1' },
@@ -663,14 +673,14 @@ describe('requeteStates.controller.ts', () => {
       const body = await res.json();
 
       expect(res.status).toBe(404);
-      expect(body).toEqual({ message: 'RequeteState not found' });
+      expect(body).toEqual({ message: 'RequeteEtape not found' });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
     });
 
     it('returns 403 when user has no access to requete', async () => {
-      vi.mocked(getRequeteStateById).mockResolvedValueOnce(fakeRequeteState);
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
 
       const res = await client[':id'].file[':fileId'].$get({
@@ -681,7 +691,7 @@ describe('requeteStates.controller.ts', () => {
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to update this requete state',
+        message: 'You are not allowed to update this requete etape',
       });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
@@ -689,7 +699,7 @@ describe('requeteStates.controller.ts', () => {
     });
 
     it('returns 404 when file not found', async () => {
-      vi.mocked(getRequeteStateById).mockResolvedValueOnce(fakeRequeteState);
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(null);
 
@@ -706,7 +716,7 @@ describe('requeteStates.controller.ts', () => {
     });
 
     it('falls back to fileName when metadata.originalName is missing', async () => {
-      vi.mocked(getRequeteStateById).mockResolvedValueOnce(fakeRequeteState);
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       const fileNoMeta = { ...baseFile, metadata: null, fileName: 'fallback.pdf' };
@@ -725,8 +735,8 @@ describe('requeteStates.controller.ts', () => {
   });
 
   describe('DELETE /:id', () => {
-    it('should delete a RequeteState successfully', async () => {
-      vi.mocked(deleteRequeteState).mockResolvedValueOnce();
+    it('should delete a RequeteEtape successfully', async () => {
+      vi.mocked(deleteRequeteEtape).mockResolvedValueOnce();
 
       const res = await client[':id'].$delete({
         param: { id: 'step1' },
@@ -734,11 +744,11 @@ describe('requeteStates.controller.ts', () => {
 
       expect(res.status).toBe(204);
       expect(await res.text()).toBe('');
-      expect(deleteRequeteState).toHaveBeenCalledWith('step1', expect.any(Object), 'test-user-id');
+      expect(deleteRequeteEtape).toHaveBeenCalledWith('step1', expect.any(Object), 'test-user-id');
     });
 
-    it('should return 404 if RequeteState not found', async () => {
-      vi.mocked(getRequeteStateById).mockResolvedValueOnce(null);
+    it('should return 404 if RequeteEtape not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
 
       const res = await client[':id'].$delete({
         param: { id: 'step1' },
@@ -748,9 +758,9 @@ describe('requeteStates.controller.ts', () => {
 
       expect(res.status).toBe(404);
       expect(body).toEqual({
-        message: 'RequeteState not found',
+        message: 'RequeteEtape not found',
       });
-      expect(deleteRequeteState).not.toHaveBeenCalled();
+      expect(deleteRequeteEtape).not.toHaveBeenCalled();
     });
 
     it('should return 403 if user has no access to requete', async () => {
@@ -764,13 +774,13 @@ describe('requeteStates.controller.ts', () => {
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to delete this requete state',
+        message: 'You are not allowed to delete this requete etape',
       });
-      expect(deleteRequeteState).not.toHaveBeenCalled();
+      expect(deleteRequeteEtape).not.toHaveBeenCalled();
     });
 
     it('should handle service errors gracefully', async () => {
-      vi.mocked(deleteRequeteState).mockRejectedValueOnce(new Error('Database error'));
+      vi.mocked(deleteRequeteEtape).mockRejectedValueOnce(new Error('Database error'));
 
       const res = await client[':id'].$delete({
         param: { id: 'step1' },
@@ -785,11 +795,11 @@ describe('requeteStates.controller.ts', () => {
   });
 
   describe('DELETE /:id/note/:noteId', () => {
-    const fakeNote = {
+    const fakeNote: RequeteEtapeNote & { uploadedFiles: UploadedFile[] } = {
       id: 'note1',
-      content: 'Original note content',
+      texte: 'Original note content',
       authorId: 'test-user-id',
-      requeteEntiteStateId: 'step1',
+      requeteEtapeId: 'step1',
       uploadedFiles: [],
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -805,13 +815,13 @@ describe('requeteStates.controller.ts', () => {
 
       expect(res.status).toBe(204);
       expect(await res.text()).toBe('');
-      expect(getRequeteStateById).toHaveBeenCalledWith('step1');
+      expect(getRequeteEtapeById).toHaveBeenCalledWith('step1');
       expect(getNoteById).toHaveBeenCalledWith('note1');
       expect(deleteNote).toHaveBeenCalledWith('note1', expect.any(Object), 'test-user-id');
     });
 
-    it('should return 404 if RequeteState not found', async () => {
-      vi.mocked(getRequeteStateById).mockResolvedValueOnce(null);
+    it('should return 404 if RequeteEtape not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
 
       const res = await client[':id'].note[':noteId'].$delete({
         param: { id: 'step1', noteId: 'note1' },
@@ -821,7 +831,7 @@ describe('requeteStates.controller.ts', () => {
 
       expect(res.status).toBe(404);
       expect(body).toEqual({
-        message: 'RequeteState not found',
+        message: 'RequeteEtape not found',
       });
       expect(getNoteById).not.toHaveBeenCalled();
       expect(deleteNote).not.toHaveBeenCalled();
@@ -838,7 +848,7 @@ describe('requeteStates.controller.ts', () => {
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to delete notes from this requete state',
+        message: 'You are not allowed to delete notes from this requete etape',
       });
       expect(getNoteById).not.toHaveBeenCalled();
       expect(deleteNote).not.toHaveBeenCalled();

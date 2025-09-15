@@ -12,39 +12,38 @@ import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import {
   addNote,
   deleteNote,
-  deleteRequeteState,
+  deleteRequeteEtape,
   getNoteById,
-  getRequeteStateById,
+  getRequeteEtapeById,
   updateNote,
-  updateRequeteStateStatut,
-  updateRequeteStateStepName,
-} from '@/features/requeteStates/requeteStates.service';
+  updateRequeteEtapeNom,
+  updateRequeteEtapeStatut,
+} from '@/features/requeteEtapes/requetesEtapes.service';
 import { getUploadedFileById, isUserOwner, setNoteFile } from '@/features/uploadedFiles/uploadedFiles.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { getFileStream } from '@/libs/minio';
 import type { Prisma } from '@/libs/prisma';
 import authMiddleware from '@/middlewares/auth.middleware';
-import requeteStatesNotesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStateNote.middleware';
-import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteStep.middleware';
-
+import requeteEtapesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtape.middleware';
+import requeteEtapesNotesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtapeNote.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service';
 import {
-  addRequeteStatesNoteRoute,
-  deleteRequeteStateRoute,
-  deleteRequeteStatesNoteRoute,
-  updateRequeteStateStatutRoute,
-  updateRequeteStateStepNameRoute,
-  updateRequeteStatesNoteRoute,
-} from './requeteStates.route';
+  addRequeteEtapesNoteRoute,
+  deleteRequeteEtapeRoute,
+  deleteRequeteEtapesNoteRoute,
+  updateRequeteEtapeNomRoute,
+  updateRequeteEtapeStatutRoute,
+  updateRequeteEtapesNoteRoute,
+} from './requetesEtapes.route';
 import {
-  addRequeteStatesNoteBodySchema,
-  UpdateRequeteStateStatutSchema,
-  UpdateRequeteStateStepNameSchema,
-  updateRequeteStatesNoteBodySchema,
-} from './requeteStates.schema';
+  addRequeteEtapeNoteBodySchema,
+  UpdateRequeteEtapeNomSchema,
+  UpdateRequeteEtapeStatutSchema,
+  updateRequeteEtapeNoteBodySchema,
+} from './requetesEtapes.schema';
 
 const app = factoryWithLogs
   .createApp()
@@ -57,17 +56,17 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const { id, fileId } = c.req.param();
 
-    const requeteState = await getRequeteStateById(id);
+    const requeteEtape = await getRequeteEtapeById(id);
 
-    if (!requeteState) {
-      return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+    if (!requeteEtape) {
+      return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
     }
 
     // TODO: check real access with entiteIds when implemented
     //   const entiteIds = c.get('entiteIds');
-    const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+    const hasAccess = await hasAccessToRequete({ requeteId: requeteEtape.requeteId, entiteId: requeteEtape.entiteId });
     if (!hasAccess) {
-      return throwHTTPException403Forbidden('You are not allowed to update this requete state', {
+      return throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
         res: c.res,
       });
     }
@@ -78,7 +77,7 @@ const app = factoryWithLogs
       return throwHTTPException404NotFound('File not found', { res: c.res });
     }
 
-    logger.info({ requeteStateId: id, fileId }, 'Retrieving file for requete state');
+    logger.info({ requeteEtapeId: id, fileId }, 'Retrieving file for requete etape');
 
     const type = file.mimeType || 'application/octet-stream';
     const size = file.size;
@@ -118,130 +117,139 @@ const app = factoryWithLogs
 
   .patch(
     '/:id/statut',
-    updateRequeteStateStatutRoute,
-    zValidator('json', UpdateRequeteStateStatutSchema),
-    requeteStatesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    updateRequeteEtapeStatutRoute,
+    zValidator('json', UpdateRequeteEtapeStatutSchema),
+    requeteEtapesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
     async (c) => {
       const logger = c.get('logger');
       const { id } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
 
-      const requeteState = await getRequeteStateById(id);
+      const requeteEtape = await getRequeteEtapeById(id);
 
-      if (!requeteState) {
-        return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+      if (!requeteEtape) {
+        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
       // TODO: check real access with entiteIds when implemented
       //   const entiteIds = c.get('entiteIds');
-      const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+      const hasAccess = await hasAccessToRequete({
+        requeteId: requeteEtape.requeteId,
+        entiteId: requeteEtape.entiteId,
+      });
       if (!hasAccess) {
-        return throwHTTPException403Forbidden('You are not allowed to update this requete state', {
+        return throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
         });
       }
 
-      const updatedRequeteState = await updateRequeteStateStatut(id, {
+      const updatedRequeteEtape = await updateRequeteEtapeStatut(id, {
         statutId: body.statutId,
       });
 
-      if (!updatedRequeteState) {
-        return throwHTTPException404NotFound('RequeteState not found', {
+      if (!updatedRequeteEtape) {
+        return throwHTTPException404NotFound('RequeteEtape not found', {
           res: c.res,
         });
       }
 
-      c.set('changelogId', updatedRequeteState.id);
+      c.set('changelogId', updatedRequeteEtape.id);
 
       logger.info(
         {
-          requeteStateId: id,
-          oldStatutId: requeteState.statutId,
+          requeteEtapeId: id,
+          oldStatutId: requeteEtape.statutId,
           newStatutId: body.statutId,
           userId,
         },
-        'RequeteState statut updated successfully',
+        'RequeteEtape statut updated successfully',
       );
 
-      return c.json({ data: updatedRequeteState });
+      return c.json({ data: updatedRequeteEtape });
     },
   )
 
   .patch(
-    '/:id/stepName',
-    updateRequeteStateStepNameRoute,
-    zValidator('json', UpdateRequeteStateStepNameSchema),
-    requeteStatesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    '/:id/nom',
+    updateRequeteEtapeNomRoute,
+    zValidator('json', UpdateRequeteEtapeNomSchema),
+    requeteEtapesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
     async (c) => {
       const logger = c.get('logger');
       const { id } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
 
-      const requeteState = await getRequeteStateById(id);
+      const requeteEtape = await getRequeteEtapeById(id);
 
-      if (!requeteState) {
-        return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+      if (!requeteEtape) {
+        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
       // TODO: check real access with entiteIds when implemented
       //   const entiteIds = c.get('entiteIds');
-      const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+      const hasAccess = await hasAccessToRequete({
+        requeteId: requeteEtape.requeteId,
+        entiteId: requeteEtape.entiteId,
+      });
       if (!hasAccess) {
-        return throwHTTPException401Unauthorized('You are not allowed to update this requete state', {
+        return throwHTTPException401Unauthorized('You are not allowed to update this requete etape', {
           res: c.res,
         });
       }
 
-      const updatedRequeteState = await updateRequeteStateStepName(id, {
-        stepName: body.stepName,
+      const updatedRequeteEtape = await updateRequeteEtapeNom(id, {
+        nom: body.nom,
       });
 
-      if (!updatedRequeteState) {
-        return throwHTTPException404NotFound('RequeteState not found', {
+      if (!updatedRequeteEtape) {
+        return throwHTTPException404NotFound('RequeteEtape not found', {
           res: c.res,
         });
       }
 
-      c.set('changelogId', updatedRequeteState.id);
+      c.set('changelogId', updatedRequeteEtape.id);
 
       logger.info(
         {
-          requeteStateId: id,
-          oldStepName: requeteState.stepName,
-          newStepName: body.stepName,
+          requeteEtapeId: id,
+          oldNom: requeteEtape.nom,
+          newNom: body.nom,
           userId,
         },
-        'RequeteState stepName updated successfully',
+        'RequeteEtape nom updated successfully',
       );
 
-      return c.json({ data: updatedRequeteState });
+      return c.json({ data: updatedRequeteEtape });
     },
   )
 
   .post(
     '/:id/note',
-    addRequeteStatesNoteRoute,
-    zValidator('json', addRequeteStatesNoteBodySchema),
-    requeteStatesNotesChangelogMiddleware({ action: ChangeLogAction.CREATED }),
+    addRequeteEtapesNoteRoute,
+    zValidator('json', addRequeteEtapeNoteBodySchema),
+    requeteEtapesNotesChangelogMiddleware({ action: ChangeLogAction.CREATED }),
     async (c) => {
       const logger = c.get('logger');
       const { id } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
 
-      const requeteState = await getRequeteStateById(id);
+      const requeteEtape = await getRequeteEtapeById(id);
 
-      if (!requeteState) {
-        return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+      if (!requeteEtape) {
+        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
       // TODO: check real access with entiteIds when implemented
       //   const entiteIds = c.get('entiteIds');
-      const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+      const hasAccess = await hasAccessToRequete({
+        requeteId: requeteEtape.requeteId,
+        entiteId: requeteEtape.entiteId,
+      });
       if (!hasAccess) {
-        return throwHTTPException403Forbidden('You are not allowed to update this requete state', {
+        return throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
           res: c.res,
         });
       }
@@ -259,8 +267,8 @@ const app = factoryWithLogs
 
       const note = await addNote({
         userId,
-        requeteEntiteStateId: id,
-        content: body.content,
+        requeteEtapeId: id,
+        texte: body.texte,
         fileIds,
       });
 
@@ -271,7 +279,7 @@ const app = factoryWithLogs
 
       c.set('changelogId', note.id);
 
-      logger.info({ requeteStateId: id, noteId: note.id, userId }, 'note added successfully');
+      logger.info({ requeteEtapeId: id, noteId: note.id, userId }, 'note added successfully');
 
       return c.json({ data: note }, 201);
     },
@@ -279,25 +287,28 @@ const app = factoryWithLogs
 
   .patch(
     '/:id/note/:noteId',
-    updateRequeteStatesNoteRoute,
-    zValidator('json', updateRequeteStatesNoteBodySchema),
-    requeteStatesNotesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    updateRequeteEtapesNoteRoute,
+    zValidator('json', updateRequeteEtapeNoteBodySchema),
+    requeteEtapesNotesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
     async (c) => {
       const logger = c.get('logger');
       const { id, noteId } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
 
-      const requeteState = await getRequeteStateById(id);
+      const requeteEtape = await getRequeteEtapeById(id);
 
-      if (!requeteState) {
-        return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+      if (!requeteEtape) {
+        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
       // TODO: check real access with entiteIds when implemented
-      const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+      const hasAccess = await hasAccessToRequete({
+        requeteId: requeteEtape.requeteId,
+        entiteId: requeteEtape.entiteId,
+      });
       if (!hasAccess) {
-        return throwHTTPException403Forbidden('You are not allowed to update this requete state', {
+        return throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
         });
       }
@@ -308,7 +319,7 @@ const app = factoryWithLogs
         return throwHTTPException404NotFound('Note not found', { res: c.res });
       }
 
-      const updatedNote = await updateNote(noteId, body.content);
+      const updatedNote = await updateNote(noteId, body.texte);
 
       const fileIds = body.fileIds || [];
       if (fileIds.length > 0) {
@@ -326,7 +337,7 @@ const app = factoryWithLogs
 
       c.set('changelogId', noteId);
 
-      logger.info({ requeteStateId: id, noteId, userId, fileIdsAdded: fileIds.length }, 'note updated successfully');
+      logger.info({ requeteEtapeId: id, noteId, userId, fileIdsAdded: fileIds.length }, 'note updated successfully');
 
       return c.json({ data: updatedNote });
     },
@@ -334,23 +345,26 @@ const app = factoryWithLogs
 
   .delete(
     '/:id/note/:noteId',
-    deleteRequeteStatesNoteRoute,
-    requeteStatesNotesChangelogMiddleware({ action: ChangeLogAction.DELETED }),
+    deleteRequeteEtapesNoteRoute,
+    requeteEtapesNotesChangelogMiddleware({ action: ChangeLogAction.DELETED }),
     async (c) => {
       const logger = c.get('logger');
       const { id, noteId } = c.req.param();
       const userId = c.get('userId');
 
-      const requeteState = await getRequeteStateById(id);
+      const requeteEtape = await getRequeteEtapeById(id);
 
-      if (!requeteState) {
-        return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
+      if (!requeteEtape) {
+        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
       // TODO: check real access with entiteIds when implemented
-      const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
+      const hasAccess = await hasAccessToRequete({
+        requeteId: requeteEtape.requeteId,
+        entiteId: requeteEtape.entiteId,
+      });
       if (!hasAccess) {
-        return throwHTTPException403Forbidden('You are not allowed to delete notes from this requete state', {
+        return throwHTTPException403Forbidden('You are not allowed to delete notes from this requete etape', {
           res: c.res,
         });
       }
@@ -365,36 +379,43 @@ const app = factoryWithLogs
 
       c.set('changelogId', noteId);
 
-      logger.info({ requeteStateId: id, noteId, userId }, 'note deleted successfully');
+      logger.info({ requeteEtapeId: id, noteId, userId }, 'note deleted successfully');
 
       return c.body(null, 204);
     },
   )
-  .delete('/:id', deleteRequeteStateRoute, async (c) => {
-    const logger = c.get('logger');
-    const { id } = c.req.param();
-    const userId = c.get('userId');
+  .delete(
+    '/:id',
+    deleteRequeteEtapeRoute,
+    requeteEtapesChangelogMiddleware({ action: ChangeLogAction.DELETED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const userId = c.get('userId');
 
-    const requeteState = await getRequeteStateById(id);
+      const requeteEtape = await getRequeteEtapeById(id);
 
-    if (!requeteState) {
-      return throwHTTPException404NotFound('RequeteState not found', { res: c.res });
-    }
+      if (!requeteEtape) {
+        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+      }
 
-    // TODO: check real access with entiteIds when implemented
-    //   const entiteIds = c.get('entiteIds');
-    const hasAccess = await hasAccessToRequete(requeteState.requeteEntiteId, null);
-    if (!hasAccess) {
-      return throwHTTPException403Forbidden('You are not allowed to delete this requete state', {
-        res: c.res,
+      // TODO: check real access with entiteIds when implemented
+      //   const entiteIds = c.get('entiteIds');
+      const hasAccess = await hasAccessToRequete({
+        requeteId: requeteEtape.requeteId,
+        entiteId: requeteEtape.entiteId,
       });
-    }
+      if (!hasAccess) {
+        return throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
+          res: c.res,
+        });
+      }
 
-    await deleteRequeteState(id, logger, userId);
+      await deleteRequeteEtape(id, logger, userId);
 
-    logger.info({ requeteStateId: id, userId }, 'RequeteState deleted successfully');
-
-    return c.body(null, 204);
-  });
+      logger.info({ requeteEtapeId: id, userId }, 'RequeteEtape deleted successfully');
+      return c.body(null, 204);
+    },
+  );
 
 export default app;
