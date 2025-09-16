@@ -303,14 +303,14 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                 )}
                 <Upload
                   label="Ajouter un ou plusieurs fichiers"
-                  hint="Taille maximale: 10 Mo. Formats supportés: .pdf, .png, .jpeg, .eml, .xlsx, .docx"
+                  hint="Taille maximale: 10 Mo. Formats supportés: .pdf, .png, .jpeg, .eml, .xlsx, .docx, .odt, .msg"
                   multiple
                   // disabled={isLoading}
                   // state={errorMessage ? 'error' : undefined}
                   // stateRelatedMessage={errorMessage ?? undefined}
                   className="relative"
                   nativeInputProps={{
-                    accept: '.pdf,.png,.jpeg,.eml,.xlsx,.docx',
+                    accept: '.pdf,.png,.jpeg,.eml,.xlsx,.docx,.odt,.msg',
                     onChange: (e) => {
                       const files = e.target.files;
                       if (files) {
