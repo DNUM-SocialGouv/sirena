@@ -35,10 +35,10 @@ const mockUploadedFile = {
   metadata: null,
   entiteId: 'e1',
   status: 'PENDING',
-  requeteEtapeNoteId: null,
-  requeteId: null,
-  faitSituationId: null,
   uploadedById: 'id10',
+  requeteEtapeNoteId: '1',
+  requeteId: '1',
+  faitSituationId: '1',
 };
 
 describe('uploadedFiles.service.ts', () => {
@@ -201,7 +201,7 @@ describe('uploadedFiles.service.ts', () => {
         filePath: '/uploads/test.pdf',
         mimeType: 'application/pdf',
         size: 1024,
-        metadata: { key: 'value' },
+        metadata: null,
         entiteId: 'entite1',
         uploadedById: 'user1',
         status: 'PENDING',
@@ -307,7 +307,7 @@ describe('uploadedFiles.service.ts', () => {
 
       expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1', 'f2'] } },
-        data: { requeteStateNoteId: 'n1', status: 'COMPLETED', entiteId: 'entite1' },
+        data: { requeteEtapeNoteId: 'n1', status: 'COMPLETED', entiteId: 'entite1' },
       });
       expect(mockedUploadedFile.findMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1', 'f2'] } },
@@ -343,7 +343,7 @@ describe('uploadedFiles.service.ts', () => {
 
       expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1'] } },
-        data: { requeteStateNoteId: 'n1', status: 'COMPLETED', entiteId: null },
+        data: { requeteEtapeNoteId: 'n1', status: 'COMPLETED', entiteId: null },
       });
       expect(mockedUploadedFile.findMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1'] } },
