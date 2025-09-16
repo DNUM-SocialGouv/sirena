@@ -30,6 +30,10 @@ const ALLOWED_MIME_TYPES = [
   'application/vnd.oasis.opendocument.spreadsheet',
   'application/vnd.oasis.opendocument.presentation',
 
+  // Outlook MSG
+  'application/vnd.ms-outlook',
+  'application/x-cfb',
+
   // CSV / TXT
   'text/csv',
   'text/plain',
@@ -85,6 +89,11 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
   // Handle text-based files that fileTypeFromBuffer can't detect
   if (!detectedType && file.name.toLowerCase().endsWith('.eml')) {
     detectedType = { mime: 'text/plain', ext: 'eml' };
+  }
+
+  // Handle MSG files that fileTypeFromBuffer might not detect or detect as x-cfb
+  if (!detectedType && file.name.toLowerCase().endsWith('.msg')) {
+    detectedType = { mime: 'application/vnd.ms-outlook', ext: 'msg' };
   }
 
   if (!detectedType?.mime || !ALLOWED_MIME_TYPES.includes(detectedType.mime)) {
