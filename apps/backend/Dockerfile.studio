@@ -1,4 +1,4 @@
-ARG NODE_VERSION=22-alpine as base
+ARG NODE_VERSION=24-alpine as base
 FROM node:$NODE_VERSION AS base
 
 ENV PNPM_HOME="/pnpm"
