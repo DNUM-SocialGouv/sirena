@@ -36,8 +36,8 @@ export async function seedAdministratives(prisma: PrismaClient) {
       .map((row) => ({
         nomComplet: row.Libellé,
         label: row['Libéllé court'],
-        emailDomain: row['Domaine mail'],
-        organizationUnit: row.Organizational_unit,
+        emailDomain: row['Domaine mail'] ?? '',
+        organizationalUnit: row.Organizational_unit ?? '',
         entiteTypeId: row["Type d'entité"],
       }));
 

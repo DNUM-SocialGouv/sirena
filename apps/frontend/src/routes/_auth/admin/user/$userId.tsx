@@ -177,13 +177,13 @@ function RouteComponent() {
                         className="fr-fieldset__content"
                         label="Nom"
                         disabled={true}
-                        nativeInputProps={{ defaultValue: user.lastName }}
+                        nativeInputProps={{ defaultValue: user.nom }}
                       />
                       <Input
                         className="fr-fieldset__content"
                         label="Prénom"
                         disabled={true}
-                        nativeInputProps={{ defaultValue: user.firstName }}
+                        nativeInputProps={{ defaultValue: user.prenom }}
                       />
                     </fieldset>
                     <fieldset className="fr-fieldset">

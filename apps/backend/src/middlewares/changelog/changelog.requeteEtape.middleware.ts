@@ -1,16 +1,16 @@
 import type { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getNoteById } from '@/features/requeteStates/requeteStates.service';
-import type { RequeteStateNote } from '@/libs/prisma';
+import { getRequeteEtapeById } from '@/features/requeteEtapes/requetesEtapes.service';
+import type { RequeteEtape } from '@/libs/prisma';
 import createChangelogMiddleware from './changelog.middleware';
 
-type requeteStatesNotesChangelogMiddleware = {
+type requeteEtapesChangelogMiddleware = {
   action: ChangeLogAction;
 };
 
-const requeteStatesNotesChangelogMiddleware = ({ action }: requeteStatesNotesChangelogMiddleware) =>
-  createChangelogMiddleware<RequeteStateNote>({
+const requeteEtapesChangelogMiddleware = ({ action }: requeteEtapesChangelogMiddleware) =>
+  createChangelogMiddleware<RequeteEtape>({
     action,
-    entity: 'RequeteStateNote',
+    entity: 'RequeteEtape',
     getEntityById: async (c) => {
       let id: string | null = null;
       if (c.get('changelogId')) {
@@ -19,7 +19,7 @@ const requeteStatesNotesChangelogMiddleware = ({ action }: requeteStatesNotesCha
         id = c.req.param('id');
       }
       if (id) {
-        return await getNoteById(id);
+        return await getRequeteEtapeById(id);
       }
       return null;
     },
@@ -29,7 +29,7 @@ const requeteStatesNotesChangelogMiddleware = ({ action }: requeteStatesNotesCha
       }
       return c.req.param('id');
     },
-    trackedFields: ['content', 'authorId'],
+    trackedFields: ['nom', 'statutId'],
   });
 
-export default requeteStatesNotesChangelogMiddleware;
+export default requeteEtapesChangelogMiddleware;

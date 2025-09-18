@@ -17,7 +17,7 @@ export const UserMenu = () => {
     if (!data) {
       return '';
     }
-    return data?.firstName;
+    return data?.prenom;
   }, [data]);
   const email = useMemo(() => data?.email ?? '', [data?.email]);
   const role = useMemo(() => (data?.role?.id ?? '') as Role | '', [data?.role]);

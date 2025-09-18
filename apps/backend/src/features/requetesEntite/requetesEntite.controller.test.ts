@@ -1,9 +1,11 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
-import { addProcessingState, getRequeteStates } from '@/features/requeteStates/requeteStates.service';
+import { addProcessingEtape, getRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
+import { getUserById } from '@/features/users/users.service';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
+import type { Requete, RequeteEntite, RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
 import RequetesEntiteController from './requetesEntite.controller';
@@ -14,9 +16,13 @@ vi.mock('./requetesEntite.service', () => ({
   hasAccessToRequete: vi.fn(),
 }));
 
-vi.mock('@/features/requeteStates/requeteStates.service', () => ({
-  addProcessingState: vi.fn(),
-  getRequeteStates: vi.fn(),
+vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
+  addProcessingEtape: vi.fn(),
+  getRequeteEtapes: vi.fn(),
+}));
+
+vi.mock('@/features/users/users.service', () => ({
+  getUserById: vi.fn(),
 }));
 
 vi.mock('@/middlewares/auth.middleware', () => {
@@ -56,7 +62,7 @@ vi.mock('@/middlewares/entites.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/changelog/changelog.requeteStep.middleware', () => {
+vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
   return {
     default: () => (_c: Context, next: Next) => {
       return next();
@@ -68,23 +74,38 @@ describe('RequetesEntite endpoints: /', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequetesEntiteController).onError(errorHandler);
   const client = testClient(app);
 
-  const fakeData = [
+  const fakeData: (RequeteEntite & { requete: Requete; RequeteEtape: RequeteEtape[] })[] = [
     {
-      id: 'r1',
-      number: 123,
-      createdAt: new Date(0),
-      updatedAt: new Date(0),
-      requeteId: 'q1',
+      requeteId: 'r1',
+      entiteId: 'e1',
       requete: {
-        id: 'q1',
-        number: 111,
-        createdAt: new Date(0),
-        updatedAt: new Date(0),
-        dematSocialId: 321,
+        id: 'r1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        commentaire: 'Commentaire',
+        receptionDate: new Date(),
+        dematSocialId: 123,
+        receptionTypeId: 'receptionTypeId',
       },
-      requetesEntiteStates: [],
+      RequeteEtape: [],
     },
   ];
+  const fakeUser = {
+    id: 'id1',
+    entiteId: 'e1',
+    sub: 'sub1',
+    email: 'email1',
+    prenom: 'John',
+    nom: 'Doe',
+    uid: 'uid1',
+    active: true,
+    pcData: {},
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    statutId: 'STATUT_ID',
+    roleId: 'ROLE_ID',
+    role: { id: 'roleId', label: 'ROLE_ADMIN' },
+  };
 
   describe('GET /', () => {
     it('should return requetesEntite with basic query', async () => {
@@ -123,30 +144,54 @@ describe('RequetesEntite endpoints: /', () => {
   });
 
   describe('GET /:id/processing-steps', () => {
+    const requeteEtape: RequeteEtape = {
+      id: 'requeteEtapeId',
+      requeteId: 'requeteId',
+      entiteId: 'entiteId',
+      nom: 'Etape 1',
+      estPartagee: false,
+      statutId: 'A_FAIRE',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const note = {
+      id: 'noteId',
+      texte: 'Note 1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      authorId: 'authorId',
+      requeteEtapeId: 'requeteEtapeId',
+    };
+
+    const uploadedFile: Pick<UploadedFile, 'id' | 'size' | 'metadata' | 'filePath'> = {
+      id: 'uploadedFileId',
+      size: 1024,
+      metadata: null,
+      filePath: 'path/to/file1.pdf',
+    };
+
+    const requeteEtapeWithNotesAndFiles: RequeteEtape & {
+      notes: (RequeteEtapeNote & {
+        author: { prenom: string; nom: string };
+        uploadedFiles: Pick<UploadedFile, 'id' | 'size' | 'metadata'>[];
+      })[];
+    } = {
+      ...requeteEtape,
+      notes: [
+        {
+          ...note,
+          author: { prenom: 'John', nom: 'Doe' },
+          uploadedFiles: [uploadedFile],
+        },
+      ],
+    };
+
     it('should return processing steps for a requete', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+      vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
 
-      const fakeSteps = [
-        {
-          id: 'step1',
-          requeteEntiteId: '1',
-          stepName: 'Step 1',
-          statutId: 'FAIT',
-          notes: [],
-          createdAt: new Date(0),
-          updatedAt: new Date(0),
-        },
-        {
-          id: 'step2',
-          requeteEntiteId: '1',
-          stepName: 'Step 2',
-          statutId: 'FAIT',
-          notes: [],
-          createdAt: new Date(0),
-          updatedAt: new Date(0),
-        },
-      ];
-      vi.mocked(getRequeteStates).mockResolvedValueOnce({ data: fakeSteps, total: 2 });
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [requeteEtapeWithNotesAndFiles], total: 2 });
 
       const res = await client[':id']['processing-steps'].$get({
         param: { id: '1' },
@@ -155,79 +200,84 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json).toEqual({
-        data: convertDatesToStrings(fakeSteps),
+        data: convertDatesToStrings([requeteEtapeWithNotesAndFiles]),
         meta: { total: 2 },
       });
 
-      expect(getRequeteStates).toHaveBeenCalledWith('1', {});
+      expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {});
     });
 
-    it('should return 404 if requete does not exist', async () => {
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+    it('should return 404 if user does not exist', async () => {
+      vi.mocked(getUserById).mockResolvedValueOnce(null);
 
       const res = await client[':id']['processing-steps'].$get({
         param: { id: 'nonexistent' },
       });
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(401);
       const json = await res.json();
-      expect(json).toEqual({ message: 'Requete entite not found' });
+      expect(json).toEqual({ message: 'User not found' });
     });
   });
 
   describe('POST /:id/processing-steps', () => {
     it('should add a processing step', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+      vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
 
       const fakeStep = {
         id: 'step1',
         requeteEntiteId: '1',
-        stepName: 'Step 1',
+        nom: 'Step 1',
         statutId: 'FAIT',
         createdAt: new Date(0),
         updatedAt: new Date(0),
+        entiteId: 'e1',
+        requeteId: '1',
+        estPartagee: false,
       };
 
-      vi.mocked(addProcessingState).mockResolvedValueOnce(fakeStep);
+      vi.mocked(addProcessingEtape).mockResolvedValueOnce(fakeStep);
 
       const res = await client[':id']['processing-steps'].$post({
         param: { id: '1' },
-        json: { stepName: 'Step 1' },
+        json: { nom: 'Step 1' },
       });
 
       expect(res.status).toBe(201);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeStep) });
-      expect(addProcessingState).toHaveBeenCalledWith('1', { stepName: 'Step 1' });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' });
     });
 
-    it('should return 404 if requete does not exist', async () => {
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+    it('should return 404 if user does not exist', async () => {
+      vi.mocked(getUserById).mockResolvedValueOnce(null);
 
       const res = await client[':id']['processing-steps'].$post({
         param: { id: 'nonexistent' },
-        json: { stepName: 'Step 1' },
+        json: { nom: 'Step 1' },
       });
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(401);
       const json = await res.json();
-      expect(json).toEqual({ message: 'Requete entite not found' });
+      expect(json).toEqual({ message: 'User not found' });
     });
 
     it('should return 404 if step is not created', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+      vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
 
-      vi.mocked(addProcessingState).mockResolvedValueOnce(null);
+      vi.mocked(addProcessingEtape).mockResolvedValueOnce(null);
 
       const res = await client[':id']['processing-steps'].$post({
         param: { id: '1' },
-        json: { stepName: 'Step 1' },
+        json: { nom: 'Step 1' },
       });
 
       expect(res.status).toBe(404);
       const json = await res.json();
       expect(json).toEqual({ message: 'Requete entite not found' });
-      expect(addProcessingState).toHaveBeenCalledWith('1', { stepName: 'Step 1' });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' });
     });
   });
 });
