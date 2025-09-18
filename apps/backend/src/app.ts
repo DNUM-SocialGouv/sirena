@@ -3,6 +3,7 @@ import '@/libs/instrument';
 import AuthController from '@/features/auth/auth.controller';
 import EntitesController from '@/features/entites/entites.controller';
 import HealthController from '@/features/health/health.controller';
+import NotesController from '@/features/notes/notes.controller';
 import ProfileController from '@/features/profile/profile.controller';
 import RequeteEtapesController from '@/features/requeteEtapes/requetesEtapes.controller';
 import RequetesEntiteController from '@/features/requetesEntite/requetesEntite.controller';
@@ -33,6 +34,7 @@ export const app = baseApp
   .route('/uploaded-files', UploadedFilesController)
   .route('/requetes-entite', RequetesEntiteController)
   .route('/requete-etapes', RequeteEtapesController)
+  .route('/notes', NotesController)
   .route('/profile', ProfileController)
   .route('/health', HealthController)
   .route('/version', VersionController)
