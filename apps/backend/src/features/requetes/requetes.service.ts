@@ -1,6 +1,5 @@
-import { RECEPTION_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { prisma } from '@/libs/prisma';
-import type { CreateRequeteFromDematSocialDto, CreateRequeteFromDematSocialMinimalDto } from './requetes.type';
+import type { CreateRequeteFromDematSocialDto } from './requetes.type';
 
 export const getRequeteByDematSocialId = async (id: number) =>
   await prisma.requete.findFirst({
@@ -9,92 +8,236 @@ export const getRequeteByDematSocialId = async (id: number) =>
     },
     include: {
       receptionType: true,
-      RequeteEntites: { include: { entite: true } },
       etapes: { include: { statut: true } },
     },
   });
 
 export const createRequeteFromDematSocial = async ({
   dematSocialId,
-  createdAt,
-  entiteIds,
-  receptionTypeId,
   receptionDate,
-  commentaire,
+  receptionTypeId,
+  declarant,
+  participant,
+  situations,
 }: CreateRequeteFromDematSocialDto) => {
-  if (!entiteIds?.length) {
-    throw new Error('createRequeteFromDematSocial: entiteIds is required (>= 1)');
-  }
-
-  return prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx) => {
     const requete = await tx.requete.create({
       data: {
         dematSocialId,
-        commentaire,
         receptionDate,
-        receptionTypeId,
-        createdAt,
+        receptionType: { connect: { id: receptionTypeId } },
       },
+      select: { id: true },
     });
 
-    for (const entiteId of entiteIds) {
-      // create requeteEntite if not exists
-      await tx.requeteEntite.upsert({
-        where: { requeteId_entiteId: { requeteId: requete.id, entiteId: entiteId } },
-        create: { requeteId: requete.id, entiteId: entiteId },
-        update: {},
+    if (declarant) {
+      const decl = await tx.personneConcernee.create({
+        data: {
+          telephone: declarant.telephone ?? '',
+          estHandicapee: declarant.estHandicapee ?? null,
+          estVictime: declarant.estVictime ?? null,
+          estAnonyme: declarant.estAnonyme ?? null,
+          lienVictime: declarant.lienVictimeId ? { connect: { id: declarant.lienVictimeId } } : undefined,
+          age: declarant.ageId ? { connect: { id: declarant.ageId } } : undefined,
+          declarantDe: { connect: { id: requete.id } },
+        },
+        select: { id: true },
       });
 
-      await tx.requeteEtape.create({
-        data: {
-          nom: `Création de la requête le ${createdAt.toLocaleDateString('fr-FR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-          })}`,
-          statutId: REQUETE_STATUT_TYPES.FAIT,
-          requeteId: requete.id,
-          entiteId,
-        },
-      });
-
-      await tx.requeteEtape.create({
-        data: {
-          nom: 'Envoyer un accusé de réception au déclarant',
-          statutId: REQUETE_STATUT_TYPES.A_FAIRE,
-          requeteId: requete.id,
-          entiteId,
-        },
-      });
+      if (declarant.adresse) {
+        const a = declarant.adresse;
+        await tx.adresse.create({
+          data: {
+            label: a.label ?? '',
+            numero: a.numRue ?? '',
+            rue: a.rue ?? '',
+            codePostal: a.codePostal ?? '',
+            ville: a.ville ?? '',
+            personneConcernee: { connect: { id: decl.id } },
+          },
+        });
+      }
     }
 
-    return requete;
+    if (participant) {
+      const part = await tx.personneConcernee.create({
+        data: {
+          telephone: participant.telephone ?? '',
+          estHandicapee: participant.estHandicapee ?? null,
+          estVictimeInformee: participant.estVictimeInformee ?? null,
+          victimeInformeeCommentaire: participant.victimeInformeeCommentaire ?? '',
+          autrePersonnes: participant.autrePersonnes ?? '',
+          age: participant.ageId ? { connect: { id: participant.ageId } } : undefined,
+          participantDe: { connect: { id: requete.id } },
+        },
+        select: { id: true },
+      });
+
+      if (participant.adresse) {
+        const a = participant.adresse;
+        await tx.adresse.create({
+          data: {
+            label: a.label ?? '',
+            numero: a.numRue ?? '',
+            rue: a.rue ?? '',
+            codePostal: a.codePostal ?? '',
+            ville: a.ville ?? '',
+            personneConcernee: { connect: { id: part.id } },
+          },
+        });
+      }
+    }
+
+    for (const s of situations) {
+      const lieu = await tx.lieuDeSurvenue.create({
+        data: {
+          codePostal: s.lieuDeSurvenue.codePostal ?? '',
+          commentaire: s.lieuDeSurvenue.commentaire ?? '',
+          societeTransport: s.lieuDeSurvenue.societeTransport ?? '',
+          finess: s.lieuDeSurvenue.finess ?? '',
+          lieuType: s.lieuDeSurvenue.lieuTypeId ? { connect: { id: s.lieuDeSurvenue.lieuTypeId } } : undefined,
+          transportType: s.lieuDeSurvenue.transportTypeId
+            ? { connect: { id: s.lieuDeSurvenue.transportTypeId } }
+            : undefined,
+        },
+        select: { id: true },
+      });
+
+      if (s.lieuDeSurvenue.adresse) {
+        const a = s.lieuDeSurvenue.adresse;
+        await tx.adresse.create({
+          data: {
+            label: a.label ?? '',
+            numero: a.numRue ?? '',
+            rue: a.rue ?? '',
+            codePostal: a.codePostal ?? '',
+            ville: a.ville ?? '',
+            lieuDeSurvenue: { connect: { id: lieu.id } },
+          },
+        });
+      }
+
+      const mec = await tx.misEnCause.create({
+        data: {
+          rpps: s.misEnCause.rpps ?? null,
+          commentaire: s.misEnCause.commentaire ?? '',
+          misEnCauseType: s.misEnCause.misEnCauseType ? { connect: { id: s.misEnCause.misEnCauseType } } : undefined,
+          professionType: s.misEnCause.professionType ? { connect: { id: s.misEnCause.professionType } } : undefined,
+          professionDomicileType: s.misEnCause.professionDomicileType
+            ? { connect: { id: s.misEnCause.professionDomicileType } }
+            : undefined,
+        },
+        select: { id: true },
+      });
+
+      const atId = s.demarchesEngagees.autoriteTypeId ?? null;
+      const autorite = atId
+        ? await tx.autoriteTypeEnum.findUnique({ where: { id: atId }, select: { id: true } })
+        : null;
+
+      const demIds = s.demarchesEngagees.demarches ?? [];
+      const demExisting = demIds.length
+        ? await tx.demarchesEngageesEnum.findMany({
+            where: { id: { in: demIds } },
+            select: { id: true },
+          })
+        : [];
+
+      const dem = await tx.demarchesEngagees.create({
+        data: {
+          dateContactEtablissement: s.demarchesEngagees.dateContactEtablissement ?? null,
+          etablissementARepondu: s.demarchesEngagees.etablissementARepondu ?? null,
+          organisme: s.demarchesEngagees.organisme ?? '',
+          datePlainte: s.demarchesEngagees.datePlainte ?? null,
+          autoriteType: autorite ? { connect: { id: autorite.id } } : undefined,
+          demarches: demExisting.length ? { connect: demExisting } : undefined,
+        },
+        select: { id: true },
+      });
+
+      const situation = await tx.situation.create({
+        data: {
+          requete: { connect: { id: requete.id } },
+          lieuDeSurvenue: { connect: { id: lieu.id } },
+          misEnCause: { connect: { id: mec.id } },
+          demarchesEngagees: { connect: { id: dem.id } },
+        },
+        select: { id: true },
+      });
+
+      const f0 = s.faits?.[0];
+      if (f0) {
+        await tx.fait.create({
+          data: {
+            situation: { connect: { id: situation.id } },
+            dateDebut: f0.dateDebut ?? null,
+            dateFin: f0.dateFin ?? null,
+            commentaire: f0.commentaire ?? '',
+          },
+        });
+
+        if (f0.motifs?.length) {
+          await tx.faitMotif.createMany({
+            data: f0.motifs.map((motifId) => ({
+              situationId: situation.id,
+              motifId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+
+        if (f0.consequences?.length) {
+          await tx.faitConsequence.createMany({
+            data: f0.consequences.map((consequenceId) => ({
+              situationId: situation.id,
+              consequenceId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+
+        if (f0.maltraitanceTypes?.length) {
+          await tx.faitMaltraitanceType.createMany({
+            data: f0.maltraitanceTypes.map((maltraitanceTypeId) => ({
+              situationId: situation.id,
+              maltraitanceTypeId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+    }
+
+    return tx.requete.findUniqueOrThrow({
+      where: { id: requete.id },
+      include: {
+        declarant: { include: { adresse: true, age: true, lienVictime: true } },
+        participant: { include: { adresse: true, age: true } },
+        situations: {
+          include: {
+            lieuDeSurvenue: { include: { adresse: true, lieuType: true, transportType: true } },
+            misEnCause: { include: { misEnCauseType: true, professionType: true, professionDomicileType: true } },
+            demarchesEngagees: { include: { autoriteType: true, demarches: true } },
+            faits: {
+              include: {
+                motifs: { include: { motif: true } },
+                consequences: { include: { consequence: true } },
+                maltraitanceTypes: { include: { maltraitanceType: true } },
+              },
+            },
+          },
+        },
+      },
+    });
   });
 };
 
-export const createOrGetFromDematSocial = async (
-  dto: CreateRequeteFromDematSocialMinimalDto,
-  ctx: {
-    userEntiteId: string;
-  },
-) => {
+export const createOrGetFromDematSocial = async (dto: CreateRequeteFromDematSocialDto) => {
   const requete = await getRequeteByDematSocialId(dto.dematSocialId);
 
   if (requete) {
     return null;
   }
 
-  const entiteIds = dto.entiteIds?.length ? dto.entiteIds : [ctx.userEntiteId];
-  const receptionTypeId = dto.receptionTypeId ?? RECEPTION_TYPES.FORMULAIRE;
-  const receptionDate = dto.receptionDate ?? new Date();
-  const commentaire = dto.commentaire ?? '';
-
-  return await createRequeteFromDematSocial({
-    dematSocialId: dto.dematSocialId,
-    createdAt: dto.createdAt,
-    entiteIds,
-    receptionTypeId,
-    receptionDate,
-    commentaire,
-  });
+  createRequeteFromDematSocial(dto);
 };

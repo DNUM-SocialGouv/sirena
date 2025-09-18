@@ -1,8 +1,8 @@
 export const ages = {
   '-18': 'Moins de 18 ans',
-  '18-29': '18 à 29 ans',
-  '30-59': '30 à 59 ans',
-  '60-79': '60 à 79 ans',
+  '18-29': 'Entre 18 et 29 ans',
+  '30-59': 'Entre 30 et 59 ans',
+  '60-79': 'Entre 60 et 79 ans',
   '>= 80': '80 ans et plus',
   Inconnu: 'Inconnu',
 } as const;
@@ -16,9 +16,8 @@ export const civilites = {
 
 export const misEnCauseTypes = {
   MEMBRE_FAMILLE: 'Membre de la famille',
-  PROCHE: 'Proche (ami, voisin...)',
+  PROCHE: 'Proche',
   PROFESSIONNEL: 'Professionnel',
-  PROFESSIONNEL_DOMICILE: "Professionnel dans le cadre d'un service ou d'une intervention à domicile",
   AUTRE: 'Autre',
 } as const;
 
@@ -41,27 +40,32 @@ export const motifs = {
 } as const;
 
 export const consequences = {
-  SANTE: 'Sur la santé physique et/ou psychique (blessures, troubles de la santé ou mentaux...)',
-  DROITS: 'Sur les droits (violation du droit de la protection et sécurité, accès limité à la justice...)',
-  BESOINS: 'Sur les besoins fondamentaux et spécifiques (notamment des besoins vitaux...)',
-  SOCIAL: 'Sur le développement, la participation sociale (isolement, rejet...)',
+  SANTE: 'Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...)',
+  DROITS: 'Sur les droits (impossible de porter plainte, d’être écouté, d’avoir un soutien...)',
+  BESOINS:
+    'Sur les besoins du quotidien (difficulté à manger, dormir, se laver, ou à recevoir l’aide dont elle a besoin...)',
+  SOCIAL:
+    'Sur la vie sociale ( isolement, rejet, mise à l’écart, difficulté à aller à l’école, au travail ou à participer à des activités...)',
   AUTRE: 'Autre conséquence',
 } as const;
 
 export const maltraitanceTypes = {
   PHYSIQUE:
-    'Maltraitance physique (châtiments corporels, agressions physiques, intervention médicale sans consentement éclairé, enfermement...)',
-  SEXUELLE: 'Maltraitance sexuelle (viols, agressions sexuelles, atteintes sexuelles, attentats à la pudeur...)',
+    'Oui, de la maltraitance physique (châtiments corporels, agressions physiques, intervention médicale sans consentement éclairé, enfermement...)',
+  SEXUELLE:
+    'Oui, de la maltraitance sexuelle (viols, agressions sexuelles, atteintes sexuelles, attentats à la pudeur...)',
   PSYCHOLOGIQUE:
-    'Maltraitance psychologique (humiliations, insulte, intimidation, harcèlement, menaces, dénigrement, isolement...)',
+    'Oui, de la maltraitance psychologique (humiliations, insulte, intimidation, harcèlement, menaces, dénigrement, isolement...)',
   MATERIELLE_FINANCIERE:
-    "Maltraitance matérielles et financières (fraude, vol d'effets personnels d'argent ou de biens, privation de gestion de ses ressources, dégradation de biens d'une personne...)",
-  NEGLIGENCES: "Négligence, abandon, privation (manque de soins, de nourriture, d'hygiène, de sécurité)",
+    "Oui, de la maltraitance matérielles et financières (fraude, vol d'effets personnels d'argent ou de biens, privation de gestion de ses ressources, dégradation de biens d'une personne...)",
+  NEGLIGENCES: "Oui, de la négligence, abandon, privation (manque de soins, de nourriture, d'hygiène, de sécurité)",
   DISCRIMINATION:
-    "Discrimination (accès difficile, dégradé ou impossible aux droits aux soins ou prestations sociales ou à l'information...)",
+    "Oui, de la discrimination (accès difficile, dégradé ou impossible aux droits aux soins ou prestations sociales ou à l'information...)",
   INSTITUTIONNELLE:
-    'Violence institutionnelle (traitement abusif de la part de structures ou d’institutions, menaces, soumission à des actes, comportements ou images violents...)',
-  AUTRE: 'Autre type de maltraitance',
+    'Oui, de la violence institutionnelle (traitement abusif de la part de structures ou d’institutions, menaces, soumission à des actes, comportements ou images violents...)',
+  AUTRE: 'Oui, un autre type de maltraitance',
+  NE_SAIS_PAS: "Je ne sais pas si j'ai subi de la maltraitance",
+  NON: "Non, je n'ai pas subi de maltraitance",
 } as const;
 
 export const lieuTypes = {
@@ -76,6 +80,7 @@ export const lieuTypes = {
 } as const;
 
 export const professionDomicileTypes = {
+  PROF_LIBERAL: "Intervention d'un professionnel libéral ou service (SAMU, médecin)",
   HAD: 'Hospitalisation à domicile',
   SESSAD: "Service d'éducation spéciale et de soins",
   AIDE_MENAGERE: "Service d'aide ménagère",
@@ -83,7 +88,6 @@ export const professionDomicileTypes = {
   TRAITEMENT: 'Traitements spécialisés',
   SAADF: "Service d'Aide et d'Accompagnement à Domicile aux Familles (SAADF)",
   MJPM: 'Mandataire Judiciaire à la Protection des Majeurs (curatelle, tutelle)',
-  PROF_LIBERAL: "Intervention d'un professionnel libéral ou service (SAMU, médecin)",
   SSIAD: 'Service de Soins Infirmier à Domicile (SSIAD)',
   SAAD: "Service d'Aide et d'Accompagnement à Domicile (SAAD)",
   AUTRE: 'Autre',
@@ -99,13 +103,13 @@ export const transportTypes = {
 } as const;
 
 export const professionTypes = {
-  PROF_SANTE: 'Un professionnel de santé (médecin, infirmier, aide-soignant, kiné, ostéopathe...)',
-  PROF_SOIN: 'Un professionnel du soin (coiffeur, esthéticienne, naturopathe, ...)',
-  AUTRE_PROF_SERVICE:
-    "Un autre professionnel d'établissement ou de service (directeur, animateur, agent d'entretien...)",
+  PROF_SANTE:
+    'Un professionnel de santé (médecin généraliste, spécialiste, dentiste, kinésithérapeute, orthophoniste, infirmier, aide-soignant...)',
   TRAVAILLEUR_SOCIAL: 'Travailleur social (éducateur, assistant social...)',
-  MJPM: 'Mandataire Judiciaire à la Protection des Majeurs (curatelle, tutelle)',
-  AUTRE: 'Autre Professionnel',
+  PROF_SOIN: 'Un professionnel du soin (coiffeur, esthéticienne, naturopathe, ...)',
+  RESPONSABLE: 'Responsable (directeur, cadre de santé...)',
+  MJPM: 'Mandataire judiciaire à la protection des majeurs (curateur, tuteur...)',
+  AUTRE: 'Autre (animateur, agent d’entretien...)',
 } as const;
 
 export const RECEPTION_TYPES = {
@@ -126,10 +130,16 @@ export const receptionTypes: Record<ReceptionType, string> = {
   PLATEFORME: 'Plateforme téléphonique',
   TELEPHONE: 'Téléphone',
   AUTRE: 'Autre',
-} as const;
+};
 
-export const institutionPlainteTypes = {
+export const autoritesTypes = {
   GENDARMERIE: 'Gendarmerie',
   COMMISSARIAT: 'Commissariat',
   TRIBUNAL: 'Tribunal',
+} as const;
+
+export const demarchesEngageesTypes = {
+  CONTACT_RESPONSABLES: "Prise de contact avec l'établissement ou les responsables des faits",
+  CONTACT_ORGANISME: "Démarches engagées auprès d'autres organismes",
+  PLAINTE: 'Dépôt de plainte',
 } as const;

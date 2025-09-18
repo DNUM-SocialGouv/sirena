@@ -92,7 +92,7 @@ model Entite {
 
   users         User[]
   uploads       UploadedFile[]
-  RequeteEntite RequeteEntite[]
+  requeteEntite RequeteEntite[]
 }
 
 model EntiteTypeEnum {
@@ -122,13 +122,11 @@ model Requete {
 
   participant PersonneConcernee? @relation("ParticipantRequete")
 
-  demarchesEngagees DemarchesEngagees?
-
   fichiersRequeteOriginale UploadedFile[]
 
   etapes         RequeteEtape[]
   situations     Situation[]
-  RequeteEntites RequeteEntite[]
+  requeteEntites RequeteEntite[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -140,7 +138,7 @@ model RequeteEntite {
 
   entiteId     String
   entite       Entite         @relation(fields: [entiteId], references: [id])
-  RequeteEtape RequeteEtape[]
+  requeteEtape RequeteEtape[]
 
   @@id([requeteId, entiteId])
 }
@@ -153,22 +151,36 @@ model ReceptionTypeEnum {
 }
 
 model DemarchesEngagees {
-  aContacte             Boolean?
-  dateContact           DateTime?
-  aRepondu              Boolean?
-  aContacteAutre        Boolean?
-  autreOrganisation     String    @default("")
-  aDeposePlainte        Boolean?
-  plainteDeposeDate     DateTime?
-  plainteDeposeLocation String    @default("")
-  commentaire           String    @default("")
+  id                       String    @id @default(uuid())
+  dateContactEtablissement DateTime?
+  etablissementARepondu    Boolean?
+  organisme                String    @default("")
+  datePlainte              DateTime?
+  commentaire              String    @default("")
 
-  RequeteId String  @id
-  Requete   Requete @relation(fields: [RequeteId], references: [id], onDelete: Cascade)
+  autoriteTypeId String?
+  autoriteType   AutoriteTypeEnum? @relation(fields: [autoriteTypeId], references: [id])
+
+  demarches DemarchesEngageesEnum[]
+  Situation Situation[]
+}
+
+model AutoriteTypeEnum {
+  id    String @id @default(uuid())
+  label String @unique
+
+  DemarchesEngagees DemarchesEngagees[]
+}
+
+model DemarchesEngageesEnum {
+  id                String              @id @default(uuid())
+  label             String              @unique
+  demarchesEngagees DemarchesEngagees[]
 }
 
 model PersonneConcernee {
   id                         String   @id @default(uuid())
+  telephone                  String?  @default("")
   estNonIdentifiee           Boolean?
   estAnonyme                 Boolean?
   estHandicapee              Boolean?
@@ -197,7 +209,7 @@ model PersonneConcernee {
   declarantDe   Requete? @relation("DeclarantRequete", fields: [declarantDeId], references: [id], onDelete: Cascade)
 
   participantDeId String?  @unique
-  ParticipantDe   Requete? @relation("ParticipantRequete", fields: [participantDeId], references: [id], onDelete: Cascade)
+  participantDe   Requete? @relation("ParticipantRequete", fields: [participantDeId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -260,15 +272,20 @@ model Situation {
   lieuDeSurvenueId String         @unique
   lieuDeSurvenue   LieuDeSurvenue @relation("SituationLieu", fields: [lieuDeSurvenueId], references: [id], onDelete: Cascade)
 
-  misEnCauses MisEnCause[]
-  faits       Fait[]
-  Requete     Requete?     @relation(fields: [requeteId], references: [id], onDelete: Cascade)
-  requeteId   String?
+  misEnCauseId String
+  misEnCause   MisEnCause @relation(fields: [misEnCauseId], references: [id], onDelete: Cascade)
+
+  faits Fait[]
+
+  demarchesEngageesId String
+  demarchesEngagees   DemarchesEngagees @relation(fields: [demarchesEngageesId], references: [id], onDelete: Cascade)
+
+  requete   Requete? @relation(fields: [requeteId], references: [id], onDelete: Cascade)
+  requeteId String?
 }
 
 model LieuDeSurvenue {
   id               String @id @default(uuid())
-  nom              String @default("")
   codePostal       String @default("")
   societeTransport String @default("")
   finess           String @default("")
@@ -300,14 +317,9 @@ model TransportTypeEnum {
 }
 
 model MisEnCause {
-  id           String   @id @default(uuid())
-  estIdentifie Boolean?
-  identite     String?
-  rpps         String?
-  commentaire  String   @default("")
-
-  situationId String
-  situation   Situation @relation(fields: [situationId], references: [id], onDelete: Cascade)
+  id          String  @id @default(uuid())
+  rpps        String?
+  commentaire String  @default("")
 
   professionTypeId String?
   professionType   ProfessionTypeEnum? @relation(fields: [professionTypeId], references: [id])
@@ -317,6 +329,7 @@ model MisEnCause {
 
   professionDomicileTypeId String?
   professionDomicileType   ProfessionDomicileTypeEnum? @relation(fields: [professionDomicileTypeId], references: [id])
+  Situation                Situation[]
 }
 
 model MisEnCauseTypeEnum {
@@ -344,10 +357,9 @@ model Fait {
   situationId String    @id
   situation   Situation @relation(fields: [situationId], references: [id], onDelete: Cascade)
 
-  estMaltraitance Boolean?
-  dateDebut       DateTime?
-  dateFin         DateTime?
-  commentaire     String    @default("")
+  dateDebut   DateTime?
+  dateFin     DateTime?
+  commentaire String    @default("")
 
   fichiers UploadedFile[]
 
@@ -416,7 +428,7 @@ model RequeteEtape {
   statut   RequeteStatutEnum @relation(fields: [statutId], references: [id])
 
   requeteId String
-  Requete   Requete @relation(fields: [requeteId], references: [id], onDelete: Cascade)
+  requete   Requete @relation(fields: [requeteId], references: [id], onDelete: Cascade)
 
   entiteId String
 
@@ -476,7 +488,7 @@ model UploadedFile {
   requeteId String?
   Requete   Requete? @relation(fields: [requeteId], references: [id], onDelete: Cascade)
 
-  Fait            Fait?   @relation(fields: [faitSituationId], references: [situationId], onDelete: Cascade)
+  fait            Fait?   @relation(fields: [faitSituationId], references: [situationId], onDelete: Cascade)
   faitSituationId String?
 
   createdAt DateTime @default(now())
