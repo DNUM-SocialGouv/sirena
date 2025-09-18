@@ -1,7 +1,9 @@
+import * as Sentry from '@sentry/node';
 import { Worker } from 'bullmq';
+import { envVars } from '@/config/env';
 import { connection } from '@/config/redis';
 import { createDefaultLogger } from '@/helpers/pino';
-import { loggerStorage } from '@/libs/asyncLocalStorage';
+import { loggerStorage, sentryStorage } from '@/libs/asyncLocalStorage';
 import { jobHandlers } from '../config/job.definitions';
 import { cronQueue } from '../config/job.queues';
 
@@ -14,7 +16,26 @@ export const cronWorker = new Worker(
     if (!handler) {
       throw new Error(`No handler for job: ${job.name}`);
     }
-    return loggerStorage.run(createDefaultLogger(), async () => await handler(job));
+
+    return loggerStorage.run(createDefaultLogger(), async () => {
+      if (envVars.SENTRY_ENABLED) {
+        return Sentry.withScope(async (scope) => {
+          return sentryStorage.run(scope, async () => {
+            scope.setContext('cron_job', {
+              name: job.name,
+              id: job.id,
+              attemptsMade: job.attemptsMade,
+              processedOn: job.processedOn,
+              timestamp: job.timestamp,
+            });
+
+            return await handler(job);
+          });
+        });
+      }
+
+      return await handler(job);
+    });
   },
   { connection, concurrency: 5 },
 );

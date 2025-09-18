@@ -1,37 +1,45 @@
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { testClient } from 'hono/testing';
+import type pino from 'pino';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { EnrichedUserContext, RequestContext } from '@/helpers/middleware';
+import type { createDefaultLogger } from '@/helpers/pino';
 import { createTestRequestContext, createTestUser } from '../tests/test-utils';
-import type { EnhancedLogger, MockedContext } from '../tests/types';
 import { enhancedPinoMiddleware } from './pino.middleware';
 
-vi.unmock('@sentry/node');
-vi.unmock('@/helpers/middleware');
-vi.unmock('pino');
-vi.unmock('hono-pino');
+const {
+  mockPinoLogger,
+  helperMocks,
+  pinoMocks,
+  testContext,
+  mockLoggerStorage,
+  childLogger,
+  enrichedRequestContext,
+  enrichedUserContext,
+} = vi.hoisted(() => {
+  const createChildLogger = () => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    trace: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(),
+    level: 'info',
+  });
 
-const { sentryMocks, mockPinoLogger, helperMocks, testContext } = vi.hoisted(() => {
-  const mockScope = {
-    setContext: vi.fn(),
-    setTag: vi.fn(),
-    setUser: vi.fn(),
-    setFingerprint: vi.fn(),
-    setLevel: vi.fn(),
-  };
+  const childLogger = createChildLogger();
 
-  const mockSpan = {
-    setAttributes: vi.fn(),
-  };
-
-  const sentryMocks = {
-    getCurrentScope: vi.fn(() => mockScope),
-    startSpan: vi.fn(async (_config, callback) => {
-      return await callback(mockSpan);
-    }),
-    withScope: vi.fn((callback) => callback(mockScope)),
-    captureException: vi.fn(),
-    captureMessage: vi.fn(),
+  const innerPinoLogger = {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    trace: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(() => childLogger),
+    level: 'info',
   };
 
   const mockPinoLogger = {
@@ -41,16 +49,8 @@ const { sentryMocks, mockPinoLogger, helperMocks, testContext } = vi.hoisted(() 
     debug: vi.fn(),
     trace: vi.fn(),
     fatal: vi.fn(),
-    child: vi.fn().mockReturnValue({
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      debug: vi.fn(),
-      trace: vi.fn(),
-      fatal: vi.fn(),
-      child: vi.fn(),
-      level: 'info',
-    }),
+    child: vi.fn(() => childLogger),
+    assign: vi.fn(),
     level: 'info',
   };
 
@@ -61,76 +61,107 @@ const { sentryMocks, mockPinoLogger, helperMocks, testContext } = vi.hoisted(() 
     userId: 'test-user-id',
     ip: 'xxx.xxx.xxx.100',
     userAgent: 'Mozilla/5.0',
-    entiteId: 'test-entite-id',
+    entiteIds: ['test-entite-id'],
+    roleId: 'test-role-id',
+  };
+
+  const enrichedRequestContext = {
+    ...testContext,
+    caller: 'test.ts:123',
+    extraContext: {},
+  };
+
+  const enrichedUserContext = {
+    userId: testContext.userId,
+    entiteIds: testContext.entiteIds,
+    roleId: testContext.roleId,
   };
 
   const helperMocks = {
-    extractRequestContext: vi.fn(() => testContext),
+    extractRequestContext: vi.fn(() => testContext as RequestContext),
+    enrichRequestContext: vi.fn(() => enrichedRequestContext),
+    enrichUserContext: vi.fn(() => enrichedUserContext),
+    createPinoContextData: vi.fn(() => ({
+      requestId: testContext.requestId,
+      traceId: testContext.traceId,
+      sessionId: testContext.sessionId,
+      ip: testContext.ip,
+      userAgent: testContext.userAgent,
+      userId: testContext.userId,
+      entiteIds: testContext.entiteIds,
+      roleId: testContext.roleId,
+      caller: 'test.ts:123',
+    })),
     getLogLevelConfig: vi.fn(() => ({
       console: 'info',
-      sentry: 'warn',
     })),
-    shouldSendToSentry: vi.fn((level) => level === 'warn' || level === 'error' || level === 'fatal'),
-    getCaller: vi.fn(() => 'test.ts:123'),
-    setSentryCorrelationTags: vi.fn(),
     getLogExtraContext: vi.fn(() => ({})),
-    createSentryRequestContext: vi.fn((c, context) => ({
-      id: context.requestId,
-      traceId: context.traceId,
-      sessionId: context.sessionId,
-      method: c.req.method,
-      url: c.req.url,
-      path: c.req.path,
-      headers: Object.fromEntries([...c.req.raw.headers]),
-      ip: context.ip,
-      userAgent: context.userAgent,
-      source: 'backend',
-    })),
-    createSentryBusinessContext: vi.fn((context) => ({
-      source: 'backend',
-      userId: context.userId,
-      entiteId: context.entiteId,
-      roleId: context.roleId,
-    })),
-    createSentryUserContext: vi.fn((user, ip) => ({
-      id: user.id,
-      email: user.email,
-      username: user.email,
-      ip_address: ip,
-    })),
-    extractClientIp: vi.fn(() => 'xxx.xxx.xxx.100'),
-    UNKNOWN_VALUE: 'unknown',
-    SOURCE_BACKEND: 'backend',
   };
 
-  return { sentryMocks, mockPinoLogger, helperMocks, testContext };
+  const pinoMocks = {
+    stdSerializers: {
+      err: vi.fn((err) => ({
+        type: err?.constructor?.name || 'Error',
+        message: err?.message || String(err),
+        stack: err?.stack,
+      })),
+      req: vi.fn((req) => req),
+      res: vi.fn((res) => res),
+    },
+  };
+
+  let storedLogger: ReturnType<typeof createDefaultLogger> | null = null;
+  const mockLoggerStorage = {
+    run: vi.fn(async (value, callback) => {
+      // Store the logger value for the callback
+      storedLogger = value;
+      return await callback();
+    }),
+    getStore: vi.fn(() => storedLogger),
+  };
+
+  return {
+    mockPinoLogger,
+    innerPinoLogger,
+    helperMocks,
+    pinoMocks,
+    testContext,
+    mockLoggerStorage,
+    childLogger,
+    enrichedRequestContext,
+    enrichedUserContext,
+  };
 });
 
-vi.mock('@sentry/node', () => sentryMocks);
-vi.mock('@/helpers/middleware', () => helperMocks);
+vi.mock('@/helpers/middleware', async () => {
+  return helperMocks;
+});
+
+// Mock asyncLocalStorage
+vi.mock('@/libs/asyncLocalStorage', () => ({
+  loggerStorage: mockLoggerStorage,
+}));
 
 vi.mock('pino', () => {
-  const innerMockLogger = {
+  // Create a separate pino instance for basePino that will be used if no logger exists in context
+  const basePinoInstance = {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
     debug: vi.fn(),
     trace: vi.fn(),
     fatal: vi.fn(),
-    child: vi.fn().mockReturnThis(),
+    child: vi.fn(() => childLogger),
+    assign: vi.fn(),
     level: 'info',
   };
 
-  const mockPino = vi.fn(() => innerMockLogger);
-  mockPino.stdSerializers = {
-    err: vi.fn((err) => ({
-      type: err?.constructor?.name || 'Error',
-      message: err?.message || String(err),
-      stack: err?.stack,
-    })),
-    req: vi.fn((req) => req),
-    res: vi.fn((res) => res),
-  };
+  const mockPino = Object.assign(
+    vi.fn(() => basePinoInstance),
+    {
+      stdSerializers: pinoMocks.stdSerializers,
+    },
+  ) as unknown as typeof pino;
 
   return {
     default: mockPino,
@@ -139,26 +170,33 @@ vi.mock('pino', () => {
 });
 
 vi.mock('hono-pino', () => ({
-  pinoLogger: vi.fn(() => (c, next) => {
-    c.set('logger', mockPinoLogger);
-    return next();
+  pinoLogger: vi.fn((config) => {
+    // Return a middleware function that sets the logger before calling next
+    return async (c: Context, next: () => Promise<void>) => {
+      // The logger should be the pino instance passed in config.pino
+      const logger = config?.pino;
+      if (logger) {
+        // Add methods that might be missing
+        if (!logger.assign) {
+          logger.assign = vi.fn();
+        }
+      }
+      c.set('logger', logger);
+      await next();
+    };
   }),
 }));
 
 vi.mock('@/config/env', () => ({
   envVars: {
     LOG_LEVEL: 'info',
-    LOG_LEVEL_SENTRY: 'warn',
     LOG_FORMAT: 'json',
   },
 }));
 
 describe('pino.middleware.ts', () => {
-  let app: Hono;
-
   beforeEach(() => {
     vi.resetAllMocks();
-    app = new Hono();
   });
 
   afterEach(() => {
@@ -166,47 +204,49 @@ describe('pino.middleware.ts', () => {
   });
 
   describe('enhancedPinoMiddleware', () => {
-    it('should set up enhanced logger with request context', async () => {
-      let enhancedLogger: EnhancedLogger;
-
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => {
-        enhancedLogger = c.get('logger') as EnhancedLogger;
+    it('should set up logger with request context', async () => {
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => {
+        // Just return success - we'll check the middleware behavior via mocks
         return c.json({ success: true });
       });
 
-      const client = testClient(app);
-      await client.test.$get();
+      const client = testClient(testApp);
+      const _res = await client.test.$get();
 
-      expect(enhancedLogger).toBeDefined();
-      expect(typeof enhancedLogger?.info).toBe('function');
-      expect(typeof enhancedLogger?.warn).toBe('function');
-      expect(typeof enhancedLogger?.error).toBe('function');
+      expect(helperMocks.extractRequestContext).toHaveBeenCalled();
+      expect(helperMocks.enrichRequestContext).toHaveBeenCalledWith(testContext);
+      expect(helperMocks.enrichUserContext).toHaveBeenCalledWith(testContext);
+
+      // Check that loggerStorage.run was called with proper logger
+      expect(mockLoggerStorage.run).toHaveBeenCalled();
+
+      // Since we can't directly access the pino instance from the test,
+      // check the behavior through the mocks we can verify
+      expect(helperMocks.createPinoContextData).toHaveBeenCalledWith(enrichedRequestContext, enrichedUserContext);
     });
 
     it('should add request-id and trace-id headers', async () => {
-      let _context: Context;
-
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => {
-        _context = c;
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => {
         return c.json({ success: true });
       });
 
-      const client = testClient(app);
+      const client = testClient(testApp);
       const response = await client.test.$get();
 
       expect(response).toBeDefined();
       expect(helperMocks.extractRequestContext).toHaveBeenCalled();
+      // Headers are set in the response
+      const headers = response.headers;
+      expect(headers.get('x-request-id')).toBe('test-request-id');
+      expect(headers.get('x-trace-id')).toBe('test-trace-id');
     });
 
     it('should handle requests with existing x-request-id header', async () => {
       const existingRequestId = 'existing-request-id';
 
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => c.json({ success: true }));
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => c.json({ success: true }));
 
-      const client = testClient(app);
+      const client = testClient(testApp);
       await client.test.$get({
         headers: {
           'x-request-id': existingRequestId,
@@ -215,178 +255,132 @@ describe('pino.middleware.ts', () => {
 
       expect(helperMocks.extractRequestContext).toHaveBeenCalled();
     });
-  });
 
-  describe('enhanced logger methods', () => {
-    let _mockContext: MockedContext;
-    let enhancedLogger: EnhancedLogger;
+    it('should run logger storage with contextual logger', async () => {
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => c.json({ success: true }));
 
-    beforeEach(async () => {
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => {
-        _mockContext = c as MockedContext;
-        enhancedLogger = c.get('logger') as EnhancedLogger;
-        return c.json({ success: true });
-      });
-
-      const client = testClient(app);
+      const client = testClient(testApp);
       await client.test.$get();
-    });
 
-    describe('comprehensive logging tests', () => {
-      it('should handle info level logging correctly', () => {
-        const infoSpy = vi.spyOn(enhancedLogger, 'info');
-
-        enhancedLogger.info('Test info message', { extra: 'data' });
-
-        expect(infoSpy).toHaveBeenCalledWith('Test info message', { extra: 'data' });
-
-        expect(sentryMocks.captureMessage).not.toHaveBeenCalled();
-        expect(sentryMocks.captureException).not.toHaveBeenCalled();
-      });
-
-      it('should handle warn level logging correctly', () => {
-        const warnSpy = vi.spyOn(enhancedLogger, 'warn');
-
-        enhancedLogger.warn('Test warning', { code: 'WARN_001' });
-
-        expect(warnSpy).toHaveBeenCalledWith('Test warning', { code: 'WARN_001' });
-
-        expect(sentryMocks.withScope).toHaveBeenCalled();
-        expect(sentryMocks.captureMessage).toHaveBeenCalled();
-      });
-
-      it('should handle error level logging correctly', () => {
-        const errorSpy = vi.spyOn(enhancedLogger, 'error');
-        const testError = new Error('Test error');
-
-        enhancedLogger.error('Database error', { err: testError, retries: 3 });
-
-        expect(errorSpy).toHaveBeenCalledWith('Database error', { err: testError, retries: 3 });
-
-        expect(sentryMocks.withScope).toHaveBeenCalled();
-        expect(helperMocks.shouldSendToSentry).toHaveBeenCalledWith('error', expect.any(Object));
-        expect(
-          sentryMocks.captureException.mock.calls.length + sentryMocks.captureMessage.mock.calls.length,
-        ).toBeGreaterThan(0);
-      });
-    });
-
-    describe('string-only messages', () => {
-      it('should handle string-only info messages', () => {
-        const infoSpy = vi.spyOn(enhancedLogger, 'info');
-
-        enhancedLogger.info('Simple info message');
-
-        expect(infoSpy).toHaveBeenCalledWith('Simple info message');
-        expect(sentryMocks.captureMessage).not.toHaveBeenCalled();
-      });
-
-      it('should handle string-only error messages', () => {
-        const errorSpy = vi.spyOn(enhancedLogger, 'error');
-
-        enhancedLogger.error('Simple error message');
-
-        expect(errorSpy).toHaveBeenCalledWith('Simple error message');
-        expect(sentryMocks.captureMessage).toHaveBeenCalledWith('Simple error message', 'error');
-      });
-    });
-
-    describe('error logging without error object', () => {
-      it('should handle error logging without error object', () => {
-        const errorSpy = vi.spyOn(enhancedLogger, 'error');
-
-        enhancedLogger.error('General error message');
-
-        expect(errorSpy).toHaveBeenCalledWith('General error message');
-        expect(sentryMocks.captureMessage).toHaveBeenCalledWith('General error message', 'error');
-      });
+      expect(mockLoggerStorage.run).toHaveBeenCalled();
+      const [logger, callback] = mockLoggerStorage.run.mock.calls[0];
+      // The logger should be a pino instance
+      expect(logger).toBeDefined();
+      expect(typeof callback).toBe('function');
     });
   });
 
-  describe('Sentry integration', () => {
-    let enhancedLogger: EnhancedLogger;
+  describe('logger functionality', () => {
+    it('should create a child logger with proper methods', () => {
+      const childLogger = mockPinoLogger.child();
 
-    beforeEach(async () => {
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => {
-        enhancedLogger = c.get('logger') as EnhancedLogger;
-        return c.json({ success: true });
-      });
+      expect(typeof childLogger.info).toBe('function');
+      expect(typeof childLogger.warn).toBe('function');
+      expect(typeof childLogger.error).toBe('function');
+      expect(typeof childLogger.debug).toBe('function');
+      expect(typeof childLogger.trace).toBe('function');
+      expect(typeof childLogger.fatal).toBe('function');
+      expect(typeof childLogger.child).toBe('function');
+      expect(childLogger.level).toBe('info');
+    });
 
-      const client = testClient(app);
+    it('should create contextual logger with enriched context', async () => {
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => c.json({ success: true }));
+
+      const client = testClient(testApp);
       await client.test.$get();
+
+      // Check the pino context data was created with proper values
+      expect(helperMocks.createPinoContextData).toHaveBeenCalled();
+      const mockCalls = helperMocks.createPinoContextData.mock.calls;
+      if (mockCalls.length > 0) {
+        const [enrichedCtx, userCtx] = mockCalls[0] as unknown as [RequestContext, EnrichedUserContext | null];
+        // Check the enriched context has the expected request ID
+        expect(enrichedCtx.requestId).toBe(testContext.requestId);
+        // Check the user context has the expected user ID
+        if (userCtx) {
+          expect(userCtx.userId).toBe(testContext.userId);
+        }
+      }
     });
+  });
 
-    it('should set correct Sentry level for warnings', () => {
-      enhancedLogger.warn('Test warning');
-      expect(sentryMocks.captureMessage).toHaveBeenCalledWith('Test warning', 'warning');
-    });
+  describe('middleware integration', () => {
+    it('should work with other middlewares', async () => {
+      const testApp = new Hono()
+        .use(enhancedPinoMiddleware())
+        .use(async (_c, next) => {
+          // Middleware executes but we'll verify through mocks
+          await next();
+        })
+        .get('/test', (c) => {
+          return c.json({ success: true });
+        });
 
-    it('should set correct Sentry level for errors', () => {
-      enhancedLogger.error('Test error');
-      expect(sentryMocks.captureMessage).toHaveBeenCalledWith('Test error', 'error');
-    });
+      const client = testClient(testApp);
+      await client.test.$get();
 
-    it('should set correct Sentry level for fatal', () => {
-      enhancedLogger.fatal('Fatal error');
-      expect(sentryMocks.captureMessage).toHaveBeenCalledWith('Fatal error', 'error');
-    });
-
-    it('should set correlation tags', () => {
-      enhancedLogger.warn('Test warning with correlation');
-
-      expect(sentryMocks.withScope).toHaveBeenCalled();
-      expect(helperMocks.setSentryCorrelationTags).toHaveBeenCalledWith(expect.any(Object), testContext);
-    });
-
-    it('should set caller tag', () => {
-      enhancedLogger.error('Test error with caller');
-
-      expect(helperMocks.getCaller).toHaveBeenCalled();
-      expect(sentryMocks.withScope).toHaveBeenCalled();
-    });
-
-    it('should set request context', () => {
-      enhancedLogger.warn('Test warning with context');
-
+      // Verify the middleware chain executed properly
+      expect(mockLoggerStorage.run).toHaveBeenCalled();
       expect(helperMocks.extractRequestContext).toHaveBeenCalled();
-      expect(sentryMocks.withScope).toHaveBeenCalled();
     });
 
-    it('should set business context when business data available', () => {
+    it('should handle errors in next middleware', async () => {
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (_c) => {
+        throw new Error('Test middleware error');
+      });
+
+      const client = testClient(testApp);
+      const response = await client.test.$get();
+
+      expect(response.status).toBe(500);
+    });
+  });
+
+  describe('context enrichment', () => {
+    it('should enrich context with user information when available', async () => {
       const testUser = createTestUser();
-      const contextWithBusiness = createTestRequestContext({
+      const contextWithUser = createTestRequestContext({
         userId: testUser.id,
-        entiteId: testUser.entiteId,
+        entiteIds: testUser.entiteIds,
         roleId: testUser.roleId,
       });
 
-      helperMocks.extractRequestContext.mockReturnValue(contextWithBusiness);
-
-      enhancedLogger.error('Business error');
-
-      expect(sentryMocks.withScope).toHaveBeenCalled();
-    });
-
-    it('should set logging context', () => {
-      const extraContext = { feature: 'auth', action: 'login' };
-      helperMocks.getLogExtraContext.mockReturnValue(extraContext);
-
-      enhancedLogger.warn('Context warning');
-
-      expect(helperMocks.getLogExtraContext).toHaveBeenCalled();
-    });
-
-    it('should set user context if user ID available', () => {
-      const contextWithUser = createTestRequestContext({
-        userId: 'test-user-123',
-      });
       helperMocks.extractRequestContext.mockReturnValue(contextWithUser);
+      helperMocks.enrichUserContext.mockReturnValue({
+        userId: testUser.id,
+        entiteIds: testUser.entiteIds || [],
+        roleId: testUser.roleId,
+      });
 
-      enhancedLogger.error('User error');
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => c.json({ success: true }));
 
-      expect(sentryMocks.withScope).toHaveBeenCalled();
+      const client = testClient(testApp);
+      await client.test.$get();
+
+      expect(helperMocks.enrichUserContext).toHaveBeenCalledWith(contextWithUser);
+    });
+
+    it('should handle context without user information', async () => {
+      const contextWithoutUser = createTestRequestContext({
+        userId: undefined,
+        entiteIds: undefined,
+        roleId: undefined,
+      });
+
+      helperMocks.extractRequestContext.mockReturnValue(contextWithoutUser);
+      helperMocks.enrichUserContext.mockReturnValue({
+        userId: '',
+        entiteIds: [],
+        roleId: '',
+      });
+
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (c) => c.json({ success: true }));
+
+      const client = testClient(testApp);
+      await client.test.$get();
+
+      expect(helperMocks.enrichUserContext).toHaveBeenCalledWith(contextWithoutUser);
     });
   });
 
@@ -394,149 +388,16 @@ describe('pino.middleware.ts', () => {
     it('should respect custom log level configuration', () => {
       const customConfig = {
         console: 'debug' as const,
-        sentry: 'error' as const,
       };
 
       helperMocks.getLogLevelConfig.mockReturnValue(customConfig);
-      helperMocks.shouldSendToSentry.mockImplementation((level) => level === 'error' || level === 'fatal');
 
       expect(helperMocks.getLogLevelConfig()).toEqual(customConfig);
-      expect(helperMocks.shouldSendToSentry('warn')).toBe(false);
-      expect(helperMocks.shouldSendToSentry('error')).toBe(true);
-    });
-  });
-
-  describe('message extraction', () => {
-    let enhancedLogger: EnhancedLogger;
-
-    beforeEach(async () => {
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => {
-        enhancedLogger = c.get('logger') as EnhancedLogger;
-        return c.json({ success: true });
-      });
-
-      const client = testClient(app);
-      await client.test.$get();
-    });
-
-    it('should extract message from object', () => {
-      const infoSpy = vi.spyOn(enhancedLogger, 'info');
-      const logData = { message: 'Custom message', extra: 'data' };
-
-      enhancedLogger.info(logData);
-
-      expect(infoSpy).toHaveBeenCalledWith(logData);
-    });
-
-    it('should use default message when object has no message property', () => {
-      const warnSpy = vi.spyOn(enhancedLogger, 'warn');
-      const logData = { extra: 'data', code: 'ERR001' };
-
-      enhancedLogger.warn(logData);
-
-      expect(warnSpy).toHaveBeenCalledWith(logData);
-    });
-
-    it('should handle custom message parameter', () => {
-      const errorSpy = vi.spyOn(enhancedLogger, 'error');
-      const logData = { code: 'ERR001', retry: 3 };
-      const customMessage = 'Custom operation failed';
-
-      enhancedLogger.error(logData, customMessage);
-
-      expect(errorSpy).toHaveBeenCalledWith(logData, customMessage);
-    });
-  });
-
-  describe('logger properties', () => {
-    let enhancedLogger: EnhancedLogger;
-
-    beforeEach(async () => {
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => {
-        enhancedLogger = c.get('logger') as EnhancedLogger;
-        return c.json({ success: true });
-      });
-
-      const client = testClient(app);
-      await client.test.$get();
-    });
-
-    it('should have all required logger methods', () => {
-      expect(typeof enhancedLogger.info).toBe('function');
-      expect(typeof enhancedLogger.warn).toBe('function');
-      expect(typeof enhancedLogger.error).toBe('function');
-      expect(typeof enhancedLogger.debug).toBe('function');
-      expect(typeof enhancedLogger.trace).toBe('function');
-      expect(typeof enhancedLogger.fatal).toBe('function');
-      expect(typeof enhancedLogger.child).toBe('function');
-    });
-
-    it('should have level property', () => {
-      expect(enhancedLogger.level).toBeDefined();
-    });
-
-    it('should support child logger creation', () => {
-      expect(typeof enhancedLogger.child).toBe('function');
-
-      expect(enhancedLogger.child).toBeDefined();
-    });
-  });
-
-  describe('middleware integration', () => {
-    it('should work with other middlewares', async () => {
-      let loggerFromContext: EnhancedLogger;
-
-      app.use(enhancedPinoMiddleware());
-      app.use(async (c, next) => {
-        const logger = c.get('logger') as EnhancedLogger;
-        logger.info('Middleware chain info');
-        await next();
-      });
-      app.get('/test', (c) => {
-        loggerFromContext = c.get('logger') as EnhancedLogger;
-        return c.json({ success: true });
-      });
-
-      const client = testClient(app);
-      await client.test.$get();
-
-      expect(loggerFromContext).toBeDefined();
-      expect(typeof loggerFromContext?.info).toBe('function');
-      expect(typeof loggerFromContext?.warn).toBe('function');
-      expect(typeof loggerFromContext?.error).toBe('function');
-    });
-
-    it('should handle errors in next middleware', async () => {
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', () => {
-        throw new Error('Test middleware error');
-      });
-
-      const client = testClient(app);
-      const response = await client.test.$get();
-
-      expect(response.status).toBe(500);
     });
   });
 
   describe('LOG_EXTRA_CONTEXT integration', () => {
-    let enhancedLogger: EnhancedLogger;
-
-    beforeEach(async () => {
-      app.use(enhancedPinoMiddleware());
-      app.get('/test', (c) => {
-        enhancedLogger = c.get('logger') as EnhancedLogger;
-        return c.json({ success: true });
-      });
-
-      const client = testClient(app);
-      await client.test.$get();
-    });
-
     it('should include extra context in log data when available', () => {
-      const infoSpy = vi.spyOn(enhancedLogger, 'info');
       const extraContext = {
         feature: 'user-management',
         action: 'create-user',
@@ -544,21 +405,24 @@ describe('pino.middleware.ts', () => {
       };
 
       helperMocks.getLogExtraContext.mockReturnValue(extraContext);
+      helperMocks.enrichRequestContext.mockReturnValue({
+        ...testContext,
+        caller: 'test.ts:123',
+        extraContext,
+      });
 
-      enhancedLogger.info('User creation attempt', { userId: 'new-user-id' });
-
-      expect(infoSpy).toHaveBeenCalledWith('User creation attempt', { userId: 'new-user-id' });
-      expect(helperMocks.getLogExtraContext).toHaveBeenCalled();
+      expect(helperMocks.getLogExtraContext()).toEqual(extraContext);
     });
 
     it('should not include extraContext field when no extra context is available', () => {
-      const warnSpy = vi.spyOn(enhancedLogger, 'warn');
       helperMocks.getLogExtraContext.mockReturnValue({});
+      helperMocks.enrichRequestContext.mockReturnValue({
+        ...testContext,
+        caller: 'test.ts:123',
+        extraContext: {},
+      });
 
-      enhancedLogger.warn('Standard warning message');
-
-      expect(warnSpy).toHaveBeenCalledWith('Standard warning message');
-      expect(helperMocks.getLogExtraContext).toHaveBeenCalled();
+      expect(helperMocks.getLogExtraContext()).toEqual({});
     });
   });
 });

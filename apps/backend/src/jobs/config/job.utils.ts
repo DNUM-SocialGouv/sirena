@@ -1,7 +1,9 @@
 import * as Sentry from '@sentry/node';
 import type { Job } from 'bullmq';
+import { envVars } from '@/config/env';
 import { endCron, startCron } from '@/crons/crons.service';
 import { serializeError } from '@/helpers/errors';
+import { getSentryStore } from '@/libs/asyncLocalStorage';
 
 export async function withCronLifecycle<R extends Record<string, unknown>, J extends Job>(
   job: J,
@@ -38,13 +40,34 @@ export async function withCronLifecycle<R extends Record<string, unknown>, J ext
       state: 'error',
     });
 
-    if (process.env.SENTRY_ENABLED === 'true') {
-      Sentry.captureException(error, {
-        extra: {
-          jobName: job.name,
-          jobId: job.id,
-        },
-      });
+    if (envVars.SENTRY_ENABLED) {
+      try {
+        const sentryScope = getSentryStore();
+        if (sentryScope) {
+          sentryScope.setContext('job', {
+            jobName: job.name,
+            jobId: job.id,
+            params,
+            startedAt: startedAt.toISOString(),
+            endedAt: endedAt.toISOString(),
+          });
+          Sentry.captureException(error, sentryScope);
+        } else {
+          Sentry.captureException(error, {
+            contexts: {
+              job: {
+                jobName: job.name,
+                jobId: job.id,
+                params,
+                startedAt: startedAt.toISOString(),
+                endedAt: endedAt.toISOString(),
+              },
+            },
+          });
+        }
+      } catch (sentryError) {
+        console.error('Failed to capture exception in Sentry:', sentryError);
+      }
     }
 
     throw error;

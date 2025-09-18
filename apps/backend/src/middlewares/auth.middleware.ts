@@ -7,6 +7,8 @@ import { getUserById } from '@/features/users/users.service';
 import type { AppBindings } from '@/helpers/factories/appWithAuth';
 import factoryWithAuth from '@/helpers/factories/appWithAuth';
 import { getJwtExpirationDate, isJwtError, signAuthCookie, verify } from '@/helpers/jsonwebtoken';
+import { extractClientIp } from '@/helpers/middleware';
+import { sentryStorage } from '@/libs/asyncLocalStorage';
 import type { Session } from '@/libs/prisma';
 
 const cleanAnSendError = (c: Context<AppBindings>, error: unknown, errorMessage: string, errorResponse: string) => {
@@ -17,8 +19,27 @@ const cleanAnSendError = (c: Context<AppBindings>, error: unknown, errorMessage:
   throwHTTPException401Unauthorized(errorResponse, { res: c.res });
 };
 
+const updateSentryUserContext = (
+  id: string,
+  { roleId, email, entiteIds, ip }: { roleId?: string; email?: string; entiteIds?: string[] | null; ip?: string } = {},
+) => {
+  if (!envVars.SENTRY_ENABLED) return;
+
+  const sentryScope = sentryStorage.getStore();
+  if (sentryScope) {
+    sentryScope.setUser({
+      id: id,
+      roleId,
+      ip_address: ip,
+      ...(email && { email }),
+      ...(entiteIds && entiteIds.length > 0 && { entiteIds: entiteIds.join(',') }),
+    });
+  }
+};
+
 const app = factoryWithAuth.createMiddleware(async (c, next) => {
   const logger = c.get('logger');
+  const ip = extractClientIp(c);
 
   const authToken = getCookie(c, envVars.AUTH_TOKEN_NAME);
   if (authToken) {
@@ -26,6 +47,7 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
       const decoded = verify<{ id: string; roleId: string }>(authToken, envVars.AUTH_TOKEN_SECRET_KEY);
       c.set('userId', decoded.id);
       c.set('roleId', decoded.roleId);
+      updateSentryUserContext(decoded.id, { ...decoded, ip });
       return next();
     } catch (error) {
       if (!isJwtError(error)) {
@@ -75,6 +97,7 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
       });
       c.set('userId', decoded.id);
       c.set('roleId', roleId);
+      updateSentryUserContext(decoded.id, { ...user, ip });
       return next();
     } catch (error) {
       if (!isJwtError(error)) {

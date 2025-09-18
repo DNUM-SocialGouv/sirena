@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { expect, vi } from 'vitest';
-import type { LogLevel, RequestContext, User } from '@/helpers/middleware';
+import type { LogLevel, RequestContext } from '@/helpers/middleware';
+import type { User } from '@/libs/prisma';
 
 export interface MockSentryScope {
   setContext: ReturnType<typeof vi.fn>;
@@ -22,6 +23,7 @@ export interface MockPinoLogger {
   trace: ReturnType<typeof vi.fn>;
   fatal: ReturnType<typeof vi.fn>;
   child: ReturnType<typeof vi.fn>;
+  assign: ReturnType<typeof vi.fn>;
   level: string;
 }
 
@@ -40,6 +42,7 @@ export interface MockContext {
 
 export interface TestUser extends User {
   email: string;
+  entiteIds?: string[];
 }
 
 export const createMockSentryScope = (): MockSentryScope => ({
@@ -62,6 +65,7 @@ export const createMockPinoLogger = (): MockPinoLogger => ({
   trace: vi.fn(),
   fatal: vi.fn(),
   child: vi.fn().mockReturnThis(),
+  assign: vi.fn(),
   level: 'info',
 });
 
@@ -102,7 +106,7 @@ export const createTestRequestContext = (overrides: Partial<RequestContext> = {}
   userId: 'test-user-id',
   ip: 'xxx.xxx.xxx.100',
   userAgent: 'Mozilla/5.0',
-  entiteId: 'test-entite-id',
+  entiteIds: ['test-entite-id'] as string[],
   roleId: 'test-role-id',
   ...overrides,
 });
@@ -110,8 +114,17 @@ export const createTestRequestContext = (overrides: Partial<RequestContext> = {}
 export const createTestUser = (overrides: Partial<TestUser> = {}): TestUser => ({
   id: 'user-123',
   email: 'test@example.com',
-  entiteId: 'entite-456',
+  firstName: 'Test',
+  lastName: 'User',
+  uid: 'test-uid',
+  sub: 'test-sub',
+  createdAt: new Date(),
+  active: true,
+  pcData: {},
   roleId: 'role-789',
+  statutId: 'statut-123',
+  entiteId: 'entite-456',
+  entiteIds: ['entite-456'],
   ...overrides,
 });
 
@@ -141,7 +154,7 @@ export const setupSentryMocks = () => {
 export const setupMiddlewareHelperMocks = (requestContext?: Partial<RequestContext>) => {
   const testContext = createTestRequestContext(requestContext);
 
-  const helperMocks = {
+  const middlewareHelpers = {
     extractRequestContext: vi.fn(() => testContext),
     getLogLevelConfig: vi.fn(() => ({
       console: 'info' as LogLevel,
@@ -151,6 +164,16 @@ export const setupMiddlewareHelperMocks = (requestContext?: Partial<RequestConte
     getCaller: vi.fn(() => 'test.ts:123'),
     setSentryCorrelationTags: vi.fn(),
     getLogExtraContext: vi.fn(() => ({})),
+    extractClientIp: vi.fn(() => 'xxx.xxx.xxx.100'),
+    enrichUserContext: vi.fn((context: RequestContext) =>
+      context.userId ? { userId: context.userId, roleId: context.roleId, entiteIds: context.entiteIds } : null,
+    ),
+    enrichRequestContext: vi.fn((context: RequestContext) => ({ ...context, caller: 'test.ts:123' })),
+    UNKNOWN_VALUE: 'unknown',
+    SOURCE_BACKEND: 'backend',
+  };
+
+  const sentryHelpers = {
     createSentryRequestContext: vi.fn((c: Context, context: RequestContext) => ({
       id: context.requestId,
       traceId: context.traceId,
@@ -163,25 +186,21 @@ export const setupMiddlewareHelperMocks = (requestContext?: Partial<RequestConte
       userAgent: context.userAgent,
       source: 'backend',
     })),
-    createSentryBusinessContext: vi.fn((context: RequestContext) => ({
-      source: 'backend',
-      userId: context.userId,
-      entiteId: context.entiteId,
-      roleId: context.roleId,
-    })),
-    createSentryUserContext: vi.fn((user: User, ip: string) => ({
-      id: user.id,
-      email: user.email,
-      username: user.email,
-      ip_address: ip,
-    })),
-    extractClientIp: vi.fn(() => 'xxx.xxx.xxx.100'),
-    UNKNOWN_VALUE: 'unknown',
-    SOURCE_BACKEND: 'backend',
+
+    createSentryUserFromContext: vi.fn(
+      (userContext: { userId: string; roleId?: string; entiteIds?: string[] | null }, ip: string) => ({
+        id: userContext.userId,
+        ...(ip && ip !== 'unknown' && { ip_address: ip }),
+        ...(userContext.roleId && { roleId: userContext.roleId }),
+        ...(userContext.entiteIds && userContext.entiteIds.length > 0 && { entiteIds: userContext.entiteIds }),
+      }),
+    ),
   };
 
-  vi.doMock('@/helpers/middleware', () => helperMocks);
+  vi.doMock('@/helpers/middleware', () => middlewareHelpers);
+  vi.doMock('@/middlewares/sentry.middleware', () => sentryHelpers);
 
+  const helperMocks = { ...middlewareHelpers, ...sentryHelpers };
   return { helperMocks, testContext };
 };
 
@@ -197,6 +216,7 @@ export const setupPinoMocks = () => {
       trace: vi.fn(),
       fatal: vi.fn(),
       child: vi.fn().mockReturnThis(),
+      assign: vi.fn(),
       level: 'info',
     };
 
@@ -366,7 +386,7 @@ export const runLogLevelTest = (
     userId: requestContext.userId,
     ip: requestContext.ip,
     userAgent: requestContext.userAgent,
-    entiteId: requestContext.entiteId,
+    entiteIds: requestContext.entiteIds,
     caller: 'test.ts:123',
   };
 

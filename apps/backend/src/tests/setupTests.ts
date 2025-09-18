@@ -56,12 +56,18 @@ vi.mock('@/helpers/middleware', () => ({
   getCaller: vi.fn(() => 'test.ts:123'),
   setSentryCorrelationTags: vi.fn(),
   extractClientIp: vi.fn(() => 'xxx.xxx.xxx.100'),
-  createSentryRequestContext: vi.fn(() => ({})),
-  createSentryBusinessContext: vi.fn(() => ({})),
-  createSentryUserContext: vi.fn(() => ({})),
   getRawIpAddress: vi.fn((ip) => ip || 'unknown'),
+  enrichUserContext: vi.fn((context) =>
+    context.userId ? { userId: context.userId, roleId: context.roleId, entiteIds: context.entiteIds } : null,
+  ),
+  enrichRequestContext: vi.fn((context) => ({ ...context, caller: 'test.ts:123' })),
   UNKNOWN_VALUE: 'unknown',
   SOURCE_BACKEND: 'backend',
+}));
+
+vi.mock('@/middlewares/sentry.middleware', () => ({
+  createSentryRequestContext: vi.fn(() => ({})),
+  createSentryUserFromContext: vi.fn(() => ({})),
 }));
 
 const mockPinoMiddleware = vi.fn(async (c: Context, next: () => Promise<void>) => {
