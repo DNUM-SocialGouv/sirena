@@ -42,9 +42,8 @@ export type AddProcessingStepNoteData = {
 };
 
 export async function addProcessingStepNote(stepId: string, data: AddProcessingStepNoteData) {
-  const res = await client['requete-etapes'][':id'].note.$post({
-    param: { id: stepId },
-    json: { texte: data.texte, fileIds: data.fileIds },
+  const res = await client.notes.$post({
+    json: { texte: data.texte, fileIds: data.fileIds, requeteEtapeId: stepId },
   });
   await handleRequestErrors(res);
   return res.json();
@@ -55,18 +54,18 @@ export type UpdateProcessingStepNoteData = {
   fileIds: string[];
 };
 
-export async function updateProcessingStepNote(stepId: string, noteId: string, data: UpdateProcessingStepNoteData) {
-  const res = await client['requete-etapes'][':id'].note[':noteId'].$patch({
-    param: { id: stepId, noteId: noteId },
+export async function updateProcessingStepNote(noteId: string, data: UpdateProcessingStepNoteData) {
+  const res = await client.notes[':noteId'].$patch({
+    param: { noteId: noteId },
     json: { texte: data.texte, fileIds: data.fileIds },
   });
   await handleRequestErrors(res);
   return res.json();
 }
 
-export async function deleteProcessingStepNote(stepId: string, noteId: string) {
-  const res = await client['requete-etapes'][':id'].note[':noteId'].$delete({
-    param: { id: stepId, noteId: noteId },
+export async function deleteProcessingStepNote(noteId: string) {
+  const res = await client.notes[':noteId'].$delete({
+    param: { noteId: noteId },
   });
   await handleRequestErrors(res);
   return;
