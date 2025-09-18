@@ -29,7 +29,7 @@ type StepProps = StepType & {
   ): void;
 };
 
-const StepComponent = ({ stepName, statutId, disabled, openEdit, openEditNote, notes, id, ...rest }: StepProps) => {
+const StepComponent = ({ nom, statutId, disabled, openEdit, openEditNote, notes, id, ...rest }: StepProps) => {
   const deleteStepModal = createModal({
     id: `delete-step-modal-${id}`,
     isOpenedByDefault: false,
@@ -42,7 +42,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, openEditNote, n
   const toastManager = Toast.useToastManager();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editStepName, setEditStepName] = useState(stepName ?? '');
+  const [editStepName, setEditStepName] = useState(nom ?? '');
   const [editError, setEditError] = useState<string | null>(null);
 
   const badges = [
@@ -74,7 +74,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, openEditNote, n
 
   const handleEditButton = (open: boolean) => {
     setIsEditing(open);
-    setEditStepName(stepName ?? '');
+    setEditStepName(nom ?? '');
     setEditError(null);
   };
 
@@ -91,7 +91,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, openEditNote, n
 
     updateStepNameMutation.mutate({
       id,
-      stepName: validationResult.data.stepName,
+      nom: validationResult.data.stepName,
     });
 
     setIsEditing(false);
@@ -162,7 +162,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, openEditNote, n
         ) : (
           <div className="fr-grid-row fr-grid-row--middle fr-mb-2w">
             <div className="fr-col">
-              <h3 className="fr-h6 fr-mb-0">{stepName ?? ''}</h3>
+              <h3 className="fr-h6 fr-mb-0">{nom ?? ''}</h3>
             </div>
             <div className="fr-col-auto">
               <StatusMenu
@@ -192,13 +192,13 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, openEditNote, n
           {notes.slice(0, isOpen ? notes.length : 3).map((note) => (
             <StepNote
               key={note.id}
-              content={note.content}
+              content={note.texte}
               author={note.author}
               id={note.id}
               createdAt={note.createdAt}
               files={note.uploadedFiles}
               requeteStateId={id}
-              onEdit={(noteData) => openEditNote?.({ id, stepName, statutId, notes, ...rest }, noteData)}
+              onEdit={(noteData) => openEditNote?.({ id, nom, statutId, notes, ...rest }, noteData)}
             />
           ))}
         </div>
@@ -217,7 +217,7 @@ const StepComponent = ({ stepName, statutId, disabled, openEdit, openEditNote, n
           type="button"
           priority="tertiary"
           iconId="fr-icon-add-line"
-          onClick={() => openEdit?.({ id, stepName, statutId, notes, ...rest })}
+          onClick={() => openEdit?.({ id, nom, statutId, notes, ...rest })}
         >
           Note ou fichier
         </Button>

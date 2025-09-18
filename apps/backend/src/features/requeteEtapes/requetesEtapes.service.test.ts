@@ -1,7 +1,6 @@
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createChangeLog } from '@/features/changelog/changelog.service';
-import { getRequeteEntiteById } from '@/features/requetesEntite/requetesEntite.service';
 import { deleteFileFromMinio } from '@/libs/minio';
 import {
   type ChangeLog,
@@ -28,6 +27,12 @@ import {
 vi.mock('@/libs/prisma', () => ({
   prisma: {
     $transaction: vi.fn(),
+    requete: {
+      findUnique: vi.fn(),
+    },
+    requeteEntite: {
+      upsert: vi.fn(),
+    },
     requeteEtape: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -46,10 +51,6 @@ vi.mock('@/libs/prisma', () => ({
       deleteMany: vi.fn(),
     },
   },
-}));
-
-vi.mock('@/features/requetesEntite/requetesEntite.service', () => ({
-  getRequeteEntiteById: vi.fn(),
 }));
 
 vi.mock('@/features/changelog/changelog.service', () => ({
@@ -115,9 +116,17 @@ describe('RequeteEtapes.service.ts', () => {
   });
 
   describe('addProcessingEtape()', () => {
-    it('should add a processing etape to a RequeteEntite', async () => {
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(requeteEntite);
-
+    it('should add a processing etape when requete exists', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: 'requeteId',
+        commentaire: 'Test',
+        receptionDate: new Date(),
+        dematSocialId: 123,
+        receptionTypeId: 'type',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce(requeteEntite);
       vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(requeteEtape);
 
       const result = await addProcessingEtape('requeteId', 'entiteId', {
@@ -125,6 +134,22 @@ describe('RequeteEtapes.service.ts', () => {
       });
 
       expect(result).toEqual(requeteEtape);
+      expect(prisma.requete.findUnique).toHaveBeenCalledWith({
+        where: { id: 'requeteId' },
+      });
+      expect(prisma.requeteEntite.upsert).toHaveBeenCalledWith({
+        where: {
+          requeteId_entiteId: {
+            requeteId: 'requeteId',
+            entiteId: 'entiteId',
+          },
+        },
+        create: {
+          requeteId: 'requeteId',
+          entiteId: 'entiteId',
+        },
+        update: {},
+      });
       expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
         data: {
           requeteId: requeteEtape.requeteId,
@@ -135,14 +160,15 @@ describe('RequeteEtapes.service.ts', () => {
       });
     });
 
-    it('should return null if RequeteEntite does not exist', async () => {
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(null);
+    it('should return null if requete does not exist', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(null);
 
       const result = await addProcessingEtape('nonExistentRequeteId', 'entiteId', {
         nom: 'Processing Etape',
       });
 
       expect(result).toBeNull();
+      expect(prisma.requeteEntite.upsert).not.toHaveBeenCalled();
       expect(prisma.requeteEtape.create).not.toHaveBeenCalled();
     });
   });
