@@ -40,7 +40,6 @@ const app = factoryWithLogs
     });
   })
 
-  // TODO: Processing steps returns RequeteEtapes entity and should be in a dedicated RequeteEtapes controller
   .get('/:id/processing-steps', async (c) => {
     const logger = c.get('logger');
     const { id } = c.req.param();
@@ -75,7 +74,6 @@ const app = factoryWithLogs
   // Roles with edit permissions
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]))
 
-  // TODO: Processing steps create RequeteEtape entity and should be in a dedicated RequeteEtapes controller
   .post(
     '/:id/processing-steps',
     addProcessingStepRoute,
