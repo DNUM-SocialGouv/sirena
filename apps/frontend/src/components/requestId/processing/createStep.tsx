@@ -30,7 +30,7 @@ const CreateStepComponent = ({ isAddingStep, setIsAddingStep }: CreateStepProps)
       return;
     }
     addStepMutation.mutate(
-      { stepName: stepName.trim() },
+      { nom: stepName.trim() },
       {
         onSuccess: () => {
           setIsAddingStep(false);
