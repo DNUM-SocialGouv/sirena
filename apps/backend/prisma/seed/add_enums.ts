@@ -1,7 +1,9 @@
 import {
   ages,
+  autoritesTypes,
   civilites,
   consequences,
+  demarchesEngageesTypes,
   entiteTypes,
   liensVictime,
   lieuTypes,
@@ -31,6 +33,18 @@ async function seedAgeEnum(prisma: PrismaClient) {
   return { table: 'ageEnum', added };
 }
 
+async function seedAutoritesTypes(prisma: PrismaClient) {
+  let added = 0;
+  for (const [id, label] of Object.entries(autoritesTypes)) {
+    const exists = await prisma.autoriteTypeEnum.findUnique({ where: { id } });
+    if (!exists) {
+      await prisma.autoriteTypeEnum.create({ data: { id, label } });
+      added++;
+    }
+  }
+  return { table: 'autoriteTypeEnum', added };
+}
+
 async function seedCiviliteEnum(prisma: PrismaClient) {
   let added = 0;
   for (const [id, label] of Object.entries(civilites)) {
@@ -53,6 +67,18 @@ async function seedConsequenceEnum(prisma: PrismaClient) {
     }
   }
   return { table: 'consequenceEnum', added };
+}
+
+async function seedDemarchesEngageesEnum(prisma: PrismaClient) {
+  let added = 0;
+  for (const [id, label] of Object.entries(demarchesEngageesTypes)) {
+    const exists = await prisma.demarchesEngageesEnum.findUnique({ where: { id } });
+    if (!exists) {
+      await prisma.demarchesEngageesEnum.create({ data: { id, label } });
+      added++;
+    }
+  }
+  return { table: 'demarchesEngagees', added };
 }
 
 async function seedEntiteTypeEnum(prisma: PrismaClient) {
@@ -214,18 +240,12 @@ async function seedTransportTypeEnum(prisma: PrismaClient) {
 export async function seedEnums(prisma: PrismaClient) {
   console.log('🌱 Début du seeding des enums...');
 
-  // TODO: remove this (we purge the actual status for new one)
-  await prisma.requeteEtapeNote.deleteMany({});
-  await prisma.requeteEtape.deleteMany({});
-  await prisma.requeteEntite.deleteMany({});
-  await prisma.requete.deleteMany({});
-  await prisma.requeteStatutEnum.deleteMany({});
-  await prisma.receptionTypeEnum.deleteMany({});
-
   const results = await Promise.allSettled([
     seedAgeEnum(prisma),
+    seedAutoritesTypes(prisma),
     seedCiviliteEnum(prisma),
     seedConsequenceEnum(prisma),
+    seedDemarchesEngageesEnum(prisma),
     seedEntiteTypeEnum(prisma),
     seedLienVictimeEnum(prisma),
     seedLieuTypeEnum(prisma),
