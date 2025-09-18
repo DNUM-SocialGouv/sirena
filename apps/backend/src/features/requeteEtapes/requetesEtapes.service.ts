@@ -2,7 +2,6 @@ import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
 import { createChangeLog } from '@/features/changelog/changelog.service';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getRequeteEntiteById } from '@/features/requetesEntite/requetesEntite.service';
 import { deleteFileFromMinio } from '@/libs/minio';
 import type { Prisma } from '@/libs/prisma';
 import { prisma, type RequeteEtape } from '@/libs/prisma';
@@ -15,10 +14,29 @@ import type {
 } from './requetesEtapes.type';
 
 export const addProcessingEtape = async (requeteId: string, entiteId: string, data: RequeteEtapeCreationDto) => {
-  const requeteEntite = await getRequeteEntiteById({ requeteId, entiteId });
-  if (!requeteEntite) {
+  // First check if the requete exists
+  const requete = await prisma.requete.findUnique({
+    where: { id: requeteId },
+  });
+
+  if (!requete) {
     return null;
   }
+
+  // Ensure RequeteEntite exists (create if not)
+  await prisma.requeteEntite.upsert({
+    where: {
+      requeteId_entiteId: {
+        requeteId,
+        entiteId,
+      },
+    },
+    create: {
+      requeteId,
+      entiteId,
+    },
+    update: {},
+  });
 
   const etape = await prisma.requeteEtape.create({
     data: {
