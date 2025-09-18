@@ -3,7 +3,7 @@ import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createChangeLog } from '@/features/changelog/changelog.service';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getNoteById } from '@/features/requeteEtapes/requetesEtapes.service';
+import { getNoteById } from '@/features/notes/notes.service';
 import appWithAuth from '@/helpers/factories/appWithAuth';
 import type { RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
 import requeteEtapesNotesChangelogMiddleware from './changelog.requeteEtapeNote.middleware';
@@ -12,7 +12,7 @@ vi.mock('@/features/changelog/changelog.service', () => ({
   createChangeLog: vi.fn(),
 }));
 
-vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
+vi.mock('@/features/notes/notes.service', () => ({
   getNoteById: vi.fn(),
 }));
 
