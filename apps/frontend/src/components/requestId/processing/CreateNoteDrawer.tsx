@@ -84,7 +84,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
     }
 
     addStepNoteMutation.mutate(
-      { content: content.trim(), id: step.id, fileIds },
+      { texte: content.trim(), id: step.id, fileIds },
       {
         onError: () => {
           setIsLoading(false);
@@ -103,7 +103,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
       <Drawer.Portal>
         <Drawer.Panel>
           <div className="fr-container fr-mt-8w">
-            <h3 className="fr-h6">Ajouter une note ou un fichier à l'étape "{step?.stepName ?? ''}"</h3>
+            <h3 className="fr-h6">Ajouter une note ou un fichier à l'étape "{step?.nom ?? ''}"</h3>
             <form>
               <Input
                 hintText="Informations à ajouter"

@@ -20,7 +20,7 @@ export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetR
       skip: offset,
       ...(typeof limit === 'number' ? { take: limit } : {}),
       orderBy: { [sort]: order },
-      include: { requete: true, RequeteEtape: { orderBy: { createdAt: 'desc' }, take: 1 } },
+      include: { requete: true, requeteEtape: { orderBy: { createdAt: 'desc' }, take: 1 } },
     }),
     prisma.requeteEntite.count({
       /* where */
@@ -50,7 +50,7 @@ export const getRequeteEntiteById = async ({ requeteId, entiteId }: RequeteEntit
     where: { requeteId_entiteId: { requeteId, entiteId } },
     include: {
       requete: true,
-      RequeteEtape: {
+      requeteEtape: {
         orderBy: { createdAt: 'desc' },
         take: 1,
       },

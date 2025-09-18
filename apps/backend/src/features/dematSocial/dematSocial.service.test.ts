@@ -97,8 +97,14 @@ describe('dematSocial.service.ts', () => {
       const result = await importRequetes(new Date('2024-01-01'));
 
       expect(createOrGetFromDematSocial).toHaveBeenCalledTimes(2);
-      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({ dematSocialId: 101, createdAt: dateDepot });
-      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({ dematSocialId: 102, createdAt: dateDepot });
+      expect(createOrGetFromDematSocial).toHaveBeenCalledWith(
+        { dematSocialId: 101, createdAt: dateDepot, entiteIds: undefined },
+        { userEntiteId: '' },
+      );
+      expect(createOrGetFromDematSocial).toHaveBeenCalledWith(
+        { dematSocialId: 102, createdAt: dateDepot, entiteIds: undefined },
+        { userEntiteId: '' },
+      );
       expect(result).toEqual({ count: 2 });
     });
 

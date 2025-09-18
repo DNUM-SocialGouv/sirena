@@ -1,5 +1,5 @@
 import type { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getNoteById } from '@/features/requeteEtapes/requetesEtapes.service';
+import { getNoteById } from '@/features/notes/notes.service';
 import type { RequeteEtapeNote } from '@/libs/prisma';
 import createChangelogMiddleware from './changelog.middleware';
 
