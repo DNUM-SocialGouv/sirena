@@ -28,7 +28,7 @@ type Declarant = {
     codePostal: string;
     ville: string;
     rue: string;
-    numRue: string;
+    numero: string;
   } | null;
 };
 
@@ -40,7 +40,7 @@ type Participant = {
     codePostal: string;
     ville: string;
     rue: string;
-    numRue: string;
+    numero: string;
   } | null;
   estHandicapee: boolean | null;
   estVictimeInformee: boolean | null;
@@ -56,7 +56,7 @@ type LieuDeSurvenue = {
     codePostal: string;
     ville: string;
     rue: string;
-    numRue: string;
+    numero: string;
   } | null;
   lieuTypeId: string | null;
   transportTypeId: string | null;
@@ -65,9 +65,9 @@ type LieuDeSurvenue = {
 };
 
 type MisEnCause = {
-  misEnCauseType: string | null;
-  professionType: string | null;
-  professionDomicileType: string | null;
+  misEnCauseTypeId: string | null;
+  professionTypeId: string | null;
+  professionDomicileTypeId: string | null;
   rpps: string | null;
   commentaire: string | null;
 };
