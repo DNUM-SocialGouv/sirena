@@ -1,16 +1,16 @@
 import {
-  ages,
-  autoritesTypes,
-  consequences,
-  demarchesEngageesTypes,
-  liensVictime,
-  lieuTypes,
-  maltraitanceTypes,
-  misEnCauseTypes,
-  motifs,
-  professionDomicileTypes,
-  professionTypes,
-  transportTypes,
+  ageLabels,
+  autoriteTypeLabels,
+  consequenceLabels,
+  demarcheEngageeLabels,
+  lienVictimeLabels,
+  lieuTypeLabels,
+  maltraitanceTypeLabels,
+  misEnCauseTypeLabels,
+  motifLabels,
+  professionDomicileTypeLabels,
+  professionTypeLabels,
+  transportTypeLabels,
 } from '@sirena/common/constants';
 
 const estVictime = {
@@ -47,7 +47,7 @@ const age = {
   id: 'Champ-19490',
   type: 'TextChamp',
   label: 'Votre âge',
-  options: Object.entries(ages).map(([key, label]) => ({
+  options: Object.entries(ageLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -101,7 +101,7 @@ const victimeAge = {
   id: 'Champ-19493',
   type: 'TextChamp',
   label: 'Son âge',
-  options: Object.entries(ages).map(([key, label]) => ({
+  options: Object.entries(ageLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -200,7 +200,7 @@ const lienVictime = {
   id: 'Champ-19497',
   type: 'TextChamp',
   label: 'Votre lien avec la personne concernée',
-  options: Object.entries(liensVictime).map(([key, label]) => ({
+  options: Object.entries(lienVictimeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -253,7 +253,7 @@ const lieuType = {
   id: 'Champ-19505',
   type: 'TextChamp',
   label: 'Type de lieu',
-  options: Object.entries(lieuTypes).map(([key, label]) => ({
+  options: Object.entries(lieuTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -280,7 +280,7 @@ const transportType = {
   id: 'Champ-27166',
   type: 'TextChamp',
   label: 'Type de transport concerné',
-  options: Object.entries(transportTypes).map(([key, label]) => ({
+  options: Object.entries(transportTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -307,7 +307,7 @@ const responsableType = {
   id: 'Champ-28368',
   type: 'TextChamp',
   label: 'Responsable des faits',
-  options: Object.entries(misEnCauseTypes).map(([key, label]) => ({
+  options: Object.entries(misEnCauseTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -320,7 +320,7 @@ const professionnelResponsable = {
   id: 'Champ-19515',
   type: 'TextChamp',
   label: 'Professionnel responsable des faits',
-  options: Object.entries(professionTypes).map(([key, label]) => ({
+  options: Object.entries(professionTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -333,7 +333,7 @@ const professionnelResponsableDomicile = {
   id: 'Champ-27168',
   type: 'TextChamp',
   label: "Professionnel dans le cadre d'un service ou d'une intervention à domicile",
-  options: Object.entries(professionDomicileTypes).map(([key, label]) => ({
+  options: Object.entries(professionDomicileTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -393,7 +393,7 @@ const motifsMap = {
   id: 'Champ-19526',
   type: 'MultipleDropDownListChamp',
   label: 'Type(s) de faits',
-  options: Object.entries(motifs).map(([key, label]) => ({
+  options: Object.entries(motifLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -403,7 +403,7 @@ const consequencesMap = {
   id: 'Champ-27572',
   type: 'MultipleDropDownListChamp',
   label: 'Conséquences pour vous ou la personne concernée',
-  options: Object.entries(consequences).map(([key, label]) => ({
+  options: Object.entries(consequenceLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -423,7 +423,7 @@ const maltraitanceTypesMap = {
   id: 'Champ-27156',
   type: 'MultipleDropDownListChamp',
   label: 'Avez-vous, ou la personne concernée, subi des actes de maltraitance ?',
-  options: Object.entries(maltraitanceTypes).map(([key, label]) => ({
+  options: Object.entries(maltraitanceTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -593,7 +593,7 @@ const demarchesEngagees = {
   type: 'MultipleDropDownListChamp',
   label:
     "Si vous ou la personne concernée avez déjà engagé des démarches pour ces faits (à l'écrit ou à l'oral), cochez la ou les cases correspondantes :",
-  options: Object.entries(demarchesEngageesTypes).map(([key, label]) => ({
+  options: Object.entries(demarcheEngageeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -655,7 +655,7 @@ const demarcheEngageAutoriteType = {
   id: 'Champ-19742',
   type: 'TextChamp',
   label: 'Auprès de qui ?',
-  options: Object.entries(autoritesTypes).map(([key, label]) => ({
+  options: Object.entries(autoriteTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),

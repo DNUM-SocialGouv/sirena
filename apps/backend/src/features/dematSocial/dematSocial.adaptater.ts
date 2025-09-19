@@ -1,4 +1,4 @@
-import { RECEPTION_TYPES } from '@sirena/common/constants';
+import { RECEPTION_TYPE } from '@sirena/common/constants';
 import type { CreateRequeteFromDematSocialDto } from '@/features/requetes/requetes.type';
 import type { RootChampFragmentFragment } from '@/libs/graffle';
 import { ChampMappingError, EnumNotFound } from './dematSocial.error';
@@ -64,7 +64,7 @@ const createAddress = (champ: RootChampFragmentFragment) => {
       codePostal: champ.address.postalCode,
       ville: champ.address.cityName,
       rue: champ.address.streetName,
-      numRue: champ.address.streetNumber,
+      numero: champ.address.streetNumber,
     };
   }
   return null;
@@ -117,15 +117,15 @@ const getLieuDeSurvenue = (champsById: MappedChamp) => {
 
 const getMisEnCause = (champsById: MappedChamp) => {
   const misEnCause = {
-    misEnCauseType: getEnumIdFromLabel(
+    misEnCauseTypeId: getEnumIdFromLabel(
       mapping.responsableType.options,
       champsById[mapping.responsableType.id]?.stringValue ?? null,
     ),
-    professionType: getEnumIdFromLabel(
+    professionTypeId: getEnumIdFromLabel(
       mapping.professionnelResponsable.options,
       champsById[mapping.professionnelResponsable.id]?.stringValue ?? null,
     ),
-    professionDomicileType: getEnumIdFromLabel(
+    professionDomicileTypeId: getEnumIdFromLabel(
       mapping.professionnelResponsableDomicile.options,
       champsById[mapping.professionnelResponsableDomicile.id]?.stringValue ?? null,
     ),
@@ -231,7 +231,7 @@ export const mapDataForPrisma = (
 
   return {
     receptionDate: new Date(date),
-    receptionTypeId: RECEPTION_TYPES.FORMULAIRE,
+    receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
     declarant,
     participant: victime,
     dematSocialId: id,
