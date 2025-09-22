@@ -83,7 +83,7 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
     },
     {
       name: 'DEMAT_SOCIAL_API_DIRECTORY',
-      value: '661',
+      value: '798',
     },
     {
       name: 'SENTRY_ENABLED',
