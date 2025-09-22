@@ -239,5 +239,5 @@ export const createOrGetFromDematSocial = async (dto: CreateRequeteFromDematSoci
     return null;
   }
 
-  createRequeteFromDematSocial(dto);
+  return await createRequeteFromDematSocial(dto);
 };

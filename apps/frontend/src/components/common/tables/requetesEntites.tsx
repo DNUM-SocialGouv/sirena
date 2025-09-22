@@ -61,7 +61,7 @@ export function RequetesEntite() {
       </div>
     ),
     'custom:statut': (row) => {
-      const statutId = row.RequeteEtape?.[0]?.statutId;
+      const statutId = row.requeteEtape?.[0]?.statutId;
       return statutId ? requeteStatutType[statutId as RequeteStatutType] : '';
     },
     'custom:lieu': () => '-',
