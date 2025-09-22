@@ -46,7 +46,7 @@
   "dependencies": {
     "@hono/node-server": "^1.19.2",
     "@hono/sentry": "^1.2.2",
-    "@hono/zod-validator": "^0.7.2",
+    "@hono/zod-validator": "^0.7.3",
     "@prisma/client": "6.16.1",
     "@scalar/hono-api-reference": "^0.9.18",
     "@sentry/cli": "^2.53.0",
