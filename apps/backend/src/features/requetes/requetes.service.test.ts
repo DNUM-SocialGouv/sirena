@@ -1,15 +1,15 @@
 import {
-  ages as AGE,
-  autoritesTypes as AUTORITE_TYPE,
-  demarchesEngageesTypes as DEMARCHES_ENGAGEES,
-  liensVictime as LIEN_VICTIME,
-  lieuTypes as LIEU_TYPE,
-  misEnCauseTypes as MIS_EN_CAUSE_TYPE,
-  motifs as MOTIF,
-  professionDomicileTypes as PROFESSION_DOMICILE_TYPE,
-  professionTypes as PROFESSION_TYPE,
-  RECEPTION_TYPES as RECEPTION_TYPE,
-  transportTypes as TRANSPORT_TYPE,
+  AGE,
+  AUTORITE_TYPE,
+  DEMARCHES_ENGAGEES,
+  LIEN_VICTIME,
+  LIEU_TYPE,
+  MIS_EN_CAUSE_TYPE,
+  MOTIF,
+  PROFESSION_DOMICILE_TYPE,
+  PROFESSION_TYPE,
+  RECEPTION_TYPE,
+  TRANSPORT_TYPE,
 } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/libs/__mocks__/prisma';
