@@ -86,7 +86,7 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
   ],
 };
 
-const requeteEntite: RequeteEntite & { requete: Requete } & { RequeteEtape: RequeteEtape[] } = {
+const requeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: RequeteEtape[] } = {
   entiteId: 'entiteId',
   requeteId: 'requeteId',
   requete: {
@@ -98,7 +98,7 @@ const requeteEntite: RequeteEntite & { requete: Requete } & { RequeteEtape: Requ
     createdAt: new Date(),
     updatedAt: new Date(),
   },
-  RequeteEtape: [],
+  requeteEtape: [],
 };
 
 describe('RequeteEtapes.service.ts', () => {
