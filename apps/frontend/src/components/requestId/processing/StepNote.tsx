@@ -72,7 +72,7 @@ export const StepNote = ({ id, author, content, createdAt, requeteStateId, files
           {files.map((file) => (
             <li key={file.id} className={styles['request-note__file']}>
               <FileDownloadLink
-                href={`/api/requete-states/${requeteStateId}/file/${file.id}`}
+                href={`/api/requete-etapes/${requeteStateId}/file/${file.id}`}
                 fileName={file.originalName}
                 fileSize={file.size}
               />
