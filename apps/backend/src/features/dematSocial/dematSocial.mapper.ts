@@ -1,16 +1,16 @@
 import {
-  ages as ageLabels,
-  autoritesTypes as autoriteTypeLabels,
-  consequences as consequenceLabels,
-  demarchesEngageesTypes as demarcheEngageeLabels,
-  liensVictime as lienVictimeLabels,
-  lieuTypes as lieuTypeLabels,
-  maltraitanceTypes as maltraitanceTypeLabels,
-  misEnCauseTypes as misEnCauseTypeLabels,
-  motifs as motifLabels,
-  professionDomicileTypes as professionDomicileTypeLabels,
-  professionTypes as professionTypeLabels,
-  transportTypes as transportTypeLabels,
+  ageLabels,
+  autoriteTypeLabels,
+  consequenceLabels,
+  demarcheEngageeLabels,
+  lienVictimeLabels,
+  lieuTypeLabels,
+  maltraitanceTypeLabels,
+  misEnCauseTypeLabels,
+  motifLabels,
+  professionDomicileTypeLabels,
+  professionTypeLabels,
+  transportTypeLabels,
 } from '@sirena/common/constants';
 
 const estVictime = {
