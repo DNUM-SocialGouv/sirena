@@ -27,36 +27,32 @@ export const createRequeteFromDematSocial = async ({
         receptionDate,
         receptionType: { connect: { id: receptionTypeId } },
       },
-      select: { id: true },
     });
 
-    if (declarant) {
-      const decl = await tx.personneConcernee.create({
-        data: {
-          telephone: declarant.telephone ?? '',
-          estHandicapee: declarant.estHandicapee ?? null,
-          estVictime: declarant.estVictime ?? null,
-          estAnonyme: declarant.estAnonyme ?? null,
-          lienVictime: declarant.lienVictimeId ? { connect: { id: declarant.lienVictimeId } } : undefined,
-          age: declarant.ageId ? { connect: { id: declarant.ageId } } : undefined,
-          declarantDe: { connect: { id: requete.id } },
-        },
-        select: { id: true },
-      });
+    const decl = await tx.personneConcernee.create({
+      data: {
+        telephone: declarant.telephone ?? '',
+        estHandicapee: declarant.estHandicapee ?? null,
+        estVictime: declarant.estVictime ?? null,
+        estAnonyme: declarant.estAnonyme ?? null,
+        lienVictime: declarant.lienVictimeId ? { connect: { id: declarant.lienVictimeId } } : undefined,
+        age: declarant.ageId ? { connect: { id: declarant.ageId } } : undefined,
+        declarantDe: { connect: { id: requete.id } },
+      },
+    });
 
-      if (declarant.adresse) {
-        const a = declarant.adresse;
-        await tx.adresse.create({
-          data: {
-            label: a.label ?? '',
-            numero: a.numRue ?? '',
-            rue: a.rue ?? '',
-            codePostal: a.codePostal ?? '',
-            ville: a.ville ?? '',
-            personneConcernee: { connect: { id: decl.id } },
-          },
-        });
-      }
+    if (declarant.adresse) {
+      const a = declarant.adresse;
+      await tx.adresse.create({
+        data: {
+          label: a.label ?? '',
+          numero: a.numero ?? '',
+          rue: a.rue ?? '',
+          codePostal: a.codePostal ?? '',
+          ville: a.ville ?? '',
+          personneConcernee: { connect: { id: decl.id } },
+        },
+      });
     }
 
     if (participant) {
@@ -78,7 +74,7 @@ export const createRequeteFromDematSocial = async ({
         await tx.adresse.create({
           data: {
             label: a.label ?? '',
-            numero: a.numRue ?? '',
+            numero: a.numero ?? '',
             rue: a.rue ?? '',
             codePostal: a.codePostal ?? '',
             ville: a.ville ?? '',
@@ -108,7 +104,7 @@ export const createRequeteFromDematSocial = async ({
         await tx.adresse.create({
           data: {
             label: a.label ?? '',
-            numero: a.numRue ?? '',
+            numero: a.numero ?? '',
             rue: a.rue ?? '',
             codePostal: a.codePostal ?? '',
             ville: a.ville ?? '',
@@ -121,10 +117,14 @@ export const createRequeteFromDematSocial = async ({
         data: {
           rpps: s.misEnCause.rpps ?? null,
           commentaire: s.misEnCause.commentaire ?? '',
-          misEnCauseType: s.misEnCause.misEnCauseType ? { connect: { id: s.misEnCause.misEnCauseType } } : undefined,
-          professionType: s.misEnCause.professionType ? { connect: { id: s.misEnCause.professionType } } : undefined,
-          professionDomicileType: s.misEnCause.professionDomicileType
-            ? { connect: { id: s.misEnCause.professionDomicileType } }
+          misEnCauseType: s.misEnCause.misEnCauseTypeId
+            ? { connect: { id: s.misEnCause.misEnCauseTypeId } }
+            : undefined,
+          professionType: s.misEnCause.professionTypeId
+            ? { connect: { id: s.misEnCause.professionTypeId } }
+            : undefined,
+          professionDomicileType: s.misEnCause.professionDomicileTypeId
+            ? { connect: { id: s.misEnCause.professionDomicileTypeId } }
             : undefined,
         },
         select: { id: true },
@@ -135,13 +135,7 @@ export const createRequeteFromDematSocial = async ({
         ? await tx.autoriteTypeEnum.findUnique({ where: { id: atId }, select: { id: true } })
         : null;
 
-      const demIds = s.demarchesEngagees.demarches ?? [];
-      const demExisting = demIds.length
-        ? await tx.demarchesEngageesEnum.findMany({
-            where: { id: { in: demIds } },
-            select: { id: true },
-          })
-        : [];
+      const demIds = s.demarchesEngagees.demarches?.map((id) => ({ id })) ?? [];
 
       const dem = await tx.demarchesEngagees.create({
         data: {
@@ -150,9 +144,8 @@ export const createRequeteFromDematSocial = async ({
           organisme: s.demarchesEngagees.organisme ?? '',
           datePlainte: s.demarchesEngagees.datePlainte ?? null,
           autoriteType: autorite ? { connect: { id: autorite.id } } : undefined,
-          demarches: demExisting.length ? { connect: demExisting } : undefined,
+          demarches: demIds.length ? { connect: demIds } : undefined,
         },
-        select: { id: true },
       });
 
       const situation = await tx.situation.create({
@@ -165,6 +158,7 @@ export const createRequeteFromDematSocial = async ({
         select: { id: true },
       });
 
+      // TODO change to iteration on all faits
       const f0 = s.faits?.[0];
       if (f0) {
         await tx.fait.create({
@@ -208,7 +202,7 @@ export const createRequeteFromDematSocial = async ({
       }
     }
 
-    return tx.requete.findUniqueOrThrow({
+    return await tx.requete.findUniqueOrThrow({
       where: { id: requete.id },
       include: {
         declarant: { include: { adresse: true, age: true, lienVictime: true } },
@@ -239,5 +233,5 @@ export const createOrGetFromDematSocial = async (dto: CreateRequeteFromDematSoci
     return null;
   }
 
-  createRequeteFromDematSocial(dto);
+  return await createRequeteFromDematSocial(dto);
 };
