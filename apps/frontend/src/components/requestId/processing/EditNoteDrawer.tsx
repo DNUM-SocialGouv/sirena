@@ -177,7 +177,6 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
       // 3 - Update note content/attach new files
       if (modifications.content || newFileIds.length > 0) {
         await updateNoteMutation.mutateAsync({
-          id: noteData.requeteStateId,
           noteId: noteData.id,
           texte: noteData.content,
           fileIds: newFileIds,
