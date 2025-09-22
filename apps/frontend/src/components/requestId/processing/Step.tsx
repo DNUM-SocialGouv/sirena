@@ -196,7 +196,11 @@ const StepComponent = ({ nom, statutId, disabled, openEdit, openEditNote, notes,
               author={note.author}
               id={note.id}
               createdAt={note.createdAt}
-              files={note.uploadedFiles}
+              files={note.uploadedFiles.map((file) => ({
+                id: file.id,
+                size: file.size,
+                originalName: (file.metadata as { originalName?: string })?.originalName || 'Unknown',
+              }))}
               requeteStateId={id}
               onEdit={(noteData) => openEditNote?.({ id, nom, statutId, notes, ...rest }, noteData)}
             />
