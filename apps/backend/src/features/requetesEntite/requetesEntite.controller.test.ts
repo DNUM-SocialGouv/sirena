@@ -74,7 +74,7 @@ describe('RequetesEntite endpoints: /', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequetesEntiteController).onError(errorHandler);
   const client = testClient(app);
 
-  const fakeData: (RequeteEntite & { requete: Requete; RequeteEtape: RequeteEtape[] })[] = [
+  const fakeData: (RequeteEntite & { requete: Requete; requeteEtape: RequeteEtape[] })[] = [
     {
       requeteId: 'r1',
       entiteId: 'e1',
@@ -87,7 +87,7 @@ describe('RequetesEntite endpoints: /', () => {
         dematSocialId: 123,
         receptionTypeId: 'receptionTypeId',
       },
-      RequeteEtape: [],
+      requeteEtape: [],
     },
   ];
   const fakeUser = {

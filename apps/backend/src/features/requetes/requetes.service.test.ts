@@ -1,18 +1,19 @@
 import {
-  AGE,
-  AUTORITE_TYPE,
-  DEMARCHES_ENGAGEES,
-  LIEN_VICTIME,
-  LIEU_TYPE,
-  MIS_EN_CAUSE_TYPE,
-  MOTIF,
-  PROFESSION_DOMICILE_TYPE,
-  PROFESSION_TYPE,
-  RECEPTION_TYPE,
-  TRANSPORT_TYPE,
+  ages as AGE,
+  autoritesTypes as AUTORITE_TYPE,
+  demarchesEngageesTypes as DEMARCHES_ENGAGEES,
+  liensVictime as LIEN_VICTIME,
+  lieuTypes as LIEU_TYPE,
+  misEnCauseTypes as MIS_EN_CAUSE_TYPE,
+  motifs as MOTIF,
+  professionDomicileTypes as PROFESSION_DOMICILE_TYPE,
+  professionTypes as PROFESSION_TYPE,
+  RECEPTION_TYPES as RECEPTION_TYPE,
+  transportTypes as TRANSPORT_TYPE,
 } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/libs/__mocks__/prisma';
+import type { Requete } from '../../../generated/client';
 import {
   createOrGetFromDematSocial,
   createRequeteFromDematSocial,
@@ -105,7 +106,7 @@ const getfakeRequeteDto = () => {
 const getMinimalRequeteDto = () => {
   const dto = {
     receptionDate: new Date(),
-    receptionTypeId: 'FORMULAIRE',
+    receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
     dematSocialId: 42,
     declarant: {
       ageId: null,
@@ -173,7 +174,132 @@ describe('requetes.service.ts', () => {
     vi.useRealTimers();
   });
 
-  describe('getRequeteByDematSocialId', async () => {
+  describe('createRequeteFromDematSocial()', () => {
+    describe('createRequeteFromDematSocial', async () => {
+      it('creates requete with declarant, participant and situations inside a single transaction', async () => {
+        vi.useFakeTimers();
+
+        const fakeNow = new Date('2025-08-06T12:34:56.000Z');
+        vi.setSystemTime(fakeNow);
+
+        const dematSocialId = 123;
+        const receptionTypeId = RECEPTION_TYPE.FORMULAIRE;
+
+        const fakeRequete: Requete = {
+          id: '1',
+          dematSocialId,
+          createdAt: new Date('2025-01-02T00:00:00.000Z'),
+          updatedAt: new Date('2025-01-02T00:00:00.000Z'),
+          commentaire: 'Requête créée automatiquement',
+          receptionDate: new Date(),
+          receptionTypeId,
+        };
+
+        const transactionSpy = vi.mocked(prisma.$transaction);
+        transactionSpy.mockImplementation(async (cb) => {
+          const mockTx = {
+            ...prisma,
+            requete: {
+              ...prisma.requete,
+              create: vi.fn().mockResolvedValue({ id: '1' }),
+              findUniqueOrThrow: vi.fn().mockResolvedValue(fakeRequete),
+            },
+            personneConcernee: {
+              ...prisma.personneConcernee,
+              create: vi.fn().mockResolvedValue({ id: 'personne-1' }),
+            },
+            adresse: {
+              ...prisma.adresse,
+              create: vi.fn().mockResolvedValue({ id: 'adresse-1' }),
+            },
+            lieuDeSurvenue: {
+              ...prisma.lieuDeSurvenue,
+              create: vi.fn().mockResolvedValue({ id: 'lieu-1' }),
+            },
+            misEnCause: {
+              ...prisma.misEnCause,
+              create: vi.fn().mockResolvedValue({ id: 'mec-1' }),
+            },
+            autoriteTypeEnum: {
+              ...prisma.autoriteTypeEnum,
+              findUnique: vi.fn().mockResolvedValue({ id: 'autorite-1' }),
+            },
+            demarchesEngageesEnum: {
+              ...prisma.demarchesEngageesEnum,
+              findMany: vi.fn().mockResolvedValue([{ id: 'demarche-1' }]),
+            },
+            demarchesEngagees: {
+              ...prisma.demarchesEngagees,
+              create: vi.fn().mockResolvedValue({ id: 'demarches-1' }),
+            },
+            situation: {
+              ...prisma.situation,
+              create: vi.fn().mockResolvedValue({ id: 'situation-1' }),
+            },
+            fait: {
+              ...prisma.fait,
+              create: vi.fn().mockResolvedValue({ id: 'fait-1' }),
+            },
+            faitMotif: {
+              ...prisma.faitMotif,
+              createMany: vi.fn().mockResolvedValue({ count: 1 }),
+            },
+            faitConsequence: {
+              ...prisma.faitConsequence,
+              createMany: vi.fn().mockResolvedValue({ count: 1 }),
+            },
+            faitMaltraitanceType: {
+              ...prisma.faitMaltraitanceType,
+              createMany: vi.fn().mockResolvedValue({ count: 1 }),
+            },
+          } as typeof prisma;
+          return cb(mockTx);
+        });
+
+        const result = await createRequeteFromDematSocial({
+          dematSocialId,
+          receptionTypeId,
+          receptionDate: new Date(),
+          declarant: {
+            adresse: {
+              label: '123 Main St',
+              codePostal: '12345',
+              ville: 'Anytown',
+              rue: 'Main St',
+              numero: '123',
+            },
+            ageId: '1',
+            telephone: '1234567890',
+            estHandicapee: false,
+            lienVictimeId: '1',
+            estVictime: false,
+            estAnonyme: false,
+          },
+          participant: {
+            adresse: {
+              label: '123 Main St',
+              codePostal: '12345',
+              ville: 'Anytown',
+              rue: 'Main St',
+              numero: '123',
+            },
+            ageId: '1',
+            telephone: '1234567890',
+            estHandicapee: false,
+            estVictimeInformee: false,
+            victimeInformeeCommentaire: '1234567890',
+            autrePersonnes: '1234567890',
+          },
+          situations: [],
+        });
+
+        expect(transactionSpy).toHaveBeenCalledTimes(1);
+        expect(result).toBe(fakeRequete);
+      });
+    });
+  });
+
+  describe('getRequeteByDematSocialId()', () => {
     it('should return the requete matching the dematSocialId', async () => {
       const mockedFindFirst = vi.mocked(prisma.requete.findFirst);
 
@@ -194,7 +320,6 @@ describe('requetes.service.ts', () => {
         where: { dematSocialId: 123 },
         include: {
           receptionType: true,
-          // RequeteEntites: { include: { entite: true } },
           etapes: { include: { statut: true } },
         },
       });
@@ -499,7 +624,13 @@ describe('requetes.service.ts', () => {
 
   describe('createOrGetFromDematSocial()', () => {
     it('should return null if requete already exists', async () => {
-      vi.mocked(prisma.requete.findFirst).mockResolvedValueOnce({
+      vi.useFakeTimers();
+      const fakeNow = new Date('2025-08-06T12:34:56.000Z');
+      vi.setSystemTime(fakeNow);
+      const mockedFindFirst = vi.mocked(prisma.requete.findFirst);
+
+      const existing = {
+        number: 1,
         id: '1',
         dematSocialId: 123,
         createdAt: new Date(),
@@ -507,152 +638,194 @@ describe('requetes.service.ts', () => {
         commentaire: 'Requête créée automatiquement',
         receptionDate: new Date(),
         receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+      };
+
+      mockedFindFirst.mockResolvedValueOnce(existing);
+
+      const result = await createOrGetFromDematSocial({
+        dematSocialId: 123,
+        receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+        receptionDate: new Date(),
+        declarant: {
+          adresse: {
+            label: '123 Main St',
+            codePostal: '12345',
+            ville: 'Anytown',
+            rue: 'Main St',
+            numero: '123',
+          },
+          ageId: '1',
+          telephone: '1234567890',
+          estHandicapee: false,
+          lienVictimeId: '1',
+          estVictime: false,
+          estAnonyme: false,
+        },
+        participant: {
+          adresse: {
+            label: '123 Main St',
+            codePostal: '12345',
+            ville: 'Anytown',
+            rue: 'Main St',
+            numero: '123',
+          },
+          ageId: '1',
+          telephone: '1234567890',
+          estHandicapee: false,
+          estVictimeInformee: false,
+          victimeInformeeCommentaire: '1234567890',
+          autrePersonnes: '1234567890',
+        },
+        situations: [],
       });
 
-      const dto = getfakeRequeteDto();
-
-      const result = await createOrGetFromDematSocial(dto);
-
-      expect(result).toBeNull;
+      expect(mockedFindFirst).toHaveBeenCalledWith({
+        where: { dematSocialId: 123 },
+        include: {
+          receptionType: true,
+          etapes: { include: { statut: true } },
+        },
+      });
+      expect(result).toBeNull();
     });
 
-    it('should return the request created', async () => {
-      vi.mocked(prisma.requete.findFirst).mockResolvedValueOnce(null);
+    it('should create and return requete if not existing', async () => {
+      vi.useFakeTimers();
+      const fakeNow = new Date('2025-08-06T12:34:56.000Z');
+      vi.setSystemTime(fakeNow);
 
-      const fakeRequeteDto = getfakeRequeteDto();
-
+      const mockedFindFirst = vi.mocked(prisma.requete.findFirst);
       const transactionSpy = vi.mocked(prisma.$transaction);
-      transactionSpy.mockImplementation(async (cb) => cb(prisma));
 
-      vi.mocked(prisma.requete.create).mockResolvedValueOnce({
+      const dematSocialId = 456;
+      const mockRequeteCreate = vi.fn().mockResolvedValue({ id: '1' });
+
+      const created: Requete = {
         id: '1',
-        dematSocialId: 1,
+        dematSocialId,
         createdAt: new Date(),
         updatedAt: new Date(),
         commentaire: 'Requête créée automatiquement',
         receptionDate: new Date(),
         receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+      };
+
+      mockedFindFirst.mockResolvedValueOnce(null);
+
+      transactionSpy.mockImplementation(async (cb) => {
+        const mockTx = {
+          ...prisma,
+          requete: {
+            ...prisma.requete,
+            create: mockRequeteCreate,
+            findUniqueOrThrow: vi.fn().mockResolvedValue(created),
+          },
+          personneConcernee: {
+            ...prisma.personneConcernee,
+            create: vi.fn().mockResolvedValue({ id: 'personne-1' }),
+          },
+          adresse: {
+            ...prisma.adresse,
+            create: vi.fn().mockResolvedValue({ id: 'adresse-1' }),
+          },
+          lieuDeSurvenue: {
+            ...prisma.lieuDeSurvenue,
+            create: vi.fn().mockResolvedValue({ id: 'lieu-1' }),
+          },
+          misEnCause: {
+            ...prisma.misEnCause,
+            create: vi.fn().mockResolvedValue({ id: 'mec-1' }),
+          },
+          autoriteTypeEnum: {
+            ...prisma.autoriteTypeEnum,
+            findUnique: vi.fn().mockResolvedValue({ id: 'autorite-1' }),
+          },
+          demarchesEngageesEnum: {
+            ...prisma.demarchesEngageesEnum,
+            findMany: vi.fn().mockResolvedValue([{ id: 'demarche-1' }]),
+          },
+          demarchesEngagees: {
+            ...prisma.demarchesEngagees,
+            create: vi.fn().mockResolvedValue({ id: 'demarches-1' }),
+          },
+          situation: {
+            ...prisma.situation,
+            create: vi.fn().mockResolvedValue({ id: 'situation-1' }),
+          },
+          fait: {
+            ...prisma.fait,
+            create: vi.fn().mockResolvedValue({ id: 'fait-1' }),
+          },
+          faitMotif: {
+            ...prisma.faitMotif,
+            createMany: vi.fn().mockResolvedValue({ count: 1 }),
+          },
+          faitConsequence: {
+            ...prisma.faitConsequence,
+            createMany: vi.fn().mockResolvedValue({ count: 1 }),
+          },
+          faitMaltraitanceType: {
+            ...prisma.faitMaltraitanceType,
+            createMany: vi.fn().mockResolvedValue({ count: 1 }),
+          },
+        } as typeof prisma;
+        return cb(mockTx);
       });
 
-      vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({
-        ...fakeRequeteDto.declarant,
-        id: '1',
-        estNonIdentifiee: null,
-        estIdentifie: null,
-        estVictimeInformee: null,
-        victimeInformeeCommentaire: '',
-        veutGarderAnonymat: null,
-        commentaire: '',
-        autrePersonnes: '',
-        civiliteId: null,
-        declarantDeId: '1',
-        participantDeId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      const result = await createOrGetFromDematSocial({
+        dematSocialId,
+        receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+        receptionDate: new Date(),
+        declarant: {
+          adresse: {
+            label: '123 Main St',
+            codePostal: '12345',
+            ville: 'Anytown',
+            rue: 'Main St',
+            numero: '123',
+          },
+          ageId: '1',
+          telephone: '1234567890',
+          estHandicapee: false,
+          lienVictimeId: '1',
+          estVictime: false,
+          estAnonyme: false,
+        },
+        participant: {
+          adresse: {
+            label: '123 Main St',
+            codePostal: '12345',
+            ville: 'Anytown',
+            rue: 'Main St',
+            numero: '123',
+          },
+          ageId: '1',
+          telephone: '1234567890',
+          estHandicapee: false,
+          estVictimeInformee: false,
+          victimeInformeeCommentaire: '1234567890',
+          autrePersonnes: '1234567890',
+        },
+        situations: [],
       });
 
-      vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
-        ...fakeRequeteDto.declarant.adresse,
-        id: '1',
-        personneConcerneeId: '1',
-        lieuDeSurvenueId: null,
+      expect(mockedFindFirst).toHaveBeenCalledWith({
+        where: { dematSocialId },
+        include: {
+          receptionType: true,
+          etapes: { include: { statut: true } },
+        },
       });
-
-      vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({
-        ...fakeRequeteDto.participant,
-        id: '2',
-        estHandicapee: null,
-        lienVictimeId: LIEN_VICTIME.PROCHE,
-        estNonIdentifiee: null,
-        estIdentifie: null,
-        estVictimeInformee: null,
-        victimeInformeeCommentaire: '',
-        estVictime: true,
-        estAnonyme: false,
-        veutGarderAnonymat: null,
-        commentaire: '',
-        autrePersonnes: '',
-        civiliteId: null,
-        declarantDeId: '1',
-        participantDeId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      expect(transactionSpy).toHaveBeenCalledTimes(1);
+      expect(mockRequeteCreate).toHaveBeenCalledTimes(1);
+      expect(mockRequeteCreate).toHaveBeenCalledWith({
+        data: {
+          dematSocialId,
+          receptionDate: new Date(),
+          receptionType: { connect: { id: RECEPTION_TYPE.FORMULAIRE } },
+        },
       });
-
-      vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
-        ...fakeRequeteDto.declarant.adresse,
-        id: '2',
-        personneConcerneeId: '2',
-        lieuDeSurvenueId: null,
-      });
-
-      fakeRequeteDto.situations.forEach((situation) => {
-        vi.mocked(prisma.lieuDeSurvenue.create).mockResolvedValueOnce({
-          ...situation.lieuDeSurvenue,
-          id: '1',
-        });
-
-        if (situation.lieuDeSurvenue.adresse) {
-          vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
-            ...fakeRequeteDto.declarant.adresse,
-            id: '1',
-            personneConcerneeId: null,
-            lieuDeSurvenueId: '1',
-          });
-        }
-
-        vi.mocked(prisma.misEnCause.create).mockResolvedValueOnce({
-          ...situation.misEnCause,
-          id: '1',
-        });
-
-        vi.mocked(prisma.demarchesEngagees.create).mockResolvedValueOnce({
-          ...situation.demarchesEngagees,
-          id: '1',
-          autoriteTypeId: situation.demarchesEngagees.autoriteTypeId,
-        });
-
-        vi.mocked(prisma.situation.create).mockResolvedValueOnce({
-          id: '1',
-          requeteId: '1',
-          lieuDeSurvenueId: '1',
-          misEnCauseId: '1',
-          demarchesEngageesId: '1',
-        });
-
-        situation.faits.forEach((fait) => {
-          vi.mocked(prisma.fait.create).mockResolvedValueOnce({
-            ...fait,
-            situationId: '1',
-          });
-
-          vi.mocked(prisma.faitMotif.createMany).mockResolvedValueOnce({
-            count: fait.motifs.length,
-          });
-
-          vi.mocked(prisma.faitConsequence.createMany).mockResolvedValueOnce({
-            count: fait.consequences.length,
-          });
-
-          vi.mocked(prisma.faitMaltraitanceType.createMany).mockResolvedValueOnce({
-            count: fait.maltraitanceTypes.length,
-          });
-        });
-
-        vi.mocked(prisma.requete.findUniqueOrThrow).mockResolvedValueOnce({
-          id: '1',
-          commentaire: '',
-          receptionDate: fakeRequeteDto.receptionDate,
-          dematSocialId: fakeRequeteDto.dematSocialId,
-          receptionTypeId: fakeRequeteDto.receptionTypeId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-      });
-
-      const result = await createOrGetFromDematSocial(fakeRequeteDto);
-      expect(result).not.toBeNull();
-      expect(result?.id).toBe('1');
+      expect(result).toBe(created);
     });
   });
 });
