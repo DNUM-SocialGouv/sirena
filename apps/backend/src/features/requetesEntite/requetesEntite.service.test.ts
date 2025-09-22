@@ -13,7 +13,7 @@ vi.mock('@/libs/prisma', () => ({
   },
 }));
 
-const mockRequeteEntite: RequeteEntite & { requete: Requete } & { RequeteEtape: RequeteEtape[] } = {
+const mockRequeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: RequeteEtape[] } = {
   requeteId: 'req123',
   entiteId: 'ent123',
   requete: {
@@ -25,7 +25,7 @@ const mockRequeteEntite: RequeteEntite & { requete: Requete } & { RequeteEtape: 
     receptionDate: new Date(),
     receptionTypeId: 'receptionTypeId',
   },
-  RequeteEtape: [
+  requeteEtape: [
     {
       id: 'etape1',
       statutId: 'A_QUALIFIER',
@@ -58,7 +58,7 @@ describe('requetesEntite.service', () => {
         orderBy: { requeteId: 'desc' },
         include: {
           requete: true,
-          RequeteEtape: {
+          requeteEtape: {
             orderBy: { createdAt: 'desc' },
             take: 1,
           },
@@ -86,7 +86,7 @@ describe('requetesEntite.service', () => {
         orderBy: { entiteId: 'asc' },
         include: {
           requete: true,
-          RequeteEtape: {
+          requeteEtape: {
             orderBy: { createdAt: 'desc' },
             take: 1,
           },
@@ -130,7 +130,7 @@ describe('requetesEntite.service', () => {
         where: { requeteId_entiteId: { requeteId: mockRequeteEntite.requeteId, entiteId: mockRequeteEntite.entiteId } },
         include: {
           requete: true,
-          RequeteEtape: {
+          requeteEtape: {
             orderBy: { createdAt: 'desc' },
             take: 1,
           },

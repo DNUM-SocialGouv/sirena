@@ -8,7 +8,7 @@ export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns)
 
 export const GetRequeteEntiteSchema = RequeteEntiteSchema.extend({
   requete: RequeteSchema,
-  RequeteEtape: z.array(RequeteEtapeSchema),
+  requeteEtape: z.array(RequeteEtapeSchema),
 });
 
 export const GetRequetesEntiteResponseSchema = z.array(GetRequeteEntiteSchema);
