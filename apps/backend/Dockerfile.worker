@@ -51,6 +51,6 @@ COPY --from=builder --chown=node:node /app/apps/backend apps/backend
 COPY --from=builder --chown=node:node /app/packages/backend-utils packages/backend-utils
 COPY --from=builder --chown=node:node /app/packages/common packages/common
 
-COPY --chown=node:node ./scripts/backend.entrypoint.sh scripts/
+COPY --chown=node:node ./scripts/worker.entrypoint.sh scripts/
 
 ENTRYPOINT ["/app/scripts/worker.entrypoint.sh"]
