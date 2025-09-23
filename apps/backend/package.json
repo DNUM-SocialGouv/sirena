@@ -69,6 +69,7 @@
     "pino-pretty": "^13.1.1",
     "tmp-promise": "^3.0.3",
     "ioredis": "^5.7.0",
+    "tsx": "catalog:",
     "zod": "catalog:",
     "zod-openapi": "^4.2.4",
     "zod-prisma-types": "^3.2.4"
@@ -84,7 +85,6 @@
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "prisma": "^6.10.1",
-    "tsx": "^4.20.5",
     "typescript": "~5.9.2",
     "vitest": "catalog:",
     "vitest-mock-extended": "^3.1.0"

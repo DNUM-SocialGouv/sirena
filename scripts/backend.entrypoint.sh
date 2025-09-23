@@ -8,4 +8,4 @@ echo "Init seed"
 pnpm --filter @sirena/backend db:seed
 
 cd /app/apps/backend
-exec node dist/src/index.js
+exec node_modules/.bin/tsx src/index.ts

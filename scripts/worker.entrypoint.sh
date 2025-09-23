@@ -2,4 +2,4 @@
 set -e
 
 cd /app/apps/backend
-exec node dist/src/start-worker.js
+exec node_modules/.bin/tsx src/start-worker.ts
