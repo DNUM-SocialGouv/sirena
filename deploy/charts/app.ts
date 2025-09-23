@@ -331,7 +331,13 @@ function createWorkerDeployment(scope: Construct, props: WorkerProps, labels: Re
                   memory: k8s.Quantity.fromString('500Mi'),
                 },
               },
-              env: [...createRedisEnvVars()],
+              env: [
+                ...createBackendEnvVars('', props.environment),
+                ...createDatabaseEnvVars(),
+                ...createRedisEnvVars(),
+                ...createBucketEnvVars(),
+              ],
+              envFrom: [{ secretRef: { name: 'backend' } }],
             },
           ],
           imagePullSecrets: [
