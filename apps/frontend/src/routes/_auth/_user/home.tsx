@@ -1,6 +1,7 @@
+import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { RequetesEntite } from '@/components/common/tables/requetesEntites.tsx';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -9,6 +10,7 @@ import { requireAuth } from '@/lib/auth-guards';
 import { router } from '@/lib/router';
 import { QueryParamsSchema } from '@/schemas/pagination.schema';
 import { useUserStore } from '@/stores/userStore';
+import styles from './home.module.css';
 
 export const Route = createFileRoute('/_auth/_user/home')({
   beforeLoad: requireAuth,
@@ -40,7 +42,14 @@ function RouteComponent() {
       <QueryStateHandler query={profileQuery}>
         {() => (
           <>
-            <h1>Bienvenue {label}</h1>
+            <div className={styles.header}>
+              <h1 className={styles.title}>Bienvenue {label}</h1>
+              <Link to="/request/create">
+                <Button iconId="fr-icon-add-line" iconPosition="left">
+                  Créer une requête manuellement
+                </Button>
+              </Link>
+            </div>
             <RequetesEntite />
           </>
         )}
