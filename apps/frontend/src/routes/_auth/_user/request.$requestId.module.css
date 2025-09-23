@@ -105,3 +105,9 @@
 .timeline-step:last-child .request-step {
   border-bottom: none;
 }
+
+.disabledTabs :global(.fr-tabs__tab:not([aria-selected="true"])) {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}

@@ -21,9 +21,11 @@ import { Route as AuthAdminUsersRouteRouteImport } from './routes/_auth/admin/us
 import { Route as AuthAdminUsersIndexRouteImport } from './routes/_auth/admin/users/index'
 import { Route as AuthAdminUsersAllRouteImport } from './routes/_auth/admin/users/all'
 import { Route as AuthAdminUserUserIdRouteImport } from './routes/_auth/admin/user/$userId'
+import { Route as AuthUserRequestCreateRouteImport } from './routes/_auth/_user/request.create'
 import { Route as AuthUserRequestRequestIdRouteImport } from './routes/_auth/_user/request.$requestId'
 import { Route as AuthUserRequestRequestIdIndexRouteImport } from './routes/_auth/_user/request.$requestId/index'
 import { Route as AuthUserRequestRequestIdProcessingRouteImport } from './routes/_auth/_user/request.$requestId/processing'
+import { Route as AuthUserRequestRequestIdEditRouteImport } from './routes/_auth/_user/request.$requestId.edit'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -83,6 +85,11 @@ const AuthAdminUserUserIdRoute = AuthAdminUserUserIdRouteImport.update({
   path: '/user/$userId',
   getParentRoute: () => AuthAdminRouteRoute,
 } as any)
+const AuthUserRequestCreateRoute = AuthUserRequestCreateRouteImport.update({
+  id: '/request/create',
+  path: '/request/create',
+  getParentRoute: () => AuthUserRouteRoute,
+} as any)
 const AuthUserRequestRequestIdRoute =
   AuthUserRequestRequestIdRouteImport.update({
     id: '/request/$requestId',
@@ -101,6 +108,12 @@ const AuthUserRequestRequestIdProcessingRoute =
     path: '/processing',
     getParentRoute: () => AuthUserRequestRequestIdRoute,
   } as any)
+const AuthUserRequestRequestIdEditRoute =
+  AuthUserRequestRequestIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthUserRequestRequestIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -111,9 +124,11 @@ export interface FileRoutesByFullPath {
   '/home': typeof AuthUserHomeRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
+  '/request/create': typeof AuthUserRequestCreateRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
   '/admin/users/': typeof AuthAdminUsersIndexRoute
+  '/request/$requestId/edit': typeof AuthUserRequestRequestIdEditRoute
   '/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
   '/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
 }
@@ -124,9 +139,11 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/home': typeof AuthUserHomeRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
+  '/request/create': typeof AuthUserRequestCreateRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
   '/admin/users': typeof AuthAdminUsersIndexRoute
+  '/request/$requestId/edit': typeof AuthUserRequestRequestIdEditRoute
   '/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdIndexRoute
 }
@@ -142,9 +159,11 @@ export interface FileRoutesById {
   '/_auth/_user/home': typeof AuthUserHomeRoute
   '/_auth/admin/entities': typeof AuthAdminEntitiesRoute
   '/_auth/_user/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
+  '/_auth/_user/request/create': typeof AuthUserRequestCreateRoute
   '/_auth/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/_auth/admin/users/all': typeof AuthAdminUsersAllRoute
   '/_auth/admin/users/': typeof AuthAdminUsersIndexRoute
+  '/_auth/_user/request/$requestId/edit': typeof AuthUserRequestRequestIdEditRoute
   '/_auth/_user/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
   '/_auth/_user/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
 }
@@ -159,9 +178,11 @@ export interface FileRouteTypes {
     | '/home'
     | '/admin/entities'
     | '/request/$requestId'
+    | '/request/create'
     | '/admin/user/$userId'
     | '/admin/users/all'
     | '/admin/users/'
+    | '/request/$requestId/edit'
     | '/request/$requestId/processing'
     | '/request/$requestId/'
   fileRoutesByTo: FileRoutesByTo
@@ -172,9 +193,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/home'
     | '/admin/entities'
+    | '/request/create'
     | '/admin/user/$userId'
     | '/admin/users/all'
     | '/admin/users'
+    | '/request/$requestId/edit'
     | '/request/$requestId/processing'
     | '/request/$requestId'
   id:
@@ -189,9 +212,11 @@ export interface FileRouteTypes {
     | '/_auth/_user/home'
     | '/_auth/admin/entities'
     | '/_auth/_user/request/$requestId'
+    | '/_auth/_user/request/create'
     | '/_auth/admin/user/$userId'
     | '/_auth/admin/users/all'
     | '/_auth/admin/users/'
+    | '/_auth/_user/request/$requestId/edit'
     | '/_auth/_user/request/$requestId/processing'
     | '/_auth/_user/request/$requestId/'
   fileRoutesById: FileRoutesById
@@ -289,6 +314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAdminUserUserIdRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
+    '/_auth/_user/request/create': {
+      id: '/_auth/_user/request/create'
+      path: '/request/create'
+      fullPath: '/request/create'
+      preLoaderRoute: typeof AuthUserRequestCreateRouteImport
+      parentRoute: typeof AuthUserRouteRoute
+    }
     '/_auth/_user/request/$requestId': {
       id: '/_auth/_user/request/$requestId'
       path: '/request/$requestId'
@@ -310,16 +342,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUserRequestRequestIdProcessingRouteImport
       parentRoute: typeof AuthUserRequestRequestIdRoute
     }
+    '/_auth/_user/request/$requestId/edit': {
+      id: '/_auth/_user/request/$requestId/edit'
+      path: '/edit'
+      fullPath: '/request/$requestId/edit'
+      preLoaderRoute: typeof AuthUserRequestRequestIdEditRouteImport
+      parentRoute: typeof AuthUserRequestRequestIdRoute
+    }
   }
 }
 
 interface AuthUserRequestRequestIdRouteChildren {
+  AuthUserRequestRequestIdEditRoute: typeof AuthUserRequestRequestIdEditRoute
   AuthUserRequestRequestIdProcessingRoute: typeof AuthUserRequestRequestIdProcessingRoute
   AuthUserRequestRequestIdIndexRoute: typeof AuthUserRequestRequestIdIndexRoute
 }
 
 const AuthUserRequestRequestIdRouteChildren: AuthUserRequestRequestIdRouteChildren =
   {
+    AuthUserRequestRequestIdEditRoute: AuthUserRequestRequestIdEditRoute,
     AuthUserRequestRequestIdProcessingRoute:
       AuthUserRequestRequestIdProcessingRoute,
     AuthUserRequestRequestIdIndexRoute: AuthUserRequestRequestIdIndexRoute,
@@ -333,11 +374,13 @@ const AuthUserRequestRequestIdRouteWithChildren =
 interface AuthUserRouteRouteChildren {
   AuthUserHomeRoute: typeof AuthUserHomeRoute
   AuthUserRequestRequestIdRoute: typeof AuthUserRequestRequestIdRouteWithChildren
+  AuthUserRequestCreateRoute: typeof AuthUserRequestCreateRoute
 }
 
 const AuthUserRouteRouteChildren: AuthUserRouteRouteChildren = {
   AuthUserHomeRoute: AuthUserHomeRoute,
   AuthUserRequestRequestIdRoute: AuthUserRequestRequestIdRouteWithChildren,
+  AuthUserRequestCreateRoute: AuthUserRequestCreateRoute,
 }
 
 const AuthUserRouteRouteWithChildren = AuthUserRouteRoute._addFileChildren(
