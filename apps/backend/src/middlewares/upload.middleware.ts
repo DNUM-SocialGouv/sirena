@@ -91,9 +91,10 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
     detectedType = { mime: 'text/plain', ext: 'eml' };
   }
 
-  // Handle MSG files that fileTypeFromBuffer might not detect or detect as x-cfb
-  if (!detectedType && file.name.toLowerCase().endsWith('.msg')) {
-    detectedType = { mime: 'application/vnd.ms-outlook', ext: 'msg' };
+  // Handle MSG files - they might be detected as x-cfb (Compound File Binary)
+  // but we want to preserve the .msg extension
+  if (file.name.toLowerCase().endsWith('.msg') && detectedType?.mime === 'application/x-cfb') {
+    detectedType = { mime: 'application/x-cfb', ext: 'msg' };
   }
 
   if (!detectedType?.mime || !ALLOWED_MIME_TYPES.includes(detectedType.mime)) {
