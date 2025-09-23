@@ -30,6 +30,14 @@ vi.mock('@/features/requetes/requetes.service', () => ({
   createOrGetFromDematSocial: vi.fn(),
 }));
 
+vi.mock('./dematSocial.adaptater', () => ({
+  mapDataForPrisma: vi.fn().mockReturnValue({
+    dematSocialId: 101,
+    createdAt: new Date('2024-01-01'),
+    entiteIds: undefined,
+  }),
+}));
+
 describe('dematSocial.service.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -76,30 +84,28 @@ describe('dematSocial.service.ts', () => {
         },
       });
 
-      vi.mocked(createOrGetFromDematSocial)
-        .mockResolvedValueOnce({
-          number: 1,
-          dematSocialId: 101,
-          id: '1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          requetesEntite: [],
-        })
-        .mockResolvedValueOnce({
-          number: 2,
-          dematSocialId: 102,
-          id: '2',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          requetesEntite: [],
-        });
+      sendMock.mockResolvedValue({
+        dossier: {
+          champs: [],
+        },
+      });
+
+      vi.mocked(createOrGetFromDematSocial).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
 
       const result = await importRequetes(new Date('2024-01-01'));
 
       expect(createOrGetFromDematSocial).toHaveBeenCalledTimes(2);
-      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({ dematSocialId: 101, createdAt: dateDepot });
-      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({ dematSocialId: 102, createdAt: dateDepot });
-      expect(result).toEqual({ count: 2 });
+      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({
+        dematSocialId: 101,
+        createdAt: dateDepot,
+        entiteIds: undefined,
+      });
+      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({
+        dematSocialId: 101,
+        createdAt: dateDepot,
+        entiteIds: undefined,
+      });
+      expect(result).toEqual({ count: 2, errorCount: 0 });
     });
 
     it('should do nothing if no dossiers returned', async () => {
@@ -109,7 +115,7 @@ describe('dematSocial.service.ts', () => {
 
       const result = await importRequetes();
       expect(createOrGetFromDematSocial).not.toHaveBeenCalled();
-      expect(result).toEqual({ count: 0 });
+      expect(result).toEqual({ errorCount: 0, count: 0 });
     });
   });
 });

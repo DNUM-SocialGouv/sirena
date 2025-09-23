@@ -1,11 +1,11 @@
 import { csrf } from 'hono/csrf';
 import '@/libs/instrument';
 import AuthController from '@/features/auth/auth.controller';
-import DematSocialMapperController from '@/features/dematSocialMapping/dematSocialMapping.controller';
 import EntitesController from '@/features/entites/entites.controller';
 import HealthController from '@/features/health/health.controller';
+import NotesController from '@/features/notes/notes.controller';
 import ProfileController from '@/features/profile/profile.controller';
-import RequeteStatesController from '@/features/requeteStates/requeteStates.controller';
+import RequeteEtapesController from '@/features/requeteEtapes/requetesEtapes.controller';
 import RequetesEntiteController from '@/features/requetesEntite/requetesEntite.controller';
 import RolesController from '@/features/roles/roles.controller';
 import UploadedFilesController from '@/features/uploadedFiles/uploadedFiles.controller';
@@ -32,9 +32,9 @@ export const app = baseApp
   .route('/users', UsersController)
   .route('/entites', EntitesController)
   .route('/uploaded-files', UploadedFilesController)
-  .route('/demat-social-mapping', DematSocialMapperController)
   .route('/requetes-entite', RequetesEntiteController)
-  .route('/requete-states', RequeteStatesController)
+  .route('/requete-etapes', RequeteEtapesController)
+  .route('/notes', NotesController)
   .route('/profile', ProfileController)
   .route('/health', HealthController)
   .route('/version', VersionController)

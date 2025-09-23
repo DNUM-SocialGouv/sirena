@@ -27,16 +27,18 @@ const mockedUploadedFile = vi.mocked(prisma.uploadedFile);
 const mockUploadedFile = {
   id: 'file1',
   fileName: 'test.pdf',
-  filePath: '/uploads/test.pdf',
+  filePath: 'uploads/test.pdf',
   mimeType: 'application/pdf',
   size: 1024,
   createdAt: new Date(),
   updatedAt: new Date(),
   metadata: null,
-  entiteId: 'entite1',
-  uploadedById: 'user1',
+  entiteId: 'e1',
   status: 'PENDING',
-  requeteStateNoteId: '1',
+  uploadedById: 'id10',
+  requeteEtapeNoteId: '1',
+  requeteId: '1',
+  faitSituationId: '1',
 };
 
 describe('uploadedFiles.service.ts', () => {
@@ -173,7 +175,9 @@ describe('uploadedFiles.service.ts', () => {
         entiteId: 'entite1',
         uploadedById: 'user1',
         status: 'PENDING',
-        requeteStateNoteId: null,
+        requeteEtapeNoteId: null,
+        requeteId: null,
+        faitSituationId: null,
       };
 
       const result = await createUploadedFile(uploadedFileData);
@@ -197,27 +201,21 @@ describe('uploadedFiles.service.ts', () => {
         filePath: '/uploads/test.pdf',
         mimeType: 'application/pdf',
         size: 1024,
-        metadata: { key: 'value' },
+        metadata: null,
         entiteId: 'entite1',
         uploadedById: 'user1',
         status: 'PENDING',
-        requeteStateNoteId: null,
+        requeteEtapeNoteId: null,
+        requeteId: null,
+        faitSituationId: null,
       };
 
       const result = await createUploadedFile(uploadedFileData);
 
       expect(mockedUploadedFile.create).toHaveBeenCalledWith({
         data: {
-          id: 'test',
-          fileName: 'test.pdf',
-          filePath: '/uploads/test.pdf',
-          mimeType: 'application/pdf',
-          size: 1024,
-          metadata: { key: 'value' },
-          entiteId: 'entite1',
-          uploadedById: 'user1',
-          status: 'PENDING',
-          requeteStateNoteId: null,
+          ...uploadedFileData,
+          metadata: null,
         },
       });
 
@@ -272,7 +270,6 @@ describe('uploadedFiles.service.ts', () => {
       const updatedRows = [
         {
           id: 'f1',
-          requeteStateNoteId: 'n1',
           status: 'COMPLETED',
           entiteId: 'entite1',
           createdAt: new Date(),
@@ -283,10 +280,12 @@ describe('uploadedFiles.service.ts', () => {
           size: 1024,
           metadata: { originalName: 'test.pdf' },
           uploadedById: 'user1',
+          requeteEtapeNoteId: 'n1',
+          requeteId: null,
+          faitSituationId: null,
         },
         {
           id: 'f2',
-          requeteStateNoteId: 'n1',
           status: 'COMPLETED',
           entiteId: 'entite1',
           createdAt: new Date(),
@@ -297,6 +296,9 @@ describe('uploadedFiles.service.ts', () => {
           size: 2048,
           metadata: { originalName: 'test2.pdf' },
           uploadedById: 'user1',
+          requeteEtapeNoteId: 'n1',
+          requeteId: null,
+          faitSituationId: null,
         },
       ];
       mockedUploadedFile.findMany.mockResolvedValueOnce(updatedRows);
@@ -305,7 +307,7 @@ describe('uploadedFiles.service.ts', () => {
 
       expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1', 'f2'] } },
-        data: { requeteStateNoteId: 'n1', status: 'COMPLETED', entiteId: 'entite1' },
+        data: { requeteEtapeNoteId: 'n1', status: 'COMPLETED', entiteId: 'entite1' },
       });
       expect(mockedUploadedFile.findMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1', 'f2'] } },
@@ -318,7 +320,6 @@ describe('uploadedFiles.service.ts', () => {
       const updatedRows = [
         {
           id: 'f1',
-          requeteStateNoteId: 'n1',
           status: 'COMPLETED',
           entiteId: null,
           createdAt: new Date(),
@@ -331,6 +332,9 @@ describe('uploadedFiles.service.ts', () => {
             originalName: 'test.pdf',
           },
           uploadedById: ' user1',
+          requeteEtapeNoteId: 'n1',
+          requeteId: null,
+          faitSituationId: null,
         },
       ];
       mockedUploadedFile.findMany.mockResolvedValueOnce(updatedRows);
@@ -339,7 +343,7 @@ describe('uploadedFiles.service.ts', () => {
 
       expect(mockedUploadedFile.updateMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1'] } },
-        data: { requeteStateNoteId: 'n1', status: 'COMPLETED', entiteId: null },
+        data: { requeteEtapeNoteId: 'n1', status: 'COMPLETED', entiteId: null },
       });
       expect(mockedUploadedFile.findMany).toHaveBeenCalledWith({
         where: { id: { in: ['f1'] } },

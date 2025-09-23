@@ -177,9 +177,8 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
       // 3 - Update note content/attach new files
       if (modifications.content || newFileIds.length > 0) {
         await updateNoteMutation.mutateAsync({
-          id: noteData.requeteStateId,
           noteId: noteData.id,
-          content: noteData.content,
+          texte: noteData.content,
           fileIds: newFileIds,
         });
       }
@@ -241,7 +240,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
               className="fr-container fr-mt-8w"
               style={{ height: 'calc(100vh - 4rem)', overflowY: 'auto', paddingBottom: '2rem' }}
             >
-              <h3 className="fr-h6">Modifier la note de l'étape "{noteData.step?.stepName ?? ''}"</h3>
+              <h3 className="fr-h6">Modifier la note de l'étape "{noteData.step?.nom ?? ''}"</h3>
               {(modifications.content || modifications.filesAdded || modifications.filesDeleted) && (
                 <div className="fr-alert fr-alert--warning fr-mb-2w">
                   <p className="fr-text--sm">
@@ -272,7 +271,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                             <li key={file.id} className={styles['request-note__file']}>
                               <div>
                                 <a
-                                  href={`/api/requete-states/${noteData.requeteStateId}/file/${file.id}`}
+                                  href={`/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="fr-link fr-text--sm"

@@ -33,8 +33,8 @@ describe('Profile endpoints: /profile', () => {
   const fakeUser = {
     id: 'id1',
     email: 'user1@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
+    prenom: 'John',
+    nom: 'Doe',
     uid: 'uid1',
     sub: 'sub1',
     createdAt: new Date(0),

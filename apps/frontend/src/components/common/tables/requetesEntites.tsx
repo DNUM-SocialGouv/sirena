@@ -5,7 +5,9 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 
-type DematSocialMapping = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number];
+type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number] & {
+  id: string;
+};
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -18,11 +20,13 @@ export function RequetesEntite() {
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
   const { data: requetes, isFetching } = useRequetesEntite({
-    ...queries,
-    limit: limit.toString(),
+    ...(queries.sort && { sort: queries.sort as 'requeteId' | 'entiteId' }),
+    ...(queries.order && { order: queries.order as 'asc' | 'desc' }),
     offset: offset.toString(),
+    limit: limit.toString(),
   });
-  const [title, setTitle] = useState('Requêtes');
+
+  const [title, setTitle] = useState<string>('Requêtes');
 
   useEffect(() => {
     if (requetes) {
@@ -30,9 +34,9 @@ export function RequetesEntite() {
     }
   }, [requetes]);
 
-  const columns: Column<DematSocialMapping>[] = [
-    { key: 'number', label: 'Numero' },
-    { key: 'createdAt', label: 'Réception' },
+  const columns: Column<RequeteEntiteRow>[] = [
+    { key: 'custom:number', label: 'Numero' },
+    { key: 'custom:createdAt', label: 'Réception' },
     { key: 'custom:lieu', label: 'Lieu de survenue' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },
     { key: 'custom:Attribution', label: 'Attribution' },
@@ -40,25 +44,29 @@ export function RequetesEntite() {
     { key: 'custom:action', label: 'Action' },
   ];
 
-  const cells: Cells<DematSocialMapping> = {
+  const cells: Cells<RequeteEntiteRow> = {
+    'custom:number': (row) => row.requete.dematSocialId || row.requeteId.slice(0, 8),
     'custom:action': (row) => (
-      <Link to="/request/$requestId" params={{ requestId: row.id }}>
+      <Link to="/request/$requestId" params={{ requestId: row.requeteId }}>
         Voir la requête
       </Link>
     ),
-    createdAt: (row) => (
+    'custom:createdAt': (row) => (
       <div>
-        {new Date(row.createdAt).toLocaleDateString('fr-FR', {
+        {new Date(row.requete.createdAt).toLocaleDateString('fr-FR', {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit',
         })}
       </div>
     ),
-    'custom:statut': (row) =>
-      row.requetesEntiteStates[0]?.statutId
-        ? requeteStatutType[row.requetesEntiteStates[0]?.statutId as RequeteStatutType]
-        : '',
+    'custom:statut': (row) => {
+      const statutId = row.requeteEtape?.[0]?.statutId;
+      return statutId ? requeteStatutType[statutId as RequeteStatutType] : '';
+    },
+    'custom:lieu': () => '-',
+    'custom:misEnCause': () => '-',
+    'custom:Attribution': (row) => row.entiteId.slice(0, 8),
   };
 
   const total = useMemo(() => requetes?.meta?.total ?? 0, [requetes?.meta?.total]);
@@ -87,16 +95,17 @@ export function RequetesEntite() {
     [navigate, limit],
   );
 
+  // Transform data to have id field for DataTable
+  const dataWithId = useMemo(() => {
+    return (requetes?.data ?? []).map((row) => ({
+      ...row,
+      id: row.requeteId,
+    }));
+  }, [requetes?.data]);
+
   return (
     <>
-      <DataTable
-        title={title}
-        rowId="id"
-        data={requetes?.data ?? []}
-        columns={columns}
-        cells={cells}
-        isLoading={isFetching}
-      />
+      <DataTable title={title} rowId="id" data={dataWithId} columns={columns} cells={cells} isLoading={isFetching} />
       {shouldShowPagination && (
         <div className="fr-mt-3w fr-grid-row fr-grid-row--center">
           <Pagination count={totalPages} defaultPage={currentPage} getPageLinkProps={getPageLinkProps} />

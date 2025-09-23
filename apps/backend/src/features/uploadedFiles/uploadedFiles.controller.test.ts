@@ -14,7 +14,7 @@ import { convertDatesToStrings } from '@/tests/formatter';
 import UploadedFilesController from './uploadedFiles.controller';
 import { createUploadedFile, deleteUploadedFile, getUploadedFileById } from './uploadedFiles.service';
 
-const fakeFile = {
+const fakeFile: UploadedFile = {
   id: 'file1',
   fileName: 'test.pdf',
   filePath: 'uploads/test.pdf',
@@ -25,7 +25,9 @@ const fakeFile = {
   metadata: null,
   entiteId: 'e1',
   status: 'PENDING',
-  requeteStateNoteId: null,
+  requeteEtapeNoteId: null,
+  faitSituationId: null,
+  requeteId: null,
   uploadedById: 'id10',
 };
 

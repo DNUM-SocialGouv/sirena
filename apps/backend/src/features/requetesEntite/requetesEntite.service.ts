@@ -1,17 +1,12 @@
-import { prisma, type RequeteEntite } from '@/libs/prisma';
+import { prisma } from '@/libs/prisma';
 import type { GetRequetesEntiteQuery } from './requetesEntite.type';
 
-const filterByEntities = (entiteIds: string[] | null) => {
-  if (!entiteIds) {
-    return null;
-  }
-  return { entiteId: { in: entiteIds } };
-};
+type RequeteEntiteKey = { requeteId: string; entiteId: string };
 
 // TODO handle entiteIds
 // TODO handle search
 export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
-  const { offset = 0, limit, sort = 'createdAt', order = 'desc' } = query;
+  const { offset = 0, limit, sort = 'requeteId', order = 'desc' } = query;
 
   // const entiteFilter = filterByEntities(entiteIds);
 
@@ -25,7 +20,7 @@ export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetR
       skip: offset,
       ...(typeof limit === 'number' ? { take: limit } : {}),
       orderBy: { [sort]: order },
-      include: { requete: true, requetesEntiteStates: { orderBy: { createdAt: 'desc' }, take: 1 } },
+      include: { requete: true, requeteEtape: { orderBy: { createdAt: 'desc' }, take: 1 } },
     }),
     prisma.requeteEntite.count({
       /* where */
@@ -38,30 +33,24 @@ export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetR
   };
 };
 
-export const hasAccessToRequete = async (requeteEntiteId: RequeteEntite['id'], entiteIds: string[] | null) => {
-  const entiteFilter = filterByEntities(entiteIds);
-
-  const where = {
-    id: requeteEntiteId,
-    ...(entiteFilter ?? {}),
-  };
-
-  const requete = await prisma.requeteEntite.findFirst({
-    where,
+export const hasAccessToRequete = async ({ requeteId, entiteId }: RequeteEntiteKey) => {
+  const requete = await prisma.requeteEntite.findUnique({
+    where: { requeteId_entiteId: { requeteId, entiteId } },
     select: {
-      id: true,
+      requeteId: true,
+      entiteId: true,
     },
   });
 
   return !!requete;
 };
 
-export const getRequestEntiteById = async (requeteEntiteId: RequeteEntite['id']) => {
+export const getRequeteEntiteById = async ({ requeteId, entiteId }: RequeteEntiteKey) => {
   return await prisma.requeteEntite.findUnique({
-    where: { id: requeteEntiteId },
+    where: { requeteId_entiteId: { requeteId, entiteId } },
     include: {
       requete: true,
-      requetesEntiteStates: {
+      requeteEtape: {
         orderBy: { createdAt: 'desc' },
         take: 1,
       },
