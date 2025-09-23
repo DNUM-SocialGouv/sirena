@@ -5,9 +5,7 @@ import type { Env } from '@/config/env.schema';
 const originalMiddleware = await vi.importActual<typeof import('./middleware')>('./middleware');
 const {
   getRawIpAddress,
-  createSentryBusinessContext,
-  createSentryRequestContext,
-  createSentryUserContext,
+  enrichUserContext,
   extractClientIp,
   extractRequestContext,
   extractRequestHeaders,
@@ -15,13 +13,11 @@ const {
   getLogExtraContext,
   getLogLevelConfig,
   getTrustedIpHeaders,
-  SOURCE_BACKEND,
-  setSentryCorrelationTags,
-  shouldSendToSentry,
   UNKNOWN_VALUE,
 } = originalMiddleware;
 
-import type { LogLevel, LogLevelConfig, RequestContext, User } from './middleware';
+import type { User } from '@/libs/prisma';
+import type { LogLevel, LogLevelConfig, RequestContext } from './middleware';
 
 interface MockRequest {
   header: MockedFunction<(name: string) => string | undefined>;
@@ -44,14 +40,10 @@ interface MockContext {
   env: Record<string, unknown>;
 }
 
-interface MockSentryScope {
-  setTag: MockedFunction<(key: string, value: string) => void>;
-}
-
 interface TestUser extends User {
   id: string;
   email?: string;
-  entiteId?: string;
+  entiteIds?: string[] | null;
   roleId?: string;
 }
 
@@ -62,7 +54,7 @@ interface TestRequestContext extends RequestContext {
   userId?: string;
   ip: string;
   userAgent: string;
-  entiteId?: string;
+  entiteIds?: string[] | null;
   roleId?: string;
 }
 
@@ -101,7 +93,7 @@ const TEST_HEADERS = {
 const TEST_USER: TestUser = {
   id: 'user-123',
   email: 'test@example.com',
-  entiteId: 'entite-456',
+  entiteIds: ['entite-456'],
   roleId: 'role-789',
 } as const;
 
@@ -159,12 +151,6 @@ function createMockContext(overrides: Partial<MockContext> = {}): MockContext {
   };
 }
 
-function createMockSentryScope(): MockSentryScope {
-  return {
-    setTag: vi.fn(),
-  };
-}
-
 function mockEnvironment(envVars: Partial<MockEnvVars>): void {
   vi.resetModules();
   vi.doMock('@/config/env', () => ({
@@ -180,7 +166,7 @@ function createTestRequestContext(overrides: Partial<TestRequestContext> = {}): 
     ip: '192.168.1.100',
     userAgent: TEST_HEADERS.USER_AGENT,
     userId: TEST_USER.id,
-    entiteId: TEST_USER.entiteId,
+    entiteIds: TEST_USER.entiteIds,
     roleId: TEST_USER.roleId,
     ...overrides,
   };
@@ -395,7 +381,9 @@ describe('middleware utilities', () => {
 
       const context = createContextWithHeaders(headerMap);
       context.get.mockImplementation((key: string) => {
-        if (key === 'user') return TEST_USER;
+        if (key === 'userId') return TEST_USER.id;
+        if (key === 'roleId') return TEST_USER.roleId;
+        if (key === 'entiteIds') return TEST_USER.entiteIds;
         return undefined;
       });
 
@@ -408,7 +396,7 @@ describe('middleware utilities', () => {
         userId: TEST_USER.id,
         ip: 'unknown', // The extractClientIp function returns "unknown" by default in test environment
         userAgent: TEST_HEADERS.USER_AGENT,
-        entiteId: TEST_USER.entiteId,
+        entiteIds: TEST_USER.entiteIds,
         roleId: TEST_USER.roleId,
       };
 
@@ -423,157 +411,46 @@ describe('middleware utilities', () => {
       expect(requestContext.traceId).toBeDefined();
       expect(requestContext.sessionId).toBe(UNKNOWN_VALUE);
       expect(requestContext.userId).toBeUndefined();
-      expect(requestContext.entiteId).toBeUndefined();
+      expect(requestContext.entiteIds).toBeUndefined();
       expect(requestContext.roleId).toBeUndefined();
     });
   });
 
-  describe('createSentryUserContext', () => {
-    it('should create Sentry user context with raw IP', () => {
-      const userContext = createSentryUserContext(TEST_USER, '192.168.1.100');
-
-      expect(userContext).toEqual({
-        id: TEST_USER.id,
-        email: TEST_USER.email,
-        username: TEST_USER.email,
-        ip_address: '192.168.1.100',
-      });
-    });
-
-    it('should handle edge cases in user context creation', () => {
-      expect(createSentryUserContext(TEST_USER, UNKNOWN_VALUE)).toEqual({
-        id: TEST_USER.id,
-        email: TEST_USER.email,
-        username: TEST_USER.email,
-      });
-
-      const userWithoutEmail: TestUser = { id: TEST_USER.id };
-      expect(createSentryUserContext(userWithoutEmail, '192.168.1.100')).toEqual({
-        id: TEST_USER.id,
-        email: undefined,
-        username: undefined,
-        ip_address: '192.168.1.100',
-      });
-    });
-  });
-
-  describe('createSentryRequestContext', () => {
-    it('should create complete Sentry request context', () => {
-      const context = createMockContext({
-        req: {
-          header: createMockHeaders(),
-          method: 'POST',
-          url: 'https://example.com/api/test',
-          path: '/api/test',
-          raw: {
-            headers: new Headers([['content-type', 'application/json']]),
-          },
-        },
-      });
-
-      const requestContext = createTestRequestContext();
-      const sentryContext = createSentryRequestContext(context as unknown as Context, requestContext);
-
-      expect(sentryContext).toMatchObject({
-        id: TEST_HEADERS.REQUEST_ID,
-        traceId: TEST_HEADERS.TRACE_ID,
-        sessionId: TEST_HEADERS.SESSION_ID,
-        method: 'POST',
-        url: 'https://example.com/api/test',
-        path: '/api/test',
-        ip: '192.168.1.100',
-        userAgent: TEST_HEADERS.USER_AGENT,
-        source: SOURCE_BACKEND,
-      });
-    });
-
-    it('should not include IP if unknown', () => {
-      const context = createMockContext();
-      const requestContext = createTestRequestContext({ ip: UNKNOWN_VALUE });
-      const sentryContext = createSentryRequestContext(context as unknown as Context, requestContext);
-
-      expect(sentryContext).not.toHaveProperty('ip');
-    });
-  });
-
-  describe('createSentryBusinessContext', () => {
-    it('should create business context with all fields', () => {
-      const requestContext = createTestRequestContext();
-      const businessContext = createSentryBusinessContext(requestContext);
-
-      expect(businessContext).toEqual({
-        source: SOURCE_BACKEND,
-        userId: TEST_USER.id,
-        entiteId: TEST_USER.entiteId,
-        roleId: TEST_USER.roleId,
-      });
-    });
-
-    it('should handle partial and empty business context data', () => {
-      expect(
-        createSentryBusinessContext(
-          createTestRequestContext({
-            userId: undefined,
-            entiteId: undefined,
-            roleId: undefined,
-          }),
-        ),
-      ).toBeUndefined();
-
-      expect(
-        createSentryBusinessContext(
-          createTestRequestContext({
-            entiteId: undefined,
-            roleId: undefined,
-          }),
-        ),
-      ).toEqual({
-        source: SOURCE_BACKEND,
-        userId: TEST_USER.id,
-      });
-    });
-  });
-
-  describe('setSentryCorrelationTags', () => {
-    it('should set all correlation tags', () => {
-      const mockScope = createMockSentryScope();
-      const requestContext = createTestRequestContext();
-
-      setSentryCorrelationTags(mockScope, requestContext);
-
-      const expectedCalls: Array<[string, string]> = [
-        ['requestId', TEST_HEADERS.REQUEST_ID],
-        ['traceId', TEST_HEADERS.TRACE_ID],
-        ['sessionId', TEST_HEADERS.SESSION_ID],
-        ['source', SOURCE_BACKEND],
-        ['userId', TEST_USER.id],
-        ['entiteId', TEST_USER.entiteId as string],
-        ['roleId', TEST_USER.roleId as string],
-      ];
-
-      expectedCalls.forEach(([key, value]) => {
-        expect(mockScope.setTag).toHaveBeenCalledWith(key, value);
-      });
-    });
-
-    it('should not set undefined tags', () => {
-      const mockScope = createMockSentryScope();
-      const requestContext = createTestRequestContext({
+  describe('enrichUserContext', () => {
+    it('should return null when no userId', () => {
+      const context = createTestRequestContext({
         userId: undefined,
-        entiteId: undefined,
+        entiteIds: undefined,
         roleId: undefined,
       });
 
-      setSentryCorrelationTags(mockScope, requestContext);
+      const enriched = enrichUserContext(context);
+      expect(enriched).toBeNull();
+    });
 
-      expect(mockScope.setTag).toHaveBeenCalledWith('requestId', TEST_HEADERS.REQUEST_ID);
-      expect(mockScope.setTag).toHaveBeenCalledWith('traceId', TEST_HEADERS.TRACE_ID);
-      expect(mockScope.setTag).toHaveBeenCalledWith('sessionId', TEST_HEADERS.SESSION_ID);
-      expect(mockScope.setTag).toHaveBeenCalledWith('source', SOURCE_BACKEND);
+    it('should return enriched context when userId exists', () => {
+      const context = createTestRequestContext();
 
-      expect(mockScope.setTag).not.toHaveBeenCalledWith('userId', expect.anything());
-      expect(mockScope.setTag).not.toHaveBeenCalledWith('entiteId', expect.anything());
-      expect(mockScope.setTag).not.toHaveBeenCalledWith('roleId', expect.anything());
+      const enriched = enrichUserContext(context);
+      expect(enriched).toEqual({
+        userId: TEST_USER.id,
+        roleId: TEST_USER.roleId,
+        entiteIds: TEST_USER.entiteIds,
+      });
+    });
+
+    it('should handle partial data', () => {
+      const context = createTestRequestContext({
+        entiteIds: undefined,
+        roleId: undefined,
+      });
+
+      const enriched = enrichUserContext(context);
+      expect(enriched).toEqual({
+        userId: TEST_USER.id,
+        roleId: undefined,
+        entiteIds: undefined,
+      });
     });
   });
 
@@ -606,7 +483,6 @@ describe('middleware utilities', () => {
 
       const expectedConfig: LogLevelConfig = {
         console: 'info',
-        sentry: 'warn',
       };
 
       expect(config).toEqual(expectedConfig);
@@ -623,19 +499,7 @@ describe('middleware utilities', () => {
 
       expect(config).toEqual({
         console: 'debug',
-        sentry: 'error',
       });
-    });
-  });
-
-  describe('shouldSendToSentry', () => {
-    it('should determine Sentry eligibility based on log level configuration', () => {
-      const config: LogLevelConfig = { console: 'debug', sentry: 'error' };
-      expect(shouldSendToSentry('error', config)).toBe(true);
-      expect(shouldSendToSentry('warn', config)).toBe(false);
-
-      expect(shouldSendToSentry('warn')).toBe(true);
-      expect(shouldSendToSentry('info')).toBe(false);
     });
   });
 

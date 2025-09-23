@@ -1,17 +1,33 @@
 import * as Sentry from '@sentry/node';
 import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { envVars } from '@/config/env';
+import { sentryStorage } from '@/libs/asyncLocalStorage';
 import type { AppBindings } from './factories/appWithLogs';
 
 export const errorHandler: ErrorHandler<AppBindings> = (err, c) => {
   if (err instanceof HTTPException) {
     return err.getResponse();
   }
-  if (process.env.SENTRY_ENABLED === 'true') {
-    Sentry.captureException(err);
-  }
+
   const logger = c.get('logger');
   logger.error({ err }, 'Internal server error');
+
+  if (envVars.SENTRY_ENABLED) {
+    const sentryScope = sentryStorage.getStore();
+    if (sentryScope) {
+      // Use the isolated scope from asyncLocalStorage
+      sentryScope.setTag('error_source', 'global_handler');
+      Sentry.captureException(err, sentryScope);
+    } else {
+      // If not in scope context, create a new isolated scope
+      Sentry.withScope((scope) => {
+        scope.setTag('error_source', 'global_handler');
+        Sentry.captureException(err, scope);
+      });
+    }
+  }
+
   return c.json({ message: 'Internal server error' }, 500);
 };
 

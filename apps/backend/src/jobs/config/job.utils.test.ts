@@ -18,12 +18,30 @@ vi.mock('@/helpers/errors', () => ({
   serializeError: vi.fn((err) => ({ message: err.message })),
 }));
 
+const mockSentryScope = {
+  setContext: vi.fn(),
+};
+
+vi.mock('@/libs/asyncLocalStorage', () => ({
+  getSentryStore: vi.fn(() => mockSentryScope),
+}));
+
+const mockEnvVars = {
+  SENTRY_ENABLED: false,
+};
+
+vi.mock('@/config/env', () => ({
+  get envVars() {
+    return mockEnvVars;
+  },
+}));
+
 describe('job.utils', () => {
   describe('withCronLifecycle', () => {
     beforeEach(() => {
       vi.clearAllMocks();
       vi.useFakeTimers();
-      process.env.SENTRY_ENABLED = 'false';
+      mockEnvVars.SENTRY_ENABLED = false;
     });
 
     afterEach(() => {
@@ -141,7 +159,7 @@ describe('job.utils', () => {
         state: 'started',
       };
 
-      process.env.SENTRY_ENABLED = 'true';
+      mockEnvVars.SENTRY_ENABLED = true;
       vi.mocked(startCron).mockResolvedValueOnce(startedCron);
       const error = new Error('Oops');
 
@@ -151,12 +169,14 @@ describe('job.utils', () => {
         }),
       ).rejects.toThrow();
 
-      expect(Sentry.captureException).toHaveBeenCalledWith(error, {
-        extra: {
-          jobName: mockJob.name,
-          jobId: mockJob.id,
-        },
+      expect(mockSentryScope.setContext).toHaveBeenCalledWith('job', {
+        jobName: mockJob.name,
+        jobId: mockJob.id,
+        params: {},
+        startedAt: startedAt.toISOString(),
+        endedAt: new Date().toISOString(),
       });
+      expect(Sentry.captureException).toHaveBeenCalledWith(error, mockSentryScope);
     });
   });
 });

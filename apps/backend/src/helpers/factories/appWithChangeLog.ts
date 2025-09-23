@@ -1,14 +1,14 @@
 import { createFactory } from 'hono/factory';
+import type { AppBindings as AuthAppBindings } from './appWithAuth';
 
-import type { PinoLogger } from 'hono-pino';
+// ChangeLog-specific variables
+type ChangeLogVariables = {
+  changelogId: string | null;
+};
 
+// ChangeLog middleware extends auth bindings with changelog data
 export type AppBindings = {
-  Variables: {
-    logger: PinoLogger;
-    userId: string;
-    roleId: string;
-    changelogId: string | null;
-  };
+  Variables: AuthAppBindings['Variables'] & ChangeLogVariables;
 };
 
 export default createFactory<AppBindings>();

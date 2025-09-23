@@ -13,14 +13,15 @@ import UsersController from '@/features/users/users.controller';
 import VersionController from '@/features/version/version.controller';
 import appFactory from '@/helpers/factories/appWithLogs';
 import { enhancedPinoMiddleware } from '@/middlewares/pino.middleware';
-import { sentryMiddleware } from '@/middlewares/sentry.middleware';
+import { sentryContextMiddleware } from '@/middlewares/sentry.middleware';
 import { envVars } from './config/env';
 import { errorHandler } from './helpers/errors';
 
-export const app = appFactory
-  .createApp()
-  .use(sentryMiddleware())
+const baseApp = appFactory.createApp();
+
+export const app = baseApp
   .use(enhancedPinoMiddleware())
+  .use(sentryContextMiddleware())
   .use(
     csrf({
       origin: [envVars.FRONTEND_URI],
@@ -38,6 +39,6 @@ export const app = appFactory
   .route('/health', HealthController)
   .route('/version', VersionController)
   .get('/sentry', () => {
-    throw new Error('Sentry test error');
+    throw new Error(`Sentry test error - Sentry ${envVars.SENTRY_ENABLED ? 'enabled' : 'disabled'}`);
   })
   .onError(errorHandler);
