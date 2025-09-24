@@ -104,6 +104,20 @@ query getDossier($dossierNumber: Int!) {
     state
     dateDerniereModification
     dateDepot
+
+    usager {
+      email
+    }
+
+    demandeur {
+      __typename
+      ... on PersonnePhysique {
+        nom
+        prenom
+        civilite
+      }
+    }
+
     champs {
       __typename
       ...RootChampFragment

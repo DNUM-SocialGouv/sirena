@@ -2,14 +2,32 @@ import { RECEPTION_TYPE } from '@sirena/common/constants';
 import type { CreateRequeteFromDematSocialDto } from '@/features/requetes/requetes.type';
 import type { RootChampFragmentFragment } from '@/libs/graffle';
 import { ChampMappingError, EnumNotFound } from './dematSocial.error';
-import mapping from './dematSocial.mapper';
+import rootMapping from './dematSocial.mapper';
+import type {
+  AutreFaitsMapping,
+  Demandeur,
+  MappedChamp,
+  MappedRepetitionChamp,
+  Mapping,
+  RepetitionChamp,
+} from './dematSocial.type';
 
-type MappedChamp = {
-  [key: string]: RootChampFragmentFragment;
-};
+const fromB64 = (s: string) => Buffer.from(s, 'base64').toString('utf8');
 
 const indexChamps = (champs: RootChampFragmentFragment[]) =>
-  Object.fromEntries(champs.map((champ) => [atob(champ.id), champ]));
+  Object.fromEntries(champs.map((champ) => [fromB64(champ.id), champ]));
+
+const splitRepetitionChamp = (champs: RepetitionChamp[]) => {
+  const parts: Record<string, MappedRepetitionChamp> = {};
+  champs.forEach((value) => {
+    const id = fromB64(value.id);
+    const [index, key] = id.split('|');
+    if (!parts[key]) parts[key] = {};
+    parts[key][index] = value;
+  });
+
+  return Object.values(parts);
+};
 
 const getEnumIdFromLabel = (options: { key: string; label: string }[], label: string | null) => {
   const element = options.find((o) => o.label === label)?.key ?? null;
@@ -19,8 +37,11 @@ const getEnumIdFromLabel = (options: { key: string; label: string }[], label: st
   return element;
 };
 
-const getEnumsFromLabel = (options: { key: string; label: string }[], champ: RootChampFragmentFragment): string[] => {
-  if (champ.__typename !== 'MultipleDropDownListChamp') {
+const getEnumsFromLabel = (
+  options: { key: string; label: string }[],
+  champ: RootChampFragmentFragment | RepetitionChamp,
+): string[] => {
+  if ('values' in champ === false) {
     throw new ChampMappingError(champ, 'MultipleDropDownListChamp', 'Invalid mapping value');
   }
   const keys = champ.values.map((value) => {
@@ -33,8 +54,11 @@ const getEnumsFromLabel = (options: { key: string; label: string }[], champ: Roo
   return keys;
 };
 
-const getDateByChamps = (champ: RootChampFragmentFragment) => {
-  if (champ.__typename !== 'DateChamp') {
+const getDateByChamps = (champ: RootChampFragmentFragment | RepetitionChamp) => {
+  if (!champ) {
+    return null;
+  }
+  if ('date' in champ === false) {
     throw new ChampMappingError(champ, 'DateChamp', 'Invalid mapping value');
   }
   if (champ.date === null) {
@@ -50,7 +74,7 @@ const getDateByChamps = (champ: RootChampFragmentFragment) => {
   throw new ChampMappingError(champ, 'date', `Invalid date value: ${champ?.date}`);
 };
 
-const createAddress = (champ: RootChampFragmentFragment) => {
+const createAddress = (champ: RootChampFragmentFragment | RepetitionChamp) => {
   if (
     champ.__typename === 'AddressChamp' &&
     champ.address?.label &&
@@ -70,7 +94,10 @@ const createAddress = (champ: RootChampFragmentFragment) => {
   return null;
 };
 
-const getBooleanOrNull = (champ: RootChampFragmentFragment, options: { key: boolean | null; label: string }[]) => {
+const getBooleanOrNull = (
+  champ: RootChampFragmentFragment | RepetitionChamp,
+  options: { key: boolean | null; label: string }[],
+) => {
   if (champ.stringValue) {
     const match = options.find((opt) => opt.label === champ.stringValue);
     if (match) {
@@ -80,15 +107,16 @@ const getBooleanOrNull = (champ: RootChampFragmentFragment, options: { key: bool
   throw new ChampMappingError(champ, 'unknown', 'Invalid mapping value');
 };
 
-const getDemarchesEngagees = (champsById: MappedChamp) => {
+const getDemarchesEngagees = (
+  champsById: MappedChamp | MappedRepetitionChamp,
+  mapping: Mapping | AutreFaitsMapping,
+) => {
   const demarchesEngagees = {
     demarches: getEnumsFromLabel(mapping.demarchesEngagees.options, champsById[mapping.demarchesEngagees.id]),
     dateContactEtablissement: getDateByChamps(champsById[mapping.demarchesEngageesDateContactEtablissement.id]),
     etablissementARepondu: champsById[mapping.demarchesEngageesEtablissementARepondu.id]?.stringValue === 'Oui',
     organisme: champsById[mapping.demarchesEngageesOrganisme.id]?.stringValue ?? '',
-    datePlainte: champsById[mapping.demarcheEngageDatePlainte.id]
-      ? getDateByChamps(champsById[mapping.demarcheEngageDatePlainte.id])
-      : null,
+    datePlainte: getDateByChamps(champsById[mapping.demarcheEngageDatePlainte.id]),
     autoriteTypeId: getEnumIdFromLabel(
       mapping.demarcheEngageAutoriteType.options,
       champsById[mapping.demarcheEngageAutoriteType.id]?.stringValue ?? null,
@@ -97,7 +125,7 @@ const getDemarchesEngagees = (champsById: MappedChamp) => {
   return demarchesEngagees;
 };
 
-const getLieuDeSurvenue = (champsById: MappedChamp) => {
+const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
   const address = champsById[mapping.lieuAdresse.id] ? createAddress(champsById[mapping.lieuAdresse.id]) : null;
 
   const lieux = {
@@ -109,13 +137,13 @@ const getLieuDeSurvenue = (champsById: MappedChamp) => {
       mapping.transportType.options,
       champsById[mapping.transportType.id]?.stringValue ?? null,
     ),
-    societeTransport: champsById[mapping.transportSociété.id]?.stringValue ?? '',
+    societeTransport: champsById[mapping.transportSociete.id]?.stringValue ?? '',
     finess: champsById[mapping.finess.id]?.stringValue ?? '',
   };
   return lieux;
 };
 
-const getMisEnCause = (champsById: MappedChamp) => {
+const getMisEnCause = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
   const misEnCause = {
     misEnCauseTypeId: getEnumIdFromLabel(
       mapping.responsableType.options,
@@ -130,12 +158,12 @@ const getMisEnCause = (champsById: MappedChamp) => {
       champsById[mapping.professionnelResponsableDomicile.id]?.stringValue ?? null,
     ),
     rpps: champsById[mapping.professionnelResponsableIdentite.id]?.stringValue ?? null,
-    commentaire: champsById[mapping.responssableComment.id]?.stringValue ?? null,
+    commentaire: champsById[mapping.responsableComment.id]?.stringValue ?? null,
   };
   return misEnCause;
 };
 
-const getFait = (champsById: MappedChamp) => {
+const getFait = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
   const fait = {
     motifs: getEnumsFromLabel(mapping.motifsMap.options, champsById[mapping.motifsMap.id]),
     consequences: getEnumsFromLabel(mapping.consequencesMap.options, champsById[mapping.consequencesMap.id]),
@@ -144,34 +172,38 @@ const getFait = (champsById: MappedChamp) => {
       champsById[mapping.maltraitanceTypesMap.id],
     ),
     dateDebut: getDateByChamps(champsById[mapping.dateDebut.id]),
-    dateFin: champsById[mapping.dateFin.id] ? getDateByChamps(champsById[mapping.dateFin.id]) : null,
+    dateFin: getDateByChamps(champsById[mapping.dateFin.id]),
     commentaire: champsById[mapping.faitsCommentaire.id]?.stringValue ?? null,
   };
   return fait;
 };
 
-const getDeclarantVictime = (champsById: MappedChamp) => {
-  const address = createAddress(champsById[mapping.victimeAdresse.id]);
+const getDeclarantVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
+  const address = champsById[rootMapping.victimeAdresse.id]
+    ? createAddress(champsById[rootMapping.victimeAdresse.id])
+    : null;
   const personneConcernee = {
-    ageId: getEnumIdFromLabel(mapping.age.options, champsById[mapping.age.id]?.stringValue ?? null),
-    telephone: champsById[mapping.telephone.id]?.stringValue ?? null,
-    estHandicapee: getBooleanOrNull(champsById[mapping.estHandicape.id], mapping.estHandicape.options),
+    ...demandeur,
+    ageId: getEnumIdFromLabel(rootMapping.age.options, champsById[rootMapping.age.id]?.stringValue ?? null),
+    telephone: champsById[rootMapping.telephone.id]?.stringValue ?? null,
+    estHandicapee: getBooleanOrNull(champsById[rootMapping.estHandicape.id], rootMapping.estHandicape.options),
     lienVictimeId: null,
     estVictime: true,
-    estAnonyme: getBooleanOrNull(champsById[mapping.estAnonyme.id], mapping.estAnonyme.options),
+    estAnonyme: getBooleanOrNull(champsById[rootMapping.estAnonyme.id], rootMapping.estAnonyme.options),
     adresse: address,
   };
   return personneConcernee;
 };
 
-const declarantNonConcerne = (champsById: MappedChamp) => {
+const declarantNonConcerne = (champsById: MappedChamp, demandeur: Demandeur) => {
   const personneConcernee = {
+    ...demandeur,
     ageId: null,
-    telephone: champsById[mapping.declarantTelephone.id]?.stringValue ?? null,
+    telephone: champsById[rootMapping.declarantTelephone.id]?.stringValue ?? null,
     estHandicapee: null,
     lienVictimeId: getEnumIdFromLabel(
-      mapping.lienVictime.options,
-      champsById[mapping.lienVictime.id]?.stringValue ?? null,
+      rootMapping.lienVictime.options,
+      champsById[rootMapping.lienVictime.id]?.stringValue ?? null,
     ),
     estVictime: false,
     estAnonyme: false,
@@ -181,44 +213,74 @@ const declarantNonConcerne = (champsById: MappedChamp) => {
 };
 
 const getVictimeNonConcernee = (champsById: MappedChamp) => {
-  const address = createAddress(champsById[mapping.victimeAdressePostale.id]);
+  const address = champsById[rootMapping.victimeAdressePostale.id]
+    ? createAddress(champsById[rootMapping.victimeAdressePostale.id])
+    : null;
   const personneConcernee = {
-    telephone: champsById[mapping.victimeTelephone.id]?.stringValue ?? null,
-    ageId: getEnumIdFromLabel(mapping.victimeAge.options, champsById[mapping.victimeAge.id]?.stringValue ?? null),
+    telephone: champsById[rootMapping.victimeTelephone.id]?.stringValue ?? null,
+    ageId: getEnumIdFromLabel(
+      rootMapping.victimeAge.options,
+      champsById[rootMapping.victimeAge.id]?.stringValue ?? null,
+    ),
     adresse: address,
-    estHandicapee: getBooleanOrNull(champsById[mapping.victimeEstHandicape.id], mapping.estHandicape.options),
-    estVictimeInformee: getBooleanOrNull(champsById[mapping.estVictimeInformee.id], mapping.estVictimeInformee.options),
-    victimeInformeeCommentaire: champsById[mapping.estVictimeInformeeCommentaire.id]?.stringValue ?? null,
-    autrePersonnes: champsById[mapping.autreVictimes.id]?.stringValue ?? null,
+    estHandicapee: getBooleanOrNull(champsById[rootMapping.victimeEstHandicape.id], rootMapping.estHandicape.options),
+    estVictimeInformee: getBooleanOrNull(
+      champsById[rootMapping.estVictimeInformee.id],
+      rootMapping.estVictimeInformee.options,
+    ),
+    victimeInformeeCommentaire: champsById[rootMapping.estVictimeInformeeCommentaire.id]?.stringValue ?? null,
+    autrePersonnes: champsById[rootMapping.autreVictimes.id]?.stringValue ?? null,
   };
   return personneConcernee;
 };
 
-const getVictime = (champsById: MappedChamp) => {
-  if (getBooleanOrNull(champsById[mapping.estVictime.id], mapping.estVictime.options)) {
+const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
+  if (getBooleanOrNull(champsById[rootMapping.estVictime.id], rootMapping.estVictime.options)) {
     return {
-      declarant: getDeclarantVictime(champsById),
+      declarant: getDeclarantVictime(champsById, demandeur),
       victime: null,
     };
   }
   return {
-    declarant: declarantNonConcerne(champsById),
+    declarant: declarantNonConcerne(champsById, demandeur),
     victime: getVictimeNonConcernee(champsById),
   };
+};
+
+const getOtherSituations = (champsById: MappedChamp) => {
+  const champ = champsById[rootMapping.autreFaits.id];
+  const subMapping = rootMapping.autreFaits.champs;
+  if (champ.__typename === 'RepetitionChamp' && champ.champs.length > 0) {
+    const repetitionChamps = splitRepetitionChamp(champ.champs);
+    return repetitionChamps.map((repChamps) => {
+      const faits = [getFait(repChamps, subMapping)];
+      const demarchesEngagees = getDemarchesEngagees(repChamps, subMapping);
+      const lieuDeSurvenue = getLieuDeSurvenue(repChamps, subMapping);
+      const misEnCause = getMisEnCause(repChamps, subMapping);
+      return {
+        lieuDeSurvenue,
+        misEnCause,
+        demarchesEngagees,
+        faits,
+      };
+    });
+  }
+  return [];
 };
 
 export const mapDataForPrisma = (
   champs: RootChampFragmentFragment[],
   id: number,
   date: string,
+  demandeur: Demandeur,
 ): CreateRequeteFromDematSocialDto => {
   const champsById = indexChamps(champs);
 
-  const { declarant, victime } = getVictime(champsById);
-  const faits = [getFait(champsById)];
-  const demarchesEngagees = getDemarchesEngagees(champsById);
-  const lieuDeSurvenue = getLieuDeSurvenue(champsById);
-  const misEnCause = getMisEnCause(champsById);
+  const { declarant, victime } = getVictime(champsById, demandeur);
+  const faits = [getFait(champsById, rootMapping)];
+  const demarchesEngagees = getDemarchesEngagees(champsById, rootMapping);
+  const lieuDeSurvenue = getLieuDeSurvenue(champsById, rootMapping);
+  const misEnCause = getMisEnCause(champsById, rootMapping);
 
   const situations = [
     {
@@ -228,6 +290,7 @@ export const mapDataForPrisma = (
       faits,
       entiteIds: [],
     },
+    ...getOtherSituations(champsById),
   ];
 
   return {

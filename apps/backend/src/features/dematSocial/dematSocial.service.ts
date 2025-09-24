@@ -2,8 +2,9 @@ import { writeFile } from 'node:fs/promises';
 import { envVars } from '@/config/env';
 import { mapDataForPrisma } from '@/features/dematSocial/dematSocial.adaptater';
 import { createOrGetFromDematSocial } from '@/features/requetes/requetes.service';
-import { abortControllerStorage } from '@/libs/asyncLocalStorage';
+import { abortControllerStorage, getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
 import { GetDossierDocument, GetDossiersByDateDocument, GetDossiersMetadataDocument, graffle } from '@/libs/graffle';
+import type { Demandeur, DematSocialCivilite } from './dematSocial.type';
 
 export const getRequetes = async (createdSince?: Date) => {
   const abortController = abortControllerStorage.getStore();
@@ -25,11 +26,26 @@ export const getRequete = async (id: number) => {
   return await graffle.gql(GetDossierDocument).send({ dossierNumber: id });
 };
 
+type DemandeurData = NonNullable<Awaited<ReturnType<typeof getRequete>>>['dossier']['demandeur'];
+
+export const getDemandeur = (d: DemandeurData, email: string): Demandeur => ({
+  nom: d?.__typename === 'PersonnePhysique' ? d.nom : '',
+  prenom: d?.__typename === 'PersonnePhysique' ? d.prenom : '',
+  civiliteId:
+    d?.__typename === 'PersonnePhysique'
+      ? d.civilite
+        ? (d.civilite.toUpperCase() as DematSocialCivilite)
+        : null
+      : null,
+  email,
+});
+
 export const importRequetes = async (createdSince?: Date) => {
+  const logger = getLoggerStore();
   if (createdSince) {
-    console.log(`Importing requetes from ${createdSince.toUTCString()}`);
+    logger.info(`Importing requetes from ${createdSince.toUTCString()}`);
   } else {
-    console.log('Importing all requetes');
+    logger.info('Importing all requetes');
   }
   const dossiers = await getRequetes(createdSince);
   let i = 0;
@@ -46,14 +62,17 @@ export const importRequetes = async (createdSince?: Date) => {
       continue;
     }
     try {
-      const requete = mapDataForPrisma(data.dossier.champs, dossier.number, dossier.dateDepot);
+      const demandeur = getDemandeur(data.dossier.demandeur, data.dossier.usager.email);
+      const requete = mapDataForPrisma(data.dossier.champs, dossier.number, dossier.dateDepot, demandeur);
       await createOrGetFromDematSocial(requete);
       i += 1;
-    } catch (error) {
-      console.error(`Error processing dossier ${dossier.number}:`, error);
+    } catch (err) {
+      logger.error({ err }, `Error processing dossier ${dossier.number}:`);
+      const sentry = getSentryStore();
+      sentry.captureException(err);
       errorCount += 1;
     }
   }
-  console.log(`${i} Requete(s) added`);
+  logger.info(`${i} Requete(s) added`);
   return { count: i, errorCount };
 };

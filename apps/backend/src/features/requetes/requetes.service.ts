@@ -20,9 +20,23 @@ export const createRequeteFromDematSocial = async ({
   participant,
   situations,
 }: CreateRequeteFromDematSocialDto) => {
+  // TODO remove that
+  const defaultEntity = await prisma.entite.findFirst({
+    where: {
+      entiteMereId: null,
+    },
+    select: { id: true },
+  });
+
   return await prisma.$transaction(async (tx) => {
     const requete = await tx.requete.create({
       data: {
+        requeteEntites: {
+          create: {
+            // TODO remove that
+            entite: { connect: { id: defaultEntity?.id } },
+          },
+        },
         dematSocialId,
         receptionDate,
         receptionType: { connect: { id: receptionTypeId } },
@@ -31,7 +45,15 @@ export const createRequeteFromDematSocial = async ({
 
     const decl = await tx.personneConcernee.create({
       data: {
-        telephone: declarant.telephone ?? '',
+        identite: {
+          create: {
+            nom: declarant.nom ?? '',
+            prenom: declarant.prenom ?? '',
+            telephone: declarant.telephone ?? '',
+            email: declarant.email ?? '',
+            civilite: declarant.civiliteId ? { connect: { id: declarant.civiliteId } } : undefined,
+          },
+        },
         estHandicapee: declarant.estHandicapee ?? null,
         estVictime: declarant.estVictime ?? null,
         estAnonyme: declarant.estAnonyme ?? null,
@@ -58,7 +80,11 @@ export const createRequeteFromDematSocial = async ({
     if (participant) {
       const part = await tx.personneConcernee.create({
         data: {
-          telephone: participant.telephone ?? '',
+          identite: {
+            create: {
+              telephone: participant.telephone ?? '',
+            },
+          },
           estHandicapee: participant.estHandicapee ?? null,
           estVictimeInformee: participant.estVictimeInformee ?? null,
           victimeInformeeCommentaire: participant.victimeInformeeCommentaire ?? '',

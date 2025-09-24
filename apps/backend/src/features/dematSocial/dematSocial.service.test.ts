@@ -26,6 +26,22 @@ vi.mock('@/config/env', () => ({
   },
 }));
 
+vi.mock('@/libs/asyncLocalStorage', () => {
+  const info = vi.fn();
+  const error = vi.fn();
+  const captureException = vi.fn();
+
+  return {
+    getLoggerStore: vi.fn(() => ({ info, error })),
+
+    getSentryStore: vi.fn(() => ({ captureException })),
+
+    abortControllerStorage: {
+      getStore: vi.fn(() => new AbortController()),
+    },
+  };
+});
+
 vi.mock('@/features/requetes/requetes.service', () => ({
   createOrGetFromDematSocial: vi.fn(),
 }));
@@ -73,19 +89,38 @@ describe('dematSocial.service.ts', () => {
   describe('importRequetes()', () => {
     it('should call createRequeteFromDematSocial for each dossier number', async () => {
       const dateDepot = new Date('2024-01-01');
+      // getRequetes
       sendMock.mockResolvedValueOnce({
         demarche: {
           dossiers: {
             nodes: [
-              { number: 101, dateDepot },
-              { number: 102, dateDepot },
+              {
+                number: 101,
+                dateDepot,
+              },
+              {
+                number: 102,
+                dateDepot,
+              },
             ],
           },
         },
       });
 
-      sendMock.mockResolvedValue({
+      // getRequete
+      sendMock.mockResolvedValueOnce({
         dossier: {
+          demandeur: { __typename: 'PersonnePhysique', civilite: 'M', nom: 'test', prenom: 'test' },
+          usager: { email: 'test@test.fr' },
+          champs: [],
+        },
+      });
+
+      // getRequete
+      sendMock.mockResolvedValueOnce({
+        dossier: {
+          demandeur: { __typename: 'PersonneMorale' },
+          usager: { email: 'test@test.fr' },
           champs: [],
         },
       });

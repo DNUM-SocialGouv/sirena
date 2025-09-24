@@ -286,7 +286,7 @@ const transportType = {
   })),
 };
 
-const transportSociété = {
+const transportSociete = {
   id: 'Champ-27588',
   type: 'TextChamp',
   label: 'Société de transport concernée',
@@ -362,7 +362,7 @@ const nomEtablissement = {
 /* responsableType = Etablissement end */
 /* responsableType != Etablissement start */
 
-const responssableComment = {
+const responsableComment = {
   id: 'Champ-37819',
   type: 'TextChamp',
   label: 'Précisions sur le responsable des faits',
@@ -371,7 +371,7 @@ const responssableComment = {
 /* responsableType != Etablissement end */
 /* responsableType = Etablissement start */
 
-const etablissementResponssable = {
+const etablissementResponsable = {
   id: 'Champ-37811',
   type: 'CheckboxChamp',
   label: "L'établissement responsable est-il celui où se sont passés les faits ?",
@@ -507,19 +507,19 @@ const autreResponsables = {
     /* professionnelResponsable = Professionnel... start || professionnelResponsableDomicile = Intervention d'un ... end */
     /* responsableType = Etablissement start */
     {
-      ...etablissementResponssable,
+      ...etablissementResponsable,
       id: 'Champ-37813',
     },
     /* responsableType = Etablissement end */
-    /* etablissementResponssable = false start */
+    /* etablissementResponsable = false start */
     {
       ...nomEtablissement,
       id: 'Champ-37817',
     },
-    /* etablissementResponssable = false end */
+    /* etablissementResponsable = false end */
     /* responsableType != Etablissement start */
     {
-      ...responssableComment,
+      ...responsableComment,
       id: 'Champ-37059',
     },
     /* responsableType != Etablissement end */
@@ -667,164 +667,177 @@ const autreFaits = {
   id: 'Champ-37253',
   type: 'RepetitionChamp',
   label: 'Autres faits',
-  champs: [
-    {
+  champs: {
+    lieuCodePostal: {
       ...lieuCodePostal,
       id: 'Champ-37257',
     },
-    {
+    lieuType: {
       ...lieuType,
       id: 'Champ-37256',
     },
     /* lieuType = Autre || Au domicile... || Dans un cabinet... start */
-    {
+    lieuCommentaire: {
       ...lieuCommentaire,
       id: 'Champ-37353',
     },
-    {
+    lieuAdresse: {
       ...lieuAdresse,
       id: 'Champ-37354',
     },
     /* lieuType = Autre || Au domicile... || Dans un cabinet... end */
     /* lieuType = 'Durant le trajet... start */
-    {
+    transportType: {
       ...transportType,
       id: 'Champ-37355',
     },
-    {
-      ...transportSociété,
+    /* lieuType = 'Durant le trajet... start */
+    transportSociete: {
+      ...transportSociete,
       id: 'Champ-37260',
     },
-    /* lieuType = 'Durant le trajet... end */
+
     /* lieuType = 'Dans un établissement... start */
-    {
+    finess: {
       ...finess,
       id: 'Champ-37350',
     },
     /* lieuType = 'Dans un établissement... end */
-    {
+
+    responsableType: {
       ...responsableType,
       id: 'Champ-37258',
     },
+
     /*  responsableType = Professionel... start */
     /* lieuType != Au domicile... start */
-    {
+    professionnelResponsable: {
       ...professionnelResponsable,
       id: 'Champ-37312',
     },
     /* lieuType != Au domicile... end */
     /* lieuType = Au domicile... start */
-    {
+    professionnelResponsableDomicile: {
       ...professionnelResponsableDomicile,
       id: 'Champ-37313',
     },
     /* lieuType = Au domicile... end */
     /* professionnelResponsable = Professionnel... || professionnelResponsableDomicile = Intervention d'un ... start */
-    {
+    professionnelResponsableIdentite: {
       ...professionnelResponsableIdentite,
       id: 'Champ-37314',
     },
     /* professionnelResponsable = Professionnel... || professionnelResponsableDomicile = Intervention d'un ... end */
+
     /* responsableType = Etablissement start */
-    {
+    nomEtablissement: {
       ...nomEtablissement,
       id: 'Champ-37834',
     },
     /* responsableType = Etablissement end */
+
     /* responsableType != Etablissement start */
-    {
-      ...responssableComment,
+    responsableComment: {
+      ...responsableComment,
       id: 'Champ-37259',
     },
     /* responsableType != Etablissement end */
+
     /* responsableType = Etablissement start */
-    {
-      ...etablissementResponssable,
+    etablissementResponsable: {
+      ...etablissementResponsable,
       id: 'Champ-37833',
     },
     /* responsableType = Etablissement end */
-    {
+
+    motifsMap: {
       ...motifsMap,
       id: 'Champ-37263',
     },
-    {
+    consequencesMap: {
       ...consequencesMap,
       id: 'Champ-37317',
     },
     /* consequencesMap = Autre... start */
-    {
+    consequenceComment: {
       ...consequenceComment,
       id: 'Champ-37530',
     },
     /* consequencesMap = Autre... end */
-    {
+    maltraitanceTypesMap: {
       ...maltraitanceTypesMap,
       id: 'Champ-37319',
     },
-    {
+
+    dateDebut: {
       ...dateDebut,
       id: 'Champ-37320',
     },
-    {
+    estSituationActuelle: {
       ...estSituationActuelle,
       id: 'Champ-37321',
     },
     /* estSituationActuelle = false start */
-    {
+    dateFin: {
       ...dateFin,
       id: 'Champ-37322',
     },
     /* estSituationActuelle = false end */
-    {
+
+    faitsCommentaire: {
       ...faitsCommentaire,
       id: 'Champ-37323',
     },
-    {
+    faitsFichiers: {
       ...faitsFichiers,
       id: 'Champ-37324',
     },
-    {
+
+    autresResponsablesPrecisions: {
       id: 'Champ-37282',
       type: 'TextChamp',
       label: 'Précisions sur les autres responsables des faits (types de responsables, nom, prénom...)',
     },
-    {
+
+    demarchesEngagees: {
       ...demarchesEngagees,
       id: 'Champ-37340',
     },
     /* demarcheEngage = Prise de contact... start */
-    {
+    demarchesEngageesDateContactEtablissement: {
       ...demarchesEngageesDateContactEtablissement,
       id: 'Champ-37341',
     },
-    {
+    demarchesEngageesEtablissementARepondu: {
       ...demarchesEngageesEtablissementARepondu,
       id: 'Champ-37342',
     },
     /* demarchesEngageesReponse = true start */
-    {
+    demarchesEngageesReponseFile: {
       ...demarchesEngageesReponseFile,
       id: 'Champ-37343',
     },
     /* demarchesEngageesReponse = true end */
     /* demarcheEngage = Prise de contact... end */
+
     /* demarchesEngagees = Demarches... start */
-    {
+    demarchesEngageesOrganisme: {
       ...demarchesEngageesOrganisme,
       id: 'Champ-37344',
     },
     /* demarchesEngagees = Demarches... end */
+
     /* demarchesEngagees = Depot... start */
-    {
+    demarcheEngageDatePlainte: {
       ...demarcheEngageDatePlainte,
       id: 'Champ-37345',
     },
-    {
+    demarcheEngageAutoriteType: {
       ...demarcheEngageAutoriteType,
       id: 'Champ-37346',
     },
     /* demarchesEngagees = Depot... end */
-  ],
+  },
 };
 
 export default {
@@ -860,7 +873,7 @@ export default {
   lieuCommentaire,
   lieuAdresse,
   transportType,
-  transportSociété,
+  transportSociete,
   finess,
 
   // Mis en cause
@@ -869,8 +882,8 @@ export default {
   professionnelResponsableDomicile,
   professionnelResponsableIdentite,
   nomEtablissement,
-  responssableComment,
-  etablissementResponssable,
+  responsableComment,
+  etablissementResponsable,
 
   // Faits
   motifsMap,
