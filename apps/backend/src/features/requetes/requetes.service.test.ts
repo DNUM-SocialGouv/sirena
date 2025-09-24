@@ -490,6 +490,7 @@ describe('requetes.service.ts', () => {
 
       expect(prisma.requete.create).toHaveBeenCalledWith({
         data: {
+          id: 'RS-2025-01-1',
           dematSocialId: fakeRequeteDto.dematSocialId,
           receptionDate: fakeRequeteDto.receptionDate,
           receptionType: { connect: { id: fakeRequeteDto.receptionTypeId } },

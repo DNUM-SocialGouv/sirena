@@ -35,7 +35,7 @@ export function RequetesEntite() {
   }, [requetes]);
 
   const columns: Column<RequeteEntiteRow>[] = [
-    { key: 'custom:number', label: 'Numero' },
+    { key: 'custom:number', label: 'ID Requête' },
     { key: 'custom:createdAt', label: 'Réception' },
     { key: 'custom:lieu', label: 'Lieu de survenue' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },
@@ -45,7 +45,7 @@ export function RequetesEntite() {
   ];
 
   const cells: Cells<RequeteEntiteRow> = {
-    'custom:number': (row) => row.requete.dematSocialId || row.requeteId.slice(0, 8),
+    'custom:number': (row) => row.requeteId,
     'custom:action': (row) => (
       <Link to="/request/$requestId" params={{ requestId: row.requeteId }}>
         Voir la requête

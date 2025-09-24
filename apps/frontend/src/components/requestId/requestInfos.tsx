@@ -8,7 +8,7 @@ export const RequestInfos = () => {
   return (
     <div className="fr-grid-row fr-grid-row--gutters">
       <div className="fr-col">
-        <h1 className="fr-mb-2w">Requête n°{requestId}</h1>
+        <h1 className="fr-mb-2w">Requête {requestId}</h1>
       </div>
     </div>
   );
