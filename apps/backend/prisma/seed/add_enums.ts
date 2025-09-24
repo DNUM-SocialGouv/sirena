@@ -18,8 +18,8 @@ import {
   statutTypes,
   transportTypeLabels,
 } from '@sirena/common/constants';
-
 import type { PrismaClient } from 'generated/client';
+import { getLoggerStore } from '@/libs/asyncLocalStorage';
 
 async function seedAgeEnum(prisma: PrismaClient) {
   let added = 0;
@@ -238,7 +238,8 @@ async function seedTransportTypeEnum(prisma: PrismaClient) {
 }
 
 export async function seedEnums(prisma: PrismaClient) {
-  console.log('🌱 Début du seeding des enums...');
+  const logger = getLoggerStore();
+  logger.info('🌱 Début du seeding des enums...');
 
   const results = await Promise.allSettled([
     seedAgeEnum(prisma),
@@ -263,11 +264,11 @@ export async function seedEnums(prisma: PrismaClient) {
 
   for (const result of results) {
     if (result.status === 'fulfilled') {
-      console.log(`  ✅ ${result.value.table} : ${result.value.added} ajoutés`);
+      logger.info(`  ✅ ${result.value.table} : ${result.value.added} ajoutés`);
     } else {
-      console.log('  ❌ Erreur pendant le seeding :', result.reason);
+      logger.info({ err: result.reason }, '  ❌ Erreur pendant le seeding');
     }
   }
 
-  console.log('🎉 Seeding pour des enums terminé !');
+  logger.info('🎉 Seeding pour des enums terminé !');
 }

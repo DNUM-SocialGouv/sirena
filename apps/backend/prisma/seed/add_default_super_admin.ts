@@ -1,8 +1,10 @@
 import { STATUT_TYPES } from '@sirena/common/constants';
 import type { PrismaClient } from 'generated/client';
+import { getLoggerStore } from '@/libs/asyncLocalStorage';
 
 export async function seedSuperAdmin(prisma: PrismaClient) {
-  console.log('🌱 Début du seeding des super admin...');
+  const logger = getLoggerStore();
+  logger.info('🌱 Début du seeding des super admin...');
   const superAdminRole = await prisma.roleEnum.findUnique({
     where: { id: 'SUPER_ADMIN' },
   });
@@ -23,12 +25,12 @@ export async function seedSuperAdmin(prisma: PrismaClient) {
           where: { email: superAdminEmail },
           data: { roleId: superAdminId, statutId: STATUT_TYPES.ACTIF },
         });
-        console.log(`  👑 Rôle SUPER_ADMIN assigné à: ${superAdminEmail}`);
+        logger.info({}, `  👑 Rôle SUPER_ADMIN assigné à: ${superAdminEmail}`);
       }
     } else {
-      console.log(`  ❌ Utilisateur non trouvé: ${superAdminEmail}`);
+      logger.info({}, `  ❌ Utilisateur non trouvé: ${superAdminEmail}`);
     }
   }
 
-  console.log('🎉 Seeding des super admins terminé!');
+  logger.info('🎉 Seeding des super admins terminé!');
 }
