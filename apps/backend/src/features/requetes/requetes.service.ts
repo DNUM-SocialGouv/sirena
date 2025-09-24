@@ -24,6 +24,7 @@ export const createRequeteFromDematSocial = async ({
   const defaultEntity = await prisma.entite.findFirst({
     where: {
       entiteMereId: null,
+      label: 'ARS NORM',
     },
     select: { id: true },
   });
