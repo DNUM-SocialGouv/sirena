@@ -4,6 +4,7 @@ import { mapDataForPrisma } from '@/features/dematSocial/dematSocial.adaptater';
 import { createOrGetFromDematSocial } from '@/features/requetes/requetes.service';
 import { abortControllerStorage } from '@/libs/asyncLocalStorage';
 import { GetDossierDocument, GetDossiersByDateDocument, GetDossiersMetadataDocument, graffle } from '@/libs/graffle';
+import { prisma } from '@/libs/prisma';
 
 export const getRequetes = async (createdSince?: Date) => {
   const abortController = abortControllerStorage.getStore();
@@ -25,7 +26,7 @@ export const getRequete = async (id: number) => {
   return await graffle.gql(GetDossierDocument).send({ dossierNumber: id });
 };
 
-export const importRequetes = async (createdSince?: Date) => {
+export const importRequetes = async (createdSince?: Date, entiteId?: string) => {
   if (createdSince) {
     console.log(`Importing requetes from ${createdSince.toUTCString()}`);
   } else {
@@ -47,7 +48,15 @@ export const importRequetes = async (createdSince?: Date) => {
     }
     try {
       const requete = mapDataForPrisma(data.dossier.champs, dossier.number, dossier.dateDepot);
-      await createOrGetFromDematSocial(requete);
+      const res = await createOrGetFromDematSocial(requete);
+      if (entiteId && res) {
+        await prisma.requeteEntite.create({
+          data: {
+            requeteId: res.id,
+            entiteId,
+          },
+        });
+      }
       i += 1;
     } catch (error) {
       console.error(`Error processing dossier ${dossier.number}:`, error);

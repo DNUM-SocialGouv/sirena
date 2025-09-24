@@ -7,7 +7,7 @@ export async function seedRequeteFromDematSocial() {
   // Get a default entity for seeding
   const defaultEntity = await prisma.entite.findFirst({
     where: {
-      entiteMereId: null, // Get a top-level entity
+      label: 'ARS NORM', // ARS Normandie
     },
     select: { id: true, nomComplet: true },
   });
