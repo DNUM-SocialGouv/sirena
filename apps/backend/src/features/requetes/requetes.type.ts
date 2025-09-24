@@ -95,6 +95,7 @@ type Situation = {
   misEnCause: MisEnCause;
   demarchesEngagees: DemarchesEngagees;
   faits: Fait[];
+  entiteIds: string[];
 };
 
 export type CreateRequeteFromDematSocialDto = {

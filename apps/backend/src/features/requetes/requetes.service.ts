@@ -154,6 +154,9 @@ export const createRequeteFromDematSocial = async ({
           lieuDeSurvenue: { connect: { id: lieu.id } },
           misEnCause: { connect: { id: mec.id } },
           demarchesEngagees: { connect: { id: dem.id } },
+          situationEntites: {
+            create: s.entiteIds?.map((entiteId) => ({ entiteId })) || [],
+          },
         },
         select: { id: true },
       });
