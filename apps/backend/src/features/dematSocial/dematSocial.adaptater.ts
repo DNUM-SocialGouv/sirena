@@ -262,6 +262,7 @@ const getOtherSituations = (champsById: MappedChamp) => {
         misEnCause,
         demarchesEngagees,
         faits,
+        entiteIds: [],
       };
     });
   }

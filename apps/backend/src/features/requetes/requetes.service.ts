@@ -181,7 +181,8 @@ export const createRequeteFromDematSocial = async ({
           misEnCause: { connect: { id: mec.id } },
           demarchesEngagees: { connect: { id: dem.id } },
           situationEntites: {
-            create: s.entiteIds?.map((entiteId) => ({ entiteId })) || [],
+            // TODO change this
+            create: { entiteId: defaultEntity?.id || '' },
           },
         },
         select: { id: true },
