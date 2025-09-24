@@ -23,7 +23,6 @@
     "db:studio": "prisma studio",
     "script:update-demat-social-mapper": "tsx scripts/updateDematSocial-mapper.ts",
     "generate:codegen": "graphql-codegen --config codegen.ts",
-    "generate:openAPI": "tsx src/swagger/gen-openAPI-swagger.ts",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/backend/' | sed 's|^packages/backend/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
     "lint": "biome check",
     "sentry:sourcemaps": "sh -c 'SHORT=$(echo \"$APP_VERSION\" | cut -c1-7) && sentry-cli sourcemaps inject --release \"$SHORT\" --org incubateur --project psn-sirena-backend ./dist && sentry-cli --url https://sentry2.fabrique.social.gouv.fr/ sourcemaps upload --release \"$SHORT\" --org incubateur --project psn-sirena-backend ./dist'"
@@ -35,7 +34,6 @@
         "default": "./dist/src/index.js"
       }
     },
-    "./swagger": "./src/swagger/openAPI.json",
     "./hc": {
       "import": {
         "types": "./dist/src/hc.d.ts",
