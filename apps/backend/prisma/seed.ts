@@ -31,12 +31,14 @@ async function main() {
     });
   }
 
-  await loggerStorage.run(logger, async () => {
-    await Sentry.withScope(async (scope) => {
-      await sentryStorage.run(scope, async () => {
-        seeding().finally(async () => {
+  loggerStorage.run(logger, () => {
+    Sentry.withScope((scope) => {
+      sentryStorage.run(scope, async () => {
+        try {
+          await seeding();
+        } finally {
           await prisma.$disconnect();
-        });
+        }
       });
     });
   });
