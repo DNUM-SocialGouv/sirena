@@ -93,6 +93,7 @@ model Entite {
   users         User[]
   uploads       UploadedFile[]
   requeteEntite RequeteEntite[]
+  situationEntites SituationEntite[]
 }
 
 model EntiteTypeEnum {
@@ -282,6 +283,18 @@ model Situation {
 
   requete   Requete? @relation(fields: [requeteId], references: [id], onDelete: Cascade)
   requeteId String?
+
+  situationEntites SituationEntite[]
+}
+
+model SituationEntite {
+  situationId String
+  situation   Situation @relation(fields: [situationId], references: [id], onDelete: Cascade)
+
+  entiteId String
+  entite   Entite @relation(fields: [entiteId], references: [id])
+
+  @@id([situationId, entiteId])
 }
 
 model LieuDeSurvenue {

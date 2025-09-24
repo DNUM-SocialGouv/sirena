@@ -226,6 +226,7 @@ export const mapDataForPrisma = (
       misEnCause,
       demarchesEngagees,
       faits,
+      entiteIds: [],
     },
   ];
 

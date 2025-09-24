@@ -90,6 +90,7 @@ const getfakeRequeteDto = () => {
           commentaire: '',
         },
       ],
+      entiteIds: ['entite-1', 'entite-2'],
     },
   ];
 
@@ -162,6 +163,7 @@ const getMinimalRequeteDto = () => {
             commentaire: null,
           },
         ],
+        entiteIds: [],
       },
     ],
   };
