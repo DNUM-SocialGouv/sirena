@@ -7,7 +7,7 @@ import styles from './InfoSection.module.css';
 type InfoSectionProps = {
   id: string;
   title: string;
-  onEdit: () => void;
+  onEdit?: () => void;
   renderSummary?: () => React.ReactNode;
   renderDetails?: () => React.ReactNode;
   emptyLabel?: string;
@@ -18,10 +18,10 @@ type InfoSectionProps = {
 export function InfoSection({
   id,
   title,
-  onEdit,
   renderSummary,
   renderDetails,
   emptyLabel = 'Aucune information',
+  onEdit,
   badges,
   replaceSummaryWithDetails = false,
 }: InfoSectionProps) {
@@ -50,9 +50,11 @@ export function InfoSection({
             </output>
           ))}
         </div>
-        <Button iconPosition="right" iconId="fr-icon-pencil-line" priority="tertiary no outline" onClick={onEdit}>
-          {editLabel}
-        </Button>
+        {onEdit && (
+          <Button iconPosition="right" iconId="fr-icon-pencil-line" priority="tertiary no outline" onClick={onEdit}>
+            {editLabel}
+          </Button>
+        )}
       </div>
 
       {isEmpty ? (

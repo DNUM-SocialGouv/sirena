@@ -99,3 +99,19 @@ export const ReplaceSummaryWithDetails: Story = {
     ],
   },
 };
+
+export const NoEdit: Story = {
+  args: {
+    id: 'info-section',
+    title: 'Déclarant',
+    onEdit: undefined,
+    renderSummary: () => <div>Summary DIV - sera remplacé par les détails</div>,
+    renderDetails: () => <div>Details DIV - remplace le summary quand ouvert</div>,
+    emptyLabel: 'Aucune information',
+    badges: [
+      <Badge key="badge-1" severity="error">
+        Priorité haute
+      </Badge>,
+    ],
+  },
+};
