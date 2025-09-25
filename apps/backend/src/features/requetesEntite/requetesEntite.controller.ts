@@ -12,7 +12,7 @@ import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { getUserById } from '../users/users.service';
 import { addProcessingStepRoute, getRequetesEntiteRoute } from './requetesEntite.route';
 import { AddProcessingStepBodySchema, GetRequetesEntiteQuerySchema } from './requetesEntite.schema';
-import { getRequetesEntite } from './requetesEntite.service';
+import { createRequeteEntite, getRequetesEntite } from './requetesEntite.service';
 
 const app = factoryWithLogs
   .createApp()
@@ -73,6 +73,25 @@ const app = factoryWithLogs
 
   // Roles with edit permissions
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]))
+
+  // TODO: useful to validate ticket SIRENA-223, should be removed later
+  .post('/', async (c) => {
+    const logger = c.get('logger');
+    const userId = c.get('userId');
+
+    const user = await getUserById(userId, null, null);
+    if (!user?.entiteId) {
+      return throwHTTPException401Unauthorized('User not found or not associated with entity', {
+        res: c.res,
+      });
+    }
+
+    const requete = await createRequeteEntite(user.entiteId);
+
+    logger.info({ requeteId: requete.id, userId }, 'New requete created successfully');
+
+    return c.json({ data: requete }, 201);
+  })
 
   .post(
     '/:id/processing-steps',

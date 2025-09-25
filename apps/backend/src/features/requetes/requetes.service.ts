@@ -1,4 +1,5 @@
 import { prisma } from '@/libs/prisma';
+import { determineSource, generateRequeteId } from './functionalId.service';
 import type { CreateRequeteFromDematSocialDto } from './requetes.type';
 
 export const getRequeteByDematSocialId = async (id: number) =>
@@ -30,6 +31,8 @@ export const createRequeteFromDematSocial = async ({
   });
 
   return await prisma.$transaction(async (tx) => {
+    const source = determineSource(dematSocialId);
+    const id = await generateRequeteId(source);
     const requete = await tx.requete.create({
       data: {
         requeteEntites: {
@@ -38,6 +41,7 @@ export const createRequeteFromDematSocial = async ({
             entite: { connect: { id: defaultEntity?.id } },
           },
         },
+        id,
         dematSocialId,
         receptionDate,
         receptionType: { connect: { id: receptionTypeId } },

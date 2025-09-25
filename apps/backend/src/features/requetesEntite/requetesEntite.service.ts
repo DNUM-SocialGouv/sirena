@@ -57,3 +57,53 @@ export const getRequeteEntiteById = async ({ requeteId, entiteId }: RequeteEntit
     },
   });
 };
+
+export const generateRequeteId = async (isFromDematSocial = false): Promise<string> => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const source = isFromDematSocial ? 'D' : 'S';
+
+  // Find the last requete with the same prefix to get the next counter
+  const prefix = `R${source}-${year}-${month}-`;
+  const lastRequete = await prisma.requete.findFirst({
+    where: {
+      id: {
+        startsWith: prefix,
+      },
+    },
+    orderBy: {
+      id: 'desc',
+    },
+  });
+
+  let counter = 1;
+  if (lastRequete) {
+    const lastCounter = parseInt(lastRequete.id.split('-').pop() || '0', 10);
+    counter = lastCounter + 1;
+  }
+
+  return `${prefix}${counter}`;
+};
+
+export const createRequeteEntite = async (entiteId: string) => {
+  const requeteId = await generateRequeteId(false);
+
+  const requete = await prisma.requete.create({
+    data: {
+      id: requeteId,
+      receptionDate: new Date(),
+      receptionTypeId: 'EMAIL',
+      requeteEntites: {
+        create: {
+          entiteId,
+        },
+      },
+    },
+    include: {
+      requeteEntites: true,
+    },
+  });
+
+  return requete;
+};
