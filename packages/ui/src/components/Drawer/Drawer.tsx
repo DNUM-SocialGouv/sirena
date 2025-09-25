@@ -18,10 +18,8 @@ import s from './Drawer.module.css';
 
 const EXIT_MS = 240;
 
-const raf =
-  (typeof window !== 'undefined' && window.requestAnimationFrame) ||
-  ((cb: FrameRequestCallback) => +setTimeout(() => cb(Date.now()), 0));
-const caf = (typeof window !== 'undefined' && window.cancelAnimationFrame) || ((id: number) => clearTimeout(id));
+const raf = window?.requestAnimationFrame || ((cb: FrameRequestCallback) => +setTimeout(() => cb(Date.now()), 0));
+const caf = window?.cancelAnimationFrame || ((id: number) => clearTimeout(id));
 
 const VisualStateCtx = createContext<'entering' | 'open' | 'closing'>('open');
 const useVisualState = () => useContext(VisualStateCtx);

@@ -1,0 +1,27 @@
+.section {
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+  background-color: #ffffff;
+  margin: 1.5rem 0;
+  padding: 20px 24px 24px 24px;
+}
+
+.headerContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.headerContentEmpty {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
