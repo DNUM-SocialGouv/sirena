@@ -12,6 +12,7 @@ type Story = StoryObj<typeof InfoSection>;
 
 export const EmptyState: Story = {
   args: {
+    id: 'info-section-empty',
     title: 'Déclarant',
     onEdit: () => {
       console.log('onEdit');
@@ -30,6 +31,7 @@ export const EmptyState: Story = {
 
 export const FullState: Story = {
   args: {
+    id: 'info-section-full',
     title: 'Déclarant',
     onEdit: () => {
       console.log('onEdit');
@@ -47,6 +49,7 @@ export const FullState: Story = {
 
 export const OnlySummaryState: Story = {
   args: {
+    id: 'info-section-only-summary',
     title: 'Déclarant',
     onEdit: () => {
       console.log('onEdit');
@@ -63,6 +66,7 @@ export const OnlySummaryState: Story = {
 
 export const OnlyDetailsState: Story = {
   args: {
+    id: 'info-section-only-details',
     title: 'Déclarant',
     onEdit: () => {
       console.log('onEdit');
@@ -79,6 +83,7 @@ export const OnlyDetailsState: Story = {
 
 export const ReplaceSummaryWithDetails: Story = {
   args: {
+    id: 'info-section-replace-summary-with-details',
     title: 'Déclarant',
     onEdit: () => {
       console.log('onEdit');
@@ -97,10 +102,11 @@ export const ReplaceSummaryWithDetails: Story = {
 
 export const NoEdit: Story = {
   args: {
+    id: 'info-section-no-edit',
     title: 'Déclarant',
     onEdit: undefined,
-    renderSummary: () => <div>Summary DIV - sera remplacé par les détails</div>,
-    renderDetails: () => <div>Details DIV - remplace le summary quand ouvert</div>,
+    renderSummary: () => <div>Summary DIV</div>,
+    renderDetails: () => <div>Details DIV</div>,
     emptyLabel: 'Aucune information',
     badges: [
       <Badge key="badge-1" severity="error">

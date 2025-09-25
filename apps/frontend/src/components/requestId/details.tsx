@@ -1,9 +1,13 @@
 import { InfoSection } from '@sirena/ui';
+import { useId } from 'react';
 
 export const Details = () => {
+  const personneId = useId();
+
   return (
     <div>
       <InfoSection
+        id={personneId}
         title="Personne concernée"
         onEdit={() => console.log('Edit personne concernée')}
         renderSummary={() => (

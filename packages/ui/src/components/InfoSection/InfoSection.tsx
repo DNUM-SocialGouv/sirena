@@ -5,6 +5,7 @@ import React from 'react';
 import styles from './InfoSection.module.css';
 
 type InfoSectionProps = {
+  id: string;
   title: string;
   onEdit?: () => void;
   renderSummary?: () => React.ReactNode;
@@ -15,6 +16,7 @@ type InfoSectionProps = {
 };
 
 export function InfoSection({
+  id,
   title,
   renderSummary,
   renderDetails,
@@ -34,11 +36,14 @@ export function InfoSection({
 
   const toggleDetails = () => setIsDetailsExpanded(!isDetailsExpanded);
 
+  const titleId = id ? `${id}-title` : 'title';
+  const detailsId = id ? `${id}-details` : 'details';
+
   return (
-    <section aria-labelledby={`title`} className={styles.section}>
+    <section aria-labelledby={titleId} className={styles.section}>
       <div className={isEmpty ? styles.headerContentEmpty : styles.headerContent}>
         <div className={styles.titleGroup}>
-          <h2 id={`title`} className={fr.cx('fr-text--lg', 'fr-mb-0', 'fr-text--bold')}>
+          <h2 id={titleId} className={fr.cx('fr-text--lg', 'fr-mb-0', 'fr-text--bold')}>
             {title}
           </h2>
           {badges?.map((badge, index) => (
@@ -66,7 +71,7 @@ export function InfoSection({
                 label={isDetailsExpanded ? 'Masquer le détail' : 'Voir le détail'}
                 expanded={isDetailsExpanded}
                 onExpandedChange={toggleDetails}
-                id={`details`}
+                id={detailsId}
               >
                 {renderDetails?.() || <div>{emptyLabel}</div>}
               </Accordion>
