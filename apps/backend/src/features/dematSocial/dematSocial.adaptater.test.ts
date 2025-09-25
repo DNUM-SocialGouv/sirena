@@ -1,5 +1,3 @@
-// dematSocial.mapper.test.ts
-
 import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { describe, expect, it } from 'vitest';
 import { AddressType, type RootChampFragmentFragment } from '@/libs/graffle';
