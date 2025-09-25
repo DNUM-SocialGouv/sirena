@@ -1,6 +1,6 @@
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { InfoSection } from '@sirena/ui';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 
 // TODO: Use API types instead of local interfaces
 interface RequestData {
