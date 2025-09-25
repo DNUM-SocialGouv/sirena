@@ -1,9 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { PinoLogger } from 'hono-pino';
+import { Readable } from 'node:stream';
+import { fileTypeFromStream } from 'file-type';
 import { Client } from 'minio';
 import { envVars } from '@/config/env';
+import { MAX_FILE_SIZE } from '@/config/files.constant';
+import { getLoggerStore } from './asyncLocalStorage';
 
 const {
   S3_BUCKET_ACCESS_KEY,
@@ -26,10 +29,10 @@ const minioClient = S3_BUCKET_ENDPOINT
   : null;
 
 export const uploadFileToMinio = async (
-  filePath: string,
+  filePath: string | Readable,
   originalName: string,
   contentType?: string,
-): Promise<{ objectPath: string; rollback: (logger: PinoLogger) => Promise<void> }> => {
+): Promise<{ objectPath: string; rollback: () => Promise<void> }> => {
   if (!minioClient) {
     throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
   }
@@ -39,8 +42,9 @@ export const uploadFileToMinio = async (
   const filename = `${fileId}${fileExtension}`;
   const objectPath = `${S3_BUCKET_ROOT_DIR}/${filename}`;
 
-  const stream = fs.createReadStream(filePath);
-
+  const stream = typeof filePath === 'string' ? fs.createReadStream(filePath) : filePath;
+  const logger = getLoggerStore();
+  logger.warn(objectPath);
   await minioClient.putObject(S3_BUCKET_NAME, objectPath, stream, undefined, {
     'Content-Type': contentType || 'application/octet-stream',
     'x-amz-meta-filename': originalName,
@@ -49,10 +53,11 @@ export const uploadFileToMinio = async (
 
   return {
     objectPath,
-    rollback: async (logger: PinoLogger) => {
+    rollback: async () => {
       try {
         await deleteFileFromMinio(objectPath);
       } catch (err) {
+        const logger = getLoggerStore();
         logger.error({ err }, 'Failed to rollback MinIO file');
       }
     },
@@ -82,4 +87,30 @@ export const getFileStream = async (filePath: string) => {
 
   const stream = await minioClient.getObject(S3_BUCKET_NAME, filePath);
   return stream;
+};
+
+export const urlToStream = async (url: string) => {
+  const res = await fetch(url, { redirect: 'follow' });
+  if (!res.ok || !res.body) {
+    throw new Error(`Failed to fetch ${url} (HTTP ${res.status})`);
+  }
+
+  const sizeHdr = res.headers.get('content-length');
+  const size = sizeHdr ? Number(sizeHdr) : undefined;
+  if (size && size > MAX_FILE_SIZE) throw new Error('File too large');
+
+  const sniff = await fileTypeFromStream(res.body).catch(() => null);
+
+  const mimeSniffed = sniff?.mime;
+
+  const mimeFromHeader = res.headers.get('content-type') ?? undefined;
+
+  const node = Readable.fromWeb(res.body);
+
+  return {
+    stream: node,
+    size: size ?? undefined,
+    mimeFromHeader,
+    mimeSniffed,
+  };
 };

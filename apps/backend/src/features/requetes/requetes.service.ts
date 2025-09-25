@@ -1,15 +1,14 @@
+import { createUploadedFile } from '@/features/uploadedFiles/uploadedFiles.service';
+import { getLoggerStore } from '@/libs/asyncLocalStorage';
+import { uploadFileToMinio, urlToStream } from '@/libs/minio';
 import { prisma } from '@/libs/prisma';
 import { determineSource, generateRequeteId } from './functionalId.service';
-import type { CreateRequeteFromDematSocialDto } from './requetes.type';
+import type { CreateRequeteFromDematSocialDto, ElementLinked, File } from './requetes.type';
 
 export const getRequeteByDematSocialId = async (id: number) =>
   await prisma.requete.findFirst({
     where: {
       dematSocialId: id,
-    },
-    include: {
-      receptionType: true,
-      etapes: { include: { statut: true } },
     },
   });
 
@@ -22,6 +21,7 @@ export const createRequeteFromDematSocial = async ({
   situations,
 }: CreateRequeteFromDematSocialDto) => {
   // TODO remove that when we create assignation algo
+  const logger = getLoggerStore();
   const defaultEntity = await prisma.entite.findFirst({
     where: {
       entiteMereId: null,
@@ -31,6 +31,43 @@ export const createRequeteFromDematSocial = async ({
   });
 
   return await prisma.$transaction(async (tx) => {
+    const createFileForRequete = async (file: File, element: ElementLinked, entiteId: string | null) => {
+      const { stream, mimeFromHeader, mimeSniffed, size } = await urlToStream(file.url);
+
+      const mimeType = mimeSniffed ?? mimeFromHeader ?? 'application/octet-stream';
+
+      const { objectPath, rollback: rollbackMinio } = await uploadFileToMinio(
+        stream,
+        Buffer.from(file.name, 'utf8').toString('base64'),
+        file.mimeType,
+      );
+
+      const id = file.name.split('.')?.[0] || '';
+
+      return tx.uploadedFile
+        .create({
+          data: {
+            id,
+            fileName: file.name,
+            filePath: objectPath,
+            mimeType,
+            size: size ?? 0,
+            metadata: { originalName: file.name },
+            entiteId,
+            uploadedById: null,
+            requeteEtapeNoteId: null,
+            requeteId: null,
+            demarchesEngageesId: element.demarchesEngageesId ?? null,
+            faitSituationId: element.faitSituationId ?? null,
+            status: 'COMPLETED',
+          },
+        })
+        .catch(async (err) => {
+          await rollbackMinio();
+          throw err;
+        });
+    };
+
     const source = determineSource(dematSocialId);
     const id = await generateRequeteId(source);
     const requete = await tx.requete.create({
@@ -179,6 +216,20 @@ export const createRequeteFromDematSocial = async ({
         },
       });
 
+      const files = s.demarchesEngagees.files.map(
+        async (file) => await createFileForRequete(file, { demarchesEngageesId: dem.id }, defaultEntity?.id ?? null),
+      );
+
+      const results = await Promise.allSettled(files);
+      results.forEach((result) => {
+        if (result.status === 'rejected') {
+          logger.error(
+            { err: result.reason },
+            `Uploaded files to s3 encountred an error on requete: ${requete.id}, dematSocialId: ${dematSocialId}`,
+          );
+        }
+      });
+
       const situation = await tx.situation.create({
         data: {
           requete: { connect: { id: requete.id } },
@@ -201,6 +252,21 @@ export const createRequeteFromDematSocial = async ({
             dateFin: f.dateFin ?? null,
             commentaire: f.commentaire ?? '',
           },
+        });
+
+        const files = f.files.map(
+          async (file) =>
+            await createFileForRequete(file, { faitSituationId: situation.id }, defaultEntity?.id ?? null),
+        );
+
+        const results = await Promise.allSettled(files);
+        results.forEach((result) => {
+          if (result.status === 'rejected') {
+            logger.error(
+              { err: result.reason },
+              `Uploaded files to s3 encountred an error on requete: ${requete.id}, dematSocialId: ${dematSocialId}`,
+            );
+          }
         });
 
         if (f.motifs?.length) {
@@ -259,14 +325,4 @@ export const createRequeteFromDematSocial = async ({
       },
     });
   });
-};
-
-export const createOrGetFromDematSocial = async (dto: CreateRequeteFromDematSocialDto) => {
-  const requete = await getRequeteByDematSocialId(dto.dematSocialId);
-
-  if (requete) {
-    return null;
-  }
-
-  return await createRequeteFromDematSocial(dto);
 };

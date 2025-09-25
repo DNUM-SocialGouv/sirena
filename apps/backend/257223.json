@@ -1,0 +1,365 @@
+{
+  "dossier": {
+    "id": "RG9zc2llci0yNTcyMjM=",
+    "number": 257223,
+    "state": "en_construction",
+    "dateDerniereModification": "2025-09-16T14:25:52+02:00",
+    "dateDepot": "2025-09-16T14:23:36+02:00",
+    "usager": {
+      "email": "isabelle.salaun@valdoise.fr"
+    },
+    "demandeur": {
+      "__typename": "PersonnePhysique",
+      "nom": "Lecoeur",
+      "prenom": "Maryline",
+      "civilite": "Mme"
+    },
+    "champs": [
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc2OTY=",
+        "label": "Indications pour remplir ce formulaire",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDQ=",
+        "label": "Identité de la personne concernée",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0ODU=",
+        "label": "Êtes-vous la personne concernée ?",
+        "stringValue": "Non, je suis témoin, aidant ou proche d'une personne concernée"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcyOTE=",
+        "label": "Informations sur la personne concernée",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTM=",
+        "label": "Son âge",
+        "stringValue": "80 ans et plus"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTU=",
+        "label": "Son numéro de téléphone (à seul usage de l'administration)",
+        "stringValue": "06 70 25 30 01"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTY=",
+        "label": "Son courrier électronique",
+        "stringValue": "lecoeur@orange.fr"
+      },
+      {
+        "__typename": "AddressChamp",
+        "id": "Q2hhbXAtMjkzMjE=",
+        "label": "Son adresse postale",
+        "stringValue": "1 Allée du Soleil 13500 Martigues",
+        "address": {
+          "label": "1 Allée du Soleil 13500 Martigues",
+          "type": "housenumber",
+          "streetAddress": "1 Allée du Soleil",
+          "streetNumber": "1",
+          "streetName": "Allée du Soleil",
+          "postalCode": "13500",
+          "cityName": "Martigues",
+          "cityCode": "13056",
+          "departmentName": "Bouches-du-Rhône",
+          "departmentCode": "13",
+          "regionName": "Provence-Alpes-Côte d'Azur",
+          "regionCode": "93"
+        }
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNTk=",
+        "label": "La personne concernée est-elle en situation de handicap ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzQyNDg=",
+        "label": "La personne concernée accepte-t-elle que son identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
+        "stringValue": "Non"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzg4ODY=",
+        "label": "Acceptez-vous que votre identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
+        "stringValue": "Non"
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMjc2MDU=",
+        "label": "D'autres personnes sont-elles concernées par la réclamation ?",
+        "stringValue": "true",
+        "checked": true
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc2MDY=",
+        "label": "Précisions sur les autres personnes concernées :",
+        "stringValue": "Soeur et frère de la personne concernée"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcyOTI=",
+        "label": "Vos informations en tant que déclarant",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTc=",
+        "label": "Votre lien avec la personne concernée",
+        "stringValue": "Autre"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTg=",
+        "label": "Votre numéro de téléphone (à seul usage de l'administration)",
+        "stringValue": "07 49 48 54 30"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTk=",
+        "label": "La personne concernée est-elle au courant de votre démarche ?",
+        "stringValue": "Je ne sais pas"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzcwNDM=",
+        "label": "Les faits",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDE=",
+        "label": "Où se sont passés les faits ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc1MzM=",
+        "label": "Vous souhaitez déclarer des faits survenus dans différents lieux ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgzNjc=",
+        "label": "Code postal du lieu où se sont passés les faits",
+        "stringValue": "Poissy (78300)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDU=",
+        "label": "Type de lieu",
+        "stringValue": "Dans un établissement d'hébergement (EHPAD, foyer d'accueil et d'hébergement ...)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDg=",
+        "label": "Recherchez l'établissement concerné",
+        "stringValue": "130052392 - EHPAD - AURIOL - 13390"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MzU=",
+        "label": "Qui est responsable des faits ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgzNjg=",
+        "label": "Responsable des faits",
+        "stringValue": "Autre"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc4MTk=",
+        "label": "Précisions sur le responsable des faits",
+        "stringValue": "passant"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MjQ=",
+        "label": "Que s'est-il passé ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMTk1MjY=",
+        "label": "Type(s) de faits",
+        "stringValue": "Autre (ex: tatouage, chirurgie et/ou soins esthétiques...)",
+        "values": [
+          "Autre (ex: tatouage, chirurgie et/ou soins esthétiques...)"
+        ]
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMjc1NzI=",
+        "label": "Conséquences pour vous ou la personne concernée",
+        "stringValue": "Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...), Autre conséquence",
+        "values": [
+          "Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...)",
+          "Autre conséquence"
+        ]
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc1MjY=",
+        "label": "Précisez \"Autre conséquence\"",
+        "stringValue": "conséquences psychiques"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgxODI=",
+        "label": "Informations sur la maltraitance",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMjcxNTY=",
+        "label": "Avez-vous, ou la personne concernée, subi des actes de maltraitance ?",
+        "stringValue": "Oui, de la maltraitance physique (châtiments corporels, agressions physiques, intervention médicale sans consentement éclairé, enfermement...)",
+        "values": [
+          "Oui, de la maltraitance physique (châtiments corporels, agressions physiques, intervention médicale sans consentement éclairé, enfermement...)"
+        ]
+      },
+      {
+        "__typename": "DateChamp",
+        "id": "Q2hhbXAtMTk1Mjc=",
+        "label": "Date de début des faits (la date peut être approximative)",
+        "stringValue": "15 septembre 2025",
+        "date": "2025-09-15"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNTc=",
+        "label": "Cette situation est-elle toujours d'actualité ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1Mjg=",
+        "label": "Expliquez-nous en détail les faits (ce qui est arrivé, qui était présent, ce que vous avez fait,...)",
+        "stringValue": "Madame Lecoeur, âgée de 100 ans, se rendant à un rendez-vous dentaire, a été en fait reçu par le tatoueur qui lui a imposé de force un tatouage en forme de coeur au milieu du visage."
+      },
+      {
+        "__typename": "PieceJustificativeChamp",
+        "id": "Q2hhbXAtMzcyNTI=",
+        "label": "Si vous les pensez utiles au traitement de votre dossier, vous pouvez ajouter des pièces jointes (3 maximum)",
+        "stringValue": "",
+        "files": []
+      },
+      {
+        "__typename": "RepetitionChamp",
+        "id": "Q2hhbXAtMzcwNTA=",
+        "label": "Autre responsable",
+        "stringValue": "",
+        "champs": []
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzcyNDg=",
+        "label": "Démarches engagées",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMzcwNDg=",
+        "label": "Si vous ou la personne concernée avez déjà engagé des démarches pour ces faits (à l'écrit ou à l'oral), cochez la ou les cases correspondantes :",
+        "stringValue": "Prise de contact avec l'établissement ou les responsables des faits, Démarches engagées auprès d'autres organismes, Dépôt de plainte",
+        "values": [
+          "Prise de contact avec l'établissement ou les responsables des faits",
+          "Démarches engagées auprès d'autres organismes",
+          "Dépôt de plainte"
+        ]
+      },
+      {
+        "__typename": "DateChamp",
+        "id": "Q2hhbXAtMTk3MzU=",
+        "label": "À quelle date la prise de contact avec l'établissement ou les responsables des faits a-t-elle été effectuée ?",
+        "stringValue": "15 septembre 2025",
+        "date": "2025-09-15"
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3MzY=",
+        "label": "Une réponse a-t-elle été obtenue ?",
+        "stringValue": "false",
+        "checked": false
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjAwMDU=",
+        "label": "Auprès de quel organisme les démarches ont-elles été engagées ?",
+        "stringValue": "Police"
+      },
+      {
+        "__typename": "DateChamp",
+        "id": "Q2hhbXAtMTk3NDE=",
+        "label": "À quelle date la plainte a-t-elle été déposée ?",
+        "stringValue": "15 septembre 2025",
+        "date": "2025-09-15"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk3NDI=",
+        "label": "Auprès de qui ?",
+        "stringValue": "Gendarmerie"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc1MzE=",
+        "label": "Autres faits à déclarer, survenus dans d'autres lieux",
+        "stringValue": ""
+      },
+      {
+        "__typename": "RepetitionChamp",
+        "id": "Q2hhbXAtMzcyNTM=",
+        "label": "Autres faits",
+        "stringValue": "",
+        "champs": []
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc4ODE=",
+        "label": "Complément d'information",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc4ODI=",
+        "label": "Précisions à ajouter",
+        "stringValue": "La soeur et le frère de Madame se joignent à cette réclamation.\r\nLe 16.09.25 à 14h24, finalement le tatouage était un tatouage éphémère et tout va bien pour Madame.\r\nMerci encore de votre écoute.\r\nBon courage à vous et bonne journée."
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk3NDM=",
+        "label": "Validation",
+        "stringValue": ""
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3NDQ=",
+        "label": "Je certifie sur l’honneur l’exactitude des renseignements fournis.",
+        "stringValue": "true",
+        "checked": true
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3NDU=",
+        "label": "J'ai pris connaissance que l'administration en charge de ma réclamation procède à un traitement de mes données personnelles pour sa gestion et son suivi.",
+        "stringValue": "true",
+        "checked": true
+      }
+    ]
+  }
+}
