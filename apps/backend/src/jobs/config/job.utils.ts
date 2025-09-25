@@ -3,7 +3,7 @@ import type { Job } from 'bullmq';
 import { envVars } from '@/config/env';
 import { endCron, startCron } from '@/crons/crons.service';
 import { serializeError } from '@/helpers/errors';
-import { getSentryStore } from '@/libs/asyncLocalStorage';
+import { getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
 
 export async function withCronLifecycle<R extends Record<string, unknown>, J extends Job>(
   job: J,
@@ -65,8 +65,9 @@ export async function withCronLifecycle<R extends Record<string, unknown>, J ext
             },
           });
         }
-      } catch (sentryError) {
-        console.error('Failed to capture exception in Sentry:', sentryError);
+      } catch (err) {
+        const logger = getLoggerStore();
+        logger.error({ err }, 'Failed to capture exception in Sentry:');
       }
     }
 

@@ -181,7 +181,6 @@ model DemarchesEngageesEnum {
 
 model PersonneConcernee {
   id                         String   @id @default(uuid())
-  telephone                  String?  @default("")
   estNonIdentifiee           Boolean?
   estAnonyme                 Boolean?
   estHandicapee              Boolean?
@@ -199,9 +198,6 @@ model PersonneConcernee {
   age   AgeEnum? @relation(fields: [ageId], references: [id])
 
   adresse Adresse? @relation("PersonneAdresse")
-
-  civiliteId String?
-  civilite   CiviliteEnum? @relation(fields: [civiliteId], references: [id])
 
   lienVictimeId String?
   lienVictime   LienVictimeEnum? @relation(fields: [lienVictimeId], references: [id])
@@ -234,7 +230,7 @@ model CiviliteEnum {
   id    String @id
   label String @unique
 
-  personneConcernee PersonneConcernee[]
+  Identite Identite[]
 }
 
 model Identite {
@@ -244,6 +240,9 @@ model Identite {
   email       String @default("")
   telephone   String @default("")
   commentaire String @default("")
+
+  civiliteId String?
+  civilite   CiviliteEnum? @relation(fields: [civiliteId], references: [id])
 
   personneConcerneeId String            @unique
   personneConcernee   PersonneConcernee @relation("PersonneIdentite", fields: [personneConcerneeId], references: [id], onDelete: Cascade)

@@ -20,9 +20,24 @@ export const createRequeteFromDematSocial = async ({
   participant,
   situations,
 }: CreateRequeteFromDematSocialDto) => {
+  // TODO remove that when we create assignation algo
+  const defaultEntity = await prisma.entite.findFirst({
+    where: {
+      entiteMereId: null,
+      label: 'ARS NORM',
+    },
+    select: { id: true },
+  });
+
   return await prisma.$transaction(async (tx) => {
     const requete = await tx.requete.create({
       data: {
+        requeteEntites: {
+          create: {
+            // TODO remove that when we create assignation algo
+            entite: { connect: { id: defaultEntity?.id } },
+          },
+        },
         dematSocialId,
         receptionDate,
         receptionType: { connect: { id: receptionTypeId } },
@@ -31,7 +46,15 @@ export const createRequeteFromDematSocial = async ({
 
     const decl = await tx.personneConcernee.create({
       data: {
-        telephone: declarant.telephone ?? '',
+        identite: {
+          create: {
+            nom: declarant.nom ?? '',
+            prenom: declarant.prenom ?? '',
+            telephone: declarant.telephone ?? '',
+            email: declarant.email ?? '',
+            civilite: declarant.civiliteId ? { connect: { id: declarant.civiliteId } } : undefined,
+          },
+        },
         estHandicapee: declarant.estHandicapee ?? null,
         estVictime: declarant.estVictime ?? null,
         estAnonyme: declarant.estAnonyme ?? null,
@@ -58,7 +81,11 @@ export const createRequeteFromDematSocial = async ({
     if (participant) {
       const part = await tx.personneConcernee.create({
         data: {
-          telephone: participant.telephone ?? '',
+          identite: {
+            create: {
+              telephone: participant.telephone ?? '',
+            },
+          },
           estHandicapee: participant.estHandicapee ?? null,
           estVictimeInformee: participant.estVictimeInformee ?? null,
           victimeInformeeCommentaire: participant.victimeInformeeCommentaire ?? '',
@@ -155,27 +182,26 @@ export const createRequeteFromDematSocial = async ({
           misEnCause: { connect: { id: mec.id } },
           demarchesEngagees: { connect: { id: dem.id } },
           situationEntites: {
-            create: s.entiteIds?.map((entiteId) => ({ entiteId })) || [],
+            // TODO remove that when we create assignation algo
+            create: { entiteId: defaultEntity?.id || '' },
           },
         },
         select: { id: true },
       });
 
-      // TODO change to iteration on all faits
-      const f0 = s.faits?.[0];
-      if (f0) {
+      const faits = s.faits.map(async (f) => {
         await tx.fait.create({
           data: {
             situation: { connect: { id: situation.id } },
-            dateDebut: f0.dateDebut ?? null,
-            dateFin: f0.dateFin ?? null,
-            commentaire: f0.commentaire ?? '',
+            dateDebut: f.dateDebut ?? null,
+            dateFin: f.dateFin ?? null,
+            commentaire: f.commentaire ?? '',
           },
         });
 
-        if (f0.motifs?.length) {
+        if (f.motifs?.length) {
           await tx.faitMotif.createMany({
-            data: f0.motifs.map((motifId) => ({
+            data: f.motifs.map((motifId) => ({
               situationId: situation.id,
               motifId,
             })),
@@ -183,9 +209,9 @@ export const createRequeteFromDematSocial = async ({
           });
         }
 
-        if (f0.consequences?.length) {
+        if (f.consequences?.length) {
           await tx.faitConsequence.createMany({
-            data: f0.consequences.map((consequenceId) => ({
+            data: f.consequences.map((consequenceId) => ({
               situationId: situation.id,
               consequenceId,
             })),
@@ -193,16 +219,18 @@ export const createRequeteFromDematSocial = async ({
           });
         }
 
-        if (f0.maltraitanceTypes?.length) {
+        if (f.maltraitanceTypes?.length) {
           await tx.faitMaltraitanceType.createMany({
-            data: f0.maltraitanceTypes.map((maltraitanceTypeId) => ({
+            data: f.maltraitanceTypes.map((maltraitanceTypeId) => ({
               situationId: situation.id,
               maltraitanceTypeId,
             })),
             skipDuplicates: true,
           });
         }
-      }
+      });
+
+      await Promise.all(faits);
     }
 
     return await tx.requete.findUniqueOrThrow({

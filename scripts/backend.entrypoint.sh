@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+echo "Reset db"
+pnpm --filter @sirena/backend db:reset
+
 echo "Init migrations"
 pnpm --filter @sirena/backend db:deploy
 

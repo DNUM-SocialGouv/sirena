@@ -1,11 +1,12 @@
 import { Graffle } from 'graffle';
 import { envVars } from '@/config/env';
 
-export type { RootChampFragmentFragment } from '../../generated/graphql/graphql';
 export {
+  AddressType,
   GetDossierDocument,
   GetDossiersByDateDocument,
   GetDossiersMetadataDocument,
+  type RootChampFragmentFragment,
 } from '../../generated/graphql/graphql';
 
 export const graffle = Graffle.create().transport({

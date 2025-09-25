@@ -17,6 +17,10 @@ export type CreateRequeteFromDematSocialMinimalDto = {
 // };
 
 type Declarant = {
+  nom: string;
+  prenom: string;
+  civiliteId: string | null;
+  email: string;
   ageId: string | null;
   telephone: string | null;
   estHandicapee: boolean | null;

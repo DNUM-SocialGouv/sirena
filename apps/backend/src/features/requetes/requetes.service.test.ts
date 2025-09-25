@@ -44,6 +44,10 @@ const getfakeRequeteDto = () => {
 
   const fakeDeclarant = {
     ageId: AGE['-18'],
+    nom: 'test',
+    prenom: 'test',
+    civiliteId: 'M',
+    email: 'test@test.com',
     telephone: '0123456789',
     estHandicapee: false,
     lienVictimeId: LIEN_VICTIME.PROCHE,
@@ -112,6 +116,10 @@ const getMinimalRequeteDto = () => {
     declarant: {
       ageId: null,
       telephone: null,
+      email: '',
+      nom: '',
+      prenom: '',
+      civiliteId: null,
       estHandicapee: null,
       lienVictimeId: null,
       estVictime: false,
@@ -270,6 +278,10 @@ describe('requetes.service.ts', () => {
               rue: 'Main St',
               numero: '123',
             },
+            nom: 'test',
+            prenom: 'test',
+            email: 'test@test.fr',
+            civiliteId: 'M',
             ageId: '1',
             telephone: '1234567890',
             estHandicapee: false,
@@ -364,7 +376,6 @@ describe('requetes.service.ts', () => {
         veutGarderAnonymat: null,
         commentaire: '',
         autrePersonnes: '',
-        civiliteId: null,
         declarantDeId: '1',
         participantDeId: null,
         createdAt: new Date(),
@@ -392,7 +403,6 @@ describe('requetes.service.ts', () => {
         veutGarderAnonymat: null,
         commentaire: '',
         autrePersonnes: '',
-        civiliteId: null,
         declarantDeId: '1',
         participantDeId: null,
         createdAt: new Date(),
@@ -479,6 +489,15 @@ describe('requetes.service.ts', () => {
           dematSocialId: fakeRequeteDto.dematSocialId,
           receptionDate: fakeRequeteDto.receptionDate,
           receptionType: { connect: { id: fakeRequeteDto.receptionTypeId } },
+          requeteEntites: {
+            create: {
+              entite: {
+                connect: {
+                  id: undefined,
+                },
+              },
+            },
+          },
         },
       });
 
@@ -490,7 +509,15 @@ describe('requetes.service.ts', () => {
           declarantDe: { connect: { id: '1' } },
           lienVictime: { connect: { id: fakeRequeteDto.declarant.lienVictimeId } },
           estHandicapee: fakeRequeteDto.declarant.estHandicapee,
-          telephone: fakeRequeteDto.declarant.telephone,
+          identite: {
+            create: {
+              nom: fakeRequeteDto.declarant.nom,
+              prenom: fakeRequeteDto.declarant.prenom,
+              civilite: { connect: { id: fakeRequeteDto.declarant.civiliteId } },
+              email: fakeRequeteDto.declarant.email,
+              telephone: fakeRequeteDto.declarant.telephone,
+            },
+          },
         },
       });
 
@@ -501,7 +528,11 @@ describe('requetes.service.ts', () => {
           autrePersonnes: '',
           estHandicapee: fakeRequeteDto.participant.estHandicapee,
           estVictimeInformee: fakeRequeteDto.participant.estVictimeInformee,
-          telephone: fakeRequeteDto.participant.telephone,
+          identite: {
+            create: {
+              telephone: fakeRequeteDto.participant.telephone,
+            },
+          },
           victimeInformeeCommentaire: '',
         },
         select: { id: true },
@@ -534,7 +565,6 @@ describe('requetes.service.ts', () => {
         veutGarderAnonymat: null,
         commentaire: '',
         autrePersonnes: '',
-        civiliteId: null,
         declarantDeId: '1',
         participantDeId: null,
         createdAt: new Date(),
@@ -543,7 +573,6 @@ describe('requetes.service.ts', () => {
 
       vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({
         ...dto.participant,
-        telephone: dto.participant?.telephone ?? '',
         ageId: dto.participant?.ageId ?? null,
         id: '2',
         estHandicapee: null,
@@ -557,7 +586,6 @@ describe('requetes.service.ts', () => {
         veutGarderAnonymat: null,
         commentaire: '',
         autrePersonnes: '',
-        civiliteId: null,
         declarantDeId: null,
         participantDeId: '1',
         createdAt: new Date(),
@@ -656,6 +684,10 @@ describe('requetes.service.ts', () => {
             rue: 'Main St',
             numero: '123',
           },
+          nom: 'test',
+          prenom: 'test',
+          email: 'test@test.fr',
+          civiliteId: 'M',
           ageId: '1',
           telephone: '1234567890',
           estHandicapee: false,
@@ -786,6 +818,10 @@ describe('requetes.service.ts', () => {
             rue: 'Main St',
             numero: '123',
           },
+          nom: 'test',
+          prenom: 'test',
+          email: 'test@test.fr',
+          civiliteId: 'M',
           ageId: '1',
           telephone: '1234567890',
           estHandicapee: false,
@@ -825,6 +861,15 @@ describe('requetes.service.ts', () => {
           dematSocialId,
           receptionDate: new Date(),
           receptionType: { connect: { id: RECEPTION_TYPE.FORMULAIRE } },
+          requeteEntites: {
+            create: {
+              entite: {
+                connect: {
+                  id: undefined,
+                },
+              },
+            },
+          },
         },
       });
       expect(result).toBe(created);
