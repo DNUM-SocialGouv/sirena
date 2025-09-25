@@ -19,10 +19,6 @@ interface DetailsTabProps {
 export function DetailsTab({ initialData }: DetailsTabProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const declarantId = useId();
-  const personneId = useId();
-  const lieuxId = useId();
-  const requeteOriginaleId = useId();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
@@ -36,7 +32,6 @@ export function DetailsTab({ initialData }: DetailsTabProps) {
   return (
     <div>
       <InfoSection
-        id={declarantId}
         title="Déclarant"
         onEdit={() => console.log('Edit declarant')}
         renderSummary={() => (
@@ -49,7 +44,6 @@ export function DetailsTab({ initialData }: DetailsTabProps) {
       />
 
       <InfoSection
-        id={personneId}
         title="Personne concernée"
         onEdit={() => console.log('Edit personne concernée')}
         renderSummary={() => (
@@ -64,7 +58,6 @@ export function DetailsTab({ initialData }: DetailsTabProps) {
       />
 
       <InfoSection
-        id={lieuxId}
         title="Lieu, mis en cause et faits"
         onEdit={() => console.log('Edit lieux et faits')}
         renderSummary={() => (
@@ -79,7 +72,6 @@ export function DetailsTab({ initialData }: DetailsTabProps) {
       />
 
       <InfoSection
-        id={requeteOriginaleId}
         title="Requête originale"
         renderSummary={() => (
           <div>
