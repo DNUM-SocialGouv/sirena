@@ -29,7 +29,7 @@ function RouteComponent() {
   const userStore = useUserStore();
   const [createdRequestId, setCreatedRequestId] = useState<string | null>(null);
 
-  //@todo: useful to validate ticket SIRENA-223, should be removed later
+  // TODO: useful to validate ticket SIRENA-223, should be removed later
   const createRequestMutation = useMutation({
     mutationFn: createRequeteEntite,
     onSuccess: (data) => {

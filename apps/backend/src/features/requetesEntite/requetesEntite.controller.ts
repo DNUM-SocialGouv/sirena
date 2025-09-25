@@ -74,7 +74,7 @@ const app = factoryWithLogs
   // Roles with edit permissions
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]))
 
-  //@todo: useful to validate ticket SIRENA-223, should be removed later
+  // TODO: useful to validate ticket SIRENA-223, should be removed later
   .post('/', async (c) => {
     const logger = c.get('logger');
     const userId = c.get('userId');
