@@ -25,6 +25,8 @@ export type TabDescriptor = {
   label: string;
   tabPanelId: string;
   tabId: string;
+  title?: string;
+  disabled?: boolean;
 };
 
 export type TabsProps = {
@@ -133,6 +135,8 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children, className
             selected={index === activeTab}
             tabId={tab.tabId}
             onTabClick={() => selectTab(index)}
+            title={tab.title}
+            disabled={tab.disabled}
           >
             {tab.label}
           </TabsItem>

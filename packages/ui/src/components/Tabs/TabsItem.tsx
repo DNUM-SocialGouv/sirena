@@ -6,9 +6,11 @@ export type TabItemProps = {
   tabId: string;
   children: React.ReactNode;
   onTabClick: (tabId: string) => void;
+  title?: string;
+  disabled?: boolean;
 };
 
-export const TabsItem = ({ panelId, selected, tabId, children, onTabClick }: TabItemProps) => {
+export const TabsItem = ({ panelId, selected, tabId, children, onTabClick, title, disabled }: TabItemProps) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -21,7 +23,9 @@ export const TabsItem = ({ panelId, selected, tabId, children, onTabClick }: Tab
       role="tab"
       aria-selected={selected}
       aria-controls={panelId}
-      onClick={() => onTabClick(tabId)}
+      onClick={disabled ? undefined : () => onTabClick(tabId)}
+      title={title}
+      disabled={disabled}
     >
       {children}
     </button>
