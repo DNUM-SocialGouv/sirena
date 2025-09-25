@@ -31,7 +31,7 @@ function RouteComponent() {
   const profileQuery = useQuery({ ...profileQueryOptions(), enabled: false });
   const userStore = useUserStore();
   const toastManager = Toast.useToastManager();
-  const [createdRequestId, setCreatedRequestId] = useState<string | null>(null);
+  const [_createdRequestId, setCreatedRequestId] = useState<string | null>(null);
 
   // TODO: useful to validate ticket SIRENA-223, should be removed later
   const createRequestMutation = useMutation({
