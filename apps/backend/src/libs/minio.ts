@@ -1,11 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { Readable } from 'node:stream';
-import { fileTypeFromStream } from 'file-type';
+import type { Readable } from 'node:stream';
 import { Client } from 'minio';
 import { envVars } from '@/config/env';
-import { MAX_FILE_SIZE } from '@/config/files.constant';
 import { getLoggerStore } from './asyncLocalStorage';
 
 const {
@@ -43,8 +41,6 @@ export const uploadFileToMinio = async (
   const objectPath = `${S3_BUCKET_ROOT_DIR}/${filename}`;
 
   const stream = typeof filePath === 'string' ? fs.createReadStream(filePath) : filePath;
-  const logger = getLoggerStore();
-  logger.warn(objectPath);
   await minioClient.putObject(S3_BUCKET_NAME, objectPath, stream, undefined, {
     'Content-Type': contentType || 'application/octet-stream',
     'x-amz-meta-filename': originalName,
@@ -87,30 +83,4 @@ export const getFileStream = async (filePath: string) => {
 
   const stream = await minioClient.getObject(S3_BUCKET_NAME, filePath);
   return stream;
-};
-
-export const urlToStream = async (url: string) => {
-  const res = await fetch(url, { redirect: 'follow' });
-  if (!res.ok || !res.body) {
-    throw new Error(`Failed to fetch ${url} (HTTP ${res.status})`);
-  }
-
-  const sizeHdr = res.headers.get('content-length');
-  const size = sizeHdr ? Number(sizeHdr) : undefined;
-  if (size && size > MAX_FILE_SIZE) throw new Error('File too large');
-
-  const sniff = await fileTypeFromStream(res.body).catch(() => null);
-
-  const mimeSniffed = sniff?.mime;
-
-  const mimeFromHeader = res.headers.get('content-type') ?? undefined;
-
-  const node = Readable.fromWeb(res.body);
-
-  return {
-    stream: node,
-    size: size ?? undefined,
-    mimeFromHeader,
-    mimeSniffed,
-  };
 };

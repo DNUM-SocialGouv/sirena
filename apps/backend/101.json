@@ -1,0 +1,14 @@
+{
+  "dossier": {
+    "demandeur": {
+      "__typename": "PersonnePhysique",
+      "civilite": "M",
+      "nom": "test",
+      "prenom": "test"
+    },
+    "usager": {
+      "email": "test@test.fr"
+    },
+    "champs": []
+  }
+}

@@ -1,6 +1,6 @@
-import { createUploadedFile } from '@/features/uploadedFiles/uploadedFiles.service';
+import { sanitizeFilename, urlToStream } from '@/helpers/file';
 import { getLoggerStore } from '@/libs/asyncLocalStorage';
-import { uploadFileToMinio, urlToStream } from '@/libs/minio';
+import { uploadFileToMinio } from '@/libs/minio';
 import { prisma } from '@/libs/prisma';
 import { determineSource, generateRequeteId } from './functionalId.service';
 import type { CreateRequeteFromDematSocialDto, ElementLinked, File } from './requetes.type';
@@ -32,23 +32,23 @@ export const createRequeteFromDematSocial = async ({
 
   return await prisma.$transaction(async (tx) => {
     const createFileForRequete = async (file: File, element: ElementLinked, entiteId: string | null) => {
-      const { stream, mimeFromHeader, mimeSniffed, size } = await urlToStream(file.url);
+      const { stream, mimeFromHeader, mimeSniffed, size, extSniffed } = await urlToStream(file.url);
 
       const mimeType = mimeSniffed ?? mimeFromHeader ?? 'application/octet-stream';
+      const ext = extSniffed ?? file.name.split('.').pop() ?? '';
 
-      const { objectPath, rollback: rollbackMinio } = await uploadFileToMinio(
-        stream,
-        Buffer.from(file.name, 'utf8').toString('base64'),
-        file.mimeType,
-      );
+      const filename = sanitizeFilename(file.name, ext);
 
-      const id = file.name.split('.')?.[0] || '';
+      const { objectPath, rollback: rollbackMinio } = await uploadFileToMinio(stream, filename, file.mimeType);
+
+      const fileName = objectPath.split('/')?.[1] || '';
+      const id = fileName.split('.')?.[0] || '';
 
       return tx.uploadedFile
         .create({
           data: {
             id,
-            fileName: file.name,
+            fileName,
             filePath: objectPath,
             mimeType,
             size: size ?? 0,

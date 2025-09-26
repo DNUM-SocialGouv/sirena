@@ -84,8 +84,8 @@ const getFilesByChamps = (champ: RootChampFragmentFragment | RepetitionChamp) =>
   return champ.files.map((file) => ({
     name: file.filename,
     url: file.url,
-    size: file.contentType,
-    mimeType: file.byteSize,
+    size: file.byteSize,
+    mimeType: file.contentType,
   }));
 };
 
