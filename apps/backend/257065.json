@@ -1,0 +1,469 @@
+{
+  "dossier": {
+    "id": "RG9zc2llci0yNTcwNjU=",
+    "number": 257065,
+    "state": "en_construction",
+    "dateDerniereModification": "2025-09-15T17:07:59+02:00",
+    "dateDepot": "2025-09-15T17:07:59+02:00",
+    "usager": {
+      "email": "zakia.brahimi@valdoise.fr"
+    },
+    "demandeur": {
+      "__typename": "PersonnePhysique",
+      "nom": "BRAHIMI",
+      "prenom": "Zakia",
+      "civilite": "Mme"
+    },
+    "champs": [
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc2OTY=",
+        "label": "Indications pour remplir ce formulaire",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDQ=",
+        "label": "Identité de la personne concernée",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0ODU=",
+        "label": "Êtes-vous la personne concernée ?",
+        "stringValue": "Non, je suis témoin, aidant ou proche d'une personne concernée"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcyOTE=",
+        "label": "Informations sur la personne concernée",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTM=",
+        "label": "Son âge",
+        "stringValue": "Entre 30 et 59 ans"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTU=",
+        "label": "Son numéro de téléphone (à seul usage de l'administration)",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTY=",
+        "label": "Son courrier électronique",
+        "stringValue": ""
+      },
+      {
+        "__typename": "AddressChamp",
+        "id": "Q2hhbXAtMjkzMjE=",
+        "label": "Son adresse postale",
+        "stringValue": "1 Rue du Tertre 95000 Cergy",
+        "address": {
+          "label": "1 Rue du Tertre 95000 Cergy",
+          "type": "housenumber",
+          "streetAddress": "1 Rue du Tertre",
+          "streetNumber": "1",
+          "streetName": "Rue du Tertre",
+          "postalCode": "95000",
+          "cityName": "Cergy",
+          "cityCode": "95127",
+          "departmentName": "Val-d'Oise",
+          "departmentCode": "95",
+          "regionName": "Île-de-France",
+          "regionCode": "11"
+        }
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNTk=",
+        "label": "La personne concernée est-elle en situation de handicap ?",
+        "stringValue": "Je ne sais pas"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzQyNDg=",
+        "label": "La personne concernée accepte-t-elle que son identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzg4ODY=",
+        "label": "Acceptez-vous que votre identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMjc2MDU=",
+        "label": "D'autres personnes sont-elles concernées par la réclamation ?",
+        "stringValue": "false",
+        "checked": false
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcyOTI=",
+        "label": "Vos informations en tant que déclarant",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTc=",
+        "label": "Votre lien avec la personne concernée",
+        "stringValue": "Autre"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTg=",
+        "label": "Votre numéro de téléphone (à seul usage de l'administration)",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTk=",
+        "label": "La personne concernée est-elle au courant de votre démarche ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzcwNDM=",
+        "label": "Les faits",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDE=",
+        "label": "Où se sont passés les faits ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc1MzM=",
+        "label": "Vous souhaitez déclarer des faits survenus dans différents lieux ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgzNjc=",
+        "label": "Code postal du lieu où se sont passés les faits",
+        "stringValue": "Cergy (95000)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDU=",
+        "label": "Type de lieu",
+        "stringValue": "Au domicile (domicile de la personne concernée, domicile d'un membre de la famille, domicile d'un aidant...)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc2MDc=",
+        "label": "Précisions sur le lieu de survenue",
+        "stringValue": ""
+      },
+      {
+        "__typename": "AddressChamp",
+        "id": "Q2hhbXAtMjcxNjE=",
+        "label": "Adresse concernée",
+        "stringValue": "",
+        "address": null
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MzU=",
+        "label": "Qui est responsable des faits ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgzNjg=",
+        "label": "Responsable des faits",
+        "stringValue": "Professionnel"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNjg=",
+        "label": "Professionnel dans le cadre d'un service ou d'une intervention à domicile",
+        "stringValue": "Mandataire Judiciaire à la Protection des Majeurs (curatelle, tutelle)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc4MTk=",
+        "label": "Précisions sur le responsable des faits",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MjQ=",
+        "label": "Que s'est-il passé ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMTk1MjY=",
+        "label": "Type(s) de faits",
+        "stringValue": "Problème d’organisation ou de fonctionnement de l’établissement ou du service (ex : Management, plannings, condition de travail...)",
+        "values": [
+          "Problème d’organisation ou de fonctionnement de l’établissement ou du service (ex : Management, plannings, condition de travail...)"
+        ]
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMjc1NzI=",
+        "label": "Conséquences pour vous ou la personne concernée",
+        "stringValue": "Sur les besoins du quotidien (difficulté à manger, dormir, se laver, ou à recevoir l’aide dont elle a besoin...)",
+        "values": [
+          "Sur les besoins du quotidien (difficulté à manger, dormir, se laver, ou à recevoir l’aide dont elle a besoin...)"
+        ]
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgxODI=",
+        "label": "Informations sur la maltraitance",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMjcxNTY=",
+        "label": "Avez-vous, ou la personne concernée, subi des actes de maltraitance ?",
+        "stringValue": "Oui, de la maltraitance matérielles et financières (fraude, vol d'effets personnels d'argent ou de biens, privation de gestion de ses ressources, dégradation de biens d'une personne...)",
+        "values": [
+          "Oui, de la maltraitance matérielles et financières (fraude, vol d'effets personnels d'argent ou de biens, privation de gestion de ses ressources, dégradation de biens d'une personne...)"
+        ]
+      },
+      {
+        "__typename": "DateChamp",
+        "id": "Q2hhbXAtMTk1Mjc=",
+        "label": "Date de début des faits (la date peut être approximative)",
+        "stringValue": "",
+        "date": null
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNTc=",
+        "label": "Cette situation est-elle toujours d'actualité ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1Mjg=",
+        "label": "Expliquez-nous en détail les faits (ce qui est arrivé, qui était présent, ce que vous avez fait,...)",
+        "stringValue": "monsieur ne peut manger à sa faim et l'appartement est très sale."
+      },
+      {
+        "__typename": "PieceJustificativeChamp",
+        "id": "Q2hhbXAtMzcyNTI=",
+        "label": "Si vous les pensez utiles au traitement de votre dossier, vous pouvez ajouter des pièces jointes (3 maximum)",
+        "stringValue": "",
+        "files": []
+      },
+      {
+        "__typename": "RepetitionChamp",
+        "id": "Q2hhbXAtMzcwNTA=",
+        "label": "Autre responsable",
+        "stringValue": "",
+        "champs": []
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzcyNDg=",
+        "label": "Démarches engagées",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMzcwNDg=",
+        "label": "Si vous ou la personne concernée avez déjà engagé des démarches pour ces faits (à l'écrit ou à l'oral), cochez la ou les cases correspondantes :",
+        "stringValue": "Prise de contact avec l'établissement ou les responsables des faits",
+        "values": [
+          "Prise de contact avec l'établissement ou les responsables des faits"
+        ]
+      },
+      {
+        "__typename": "DateChamp",
+        "id": "Q2hhbXAtMTk3MzU=",
+        "label": "À quelle date la prise de contact avec l'établissement ou les responsables des faits a-t-elle été effectuée ?",
+        "stringValue": "",
+        "date": null
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3MzY=",
+        "label": "Une réponse a-t-elle été obtenue ?",
+        "stringValue": "false",
+        "checked": false
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc1MzE=",
+        "label": "Autres faits à déclarer, survenus dans d'autres lieux",
+        "stringValue": ""
+      },
+      {
+        "__typename": "RepetitionChamp",
+        "id": "Q2hhbXAtMzcyNTM=",
+        "label": "Autres faits",
+        "stringValue": "",
+        "champs": [
+          {
+            "id": "Q2hhbXAtMzcyNTR8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Où se sont passés les faits ?",
+            "stringValue": ""
+          },
+          {
+            "id": "Q2hhbXAtMzcyNTd8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Code postal du lieu où se sont passés les faits",
+            "stringValue": "Cergy (95000)"
+          },
+          {
+            "id": "Q2hhbXAtMzcyNTZ8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Type de lieu",
+            "stringValue": "Au domicile (domicile de la personne concernée, domicile d'un membre de la famille, domicile d'un aidant...)"
+          },
+          {
+            "id": "Q2hhbXAtMzczNTN8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Précisions sur le lieu de survenue",
+            "stringValue": "appartement"
+          },
+          {
+            "id": "Q2hhbXAtMzczNTR8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Adresse concernée",
+            "stringValue": "",
+            "address": null
+          },
+          {
+            "id": "Q2hhbXAtMzcyNjB8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Qui est responsable des faits ?",
+            "stringValue": ""
+          },
+          {
+            "id": "Q2hhbXAtMzcyNTh8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Responsable des faits",
+            "stringValue": "Professionnel"
+          },
+          {
+            "id": "Q2hhbXAtMzczMTN8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Professionnel dans le cadre d'un service ou d'une intervention à domicile",
+            "stringValue": "Service d'aide ménagère"
+          },
+          {
+            "id": "Q2hhbXAtMzcyNTl8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Précisions sur le responsable des faits",
+            "stringValue": ""
+          },
+          {
+            "id": "Q2hhbXAtMzcyNjJ8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Que s'est-il passé ?",
+            "stringValue": ""
+          },
+          {
+            "id": "Q2hhbXAtMzcyNjN8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Type(s) de faits",
+            "stringValue": "Problème de qualité des soins médicaux ou paramédicaux (ex: soins et/ou interventions inadaptés, absents ou abusifs...)",
+            "values": [
+              "Problème de qualité des soins médicaux ou paramédicaux (ex: soins et/ou interventions inadaptés, absents ou abusifs...)"
+            ]
+          },
+          {
+            "id": "Q2hhbXAtMzczMTd8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Conséquences pour vous ou la personne concernée",
+            "stringValue": "Autre conséquence",
+            "values": [
+              "Autre conséquence"
+            ]
+          },
+          {
+            "id": "Q2hhbXAtMzc1MzB8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Précisez \"Autre conséquence\"",
+            "stringValue": "hygiène non respectée"
+          },
+          {
+            "id": "Q2hhbXAtMzczMTl8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Avez-vous, ou la personne concernée, subi des actes de maltraitance ?",
+            "stringValue": "Non, je n'ai pas subi de maltraitance",
+            "values": [
+              "Non, je n'ai pas subi de maltraitance"
+            ]
+          },
+          {
+            "id": "Q2hhbXAtMzczMjB8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Date de début des faits (la date peut être approximative)",
+            "stringValue": "",
+            "date": null
+          },
+          {
+            "id": "Q2hhbXAtMzczMjF8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Cette situation est-elle toujours d'actualité ?",
+            "stringValue": "Oui"
+          },
+          {
+            "id": "Q2hhbXAtMzczMjN8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Expliquez-nous en détail les faits (ce qui est arrivé, qui était présent, ce que vous avez fait,...)",
+            "stringValue": "L'intervenante est assise pendant les heures d'interventions. "
+          },
+          {
+            "id": "Q2hhbXAtMzczMjR8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Si vous les pensez utiles au traitement de votre dossier, vous pouvez ajouter des pièces jointes (3 maximum)",
+            "stringValue": "",
+            "files": []
+          },
+          {
+            "id": "Q2hhbXAtMzcyODF8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Ces faits concernent-ils d'autres responsables ?",
+            "stringValue": "true",
+            "checked": true
+          },
+          {
+            "id": "Q2hhbXAtMzcyODJ8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Précisions sur les autres responsables des faits (types de responsables, nom, prénom...)",
+            "stringValue": "intervenantes"
+          },
+          {
+            "id": "Q2hhbXAtMzczMzl8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Démarches engagées",
+            "stringValue": ""
+          },
+          {
+            "id": "Q2hhbXAtMzczNDB8MDFLNTZZRlFZV1pFOENQWkoyOVBROTdGVkQ=",
+            "label": "Si vous ou la personne concernée avez déjà engagé des démarches pour ces faits (à l'écrit ou à l'oral), cochez la ou les cases correspondantes :",
+            "stringValue": "",
+            "values": []
+          }
+        ]
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc4ODE=",
+        "label": "Complément d'information",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc4ODI=",
+        "label": "Précisions à ajouter",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk3NDM=",
+        "label": "Validation",
+        "stringValue": ""
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3NDQ=",
+        "label": "Je certifie sur l’honneur l’exactitude des renseignements fournis.",
+        "stringValue": "true",
+        "checked": true
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3NDU=",
+        "label": "J'ai pris connaissance que l'administration en charge de ma réclamation procède à un traitement de mes données personnelles pour sa gestion et son suivi.",
+        "stringValue": "true",
+        "checked": true
+      }
+    ]
+  }
+}

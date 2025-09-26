@@ -1,0 +1,518 @@
+{
+  "dossier": {
+    "id": "RG9zc2llci0yNTcyMjg=",
+    "number": 257228,
+    "state": "en_construction",
+    "dateDerniereModification": "2025-09-16T14:41:28+02:00",
+    "dateDepot": "2025-09-16T14:41:28+02:00",
+    "usager": {
+      "email": "valere.pique@sg.social.gouv.fr"
+    },
+    "demandeur": {
+      "__typename": "PersonnePhysique",
+      "nom": "test",
+      "prenom": "test",
+      "civilite": "Mme"
+    },
+    "champs": [
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc2OTY=",
+        "label": "Indications pour remplir ce formulaire",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDQ=",
+        "label": "Identité de la personne concernée",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0ODU=",
+        "label": "Êtes-vous la personne concernée ?",
+        "stringValue": "Oui, je suis la personne concernée"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0ODg=",
+        "label": "Votre numéro de téléphone (à seul usage de l'administration)",
+        "stringValue": "06 12 34 56 78"
+      },
+      {
+        "__typename": "AddressChamp",
+        "id": "Q2hhbXAtMjkzMjA=",
+        "label": "Votre adresse postale",
+        "stringValue": "11 Rue Réaumur 75003 Paris",
+        "address": {
+          "label": "11 Rue Réaumur 75003 Paris",
+          "type": "housenumber",
+          "streetAddress": "11 Rue Réaumur",
+          "streetNumber": "11",
+          "streetName": "Rue Réaumur",
+          "postalCode": "75003",
+          "cityName": "Paris",
+          "cityCode": "75103",
+          "departmentName": "Paris",
+          "departmentCode": "75",
+          "regionName": "Île-de-France",
+          "regionCode": "11"
+        }
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTA=",
+        "label": "Votre âge",
+        "stringValue": "Entre 30 et 59 ans"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNDk=",
+        "label": "Êtes-vous en situation de handicap ?",
+        "stringValue": "Non"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzQyNDc=",
+        "label": "Acceptez-vous que votre identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
+        "stringValue": "Non"
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMjc2MDU=",
+        "label": "D'autres personnes sont-elles concernées par la réclamation ?",
+        "stringValue": "true",
+        "checked": true
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc2MDY=",
+        "label": "Précisions sur les autres personnes concernées :",
+        "stringValue": "tutu"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzcwNDM=",
+        "label": "Les faits",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDE=",
+        "label": "Où se sont passés les faits ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc1MzM=",
+        "label": "Vous souhaitez déclarer des faits survenus dans différents lieux ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgzNjc=",
+        "label": "Code postal du lieu où se sont passés les faits",
+        "stringValue": "Paris 20e Arrondissement (75020)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDU=",
+        "label": "Type de lieu",
+        "stringValue": "Dans un cabinet médical (dentiste, orthopédique, pédiatrie, médecin généraliste...)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc2MDc=",
+        "label": "Précisions sur le lieu de survenue",
+        "stringValue": "il ne m'a pas dit bonjour"
+      },
+      {
+        "__typename": "AddressChamp",
+        "id": "Q2hhbXAtMjcxNjE=",
+        "label": "Adresse concernée",
+        "stringValue": "Rue Réaumur 75002 Paris",
+        "address": {
+          "label": "Rue Réaumur 75002 Paris",
+          "type": "street",
+          "streetAddress": "Rue Réaumur",
+          "streetNumber": null,
+          "streetName": "Rue Réaumur",
+          "postalCode": "75002",
+          "cityName": "Paris",
+          "cityCode": "75102",
+          "departmentName": "Paris",
+          "departmentCode": "75",
+          "regionName": "Île-de-France",
+          "regionCode": "11"
+        }
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MzU=",
+        "label": "Qui est responsable des faits ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgzNjg=",
+        "label": "Responsable des faits",
+        "stringValue": "Professionnel"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MTU=",
+        "label": "Professionnel responsable des faits",
+        "stringValue": "Professionnel de santé (médecin généraliste, spécialiste, dentiste, kinésithérapeute, orthophoniste, infirmier, aide-soignant...)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MTE=",
+        "label": "Nom du professionnel de santé",
+        "stringValue": "10108316497 - MARIANA TUTU - Masseur-Kinésithérapeute - 06600 - Antibes"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc4MTk=",
+        "label": "Précisions sur le responsable des faits",
+        "stringValue": "tutu"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MjQ=",
+        "label": "Que s'est-il passé ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMTk1MjY=",
+        "label": "Type(s) de faits",
+        "stringValue": "Problème lié à la facturation ou aux honoraires, Problème lié aux locaux ou la restauration, Non-respect des droits des usagers dont défaut d’information (ex : non prise en compte de l'expression de besoin de la personne accompagnée, travail illégal...)",
+        "values": [
+          "Problème lié à la facturation ou aux honoraires",
+          "Problème lié aux locaux ou la restauration",
+          "Non-respect des droits des usagers dont défaut d’information (ex : non prise en compte de l'expression de besoin de la personne accompagnée, travail illégal...)"
+        ]
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMjc1NzI=",
+        "label": "Conséquences pour vous ou la personne concernée",
+        "stringValue": "Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...), Sur les droits (impossible de porter plainte, d’être écouté, d’avoir un soutien...), Sur la vie sociale ( isolement, rejet, mise à l’écart, difficulté à aller à l’école, au travail ou à participer à des activités...)",
+        "values": [
+          "Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...)",
+          "Sur les droits (impossible de porter plainte, d’être écouté, d’avoir un soutien...)",
+          "Sur la vie sociale ( isolement, rejet, mise à l’écart, difficulté à aller à l’école, au travail ou à participer à des activités...)"
+        ]
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgxODI=",
+        "label": "Informations sur la maltraitance",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMjcxNTY=",
+        "label": "Avez-vous, ou la personne concernée, subi des actes de maltraitance ?",
+        "stringValue": "Oui, de la maltraitance physique (châtiments corporels, agressions physiques, intervention médicale sans consentement éclairé, enfermement...), Oui, de la négligence, abandon, privation (manque de soins, de nourriture, d'hygiène, de sécurité)",
+        "values": [
+          "Oui, de la maltraitance physique (châtiments corporels, agressions physiques, intervention médicale sans consentement éclairé, enfermement...)",
+          "Oui, de la négligence, abandon, privation (manque de soins, de nourriture, d'hygiène, de sécurité)"
+        ]
+      },
+      {
+        "__typename": "DateChamp",
+        "id": "Q2hhbXAtMTk1Mjc=",
+        "label": "Date de début des faits (la date peut être approximative)",
+        "stringValue": "16 septembre 2025",
+        "date": "2025-09-16"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNTc=",
+        "label": "Cette situation est-elle toujours d'actualité ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1Mjg=",
+        "label": "Expliquez-nous en détail les faits (ce qui est arrivé, qui était présent, ce que vous avez fait,...)",
+        "stringValue": "dawdawdawdawDDawd awdawdawdawda wdawd awdawd"
+      },
+      {
+        "__typename": "PieceJustificativeChamp",
+        "id": "Q2hhbXAtMzcyNTI=",
+        "label": "Si vous les pensez utiles au traitement de votre dossier, vous pouvez ajouter des pièces jointes (3 maximum)",
+        "stringValue": "",
+        "files": [
+          {
+            "__typename": "File",
+            "filename": "Board équipe.png",
+            "contentType": "image/png",
+            "checksum": "zRUBfZn1N9fE3F+lZAUjgw==",
+            "byteSize": "922621",
+            "url": "https://storage-eb4.cegedim.cloud/social-gouv-demat-prod/2025/JK/eJ/JKeJHoZP7FzncsgSbhZnGZMGMESH?response-content-disposition=inline%3B%20filename%3D%22Board%20equipe.png%22%3B%20filename%2A%3DUTF-8%27%27Board%2520%25C3%25A9quipe.png&response-content-type=image%2Fpng&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=wfoz3azpdwpe4jeqjt7y%2F20250926%2Feb4%2Fs3%2Faws4_request&X-Amz-Date=20250926T090242Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=b31351bf546ba8edf1128fcfdfd65f3fe7883d2767ce14eb263b34e0f14dc2e4",
+            "createdAt": "2025-09-16T14:39:12+02:00"
+          },
+          {
+            "__typename": "File",
+            "filename": "adminsitratives.csv",
+            "contentType": "text/csv",
+            "checksum": "g2/k1VbrJz5D11iIcdN+5A==",
+            "byteSize": "712",
+            "url": "https://storage-eb4.cegedim.cloud/social-gouv-demat-prod/2025/em/5H/em5HJz93dPiXQQJqtXS1dh82eaxt?response-content-disposition=attachment%3B%20filename%3D%22adminsitratives.csv%22%3B%20filename%2A%3DUTF-8%27%27adminsitratives.csv&response-content-type=text%2Fcsv&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=wfoz3azpdwpe4jeqjt7y%2F20250926%2Feb4%2Fs3%2Faws4_request&X-Amz-Date=20250926T090242Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=fbf09cad049269d182542ce686d5acc6f98a1518e3418119f4d7d0e4ab80aebe",
+            "createdAt": "2025-09-16T14:39:17+02:00"
+          }
+        ]
+      },
+      {
+        "__typename": "RepetitionChamp",
+        "id": "Q2hhbXAtMzcwNTA=",
+        "label": "Autre responsable",
+        "stringValue": "",
+        "champs": [
+          {
+            "id": "Q2hhbXAtMzcyNjl8MDFLNTk4SlNIWDJQRTIwUkZQS0dHNU5ESjI=",
+            "label": "Qui est responsable des faits ?",
+            "stringValue": ""
+          },
+          {
+            "id": "Q2hhbXAtMzcwNTV8MDFLNTk4SlNIWDJQRTIwUkZQS0dHNU5ESjI=",
+            "label": "Responsable des faits",
+            "stringValue": "Établissement"
+          },
+          {
+            "id": "Q2hhbXAtMzc4MTN8MDFLNTk4SlNIWDJQRTIwUkZQS0dHNU5ESjI=",
+            "label": "L'établissement responsable est-il celui où se sont passés les faits ?",
+            "stringValue": "false",
+            "checked": false
+          },
+          {
+            "id": "Q2hhbXAtMzc4MTd8MDFLNTk4SlNIWDJQRTIwUkZQS0dHNU5ESjI=",
+            "label": "Précisez le nom de l'établissement",
+            "stringValue": "test"
+          },
+          {
+            "id": "Q2hhbXAtMzcxNTh8MDFLNTk4SlNIWDJQRTIwUkZQS0dHNU5ESjI=",
+            "label": "Les faits à déclarer pour ce responsable sont-ils similaires à ceux déclarés pour le précédent ?",
+            "stringValue": "true",
+            "checked": true
+          }
+        ]
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzcyNDg=",
+        "label": "Démarches engagées",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMzcwNDg=",
+        "label": "Si vous ou la personne concernée avez déjà engagé des démarches pour ces faits (à l'écrit ou à l'oral), cochez la ou les cases correspondantes :",
+        "stringValue": "Prise de contact avec l'établissement ou les responsables des faits, Démarches engagées auprès d'autres organismes",
+        "values": [
+          "Prise de contact avec l'établissement ou les responsables des faits",
+          "Démarches engagées auprès d'autres organismes"
+        ]
+      },
+      {
+        "__typename": "DateChamp",
+        "id": "Q2hhbXAtMTk3MzU=",
+        "label": "À quelle date la prise de contact avec l'établissement ou les responsables des faits a-t-elle été effectuée ?",
+        "stringValue": "17 septembre 2025",
+        "date": "2025-09-17"
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3MzY=",
+        "label": "Une réponse a-t-elle été obtenue ?",
+        "stringValue": "false",
+        "checked": false
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjAwMDU=",
+        "label": "Auprès de quel organisme les démarches ont-elles été engagées ?",
+        "stringValue": "dawdawd"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc1MzE=",
+        "label": "Autres faits à déclarer, survenus dans d'autres lieux",
+        "stringValue": ""
+      },
+      {
+        "__typename": "RepetitionChamp",
+        "id": "Q2hhbXAtMzcyNTM=",
+        "label": "Autres faits",
+        "stringValue": "",
+        "champs": [
+          {
+            "id": "Q2hhbXAtMzcyNTR8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Où se sont passés les faits ?",
+            "stringValue": ""
+          },
+          {
+            "id": "Q2hhbXAtMzcyNTd8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Code postal du lieu où se sont passés les faits",
+            "stringValue": "Turny (89570)"
+          },
+          {
+            "id": "Q2hhbXAtMzcyNTZ8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Type de lieu",
+            "stringValue": "Dans un établissement de santé (hôpital, clinique, laboratoire, pharmacie ...)"
+          },
+          {
+            "id": "Q2hhbXAtMzczNTB8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Recherchez l'établissement concerné",
+            "stringValue": "670799006 - ASSOCIATION LA CASE A TOTO - LUTZELHOUSE - 67130"
+          },
+          {
+            "id": "Q2hhbXAtMzcyNjB8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Qui est responsable des faits ?",
+            "stringValue": ""
+          },
+          {
+            "id": "Q2hhbXAtMzcyNTh8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Responsable des faits",
+            "stringValue": "Membre de la famille"
+          },
+          {
+            "id": "Q2hhbXAtMzcyNTl8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Précisions sur le responsable des faits",
+            "stringValue": "teawda"
+          },
+          {
+            "id": "Q2hhbXAtMzcyNjJ8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Que s'est-il passé ?",
+            "stringValue": ""
+          },
+          {
+            "id": "Q2hhbXAtMzcyNjN8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Type(s) de faits",
+            "stringValue": "Problème lié aux locaux ou la restauration, Problème de qualité des soins médicaux ou paramédicaux (ex: soins et/ou interventions inadaptés, absents ou abusifs...)",
+            "values": [
+              "Problème lié aux locaux ou la restauration",
+              "Problème de qualité des soins médicaux ou paramédicaux (ex: soins et/ou interventions inadaptés, absents ou abusifs...)"
+            ]
+          },
+          {
+            "id": "Q2hhbXAtMzczMTd8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Conséquences pour vous ou la personne concernée",
+            "stringValue": "Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...), Sur la vie sociale ( isolement, rejet, mise à l’écart, difficulté à aller à l’école, au travail ou à participer à des activités...)",
+            "values": [
+              "Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...)",
+              "Sur la vie sociale ( isolement, rejet, mise à l’écart, difficulté à aller à l’école, au travail ou à participer à des activités...)"
+            ]
+          },
+          {
+            "id": "Q2hhbXAtMzczMTl8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Avez-vous, ou la personne concernée, subi des actes de maltraitance ?",
+            "stringValue": "Oui, de la maltraitance sexuelle (viols, agressions sexuelles, atteintes sexuelles, attentats à la pudeur...)",
+            "values": [
+              "Oui, de la maltraitance sexuelle (viols, agressions sexuelles, atteintes sexuelles, attentats à la pudeur...)"
+            ]
+          },
+          {
+            "id": "Q2hhbXAtMzczMjB8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Date de début des faits (la date peut être approximative)",
+            "stringValue": "24 septembre 2025",
+            "date": "2025-09-24"
+          },
+          {
+            "id": "Q2hhbXAtMzczMjF8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Cette situation est-elle toujours d'actualité ?",
+            "stringValue": "Oui"
+          },
+          {
+            "id": "Q2hhbXAtMzczMjN8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Expliquez-nous en détail les faits (ce qui est arrivé, qui était présent, ce que vous avez fait,...)",
+            "stringValue": "Expliquez-nous en détail les faits (ce qui est arrivé, qui était présent, ce que vous avez fait,...) \r\n"
+          },
+          {
+            "id": "Q2hhbXAtMzczMjR8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Si vous les pensez utiles au traitement de votre dossier, vous pouvez ajouter des pièces jointes (3 maximum)",
+            "stringValue": "",
+            "files": []
+          },
+          {
+            "id": "Q2hhbXAtMzcyODF8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Ces faits concernent-ils d'autres responsables ?",
+            "stringValue": "false",
+            "checked": false
+          },
+          {
+            "id": "Q2hhbXAtMzczMzl8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Démarches engagées",
+            "stringValue": ""
+          },
+          {
+            "id": "Q2hhbXAtMzczNDB8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Si vous ou la personne concernée avez déjà engagé des démarches pour ces faits (à l'écrit ou à l'oral), cochez la ou les cases correspondantes :",
+            "stringValue": "Prise de contact avec l'établissement ou les responsables des faits, Dépôt de plainte",
+            "values": [
+              "Prise de contact avec l'établissement ou les responsables des faits",
+              "Dépôt de plainte"
+            ]
+          },
+          {
+            "id": "Q2hhbXAtMzczNDF8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "À quelle date la prise de contact avec l'établissement ou les responsables des faits a-t-elle été effectuée ?",
+            "stringValue": "02 octobre 2025",
+            "date": "2025-10-02"
+          },
+          {
+            "id": "Q2hhbXAtMzczNDJ8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Une réponse a-t-elle été obtenue ?",
+            "stringValue": "false",
+            "checked": false
+          },
+          {
+            "id": "Q2hhbXAtMzczNDV8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "À quelle date la plainte a-t-elle été déposée ?",
+            "stringValue": "02 septembre 2025",
+            "date": "2025-09-02"
+          },
+          {
+            "id": "Q2hhbXAtMzczNDZ8MDFLNTk4S1hOSzgwUEZBWkZFVkIwWlA5Nlg=",
+            "label": "Auprès de qui ?",
+            "stringValue": ""
+          }
+        ]
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc4ODE=",
+        "label": "Complément d'information",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc4ODI=",
+        "label": "Précisions à ajouter",
+        "stringValue": "dadawdadadawdawawdaddadw"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk3NDM=",
+        "label": "Validation",
+        "stringValue": ""
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3NDQ=",
+        "label": "Je certifie sur l’honneur l’exactitude des renseignements fournis.",
+        "stringValue": "true",
+        "checked": true
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3NDU=",
+        "label": "J'ai pris connaissance que l'administration en charge de ma réclamation procède à un traitement de mes données personnelles pour sa gestion et son suivi.",
+        "stringValue": "true",
+        "checked": true
+      }
+    ]
+  }
+}

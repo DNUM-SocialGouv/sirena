@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createOrGetFromDematSocial } from '@/features/requetes/requetes.service';
+import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '@/features/requetes/requetes.service';
 import { graffle } from '@/libs/graffle';
 import { getRequetes, importRequetes } from './dematSocial.service';
 
@@ -43,7 +43,8 @@ vi.mock('@/libs/asyncLocalStorage', () => {
 });
 
 vi.mock('@/features/requetes/requetes.service', () => ({
-  createOrGetFromDematSocial: vi.fn(),
+  getRequeteByDematSocialId: vi.fn(),
+  createRequeteFromDematSocial: vi.fn(),
 }));
 
 vi.mock('./dematSocial.adaptater', () => ({
@@ -125,17 +126,35 @@ describe('dematSocial.service.ts', () => {
         },
       });
 
-      vi.mocked(createOrGetFromDematSocial).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+      vi.mocked(getRequeteByDematSocialId)
+        .mockResolvedValueOnce({
+          id: '1',
+          dematSocialId: 101,
+          createdAt: dateDepot,
+          updatedAt: dateDepot,
+          commentaire: '',
+          receptionDate: dateDepot,
+          receptionTypeId: '1',
+        })
+        .mockResolvedValueOnce({
+          id: '2',
+          dematSocialId: 102,
+          createdAt: dateDepot,
+          updatedAt: dateDepot,
+          commentaire: '',
+          receptionDate: dateDepot,
+          receptionTypeId: '1',
+        });
 
       const result = await importRequetes(new Date('2024-01-01'));
 
-      expect(createOrGetFromDematSocial).toHaveBeenCalledTimes(2);
-      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({
+      expect(createRequeteFromDematSocial).toHaveBeenCalledTimes(2);
+      expect(createRequeteFromDematSocial).toHaveBeenCalledWith({
         dematSocialId: 101,
         createdAt: dateDepot,
         entiteIds: undefined,
       });
-      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({
+      expect(createRequeteFromDematSocial).toHaveBeenCalledWith({
         dematSocialId: 101,
         createdAt: dateDepot,
         entiteIds: undefined,
@@ -149,7 +168,7 @@ describe('dematSocial.service.ts', () => {
       });
 
       const result = await importRequetes();
-      expect(createOrGetFromDematSocial).not.toHaveBeenCalled();
+      expect(createRequeteFromDematSocial).not.toHaveBeenCalled();
       expect(result).toEqual({ errorCount: 0, count: 0 });
     });
   });

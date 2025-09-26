@@ -56,6 +56,37 @@ const addressChamp = (mappingIdB64: string): RootChampFragmentFragment => ({
   },
 });
 
+const filesChamp = (
+  mappingId: string,
+  files: Array<{ filename: string; url: string; contentType: string }>,
+): RootChampFragmentFragment => ({
+  __typename: 'PieceJustificativeChamp',
+  label: '',
+  id: toB64(mappingId),
+  files: files.map((f) => ({
+    __typename: 'File',
+    checksum: '',
+    byteSize: 0n,
+    createdAt: new Date().toISOString(),
+    ...f,
+  })),
+});
+
+const repetitionChamp = (mappingId: string, parts: Record<string, Record<string, RootChampFragmentFragment>>) => {
+  const champs = Object.entries(parts).flatMap(([key, byIndex]) =>
+    Object.entries(byIndex).map(([index, champ]) => ({
+      ...champ,
+      id: toB64(`${index}|${key}`),
+    })),
+  );
+  return {
+    __typename: 'RepetitionChamp',
+    label: '',
+    id: toB64(mappingId),
+    champs,
+  };
+};
+
 describe('dematSocial.mapper mapDataForPrisma', () => {
   it('create a dto', () => {
     const estVictimeOui = labelFor(rootMapping.estVictime.options, true);
@@ -66,6 +97,47 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
     const consequencesLbl = firstLabel(rootMapping.consequencesMap.options);
     const maltraitanceLbl = firstLabel(rootMapping.maltraitanceTypesMap.options);
     const demarchesLbl = firstLabel(rootMapping.demarchesEngagees.options);
+
+    const consLbl = firstLabel(rootMapping.autreFaits.champs.consequencesMap.options);
+    const maltLbl = firstLabel(rootMapping.autreFaits.champs.maltraitanceTypesMap.options);
+    const demLbl = firstLabel(rootMapping.autreFaits.champs.demarchesEngagees.options);
+
+    const rep = repetitionChamp(rootMapping.autreFaits.id, {
+      faits: {
+        '0': multiSelectChamp(rootMapping.autreFaits.champs.motifsMap.id, [motifsLbl]),
+        '1': multiSelectChamp(rootMapping.autreFaits.champs.consequencesMap.id, [consLbl]),
+        '2': multiSelectChamp(rootMapping.autreFaits.champs.maltraitanceTypesMap.id, [maltLbl]),
+        '3': dateChamp(rootMapping.autreFaits.champs.dateDebut.id, '2025-03-01'),
+        '4': dateChamp(rootMapping.autreFaits.champs.dateFin.id, null),
+        '5': textChamp(rootMapping.autreFaits.champs.faitsCommentaire.id, 'c1'),
+        '6': filesChamp(rootMapping.autreFaits.champs.faitsFichiers.id, [
+          { filename: 'a.pdf', url: 'u', contentType: 'application/pdf' },
+        ]),
+        '7': multiSelectChamp(rootMapping.autreFaits.champs.demarchesEngagees.id, [demLbl]),
+        '8': dateChamp(rootMapping.autreFaits.champs.demarchesEngageesDateContactEtablissement.id, '2025-03-02'),
+        '9': textChamp(rootMapping.autreFaits.champs.demarchesEngageesEtablissementARepondu.id, 'Non'),
+        '10': textChamp(rootMapping.autreFaits.champs.demarchesEngageesOrganisme.id, 'Org'),
+        '11': dateChamp(rootMapping.autreFaits.champs.demarcheEngageDatePlainte.id, null),
+        '12': textChamp(
+          rootMapping.autreFaits.champs.demarcheEngageAutoriteType.id,
+          firstLabel(rootMapping.autreFaits.champs.demarcheEngageAutoriteType.options),
+        ),
+        '13': textChamp(
+          rootMapping.autreFaits.champs.lieuType.id,
+          firstLabel(rootMapping.autreFaits.champs.lieuType.options),
+        ),
+        '14': textChamp(
+          rootMapping.autreFaits.champs.transportType.id,
+          firstLabel(rootMapping.autreFaits.champs.transportType.options),
+        ),
+      },
+      faits2: {
+        '0': multiSelectChamp(rootMapping.autreFaits.champs.motifsMap.id, [motifsLbl]),
+        '1': multiSelectChamp(rootMapping.autreFaits.champs.consequencesMap.id, [consLbl]),
+        '2': multiSelectChamp(rootMapping.autreFaits.champs.maltraitanceTypesMap.id, [maltLbl]),
+        '3': dateChamp(rootMapping.autreFaits.champs.dateDebut.id, '2025-03-05'),
+      },
+    });
 
     const champs: RootChampFragmentFragment[] = [
       textChamp(rootMapping.estVictime.id, estVictimeOui),
@@ -81,6 +153,8 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
       multiSelectChamp(rootMapping.demarchesEngagees.id, [demarchesLbl]),
       repetitionEmpty(rootMapping.autreFaits.id),
       addressChamp(rootMapping.victimeAdresse.id),
+      // @ts-expect-error
+      rep,
     ];
 
     const demandeur = { nom: 'X', prenom: 'Y', civiliteId: 'M', email: '' } as const;
@@ -112,4 +186,62 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
 
     expect(dto.situations.slice(1)).toHaveLength(0);
   });
+
+  // it('autreFaits via RepetitionChamp: 2 situations additionnelles', () => {
+  //   const motifsLbl = firstLabel(rootMapping.autreFaits.champs.motifsMap.options);
+  //   const consLbl = firstLabel(rootMapping.autreFaits.champs.consequencesMap.options);
+  //   const maltLbl = firstLabel(rootMapping.autreFaits.champs.maltraitanceTypesMap.options);
+  //   const demLbl = firstLabel(rootMapping.autreFaits.champs.demarchesEngagees.options);
+
+  //   const rep = repetitionChamp(rootMapping.autreFaits.id, {
+  //     faits: {
+  //       '0': multiSelectChamp(rootMapping.autreFaits.champs.motifsMap.id, [motifsLbl]),
+  //       '1': multiSelectChamp(rootMapping.autreFaits.champs.consequencesMap.id, [consLbl]),
+  //       '2': multiSelectChamp(rootMapping.autreFaits.champs.maltraitanceTypesMap.id, [maltLbl]),
+  //       '3': dateChamp(rootMapping.autreFaits.champs.dateDebut.id, '2025-03-01'),
+  //       '4': dateChamp(rootMapping.autreFaits.champs.dateFin.id, null),
+  //       '5': textChamp(rootMapping.autreFaits.champs.faitsCommentaire.id, 'c1'),
+  //       '6': filesChamp(rootMapping.autreFaits.champs.faitsFichiers.id, [
+  //         { filename: 'a.pdf', url: 'u', contentType: 'application/pdf' },
+  //       ]),
+  //       '7': multiSelectChamp(rootMapping.autreFaits.champs.demarchesEngagees.id, [demLbl]),
+  //       '8': dateChamp(rootMapping.autreFaits.champs.demarchesEngageesDateContactEtablissement.id, '2025-03-02'),
+  //       '9': textChamp(rootMapping.autreFaits.champs.demarchesEngageesEtablissementARepondu.id, 'Non'),
+  //       '10': textChamp(rootMapping.autreFaits.champs.demarchesEngageesOrganisme.id, 'Org'),
+  //       '11': dateChamp(rootMapping.autreFaits.champs.demarcheEngageDatePlainte.id, null),
+  //       '12': textChamp(
+  //         rootMapping.autreFaits.champs.demarcheEngageAutoriteType.id,
+  //         firstLabel(rootMapping.autreFaits.champs.demarcheEngageAutoriteType.options),
+  //       ),
+  //       '13': textChamp(
+  //         rootMapping.autreFaits.champs.lieuType.id,
+  //         firstLabel(rootMapping.autreFaits.champs.lieuType.options),
+  //       ),
+  //       '14': textChamp(
+  //         rootMapping.autreFaits.champs.transportType.id,
+  //         firstLabel(rootMapping.autreFaits.champs.transportType.options),
+  //       ),
+  //     },
+  //     faits2: {
+  //       '0': multiSelectChamp(rootMapping.autreFaits.champs.motifsMap.id, [motifsLbl]),
+  //       '1': multiSelectChamp(rootMapping.autreFaits.champs.consequencesMap.id, [consLbl]),
+  //       '2': multiSelectChamp(rootMapping.autreFaits.champs.maltraitanceTypesMap.id, [maltLbl]),
+  //       '3': dateChamp(rootMapping.autreFaits.champs.dateDebut.id, '2025-03-05'),
+  //     },
+  //   });
+  //   const base: RootChampFragmentFragment[] = [
+  //     textChamp(rootMapping.estVictime.id, labelFor(rootMapping.estVictime.options, true)),
+  //     multiSelectChamp(rootMapping.motifsMap.id, [firstLabel(rootMapping.motifsMap.options)]),
+  //     multiSelectChamp(rootMapping.consequencesMap.id, [firstLabel(rootMapping.consequencesMap.options)]),
+  //     multiSelectChamp(rootMapping.maltraitanceTypesMap.id, [firstLabel(rootMapping.maltraitanceTypesMap.options)]),
+  //     dateChamp(rootMapping.dateDebut.id, '2025-01-01'),
+  //     // @ts-expect-error
+  //     rep,
+  //   ];
+
+  //   const dto = mapDataForPrisma(base, 1, '2025-01-02', { nom: 'N', prenom: 'P', civiliteId: 'M', email: '' });
+  //   expect(dto.situations.length).toBe(1 + 2);
+  //   expect(dto.situations[1].faits[0].commentaire).toBe('c1');
+  //   expect(dto.situations[1].faits[0].files?.[0]?.name).toBe('a.pdf');
+  // });
 });

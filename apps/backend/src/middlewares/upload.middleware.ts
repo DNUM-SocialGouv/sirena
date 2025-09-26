@@ -4,62 +4,9 @@ import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
 import { API_ERROR_CODES } from '@sirena/common/constants';
 import { fileTypeFromBuffer } from 'file-type';
 import { file as tmpAsync } from 'tmp-promise';
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '@/config/files.constant';
 import factoryWithUploadedFile from '@/helpers/factories/appWithUploadedFile';
-
-const ALLOWED_MIME_TYPES = [
-  // PDF
-  'application/pdf',
-
-  // EML
-  'message/rfc822',
-
-  // Word
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-
-  // Excel
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-
-  // PowerPoint
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-
-  // OpenOffice / LibreOffice
-  'application/vnd.oasis.opendocument.text',
-  'application/vnd.oasis.opendocument.spreadsheet',
-  'application/vnd.oasis.opendocument.presentation',
-
-  // Outlook MSG
-  'application/vnd.ms-outlook',
-  'application/x-cfb',
-
-  // CSV / TXT
-  'text/csv',
-  'text/plain',
-
-  // Images
-  'image/jpeg',
-  'image/png',
-  'image/heic',
-  'image/heif',
-  'image/webp',
-  'image/tiff',
-];
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
-export const sanitizeFilename = (originalName: string, detectedExtension: string): string => {
-  const nameWithoutExt = originalName.replace(/\.[^/.]+$/, '');
-
-  const sanitizedName = nameWithoutExt
-    .replace(/[^a-zA-Z0-9\s\-_]/g, '')
-    .replace(/\s+/g, '_')
-    .replace(/_+/g, '_')
-    .trim();
-
-  return `${sanitizedName}.${detectedExtension}`;
-};
+import { sanitizeFilename } from '@/helpers/file';
 
 /**
  * @description Extracts the uploaded file from the request body and sets it in the context. You must delete the temp file in the controller.

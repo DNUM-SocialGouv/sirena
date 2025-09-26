@@ -1,0 +1,280 @@
+{
+  "dossier": {
+    "id": "RG9zc2llci0yNTg3MDM=",
+    "number": 258703,
+    "state": "en_construction",
+    "dateDerniereModification": "2025-09-24T17:05:09+02:00",
+    "dateDepot": "2025-09-24T17:05:09+02:00",
+    "usager": {
+      "email": "delphine.delavenne@sg.social.gouv.fr"
+    },
+    "demandeur": {
+      "__typename": "PersonnePhysique",
+      "nom": "MacLane",
+      "prenom": "John",
+      "civilite": "M"
+    },
+    "champs": [
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc2OTY=",
+        "label": "Indications pour remplir ce formulaire",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDQ=",
+        "label": "Identité de la personne concernée",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0ODU=",
+        "label": "Êtes-vous la personne concernée ?",
+        "stringValue": "Oui, je suis la personne concernée"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0ODg=",
+        "label": "Votre numéro de téléphone (à seul usage de l'administration)",
+        "stringValue": ""
+      },
+      {
+        "__typename": "AddressChamp",
+        "id": "Q2hhbXAtMjkzMjA=",
+        "label": "Votre adresse postale",
+        "stringValue": "45 Rue de la Mare 75020 Paris",
+        "address": {
+          "label": "45 Rue de la Mare 75020 Paris",
+          "type": "housenumber",
+          "streetAddress": "45 Rue de la Mare",
+          "streetNumber": "45",
+          "streetName": "Rue de la Mare",
+          "postalCode": "75020",
+          "cityName": "Paris",
+          "cityCode": "75120",
+          "departmentName": "Paris",
+          "departmentCode": "75",
+          "regionName": "Île-de-France",
+          "regionCode": "11"
+        }
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk0OTA=",
+        "label": "Votre âge",
+        "stringValue": "80 ans et plus"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNDk=",
+        "label": "Êtes-vous en situation de handicap ?",
+        "stringValue": "Non"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzQyNDc=",
+        "label": "Acceptez-vous que votre identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMjc2MDU=",
+        "label": "D'autres personnes sont-elles concernées par la réclamation ?",
+        "stringValue": "false",
+        "checked": false
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzcwNDM=",
+        "label": "Les faits",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDE=",
+        "label": "Où se sont passés les faits ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc1MzM=",
+        "label": "Vous souhaitez déclarer des faits survenus dans différents lieux ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgzNjc=",
+        "label": "Code postal du lieu où se sont passés les faits",
+        "stringValue": "Paris 20e Arrondissement (75020)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDU=",
+        "label": "Type de lieu",
+        "stringValue": "Dans un établissement de santé (hôpital, clinique, laboratoire, pharmacie ...)"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MDg=",
+        "label": "Recherchez l'établissement concerné",
+        "stringValue": "750301160 - CLINIQUE MAUSSINS NOLLET - PARIS - 75019"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MzU=",
+        "label": "Qui est responsable des faits ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgzNjg=",
+        "label": "Responsable des faits",
+        "stringValue": "Établissement"
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMzc4MTE=",
+        "label": "L'établissement responsable est-il celui où se sont passés les faits ?",
+        "stringValue": "true",
+        "checked": true
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1MjQ=",
+        "label": "Que s'est-il passé ?",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMTk1MjY=",
+        "label": "Type(s) de faits",
+        "stringValue": "Problème lié à la facturation ou aux honoraires",
+        "values": [
+          "Problème lié à la facturation ou aux honoraires"
+        ]
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMjc1NzI=",
+        "label": "Conséquences pour vous ou la personne concernée",
+        "stringValue": "Autre conséquence",
+        "values": [
+          "Autre conséquence"
+        ]
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc1MjY=",
+        "label": "Précisez \"Autre conséquence\"",
+        "stringValue": "Plouf"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjgxODI=",
+        "label": "Informations sur la maltraitance",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMjcxNTY=",
+        "label": "Avez-vous, ou la personne concernée, subi des actes de maltraitance ?",
+        "stringValue": "Non, je n'ai pas subi de maltraitance",
+        "values": [
+          "Non, je n'ai pas subi de maltraitance"
+        ]
+      },
+      {
+        "__typename": "DateChamp",
+        "id": "Q2hhbXAtMTk1Mjc=",
+        "label": "Date de début des faits (la date peut être approximative)",
+        "stringValue": "",
+        "date": null
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjcxNTc=",
+        "label": "Cette situation est-elle toujours d'actualité ?",
+        "stringValue": "Oui"
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk1Mjg=",
+        "label": "Expliquez-nous en détail les faits (ce qui est arrivé, qui était présent, ce que vous avez fait,...)",
+        "stringValue": "Blablabla"
+      },
+      {
+        "__typename": "PieceJustificativeChamp",
+        "id": "Q2hhbXAtMzcyNTI=",
+        "label": "Si vous les pensez utiles au traitement de votre dossier, vous pouvez ajouter des pièces jointes (3 maximum)",
+        "stringValue": "",
+        "files": []
+      },
+      {
+        "__typename": "RepetitionChamp",
+        "id": "Q2hhbXAtMzcwNTA=",
+        "label": "Autre responsable",
+        "stringValue": "",
+        "champs": []
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzcyNDg=",
+        "label": "Démarches engagées",
+        "stringValue": ""
+      },
+      {
+        "__typename": "MultipleDropDownListChamp",
+        "id": "Q2hhbXAtMzcwNDg=",
+        "label": "Si vous ou la personne concernée avez déjà engagé des démarches pour ces faits (à l'écrit ou à l'oral), cochez la ou les cases correspondantes :",
+        "stringValue": "",
+        "values": []
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMzc1MzE=",
+        "label": "Autres faits à déclarer, survenus dans d'autres lieux",
+        "stringValue": ""
+      },
+      {
+        "__typename": "RepetitionChamp",
+        "id": "Q2hhbXAtMzcyNTM=",
+        "label": "Autres faits",
+        "stringValue": "",
+        "champs": []
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc4ODE=",
+        "label": "Complément d'information",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMjc4ODI=",
+        "label": "Précisions à ajouter",
+        "stringValue": ""
+      },
+      {
+        "__typename": "TextChamp",
+        "id": "Q2hhbXAtMTk3NDM=",
+        "label": "Validation",
+        "stringValue": ""
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3NDQ=",
+        "label": "Je certifie sur l’honneur l’exactitude des renseignements fournis.",
+        "stringValue": "true",
+        "checked": true
+      },
+      {
+        "__typename": "CheckboxChamp",
+        "id": "Q2hhbXAtMTk3NDU=",
+        "label": "J'ai pris connaissance que l'administration en charge de ma réclamation procède à un traitement de mes données personnelles pour sa gestion et son suivi.",
+        "stringValue": "true",
+        "checked": true
+      }
+    ]
+  }
+}

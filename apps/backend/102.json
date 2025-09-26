@@ -1,0 +1,11 @@
+{
+  "dossier": {
+    "demandeur": {
+      "__typename": "PersonneMorale"
+    },
+    "usager": {
+      "email": "test@test.fr"
+    },
+    "champs": []
+  }
+}
