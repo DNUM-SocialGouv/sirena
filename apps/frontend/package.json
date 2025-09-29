@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "@playwright/test": "^1.55.0",
+    "@playwright/test": "^1.55.1",
     "@sentry/vite-plugin": "^3.6.1",
     "tsx": "catalog:",
     "@tanstack/react-router-devtools": "^1.131.50",
