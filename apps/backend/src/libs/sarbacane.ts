@@ -162,17 +162,15 @@ async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Prom
   });
 
   if (!response.ok) {
-    const errorData: SarbacaneError = await response.json().catch(() => ({
-      message: `HTTP ${response.status}: ${response.statusText}`,
-    }));
-    throw new Error(errorData.message);
+    const errorData = (await response.json().catch(() => null)) as Partial<SarbacaneError> | null;
+    throw new Error(errorData?.message ?? `HTTP ${response.status}: ${response.statusText}`);
   }
 
   if (response.status === 204) {
     return {} as T;
   }
 
-  return response.json();
+  return response.json() as T;
 }
 
 // ============================================================================
