@@ -116,7 +116,7 @@ importers:
         version: 0.4.8(@hono/zod-validator@0.7.3(hono@4.9.1)(zod@3.25.76))(effect@3.16.12)(hono@4.9.1)(openapi-types@12.1.3)(zod-openapi@4.2.4(zod@3.25.76))(zod@3.25.76)
       hono-pino:
         specifier: ^0.10.2
-        version: 0.10.2(hono@4.9.1)(pino@9.11.0)
+        version: 0.10.2(hono@4.9.1)(pino@9.12.0)
       html-to-text:
         specifier: ^9.0.5
         version: 9.0.5
@@ -137,7 +137,7 @@ importers:
         version: 6.8.0
       pino:
         specifier: ^9.11.0
-        version: 9.11.0
+        version: 9.12.0
       pino-pretty:
         specifier: ^13.1.1
         version: 13.1.1
@@ -1171,6 +1171,7 @@ packages:
   '@graphql-tools/prisma-loader@8.0.17':
     resolution: {integrity: sha512-fnuTLeQhqRbA156pAyzJYN0KxCjKYRU5bz1q/SKOwElSnAU4k7/G1kyVsWLh7fneY78LoMNH5n+KlFV8iQlnyg==}
     engines: {node: '>=16.0.0'}
+    deprecated: 'This package was intended to be used with an older versions of Prisma.\nThe newer versions of Prisma has a different approach to GraphQL integration.\nTherefore, this package is no longer needed and has been deprecated and removed.\nLearn more: https://www.prisma.io/graphql'
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
 
@@ -2898,10 +2899,6 @@ packages:
     resolution: {integrity: sha512-7MptL8U0cqcFdzIzwOTHoilX9x5BrNqye7Z/LuC7kCMRio1EMSyqRK3BEAUD7sXRq4iT4AzTVuZdhgQ2TCvYLg==}
     engines: {node: '>=8.6.0'}
 
-  fast-redact@3.5.0:
-    resolution: {integrity: sha512-dwsoQlS7h9hMeYUq1W++23NDcBLV4KqONnITDV9DjfS3q1SgDGVrBdvvTLUotWtPSD7asWDV9/CmsZPy8Hf70A==}
-    engines: {node: '>=6'}
-
   fast-safe-stringify@2.1.1:
     resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
 
@@ -4009,8 +4006,8 @@ packages:
   pino-std-serializers@7.0.0:
     resolution: {integrity: sha512-e906FRY0+tV27iq4juKzSYPbUj2do2X2JX4EzSca1631EB2QJQUqGbDuERal7LCtOpxl6x3+nvo9NPZcmjkiFA==}
 
-  pino@9.11.0:
-    resolution: {integrity: sha512-+YIodBB9sxcWeR8PrXC2K3gEDyfkUuVEITOcbqrfcj+z5QW4ioIcqZfYFbrLTYLsmAwunbS7nfU/dpBB6PZc1g==}
+  pino@9.12.0:
+    resolution: {integrity: sha512-0Gd0OezGvqtqMwgYxpL7P0pSHHzTJ0Lx992h+mNlMtRVfNnqweWmf0JmRWk5gJzHalyd2mxTzKjhiNbGS2Ztfw==}
     hasBin: true
 
   pkg-types@2.2.0:
@@ -4308,6 +4305,12 @@ packages:
     peerDependencies:
       seroval: ^1.0
 
+  seroval-plugins@1.3.3:
+    resolution: {integrity: sha512-16OL3NnUBw8JG1jBLUoZJsLnQq0n5Ua6aHalhJK4fMQkz1lqR7Osz1sA30trBtd9VUDc2NgkuRCn8+/pBwqZ+w==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      seroval: ^1.0
+
   seroval@1.3.2:
     resolution: {integrity: sha512-RbcPH1n5cfwKrru7v7+zrZvjLurgHhGyso3HTyGtRivGWgYjbOmGuivCQaORNELjNONoK35nj28EoWul9sb1zQ==}
     engines: {node: '>=10'}
@@ -4365,6 +4368,9 @@ packages:
 
   slick@1.12.2:
     resolution: {integrity: sha512-4qdtOGcBjral6YIBCWJ0ljFSKNLz9KkhbWtuGvUyRowl1kxfuE1x/Z/aJcaiilpb3do9bl5K7/1h9XC5wWpY/A==}
+
+  slow-redact@0.3.0:
+    resolution: {integrity: sha512-cf723wn9JeRIYP9tdtd86GuqoR5937u64Io+CYjlm2i7jvu7g0H+Cp0l0ShAf/4ZL+ISUTVT+8Qzz7RZmp9FjA==}
 
   snake-case@3.0.4:
     resolution: {integrity: sha512-LAOh4z89bGQvl9pFfNF8V146i7o7/CqFPbqzYgP+yYzDIDeS9HaNFtXABamRW+AQzEVODcvE79ljJ+8a9YSdMg==}
@@ -7983,8 +7989,6 @@ snapshots:
       merge2: 1.4.1
       micromatch: 4.0.8
 
-  fast-redact@3.5.0: {}
-
   fast-safe-stringify@2.1.1: {}
 
   fast-uri@3.0.6: {}
@@ -8272,11 +8276,11 @@ snapshots:
       zod: 3.25.76
       zod-openapi: 4.2.4(zod@3.25.76)
 
-  hono-pino@0.10.2(hono@4.9.1)(pino@9.11.0):
+  hono-pino@0.10.2(hono@4.9.1)(pino@9.12.0):
     dependencies:
       defu: 6.1.4
       hono: 4.9.1
-      pino: 9.11.0
+      pino: 9.12.0
 
   hono@4.9.1: {}
 
@@ -9098,10 +9102,9 @@ snapshots:
 
   pino-std-serializers@7.0.0: {}
 
-  pino@9.11.0:
+  pino@9.12.0:
     dependencies:
       atomic-sleep: 1.0.0
-      fast-redact: 3.5.0
       on-exit-leak-free: 2.1.2
       pino-abstract-transport: 2.0.0
       pino-std-serializers: 7.0.0
@@ -9109,6 +9112,7 @@ snapshots:
       quick-format-unescaped: 4.0.4
       real-require: 0.2.0
       safe-stable-stringify: 2.5.0
+      slow-redact: 0.3.0
       sonic-boom: 4.2.0
       thread-stream: 3.1.0
 
@@ -9411,6 +9415,10 @@ snapshots:
     dependencies:
       seroval: 1.3.2
 
+  seroval-plugins@1.3.3(seroval@1.3.2):
+    dependencies:
+      seroval: 1.3.2
+
   seroval@1.3.2: {}
 
   set-function-length@1.2.2:
@@ -9464,6 +9472,8 @@ snapshots:
 
   slick@1.12.2: {}
 
+  slow-redact@0.3.0: {}
+
   snake-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
@@ -9473,7 +9483,7 @@ snapshots:
     dependencies:
       csstype: 3.1.3
       seroval: 1.3.2
-      seroval-plugins: 1.3.2(seroval@1.3.2)
+      seroval-plugins: 1.3.3(seroval@1.3.2)
 
   sonic-boom@4.2.0:
     dependencies:
