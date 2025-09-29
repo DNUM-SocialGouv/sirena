@@ -50,7 +50,7 @@
     "@sentry/node": "^9.46.0",
     "@sirena/backend-utils": "workspace:*",
     "@sirena/common": "workspace:*",
-    "graffle": "8.0.0-next.168",
+    "graffle": "8.0.0-next.173",
     "file-type": "^21.0.0",
     "bullmq": "^5.58.7",
     "graphql": "^16.11.0",
