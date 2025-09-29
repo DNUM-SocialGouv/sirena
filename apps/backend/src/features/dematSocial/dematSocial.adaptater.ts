@@ -74,6 +74,21 @@ const getDateByChamps = (champ: RootChampFragmentFragment | RepetitionChamp) => 
   throw new ChampMappingError(champ, 'date', `Invalid date value: ${champ?.date}`);
 };
 
+const getFilesByChamps = (champ: RootChampFragmentFragment | RepetitionChamp) => {
+  if (!champ) {
+    return [];
+  }
+  if ('files' in champ === false) {
+    throw new ChampMappingError(champ, 'FileChamp', 'Invalid mapping value');
+  }
+  return champ.files.map((file) => ({
+    name: file.filename,
+    url: file.url,
+    size: file.byteSize,
+    mimeType: file.contentType,
+  }));
+};
+
 const createAddress = (champ: RootChampFragmentFragment | RepetitionChamp) => {
   if (
     champ.__typename === 'AddressChamp' &&
@@ -123,6 +138,7 @@ const getDemarchesEngagees = (
     etablissementARepondu: getBooleanOrNull(champsById[mapping.demarchesEngageesEtablissementARepondu.id]) || false,
     organisme: champsById[mapping.demarchesEngageesOrganisme.id]?.stringValue ?? '',
     datePlainte: getDateByChamps(champsById[mapping.demarcheEngageDatePlainte.id]),
+    files: getFilesByChamps(champsById[mapping.demarchesEngageesReponseFile.id]),
     autoriteTypeId: getEnumIdFromLabel(
       mapping.demarcheEngageAutoriteType.options,
       champsById[mapping.demarcheEngageAutoriteType.id]?.stringValue ?? null,
@@ -180,6 +196,7 @@ const getFait = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mappi
     dateDebut: getDateByChamps(champsById[mapping.dateDebut.id]),
     dateFin: getDateByChamps(champsById[mapping.dateFin.id]),
     commentaire: champsById[mapping.faitsCommentaire.id]?.stringValue ?? null,
+    files: getFilesByChamps(champsById[mapping.faitsFichiers.id]),
   };
   return fait;
 };

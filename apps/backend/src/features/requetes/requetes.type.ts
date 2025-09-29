@@ -1,20 +1,13 @@
-export type CreateRequeteFromDematSocialMinimalDto = {
-  dematSocialId: number;
-  createdAt: Date;
-  entiteIds?: string[];
-  receptionTypeId?: string;
-  receptionDate?: Date;
-  commentaire?: string;
-};
+export type ElementLinked =
+  | { demarchesEngageesId: string; faitSituationId?: never }
+  | { faitSituationId: string; demarchesEngageesId?: never };
 
-// export type CreateRequeteFromDematSocialDto = {
-//   dematSocialId: number;
-//   createdAt: Date;
-//   entiteIds: string[];
-//   receptionTypeId: string;
-//   receptionDate: Date;
-//   commentaire: string;
-// };
+export type File = {
+  name: string;
+  url: string;
+  size: bigint;
+  mimeType: string;
+};
 
 type Declarant = {
   nom: string;
@@ -82,6 +75,7 @@ type DemarchesEngagees = {
   etablissementARepondu: boolean;
   organisme: string;
   datePlainte: Date | null;
+  files: File[];
   autoriteTypeId: string | null;
 };
 
@@ -92,6 +86,7 @@ type Fait = {
   dateDebut: Date | null;
   dateFin: Date | null;
   commentaire: string | null;
+  files: File[];
 };
 
 type Situation = {

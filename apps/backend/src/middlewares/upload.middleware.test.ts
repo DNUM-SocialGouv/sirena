@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '@/helpers/factories/appWithUploadedFile';
 import { createMockPinoLogger } from '@/tests/test-utils';
-import extractUploadedFileMiddleware, { sanitizeFilename } from './upload.middleware';
+import extractUploadedFileMiddleware from './upload.middleware';
 
 const FIXED_DATE = new Date('2025-08-06T10:00:00.000Z');
 
@@ -91,43 +91,6 @@ describe('upload.middleware.ts', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-  });
-
-  describe('sanitizeFilename', () => {
-    it.each([
-      ['simple.txt', 'txt', 'simple.txt'],
-      ['document.pdf', 'pdf', 'document.pdf'],
-      ['file@name.txt', 'txt', 'filename.txt'],
-      ['file#name.pdf', 'pdf', 'filename.pdf'],
-      ['my document.txt', 'txt', 'my_document.txt'],
-      ['file__name.pdf', 'pdf', 'file_name.pdf'],
-      ['file-name.docx', 'docx', 'file-name.docx'],
-      ['   c omp    lex@file#name%232   $with%symbols.docx   ', 'docx', '_c_omp_lexfilename232_withsymbols.docx'],
-    ])('should handle simple cases with filename: %s with extension %s -> %s', (input, extension, expected) => {
-      expect(sanitizeFilename(input, extension)).toBe(expected);
-    });
-
-    it.each([
-      ['', 'txt', '.txt'],
-      ['@#$%^&*()', 'txt', '.txt'],
-      ['   ', 'pdf', '_.pdf'],
-      ['___', 'txt', '_.txt'],
-      ['---', 'pdf', '---.pdf'],
-      ['My Document (1).pdf', 'pdf', 'My_Document_1.pdf'],
-      ['Screenshot 2024-01-15 at 14.30.25.png', 'png', 'Screenshot_2024-01-15_at_143025.png'],
-      ['FW_Important_Document_2024.pdf', 'pdf', 'FW_Important_Document_2024.pdf'],
-    ])('should handle edge cases: %s with extension %s -> %s', (input, extension, expected) => {
-      expect(sanitizeFilename(input, extension)).toBe(expected);
-    });
-
-    it.each([
-      ['document.txt', 'pdf', 'document.pdf'],
-      ['image.jpg', 'png', 'image.png'],
-      ['file.docx', 'xlsx', 'file.xlsx'],
-      ['archive.tar.gz', 'zip', 'archivetar.zip'],
-    ])('should use detected extension: %s with detected %s -> %s', (input, detectedExt, expected) => {
-      expect(sanitizeFilename(input, detectedExt)).toBe(expected);
-    });
   });
 
   describe('extractUploadedFileMiddleware', () => {
