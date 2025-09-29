@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createOrGetFromDematSocial } from '@/features/requetes/requetes.service';
+import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '@/features/requetes/requetes.service';
 import { graffle } from '@/libs/graffle';
 import { getRequetes, importRequetes } from './dematSocial.service';
 
@@ -43,7 +43,8 @@ vi.mock('@/libs/asyncLocalStorage', () => {
 });
 
 vi.mock('@/features/requetes/requetes.service', () => ({
-  createOrGetFromDematSocial: vi.fn(),
+  getRequeteByDematSocialId: vi.fn(),
+  createRequeteFromDematSocial: vi.fn(),
 }));
 
 vi.mock('./dematSocial.adaptater', () => ({
@@ -89,7 +90,7 @@ describe('dematSocial.service.ts', () => {
   describe('importRequetes()', () => {
     it('should call createRequeteFromDematSocial for each dossier number', async () => {
       const dateDepot = new Date('2024-01-01');
-      // getRequetes
+
       sendMock.mockResolvedValueOnce({
         demarche: {
           dossiers: {
@@ -107,7 +108,6 @@ describe('dematSocial.service.ts', () => {
         },
       });
 
-      // getRequete
       sendMock.mockResolvedValueOnce({
         dossier: {
           demandeur: { __typename: 'PersonnePhysique', civilite: 'M', nom: 'test', prenom: 'test' },
@@ -115,8 +115,6 @@ describe('dematSocial.service.ts', () => {
           champs: [],
         },
       });
-
-      // getRequete
       sendMock.mockResolvedValueOnce({
         dossier: {
           demandeur: { __typename: 'PersonneMorale' },
@@ -125,22 +123,70 @@ describe('dematSocial.service.ts', () => {
         },
       });
 
-      vi.mocked(createOrGetFromDematSocial).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+      vi.mocked(getRequeteByDematSocialId).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
 
       const result = await importRequetes(new Date('2024-01-01'));
 
-      expect(createOrGetFromDematSocial).toHaveBeenCalledTimes(2);
-      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({
+      expect(createRequeteFromDematSocial).toHaveBeenCalledTimes(2);
+      expect(createRequeteFromDematSocial).toHaveBeenCalledWith({
         dematSocialId: 101,
         createdAt: dateDepot,
         entiteIds: undefined,
       });
-      expect(createOrGetFromDematSocial).toHaveBeenCalledWith({
+      expect(createRequeteFromDematSocial).toHaveBeenCalledWith({
         dematSocialId: 101,
         createdAt: dateDepot,
         entiteIds: undefined,
       });
       expect(result).toEqual({ count: 2, errorCount: 0 });
+    });
+
+    describe('importRequetes()', () => {
+      it('should continue if dossier already exists', async () => {
+        const dateDepot = new Date('2024-01-01');
+        // getRequetes
+        sendMock.mockResolvedValueOnce({
+          demarche: {
+            dossiers: {
+              nodes: [
+                {
+                  number: 101,
+                  dateDepot,
+                },
+                {
+                  number: 102,
+                  dateDepot,
+                },
+              ],
+            },
+          },
+        });
+
+        vi.mocked(getRequeteByDematSocialId)
+          .mockResolvedValueOnce({
+            id: '1',
+            dematSocialId: 101,
+            createdAt: dateDepot,
+            updatedAt: dateDepot,
+            commentaire: '',
+            receptionDate: dateDepot,
+            receptionTypeId: '1',
+          })
+          .mockResolvedValueOnce({
+            id: '2',
+            dematSocialId: 102,
+            createdAt: dateDepot,
+            updatedAt: dateDepot,
+            commentaire: '',
+            receptionDate: dateDepot,
+            receptionTypeId: '1',
+          });
+
+        const result = await importRequetes(new Date('2024-01-01'));
+
+        expect(createRequeteFromDematSocial).toHaveBeenCalledTimes(0);
+        expect(result).toEqual({ count: 0, errorCount: 0 });
+      });
     });
 
     it('should do nothing if no dossiers returned', async () => {
@@ -149,7 +195,7 @@ describe('dematSocial.service.ts', () => {
       });
 
       const result = await importRequetes();
-      expect(createOrGetFromDematSocial).not.toHaveBeenCalled();
+      expect(createRequeteFromDematSocial).not.toHaveBeenCalled();
       expect(result).toEqual({ errorCount: 0, count: 0 });
     });
   });
