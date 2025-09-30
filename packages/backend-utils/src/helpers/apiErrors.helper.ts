@@ -14,6 +14,7 @@ const MESSAGES = {
   UNAUTHORIZED: 'Unauthorized',
   FORBIDDEN: 'Forbidden',
   NOT_FOUND: 'Not found',
+  CONFLICT: 'Conflict',
   ZOD_ERROR: 'Zod error',
   SERVICE_NOT_AVAILABLE: 'Service not available',
 };
@@ -65,6 +66,12 @@ export const throwHTTPException403Forbidden = (msg = MESSAGES.FORBIDDEN, options
 
 export const throwHTTPException404NotFound = (msg = MESSAGES.NOT_FOUND, options?: ErrorOptions) => {
   const status = 404;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
+};
+
+export const throwHTTPException409Conflict = (msg = MESSAGES.CONFLICT, options?: ErrorOptions) => {
+  const status = 409;
   const params = getParamsOptions(status, msg, options);
   throw new HTTPException(status, params);
 };
@@ -127,6 +134,15 @@ export const openApi403Forbidden = (description = MESSAGES.FORBIDDEN) => ({
 });
 export const openApi404NotFound = (description = MESSAGES.NOT_FOUND) => ({
   404: {
+    description,
+    content: {
+      'application/json': { schema: apiErrorResolver() },
+    },
+  },
+});
+
+export const openApi409Conflict = (description = MESSAGES.CONFLICT) => ({
+  409: {
     description,
     content: {
       'application/json': { schema: apiErrorResolver() },

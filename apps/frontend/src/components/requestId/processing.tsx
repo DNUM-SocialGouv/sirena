@@ -1,5 +1,5 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { CreateStep } from '@/components/requestId/processing/createStep';
@@ -11,24 +11,28 @@ import { EditNoteDrawer, type EditNoteDrawerRef } from './processing/EditNoteDra
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
-export const Processing = () => {
-  const { requestId } = useParams({ from: '/_auth/_user/request/$requestId' });
+interface ProcessingProps {
+  requestId?: string;
+}
+
+export const Processing = ({ requestId }: ProcessingProps = {}) => {
   const navigate = useNavigate();
 
   const [isAddingStep, setIsAddingStep] = useState(false);
   const createNoteDrawerRef = useRef<CreateNoteDrawerRef>(null);
   const editNoteDrawerRef = useRef<EditNoteDrawerRef>(null);
-  const queryProcessingSteps = useProcessingSteps(requestId);
+  const queryProcessingSteps = useProcessingSteps(requestId || '');
 
   useEffect(() => {
     if (
+      requestId &&
       queryProcessingSteps.error &&
       'status' in queryProcessingSteps.error &&
       queryProcessingSteps.error.status === 404
     ) {
       navigate({ to: '/home' });
     }
-  }, [queryProcessingSteps.error, navigate]);
+  }, [queryProcessingSteps.error, navigate, requestId]);
 
   const handleOpenEdit = (step: StepType) => {
     if (createNoteDrawerRef.current) {
@@ -53,6 +57,29 @@ export const Processing = () => {
       editNoteDrawerRef.current.openDrawer(step, noteData);
     }
   };
+
+  if (!requestId) {
+    return (
+      <div>
+        <div className="fr-container--fluid">
+          <div className="fr-grid-row fr-grid-row--gutters">
+            <div className="fr-col">
+              <div className="fr-mb-4w">
+                <div className="fr-grid-row fr-grid-row--middle fr-mb-3w">
+                  <div className="fr-col">
+                    <h2 className="fr-mb-0">Étapes du traitement</h2>
+                  </div>
+                </div>
+                <p className="fr-text--sm fr-text--grey">
+                  Les étapes de traitement seront disponibles après la création de la requête.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -79,13 +106,14 @@ export const Processing = () => {
               <div className={styles['timeline-container']}>
                 <div className={styles['timeline-line']} />
 
-                <CreateStep isAddingStep={isAddingStep} setIsAddingStep={setIsAddingStep} />
+                <CreateStep requestId={requestId} isAddingStep={isAddingStep} setIsAddingStep={setIsAddingStep} />
 
                 <QueryStateHandler query={queryProcessingSteps}>
                   {({ data }) =>
                     data.data.map((step, index) => (
                       <Step
                         key={step.id}
+                        requestId={requestId}
                         {...step}
                         disabled={index === data.data.length - 1}
                         openEdit={handleOpenEdit}
@@ -99,8 +127,8 @@ export const Processing = () => {
           </div>
         </div>
       </div>
-      <CreateNoteDrawer ref={createNoteDrawerRef} />
-      <EditNoteDrawer ref={editNoteDrawerRef} />
+      <CreateNoteDrawer ref={createNoteDrawerRef} requestId={requestId} />
+      <EditNoteDrawer ref={editNoteDrawerRef} requestId={requestId} />
     </div>
   );
 };
