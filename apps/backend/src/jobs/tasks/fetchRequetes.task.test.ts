@@ -46,7 +46,7 @@ describe('fetchRequetes.task', () => {
   it('should call getLastCron, run importRequetes in context, and clear timeout', async () => {
     const cronDate = new Date(2000, 1, 1, 13);
     vi.setSystemTime(cronDate);
-    const resultData = { count: 1 };
+    const resultData = { count: 1, errorCount: 0 };
 
     const mockJob = {
       name: 'fetch-requetes',

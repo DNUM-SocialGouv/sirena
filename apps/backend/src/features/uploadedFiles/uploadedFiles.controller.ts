@@ -142,11 +142,12 @@ const app = factoryWithLogs
         entiteId: fileEntiteId,
         uploadedById: userId,
         requeteEtapeNoteId: null,
-        faitSituationId: null,
         requeteId: null,
+        faitSituationId: null,
+        demarchesEngageesId: null,
         status: 'PENDING',
       }).catch(async (err) => {
-        await rollbackMinio(logger);
+        await rollbackMinio();
         throw err;
       });
 

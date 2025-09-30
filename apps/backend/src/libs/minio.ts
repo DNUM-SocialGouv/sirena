@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { PinoLogger } from 'hono-pino';
+import type { Readable } from 'node:stream';
 import { Client } from 'minio';
 import { envVars } from '@/config/env';
+import { getLoggerStore } from './asyncLocalStorage';
 
 const {
   S3_BUCKET_ACCESS_KEY,
@@ -26,10 +27,10 @@ const minioClient = S3_BUCKET_ENDPOINT
   : null;
 
 export const uploadFileToMinio = async (
-  filePath: string,
+  filePath: string | Readable,
   originalName: string,
   contentType?: string,
-): Promise<{ objectPath: string; rollback: (logger: PinoLogger) => Promise<void> }> => {
+): Promise<{ objectPath: string; rollback: () => Promise<void> }> => {
   if (!minioClient) {
     throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
   }
@@ -39,8 +40,7 @@ export const uploadFileToMinio = async (
   const filename = `${fileId}${fileExtension}`;
   const objectPath = `${S3_BUCKET_ROOT_DIR}/${filename}`;
 
-  const stream = fs.createReadStream(filePath);
-
+  const stream = typeof filePath === 'string' ? fs.createReadStream(filePath) : filePath;
   await minioClient.putObject(S3_BUCKET_NAME, objectPath, stream, undefined, {
     'Content-Type': contentType || 'application/octet-stream',
     'x-amz-meta-filename': originalName,
@@ -49,10 +49,11 @@ export const uploadFileToMinio = async (
 
   return {
     objectPath,
-    rollback: async (logger: PinoLogger) => {
+    rollback: async () => {
       try {
         await deleteFileFromMinio(objectPath);
       } catch (err) {
+        const logger = getLoggerStore();
         logger.error({ err }, 'Failed to rollback MinIO file');
       }
     },

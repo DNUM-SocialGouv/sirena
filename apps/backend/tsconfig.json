@@ -8,10 +8,10 @@
     "noEmit": true,
     "skipLibCheck": true,
     "types": ["node"],
-    "baseUrl": ".",
+    "lib": ["ES2022"],
 
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
 
     "sourceMap": true,

@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { envVars } from '@/config/env';
 import { mapDataForPrisma } from '@/features/dematSocial/dematSocial.adaptater';
-import { createOrGetFromDematSocial } from '@/features/requetes/requetes.service';
+import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '@/features/requetes/requetes.service';
 import { abortControllerStorage, getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
 import { GetDossierDocument, GetDossiersByDateDocument, GetDossiersMetadataDocument, graffle } from '@/libs/graffle';
 import type { Demandeur, DematSocialCivilite } from './dematSocial.type';
@@ -56,6 +56,10 @@ export const importRequetes = async (createdSince?: Date) => {
     if (dossier.number === 247791) {
       continue;
     }
+    const isDossierAlreadyImported = await getRequeteByDematSocialId(dossier.number);
+    if (isDossierAlreadyImported) {
+      continue;
+    }
     const data = await getRequete(dossier.number);
     if (!data) {
       errorCount += 1;
@@ -64,7 +68,7 @@ export const importRequetes = async (createdSince?: Date) => {
     try {
       const demandeur = getDemandeur(data.dossier.demandeur, data.dossier.usager.email);
       const requete = mapDataForPrisma(data.dossier.champs, dossier.number, dossier.dateDepot, demandeur);
-      await createOrGetFromDematSocial(requete);
+      await createRequeteFromDematSocial(requete);
       i += 1;
     } catch (err) {
       logger.error({ err }, `Error processing dossier ${dossier.number}:`);

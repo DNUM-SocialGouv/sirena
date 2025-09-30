@@ -22,6 +22,16 @@ fragment AddressFragment on Address {
   regionCode
 }
 
+fragment FileFragment on File {
+  __typename
+  filename
+  contentType
+  checksum
+  byteSize: byteSizeBigInt
+  url
+  createdAt
+}
+
 fragment ChampFragment on Champ {
   id
   label
@@ -52,9 +62,8 @@ fragment ChampFragment on Champ {
     values
   }
   ... on PieceJustificativeChamp {
-    file {
-      filename
-      url
+    files {
+      ...FileFragment
     }
   }
   ... on AddressChamp {
