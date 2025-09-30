@@ -43,10 +43,6 @@ describe('functionalId.service', () => {
           id: {
             startsWith: 'RS-2025-09-',
           },
-          createdAt: {
-            gte: new Date(Date.UTC(2025, 8, 15)),
-            lt: new Date(Date.UTC(2025, 8, 16)),
-          },
         },
         select: {
           id: true,

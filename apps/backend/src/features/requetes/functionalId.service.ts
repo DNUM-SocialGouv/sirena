@@ -12,45 +12,57 @@ export async function generateRequeteId(source: FunctionalIdSource): Promise<str
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
 
-  const startOfDay = new Date(Date.UTC(year, now.getMonth(), now.getDate()));
-  const endOfDay = new Date(Date.UTC(year, now.getMonth(), now.getDate() + 1));
+  const result = await prisma.$transaction(
+    async (tx) => {
+      const prefix = source === 'SIRENA' ? 'RS' : 'RD';
+      const monthPrefix = `${prefix}-${year}-${month}-`;
 
-  const result = await prisma.$transaction(async (tx) => {
-    const prefix = source === 'SIRENA' ? 'RS' : 'RD';
-    const _pattern = `${prefix}-${year}-${month}-%`;
-
-    const todayRequests = await tx.requete.findMany({
-      where: {
-        id: {
-          startsWith: `${prefix}-${year}-${month}-`,
+      const lastRequestOfMonth = await tx.requete.findFirst({
+        where: {
+          id: {
+            startsWith: monthPrefix,
+          },
         },
-        createdAt: {
-          gte: startOfDay,
-          lt: endOfDay,
+        select: {
+          id: true,
         },
-      },
-      select: {
-        id: true,
-      },
-      orderBy: {
-        id: 'desc',
-      },
-      take: 1,
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
-    let nextNumber = 1;
+      let nextNumber = 1;
 
-    if (todayRequests.length > 0) {
-      const lastId = todayRequests[0].id;
-      const parts = lastId.split('-');
-      const lastNumber = parseInt(parts[parts.length - 1], 10);
-      if (!Number.isNaN(lastNumber)) {
-        nextNumber = lastNumber + 1;
+      if (lastRequestOfMonth) {
+        const allRequests = await tx.requete.findMany({
+          where: {
+            id: {
+              startsWith: monthPrefix,
+            },
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        let maxNumber = 0;
+        for (const req of allRequests) {
+          const parts = req.id.split('-');
+          const num = parseInt(parts[parts.length - 1], 10);
+          if (!Number.isNaN(num) && num > maxNumber) {
+            maxNumber = num;
+          }
+        }
+
+        nextNumber = maxNumber + 1;
       }
-    }
 
-    return `${prefix}-${year}-${month}-${nextNumber}`;
-  });
+      return `${prefix}-${year}-${month}-${nextNumber}`;
+    },
+    {
+      isolationLevel: 'Serializable',
+    },
+  );
 
   return result;
 }
