@@ -5,6 +5,14 @@ import { InfoSection } from './InfoSection';
 const meta: Meta<typeof InfoSection> = {
   component: InfoSection,
   tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'InfoSection component with automatic dark theme support. The component adapts to the DSFR theme settings.',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -114,4 +122,47 @@ export const NoEdit: Story = {
       </Badge>,
     ],
   },
+};
+
+export const DarkThemeExample: Story = {
+  args: {
+    id: 'info-section-dark',
+    title: 'Dark Theme Example',
+    onEdit: () => {
+      console.log('onEdit in dark theme');
+    },
+    renderSummary: () => (
+      <div>
+        <p>This InfoSection automatically adapts to dark theme.</p>
+        <p>Toggle your system or DSFR theme to see the changes.</p>
+      </div>
+    ),
+    renderDetails: () => (
+      <div>
+        <p>The component uses CSS custom properties and media queries to support:</p>
+        <ul>
+          <li>DSFR theme switching (data-fr-theme attribute)</li>
+          <li>System preference detection (prefers-color-scheme)</li>
+          <li>Smooth transitions between themes</li>
+        </ul>
+      </div>
+    ),
+    emptyLabel: 'No data available',
+    badges: [
+      <Badge key="badge-1" severity="success">
+        Dark Mode Ready
+      </Badge>,
+    ],
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ padding: '20px' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <strong>Tip:</strong> Use your browser's dev tools to toggle prefers-color-scheme or add data-fr-theme="dark"
+          to the root element.
+        </div>
+        <Story />
+      </div>
+    ),
+  ],
 };
