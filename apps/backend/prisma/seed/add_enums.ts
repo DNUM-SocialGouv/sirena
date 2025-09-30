@@ -18,8 +18,8 @@ import {
   statutTypes,
   transportTypeLabels,
 } from '@sirena/common/constants';
-import type { PrismaClient } from 'generated/client';
 import { getLoggerStore } from '@/libs/asyncLocalStorage';
+import type { PrismaClient } from '../../generated/client';
 
 async function seedAgeEnum(prisma: PrismaClient) {
   let added = 0;
