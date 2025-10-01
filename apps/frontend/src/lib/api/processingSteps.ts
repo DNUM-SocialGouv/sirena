@@ -3,7 +3,7 @@ import { client } from '@/lib/api/hc.ts';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery.ts';
 
 export async function fetchProcessingSteps(requestId: string) {
-  const res = await client['requetes-entite'][':id']['processing-steps'].$get({
+  const res = await client['requete-etapes'][':id']['processing-steps'].$get({
     param: { id: requestId },
   });
   await handleRequestErrors(res);
@@ -15,7 +15,7 @@ export type AddProcessingStepData = {
 };
 
 export async function addProcessingStep(requestId: string, data: AddProcessingStepData) {
-  const res = await client['requetes-entite'][':id']['processing-steps'].$post({
+  const res = await client['requete-etapes'][':id']['processing-steps'].$post({
     param: { id: requestId },
     json: { nom: data.nom },
   });
@@ -55,8 +55,8 @@ export type UpdateProcessingStepNoteData = {
 };
 
 export async function updateProcessingStepNote(noteId: string, data: UpdateProcessingStepNoteData) {
-  const res = await client.notes[':noteId'].$patch({
-    param: { noteId: noteId },
+  const res = await client.notes[':id'].$patch({
+    param: { id: noteId },
     json: { texte: data.texte, fileIds: data.fileIds },
   });
   await handleRequestErrors(res);

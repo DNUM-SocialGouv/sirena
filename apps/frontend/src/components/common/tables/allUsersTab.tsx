@@ -15,7 +15,7 @@ export function AllUsersTab() {
   const { data } = useQuery({ ...profileQueryOptions(), enabled: false });
 
   const queries = useSearch({ from: '/_auth/admin/users' });
-  const navigate = useNavigate({ from: '/admin/users' });
+  const navigate = useNavigate({ from: '/admin/users/all' });
 
   const rolesToFilter: Role[] =
     data?.role?.id === ROLES.ENTITY_ADMIN ? [ROLES.SUPER_ADMIN, ROLES.PENDING] : [ROLES.PENDING];

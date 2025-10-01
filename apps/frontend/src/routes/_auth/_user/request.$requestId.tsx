@@ -1,6 +1,7 @@
 import { ROLES } from '@sirena/common/constants';
 import { type TabDescriptor, Tabs } from '@sirena/ui';
 import { createFileRoute, Link, useMatchRoute, useNavigate } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { z } from 'zod';
 import { Details } from '@/components/requestId/details';
 import { Processing } from '@/components/requestId/processing';
@@ -18,7 +19,7 @@ export const Route = createFileRoute('/_auth/_user/request/$requestId')({
   head: () => ({
     meta: [
       {
-        title: 'Traitement requête - SIRENA',
+        title: 'Détails de la requête - SIRENA',
       },
     ],
   }),
@@ -32,6 +33,11 @@ function RouteComponent() {
   const isAllRoute = matchRoute({ to: '/request/$requestId/processing', fuzzy: false });
 
   const activeTab = isAllRoute ? 1 : 0;
+
+  useEffect(() => {
+    const title = activeTab === 1 ? 'Traitement requête - SIRENA' : 'Détails de la requête - SIRENA';
+    document.title = title;
+  }, [activeTab]);
 
   const tabs: TabDescriptor[] = [
     { label: 'Détails de la requête', tabPanelId: 'panel-details', tabId: 'tab-details' },

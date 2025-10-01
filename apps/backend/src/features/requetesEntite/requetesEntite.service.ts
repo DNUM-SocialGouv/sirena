@@ -6,7 +6,7 @@ type RequeteEntiteKey = { requeteId: string; entiteId: string };
 // TODO handle entiteIds
 // TODO handle search
 export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
-  const { offset = 0, limit, sort = 'requeteId', order = 'desc' } = query;
+  const { offset = 0, limit, sort = 'id', order = 'asc' } = query;
 
   // const entiteFilter = filterByEntities(entiteIds);
 
@@ -19,7 +19,7 @@ export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetR
       // where,
       skip: offset,
       ...(typeof limit === 'number' ? { take: limit } : {}),
-      orderBy: { [sort]: order },
+      orderBy: { requete: { [sort]: order } },
       include: { requete: true, requeteEtape: { orderBy: { createdAt: 'desc' }, take: 1 } },
     }),
     prisma.requeteEntite.count({

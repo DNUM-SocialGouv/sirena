@@ -55,7 +55,7 @@ describe('requetesEntite.service', () => {
 
       expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
         skip: 0,
-        orderBy: { requeteId: 'desc' },
+        orderBy: { requete: { id: 'asc' } },
         include: {
           requete: true,
           requeteEtape: {
@@ -76,14 +76,14 @@ describe('requetesEntite.service', () => {
       const result = await getRequetesEntite(null, {
         offset: 10,
         limit: 5,
-        sort: 'entiteId',
+        sort: 'id',
         order: 'asc',
       });
 
       expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
         skip: 10,
         take: 5,
-        orderBy: { entiteId: 'asc' },
+        orderBy: { requete: { id: 'asc' } },
         include: {
           requete: true,
           requeteEtape: {
