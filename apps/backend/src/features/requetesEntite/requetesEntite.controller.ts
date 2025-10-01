@@ -10,9 +10,24 @@ import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { getUserById } from '../users/users.service';
-import { addProcessingStepRoute, getRequetesEntiteRoute } from './requetesEntite.route';
-import { AddProcessingStepBodySchema, GetRequetesEntiteQuerySchema } from './requetesEntite.schema';
-import { createRequeteEntite, getRequetesEntite } from './requetesEntite.service';
+import {
+  addProcessingStepRoute,
+  createRequeteRoute,
+  getRequeteEntiteRoute,
+  getRequetesEntiteRoute,
+} from './requetesEntite.route';
+import {
+  AddProcessingStepBodySchema,
+  CreateRequeteBodySchema,
+  GetRequetesEntiteQuerySchema,
+  UpdateDeclarantBodySchema,
+} from './requetesEntite.schema';
+import {
+  createRequeteEntite,
+  getRequeteEntiteById,
+  getRequetesEntite,
+  updateRequeteDeclarant,
+} from './requetesEntite.service';
 
 const app = factoryWithLogs
   .createApp()
@@ -38,6 +53,31 @@ const app = factoryWithLogs
         total,
       },
     });
+  })
+
+  .get('/:id', getRequeteEntiteRoute, async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
+
+    const user = await getUserById(userId, null, null);
+    if (!user?.entiteId) {
+      return throwHTTPException401Unauthorized('User not found or not associated with entity', {
+        res: c.res,
+      });
+    }
+
+    const requeteEntite = await getRequeteEntiteById({ requeteId: id, entiteId: user.entiteId });
+
+    if (!requeteEntite) {
+      return throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    logger.info({ requeteId: id }, 'Requete details retrieved successfully');
+
+    return c.json({ data: requeteEntite });
   })
 
   .get('/:id/processing-steps', async (c) => {
@@ -74,10 +114,10 @@ const app = factoryWithLogs
   // Roles with edit permissions
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]))
 
-  // TODO: useful to validate ticket SIRENA-223, should be removed later
-  .post('/', async (c) => {
+  .post('/', createRequeteRoute, zValidator('json', CreateRequeteBodySchema), async (c) => {
     const logger = c.get('logger');
     const userId = c.get('userId');
+    const body = c.req.valid('json');
 
     const user = await getUserById(userId, null, null);
     if (!user?.entiteId) {
@@ -86,11 +126,51 @@ const app = factoryWithLogs
       });
     }
 
-    const requete = await createRequeteEntite(user.entiteId);
+    const requete = await createRequeteEntite(user.entiteId, body);
 
-    logger.info({ requeteId: requete.id, userId }, 'New requete created successfully');
+    logger.info({ requeteId: requete.id, userId, hasDeclarant: !!body.declarant }, 'New requete created successfully');
 
     return c.json({ data: requete }, 201);
+  })
+
+  .put('/:id/declarant', zValidator('json', UpdateDeclarantBodySchema), async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
+    const { declarant: declarantData, controls } = c.req.valid('json');
+
+    const user = await getUserById(userId, null, null);
+    if (!user?.entiteId) {
+      return throwHTTPException401Unauthorized('User not found or not associated with entity', {
+        res: c.res,
+      });
+    }
+
+    const requeteEntite = await getRequeteEntiteById({ requeteId: id, entiteId: user.entiteId });
+
+    if (!requeteEntite) {
+      return throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    try {
+      const updatedRequete = await updateRequeteDeclarant(id, declarantData, controls);
+
+      logger.info({ requeteId: id, userId }, 'Declarant data updated successfully');
+
+      return c.json({ data: updatedRequete });
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message.startsWith('CONFLICT')) {
+        const conflictResponse = {
+          message: 'The declarant identity has been modified by another user.',
+          conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
+        };
+
+        return c.json(conflictResponse, 409);
+      }
+      throw error;
+    }
   })
 
   .post(

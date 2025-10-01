@@ -9,6 +9,9 @@ export const RequestInfos = ({ requestId }: RequestInfosProps = {}) => {
     <div className="fr-grid-row fr-grid-row--gutters">
       <div className="fr-col">
         <h1 className="fr-mb-2w">{requestId ? `Requête ${requestId}` : 'Nouvelle requête'}</h1>
+        {!requestId && (
+          <p className="fr-text--sm fr-mb-0">La requête sera créée lorsqu'au moins une donnée sera renseignée</p>
+        )}
       </div>
     </div>
   );

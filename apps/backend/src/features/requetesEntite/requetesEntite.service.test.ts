@@ -1,6 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { prisma, type Requete, type RequeteEntite, type RequeteEtape } from '@/libs/prisma';
-import { getRequeteEntiteById, getRequetesEntite, hasAccessToRequete } from './requetesEntite.service';
+import {
+  type Identite,
+  type PersonneConcernee,
+  prisma,
+  type Requete,
+  type RequeteEntite,
+  type RequeteEtape,
+} from '@/libs/prisma';
+import {
+  getRequeteEntiteById,
+  getRequetesEntite,
+  hasAccessToRequete,
+  updateRequete,
+  updateRequeteDeclarant,
+} from './requetesEntite.service';
 
 vi.mock('@/libs/prisma', () => ({
   prisma: {
@@ -9,6 +22,10 @@ vi.mock('@/libs/prisma', () => ({
       count: vi.fn(),
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+    },
+    requete: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
     },
   },
 }));
@@ -57,7 +74,16 @@ describe('requetesEntite.service', () => {
         skip: 0,
         orderBy: { requeteId: 'desc' },
         include: {
-          requete: true,
+          requete: {
+            include: {
+              declarant: {
+                include: {
+                  identite: true,
+                  adresse: true,
+                },
+              },
+            },
+          },
           requeteEtape: {
             orderBy: { createdAt: 'desc' },
             take: 1,
@@ -85,7 +111,16 @@ describe('requetesEntite.service', () => {
         take: 5,
         orderBy: { entiteId: 'asc' },
         include: {
-          requete: true,
+          requete: {
+            include: {
+              declarant: {
+                include: {
+                  identite: true,
+                  adresse: true,
+                },
+              },
+            },
+          },
           requeteEtape: {
             orderBy: { createdAt: 'desc' },
             take: 1,
@@ -129,7 +164,21 @@ describe('requetesEntite.service', () => {
       expect(prisma.requeteEntite.findUnique).toHaveBeenCalledWith({
         where: { requeteId_entiteId: { requeteId: mockRequeteEntite.requeteId, entiteId: mockRequeteEntite.entiteId } },
         include: {
-          requete: true,
+          requete: {
+            include: {
+              declarant: {
+                include: {
+                  identite: {
+                    include: {
+                      civilite: true,
+                    },
+                  },
+                  adresse: true,
+                  lienVictime: true,
+                },
+              },
+            },
+          },
           requeteEtape: {
             orderBy: { createdAt: 'desc' },
             take: 1,
@@ -138,6 +187,241 @@ describe('requetesEntite.service', () => {
       });
 
       expect(result).toEqual(mockRequeteEntite);
+    });
+  });
+
+  describe('updateRequeteDeclarant', () => {
+    it('should throw conflict error when identite updatedAt timestamp does not match', async () => {
+      const oldTimestamp = new Date('2024-01-01T10:00:00Z');
+      const newTimestamp = new Date('2024-01-01T10:05:00Z');
+
+      const mockIdentite = {
+        id: 'identite123',
+        prenom: 'John',
+        nom: 'Doe',
+        email: '',
+        telephone: '',
+        commentaire: '',
+        civiliteId: null,
+        personneConcerneeId: 'declarant123',
+        createdAt: oldTimestamp,
+        updatedAt: newTimestamp,
+      };
+
+      const mockDeclarant: PersonneConcernee = {
+        id: 'declarant123',
+        estNonIdentifiee: null,
+        estAnonyme: null,
+        estHandicapee: null,
+        estIdentifie: true,
+        estVictime: false,
+        estVictimeInformee: null,
+        victimeInformeeCommentaire: '',
+        veutGarderAnonymat: false,
+        commentaire: '',
+        autrePersonnes: '',
+        ageId: null,
+        lienVictimeId: null,
+        lienAutrePrecision: null,
+        declarantDeId: 'req123',
+        participantDeId: null,
+        createdAt: oldTimestamp,
+        updatedAt: oldTimestamp,
+      };
+
+      type RequeteWithDeclarant = Requete & {
+        declarant: PersonneConcernee & {
+          identite: Identite;
+        };
+      };
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: 'req123',
+        dematSocialId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        commentaire: '',
+        receptionDate: new Date(),
+        receptionTypeId: 'EMAIL',
+        declarant: {
+          ...mockDeclarant,
+          identite: mockIdentite,
+        },
+      } satisfies RequeteWithDeclarant as RequeteWithDeclarant);
+
+      await expect(
+        updateRequeteDeclarant(
+          'req123',
+          { nom: 'Updated Name' },
+          {
+            declarant: { updatedAt: oldTimestamp.toISOString() },
+          },
+        ),
+      ).rejects.toThrow('CONFLICT: The declarant identity has been modified by another user.');
+    });
+
+    it('should update declarant when identite updatedAt timestamp matches', async () => {
+      const timestamp = new Date('2024-01-01T10:00:00Z');
+
+      const mockIdentite = {
+        id: 'identite123',
+        prenom: 'John',
+        nom: 'Doe',
+        email: '',
+        telephone: '',
+        commentaire: '',
+        civiliteId: null,
+        personneConcerneeId: 'declarant123',
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+
+      const mockDeclarant: PersonneConcernee = {
+        id: 'declarant123',
+        estNonIdentifiee: null,
+        estAnonyme: null,
+        estHandicapee: null,
+        estIdentifie: true,
+        estVictime: false,
+        estVictimeInformee: null,
+        victimeInformeeCommentaire: '',
+        veutGarderAnonymat: false,
+        commentaire: '',
+        autrePersonnes: '',
+        ageId: null,
+        lienVictimeId: null,
+        lienAutrePrecision: null,
+        declarantDeId: 'req123',
+        participantDeId: null,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+
+      type RequeteWithDeclarant = Requete & {
+        declarant: PersonneConcernee & {
+          identite: Identite;
+        };
+      };
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: 'req123',
+        dematSocialId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        commentaire: '',
+        receptionDate: new Date(),
+        receptionTypeId: 'EMAIL',
+        declarant: {
+          ...mockDeclarant,
+          identite: mockIdentite,
+        },
+      } satisfies RequeteWithDeclarant as RequeteWithDeclarant);
+
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+
+      await updateRequeteDeclarant(
+        'req123',
+        { nom: 'Updated Name' },
+        {
+          declarant: { updatedAt: timestamp.toISOString() },
+        },
+      );
+
+      expect(prisma.requete.update).toHaveBeenCalled();
+    });
+  });
+
+  describe('updateRequete', () => {
+    it('should update requete with declarant data', async () => {
+      const timestamp = new Date('2024-01-01T10:00:00Z');
+
+      const mockIdentite = {
+        id: 'identite123',
+        prenom: 'John',
+        nom: 'Doe',
+        email: '',
+        telephone: '',
+        commentaire: '',
+        civiliteId: null,
+        personneConcerneeId: 'declarant123',
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+
+      const mockDeclarant: PersonneConcernee = {
+        id: 'declarant123',
+        estNonIdentifiee: null,
+        estAnonyme: null,
+        estHandicapee: null,
+        estIdentifie: true,
+        estVictime: false,
+        estVictimeInformee: null,
+        victimeInformeeCommentaire: '',
+        veutGarderAnonymat: false,
+        commentaire: '',
+        autrePersonnes: '',
+        ageId: null,
+        lienVictimeId: null,
+        lienAutrePrecision: null,
+        declarantDeId: 'req123',
+        participantDeId: null,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+
+      type RequeteWithDeclarant = Requete & {
+        declarant: PersonneConcernee & {
+          identite: Identite;
+        };
+      };
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: 'req123',
+        dematSocialId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        commentaire: '',
+        receptionDate: new Date(),
+        receptionTypeId: 'EMAIL',
+        declarant: {
+          ...mockDeclarant,
+          identite: mockIdentite,
+        },
+      } satisfies RequeteWithDeclarant as RequeteWithDeclarant);
+
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+
+      await updateRequete(
+        'req123',
+        { declarant: { nom: 'Updated Name' } },
+        {
+          declarant: { updatedAt: timestamp.toISOString() },
+        },
+      );
+
+      expect(prisma.requete.update).toHaveBeenCalled();
+    });
+
+    it('should return requete unchanged when no data provided', async () => {
+      vi.clearAllMocks();
+
+      const mockRequete = {
+        id: 'req123',
+        dematSocialId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        commentaire: '',
+        receptionDate: new Date(),
+        receptionTypeId: 'EMAIL',
+        declarant: null,
+      } as Requete;
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequete);
+
+      const result = await updateRequete('req123', {});
+
+      expect(result).toEqual(mockRequete);
+      expect(prisma.requete.update).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,5 +1,12 @@
+import { mappers } from '@sirena/common';
+import type { DeclarantDataSchema } from '@sirena/common/schemas';
+import type { z } from 'zod';
+import { generateRequeteId } from '@/features/requetes/functionalId.service';
 import { prisma } from '@/libs/prisma';
+import { mapDeclarantToPrismaCreate } from './requetesEntite.mapper';
 import type { GetRequetesEntiteQuery } from './requetesEntite.type';
+
+type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
 
 type RequeteEntiteKey = { requeteId: string; entiteId: string };
 
@@ -20,7 +27,19 @@ export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetR
       skip: offset,
       ...(typeof limit === 'number' ? { take: limit } : {}),
       orderBy: { [sort]: order },
-      include: { requete: true, requeteEtape: { orderBy: { createdAt: 'desc' }, take: 1 } },
+      include: {
+        requete: {
+          include: {
+            declarant: {
+              include: {
+                identite: true,
+                adresse: true,
+              },
+            },
+          },
+        },
+        requeteEtape: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
     }),
     prisma.requeteEntite.count({
       /* where */
@@ -49,7 +68,21 @@ export const getRequeteEntiteById = async ({ requeteId, entiteId }: RequeteEntit
   return await prisma.requeteEntite.findUnique({
     where: { requeteId_entiteId: { requeteId, entiteId } },
     include: {
-      requete: true,
+      requete: {
+        include: {
+          declarant: {
+            include: {
+              identite: {
+                include: {
+                  civilite: true,
+                },
+              },
+              adresse: true,
+              lienVictime: true,
+            },
+          },
+        },
+      },
       requeteEtape: {
         orderBy: { createdAt: 'desc' },
         take: 1,
@@ -58,52 +91,195 @@ export const getRequeteEntiteById = async ({ requeteId, entiteId }: RequeteEntit
   });
 };
 
-export const generateRequeteId = async (isFromDematSocial = false): Promise<string> => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const source = isFromDematSocial ? 'D' : 'S';
+interface CreateRequeteInput {
+  declarant?: DeclarantInput;
+}
 
-  // Find the last requete with the same prefix to get the next counter
-  const prefix = `R${source}-${year}-${month}-`;
-  const lastRequete = await prisma.requete.findFirst({
-    where: {
-      id: {
-        startsWith: prefix,
-      },
-    },
-    orderBy: {
-      id: 'desc',
-    },
-  });
+export const createRequeteEntite = async (entiteId: string, data?: CreateRequeteInput) => {
+  const maxRetries = 5;
+  let retryCount = 0;
+  let lastError: Error | null = null;
 
-  let counter = 1;
-  if (lastRequete) {
-    const lastCounter = parseInt(lastRequete.id.split('-').pop() || '0', 10);
-    counter = lastCounter + 1;
+  while (retryCount < maxRetries) {
+    try {
+      const requeteId = await generateRequeteId('SIRENA');
+
+      const requete = await prisma.requete.create({
+        data: {
+          id: requeteId,
+          receptionDate: new Date(),
+          receptionTypeId: 'EMAIL',
+          ...(data?.declarant && {
+            declarant: {
+              create: mapDeclarantToPrismaCreate(data.declarant),
+            },
+          }),
+          requeteEntites: {
+            create: {
+              entiteId,
+            },
+          },
+        },
+        include: {
+          requeteEntites: true,
+          declarant: data?.declarant
+            ? {
+                include: {
+                  identite: true,
+                  adresse: true,
+                },
+              }
+            : false,
+        },
+      });
+
+      return requete;
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'code' in error) {
+        const prismaError = error as { code: string; meta?: { target?: string[] }; message?: string };
+        if (prismaError.code === 'P2002' && prismaError.meta?.target?.includes('id')) {
+          lastError = new Error(prismaError.message || 'Unique constraint failed on id');
+          retryCount++;
+          await new Promise((resolve) => setTimeout(resolve, 100 * retryCount));
+          continue;
+        }
+      }
+      throw error;
+    }
   }
 
-  return `${prefix}${counter}`;
+  throw new Error(`Failed to create requete after ${maxRetries} retries. Last error: ${lastError?.message}`);
 };
 
-export const createRequeteEntite = async (entiteId: string) => {
-  const requeteId = await generateRequeteId(false);
+interface UpdateRequeteInput {
+  declarant?: DeclarantInput;
+}
 
-  const requete = await prisma.requete.create({
-    data: {
-      id: requeteId,
-      receptionDate: new Date(),
-      receptionTypeId: 'EMAIL',
-      requeteEntites: {
-        create: {
-          entiteId,
+interface UpdateRequeteControls {
+  declarant?: { updatedAt?: string };
+}
+
+export const updateRequete = async (requeteId: string, data: UpdateRequeteInput, controls?: UpdateRequeteControls) => {
+  const requete = await prisma.requete.findUnique({
+    where: { id: requeteId },
+    include: {
+      declarant: {
+        include: {
+          identite: true,
+          adresse: true,
         },
       },
     },
-    include: {
-      requeteEntites: true,
-    },
   });
 
+  if (!requete) {
+    throw new Error('Requete not found');
+  }
+
+  if (data.declarant) {
+    if (controls?.declarant?.updatedAt && requete.declarant?.identite) {
+      const clientUpdatedAt = new Date(controls.declarant.updatedAt);
+      const serverUpdatedAt = requete.declarant.identite.updatedAt;
+
+      if (clientUpdatedAt.getTime() !== serverUpdatedAt.getTime()) {
+        const error = new Error('CONFLICT: The declarant identity has been modified by another user.');
+        (error as Error & { conflictData?: unknown }).conflictData = {
+          serverData: requete.declarant,
+          serverUpdatedAt: serverUpdatedAt.toISOString(),
+        };
+        throw error;
+      }
+    }
+
+    const declarantData = data.declarant;
+    const lienVictimeValue =
+      declarantData.lienAvecPersonneConcernee &&
+      declarantData.lienAvecPersonneConcernee !== '' &&
+      declarantData.lienAvecPersonneConcernee !== 'AUTRE'
+        ? declarantData.lienAvecPersonneConcernee
+        : null;
+
+    const lienAutrePrecisionValue = declarantData.lienAvecPersonneConcerneePrecision || undefined;
+
+    const includeDeclarant = {
+      include: {
+        identite: true,
+        adresse: true,
+        lienVictime: true,
+      },
+    };
+
+    if (requete.declarant) {
+      return await prisma.requete.update({
+        where: { id: requeteId },
+        data: {
+          declarant: {
+            update: {
+              estIdentifie: true,
+              veutGarderAnonymat: declarantData.neSouhaitePasCommuniquerIdentite || false,
+              estVictime: declarantData.estPersonneConcernee || false,
+              commentaire: declarantData.autresPrecisions || '',
+              lienVictimeId: lienVictimeValue,
+              lienAutrePrecision: lienAutrePrecisionValue,
+              updatedAt: new Date(),
+              identite: {
+                update: {
+                  nom: declarantData.nom || '',
+                  prenom: declarantData.prenom || '',
+                  email: declarantData.courrierElectronique || '',
+                  telephone: declarantData.numeroTelephone || '',
+                  civiliteId: mappers.mapCiviliteToDatabase(declarantData.civilite),
+                },
+              },
+              adresse:
+                declarantData.adresseDomicile || declarantData.codePostal || declarantData.ville
+                  ? {
+                      upsert: {
+                        create: {
+                          label: declarantData.adresseDomicile || '',
+                          codePostal: declarantData.codePostal || '',
+                          ville: declarantData.ville || '',
+                        },
+                        update: {
+                          label: declarantData.adresseDomicile || '',
+                          codePostal: declarantData.codePostal || '',
+                          ville: declarantData.ville || '',
+                        },
+                      },
+                    }
+                  : undefined,
+            },
+          },
+        },
+        include: {
+          declarant: includeDeclarant,
+        },
+      });
+    }
+
+    return await prisma.requete.update({
+      where: { id: requeteId },
+      data: {
+        declarant: {
+          create: mapDeclarantToPrismaCreate(declarantData),
+        },
+      },
+      include: {
+        declarant: includeDeclarant,
+      },
+    });
+  }
+
   return requete;
+};
+
+export const updateRequeteDeclarant = async (
+  requeteId: string,
+  declarantData?: DeclarantInput,
+  controls?: UpdateRequeteControls,
+) => {
+  if (!declarantData) {
+    throw new Error('Declarant data is required');
+  }
+  return updateRequete(requeteId, { declarant: declarantData }, controls);
 };

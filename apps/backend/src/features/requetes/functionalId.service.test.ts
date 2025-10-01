@@ -25,11 +25,11 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
-      const mockFindMany = vi.fn().mockResolvedValue([]);
+      const mockFindFirst = vi.fn().mockResolvedValue(null);
       mockTransaction.mockImplementation(async (callback) => {
         return callback({
           requete: {
-            findMany: mockFindMany,
+            findFirst: mockFindFirst,
           },
         });
       });
@@ -38,7 +38,7 @@ describe('functionalId.service', () => {
       const result = await generateRequeteId('SIRENA');
 
       expect(result).toBe('RS-2025-09-1');
-      expect(mockFindMany).toHaveBeenCalledWith({
+      expect(mockFindFirst).toHaveBeenCalledWith({
         where: {
           id: {
             startsWith: 'RS-2025-09-',
@@ -48,9 +48,8 @@ describe('functionalId.service', () => {
           id: true,
         },
         orderBy: {
-          id: 'desc',
+          createdAt: 'desc',
         },
-        take: 1,
       });
     });
 
@@ -58,10 +57,12 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2024-11-20');
       vi.setSystemTime(mockDate);
 
+      const mockFindFirst = vi.fn().mockResolvedValue({ id: 'RD-2024-11-119' });
       const mockFindMany = vi.fn().mockResolvedValue([{ id: 'RD-2024-11-119' }]);
       mockTransaction.mockImplementation(async (callback) => {
         return callback({
           requete: {
+            findFirst: mockFindFirst,
             findMany: mockFindMany,
           },
         });
@@ -77,10 +78,12 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-01-05');
       vi.setSystemTime(mockDate);
 
+      const mockFindFirst = vi.fn().mockResolvedValue({ id: 'RS-2025-01-41' });
       const mockFindMany = vi.fn().mockResolvedValue([{ id: 'RS-2025-01-41' }]);
       mockTransaction.mockImplementation(async (callback) => {
         return callback({
           requete: {
+            findFirst: mockFindFirst,
             findMany: mockFindMany,
           },
         });
@@ -96,15 +99,26 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
-      const mockFindMany = vi
-        .fn()
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 'RS-2025-09-1' }])
-        .mockResolvedValueOnce([{ id: 'RS-2025-09-2' }]);
-
+      let callCount = 0;
       mockTransaction.mockImplementation(async (callback) => {
+        callCount++;
+        const mockFindFirst = vi.fn();
+        const mockFindMany = vi.fn();
+
+        if (callCount === 1) {
+          mockFindFirst.mockResolvedValue(null);
+          mockFindMany.mockResolvedValue([]);
+        } else if (callCount === 2) {
+          mockFindFirst.mockResolvedValue({ id: 'RS-2025-09-1' });
+          mockFindMany.mockResolvedValue([{ id: 'RS-2025-09-1' }]);
+        } else if (callCount === 3) {
+          mockFindFirst.mockResolvedValue({ id: 'RS-2025-09-2' });
+          mockFindMany.mockResolvedValue([{ id: 'RS-2025-09-1' }, { id: 'RS-2025-09-2' }]);
+        }
+
         return callback({
           requete: {
+            findFirst: mockFindFirst,
             findMany: mockFindMany,
           },
         });
@@ -124,6 +138,11 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
+      const mockFindFirst = vi
+        .fn()
+        .mockResolvedValueOnce({ id: 'RS-2025-09-5' })
+        .mockResolvedValueOnce({ id: 'RD-2025-09-3' });
+
       const mockFindMany = vi
         .fn()
         .mockResolvedValueOnce([{ id: 'RS-2025-09-5' }])
@@ -132,6 +151,7 @@ describe('functionalId.service', () => {
       mockTransaction.mockImplementation(async (callback) => {
         return callback({
           requete: {
+            findFirst: mockFindFirst,
             findMany: mockFindMany,
           },
         });
@@ -146,6 +166,8 @@ describe('functionalId.service', () => {
     });
 
     it('should reset counter on new day', async () => {
+      const mockFindFirst = vi.fn().mockResolvedValueOnce({ id: 'RS-2025-09-10' }).mockResolvedValueOnce(null);
+
       const mockFindMany = vi
         .fn()
         .mockResolvedValueOnce([{ id: 'RS-2025-09-10' }])
@@ -154,6 +176,7 @@ describe('functionalId.service', () => {
       mockTransaction.mockImplementation(async (callback) => {
         return callback({
           requete: {
+            findFirst: mockFindFirst,
             findMany: mockFindMany,
           },
         });
@@ -175,10 +198,12 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
+      const mockFindFirst = vi.fn().mockResolvedValue({ id: 'RS-2025-09-invalid' });
       const mockFindMany = vi.fn().mockResolvedValue([{ id: 'RS-2025-09-invalid' }]);
       mockTransaction.mockImplementation(async (callback) => {
         return callback({
           requete: {
+            findFirst: mockFindFirst,
             findMany: mockFindMany,
           },
         });

@@ -127,8 +127,8 @@ export const Processing = ({ requestId }: ProcessingProps = {}) => {
           </div>
         </div>
       </div>
-      <CreateNoteDrawer ref={createNoteDrawerRef} requestId={requestId} />
-      <EditNoteDrawer ref={editNoteDrawerRef} requestId={requestId} />
+      <CreateNoteDrawer ref={createNoteDrawerRef} />
+      <EditNoteDrawer ref={editNoteDrawerRef} />
     </div>
   );
 };

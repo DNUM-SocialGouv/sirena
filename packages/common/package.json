@@ -31,6 +31,13 @@
         "import": "./dist/types/index.js",
         "require": "./dist/types/index.js"
       }
+    },
+    "./schemas": {
+      "import": {
+        "types": "./dist/schemas/index.d.js",
+        "import": "./dist/schemas/index.js",
+        "require": "./dist/schemas/index.js"
+      }
     }
   },
   "scripts": {
@@ -44,5 +51,8 @@
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "zod": "catalog:"
   }
 }

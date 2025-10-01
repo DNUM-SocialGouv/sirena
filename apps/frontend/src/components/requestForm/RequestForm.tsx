@@ -56,29 +56,15 @@ export function RequestForm({ requestId }: RequestFormProps) {
               <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
             </Link>
           </div>
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col">
-              <h1 className="fr-mb-2w">{title}</h1>
-              {isCreateMode && (
-                <p className="fr-text--sm">La requête sera créée lorsqu'au moins une donnée sera renseignée</p>
-              )}
-            </div>
-          </div>
+          <RequestInfos requestId={requestId} />
         </div>
       </div>
       <div className="fr-container">
-        <div className={isCreateMode ? styles.disabledTabs : ''}>
-          <Tabs
-            tabs={tabs}
-            activeTab={activeTab}
-            onUpdateActiveTab={handleTabChange}
-            className={styles['request-tabs']}
-          >
-            {activeTab === 0 && <DetailsTab initialData={initialData} />}
-            {activeTab === 1 && !isCreateMode && <AffectationTab />}
-            {activeTab === 2 && !isCreateMode && <TraitementTab />}
-          </Tabs>
-        </div>
+        <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange} className={styles['request-tabs']}>
+          {activeTab === 0 && <Details requestId={requestId} />}
+          {activeTab === 1 && <AffectationTab />}
+          {activeTab === 2 && <Processing requestId={requestId} />}
+        </Tabs>
       </div>
     </div>
   );
