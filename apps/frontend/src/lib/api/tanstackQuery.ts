@@ -67,7 +67,10 @@ export const handleRequestErrors = async (res: Response, options: RequestErrorOp
   }
 
   if (isAccountInactiveError(res)) {
-    router.navigate({ to: '/inactive' });
+    // For account inactive error, logout and redirect to login to get fresh JWT with new role as payload
+    const userStore = useUserStore.getState();
+    userStore.logout();
+    router.navigate({ to: '/login', search: { redirect: window.location.pathname } });
     return;
   }
 

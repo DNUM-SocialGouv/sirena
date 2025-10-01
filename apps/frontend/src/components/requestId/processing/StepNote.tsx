@@ -37,7 +37,7 @@ export const StepNote = ({ id, author, content, createdAt, requeteStateId, files
 
   return (
     <div className={styles['request-note']}>
-      <div className='fr-grid-row fr-grid-row--middle fr-mb-2w"'>
+      <div className="fr-grid-row fr-grid-row--middle fr-mb-2w">
         <div className={clsx('fr-col', styles['request-note__from'])}>
           Le
           <span>
@@ -53,14 +53,16 @@ export const StepNote = ({ id, author, content, createdAt, requeteStateId, files
             {author.prenom} {author.nom}
           </span>
         </div>
-        <div className="fr-col-auto">
+        <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
           <Button
             priority="tertiary no outline"
             size="small"
             iconId="fr-icon-edit-line"
             title="Modifier la note"
+            aria-label="Modifier la note"
             className="fr-btn--icon-center center-icon-with-sr-only"
             onClick={handleEdit}
+            style={{ whiteSpace: 'nowrap' }}
           >
             <span className="fr-sr-only">Modifier la note</span>
           </Button>

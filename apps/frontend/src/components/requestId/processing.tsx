@@ -56,6 +56,8 @@ export const Processing = () => {
 
   return (
     <div>
+      <CreateNoteDrawer ref={createNoteDrawerRef} />
+      <EditNoteDrawer ref={editNoteDrawerRef} />
       <div className="fr-container--fluid">
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col">
@@ -83,14 +85,8 @@ export const Processing = () => {
 
                 <QueryStateHandler query={queryProcessingSteps}>
                   {({ data }) =>
-                    data.data.map((step, index) => (
-                      <Step
-                        key={step.id}
-                        {...step}
-                        disabled={index === data.data.length - 1}
-                        openEdit={handleOpenEdit}
-                        openEditNote={handleOpenEditNote}
-                      />
+                    data.data.map((step) => (
+                      <Step key={step.id} {...step} openEdit={handleOpenEdit} openEditNote={handleOpenEditNote} />
                     ))
                   }
                 </QueryStateHandler>
@@ -99,8 +95,6 @@ export const Processing = () => {
           </div>
         </div>
       </div>
-      <CreateNoteDrawer ref={createNoteDrawerRef} />
-      <EditNoteDrawer ref={editNoteDrawerRef} />
     </div>
   );
 };

@@ -1,14 +1,16 @@
+import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Drawer, Toast } from '@sirena/ui';
 import { useParams } from '@tanstack/react-router';
-import { forwardRef, useImperativeHandle, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { useDeleteProcessingStepNote, useUpdateProcessingStepNote } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
+import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 
 type NoteFiles = {
   id: string;
@@ -51,6 +53,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
   });
   const [fileIdsToDelete, setFileIdsToDelete] = useState<string[]>([]);
   const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
+  const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
   const [modifications, setModifications] = useState({
     content: false,
     filesAdded: false,
@@ -58,6 +61,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [contentError, setContentError] = useState<string | null>(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
   const updateNoteMutation = useUpdateProcessingStepNote(requestId);
   const uploadFileMutation = useUploadFile();
@@ -70,6 +74,46 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
     id: 'delete-note-modal',
     isOpenedByDefault: false,
   });
+
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+    };
+  }, []);
+
+  const addModalEventListener = () => {
+    const handleModalClose = () => {
+      setTimeout(() => {
+        deleteButtonRef.current?.focus();
+      }, 100);
+    };
+
+    const checkForModal = () => {
+      const modalElement = document.querySelector(`#${deleteNoteModal.id}`);
+
+      if (modalElement) {
+        modalElement.addEventListener('dsfr.conceal', handleModalClose);
+
+        cleanupRef.current = () => {
+          modalElement.removeEventListener('dsfr.conceal', handleModalClose);
+        };
+
+        return true;
+      }
+      return false;
+    };
+
+    if (!checkForModal()) {
+      setTimeout(() => {
+        checkForModal();
+      }, 100);
+    }
+  };
 
   const openDrawer = (
     step: StepType,
@@ -106,11 +150,15 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
     });
     setFileIdsToDelete([]);
     setFilesToUpload([]);
+    setFileErrors({});
     setContentError(null);
   };
 
   const handleDeleteNote = () => {
     deleteNoteModal.open();
+    setTimeout(() => {
+      addModalEventListener();
+    }, 50);
   };
 
   const handleConfirmDeleteNote = async () => {
@@ -147,6 +195,10 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
   }));
 
   const handleSubmit = async () => {
+    if (!modifications.content && !modifications.filesAdded && !modifications.filesDeleted) {
+      return;
+    }
+
     if (!noteData.step || !noteData.id || !noteData.requeteStateId) {
       return;
     }
@@ -157,6 +209,14 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
     }
 
     setContentError(null);
+
+    const newFileErrors = validateFiles(filesToUpload);
+
+    if (Object.keys(newFileErrors).length > 0) {
+      setFileErrors(newFileErrors);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -242,11 +302,9 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
             >
               <h3 className="fr-h6">Modifier la note de l'étape "{noteData.step?.nom ?? ''}"</h3>
               {(modifications.content || modifications.filesAdded || modifications.filesDeleted) && (
-                <div className="fr-alert fr-alert--warning fr-mb-2w">
-                  <p className="fr-text--sm">
-                    La note a été modifiée. Vous devez la sauvegarder pour prendre en compte les modifications.
-                  </p>
-                </div>
+                <p className={fr.cx('fr-text--sm', 'fr-mb-2w')} style={{ color: 'var(--text-default-error)' }}>
+                  ⚠️ Attention : Vous devez enregistrer la note pour que les modifications soient prises en compte.
+                </p>
               )}
               <form>
                 <Input
@@ -264,7 +322,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                 {noteData.existingFiles.length > 0 && (
                   <div>
                     <span className="fr-label">Fichiers ajoutés</span>
-                    <div className="fr-mt-1w">
+                    <div className="fr-mt-1w" style={{ maxHeight: '200px', overflowY: 'auto' }}>
                       {noteData.existingFiles.length > 0 && (
                         <ul>
                           {noteData.existingFiles.map((file) => (
@@ -281,14 +339,15 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                                     ? `${file.originalName.slice(0, 20)}...`
                                     : file.originalName}
                                 </a>
-                                <button
+                                <Button
                                   aria-label="Supprimer le fichier"
+                                  title="Supprimer le fichier"
                                   type="button"
                                   className="fr-btn fr-btn--sm fr-btn--tertiary fr-icon-delete-line fr-ml-2w"
                                   onClick={() => handleDeleteFile(file.id)}
                                 >
                                   <span className="fr-sr-only">Supprimer le fichier</span>
-                                </button>
+                                </Button>
                               </div>
                               <p className="fr-text--xs">
                                 {file.originalName.split('.')?.[1]?.toUpperCase()} - {(file.size / 1024).toFixed(2)} Ko
@@ -302,44 +361,95 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                 )}
                 <Upload
                   label="Ajouter un ou plusieurs fichiers"
-                  hint="Taille maximale: 10 Mo. Formats supportés: .pdf, .png, .jpeg, .eml, .xlsx, .docx, .odt, .msg"
+                  hint="Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"
                   multiple
-                  // disabled={isLoading}
-                  // state={errorMessage ? 'error' : undefined}
-                  // stateRelatedMessage={errorMessage ?? undefined}
                   className="relative"
                   nativeInputProps={{
-                    accept: '.pdf,.png,.jpeg,.eml,.xlsx,.docx,.odt,.msg',
+                    accept:
+                      '.pdf,.eml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.msg,.csv,.txt,.png,.jpeg,.jpg,.heic,.heif,.webp,.tiff',
                     onChange: (e) => {
                       const files = e.target.files;
                       if (files) {
                         const fileArray = Array.from(files);
                         setFilesToUpload(fileArray.map((file) => new File([file], file.name, { type: file.type })));
                         setModifications((prev) => ({ ...prev, filesAdded: fileArray.length > 0 }));
+                        setFileErrors({});
                       }
                     },
                   }}
                 />
+                {filesToUpload.length > 0 && (
+                  <div className="fr-mt-2w">
+                    <span className="fr-label">Nouveaux fichiers</span>
+                    <div className="fr-mt-1w" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                      <ul>
+                        {filesToUpload.map((file) => (
+                          <li key={file.name} className="fr-mb-1w">
+                            <div className="fr-grid-row fr-grid-row--middle">
+                              <div className="fr-col">
+                                <span className="fr-text--sm">
+                                  {file.name} ({(file.size / 1024 / 1024).toFixed(2)} Mo)
+                                  <Button
+                                    type="button"
+                                    priority="tertiary no outline"
+                                    size="small"
+                                    iconId="fr-icon-delete-line"
+                                    title="Supprimer le fichier"
+                                    aria-label="Supprimer le fichier"
+                                    className="fr-ml-1w"
+                                    onClick={() => {
+                                      setFilesToUpload(filesToUpload.filter((f) => f.name !== file.name));
+                                      const newErrors = { ...fileErrors };
+                                      delete newErrors[file.name];
+                                      setFileErrors(newErrors);
+                                      setModifications((prev) => ({ ...prev, filesAdded: filesToUpload.length > 1 }));
+                                    }}
+                                  >
+                                    <span className="fr-sr-only">Supprimer le fichier</span>
+                                  </Button>
+                                </span>
+                              </div>
+                            </div>
+                            {fileErrors[file.name] && (
+                              <div className="fr-mt-1w">
+                                {fileErrors[file.name].map((error, index) => (
+                                  <p
+                                    key={`${file.name}-error-${index}`}
+                                    className="fr-text--xs"
+                                    style={{ color: 'var(--text-default-error)' }}
+                                  >
+                                    {error.message}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
                 <div className="display-end fr-mt-4w">
                   <Button
+                    ref={deleteButtonRef}
                     type="button"
                     priority="secondary"
                     size="small"
                     onClick={handleDeleteNote}
-                    className="fr-mr-2w"
+                    className="fr-mr-2w fr-btn--icon-center center-icon-with-sr-only"
+                    aria-label="Supprimer la note"
+                    title="Supprimer la note"
                   >
                     Supprimer la note
                   </Button>
                   <Button
-                    disabled={
-                      (!modifications.content && !modifications.filesAdded && !modifications.filesDeleted) ||
-                      isLoading ||
-                      !noteData.content.trim()
-                    }
+                    disabled={isLoading}
                     onClick={handleSubmit}
                     type="button"
                     priority="primary"
                     size="small"
+                    aria-label="Modifier la note"
+                    title="Modifier la note"
                   >
                     {isLoading ? 'Modification...' : 'Modifier la note'}
                   </Button>
@@ -350,6 +460,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
         </Drawer.Portal>
       </Drawer.Root>
       <deleteNoteModal.Component
+        concealingBackdrop={false}
         title="Supprimer la note"
         buttons={[
           {

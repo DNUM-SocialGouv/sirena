@@ -142,7 +142,7 @@ const StepComponent = ({ nom, statutId, disabled, openEdit, openEditNote, notes,
                   Supprimer l'étape
                 </ButtonLink>
               </div>
-              <div className="fr-col-auto">
+              <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
                 <div className="fr-btns-group fr-btns-group--inline">
                   <Button priority="secondary" size="small" onClick={() => handleEditButton(false)}>
                     Annuler
@@ -164,7 +164,7 @@ const StepComponent = ({ nom, statutId, disabled, openEdit, openEditNote, notes,
             <div className="fr-col">
               <h3 className="fr-h6 fr-mb-0">{nom ?? ''}</h3>
             </div>
-            <div className="fr-col-auto">
+            <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
               <StatusMenu
                 badges={badges}
                 value={statutId}
@@ -172,16 +172,18 @@ const StepComponent = ({ nom, statutId, disabled, openEdit, openEditNote, notes,
                 onBadgeClick={handleStatusChange}
               />
             </div>
-            <div className="fr-col-auto">
+            <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
               <Button
                 priority="tertiary no outline"
                 size="small"
                 iconId="fr-icon-edit-line"
-                title="Éditer"
+                title="Modifier le nom de l'étape"
+                aria-label="Modifier le nom de l'étape"
                 className="fr-btn--icon-center center-icon-with-sr-only"
                 onClick={() => handleEditButton(true)}
+                style={{ whiteSpace: 'nowrap' }}
               >
-                <span className="fr-sr-only">Éditer</span>
+                <span className="fr-sr-only">Modifier le nom de l'étape</span>
               </Button>
             </div>
           </div>
