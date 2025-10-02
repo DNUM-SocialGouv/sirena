@@ -64,9 +64,16 @@ export const hasAccessToRequete = async ({ requeteId, entiteId }: RequeteEntiteK
   return !!requete;
 };
 
-export const getRequeteEntiteById = async ({ requeteId, entiteId }: RequeteEntiteKey) => {
-  return await prisma.requeteEntite.findUnique({
-    where: { requeteId_entiteId: { requeteId, entiteId } },
+export const getRequeteEntiteById = async (requeteId: string, entiteIds: string[] | null) => {
+  if (!entiteIds || entiteIds.length === 0) {
+    return null;
+  }
+
+  return await prisma.requeteEntite.findFirst({
+    where: {
+      requeteId,
+      entiteId: { in: entiteIds },
+    },
     include: {
       requete: {
         include: {
@@ -95,7 +102,12 @@ interface CreateRequeteInput {
   declarant?: DeclarantInput;
 }
 
-export const createRequeteEntite = async (entiteId: string, data?: CreateRequeteInput) => {
+export const createRequeteEntite = async (entiteIds: string[] | null, data?: CreateRequeteInput) => {
+  const entiteId = entiteIds?.[0];
+  if (!entiteId) {
+    throw new Error('No entity ID provided');
+  }
+
   const maxRetries = 5;
   let retryCount = 0;
   let lastError: Error | null = null;

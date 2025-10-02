@@ -2,7 +2,6 @@ import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { addProcessingEtape, getRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
-import { getUserById } from '@/features/users/users.service';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import type { Requete, RequeteEntite, RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
@@ -19,10 +18,6 @@ vi.mock('./requetesEntite.service', () => ({
 vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
   addProcessingEtape: vi.fn(),
   getRequeteEtapes: vi.fn(),
-}));
-
-vi.mock('@/features/users/users.service', () => ({
-  getUserById: vi.fn(),
 }));
 
 vi.mock('@/middlewares/auth.middleware', () => {
@@ -90,22 +85,6 @@ describe('RequetesEntite endpoints: /', () => {
       requeteEtape: [],
     },
   ];
-  const fakeUser = {
-    id: 'id1',
-    entiteId: 'e1',
-    sub: 'sub1',
-    email: 'email1',
-    prenom: 'John',
-    nom: 'Doe',
-    uid: 'uid1',
-    active: true,
-    pcData: {},
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    statutId: 'STATUT_ID',
-    roleId: 'ROLE_ID',
-    role: { id: 'roleId', label: 'ROLE_ADMIN' },
-  };
 
   describe('GET /', () => {
     it('should return requetesEntite with basic query', async () => {
@@ -189,7 +168,6 @@ describe('RequetesEntite endpoints: /', () => {
 
     it('should return processing steps for a requete', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
 
       vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [requeteEtapeWithNotesAndFiles], total: 2 });
 
@@ -204,26 +182,13 @@ describe('RequetesEntite endpoints: /', () => {
         meta: { total: 2 },
       });
 
-      expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {});
-    });
-
-    it('should return 404 if user does not exist', async () => {
-      vi.mocked(getUserById).mockResolvedValueOnce(null);
-
-      const res = await client[':id']['processing-steps'].$get({
-        param: { id: 'nonexistent' },
-      });
-
-      expect(res.status).toBe(401);
-      const json = await res.json();
-      expect(json).toEqual({ message: 'User not found' });
+      expect(getRequeteEtapes).toHaveBeenCalledWith('1', ['e1', 'e2'], {});
     });
   });
 
   describe('POST /:id/processing-steps', () => {
     it('should add a processing step', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
 
       const fakeStep = {
         id: 'step1',
@@ -247,25 +212,11 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(201);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeStep) });
-      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' });
-    });
-
-    it('should return 404 if user does not exist', async () => {
-      vi.mocked(getUserById).mockResolvedValueOnce(null);
-
-      const res = await client[':id']['processing-steps'].$post({
-        param: { id: 'nonexistent' },
-        json: { nom: 'Step 1' },
-      });
-
-      expect(res.status).toBe(401);
-      const json = await res.json();
-      expect(json).toEqual({ message: 'User not found' });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', ['e1', 'e2'], { nom: 'Step 1' });
     });
 
     it('should return 404 if step is not created', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
 
       vi.mocked(addProcessingEtape).mockResolvedValueOnce(null);
 
@@ -277,7 +228,7 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(404);
       const json = await res.json();
       expect(json).toEqual({ message: 'Requete entite not found' });
-      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', ['e1', 'e2'], { nom: 'Step 1' });
     });
   });
 });

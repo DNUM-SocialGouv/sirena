@@ -1,4 +1,4 @@
-import { throwHTTPException401Unauthorized, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
+import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
@@ -9,7 +9,6 @@ import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-import { getUserById } from '../users/users.service';
 import {
   addProcessingStepRoute,
   createRequeteRoute,
@@ -58,16 +57,9 @@ const app = factoryWithLogs
   .get('/:id', getRequeteEntiteRoute, async (c) => {
     const logger = c.get('logger');
     const { id } = c.req.param();
-    const userId = c.get('userId');
+    const entiteIds = c.get('entiteIds');
 
-    const user = await getUserById(userId, null, null);
-    if (!user?.entiteId) {
-      return throwHTTPException401Unauthorized('User not found or not associated with entity', {
-        res: c.res,
-      });
-    }
-
-    const requeteEntite = await getRequeteEntiteById({ requeteId: id, entiteId: user.entiteId });
+    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
 
     if (!requeteEntite) {
       return throwHTTPException404NotFound('Requete not found', {
@@ -83,7 +75,7 @@ const app = factoryWithLogs
   .get('/:id/processing-steps', async (c) => {
     const logger = c.get('logger');
     const { id } = c.req.param();
-    // const entiteIds = c.get('entiteIds');
+    const entiteIds = c.get('entiteIds');
 
     // TODO: Use real entiteIds when implemented
     // const hasAccess = await hasAccessToRequete({ requeteId: id, entiteId });
@@ -95,16 +87,7 @@ const app = factoryWithLogs
       });
     }
 
-    // TODO: Temporary: Here we are using a permission and access management system that will not be the final system: HERE only the user's entiteId is used to retrieve the steps linked to this same entiteId, it WILL likely be more complex later with a parent/child permission chain.
-    const userId = c.get('userId');
-    const user = await getUserById(userId, null, null);
-    if (!user?.entiteId) {
-      return throwHTTPException401Unauthorized('User not found', {
-        res: c.res,
-      });
-    }
-
-    const { data, total } = await getRequeteEtapes(id, user.entiteId, {});
+    const { data, total } = await getRequeteEtapes(id, entiteIds, {});
 
     logger.info({ requestId: id, stepCount: total }, 'Processing steps retrieved successfully');
 
@@ -117,16 +100,10 @@ const app = factoryWithLogs
   .post('/', createRequeteRoute, zValidator('json', CreateRequeteBodySchema), async (c) => {
     const logger = c.get('logger');
     const userId = c.get('userId');
+    const entiteIds = c.get('entiteIds');
     const body = c.req.valid('json');
 
-    const user = await getUserById(userId, null, null);
-    if (!user?.entiteId) {
-      return throwHTTPException401Unauthorized('User not found or not associated with entity', {
-        res: c.res,
-      });
-    }
-
-    const requete = await createRequeteEntite(user.entiteId, body);
+    const requete = await createRequeteEntite(entiteIds, body);
 
     logger.info({ requeteId: requete.id, userId, hasDeclarant: !!body.declarant }, 'New requete created successfully');
 
@@ -137,16 +114,10 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const { id } = c.req.param();
     const userId = c.get('userId');
+    const entiteIds = c.get('entiteIds');
     const { declarant: declarantData, controls } = c.req.valid('json');
 
-    const user = await getUserById(userId, null, null);
-    if (!user?.entiteId) {
-      return throwHTTPException401Unauthorized('User not found or not associated with entity', {
-        res: c.res,
-      });
-    }
-
-    const requeteEntite = await getRequeteEntiteById({ requeteId: id, entiteId: user.entiteId });
+    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
 
     if (!requeteEntite) {
       return throwHTTPException404NotFound('Requete not found', {
@@ -183,7 +154,7 @@ const app = factoryWithLogs
       const { id } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
-      // const entiteIds = c.get('entiteIds');
+      const entiteIds = c.get('entiteIds');
 
       // TODO: Use real entiteIds when implemented
       // const hasAccess = await hasAccessToRequete(id, null);
@@ -195,14 +166,7 @@ const app = factoryWithLogs
         });
       }
 
-      // TODO: Temporary: Here we are using a permission and access management system that will not be the final system: HERE only the user's entiteId is used to create the step linked to this same entiteId, it WILL likely be more complex later with maybe a parent/child permission chain.
-      const user = await getUserById(userId, null, null);
-      if (!user?.entiteId) {
-        return throwHTTPException401Unauthorized('User not found', {
-          res: c.res,
-        });
-      }
-      const step = await addProcessingEtape(id, user.entiteId, {
+      const step = await addProcessingEtape(id, entiteIds, {
         nom: body.nom,
       });
 
