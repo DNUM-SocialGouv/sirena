@@ -1,10 +1,8 @@
 import { InfoSection } from '@sirena/ui';
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useId } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
-import { client } from '@/lib/api/hc';
-import { handleRequestErrors } from '@/lib/api/tanstackQuery';
+import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 
 interface DetailsProps {
   requestId?: string;
@@ -14,20 +12,7 @@ export const Details = ({ requestId }: DetailsProps) => {
   const navigate = useNavigate();
   const declarantSectionId = useId();
   const personneSectionId = useId();
-
-  const requestQuery = useQuery({
-    queryKey: ['requete', requestId],
-    queryFn: async () => {
-      if (!requestId) return null;
-      const response = await client['requetes-entite'][':id'].$get({
-        param: { id: requestId },
-      });
-      await handleRequestErrors(response);
-      const result = await response.json();
-      return result.data;
-    },
-    enabled: !!requestId,
-  });
+  const requestQuery = useRequeteDetails(requestId);
 
   const handleEditDeclarant = () => {
     if (requestId) {
