@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <tests purposes> */
 import {
   AGE,
   AUTORITE_TYPE,
@@ -209,6 +210,11 @@ describe('requetes.service.ts', () => {
           receptionTypeId,
         };
 
+        const fakeRequeteWithEntites = {
+          ...fakeRequete,
+          requeteEntites: [{ entiteId: 'entite-1' }, { entiteId: 'entite-2' }],
+        };
+
         const transactionSpy = vi.mocked(prisma.$transaction);
         transactionSpy.mockImplementation(async (cb) => {
           const mockTx = {
@@ -216,7 +222,7 @@ describe('requetes.service.ts', () => {
             requete: {
               ...prisma.requete,
               create: vi.fn().mockResolvedValue({ id: '1' }),
-              findUniqueOrThrow: vi.fn().mockResolvedValue(fakeRequete),
+              findUniqueOrThrow: vi.fn().mockResolvedValue(fakeRequeteWithEntites),
             },
             personneConcernee: {
               ...prisma.personneConcernee,
@@ -266,6 +272,10 @@ describe('requetes.service.ts', () => {
               ...prisma.faitMaltraitanceType,
               createMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
+            requeteEtape: {
+              ...prisma.requeteEtape,
+              create: vi.fn().mockResolvedValue({ id: 'etape-1' }),
+            },
           } as typeof prisma;
           return cb(mockTx);
         });
@@ -312,7 +322,7 @@ describe('requetes.service.ts', () => {
         });
 
         expect(transactionSpy).toHaveBeenCalledTimes(1);
-        expect(result).toBe(fakeRequete);
+        expect(result).toBe(fakeRequeteWithEntites);
       });
     });
   });
@@ -358,7 +368,69 @@ describe('requetes.service.ts', () => {
       const fakeRequeteDto = getfakeRequeteDto();
 
       const transactionSpy = vi.mocked(prisma.$transaction);
-      transactionSpy.mockImplementation(async (cb) => cb(prisma));
+      transactionSpy.mockImplementation(async (cb) => {
+        const mockTx = {
+          ...prisma,
+          requete: {
+            ...prisma.requete,
+            create: vi.mocked(prisma.requete.create),
+            findUniqueOrThrow: vi.mocked(prisma.requete.findUniqueOrThrow),
+          },
+          personneConcernee: {
+            ...prisma.personneConcernee,
+            create: vi.mocked(prisma.personneConcernee.create),
+          },
+          adresse: {
+            ...prisma.adresse,
+            create: vi.mocked(prisma.adresse.create),
+          },
+          lieuDeSurvenue: {
+            ...prisma.lieuDeSurvenue,
+            create: vi.mocked(prisma.lieuDeSurvenue.create),
+          },
+          misEnCause: {
+            ...prisma.misEnCause,
+            create: vi.mocked(prisma.misEnCause.create),
+          },
+          autoriteTypeEnum: {
+            ...prisma.autoriteTypeEnum,
+            findUnique: vi.mocked(prisma.autoriteTypeEnum.findUnique),
+          },
+          demarchesEngageesEnum: {
+            ...prisma.demarchesEngageesEnum,
+            findMany: vi.mocked(prisma.demarchesEngageesEnum.findMany),
+          },
+          demarchesEngagees: {
+            ...prisma.demarchesEngagees,
+            create: vi.mocked(prisma.demarchesEngagees.create),
+          },
+          situation: {
+            ...prisma.situation,
+            create: vi.mocked(prisma.situation.create),
+          },
+          fait: {
+            ...prisma.fait,
+            create: vi.mocked(prisma.fait.create),
+          },
+          faitMotif: {
+            ...prisma.faitMotif,
+            createMany: vi.mocked(prisma.faitMotif.createMany),
+          },
+          faitConsequence: {
+            ...prisma.faitConsequence,
+            createMany: vi.mocked(prisma.faitConsequence.createMany),
+          },
+          faitMaltraitanceType: {
+            ...prisma.faitMaltraitanceType,
+            createMany: vi.mocked(prisma.faitMaltraitanceType.createMany),
+          },
+          requeteEtape: {
+            ...prisma.requeteEtape,
+            create: vi.fn().mockResolvedValue({ id: 'etape-1' }),
+          },
+        } as typeof prisma;
+        return cb(mockTx);
+      });
 
       vi.mocked(prisma.requete.create).mockResolvedValueOnce({
         id: '1',
@@ -481,12 +553,34 @@ describe('requetes.service.ts', () => {
           receptionTypeId: fakeRequeteDto.receptionTypeId,
           createdAt: new Date(),
           updatedAt: new Date(),
-        });
+          requeteEntites: [{ entiteId: 'entite-1' }, { entiteId: 'entite-2' }],
+        } as any);
+
+        // Mock pour le deuxième appel à findUniqueOrThrow (retour final)
+        vi.mocked(prisma.requete.findUniqueOrThrow).mockResolvedValueOnce({
+          id: '1',
+          commentaire: '',
+          receptionDate: fakeRequeteDto.receptionDate,
+          dematSocialId: fakeRequeteDto.dematSocialId,
+          receptionTypeId: fakeRequeteDto.receptionTypeId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          requeteEntites: [{ entiteId: 'entite-1' }, { entiteId: 'entite-2' }],
+        } as any);
       });
       const requete = await createRequeteFromDematSocial(fakeRequeteDto);
 
       expect(transactionSpy).toHaveBeenCalledTimes(1);
-      expect(requete).toBeDefined();
+      expect(requete).toEqual({
+        id: '1',
+        commentaire: '',
+        receptionDate: fakeRequeteDto.receptionDate,
+        dematSocialId: fakeRequeteDto.dematSocialId,
+        receptionTypeId: fakeRequeteDto.receptionTypeId,
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
+        requeteEntites: [{ entiteId: 'entite-1' }, { entiteId: 'entite-2' }],
+      });
 
       expect(prisma.requete.create).toHaveBeenCalledWith({
         data: {
@@ -757,7 +851,10 @@ describe('requetes.service.ts', () => {
           requete: {
             ...prisma.requete,
             create: mockRequeteCreate,
-            findUniqueOrThrow: vi.fn().mockResolvedValue(created),
+            findUniqueOrThrow: vi.fn().mockResolvedValue({
+              ...created,
+              requeteEntites: [{ entiteId: 'entite-1' }, { entiteId: 'entite-2' }],
+            } as any),
           },
           personneConcernee: {
             ...prisma.personneConcernee,
@@ -806,6 +903,10 @@ describe('requetes.service.ts', () => {
           faitMaltraitanceType: {
             ...prisma.faitMaltraitanceType,
             createMany: vi.fn().mockResolvedValue({ count: 1 }),
+          },
+          requeteEtape: {
+            ...prisma.requeteEtape,
+            create: vi.fn().mockResolvedValue({ id: 'etape-1' }),
           },
         } as typeof prisma;
         return cb(mockTx);
@@ -878,7 +979,10 @@ describe('requetes.service.ts', () => {
           },
         },
       });
-      expect(result).toBe(created);
+      expect(result).toEqual({
+        ...created,
+        requeteEntites: [{ entiteId: 'entite-1' }, { entiteId: 'entite-2' }],
+      });
     });
   });
 });

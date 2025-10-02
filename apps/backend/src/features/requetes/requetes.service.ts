@@ -1,3 +1,4 @@
+import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { prisma } from '@/libs/prisma';
 import { determineSource, generateRequeteId } from './functionalId.service';
 import type { CreateRequeteFromDematSocialDto } from './requetes.type';
@@ -235,6 +236,35 @@ export const createRequeteFromDematSocial = async ({
       });
 
       await Promise.all(faits);
+    }
+
+    const requeteWithEntites = await tx.requete.findUniqueOrThrow({
+      where: { id: requete.id },
+      include: { requeteEntites: true },
+    });
+
+    for (const entite of requeteWithEntites.requeteEntites) {
+      await tx.requeteEtape.create({
+        data: {
+          requeteId: requete.id,
+          entiteId: entite.entiteId,
+          statutId: REQUETE_STATUT_TYPES.FAIT,
+          nom: `Création de la requête le ${receptionDate.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })}`,
+        },
+      });
+
+      await tx.requeteEtape.create({
+        data: {
+          requeteId: requete.id,
+          entiteId: entite.entiteId,
+          statutId: REQUETE_STATUT_TYPES.A_FAIRE,
+          nom: 'Envoyer un accusé de réception au déclarant',
+        },
+      });
     }
 
     return await tx.requete.findUniqueOrThrow({

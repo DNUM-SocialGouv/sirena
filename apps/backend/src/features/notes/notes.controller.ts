@@ -83,13 +83,13 @@ const app = factoryWithLogs
   )
 
   .patch(
-    '/:noteId',
+    '/:id',
     updateNoteRoute,
     zValidator('json', updateNoteBodySchema),
     requeteEtapesNotesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
     async (c) => {
       const logger = c.get('logger');
-      const { noteId } = c.req.param();
+      const { id: noteId } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
 

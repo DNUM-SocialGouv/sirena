@@ -10,6 +10,7 @@ import { useAddProcessingStepNote } from '@/hooks/mutations/updateProcessingStep
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { HttpError } from '@/lib/api/tanstackQuery';
+import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 export type CreateNoteDrawerRef = {
@@ -28,6 +29,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
   const [content, setContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const addStepNoteMutation = useAddProcessingStepNote(requestId);
@@ -41,6 +43,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
   const handleCancel = () => {
     setContent('');
     setFiles([]);
+    setFileErrors({});
     setStep(null);
     setIsLoading(false);
     setErrorMessage(null);
@@ -59,6 +62,20 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
 
   const handleSubmit = async () => {
     if (!step) {
+      return;
+    }
+
+    if (!content.trim().length && files.length === 0) {
+      setErrorMessage('Vous devez renseigner le champs "Détails de la note" ou ajouter un fichier pour créer la note.');
+      return;
+    }
+
+    setErrorMessage(null);
+
+    const newFileErrors = validateFiles(files);
+
+    if (Object.keys(newFileErrors).length > 0) {
+      setFileErrors(newFileErrors);
       return;
     }
 
@@ -118,31 +135,77 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
               />
               <Upload
                 label="Ajouter un ou plusieurs fichiers"
-                hint="Taille maximale: 10 Mo. Formats supportés: .pdf, .png, .jpeg, .eml, .xlsx, .docx, .odt, .msg"
+                hint="Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"
                 multiple
                 disabled={isLoading}
                 state={errorMessage ? 'error' : undefined}
                 stateRelatedMessage={errorMessage ?? undefined}
                 className="relative"
                 nativeInputProps={{
-                  accept: '.pdf,.png,.jpeg,.eml,.xlsx,.docx,.odt,.msg',
+                  accept:
+                    '.pdf,.eml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.msg,.csv,.txt,.png,.jpeg,.jpg,.heic,.heif,.webp,.tiff',
                   onChange: (e) => {
                     const files = e.target.files;
                     if (files) {
                       const fileArray = Array.from(files);
                       setFiles(fileArray.map((file) => new File([file], file.name, { type: file.type })));
+                      setFileErrors({});
                     }
                   },
                 }}
               />
+              {files.length > 0 && (
+                <div className="fr-mt-2w">
+                  <span className="fr-label">Fichiers sélectionnés</span>
+                  <div className="fr-mt-1w" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    <ul>
+                      {files.map((file) => (
+                        <li key={file.name} className="fr-mb-1w">
+                          <div className="fr-grid-row fr-grid-row--middle">
+                            <div className="fr-col">
+                              <span className="fr-text--sm">
+                                {file.name} ({(file.size / 1024 / 1024).toFixed(2)} Mo)
+                                <Button
+                                  type="button"
+                                  priority="tertiary no outline"
+                                  size="small"
+                                  iconId="fr-icon-delete-line"
+                                  title="Supprimer le fichier"
+                                  aria-label="Supprimer le fichier"
+                                  className="fr-ml-1w"
+                                  onClick={() => {
+                                    setFiles(files.filter((f) => f.name !== file.name));
+                                    const newErrors = { ...fileErrors };
+                                    delete newErrors[file.name];
+                                    setFileErrors(newErrors);
+                                  }}
+                                >
+                                  <span className="fr-sr-only">Supprimer le fichier</span>
+                                </Button>
+                              </span>
+                            </div>
+                          </div>
+                          {fileErrors[file.name] && (
+                            <div className="fr-mt-1w">
+                              {fileErrors[file.name].map((error, index) => (
+                                <p
+                                  key={`${file.name}-error-${index}`}
+                                  className="fr-text--xs"
+                                  style={{ color: 'var(--text-default-error)' }}
+                                >
+                                  {error.message}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
               <div className="display-end fr-mt-2w">
-                <Button
-                  type="button"
-                  priority="primary"
-                  size="small"
-                  onClick={handleSubmit}
-                  disabled={isLoading || (!content.trim() && files.length === 0)}
-                >
+                <Button type="button" priority="primary" size="small" onClick={handleSubmit} disabled={isLoading}>
                   {isLoading ? 'En cours...' : 'Ajouter la note'}
                 </Button>
               </div>

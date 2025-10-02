@@ -26,14 +26,21 @@ export const Route = createFileRoute('/inactive')({
 });
 
 function RouteComponent() {
-  const profileQuery = useQuery({ ...profileQueryOptions(), enabled: false });
+  const profileQuery = useQuery({
+    ...profileQueryOptions(),
+    enabled: true,
+    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchIntervalInBackground: true,
+  });
   const userStore = useUserStore();
 
   const label = useMemo(() => (profileQuery.data ? profileQuery.data.prenom : ''), [profileQuery.data]);
 
   useEffect(() => {
     if (profileQuery.data?.statutId === STATUT_TYPES.ACTIF && userStore.role !== ROLES.PENDING) {
-      router.navigate({ to: '/home' });
+      const userStore = useUserStore.getState();
+      userStore.logout();
+      router.navigate({ to: '/login', search: { redirect: window.location.pathname } });
     }
   }, [profileQuery.data, userStore.role]);
 
