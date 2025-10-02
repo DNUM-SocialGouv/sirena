@@ -70,12 +70,6 @@ export const throwHTTPException404NotFound = (msg = MESSAGES.NOT_FOUND, options?
   throw new HTTPException(status, params);
 };
 
-export const throwHTTPException409Conflict = (msg = MESSAGES.CONFLICT, options?: ErrorOptions) => {
-  const status = 409;
-  const params = getParamsOptions(status, msg, options);
-  throw new HTTPException(status, params);
-};
-
 export const throwHTTPException503ServiceUnavailable = (
   msg = MESSAGES.SERVICE_NOT_AVAILABLE,
   options?: ErrorOptions,
