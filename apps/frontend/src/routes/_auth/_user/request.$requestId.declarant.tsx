@@ -95,7 +95,6 @@ function RouteComponent() {
             toastManager.add({
               title: 'Fusion automatique',
               description: 'Les modifications ont été fusionnées automatiquement.',
-              timeout: 5000,
               data: { icon: 'fr-alert--info' },
             });
 
@@ -111,7 +110,6 @@ function RouteComponent() {
           toastManager.add({
             title: 'Conflit de données',
             description: 'Les données ont été modifiées. La page a été rafraîchie.',
-            timeout: 10000,
             data: { icon: 'fr-alert--warning' },
           });
         }
@@ -119,7 +117,6 @@ function RouteComponent() {
         toastManager.add({
           title: 'Erreur',
           description: error.message || 'Une erreur est survenue lors de la sauvegarde.',
-          timeout: 10000,
           data: { icon: 'fr-alert--error' },
         });
       }
