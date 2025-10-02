@@ -96,9 +96,15 @@ const createAddress = (champ: RootChampFragmentFragment | RepetitionChamp) => {
 
 const getBooleanOrNull = (
   champ: RootChampFragmentFragment | RepetitionChamp,
-  options: { key: boolean | null; label: string }[],
+  options?: { key: boolean | null; label: string }[],
 ) => {
-  if (champ.stringValue) {
+  if (!champ) {
+    return null;
+  }
+  if ('checked' in champ) {
+    return champ.checked;
+  }
+  if (options && champ.stringValue) {
     const match = options.find((opt) => opt.label === champ.stringValue);
     if (match) {
       return match.key;
@@ -114,7 +120,7 @@ const getDemarchesEngagees = (
   const demarchesEngagees = {
     demarches: getEnumsFromLabel(mapping.demarchesEngagees.options, champsById[mapping.demarchesEngagees.id]),
     dateContactEtablissement: getDateByChamps(champsById[mapping.demarchesEngageesDateContactEtablissement.id]),
-    etablissementARepondu: champsById[mapping.demarchesEngageesEtablissementARepondu.id]?.stringValue === 'Oui',
+    etablissementARepondu: getBooleanOrNull(champsById[mapping.demarchesEngageesEtablissementARepondu.id]) || false,
     organisme: champsById[mapping.demarchesEngageesOrganisme.id]?.stringValue ?? '',
     datePlainte: getDateByChamps(champsById[mapping.demarcheEngageDatePlainte.id]),
     autoriteTypeId: getEnumIdFromLabel(
@@ -229,7 +235,7 @@ const getVictimeNonConcernee = (champsById: MappedChamp) => {
       rootMapping.estVictimeInformee.options,
     ),
     victimeInformeeCommentaire: champsById[rootMapping.estVictimeInformeeCommentaire.id]?.stringValue ?? null,
-    autrePersonnes: champsById[rootMapping.autreVictimes.id]?.stringValue ?? null,
+    autrePersonnes: champsById[rootMapping.autreVictimesDetails.id]?.stringValue ?? null,
   };
   return personneConcernee;
 };
