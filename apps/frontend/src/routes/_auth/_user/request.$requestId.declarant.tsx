@@ -55,7 +55,7 @@ function RouteComponent() {
     mutationFn: async (data: DeclarantData) => {
       const identiteUpdatedAt = requestQuery.data?.requete?.declarant?.identite?.updatedAt;
 
-      const response = await client['requetes-entite'][':id'].declarant.$put({
+      const response = await client['requetes-entite'][':id'].declarant.$patch({
         param: { id: requestId },
         json: {
           declarant: data,

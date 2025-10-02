@@ -110,7 +110,7 @@ const app = factoryWithLogs
     return c.json({ data: requete }, 201);
   })
 
-  .put('/:id/declarant', zValidator('json', UpdateDeclarantBodySchema), async (c) => {
+  .patch('/:id/declarant', zValidator('json', UpdateDeclarantBodySchema), async (c) => {
     const logger = c.get('logger');
     const { id } = c.req.param();
     const userId = c.get('userId');
