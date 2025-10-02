@@ -67,6 +67,14 @@ function isEqual(a: unknown, b: unknown): boolean {
   if (a == null || b == null) return a === b;
   if (typeof a !== typeof b) return false;
 
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!isEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
   if (typeof a === 'object' && a !== null && b !== null) {
     const objA = a as Record<string, unknown>;
     const objB = b as Record<string, unknown>;
