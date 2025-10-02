@@ -5,11 +5,16 @@ export const authorizationParams = {
   redirect_uri: envVars.PC_REDIRECT_URI,
   scope: scopes,
   login_hint: '',
-  acr_values: ['eidas1'],
   claims: {
     id_token: {
-      amr: {
+      acr: {
         essential: true,
+        values: [
+          'eidas2',
+          'eidas3',
+          'https://proconnect.gouv.fr/assurance/self-asserted-2fa',
+          'https://proconnect.gouv.fr/assurance/consistency-checked-2fa',
+        ],
       },
     },
   },
