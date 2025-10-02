@@ -10,14 +10,19 @@ export type UserState = {
   logout: () => void;
 };
 
-export const useUserStore = create<UserState>((set) => ({
-  isLogged: LOGGED_TOKEN_NAME ? document.cookie.includes(LOGGED_TOKEN_NAME) : false,
-  role: null,
-  setRole: (role: Role | null) => set(() => ({ role })),
-  updateIsLogged: (isLogged: boolean) => set(() => ({ isLogged })),
-  logout: () =>
-    set(() => ({
-      isLogged: false,
-      role: null,
-    })),
-}));
+export const useUserStore = create<UserState>((set) => {
+  const cookieName = LOGGED_TOKEN_NAME || 'is_logged_token';
+  const initialIsLogged = document.cookie.includes(cookieName);
+
+  return {
+    isLogged: initialIsLogged,
+    role: null,
+    setRole: (role: Role | null) => set(() => ({ role })),
+    updateIsLogged: (isLogged: boolean) => set(() => ({ isLogged })),
+    logout: () =>
+      set(() => ({
+        isLogged: false,
+        role: null,
+      })),
+  };
+});

@@ -72,7 +72,7 @@ describe('requetesEntite.service', () => {
 
       expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
         skip: 0,
-        orderBy: { id: 'asc' },
+        orderBy: { requeteId: 'asc' },
         include: {
           requete: {
             include: {

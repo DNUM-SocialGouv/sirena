@@ -13,7 +13,7 @@ type RequeteEntiteKey = { requeteId: string; entiteId: string };
 // TODO handle entiteIds
 // TODO handle search
 export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
-  const { offset = 0, limit, sort = 'id', order = 'asc' } = query;
+  const { offset = 0, limit, sort = 'requeteId', order = 'asc' } = query;
 
   // const entiteFilter = filterByEntities(entiteIds);
 

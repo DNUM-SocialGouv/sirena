@@ -97,7 +97,7 @@ export function ConflictResolutionDialog<T = Record<string, unknown>>({
         {conflicts.map((conflict) => {
           const fieldKey = String(conflict.field);
           return (
-            <div key={fieldKey} className="fr-mb-3w fr-p-2w" style={{ backgroundColor: '#f5f5fe' }}>
+            <div key={fieldKey} className="fr-mb-3w fr-p-2w fr-background-alt--blue-france">
               <h3 className="fr-h6 fr-mb-2w">{fieldMetadata[fieldKey]?.label || fieldKey}</h3>
 
               <RadioButtons
@@ -136,7 +136,7 @@ export function ConflictResolutionDialog<T = Record<string, unknown>>({
               {conflict.originalValue !== undefined &&
                 conflict.originalValue !== null &&
                 conflict.originalValue !== '' && (
-                  <div className="fr-mt-2w fr-text--sm" style={{ color: '#666' }}>
+                  <div className="fr-mt-2w fr-text--sm fr-text-mention--grey">
                     <strong>Valeur originale :</strong> {formatValue(conflict.originalValue)}
                   </div>
                 )}
