@@ -2,6 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
+import { mappers } from '@sirena/common';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -16,11 +17,6 @@ interface DeclarantFormProps {
   initialData?: DeclarantData;
   onSave: (data: DeclarantData, shouldCreateRequest: boolean) => Promise<void>;
 }
-
-const civiliteOptions = [
-  { label: 'Madame', value: 'madame' },
-  { label: 'Monsieur', value: 'monsieur' },
-];
 
 const lienAvecPersonneConcerneeOptions = [
   { label: 'Membre de la famille', value: 'MEMBRE_FAMILLE' },
@@ -117,7 +113,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                 }}
               >
                 <option value="">Sélectionner</option>
-                {civiliteOptions.map((option) => (
+                {mappers.civiliteOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
