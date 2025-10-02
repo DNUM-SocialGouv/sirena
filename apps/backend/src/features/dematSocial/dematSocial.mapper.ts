@@ -612,16 +612,6 @@ const demarchesEngageesEtablissementARepondu = {
   id: 'Champ-19736',
   type: 'CheckboxChamp',
   label: 'Une réponse a-t-elle été obtenue ?',
-  options: [
-    {
-      key: true,
-      label: 'Oui',
-    },
-    {
-      key: false,
-      label: 'Non',
-    },
-  ],
 };
 
 /* demarchesEngageesEtablissementARepondu = true start */
