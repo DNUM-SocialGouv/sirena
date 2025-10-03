@@ -12,12 +12,8 @@ import type {
   UpdateRequeteEtapeStatutDto,
 } from './requetesEtapes.type';
 
-export const addProcessingEtape = async (
-  requeteId: string,
-  entiteIds: string[] | null,
-  data: RequeteEtapeCreationDto,
-) => {
-  const entiteId = entiteIds?.[0];
+export const addProcessingEtape = async (requeteId: string, entiteIds: string[], data: RequeteEtapeCreationDto) => {
+  const [entiteId] = entiteIds;
   if (!entiteId) {
     return null;
   }
@@ -58,8 +54,8 @@ export const addProcessingEtape = async (
   return etape;
 };
 
-export const getRequeteEtapes = async (requeteId: string, entiteIds: string[] | null, query: GetRequeteEtapesQuery) => {
-  const entiteId = entiteIds?.[0];
+export const getRequeteEtapes = async (requeteId: string, entiteIds: string[], query: GetRequeteEtapesQuery) => {
+  const [entiteId] = entiteIds;
   if (!entiteId) {
     return { data: [], total: 0 };
   }
