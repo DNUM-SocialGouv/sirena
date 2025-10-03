@@ -1,5 +1,5 @@
 import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
-import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
+import { PERMISSION_ERROR, ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { getUserById } from '@/features/users/users.service';
 import factoryWithAuth from '@/helpers/factories/appWithAuth';
 
@@ -20,8 +20,10 @@ const userStatusMiddleware = factoryWithAuth.createMiddleware(async (c, next) =>
     (user.statutId === STATUT_TYPES.INACTIF || user.statutId === STATUT_TYPES.NON_RENSEIGNE) &&
     user.roleId !== ROLES.SUPER_ADMIN
   ) {
-    c.res.headers.set('X-Error-Code', 'ACCOUNT_INACTIVE');
-    return throwHTTPException403Forbidden('Account inactive', { res: c.res });
+    return throwHTTPException403Forbidden('Account inactive', {
+      res: c.res,
+      cause: { name: PERMISSION_ERROR.ACCOUNT_INACTIVE },
+    });
   }
 
   return next();

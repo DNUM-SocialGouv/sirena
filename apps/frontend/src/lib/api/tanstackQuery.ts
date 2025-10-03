@@ -1,4 +1,7 @@
+import { PERMISSION_ERROR } from '@sirena/common/constants';
 import type { Cause } from '@sirena/common/types';
+import { profileQueryOptions } from '@/hooks/queries/profile.hook';
+import { queryClient } from '@/lib/queryClient';
 import { router } from '@/lib/router';
 import { toastManager } from '@/lib/toastManager';
 import { useUserStore } from '@/stores/userStore';
@@ -54,8 +57,16 @@ export class HttpError extends Error {
 }
 
 export const handleRequestErrors = async (res: Response, options: RequestErrorOptions = {}) => {
-  const isAccountInactiveError = (res: Response): boolean => {
-    return res.status === 403 && res.headers.get('X-Error-Code') === 'ACCOUNT_INACTIVE';
+  let errorFound = false;
+  const isAccountInactiveError = async (res: Response) => {
+    if (res.status !== 403) return false;
+    try {
+      const data = await res.clone().json();
+      if (getDataResposne(data) && data.cause?.name === PERMISSION_ERROR.ACCOUNT_INACTIVE) return true;
+      return false;
+    } catch {
+      return false;
+    }
   };
 
   if (res.ok) return;
@@ -64,14 +75,14 @@ export const handleRequestErrors = async (res: Response, options: RequestErrorOp
     const userStore = useUserStore.getState();
     userStore.logout();
     router.navigate({ to: '/login', search: { redirect: window.location.pathname } });
+    errorFound = true;
   }
 
-  if (isAccountInactiveError(res)) {
-    // For account inactive error, logout and redirect to login to get fresh JWT with new role as payload
-    const userStore = useUserStore.getState();
-    userStore.logout();
-    router.navigate({ to: '/login', search: { redirect: window.location.pathname } });
-    return;
+  if (await isAccountInactiveError(res)) {
+    await queryClient.invalidateQueries({ queryKey: ['profileKey'] });
+    await queryClient.fetchQuery(profileQueryOptions());
+    router.navigate({ to: '/inactive', search: { redirect: window.location.pathname } });
+    errorFound = true;
   }
 
   let data: unknown;
@@ -85,7 +96,7 @@ export const handleRequestErrors = async (res: Response, options: RequestErrorOp
     }
   }
 
-  if (!options.silentToastError) {
+  if (!options.silentToastError && !errorFound) {
     toastManager.add({
       title: 'Erreur',
       description: `Une erreur s'est produite : ${res.status} ${res.statusText}`,

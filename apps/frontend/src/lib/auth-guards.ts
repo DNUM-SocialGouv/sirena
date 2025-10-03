@@ -1,3 +1,4 @@
+import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { redirect } from '@tanstack/react-router';
 import { type UserState, useUserStore } from '@/stores/userStore';
 
@@ -24,8 +25,11 @@ export const checkAuth = (params: BeforeLoad, userStore: UserState) => {
 };
 
 const getFallbackByRole = (role: string | null) => {
-  if (role === 'SUPER_ADMIN') {
+  if (role === ROLES.SUPER_ADMIN) {
     return '/admin/users';
+  }
+  if (role === ROLES.PENDING) {
+    return '/inactive';
   }
   return fallback;
 };
@@ -47,10 +51,19 @@ export const checkRoles = (userStore: UserState, roles: string[]) => {
   }
 };
 
+const checkActif = (userStore: UserState) => {
+  if (userStore.statutId !== 'ACTIF' && userStore.role !== ROLES.SUPER_ADMIN) {
+    throw redirect({
+      to: '/inactive',
+    });
+  }
+};
+
 export const requireAuthAndRoles = (roles: string[]) => {
   return (params: BeforeLoad) => {
     const userStore = useUserStore.getState();
     checkAuth(params, userStore);
+    checkActif(userStore);
     checkRoles(userStore, roles);
   };
 };
@@ -63,4 +76,21 @@ export const requireAuth = (params: BeforeLoad) => {
 export const requireNotAuth = (params: BeforeLoad) => {
   const userStore = useUserStore.getState();
   checkNotAuth(params, userStore);
+};
+
+export const requireNotPendingOrActif = (params: BeforeLoad) => {
+  const userStore = useUserStore.getState();
+  checkAuth(params, userStore);
+  if (userStore.role === ROLES.SUPER_ADMIN) {
+    throw redirect({ to: '/admin/users' });
+  }
+  if (
+    userStore.role != null &&
+    userStore.statutId != null &&
+    userStore.role !== ROLES.PENDING &&
+    userStore.statutId !== STATUT_TYPES.INACTIF &&
+    userStore.statutId !== STATUT_TYPES.NON_RENSEIGNE
+  ) {
+    throw redirect({ to: fallback });
+  }
 };
