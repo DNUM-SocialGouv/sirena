@@ -1,4 +1,4 @@
-import { STATUT_TYPES } from '@sirena/common/constants';
+import { PERMISSION_ERROR, STATUT_TYPES } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -99,6 +99,9 @@ describe('userStatus.middleware.ts', () => {
 
       expect(mockGetUserById).toHaveBeenCalledWith('user-123', null, null);
       expect(mockThrowHTTPException403Forbidden).toHaveBeenCalledWith('Account inactive', {
+        cause: {
+          name: PERMISSION_ERROR.ACCOUNT_INACTIVE,
+        },
         res: mockContext.res,
       });
       expect(next).not.toHaveBeenCalled();
@@ -129,6 +132,9 @@ describe('userStatus.middleware.ts', () => {
 
       expect(mockGetUserById).toHaveBeenCalledWith('user-123', null, null);
       expect(mockThrowHTTPException403Forbidden).toHaveBeenCalledWith('Account inactive', {
+        cause: {
+          name: PERMISSION_ERROR.ACCOUNT_INACTIVE,
+        },
         res: mockContext.res,
       });
       expect(next).not.toHaveBeenCalled();
