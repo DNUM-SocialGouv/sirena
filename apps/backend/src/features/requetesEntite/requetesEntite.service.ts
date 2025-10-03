@@ -1,3 +1,4 @@
+import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
 import type { DeclarantDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
@@ -194,12 +195,12 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
       const serverUpdatedAt = requete.declarant.identite.updatedAt;
 
       if (clientUpdatedAt.getTime() !== serverUpdatedAt.getTime()) {
-        const error = new Error('CONFLICT: The declarant identity has been modified by another user.');
-        (error as Error & { conflictData?: unknown }).conflictData = {
-          serverData: requete.declarant,
-          serverUpdatedAt: serverUpdatedAt.toISOString(),
-        };
-        throw error;
+        helpers.throwHTTPException409Conflict('The declarant identity has been modified by another user.', {
+          cause: {
+            serverData: requete.declarant,
+            serverUpdatedAt: serverUpdatedAt.toISOString(),
+          },
+        });
       }
     }
 

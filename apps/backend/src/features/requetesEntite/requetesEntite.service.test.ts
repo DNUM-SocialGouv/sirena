@@ -15,6 +15,18 @@ import {
   updateRequeteDeclarant,
 } from './requetesEntite.service';
 
+vi.mock('@sirena/backend-utils', () => ({
+  helpers: {
+    throwHTTPException409Conflict: vi.fn((message: string, options?: { cause?: unknown }) => {
+      const error = new Error(message);
+      if (options?.cause) {
+        (error as Error & { cause?: unknown }).cause = options.cause;
+      }
+      throw error;
+    }),
+  },
+}));
+
 vi.mock('@/libs/prisma', () => ({
   prisma: {
     requeteEntite: {
@@ -267,7 +279,7 @@ describe('requetesEntite.service', () => {
             declarant: { updatedAt: oldTimestamp.toISOString() },
           },
         ),
-      ).rejects.toThrow('CONFLICT: The declarant identity has been modified by another user.');
+      ).rejects.toThrow('The declarant identity has been modified by another user.');
     });
 
     it('should update declarant when identite updatedAt timestamp matches', async () => {

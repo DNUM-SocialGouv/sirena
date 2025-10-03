@@ -125,23 +125,11 @@ const app = factoryWithLogs
       });
     }
 
-    try {
-      const updatedRequete = await updateRequeteDeclarant(id, declarantData, controls);
+    const updatedRequete = await updateRequeteDeclarant(id, declarantData, controls);
 
-      logger.info({ requeteId: id, userId }, 'Declarant data updated successfully');
+    logger.info({ requeteId: id, userId }, 'Declarant data updated successfully');
 
-      return c.json({ data: updatedRequete });
-    } catch (error: unknown) {
-      if (error instanceof Error && error.message.startsWith('CONFLICT')) {
-        const conflictResponse = {
-          message: 'The declarant identity has been modified by another user.',
-          conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
-        };
-
-        return c.json(conflictResponse, 409);
-      }
-      throw error;
-    }
+    return c.json({ data: updatedRequete });
   })
 
   .post(
