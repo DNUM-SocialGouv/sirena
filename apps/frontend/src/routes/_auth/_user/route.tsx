@@ -4,13 +4,7 @@ import { AuthLayout } from '@/components/layout/auth/layout';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/_user')({
-  beforeLoad: requireAuthAndRoles([
-    ROLES.ENTITY_ADMIN,
-    ROLES.NATIONAL_STEERING,
-    ROLES.PENDING,
-    ROLES.READER,
-    ROLES.WRITER,
-  ]),
+  beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]),
   component: RouteComponent,
 });
 

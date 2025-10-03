@@ -10,9 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as InactiveRouteImport } from './routes/inactive'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/route'
 import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
 import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
 import { Route as AuthAdminEntitiesRouteImport } from './routes/_auth/admin/entities'
@@ -32,11 +32,6 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InactiveRoute = InactiveRouteImport.update({
-  id: '/inactive',
-  path: '/inactive',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
@@ -45,6 +40,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthInactiveRouteRoute = AuthInactiveRouteRouteImport.update({
+  id: '/inactive',
+  path: '/inactive',
+  getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthAdminRouteRoute = AuthAdminRouteRouteImport.update({
   id: '/admin',
@@ -117,9 +117,9 @@ const AuthUserRequestRequestIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/inactive': typeof InactiveRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
+  '/inactive': typeof AuthInactiveRouteRoute
   '/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/home': typeof AuthUserHomeRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
@@ -134,9 +134,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/inactive': typeof InactiveRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
+  '/inactive': typeof AuthInactiveRouteRoute
   '/home': typeof AuthUserHomeRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
   '/request/create': typeof AuthUserRequestCreateRoute
@@ -151,10 +151,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteRouteWithChildren
-  '/inactive': typeof InactiveRoute
   '/login': typeof LoginRoute
   '/_auth/_user': typeof AuthUserRouteRouteWithChildren
   '/_auth/admin': typeof AuthAdminRouteRouteWithChildren
+  '/_auth/inactive': typeof AuthInactiveRouteRoute
   '/_auth/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/_auth/_user/home': typeof AuthUserHomeRoute
   '/_auth/admin/entities': typeof AuthAdminEntitiesRoute
@@ -171,9 +171,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/inactive'
     | '/login'
     | '/admin'
+    | '/inactive'
     | '/admin/users'
     | '/home'
     | '/admin/entities'
@@ -188,9 +188,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/inactive'
     | '/login'
     | '/admin'
+    | '/inactive'
     | '/home'
     | '/admin/entities'
     | '/request/create'
@@ -204,10 +204,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_auth'
-    | '/inactive'
     | '/login'
     | '/_auth/_user'
     | '/_auth/admin'
+    | '/_auth/inactive'
     | '/_auth/admin/users'
     | '/_auth/_user/home'
     | '/_auth/admin/entities'
@@ -224,7 +224,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
-  InactiveRoute: typeof InactiveRoute
   LoginRoute: typeof LoginRoute
 }
 
@@ -235,13 +234,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inactive': {
-      id: '/inactive'
-      path: '/inactive'
-      fullPath: '/inactive'
-      preLoaderRoute: typeof InactiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth': {
@@ -257,6 +249,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_auth/inactive': {
+      id: '/_auth/inactive'
+      path: '/inactive'
+      fullPath: '/inactive'
+      preLoaderRoute: typeof AuthInactiveRouteRouteImport
+      parentRoute: typeof AuthRouteRoute
     }
     '/_auth/admin': {
       id: '/_auth/admin'
@@ -419,11 +418,13 @@ const AuthAdminRouteRouteWithChildren = AuthAdminRouteRoute._addFileChildren(
 interface AuthRouteRouteChildren {
   AuthUserRouteRoute: typeof AuthUserRouteRouteWithChildren
   AuthAdminRouteRoute: typeof AuthAdminRouteRouteWithChildren
+  AuthInactiveRouteRoute: typeof AuthInactiveRouteRoute
 }
 
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthUserRouteRoute: AuthUserRouteRouteWithChildren,
   AuthAdminRouteRoute: AuthAdminRouteRouteWithChildren,
+  AuthInactiveRouteRoute: AuthInactiveRouteRoute,
 }
 
 const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
@@ -433,7 +434,6 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRouteRoute: AuthRouteRouteWithChildren,
-  InactiveRoute: InactiveRoute,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport

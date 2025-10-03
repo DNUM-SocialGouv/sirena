@@ -1,12 +1,13 @@
+import { ROLES } from '@sirena/common/constants';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { RequestForm } from '@/components/requestForm/RequestForm';
-import { requireAuth } from '@/lib/auth-guards';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/_user/request/$requestId/edit')({
-  beforeLoad: requireAuth,
+  beforeLoad: requireAuthAndRoles([ROLES.WRITER, ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING]),
   params: {
     parse: (params: Record<string, string>) => ({
       requestId: z.string().parse(params.requestId),

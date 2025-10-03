@@ -23,3 +23,8 @@ export const AUTH_ERROR_MESSAGES: Record<keyof typeof AUTH_ERROR_CODES, string> 
   SESSION_ALREADY_EXISTS: 'La session existe déjà',
   SESSION_CREATE_ERROR: 'Erreur lors de la création de la session',
 };
+
+export const PERMISSION_ERROR = {
+  ACCOUNT_INACTIVE: 'ACCOUNT_INACTIVE',
+  ACCOUNT_PENDING: 'ACCOUNT_PENDING',
+};

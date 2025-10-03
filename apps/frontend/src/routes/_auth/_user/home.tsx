@@ -8,14 +8,14 @@ import { RequetesEntite } from '@/components/common/tables/requetesEntites.tsx';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { createRequeteEntite } from '@/lib/api/createRequeteEntite';
-import { requireAuth } from '@/lib/auth-guards';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { router } from '@/lib/router';
 import { QueryParamsSchema } from '@/schemas/pagination.schema';
 import { useUserStore } from '@/stores/userStore';
 import styles from './home.module.css';
 
 export const Route = createFileRoute('/_auth/_user/home')({
-  beforeLoad: requireAuth,
+  beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]),
   head: () => ({
     meta: [
       {
@@ -69,27 +69,25 @@ function RouteComponent() {
   };
 
   return (
-    <div className="fr-container fr-mt-4w">
-      <QueryStateHandler query={profileQuery}>
-        {() => (
-          <>
-            <div className={styles.header}>
-              <h1 className={styles.title}>Bienvenue {label}</h1>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <Link to="/request/create">
-                  <Button iconId="fr-icon-add-line" iconPosition="left">
-                    Créer une requête manuellement
-                  </Button>
-                </Link>
-                <Button iconId="fr-icon-add-line" iconPosition="left" onClick={handleCreateRequest}>
-                  Créer une requête (test SIRENA-223)
+    <QueryStateHandler query={profileQuery}>
+      {() => (
+        <>
+          <div className={styles.header}>
+            <h1 className={styles.title}>Bienvenue {label}</h1>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <Link to="/request/create">
+                <Button iconId="fr-icon-add-line" iconPosition="left">
+                  Créer une requête manuellement
                 </Button>
-              </div>
+              </Link>
+              <Button iconId="fr-icon-add-line" iconPosition="left" onClick={handleCreateRequest}>
+                Créer une requête (test SIRENA-223)
+              </Button>
             </div>
-            <RequetesEntite />
-          </>
-        )}
-      </QueryStateHandler>
-    </div>
+          </div>
+          <RequetesEntite />
+        </>
+      )}
+    </QueryStateHandler>
   );
 }
