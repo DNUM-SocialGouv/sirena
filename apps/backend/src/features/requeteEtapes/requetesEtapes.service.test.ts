@@ -120,7 +120,7 @@ describe('RequeteEtapes.service.ts', () => {
       vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce(requeteEntite);
       vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(requeteEtape);
 
-      const result = await addProcessingEtape('requeteId', 'entiteId', {
+      const result = await addProcessingEtape('requeteId', ['entiteId'], {
         nom: requeteEtape.nom,
       });
 
@@ -154,7 +154,7 @@ describe('RequeteEtapes.service.ts', () => {
     it('should return null if requete does not exist', async () => {
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(null);
 
-      const result = await addProcessingEtape('nonExistentRequeteId', 'entiteId', {
+      const result = await addProcessingEtape('nonExistentRequeteId', ['entiteId'], {
         nom: 'Processing Etape',
       });
 
@@ -169,7 +169,7 @@ describe('RequeteEtapes.service.ts', () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([requeteEtapeWithNotesAndFiles]);
       vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
 
-      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0, limit: 10 });
+      const result = await getRequeteEtapes('requeteId', ['entiteId'], { offset: 0, limit: 10 });
 
       expect(result.data).toEqual([requeteEtapeWithNotesAndFiles]);
       expect(result.total).toBe(1);
@@ -217,7 +217,7 @@ describe('RequeteEtapes.service.ts', () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([requeteEtapeWithNotesAndFiles]);
       vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
 
-      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0 });
+      const result = await getRequeteEtapes('requeteId', ['entiteId'], { offset: 0 });
 
       expect(result.data).toEqual([requeteEtapeWithNotesAndFiles]);
       expect(result.total).toBe(1);

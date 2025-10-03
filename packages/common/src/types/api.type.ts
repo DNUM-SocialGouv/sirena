@@ -1,1 +1,1 @@
-export type Cause = { name?: string; message?: string; stack?: string };
+export type Cause = Record<string, unknown>;

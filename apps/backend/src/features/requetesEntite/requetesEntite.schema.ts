@@ -1,4 +1,5 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
+import { DeclarantDataSchema } from '@sirena/common/schemas';
 import { Prisma } from '@/libs/prisma';
 import { RequeteEntiteSchema, RequeteEtapeSchema, RequeteSchema, z } from '@/libs/zod';
 
@@ -23,4 +24,19 @@ export const addProcessingStepNoteBodySchema = z.object({
   content: z.string().min(1, {
     message: "Le champ 'content' est obligatoire. Veuillez le renseigner pour ajouter une note à l'étape.",
   }),
+});
+
+export const CreateRequeteBodySchema = z.object({
+  declarant: DeclarantDataSchema.optional(),
+});
+
+export const UpdateDeclarantBodySchema = z.object({
+  declarant: DeclarantDataSchema,
+  controls: z
+    .object({
+      declarant: z.object({
+        updatedAt: z.string().datetime(),
+      }),
+    })
+    .optional(),
 });

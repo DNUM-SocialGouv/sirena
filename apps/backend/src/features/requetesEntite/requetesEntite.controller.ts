@@ -1,15 +1,32 @@
-import { throwHTTPException401Unauthorized } from '@sirena/backend-utils/helpers';
+import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
+import { ChangeLogAction } from '@/features/changelog/changelog.type';
+import { addProcessingEtape, getRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
+import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtape.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-import { getUserById } from '../users/users.service';
-import { getRequetesEntiteRoute } from './requetesEntite.route';
-import { GetRequetesEntiteQuerySchema } from './requetesEntite.schema';
-import { createRequeteEntite, getRequetesEntite } from './requetesEntite.service';
+import {
+  addProcessingStepRoute,
+  createRequeteRoute,
+  getRequeteEntiteRoute,
+  getRequetesEntiteRoute,
+} from './requetesEntite.route';
+import {
+  AddProcessingStepBodySchema,
+  CreateRequeteBodySchema,
+  GetRequetesEntiteQuerySchema,
+  UpdateDeclarantBodySchema,
+} from './requetesEntite.schema';
+import {
+  createRequeteEntite,
+  getRequeteEntiteById,
+  getRequetesEntite,
+  updateRequeteDeclarant,
+} from './requetesEntite.service';
 
 const app = factoryWithLogs
   .createApp()
@@ -37,26 +54,123 @@ const app = factoryWithLogs
     });
   })
 
-  // Roles with edit permissions
-  .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]))
-
-  // TODO: useful to validate ticket SIRENA-223, should be removed later
-  .post('/', async (c) => {
+  .get('/:id', getRequeteEntiteRoute, async (c) => {
     const logger = c.get('logger');
-    const userId = c.get('userId');
+    const { id } = c.req.param();
+    const entiteIds = c.get('entiteIds');
 
-    const user = await getUserById(userId, null, null);
-    if (!user?.entiteId) {
-      return throwHTTPException401Unauthorized('User not found or not associated with entity', {
+    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
+
+    if (!requeteEntite) {
+      return throwHTTPException404NotFound('Requete not found', {
         res: c.res,
       });
     }
 
-    const requete = await createRequeteEntite(user.entiteId);
+    logger.info({ requeteId: id }, 'Requete details retrieved successfully');
 
-    logger.info({ requeteId: requete.id, userId }, 'New requete created successfully');
+    return c.json({ data: requeteEntite });
+  })
+
+  .get('/:id/processing-steps', async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const entiteIds = c.get('entiteIds');
+
+    // TODO: Use real entiteIds when implemented
+    // const hasAccess = await hasAccessToRequete({ requeteId: id, entiteId });
+    const hasAccess = true;
+
+    if (!hasAccess) {
+      return throwHTTPException404NotFound('Requete entite not found', {
+        res: c.res,
+      });
+    }
+
+    const { data, total } = await getRequeteEtapes(id, entiteIds, {});
+
+    logger.info({ requestId: id, stepCount: total }, 'Processing steps retrieved successfully');
+
+    return c.json({ data, meta: { total } });
+  })
+
+  // Roles with edit permissions
+  .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]))
+
+  .post('/', createRequeteRoute, zValidator('json', CreateRequeteBodySchema), async (c) => {
+    const logger = c.get('logger');
+    const userId = c.get('userId');
+    const entiteIds = c.get('entiteIds');
+    const body = c.req.valid('json');
+
+    const requete = await createRequeteEntite(entiteIds, body);
+
+    logger.info({ requeteId: requete.id, userId, hasDeclarant: !!body.declarant }, 'New requete created successfully');
 
     return c.json({ data: requete }, 201);
-  });
+  })
+
+  .patch('/:id/declarant', zValidator('json', UpdateDeclarantBodySchema), async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
+    const entiteIds = c.get('entiteIds');
+    const { declarant: declarantData, controls } = c.req.valid('json');
+
+    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
+
+    if (!requeteEntite) {
+      return throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    const updatedRequete = await updateRequeteDeclarant(id, declarantData, controls);
+
+    logger.info({ requeteId: id, userId }, 'Declarant data updated successfully');
+
+    return c.json({ data: updatedRequete });
+  })
+
+  .post(
+    '/:id/processing-steps',
+    addProcessingStepRoute,
+    zValidator('json', AddProcessingStepBodySchema),
+    requeteStatesChangelogMiddleware({ action: ChangeLogAction.CREATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const body = c.req.valid('json');
+      const userId = c.get('userId');
+      const entiteIds = c.get('entiteIds');
+
+      // TODO: Use real entiteIds when implemented
+      // const hasAccess = await hasAccessToRequete(id, null);
+      const hasAccess = true;
+
+      if (!hasAccess) {
+        return throwHTTPException404NotFound('Requete entite not found', {
+          res: c.res,
+        });
+      }
+
+      const step = await addProcessingEtape(id, entiteIds, {
+        nom: body.nom,
+      });
+
+      if (!step) {
+        logger.error({ requestId: id, userId }, 'Inconsistent state: step not created');
+        return throwHTTPException404NotFound('Requete entite not found', {
+          res: c.res,
+        });
+      }
+
+      c.set('changelogId', step.id);
+
+      logger.info({ requestId: id, stepId: step.id, userId }, 'Processing step added successfully');
+
+      return c.json({ data: step }, 201);
+    },
+  );
 
 export default app;

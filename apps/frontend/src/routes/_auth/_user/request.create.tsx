@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useMatches } from '@tanstack/react-router';
 import { RequestForm } from '@/components/requestForm/RequestForm';
 import { requireAuth } from '@/lib/auth-guards';
 
@@ -15,5 +15,9 @@ export const Route = createFileRoute('/_auth/_user/request/create')({
 });
 
 function RouteComponent() {
-  return <RequestForm mode="create" />;
+  const matches = useMatches();
+  const lastMatch = matches[matches.length - 1];
+  const hasChildRoute = lastMatch?.id !== '/_auth/_user/request/create';
+
+  return hasChildRoute ? <Outlet /> : <RequestForm />;
 }

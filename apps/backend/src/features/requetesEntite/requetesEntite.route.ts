@@ -1,11 +1,25 @@
 import { openApiProtectedRoute, openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
-import { RequeteEtapeNoteSchema, RequeteEtapeSchema } from '@/libs/zod';
+import { RequeteEtapeNoteSchema, RequeteEtapeSchema, RequeteSchema } from '@/libs/zod';
 import { GetRequetesEntiteResponseSchema } from './requetesEntite.schema';
 
 export const getRequetesEntiteRoute = openApiProtectedRoute({
   description: 'Get requetes entites',
   responses: {
     ...openApiResponses(GetRequetesEntiteResponseSchema),
+  },
+});
+
+export const getRequeteEntiteRoute = openApiProtectedRoute({
+  description: 'Get a single requete entite by ID',
+  responses: {
+    ...openApiResponse(RequeteSchema),
+  },
+});
+
+export const createRequeteRoute = openApiProtectedRoute({
+  description: 'Create a new request with optional declarant information',
+  responses: {
+    ...openApiResponse(RequeteSchema, 201),
   },
 });
 

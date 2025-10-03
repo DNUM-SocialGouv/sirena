@@ -1,17 +1,23 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
+import { addProcessingEtape, getRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
-import type { Requete, RequeteEntite, RequeteEtape } from '@/libs/prisma';
+import type { Requete, RequeteEntite, RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
 import RequetesEntiteController from './requetesEntite.controller';
-import { getRequetesEntite } from './requetesEntite.service';
+import { getRequetesEntite, hasAccessToRequete } from './requetesEntite.service';
 
 vi.mock('./requetesEntite.service', () => ({
   getRequetesEntite: vi.fn(),
   hasAccessToRequete: vi.fn(),
+}));
+
+vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
+  addProcessingEtape: vi.fn(),
+  getRequeteEtapes: vi.fn(),
 }));
 
 vi.mock('@/middlewares/auth.middleware', () => {
@@ -113,6 +119,116 @@ describe('RequetesEntite endpoints: /', () => {
       });
 
       expect(getRequetesEntite).toHaveBeenCalledWith(null, { offset: 5, limit: 10 });
+    });
+  });
+
+  describe('GET /:id/processing-steps', () => {
+    const requeteEtape: RequeteEtape = {
+      id: 'requeteEtapeId',
+      requeteId: 'requeteId',
+      entiteId: 'entiteId',
+      nom: 'Etape 1',
+      estPartagee: false,
+      statutId: 'A_FAIRE',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const note = {
+      id: 'noteId',
+      texte: 'Note 1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      authorId: 'authorId',
+      requeteEtapeId: 'requeteEtapeId',
+    };
+
+    const uploadedFile: Pick<UploadedFile, 'id' | 'size' | 'metadata' | 'filePath'> = {
+      id: 'uploadedFileId',
+      size: 1024,
+      metadata: null,
+      filePath: 'path/to/file1.pdf',
+    };
+
+    const requeteEtapeWithNotesAndFiles: RequeteEtape & {
+      notes: (RequeteEtapeNote & {
+        author: { prenom: string; nom: string };
+        uploadedFiles: Pick<UploadedFile, 'id' | 'size' | 'metadata'>[];
+      })[];
+    } = {
+      ...requeteEtape,
+      notes: [
+        {
+          ...note,
+          author: { prenom: 'John', nom: 'Doe' },
+          uploadedFiles: [uploadedFile],
+        },
+      ],
+    };
+
+    it('should return processing steps for a requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [requeteEtapeWithNotesAndFiles], total: 2 });
+
+      const res = await client[':id']['processing-steps'].$get({
+        param: { id: '1' },
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({
+        data: convertDatesToStrings([requeteEtapeWithNotesAndFiles]),
+        meta: { total: 2 },
+      });
+
+      expect(getRequeteEtapes).toHaveBeenCalledWith('1', ['e1', 'e2'], {});
+    });
+  });
+
+  describe('POST /:id/processing-steps', () => {
+    it('should add a processing step', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+
+      const fakeStep = {
+        id: 'step1',
+        requeteEntiteId: '1',
+        nom: 'Step 1',
+        statutId: 'FAIT',
+        createdAt: new Date(0),
+        updatedAt: new Date(0),
+        entiteId: 'e1',
+        requeteId: '1',
+        estPartagee: false,
+      };
+
+      vi.mocked(addProcessingEtape).mockResolvedValueOnce(fakeStep);
+
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: '1' },
+        json: { nom: 'Step 1' },
+      });
+
+      expect(res.status).toBe(201);
+      const json = await res.json();
+      expect(json).toEqual({ data: convertDatesToStrings(fakeStep) });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', ['e1', 'e2'], { nom: 'Step 1' });
+    });
+
+    it('should return 404 if step is not created', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+
+      vi.mocked(addProcessingEtape).mockResolvedValueOnce(null);
+
+      const res = await client[':id']['processing-steps'].$post({
+        param: { id: '1' },
+        json: { nom: 'Step 1' },
+      });
+
+      expect(res.status).toBe(404);
+      const json = await res.json();
+      expect(json).toEqual({ message: 'Requete entite not found' });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', ['e1', 'e2'], { nom: 'Step 1' });
     });
   });
 });

@@ -199,8 +199,9 @@ model PersonneConcernee {
 
   adresse Adresse? @relation("PersonneAdresse")
 
-  lienVictimeId String?
-  lienVictime   LienVictimeEnum? @relation(fields: [lienVictimeId], references: [id])
+  lienVictimeId      String?
+  lienVictime        LienVictimeEnum? @relation(fields: [lienVictimeId], references: [id])
+  lienAutrePrecision String?
 
   declarantDeId String?  @unique
   declarantDe   Requete? @relation("DeclarantRequete", fields: [declarantDeId], references: [id], onDelete: Cascade)

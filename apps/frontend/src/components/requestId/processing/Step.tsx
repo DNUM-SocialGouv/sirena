@@ -3,7 +3,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { REQUETE_STATUT_TYPES, type RequeteStatutType } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
-import { useParams } from '@tanstack/react-router';
+
 import { clsx } from 'clsx';
 import { memo, useState } from 'react';
 import { ButtonLink } from '@/components/common/ButtonLink';
@@ -18,6 +18,7 @@ import { StepNote } from './StepNote';
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
 type StepProps = StepType & {
+  requestId: string;
   disabled?: boolean;
   openEdit?(step: StepType): void;
   openEditNote?(
@@ -29,12 +30,21 @@ type StepProps = StepType & {
   ): void;
 };
 
-const StepComponent = ({ nom, statutId, disabled, openEdit, openEditNote, notes, id, ...rest }: StepProps) => {
+const StepComponent = ({
+  requestId,
+  nom,
+  statutId,
+  disabled,
+  openEdit,
+  openEditNote,
+  notes,
+  id,
+  ...rest
+}: StepProps) => {
   const deleteStepModal = createModal({
     id: `delete-step-modal-${id}`,
     isOpenedByDefault: false,
   });
-  const { requestId } = useParams({ from: '/_auth/_user/request/$requestId' });
   const [isOpen, setIsOpen] = useState(false);
   const updateStatusMutation = useUpdateProcessingStepStatus(requestId);
   const updateStepNameMutation = useUpdateProcessingStepName(requestId);

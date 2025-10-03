@@ -1,8 +1,11 @@
 import { type TabDescriptor, Tabs } from '@sirena/ui';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
+import { Details } from '@/components/requestId/details';
+import { Processing } from '@/components/requestId/processing';
+import { RequestInfos } from '@/components/requestId/requestInfos';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
-import { AffectationTab, DetailsTab, TraitementTab } from './tabs';
+import { AffectationTab } from './tabs/AffectationTab';
 
 // TODO: Use API types instead of local interfaces
 interface RequestData {
@@ -15,16 +18,12 @@ interface RequestData {
 }
 
 interface RequestFormProps {
-  mode: 'create' | 'edit';
   requestId?: string;
   initialData?: RequestData;
 }
 
-export function RequestForm({ mode, requestId, initialData }: RequestFormProps) {
+export function RequestForm({ requestId }: RequestFormProps) {
   const [activeTab, setActiveTab] = useState(0);
-
-  const isCreateMode = mode === 'create';
-  const title = isCreateMode ? 'Nouvelle requête' : `Requête n°${requestId}`;
 
   const tabs: TabDescriptor[] = [
     { label: 'Détails de la requête', tabPanelId: 'panel-details', tabId: 'tab-details' },
@@ -32,23 +31,19 @@ export function RequestForm({ mode, requestId, initialData }: RequestFormProps) 
       label: 'Affectation',
       tabPanelId: 'panel-affectation',
       tabId: 'tab-affectation',
-      title: isCreateMode ? 'Cet onglet sera disponible une fois la requête créée' : undefined,
-      disabled: isCreateMode,
+      disabled: !requestId,
+      title: !requestId ? 'Disponible après la création de la requête' : undefined,
     },
     {
       label: 'Traitement',
       tabPanelId: 'panel-traitement',
       tabId: 'tab-traitement',
-      title: isCreateMode ? 'Cet onglet sera disponible une fois la requête créée' : undefined,
-      disabled: isCreateMode,
+      disabled: !requestId,
+      title: !requestId ? 'Disponible après la création de la requête' : undefined,
     },
   ];
 
   const handleTabChange = (newTabIndex: number) => {
-    // Only allow tab 0 (Détails) in create mode
-    if (isCreateMode && newTabIndex !== 0) {
-      return;
-    }
     setActiveTab(newTabIndex);
   };
 
@@ -61,29 +56,15 @@ export function RequestForm({ mode, requestId, initialData }: RequestFormProps) 
               <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
             </Link>
           </div>
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col">
-              <h1 className="fr-mb-2w">{title}</h1>
-              {isCreateMode && (
-                <p className="fr-text--sm">La requête sera créée lorsqu'au moins une donnée sera renseignée</p>
-              )}
-            </div>
-          </div>
+          <RequestInfos requestId={requestId} />
         </div>
       </div>
       <div className="fr-container">
-        <div className={isCreateMode ? styles.disabledTabs : ''}>
-          <Tabs
-            tabs={tabs}
-            activeTab={activeTab}
-            onUpdateActiveTab={handleTabChange}
-            className={styles['request-tabs']}
-          >
-            {activeTab === 0 && <DetailsTab initialData={initialData} />}
-            {activeTab === 1 && !isCreateMode && <AffectationTab />}
-            {activeTab === 2 && !isCreateMode && <TraitementTab />}
-          </Tabs>
-        </div>
+        <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange} className={styles['request-tabs']}>
+          {activeTab === 0 && <Details requestId={requestId} />}
+          {activeTab === 1 && <AffectationTab />}
+          {activeTab === 2 && <Processing requestId={requestId} />}
+        </Tabs>
       </div>
     </div>
   );
