@@ -18,13 +18,6 @@ interface DeclarantFormProps {
   onSave: (data: DeclarantData, shouldCreateRequest: boolean) => Promise<void>;
 }
 
-const lienAvecPersonneConcerneeOptions = [
-  { label: 'Membre de la famille', value: 'MEMBRE_FAMILLE' },
-  { label: 'Proche', value: 'PROCHE' },
-  { label: 'Professionnel', value: 'PROFESSIONNEL' },
-  { label: 'Autre', value: 'AUTRE' },
-];
-
 export function DeclarantForm({ mode, requestId, initialData, onSave }: DeclarantFormProps) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<DeclarantData>(initialData || {});
@@ -156,7 +149,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                 }}
               >
                 <option value="">Sélectionner une option</option>
-                {lienAvecPersonneConcerneeOptions.map((option) => (
+                {mappers.lienAvecPersonneConcerneeOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
