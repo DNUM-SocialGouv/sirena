@@ -44,7 +44,7 @@
     "vitest-browser-react": "^1.0.1"
   },
   "dependencies": {
-    "@base-ui-components/react": "1.0.0-beta.3",
+    "@base-ui-components/react": "1.0.0-beta.4",
     "@codegouvfr/react-dsfr": "catalog:",
     "clsx": "^2.1.1",
     "react": "catalog:",
