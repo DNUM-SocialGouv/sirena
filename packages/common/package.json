@@ -50,7 +50,7 @@
   "packageManager": "pnpm@10.11.0",
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "zod": "catalog:"
