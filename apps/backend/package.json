@@ -57,7 +57,7 @@
     "handlebars": "^4.7.8",
     "hono": "catalog:",
     "hono-openapi": "catalog:",
-    "hono-pino": "^0.10.2",
+    "hono-pino": "^0.10.3",
     "html-to-text": "^9.0.5",
     "jsonwebtoken": "^9.0.2",
     "juice": "^11.0.1",
