@@ -36,7 +36,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
   const uploadFileMutation = useUploadFile({ silentToastError: true });
 
   const openDrawer = (step: StepType) => {
-    setStep(step ?? '');
+    setStep(step);
     setIsOpen(true);
   };
 
@@ -80,6 +80,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
     }
 
     setIsLoading(true);
+    const stepId = step.id;
     const fileIds = [];
     if (files.length > 0) {
       try {
@@ -90,8 +91,9 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
       } catch (error) {
         setIsLoading(false);
         if (error instanceof HttpError) {
-          if (error.status === 400 && error.data?.name && error.data.name in API_ERROR_MESSAGES) {
-            setErrorMessage(API_ERROR_MESSAGES[error.data.name as ApiErrorCodes]);
+          const errorName = error.data?.name;
+          if (error.status === 400 && errorName && typeof errorName === 'string' && errorName in API_ERROR_MESSAGES) {
+            setErrorMessage(API_ERROR_MESSAGES[errorName as ApiErrorCodes]);
             throw error;
           }
         }
@@ -101,7 +103,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
     }
 
     addStepNoteMutation.mutate(
-      { texte: content.trim(), id: step.id, fileIds },
+      { texte: content.trim(), id: stepId, fileIds },
       {
         onError: () => {
           setIsLoading(false);

@@ -12,45 +12,27 @@ export async function generateRequeteId(source: FunctionalIdSource): Promise<str
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
 
-  const startOfDay = new Date(Date.UTC(year, now.getMonth(), now.getDate()));
-  const endOfDay = new Date(Date.UTC(year, now.getMonth(), now.getDate() + 1));
+  const result = await prisma.$transaction(
+    async (tx) => {
+      const prefix = source === 'SIRENA' ? 'RS' : 'RD';
+      const monthPrefix = `${prefix}-${year}-${month}-`;
 
-  const result = await prisma.$transaction(async (tx) => {
-    const prefix = source === 'SIRENA' ? 'RS' : 'RD';
-    const _pattern = `${prefix}-${year}-${month}-%`;
-
-    const todayRequests = await tx.requete.findMany({
-      where: {
-        id: {
-          startsWith: `${prefix}-${year}-${month}-`,
+      const count = await tx.requete.count({
+        where: {
+          id: {
+            startsWith: monthPrefix,
+          },
         },
-        createdAt: {
-          gte: startOfDay,
-          lt: endOfDay,
-        },
-      },
-      select: {
-        id: true,
-      },
-      orderBy: {
-        id: 'desc',
-      },
-      take: 1,
-    });
+      });
 
-    let nextNumber = 1;
+      const nextNumber = count + 1;
 
-    if (todayRequests.length > 0) {
-      const lastId = todayRequests[0].id;
-      const parts = lastId.split('-');
-      const lastNumber = parseInt(parts[parts.length - 1], 10);
-      if (!Number.isNaN(lastNumber)) {
-        nextNumber = lastNumber + 1;
-      }
-    }
-
-    return `${prefix}-${year}-${month}-${nextNumber}`;
-  });
+      return `${prefix}-${year}-${month}-${nextNumber}`;
+    },
+    {
+      isolationLevel: 'Serializable',
+    },
+  );
 
   return result;
 }

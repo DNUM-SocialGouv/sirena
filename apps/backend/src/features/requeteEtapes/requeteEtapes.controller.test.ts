@@ -590,7 +590,7 @@ describe('requeteEtapes.controller.ts', () => {
         meta: { total: 2 },
       });
 
-      expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {});
+      expect(getRequeteEtapes).toHaveBeenCalledWith('1', ['e1'], {});
     });
 
     it('should return 404 if user does not exist', async () => {
@@ -650,7 +650,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(201);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeStep) });
-      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', ['e1'], { nom: 'Step 1' });
     });
 
     it('should return 404 if user does not exist', async () => {
@@ -680,7 +680,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(404);
       const json = await res.json();
       expect(json).toEqual({ message: 'Requete entite not found' });
-      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', ['e1'], { nom: 'Step 1' });
     });
   });
 });

@@ -128,7 +128,7 @@ const app = factoryWithLogs
       });
     }
 
-    const { data, total } = await getRequeteEtapes(requeteId, user.entiteId, {});
+    const { data, total } = await getRequeteEtapes(requeteId, [user.entiteId], {});
 
     logger.info({ requestId: requeteId, stepCount: total }, 'Processing steps retrieved successfully');
 
@@ -166,7 +166,7 @@ const app = factoryWithLogs
           res: c.res,
         });
       }
-      const step = await addProcessingEtape(requeteId, user.entiteId, {
+      const step = await addProcessingEtape(requeteId, [user.entiteId], {
         nom: body.nom,
       });
 

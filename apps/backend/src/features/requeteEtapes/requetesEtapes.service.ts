@@ -12,7 +12,12 @@ import type {
   UpdateRequeteEtapeStatutDto,
 } from './requetesEtapes.type';
 
-export const addProcessingEtape = async (requeteId: string, entiteId: string, data: RequeteEtapeCreationDto) => {
+export const addProcessingEtape = async (requeteId: string, entiteIds: string[], data: RequeteEtapeCreationDto) => {
+  const [entiteId] = entiteIds;
+  if (!entiteId) {
+    return null;
+  }
+
   // First check if the requete exists
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
@@ -49,7 +54,12 @@ export const addProcessingEtape = async (requeteId: string, entiteId: string, da
   return etape;
 };
 
-export const getRequeteEtapes = async (requeteId: string, entiteId: string, query: GetRequeteEtapesQuery) => {
+export const getRequeteEtapes = async (requeteId: string, entiteIds: string[], query: GetRequeteEtapesQuery) => {
+  const [entiteId] = entiteIds;
+  if (!entiteId) {
+    return { data: [], total: 0 };
+  }
+
   const { offset = 0, limit, sort = 'createdAt', order = 'desc' } = query;
 
   const where = {

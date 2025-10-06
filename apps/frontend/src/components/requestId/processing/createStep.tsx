@@ -1,18 +1,16 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
-import { useParams } from '@tanstack/react-router';
 import { memo, useState } from 'react';
 import { useAddProcessingStep } from '@/hooks/mutations/updateProcessingStep.hook';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 
 type CreateStepProps = {
+  requestId: string;
   isAddingStep: boolean;
   setIsAddingStep: (val: boolean) => void;
 };
 
-const CreateStepComponent = ({ isAddingStep, setIsAddingStep }: CreateStepProps) => {
-  const { requestId } = useParams({ from: '/_auth/_user/request/$requestId' });
-
+const CreateStepComponent = ({ requestId, isAddingStep, setIsAddingStep }: CreateStepProps) => {
   const [stepName, setStepName] = useState('');
   const [stepNameError, setStepNameError] = useState<string | null>();
 
