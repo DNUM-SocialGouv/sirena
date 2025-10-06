@@ -1,5 +1,5 @@
-import type { PrismaClient } from 'generated/client';
 import { getLoggerStore } from '@/libs/asyncLocalStorage';
+import type { PrismaClient } from '../../generated/client';
 import { seedAdministratives } from './add_seed_entities/seed_administratives';
 import { seedDirections } from './add_seed_entities/seed_directions';
 import { seedServices } from './add_seed_entities/seed_services';

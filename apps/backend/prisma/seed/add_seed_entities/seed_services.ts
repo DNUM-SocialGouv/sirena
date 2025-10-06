@@ -1,5 +1,5 @@
-import type { PrismaClient } from 'generated/client';
 import { z } from '@/libs/zod';
+import type { PrismaClient } from '../../../generated/client';
 import { parseCsv } from '../../helpers/parseCsv';
 
 const ServiceRowSchema = z.object({

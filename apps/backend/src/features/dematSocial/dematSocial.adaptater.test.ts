@@ -133,12 +133,6 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
           firstLabel(rootMapping.autreFaits.champs.transportType.options),
         ),
       ],
-      // faits2: [
-      //   multiSelectChamp(rootMapping.autreFaits.champs.motifsMap.id, [motifsLbl]),
-      //   multiSelectChamp(rootMapping.autreFaits.champs.consequencesMap.id, [consLbl]),
-      //   multiSelectChamp(rootMapping.autreFaits.champs.maltraitanceTypesMap.id, [maltLbl]),
-      //   dateChamp(rootMapping.autreFaits.champs.dateDebut.id, '2025-03-05'),
-      // ],
     });
 
     const champs: RootChampFragmentFragment[] = [
