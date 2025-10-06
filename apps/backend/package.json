@@ -60,7 +60,7 @@
     "hono-pino": "^0.10.2",
     "html-to-text": "^9.0.5",
     "jsonwebtoken": "^9.0.2",
-    "juice": "^11.0.1",
+    "juice": "^11.0.3",
     "openid-client": "^6.8.1",
     "pino": "^9.12.0",
     "minio": "^8.0.6",
