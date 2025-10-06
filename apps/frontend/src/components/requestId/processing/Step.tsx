@@ -201,14 +201,14 @@ const StepComponent = ({
       </div>
       <div className={styles['request-step']}>
         <div className={styles['request-notes']}>
-          {notes.slice(0, isOpen ? notes.length : 3).map((note) => (
+          {notes.slice(0, isOpen ? notes.length : 3).map((note: StepType['notes'][number]) => (
             <StepNote
               key={note.id}
               content={note.texte}
               author={note.author}
               id={note.id}
               createdAt={note.createdAt}
-              files={note.uploadedFiles.map((file) => ({
+              files={note.uploadedFiles.map((file: (typeof note.uploadedFiles)[number]) => ({
                 id: file.id,
                 size: file.size,
                 originalName: (file.metadata as { originalName?: string })?.originalName || 'Unknown',

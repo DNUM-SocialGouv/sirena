@@ -45,7 +45,7 @@ export const Processing = ({ requestId }: ProcessingProps = {}) => {
         <CreateStep requestId={requestId} isAddingStep={isAddingStep} setIsAddingStep={setIsAddingStep} />
         <QueryStateHandler query={queryProcessingSteps}>
           {({ data }) =>
-            data.data.map((step, index) => (
+            data.data.map((step, index: number) => (
               <Step
                 key={step.id}
                 requestId={requestId}
