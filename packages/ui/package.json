@@ -39,7 +39,7 @@
     "jsdom": "^26.1.0",
     "react-dom": "catalog:",
     "storybook": "^9.1.8",
-    "vite": "^7.1.7",
+    "vite": "^7.1.9",
     "vitest": "catalog:",
     "vitest-browser-react": "^1.0.1"
   },
