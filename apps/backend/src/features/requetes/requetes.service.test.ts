@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <tests purposes> */
 import { Readable } from 'node:stream';
 import {
   AGE,

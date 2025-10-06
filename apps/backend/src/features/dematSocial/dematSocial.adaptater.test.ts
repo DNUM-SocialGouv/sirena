@@ -44,6 +44,13 @@ const repetitionEmpty = (mappingId: string): RootChampFragmentFragment => ({
   champs: [],
 });
 
+const booleanChamp = (mappingId: string, checked: boolean): RootChampFragmentFragment => ({
+  __typename: 'CheckboxChamp',
+  label: '',
+  id: toB64(mappingId),
+  checked,
+});
+
 const addressChamp = (mappingIdB64: string): RootChampFragmentFragment => ({
   __typename: 'AddressChamp',
   label: '',
@@ -117,7 +124,7 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
         ]),
         multiSelectChamp(rootMapping.autreFaits.champs.demarchesEngagees.id, [demLbl]),
         dateChamp(rootMapping.autreFaits.champs.demarchesEngageesDateContactEtablissement.id, '2025-03-02'),
-        textChamp(rootMapping.autreFaits.champs.demarchesEngageesEtablissementARepondu.id, 'Non'),
+        booleanChamp(rootMapping.autreFaits.champs.demarchesEngageesEtablissementARepondu.id, true),
         textChamp(rootMapping.autreFaits.champs.demarchesEngageesOrganisme.id, 'Org'),
         dateChamp(rootMapping.autreFaits.champs.demarcheEngageDatePlainte.id, null),
         textChamp(
