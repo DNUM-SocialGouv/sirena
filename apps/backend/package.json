@@ -83,7 +83,7 @@
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "prisma": "^6.10.1",
-    "typescript": "~5.9.2",
+    "typescript": "~5.9.3",
     "vitest": "catalog:",
     "vitest-mock-extended": "^3.1.0"
   }
