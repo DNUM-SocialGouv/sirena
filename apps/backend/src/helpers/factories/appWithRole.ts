@@ -7,7 +7,7 @@ export type AppBindings = {
     logger: PinoLogger;
     userId: string;
     roleId: string;
-    entiteIds: string[];
+    entiteIds: string[] | null;
   };
 };
 
