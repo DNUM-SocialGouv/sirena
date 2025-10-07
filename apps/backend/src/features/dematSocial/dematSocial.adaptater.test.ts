@@ -5,6 +5,7 @@ import { mapDataForPrisma } from './dematSocial.adaptater';
 import rootMapping from './dematSocial.mapper';
 
 const toB64 = (s: string) => Buffer.from(s, 'utf8').toString('base64');
+const fromB64 = (s: string) => Buffer.from(s, 'base64').toString('utf8');
 
 function labelFor<T extends { key: string | boolean; label: string }>(options: T[], keyToPick: T['key']) {
   const found = options.find((o) => o.key === keyToPick);
@@ -43,10 +44,17 @@ const repetitionEmpty = (mappingId: string): RootChampFragmentFragment => ({
   champs: [],
 });
 
+const booleanChamp = (mappingId: string, checked: boolean): RootChampFragmentFragment => ({
+  __typename: 'CheckboxChamp',
+  label: '',
+  id: toB64(mappingId),
+  checked,
+});
+
 const addressChamp = (mappingIdB64: string): RootChampFragmentFragment => ({
   __typename: 'AddressChamp',
   label: '',
-  id: mappingIdB64,
+  id: toB64(mappingIdB64),
   address: {
     label: 'l',
     type: AddressType.Street,
@@ -55,6 +63,38 @@ const addressChamp = (mappingIdB64: string): RootChampFragmentFragment => ({
     cityCode: 'paris',
   },
 });
+
+const filesChamp = (
+  mappingId: string,
+  files: Array<{ filename: string; url: string; contentType: string }>,
+): RootChampFragmentFragment => ({
+  __typename: 'PieceJustificativeChamp',
+  label: '',
+  id: toB64(mappingId),
+  files: files.map((f) => ({
+    __typename: 'File',
+    checksum: '',
+    byteSize: 0n,
+    createdAt: new Date().toISOString(),
+    ...f,
+  })),
+});
+
+const repetitionChamp = (mappingId: string, parts: Record<string, RootChampFragmentFragment[]>) => {
+  const champs = Object.entries(parts).flatMap(([partKey, arr]) =>
+    arr.map((champ) => ({
+      ...champ,
+      id: toB64(`${fromB64(champ.id)}|${partKey}`),
+    })),
+  );
+
+  return {
+    __typename: 'RepetitionChamp' as const,
+    label: '',
+    id: toB64(mappingId),
+    champs,
+  };
+};
 
 describe('dematSocial.mapper mapDataForPrisma', () => {
   it('create a dto', () => {
@@ -66,6 +106,41 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
     const consequencesLbl = firstLabel(rootMapping.consequencesMap.options);
     const maltraitanceLbl = firstLabel(rootMapping.maltraitanceTypesMap.options);
     const demarchesLbl = firstLabel(rootMapping.demarchesEngagees.options);
+
+    const consLbl = firstLabel(rootMapping.autreFaits.champs.consequencesMap.options);
+    const maltLbl = firstLabel(rootMapping.autreFaits.champs.maltraitanceTypesMap.options);
+    const demLbl = firstLabel(rootMapping.autreFaits.champs.demarchesEngagees.options);
+
+    const rep = repetitionChamp(rootMapping.autreFaits.id, {
+      faits: [
+        multiSelectChamp(rootMapping.autreFaits.champs.motifsMap.id, [motifsLbl]),
+        multiSelectChamp(rootMapping.autreFaits.champs.consequencesMap.id, [consLbl]),
+        multiSelectChamp(rootMapping.autreFaits.champs.maltraitanceTypesMap.id, [maltLbl]),
+        dateChamp(rootMapping.autreFaits.champs.dateDebut.id, '2025-03-01'),
+        dateChamp(rootMapping.autreFaits.champs.dateFin.id, null),
+        textChamp(rootMapping.autreFaits.champs.faitsCommentaire.id, 'c1'),
+        filesChamp(rootMapping.autreFaits.champs.faitsFichiers.id, [
+          { filename: 'a.pdf', url: 'u', contentType: 'application/pdf' },
+        ]),
+        multiSelectChamp(rootMapping.autreFaits.champs.demarchesEngagees.id, [demLbl]),
+        dateChamp(rootMapping.autreFaits.champs.demarchesEngageesDateContactEtablissement.id, '2025-03-02'),
+        booleanChamp(rootMapping.autreFaits.champs.demarchesEngageesEtablissementARepondu.id, true),
+        textChamp(rootMapping.autreFaits.champs.demarchesEngageesOrganisme.id, 'Org'),
+        dateChamp(rootMapping.autreFaits.champs.demarcheEngageDatePlainte.id, null),
+        textChamp(
+          rootMapping.autreFaits.champs.demarcheEngageAutoriteType.id,
+          firstLabel(rootMapping.autreFaits.champs.demarcheEngageAutoriteType.options),
+        ),
+        textChamp(
+          rootMapping.autreFaits.champs.lieuType.id,
+          firstLabel(rootMapping.autreFaits.champs.lieuType.options),
+        ),
+        textChamp(
+          rootMapping.autreFaits.champs.transportType.id,
+          firstLabel(rootMapping.autreFaits.champs.transportType.options),
+        ),
+      ],
+    });
 
     const champs: RootChampFragmentFragment[] = [
       textChamp(rootMapping.estVictime.id, estVictimeOui),
@@ -81,6 +156,7 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
       multiSelectChamp(rootMapping.demarchesEngagees.id, [demarchesLbl]),
       repetitionEmpty(rootMapping.autreFaits.id),
       addressChamp(rootMapping.victimeAdresse.id),
+      rep,
     ];
 
     const demandeur = { nom: 'X', prenom: 'Y', civiliteId: 'M', email: '' } as const;
@@ -110,6 +186,6 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
     expect(s0.faits[0].maltraitanceTypes).toContain(maltKey);
     expect(s0.demarchesEngagees.demarches).toContain(demarchesKey);
 
-    expect(dto.situations.slice(1)).toHaveLength(0);
+    expect(dto.situations.slice(1)).toHaveLength(1);
   });
 });

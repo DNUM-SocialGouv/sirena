@@ -90,9 +90,9 @@ model Entite {
   entiteMereId String?
   entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
 
-  users         User[]
-  uploads       UploadedFile[]
-  requeteEntite RequeteEntite[]
+  users            User[]
+  uploads          UploadedFile[]
+  requeteEntite    RequeteEntite[]
   situationEntites SituationEntite[]
 }
 
@@ -162,6 +162,8 @@ model DemarchesEngagees {
   autoriteTypeId String?
   autoriteType   AutoriteTypeEnum? @relation(fields: [autoriteTypeId], references: [id])
 
+  etablissementReponse UploadedFile[]
+
   demarches DemarchesEngageesEnum[]
   Situation Situation[]
 }
@@ -170,7 +172,7 @@ model AutoriteTypeEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  DemarchesEngagees DemarchesEngagees[]
+  demarchesEngagees DemarchesEngagees[]
 }
 
 model DemarchesEngageesEnum {
@@ -217,14 +219,14 @@ model LienVictimeEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  PersonneConcernees PersonneConcernee[]
+  personneConcernees PersonneConcernee[]
 }
 
 model AgeEnum {
   id    String @id
   label String @unique
 
-  PersonneConcernees PersonneConcernee[]
+  personneConcernees PersonneConcernee[]
 }
 
 model CiviliteEnum {
@@ -342,7 +344,7 @@ model MisEnCause {
 
   professionDomicileTypeId String?
   professionDomicileType   ProfessionDomicileTypeEnum? @relation(fields: [professionDomicileTypeId], references: [id])
-  Situation                Situation[]
+  situation                Situation[]
 }
 
 model MisEnCauseTypeEnum {
@@ -492,8 +494,8 @@ model UploadedFile {
   entiteId String?
   entite   Entite? @relation(fields: [entiteId], references: [id])
 
-  uploadedById String
-  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+  uploadedById String?
+  uploadedBy   User?   @relation(fields: [uploadedById], references: [id])
 
   requeteEtapeNoteId String?
   requeteEtapeNote   RequeteEtapeNote? @relation(fields: [requeteEtapeNoteId], references: [id], onDelete: Cascade)
@@ -503,6 +505,9 @@ model UploadedFile {
 
   fait            Fait?   @relation(fields: [faitSituationId], references: [situationId], onDelete: Cascade)
   faitSituationId String?
+
+  demarchesEngagees   DemarchesEngagees? @relation(fields: [demarchesEngageesId], references: [id])
+  demarchesEngageesId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
