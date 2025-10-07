@@ -5,6 +5,7 @@ import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { addProcessingEtape, getRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
+import requeteChangelogMiddleware from '@/middlewares/changelog/changelog.requete.middleware';
 import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtape.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
@@ -41,7 +42,7 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const query = c.req.valid('query');
     // const entiteIds = c.get('entiteIds');
-    // TODO Use real entiteIds when implemented
+    // TODO: Use real entiteIds when implemented
     const { data, total } = await getRequetesEntite(null, query);
 
     logger.info({ requestCount: data.length, total }, 'Requetes entite list retrieved successfully');
@@ -99,74 +100,103 @@ const app = factoryWithLogs
   // Roles with edit permissions
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]))
 
-  .post('/', createRequeteRoute, zValidator('json', CreateRequeteBodySchema), async (c) => {
-    const logger = c.get('logger');
-    const userId = c.get('userId');
-    const entiteIds = c.get('entiteIds');
-    const body = c.req.valid('json');
+  .post(
+    '/',
+    createRequeteRoute,
+    zValidator('json', CreateRequeteBodySchema),
+    requeteChangelogMiddleware({ action: ChangeLogAction.CREATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const userId = c.get('userId');
+      const entiteIds = c.get('entiteIds');
+      const body = c.req.valid('json');
 
-    const requete = await createRequeteEntite(entiteIds, body);
+      const requete = await createRequeteEntite(entiteIds, body);
 
-    logger.info({ requeteId: requete.id, userId, hasDeclarant: !!body.declarant }, 'New requete created successfully');
+      logger.info(
+        { requeteId: requete.id, userId, hasDeclarant: !!body.declarant, hasParticipant: !!body.participant },
+        'New requete created successfully',
+      );
 
-    return c.json({ data: requete }, 201);
-  })
+      return c.json({ data: requete }, 201);
+    },
+  )
 
-  .patch('/:id/declarant', zValidator('json', UpdateDeclarantBodySchema), async (c) => {
-    const logger = c.get('logger');
-    const { id } = c.req.param();
-    const userId = c.get('userId');
-    const entiteIds = c.get('entiteIds');
-    const { declarant: declarantData, controls } = c.req.valid('json');
+  .patch(
+    '/:id/declarant',
+    zValidator('json', UpdateDeclarantBodySchema),
+    requeteChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const userId = c.get('userId');
+      const entiteIds = c.get('entiteIds');
+      const { declarant: declarantData, controls } = c.req.valid('json');
 
-    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
+      const requeteEntite = await getRequeteEntiteById(id, entiteIds);
 
-    if (!requeteEntite) {
-      return throwHTTPException404NotFound('Requete not found', {
-        res: c.res,
-      });
-    }
+      if (!requeteEntite) {
+        return throwHTTPException404NotFound('Requete not found', {
+          res: c.res,
+        });
+      }
 
-    const updatedRequete = await updateRequeteDeclarant(id, declarantData, controls);
+      const updatedRequete = await updateRequeteDeclarant(id, declarantData, controls);
 
-    logger.info({ requeteId: id, userId }, 'Declarant data updated successfully');
+      // Set the declarant ID in context for changelog middleware
+      if (updatedRequete.declarant) {
+        c.set('changelogId', updatedRequete.declarant.id);
+      }
 
-    return c.json({ data: updatedRequete });
-  })
-
-  .patch('/:id/participant', zValidator('json', UpdateParticipantBodySchema), async (c) => {
-    const logger = c.get('logger');
-    const { id } = c.req.param();
-    const userId = c.get('userId');
-    const entiteIds = c.get('entiteIds');
-    const { participant: participantData, controls } = c.req.valid('json');
-
-    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
-
-    if (!requeteEntite) {
-      return throwHTTPException404NotFound('Requete not found', {
-        res: c.res,
-      });
-    }
-
-    try {
-      const updatedRequete = await updateRequeteParticipant(id, participantData, controls);
-
-      logger.info({ requeteId: id, userId }, 'Participant data updated successfully');
+      logger.info({ requeteId: id, userId }, 'Declarant data updated successfully');
 
       return c.json({ data: updatedRequete });
-    } catch (error: unknown) {
-      if (error instanceof Error && error.message.startsWith('CONFLICT')) {
-        const conflictResponse = {
-          message: 'The participant identity has been modified by another user.',
-          conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
-        };
+    },
+  )
 
-        return c.json(conflictResponse, 409);
+  .patch(
+    '/:id/participant',
+    zValidator('json', UpdateParticipantBodySchema),
+    requeteChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const userId = c.get('userId');
+      const entiteIds = c.get('entiteIds');
+      const { participant: participantData, controls } = c.req.valid('json');
+
+      const requeteEntite = await getRequeteEntiteById(id, entiteIds);
+
+      if (!requeteEntite) {
+        return throwHTTPException404NotFound('Requete not found', {
+          res: c.res,
+        });
       }
-      throw error;
-    }
-  })
+
+      try {
+        const updatedRequete = await updateRequeteParticipant(id, participantData, controls);
+
+        // Set the participant ID in context for changelog middleware
+        if (updatedRequete.participant) {
+          c.set('changelogId', updatedRequete.participant.id);
+        }
+
+        logger.info({ requeteId: id, userId }, 'Participant data updated successfully');
+
+        return c.json({ data: updatedRequete });
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.startsWith('CONFLICT')) {
+          const conflictResponse = {
+            message: 'The participant identity has been modified by another user.',
+            conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
+          };
+
+          return c.json(conflictResponse, 409);
+        }
+        throw error;
+      }
+    },
+  )
 
   .post(
     '/:id/processing-steps',
