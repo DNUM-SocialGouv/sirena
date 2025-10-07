@@ -10,6 +10,12 @@ import type { DeclarantData } from '@/lib/declarant';
 import { declarantFieldMetadata } from '@/lib/fieldMetadata';
 
 const emailSchema = z.string().email('Adresse email invalide').optional().or(z.literal(''));
+const phoneSchema = z
+  .string()
+  .regex(/^\d+$/, 'Le numéro de téléphone ne doit contenir que des chiffres')
+  .min(10, 'Le numéro de téléphone doit contenir au moins 10 caractères')
+  .optional()
+  .or(z.literal(''));
 
 interface DeclarantFormProps {
   mode: 'create' | 'edit';
@@ -22,20 +28,35 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
   const navigate = useNavigate();
   const [formData, setFormData] = useState<DeclarantData>(initialData || {});
   const [emailError, setEmailError] = useState<string | undefined>();
+  const [phoneError, setPhoneError] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);
+  const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
 
   const handleInputChange =
     (field: keyof DeclarantData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = e.target.value;
       setFormData((prev: DeclarantData) => ({ ...prev, [field]: value }));
 
-      if (field === 'courrierElectronique') {
-        try {
-          emailSchema.parse(value);
-          setEmailError(undefined);
-        } catch (error) {
-          if (error instanceof z.ZodError) {
-            setEmailError(error.errors[0].message);
+      if (hasAttemptedSave) {
+        if (field === 'courrierElectronique') {
+          try {
+            emailSchema.parse(value);
+            setEmailError(undefined);
+          } catch (error) {
+            if (error instanceof z.ZodError) {
+              setEmailError(error.errors[0].message);
+            }
+          }
+        }
+
+        if (field === 'numeroTelephone') {
+          try {
+            phoneSchema.parse(value);
+            setPhoneError(undefined);
+          } catch (error) {
+            if (error instanceof z.ZodError) {
+              setPhoneError(error.errors[0].message);
+            }
           }
         }
       }
@@ -46,7 +67,35 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
   };
 
   const handleSave = async () => {
-    if (emailError) {
+    setHasAttemptedSave(true);
+
+    let hasErrors = false;
+
+    if (formData.courrierElectronique) {
+      try {
+        emailSchema.parse(formData.courrierElectronique);
+        setEmailError(undefined);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          setEmailError(error.errors[0].message);
+          hasErrors = true;
+        }
+      }
+    }
+
+    if (formData.numeroTelephone) {
+      try {
+        phoneSchema.parse(formData.numeroTelephone);
+        setPhoneError(undefined);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          setPhoneError(error.errors[0].message);
+          hasErrors = true;
+        }
+      }
+    }
+
+    if (hasErrors) {
       return;
     }
 
@@ -212,6 +261,8 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
               <Input
                 label={declarantFieldMetadata.numeroTelephone.label}
                 hintText="Format attendu : 10 chiffres"
+                state={phoneError ? 'error' : undefined}
+                stateRelatedMessage={phoneError}
                 nativeInputProps={{
                   value: formData.numeroTelephone || '',
                   onChange: handleInputChange('numeroTelephone'),
@@ -269,7 +320,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
           <Button priority="secondary" onClick={handleCancel}>
             Annuler
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || !!emailError}>
+          <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
         </div>
