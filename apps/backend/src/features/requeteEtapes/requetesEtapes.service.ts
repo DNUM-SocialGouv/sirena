@@ -12,11 +12,16 @@ import type {
   UpdateRequeteEtapeStatutDto,
 } from './requetesEtapes.type';
 
-export const addProcessingEtape = async (requeteId: string, entiteIds: string[], data: RequeteEtapeCreationDto) => {
-  const [entiteId] = entiteIds;
-  if (!entiteId) {
+export const addProcessingEtape = async (
+  requeteId: string,
+  entiteIds: string[] | null,
+  data: RequeteEtapeCreationDto,
+) => {
+  if (!entiteIds || entiteIds.length === 0) {
     return null;
   }
+
+  const [entiteId] = entiteIds;
 
   // First check if the requete exists
   const requete = await prisma.requete.findUnique({
