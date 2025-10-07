@@ -219,22 +219,6 @@ export const deleteRequeteEtape = async (id: string, logger: PinoLogger, changed
         }),
       );
     }
-
-    // Create changelog for the complete RequeteEtape (all other entities)
-    const { notes: _, ...requeteEtapeWithoutNotes } = requeteEtape;
-
-    try {
-      await createChangeLog({
-        entity: 'RequeteEtape',
-        entityId: id,
-        action: ChangeLogAction.DELETED,
-        before: requeteEtapeWithoutNotes as unknown as Prisma.JsonObject,
-        after: {},
-        changedById,
-      });
-    } catch (err) {
-      logger.error({ err, requeteEtapeId: id }, 'Failed to create changelog for requeteEtape');
-    }
   }
 
   // Delete physical files from MinIO
