@@ -12,7 +12,6 @@ type HeaderMenuProps = {
 
 export const HeaderMenu = (props: HeaderMenuProps) => {
   const userStore = useUserStore();
-
   const quickAccessItems = userStore.isLogged ? [<UserMenu key="menu" />] : [];
   const id = useId();
   return (

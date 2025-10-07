@@ -1,9 +1,10 @@
+import { ROLES } from '@sirena/common/constants';
 import { createFileRoute, Outlet, useMatches } from '@tanstack/react-router';
 import { RequestForm } from '@/components/requestForm/RequestForm';
-import { requireAuth } from '@/lib/auth-guards';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/_user/request/create')({
-  beforeLoad: requireAuth,
+  beforeLoad: requireAuthAndRoles([ROLES.WRITER, ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING]),
   head: () => ({
     meta: [
       {
