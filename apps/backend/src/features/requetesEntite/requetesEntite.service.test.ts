@@ -189,6 +189,15 @@ describe('requetesEntite.service', () => {
                   lienVictime: true,
                 },
               },
+              participant: {
+                include: {
+                  adresse: true,
+                  age: true,
+                  identite: true,
+                  lienVictime: true,
+                  participantDe: true,
+                },
+              },
             },
           },
           requeteEtape: {
