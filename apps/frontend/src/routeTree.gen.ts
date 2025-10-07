@@ -24,8 +24,10 @@ import { Route as AuthAdminUserUserIdRouteImport } from './routes/_auth/admin/us
 import { Route as AuthUserRequestCreateRouteImport } from './routes/_auth/_user/request.create'
 import { Route as AuthUserRequestRequestIdRouteImport } from './routes/_auth/_user/request.$requestId'
 import { Route as AuthUserRequestRequestIdIndexRouteImport } from './routes/_auth/_user/request.$requestId.index'
+import { Route as AuthUserRequestCreatePersonneConcerneeRouteImport } from './routes/_auth/_user/request.create.personne-concernee'
 import { Route as AuthUserRequestCreateDeclarantRouteImport } from './routes/_auth/_user/request.create.declarant'
 import { Route as AuthUserRequestRequestIdProcessingRouteImport } from './routes/_auth/_user/request.$requestId/processing'
+import { Route as AuthUserRequestRequestIdPersonneConcerneeRouteImport } from './routes/_auth/_user/request.$requestId.personne-concernee'
 import { Route as AuthUserRequestRequestIdDeclarantRouteImport } from './routes/_auth/_user/request.$requestId.declarant'
 
 const LoginRoute = LoginRouteImport.update({
@@ -103,6 +105,12 @@ const AuthUserRequestRequestIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthUserRequestRequestIdRoute,
   } as any)
+const AuthUserRequestCreatePersonneConcerneeRoute =
+  AuthUserRequestCreatePersonneConcerneeRouteImport.update({
+    id: '/personne-concernee',
+    path: '/personne-concernee',
+    getParentRoute: () => AuthUserRequestCreateRoute,
+  } as any)
 const AuthUserRequestCreateDeclarantRoute =
   AuthUserRequestCreateDeclarantRouteImport.update({
     id: '/declarant',
@@ -113,6 +121,12 @@ const AuthUserRequestRequestIdProcessingRoute =
   AuthUserRequestRequestIdProcessingRouteImport.update({
     id: '/processing',
     path: '/processing',
+    getParentRoute: () => AuthUserRequestRequestIdRoute,
+  } as any)
+const AuthUserRequestRequestIdPersonneConcerneeRoute =
+  AuthUserRequestRequestIdPersonneConcerneeRouteImport.update({
+    id: '/personne-concernee',
+    path: '/personne-concernee',
     getParentRoute: () => AuthUserRequestRequestIdRoute,
   } as any)
 const AuthUserRequestRequestIdDeclarantRoute =
@@ -136,8 +150,10 @@ export interface FileRoutesByFullPath {
   '/admin/users/all': typeof AuthAdminUsersAllRoute
   '/admin/users/': typeof AuthAdminUsersIndexRoute
   '/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
+  '/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
   '/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
   '/request/create/declarant': typeof AuthUserRequestCreateDeclarantRoute
+  '/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -152,8 +168,10 @@ export interface FileRoutesByTo {
   '/admin/users/all': typeof AuthAdminUsersAllRoute
   '/admin/users': typeof AuthAdminUsersIndexRoute
   '/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
+  '/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
   '/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
   '/request/create/declarant': typeof AuthUserRequestCreateDeclarantRoute
+  '/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdIndexRoute
 }
 export interface FileRoutesById {
@@ -173,8 +191,10 @@ export interface FileRoutesById {
   '/_auth/admin/users/all': typeof AuthAdminUsersAllRoute
   '/_auth/admin/users/': typeof AuthAdminUsersIndexRoute
   '/_auth/_user/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
+  '/_auth/_user/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
   '/_auth/_user/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
   '/_auth/_user/request/create/declarant': typeof AuthUserRequestCreateDeclarantRoute
+  '/_auth/_user/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/_auth/_user/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -193,8 +213,10 @@ export interface FileRouteTypes {
     | '/admin/users/all'
     | '/admin/users/'
     | '/request/$requestId/declarant'
+    | '/request/$requestId/personne-concernee'
     | '/request/$requestId/processing'
     | '/request/create/declarant'
+    | '/request/create/personne-concernee'
     | '/request/$requestId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -209,8 +231,10 @@ export interface FileRouteTypes {
     | '/admin/users/all'
     | '/admin/users'
     | '/request/$requestId/declarant'
+    | '/request/$requestId/personne-concernee'
     | '/request/$requestId/processing'
     | '/request/create/declarant'
+    | '/request/create/personne-concernee'
     | '/request/$requestId'
   id:
     | '__root__'
@@ -229,8 +253,10 @@ export interface FileRouteTypes {
     | '/_auth/admin/users/all'
     | '/_auth/admin/users/'
     | '/_auth/_user/request/$requestId/declarant'
+    | '/_auth/_user/request/$requestId/personne-concernee'
     | '/_auth/_user/request/$requestId/processing'
     | '/_auth/_user/request/create/declarant'
+    | '/_auth/_user/request/create/personne-concernee'
     | '/_auth/_user/request/$requestId/'
   fileRoutesById: FileRoutesById
 }
@@ -347,6 +373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUserRequestRequestIdIndexRouteImport
       parentRoute: typeof AuthUserRequestRequestIdRoute
     }
+    '/_auth/_user/request/create/personne-concernee': {
+      id: '/_auth/_user/request/create/personne-concernee'
+      path: '/personne-concernee'
+      fullPath: '/request/create/personne-concernee'
+      preLoaderRoute: typeof AuthUserRequestCreatePersonneConcerneeRouteImport
+      parentRoute: typeof AuthUserRequestCreateRoute
+    }
     '/_auth/_user/request/create/declarant': {
       id: '/_auth/_user/request/create/declarant'
       path: '/declarant'
@@ -361,6 +394,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUserRequestRequestIdProcessingRouteImport
       parentRoute: typeof AuthUserRequestRequestIdRoute
     }
+    '/_auth/_user/request/$requestId/personne-concernee': {
+      id: '/_auth/_user/request/$requestId/personne-concernee'
+      path: '/personne-concernee'
+      fullPath: '/request/$requestId/personne-concernee'
+      preLoaderRoute: typeof AuthUserRequestRequestIdPersonneConcerneeRouteImport
+      parentRoute: typeof AuthUserRequestRequestIdRoute
+    }
     '/_auth/_user/request/$requestId/declarant': {
       id: '/_auth/_user/request/$requestId/declarant'
       path: '/declarant'
@@ -373,6 +413,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthUserRequestRequestIdRouteChildren {
   AuthUserRequestRequestIdDeclarantRoute: typeof AuthUserRequestRequestIdDeclarantRoute
+  AuthUserRequestRequestIdPersonneConcerneeRoute: typeof AuthUserRequestRequestIdPersonneConcerneeRoute
   AuthUserRequestRequestIdProcessingRoute: typeof AuthUserRequestRequestIdProcessingRoute
   AuthUserRequestRequestIdIndexRoute: typeof AuthUserRequestRequestIdIndexRoute
 }
@@ -381,6 +422,8 @@ const AuthUserRequestRequestIdRouteChildren: AuthUserRequestRequestIdRouteChildr
   {
     AuthUserRequestRequestIdDeclarantRoute:
       AuthUserRequestRequestIdDeclarantRoute,
+    AuthUserRequestRequestIdPersonneConcerneeRoute:
+      AuthUserRequestRequestIdPersonneConcerneeRoute,
     AuthUserRequestRequestIdProcessingRoute:
       AuthUserRequestRequestIdProcessingRoute,
     AuthUserRequestRequestIdIndexRoute: AuthUserRequestRequestIdIndexRoute,
@@ -393,10 +436,13 @@ const AuthUserRequestRequestIdRouteWithChildren =
 
 interface AuthUserRequestCreateRouteChildren {
   AuthUserRequestCreateDeclarantRoute: typeof AuthUserRequestCreateDeclarantRoute
+  AuthUserRequestCreatePersonneConcerneeRoute: typeof AuthUserRequestCreatePersonneConcerneeRoute
 }
 
 const AuthUserRequestCreateRouteChildren: AuthUserRequestCreateRouteChildren = {
   AuthUserRequestCreateDeclarantRoute: AuthUserRequestCreateDeclarantRoute,
+  AuthUserRequestCreatePersonneConcerneeRoute:
+    AuthUserRequestCreatePersonneConcerneeRoute,
 }
 
 const AuthUserRequestCreateRouteWithChildren =
