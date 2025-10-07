@@ -55,9 +55,12 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
     const entiteIds = c.get('entiteIds');
 
     if (!requeteId) {
-      logger.error('requeteChangelogMiddleware: Requete ID is required. Skipping changelog.', {
-        requeteId,
-      });
+      logger.error(
+        {
+          requeteId,
+        },
+        'requeteChangelogMiddleware: Requete ID is required. Skipping changelog.',
+      );
       return await next();
     }
 
