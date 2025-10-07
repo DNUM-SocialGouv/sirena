@@ -1,7 +1,5 @@
 import { mappers } from '@sirena/common';
 
-//TODO: revoir typage/cast ici
-
 export interface PersonneConcerneeData {
   civilite?: string;
   nom?: string;
