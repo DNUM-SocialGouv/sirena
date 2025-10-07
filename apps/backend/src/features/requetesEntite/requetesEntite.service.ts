@@ -1,5 +1,6 @@
 import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
+import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { DeclarantDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
 import { generateRequeteId } from '@/features/requetes/functionalId.service';
@@ -145,6 +146,38 @@ export const createRequeteEntite = async (entiteIds: string[] | null, data?: Cre
             : false,
         },
       });
+
+      // Create default processing steps for each entity
+      for (const entite of requete.requeteEntites) {
+        await prisma.requeteEtape.create({
+          data: {
+            requeteId: requete.id,
+            entiteId: entite.entiteId,
+            statutId: REQUETE_STATUT_TYPES.FAIT,
+            nom: `Création de la requête le ${
+              requete.receptionDate?.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              }) ||
+              new Date().toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })
+            }`,
+          },
+        });
+
+        await prisma.requeteEtape.create({
+          data: {
+            requeteId: requete.id,
+            entiteId: entite.entiteId,
+            statutId: REQUETE_STATUT_TYPES.A_FAIRE,
+            nom: 'Envoyer un accusé de réception au déclarant',
+          },
+        });
+      }
 
       return requete;
     } catch (error: unknown) {
