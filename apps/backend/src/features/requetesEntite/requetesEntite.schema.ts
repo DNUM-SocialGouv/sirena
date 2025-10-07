@@ -1,5 +1,5 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
-import { DeclarantDataSchema } from '@sirena/common/schemas';
+import { DeclarantDataSchema, PersonneConcerneeDataSchema } from '@sirena/common/schemas';
 import { Prisma } from '@/libs/prisma';
 import { RequeteEntiteSchema, RequeteEtapeSchema, RequeteSchema, z } from '@/libs/zod';
 
@@ -28,6 +28,7 @@ export const addProcessingStepNoteBodySchema = z.object({
 
 export const CreateRequeteBodySchema = z.object({
   declarant: DeclarantDataSchema.optional(),
+  participant: PersonneConcerneeDataSchema.optional(),
 });
 
 export const UpdateDeclarantBodySchema = z.object({
@@ -35,6 +36,17 @@ export const UpdateDeclarantBodySchema = z.object({
   controls: z
     .object({
       declarant: z.object({
+        updatedAt: z.string().datetime(),
+      }),
+    })
+    .optional(),
+});
+
+export const UpdateParticipantBodySchema = z.object({
+  participant: PersonneConcerneeDataSchema,
+  controls: z
+    .object({
+      participant: z.object({
         updatedAt: z.string().datetime(),
       }),
     })

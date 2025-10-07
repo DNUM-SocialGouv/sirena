@@ -20,12 +20,14 @@ import {
   CreateRequeteBodySchema,
   GetRequetesEntiteQuerySchema,
   UpdateDeclarantBodySchema,
+  UpdateParticipantBodySchema,
 } from './requetesEntite.schema';
 import {
   createRequeteEntite,
   getRequeteEntiteById,
   getRequetesEntite,
   updateRequeteDeclarant,
+  updateRequeteParticipant,
 } from './requetesEntite.service';
 
 const app = factoryWithLogs
@@ -87,7 +89,7 @@ const app = factoryWithLogs
       });
     }
 
-    const { data, total } = await getRequeteEtapes(id, entiteIds, {});
+    const { data, total } = await getRequeteEtapes(id, entiteIds || [], {});
 
     logger.info({ requestId: id, stepCount: total }, 'Processing steps retrieved successfully');
 
@@ -132,6 +134,40 @@ const app = factoryWithLogs
     return c.json({ data: updatedRequete });
   })
 
+  .patch('/:id/participant', zValidator('json', UpdateParticipantBodySchema), async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
+    const entiteIds = c.get('entiteIds');
+    const { participant: participantData, controls } = c.req.valid('json');
+
+    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
+
+    if (!requeteEntite) {
+      return throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    try {
+      const updatedRequete = await updateRequeteParticipant(id, participantData, controls);
+
+      logger.info({ requeteId: id, userId }, 'Participant data updated successfully');
+
+      return c.json({ data: updatedRequete });
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message.startsWith('CONFLICT')) {
+        const conflictResponse = {
+          message: 'The participant identity has been modified by another user.',
+          conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
+        };
+
+        return c.json(conflictResponse, 409);
+      }
+      throw error;
+    }
+  })
+
   .post(
     '/:id/processing-steps',
     addProcessingStepRoute,
@@ -154,7 +190,7 @@ const app = factoryWithLogs
         });
       }
 
-      const step = await addProcessingEtape(id, entiteIds, {
+      const step = await addProcessingEtape(id, entiteIds || [], {
         nom: body.nom,
       });
 
