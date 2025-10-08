@@ -3,19 +3,12 @@ import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
+import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { z } from 'zod';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
 import type { PersonneConcerneeData } from '@/lib/personneConcernee';
-
-const emailSchema = z.string().email('Adresse email invalide').optional().or(z.literal(''));
-const phoneSchema = z
-  .string()
-  .regex(/^\d+$/, 'Le numéro de téléphone ne doit contenir que des chiffres')
-  .min(10, 'Le numéro de téléphone doit contenir au moins 10 caractères')
-  .optional()
-  .or(z.literal(''));
 
 interface PersonneConcerneeFormProps {
   mode: 'create' | 'edit';
@@ -40,7 +33,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
       if (hasAttemptedSave) {
         if (field === 'courrierElectronique') {
           try {
-            emailSchema.parse(value);
+            optionalEmailSchema.parse(value);
             setEmailError(undefined);
           } catch (error) {
             if (error instanceof z.ZodError) {
@@ -51,7 +44,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
 
         if (field === 'numeroTelephone') {
           try {
-            phoneSchema.parse(value);
+            optionalPhoneSchema.parse(value);
             setPhoneError(undefined);
           } catch (error) {
             if (error instanceof z.ZodError) {
@@ -73,7 +66,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
 
     if (formData.courrierElectronique) {
       try {
-        emailSchema.parse(formData.courrierElectronique);
+        optionalEmailSchema.parse(formData.courrierElectronique);
         setEmailError(undefined);
       } catch (error) {
         if (error instanceof z.ZodError) {
@@ -85,7 +78,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
 
     if (formData.numeroTelephone) {
       try {
-        phoneSchema.parse(formData.numeroTelephone);
+        optionalPhoneSchema.parse(formData.numeroTelephone);
         setPhoneError(undefined);
       } catch (error) {
         if (error instanceof z.ZodError) {
@@ -244,14 +237,14 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
             <div className="fr-col-12 fr-col-md-6">
               <Input
                 label={personneConcerneeFieldMetadata.numeroTelephone.label}
-                hintText="Format attendu : 10 chiffres"
+                hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
                 state={phoneError ? 'error' : undefined}
                 stateRelatedMessage={phoneError}
                 nativeInputProps={{
                   value: formData.numeroTelephone || '',
                   onChange: handleInputChange('numeroTelephone'),
                   type: 'tel',
-                  maxLength: 10,
+                  maxLength: 15,
                 }}
               />
             </div>
