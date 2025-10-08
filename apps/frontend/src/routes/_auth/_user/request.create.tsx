@@ -4,7 +4,7 @@ import { RequestForm } from '@/components/requestForm/RequestForm';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/_user/request/create')({
-  beforeLoad: requireAuthAndRoles([ROLES.WRITER, ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING]),
+  beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]),
   head: () => ({
     meta: [
       {

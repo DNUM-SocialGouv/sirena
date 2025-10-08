@@ -6,8 +6,8 @@ import { useEffect, useMemo } from 'react';
 import { RequetesEntite } from '@/components/common/tables/requetesEntites.tsx';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
+import { useCanEdit } from '@/hooks/useCanEdit';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-
 import { router } from '@/lib/router';
 import { QueryParamsSchema } from '@/schemas/pagination.schema';
 import { useUserStore } from '@/stores/userStore';
@@ -27,6 +27,7 @@ export const Route = createFileRoute('/_auth/_user/home')({
 });
 
 function RouteComponent() {
+  const { canEdit } = useCanEdit();
   const profileQuery = useQuery({ ...profileQueryOptions(), enabled: false });
   const userStore = useUserStore();
 
@@ -45,11 +46,13 @@ function RouteComponent() {
           <div className={styles.header}>
             <h1 className={styles.title}>Bienvenue {label}</h1>
             <div style={{ display: 'flex', gap: '1rem' }}>
-              <Link to="/request/create">
-                <Button iconId="fr-icon-add-line" iconPosition="left">
-                  Créer une requête
-                </Button>
-              </Link>
+              {canEdit && (
+                <Link to="/request/create">
+                  <Button iconId="fr-icon-add-line" iconPosition="left">
+                    Créer une requête
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
           <RequetesEntite />
