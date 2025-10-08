@@ -23,11 +23,19 @@ export const Details = ({ requestId }: DetailsProps) => {
     }
   };
 
+  const handleEditPersonneConcernee = () => {
+    if (requestId) {
+      navigate({ to: '/request/$requestId/personne-concernee', params: { requestId } });
+    } else {
+      navigate({ to: '/request/create/personne-concernee' });
+    }
+  };
+
   if (!requestId) {
     return (
       <>
         <DeclarantSection id={declarantSectionId} onEdit={handleEditDeclarant} />
-        <PersonneConcerneeSection id={personneSectionId} />
+        <PersonneConcerneeSection id={personneSectionId} onEdit={handleEditPersonneConcernee} />
       </>
     );
   }
@@ -36,11 +44,12 @@ export const Details = ({ requestId }: DetailsProps) => {
     <QueryStateHandler query={requestQuery}>
       {() => {
         const declarant = requestQuery.data?.requete?.declarant;
+        const personne = requestQuery.data?.requete?.participant;
 
         return (
           <>
             <DeclarantSection id={declarantSectionId} declarant={declarant} onEdit={handleEditDeclarant} />
-            <PersonneConcerneeSection id={personneSectionId} />
+            <PersonneConcerneeSection id={personneSectionId} personne={personne} onEdit={handleEditPersonneConcernee} />
           </>
         );
       }}

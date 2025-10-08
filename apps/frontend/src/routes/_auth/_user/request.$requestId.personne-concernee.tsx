@@ -2,15 +2,15 @@ import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { ConflictResolutionDialog } from '@/components/conflictDialog/ConflictResolutionDialog';
-import { DeclarantForm } from '@/components/declarant/DeclarantForm';
+import { PersonneConcerneeForm } from '@/components/personneConcernee/PersonneConcerneeForm';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
-import { useDeclarantSave } from '@/hooks/mutations/useDeclarantSave';
+import { usePersonneConcerneeSave } from '@/hooks/mutations/usePersonneConcerneeSave';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { formatDeclarantFromServer } from '@/lib/declarant';
-import { declarantFieldMetadata } from '@/lib/fieldMetadata';
+import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
+import { formatPersonneConcerneeFromServer } from '@/lib/personneConcernee';
 
-export const Route = createFileRoute('/_auth/_user/request/$requestId/declarant')({
+export const Route = createFileRoute('/_auth/_user/request/$requestId/personne-concernee')({
   beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]),
   params: {
     parse: (params: Record<string, string>) => ({
@@ -20,7 +20,7 @@ export const Route = createFileRoute('/_auth/_user/request/$requestId/declarant'
   head: () => ({
     meta: [
       {
-        title: 'Déclarant - Édition requête - SIRENA',
+        title: 'Personne concernée - Édition requête - SIRENA',
       },
     ],
   }),
@@ -32,9 +32,9 @@ function RouteComponent() {
   const requestQuery = useRequeteDetails(requestId);
 
   const { handleSave, handleConflictResolve, handleConflictCancel, conflicts, showConflictDialog, originalDataRef } =
-    useDeclarantSave({
+    usePersonneConcerneeSave({
       requestId,
-      identiteUpdatedAt: requestQuery.data?.requete?.declarant?.identite?.updatedAt,
+      participantUpdatedAt: requestQuery.data?.requete?.participant?.identite?.updatedAt,
       onRefetch: () => requestQuery.refetch(),
     });
 
@@ -42,22 +42,22 @@ function RouteComponent() {
     <QueryStateHandler query={requestQuery}>
       {() => {
         const request = requestQuery.data;
-        const declarant = request?.requete?.declarant;
+        const participant = request?.requete?.participant;
 
-        const formattedData = declarant ? formatDeclarantFromServer(declarant) : {};
+        const formattedData = participant ? formatPersonneConcerneeFromServer(participant) : {};
 
         originalDataRef.current = formattedData;
 
         return (
           <>
-            <DeclarantForm mode="edit" requestId={requestId} initialData={formattedData} onSave={handleSave} />
+            <PersonneConcerneeForm mode="edit" requestId={requestId} initialData={formattedData} onSave={handleSave} />
             {showConflictDialog && conflicts.length > 0 && (
               <ConflictResolutionDialog
                 conflicts={conflicts}
                 onResolve={handleConflictResolve}
                 onCancel={handleConflictCancel}
                 isOpen={showConflictDialog}
-                fieldMetadata={declarantFieldMetadata}
+                fieldMetadata={personneConcerneeFieldMetadata}
               />
             )}
           </>

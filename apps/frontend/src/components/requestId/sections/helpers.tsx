@@ -1,6 +1,6 @@
 export const formatFullName = (identite?: { civilite?: { label?: string }; prenom?: string; nom?: string } | null) => {
   if (!identite) return '';
-  return [identite.civilite?.label, identite.prenom, identite.nom].filter(Boolean).join(' ');
+  return [identite.civilite?.label, identite.nom, identite.prenom].filter(Boolean).join(' ');
 };
 
 export const formatAddress = (adresse?: { label?: string; codePostal?: string; ville?: string } | null) => {
@@ -9,10 +9,19 @@ export const formatAddress = (adresse?: { label?: string; codePostal?: string; v
   return [adresse.label, postalCity].filter(Boolean).join(' ');
 };
 
-export const ContactInfo = ({ icon, children }: { icon: string; children: React.ReactNode }) => (
+export const ContactInfo = ({
+  icon,
+  children,
+  ariaLabel,
+}: {
+  icon: string;
+  children: React.ReactNode;
+  ariaLabel: string;
+}) => (
   <div className="fr-col-auto">
     <p className="fr-mb-0">
-      <span className={icon} aria-hidden="true" /> {children}
+      <span className={icon} role="img" aria-label={ariaLabel} />
+      {children}
     </p>
   </div>
 );

@@ -17,9 +17,9 @@ export const DeclarantSection = ({ id, declarant, onEdit }: DeclarantSectionProp
   const fullName = formatFullName(
     declarantIdentite
       ? {
-          civilite: declarantIdentite.civilite ? { label: declarantIdentite.civilite.label } : undefined,
+          civilite: declarantIdentite.civiliteId ? { label: declarantIdentite.civiliteId } : undefined,
           prenom: declarantIdentite.prenom,
-          nom: declarantIdentite.nom,
+          nom: declarantIdentite.nom?.toUpperCase() || '',
         }
       : null,
   );
@@ -48,10 +48,20 @@ export const DeclarantSection = ({ id, declarant, onEdit }: DeclarantSectionProp
 
     return (
       <div className="fr-grid-row fr-grid-row--gutters">
-        {fullName && <ContactInfo icon="fr-icon-user-line">{fullName}</ContactInfo>}
-        {declarantIdentite?.email && <ContactInfo icon="fr-icon-mail-line">{declarantIdentite.email}</ContactInfo>}
+        {fullName && (
+          <ContactInfo icon="fr-icon-user-line" ariaLabel="Identité">
+            {fullName}
+          </ContactInfo>
+        )}
+        {declarantIdentite?.email && (
+          <ContactInfo icon="fr-icon-mail-line" ariaLabel="Courrier électronique">
+            {declarantIdentite.email}
+          </ContactInfo>
+        )}
         {declarantIdentite?.telephone && (
-          <ContactInfo icon="fr-icon-phone-line">{declarantIdentite.telephone}</ContactInfo>
+          <ContactInfo icon="fr-icon-phone-line" ariaLabel="Numéro de téléphone">
+            {declarantIdentite.telephone}
+          </ContactInfo>
         )}
       </div>
     );

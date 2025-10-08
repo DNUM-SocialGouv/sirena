@@ -385,7 +385,7 @@ describe('RequeteEtapes.service.ts', () => {
         },
       });
       expect(prisma.requeteEtape.delete).toHaveBeenCalledWith({ where: { id: requeteEtapeWithNotesAndFiles.id } });
-      expect(createChangeLog).toHaveBeenCalledTimes(3); // 1 note + 1 file + 1 RequeteEtape
+      expect(createChangeLog).toHaveBeenCalledTimes(2);
       expect(deleteFileFromMinio).toHaveBeenCalledWith('path/to/file1.pdf');
     });
 
@@ -409,7 +409,7 @@ describe('RequeteEtapes.service.ts', () => {
       await deleteRequeteEtape('etape-1', mockLogger, 'user-1');
 
       expect(prisma.requeteEtape.delete).toHaveBeenCalled();
-      expect(createChangeLog).toHaveBeenCalledTimes(1);
+      expect(createChangeLog).toHaveBeenCalledTimes(0); // No changelog
     });
 
     it('should handle RequeteEtape with notes but no files', async () => {
@@ -433,7 +433,7 @@ describe('RequeteEtapes.service.ts', () => {
       await deleteRequeteEtape('etape-1', mockLogger, 'user-1');
 
       expect(prisma.requeteEtape.delete).toHaveBeenCalled();
-      expect(createChangeLog).toHaveBeenCalledTimes(2); // 1 note + 1 RequeteEtape
+      expect(createChangeLog).toHaveBeenCalledTimes(1); // 1 note
     });
 
     it('should handle changelog creation errors gracefully', async () => {
@@ -482,7 +482,7 @@ describe('RequeteEtapes.service.ts', () => {
 
       await deleteRequeteEtape('etape-1', mockLogger, 'user-1');
 
-      expect(createChangeLog).toHaveBeenCalledTimes(3); // 1 notes + 1 files + 1 RequeteEtape
+      expect(createChangeLog).toHaveBeenCalledTimes(2); // 1 notes + 1 files
       expect(deleteFileFromMinio).toHaveBeenCalledTimes(1);
     });
 
@@ -494,7 +494,7 @@ describe('RequeteEtapes.service.ts', () => {
 
       await deleteRequeteEtape('etape-1', mockLogger, 'user-1');
 
-      expect(createChangeLog).toHaveBeenCalledTimes(3); // 1 note + 1 file + 1 RequeteEtape (with all entities)
+      expect(createChangeLog).toHaveBeenCalledTimes(2); // 1 note + 1 file
       expect(deleteFileFromMinio).toHaveBeenCalledWith('path/to/file1.pdf');
     });
   });

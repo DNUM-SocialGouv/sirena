@@ -160,51 +160,27 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                   />
                   {files.length > 0 && (
                     <div className="fr-mt-2w">
-                      <span className="fr-label">Fichiers sélectionnés</span>
-                      <div className="fr-mt-1w" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                        <ul>
-                          {files.map((file) => (
-                            <li key={file.name} className="fr-mb-1w">
-                              <div className="fr-grid-row fr-grid-row--middle">
-                                <div className="fr-col">
-                                  <span className="fr-text--sm">
-                                    {file.name} ({(file.size / 1024 / 1024).toFixed(2)} Mo)
-                                    <Button
-                                      type="button"
-                                      priority="tertiary no outline"
-                                      size="small"
-                                      iconId="fr-icon-delete-line"
-                                      title="Supprimer le fichier"
-                                      aria-label="Supprimer le fichier"
-                                      className="fr-ml-1w"
-                                      onClick={() => {
-                                        setFiles(files.filter((f) => f.name !== file.name));
-                                        const newErrors = { ...fileErrors };
-                                        delete newErrors[file.name];
-                                        setFileErrors(newErrors);
-                                      }}
-                                    >
-                                      <span className="fr-sr-only">Supprimer le fichier</span>
-                                    </Button>
-                                  </span>
-                                </div>
+                      <div className="fr-mt-1w">
+                        {files.map((file) => (
+                          <div key={file.name} className="fr-mb-1w">
+                            {fileErrors[file.name] && (
+                              <div className="fr-mt-1w">
+                                <p className="fr-text--sm fr-text--bold" style={{ color: 'var(--text-default-error)' }}>
+                                  {file.name}
+                                </p>
+                                {fileErrors[file.name].map((error, index) => (
+                                  <p
+                                    key={`${file.name}-error-${index}`}
+                                    className="fr-text--xs"
+                                    style={{ color: 'var(--text-default-error)' }}
+                                  >
+                                    {error.message}
+                                  </p>
+                                ))}
                               </div>
-                              {fileErrors[file.name] && (
-                                <div className="fr-mt-1w">
-                                  {fileErrors[file.name].map((error, index) => (
-                                    <p
-                                      key={`${file.name}-error-${index}`}
-                                      className="fr-text--xs"
-                                      style={{ color: 'var(--text-default-error)' }}
-                                    >
-                                      {error.message}
-                                    </p>
-                                  ))}
-                                </div>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}

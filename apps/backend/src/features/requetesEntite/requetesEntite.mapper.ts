@@ -1,8 +1,9 @@
 import { mappers } from '@sirena/common';
-import type { DeclarantDataSchema } from '@sirena/common/schemas';
+import type { DeclarantDataSchema, PersonneConcerneeDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
+type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
 
 export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
   estIdentifie: true,
@@ -32,6 +33,34 @@ export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
             label: declarantData.adresseDomicile || '',
             codePostal: declarantData.codePostal || '',
             ville: declarantData.ville || '',
+          },
+        }
+      : undefined,
+});
+
+export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConcerneeInput) => ({
+  estHandicapee: participantData.estHandicapee || false,
+  veutGarderAnonymat: participantData.veutGarderAnonymat || false,
+  estVictimeInformee: participantData.estVictimeInformee || false,
+  autrePersonnes: participantData.autrePersonnes || '',
+  commentaire: participantData.commentaire || '',
+  ageId: participantData.age || undefined,
+  identite: {
+    create: {
+      nom: participantData.nom || '',
+      prenom: participantData.prenom || '',
+      email: participantData.courrierElectronique || '',
+      telephone: participantData.numeroTelephone || '',
+      civiliteId: mappers.mapCiviliteToDatabase(participantData.civilite),
+    },
+  },
+  adresse:
+    participantData.adresseDomicile || participantData.codePostal || participantData.ville
+      ? {
+          create: {
+            label: participantData.adresseDomicile || '',
+            codePostal: participantData.codePostal || '',
+            ville: participantData.ville || '',
           },
         }
       : undefined,

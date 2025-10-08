@@ -6,8 +6,8 @@ import { mappers } from '@sirena/common';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { z } from 'zod';
-import type { DeclarantData } from '@/lib/declarant';
-import { declarantFieldMetadata } from '@/lib/fieldMetadata';
+import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
+import type { PersonneConcerneeData } from '@/lib/personneConcernee';
 
 const emailSchema = z.string().email('Adresse email invalide').optional().or(z.literal(''));
 const phoneSchema = z
@@ -17,25 +17,25 @@ const phoneSchema = z
   .optional()
   .or(z.literal(''));
 
-interface DeclarantFormProps {
+interface PersonneConcerneeFormProps {
   mode: 'create' | 'edit';
   requestId?: string;
-  initialData?: DeclarantData;
-  onSave: (data: DeclarantData, shouldCreateRequest: boolean) => Promise<void>;
+  initialData?: PersonneConcerneeData;
+  onSave: (data: PersonneConcerneeData, shouldCreateRequest: boolean) => Promise<void>;
 }
 
-export function DeclarantForm({ mode, requestId, initialData, onSave }: DeclarantFormProps) {
+export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: PersonneConcerneeFormProps) {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<DeclarantData>(initialData || {});
+  const [formData, setFormData] = useState<PersonneConcerneeData>(initialData || {});
   const [emailError, setEmailError] = useState<string | undefined>();
   const [phoneError, setPhoneError] = useState<string | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
 
   const handleInputChange =
-    (field: keyof DeclarantData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    (field: keyof PersonneConcerneeData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = e.target.value;
-      setFormData((prev: DeclarantData) => ({ ...prev, [field]: value }));
+      setFormData((prev: PersonneConcerneeData) => ({ ...prev, [field]: value }));
 
       if (hasAttemptedSave) {
         if (field === 'courrierElectronique') {
@@ -62,8 +62,8 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
       }
     };
 
-  const handleCheckboxChange = (field: keyof DeclarantData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev: DeclarantData) => ({ ...prev, [field]: e.target.checked }));
+  const handleCheckboxChange = (field: keyof PersonneConcerneeData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev: PersonneConcerneeData) => ({ ...prev, [field]: e.target.checked }));
   };
 
   const handleSave = async () => {
@@ -134,7 +134,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
           </Link>
         </div>
 
-        <h1 className="fr-mb-2w">Déclarant</h1>
+        <h1 className="fr-mb-2w">Personne concernée</h1>
         <p className="fr-text--sm fr-mb-5w">Tous les champs sont facultatifs</p>
 
         <div
@@ -145,12 +145,12 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
           <div className="fr-grid-row fr-grid-row--gutters">
             <div className="fr-col-12 fr-col-md-3">
               <Select
-                label={declarantFieldMetadata.civilite.label}
+                label={personneConcerneeFieldMetadata.civilite.label}
                 nativeSelectProps={{
                   value: formData.civilite ?? '',
                   onChange: (e) => {
                     const value = e.target.value;
-                    setFormData((prev: DeclarantData) => ({ ...prev, civilite: value || undefined }));
+                    setFormData((prev: PersonneConcerneeData) => ({ ...prev, civilite: value || undefined }));
                   },
                 }}
               >
@@ -164,7 +164,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
             </div>
             <div className="fr-col-12 fr-col-md-4">
               <Input
-                label={declarantFieldMetadata.nom.label}
+                label={personneConcerneeFieldMetadata.nom.label}
                 nativeInputProps={{
                   value: formData.nom || '',
                   onChange: handleInputChange('nom'),
@@ -173,7 +173,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
             </div>
             <div className="fr-col-12 fr-col-md-5">
               <Input
-                label={declarantFieldMetadata.prenom.label}
+                label={personneConcerneeFieldMetadata.prenom.label}
                 nativeInputProps={{
                   value: formData.prenom || '',
                   onChange: handleInputChange('prenom'),
@@ -185,38 +185,23 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
           <div className="fr-grid-row fr-grid-row--gutters">
             <div className="fr-col-12 fr-col-md-6">
               <Select
-                label={declarantFieldMetadata.lienAvecPersonneConcernee.label}
+                label={personneConcerneeFieldMetadata.age.label}
                 nativeSelectProps={{
-                  value: formData.lienAvecPersonneConcernee ?? '',
+                  value: formData.age ?? '',
                   onChange: (e) => {
                     const value = e.target.value;
-                    setFormData((prev: DeclarantData) => ({
-                      ...prev,
-                      lienAvecPersonneConcernee: value || undefined,
-                    }));
+                    setFormData((prev: PersonneConcerneeData) => ({ ...prev, age: value || undefined }));
                   },
                 }}
               >
-                <option value="">Sélectionner une option</option>
-                {mappers.lienAvecPersonneConcerneeOptions.map((option) => (
+                <option value="">Sélectionner une tranche d'âge</option>
+                {mappers.ageOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
               </Select>
             </div>
-            {formData.lienAvecPersonneConcernee === 'AUTRE' && (
-              <div className="fr-col-12 fr-col-md-6">
-                <Input
-                  label={declarantFieldMetadata.lienAvecPersonneConcerneePrecision.label}
-                  nativeInputProps={{
-                    value: formData.lienAvecPersonneConcerneePrecision || '',
-                    onChange: handleInputChange('lienAvecPersonneConcerneePrecision'),
-                    placeholder: 'Précisez votre lien avec la personne concernée',
-                  }}
-                />
-              </div>
-            )}
           </div>
         </div>
 
@@ -228,7 +213,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
           <div className="fr-grid-row fr-grid-row--gutters">
             <div className="fr-col-12 fr-col-md-6">
               <Input
-                label={declarantFieldMetadata.adresseDomicile.label}
+                label={personneConcerneeFieldMetadata.adresseDomicile.label}
                 nativeInputProps={{
                   value: formData.adresseDomicile || '',
                   onChange: handleInputChange('adresseDomicile'),
@@ -237,7 +222,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
             </div>
             <div className="fr-col-12 fr-col-md-2">
               <Input
-                label={declarantFieldMetadata.codePostal.label}
+                label={personneConcerneeFieldMetadata.codePostal.label}
                 nativeInputProps={{
                   value: formData.codePostal || '',
                   onChange: handleInputChange('codePostal'),
@@ -247,7 +232,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
             </div>
             <div className="fr-col-12 fr-col-md-4">
               <Input
-                label={declarantFieldMetadata.ville.label}
+                label={personneConcerneeFieldMetadata.ville.label}
                 nativeInputProps={{
                   value: formData.ville || '',
                   onChange: handleInputChange('ville'),
@@ -255,11 +240,10 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
               />
             </div>
           </div>
-
           <div className="fr-grid-row fr-grid-row--gutters">
             <div className="fr-col-12 fr-col-md-6">
               <Input
-                label={declarantFieldMetadata.numeroTelephone.label}
+                label={personneConcerneeFieldMetadata.numeroTelephone.label}
                 hintText="Format attendu : 10 chiffres"
                 state={phoneError ? 'error' : undefined}
                 stateRelatedMessage={phoneError}
@@ -273,7 +257,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
             </div>
             <div className="fr-col-12 fr-col-md-6">
               <Input
-                label={declarantFieldMetadata.courrierElectronique.label}
+                label={personneConcerneeFieldMetadata.courrierElectronique.label}
                 hintText="Exemple : prenom.nom@exemple.com"
                 state={emailError ? 'error' : undefined}
                 stateRelatedMessage={emailError}
@@ -293,24 +277,64 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
         >
           <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
 
-          <Checkbox
-            options={[
-              {
-                label: declarantFieldMetadata.neSouhaitePasCommuniquerIdentite.label,
-                nativeInputProps: {
-                  checked: formData.neSouhaitePasCommuniquerIdentite || false,
-                  onChange: handleCheckboxChange('neSouhaitePasCommuniquerIdentite'),
+          <div className="fr-mb-3w">
+            <Checkbox
+              options={[
+                {
+                  label: personneConcerneeFieldMetadata.estHandicapee.label,
+                  nativeInputProps: {
+                    checked: formData.estHandicapee || false,
+                    onChange: handleCheckboxChange('estHandicapee'),
+                  },
                 },
-              },
-            ]}
+              ]}
+            />
+          </div>
+
+          <div className="fr-mb-3w">
+            <Checkbox
+              options={[
+                {
+                  label: personneConcerneeFieldMetadata.veutGarderAnonymat.label,
+                  nativeInputProps: {
+                    checked: formData.veutGarderAnonymat || false,
+                    onChange: handleCheckboxChange('veutGarderAnonymat'),
+                  },
+                },
+              ]}
+            />
+          </div>
+
+          <div className="fr-mb-3w">
+            <Checkbox
+              options={[
+                {
+                  label: personneConcerneeFieldMetadata.estVictimeInformee.label,
+                  nativeInputProps: {
+                    checked: formData.estVictimeInformee || false,
+                    onChange: handleCheckboxChange('estVictimeInformee'),
+                  },
+                },
+              ]}
+            />
+          </div>
+
+          <Input
+            label={personneConcerneeFieldMetadata.autrePersonnes.label}
+            textArea
+            nativeTextAreaProps={{
+              value: formData.autrePersonnes || '',
+              onChange: handleInputChange('autrePersonnes'),
+              rows: 3,
+            }}
           />
 
           <Input
-            label={declarantFieldMetadata.autresPrecisions.label}
+            label={personneConcerneeFieldMetadata.commentaire.label}
             textArea
             nativeTextAreaProps={{
-              value: formData.autresPrecisions || '',
-              onChange: handleInputChange('autresPrecisions'),
+              value: formData.commentaire || '',
+              onChange: handleInputChange('commentaire'),
               rows: 4,
             }}
           />

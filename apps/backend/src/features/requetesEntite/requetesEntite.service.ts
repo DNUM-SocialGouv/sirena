@@ -1,14 +1,15 @@
 import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
-import type { DeclarantDataSchema } from '@sirena/common/schemas';
+import type { DeclarantDataSchema, PersonneConcerneeDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
 import { generateRequeteId } from '@/features/requetes/functionalId.service';
 import { prisma } from '@/libs/prisma';
-import { mapDeclarantToPrismaCreate } from './requetesEntite.mapper';
+import { mapDeclarantToPrismaCreate, mapPersonneConcerneeToPrismaCreate } from './requetesEntite.mapper';
 import type { GetRequetesEntiteQuery } from './requetesEntite.type';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
+type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
 
 type RequeteEntiteKey = { requeteId: string; entiteId: string };
 
@@ -90,6 +91,15 @@ export const getRequeteEntiteById = async (requeteId: string, entiteIds: string[
               lienVictime: true,
             },
           },
+          participant: {
+            include: {
+              adresse: true,
+              age: true,
+              identite: true,
+              lienVictime: true,
+              participantDe: true,
+            },
+          },
         },
       },
       requeteEtape: {
@@ -102,6 +112,7 @@ export const getRequeteEntiteById = async (requeteId: string, entiteIds: string[
 
 interface CreateRequeteInput {
   declarant?: DeclarantInput;
+  participant?: PersonneConcerneeInput;
 }
 
 export const createRequeteEntite = async (entiteIds: string[] | null, data?: CreateRequeteInput) => {
@@ -128,6 +139,11 @@ export const createRequeteEntite = async (entiteIds: string[] | null, data?: Cre
               create: mapDeclarantToPrismaCreate(data.declarant),
             },
           }),
+          ...(data?.participant && {
+            participant: {
+              create: mapPersonneConcerneeToPrismaCreate(data.participant),
+            },
+          }),
           requeteEntites: {
             create: {
               entiteId,
@@ -137,6 +153,14 @@ export const createRequeteEntite = async (entiteIds: string[] | null, data?: Cre
         include: {
           requeteEntites: true,
           declarant: data?.declarant
+            ? {
+                include: {
+                  identite: true,
+                  adresse: true,
+                },
+              }
+            : false,
+          participant: data?.participant
             ? {
                 include: {
                   identite: true,
@@ -203,6 +227,7 @@ interface UpdateRequeteInput {
 
 interface UpdateRequeteControls {
   declarant?: { updatedAt?: string };
+  participant?: { updatedAt?: string };
 }
 
 export const updateRequete = async (requeteId: string, data: UpdateRequeteInput, controls?: UpdateRequeteControls) => {
@@ -321,11 +346,111 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
 
 export const updateRequeteDeclarant = async (
   requeteId: string,
-  declarantData?: DeclarantInput,
+  declarantData: DeclarantInput,
   controls?: UpdateRequeteControls,
 ) => {
-  if (!declarantData) {
-    throw new Error('Declarant data is required');
-  }
   return updateRequete(requeteId, { declarant: declarantData }, controls);
+};
+
+export const updateRequeteParticipant = async (
+  requeteId: string,
+  participantData: PersonneConcerneeInput,
+  controls?: UpdateRequeteControls,
+) => {
+  const requete = await prisma.requete.findUnique({
+    where: { id: requeteId },
+    include: {
+      participant: {
+        include: {
+          identite: true,
+          adresse: true,
+        },
+      },
+    },
+  });
+
+  if (!requete) {
+    throw new Error('Requete not found');
+  }
+
+  if (controls?.participant?.updatedAt && requete.participant?.identite) {
+    const clientUpdatedAt = new Date(controls.participant.updatedAt);
+    const serverUpdatedAt = requete.participant.identite.updatedAt;
+
+    if (clientUpdatedAt.getTime() !== serverUpdatedAt.getTime()) {
+      const error = new Error('CONFLICT: The participant identity has been modified by another user.');
+      (error as Error & { conflictData?: unknown }).conflictData = {
+        serverData: requete.participant,
+        serverUpdatedAt: serverUpdatedAt.toISOString(),
+      };
+      throw error;
+    }
+  }
+
+  const includeParticipant = {
+    include: {
+      identite: true,
+      adresse: true,
+    },
+  };
+
+  if (requete.participant) {
+    return await prisma.requete.update({
+      where: { id: requeteId },
+      data: {
+        participant: {
+          update: {
+            estHandicapee: participantData.estHandicapee || false,
+            veutGarderAnonymat: participantData.veutGarderAnonymat || false,
+            estVictimeInformee: participantData.estVictimeInformee || false,
+            autrePersonnes: participantData.autrePersonnes || '',
+            commentaire: participantData.commentaire || '',
+            ageId: participantData.age || undefined,
+            updatedAt: new Date(),
+            identite: {
+              update: {
+                nom: participantData.nom || '',
+                prenom: participantData.prenom || '',
+                email: participantData.courrierElectronique || '',
+                telephone: participantData.numeroTelephone || '',
+                civiliteId: mappers.mapCiviliteToDatabase(participantData.civilite),
+              },
+            },
+            adresse:
+              participantData.adresseDomicile || participantData.codePostal || participantData.ville
+                ? {
+                    upsert: {
+                      create: {
+                        label: participantData.adresseDomicile || '',
+                        codePostal: participantData.codePostal || '',
+                        ville: participantData.ville || '',
+                      },
+                      update: {
+                        label: participantData.adresseDomicile || '',
+                        codePostal: participantData.codePostal || '',
+                        ville: participantData.ville || '',
+                      },
+                    },
+                  }
+                : undefined,
+          },
+        },
+      },
+      include: {
+        participant: includeParticipant,
+      },
+    });
+  }
+
+  return await prisma.requete.update({
+    where: { id: requeteId },
+    data: {
+      participant: {
+        create: mapPersonneConcerneeToPrismaCreate(participantData),
+      },
+    },
+    include: {
+      participant: includeParticipant,
+    },
+  });
 };
