@@ -346,24 +346,17 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
 
 export const updateRequeteDeclarant = async (
   requeteId: string,
-  declarantData?: DeclarantInput,
+  declarantData: DeclarantInput,
   controls?: UpdateRequeteControls,
 ) => {
-  if (!declarantData) {
-    throw new Error('Declarant data is required');
-  }
   return updateRequete(requeteId, { declarant: declarantData }, controls);
 };
 
 export const updateRequeteParticipant = async (
   requeteId: string,
-  participantData?: PersonneConcerneeInput,
+  participantData: PersonneConcerneeInput,
   controls?: UpdateRequeteControls,
 ) => {
-  if (!participantData) {
-    throw new Error('Participant data is required');
-  }
-
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
     include: {

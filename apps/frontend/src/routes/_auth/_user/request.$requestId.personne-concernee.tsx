@@ -1,3 +1,4 @@
+import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { ConflictResolutionDialog } from '@/components/conflictDialog/ConflictResolutionDialog';
@@ -5,12 +6,12 @@ import { PersonneConcerneeForm } from '@/components/personneConcernee/PersonneCo
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { usePersonneConcerneeSave } from '@/hooks/mutations/usePersonneConcerneeSave';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
-import { requireAuth } from '@/lib/auth-guards';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { personneConcerneeFieldMetadata } from '@/lib/fieldMetadata';
 import { formatPersonneConcerneeFromServer } from '@/lib/personneConcernee';
 
 export const Route = createFileRoute('/_auth/_user/request/$requestId/personne-concernee')({
-  beforeLoad: requireAuth,
+  beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]),
   params: {
     parse: (params: Record<string, string>) => ({
       requestId: z.string().parse(params.requestId),

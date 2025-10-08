@@ -1,3 +1,4 @@
+import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { ConflictResolutionDialog } from '@/components/conflictDialog/ConflictResolutionDialog';
@@ -5,12 +6,12 @@ import { DeclarantForm } from '@/components/declarant/DeclarantForm';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { useDeclarantSave } from '@/hooks/mutations/useDeclarantSave';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
-import { requireAuth } from '@/lib/auth-guards';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { formatDeclarantFromServer } from '@/lib/declarant';
 import { declarantFieldMetadata } from '@/lib/fieldMetadata';
 
 export const Route = createFileRoute('/_auth/_user/request/$requestId/declarant')({
-  beforeLoad: requireAuth,
+  beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]),
   params: {
     parse: (params: Record<string, string>) => ({
       requestId: z.string().parse(params.requestId),
