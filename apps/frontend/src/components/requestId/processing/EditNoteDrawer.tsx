@@ -295,166 +295,171 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
     <>
       <Drawer.Root mask={false} open={isOpen} onOpenChange={handleOpenChange}>
         <Drawer.Portal>
-          <Drawer.Panel>
-            <div
-              className="fr-container fr-mt-8w"
-              style={{ height: 'calc(100vh - 4rem)', overflowY: 'auto', paddingBottom: '2rem' }}
-            >
-              <h3 className="fr-h6">Modifier la note de l'étape "{noteData.step?.nom ?? ''}"</h3>
-              {(modifications.content || modifications.filesAdded || modifications.filesDeleted) && (
-                <p className={fr.cx('fr-text--sm', 'fr-mb-2w')} style={{ color: 'var(--text-default-error)' }}>
-                  ⚠️ Attention : Vous devez enregistrer la note pour que les modifications soient prises en compte.
-                </p>
-              )}
-              <form>
-                <Input
-                  label="Détails de la note"
-                  textArea={true}
-                  state={contentError ? 'error' : undefined}
-                  stateRelatedMessage={contentError ?? undefined}
-                  nativeTextAreaProps={{
-                    rows: 8,
-                    value: noteData.content,
-                    onChange: handleContentChange,
-                  }}
-                />
+          <Drawer.Panel style={{ width: 'min(90vw, 600px)', maxWidth: '100%' }}>
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px 16px' }}>
+                <div className="fr-container fr-mt-8w">
+                  <h3 className="fr-h6">Modifier la note de l'étape "{noteData.step?.nom ?? ''}"</h3>
+                  {(modifications.content || modifications.filesAdded || modifications.filesDeleted) && (
+                    <p className={fr.cx('fr-text--sm', 'fr-mb-2w')} style={{ color: 'var(--text-default-error)' }}>
+                      ⚠️ Attention : Vous devez enregistrer la note pour que les modifications soient prises en compte.
+                    </p>
+                  )}
+                  <form>
+                    <Input
+                      label="Détails de la note"
+                      textArea={true}
+                      state={contentError ? 'error' : undefined}
+                      stateRelatedMessage={contentError ?? undefined}
+                      nativeTextAreaProps={{
+                        rows: 8,
+                        value: noteData.content,
+                        onChange: handleContentChange,
+                      }}
+                    />
 
-                {noteData.existingFiles.length > 0 && (
-                  <div>
-                    <span className="fr-label">Fichiers ajoutés</span>
-                    <div className="fr-mt-1w" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                      {noteData.existingFiles.length > 0 && (
-                        <ul>
-                          {noteData.existingFiles.map((file) => (
-                            <li key={file.id} className={styles['request-note__file']}>
-                              <div>
-                                <a
-                                  href={`/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="fr-link fr-text--sm"
-                                  title={file.originalName}
-                                >
-                                  {file.originalName.length > 30
-                                    ? `${file.originalName.slice(0, 20)}...`
-                                    : file.originalName}
-                                </a>
-                                <Button
-                                  aria-label="Supprimer le fichier"
-                                  title="Supprimer le fichier"
-                                  type="button"
-                                  className="fr-btn fr-btn--sm fr-btn--tertiary fr-icon-delete-line fr-ml-2w"
-                                  onClick={() => handleDeleteFile(file.id)}
-                                >
-                                  <span className="fr-sr-only">Supprimer le fichier</span>
-                                </Button>
-                              </div>
-                              <p className="fr-text--xs">
-                                {file.originalName.split('.')?.[1]?.toUpperCase()} - {(file.size / 1024).toFixed(2)} Ko
-                              </p>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
-                )}
-                <Upload
-                  label="Ajouter un ou plusieurs fichiers"
-                  hint="Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"
-                  multiple
-                  className="relative"
-                  nativeInputProps={{
-                    accept:
-                      '.pdf,.eml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.msg,.csv,.txt,.png,.jpeg,.jpg,.heic,.heif,.webp,.tiff',
-                    onChange: (e) => {
-                      const files = e.target.files;
-                      if (files) {
-                        const fileArray = Array.from(files);
-                        setFilesToUpload(fileArray.map((file) => new File([file], file.name, { type: file.type })));
-                        setModifications((prev) => ({ ...prev, filesAdded: fileArray.length > 0 }));
-                        setFileErrors({});
-                      }
-                    },
-                  }}
-                />
-                {filesToUpload.length > 0 && (
-                  <div className="fr-mt-2w">
-                    <span className="fr-label">Nouveaux fichiers</span>
-                    <div className="fr-mt-1w" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                      <ul>
-                        {filesToUpload.map((file) => (
-                          <li key={file.name} className="fr-mb-1w">
-                            <div className="fr-grid-row fr-grid-row--middle">
-                              <div className="fr-col">
-                                <span className="fr-text--sm">
-                                  {file.name} ({(file.size / 1024 / 1024).toFixed(2)} Mo)
-                                  <Button
-                                    type="button"
-                                    priority="tertiary no outline"
-                                    size="small"
-                                    iconId="fr-icon-delete-line"
-                                    title="Supprimer le fichier"
-                                    aria-label="Supprimer le fichier"
-                                    className="fr-ml-1w"
-                                    onClick={() => {
-                                      setFilesToUpload(filesToUpload.filter((f) => f.name !== file.name));
-                                      const newErrors = { ...fileErrors };
-                                      delete newErrors[file.name];
-                                      setFileErrors(newErrors);
-                                      setModifications((prev) => ({ ...prev, filesAdded: filesToUpload.length > 1 }));
-                                    }}
-                                  >
-                                    <span className="fr-sr-only">Supprimer le fichier</span>
-                                  </Button>
-                                </span>
-                              </div>
-                            </div>
-                            {fileErrors[file.name] && (
-                              <div className="fr-mt-1w">
-                                {fileErrors[file.name].map((error, index) => (
-                                  <p
-                                    key={`${file.name}-error-${index}`}
-                                    className="fr-text--xs"
-                                    style={{ color: 'var(--text-default-error)' }}
-                                  >
-                                    {error.message}
+                    {noteData.existingFiles.length > 0 && (
+                      <div>
+                        <span className="fr-label">Fichiers ajoutés</span>
+                        <div className="fr-mt-1w" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                          {noteData.existingFiles.length > 0 && (
+                            <ul>
+                              {noteData.existingFiles.map((file) => (
+                                <li key={file.id} className={styles['request-note__file']}>
+                                  <div>
+                                    <a
+                                      href={`/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="fr-link fr-text--sm"
+                                      title={file.originalName}
+                                    >
+                                      {file.originalName.length > 30
+                                        ? `${file.originalName.slice(0, 20)}...`
+                                        : file.originalName}
+                                    </a>
+                                    <Button
+                                      aria-label="Supprimer le fichier"
+                                      title="Supprimer le fichier"
+                                      type="button"
+                                      className="fr-btn fr-btn--sm fr-btn--tertiary fr-icon-delete-line fr-ml-2w"
+                                      onClick={() => handleDeleteFile(file.id)}
+                                    >
+                                      <span className="fr-sr-only">Supprimer le fichier</span>
+                                    </Button>
+                                  </div>
+                                  <p className="fr-text--xs">
+                                    {file.originalName.split('.')?.[1]?.toUpperCase()} - {(file.size / 1024).toFixed(2)}{' '}
+                                    Ko
                                   </p>
-                                ))}
-                              </div>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <Upload
+                      label="Ajouter un ou plusieurs fichiers"
+                      hint="Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"
+                      multiple
+                      className="relative"
+                      nativeInputProps={{
+                        accept:
+                          '.pdf,.eml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.msg,.csv,.txt,.png,.jpeg,.jpg,.heic,.heif,.webp,.tiff',
+                        onChange: (e) => {
+                          const files = e.target.files;
+                          if (files) {
+                            const fileArray = Array.from(files);
+                            setFilesToUpload(fileArray.map((file) => new File([file], file.name, { type: file.type })));
+                            setModifications((prev) => ({ ...prev, filesAdded: fileArray.length > 0 }));
+                            setFileErrors({});
+                          }
+                        },
+                      }}
+                    />
+                    {filesToUpload.length > 0 && (
+                      <div className="fr-mt-2w">
+                        <span className="fr-label">Nouveaux fichiers</span>
+                        <div className="fr-mt-1w" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                          <ul>
+                            {filesToUpload.map((file) => (
+                              <li key={file.name} className="fr-mb-1w">
+                                <div className="fr-grid-row fr-grid-row--middle">
+                                  <div className="fr-col">
+                                    <span className="fr-text--sm">
+                                      {file.name} ({(file.size / 1024 / 1024).toFixed(2)} Mo)
+                                      <Button
+                                        type="button"
+                                        priority="tertiary no outline"
+                                        size="small"
+                                        iconId="fr-icon-delete-line"
+                                        title="Supprimer le fichier"
+                                        aria-label="Supprimer le fichier"
+                                        className="fr-ml-1w"
+                                        onClick={() => {
+                                          setFilesToUpload(filesToUpload.filter((f) => f.name !== file.name));
+                                          const newErrors = { ...fileErrors };
+                                          delete newErrors[file.name];
+                                          setFileErrors(newErrors);
+                                          setModifications((prev) => ({
+                                            ...prev,
+                                            filesAdded: filesToUpload.length > 1,
+                                          }));
+                                        }}
+                                      >
+                                        <span className="fr-sr-only">Supprimer le fichier</span>
+                                      </Button>
+                                    </span>
+                                  </div>
+                                </div>
+                                {fileErrors[file.name] && (
+                                  <div className="fr-mt-1w">
+                                    {fileErrors[file.name].map((error, index) => (
+                                      <p
+                                        key={`${file.name}-error-${index}`}
+                                        className="fr-text--xs"
+                                        style={{ color: 'var(--text-default-error)' }}
+                                      >
+                                        {error.message}
+                                      </p>
+                                    ))}
+                                  </div>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                    <div className="display-end fr-mt-4w">
+                      <Button
+                        ref={deleteButtonRef}
+                        type="button"
+                        priority="secondary"
+                        size="small"
+                        onClick={handleDeleteNote}
+                        className="fr-mr-2w fr-btn--icon-center center-icon-with-sr-only"
+                        aria-label="Supprimer la note"
+                        title="Supprimer la note"
+                      >
+                        Supprimer la note
+                      </Button>
+                      <Button
+                        disabled={isLoading}
+                        onClick={handleSubmit}
+                        type="button"
+                        priority="primary"
+                        size="small"
+                        aria-label="Modifier la note"
+                        title="Modifier la note"
+                      >
+                        {isLoading ? 'Modification...' : 'Modifier la note'}
+                      </Button>
                     </div>
-                  </div>
-                )}
-                <div className="display-end fr-mt-4w">
-                  <Button
-                    ref={deleteButtonRef}
-                    type="button"
-                    priority="secondary"
-                    size="small"
-                    onClick={handleDeleteNote}
-                    className="fr-mr-2w fr-btn--icon-center center-icon-with-sr-only"
-                    aria-label="Supprimer la note"
-                    title="Supprimer la note"
-                  >
-                    Supprimer la note
-                  </Button>
-                  <Button
-                    disabled={isLoading}
-                    onClick={handleSubmit}
-                    type="button"
-                    priority="primary"
-                    size="small"
-                    aria-label="Modifier la note"
-                    title="Modifier la note"
-                  >
-                    {isLoading ? 'Modification...' : 'Modifier la note'}
-                  </Button>
+                  </form>
                 </div>
-              </form>
+              </div>
             </div>
           </Drawer.Panel>
         </Drawer.Portal>
