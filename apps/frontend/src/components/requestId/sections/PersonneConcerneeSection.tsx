@@ -19,7 +19,7 @@ export const PersonneConcerneeSection = ({ id, personne, onEdit }: PersonneConce
       ? {
           civilite: personneIdentite.civiliteId ? { label: personneIdentite.civiliteId } : undefined,
           prenom: personneIdentite.prenom,
-          nom: personneIdentite.nom,
+          nom: personneIdentite.nom?.toUpperCase() || '',
         }
       : null,
   );
@@ -52,10 +52,20 @@ export const PersonneConcerneeSection = ({ id, personne, onEdit }: PersonneConce
 
     return (
       <div className="fr-grid-row fr-grid-row--gutters">
-        {fullName && <ContactInfo icon="fr-icon-user-line">{fullName}</ContactInfo>}
-        {personneIdentite?.email && <ContactInfo icon="fr-icon-mail-line">{personneIdentite.email}</ContactInfo>}
+        {fullName && (
+          <ContactInfo icon="fr-icon-user-line" ariaLabel="Identité">
+            {fullName}
+          </ContactInfo>
+        )}
+        {personneIdentite?.email && (
+          <ContactInfo icon="fr-icon-mail-line" ariaLabel="Courrier électronique">
+            {personneIdentite.email}
+          </ContactInfo>
+        )}
         {personneIdentite?.telephone && (
-          <ContactInfo icon="fr-icon-phone-line">{personneIdentite.telephone}</ContactInfo>
+          <ContactInfo icon="fr-icon-phone-line" ariaLabel="Numéro de téléphone">
+            {personneIdentite.telephone}
+          </ContactInfo>
         )}
       </div>
     );
