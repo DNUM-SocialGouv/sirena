@@ -17,7 +17,7 @@ export const DeclarantSection = ({ id, declarant, onEdit }: DeclarantSectionProp
   const fullName = formatFullName(
     declarantIdentite
       ? {
-          civilite: declarantIdentite.civilite ? { label: declarantIdentite.civilite.label } : undefined,
+          civilite: declarantIdentite.civiliteId ? { label: declarantIdentite.civiliteId } : undefined,
           prenom: declarantIdentite.prenom,
           nom: declarantIdentite.nom?.toUpperCase() || '',
         }

@@ -1,6 +1,6 @@
 export const formatFullName = (identite?: { civilite?: { label?: string }; prenom?: string; nom?: string } | null) => {
   if (!identite) return '';
-  return [identite.civilite?.label, identite.prenom, identite.nom].filter(Boolean).join(' ');
+  return [identite.civilite?.label, identite.nom, identite.prenom].filter(Boolean).join(' ');
 };
 
 export const formatAddress = (adresse?: { label?: string; codePostal?: string; ville?: string } | null) => {
