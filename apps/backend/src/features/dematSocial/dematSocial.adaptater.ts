@@ -251,6 +251,7 @@ const getVictimeNonConcernee = (champsById: MappedChamp) => {
       champsById[rootMapping.estVictimeInformee.id],
       rootMapping.estVictimeInformee.options,
     ),
+    estVictime: true,
     victimeInformeeCommentaire: champsById[rootMapping.estVictimeInformeeCommentaire.id]?.stringValue ?? null,
     autrePersonnes: champsById[rootMapping.autreVictimesDetails.id]?.stringValue ?? null,
   };
