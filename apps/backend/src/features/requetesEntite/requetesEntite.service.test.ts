@@ -94,6 +94,25 @@ describe('requetesEntite.service', () => {
                   adresse: true,
                 },
               },
+              participant: {
+                include: {
+                  adresse: true,
+                  identite: true,
+                },
+              },
+              situations: {
+                include: {
+                  faits: {
+                    include: {
+                      consequences: true,
+                      maltraitanceTypes: true,
+                      motifs: true,
+                    },
+                  },
+                  lieuDeSurvenue: true,
+                  misEnCause: true,
+                },
+              },
             },
           },
           requeteEtape: {
@@ -129,6 +148,25 @@ describe('requetesEntite.service', () => {
                 include: {
                   identite: true,
                   adresse: true,
+                },
+              },
+              participant: {
+                include: {
+                  adresse: true,
+                  identite: true,
+                },
+              },
+              situations: {
+                include: {
+                  faits: {
+                    include: {
+                      consequences: true,
+                      maltraitanceTypes: true,
+                      motifs: true,
+                    },
+                  },
+                  lieuDeSurvenue: true,
+                  misEnCause: true,
                 },
               },
             },
