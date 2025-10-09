@@ -39,6 +39,25 @@ export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetR
                 adresse: true,
               },
             },
+            participant: {
+              include: {
+                identite: true,
+                adresse: true,
+              },
+            },
+            situations: {
+              include: {
+                faits: {
+                  include: {
+                    consequences: true,
+                    maltraitanceTypes: true,
+                    motifs: true,
+                  },
+                },
+                misEnCause: true,
+                lieuDeSurvenue: true,
+              },
+            },
           },
         },
         requeteEtape: { orderBy: { createdAt: 'desc' }, take: 1 },

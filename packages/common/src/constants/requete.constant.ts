@@ -83,6 +83,17 @@ export const motifLabels: Record<Motif, string> = {
   AUTRE: 'Autre (ex: tatouage, chirurgie et/ou soins esthétiques...)',
 };
 
+export const motifShortLabels: Record<Motif, string> = {
+  PROBLEME_COMPORTEMENTAL: 'Problème comportemental',
+  PROBLEME_FACTURATION: 'Problème lié à la facturation',
+  PROBLEME_LOCAUX: 'Problème lié aux locaux',
+  NON_RESPECT_DROITS: 'Non-respect des droits des usagers',
+  PROBLEME_ORGANISATION: 'Problème d’organisation',
+  PROBLEME_QUALITE_SOINS: 'Problème de qualité des soins',
+  DIFFICULTES_ACCES_SOINS: "Difficultés d'accès aux soins",
+  AUTRE: 'Autre',
+};
+
 export const CONSEQUENCE = {
   SANTE: 'SANTE',
   DROITS: 'DROITS',
