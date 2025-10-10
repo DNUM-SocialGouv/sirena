@@ -203,11 +203,6 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
       return;
     }
 
-    if (!noteData.content.trim()) {
-      setContentError('Le contenu de la note est obligatoire');
-      return;
-    }
-
     setContentError(null);
 
     const newFileErrors = validateFiles(filesToUpload);
