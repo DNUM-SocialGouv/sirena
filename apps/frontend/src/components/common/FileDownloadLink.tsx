@@ -70,11 +70,9 @@ export const FileDownloadLink = ({
           {
             doClosesModal: true,
             children: 'Télécharger',
-            linkProps: {
-              href,
-              download: fileName,
-              target: '_blank',
-              rel: 'noopener noreferrer',
+            onClick: () => {
+              window.open(href, '_blank');
+              downloadModal.close();
             },
           },
         ]}
