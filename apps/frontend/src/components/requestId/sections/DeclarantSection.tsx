@@ -41,7 +41,7 @@ export const DeclarantSection = ({ id, declarant, onEdit }: DeclarantSectionProp
     !!declarantIdentite?.email ||
     !!declarantIdentite?.telephone ||
     !!declarant?.commentaire ||
-    declarant?.veutGarderAnonymat !== null;
+    !!declarant?.veutGarderAnonymat;
 
   const renderSummary = () => {
     if (!fullName && !declarantIdentite?.email && !declarantIdentite?.telephone) return null;
