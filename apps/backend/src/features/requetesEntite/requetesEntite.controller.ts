@@ -113,6 +113,8 @@ const app = factoryWithLogs
 
       const requete = await createRequeteEntite(entiteIds, body);
 
+      c.set('changelogId', requete.id);
+
       logger.info(
         { requeteId: requete.id, userId, hasDeclarant: !!body.declarant, hasParticipant: !!body.participant },
         'New requete created successfully',

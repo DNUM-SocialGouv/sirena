@@ -358,7 +358,7 @@ describe('notes.controller.ts', () => {
       expect(updateNote).not.toHaveBeenCalled();
     });
 
-    it('should validate the request body - content is required', async () => {
+    it('should validate the request body - content is not required', async () => {
       vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
 
       const res = await client[':noteId'].$patch({
@@ -366,19 +366,7 @@ describe('notes.controller.ts', () => {
         json: { texte: '' },
       });
 
-      expect(res.status).toBe(400);
-    });
-
-    it('should validate the request body - content is required', async () => {
-      vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
-
-      const res = await client[':noteId'].$patch({
-        param: { noteId: 'note1' },
-        // biome-ignore lint/suspicious/noExplicitAny: <tests purposes>
-        json: {} as any,
-      });
-
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(200);
     });
   });
 

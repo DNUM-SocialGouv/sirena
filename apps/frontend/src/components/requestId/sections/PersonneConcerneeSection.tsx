@@ -47,7 +47,7 @@ export const PersonneConcerneeSection = ({ id, personne, onEdit }: PersonneConce
 
   const renderSummary = () => {
     if (!fullName && !personneIdentite?.email && !personneIdentite?.telephone) {
-      return <p className="fr-text--sm fr-text--grey">Aucune information</p>;
+      return null;
     }
 
     return (

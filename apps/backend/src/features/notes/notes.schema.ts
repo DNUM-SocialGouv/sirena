@@ -18,11 +18,6 @@ export const addNoteBodySchema = z
   });
 
 export const updateNoteBodySchema = z.object({
-  texte: z
-    .string()
-    .min(1, {
-      message: 'Le contenu de la note ne peut pas être vide.',
-    })
-    .transform((s) => s.trim()),
+  texte: z.string().transform((s) => s.trim()),
   fileIds: z.array(z.string().min(1, 'Un fichier est requis')).optional(),
 });
