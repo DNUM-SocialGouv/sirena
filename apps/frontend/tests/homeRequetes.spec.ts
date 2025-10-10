@@ -58,6 +58,8 @@ test.describe('Requete Feature', () => {
     const firstRow = requetesTable.locator('tbody tr').first();
     await expect(firstRow).toBeVisible();
 
+    await expect(firstRow).toHaveAttribute('data-row-key');
+
     const requestUuid = await firstRow.getAttribute('data-row-key');
     expect(requestUuid).toBeTruthy();
 
@@ -67,6 +69,6 @@ test.describe('Requete Feature', () => {
 
     await expect(page).toHaveURL(`${baseUrl}/request/${requestUuid}`);
 
-    await expect(page.getByRole('heading', { name: `Requête n°${requestUuid}` })).toBeVisible();
+    await expect(page.getByRole('heading', { name: `Requête ${requestUuid}` })).toBeVisible();
   });
 });
