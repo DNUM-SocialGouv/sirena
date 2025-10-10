@@ -30,7 +30,12 @@ test.describe('Request Details Feature', () => {
 
     const requetesTable = page.getByRole('table');
     await expect(requetesTable).toBeVisible();
+
     const firstRow = requetesTable.locator('tbody tr').first();
+    await expect(firstRow).toBeVisible();
+
+    await expect(firstRow).toHaveAttribute('data-row-key');
+
     const uuid = await firstRow.getAttribute('data-row-key');
     expect(uuid).toBeTruthy();
 
@@ -49,7 +54,7 @@ test.describe('Request Details Feature', () => {
   });
 
   test('should navigate to request detail page from table', async () => {
-    await expect(page.getByRole('heading', { name: `Requête n°${requestUuid}`, level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: `Requête ${requestUuid}`, level: 1 })).toBeVisible();
   });
 
   test('should add a processing step and see it after reload', async () => {
@@ -58,7 +63,7 @@ test.describe('Request Details Feature', () => {
 
     await page.getByRole('button', { name: 'Ajouter une étape' }).click();
 
-    const inputEtape = page.getByLabel("Nom de l'étape");
+    const inputEtape = page.getByRole('textbox', { name: "Nom de l'étape (obligatoire)" });
     await expect(inputEtape).toBeVisible();
     await inputEtape.fill(randomStepName);
 
