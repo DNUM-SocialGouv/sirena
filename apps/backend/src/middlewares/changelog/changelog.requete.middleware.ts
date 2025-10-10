@@ -1,5 +1,5 @@
 import { createChangeLog } from '@/features/changelog/changelog.service';
-import type { ChangeLogAction } from '@/features/changelog/changelog.type';
+import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { getRequeteEntiteById } from '@/features/requetesEntite/requetesEntite.service';
 import factoryWithChangelog from '@/helpers/factories/appWithChangeLog';
 import { isEqual, pick } from '@/helpers/object';
@@ -54,7 +54,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
     const logger = c.get('logger');
     const entiteIds = c.get('entiteIds');
 
-    if (!requeteId) {
+    if (!requeteId && action === 'UPDATED') {
       logger.error(
         {
           requeteId,
@@ -71,7 +71,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
     let participantIdentiteBefore: Identite | null = null;
     let participantAdresseBefore: Adresse | null = null;
 
-    if (action !== 'CREATED') {
+    if (action === 'UPDATED' && requeteId) {
       const requeteEntite = await getRequeteEntiteById(requeteId, entiteIds);
 
       if (requeteEntite?.requete?.declarant) {
@@ -87,239 +87,209 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
       }
     }
 
+    // Call route/controller
     await next();
 
+    // In case of CREATED action, the changelogId is set in the controller with created requete ID
+    // In case of UPDATED action, the changelogId is set in the controller with updated declarant or participant ID
     const changelogId = c.get('changelogId');
 
-    // Handle declarant updated changelog
-    if (changelogId && changedById && action === 'UPDATED' && declarantBefore) {
-      const requeteEntite = await getRequeteEntiteById(requeteId, entiteIds);
+    // Helper function to create changelog for an entity
+    const createEntityChangelog = async (
+      entity: 'PersonneConcernee' | 'Identite' | 'Adresse',
+      entityId: string,
+      action: ChangeLogAction,
+      before: Prisma.JsonObject | null,
+      after: Prisma.JsonObject | null,
+    ) => {
+      await createChangeLog({
+        entity,
+        entityId,
+        action,
+        before,
+        after,
+        changedById,
+      });
+    };
 
-      if (requeteEntite?.requete?.declarant) {
-        const declarantAfter = requeteEntite.requete.declarant;
-        const identiteAfter = requeteEntite.requete.declarant.identite;
-        const adresseAfter = requeteEntite.requete.declarant.adresse;
+    // Helper function to check if there are changes between before and after data
+    const hasChanges = (before: Record<string, unknown>, after: Record<string, unknown>, fields: string[]) => {
+      return fields.some((field) => {
+        const beforeValue = before[field];
+        const afterValue = after[field];
+        return !isEqual(beforeValue, afterValue);
+      });
+    };
 
-        const declarantBeforePicked = pick(declarantBefore, personneTrackedFields);
-        const declarantAfterPicked = pick(declarantAfter, personneTrackedFields);
+    // Helper function to handle entity changes (UPDATED action)
+    const handleEntityChanges = async (
+      entity: 'PersonneConcernee' | 'Identite' | 'Adresse',
+      entityId: string,
+      before: Record<string, unknown> | null,
+      after: Record<string, unknown> | null,
+      trackedFields: string[],
+    ) => {
+      if (!before || !after) return;
 
-        const hasDeclarantChanges = personneTrackedFields.some((field) => {
-          const before = declarantBeforePicked[field];
-          const after = declarantAfterPicked[field];
-          return !isEqual(before, after);
-        });
+      const beforePicked = pick(before, trackedFields);
+      const afterPicked = pick(after, trackedFields);
 
-        if (hasDeclarantChanges) {
-          await createChangeLog({
-            entity: 'PersonneConcernee',
-            entityId: changelogId,
-            action,
-            before: declarantBeforePicked as unknown as Prisma.JsonObject,
-            after: declarantAfterPicked as unknown as Prisma.JsonObject,
-            changedById,
-          });
-        }
-
-        if (declarantIdentiteBefore && identiteAfter) {
-          const identiteBeforePicked = pick(declarantIdentiteBefore, identiteTrackedFields);
-          const identiteAfterPicked = pick(identiteAfter, identiteTrackedFields);
-
-          const hasIdentiteChanges = identiteTrackedFields.some((field) => {
-            const before = identiteBeforePicked[field];
-            const after = identiteAfterPicked[field];
-            return !isEqual(before, after);
-          });
-
-          if (hasIdentiteChanges) {
-            await createChangeLog({
-              entity: 'Identite',
-              entityId: identiteAfter.id,
-              action,
-              before: identiteBeforePicked as unknown as Prisma.JsonObject,
-              after: identiteAfterPicked as unknown as Prisma.JsonObject,
-              changedById,
-            });
-          }
-        }
-
-        if (declarantAdresseBefore && adresseAfter) {
-          const adresseBeforePicked = pick(declarantAdresseBefore, adresseTrackedFields);
-          const adresseAfterPicked = pick(adresseAfter, adresseTrackedFields);
-
-          const hasAdresseChanges = adresseTrackedFields.some((field) => {
-            const before = adresseBeforePicked[field];
-            const after = adresseAfterPicked[field];
-            return !isEqual(before, after);
-          });
-
-          if (hasAdresseChanges) {
-            await createChangeLog({
-              entity: 'Adresse',
-              entityId: adresseAfter.id,
-              action,
-              before: adresseBeforePicked as unknown as Prisma.JsonObject,
-              after: adresseAfterPicked as unknown as Prisma.JsonObject,
-              changedById,
-            });
-          }
-        }
+      if (hasChanges(beforePicked, afterPicked, trackedFields)) {
+        await createEntityChangelog(
+          entity,
+          entityId,
+          action,
+          beforePicked as unknown as Prisma.JsonObject,
+          afterPicked as unknown as Prisma.JsonObject,
+        );
       }
-    } else if (changedById && action === 'CREATED') {
-      // Handle both declarant and participant creation
-      const requeteEntite = await getRequeteEntiteById(requeteId, entiteIds);
+    };
+
+    // Helper function to handle entity creation (CREATED action)
+    const handleEntityCreation = async (
+      entity: 'PersonneConcernee' | 'Identite' | 'Adresse',
+      entityId: string,
+      data: Record<string, unknown>,
+      trackedFields: string[],
+    ) => {
+      const pickedData = pick(data, trackedFields);
+      await createEntityChangelog(
+        entity,
+        entityId,
+        ChangeLogAction.CREATED,
+        null,
+        pickedData as unknown as Prisma.JsonObject,
+      );
+    };
+
+    if (!changelogId || !changedById) return;
+
+    // Scenario 1: CREATED action (new requete with declarant/participant)
+    if (action === 'CREATED') {
+      const requeteEntite = await getRequeteEntiteById(changelogId, entiteIds);
 
       // Handle declarant creation
       if (requeteEntite?.requete?.declarant) {
         const declarant = requeteEntite.requete.declarant;
-
-        const declarantData = pick(declarant, personneTrackedFields);
-
-        await createChangeLog({
-          entity: 'PersonneConcernee',
-          entityId: declarant.id,
-          action,
-          before: null,
-          after: declarantData as unknown as Prisma.JsonObject,
-          changedById,
-        });
+        await handleEntityCreation('PersonneConcernee', declarant.id, declarant, personneTrackedFields);
 
         if (declarant.identite) {
-          const identiteData = pick(declarant.identite, identiteTrackedFields);
-          await createChangeLog({
-            entity: 'Identite',
-            entityId: declarant.identite.id,
-            action,
-            before: null,
-            after: identiteData as unknown as Prisma.JsonObject,
-            changedById,
-          });
+          await handleEntityCreation('Identite', declarant.identite.id, declarant.identite, identiteTrackedFields);
         }
 
         if (declarant.adresse) {
-          const adresseData = pick(declarant.adresse, adresseTrackedFields);
-          await createChangeLog({
-            entity: 'Adresse',
-            entityId: declarant.adresse.id,
-            action,
-            before: null,
-            after: adresseData as unknown as Prisma.JsonObject,
-            changedById,
-          });
+          await handleEntityCreation('Adresse', declarant.adresse.id, declarant.adresse, adresseTrackedFields);
         }
       }
 
       // Handle participant creation
       if (requeteEntite?.requete?.participant) {
         const participant = requeteEntite.requete.participant;
-
-        const participantData = pick(participant, personneTrackedFields);
-
-        await createChangeLog({
-          entity: 'PersonneConcernee',
-          entityId: participant.id,
-          action,
-          before: null,
-          after: participantData as unknown as Prisma.JsonObject,
-          changedById,
-        });
+        await handleEntityCreation('PersonneConcernee', participant.id, participant, personneTrackedFields);
 
         if (participant.identite) {
-          const identiteData = pick(participant.identite, identiteTrackedFields);
-          await createChangeLog({
-            entity: 'Identite',
-            entityId: participant.identite.id,
-            action,
-            before: null,
-            after: identiteData as unknown as Prisma.JsonObject,
-            changedById,
-          });
+          await handleEntityCreation('Identite', participant.identite.id, participant.identite, identiteTrackedFields);
         }
 
         if (participant.adresse) {
-          const adresseData = pick(participant.adresse, adresseTrackedFields);
-          await createChangeLog({
-            entity: 'Adresse',
-            entityId: participant.adresse.id,
-            action,
-            before: null,
-            after: adresseData as unknown as Prisma.JsonObject,
-            changedById,
-          });
+          await handleEntityCreation('Adresse', participant.adresse.id, participant.adresse, adresseTrackedFields);
         }
       }
     }
 
-    // Handle participant changelog for UPDATED
-    if (changelogId && changedById && action === 'UPDATED' && participantBefore) {
+    // Scenario 2: UPDATED action (modify existing declarant/participant)
+    if (action === 'UPDATED' && requeteId) {
       const requeteEntite = await getRequeteEntiteById(requeteId, entiteIds);
 
-      if (requeteEntite?.requete?.participant) {
+      // Handle declarant updates
+      if (declarantBefore && requeteEntite?.requete?.declarant) {
+        const declarantAfter = requeteEntite.requete.declarant;
+        await handleEntityChanges(
+          'PersonneConcernee',
+          changelogId,
+          declarantBefore,
+          declarantAfter,
+          personneTrackedFields,
+        );
+
+        if (declarantIdentiteBefore && declarantAfter.identite) {
+          await handleEntityChanges(
+            'Identite',
+            declarantAfter.identite.id,
+            declarantIdentiteBefore,
+            declarantAfter.identite,
+            identiteTrackedFields,
+          );
+        }
+
+        if (declarantAdresseBefore && declarantAfter.adresse) {
+          await handleEntityChanges(
+            'Adresse',
+            declarantAfter.adresse.id,
+            declarantAdresseBefore,
+            declarantAfter.adresse,
+            adresseTrackedFields,
+          );
+        }
+      }
+
+      // Handle participant updates
+      if (participantBefore && requeteEntite?.requete?.participant) {
         const participantAfter = requeteEntite.requete.participant;
-        const identiteAfter = requeteEntite.requete.participant.identite;
-        const adresseAfter = requeteEntite.requete.participant.adresse;
+        await handleEntityChanges(
+          'PersonneConcernee',
+          changelogId,
+          participantBefore,
+          participantAfter,
+          personneTrackedFields,
+        );
 
-        const participantBeforePicked = pick(participantBefore, personneTrackedFields);
-        const participantAfterPicked = pick(participantAfter, personneTrackedFields);
-
-        const hasParticipantChanges = personneTrackedFields.some((field) => {
-          const before = participantBeforePicked[field];
-          const after = participantAfterPicked[field];
-          return !isEqual(before, after);
-        });
-
-        if (hasParticipantChanges) {
-          await createChangeLog({
-            entity: 'PersonneConcernee',
-            entityId: changelogId,
-            action,
-            before: participantBeforePicked as unknown as Prisma.JsonObject,
-            after: participantAfterPicked as unknown as Prisma.JsonObject,
-            changedById,
-          });
+        if (participantIdentiteBefore && participantAfter.identite) {
+          await handleEntityChanges(
+            'Identite',
+            participantAfter.identite.id,
+            participantIdentiteBefore,
+            participantAfter.identite,
+            identiteTrackedFields,
+          );
         }
 
-        if (participantIdentiteBefore && identiteAfter) {
-          const identiteBeforePicked = pick(participantIdentiteBefore, identiteTrackedFields);
-          const identiteAfterPicked = pick(identiteAfter, identiteTrackedFields);
+        if (participantAdresseBefore && participantAfter.adresse) {
+          await handleEntityChanges(
+            'Adresse',
+            participantAfter.adresse.id,
+            participantAdresseBefore,
+            participantAfter.adresse,
+            adresseTrackedFields,
+          );
+        }
+      }
 
-          const hasIdentiteChanges = identiteTrackedFields.some((field) => {
-            const before = identiteBeforePicked[field];
-            const after = identiteAfterPicked[field];
-            return !isEqual(before, after);
-          });
+      // Handle new declarant creation on existing requete
+      if (!declarantBefore && requeteEntite?.requete?.declarant) {
+        const declarant = requeteEntite.requete.declarant;
+        await handleEntityCreation('PersonneConcernee', declarant.id, declarant, personneTrackedFields);
 
-          if (hasIdentiteChanges) {
-            await createChangeLog({
-              entity: 'Identite',
-              entityId: identiteAfter.id,
-              action,
-              before: identiteBeforePicked as unknown as Prisma.JsonObject,
-              after: identiteAfterPicked as unknown as Prisma.JsonObject,
-              changedById,
-            });
-          }
+        if (declarant.identite) {
+          await handleEntityCreation('Identite', declarant.identite.id, declarant.identite, identiteTrackedFields);
         }
 
-        if (participantAdresseBefore && adresseAfter) {
-          const adresseBeforePicked = pick(participantAdresseBefore, adresseTrackedFields);
-          const adresseAfterPicked = pick(adresseAfter, adresseTrackedFields);
+        if (declarant.adresse) {
+          await handleEntityCreation('Adresse', declarant.adresse.id, declarant.adresse, adresseTrackedFields);
+        }
+      }
 
-          const hasAdresseChanges = adresseTrackedFields.some((field) => {
-            const before = adresseBeforePicked[field];
-            const after = adresseAfterPicked[field];
-            return !isEqual(before, after);
-          });
+      // Handle new participant creation on existing requete
+      if (!participantBefore && requeteEntite?.requete?.participant) {
+        const participant = requeteEntite.requete.participant;
+        await handleEntityCreation('PersonneConcernee', participant.id, participant, personneTrackedFields);
 
-          if (hasAdresseChanges) {
-            await createChangeLog({
-              entity: 'Adresse',
-              entityId: adresseAfter.id,
-              action,
-              before: adresseBeforePicked as unknown as Prisma.JsonObject,
-              after: adresseAfterPicked as unknown as Prisma.JsonObject,
-              changedById,
-            });
-          }
+        if (participant.identite) {
+          await handleEntityCreation('Identite', participant.identite.id, participant.identite, identiteTrackedFields);
+        }
+
+        if (participant.adresse) {
+          await handleEntityCreation('Adresse', participant.adresse.id, participant.adresse, adresseTrackedFields);
         }
       }
     }
