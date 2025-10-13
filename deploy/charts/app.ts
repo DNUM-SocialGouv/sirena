@@ -248,7 +248,7 @@ function createIngressAnnotations(isBackend: boolean, namespace: string): Record
 
   return {
     ...baseAnnotations,
-    // "nginx.ingress.kubernetes.io/custom-headers": `${namespace}/security-headers`,
+    'nginx.ingress.kubernetes.io/custom-headers': `${namespace}/security-headers`,
   };
 }
 
