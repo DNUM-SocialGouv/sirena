@@ -46,7 +46,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@hono/zod-validator": "^0.7.3",
+    "@hono/zod-validator": "^0.7.4",
     "@sirena/common": "workspace:*",
     "hono": "catalog:",
     "hono-openapi": "catalog:",
