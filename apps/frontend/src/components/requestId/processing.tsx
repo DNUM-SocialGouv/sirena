@@ -5,6 +5,7 @@ import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHand
 import { CreateStep } from '@/components/requestId/processing/createStep';
 import { Step } from '@/components/requestId/processing/Step';
 import { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
+import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { CreateNoteDrawer, type CreateNoteDrawerRef } from './processing/CreateNoteDrawer';
 import { EditNoteDrawer, type EditNoteDrawerRef } from './processing/EditNoteDrawer';
@@ -22,6 +23,7 @@ export const Processing = ({ requestId }: ProcessingProps = {}) => {
   const createNoteDrawerRef = useRef<CreateNoteDrawerRef>(null);
   const editNoteDrawerRef = useRef<EditNoteDrawerRef>(null);
   const queryProcessingSteps = useProcessingSteps(requestId || '');
+  const { canEdit } = useCanEdit();
 
   useEffect(() => {
     if (
@@ -77,7 +79,7 @@ export const Processing = ({ requestId }: ProcessingProps = {}) => {
                 <div className="fr-col">
                   <h2 className="fr-mb-0">Étapes du traitement</h2>
                 </div>
-                {requestId && (
+                {requestId && canEdit && (
                   <div className="fr-col-auto">
                     <Button
                       priority="secondary"

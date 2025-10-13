@@ -11,6 +11,7 @@ import { StatusMenu } from '@/components/common/statusMenu';
 import { useDeleteProcessingStep, useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useUpdateProcessingStepName } from '@/hooks/mutations/updateProcessingStepName.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
+import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { UpdateProcessingStepNameSchema } from '@/schemas/processingSteps.schema';
 import { StepNote } from './StepNote';
@@ -54,6 +55,7 @@ const StepComponent = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editStepName, setEditStepName] = useState(nom ?? '');
   const [editError, setEditError] = useState<string | null>(null);
+  const { canEdit } = useCanEdit();
 
   const badges = [
     {
@@ -178,23 +180,25 @@ const StepComponent = ({
               <StatusMenu
                 badges={badges}
                 value={statutId}
-                disabled={disabled || updateStatusMutation.isPending}
+                disabled={disabled || !canEdit || updateStatusMutation.isPending}
                 onBadgeClick={handleStatusChange}
               />
             </div>
             <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-              <Button
-                priority="tertiary no outline"
-                size="small"
-                iconId="fr-icon-edit-line"
-                title="Modifier le nom de l'étape"
-                aria-label="Modifier le nom de l'étape"
-                className="fr-btn--icon-center center-icon-with-sr-only"
-                onClick={() => handleEditButton(true)}
-                style={{ whiteSpace: 'nowrap' }}
-              >
-                <span className="fr-sr-only">Modifier le nom de l'étape</span>
-              </Button>
+              {canEdit && (
+                <Button
+                  priority="tertiary no outline"
+                  size="small"
+                  iconId="fr-icon-edit-line"
+                  title="Modifier le nom de l'étape"
+                  aria-label="Modifier le nom de l'étape"
+                  className="fr-btn--icon-center center-icon-with-sr-only"
+                  onClick={() => handleEditButton(true)}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  <span className="fr-sr-only">Modifier le nom de l'étape</span>
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -228,15 +232,17 @@ const StepComponent = ({
             </button>
           )}
         </div>
-        <Button
-          className={styles['request-step__add-note']}
-          type="button"
-          priority="tertiary"
-          iconId="fr-icon-add-line"
-          onClick={() => openEdit?.({ id, nom, statutId, notes, ...rest })}
-        >
-          Note ou fichier
-        </Button>
+        {canEdit && (
+          <Button
+            className={styles['request-step__add-note']}
+            type="button"
+            priority="tertiary"
+            iconId="fr-icon-add-line"
+            onClick={() => openEdit?.({ id, nom, statutId, notes, ...rest })}
+          >
+            Note ou fichier
+          </Button>
+        )}
       </div>
 
       <deleteStepModal.Component

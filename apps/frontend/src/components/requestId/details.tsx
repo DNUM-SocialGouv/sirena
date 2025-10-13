@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useId } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
+import { useCanEdit } from '@/hooks/useCanEdit';
 import { DeclarantSection } from './sections/DeclarantSection';
 import { PersonneConcerneeSection } from './sections/PersonneConcerneeSection';
 
@@ -14,8 +15,10 @@ export const Details = ({ requestId }: DetailsProps) => {
   const declarantSectionId = useId();
   const personneSectionId = useId();
   const requestQuery = useRequeteDetails(requestId);
+  const { canEdit } = useCanEdit();
 
   const handleEditDeclarant = () => {
+    if (!canEdit) return;
     if (requestId) {
       navigate({ to: '/request/$requestId/declarant', params: { requestId } });
     } else {

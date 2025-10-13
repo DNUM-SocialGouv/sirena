@@ -1,5 +1,6 @@
 import { InfoSection } from '@sirena/ui';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
+import { useCanEdit } from '@/hooks/useCanEdit';
 import { ContactInfo, formatAddress, formatFullName, SectionTitle } from './helpers';
 
 type PersonneData = NonNullable<ReturnType<typeof useRequeteDetails>['data']>['requete']['participant'];
@@ -11,6 +12,7 @@ interface PersonneConcerneeSectionProps {
 }
 
 export const PersonneConcerneeSection = ({ id, personne, onEdit }: PersonneConcerneeSectionProps) => {
+  const { canEdit } = useCanEdit();
   const personneIdentite = personne?.identite;
   const personneAdresse = personne?.adresse;
 
@@ -134,6 +136,7 @@ export const PersonneConcerneeSection = ({ id, personne, onEdit }: PersonneConce
       id={id}
       title="Personne concernée"
       onEdit={onEdit}
+      canEdit={canEdit}
       renderSummary={renderSummary}
       renderDetails={isFulfilled ? renderDetails : undefined}
       emptyLabel="Aucune information sur la personne concernée"

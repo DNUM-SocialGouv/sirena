@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { addProcessingEtape, getRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
-import type { Requete, RequeteEntite, RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
+import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
 import RequetesEntiteController from './requetesEntite.controller';
@@ -69,7 +69,7 @@ describe('RequetesEntite endpoints: /', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequetesEntiteController).onError(errorHandler);
   const client = testClient(app);
 
-  const fakeData: (RequeteEntite & { requete: Requete; requeteEtape: RequeteEtape[] })[] = [
+  const fakeData = [
     {
       requeteId: 'r1',
       entiteId: 'e1',
@@ -81,10 +81,32 @@ describe('RequetesEntite endpoints: /', () => {
         receptionDate: new Date(),
         dematSocialId: 123,
         receptionTypeId: 'receptionTypeId',
+        declarant: {
+          id: 'd1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          commentaire: '',
+          estNonIdentifiee: false,
+          estAnonyme: false,
+          estHandicapee: false,
+          estIdentifie: true,
+          estVictime: null,
+          estVictimeInformee: null,
+          victimeInformeeCommentaire: '',
+          veutGarderAnonymat: false,
+          autrePersonnes: '',
+          declarantDeId: 'd1',
+          lienAutrePrecision: '',
+          lienVictimeId: '',
+          participantDeId: '',
+          ageId: null,
+          identite: null,
+          adresse: null,
+        },
       },
       requeteEtape: [],
     },
-  ];
+  ] satisfies Awaited<ReturnType<typeof getRequetesEntite>>['data'];
 
   describe('GET /', () => {
     it('should return requetesEntite with basic query', async () => {
