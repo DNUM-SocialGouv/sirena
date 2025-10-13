@@ -1,5 +1,13 @@
+import { fr } from '@codegouvfr/react-dsfr';
+import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
-import { type RequeteStatutType, requeteStatutType } from '@sirena/common/constants';
+import {
+  type Motif,
+  motifShortLabels,
+  REQUETE_STATUT_TYPES,
+  type RequeteStatutType,
+  requeteStatutType,
+} from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -10,6 +18,12 @@ type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>
 };
 
 const DEFAULT_PAGE_SIZE = 10;
+
+const statutSeverity = {
+  [REQUETE_STATUT_TYPES.EN_COURS]: 'info',
+  [REQUETE_STATUT_TYPES.A_FAIRE]: 'new',
+  [REQUETE_STATUT_TYPES.FAIT]: 'success',
+} as const;
 
 export function RequetesEntite() {
   const queries = useSearch({ from: '/_auth/_user/home' });
@@ -35,23 +49,19 @@ export function RequetesEntite() {
   }, [requetes]);
 
   const columns: Column<RequeteEntiteRow>[] = [
-    { key: 'custom:number', label: 'ID Requête' },
-    { key: 'custom:createdAt', label: 'Réception' },
-    { key: 'custom:lieu', label: 'Lieu de survenue' },
-    { key: 'custom:misEnCause', label: 'Mis en cause' },
-    { key: 'custom:Attribution', label: 'Attribution' },
+    { key: 'requete.id', label: 'ID Requête' },
     { key: 'custom:statut', label: 'Statut' },
+    { key: 'requete.receptionDate', label: 'Réception' },
+    { key: 'custom:priorite', label: 'Priorité' },
+    { key: 'custom:personne', label: 'Personne Concernée' },
+    { key: 'custom:motifs', label: 'Motifs' },
+    { key: 'custom:misEnCause', label: 'Mis en cause' },
     { key: 'custom:action', label: 'Action' },
   ];
 
   const cells: Cells<RequeteEntiteRow> = {
-    'custom:number': (row) => row.requeteId,
-    'custom:action': (row) => (
-      <Link to="/request/$requestId" params={{ requestId: row.requeteId }}>
-        Voir la requête
-      </Link>
-    ),
-    'custom:createdAt': (row) => (
+    'requete.id': (row) => <span className="one-line">{row.requete.id}</span>,
+    'requete.receptionDate': (row) => (
       <div>
         {new Date(row.requete.createdAt).toLocaleDateString('fr-FR', {
           year: 'numeric',
@@ -62,11 +72,63 @@ export function RequetesEntite() {
     ),
     'custom:statut': (row) => {
       const statutId = row.requeteEtape?.[0]?.statutId;
-      return statutId ? requeteStatutType[statutId as RequeteStatutType] : '';
+      const severity = statutId ? statutSeverity[statutId as RequeteStatutType] : undefined;
+      const label = statutId ? requeteStatutType[statutId as RequeteStatutType] : 'Inconnu';
+      return severity ? (
+        <Badge noIcon severity={severity} className="one-line">
+          {label}
+        </Badge>
+      ) : (
+        ''
+      );
     },
-    'custom:lieu': () => '-',
-    'custom:misEnCause': () => '-',
-    'custom:Attribution': (row) => row.entiteId.slice(0, 8),
+    'custom:personne': (row) => {
+      const { declarant, participant } = row.requete;
+      if (declarant?.estVictime && declarant.identite) {
+        return (
+          <span className="one-line">
+            {declarant.identite.prenom} {declarant.identite.nom}
+          </span>
+        );
+      }
+      if (participant?.estVictime && participant.identite) {
+        return (
+          <span className="one-line">
+            {participant.identite.prenom} {participant.identite.nom}
+          </span>
+        );
+      }
+      return '-';
+    },
+    'custom:motifs': (row) => {
+      const situation = row.requete.situations?.[0];
+      const fait = situation?.faits?.[0];
+      const motifs = fait?.motifs || [];
+      const isMaltraitance = fait?.maltraitanceTypes?.length > 0;
+      return (
+        <>
+          <div>
+            {isMaltraitance && (
+              <Badge noIcon className={fr.cx('fr-badge--purple-glycine')}>
+                Maltraitance
+              </Badge>
+            )}
+          </div>
+          {motifs.length && (
+            <ul>
+              {motifs.map((motif) => (
+                <li key={motif.motifId}>{motifShortLabels[motif.motifId as Motif]}</li>
+              ))}
+            </ul>
+          )}
+        </>
+      );
+    },
+    'custom:action': (row) => (
+      <Link to="/request/$requestId" className="one-line" params={{ requestId: row.requeteId }}>
+        Voir la requête
+      </Link>
+    ),
   };
 
   const total = useMemo(() => requetes?.meta?.total ?? 0, [requetes?.meta?.total]);

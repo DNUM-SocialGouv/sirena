@@ -64,3 +64,7 @@ body {
 .bg-cumulus {
   background-color: var(--background-alt-blue-cumulus);
 }
+
+.one-line {
+  white-space: nowrap;
+}
