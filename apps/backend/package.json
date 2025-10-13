@@ -64,7 +64,7 @@
     "openid-client": "^6.8.1",
     "pino": "^9.13.1",
     "minio": "^8.0.6",
-    "pino-pretty": "^13.1.1",
+    "pino-pretty": "^13.1.2",
     "tmp-promise": "^3.0.3",
     "ioredis": "^5.8.1",
     "tsx": "catalog:",
