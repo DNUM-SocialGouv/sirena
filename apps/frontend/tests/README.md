@@ -5,6 +5,23 @@
 ### Overview
 E2E tests use Playwright browser context persistence to skip repeated ProConnect logins.
 
+### Requirements
+
+#### Admin tests
+ * Prerequisites:
+ * - At least 2 users with same entiteId in "Gestion des utilisateurs" table
+ * - Authenticated user has ENTITY_ADMIN role
+
+#### Home Requetes
+ * Prerequisites:
+ * - At least 1 requete in "/home" table
+ * - Authenticated user has ENTITY_ADMIN role
+
+#### Request Details E2E TESTS
+ * Prerequisites:
+ * - At least 1 requête exists in "/home"
+ * - User has ENTITY_ADMIN role
+
 ### How it works
 
 **Why:** ProConnect authentication is slow (~10-15s) and repetitive for each test. Instead of logging in every time, we save the browser state after the first login.
