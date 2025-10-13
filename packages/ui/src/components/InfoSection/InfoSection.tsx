@@ -13,6 +13,7 @@ type InfoSectionProps = {
   emptyLabel?: string;
   badges?: React.ReactNode[];
   replaceSummaryWithDetails?: boolean;
+  canEdit?: boolean;
 };
 
 export function InfoSection({
@@ -24,6 +25,7 @@ export function InfoSection({
   onEdit,
   badges,
   replaceSummaryWithDetails = false,
+  canEdit = false,
 }: InfoSectionProps) {
   const [isDetailsExpanded, setIsDetailsExpanded] = React.useState(false);
 
@@ -53,7 +55,7 @@ export function InfoSection({
             </output>
           ))}
         </div>
-        {onEdit && (
+        {canEdit && onEdit && (
           <Button iconPosition="right" iconId="fr-icon-pencil-line" priority="tertiary no outline" onClick={onEdit}>
             {editLabel}
           </Button>

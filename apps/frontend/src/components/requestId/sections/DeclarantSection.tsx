@@ -1,5 +1,6 @@
 import { InfoSection } from '@sirena/ui';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
+import { useCanEdit } from '@/hooks/useCanEdit';
 import { ContactInfo, formatAddress, formatFullName, SectionTitle } from './helpers';
 
 type DeclarantData = NonNullable<ReturnType<typeof useRequeteDetails>['data']>['requete']['declarant'];
@@ -13,6 +14,7 @@ interface DeclarantSectionProps {
 export const DeclarantSection = ({ id, declarant, onEdit }: DeclarantSectionProps) => {
   const declarantIdentite = declarant?.identite;
   const declarantAdresse = declarant?.adresse;
+  const { canEdit } = useCanEdit();
 
   const fullName = formatFullName(
     declarantIdentite
@@ -128,6 +130,7 @@ export const DeclarantSection = ({ id, declarant, onEdit }: DeclarantSectionProp
       id={id}
       title="Déclarant"
       onEdit={onEdit}
+      canEdit={canEdit}
       renderSummary={renderSummary}
       renderDetails={isFulfilled ? renderDetails : undefined}
       emptyLabel="Aucune information sur le déclarant"
