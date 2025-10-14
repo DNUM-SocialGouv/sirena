@@ -4,6 +4,7 @@ import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
 import { generateRequeteId } from '@/features/requetes/functionalId.service';
+import { sortObject } from '@/helpers/prisma/sort';
 import { prisma } from '@/libs/prisma';
 import { mapDeclarantToPrismaCreate, mapPersonneConcerneeToPrismaCreate } from './requetesEntite.mapper';
 import type { GetRequetesEntiteQuery } from './requetesEntite.type';
@@ -16,7 +17,7 @@ type RequeteEntiteKey = { requeteId: string; entiteId: string };
 // TODO handle entiteIds
 // TODO handle search
 export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
-  const { offset = 0, limit, sort = 'requeteId', order = 'asc' } = query;
+  const { offset = 0, limit, sort = 'requete.createdAt', order = 'desc' } = query;
 
   // const entiteFilter = filterByEntities(entiteIds);
 
@@ -29,7 +30,7 @@ export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetR
       // where,
       skip: offset,
       ...(typeof limit === 'number' ? { take: limit } : {}),
-      orderBy: { [sort]: order },
+      orderBy: sortObject(sort, order),
       include: {
         requete: {
           include: {
