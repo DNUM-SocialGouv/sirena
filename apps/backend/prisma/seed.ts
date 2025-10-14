@@ -15,11 +15,11 @@ async function main() {
 
   async function seeding() {
     await seedEnums(prisma).catch((err) => {
-      logger.error({ err }, '❌ Erreur lors du seeding des enums', e);
+      logger.error({ err }, '❌ Erreur lors du seeding des enums');
       process.exit(1);
     });
     await seedSuperAdmin(prisma).catch((err) => {
-      logger.error({ err }, '❌ Erreur lors du seeding des super admin:', e);
+      logger.error({ err }, '❌ Erreur lors du seeding des super admin:');
       process.exit(1);
     });
     await seedEntites(prisma).catch((err) => {
@@ -27,7 +27,7 @@ async function main() {
       process.exit(1);
     });
     await seedRequeteFromDematSocial().catch((err) => {
-      logger.error({ err }, '❌ Erreur lors du seeding des requêtes depuis Demat Social:');
+      logger.error({ err }, '❌ Erreur lors du seeding des requêtes depuis Demat Social');
     });
   }
 
