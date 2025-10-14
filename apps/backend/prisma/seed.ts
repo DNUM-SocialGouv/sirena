@@ -6,6 +6,7 @@ import { seedSuperAdmin } from './seed/add_default_super_admin';
 import { seedEntites } from './seed/add_entities';
 import { seedEnums } from './seed/add_enums';
 import { seedRequeteFromDematSocial } from './seed/get_demat_social';
+import '@/libs/instrument';
 
 async function main() {
   const prisma = new PrismaClient();
@@ -27,7 +28,6 @@ async function main() {
     });
     await seedRequeteFromDematSocial().catch((e) => {
       logger.error('❌ Erreur lors du seeding des requêtes depuis Demat Social:', e);
-      process.exit(1);
     });
   }
 
