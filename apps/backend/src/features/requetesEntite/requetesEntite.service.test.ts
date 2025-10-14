@@ -89,6 +89,7 @@ describe('requetesEntite.service', () => {
             createdAt: 'desc',
           },
         },
+        where: {},
         include: {
           requete: {
             include: {
@@ -147,6 +148,66 @@ describe('requetesEntite.service', () => {
         orderBy: {
           id: 'asc',
         },
+        where: {},
+        include: {
+          requete: {
+            include: {
+              declarant: {
+                include: {
+                  identite: true,
+                  adresse: true,
+                },
+              },
+              participant: {
+                include: {
+                  adresse: true,
+                  identite: true,
+                },
+              },
+              situations: {
+                include: {
+                  faits: {
+                    include: {
+                      consequences: true,
+                      maltraitanceTypes: true,
+                      motifs: true,
+                    },
+                  },
+                  lieuDeSurvenue: true,
+                  misEnCause: true,
+                },
+              },
+            },
+          },
+          requeteEtape: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      });
+
+      expect(result.total).toBe(1);
+    });
+
+    it('should call prisma with where conditions when search is provided', async () => {
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
+      mockedRequeteEntite.count.mockResolvedValueOnce(1);
+
+      const result = await getRequetesEntite(null, {
+        offset: 10,
+        limit: 5,
+        sort: 'id',
+        order: 'asc',
+        search: 'test-search',
+      });
+
+      expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith({
+        skip: 10,
+        take: 5,
+        orderBy: {
+          id: 'asc',
+        },
+        where: expect.objectContaining({ OR: expect.any(Array) }),
         include: {
           requete: {
             include: {
