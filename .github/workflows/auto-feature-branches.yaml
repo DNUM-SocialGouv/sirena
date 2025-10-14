@@ -6,6 +6,7 @@ on:
       - main
       - validation
       - production
+      - preproduction
       # branch use to deploy on test env
       - chore/deploy
 
@@ -32,6 +33,6 @@ jobs:
         uses: ./.github/actions/build-docker
         with:
           version: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
-          github-token: ${{ secrets.GITHUB_TOKEN }} 
-          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }} 
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
           environment: ${{ github.event.inputs.environment }}

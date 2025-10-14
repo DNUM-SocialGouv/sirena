@@ -52,6 +52,11 @@ const ENV_CONFIGS: Record<string, EnvironmentConfig> = {
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
   },
+  preproduction: {
+    subdomain: 'sirena.preproduction',
+    domain: 'dev.atlas.fabrique.social.gouv.fr',
+    replicas: COMMON_CONFIG.resources.dev.replicas,
+  },
   // production: {
   //   subdomain: "sirena",
   //   domain: "prod.atlas.fabrique.social.gouv.fr",
