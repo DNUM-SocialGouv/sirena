@@ -14,20 +14,20 @@ async function main() {
   const logger = createDefaultLogger();
 
   async function seeding() {
-    await seedEnums(prisma).catch((e) => {
-      logger.error('❌ Erreur lors du seeding des enums', e);
+    await seedEnums(prisma).catch((err) => {
+      logger.error({ err }, '❌ Erreur lors du seeding des enums', e);
       process.exit(1);
     });
-    await seedSuperAdmin(prisma).catch((e) => {
-      logger.error('❌ Erreur lors du seeding des super admin:', e);
+    await seedSuperAdmin(prisma).catch((err) => {
+      logger.error({ err }, '❌ Erreur lors du seeding des super admin:', e);
       process.exit(1);
     });
-    await seedEntites(prisma).catch((e) => {
-      logger.error('❌ Erreur lors du seeding des entités:', e);
+    await seedEntites(prisma).catch((err) => {
+      logger.error({ err }, '❌ Erreur lors du seeding des entités:');
       process.exit(1);
     });
-    await seedRequeteFromDematSocial().catch((e) => {
-      logger.error('❌ Erreur lors du seeding des requêtes depuis Demat Social:', e);
+    await seedRequeteFromDematSocial().catch((err) => {
+      logger.error({ err }, '❌ Erreur lors du seeding des requêtes depuis Demat Social:');
     });
   }
 
