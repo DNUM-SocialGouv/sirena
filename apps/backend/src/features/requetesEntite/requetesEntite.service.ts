@@ -5,7 +5,8 @@ import type { DeclarantDataSchema, PersonneConcerneeDataSchema } from '@sirena/c
 import type { z } from 'zod';
 import { generateRequeteId } from '@/features/requetes/functionalId.service';
 import { sortObject } from '@/helpers/prisma/sort';
-import { prisma } from '@/libs/prisma';
+import { createSearchConditionsForRequeteEntite } from '@/helpers/search';
+import { type Prisma, prisma } from '@/libs/prisma';
 import { mapDeclarantToPrismaCreate, mapPersonneConcerneeToPrismaCreate } from './requetesEntite.mapper';
 import type { GetRequetesEntiteQuery } from './requetesEntite.type';
 
@@ -15,19 +16,21 @@ type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
 type RequeteEntiteKey = { requeteId: string; entiteId: string };
 
 // TODO handle entiteIds
-// TODO handle search
 export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
-  const { offset = 0, limit, sort = 'requete.createdAt', order = 'desc' } = query;
+  const { offset = 0, limit, sort = 'requete.createdAt', order = 'desc', search } = query;
 
   // const entiteFilter = filterByEntities(entiteIds);
 
-  // const where = {
-  //   ...(entiteFilter ?? {}),
-  // };
+  const searchConditions: Prisma.RequeteEntiteWhereInput = search ? createSearchConditionsForRequeteEntite(search) : {};
+
+  const where = {
+    ...searchConditions,
+    // ...(entiteFilter ?? {}),
+  };
 
   const [data, total] = await Promise.all([
     prisma.requeteEntite.findMany({
-      // where,
+      where,
       skip: offset,
       ...(typeof limit === 'number' ? { take: limit } : {}),
       orderBy: sortObject(sort, order),
@@ -65,7 +68,7 @@ export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetR
       },
     }),
     prisma.requeteEntite.count({
-      /* where */
+      where,
     }),
   ]);
 
