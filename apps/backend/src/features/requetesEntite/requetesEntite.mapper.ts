@@ -1,10 +1,11 @@
 import { mappers } from '@sirena/common';
-import type { DeclarantDataSchema, PersonneConcerneeDataSchema } from '@sirena/common/schemas';
+import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
 import { parseAdresseDomicile } from '@/helpers/address';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
 type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
+type SituationInput = z.infer<typeof SituationDataSchema>;
 
 export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
   estIdentifie: true,
@@ -80,3 +81,102 @@ export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConc
         }
       : undefined,
 });
+
+export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
+  const lieuData = situationData.lieuDeSurvenue;
+  const misEnCauseData = situationData.misEnCause;
+  const demarchesData = situationData.demarchesEngagees;
+
+  const hasAdresse = lieuData?.adresse || lieuData?.numero || lieuData?.rue || lieuData?.codePostal || lieuData?.ville;
+
+  return {
+    lieuDeSurvenue: {
+      create: {
+        lieuTypeId: lieuData?.lieuType || null,
+        codePostal: lieuData?.codePostal || '',
+        societeTransport: lieuData?.societeTransport || '',
+        finess: lieuData?.finess || '',
+        commentaire: lieuData?.commentaire || '',
+        transportTypeId: lieuData?.transportType || null,
+        adresse: hasAdresse
+          ? {
+              create: {
+                label: lieuData?.adresse || '',
+                numero: lieuData?.numero || '',
+                rue: lieuData?.rue || '',
+                codePostal: lieuData?.codePostal || '',
+                ville: lieuData?.ville || '',
+              },
+            }
+          : undefined,
+      },
+    },
+    misEnCause: {
+      create: {
+        misEnCauseTypeId: misEnCauseData?.misEnCauseType || null,
+        professionTypeId: misEnCauseData?.professionType || null,
+        professionDomicileTypeId: misEnCauseData?.professionDomicileType || null,
+        rpps: misEnCauseData?.rpps || null,
+        commentaire: misEnCauseData?.commentaire || '',
+      },
+    },
+    demarchesEngagees: {
+      create: {
+        dateContactEtablissement: demarchesData?.dateContactEtablissement
+          ? new Date(demarchesData.dateContactEtablissement)
+          : null,
+        etablissementARepondu: demarchesData?.etablissementARepondu ?? null,
+        organisme: demarchesData?.organisme || '',
+        datePlainte: demarchesData?.datePlainte ? new Date(demarchesData.datePlainte) : null,
+        commentaire: demarchesData?.commentaire || '',
+        autoriteTypeId: demarchesData?.autoriteType || null,
+        demarches: demarchesData?.demarches?.length
+          ? {
+              connect: demarchesData.demarches.map((demarcheId) => ({ id: demarcheId })),
+            }
+          : undefined,
+      },
+    },
+  };
+};
+
+export const mapSituationFaitToPrismaCreate = (situationId: string, faitData?: SituationInput['fait']) => {
+  if (!faitData) return undefined;
+
+  return {
+    situationId,
+    dateDebut: faitData.dateDebut ? new Date(faitData.dateDebut) : null,
+    dateFin: faitData.dateFin ? new Date(faitData.dateFin) : null,
+    commentaire: faitData.commentaire || '',
+    motifs: faitData.sousMotifs?.length
+      ? {
+          create: faitData.sousMotifs.map((sousMotifLabel) => ({
+            motif: {
+              connectOrCreate: {
+                where: { label: sousMotifLabel },
+                create: { label: sousMotifLabel },
+              },
+            },
+          })),
+        }
+      : undefined,
+    consequences: faitData.consequences?.length
+      ? {
+          create: faitData.consequences.map((consequenceId) => ({
+            consequence: {
+              connect: { id: consequenceId },
+            },
+          })),
+        }
+      : undefined,
+    maltraitanceTypes: faitData.maltraitanceTypes?.length
+      ? {
+          create: faitData.maltraitanceTypes.map((maltraitanceTypeId) => ({
+            maltraitanceType: {
+              connect: { id: maltraitanceTypeId },
+            },
+          })),
+        }
+      : undefined,
+  };
+};

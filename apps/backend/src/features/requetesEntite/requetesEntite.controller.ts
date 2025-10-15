@@ -29,6 +29,7 @@ import {
   UpdateDeclarantBodySchema,
   UpdateParticipantBodySchema,
   UpdateRequeteFilesBodySchema,
+  UpdateSituationBodySchema,
 } from './requetesEntite.schema';
 import {
   createRequeteEntite,
@@ -37,6 +38,7 @@ import {
   hasAccessToRequete,
   updateRequeteDeclarant,
   updateRequeteParticipant,
+  updateRequeteSituation,
 } from './requetesEntite.service';
 
 const app = factoryWithLogs
@@ -337,6 +339,28 @@ const app = factoryWithLogs
     logger.info({ requeteId: id, userId, fileIds }, 'Files linked to requete successfully');
 
     return c.json({ data: { requeteId: id, fileIds } });
+  })
+
+  .patch('/:id/situation', zValidator('json', UpdateSituationBodySchema), async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
+    const entiteIds = c.get('entiteIds');
+    const { situation: situationData } = c.req.valid('json');
+
+    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
+
+    if (!requeteEntite) {
+      return throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    const updatedRequete = await updateRequeteSituation(id, situationData);
+
+    logger.info({ requeteId: id, userId }, 'Situation data updated successfully');
+
+    return c.json({ data: updatedRequete });
   })
 
   .post(
