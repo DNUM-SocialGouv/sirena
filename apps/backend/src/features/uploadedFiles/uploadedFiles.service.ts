@@ -103,3 +103,29 @@ export const setNoteFile = async (
 
   return await prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileId } } });
 };
+
+export const setFaitFiles = async (
+  faitSituationId: string,
+  uploadedFileId: UploadedFile['id'][],
+  entiteId: string | null = null,
+) => {
+  await prisma.uploadedFile.updateMany({
+    where: { id: { in: uploadedFileId } },
+    data: { faitSituationId, status: 'COMPLETED', entiteId },
+  });
+
+  return await prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileId } } });
+};
+
+export const setDemarchesEngageesFiles = async (
+  demarchesEngageesId: string,
+  uploadedFileId: UploadedFile['id'][],
+  entiteId: string | null = null,
+) => {
+  await prisma.uploadedFile.updateMany({
+    where: { id: { in: uploadedFileId } },
+    data: { demarchesEngageesId, status: 'COMPLETED', entiteId },
+  });
+
+  return await prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileId } } });
+};

@@ -1,5 +1,5 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
-import { DeclarantDataSchema, PersonneConcerneeDataSchema } from '@sirena/common/schemas';
+import { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import { Prisma } from '@/libs/prisma';
 import { RequeteEntiteSchema, RequeteEtapeSchema, RequeteSchema, z } from '@/libs/zod';
 
@@ -51,4 +51,8 @@ export const UpdateParticipantBodySchema = z.object({
       }),
     })
     .optional(),
+});
+
+export const UpdateSituationBodySchema = z.object({
+  situation: SituationDataSchema,
 });
