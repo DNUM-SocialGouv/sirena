@@ -133,3 +133,39 @@ query getDossier($dossierNumber: Int!) {
     }
   }
 }
+
+query getInstructeurs($demarcheNumber: Int!) {
+  demarche(number: $demarcheNumber) {
+    groupeInstructeurs {
+      instructeurs {
+        id
+        email
+      }
+    }
+  }
+}
+
+mutation changerInstruction(
+  $clientMutationId: String!
+  $dossierId: ID!
+  $instructeurId: ID!
+  $disableNotification: Boolean = false
+) {
+  dossierPasserEnInstruction(
+    input: {
+      clientMutationId: $clientMutationId
+      dossierId: $dossierId
+      instructeurId: $instructeurId
+      disableNotification: $disableNotification
+    }
+  ) {
+    dossier {
+      id
+      number
+      state
+    }
+    errors {
+      message
+    }
+  }
+}

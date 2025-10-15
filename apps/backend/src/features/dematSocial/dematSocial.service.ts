@@ -3,8 +3,26 @@ import { envVars } from '@/config/env';
 import { mapDataForPrisma } from '@/features/dematSocial/dematSocial.adaptater';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '@/features/requetes/requetes.service';
 import { abortControllerStorage, getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
-import { GetDossierDocument, GetDossiersByDateDocument, GetDossiersMetadataDocument, graffle } from '@/libs/graffle';
+import {
+  ChangerInstructionDocument,
+  GetDossierDocument,
+  GetDossiersByDateDocument,
+  GetDossiersMetadataDocument,
+  GetInstructeursDocument,
+  graffle,
+} from '@/libs/graffle';
 import type { Demandeur, DematSocialCivilite } from './dematSocial.type';
+
+export const getInstructeurs = async () => {
+  return await graffle.gql(GetInstructeursDocument).send({ demarcheNumber: envVars.DEMAT_SOCIAL_API_DIRECTORY });
+};
+
+export const updateInstruction = async (id: string) => {
+  const dossierId = Buffer.from(id).toString('base64');
+  const instructeurId = Buffer.from(envVars.DEMAT_SOCIAL_INSTRUCTEUR_ID).toString('base64');
+  console.log({ dossierId, instructeurId });
+  return await graffle.gql(ChangerInstructionDocument).send({ dossierId, instructeurId, clientMutationId: 'qwe' });
+};
 
 export const getRequetes = async (createdSince?: Date) => {
   const abortController = abortControllerStorage.getStore();
