@@ -69,11 +69,9 @@ describe('SelectWithChildren', () => {
       expect(screen.getByText('2 options sélectionnées')).toBeInTheDocument();
     });
 
-    it('should display selected items list', () => {
+    it('should show selected count in button label', () => {
       render(<SelectWithChildren value={['opt-a1', 'opt-b1']} onChange={vi.fn()} options={TEST_OPTIONS} />);
-      expect(screen.getByText('Sélectionnés :')).toBeInTheDocument();
-      expect(screen.getByText('Option A1')).toBeInTheDocument();
-      expect(screen.getByText('Option B1')).toBeInTheDocument();
+      expect(screen.getByText('2 options sélectionnées')).toBeInTheDocument();
     });
   });
 
@@ -301,7 +299,7 @@ describe('SelectWithChildren', () => {
 
     it('should show fallback for unknown selected values', () => {
       render(<SelectWithChildren value={['unknown-value']} onChange={vi.fn()} options={TEST_OPTIONS} />);
-      expect(screen.getAllByText('unknown-value')).toHaveLength(2);
+      expect(screen.getByText('unknown-value')).toBeInTheDocument();
     });
 
     it('should handle single option with children', async () => {

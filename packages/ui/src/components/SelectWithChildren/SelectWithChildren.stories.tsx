@@ -135,9 +135,6 @@ const meta: Meta<typeof SelectWithChildren> = {
 export default meta;
 type Story = StoryObj<typeof SelectWithChildren>;
 
-/**
- * Default empty state with no selection
- */
 export const Default: Story = {
   render: (args) => {
     const [value, setValue] = useState<string[]>([]);
@@ -145,9 +142,6 @@ export const Default: Story = {
   },
 };
 
-/**
- * Component with pre-selected values
- */
 export const WithSelection: Story = {
   render: (args) => {
     const [value, setValue] = useState<string[]>([
@@ -159,9 +153,6 @@ export const WithSelection: Story = {
   },
 };
 
-/**
- * Recursive structure with multiple nesting levels
- */
 export const RecursiveStructure: Story = {
   args: {
     options: RECURSIVE_OPTIONS,
