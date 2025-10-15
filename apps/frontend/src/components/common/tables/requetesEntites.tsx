@@ -2,6 +2,7 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import {
+  MALTRAITANCE_TYPE,
   type Motif,
   motifShortLabels,
   REQUETE_STATUT_TYPES,
@@ -104,7 +105,11 @@ export function RequetesEntite() {
       const situation = row.requete.situations?.[0];
       const fait = situation?.faits?.[0];
       const motifs = fait?.motifs || [];
-      const isMaltraitance = fait?.maltraitanceTypes?.length > 0;
+      const isMaltraitance =
+        fait?.maltraitanceTypes?.filter(
+          (elem) =>
+            elem.maltraitanceTypeId !== MALTRAITANCE_TYPE.NON || elem.maltraitanceTypeId !== MALTRAITANCE_TYPE.NON,
+        ).length > 0;
       return (
         <>
           <div>
