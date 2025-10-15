@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy to'
+        description: "Environment to deploy to"
         required: true
         type: choice
         options:
           - validation
-          - preprod
+          - preproduction
           - prod
-        default: 'validation'
+        default: "validation"
 
 jobs:
   build-docker:
@@ -62,4 +62,4 @@ jobs:
         with:
           environment: ${{ github.event.inputs.environment }}
           version: ${{ needs.build-docker.outputs.VERSION }}
-          gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }} 
+          gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }}
