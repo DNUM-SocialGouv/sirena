@@ -43,6 +43,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
+    "test": "vitest",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/common/' | sed 's|^packages/common/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
     "lint": "biome check"
   },
@@ -50,7 +51,8 @@
   "packageManager": "pnpm@10.11.0",
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "catalog:"
   },
   "dependencies": {
     "zod": "catalog:"

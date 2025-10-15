@@ -338,17 +338,6 @@ export function SelectWithChildren({
           </div>
         )}
       </div>
-
-      {selectedCount > 0 && (
-        <output className={styles.selectedList} aria-live="polite">
-          <strong>Sélectionnés :</strong>
-          <ul>
-            {value.map((selectedValue) => (
-              <li key={selectedValue}>{labelsMap.get(selectedValue) || selectedValue}</li>
-            ))}
-          </ul>
-        </output>
-      )}
     </div>
   );
 }
