@@ -145,19 +145,9 @@ query getInstructeurs($demarcheNumber: Int!) {
   }
 }
 
-mutation changerInstruction(
-  $clientMutationId: String!
-  $dossierId: ID!
-  $instructeurId: ID!
-  $disableNotification: Boolean = false
-) {
+mutation changerInstruction($dossierId: ID!, $instructeurId: ID!, $disableNotification: Boolean = false) {
   dossierPasserEnInstruction(
-    input: {
-      clientMutationId: $clientMutationId
-      dossierId: $dossierId
-      instructeurId: $instructeurId
-      disableNotification: $disableNotification
-    }
+    input: { dossierId: $dossierId, instructeurId: $instructeurId, disableNotification: $disableNotification }
   ) {
     dossier {
       id

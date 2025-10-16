@@ -20,8 +20,7 @@ export const getInstructeurs = async () => {
 export const updateInstruction = async (id: string) => {
   const dossierId = Buffer.from(id).toString('base64');
   const instructeurId = Buffer.from(envVars.DEMAT_SOCIAL_INSTRUCTEUR_ID).toString('base64');
-  console.log({ dossierId, instructeurId });
-  return await graffle.gql(ChangerInstructionDocument).send({ dossierId, instructeurId, clientMutationId: 'qwe' });
+  return await graffle.gql(ChangerInstructionDocument).send({ dossierId, instructeurId });
 };
 
 export const getRequetes = async (createdSince?: Date) => {
