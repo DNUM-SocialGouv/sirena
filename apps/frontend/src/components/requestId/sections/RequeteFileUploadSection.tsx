@@ -2,12 +2,15 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
+import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
 import { useSetRequeteFile } from '@/hooks/mutations/setRequeteFile.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
+import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import noteStyles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 import styles from './RequeteFileUploadSection.module.css';
@@ -82,6 +85,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
   const navigate = useNavigate();
   const toastManager = Toast.useToastManager();
 
+  const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
   const uploadFileMutation = useUploadFile();
   const setRequeteFileMutation = useSetRequeteFile();
   const createRequeteMutation = useCreateRequeteEntite();
@@ -288,15 +292,17 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
                           {truncateFileName(originalName)}
                         </a>
                       </div>
-                      <Button
-                        aria-label="Supprimer le fichier"
-                        title="Supprimer le fichier"
-                        type="button"
-                        className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
-                        onClick={(event) => handleDeleteFile(file, event)}
-                      >
-                        <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
-                      </Button>
+                      {profile?.role?.id !== ROLES.READER && (
+                        <Button
+                          aria-label="Supprimer le fichier"
+                          title="Supprimer le fichier"
+                          type="button"
+                          className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
+                          onClick={(event) => handleDeleteFile(file, event)}
+                        >
+                          <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
+                        </Button>
+                      )}
                     </div>
                     <p className={fr.cx('fr-text--xs')}>
                       {originalName.split('.')?.[1]?.toUpperCase()} - {(file.size / 1024).toFixed(2)} Ko
@@ -311,24 +317,26 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
       {selectedFiles.length === 0 && mode === 'create' && (
         <p className={fr.cx('fr-text--sm', 'fr-text--light')}>Aucun fichier sélectionné.</p>
       )}
-      <Upload
-        label=""
-        hint="Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"
-        multiple
-        disabled={isUploading}
-        nativeInputProps={{
-          ref: uploadInputRef,
-          accept:
-            '.pdf,.eml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.msg,.csv,.txt,.png,.jpeg,.jpg,.heic,.heif,.webp,.tiff',
-          onChange: (e) => {
-            const files = e.target.files;
-            if (files) {
-              const fileArray = Array.from(files);
-              handleFileSelect(fileArray.map((file) => new File([file], file.name, { type: file.type })));
-            }
-          },
-        }}
-      />
+      {profile?.role?.id !== ROLES.READER && (
+        <Upload
+          label=""
+          hint="Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"
+          multiple
+          disabled={isUploading}
+          nativeInputProps={{
+            ref: uploadInputRef,
+            accept:
+              '.pdf,.eml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.msg,.csv,.txt,.png,.jpeg,.jpg,.heic,.heif,.webp,.tiff',
+            onChange: (e) => {
+              const files = e.target.files;
+              if (files) {
+                const fileArray = Array.from(files);
+                handleFileSelect(fileArray.map((file) => new File([file], file.name, { type: file.type })));
+              }
+            },
+          }}
+        />
+      )}
 
       {Object.keys(fileErrors).length > 0 && (
         <div className={fr.cx('fr-mt-2w')}>

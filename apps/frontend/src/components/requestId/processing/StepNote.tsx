@@ -1,7 +1,10 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
+import { ROLES } from '@sirena/common/constants';
+import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
+import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 
 type StepNoteProps = {
@@ -31,6 +34,8 @@ export const StepNote = ({ id, author, content, createdAt, requeteStateId, files
     from: '/_auth/_user/request/$requestId',
   });
 
+  const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
+
   const handleEdit = () => {
     onEdit?.({
       id,
@@ -59,18 +64,20 @@ export const StepNote = ({ id, author, content, createdAt, requeteStateId, files
           </span>
         </div>
         <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-          <Button
-            priority="tertiary no outline"
-            size="small"
-            iconId="fr-icon-edit-line"
-            title="Modifier la note"
-            aria-label="Modifier la note"
-            className="fr-btn--icon-center center-icon-with-sr-only"
-            onClick={handleEdit}
-            style={{ whiteSpace: 'nowrap' }}
-          >
-            <span className="fr-sr-only">Modifier la note</span>
-          </Button>
+          {profile?.role?.id !== ROLES.READER && (
+            <Button
+              priority="tertiary no outline"
+              size="small"
+              iconId="fr-icon-edit-line"
+              title="Modifier la note"
+              aria-label="Modifier la note"
+              className="fr-btn--icon-center center-icon-with-sr-only"
+              onClick={handleEdit}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              <span className="fr-sr-only">Modifier la note</span>
+            </Button>
+          )}
         </div>
       </div>
       <p className={styles['request-note__content']}>{content}</p>
