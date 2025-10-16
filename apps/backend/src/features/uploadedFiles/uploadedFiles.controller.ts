@@ -1,9 +1,13 @@
 import fs from 'node:fs';
+import { Readable } from 'node:stream';
+import * as Sentry from '@sentry/node';
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
+import { stream as honoStream } from 'hono/streaming';
 import { validator as zValidator } from 'hono-openapi/zod';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import { deleteFileFromMinio, getSignedUrl, uploadFileToMinio } from '@/libs/minio';
+import { deleteFileFromMinio, getFileStream, getSignedUrl, uploadFileToMinio } from '@/libs/minio';
+import type { Prisma } from '@/libs/prisma';
 import authMiddleware from '@/middlewares/auth.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
@@ -26,6 +30,58 @@ const app = factoryWithLogs
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]))
   .use(entitesMiddleware)
 
+  .get('/:requeteId/file/:fileId', async (c) => {
+    const logger = c.get('logger');
+    const { fileId } = c.req.param();
+
+    // TODO: check real FILE access with entiteIds when implemented
+    //   const entiteIds = c.get('entiteIds');
+    // const hasAccess = await hasAccessToRequete({ requeteId, entiteId: entiteId });
+    // if (!hasAccess) {
+    //   return throwHTTPException403Forbidden('You are not allowed to read this file', {
+    //     res: c.res,
+    //   });
+    // }
+
+    const file = await getUploadedFileById(fileId, null);
+
+    if (!file) {
+      return throwHTTPException404NotFound('File not found', { res: c.res });
+    }
+
+    const type = file.mimeType || 'application/octet-stream';
+    const size = file.size;
+
+    c.header('Content-Type', type);
+    c.header(
+      'Content-Disposition',
+      `inline; filename="${(file.metadata as Prisma.JsonObject)?.originalName || file.fileName}"`,
+    );
+
+    if (size === 0) {
+      return c.body(null, 200);
+    }
+
+    return honoStream(c, async (s) => {
+      try {
+        const nodeStream = await getFileStream(file.filePath);
+
+        const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream<Uint8Array>;
+
+        s.onAbort(() => {
+          if ('destroy' in nodeStream) {
+            nodeStream.destroy();
+          }
+        });
+
+        await s.pipe(webStream);
+      } catch (error) {
+        logger.error({ fileId, err: error }, 'Stream error');
+        Sentry.captureException(error);
+        s.close();
+      }
+    });
+  })
   .get('/', getUploadedFilesRoute, zValidator('query', GetUploadedFilesQuerySchema), async (c) => {
     const logger = c.get('logger');
     const query = c.req.valid('query');

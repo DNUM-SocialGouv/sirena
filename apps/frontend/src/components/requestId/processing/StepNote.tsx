@@ -1,4 +1,5 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
+import { useParams } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
@@ -26,6 +27,10 @@ type StepNoteProps = {
 };
 
 export const StepNote = ({ id, author, content, createdAt, requeteStateId, files, onEdit }: StepNoteProps) => {
+  const { requestId } = useParams({
+    from: '/_auth/_user/request/$requestId',
+  });
+
   const handleEdit = () => {
     onEdit?.({
       id,
@@ -74,7 +79,7 @@ export const StepNote = ({ id, author, content, createdAt, requeteStateId, files
           {files.map((file) => (
             <li key={file.id} className={styles['request-note__file']}>
               <FileDownloadLink
-                href={`/api/requete-etapes/${requeteStateId}/file/${file.id}`}
+                href={`/api/uploaded-files/${requestId}/file/${file.id}`}
                 fileName={file.originalName}
                 fileSize={file.size}
               />
