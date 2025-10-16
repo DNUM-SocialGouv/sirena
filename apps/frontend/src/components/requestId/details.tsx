@@ -49,7 +49,7 @@ export const Details = ({ requestId }: DetailsProps) => {
       <>
         <DeclarantSection id={declarantSectionId} onEdit={handleEditDeclarant} />
         <PersonneConcerneeSection id={personneSectionId} onEdit={handleEditPersonneConcernee} />
-        <SituationSection id={situationSectionId} onEdit={handleEditSituation} />
+        <SituationSection id={situationSectionId} requestId={requestId} onEdit={handleEditSituation} />
       </>
     );
   }
@@ -65,7 +65,12 @@ export const Details = ({ requestId }: DetailsProps) => {
           <>
             <DeclarantSection id={declarantSectionId} declarant={declarant} onEdit={handleEditDeclarant} />
             <PersonneConcerneeSection id={personneSectionId} personne={personne} onEdit={handleEditPersonneConcernee} />
-            <SituationSection id={situationSectionId} situation={situation} onEdit={handleEditSituation} />
+            <SituationSection
+              id={situationSectionId}
+              requestId={requestId}
+              situation={situation}
+              onEdit={handleEditSituation}
+            />
           </>
         );
       }}

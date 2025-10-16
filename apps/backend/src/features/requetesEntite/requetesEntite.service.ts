@@ -4,8 +4,8 @@ import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
 import { generateRequeteId } from '@/features/requetes/functionalId.service';
-import { sortObject } from '@/helpers/prisma/sort';
 import { setDemarchesEngageesFiles, setFaitFiles } from '@/features/uploadedFiles/uploadedFiles.service';
+import { sortObject } from '@/helpers/prisma/sort';
 import { prisma } from '@/libs/prisma';
 import {
   mapDeclarantToPrismaCreate,
@@ -20,6 +20,11 @@ type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
 type SituationInput = z.infer<typeof SituationDataSchema>;
 
 type RequeteEntiteKey = { requeteId: string; entiteId: string };
+
+const toNullableId = (value: string | undefined | null): string | null => {
+  if (!value || value === '') return null;
+  return value;
+};
 
 // TODO handle entiteIds
 // TODO handle search
@@ -60,6 +65,7 @@ export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetR
                     consequences: true,
                     maltraitanceTypes: true,
                     motifs: true,
+                    fichiers: true,
                   },
                 },
                 misEnCause: true,
@@ -144,12 +150,14 @@ export const getRequeteEntiteById = async (requeteId: string, entiteIds: string[
                   motifs: { include: { motif: true } },
                   consequences: { include: { consequence: true } },
                   maltraitanceTypes: { include: { maltraitanceType: true } },
+                  fichiers: true,
                 },
               },
               demarchesEngagees: {
                 include: {
                   demarches: true,
                   autoriteType: true,
+                  etablissementReponse: true,
                 },
               },
             },
@@ -509,7 +517,11 @@ export const updateRequeteParticipant = async (
   });
 };
 
-export const updateRequeteSituation = async (requeteId: string, situationData: SituationInput) => {
+export const updateRequeteSituation = async (
+  requeteId: string,
+  situationId: string | undefined,
+  situationData: SituationInput,
+) => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
     include: {
@@ -523,6 +535,7 @@ export const updateRequeteSituation = async (requeteId: string, situationData: S
           demarchesEngagees: {
             include: {
               demarches: true,
+              etablissementReponse: true,
             },
           },
         },
@@ -535,8 +548,11 @@ export const updateRequeteSituation = async (requeteId: string, situationData: S
   }
 
   const result = await prisma.$transaction(async (tx) => {
-    if (requete.situations.length > 0) {
-      const [existingSituation] = requete.situations;
+    const existingSituation = situationId
+      ? requete.situations.find((s) => s.id === situationId)
+      : requete.situations[0];
+
+    if (existingSituation) {
       const lieuData = situationData.lieuDeSurvenue;
       const misEnCauseData = situationData.misEnCause;
       const faitData = situationData.fait;
@@ -547,12 +563,12 @@ export const updateRequeteSituation = async (requeteId: string, situationData: S
         data: {
           lieuDeSurvenue: {
             update: {
-              lieuTypeId: lieuData?.lieuType || null,
+              lieuTypeId: toNullableId(lieuData?.lieuType),
               codePostal: lieuData?.codePostal || '',
               societeTransport: lieuData?.societeTransport || '',
               finess: lieuData?.finess || '',
               commentaire: lieuData?.commentaire || '',
-              transportTypeId: lieuData?.transportType || null,
+              transportTypeId: toNullableId(lieuData?.transportType),
               adresse:
                 lieuData?.adresse || lieuData?.numero || lieuData?.rue || lieuData?.codePostal || lieuData?.ville
                   ? {
@@ -578,9 +594,9 @@ export const updateRequeteSituation = async (requeteId: string, situationData: S
           },
           misEnCause: {
             update: {
-              misEnCauseTypeId: misEnCauseData?.misEnCauseType || null,
-              professionTypeId: misEnCauseData?.professionType || null,
-              professionDomicileTypeId: misEnCauseData?.professionDomicileType || null,
+              misEnCauseTypeId: toNullableId(misEnCauseData?.misEnCauseType),
+              professionTypeId: toNullableId(misEnCauseData?.professionType),
+              professionDomicileTypeId: toNullableId(misEnCauseData?.professionDomicileType),
               rpps: misEnCauseData?.rpps || null,
               commentaire: misEnCauseData?.commentaire || '',
             },
@@ -594,7 +610,7 @@ export const updateRequeteSituation = async (requeteId: string, situationData: S
               organisme: demarchesData?.organisme || '',
               datePlainte: demarchesData?.datePlainte ? new Date(demarchesData.datePlainte) : null,
               commentaire: demarchesData?.commentaire || '',
-              autoriteTypeId: demarchesData?.autoriteType || null,
+              autoriteTypeId: toNullableId(demarchesData?.autoriteType),
               demarches: demarchesData?.demarches?.length
                 ? {
                     set: demarchesData.demarches.map((demarcheId) => ({ id: demarcheId })),
@@ -709,12 +725,14 @@ export const updateRequeteSituation = async (requeteId: string, situationData: S
                 motifs: { include: { motif: true } },
                 consequences: { include: { consequence: true } },
                 maltraitanceTypes: { include: { maltraitanceType: true } },
+                fichiers: true,
               },
             },
             demarchesEngagees: {
               include: {
                 demarches: true,
                 autoriteType: true,
+                etablissementReponse: true,
               },
             },
           },
@@ -723,17 +741,55 @@ export const updateRequeteSituation = async (requeteId: string, situationData: S
     });
   });
 
-  if (result?.situations?.[0]) {
-    const [situation] = result.situations;
+  if (result?.situations) {
+    const situation = situationId ? result.situations.find((s) => s.id === situationId) : result.situations[0];
 
-    if (situationData.fait?.fileIds?.length && situation.faits?.[0]) {
-      await setFaitFiles(situation.id, situationData.fait.fileIds, null);
-    }
+    if (situation) {
+      if (situationData.fait?.fileIds?.length) {
+        await setFaitFiles(situation.id, situationData.fait.fileIds, null);
+      }
 
-    if (situationData.demarchesEngagees?.fileIds?.length && situation.demarchesEngagees) {
-      await setDemarchesEngageesFiles(situation.demarchesEngagees.id, situationData.demarchesEngagees.fileIds, null);
+      if (situationData.demarchesEngagees?.fileIds?.length && situation.demarchesEngagees) {
+        await setDemarchesEngageesFiles(situation.demarchesEngagees.id, situationData.demarchesEngagees.fileIds, null);
+      }
     }
   }
 
-  return result;
+  // Re-fetch to include the newly linked files
+  const updatedResult = await prisma.requete.findUnique({
+    where: { id: requeteId },
+    include: {
+      situations: {
+        include: {
+          lieuDeSurvenue: {
+            include: { adresse: true, lieuType: true, transportType: true },
+          },
+          misEnCause: {
+            include: {
+              misEnCauseType: true,
+              professionType: true,
+              professionDomicileType: true,
+            },
+          },
+          faits: {
+            include: {
+              motifs: { include: { motif: true } },
+              consequences: { include: { consequence: true } },
+              maltraitanceTypes: { include: { maltraitanceType: true } },
+              fichiers: true,
+            },
+          },
+          demarchesEngagees: {
+            include: {
+              demarches: true,
+              autoriteType: true,
+              etablissementReponse: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return updatedResult;
 };

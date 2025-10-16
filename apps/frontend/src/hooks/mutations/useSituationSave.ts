@@ -7,30 +7,45 @@ import { toastManager } from '@/lib/toastManager';
 
 interface UseSituationSaveProps {
   requestId: string;
+  situationId?: string;
   onRefetch: () => void;
   onSuccess?: () => void;
 }
 
-export const useSituationSave = ({ requestId, onRefetch, onSuccess }: UseSituationSaveProps) => {
+export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess }: UseSituationSaveProps) => {
   const saveMutation = useMutation({
     mutationFn: async ({ data, faitFiles }: { data: SituationData; faitFiles: File[] }) => {
-      const faitFileIds: string[] = [];
+      const newFaitFileIds: string[] = [];
       if (faitFiles.length > 0) {
         const uploadedFaitFiles = await Promise.all(faitFiles.map((file) => uploadFile(file)));
-        faitFileIds.push(...uploadedFaitFiles.map((file) => file.id));
+        newFaitFileIds.push(...uploadedFaitFiles.map((file) => file.id));
       }
+
+      const existingFileIds = data.fait?.fileIds || [];
+      const allFileIds = [...existingFileIds, ...newFaitFileIds];
 
       const enrichedData: SituationData = {
         ...data,
-        fait: data.fait ? { ...data.fait, fileIds: faitFileIds } : undefined,
+        fait: data.fait
+          ? { ...data.fait, fileIds: allFileIds.length > 0 ? allFileIds : undefined }
+          : allFileIds.length > 0
+            ? { fileIds: allFileIds }
+            : undefined,
       };
 
-      const response = await client['requetes-entite'][':id'].situation.$patch({
-        param: { id: requestId },
-        json: {
-          situation: enrichedData,
-        },
-      });
+      const response = situationId
+        ? await client['requetes-entite'][':id'].situation[':situationId'].$patch({
+            param: { id: requestId, situationId },
+            json: {
+              situation: enrichedData,
+            },
+          })
+        : await client['requetes-entite'][':id'].situation.$post({
+            param: { id: requestId },
+            json: {
+              situation: enrichedData,
+            },
+          });
 
       await handleRequestErrors(response);
       const result = await response.json();

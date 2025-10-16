@@ -1,12 +1,9 @@
-import { Readable } from 'node:stream';
-import * as Sentry from '@sentry/node';
 import {
   throwHTTPException401Unauthorized,
   throwHTTPException403Forbidden,
   throwHTTPException404NotFound,
 } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
-import { stream as honoStream } from 'hono/streaming';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import {
@@ -17,10 +14,9 @@ import {
   updateRequeteEtapeNom,
   updateRequeteEtapeStatut,
 } from '@/features/requeteEtapes/requetesEtapes.service';
-import { getUploadedFileById } from '@/features/uploadedFiles/uploadedFiles.service';
+import { getUploadedFileById, isFileBelongsToRequete } from '@/features/uploadedFiles/uploadedFiles.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import { getFileStream } from '@/libs/minio';
-import type { Prisma } from '@/libs/prisma';
+import { streamFileResponse } from '@/helpers/file';
 import authMiddleware from '@/middlewares/auth.middleware';
 import requeteEtapesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtape.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
@@ -69,40 +65,19 @@ const app = factoryWithLogs
       return throwHTTPException404NotFound('File not found', { res: c.res });
     }
 
-    logger.info({ requeteEtapeId: id, fileId }, 'Retrieving file for requete etape');
+    const belongsToRequete = await isFileBelongsToRequete(fileId, requeteEtape.requeteId);
 
-    const type = file.mimeType || 'application/octet-stream';
-    const size = file.size;
-
-    c.header('Content-Type', type);
-    c.header(
-      'Content-Disposition',
-      `inline; filename="${(file.metadata as Prisma.JsonObject)?.originalName || file.fileName}"`,
-    );
-
-    if (size === 0) {
-      return c.body(null, 200);
+    if (!belongsToRequete) {
+      logger.warn(
+        { requeteEtapeId: id, requeteId: requeteEtape.requeteId, fileId },
+        'Attempt to access file not belonging to requete',
+      );
+      return throwHTTPException403Forbidden('File does not belong to this requete', { res: c.res });
     }
 
-    return honoStream(c, async (s) => {
-      try {
-        const nodeStream = await getFileStream(file.filePath);
+    logger.info({ requeteEtapeId: id, fileId }, 'Retrieving file for requete etape');
 
-        const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream<Uint8Array>;
-
-        s.onAbort(() => {
-          if ('destroy' in nodeStream) {
-            nodeStream.destroy();
-          }
-        });
-
-        await s.pipe(webStream);
-      } catch (error) {
-        logger.error({ fileId, err: error }, 'Stream error');
-        Sentry.captureException(error);
-        s.close();
-      }
-    });
+    return streamFileResponse(c, file);
   })
   .get('/:id/processing-steps', async (c) => {
     const logger = c.get('logger');

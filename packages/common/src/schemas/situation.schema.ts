@@ -38,6 +38,15 @@ export const SituationDataSchema = z.object({
       autresPrecisions: z.string().optional(),
       consequences: z.array(z.string()).optional(),
       fileIds: z.array(z.string()).optional(),
+      files: z
+        .array(
+          z.object({
+            id: z.string(),
+            fileName: z.string(),
+            size: z.number(),
+          }),
+        )
+        .optional(),
     })
     .optional(),
 

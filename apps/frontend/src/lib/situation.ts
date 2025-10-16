@@ -1,4 +1,5 @@
 import type { SituationData } from '@sirena/common/schemas';
+import { formatFilesFromServer } from '@/utils/fileHelpers';
 import type { client } from './api/hc';
 
 type RequeteGetResponse = Awaited<
@@ -15,7 +16,7 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
   const lieuDeSurvenue = situation.lieuDeSurvenue;
   const adresse = lieuDeSurvenue?.adresse;
   const misEnCause = situation.misEnCause;
-  const fait = situation.faits?.[0];
+  const [fait] = situation.faits ?? [];
   const demarchesEngagees = situation.demarchesEngagees;
 
   return {
@@ -51,6 +52,8 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
           dateFin: fait.dateFin ? new Date(fait.dateFin).toISOString().split('T')[0] : undefined,
           autresPrecisions: undefined,
           consequences: fait.consequences?.map((c) => c.consequence.id) || undefined,
+          fileIds: fait.fichiers?.map((f) => f.id) || undefined,
+          files: formatFilesFromServer(fait.fichiers),
         }
       : undefined,
     demarchesEngagees: demarchesEngagees

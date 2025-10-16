@@ -10,6 +10,7 @@ import { useAddProcessingStepNote } from '@/hooks/mutations/updateProcessingStep
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { HttpError } from '@/lib/api/tanstackQuery';
+import { ACCEPTED_FILE_TYPES, FILE_UPLOAD_HINT } from '@/utils/fileHelpers';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
@@ -139,15 +140,14 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                   />
                   <Upload
                     label="Ajouter un ou plusieurs fichiers"
-                    hint="Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"
+                    hint={FILE_UPLOAD_HINT}
                     multiple
                     disabled={isLoading}
                     state={errorMessage ? 'error' : undefined}
                     stateRelatedMessage={errorMessage ?? undefined}
                     className="relative"
                     nativeInputProps={{
-                      accept:
-                        '.pdf,.eml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.msg,.csv,.txt,.png,.jpeg,.jpg,.heic,.heif,.webp,.tiff',
+                      accept: ACCEPTED_FILE_TYPES,
                       onChange: (e) => {
                         const files = e.target.files;
                         if (files) {

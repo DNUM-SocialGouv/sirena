@@ -29,23 +29,33 @@ function RouteComponent() {
   const navigate = useNavigate();
   const requestQuery = useRequeteDetails(requestId);
 
-  const { handleSave } = useSituationSave({
-    requestId,
-    onRefetch: () => requestQuery.refetch(),
-    onSuccess: () => {
-      navigate({ to: '/request/$requestId', params: { requestId } });
-    },
-  });
-
   return (
     <QueryStateHandler query={requestQuery}>
       {() => {
         const request = requestQuery.data;
-        const situation = request?.requete?.situations?.[0];
+        const [situation] = request?.requete?.situations ?? [];
+        const situationId = situation?.id;
 
         const formattedData = formatSituationFromServer(situation);
 
-        return <SituationForm mode="edit" requestId={requestId} initialData={formattedData} onSave={handleSave} />;
+        const { handleSave } = useSituationSave({
+          requestId,
+          situationId,
+          onRefetch: () => requestQuery.refetch(),
+          onSuccess: () => {
+            navigate({ to: '/request/$requestId', params: { requestId } });
+          },
+        });
+
+        return (
+          <SituationForm
+            mode="edit"
+            requestId={requestId}
+            situationId={situationId}
+            initialData={formattedData}
+            onSave={handleSave}
+          />
+        );
       }}
     </QueryStateHandler>
   );
