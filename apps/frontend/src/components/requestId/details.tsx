@@ -5,8 +5,8 @@ import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { DeclarantSection } from './sections/DeclarantSection';
 import { PersonneConcerneeSection } from './sections/PersonneConcerneeSection';
-import { SituationSection } from './sections/SituationSection';
 import { RequeteFileUploadSection } from './sections/RequeteFileUploadSection';
+import { SituationSection } from './sections/SituationSection';
 
 interface DetailsProps {
   requestId?: string;
@@ -50,7 +50,7 @@ export const Details = ({ requestId }: DetailsProps) => {
       <>
         <DeclarantSection id={declarantSectionId} onEdit={handleEditDeclarant} />
         <PersonneConcerneeSection id={personneSectionId} onEdit={handleEditPersonneConcernee} />
-        <SituationSection id={situationSectionId} onEdit={handleEditSituation} />
+        <SituationSection id={situationSectionId} requestId={requestId} onEdit={handleEditSituation} />
         <RequeteFileUploadSection requeteId={requestId} mode="create" />
       </>
     );
@@ -67,7 +67,12 @@ export const Details = ({ requestId }: DetailsProps) => {
           <>
             <DeclarantSection id={declarantSectionId} declarant={declarant} onEdit={handleEditDeclarant} />
             <PersonneConcerneeSection id={personneSectionId} personne={personne} onEdit={handleEditPersonneConcernee} />
-            <SituationSection id={situationSectionId} situation={situation} onEdit={handleEditSituation} />
+            <SituationSection
+              id={situationSectionId}
+              requestId={requestId}
+              situation={situation}
+              onEdit={handleEditSituation}
+            />
             <RequeteFileUploadSection
               requeteId={requestId}
               mode="edit"

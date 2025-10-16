@@ -29,7 +29,7 @@ export const useSituationCreate = () => {
         fait: data.fait ? { ...data.fait, fileIds: faitFileIds } : undefined,
       };
 
-      const updateResponse = await client['requetes-entite'][':id'].situation.$patch({
+      const updateResponse = await client['requetes-entite'][':id'].situation.$post({
         param: { id: requeteId },
         json: { situation: enrichedData },
       });

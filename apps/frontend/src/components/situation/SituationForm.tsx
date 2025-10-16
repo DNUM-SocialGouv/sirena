@@ -2,7 +2,6 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
-import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import {
   AUTORITE_TYPE,
   AUTRE_PROFESSIONNEL_PRECISION,
@@ -47,15 +46,17 @@ import { labelsToValues, valuesToLabels } from '@sirena/common/utils';
 import { SelectWithChildren } from '@sirena/ui';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { FileUploadSection } from '@/components/common/FileUploadSection';
 
 interface SituationFormProps {
   mode: 'create' | 'edit';
   requestId?: string;
+  situationId?: string;
   initialData?: SituationData;
   onSave: (data: SituationData, shouldCreateRequest: boolean, faitFiles: File[]) => Promise<void>;
 }
 
-export function SituationForm({ mode, requestId, initialData, onSave }: SituationFormProps) {
+export function SituationForm({ mode, requestId, situationId, initialData, onSave }: SituationFormProps) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<SituationData>(initialData || {});
   const [isSaving, setIsSaving] = useState(false);
@@ -86,16 +87,6 @@ export function SituationForm({ mode, requestId, initialData, onSave }: Situatio
         },
       }));
     };
-
-  const _handleDemarchesRadio = (field: string) => (value: unknown) => {
-    setFormData((prev) => ({
-      ...prev,
-      demarchesEngagees: {
-        ...prev.demarchesEngagees,
-        [field]: value === 'true',
-      },
-    }));
-  };
 
   const handleMultiSelect = (section: 'fait' | 'demarchesEngagees', field: string) => (values: string[]) => {
     setFormData((prev) => ({
@@ -781,7 +772,7 @@ export function SituationForm({ mode, requestId, initialData, onSave }: Situatio
             </div>
 
             {demarches.includes(DEMARCHES_ENGAGEES.CONTACT_RESPONSABLES) && (
-              <div className="fr-col-12 fr-pl-8w">
+              <div className="fr-col-12 fr-pl-6w">
                 <div className="fr-grid-row fr-grid-row--gutters">
                   <div className="fr-col-12 fr-col-md-6">
                     <Input
@@ -838,7 +829,7 @@ export function SituationForm({ mode, requestId, initialData, onSave }: Situatio
             </div>
 
             {demarches.includes(DEMARCHES_ENGAGEES.CONTACT_ORGANISME) && (
-              <div className="fr-col-12 fr-pl-8w">
+              <div className="fr-col-12 fr-pl-6w">
                 <Input
                   label="Précisions sur l'organisme contacté"
                   textArea
@@ -872,7 +863,7 @@ export function SituationForm({ mode, requestId, initialData, onSave }: Situatio
             </div>
 
             {demarches.includes(DEMARCHES_ENGAGEES.PLAINTE) && (
-              <div className="fr-col-12 fr-pl-8w">
+              <div className="fr-col-12 fr-pl-6w">
                 <div className="fr-grid-row fr-grid-row--gutters">
                   <div className="fr-col-12 fr-col-md-6">
                     <Input
@@ -918,37 +909,18 @@ export function SituationForm({ mode, requestId, initialData, onSave }: Situatio
           style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
         >
           <h2 className="fr-h6 fr-mb-3w">Pièces jointes</h2>
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col-12">
-              <Upload
-                label="Ajouter des fichiers relatifs aux faits"
-                hint="Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"
-                multiple
-                disabled={isSaving}
-                nativeInputProps={{
-                  accept:
-                    '.pdf,.eml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.msg,.csv,.txt,.png,.jpeg,.jpg,.heic,.heif,.webp,.tiff',
-                  onChange: (e) => {
-                    const files = e.target.files;
-                    if (files) {
-                      const fileArray = Array.from(files);
-                      setFaitFiles(fileArray);
-                    }
-                  },
-                }}
-              />
-              {faitFiles.length > 0 && (
-                <div className="fr-mt-2w">
-                  <p className="fr-text--sm fr-text--bold">Fichiers sélectionnés :</p>
-                  {faitFiles.map((file) => (
-                    <p key={file.name} className="fr-text--sm">
-                      {file.name} ({(file.size / 1024).toFixed(2)} Ko)
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          <FileUploadSection
+            label="Ajouter des fichiers relatifs aux faits"
+            existingFiles={formData.fait?.files}
+            getFileUrl={
+              situationId
+                ? (fileId) => `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}`
+                : undefined
+            }
+            selectedFiles={faitFiles}
+            onFilesChange={setFaitFiles}
+            disabled={isSaving}
+          />
         </div>
 
         <div className="fr-btns-group fr-btns-group--inline-md fr-mb-6w">

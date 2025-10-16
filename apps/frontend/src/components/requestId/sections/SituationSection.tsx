@@ -1,7 +1,9 @@
 import { demarcheEngageeLabels, misEnCauseTypeLabels } from '@sirena/common/constants';
 import { InfoSection } from '@sirena/ui';
+import { FileList } from '@/components/common/FileList';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
+import { formatFileFromServer } from '@/utils/fileHelpers';
 import { SectionTitle } from './helpers';
 
 type SituationData = NonNullable<
@@ -10,11 +12,13 @@ type SituationData = NonNullable<
 
 interface SituationSectionProps {
   id: string;
+  requestId?: string;
   situation?: SituationData | null;
   onEdit: () => void;
 }
 
-export const SituationSection = ({ id, situation, onEdit }: SituationSectionProps) => {
+export const SituationSection = ({ id, requestId, situation, onEdit }: SituationSectionProps) => {
+  const situationId = situation?.id;
   const { canEdit } = useCanEdit();
   const [fait] = situation?.faits ?? [];
   const hasLieu = situation?.lieuDeSurvenue?.lieuType?.label;
@@ -34,32 +38,35 @@ export const SituationSection = ({ id, situation, onEdit }: SituationSectionProp
     if (!hasLieu && !hasMisEnCause && !hasFaits) return null;
 
     return (
-      <>
+      <div className="fr-grid-row fr-grid-row--gutters">
         {hasMisEnCause && (
-          <p className="fr-mb-2w">
-            <span className="fr-icon-user-line fr-icon--sm" aria-hidden="true" />{' '}
-            {situation?.misEnCause?.professionType?.label || situation?.misEnCause?.misEnCauseType?.label}
-            {situation?.misEnCause?.misEnCausePrecision?.label &&
-              ` - ${situation.misEnCause.misEnCausePrecision.label}`}
-            {situation?.misEnCause?.commentaire && ` - ${situation.misEnCause.commentaire}`}
-          </p>
+          <div className="fr-col-auto">
+            <p className="fr-mb-0">
+              <span className="fr-icon-error-warning-line fr-icon--sm" aria-hidden="true" />{' '}
+              {situation?.misEnCause?.professionType?.label || situation?.misEnCause?.misEnCauseType?.label}
+              {situation?.misEnCause?.commentaire && ` - ${situation.misEnCause.commentaire}`}
+            </p>
+          </div>
         )}
 
         {hasLieu && (
-          <p className="fr-mb-2w">
-            <span className="fr-icon-map-pin-2-line fr-icon--sm" aria-hidden="true" />{' '}
-            {situation?.lieuDeSurvenue?.lieuType?.label}
-            {situation?.lieuDeSurvenue?.lieuPrecision?.label && ` - ${situation.lieuDeSurvenue.lieuPrecision.label}`}
-          </p>
+          <div className="fr-col-auto">
+            <p className="fr-mb-0">
+              <span className="fr-icon-map-pin-2-line fr-icon--sm" aria-hidden="true" />{' '}
+              {situation?.lieuDeSurvenue?.lieuType?.label}
+            </p>
+          </div>
         )}
 
-        {fait?.motifs && fait.motifs.length > 0 && (
-          <p className="fr-mb-0">
-            <span className="fr-icon-file-text-line fr-icon--sm" aria-hidden="true" />{' '}
-            {fait.motifs.map((motif) => motif.motif.label).join(', ')}
-          </p>
+        {fait?.motifs?.length > 0 && (
+          <div className="fr-col-auto">
+            <p className="fr-mb-0">
+              <span className="fr-icon-draft-line fr-icon--sm" aria-hidden="true" />{' '}
+              {fait.motifs.map((motif) => motif.motif.label).join(', ')}
+            </p>
+          </div>
         )}
-      </>
+      </div>
     );
   };
 
@@ -74,9 +81,6 @@ export const SituationSection = ({ id, situation, onEdit }: SituationSectionProp
             <p className="fr-mb-1w">
               {situation?.misEnCause?.professionType?.label || situation?.misEnCause?.misEnCauseType?.label}
             </p>
-            {situation?.misEnCause?.misEnCausePrecision?.label && (
-              <p className="fr-mb-2w">{situation.misEnCause.misEnCausePrecision.label}</p>
-            )}
             {situation?.misEnCause?.rpps && (
               <p className="fr-mb-2w">Identité du professionnel ou numéro RPPS : {situation.misEnCause.rpps}</p>
             )}
@@ -94,14 +98,13 @@ export const SituationSection = ({ id, situation, onEdit }: SituationSectionProp
           <>
             <SectionTitle>Lieu où se sont déroulés les faits</SectionTitle>
             <p className="fr-mb-1w">{situation?.lieuDeSurvenue?.lieuType?.label}</p>
-            {situation?.lieuDeSurvenue?.lieuPrecision?.label && (
-              <p className="fr-mb-2w">{situation.lieuDeSurvenue.lieuPrecision.label}</p>
+            {situation?.lieuDeSurvenue?.adresse?.label && (
+              <p className="fr-mb-1w">{situation.lieuDeSurvenue.adresse.label}</p>
             )}
-            {situation?.lieuDeSurvenue?.adresse?.nom && (
-              <p className="fr-mb-1w">{situation.lieuDeSurvenue.adresse.nom}</p>
-            )}
-            {situation?.lieuDeSurvenue?.adresse?.adresse && (
-              <p className="fr-mb-1w">{situation.lieuDeSurvenue.adresse.adresse}</p>
+            {situation?.lieuDeSurvenue?.adresse?.numero && situation?.lieuDeSurvenue?.adresse?.rue && (
+              <p className="fr-mb-1w">
+                {situation.lieuDeSurvenue.adresse.numero} {situation.lieuDeSurvenue.adresse.rue}
+              </p>
             )}
             {situation?.lieuDeSurvenue?.adresse?.codePostal && situation?.lieuDeSurvenue?.adresse?.ville && (
               <p className="fr-mb-2w">
@@ -173,10 +176,14 @@ export const SituationSection = ({ id, situation, onEdit }: SituationSectionProp
           </>
         )}
 
-        {fait?.autresPrecisions && (
+        {fait?.fichiers?.length > 0 && (
           <>
-            <SectionTitle>Autres précisions</SectionTitle>
-            <p className="fr-mb-3w">{fait.autresPrecisions}</p>
+            <SectionTitle>Pièces jointes</SectionTitle>
+            <FileList
+              files={fait.fichiers.map(formatFileFromServer)}
+              getFileUrl={(fileId) => `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}`}
+              title=""
+            />
           </>
         )}
 
@@ -188,27 +195,27 @@ export const SituationSection = ({ id, situation, onEdit }: SituationSectionProp
                 <p className="fr-text--bold fr-mb-1w">{demarche.label}</p>
                 {demarche.label === demarcheEngageeLabels.CONTACT_RESPONSABLES && (
                   <>
-                    {situation.demarchesEngagees?.dateContactResponsables && (
+                    {situation.demarchesEngagees?.dateContactEtablissement && (
                       <p className="fr-mb-1w">
                         Date de prise de contact :{' '}
-                        {new Date(situation.demarchesEngagees.dateContactResponsables).toLocaleDateString('fr-FR')}
+                        {new Date(situation.demarchesEngagees.dateContactEtablissement).toLocaleDateString('fr-FR')}
                       </p>
                     )}
-                    {situation.demarchesEngagees?.reponseRecueResponsables && (
+                    {situation.demarchesEngagees?.etablissementARepondu && (
                       <p className="fr-mb-1w">Le déclarant a reçu une réponse</p>
                     )}
                   </>
                 )}
                 {demarche.label === demarcheEngageeLabels.CONTACT_ORGANISME &&
-                  situation.demarchesEngagees?.precisionsOrganisme && (
-                    <p className="fr-mb-1w">{situation.demarchesEngagees.precisionsOrganisme}</p>
+                  situation.demarchesEngagees?.organisme && (
+                    <p className="fr-mb-1w">{situation.demarchesEngagees.organisme}</p>
                   )}
                 {demarche.label === demarcheEngageeLabels.PLAINTE && (
                   <>
-                    {situation.demarchesEngagees?.dateDepotPlainte && (
+                    {situation.demarchesEngagees?.datePlainte && (
                       <p className="fr-mb-1w">
                         Date du dépôt de plainte :{' '}
-                        {new Date(situation.demarchesEngagees.dateDepotPlainte).toLocaleDateString('fr-FR')}
+                        {new Date(situation.demarchesEngagees.datePlainte).toLocaleDateString('fr-FR')}
                       </p>
                     )}
                     {situation.demarchesEngagees?.autoriteType?.label && (
@@ -218,20 +225,6 @@ export const SituationSection = ({ id, situation, onEdit }: SituationSectionProp
                 )}
               </div>
             ))}
-          </>
-        )}
-
-        {fait?.pieceJointe && (
-          <>
-            <SectionTitle>Pièce jointe</SectionTitle>
-            <a href={fait.pieceJointe.url} className="fr-link" target="_blank" rel="noopener noreferrer">
-              {fait.pieceJointe.nom}
-              <span className="fr-icon-external-link-line fr-icon--sm fr-ml-1w" aria-hidden="true" />
-            </a>
-            <br />
-            <span className="fr-text--xs">
-              {fait.pieceJointe.type?.toUpperCase()} - {fait.pieceJointe.taille}
-            </span>
           </>
         )}
       </>

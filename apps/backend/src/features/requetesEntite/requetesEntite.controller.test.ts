@@ -9,7 +9,7 @@ import { getFileStream } from '@/libs/minio';
 import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
-import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service';
+import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service';
 import RequetesEntiteController from './requetesEntite.controller';
 import { getRequeteEntiteById, getRequetesEntite, hasAccessToRequete } from './requetesEntite.service';
 
@@ -75,6 +75,7 @@ vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
 
 vi.mock('@/features/uploadedFiles/uploadedFiles.service', () => ({
   getUploadedFileById: vi.fn(),
+  isFileBelongsToRequete: vi.fn(),
 }));
 
 describe('RequetesEntite endpoints: /', () => {
@@ -314,6 +315,7 @@ describe('RequetesEntite endpoints: /', () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(baseFile);
+      vi.mocked(isFileBelongsToRequete).mockResolvedValueOnce(true);
 
       const nodeReadable = Readable.from(Buffer.from('hello'));
       vi.mocked(getFileStream).mockResolvedValueOnce(nodeReadable);
@@ -340,6 +342,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       const emptyFile = { ...baseFile, size: 0 };
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(emptyFile);
+      vi.mocked(isFileBelongsToRequete).mockResolvedValueOnce(true);
 
       const res = await client[':id'].file[':fileId'].$get({
         param: { id: 'requeteId', fileId: 'file1' },
@@ -411,6 +414,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       const fileNoMeta = { ...baseFile, metadata: null, fileName: 'fallback.pdf' };
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(fileNoMeta);
+      vi.mocked(isFileBelongsToRequete).mockResolvedValueOnce(true);
 
       const nodeReadable = Readable.from(Buffer.from('x'));
       vi.mocked(getFileStream).mockResolvedValueOnce(nodeReadable);
