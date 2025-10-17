@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream';
 import type { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { testClient } from 'hono/testing';
@@ -12,8 +13,10 @@ import {
   updateRequeteEtapeStatut,
 } from '@/features/requeteEtapes/requetesEtapes.service';
 import { hasAccessToRequete } from '@/features/requetesEntite/requetesEntite.service';
+import { getUploadedFileById } from '@/features/uploadedFiles/uploadedFiles.service';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
+import { getFileStream } from '@/libs/minio';
 import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
 import { convertDatesToStrings } from '@/tests/formatter';
 import { getUserById } from '../users/users.service';
@@ -84,6 +87,10 @@ vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
     },
   };
 });
+
+vi.mock('@/libs/minio', () => ({
+  getFileStream: vi.fn(),
+}));
 
 vi.mock('@/helpers/errors', () => ({
   errorHandler: vi.fn((err, c) => {
@@ -307,6 +314,142 @@ describe('requeteEtapes.controller.ts', () => {
       });
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe('GET /:id/file/:fileId', () => {
+    const baseFile: UploadedFile = {
+      id: 'file1',
+      fileName: 'test.pdf',
+      filePath: '/uploads/test.pdf',
+      mimeType: 'application/pdf',
+      size: 5,
+      requeteId: null,
+      faitSituationId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      metadata: { originalName: 'report.pdf' },
+      entiteId: 'entite1',
+      uploadedById: 'user1',
+      status: 'PENDING',
+      requeteEtapeNoteId: 'step1',
+      demarchesEngageesId: null,
+    };
+
+    it('streams the file with correct headers (inline) and body content', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(baseFile);
+
+      const nodeReadable = Readable.from(Buffer.from('hello'));
+      vi.mocked(getFileStream).mockResolvedValueOnce(nodeReadable);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      const bodyText = await res.text();
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toBe('application/pdf');
+      expect(res.headers.get('content-disposition')).toBe('inline; filename="report.pdf"');
+
+      expect(bodyText).toBe('hello');
+
+      expect(getUploadedFileById).toHaveBeenCalledWith('file1', null);
+      expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf');
+    });
+
+    it('returns 200 with empty body when file size is 0 (no streaming)', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+
+      const emptyFile = { ...baseFile, size: 0 };
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(emptyFile);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      const bodyText = await res.text();
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toBe('application/pdf');
+      expect(res.headers.get('content-disposition')).toBe('inline; filename="report.pdf"');
+      expect(bodyText).toBe('');
+
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when RequeteEtape not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({ message: 'RequeteEtape not found' });
+
+      expect(getUploadedFileById).not.toHaveBeenCalled();
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when user has no access to requete', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(body).toEqual({
+        message: 'You are not allowed to update this requete etape',
+      });
+
+      expect(getUploadedFileById).not.toHaveBeenCalled();
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when file not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({ message: 'File not found' });
+
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('falls back to fileName when metadata.originalName is missing', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+
+      const fileNoMeta = { ...baseFile, metadata: null, fileName: 'fallback.pdf' };
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(fileNoMeta);
+
+      const nodeReadable = Readable.from(Buffer.from('x'));
+      vi.mocked(getFileStream).mockResolvedValueOnce(nodeReadable);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'step1', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-disposition')).toBe('inline; filename="fallback.pdf"');
     });
   });
 

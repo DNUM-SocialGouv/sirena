@@ -1,18 +1,26 @@
+import { Readable } from 'node:stream';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addProcessingEtape, getRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
+import { getFileStream } from '@/libs/minio';
 import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
+import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service';
 import RequetesEntiteController from './requetesEntite.controller';
-import { getRequetesEntite, hasAccessToRequete } from './requetesEntite.service';
+import { getRequeteEntiteById, getRequetesEntite, hasAccessToRequete } from './requetesEntite.service';
 
 vi.mock('./requetesEntite.service', () => ({
+  getRequeteEntiteById: vi.fn(),
   getRequetesEntite: vi.fn(),
   hasAccessToRequete: vi.fn(),
+}));
+
+vi.mock('@/libs/minio', () => ({
+  getFileStream: vi.fn(),
 }));
 
 vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
@@ -65,7 +73,15 @@ vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
   };
 });
 
+vi.mock('@/features/uploadedFiles/uploadedFiles.service', () => ({
+  getUploadedFileById: vi.fn(),
+}));
+
 describe('RequetesEntite endpoints: /', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequetesEntiteController).onError(errorHandler);
   const client = testClient(app);
 
@@ -81,6 +97,8 @@ describe('RequetesEntite endpoints: /', () => {
         receptionDate: new Date(),
         dematSocialId: 123,
         receptionTypeId: 'receptionTypeId',
+        participant: null,
+        situations: [],
         declarant: {
           id: 'd1',
           createdAt: new Date(),
@@ -251,6 +269,158 @@ describe('RequetesEntite endpoints: /', () => {
       const json = await res.json();
       expect(json).toEqual({ message: 'Requete entite not found' });
       expect(addProcessingEtape).toHaveBeenCalledWith('1', ['e1', 'e2'], { nom: 'Step 1' });
+    });
+  });
+
+  describe('GET /:id/file/:fileId', () => {
+    const baseFile: UploadedFile = {
+      id: 'file1',
+      fileName: 'test.pdf',
+      filePath: '/uploads/test.pdf',
+      mimeType: 'application/pdf',
+      size: 5,
+      requeteId: 'requeteId',
+      faitSituationId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      metadata: { originalName: 'report.pdf' },
+      entiteId: 'entite1',
+      uploadedById: 'user1',
+      status: 'PENDING',
+      requeteEtapeNoteId: 'step1',
+      demarchesEngageesId: null,
+    };
+
+    const fakeRequeteEntite = {
+      requeteId: 'requeteId',
+      entiteId: 'entiteId',
+      requete: {
+        id: 'requeteId',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        commentaire: 'Commentaire',
+        receptionDate: new Date(),
+        dematSocialId: 123,
+        receptionTypeId: 'receptionTypeId',
+        declarant: null,
+        participant: null,
+        fichiersRequeteOriginale: [],
+      },
+      requeteEtape: [],
+    };
+
+    it('streams the file with correct headers (inline) and body content', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(baseFile);
+
+      const nodeReadable = Readable.from(Buffer.from('hello'));
+      vi.mocked(getFileStream).mockResolvedValueOnce(nodeReadable);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'requeteId', fileId: 'file1' },
+      });
+
+      const bodyText = await res.text();
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toBe('application/pdf');
+      expect(res.headers.get('content-disposition')).toBe('inline; filename="report.pdf"');
+
+      expect(bodyText).toBe('hello');
+
+      expect(getUploadedFileById).toHaveBeenCalledWith('file1', null);
+      expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf');
+    });
+
+    it('returns 200 with empty body when file size is 0 (no streaming)', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+
+      const emptyFile = { ...baseFile, size: 0 };
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(emptyFile);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'requeteId', fileId: 'file1' },
+      });
+
+      const bodyText = await res.text();
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toBe('application/pdf');
+      expect(res.headers.get('content-disposition')).toBe('inline; filename="report.pdf"');
+      expect(bodyText).toBe('');
+
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when RequeteEntite not found', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'requeteId', fileId: 'file1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({ message: 'Requete not found' });
+
+      expect(getUploadedFileById).not.toHaveBeenCalled();
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when user has no access to requete', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(hasAccessToRequete).mockResolvedValue(false);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'requeteId', fileId: 'file1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(body).toEqual({ message: 'You are not allowed to access this requete' });
+
+      expect(getUploadedFileById).not.toHaveBeenCalled();
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when file not found', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'requeteId', fileId: 'file1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({ message: 'File not found' });
+
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('falls back to fileName when metadata.originalName is missing', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+
+      const fileNoMeta = { ...baseFile, metadata: null, fileName: 'fallback.pdf' };
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(fileNoMeta);
+
+      const nodeReadable = Readable.from(Buffer.from('x'));
+      vi.mocked(getFileStream).mockResolvedValueOnce(nodeReadable);
+
+      const res = await client[':id'].file[':fileId'].$get({
+        param: { id: 'requeteId', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-disposition')).toBe('inline; filename="fallback.pdf"');
     });
   });
 });
