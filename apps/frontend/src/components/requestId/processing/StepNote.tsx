@@ -1,7 +1,6 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ROLES } from '@sirena/common/constants';
 import { useQuery } from '@tanstack/react-query';
-import { useParams } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
@@ -30,10 +29,6 @@ type StepNoteProps = {
 };
 
 export const StepNote = ({ id, author, content, createdAt, requeteStateId, files, onEdit }: StepNoteProps) => {
-  const { requestId } = useParams({
-    from: '/_auth/_user/request/$requestId',
-  });
-
   const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
 
   const handleEdit = () => {
@@ -86,7 +81,7 @@ export const StepNote = ({ id, author, content, createdAt, requeteStateId, files
           {files.map((file) => (
             <li key={file.id} className={styles['request-note__file']}>
               <FileDownloadLink
-                href={`/api/uploaded-files/${requestId}/file/${file.id}`}
+                href={`/api/requete-etapes/${requeteStateId}/file/${file.id}`}
                 fileName={file.originalName}
                 fileSize={file.size}
               />
