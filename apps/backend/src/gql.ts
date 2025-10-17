@@ -16,7 +16,7 @@ async function main() {
   const logger = createDefaultLogger();
   await loggerStorage.run(logger, async () => {
     const data = await getPractionners({ ['given:contains']: 'a' });
-    logger.info({ data });
+    // logger.info({ data });
   });
 }
 

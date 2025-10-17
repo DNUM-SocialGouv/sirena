@@ -44,7 +44,12 @@ export const fetchEsanteData = async (route: string, query: Record<string, strin
 };
 
 export const getPractionners = async (params: GetPractionnersParams) => {
-  const data = await fetchEsanteData('Practitioner', { ...params, _elements: 'identifier,name' });
+  const data = await fetchEsanteData('Practitioner', {
+    ...params,
+    _elements: 'identifier,name,extension,qualification',
+  });
+  const logger = getLoggerStore();
+  logger.info({ data });
   return (
     data?.entry?.flatMap((e) => {
       const resourceName = e.resource?.name?.[0];
