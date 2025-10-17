@@ -33,6 +33,7 @@ vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
 
 vi.mock('@/features/uploadedFiles/uploadedFiles.service', () => ({
   getUploadedFileById: vi.fn(),
+  isFileBelongsToRequete: vi.fn(() => Promise.resolve(true)),
 }));
 
 vi.mock('@/features/requetesEntite/requetesEntite.service', () => ({

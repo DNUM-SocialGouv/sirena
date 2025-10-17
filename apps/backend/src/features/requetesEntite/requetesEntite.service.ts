@@ -1,18 +1,30 @@
 import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
-import type { DeclarantDataSchema, PersonneConcerneeDataSchema } from '@sirena/common/schemas';
+import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
 import { generateRequeteId } from '@/features/requetes/functionalId.service';
+import { setDemarchesEngageesFiles, setFaitFiles } from '@/features/uploadedFiles/uploadedFiles.service';
 import { sortObject } from '@/helpers/prisma/sort';
 import { prisma } from '@/libs/prisma';
-import { mapDeclarantToPrismaCreate, mapPersonneConcerneeToPrismaCreate } from './requetesEntite.mapper';
+import {
+  mapDeclarantToPrismaCreate,
+  mapPersonneConcerneeToPrismaCreate,
+  mapSituationFaitToPrismaCreate,
+  mapSituationToPrismaCreate,
+} from './requetesEntite.mapper';
 import type { GetRequetesEntiteQuery } from './requetesEntite.type';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
 type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
+type SituationInput = z.infer<typeof SituationDataSchema>;
 
 type RequeteEntiteKey = { requeteId: string; entiteId: string };
+
+const toNullableId = (value: string | undefined | null): string | null => {
+  if (!value || value === '') return null;
+  return value;
+};
 
 // TODO handle entiteIds
 // TODO handle search
@@ -53,6 +65,7 @@ export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetR
                     consequences: true,
                     maltraitanceTypes: true,
                     motifs: true,
+                    fichiers: true,
                   },
                 },
                 misEnCause: true,
@@ -118,6 +131,35 @@ export const getRequeteEntiteById = async (requeteId: string, entiteIds: string[
               identite: true,
               lienVictime: true,
               participantDe: true,
+            },
+          },
+          situations: {
+            include: {
+              lieuDeSurvenue: {
+                include: { adresse: true, lieuType: true, transportType: true },
+              },
+              misEnCause: {
+                include: {
+                  misEnCauseType: true,
+                  professionType: true,
+                  professionDomicileType: true,
+                },
+              },
+              faits: {
+                include: {
+                  motifs: { include: { motif: true } },
+                  consequences: { include: { consequence: true } },
+                  maltraitanceTypes: { include: { maltraitanceType: true } },
+                  fichiers: true,
+                },
+              },
+              demarchesEngagees: {
+                include: {
+                  demarches: true,
+                  autoriteType: true,
+                  etablissementReponse: true,
+                },
+              },
             },
           },
         },
@@ -473,4 +515,281 @@ export const updateRequeteParticipant = async (
       participant: includeParticipant,
     },
   });
+};
+
+export const updateRequeteSituation = async (
+  requeteId: string,
+  situationId: string | undefined,
+  situationData: SituationInput,
+) => {
+  const requete = await prisma.requete.findUnique({
+    where: { id: requeteId },
+    include: {
+      situations: {
+        include: {
+          lieuDeSurvenue: {
+            include: { adresse: true },
+          },
+          misEnCause: true,
+          faits: true,
+          demarchesEngagees: {
+            include: {
+              demarches: true,
+              etablissementReponse: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!requete) {
+    throw new Error('Requete not found');
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const existingSituation = situationId
+      ? requete.situations.find((s) => s.id === situationId)
+      : requete.situations[0];
+
+    if (existingSituation) {
+      const lieuData = situationData.lieuDeSurvenue;
+      const misEnCauseData = situationData.misEnCause;
+      const faitData = situationData.fait;
+      const demarchesData = situationData.demarchesEngagees;
+
+      await tx.situation.update({
+        where: { id: existingSituation.id },
+        data: {
+          lieuDeSurvenue: {
+            update: {
+              lieuTypeId: toNullableId(lieuData?.lieuType),
+              codePostal: lieuData?.codePostal || '',
+              societeTransport: lieuData?.societeTransport || '',
+              finess: lieuData?.finess || '',
+              commentaire: lieuData?.commentaire || '',
+              transportTypeId: toNullableId(lieuData?.transportType),
+              adresse:
+                lieuData?.adresse || lieuData?.numero || lieuData?.rue || lieuData?.codePostal || lieuData?.ville
+                  ? {
+                      upsert: {
+                        create: {
+                          label: lieuData?.adresse || '',
+                          numero: lieuData?.numero || '',
+                          rue: lieuData?.rue || '',
+                          codePostal: lieuData?.codePostal || '',
+                          ville: lieuData?.ville || '',
+                        },
+                        update: {
+                          label: lieuData?.adresse || '',
+                          numero: lieuData?.numero || '',
+                          rue: lieuData?.rue || '',
+                          codePostal: lieuData?.codePostal || '',
+                          ville: lieuData?.ville || '',
+                        },
+                      },
+                    }
+                  : undefined,
+            },
+          },
+          misEnCause: {
+            update: {
+              misEnCauseTypeId: toNullableId(misEnCauseData?.misEnCauseType),
+              professionTypeId: toNullableId(misEnCauseData?.professionType),
+              professionDomicileTypeId: toNullableId(misEnCauseData?.professionDomicileType),
+              rpps: misEnCauseData?.rpps || null,
+              commentaire: misEnCauseData?.commentaire || '',
+            },
+          },
+          demarchesEngagees: {
+            update: {
+              dateContactEtablissement: demarchesData?.dateContactEtablissement
+                ? new Date(demarchesData.dateContactEtablissement)
+                : null,
+              etablissementARepondu: demarchesData?.etablissementARepondu ?? null,
+              organisme: demarchesData?.organisme || '',
+              datePlainte: demarchesData?.datePlainte ? new Date(demarchesData.datePlainte) : null,
+              commentaire: demarchesData?.commentaire || '',
+              autoriteTypeId: toNullableId(demarchesData?.autoriteType),
+              demarches: demarchesData?.demarches?.length
+                ? {
+                    set: demarchesData.demarches.map((demarcheId) => ({ id: demarcheId })),
+                  }
+                : { set: [] },
+            },
+          },
+        },
+      });
+
+      const [existingFait] = existingSituation.faits;
+      if (existingFait) {
+        await tx.faitMotif.deleteMany({
+          where: { situationId: existingSituation.id },
+        });
+        await tx.faitConsequence.deleteMany({
+          where: { situationId: existingSituation.id },
+        });
+        await tx.faitMaltraitanceType.deleteMany({
+          where: { situationId: existingSituation.id },
+        });
+
+        await tx.fait.update({
+          where: { situationId: existingSituation.id },
+          data: {
+            dateDebut: faitData?.dateDebut ? new Date(faitData.dateDebut) : null,
+            dateFin: faitData?.dateFin ? new Date(faitData.dateFin) : null,
+            commentaire: faitData?.commentaire || '',
+          },
+        });
+
+        if (faitData?.sousMotifs?.length) {
+          for (const sousMotifLabel of faitData.sousMotifs) {
+            const motif = await tx.motifEnum.upsert({
+              where: { label: sousMotifLabel },
+              create: { label: sousMotifLabel },
+              update: {},
+            });
+
+            await tx.faitMotif.create({
+              data: {
+                situationId: existingSituation.id,
+                motifId: motif.id,
+              },
+            });
+          }
+        }
+
+        if (faitData?.consequences?.length) {
+          await tx.faitConsequence.createMany({
+            data: faitData.consequences.map((consequenceId) => ({
+              situationId: existingSituation.id,
+              consequenceId,
+            })),
+          });
+        }
+
+        if (faitData?.maltraitanceTypes?.length) {
+          await tx.faitMaltraitanceType.createMany({
+            data: faitData.maltraitanceTypes.map((maltraitanceTypeId) => ({
+              situationId: existingSituation.id,
+              maltraitanceTypeId,
+            })),
+          });
+        }
+      } else if (faitData) {
+        const faitCreateData = mapSituationFaitToPrismaCreate(existingSituation.id, faitData);
+        if (faitCreateData) {
+          await tx.fait.create({
+            data: faitCreateData,
+          });
+        }
+      }
+    } else {
+      const situationCreateData = mapSituationToPrismaCreate(situationData);
+      const createdSituation = await tx.situation.create({
+        data: {
+          ...situationCreateData,
+          requete: {
+            connect: { id: requeteId },
+          },
+        },
+      });
+
+      if (situationData.fait) {
+        const faitCreateData = mapSituationFaitToPrismaCreate(createdSituation.id, situationData.fait);
+        if (faitCreateData) {
+          await tx.fait.create({
+            data: faitCreateData,
+          });
+        }
+      }
+    }
+
+    return tx.requete.findUnique({
+      where: { id: requeteId },
+      include: {
+        situations: {
+          include: {
+            lieuDeSurvenue: {
+              include: { adresse: true, lieuType: true, transportType: true },
+            },
+            misEnCause: {
+              include: {
+                misEnCauseType: true,
+                professionType: true,
+                professionDomicileType: true,
+              },
+            },
+            faits: {
+              include: {
+                motifs: { include: { motif: true } },
+                consequences: { include: { consequence: true } },
+                maltraitanceTypes: { include: { maltraitanceType: true } },
+                fichiers: true,
+              },
+            },
+            demarchesEngagees: {
+              include: {
+                demarches: true,
+                autoriteType: true,
+                etablissementReponse: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  });
+
+  if (result?.situations) {
+    const situation = situationId ? result.situations.find((s) => s.id === situationId) : result.situations[0];
+
+    if (situation) {
+      if (situationData.fait?.fileIds?.length) {
+        await setFaitFiles(situation.id, situationData.fait.fileIds, null);
+      }
+
+      if (situationData.demarchesEngagees?.fileIds?.length && situation.demarchesEngagees) {
+        await setDemarchesEngageesFiles(situation.demarchesEngagees.id, situationData.demarchesEngagees.fileIds, null);
+      }
+    }
+  }
+
+  // Re-fetch to include the newly linked files
+  const updatedResult = await prisma.requete.findUnique({
+    where: { id: requeteId },
+    include: {
+      situations: {
+        include: {
+          lieuDeSurvenue: {
+            include: { adresse: true, lieuType: true, transportType: true },
+          },
+          misEnCause: {
+            include: {
+              misEnCauseType: true,
+              professionType: true,
+              professionDomicileType: true,
+            },
+          },
+          faits: {
+            include: {
+              motifs: { include: { motif: true } },
+              consequences: { include: { consequence: true } },
+              maltraitanceTypes: { include: { maltraitanceType: true } },
+              fichiers: true,
+            },
+          },
+          demarchesEngagees: {
+            include: {
+              demarches: true,
+              autoriteType: true,
+              etablissementReponse: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return updatedResult;
 };

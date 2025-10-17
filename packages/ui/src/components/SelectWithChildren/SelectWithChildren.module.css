@@ -1,0 +1,154 @@
+.selectWrapper {
+  position: relative;
+}
+
+.selectButton {
+  width: 100%;
+  text-align: left;
+  background-color: var(--background-default-grey);
+  cursor: pointer;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  color: var(--text-default-grey);
+  border-bottom: 2px solid var(--border-plain-grey);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.selectButton [class*="fr-icon-"]::before {
+  margin-right: 0;
+}
+
+.selectButton:hover {
+  background-color: var(--background-default-grey-hover);
+}
+
+.selectButton:focus {
+  outline: 2px solid var(--border-plain-blue-france);
+  outline-offset: 2px;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--background-default-grey);
+  border: 1px solid var(--border-default-grey);
+  border-radius: 0.25rem;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 0.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.motifButton {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-bottom: 1px solid var(--border-default-grey);
+  background-color: transparent;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-default-grey);
+  font-size: 1rem;
+}
+
+.motifButton:hover {
+  background-color: var(--background-default-grey-hover);
+}
+
+.motifButton:focus {
+  outline: 2px solid var(--border-plain-blue-france);
+  outline-offset: -2px;
+  background-color: var(--background-action-low-blue-france);
+}
+
+.motifButton:focus-visible {
+  outline: 2px solid var(--border-plain-blue-france);
+  outline-offset: -2px;
+  background-color: var(--background-action-low-blue-france);
+}
+
+.backButton {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-bottom: 1px solid var(--border-default-grey);
+  background-color: var(--background-contrast-grey);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: bold;
+  color: var(--text-default-grey);
+  font-size: 1rem;
+}
+
+.backButton:hover {
+  background-color: var(--background-default-grey-hover);
+}
+
+.backButton:focus {
+  outline: 2px solid var(--border-plain-blue-france);
+  outline-offset: -2px;
+  background-color: var(--background-action-low-blue-france);
+}
+
+.backButton:focus-visible {
+  outline: 2px solid var(--border-plain-blue-france);
+  outline-offset: -2px;
+  background-color: var(--background-action-low-blue-france);
+}
+
+.submotifList {
+  padding: 0.5rem 0;
+}
+
+.submotifTitle {
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  color: var(--text-title-grey);
+  font-size: 1rem;
+}
+
+.submotifItem {
+  padding: 0.25rem 1rem;
+  border-bottom: 1px solid var(--border-default-grey-hover);
+}
+
+.submotifItem:focus {
+  outline: 2px solid var(--border-plain-blue-france);
+  outline-offset: -2px;
+  background-color: var(--background-action-low-blue-france);
+}
+
+.submotifItem:focus-visible {
+  outline: 2px solid var(--border-plain-blue-france);
+  outline-offset: -2px;
+  background-color: var(--background-action-low-blue-france);
+}
+
+.selectedList {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-mention-grey);
+}
+
+.selectedList strong {
+  color: var(--text-default-grey);
+}
+
+.selectedList ul {
+  margin-top: 0.25rem;
+  padding-left: 1.5rem;
+  color: var(--text-default-grey);
+}

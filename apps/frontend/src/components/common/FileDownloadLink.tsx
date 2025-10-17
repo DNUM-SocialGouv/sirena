@@ -1,5 +1,6 @@
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { useId } from 'react';
+import { formatFileSize } from '@/utils/fileHelpers';
 
 type FileDownloadLinkProps = {
   href: string;
@@ -15,12 +16,6 @@ const isFilePreviewable = (fileName: string): boolean => {
   const previewableExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.txt'];
   const fileExtension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
   return previewableExtensions.includes(fileExtension);
-};
-
-const formatFileSize = (bytes: number): string => {
-  if (bytes < 1024) return `${bytes} o`;
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(2)} Ko`;
-  return `${(bytes / 1048576).toFixed(2)} Mo`;
 };
 
 export const FileDownloadLink = ({
