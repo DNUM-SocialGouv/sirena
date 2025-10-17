@@ -242,6 +242,7 @@ describe('requetesEntite.service', () => {
                   participantDe: true,
                 },
               },
+              fichiersRequeteOriginale: true,
             },
           },
           requeteEtape: {

@@ -323,7 +323,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                                 <li key={file.id} className={styles['request-note__file']}>
                                   <div>
                                     <a
-                                      href={`/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}`}
+                                      href={`/api/uploaded-files/${requestId}/file/${file.id}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="fr-link fr-text--sm"

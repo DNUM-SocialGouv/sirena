@@ -29,6 +29,7 @@ export const addProcessingStepNoteBodySchema = z.object({
 export const CreateRequeteBodySchema = z.object({
   declarant: DeclarantDataSchema.optional(),
   participant: PersonneConcerneeDataSchema.optional(),
+  fileIds: z.array(z.string()).optional(),
 });
 
 export const UpdateDeclarantBodySchema = z.object({
@@ -51,4 +52,8 @@ export const UpdateParticipantBodySchema = z.object({
       }),
     })
     .optional(),
+});
+
+export const UpdateRequeteFilesBodySchema = z.object({
+  fileIds: z.array(z.string()),
 });

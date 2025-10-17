@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { Readable } from 'node:stream';
 import type { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { testClient } from 'hono/testing';
@@ -6,7 +7,7 @@ import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
-import { deleteFileFromMinio, uploadFileToMinio } from '@/libs/minio';
+import { deleteFileFromMinio, getFileStream, uploadFileToMinio } from '@/libs/minio';
 import type { UploadedFile } from '@/libs/prisma';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import extractUploadedFileMiddleware from '@/middlewares/upload.middleware';
@@ -16,19 +17,20 @@ import { createUploadedFile, deleteUploadedFile, getUploadedFileById } from './u
 
 const fakeFile: UploadedFile = {
   id: 'file1',
-  fileName: 'test.pdf',
-  filePath: 'uploads/test.pdf',
+  fileName: 'fallback.pdf',
+  filePath: '/uploads/test.pdf',
   mimeType: 'application/pdf',
-  size: 1024,
+  size: 5,
   createdAt: new Date(),
   updatedAt: new Date(),
   metadata: null,
-  entiteId: 'e1',
+  entiteId: 'entite1',
   status: 'PENDING',
-  requeteEtapeNoteId: null,
+  requeteEtapeNoteId: 'step1',
   faitSituationId: null,
-  requeteId: null,
-  uploadedById: 'id10',
+  requeteId: 'requeteId',
+  uploadedById: 'user1',
+  demarchesEngageesId: null,
 };
 
 const fakeData: UploadedFile[] = [fakeFile];
@@ -36,6 +38,7 @@ const fakeData: UploadedFile[] = [fakeFile];
 const signedUrl = 'https://test-signed-url.com';
 
 vi.mock('@/libs/minio', () => ({
+  getFileStream: vi.fn(),
   uploadFileToMinio: vi.fn(() => {
     return Promise.resolve({
       objectPath: fakeFile.filePath,
@@ -181,6 +184,124 @@ describe('uploadedFiles.controller.ts', () => {
       expect(body).toEqual({
         message: 'You are not allowed to read uploaded files without entiteIds.',
       });
+    });
+  });
+
+  describe('GET /:id/file/:fileId', () => {
+    const baseFile: UploadedFile = {
+      id: 'file1',
+      fileName: 'test.pdf',
+      filePath: '/uploads/test.pdf',
+      mimeType: 'application/pdf',
+      size: 5,
+      requeteId: 'requeteId',
+      faitSituationId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      metadata: { originalName: 'report.pdf' },
+      entiteId: 'entite1',
+      uploadedById: 'user1',
+      status: 'PENDING',
+      requeteEtapeNoteId: 'step1',
+      demarchesEngageesId: null,
+    };
+
+    it('streams the file with correct headers (inline) and body content', async () => {
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(baseFile);
+
+      const nodeReadable = Readable.from(Buffer.from('hello'));
+      vi.mocked(getFileStream).mockResolvedValueOnce(nodeReadable);
+
+      const res = await client[':requeteId'].file[':fileId'].$get({
+        param: { requeteId: 'requeteId', fileId: 'file1' },
+      });
+
+      const bodyText = await res.text();
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toBe('application/pdf');
+      expect(res.headers.get('content-disposition')).toBe('inline; filename="report.pdf"');
+
+      expect(bodyText).toBe('hello');
+
+      expect(getUploadedFileById).toHaveBeenCalledWith('file1', null);
+      expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf');
+    });
+
+    it('returns 200 with empty body when file size is 0 (no streaming)', async () => {
+      const emptyFile = { ...baseFile, size: 0 };
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(emptyFile);
+
+      const res = await client[':requeteId'].file[':fileId'].$get({
+        param: { requeteId: 'requeteId', fileId: 'file1' },
+      });
+
+      const bodyText = await res.text();
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toBe('application/pdf');
+      expect(res.headers.get('content-disposition')).toBe('inline; filename="report.pdf"');
+      expect(bodyText).toBe('');
+
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when RequeteEtape not found', async () => {
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(null);
+
+      const res = await client[':requeteId'].file[':fileId'].$get({
+        param: { requeteId: 'requeteId', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(404);
+
+      expect(getUploadedFileById).toHaveBeenCalledWith('file1', null);
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when user has no access to requete', async () => {
+      vi.mocked(getUploadedFileById).mockRejectedValueOnce(
+        new HTTPException(403, { message: 'User has no access to requete' }),
+      );
+
+      const res = await client[':requeteId'].file[':fileId'].$get({
+        param: { requeteId: 'requeteId', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(403);
+
+      expect(getUploadedFileById).toHaveBeenCalledWith('file1', null);
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when file not found', async () => {
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(null);
+
+      const res = await client[':requeteId'].file[':fileId'].$get({
+        param: { requeteId: 'requeteId', fileId: 'file1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({ message: 'File not found' });
+
+      expect(getFileStream).not.toHaveBeenCalled();
+    });
+
+    it('falls back to fileName when metadata.originalName is missing', async () => {
+      const fileNoMeta = { ...baseFile, metadata: null, fileName: 'fallback.pdf' };
+      vi.mocked(getUploadedFileById).mockResolvedValueOnce(fileNoMeta);
+
+      const nodeReadable = Readable.from(Buffer.from('x'));
+      vi.mocked(getFileStream).mockResolvedValueOnce(nodeReadable);
+
+      const res = await client[':requeteId'].file[':fileId'].$get({
+        param: { requeteId: 'requeteId', fileId: 'file1' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-disposition')).toBe('inline; filename="fallback.pdf"');
     });
   });
 
@@ -378,7 +499,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(await res.text()).toBe('');
       expect(getUploadedFileById).toHaveBeenCalledWith('file1', null);
       expect(deleteUploadedFile).toHaveBeenCalledWith('file1');
-      expect(deleteFileFromMinio).toHaveBeenCalledWith('uploads/test.pdf');
+      expect(deleteFileFromMinio).toHaveBeenCalledWith('/uploads/test.pdf');
     });
 
     it('should return 400 if entiteIds is not set', async () => {

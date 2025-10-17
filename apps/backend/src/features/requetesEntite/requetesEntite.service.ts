@@ -120,6 +120,7 @@ export const getRequeteEntiteById = async (requeteId: string, entiteIds: string[
               participantDe: true,
             },
           },
+          fichiersRequeteOriginale: true,
         },
       },
       requeteEtape: {

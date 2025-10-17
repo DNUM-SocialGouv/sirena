@@ -1,8 +1,9 @@
-import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
+import { throwHTTPException403Forbidden, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { addProcessingEtape, getRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
+import { isUserOwner, setRequeteFile } from '@/features/uploadedFiles/uploadedFiles.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
 import requeteChangelogMiddleware from '@/middlewares/changelog/changelog.requete.middleware';
@@ -22,6 +23,7 @@ import {
   GetRequetesEntiteQuerySchema,
   UpdateDeclarantBodySchema,
   UpdateParticipantBodySchema,
+  UpdateRequeteFilesBodySchema,
 } from './requetesEntite.schema';
 import {
   createRequeteEntite,
@@ -110,13 +112,36 @@ const app = factoryWithLogs
       const userId = c.get('userId');
       const entiteIds = c.get('entiteIds');
       const body = c.req.valid('json');
+      const fileIds = body.fileIds || [];
+
+      if (fileIds.length > 0) {
+        const isAllowed = await isUserOwner(userId, fileIds);
+
+        if (!isAllowed) {
+          return throwHTTPException403Forbidden('You are not allowed to add these files to the requete', {
+            res: c.res,
+          });
+        }
+      }
 
       const requete = await createRequeteEntite(entiteIds, body);
+
+      if (fileIds.length > 0) {
+        const entiteId = entiteIds?.[0];
+        await setRequeteFile(requete.id, fileIds, entiteId);
+        logger.info({ requeteId: requete.id, fileIds }, 'Files linked to requete successfully');
+      }
 
       c.set('changelogId', requete.id);
 
       logger.info(
-        { requeteId: requete.id, userId, hasDeclarant: !!body.declarant, hasParticipant: !!body.participant },
+        {
+          requeteId: requete.id,
+          userId,
+          hasDeclarant: !!body.declarant,
+          hasParticipant: !!body.participant,
+          fileCount: fileIds.length,
+        },
         'New requete created successfully',
       );
 
@@ -199,6 +224,37 @@ const app = factoryWithLogs
       }
     },
   )
+
+  .patch('/:id/files', zValidator('json', UpdateRequeteFilesBodySchema), async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
+    const entiteIds = c.get('entiteIds');
+    const { fileIds } = c.req.valid('json');
+
+    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
+
+    if (!requeteEntite) {
+      return throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    const isAllowed = await isUserOwner(userId, fileIds);
+
+    if (!isAllowed) {
+      return throwHTTPException403Forbidden('You are not allowed to add these files to the requete', {
+        res: c.res,
+      });
+    }
+
+    const entiteId = entiteIds?.[0];
+    await setRequeteFile(id, fileIds, entiteId);
+
+    logger.info({ requeteId: id, userId, fileIds }, 'Files linked to requete successfully');
+
+    return c.json({ data: { requeteId: id, fileIds } });
+  })
 
   .post(
     '/:id/processing-steps',
