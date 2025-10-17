@@ -1,3 +1,4 @@
+import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { useQuery } from '@tanstack/react-query';
@@ -42,7 +43,7 @@ function RouteComponent() {
   return (
     <QueryStateHandler query={profileQuery}>
       {() => (
-        <>
+        <div className={fr.cx('fr-container', 'fr-my-8w')}>
           <div className={styles.header}>
             <h1 className={styles.title}>Bienvenue {label}</h1>
             <div style={{ display: 'flex', gap: '1rem' }}>
@@ -56,7 +57,7 @@ function RouteComponent() {
             </div>
           </div>
           <RequetesEntite />
-        </>
+        </div>
       )}
     </QueryStateHandler>
   );
