@@ -1,10 +1,15 @@
+import { Readable } from 'node:stream';
+import * as Sentry from '@sentry/node';
 import { throwHTTPException403Forbidden, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
+import { stream as honoStream } from 'hono/streaming';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { addProcessingEtape, getRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
-import { isUserOwner, setRequeteFile } from '@/features/uploadedFiles/uploadedFiles.service';
+import { getUploadedFileById, isUserOwner, setRequeteFile } from '@/features/uploadedFiles/uploadedFiles.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
+import { getFileStream } from '@/libs/minio';
+import type { Prisma } from '@/libs/prisma';
 import authMiddleware from '@/middlewares/auth.middleware';
 import requeteChangelogMiddleware from '@/middlewares/changelog/changelog.requete.middleware';
 import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtape.middleware';
@@ -29,6 +34,7 @@ import {
   createRequeteEntite,
   getRequeteEntiteById,
   getRequetesEntite,
+  hasAccessToRequete,
   updateRequeteDeclarant,
   updateRequeteParticipant,
 } from './requetesEntite.service';
@@ -97,6 +103,84 @@ const app = factoryWithLogs
     logger.info({ requestId: id, stepCount: total }, 'Processing steps retrieved successfully');
 
     return c.json({ data, meta: { total } });
+  })
+
+  .get('/:id/file/:fileId', async (c) => {
+    const logger = c.get('logger');
+    const { id, fileId } = c.req.param();
+    const entiteIds = c.get('entiteIds');
+
+    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
+
+    if (!requeteEntite) {
+      return throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    // Check access to the requete using any of the user's entiteIds
+    if (entiteIds && entiteIds.length > 0) {
+      let hasAccess = false;
+      for (const entiteId of entiteIds) {
+        const access = await hasAccessToRequete({ requeteId: id, entiteId });
+        if (access) {
+          hasAccess = true;
+          break;
+        }
+      }
+
+      if (!hasAccess) {
+        return throwHTTPException403Forbidden('You are not allowed to access this requete', {
+          res: c.res,
+        });
+      }
+    }
+
+    const file = await getUploadedFileById(fileId, null);
+
+    if (!file) {
+      return throwHTTPException404NotFound('File not found', { res: c.res });
+    }
+
+    // Verify that the file is linked to this requete
+    if (file.requeteId !== id) {
+      return throwHTTPException404NotFound('File not found for this requete', { res: c.res });
+    }
+
+    logger.info({ requeteId: id, fileId }, 'Retrieving file for requete');
+
+    const type = file.mimeType || 'application/octet-stream';
+    const size = file.size;
+
+    c.header('Content-Type', type);
+    c.header(
+      'Content-Disposition',
+      `inline; filename="${(file.metadata as Prisma.JsonObject)?.originalName || file.fileName}"`,
+    );
+
+    if (size === 0) {
+      return c.body(null, 200);
+    }
+
+    return honoStream(c, async (s) => {
+      try {
+        const nodeStream = await getFileStream(file.filePath);
+
+        const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream<Uint8Array>;
+
+        s.onAbort(() => {
+          if ('destroy' in nodeStream) {
+            nodeStream.destroy();
+          }
+        });
+
+        await s.pipe(webStream);
+      } catch (error) {
+        logger.error({ fileId, err: error }, 'Stream error');
+        Sentry.captureException(error);
+        s.close();
+      }
+    });
   })
 
   // Roles with edit permissions

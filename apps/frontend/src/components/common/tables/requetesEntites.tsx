@@ -1,6 +1,8 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Badge } from '@codegouvfr/react-dsfr/Badge';
+import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
+import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import {
   type Motif,
   motifShortLabels,
@@ -33,9 +35,12 @@ export function RequetesEntite() {
   const offset = useMemo(() => parseInt(queries.offset || '0', 10), [queries.offset]);
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
+  const [searchTerm, setSearchTerm] = useState<string>(queries.search || '');
+
   const { data: requetes, isFetching } = useRequetesEntite({
     ...(queries.sort && { sort: queries.sort as 'requeteId' | 'entiteId' }),
     ...(queries.order && { order: queries.order as 'asc' | 'desc' }),
+    ...(queries.search && { search: queries.search }),
     offset: offset.toString(),
     limit: limit.toString(),
   });
@@ -47,6 +52,27 @@ export function RequetesEntite() {
       setTitle(`Requêtes: ${requetes?.meta?.total ?? 0}`);
     }
   }, [requetes]);
+
+  const handleSearch = useCallback(() => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        search: searchTerm.trim() || undefined,
+        offset: undefined, // Reset to first page
+      }),
+    });
+  }, [navigate, searchTerm]);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchTerm('');
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        search: undefined,
+        offset: undefined,
+      }),
+    });
+  }, [navigate]);
 
   const columns: Column<RequeteEntiteRow>[] = [
     { key: 'requete.id', label: 'ID Requête' },
@@ -167,6 +193,52 @@ export function RequetesEntite() {
 
   return (
     <>
+      <div className="fr-mb-3w">
+        <div className="fr-grid-row">
+          <div className="fr-col-12 fr-col-md-5">
+            <SearchBar
+              label="Rechercher dans les requêtes"
+              onButtonClick={handleSearch}
+              renderInput={(inputProps) => (
+                <input
+                  {...inputProps}
+                  placeholder="Rechercher par numéro, lieu de survenue, ..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              )}
+            />
+          </div>
+        </div>
+
+        {queries.search && requetes && (
+          <div className="fr-mt-2w">
+            <div className="fr-grid-row fr-grid-row--middle">
+              <div className="fr-col-auto">
+                <p className="fr-text--md fr-mb-0">
+                  <strong>{requetes.meta?.total ?? 0}</strong> résultat{requetes.meta?.total !== 1 ? 's' : ''} pour "
+                  {queries.search}"
+                </p>
+              </div>
+              <div className="fr-col-auto fr-ml-1w">
+                <Button
+                  type="button"
+                  priority="secondary"
+                  iconId="fr-icon-delete-line"
+                  iconPosition="right"
+                  size="small"
+                  onClick={handleClearSearch}
+                  className="fr-btn--icon-center center-icon-with-sr-only"
+                  aria-label="Effacer la recherche"
+                  title="Effacer la recherche"
+                >
+                  Effacer la recherche
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       <DataTable title={title} rowId="id" data={dataWithId} columns={columns} cells={cells} isLoading={isFetching} />
       {shouldShowPagination && (
         <div className="fr-mt-3w fr-grid-row fr-grid-row--center">

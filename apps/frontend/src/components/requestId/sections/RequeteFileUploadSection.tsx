@@ -283,7 +283,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
                       <div className={styles.fileName}>
                         <a
                           ref={index === 0 ? firstFileLinkRef : undefined}
-                          href={`/api/uploaded-files/${requeteId}/file/${file.id}`}
+                          href={`/api/requetes-entite/${requeteId}/file/${file.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
