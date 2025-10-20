@@ -1,0 +1,33 @@
+.requeteFileUploadSection {
+  display: flex;
+  padding: 20px 24px 24px 24px;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: stretch;
+  border-radius: 4px;
+  background: var(--light-options-illustration-color-975-default-beige-gris-galet-975, #f9f6f2);
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.fileName {
+  flex: 1;
+  margin-right: 8px;
+}
+
+.fileNameLink {
+  display: inline-block;
+}
+
+.deleteButton {
+  flex-shrink: 0;
+}
+
+.errorText {
+  color: var(--text-default-error);
+}

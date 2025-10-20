@@ -16,19 +16,20 @@ import { createUploadedFile, deleteUploadedFile, getUploadedFileById } from './u
 
 const fakeFile: UploadedFile = {
   id: 'file1',
-  fileName: 'test.pdf',
-  filePath: 'uploads/test.pdf',
+  fileName: 'fallback.pdf',
+  filePath: '/uploads/test.pdf',
   mimeType: 'application/pdf',
-  size: 1024,
+  size: 5,
   createdAt: new Date(),
   updatedAt: new Date(),
   metadata: null,
-  entiteId: 'e1',
+  entiteId: 'entite1',
   status: 'PENDING',
-  requeteEtapeNoteId: null,
+  requeteEtapeNoteId: 'step1',
   faitSituationId: null,
-  requeteId: null,
-  uploadedById: 'id10',
+  requeteId: 'requeteId',
+  uploadedById: 'user1',
+  demarchesEngageesId: null,
 };
 
 const fakeData: UploadedFile[] = [fakeFile];
@@ -36,6 +37,7 @@ const fakeData: UploadedFile[] = [fakeFile];
 const signedUrl = 'https://test-signed-url.com';
 
 vi.mock('@/libs/minio', () => ({
+  getFileStream: vi.fn(),
   uploadFileToMinio: vi.fn(() => {
     return Promise.resolve({
       objectPath: fakeFile.filePath,
@@ -378,7 +380,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(await res.text()).toBe('');
       expect(getUploadedFileById).toHaveBeenCalledWith('file1', null);
       expect(deleteUploadedFile).toHaveBeenCalledWith('file1');
-      expect(deleteFileFromMinio).toHaveBeenCalledWith('uploads/test.pdf');
+      expect(deleteFileFromMinio).toHaveBeenCalledWith('/uploads/test.pdf');
     });
 
     it('should return 400 if entiteIds is not set', async () => {

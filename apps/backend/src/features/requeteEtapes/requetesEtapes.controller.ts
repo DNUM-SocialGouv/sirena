@@ -17,7 +17,6 @@ import {
   updateRequeteEtapeNom,
   updateRequeteEtapeStatut,
 } from '@/features/requeteEtapes/requetesEtapes.service';
-import { getUploadedFileById } from '@/features/uploadedFiles/uploadedFiles.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { getFileStream } from '@/libs/minio';
 import type { Prisma } from '@/libs/prisma';
@@ -29,6 +28,7 @@ import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { addProcessingStepRoute } from '../requetesEntite/requetesEntite.route';
 import { AddProcessingStepBodySchema } from '../requetesEntite/requetesEntite.schema';
 import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service';
+import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service';
 import { getUserById } from '../users/users.service';
 import {
   deleteRequeteEtapeRoute,
@@ -44,6 +44,36 @@ const app = factoryWithLogs
   .use(userStatusMiddleware)
   .use(entitesMiddleware)
 
+  .get('/:id/processing-steps', async (c) => {
+    const logger = c.get('logger');
+    const { id: requeteId } = c.req.param();
+    // const entiteIds = c.get('entiteIds');
+
+    // TODO: Use real entiteIds when implemented
+    // const hasAccess = await hasAccessToRequete({ requeteId: id, entiteId });
+    const hasAccess = true;
+
+    if (!hasAccess) {
+      return throwHTTPException404NotFound('Requete entite not found', {
+        res: c.res,
+      });
+    }
+
+    // TODO: Temporary: Here we are using a permission and access management system that will not be the final system: HERE only the user's entiteId is used to retrieve the steps linked to this same entiteId, it WILL likely be more complex later with a parent/child permission chain.
+    const userId = c.get('userId');
+    const user = await getUserById(userId, null, null);
+    if (!user?.entiteId) {
+      return throwHTTPException401Unauthorized('User not found', {
+        res: c.res,
+      });
+    }
+
+    const { data, total } = await getRequeteEtapes(requeteId, [user.entiteId], {});
+
+    logger.info({ requestId: requeteId, stepCount: total }, 'Processing steps retrieved successfully');
+
+    return c.json({ data, meta: { total } });
+  })
   .get('/:id/file/:fileId', async (c) => {
     const logger = c.get('logger');
     const { id, fileId } = c.req.param();
@@ -103,36 +133,6 @@ const app = factoryWithLogs
         s.close();
       }
     });
-  })
-  .get('/:id/processing-steps', async (c) => {
-    const logger = c.get('logger');
-    const { id: requeteId } = c.req.param();
-    // const entiteIds = c.get('entiteIds');
-
-    // TODO: Use real entiteIds when implemented
-    // const hasAccess = await hasAccessToRequete({ requeteId: id, entiteId });
-    const hasAccess = true;
-
-    if (!hasAccess) {
-      return throwHTTPException404NotFound('Requete entite not found', {
-        res: c.res,
-      });
-    }
-
-    // TODO: Temporary: Here we are using a permission and access management system that will not be the final system: HERE only the user's entiteId is used to retrieve the steps linked to this same entiteId, it WILL likely be more complex later with a parent/child permission chain.
-    const userId = c.get('userId');
-    const user = await getUserById(userId, null, null);
-    if (!user?.entiteId) {
-      return throwHTTPException401Unauthorized('User not found', {
-        res: c.res,
-      });
-    }
-
-    const { data, total } = await getRequeteEtapes(requeteId, [user.entiteId], {});
-
-    logger.info({ requestId: requeteId, stepCount: total }, 'Processing steps retrieved successfully');
-
-    return c.json({ data, meta: { total } });
   })
 
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]))

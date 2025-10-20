@@ -5,6 +5,7 @@ import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { DeclarantSection } from './sections/DeclarantSection';
 import { PersonneConcerneeSection } from './sections/PersonneConcerneeSection';
+import { RequeteFileUploadSection } from './sections/RequeteFileUploadSection';
 
 interface DetailsProps {
   requestId?: string;
@@ -39,6 +40,7 @@ export const Details = ({ requestId }: DetailsProps) => {
       <>
         <DeclarantSection id={declarantSectionId} onEdit={handleEditDeclarant} />
         <PersonneConcerneeSection id={personneSectionId} onEdit={handleEditPersonneConcernee} />
+        <RequeteFileUploadSection requeteId={requestId} mode="create" />
       </>
     );
   }
@@ -53,6 +55,11 @@ export const Details = ({ requestId }: DetailsProps) => {
           <>
             <DeclarantSection id={declarantSectionId} declarant={declarant} onEdit={handleEditDeclarant} />
             <PersonneConcerneeSection id={personneSectionId} personne={personne} onEdit={handleEditPersonneConcernee} />
+            <RequeteFileUploadSection
+              requeteId={requestId}
+              mode="edit"
+              existingFiles={requestQuery.data?.requete?.fichiersRequeteOriginale || []}
+            />
           </>
         );
       }}

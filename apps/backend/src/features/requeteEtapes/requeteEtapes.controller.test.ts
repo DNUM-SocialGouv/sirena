@@ -333,6 +333,7 @@ describe('requeteEtapes.controller.ts', () => {
       uploadedById: 'user1',
       status: 'PENDING',
       requeteEtapeNoteId: 'step1',
+      demarchesEngageesId: null,
     };
 
     it('streams the file with correct headers (inline) and body content', async () => {
