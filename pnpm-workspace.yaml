@@ -3,17 +3,17 @@ packages:
   - apps/*
 catalog:
   prisma: ^6.13.0
-  tsx: ^4.20.5
+  tsx: ^4.20.6
   zod: ^3.25.67
-  react: ^19.1.1
-  "@types/react": ^19.1.11
-  "@types/react-dom": ^19.1.8
-  "@types/node": ^24.4.0
-  react-dom: ^19.1.1
-  "@codegouvfr/react-dsfr": ^1.26.0
-  hono: ^4.9.0
+  react: ^19.2.0
+  "@types/react": ^19.2.2
+  "@types/react-dom": ^19.2.2
+  "@types/node": ^24.8.1
+  react-dom: ^19.2.0
+  "@codegouvfr/react-dsfr": ^1.28.0
+  hono: ^4.10.1
   hono-openapi: ^0.4.8
-  "@biomejs/biome": ^2.2.3
+  "@biomejs/biome": ^2.2.6
   vitest: ^3.2.4
   "@vitest/coverage-v8": ^3.2.4
   "@vitest/browser": ^3.2.4
