@@ -2,6 +2,7 @@ import { throwHTTPException403Forbidden, throwHTTPException404NotFound } from '@
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
+import { getEntiteAscendanteIds } from '@/features/entites/entites.service';
 import { addProcessingEtape, getRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
 import {
   getUploadedFileById,
@@ -71,7 +72,15 @@ const app = factoryWithLogs
     const { id } = c.req.param();
     const entiteIds = c.get('entiteIds');
 
-    const topEntite = entiteIds[0] ? [entiteIds[0]] : [];
+    const topUserEntite = entiteIds[0];
+
+    if (!topUserEntite) {
+      return throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    const topEntite = await getEntiteAscendanteIds(topUserEntite);
 
     const requeteEntite = await getRequeteEntiteById(id, topEntite);
 
