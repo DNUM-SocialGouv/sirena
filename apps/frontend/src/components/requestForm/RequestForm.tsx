@@ -48,7 +48,7 @@ export function RequestForm({ requestId }: RequestFormProps) {
   };
 
   return (
-    <div>
+    <>
       <div className="bg-cumulus fr-mb-4w">
         <div className="fr-container fr-py-2w">
           <div className="fr-mb-2w">
@@ -66,6 +66,6 @@ export function RequestForm({ requestId }: RequestFormProps) {
           {activeTab === 2 && <Processing requestId={requestId} />}
         </Tabs>
       </div>
-    </div>
+    </>
   );
 }
