@@ -62,7 +62,7 @@
     "jsonwebtoken": "^9.0.2",
     "juice": "^11.0.3",
     "openid-client": "^6.8.1",
-    "pino": "^9.13.1",
+    "pino": "^9.14.0",
     "minio": "^8.0.6",
     "pino-pretty": "^13.1.2",
     "tmp-promise": "^3.0.3",
