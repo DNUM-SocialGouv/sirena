@@ -19,7 +19,7 @@ function formatDeclarantFromServerImpl(declarant: DeclarantFromAPI) {
     lienAvecPersonneConcernee:
       declarant.lienVictime?.id || declarant.lienVictimeId || (declarant.lienAutrePrecision ? 'AUTRE' : ''),
     lienAvecPersonneConcerneePrecision: declarant.lienAutrePrecision ?? '',
-    adresseDomicile: adresse?.label || '',
+    adresseDomicile: `${adresse?.numero || ''} ${adresse?.rue || ''}`,
     codePostal: adresse?.codePostal || '',
     ville: adresse?.ville || '',
     numeroTelephone: identite?.telephone || '',
