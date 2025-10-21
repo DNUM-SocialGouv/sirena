@@ -141,7 +141,7 @@ describe('RequetesEntite endpoints: /', () => {
         meta: { total: 1 },
       });
 
-      expect(getRequetesEntite).toHaveBeenCalledWith(null, {});
+      expect(getRequetesEntite).toHaveBeenCalledWith(['e1', 'e2'], {});
     });
 
     it('should return meta with offset and limit', async () => {
@@ -158,7 +158,7 @@ describe('RequetesEntite endpoints: /', () => {
         meta: { offset: 5, limit: 10, total: 1 },
       });
 
-      expect(getRequetesEntite).toHaveBeenCalledWith(null, { offset: 5, limit: 10 });
+      expect(getRequetesEntite).toHaveBeenCalledWith(['e1', 'e2'], { offset: 5, limit: 10 });
     });
   });
 

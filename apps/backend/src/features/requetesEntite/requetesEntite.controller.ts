@@ -49,9 +49,8 @@ const app = factoryWithLogs
   .get('/', getRequetesEntiteRoute, zValidator('query', GetRequetesEntiteQuerySchema), async (c) => {
     const logger = c.get('logger');
     const query = c.req.valid('query');
-    // const entiteIds = c.get('entiteIds');
-    // TODO: Use real entiteIds when implemented
-    const { data, total } = await getRequetesEntite(null, query);
+    const entiteIds = c.get('entiteIds');
+    const { data, total } = await getRequetesEntite(entiteIds, query);
 
     logger.info({ requestCount: data.length, total }, 'Requetes entite list retrieved successfully');
 

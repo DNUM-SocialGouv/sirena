@@ -17,16 +17,14 @@ type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
 type RequeteEntiteKey = { requeteId: string; entiteId: string };
 
 // TODO handle entiteIds
-export const getRequetesEntite = async (_entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
+export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
   const { offset = 0, limit, sort = 'requete.createdAt', order = 'desc', search } = query;
-
-  // const entiteFilter = filterByEntities(entiteIds);
 
   const searchConditions: Prisma.RequeteEntiteWhereInput = search ? createSearchConditionsForRequeteEntite(search) : {};
 
   const where = {
     ...searchConditions,
-    // ...(entiteFilter ?? {}),
+    ...(Array.isArray(entiteIds) && entiteIds.length > 0 ? { entiteId: { in: entiteIds } } : {}),
   };
 
   const [data, total] = await Promise.all([
