@@ -17,12 +17,14 @@ vi.mock('@/libs/graffle', () => {
     GetDossiersByDateDocument: {},
     GetDossiersMetadataDocument: {},
     GetDossierDocument: {},
+    ChangerInstructionDocument: {},
   };
 });
 
 vi.mock('@/config/env', () => ({
   envVars: {
     DEMAT_SOCIAL_API_DIRECTORY: 9999,
+    DEMAT_SOCIAL_INSTRUCTEUR_ID: 'Instructeur-123',
   },
 }));
 
@@ -109,12 +111,29 @@ describe('dematSocial.service.ts', () => {
       });
 
       sendMock.mockResolvedValueOnce({
+        dossierPasserEnInstruction: {
+          dossier: {
+            id: '1',
+          },
+        },
+      });
+
+      sendMock.mockResolvedValueOnce({
         dossier: {
           demandeur: { __typename: 'PersonnePhysique', civilite: 'M', nom: 'test', prenom: 'test' },
           usager: { email: 'test@test.fr' },
           champs: [],
         },
       });
+
+      sendMock.mockResolvedValueOnce({
+        dossierPasserEnInstruction: {
+          dossier: {
+            id: '1',
+          },
+        },
+      });
+
       sendMock.mockResolvedValueOnce({
         dossier: {
           demandeur: { __typename: 'PersonneMorale' },

@@ -3,8 +3,25 @@ import { envVars } from '@/config/env';
 import { mapDataForPrisma } from '@/features/dematSocial/dematSocial.adaptater';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '@/features/requetes/requetes.service';
 import { abortControllerStorage, getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
-import { GetDossierDocument, GetDossiersByDateDocument, GetDossiersMetadataDocument, graffle } from '@/libs/graffle';
+import {
+  ChangerInstructionDocument,
+  GetDossierDocument,
+  GetDossiersByDateDocument,
+  GetDossiersMetadataDocument,
+  GetInstructeursDocument,
+  graffle,
+} from '@/libs/graffle';
 import type { Demandeur, DematSocialCivilite } from './dematSocial.type';
+
+export const getInstructeurs = async () => {
+  return await graffle.gql(GetInstructeursDocument).send({ demarcheNumber: envVars.DEMAT_SOCIAL_API_DIRECTORY });
+};
+
+export const updateInstruction = async (id: string) => {
+  const dossierId = Buffer.from(id).toString('base64');
+  const instructeurId = Buffer.from(envVars.DEMAT_SOCIAL_INSTRUCTEUR_ID).toString('base64');
+  return await graffle.gql(ChangerInstructionDocument).send({ dossierId, instructeurId, disableNotification: true });
+};
 
 export const getRequetes = async (createdSince?: Date) => {
   const abortController = abortControllerStorage.getStore();
@@ -59,6 +76,11 @@ export const importRequetes = async (createdSince?: Date) => {
     const isDossierAlreadyImported = await getRequeteByDematSocialId(dossier.number);
     if (isDossierAlreadyImported) {
       continue;
+    }
+    const update = await updateInstruction(`Dossier-${dossier.number}`);
+    if (!update?.dossierPasserEnInstruction?.dossier) {
+      const err = update?.dossierPasserEnInstruction?.errors || [];
+      logger.warn({ err }, `Failed to change instruction for dossier ${dossier.number}`);
     }
     const data = await getRequete(dossier.number);
     if (!data) {

@@ -16,6 +16,7 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
     DEMAT_SOCIAL_API_URL: 'http://api.example.com',
     DEMAT_SOCIAL_API_TOKEN: 'token',
     DEMAT_SOCIAL_API_DIRECTORY: '123',
+    DEMAT_SOCIAL_INSTRUCTEUR_ID: 'instructeur-456',
     S3_BUCKET_ACCESS_KEY: 'root',
     S3_BUCKET_SECRET_KEY: 'rootroot',
     S3_BUCKET_ENDPOINT: 'localhost',
