@@ -111,7 +111,7 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
     },
     {
       name: 'CRON_DEMAT_SOCIAL',
-      value: '3600',
+      value: '300',
     },
   ];
 }
