@@ -29,6 +29,8 @@ export const PersonneConcerneeSection = ({ id, personne, onEdit }: PersonneConce
     personneAdresse
       ? {
           label: personneAdresse.label,
+          numero: personneAdresse.numero,
+          rue: personneAdresse.rue,
           codePostal: personneAdresse.codePostal,
           ville: personneAdresse.ville,
         }

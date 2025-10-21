@@ -5,10 +5,16 @@ export const formatFullName = (identite?: { civilite?: { label?: string }; preno
     .join(' ');
 };
 
-export const formatAddress = (adresse?: { label?: string; codePostal?: string; ville?: string } | null) => {
+export const formatAddress = (
+  adresse?: { label?: string; numero?: string; rue?: string; codePostal?: string; ville?: string } | null,
+) => {
   if (!adresse) return '';
+  if (adresse.label?.trim()) {
+    return adresse.label;
+  }
+
   const postalCity = adresse.codePostal && adresse.ville ? `${adresse.codePostal} ${adresse.ville}` : null;
-  return [adresse.label, postalCity].filter(Boolean).join(' ');
+  return [adresse.numero, adresse.rue, postalCity].filter(Boolean).join(' ');
 };
 
 export const ContactInfo = ({

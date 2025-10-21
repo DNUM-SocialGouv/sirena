@@ -4,6 +4,7 @@ import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
 import { generateRequeteId } from '@/features/requetes/functionalId.service';
+import { parseAdresseDomicile } from '@/helpers/address';
 import { sortObject } from '@/helpers/prisma/sort';
 import { createSearchConditionsForRequeteEntite } from '@/helpers/search';
 import { type Prisma, prisma } from '@/libs/prisma';
@@ -330,16 +331,30 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
                 declarantData.adresseDomicile || declarantData.codePostal || declarantData.ville
                   ? {
                       upsert: {
-                        create: {
-                          label: declarantData.adresseDomicile || '',
-                          codePostal: declarantData.codePostal || '',
-                          ville: declarantData.ville || '',
-                        },
-                        update: {
-                          label: declarantData.adresseDomicile || '',
-                          codePostal: declarantData.codePostal || '',
-                          ville: declarantData.ville || '',
-                        },
+                        create: (() => {
+                          const { numero, rue } = parseAdresseDomicile(declarantData.adresseDomicile || '');
+                          return {
+                            label:
+                              `${declarantData.adresseDomicile || ''} ${declarantData.codePostal || ''} ${declarantData.ville || ''}` ||
+                              '',
+                            numero,
+                            rue,
+                            codePostal: declarantData.codePostal || '',
+                            ville: declarantData.ville || '',
+                          };
+                        })(),
+                        update: (() => {
+                          const { numero, rue } = parseAdresseDomicile(declarantData.adresseDomicile || '');
+                          return {
+                            label:
+                              `${declarantData.adresseDomicile || ''} ${declarantData.codePostal || ''} ${declarantData.ville || ''}` ||
+                              '',
+                            numero,
+                            rue,
+                            codePostal: declarantData.codePostal || '',
+                            ville: declarantData.ville || '',
+                          };
+                        })(),
                       },
                     }
                   : undefined,
@@ -444,16 +459,30 @@ export const updateRequeteParticipant = async (
               participantData.adresseDomicile || participantData.codePostal || participantData.ville
                 ? {
                     upsert: {
-                      create: {
-                        label: participantData.adresseDomicile || '',
-                        codePostal: participantData.codePostal || '',
-                        ville: participantData.ville || '',
-                      },
-                      update: {
-                        label: participantData.adresseDomicile || '',
-                        codePostal: participantData.codePostal || '',
-                        ville: participantData.ville || '',
-                      },
+                      create: (() => {
+                        const { numero, rue } = parseAdresseDomicile(participantData.adresseDomicile || '');
+                        return {
+                          label:
+                            `${participantData.adresseDomicile || ''} ${participantData.codePostal || ''} ${participantData.ville || ''}` ||
+                            '',
+                          numero,
+                          rue,
+                          codePostal: participantData.codePostal || '',
+                          ville: participantData.ville || '',
+                        };
+                      })(),
+                      update: (() => {
+                        const { numero, rue } = parseAdresseDomicile(participantData.adresseDomicile || '');
+                        return {
+                          label:
+                            `${participantData.adresseDomicile || ''} ${participantData.codePostal || ''} ${participantData.ville || ''}` ||
+                            '',
+                          numero,
+                          rue,
+                          codePostal: participantData.codePostal || '',
+                          ville: participantData.ville || '',
+                        };
+                      })(),
                     },
                   }
                 : undefined,

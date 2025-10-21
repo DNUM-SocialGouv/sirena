@@ -29,7 +29,7 @@ export function formatPersonneConcerneeFromServer(participant: unknown): Personn
     nom: (identite.nom as string) || '',
     prenom: (identite.prenom as string) || '',
     age: (p.age as { id: string })?.id || '',
-    adresseDomicile: (adresse.label as string) || '',
+    adresseDomicile: `${adresse.numero || ''} ${adresse.rue || ''}`,
     codePostal: (adresse.codePostal as string) || '',
     ville: (adresse.ville as string) || '',
     numeroTelephone: (identite.telephone as string) || '',

@@ -29,6 +29,8 @@ export const DeclarantSection = ({ id, declarant, onEdit }: DeclarantSectionProp
     declarantAdresse
       ? {
           label: declarantAdresse.label,
+          numero: declarantAdresse.numero,
+          rue: declarantAdresse.rue,
           codePostal: declarantAdresse.codePostal,
           ville: declarantAdresse.ville,
         }
