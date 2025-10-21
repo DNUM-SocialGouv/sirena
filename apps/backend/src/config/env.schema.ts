@@ -58,6 +58,12 @@ export const AppEnvSchema = z.object({
   IS_LOGGED_TOKEN_NAME: z.string({
     required_error: "La variable d'environnement IS_LOGGED_TOKEN_NAME est requise",
   }),
+  ANNUAIRE_SANTE_API_KEY: z.string({
+    required_error: "La variable d'environnement ANNUAIRE_SANTE_API_KEY est requise",
+  }),
+  ANNUAIRE_SANTE_API_URL: z.string({
+    required_error: "La variable d'environnement ANNUAIRE_SANTE_API_URL est requise",
+  }),
   DEMAT_SOCIAL_API_URL: z.string({
     required_error: "La variable d'environnement DEMAT_SOCIAL_API_URL est requise",
   }),
