@@ -66,7 +66,7 @@ export const streamFileResponse = async (c: Context, file: UploadedFile) => {
   return honoStream(c, async (s) => {
     try {
       const nodeStream = await getFileStream(file.filePath);
-      const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream<Uint8Array>;
+      const webStream = Readable.toWeb(nodeStream);
 
       s.onAbort(() => {
         if ('destroy' in nodeStream) {

@@ -312,7 +312,6 @@ describe('RequetesEntite endpoints: /', () => {
 
     it('streams the file with correct headers (inline) and body content', async () => {
       vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(baseFile);
       vi.mocked(isFileBelongsToRequete).mockResolvedValueOnce(true);
@@ -338,7 +337,6 @@ describe('RequetesEntite endpoints: /', () => {
 
     it('returns 200 with empty body when file size is 0 (no streaming)', async () => {
       vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       const emptyFile = { ...baseFile, size: 0 };
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(emptyFile);
@@ -374,9 +372,8 @@ describe('RequetesEntite endpoints: /', () => {
       expect(getFileStream).not.toHaveBeenCalled();
     });
 
-    it('returns 403 when user has no access to requete', async () => {
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
-      vi.mocked(hasAccessToRequete).mockResolvedValue(false);
+    it('returns 404 when user has no access to requete', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(null);
 
       const res = await client[':id'].file[':fileId'].$get({
         param: { id: 'requeteId', fileId: 'file1' },
@@ -384,8 +381,8 @@ describe('RequetesEntite endpoints: /', () => {
 
       const body = await res.json();
 
-      expect(res.status).toBe(403);
-      expect(body).toEqual({ message: 'You are not allowed to access this requete' });
+      expect(res.status).toBe(404);
+      expect(body).toEqual({ message: 'Requete not found' });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
@@ -393,7 +390,6 @@ describe('RequetesEntite endpoints: /', () => {
 
     it('returns 404 when file not found', async () => {
       vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(null);
 
       const res = await client[':id'].file[':fileId'].$get({
@@ -410,7 +406,6 @@ describe('RequetesEntite endpoints: /', () => {
 
     it('falls back to fileName when metadata.originalName is missing', async () => {
       vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       const fileNoMeta = { ...baseFile, metadata: null, fileName: 'fallback.pdf' };
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(fileNoMeta);

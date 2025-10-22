@@ -1,10 +1,11 @@
+import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
 import { SituationForm } from '@/components/situation/SituationForm';
 import { useSituationCreate } from '@/hooks/mutations/useSituationCreate';
-import { requireAuth } from '@/lib/auth-guards';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/_user/request/create/situation')({
-  beforeLoad: requireAuth,
+  beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]),
   head: () => ({
     meta: [
       {

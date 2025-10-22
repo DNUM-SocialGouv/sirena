@@ -144,46 +144,18 @@ export const setDemarchesEngageesFiles = async (
 };
 
 export const isFileBelongsToRequete = async (fileId: UploadedFile['id'], requeteId: string): Promise<boolean> => {
-  const file = await prisma.uploadedFile.findUnique({
-    where: { id: fileId },
-    include: {
-      fait: {
-        include: {
-          situation: true,
-        },
-      },
-      requeteEtapeNote: {
-        include: {
-          requeteEtape: true,
-        },
-      },
-      demarchesEngagees: {
-        include: {
-          Situation: true,
-        },
-      },
+  const exists = await prisma.uploadedFile.findFirst({
+    where: {
+      id: fileId,
+      OR: [
+        { requeteId },
+        { fait: { situation: { requeteId } } },
+        { requeteEtapeNote: { requeteEtape: { requeteId } } },
+        { demarchesEngagees: { Situation: { some: { requeteId } } } },
+      ],
     },
+    select: { id: true },
   });
 
-  if (!file) {
-    return false;
-  }
-
-  if (file.requeteId === requeteId) {
-    return true;
-  }
-
-  if (file.fait?.situation?.requeteId === requeteId) {
-    return true;
-  }
-
-  if (file.requeteEtapeNote?.requeteEtape?.requeteId === requeteId) {
-    return true;
-  }
-
-  if (file.demarchesEngagees?.Situation?.some((situation) => situation.requeteId === requeteId)) {
-    return true;
-  }
-
-  return false;
+  return exists !== null;
 };

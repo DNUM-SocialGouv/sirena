@@ -36,7 +36,6 @@ import {
   createRequeteEntite,
   getRequeteEntiteById,
   getRequetesEntite,
-  hasAccessToRequete,
   updateRequeteDeclarant,
   updateRequeteParticipant,
   updateRequeteSituation,
@@ -118,24 +117,6 @@ const app = factoryWithLogs
       return throwHTTPException404NotFound('Requete not found', {
         res: c.res,
       });
-    }
-
-    // Check access to the requete using any of the user's entiteIds
-    if (entiteIds && entiteIds.length > 0) {
-      let hasAccess = false;
-      for (const entiteId of entiteIds) {
-        const access = await hasAccessToRequete({ requeteId: id, entiteId });
-        if (access) {
-          hasAccess = true;
-          break;
-        }
-      }
-
-      if (!hasAccess) {
-        return throwHTTPException403Forbidden('You are not allowed to access this requete', {
-          res: c.res,
-        });
-      }
     }
 
     const file = await getUploadedFileById(fileId, null);

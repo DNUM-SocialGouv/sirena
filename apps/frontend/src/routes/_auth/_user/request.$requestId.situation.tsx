@@ -1,14 +1,15 @@
+import { ROLES } from '@sirena/common/constants';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { z } from 'zod';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { SituationForm } from '@/components/situation/SituationForm';
 import { useSituationSave } from '@/hooks/mutations/useSituationSave';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
-import { requireAuth } from '@/lib/auth-guards';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { formatSituationFromServer } from '@/lib/situation';
 
 export const Route = createFileRoute('/_auth/_user/request/$requestId/situation')({
-  beforeLoad: requireAuth,
+  beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]),
   params: {
     parse: (params: Record<string, string>) => ({
       requestId: z.string().parse(params.requestId),
