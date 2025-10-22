@@ -91,17 +91,25 @@ export const isUserOwner = async (userId: string, uploadedFileIds: UploadedFile[
   return count === uploadedFileIds.length;
 };
 
+const updateFilesWithRelation = async (
+  uploadedFileIds: UploadedFile['id'][],
+  relationData: Record<string, string>,
+  entiteId: string | null = null,
+) => {
+  await prisma.uploadedFile.updateMany({
+    where: { id: { in: uploadedFileIds } },
+    data: { ...relationData, status: 'COMPLETED', entiteId } as Prisma.UploadedFileUpdateManyMutationInput,
+  });
+
+  return prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileIds } } });
+};
+
 export const setNoteFile = async (
   noteId: string,
   uploadedFileId: UploadedFile['id'][],
   entiteId: string | null = null,
 ) => {
-  await prisma.uploadedFile.updateMany({
-    where: { id: { in: uploadedFileId } },
-    data: { requeteEtapeNoteId: noteId, status: 'COMPLETED', entiteId: entiteId },
-  });
-
-  return await prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileId } } });
+  return updateFilesWithRelation(uploadedFileId, { requeteEtapeNoteId: noteId }, entiteId);
 };
 
 export const setRequeteFile = async (
@@ -109,12 +117,7 @@ export const setRequeteFile = async (
   uploadedFileId: UploadedFile['id'][],
   entiteId: string | null = null,
 ) => {
-  await prisma.uploadedFile.updateMany({
-    where: { id: { in: uploadedFileId } },
-    data: { requeteId, status: 'COMPLETED', entiteId },
-  });
-
-  return await prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileId } } });
+  return updateFilesWithRelation(uploadedFileId, { requeteId }, entiteId);
 };
 
 export const setFaitFiles = async (
@@ -122,12 +125,7 @@ export const setFaitFiles = async (
   uploadedFileId: UploadedFile['id'][],
   entiteId: string | null = null,
 ) => {
-  await prisma.uploadedFile.updateMany({
-    where: { id: { in: uploadedFileId } },
-    data: { faitSituationId, status: 'COMPLETED', entiteId },
-  });
-
-  return await prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileId } } });
+  return updateFilesWithRelation(uploadedFileId, { faitSituationId }, entiteId);
 };
 
 export const setDemarchesEngageesFiles = async (
@@ -135,12 +133,7 @@ export const setDemarchesEngageesFiles = async (
   uploadedFileId: UploadedFile['id'][],
   entiteId: string | null = null,
 ) => {
-  await prisma.uploadedFile.updateMany({
-    where: { id: { in: uploadedFileId } },
-    data: { demarchesEngageesId, status: 'COMPLETED', entiteId },
-  });
-
-  return await prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileId } } });
+  return updateFilesWithRelation(uploadedFileId, { demarchesEngageesId }, entiteId);
 };
 
 export const isFileBelongsToRequete = async (fileId: UploadedFile['id'], requeteId: string): Promise<boolean> => {

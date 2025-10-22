@@ -28,6 +28,58 @@ const toNullableId = (value: string | undefined | null): string | null => {
   return value;
 };
 
+const cleanNullOrEmpty = <T>(value: T | undefined | null): T | '' => {
+  return value || ('' as T | '');
+};
+
+const parseNullableDate = (dateString: string | undefined | null): Date | null => {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const SITUATION_INCLUDE_BASE = {
+  lieuDeSurvenue: {
+    include: { adresse: true },
+  },
+  misEnCause: true,
+  faits: true,
+  demarchesEngagees: {
+    include: {
+      demarches: true,
+      etablissementReponse: true,
+    },
+  },
+};
+
+const SITUATION_INCLUDE_FULL = {
+  lieuDeSurvenue: {
+    include: { adresse: true, lieuType: true, transportType: true },
+  },
+  misEnCause: {
+    include: {
+      misEnCauseType: true,
+      professionType: true,
+      professionDomicileType: true,
+    },
+  },
+  faits: {
+    include: {
+      motifs: { include: { motif: true } },
+      consequences: { include: { consequence: true } },
+      maltraitanceTypes: { include: { maltraitanceType: true } },
+      fichiers: true,
+    },
+  },
+  demarchesEngagees: {
+    include: {
+      demarches: true,
+      autoriteType: true,
+      etablissementReponse: true,
+    },
+  },
+};
+
 // TODO handle entiteIds
 export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
   const { offset = 0, limit, sort = 'requete.createdAt', order = 'desc', search } = query;
@@ -548,6 +600,172 @@ export const updateRequeteParticipant = async (
   });
 };
 
+const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) => {
+  if (!lieuData) return {};
+
+  const hasAdresseData = lieuData.adresse || lieuData.numero || lieuData.rue || lieuData.codePostal || lieuData.ville;
+
+  return {
+    lieuTypeId: toNullableId(lieuData.lieuType),
+    codePostal: cleanNullOrEmpty(lieuData.codePostal),
+    societeTransport: cleanNullOrEmpty(lieuData.societeTransport),
+    finess: cleanNullOrEmpty(lieuData.finess),
+    commentaire: cleanNullOrEmpty(lieuData.commentaire),
+    transportTypeId: toNullableId(lieuData.transportType),
+    adresse: hasAdresseData
+      ? {
+          upsert: {
+            create: {
+              label: cleanNullOrEmpty(lieuData.adresse),
+              numero: cleanNullOrEmpty(lieuData.numero),
+              rue: cleanNullOrEmpty(lieuData.rue),
+              codePostal: cleanNullOrEmpty(lieuData.codePostal),
+              ville: cleanNullOrEmpty(lieuData.ville),
+            },
+            update: {
+              label: cleanNullOrEmpty(lieuData.adresse),
+              numero: cleanNullOrEmpty(lieuData.numero),
+              rue: cleanNullOrEmpty(lieuData.rue),
+              codePostal: cleanNullOrEmpty(lieuData.codePostal),
+              ville: cleanNullOrEmpty(lieuData.ville),
+            },
+          },
+        }
+      : undefined,
+  };
+};
+
+const buildMisEnCauseUpdate = (misEnCauseData: SituationInput['misEnCause']) => {
+  if (!misEnCauseData) return {};
+
+  return {
+    misEnCauseTypeId: toNullableId(misEnCauseData.misEnCauseType),
+    professionTypeId: toNullableId(misEnCauseData.professionType),
+    professionDomicileTypeId: toNullableId(misEnCauseData.professionDomicileType),
+    rpps: misEnCauseData.rpps || null,
+    commentaire: cleanNullOrEmpty(misEnCauseData.commentaire),
+  };
+};
+
+const buildDemarchesEngageesUpdate = (demarchesData: SituationInput['demarchesEngagees']) => {
+  if (!demarchesData) return {};
+
+  return {
+    dateContactEtablissement: parseNullableDate(demarchesData.dateContactEtablissement),
+    etablissementARepondu: demarchesData.etablissementARepondu ?? null,
+    organisme: cleanNullOrEmpty(demarchesData.organisme),
+    datePlainte: parseNullableDate(demarchesData.datePlainte),
+    commentaire: cleanNullOrEmpty(demarchesData.commentaire),
+    autoriteTypeId: toNullableId(demarchesData.autoriteType),
+    demarches: demarchesData.demarches?.length
+      ? { set: demarchesData.demarches.map((demarcheId) => ({ id: demarcheId })) }
+      : { set: [] },
+  };
+};
+
+const updateFaitRelations = async (
+  tx: Prisma.TransactionClient,
+  situationId: string,
+  faitData: SituationInput['fait'],
+) => {
+  if (!faitData) return;
+
+  await Promise.all([
+    tx.faitMotif.deleteMany({ where: { situationId } }),
+    tx.faitConsequence.deleteMany({ where: { situationId } }),
+    tx.faitMaltraitanceType.deleteMany({ where: { situationId } }),
+  ]);
+
+  await tx.fait.update({
+    where: { situationId },
+    data: {
+      dateDebut: parseNullableDate(faitData.dateDebut),
+      dateFin: parseNullableDate(faitData.dateFin),
+      commentaire: cleanNullOrEmpty(faitData.commentaire),
+      autresPrecisions: cleanNullOrEmpty(faitData.autresPrecisions),
+    },
+  });
+
+  if (faitData.sousMotifs?.length) {
+    for (const sousMotifLabel of faitData.sousMotifs) {
+      const motif = await tx.motifEnum.upsert({
+        where: { label: sousMotifLabel },
+        create: { label: sousMotifLabel },
+        update: {},
+      });
+
+      await tx.faitMotif.create({
+        data: { situationId, motifId: motif.id },
+      });
+    }
+  }
+
+  const relationCreates = [];
+  if (faitData.consequences?.length) {
+    relationCreates.push(
+      tx.faitConsequence.createMany({
+        data: faitData.consequences.map((consequenceId) => ({ situationId, consequenceId })),
+      }),
+    );
+  }
+
+  if (faitData.maltraitanceTypes?.length) {
+    relationCreates.push(
+      tx.faitMaltraitanceType.createMany({
+        data: faitData.maltraitanceTypes.map((maltraitanceTypeId) => ({ situationId, maltraitanceTypeId })),
+      }),
+    );
+  }
+
+  if (relationCreates.length > 0) {
+    await Promise.all(relationCreates);
+  }
+};
+
+const updateExistingSituation = async (
+  tx: Prisma.TransactionClient,
+  existingSituation: { id: string; faits: unknown[] },
+  situationData: SituationInput,
+) => {
+  await tx.situation.update({
+    where: { id: existingSituation.id },
+    data: {
+      lieuDeSurvenue: { update: buildLieuDeSurvenueUpdate(situationData.lieuDeSurvenue) },
+      misEnCause: { update: buildMisEnCauseUpdate(situationData.misEnCause) },
+      demarchesEngagees: { update: buildDemarchesEngageesUpdate(situationData.demarchesEngagees) },
+    },
+  });
+
+  const [existingFait] = existingSituation.faits;
+  if (existingFait) {
+    await updateFaitRelations(tx, existingSituation.id, situationData.fait);
+  } else if (situationData.fait) {
+    const faitCreateData = mapSituationFaitToPrismaCreate(existingSituation.id, situationData.fait);
+    if (faitCreateData) {
+      await tx.fait.create({ data: faitCreateData });
+    }
+  }
+};
+
+const createNewSituation = async (tx: Prisma.TransactionClient, requeteId: string, situationData: SituationInput) => {
+  const situationCreateData = mapSituationToPrismaCreate(situationData);
+  const createdSituation = await tx.situation.create({
+    data: {
+      ...situationCreateData,
+      requete: { connect: { id: requeteId } },
+    },
+  });
+
+  if (situationData.fait) {
+    const faitCreateData = mapSituationFaitToPrismaCreate(createdSituation.id, situationData.fait);
+    if (faitCreateData) {
+      await tx.fait.create({ data: faitCreateData });
+    }
+  }
+
+  return createdSituation;
+};
+
 export const updateRequeteSituation = async (
   requeteId: string,
   situationId: string | undefined,
@@ -555,23 +773,7 @@ export const updateRequeteSituation = async (
 ) => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
-    include: {
-      situations: {
-        include: {
-          lieuDeSurvenue: {
-            include: { adresse: true },
-          },
-          misEnCause: true,
-          faits: true,
-          demarchesEngagees: {
-            include: {
-              demarches: true,
-              etablissementReponse: true,
-            },
-          },
-        },
-      },
-    },
+    include: { situations: { include: SITUATION_INCLUDE_BASE } },
   });
 
   if (!requete) {
@@ -584,192 +786,14 @@ export const updateRequeteSituation = async (
       : requete.situations[0];
 
     if (existingSituation) {
-      const lieuData = situationData.lieuDeSurvenue;
-      const misEnCauseData = situationData.misEnCause;
-      const faitData = situationData.fait;
-      const demarchesData = situationData.demarchesEngagees;
-
-      await tx.situation.update({
-        where: { id: existingSituation.id },
-        data: {
-          lieuDeSurvenue: {
-            update: {
-              lieuTypeId: toNullableId(lieuData?.lieuType),
-              codePostal: lieuData?.codePostal || '',
-              societeTransport: lieuData?.societeTransport || '',
-              finess: lieuData?.finess || '',
-              commentaire: lieuData?.commentaire || '',
-              transportTypeId: toNullableId(lieuData?.transportType),
-              adresse:
-                lieuData?.adresse || lieuData?.numero || lieuData?.rue || lieuData?.codePostal || lieuData?.ville
-                  ? {
-                      upsert: {
-                        create: {
-                          label: lieuData?.adresse || '',
-                          numero: lieuData?.numero || '',
-                          rue: lieuData?.rue || '',
-                          codePostal: lieuData?.codePostal || '',
-                          ville: lieuData?.ville || '',
-                        },
-                        update: {
-                          label: lieuData?.adresse || '',
-                          numero: lieuData?.numero || '',
-                          rue: lieuData?.rue || '',
-                          codePostal: lieuData?.codePostal || '',
-                          ville: lieuData?.ville || '',
-                        },
-                      },
-                    }
-                  : undefined,
-            },
-          },
-          misEnCause: {
-            update: {
-              misEnCauseTypeId: toNullableId(misEnCauseData?.misEnCauseType),
-              professionTypeId: toNullableId(misEnCauseData?.professionType),
-              professionDomicileTypeId: toNullableId(misEnCauseData?.professionDomicileType),
-              rpps: misEnCauseData?.rpps || null,
-              commentaire: misEnCauseData?.commentaire || '',
-            },
-          },
-          demarchesEngagees: {
-            update: {
-              dateContactEtablissement: demarchesData?.dateContactEtablissement
-                ? new Date(demarchesData.dateContactEtablissement)
-                : null,
-              etablissementARepondu: demarchesData?.etablissementARepondu ?? null,
-              organisme: demarchesData?.organisme || '',
-              datePlainte: demarchesData?.datePlainte ? new Date(demarchesData.datePlainte) : null,
-              commentaire: demarchesData?.commentaire || '',
-              autoriteTypeId: toNullableId(demarchesData?.autoriteType),
-              demarches: demarchesData?.demarches?.length
-                ? {
-                    set: demarchesData.demarches.map((demarcheId) => ({ id: demarcheId })),
-                  }
-                : { set: [] },
-            },
-          },
-        },
-      });
-
-      const [existingFait] = existingSituation.faits;
-      if (existingFait) {
-        await tx.faitMotif.deleteMany({
-          where: { situationId: existingSituation.id },
-        });
-        await tx.faitConsequence.deleteMany({
-          where: { situationId: existingSituation.id },
-        });
-        await tx.faitMaltraitanceType.deleteMany({
-          where: { situationId: existingSituation.id },
-        });
-
-        await tx.fait.update({
-          where: { situationId: existingSituation.id },
-          data: {
-            dateDebut: faitData?.dateDebut ? new Date(faitData.dateDebut) : null,
-            dateFin: faitData?.dateFin ? new Date(faitData.dateFin) : null,
-            commentaire: faitData?.commentaire || '',
-            autresPrecisions: faitData?.autresPrecisions || '',
-          },
-        });
-
-        if (faitData?.sousMotifs?.length) {
-          for (const sousMotifLabel of faitData.sousMotifs) {
-            const motif = await tx.motifEnum.upsert({
-              where: { label: sousMotifLabel },
-              create: { label: sousMotifLabel },
-              update: {},
-            });
-
-            await tx.faitMotif.create({
-              data: {
-                situationId: existingSituation.id,
-                motifId: motif.id,
-              },
-            });
-          }
-        }
-
-        if (faitData?.consequences?.length) {
-          await tx.faitConsequence.createMany({
-            data: faitData.consequences.map((consequenceId) => ({
-              situationId: existingSituation.id,
-              consequenceId,
-            })),
-          });
-        }
-
-        if (faitData?.maltraitanceTypes?.length) {
-          await tx.faitMaltraitanceType.createMany({
-            data: faitData.maltraitanceTypes.map((maltraitanceTypeId) => ({
-              situationId: existingSituation.id,
-              maltraitanceTypeId,
-            })),
-          });
-        }
-      } else if (faitData) {
-        const faitCreateData = mapSituationFaitToPrismaCreate(existingSituation.id, faitData);
-        if (faitCreateData) {
-          await tx.fait.create({
-            data: faitCreateData,
-          });
-        }
-      }
+      await updateExistingSituation(tx, existingSituation, situationData);
     } else {
-      const situationCreateData = mapSituationToPrismaCreate(situationData);
-      const createdSituation = await tx.situation.create({
-        data: {
-          ...situationCreateData,
-          requete: {
-            connect: { id: requeteId },
-          },
-        },
-      });
-
-      if (situationData.fait) {
-        const faitCreateData = mapSituationFaitToPrismaCreate(createdSituation.id, situationData.fait);
-        if (faitCreateData) {
-          await tx.fait.create({
-            data: faitCreateData,
-          });
-        }
-      }
+      await createNewSituation(tx, requeteId, situationData);
     }
 
     return tx.requete.findUnique({
       where: { id: requeteId },
-      include: {
-        situations: {
-          include: {
-            lieuDeSurvenue: {
-              include: { adresse: true, lieuType: true, transportType: true },
-            },
-            misEnCause: {
-              include: {
-                misEnCauseType: true,
-                professionType: true,
-                professionDomicileType: true,
-              },
-            },
-            faits: {
-              include: {
-                motifs: { include: { motif: true } },
-                consequences: { include: { consequence: true } },
-                maltraitanceTypes: { include: { maltraitanceType: true } },
-                fichiers: true,
-              },
-            },
-            demarchesEngagees: {
-              include: {
-                demarches: true,
-                autoriteType: true,
-                etablissementReponse: true,
-              },
-            },
-          },
-        },
-      },
+      include: { situations: { include: SITUATION_INCLUDE_FULL } },
     });
   });
 
@@ -777,51 +801,26 @@ export const updateRequeteSituation = async (
     const situation = situationId ? result.situations.find((s) => s.id === situationId) : result.situations[0];
 
     if (situation) {
+      const fileUpdates = [];
+
       if (situationData.fait?.fileIds?.length) {
-        await setFaitFiles(situation.id, situationData.fait.fileIds, null);
+        fileUpdates.push(setFaitFiles(situation.id, situationData.fait.fileIds, null));
       }
 
       if (situationData.demarchesEngagees?.fileIds?.length && situation.demarchesEngagees) {
-        await setDemarchesEngageesFiles(situation.demarchesEngagees.id, situationData.demarchesEngagees.fileIds, null);
+        fileUpdates.push(
+          setDemarchesEngageesFiles(situation.demarchesEngagees.id, situationData.demarchesEngagees.fileIds, null),
+        );
+      }
+
+      if (fileUpdates.length > 0) {
+        await Promise.all(fileUpdates);
       }
     }
   }
 
-  // Re-fetch to include the newly linked files
-  const updatedResult = await prisma.requete.findUnique({
+  return prisma.requete.findUnique({
     where: { id: requeteId },
-    include: {
-      situations: {
-        include: {
-          lieuDeSurvenue: {
-            include: { adresse: true, lieuType: true, transportType: true },
-          },
-          misEnCause: {
-            include: {
-              misEnCauseType: true,
-              professionType: true,
-              professionDomicileType: true,
-            },
-          },
-          faits: {
-            include: {
-              motifs: { include: { motif: true } },
-              consequences: { include: { consequence: true } },
-              maltraitanceTypes: { include: { maltraitanceType: true } },
-              fichiers: true,
-            },
-          },
-          demarchesEngagees: {
-            include: {
-              demarches: true,
-              autoriteType: true,
-              etablissementReponse: true,
-            },
-          },
-        },
-      },
-    },
+    include: { situations: { include: SITUATION_INCLUDE_FULL } },
   });
-
-  return updatedResult;
 };
