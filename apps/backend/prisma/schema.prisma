@@ -372,9 +372,10 @@ model Fait {
   situationId String    @id
   situation   Situation @relation(fields: [situationId], references: [id], onDelete: Cascade)
 
-  dateDebut   DateTime?
-  dateFin     DateTime?
-  commentaire String    @default("")
+  dateDebut         DateTime?
+  dateFin           DateTime?
+  commentaire       String    @default("")
+  autresPrecisions  String    @default("")
 
   fichiers UploadedFile[]
 

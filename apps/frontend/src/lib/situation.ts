@@ -50,7 +50,7 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
           commentaire: fait.commentaire || undefined,
           dateDebut: fait.dateDebut ? new Date(fait.dateDebut).toISOString().split('T')[0] : undefined,
           dateFin: fait.dateFin ? new Date(fait.dateFin).toISOString().split('T')[0] : undefined,
-          autresPrecisions: undefined,
+          autresPrecisions: fait.autresPrecisions || undefined,
           consequences: fait.consequences?.map((c) => c.consequence.id) || undefined,
           fileIds: fait.fichiers?.map((f) => f.id) || undefined,
           files: formatFilesFromServer(fait.fichiers),

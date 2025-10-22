@@ -670,6 +670,7 @@ export const updateRequeteSituation = async (
             dateDebut: faitData?.dateDebut ? new Date(faitData.dateDebut) : null,
             dateFin: faitData?.dateFin ? new Date(faitData.dateFin) : null,
             commentaire: faitData?.commentaire || '',
+            autresPrecisions: faitData?.autresPrecisions || '',
           },
         });
 

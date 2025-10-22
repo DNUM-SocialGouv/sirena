@@ -176,6 +176,13 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
           </>
         )}
 
+        {fait?.autresPrecisions && (
+          <>
+            <SectionTitle>Autres précisions</SectionTitle>
+            <p className="fr-mb-3w">{fait.autresPrecisions}</p>
+          </>
+        )}
+
         {fait?.fichiers?.length > 0 && (
           <>
             <SectionTitle>Pièces jointes</SectionTitle>

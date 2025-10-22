@@ -148,6 +148,7 @@ export const mapSituationFaitToPrismaCreate = (situationId: string, faitData?: S
     dateDebut: faitData.dateDebut ? new Date(faitData.dateDebut) : null,
     dateFin: faitData.dateFin ? new Date(faitData.dateFin) : null,
     commentaire: faitData.commentaire || '',
+    autresPrecisions: faitData.autresPrecisions || '',
     motifs: faitData.sousMotifs?.length
       ? {
           create: faitData.sousMotifs.map((sousMotifLabel) => ({
