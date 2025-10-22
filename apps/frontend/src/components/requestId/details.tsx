@@ -6,6 +6,7 @@ import { useCanEdit } from '@/hooks/useCanEdit';
 import { DeclarantSection } from './sections/DeclarantSection';
 import { PersonneConcerneeSection } from './sections/PersonneConcerneeSection';
 import { RequeteFileUploadSection } from './sections/RequeteFileUploadSection';
+import { SituationSection } from './sections/SituationSection';
 
 interface DetailsProps {
   requestId?: string;
@@ -15,6 +16,7 @@ export const Details = ({ requestId }: DetailsProps) => {
   const navigate = useNavigate();
   const declarantSectionId = useId();
   const personneSectionId = useId();
+  const situationSectionId = useId();
   const requestQuery = useRequeteDetails(requestId);
   const { canEdit } = useCanEdit();
 
@@ -35,11 +37,20 @@ export const Details = ({ requestId }: DetailsProps) => {
     }
   };
 
+  const handleEditSituation = () => {
+    if (requestId) {
+      navigate({ to: '/request/$requestId/situation', params: { requestId } });
+    } else {
+      navigate({ to: '/request/create/situation' });
+    }
+  };
+
   if (!requestId) {
     return (
       <>
         <DeclarantSection id={declarantSectionId} onEdit={handleEditDeclarant} />
         <PersonneConcerneeSection id={personneSectionId} onEdit={handleEditPersonneConcernee} />
+        <SituationSection id={situationSectionId} requestId={requestId} onEdit={handleEditSituation} />
         <RequeteFileUploadSection requeteId={requestId} mode="create" />
       </>
     );
@@ -50,11 +61,18 @@ export const Details = ({ requestId }: DetailsProps) => {
       {() => {
         const declarant = requestQuery.data?.requete?.declarant;
         const personne = requestQuery.data?.requete?.participant;
+        const [situation] = requestQuery.data?.requete?.situations ?? [];
 
         return (
           <>
             <DeclarantSection id={declarantSectionId} declarant={declarant} onEdit={handleEditDeclarant} />
             <PersonneConcerneeSection id={personneSectionId} personne={personne} onEdit={handleEditPersonneConcernee} />
+            <SituationSection
+              id={situationSectionId}
+              requestId={requestId}
+              situation={situation}
+              onEdit={handleEditSituation}
+            />
             <RequeteFileUploadSection
               requeteId={requestId}
               mode="edit"

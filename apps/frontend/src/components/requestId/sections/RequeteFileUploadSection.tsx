@@ -274,8 +274,9 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
           <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
             <ul>
               {files.map((file, index) => {
-                const originalName =
-                  (file as UploadedFile & { metadata: { originalName?: string } }).metadata?.originalName || 'Unknown';
+                const fileWithMetadata = file as UploadedFile & { metadata: { originalName?: string } };
+                const originalName = fileWithMetadata.metadata?.originalName || 'Unknown';
+                const fileExtension = originalName.split('.')?.[1]?.toUpperCase();
 
                 return (
                   <li key={file.id} className={noteStyles['request-note__file']}>
@@ -305,7 +306,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
                       )}
                     </div>
                     <p className={fr.cx('fr-text--xs')}>
-                      {originalName.split('.')?.[1]?.toUpperCase()} - {(file.size / 1024).toFixed(2)} Ko
+                      {fileExtension} - {(file.size / 1024).toFixed(2)} Ko
                     </p>
                   </li>
                 );

@@ -4,7 +4,6 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import {
-  MALTRAITANCE_TYPE,
   type Motif,
   motifShortLabels,
   REQUETE_STATUT_TYPES,
@@ -110,7 +109,10 @@ export function RequetesEntite() {
       );
     },
     'custom:personne': (row) => {
-      const { declarant, participant } = row.requete;
+      const requete = row.requete as typeof row.requete & {
+        participant?: { estVictime?: boolean; identite?: { prenom: string; nom: string } } | null;
+      };
+      const { declarant, participant } = requete;
       if (declarant?.estVictime && declarant.identite) {
         return (
           <span className="one-line">
@@ -128,14 +130,18 @@ export function RequetesEntite() {
       return '-';
     },
     'custom:motifs': (row) => {
-      const situation = row.requete.situations?.[0];
+      const requete = row.requete as typeof row.requete & {
+        situations?: Array<{
+          faits?: Array<{
+            motifs?: Array<{ motifId: string }>;
+            maltraitanceTypes?: Array<unknown>;
+          }>;
+        }>;
+      };
+      const situation = requete.situations?.[0];
       const fait = situation?.faits?.[0];
       const motifs = fait?.motifs || [];
-      const isMaltraitance =
-        fait?.maltraitanceTypes?.filter(
-          (elem) =>
-            elem.maltraitanceTypeId !== MALTRAITANCE_TYPE.NON || elem.maltraitanceTypeId !== MALTRAITANCE_TYPE.NON,
-        ).length > 0;
+      const isMaltraitance = (fait?.maltraitanceTypes?.length ?? 0) > 0;
       return (
         <>
           <div>
@@ -145,7 +151,7 @@ export function RequetesEntite() {
               </Badge>
             )}
           </div>
-          {motifs.length && (
+          {motifs.length > 0 && (
             <ul>
               {motifs.map((motif) => (
                 <li key={motif.motifId}>{motifShortLabels[motif.motifId as Motif]}</li>

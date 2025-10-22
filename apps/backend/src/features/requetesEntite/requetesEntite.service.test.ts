@@ -112,6 +112,7 @@ describe('requetesEntite.service', () => {
                       consequences: true,
                       maltraitanceTypes: true,
                       motifs: true,
+                      fichiers: true,
                     },
                   },
                   lieuDeSurvenue: true,
@@ -171,6 +172,7 @@ describe('requetesEntite.service', () => {
                       consequences: true,
                       maltraitanceTypes: true,
                       motifs: true,
+                      fichiers: true,
                     },
                   },
                   lieuDeSurvenue: true,
@@ -230,6 +232,7 @@ describe('requetesEntite.service', () => {
                       consequences: true,
                       maltraitanceTypes: true,
                       motifs: true,
+                      fichiers: true,
                     },
                   },
                   lieuDeSurvenue: true,
@@ -304,6 +307,35 @@ describe('requetesEntite.service', () => {
                 },
               },
               fichiersRequeteOriginale: true,
+              situations: {
+                include: {
+                  lieuDeSurvenue: {
+                    include: { adresse: true, lieuType: true, transportType: true },
+                  },
+                  misEnCause: {
+                    include: {
+                      misEnCauseType: true,
+                      professionType: true,
+                      professionDomicileType: true,
+                    },
+                  },
+                  faits: {
+                    include: {
+                      motifs: { include: { motif: true } },
+                      consequences: { include: { consequence: true } },
+                      maltraitanceTypes: { include: { maltraitanceType: true } },
+                      fichiers: true,
+                    },
+                  },
+                  demarchesEngagees: {
+                    include: {
+                      demarches: true,
+                      autoriteType: true,
+                      etablissementReponse: true,
+                    },
+                  },
+                },
+              },
             },
           },
           requeteEtape: {
