@@ -29,9 +29,12 @@ export function InfoSection({
 }: InfoSectionProps) {
   const [isDetailsExpanded, setIsDetailsExpanded] = React.useState(false);
 
-  const isEmpty = !renderSummary && !renderDetails;
-  const hasSummary = !!renderSummary;
-  const hasDetails = !!renderDetails;
+  const summaryContent = renderSummary?.();
+  const detailsContent = renderDetails?.();
+
+  const isEmpty = !summaryContent && !detailsContent;
+  const hasSummary = !!summaryContent;
+  const hasDetails = !!detailsContent;
   const shouldShowSummary = replaceSummaryWithDetails ? !isDetailsExpanded && hasSummary : hasSummary;
 
   const editLabel = isEmpty ? 'Compléter' : 'Éditer';
@@ -66,7 +69,7 @@ export function InfoSection({
         <p className={fr.cx('fr-text--xs')}>{emptyLabel}</p>
       ) : (
         <>
-          {shouldShowSummary && renderSummary?.()}
+          {shouldShowSummary && summaryContent}
           {hasDetails && (
             <div className={fr.cx('fr-mt-2w')}>
               <Accordion
@@ -75,7 +78,7 @@ export function InfoSection({
                 onExpandedChange={toggleDetails}
                 id={detailsId}
               >
-                {renderDetails?.() || <div>{emptyLabel}</div>}
+                {detailsContent || <div>{emptyLabel}</div>}
               </Accordion>
             </div>
           )}

@@ -3,13 +3,14 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { requeteClotureReasonLabels } from '@sirena/common/constants';
-import { forwardRef, useId, useImperativeHandle, useMemo, useState } from 'react';
+import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useCloseRequete } from '@/hooks/mutations/closeRequete.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import { HttpError } from '@/lib/api/tanstackQuery';
+import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 
 export type CloseRequeteModalRef = {
-  openModal: () => void;
+  openModal: (closeButtonRef?: React.RefObject<HTMLButtonElement | null>) => void;
 };
 
 export type CloseRequeteModalProps = {
@@ -25,12 +26,15 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     const [reasonId, setReasonId] = useState<string>('');
     const [precision, setPrecision] = useState<string>('');
     const [files, setFiles] = useState<File[]>([]);
+    const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
     const [errors, setErrors] = useState<{ reasonId?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [closeButtonRef, setCloseButtonRef] = useState<React.RefObject<HTMLButtonElement | null> | null>(null);
 
     const closeRequeteMutation = useCloseRequete(requestId);
     const uploadFileMutation = useUploadFile({ silentToastError: true });
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const cleanupRef = useRef<(() => void) | null>(null);
 
     const closeModal = useMemo(
       () =>
@@ -41,19 +45,62 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       [],
     );
 
-    const openModal = () => {
+    const openModal = (buttonRef?: React.RefObject<HTMLButtonElement | null>) => {
       setReasonId('');
       setPrecision('');
       setFiles([]);
+      setFileErrors({});
       setErrors({});
       setIsSubmitting(false);
       setErrorMessage(null);
+      setCloseButtonRef(buttonRef || null);
       closeModal.open();
+      setTimeout(() => {
+        addModalEventListener();
+      }, 50);
     };
 
     useImperativeHandle(ref, () => ({
       openModal,
     }));
+
+    useEffect(() => {
+      return () => {
+        if (cleanupRef.current) {
+          cleanupRef.current();
+          cleanupRef.current = null;
+        }
+      };
+    }, []);
+
+    const addModalEventListener = () => {
+      const handleModalClose = () => {
+        setTimeout(() => {
+          closeButtonRef?.current?.focus();
+        }, 100);
+      };
+
+      const checkForModal = () => {
+        const modalElement = document.querySelector(`#${closeModal.id}`);
+
+        if (modalElement) {
+          modalElement.addEventListener('dsfr.conceal', handleModalClose);
+
+          cleanupRef.current = () => {
+            modalElement.removeEventListener('dsfr.conceal', handleModalClose);
+          };
+
+          return true;
+        }
+        return false;
+      };
+
+      if (!checkForModal()) {
+        setTimeout(() => {
+          checkForModal();
+        }, 100);
+      }
+    };
 
     const validateForm = (): boolean => {
       const newErrors: { reasonId?: string } = {};
@@ -74,6 +121,12 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
     const handleSubmit = async () => {
       if (!validateForm()) {
+        return;
+      }
+
+      const newFileErrors = validateFiles(files);
+      if (Object.keys(newFileErrors).length > 0) {
+        setFileErrors(newFileErrors);
         return;
       }
 
@@ -206,6 +259,30 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
           />
         </div>
 
+        {Object.keys(fileErrors).length > 0 && (
+          <div className="fr-mb-4w">
+            <h4 className="fr-text--sm fr-text--bold" style={{ color: 'var(--text-default-error)' }}>
+              Erreurs de validation
+            </h4>
+            {Object.entries(fileErrors).map(([fileName, errors]) => (
+              <div key={fileName} className="fr-mb-1w">
+                <p className="fr-text--sm fr-text--bold" style={{ color: 'var(--text-default-error)' }}>
+                  {fileName}
+                </p>
+                {errors.map((error, index) => (
+                  <p
+                    key={`${fileName}-error-${error.type}-${error.message}-${index}`}
+                    className="fr-text--xs"
+                    style={{ color: 'var(--text-default-error)' }}
+                  >
+                    {error.message}
+                  </p>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="fr-mb-4w">
           <Upload
             label="Pièces jointes (facultatif)"
@@ -221,7 +298,8 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
                 const files = e.target.files;
                 if (files) {
                   const fileArray = Array.from(files);
-                  setFiles(fileArray);
+                  setFiles(fileArray.map((file) => new File([file], file.name, { type: file.type })));
+                  setFileErrors({});
                 }
               },
             }}

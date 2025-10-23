@@ -136,7 +136,7 @@ export const DeclarantSection = ({ requestId, id, declarant, onEdit }: Declarant
       canEdit={canEdit}
       renderSummary={renderSummary}
       renderDetails={isFulfilled ? renderDetails : undefined}
-      emptyLabel="Aucune information sur le déclarant"
+      emptyLabel="Aucune information"
       replaceSummaryWithDetails={true}
     />
   );

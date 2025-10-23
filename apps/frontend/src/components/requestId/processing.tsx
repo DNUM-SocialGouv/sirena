@@ -26,6 +26,7 @@ export const Processing = ({ requestId }: ProcessingProps = {}) => {
   const createNoteDrawerRef = useRef<CreateNoteDrawerRef>(null);
   const editNoteDrawerRef = useRef<EditNoteDrawerRef>(null);
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
+  const closeRequeteButtonRef = useRef<HTMLButtonElement>(null);
   const queryProcessingSteps = useProcessingSteps(requestId || '');
   const requestQuery = useRequeteDetails(requestId);
   const { canEdit } = useCanEdit({ requeteId: requestId });
@@ -44,7 +45,7 @@ export const Processing = ({ requestId }: ProcessingProps = {}) => {
   const handleOpenEdit = (step: StepType) => createNoteDrawerRef.current?.openDrawer(step);
   const handleOpenEditNote = (step: StepType, noteData: NoteData) =>
     editNoteDrawerRef.current?.openDrawer(step, noteData);
-  const handleCloseRequete = () => closeRequeteModalRef.current?.openModal();
+  const handleCloseRequete = () => closeRequeteModalRef.current?.openModal(closeRequeteButtonRef);
 
   const content = requestId ? (
     <>
@@ -106,7 +107,13 @@ export const Processing = ({ requestId }: ProcessingProps = {}) => {
                 </div>
                 {requestId && canEdit && (
                   <div className="fr-col-auto">
-                    <Button className="fr-mr-2w" size="small" priority="primary" onClick={handleCloseRequete}>
+                    <Button
+                      ref={closeRequeteButtonRef}
+                      className="fr-mr-2w"
+                      size="small"
+                      priority="primary"
+                      onClick={handleCloseRequete}
+                    >
                       Clôturer la requête
                     </Button>
                     <Button

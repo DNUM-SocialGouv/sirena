@@ -142,7 +142,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
       canEdit={canEdit}
       renderSummary={renderSummary}
       renderDetails={isFulfilled ? renderDetails : undefined}
-      emptyLabel="Aucune information sur la personne concernée"
+      emptyLabel="Aucune information"
       replaceSummaryWithDetails={true}
     />
   );
