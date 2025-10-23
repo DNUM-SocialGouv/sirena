@@ -148,10 +148,12 @@ export const CONSEQUENCE = {
 export type Consequence = keyof typeof CONSEQUENCE;
 
 export const consequenceLabels: Record<Consequence, string> = {
-  SANTE: 'Sur la santé physique et/ou psychique',
-  DROITS: 'Sur les droits',
-  BESOINS: 'Sur les besoins fondamentaux et spécifiques',
-  SOCIAL: 'Sur le développement, la participation sociale',
+  SANTE: 'Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...)',
+  DROITS: 'Sur les droits (impossible de porter plainte, d’être écouté, d’avoir un soutien...)',
+  BESOINS:
+    'Sur les besoins du quotidien (difficulté à manger, dormir, se laver, ou à recevoir l’aide dont elle a besoin...)',
+  SOCIAL:
+    'Sur la vie sociale ( isolement, rejet, mise à l’écart, difficulté à aller à l’école, au travail ou à participer à des activités...)',
   AUTRE: 'Autre conséquence',
 };
 
@@ -644,7 +646,7 @@ export const DEMARCHES_ENGAGEES = {
 export type DemarchesEngagees = keyof typeof DEMARCHES_ENGAGEES;
 
 export const demarcheEngageeLabels: Record<DemarchesEngagees, string> = {
-  CONTACT_RESPONSABLES: 'Établissement ou mis en cause contacté',
+  CONTACT_RESPONSABLES: "Prise de contact avec l'établissement ou les responsables des faits",
   CONTACT_ORGANISME: "Démarches engagées auprès d'autres organismes",
   PLAINTE: 'Dépôt de plainte',
 };
