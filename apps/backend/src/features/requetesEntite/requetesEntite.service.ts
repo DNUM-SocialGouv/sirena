@@ -898,31 +898,25 @@ export const closeRequeteForEntite = async (
       },
     });
 
-    let noteId: string | null = null;
+    const note = await tx.requeteEtapeNote.create({
+      data: {
+        requeteEtapeId: etape.id,
+        texte: precision?.trim() || '',
+        authorId,
+      },
+    });
 
-    // Create note if precision or files are provided
-    if (precision || (fileIds && fileIds.length > 0)) {
-      const note = await tx.requeteEtapeNote.create({
+    const noteId = note.id;
+
+    if (fileIds && fileIds.length > 0) {
+      await tx.uploadedFile.updateMany({
+        where: {
+          id: { in: fileIds },
+        },
         data: {
-          requeteEtapeId: etape.id,
-          texte: precision?.trim() || '',
-          authorId,
+          requeteEtapeNoteId: noteId,
         },
       });
-
-      noteId = note.id;
-
-      // Attach files to the note if provided
-      if (fileIds && fileIds.length > 0) {
-        await tx.uploadedFile.updateMany({
-          where: {
-            id: { in: fileIds },
-          },
-          data: {
-            requeteEtapeNoteId: noteId,
-          },
-        });
-      }
     }
 
     return {

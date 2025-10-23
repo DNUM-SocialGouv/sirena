@@ -182,6 +182,11 @@ describe('RequeteEtapes.service.ts', () => {
           statutId: true,
           createdAt: true,
           updatedAt: true,
+          clotureReason: {
+            select: {
+              label: true,
+            },
+          },
           notes: {
             orderBy: {
               createdAt: 'desc',
@@ -230,6 +235,11 @@ describe('RequeteEtapes.service.ts', () => {
           statutId: true,
           createdAt: true,
           updatedAt: true,
+          clotureReason: {
+            select: {
+              label: true,
+            },
+          },
           notes: {
             orderBy: {
               createdAt: 'desc',

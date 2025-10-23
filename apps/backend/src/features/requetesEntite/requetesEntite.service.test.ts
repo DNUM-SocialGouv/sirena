@@ -772,12 +772,20 @@ describe('requetesEntite.service', () => {
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
 
+      const mockNote = {
+        id: 'note123',
+      };
+
       transactionSpy.mockImplementation(async (cb) => {
         const mockTx = {
           ...prismaMock,
           requeteEtape: {
             ...prismaMock.requeteEtape,
             create: vi.fn().mockResolvedValue(mockEtape),
+          },
+          requeteEtapeNote: {
+            ...prismaMock.requeteEtapeNote,
+            create: vi.fn().mockResolvedValue(mockNote),
           },
         } as typeof prismaMock;
         return cb(mockTx);
@@ -788,7 +796,7 @@ describe('requetesEntite.service', () => {
       expect(result).toEqual({
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
-        noteId: null,
+        noteId: 'note123',
       });
     });
 

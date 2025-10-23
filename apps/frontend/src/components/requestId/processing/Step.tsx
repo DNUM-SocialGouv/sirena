@@ -232,6 +232,9 @@ const StepComponent = ({
               }))}
               requeteStateId={id}
               onEdit={(noteData) => openEditNote?.({ id, nom, statutId, notes, ...rest }, noteData)}
+              clotureReasonLabel={
+                statutId === REQUETE_STATUT_TYPES.CLOTUREE ? rest.clotureReason?.label || 'Non spécifié' : null
+              }
             />
           ))}
         </div>
