@@ -31,7 +31,7 @@ process.env = {
 
   REDIS_HOST: 'localhost',
   REDIS_PORT: '6379',
-  REDIS_USER: 'redis-user',
+  REDIS_USERNAME: 'redis-username',
   REDIS_PASSWORD: 'redis-password',
 };
 
