@@ -18,7 +18,7 @@ export const Details = ({ requestId }: DetailsProps) => {
   const personneSectionId = useId();
   const situationSectionId = useId();
   const requestQuery = useRequeteDetails(requestId);
-  const { canEdit } = useCanEdit();
+  const { canEdit } = useCanEdit({ requeteId: requestId });
 
   const handleEditDeclarant = () => {
     if (!canEdit) return;
@@ -48,8 +48,8 @@ export const Details = ({ requestId }: DetailsProps) => {
   if (!requestId) {
     return (
       <>
-        <DeclarantSection id={declarantSectionId} onEdit={handleEditDeclarant} />
-        <PersonneConcerneeSection id={personneSectionId} onEdit={handleEditPersonneConcernee} />
+        <DeclarantSection requestId={requestId} id={declarantSectionId} onEdit={handleEditDeclarant} />
+        <PersonneConcerneeSection requestId={requestId} id={personneSectionId} onEdit={handleEditPersonneConcernee} />
         <SituationSection id={situationSectionId} requestId={requestId} onEdit={handleEditSituation} />
         <RequeteFileUploadSection requeteId={requestId} mode="create" />
       </>
@@ -65,8 +65,18 @@ export const Details = ({ requestId }: DetailsProps) => {
 
         return (
           <>
-            <DeclarantSection id={declarantSectionId} declarant={declarant} onEdit={handleEditDeclarant} />
-            <PersonneConcerneeSection id={personneSectionId} personne={personne} onEdit={handleEditPersonneConcernee} />
+            <DeclarantSection
+              requestId={requestId}
+              id={declarantSectionId}
+              declarant={declarant}
+              onEdit={handleEditDeclarant}
+            />
+            <PersonneConcerneeSection
+              requestId={requestId}
+              id={personneSectionId}
+              personne={personne}
+              onEdit={handleEditPersonneConcernee}
+            />
             <SituationSection
               id={situationSectionId}
               requestId={requestId}

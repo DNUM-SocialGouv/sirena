@@ -7,14 +7,15 @@ type DeclarantData = NonNullable<ReturnType<typeof useRequeteDetails>['data']>['
 
 interface DeclarantSectionProps {
   id: string;
+  requestId?: string;
   declarant?: DeclarantData | null;
   onEdit: () => void;
 }
 
-export const DeclarantSection = ({ id, declarant, onEdit }: DeclarantSectionProps) => {
+export const DeclarantSection = ({ requestId, id, declarant, onEdit }: DeclarantSectionProps) => {
   const declarantIdentite = declarant?.identite;
   const declarantAdresse = declarant?.adresse;
-  const { canEdit } = useCanEdit();
+  const { canEdit } = useCanEdit({ requeteId: requestId });
 
   const fullName = formatFullName(
     declarantIdentite

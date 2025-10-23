@@ -7,12 +7,13 @@ type PersonneData = NonNullable<ReturnType<typeof useRequeteDetails>['data']>['r
 
 interface PersonneConcerneeSectionProps {
   id: string;
+  requestId?: string;
   personne?: PersonneData | null;
   onEdit: () => void;
 }
 
-export const PersonneConcerneeSection = ({ id, personne, onEdit }: PersonneConcerneeSectionProps) => {
-  const { canEdit } = useCanEdit();
+export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: PersonneConcerneeSectionProps) => {
+  const { canEdit } = useCanEdit({ requeteId: requestId });
   const personneIdentite = personne?.identite;
   const personneAdresse = personne?.adresse;
 

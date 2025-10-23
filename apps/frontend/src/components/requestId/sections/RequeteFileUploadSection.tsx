@@ -2,15 +2,13 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
-import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
 import { useSetRequeteFile } from '@/hooks/mutations/setRequeteFile.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
-import { profileQueryOptions } from '@/hooks/queries/profile.hook';
+import { useCanEdit } from '@/hooks/useCanEdit';
 import noteStyles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 import styles from './RequeteFileUploadSection.module.css';
@@ -81,11 +79,11 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
   const [fileToDelete, setFileToDelete] = useState<UploadedFile | null>(null);
   const firstFileLinkRef = useRef<HTMLAnchorElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
+  const { canEdit } = useCanEdit({ requeteId: requeteId });
 
   const navigate = useNavigate();
   const toastManager = Toast.useToastManager();
 
-  const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
   const uploadFileMutation = useUploadFile();
   const setRequeteFileMutation = useSetRequeteFile();
   const createRequeteMutation = useCreateRequeteEntite();
@@ -293,7 +291,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
                           {truncateFileName(originalName)}
                         </a>
                       </div>
-                      {profile?.role?.id !== ROLES.READER && (
+                      {canEdit && (
                         <Button
                           aria-label="Supprimer le fichier"
                           title="Supprimer le fichier"
@@ -318,7 +316,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
       {selectedFiles.length === 0 && mode === 'create' && (
         <p className={fr.cx('fr-text--sm', 'fr-text--light')}>Aucun fichier sélectionné.</p>
       )}
-      {profile?.role?.id !== ROLES.READER && (
+      {canEdit && (
         <Upload
           label=""
           hint="Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"

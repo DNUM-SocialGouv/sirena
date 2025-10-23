@@ -55,7 +55,7 @@ const StepComponent = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editStepName, setEditStepName] = useState(nom ?? '');
   const [editError, setEditError] = useState<string | null>(null);
-  const { canEdit } = useCanEdit();
+  const { canEdit } = useCanEdit({ requeteId: requestId });
 
   const badges = [
     {
@@ -73,13 +73,18 @@ const StepComponent = ({
       text: 'À faire',
       value: REQUETE_STATUT_TYPES.A_FAIRE,
     },
+    {
+      type: 'error',
+      text: 'Clôturée',
+      value: REQUETE_STATUT_TYPES.CLOTUREE,
+    },
   ];
 
   const handleStatusChange = (newStatutId: string) => {
-    if (newStatutId !== statutId && id) {
+    if (newStatutId !== statutId && id && newStatutId !== 'CLOTUREE') {
       updateStatusMutation.mutate({
         id,
-        statutId: newStatutId as RequeteStatutType,
+        statutId: newStatutId as Exclude<RequeteStatutType, 'CLOTUREE'>,
       });
     }
   };
@@ -207,6 +212,7 @@ const StepComponent = ({
         <div className={styles['request-notes']}>
           {notes.slice(0, isOpen ? notes.length : 3).map((note: StepType['notes'][number]) => (
             <StepNote
+              requestId={requestId}
               key={note.id}
               content={note.texte}
               author={note.author}

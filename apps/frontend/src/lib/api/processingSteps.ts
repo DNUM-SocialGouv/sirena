@@ -24,7 +24,7 @@ export async function addProcessingStep(requestId: string, data: AddProcessingSt
 }
 
 export type UpdateProcessingStepStatusData = {
-  statutId: RequeteStatutType;
+  statutId: Exclude<RequeteStatutType, 'CLOTUREE'>;
 };
 
 export async function updateProcessingStepStatus(stepId: string, data: UpdateProcessingStepStatusData) {

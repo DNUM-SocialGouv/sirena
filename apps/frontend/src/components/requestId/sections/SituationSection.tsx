@@ -19,7 +19,7 @@ interface SituationSectionProps {
 
 export const SituationSection = ({ id, requestId, situation, onEdit }: SituationSectionProps) => {
   const situationId = situation?.id;
-  const { canEdit } = useCanEdit();
+  const { canEdit } = useCanEdit({ requeteId: requestId });
   const [fait] = situation?.faits ?? [];
   const hasLieu = situation?.lieuDeSurvenue?.lieuType?.label;
   const hasMisEnCause = situation?.misEnCause?.misEnCauseType?.label || situation?.misEnCause?.professionType?.label;

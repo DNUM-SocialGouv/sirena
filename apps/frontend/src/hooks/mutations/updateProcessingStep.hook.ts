@@ -73,7 +73,7 @@ export const useDeleteProcessingStepNote = (requestId: string) => {
 
 type UpdateProcessingStepStatusParams = {
   id: string;
-  statutId: RequeteStatutType;
+  statutId: Exclude<RequeteStatutType, 'CLOTUREE'>;
 };
 
 export const useUpdateProcessingStepStatus = (requestId: string) => {
