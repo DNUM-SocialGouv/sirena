@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { throwHTTPException403Forbidden, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
@@ -20,12 +21,14 @@ import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import {
   addProcessingStepRoute,
+  closeRequeteRoute,
   createRequeteRoute,
   getRequeteEntiteRoute,
   getRequetesEntiteRoute,
 } from './requetesEntite.route';
 import {
   AddProcessingStepBodySchema,
+  CloseRequeteBodySchema,
   CreateRequeteBodySchema,
   GetRequetesEntiteQuerySchema,
   UpdateDeclarantBodySchema,
@@ -34,6 +37,7 @@ import {
   UpdateSituationBodySchema,
 } from './requetesEntite.schema';
 import {
+  closeRequeteForEntite,
   createRequeteEntite,
   getRequeteEntiteById,
   getRequetesEntite,
@@ -427,6 +431,68 @@ const app = factoryWithLogs
       logger.info({ requestId: id, stepId: step.id, userId }, 'Processing step added successfully');
 
       return c.json({ data: step }, 201);
+    },
+  )
+
+  .post(
+    '/:id/close',
+    closeRequeteRoute,
+    zValidator('json', CloseRequeteBodySchema),
+    requeteStatesChangelogMiddleware({ action: ChangeLogAction.CREATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const userId = c.get('userId');
+      const entiteIds = c.get('entiteIds');
+      const { reasonId, precision, fileIds } = c.req.valid('json');
+      const entiteId = entiteIds?.[0];
+
+      if (!entiteId) {
+        return throwHTTPException403Forbidden('You are not allowed to close this requête', {
+          res: c.res,
+        });
+      }
+
+      try {
+        const result = await closeRequeteForEntite(id, entiteId, reasonId, userId, precision, fileIds);
+
+        c.set('changelogId', result.etapeId);
+
+        logger.info(
+          {
+            requeteId: id,
+            entiteId,
+            userId,
+            reasonId,
+            fileCount: fileIds?.length || 0,
+            hasPrecision: !!precision,
+          },
+          'Requête closed successfully',
+        );
+
+        return c.json({ data: result });
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          switch (error.message) {
+            case 'REQUETE_NOT_FOUND':
+              return throwHTTPException404NotFound('Requête not found', { res: c.res });
+            case 'REASON_INVALID':
+              return c.json({ error: 'REASON_INVALID', message: 'Invalid reason provided' }, 400);
+            case 'READONLY_FOR_ENTITY':
+              return c.json(
+                { error: 'READONLY_FOR_ENTITY', message: 'Requête is already closed for this entity' },
+                403,
+              );
+            case 'FILES_INVALID':
+              return c.json({ error: 'FILES_INVALID', message: 'Invalid files provided' }, 400);
+            default:
+              logger.error({ requeteId: id, err: error }, 'Unexpected error closing requête');
+              Sentry.captureException(error);
+              return c.json({ error: 'INTERNAL_ERROR', message: 'Internal server error' }, 500);
+          }
+        }
+        throw error;
+      }
     },
   );
 

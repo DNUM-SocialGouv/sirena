@@ -7,13 +7,20 @@ import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import { getFileStream } from '@/libs/minio';
 import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
+import entitesMiddleware from '@/middlewares/entites.middleware';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service';
 import RequetesEntiteController from './requetesEntite.controller';
-import { getRequeteEntiteById, getRequetesEntite, hasAccessToRequete } from './requetesEntite.service';
+import {
+  closeRequeteForEntite,
+  getRequeteEntiteById,
+  getRequetesEntite,
+  hasAccessToRequete,
+} from './requetesEntite.service';
 
 vi.mock('./requetesEntite.service', () => ({
+  closeRequeteForEntite: vi.fn(),
   getRequeteEntiteById: vi.fn(),
   getRequetesEntite: vi.fn(),
   hasAccessToRequete: vi.fn(),
@@ -56,14 +63,12 @@ vi.mock('@/middlewares/role.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/entites.middleware', () => {
-  return {
-    default: (c: Context, next: Next) => {
-      c.set('entiteIds', ['e1', 'e2']);
-      return next();
-    },
-  };
-});
+vi.mock('@/middlewares/entites.middleware', () => ({
+  default: vi.fn((c: Context, next: Next) => {
+    c.set('entiteIds', ['e1', 'e2']);
+    return next();
+  }),
+}));
 
 vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
   return {
@@ -173,6 +178,7 @@ describe('RequetesEntite endpoints: /', () => {
       statutId: 'A_FAIRE',
       createdAt: new Date(),
       updatedAt: new Date(),
+      clotureReasonId: null,
     };
 
     const note = {
@@ -241,6 +247,7 @@ describe('RequetesEntite endpoints: /', () => {
         entiteId: 'e1',
         requeteId: '1',
         estPartagee: false,
+        clotureReasonId: null,
       };
 
       vi.mocked(addProcessingEtape).mockResolvedValueOnce(fakeStep);
@@ -305,6 +312,7 @@ describe('RequetesEntite endpoints: /', () => {
         receptionTypeId: 'receptionTypeId',
         declarant: null,
         participant: null,
+        situations: [],
         fichiersRequeteOriginale: [],
       },
       requeteEtape: [],
@@ -420,6 +428,158 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(200);
       expect(res.headers.get('content-disposition')).toBe('inline; filename="fallback.pdf"');
+    });
+  });
+
+  describe('POST /:id/close', () => {
+    const mockCloseResult = {
+      etapeId: 'etape123',
+      closedAt: '2024-01-01T10:00:00.000Z',
+      noteId: 'note123',
+    };
+
+    it('should close requete successfully with precision and files', async () => {
+      vi.mocked(closeRequeteForEntite).mockResolvedValueOnce(mockCloseResult);
+
+      const res = await client[':id'].close.$post({
+        param: { id: 'requeteId' },
+        json: {
+          reasonId: 'reason123',
+          precision: 'Test precision',
+          fileIds: ['file1', 'file2'],
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({ data: mockCloseResult });
+
+      expect(closeRequeteForEntite).toHaveBeenCalledWith('requeteId', 'e1', 'reason123', 'id1', 'Test precision', [
+        'file1',
+        'file2',
+      ]);
+    });
+
+    it('should close requete successfully without precision and files', async () => {
+      const mockCloseResultMinimal = {
+        etapeId: 'etape123',
+        closedAt: '2024-01-01T10:00:00.000Z',
+        noteId: null,
+      };
+
+      vi.mocked(closeRequeteForEntite).mockResolvedValueOnce(mockCloseResultMinimal);
+
+      const res = await client[':id'].close.$post({
+        param: { id: 'requeteId' },
+        json: {
+          reasonId: 'reason123',
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({ data: mockCloseResultMinimal });
+
+      expect(closeRequeteForEntite).toHaveBeenCalledWith('requeteId', 'e1', 'reason123', 'id1', undefined, undefined);
+    });
+
+    it('should return 403 when no entiteId is available', async () => {
+      vi.mocked(entitesMiddleware).mockImplementationOnce((c: Context, next: Next) => {
+        c.set('entiteIds', null);
+        return next();
+      });
+
+      const res = await client[':id'].close.$post({
+        param: { id: 'requeteId' },
+        json: {
+          reasonId: 'reason123',
+        },
+      });
+
+      expect(res.status).toBe(403);
+      const json = await res.json();
+      expect(json).toEqual({ message: 'You are not allowed to close this requête' });
+
+      expect(closeRequeteForEntite).not.toHaveBeenCalled();
+    });
+
+    it('should return 404 when requete not found', async () => {
+      vi.mocked(closeRequeteForEntite).mockRejectedValueOnce(new Error('REQUETE_NOT_FOUND'));
+
+      const res = await client[':id'].close.$post({
+        param: { id: 'requeteId' },
+        json: {
+          reasonId: 'reason123',
+        },
+      });
+
+      expect(res.status).toBe(404);
+      const json = await res.json();
+      expect(json).toEqual({ message: 'Requête not found' });
+    });
+
+    it('should return 400 when reason is invalid', async () => {
+      vi.mocked(closeRequeteForEntite).mockRejectedValueOnce(new Error('REASON_INVALID'));
+
+      const res = await client[':id'].close.$post({
+        param: { id: 'requeteId' },
+        json: {
+          reasonId: 'invalidReason',
+        },
+      });
+
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json).toEqual({ error: 'REASON_INVALID', message: 'Invalid reason provided' });
+    });
+
+    it('should return 403 when requete is already closed', async () => {
+      vi.mocked(closeRequeteForEntite).mockRejectedValueOnce(new Error('READONLY_FOR_ENTITY'));
+
+      const res = await client[':id'].close.$post({
+        param: { id: 'requeteId' },
+        json: {
+          reasonId: 'reason123',
+        },
+      });
+
+      expect(res.status).toBe(403);
+      const json = await res.json();
+      expect(json).toEqual({
+        error: 'READONLY_FOR_ENTITY',
+        message: 'Requête is already closed for this entity',
+      });
+    });
+
+    it('should return 400 when files are invalid', async () => {
+      vi.mocked(closeRequeteForEntite).mockRejectedValueOnce(new Error('FILES_INVALID'));
+
+      const res = await client[':id'].close.$post({
+        param: { id: 'requeteId' },
+        json: {
+          reasonId: 'reason123',
+          fileIds: ['invalidFile'],
+        },
+      });
+
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json).toEqual({ error: 'FILES_INVALID', message: 'Invalid files provided' });
+    });
+
+    it('should return 500 when unexpected error occurs', async () => {
+      vi.mocked(closeRequeteForEntite).mockRejectedValueOnce(new Error('UNEXPECTED_ERROR'));
+
+      const res = await client[':id'].close.$post({
+        param: { id: 'requeteId' },
+        json: {
+          reasonId: 'reason123',
+        },
+      });
+
+      expect(res.status).toBe(500);
+      const json = await res.json();
+      expect(json).toEqual({ error: 'INTERNAL_ERROR', message: 'Internal server error' });
     });
   });
 });

@@ -60,6 +60,7 @@ const requeteEtape: RequeteEtape = {
   statutId: 'A_FAIRE',
   createdAt: new Date(),
   updatedAt: new Date(),
+  clotureReasonId: null,
 };
 
 const uploadedFile: Pick<UploadedFile, 'id' | 'size' | 'metadata' | 'filePath'> = {

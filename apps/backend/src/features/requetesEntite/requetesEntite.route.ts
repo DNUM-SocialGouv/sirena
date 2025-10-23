@@ -1,6 +1,6 @@
 import { openApiProtectedRoute, openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
 import { RequeteEtapeNoteSchema, RequeteEtapeSchema, RequeteSchema } from '@/libs/zod';
-import { GetRequetesEntiteResponseSchema } from './requetesEntite.schema';
+import { CloseRequeteResponseSchema, GetRequetesEntiteResponseSchema } from './requetesEntite.schema';
 
 export const getRequetesEntiteRoute = openApiProtectedRoute({
   description: 'Get requetes entites',
@@ -34,6 +34,13 @@ export const addProcessingStepNoteRoute = openApiProtectedRoute({
   description: 'Add a processing note to a step of a request',
   responses: {
     ...openApiResponse(RequeteEtapeNoteSchema),
+  },
+});
+
+export const closeRequeteRoute = openApiProtectedRoute({
+  description: 'Close a Requete for a specific entity',
+  responses: {
+    ...openApiResponse(CloseRequeteResponseSchema),
   },
 });
 
