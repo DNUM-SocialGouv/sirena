@@ -84,7 +84,7 @@ const getfakeRequeteDto = () => {
         finess: '123456789',
       },
       misEnCause: {
-        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL,
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE,
         professionTypeId: PROFESSION_TYPE.PROF_SANTE,
         professionDomicileTypeId: PROFESSION_DOMICILE_TYPE.SSIAD,
         rpps: '1010101010',
@@ -479,6 +479,7 @@ describe('requetes.service.ts', () => {
         participantDeId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        lienAutrePrecision: null,
       });
 
       vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
@@ -506,6 +507,7 @@ describe('requetes.service.ts', () => {
         participantDeId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        lienAutrePrecision: null,
       });
 
       vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
@@ -553,6 +555,7 @@ describe('requetes.service.ts', () => {
           vi.mocked(prisma.fait.create).mockResolvedValueOnce({
             ...fait,
             situationId: '1',
+            autresPrecisions: '',
           });
 
           vi.mocked(prisma.faitMotif.createMany).mockResolvedValueOnce({
@@ -691,6 +694,7 @@ describe('requetes.service.ts', () => {
         participantDeId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        lienAutrePrecision: null,
       });
 
       vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({
@@ -712,6 +716,7 @@ describe('requetes.service.ts', () => {
         participantDeId: '1',
         createdAt: new Date(),
         updatedAt: new Date(),
+        lienAutrePrecision: null,
       });
 
       dto.situations.forEach((situation) => {
@@ -746,6 +751,7 @@ describe('requetes.service.ts', () => {
             ...fait,
             situationId: '1',
             commentaire: '',
+            autresPrecisions: '',
           });
 
           vi.mocked(prisma.faitMotif.createMany).mockResolvedValueOnce({

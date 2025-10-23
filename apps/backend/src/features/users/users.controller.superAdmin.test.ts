@@ -69,6 +69,7 @@ const fakeUser = {
   sub: 'sub1',
   uid: 'uid1',
   createdAt: new Date(0),
+  updatedAt: new Date(0),
   roleId: 'SUPER_ADMIN',
   active: true,
   pcData: {},

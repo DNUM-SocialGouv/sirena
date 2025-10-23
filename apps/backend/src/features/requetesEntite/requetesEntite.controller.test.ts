@@ -202,8 +202,10 @@ describe('RequetesEntite endpoints: /', () => {
         author: { prenom: string; nom: string };
         uploadedFiles: Pick<UploadedFile, 'id' | 'size' | 'metadata'>[];
       })[];
+      clotureReason: { label: string } | null;
     } = {
       ...requeteEtape,
+      clotureReason: null,
       notes: [
         {
           ...note,
@@ -464,7 +466,7 @@ describe('RequetesEntite endpoints: /', () => {
       const mockCloseResultMinimal = {
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
-        noteId: null,
+        noteId: 'note123',
       };
 
       vi.mocked(closeRequeteForEntite).mockResolvedValueOnce(mockCloseResultMinimal);
