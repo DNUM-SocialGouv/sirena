@@ -57,7 +57,7 @@ const StepComponent = ({
   const [editError, setEditError] = useState<string | null>(null);
   const { canEdit } = useCanEdit({ requeteId: requestId });
 
-  const badges = [
+  const allBadges = [
     {
       type: 'success',
       text: 'Fait',
@@ -79,6 +79,13 @@ const StepComponent = ({
       value: REQUETE_STATUT_TYPES.CLOTUREE,
     },
   ];
+
+  const badges = allBadges.filter((badge) => {
+    if (statutId === REQUETE_STATUT_TYPES.CLOTUREE) {
+      return true;
+    }
+    return badge.value !== REQUETE_STATUT_TYPES.CLOTUREE;
+  });
 
   const handleStatusChange = (newStatutId: string) => {
     if (newStatutId !== statutId && id && newStatutId !== 'CLOTUREE') {
