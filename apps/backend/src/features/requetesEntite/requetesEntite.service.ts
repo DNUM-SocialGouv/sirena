@@ -824,3 +824,113 @@ export const updateRequeteSituation = async (
     include: { situations: { include: SITUATION_INCLUDE_FULL } },
   });
 };
+
+export const closeRequeteForEntite = async (
+  requeteId: string,
+  entiteId: string,
+  reasonId: string,
+  authorId: string,
+  precision?: string,
+  fileIds?: string[],
+) => {
+  const requeteEntite = await prisma.requeteEntite.findUnique({
+    where: {
+      requeteId_entiteId: {
+        requeteId,
+        entiteId,
+      },
+    },
+    include: {
+      requete: true,
+    },
+  });
+
+  if (!requeteEntite) {
+    throw new Error('REQUETE_NOT_FOUND');
+  }
+
+  const reason = await prisma.requeteClotureReasonEnum.findUnique({
+    where: { id: reasonId },
+  });
+
+  if (!reason) {
+    throw new Error('REASON_INVALID');
+  }
+
+  const lastEtape = await prisma.requeteEtape.findFirst({
+    where: {
+      requeteId,
+      entiteId,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  if (lastEtape?.statutId === 'CLOTUREE') {
+    throw new Error('READONLY_FOR_ENTITY');
+  }
+
+  if (fileIds && fileIds.length > 0) {
+    const files = await prisma.uploadedFile.findMany({
+      where: {
+        id: { in: fileIds },
+      },
+    });
+
+    if (files.length !== fileIds.length) {
+      throw new Error('FILES_INVALID');
+    }
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const etape = await tx.requeteEtape.create({
+      data: {
+        requeteId,
+        entiteId,
+        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+        clotureReasonId: reasonId,
+        nom: `Requête clôturée le ${new Date().toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })}`,
+      },
+    });
+
+    let noteId: string | null = null;
+
+    // Create note if precision or files are provided
+    if (precision || (fileIds && fileIds.length > 0)) {
+      const note = await tx.requeteEtapeNote.create({
+        data: {
+          requeteEtapeId: etape.id,
+          texte: precision?.trim() || '',
+          authorId,
+        },
+      });
+
+      noteId = note.id;
+
+      // Attach files to the note if provided
+      if (fileIds && fileIds.length > 0) {
+        await tx.uploadedFile.updateMany({
+          where: {
+            id: { in: fileIds },
+          },
+          data: {
+            requeteEtapeNoteId: noteId,
+          },
+        });
+      }
+    }
+
+    return {
+      etapeId: etape.id,
+      closedAt: etape.createdAt.toISOString(),
+      noteId,
+    };
+  });
+
+  return result;
+};

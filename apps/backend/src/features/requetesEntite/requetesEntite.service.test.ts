@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { prisma as prismaMock } from '@/libs/__mocks__/prisma';
 import {
   type Identite,
   type PersonneConcernee,
@@ -8,6 +9,7 @@ import {
   type RequeteEtape,
 } from '@/libs/prisma';
 import {
+  closeRequeteForEntite,
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
@@ -29,6 +31,7 @@ vi.mock('@sirena/backend-utils', () => ({
 
 vi.mock('@/libs/prisma', () => ({
   prisma: {
+    $transaction: vi.fn(),
     requeteEntite: {
       findMany: vi.fn(),
       count: vi.fn(),
@@ -38,6 +41,15 @@ vi.mock('@/libs/prisma', () => ({
     requete: {
       findUnique: vi.fn(),
       update: vi.fn(),
+    },
+    requeteClotureReasonEnum: {
+      findUnique: vi.fn(),
+    },
+    requeteEtape: {
+      findFirst: vi.fn(),
+    },
+    uploadedFile: {
+      findMany: vi.fn(),
     },
   },
 }));
@@ -64,11 +76,24 @@ const mockRequeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: 
       estPartagee: false,
       nom: 'Etape 1',
       requeteId: 'req123',
+      clotureReasonId: null,
     },
   ],
 };
 
 const mockedRequeteEntite = vi.mocked(prisma.requeteEntite);
+
+const fakeEtape = {
+  id: 'etape1',
+  statutId: 'CLOTUREE',
+  requeteId: 'req123',
+  entiteId: 'ent123',
+  nom: 'Etape 1',
+  estPartagee: false,
+  clotureReasonId: null,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
 
 describe('requetesEntite.service', () => {
   describe('getRequetesEntite', () => {
@@ -591,6 +616,283 @@ describe('requetesEntite.service', () => {
 
       expect(result).toEqual(mockRequete);
       expect(prisma.requete.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('closeRequeteForEntite', () => {
+    it('should throw error if requeteEntite is not found', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(null);
+      await expect(closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123')).rejects.toThrow(
+        'REQUETE_NOT_FOUND',
+      );
+    });
+
+    it('should throw error if reason is not found', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce(null);
+      await expect(closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123')).rejects.toThrow('REASON_INVALID');
+    });
+
+    it('should throw error if last etape is closed', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
+        id: 'reason123',
+        label: 'Reason 123',
+      });
+      vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(fakeEtape);
+      await expect(closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123')).rejects.toThrow(
+        'READONLY_FOR_ENTITY',
+      );
+    });
+
+    it('should throw error if files are invalid', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
+        id: 'reason123',
+        label: 'Reason 123',
+      });
+      vi.mocked(prisma.uploadedFile.findMany).mockResolvedValueOnce([
+        {
+          id: 'file123',
+          fileName: 'File 123',
+          filePath: 'file123.pdf',
+          mimeType: 'application/pdf',
+          size: 1000,
+          status: 'PENDING',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          entiteId: 'ent123',
+          requeteId: 'req123',
+          metadata: null,
+          uploadedById: 'user123',
+          requeteEtapeNoteId: null,
+          faitSituationId: null,
+          demarchesEngageesId: null,
+        },
+      ]);
+      await expect(
+        closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123', '', ['fileid1', 'fileid2']),
+      ).rejects.toThrow('FILES_INVALID');
+    });
+
+    it('should successfully close requete with precision and files', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
+        id: 'reason123',
+        label: 'Reason 123',
+      });
+      vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
+      vi.mocked(prisma.uploadedFile.findMany).mockResolvedValueOnce([
+        {
+          id: 'fileid1',
+          fileName: 'File 1',
+          filePath: 'file1.pdf',
+          mimeType: 'application/pdf',
+          size: 1000,
+          status: 'PENDING',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          entiteId: 'ent123',
+          requeteId: 'req123',
+          metadata: null,
+          uploadedById: 'user123',
+          requeteEtapeNoteId: null,
+          faitSituationId: null,
+          demarchesEngageesId: null,
+        },
+        {
+          id: 'fileid2',
+          fileName: 'File 2',
+          filePath: 'file2.pdf',
+          mimeType: 'application/pdf',
+          size: 2000,
+          status: 'PENDING',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          entiteId: 'ent123',
+          requeteId: 'req123',
+          metadata: null,
+          uploadedById: 'user123',
+          requeteEtapeNoteId: null,
+          faitSituationId: null,
+          demarchesEngageesId: null,
+        },
+      ]);
+
+      const transactionSpy = vi.mocked(prisma.$transaction);
+      const mockEtape = {
+        id: 'etape123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+      const mockNote = {
+        id: 'note123',
+      };
+
+      transactionSpy.mockImplementation(async (cb) => {
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: {
+            ...prismaMock.requeteEtape,
+            create: vi.fn().mockResolvedValue(mockEtape),
+          },
+          requeteEtapeNote: {
+            create: vi.fn().mockResolvedValue(mockNote),
+          },
+          uploadedFile: {
+            ...prismaMock.uploadedFile,
+            updateMany: vi.fn().mockResolvedValue({ count: 2 }),
+          },
+        } as typeof prismaMock;
+        return cb(mockTx);
+      });
+
+      const result = await closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123', 'Test precision', [
+        'fileid1',
+        'fileid2',
+      ]);
+
+      expect(result).toEqual({
+        etapeId: 'etape123',
+        closedAt: '2024-01-01T10:00:00.000Z',
+        noteId: 'note123',
+      });
+    });
+
+    it('should successfully close requete without precision and files', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
+        id: 'reason123',
+        label: 'Reason 123',
+      });
+      vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
+
+      const transactionSpy = vi.mocked(prisma.$transaction);
+      const mockEtape = {
+        id: 'etape123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+
+      transactionSpy.mockImplementation(async (cb) => {
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: {
+            ...prismaMock.requeteEtape,
+            create: vi.fn().mockResolvedValue(mockEtape),
+          },
+        } as typeof prismaMock;
+        return cb(mockTx);
+      });
+
+      const result = await closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123');
+
+      expect(result).toEqual({
+        etapeId: 'etape123',
+        closedAt: '2024-01-01T10:00:00.000Z',
+        noteId: null,
+      });
+    });
+
+    it('should successfully close requete with precision but no files', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
+        id: 'reason123',
+        label: 'Reason 123',
+      });
+      vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
+
+      const transactionSpy = vi.mocked(prisma.$transaction);
+      const mockEtape = {
+        id: 'etape123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+      const mockNote = {
+        id: 'note123',
+      };
+
+      transactionSpy.mockImplementation(async (cb) => {
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: {
+            ...prismaMock.requeteEtape,
+            create: vi.fn().mockResolvedValue(mockEtape),
+          },
+          requeteEtapeNote: {
+            create: vi.fn().mockResolvedValue(mockNote),
+          },
+        } as typeof prismaMock;
+        return cb(mockTx);
+      });
+
+      const result = await closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123', 'Test precision');
+
+      expect(result).toEqual({
+        etapeId: 'etape123',
+        closedAt: '2024-01-01T10:00:00.000Z',
+        noteId: 'note123',
+      });
+    });
+
+    it('should successfully close requete with files but no precision', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
+        id: 'reason123',
+        label: 'Reason 123',
+      });
+      vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
+      vi.mocked(prisma.uploadedFile.findMany).mockResolvedValueOnce([
+        {
+          id: 'fileid1',
+          fileName: 'File 1',
+          filePath: 'file1.pdf',
+          mimeType: 'application/pdf',
+          size: 1000,
+          status: 'PENDING',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          entiteId: 'ent123',
+          requeteId: 'req123',
+          metadata: null,
+          uploadedById: 'user123',
+          requeteEtapeNoteId: null,
+          faitSituationId: null,
+          demarchesEngageesId: null,
+        },
+      ]);
+
+      const transactionSpy = vi.mocked(prisma.$transaction);
+      const mockEtape = {
+        id: 'etape123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+      const mockNote = {
+        id: 'note123',
+      };
+
+      transactionSpy.mockImplementation(async (cb) => {
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: {
+            ...prismaMock.requeteEtape,
+            create: vi.fn().mockResolvedValue(mockEtape),
+          },
+          requeteEtapeNote: {
+            create: vi.fn().mockResolvedValue(mockNote),
+          },
+          uploadedFile: {
+            ...prismaMock.uploadedFile,
+            updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+          },
+        } as typeof prismaMock;
+        return cb(mockTx);
+      });
+
+      const result = await closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123', undefined, ['fileid1']);
+
+      expect(result).toEqual({
+        etapeId: 'etape123',
+        closedAt: '2024-01-01T10:00:00.000Z',
+        noteId: 'note123',
+      });
     });
   });
 });
