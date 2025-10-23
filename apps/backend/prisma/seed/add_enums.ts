@@ -13,6 +13,7 @@ import {
   professionDomicileTypeLabels,
   professionTypeLabels,
   receptionTypeLabels,
+  requeteClotureReasonLabels,
   requeteStatutType,
   roles,
   statutTypes,
@@ -237,6 +238,18 @@ async function seedTransportTypeEnum(prisma: PrismaClient) {
   return { table: 'transportTypeEnum', added };
 }
 
+async function seedRequeteClotureReasonEnum(prisma: PrismaClient) {
+  let added = 0;
+  for (const [id, label] of Object.entries(requeteClotureReasonLabels)) {
+    const exists = await prisma.requeteClotureReasonEnum.findUnique({ where: { id } });
+    if (!exists) {
+      await prisma.requeteClotureReasonEnum.create({ data: { id, label } });
+      added++;
+    }
+  }
+  return { table: 'requeteClotureReasonEnum', added };
+}
+
 export async function seedEnums(prisma: PrismaClient) {
   const logger = getLoggerStore();
   logger.info('🌱 Début du seeding des enums...');
@@ -256,6 +269,7 @@ export async function seedEnums(prisma: PrismaClient) {
     seedProfessionDomicileTypeEnum(prisma),
     seedProfessionTypeEnum(prisma),
     seedReceptionTypeEnum(prisma),
+    seedRequeteClotureReasonEnum(prisma),
     seedRequeteStatutEnum(prisma),
     seedRoleEnum(prisma),
     seedStatutEnum(prisma),
