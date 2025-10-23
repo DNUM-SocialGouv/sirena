@@ -120,7 +120,6 @@ export async function* getEntiteDescendantIdsGenerator(entiteId: string) {
 
   while (stack.length > 0) {
     const currentId = stack.pop();
-
     const children = await prisma.entite.findMany({
       where: { entiteMereId: currentId },
       select: { id: true },
@@ -141,6 +140,52 @@ export const getEntiteDescendantIds = async (entiteId: string | null) => {
   for await (const entite of getEntiteDescendantIdsGenerator(entiteId)) {
     results.push(...entite);
   }
-
   return results;
 };
+
+async function getEntiteAscendanteId(entiteId: string) {
+  let currentEntiteId = entiteId;
+  let n = 0;
+
+  while (currentEntiteId) {
+    n += 1;
+    // Prevent infinite loop in case of cycle in entite hierarchy
+    if (n > 6) {
+      break;
+    }
+    const lastEntiteId = await prisma.entite.findUnique({
+      where: { id: currentEntiteId },
+      select: { entiteMereId: true },
+    });
+
+    if (lastEntiteId === null) {
+      return null;
+    }
+
+    if (!lastEntiteId.entiteMereId) {
+      return currentEntiteId;
+    }
+
+    if (lastEntiteId.entiteMereId) {
+      currentEntiteId = lastEntiteId.entiteMereId;
+    }
+  }
+
+  // Should not happen
+  throw new Error(`Possible cycle detected in entite hierarchy, ${entiteId}`);
+}
+
+export async function getEntiteAscendanteIds(entiteId: string | null) {
+  if (!entiteId) {
+    return null;
+  }
+
+  const ascendanteId = await getEntiteAscendanteId(entiteId);
+
+  // entiteId does not exists
+  if (ascendanteId === null) {
+    return [];
+  }
+
+  return await getEntiteDescendantIds(ascendanteId);
+}

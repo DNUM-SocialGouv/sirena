@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '@/libs/prisma';
 import {
   getEditableEntitiesChain,
+  getEntiteAscendanteIds,
   getEntiteChain,
   getEntiteDescendantIds,
   getEntiteForUser,
@@ -353,6 +354,76 @@ describe('entites.service', () => {
       const result = await getEditableEntitiesChain('3', ['3']);
 
       expect(result).toEqual(chainFromFindUnique.toReversed().map((e) => ({ ...e, disabled: true })));
+    });
+  });
+
+  describe('getEntiteAscendanteIds()', () => {
+    it('returns [] when the entite does not exist', async () => {
+      vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(null);
+
+      const result = await getEntiteAscendanteIds('unknown-id');
+
+      expect(result).toEqual([]);
+    });
+
+    it('returns null when input is null', async () => {
+      const result = await getEntiteAscendanteIds(null);
+      expect(result).toBeNull();
+    });
+
+    it('returns all ascendant IDs for a given entite', async () => {
+      vi.mocked(prisma.entite.findUnique).mockReset();
+      const mockEntite1 = {
+        id: '2',
+        label: 'b',
+        email: 'test2@domain.fr',
+        entiteTypeId: 'ENTITE_TYPE_A',
+        entiteMereId: null,
+        nomComplet: 'Entite B',
+        organizationalUnit: 'ARS-CORSE',
+        emailDomain: '',
+      };
+      const mockEntite2 = {
+        id: '1',
+        label: 'A',
+        email: 'test@domain.fr',
+        entiteTypeId: 'ENTITE_TYPE_A',
+        entiteMereId: '2',
+        nomComplet: 'Entite A',
+        organizationalUnit: '',
+        emailDomain: 'domain.fr',
+      };
+
+      vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(mockEntite2);
+      vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(mockEntite1);
+
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite2]);
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([]);
+
+      const results = await getEntiteAscendanteIds('1');
+
+      expect(results).toEqual(['2', '1']);
+      expect(prisma.entite.findUnique).toHaveBeenCalledTimes(2);
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(2);
+    });
+
+    it('throws on cycle in entite hierarchy (>6 hops) and does not traverse descendants', async () => {
+      vi.clearAllMocks();
+      const mockEntite1 = {
+        id: '2',
+        label: 'b',
+        email: 'test2@domain.fr',
+        entiteTypeId: 'ENTITE_TYPE_A',
+        entiteMereId: '1',
+        nomComplet: 'Entite B',
+        organizationalUnit: 'ARS-CORSE',
+        emailDomain: '',
+      };
+
+      vi.mocked(prisma.entite.findUnique).mockResolvedValue(mockEntite1);
+
+      await expect(getEntiteAscendanteIds('A')).rejects.toThrow(/Possible cycle detected in entite hierarchy/);
+      expect(prisma.entite.findMany).not.toHaveBeenCalled();
     });
   });
 });

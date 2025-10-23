@@ -223,7 +223,7 @@ describe('RequetesEntite endpoints: /', () => {
         meta: { total: 2 },
       });
 
-      expect(getRequeteEtapes).toHaveBeenCalledWith('1', ['e1', 'e2'], {});
+      expect(getRequeteEtapes).toHaveBeenCalledWith('1', ['e1'], {});
     });
   });
 

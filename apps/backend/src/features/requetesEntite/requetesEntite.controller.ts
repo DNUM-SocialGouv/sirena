@@ -2,6 +2,7 @@ import { throwHTTPException403Forbidden, throwHTTPException404NotFound } from '@
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
+import { getEntiteAscendanteIds } from '@/features/entites/entites.service';
 import { addProcessingEtape, getRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
 import {
   getUploadedFileById,
@@ -71,7 +72,17 @@ const app = factoryWithLogs
     const { id } = c.req.param();
     const entiteIds = c.get('entiteIds');
 
-    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
+    const topUserEntite = entiteIds[0];
+
+    if (!topUserEntite) {
+      return throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    const topEntite = await getEntiteAscendanteIds(topUserEntite);
+
+    const requeteEntite = await getRequeteEntiteById(id, topEntite);
 
     if (!requeteEntite) {
       return throwHTTPException404NotFound('Requete not found', {
@@ -99,7 +110,9 @@ const app = factoryWithLogs
       });
     }
 
-    const { data, total } = await getRequeteEtapes(id, entiteIds || [], {});
+    const topEntite = entiteIds[0] ? [entiteIds[0]] : [];
+
+    const { data, total } = await getRequeteEtapes(id, topEntite, {});
 
     logger.info({ requestId: id, stepCount: total }, 'Processing steps retrieved successfully');
 
@@ -111,7 +124,9 @@ const app = factoryWithLogs
     const { id, fileId } = c.req.param();
     const entiteIds = c.get('entiteIds');
 
-    const requeteEntite = await getRequeteEntiteById(id, entiteIds);
+    const topEntite = entiteIds[0] ? [entiteIds[0]] : [];
+
+    const requeteEntite = await getRequeteEntiteById(id, topEntite);
 
     if (!requeteEntite) {
       return throwHTTPException404NotFound('Requete not found', {
