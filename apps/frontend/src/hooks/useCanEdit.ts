@@ -8,12 +8,21 @@ export function useCanEdit({ requeteId }: { requeteId?: string } = {}) {
   const requestQuery = requeteId ? useProcessingSteps(requeteId) : null;
 
   const canEdit = useMemo(() => {
+    // First check user permissions
+    const editRoles: string[] = [ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER];
+    const hasUserPermissions = userStore.role ? editRoles.includes(userStore.role) : false;
+
+    if (!hasUserPermissions) {
+      return false;
+    }
+
+    // Then check if the request is closed
     if (requestQuery?.data?.data) {
       const hasClosedStep = requestQuery.data.data.some((step) => step.statutId === REQUETE_STATUT_TYPES.CLOTUREE);
       return !hasClosedStep;
     }
-    const editRoles: string[] = [ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER];
-    return (userStore.role && editRoles.includes(userStore.role as string)) || false;
+
+    return true;
   }, [userStore.role, requestQuery]);
 
   return { canEdit };

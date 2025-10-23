@@ -1,7 +1,8 @@
+import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { CreateStep } from '@/components/requestId/processing/createStep';
 import { Step } from '@/components/requestId/processing/Step';
@@ -30,6 +31,10 @@ export const Processing = ({ requestId }: ProcessingProps = {}) => {
   const queryProcessingSteps = useProcessingSteps(requestId || '');
   const requestQuery = useRequeteDetails(requestId);
   const { canEdit } = useCanEdit({ requeteId: requestId });
+
+  const isRequestClosed = useMemo(() => {
+    return queryProcessingSteps.data?.data?.some((step) => step.statutId === REQUETE_STATUT_TYPES.CLOTUREE);
+  }, [queryProcessingSteps.data?.data]);
 
   useEffect(() => {
     if (
@@ -94,13 +99,24 @@ export const Processing = ({ requestId }: ProcessingProps = {}) => {
       Les étapes de traitement seront disponibles après la création de la requête.
     </p>
   );
-
   return (
     <div>
       <div className="fr-container--fluid">
         <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col">
             <div className="fr-mb-4w">
+              {requestId && !canEdit && (
+                <Alert
+                  severity={isRequestClosed ? 'warning' : 'info'}
+                  title=""
+                  description={
+                    isRequestClosed
+                      ? 'Accès en lecture seule : cette requête est clôturée et ne peut plus être modifiée.'
+                      : "Accès en lecture seule : l'édition n'est pas disponible avec vos autorisations actuelles."
+                  }
+                  className="fr-mb-3w"
+                />
+              )}
               <div className="fr-grid-row fr-grid-row--middle fr-mb-3w">
                 <div className="fr-col">
                   <h2 className="fr-mb-0">Étapes du traitement</h2>
