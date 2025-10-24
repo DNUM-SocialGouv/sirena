@@ -95,15 +95,14 @@ const createAddress = (champ: RootChampFragmentFragment | RepetitionChamp) => {
     champ.address?.label &&
     champ.address?.postalCode &&
     champ.address?.cityName &&
-    champ.address?.streetName &&
-    champ.address?.streetNumber
+    champ.address?.streetName
   ) {
     return {
       label: champ.address.label,
       codePostal: champ.address.postalCode,
       ville: champ.address.cityName,
       rue: champ.address.streetName,
-      numero: champ.address.streetNumber,
+      numero: champ.address.streetNumber || '',
     };
   }
   return null;
