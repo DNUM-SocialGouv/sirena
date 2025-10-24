@@ -63,6 +63,7 @@ describe('logging configuration', () => {
       DEMAT_SOCIAL_API_URL: 'https://api.test.com',
       DEMAT_SOCIAL_API_TOKEN: 'test-api-token',
       DEMAT_SOCIAL_API_DIRECTORY: '123',
+      DEMAT_SOCIAL_INSTRUCTEUR_ID: 'instructeur-456',
 
       SUPER_ADMIN_LIST_EMAIL: 'admin@test.com',
       S3_BUCKET_ACCESS_KEY: 'root',

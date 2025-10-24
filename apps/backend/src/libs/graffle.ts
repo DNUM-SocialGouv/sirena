@@ -7,9 +7,11 @@ import { envVars } from '@/config/env';
 
 export {
   AddressType,
+  ChangerInstructionDocument,
   GetDossierDocument,
   GetDossiersByDateDocument,
   GetDossiersMetadataDocument,
+  GetInstructeursDocument,
   type RootChampFragmentFragment,
 } from '../../generated/graphql/graphql';
 
