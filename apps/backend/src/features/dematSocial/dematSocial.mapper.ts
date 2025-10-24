@@ -84,11 +84,11 @@ const estAnonyme = {
     "Acceptez-vous que votre identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
   options: [
     {
-      key: true,
+      key: false,
       label: 'Oui',
     },
     {
-      key: false,
+      key: true,
       label: 'Non',
     },
   ],
