@@ -60,3 +60,18 @@ export const UpdateRequeteFilesBodySchema = z.object({
 export const UpdateSituationBodySchema = z.object({
   situation: SituationDataSchema,
 });
+
+export const CloseRequeteBodySchema = z.object({
+  reasonId: z.string().min(1, {
+    message:
+      'Vous devez renseigner la raison de la clôture pour clôturer la requête. Veuillez sélectionner une valeur dans la liste.',
+  }),
+  precision: z.string().trim().max(5000).optional(),
+  fileIds: z.array(z.string()).optional(),
+});
+
+export const CloseRequeteResponseSchema = z.object({
+  etapeId: z.string(),
+  closedAt: z.string().datetime(),
+  noteId: z.string().nullable(),
+});

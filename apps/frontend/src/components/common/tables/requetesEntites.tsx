@@ -25,6 +25,7 @@ const statutSeverity = {
   [REQUETE_STATUT_TYPES.EN_COURS]: 'info',
   [REQUETE_STATUT_TYPES.A_FAIRE]: 'new',
   [REQUETE_STATUT_TYPES.FAIT]: 'success',
+  [REQUETE_STATUT_TYPES.CLOTUREE]: 'error',
 } as const;
 
 export function RequetesEntite() {

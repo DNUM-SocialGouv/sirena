@@ -326,12 +326,18 @@ describe('pino.middleware.ts', () => {
     });
 
     it('should handle errors in next middleware', async () => {
-      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test', (_c) => {
-        throw new Error('Test middleware error');
+      const testApp = new Hono().use(enhancedPinoMiddleware()).get('/test/:test', (c) => {
+        const test = c.req.param('test');
+        if (test === 'error') {
+          throw new Error('Test middleware error');
+        }
+        return c.json({ success: false }, 500);
       });
 
       const client = testClient(testApp);
-      const response = await client.test.$get();
+      const response = await client.test[':test'].$get({
+        param: { test: 'error' },
+      });
 
       expect(response.status).toBe(500);
     });

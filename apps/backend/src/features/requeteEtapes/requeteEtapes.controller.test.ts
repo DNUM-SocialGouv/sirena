@@ -111,6 +111,7 @@ const fakeRequeteEtape: RequeteEtape = {
   createdAt: new Date(),
   updatedAt: new Date(),
   estPartagee: false,
+  clotureReasonId: null,
 };
 
 const fakeUpdatedRequeteEtape: RequeteEtape = {
@@ -541,9 +542,10 @@ describe('requeteEtapes.controller.ts', () => {
       statutId: 'A_FAIRE',
       createdAt: new Date(),
       updatedAt: new Date(),
+      clotureReasonId: null,
     };
 
-    const note = {
+    const note: RequeteEtapeNote = {
       id: 'noteId',
       texte: 'Note 1',
       createdAt: new Date(),
@@ -564,8 +566,10 @@ describe('requeteEtapes.controller.ts', () => {
         author: { prenom: string; nom: string };
         uploadedFiles: Pick<UploadedFile, 'id' | 'size' | 'metadata'>[];
       })[];
+      clotureReason: { label: string } | null;
     } = {
       ...requeteEtape,
+      clotureReason: null,
       notes: [
         {
           ...note,
@@ -630,16 +634,16 @@ describe('requeteEtapes.controller.ts', () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
       vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
 
-      const fakeStep = {
+      const fakeStep: RequeteEtape = {
         id: 'step1',
-        requeteEntiteId: '1',
+        requeteId: '1',
         nom: 'Step 1',
         statutId: 'FAIT',
         createdAt: new Date(0),
         updatedAt: new Date(0),
         entiteId: 'e1',
-        requeteId: '1',
         estPartagee: false,
+        clotureReasonId: null,
       };
 
       vi.mocked(addProcessingEtape).mockResolvedValueOnce(fakeStep);

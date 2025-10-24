@@ -82,6 +82,11 @@ export const getRequeteEtapes = async (requeteId: string, entiteIds: string[], q
         id: true,
         nom: true,
         statutId: true,
+        clotureReason: {
+          select: {
+            label: true,
+          },
+        },
         createdAt: true,
         updatedAt: true,
         notes: {

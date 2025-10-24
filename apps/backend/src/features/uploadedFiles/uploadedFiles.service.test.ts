@@ -39,6 +39,7 @@ const mockUploadedFile = {
   requeteEtapeNoteId: '1',
   requeteId: '1',
   faitSituationId: '1',
+  demarchesEngageesId: null,
 };
 
 describe('uploadedFiles.service.ts', () => {
@@ -178,6 +179,7 @@ describe('uploadedFiles.service.ts', () => {
         requeteEtapeNoteId: null,
         requeteId: null,
         faitSituationId: null,
+        demarchesEngageesId: null,
       };
 
       const result = await createUploadedFile(uploadedFileData);
@@ -208,6 +210,7 @@ describe('uploadedFiles.service.ts', () => {
         requeteEtapeNoteId: null,
         requeteId: null,
         faitSituationId: null,
+        demarchesEngageesId: null,
       };
 
       const result = await createUploadedFile(uploadedFileData);
@@ -283,6 +286,7 @@ describe('uploadedFiles.service.ts', () => {
           requeteEtapeNoteId: 'n1',
           requeteId: null,
           faitSituationId: null,
+          demarchesEngageesId: null,
         },
         {
           id: 'f2',
@@ -299,6 +303,7 @@ describe('uploadedFiles.service.ts', () => {
           requeteEtapeNoteId: 'n1',
           requeteId: null,
           faitSituationId: null,
+          demarchesEngageesId: null,
         },
       ];
       mockedUploadedFile.findMany.mockResolvedValueOnce(updatedRows);
@@ -335,6 +340,7 @@ describe('uploadedFiles.service.ts', () => {
           requeteEtapeNoteId: 'n1',
           requeteId: null,
           faitSituationId: null,
+          demarchesEngageesId: null,
         },
       ];
       mockedUploadedFile.findMany.mockResolvedValueOnce(updatedRows);

@@ -138,10 +138,12 @@ export const motifShortLabels: Record<Motif, string> = {
 };
 
 export const CONSEQUENCE = {
-  SANTE: 'SANTE',
-  DROITS: 'DROITS',
-  BESOINS: 'BESOINS',
-  SOCIAL: 'SOCIAL',
+  SANTE: 'Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...)',
+  DROITS: 'Sur les droits (impossible de porter plainte, d’être écouté, d’avoir un soutien...)',
+  BESOINS:
+    'Sur les besoins du quotidien (difficulté à manger, dormir, se laver, ou à recevoir l’aide dont elle a besoin...)',
+  SOCIAL:
+    'Sur la vie sociale ( isolement, rejet, mise à l’écart, difficulté à aller à l’école, au travail ou à participer à des activités...)',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -1097,4 +1099,24 @@ export const sousMotifPROBLEMES_LIES_AU_TRANSPORT_SANITAIRELabels: Record<
   NON_RESPECT_DES_DISPOSITIONS_REGLEMENTAIRES_EN_VIGUEUR_ABSENCE_DE_TENUE_PROFESSIONNELLE_VEHICULE_NONCONFORME_ET_HYGIENE_NON_RESPECT_DE_L_OBLIGATION_DE_PRESENCE_D_UN_AMBULANCIER_DANS_LA_CELLULE_SANITAIRE:
     "Non-respect des dispositions réglementaires en vigueur (absence de tenue professionnelle, véhicule nonconforme et hygiène, non-respect de l'obligation de présence d'un ambulancier dans la cellule sanitaire...)",
   TRANSFERT_ENTRE_ETABLISSEMENTS: 'Transfert entre établissements',
-};
+} as const;
+
+export const REQUETE_CLOTURE_REASON = {
+  MESURES_CORRECTIVES: 'MESURES_CORRECTIVES',
+  ABSENCE_DE_RETOUR: 'ABSENCE_DE_RETOUR',
+  HORS_COMPETENCE: 'HORS_COMPETENCE',
+  MISSION_D_INSPECTION_ET_CONTROLE: 'MISSION_D_INSPECTION_ET_CONTROLE',
+  SANS_SUITE: 'SANS_SUITE',
+  AUTRE: 'AUTRE',
+} as const;
+
+export type RequeteClotureReason = keyof typeof REQUETE_CLOTURE_REASON;
+
+export const requeteClotureReasonLabels: Record<RequeteClotureReason, string> = {
+  MESURES_CORRECTIVES: "Mesures correctives prises par l'établissement / le mis en cause",
+  ABSENCE_DE_RETOUR: 'Absence de retour/accord requérant',
+  HORS_COMPETENCE: 'Hors compétence',
+  MISSION_D_INSPECTION_ET_CONTROLE: 'Mission d’inspection et contrôle',
+  SANS_SUITE: 'Sans suite',
+  AUTRE: 'Autre',
+} as const;

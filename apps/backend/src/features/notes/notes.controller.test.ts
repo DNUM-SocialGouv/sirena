@@ -96,6 +96,7 @@ const fakeRequeteEtape: RequeteEtape = {
   createdAt: new Date(),
   updatedAt: new Date(),
   estPartagee: false,
+  clotureReasonId: null,
 };
 
 describe('notes.controller.ts', () => {
@@ -225,6 +226,7 @@ describe('notes.controller.ts', () => {
           size: 1024,
           metadata: { originalName: 'test.pdf' },
           uploadedById: 'user1',
+          demarchesEngageesId: null,
         },
         {
           id: 'f2',
@@ -241,6 +243,7 @@ describe('notes.controller.ts', () => {
           size: 2048,
           metadata: { originalName: 'test2.pdf' },
           uploadedById: 'user1',
+          demarchesEngageesId: null,
         },
       ]);
 
@@ -289,8 +292,8 @@ describe('notes.controller.ts', () => {
       vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
       vi.mocked(updateNote).mockResolvedValueOnce(fakeUpdatedNote);
 
-      const res = await client[':noteId'].$patch({
-        param: { noteId: 'note1' },
+      const res = await client[':id'].$patch({
+        param: { id: 'note1' },
         json: { texte: 'Updated note content' },
       });
 
@@ -309,8 +312,8 @@ describe('notes.controller.ts', () => {
       vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
       vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
 
-      const res = await client[':noteId'].$patch({
-        param: { noteId: 'note1' },
+      const res = await client[':id'].$patch({
+        param: { id: 'note1' },
         json: { texte: 'Updated note content' },
       });
 
@@ -327,8 +330,8 @@ describe('notes.controller.ts', () => {
       vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
 
-      const res = await client[':noteId'].$patch({
-        param: { noteId: 'note1' },
+      const res = await client[':id'].$patch({
+        param: { id: 'note1' },
         json: { texte: 'Updated note content' },
       });
 
@@ -344,8 +347,8 @@ describe('notes.controller.ts', () => {
     it('should return 404 if note not found', async () => {
       vi.mocked(getNoteById).mockResolvedValueOnce(null);
 
-      const res = await client[':noteId'].$patch({
-        param: { noteId: 'note1' },
+      const res = await client[':id'].$patch({
+        param: { id: 'note1' },
         json: { texte: 'Updated note content' },
       });
 
@@ -361,8 +364,8 @@ describe('notes.controller.ts', () => {
     it('should validate the request body - content is not required', async () => {
       vi.mocked(getNoteById).mockResolvedValueOnce(fakeNote);
 
-      const res = await client[':noteId'].$patch({
-        param: { noteId: 'note1' },
+      const res = await client[':id'].$patch({
+        param: { id: 'note1' },
         json: { texte: '' },
       });
 

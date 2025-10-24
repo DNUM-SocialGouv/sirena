@@ -42,9 +42,9 @@ interface MockContext {
 
 interface TestUser extends User {
   id: string;
-  email?: string;
+  email: string;
   entiteIds?: string[] | null;
-  roleId?: string;
+  roleId: string;
 }
 
 interface TestRequestContext extends RequestContext {
@@ -93,8 +93,18 @@ const TEST_HEADERS = {
 const TEST_USER: TestUser = {
   id: 'user-123',
   email: 'test@example.com',
+  prenom: 'Test',
+  nom: 'User',
+  uid: 'test-uid',
+  sub: 'test-sub',
   entiteIds: ['entite-456'],
   roleId: 'role-789',
+  statutId: 'statut-123',
+  entiteId: 'entite-456',
+  active: true,
+  pcData: {},
+  createdAt: new Date(),
+  updatedAt: new Date(),
 } as const;
 
 const TRUSTED_HEADERS = ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'] as const;

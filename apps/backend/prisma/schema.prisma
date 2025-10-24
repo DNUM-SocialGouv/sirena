@@ -452,6 +452,9 @@ model RequeteEtape {
 
   notes RequeteEtapeNote[]
 
+  clotureReasonId String?
+  clotureReason   RequeteClotureReasonEnum? @relation(fields: [clotureReasonId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -540,4 +543,10 @@ model Crons {
   createdAt DateTime  @default(now())
   startedAt DateTime
   endedAt   DateTime?
+}
+
+model RequeteClotureReasonEnum {
+  id  String @id @default(uuid())
+  label String @unique
+  etapes RequeteEtape[]
 }

@@ -38,6 +38,7 @@ describe('Profile endpoints: /profile', () => {
     uid: 'uid1',
     sub: 'sub1',
     createdAt: new Date(0),
+    updatedAt: new Date(0),
     roleId: 'role1',
     active: true,
     pcData: {},

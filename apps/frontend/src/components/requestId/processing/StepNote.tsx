@@ -1,9 +1,7 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { ROLES } from '@sirena/common/constants';
-import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
-import { profileQueryOptions } from '@/hooks/queries/profile.hook';
+import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 
 type StepNoteProps = {
@@ -11,6 +9,8 @@ type StepNoteProps = {
   content: string;
   createdAt: string;
   requeteStateId: string;
+  requestId: string;
+  clotureReasonLabel: string | null;
   author: {
     prenom: string;
     nom: string;
@@ -28,8 +28,18 @@ type StepNoteProps = {
   }) => void;
 };
 
-export const StepNote = ({ id, author, content, createdAt, requeteStateId, files, onEdit }: StepNoteProps) => {
-  const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
+export const StepNote = ({
+  id,
+  author,
+  content,
+  createdAt,
+  requeteStateId,
+  requestId,
+  files,
+  onEdit,
+  clotureReasonLabel,
+}: StepNoteProps) => {
+  const { canEdit } = useCanEdit({ requeteId: requestId });
 
   const handleEdit = () => {
     onEdit?.({
@@ -59,7 +69,7 @@ export const StepNote = ({ id, author, content, createdAt, requeteStateId, files
           </span>
         </div>
         <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-          {profile?.role?.id !== ROLES.READER && (
+          {canEdit && (
             <Button
               priority="tertiary no outline"
               size="small"
@@ -75,19 +85,33 @@ export const StepNote = ({ id, author, content, createdAt, requeteStateId, files
           )}
         </div>
       </div>
-      <p className={styles['request-note__content']}>{content}</p>
+      {clotureReasonLabel && (
+        <div>
+          <div className="fr-text--xs fr-mb-0">Raisons de la clôture</div>
+          <div className="fr-text--sm fr-text--grey">{clotureReasonLabel}</div>
+        </div>
+      )}
+      {content && (
+        <div className="fr-mb-2w">
+          {clotureReasonLabel && <div className="fr-text--xs fr-mb-0">Précisions</div>}
+          <div className="fr-text--sm fr-text--grey">{content}</div>
+        </div>
+      )}
       {files.length > 0 && (
-        <ul>
-          {files.map((file) => (
-            <li key={file.id} className={styles['request-note__file']}>
-              <FileDownloadLink
-                href={`/api/requete-etapes/${requeteStateId}/file/${file.id}`}
-                fileName={file.originalName}
-                fileSize={file.size}
-              />
-            </li>
-          ))}
-        </ul>
+        <div>
+          <div className="fr-text--xs fr-mb-0">Pièces jointes</div>
+          <ul>
+            {files.map((file) => (
+              <li key={file.id} className={styles['request-note__file']}>
+                <FileDownloadLink
+                  href={`/api/requete-etapes/${requeteStateId}/file/${file.id}`}
+                  fileName={file.originalName}
+                  fileSize={file.size}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
