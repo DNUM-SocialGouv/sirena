@@ -1,6 +1,7 @@
 import {
   ageLabels,
   autoriteTypeLabels,
+  autreProfessionnelPrecisionLabels,
   civiliteLabels,
   consequenceLabels,
   demarcheEngageeLabels,
@@ -8,9 +9,14 @@ import {
   lienVictimeLabels,
   lieuTypeLabels,
   maltraitanceTypeLabels,
+  misEnCauseAutreNonProPrecisionLabels,
+  misEnCauseFamillePrecisionLabels,
+  misEnCauseProchePrecisionLabels,
   misEnCauseTypeLabels,
   motifLabels,
   professionDomicileTypeLabels,
+  professionSantePrecisionLabels,
+  professionSocialPrecisionLabels,
   professionTypeLabels,
   receptionTypeLabels,
   requeteClotureReasonLabels,
@@ -154,28 +160,39 @@ async function seedMotifEnum(prisma: PrismaClient) {
   return { table: 'motifEnum', added };
 }
 
-async function seedProfessionDomicileTypeEnum(prisma: PrismaClient) {
+async function seedMisEnCauseTypePrecisionEnum(prisma: PrismaClient) {
   let added = 0;
-  for (const [id, label] of Object.entries(professionDomicileTypeLabels)) {
-    const exists = await prisma.professionDomicileTypeEnum.findUnique({ where: { id } });
-    if (!exists) {
-      await prisma.professionDomicileTypeEnum.create({ data: { id, label } });
-      added++;
-    }
-  }
-  return { table: 'professionDomicileTypeEnum', added };
-}
 
-async function seedProfessionTypeEnum(prisma: PrismaClient) {
-  let added = 0;
-  for (const [id, label] of Object.entries(professionTypeLabels)) {
-    const exists = await prisma.professionTypeEnum.findUnique({ where: { id } });
-    if (!exists) {
-      await prisma.professionTypeEnum.create({ data: { id, label } });
-      added++;
+  // Helper to add precisions for a given parent type
+  const addPrecisions = async (parentTypeId: string, precisionLabels: Record<string, string>) => {
+    for (const [id, label] of Object.entries(precisionLabels)) {
+      const exists = await prisma.misEnCauseTypePrecisionEnum.findUnique({ where: { id } });
+      if (!exists) {
+        await prisma.misEnCauseTypePrecisionEnum.create({
+          data: {
+            id,
+            label,
+            misEnCauseTypeId: parentTypeId,
+          },
+        });
+        added++;
+      }
     }
-  }
-  return { table: 'professionTypeEnum', added };
+  };
+
+  // Seed all precision types linked to their parent types
+  await addPrecisions('MEMBRE_FAMILLE', misEnCauseFamillePrecisionLabels);
+  await addPrecisions('PROCHE', misEnCauseProchePrecisionLabels);
+  await addPrecisions('AUTRE_PERSONNE_NON_PRO', misEnCauseAutreNonProPrecisionLabels);
+  await addPrecisions('PROFESSIONNEL_SANTE', professionSantePrecisionLabels);
+  await addPrecisions('PROFESSIONNEL_SOCIAL', professionSocialPrecisionLabels);
+  await addPrecisions('AUTRE_PROFESSIONNEL', autreProfessionnelPrecisionLabels);
+
+  // Also seed old DematSocial enum values for backward compatibility
+  await addPrecisions('PROFESSIONNEL_SANTE', professionTypeLabels);
+  await addPrecisions('PROFESSIONNEL_SANTE', professionDomicileTypeLabels);
+
+  return { table: 'misEnCauseTypePrecisionEnum', added };
 }
 
 async function seedReceptionTypeEnum(prisma: PrismaClient) {
@@ -265,9 +282,8 @@ export async function seedEnums(prisma: PrismaClient) {
     seedLieuTypeEnum(prisma),
     seedMaltraitanceTypeEnum(prisma),
     seedMisEnCauseTypeEnum(prisma),
+    seedMisEnCauseTypePrecisionEnum(prisma),
     seedMotifEnum(prisma),
-    seedProfessionDomicileTypeEnum(prisma),
-    seedProfessionTypeEnum(prisma),
     seedReceptionTypeEnum(prisma),
     seedRequeteClotureReasonEnum(prisma),
     seedRequeteStatutEnum(prisma),

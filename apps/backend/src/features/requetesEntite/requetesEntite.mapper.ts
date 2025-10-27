@@ -113,9 +113,12 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
     },
     misEnCause: {
       create: {
-        misEnCauseTypeId: misEnCauseData?.misEnCauseType || null,
-        professionTypeId: misEnCauseData?.professionType || null,
-        professionDomicileTypeId: misEnCauseData?.professionDomicileType || null,
+        misEnCauseTypeId:
+          misEnCauseData?.misEnCauseType && misEnCauseData.misEnCauseType !== '' ? misEnCauseData.misEnCauseType : null,
+        misEnCauseTypePrecisionId:
+          misEnCauseData?.misEnCausePrecision && misEnCauseData.misEnCausePrecision !== ''
+            ? misEnCauseData.misEnCausePrecision
+            : null,
         rpps: misEnCauseData?.rpps || null,
         commentaire: misEnCauseData?.commentaire || '',
       },

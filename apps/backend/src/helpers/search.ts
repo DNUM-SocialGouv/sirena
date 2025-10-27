@@ -113,18 +113,7 @@ export const createSearchConditionsForRequeteEntite = (raw: string): Prisma.Requ
           situations: {
             some: {
               misEnCause: {
-                professionType: { label: ci(search) },
-              },
-            },
-          },
-        },
-      },
-      {
-        requete: {
-          situations: {
-            some: {
-              misEnCause: {
-                professionDomicileType: { label: ci(search) },
+                misEnCauseTypePrecision: { label: ci(search) },
               },
             },
           },

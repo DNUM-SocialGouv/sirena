@@ -1,3 +1,4 @@
+import { Button } from '@codegouvfr/react-dsfr/Button';
 import { useNavigate } from '@tanstack/react-router';
 import { useId } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -37,9 +38,19 @@ export const Details = ({ requestId }: DetailsProps) => {
     }
   };
 
-  const handleEditSituation = () => {
+  const handleEditSituation = (situationId?: string) => {
     if (requestId) {
-      navigate({ to: '/request/$requestId/situation', params: { requestId } });
+      if (situationId) {
+        navigate({
+          to: '/request/$requestId/situation/$situationId',
+          params: { requestId, situationId },
+        });
+      } else {
+        navigate({
+          to: '/request/$requestId/situation',
+          params: { requestId },
+        });
+      }
     } else {
       navigate({ to: '/request/create/situation' });
     }
@@ -61,7 +72,7 @@ export const Details = ({ requestId }: DetailsProps) => {
       {() => {
         const declarant = requestQuery.data?.requete?.declarant;
         const personne = requestQuery.data?.requete?.participant;
-        const [situation] = requestQuery.data?.requete?.situations ?? [];
+        const situations = requestQuery.data?.requete?.situations ?? [];
 
         return (
           <>
@@ -77,12 +88,28 @@ export const Details = ({ requestId }: DetailsProps) => {
               personne={personne}
               onEdit={handleEditPersonneConcernee}
             />
-            <SituationSection
-              id={situationSectionId}
-              requestId={requestId}
-              situation={situation}
-              onEdit={handleEditSituation}
-            />
+            {situations.length > 0 ? (
+              <>
+                {situations.map((situation) => (
+                  <SituationSection
+                    key={situation.id}
+                    id={situationSectionId}
+                    requestId={requestId}
+                    situation={situation}
+                    onEdit={handleEditSituation}
+                  />
+                ))}
+                {canEdit && (
+                  <div className="fr-mb-4w">
+                    <Button priority="secondary" iconId="fr-icon-add-line" onClick={() => handleEditSituation()}>
+                      Ajouter un lieu, mis en cause, faits
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <SituationSection id={situationSectionId} requestId={requestId} onEdit={handleEditSituation} />
+            )}
             <RequeteFileUploadSection
               requeteId={requestId}
               mode="edit"

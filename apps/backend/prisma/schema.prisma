@@ -336,15 +336,13 @@ model MisEnCause {
   rpps        String?
   commentaire String  @default("")
 
-  professionTypeId String?
-  professionType   ProfessionTypeEnum? @relation(fields: [professionTypeId], references: [id])
-
   misEnCauseTypeId String?
   misEnCauseType   MisEnCauseTypeEnum? @relation(fields: [misEnCauseTypeId], references: [id])
 
-  professionDomicileTypeId String?
-  professionDomicileType   ProfessionDomicileTypeEnum? @relation(fields: [professionDomicileTypeId], references: [id])
-  situation                Situation[]
+  misEnCauseTypePrecisionId String?
+  misEnCauseTypePrecision   MisEnCauseTypePrecisionEnum? @relation(fields: [misEnCauseTypePrecisionId], references: [id])
+
+  situation Situation[]
 }
 
 model MisEnCauseTypeEnum {
@@ -352,18 +350,15 @@ model MisEnCauseTypeEnum {
   label String @unique
 
   misEnCauses MisEnCause[]
+  precisions  MisEnCauseTypePrecisionEnum[]
 }
 
-model ProfessionTypeEnum {
+model MisEnCauseTypePrecisionEnum {
   id    String @id @default(uuid())
   label String @unique
 
-  misEnCauses MisEnCause[]
-}
-
-model ProfessionDomicileTypeEnum {
-  id    String @id @default(uuid())
-  label String @unique
+  misEnCauseTypeId String
+  misEnCauseType   MisEnCauseTypeEnum @relation(fields: [misEnCauseTypeId], references: [id], onDelete: Cascade)
 
   misEnCauses MisEnCause[]
 }
@@ -372,10 +367,10 @@ model Fait {
   situationId String    @id
   situation   Situation @relation(fields: [situationId], references: [id], onDelete: Cascade)
 
-  dateDebut         DateTime?
-  dateFin           DateTime?
-  commentaire       String    @default("")
-  autresPrecisions  String    @default("")
+  dateDebut        DateTime?
+  dateFin          DateTime?
+  commentaire      String    @default("")
+  autresPrecisions String    @default("")
 
   fichiers UploadedFile[]
 

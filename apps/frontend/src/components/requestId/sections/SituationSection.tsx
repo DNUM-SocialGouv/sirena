@@ -14,7 +14,7 @@ interface SituationSectionProps {
   id: string;
   requestId?: string;
   situation?: SituationData | null;
-  onEdit: () => void;
+  onEdit: (situationId?: string) => void;
 }
 
 export const SituationSection = ({ id, requestId, situation, onEdit }: SituationSectionProps) => {
@@ -22,15 +22,14 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const [fait] = situation?.faits ?? [];
   const hasLieu = situation?.lieuDeSurvenue?.lieuType?.label;
-  const hasMisEnCause = situation?.misEnCause?.misEnCauseType?.label || situation?.misEnCause?.professionType?.label;
+  const hasMisEnCause = situation?.misEnCause?.misEnCauseType?.label;
   const hasFaits = fait?.maltraitanceTypes && fait.maltraitanceTypes.length > 0;
 
   const hasLieuDetails =
     situation?.lieuDeSurvenue?.lieuType?.label ||
     situation?.lieuDeSurvenue?.finess ||
     situation?.lieuDeSurvenue?.adresse?.codePostal;
-  const hasMisEnCauseDetails =
-    (situation?.misEnCause?.professionType?.label && situation?.misEnCause?.commentaire) || situation?.misEnCause?.rpps;
+  const hasMisEnCauseDetails = situation?.misEnCause?.commentaire || situation?.misEnCause?.rpps;
 
   const isFulfilled = hasLieu || hasMisEnCause || hasFaits || hasLieuDetails || hasMisEnCauseDetails;
 
@@ -43,7 +42,7 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
           <div className="fr-col-auto">
             <p className="fr-mb-0">
               <span className="fr-icon-error-warning-line fr-icon--sm" aria-hidden="true" />{' '}
-              {situation?.misEnCause?.professionType?.label || situation?.misEnCause?.misEnCauseType?.label}
+              {situation?.misEnCause?.misEnCauseType?.label}
               {situation?.misEnCause?.commentaire && ` - ${situation.misEnCause.commentaire}`}
             </p>
           </div>
@@ -78,9 +77,7 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
         {hasMisEnCause && (
           <>
             <SectionTitle>Mis en cause</SectionTitle>
-            <p className="fr-mb-1w">
-              {situation?.misEnCause?.professionType?.label || situation?.misEnCause?.misEnCauseType?.label}
-            </p>
+            <p className="fr-mb-1w">{situation?.misEnCause?.misEnCauseType?.label}</p>
             {situation?.misEnCause?.rpps && (
               <p className="fr-mb-2w">Identité du professionnel ou numéro RPPS : {situation.misEnCause.rpps}</p>
             )}
@@ -242,7 +239,7 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
     <InfoSection
       id={id}
       title="Lieu, mis en cause et faits"
-      onEdit={onEdit}
+      onEdit={() => onEdit(situationId)}
       canEdit={canEdit}
       renderSummary={renderSummary}
       renderDetails={isFulfilled ? renderDetails : undefined}

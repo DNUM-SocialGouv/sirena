@@ -182,20 +182,27 @@ export const createRequeteFromDematSocial = async ({
         });
       }
 
+      const misEnCauseData: {
+        rpps: string | null;
+        commentaire: string;
+        misEnCauseTypeId?: string | null;
+        misEnCauseTypePrecisionId?: string | null;
+      } = {
+        rpps: s.misEnCause.rpps ?? null,
+        commentaire: s.misEnCause.commentaire ?? '',
+      };
+
+      if (s.misEnCause.misEnCauseTypeId) {
+        misEnCauseData.misEnCauseTypeId = s.misEnCause.misEnCauseTypeId;
+      }
+
+      if (s.misEnCause.professionTypeId || s.misEnCause.professionDomicileTypeId) {
+        misEnCauseData.misEnCauseTypePrecisionId =
+          s.misEnCause.professionTypeId || s.misEnCause.professionDomicileTypeId;
+      }
+
       const mec = await tx.misEnCause.create({
-        data: {
-          rpps: s.misEnCause.rpps ?? null,
-          commentaire: s.misEnCause.commentaire ?? '',
-          misEnCauseType: s.misEnCause.misEnCauseTypeId
-            ? { connect: { id: s.misEnCause.misEnCauseTypeId } }
-            : undefined,
-          professionType: s.misEnCause.professionTypeId
-            ? { connect: { id: s.misEnCause.professionTypeId } }
-            : undefined,
-          professionDomicileType: s.misEnCause.professionDomicileTypeId
-            ? { connect: { id: s.misEnCause.professionDomicileTypeId } }
-            : undefined,
-        },
+        data: misEnCauseData,
         select: { id: true },
       });
 
@@ -341,7 +348,16 @@ export const createRequeteFromDematSocial = async ({
         situations: {
           include: {
             lieuDeSurvenue: { include: { adresse: true, lieuType: true, transportType: true } },
-            misEnCause: { include: { misEnCauseType: true, professionType: true, professionDomicileType: true } },
+            misEnCause: {
+              include: {
+                misEnCauseType: true,
+                misEnCauseTypePrecision: {
+                  include: {
+                    misEnCauseType: true,
+                  },
+                },
+              },
+            },
             demarchesEngagees: { include: { autoriteType: true, demarches: true } },
             faits: {
               include: {

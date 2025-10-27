@@ -22,13 +22,13 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
   return {
     lieuDeSurvenue: lieuDeSurvenue
       ? {
-          lieuType: lieuDeSurvenue.lieuTypeId || undefined,
+          lieuType: lieuDeSurvenue.lieuType?.id || undefined,
           adresse: adresse?.label || undefined,
           numero: adresse?.numero || undefined,
           rue: adresse?.rue || undefined,
           codePostal: lieuDeSurvenue.codePostal || adresse?.codePostal || undefined,
           ville: adresse?.ville || undefined,
-          transportType: lieuDeSurvenue.transportTypeId || undefined,
+          transportType: lieuDeSurvenue.transportType?.id || undefined,
           societeTransport: lieuDeSurvenue.societeTransport || undefined,
           finess: lieuDeSurvenue.finess || undefined,
           commentaire: lieuDeSurvenue.commentaire || undefined,
@@ -36,9 +36,8 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
       : undefined,
     misEnCause: misEnCause
       ? {
-          misEnCauseType: misEnCause.misEnCauseTypeId || undefined,
-          professionType: misEnCause.professionTypeId || undefined,
-          professionDomicileType: misEnCause.professionDomicileTypeId || undefined,
+          misEnCauseType: misEnCause.misEnCauseType?.id || undefined,
+          misEnCausePrecision: misEnCause.misEnCauseTypePrecision?.id || undefined,
           rpps: misEnCause.rpps || undefined,
           commentaire: misEnCause.commentaire || undefined,
         }
@@ -59,13 +58,13 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
     demarchesEngagees: demarchesEngagees
       ? {
           demarches: demarchesEngagees.demarches?.map((d) => d.id) || undefined,
-          dateContactEtablissement: demarchesEngagees.dateContactEtablissement
+          dateContactResponsables: demarchesEngagees.dateContactEtablissement
             ? new Date(demarchesEngagees.dateContactEtablissement).toISOString().split('T')[0]
             : undefined,
-          etablissementARepondu: demarchesEngagees.etablissementARepondu ?? undefined,
-          organisme: demarchesEngagees.organisme || undefined,
-          autoriteType: demarchesEngagees.autoriteTypeId || undefined,
-          datePlainte: demarchesEngagees.datePlainte
+          reponseRecueResponsables: demarchesEngagees.etablissementARepondu ?? undefined,
+          precisionsOrganisme: demarchesEngagees.organisme || undefined,
+          lieuDepotPlainte: demarchesEngagees.autoriteType?.id || undefined,
+          dateDepotPlainte: demarchesEngagees.datePlainte
             ? new Date(demarchesEngagees.datePlainte).toISOString().split('T')[0]
             : undefined,
           commentaire: demarchesEngagees.commentaire || undefined,

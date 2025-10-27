@@ -340,8 +340,11 @@ describe('requetesEntite.service', () => {
                   misEnCause: {
                     include: {
                       misEnCauseType: true,
-                      professionType: true,
-                      professionDomicileType: true,
+                      misEnCauseTypePrecision: {
+                        include: {
+                          misEnCauseType: true,
+                        },
+                      },
                     },
                   },
                   faits: {

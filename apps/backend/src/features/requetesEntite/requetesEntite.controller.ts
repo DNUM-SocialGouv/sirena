@@ -39,6 +39,7 @@ import {
 import {
   closeRequeteForEntite,
   createRequeteEntite,
+  createRequeteSituation,
   getRequeteEntiteById,
   getRequetesEntite,
   updateRequeteDeclarant,
@@ -328,7 +329,7 @@ const app = factoryWithLogs
       });
     }
 
-    const updatedRequete = await updateRequeteSituation(id, undefined, situationData);
+    const updatedRequete = await createRequeteSituation(id, situationData);
 
     logger.info({ requeteId: id, userId }, 'Situation created successfully');
 

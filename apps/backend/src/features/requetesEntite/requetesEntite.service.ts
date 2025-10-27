@@ -59,8 +59,11 @@ const SITUATION_INCLUDE_FULL = {
   misEnCause: {
     include: {
       misEnCauseType: true,
-      professionType: true,
-      professionDomicileType: true,
+      misEnCauseTypePrecision: {
+        include: {
+          misEnCauseType: true,
+        },
+      },
     },
   },
   faits: {
@@ -196,8 +199,11 @@ export const getRequeteEntiteById = async (requeteId: string, entiteIds: string[
               misEnCause: {
                 include: {
                   misEnCauseType: true,
-                  professionType: true,
-                  professionDomicileType: true,
+                  misEnCauseTypePrecision: {
+                    include: {
+                      misEnCauseType: true,
+                    },
+                  },
                 },
               },
               faits: {
@@ -640,8 +646,7 @@ const buildMisEnCauseUpdate = (misEnCauseData: SituationInput['misEnCause']) => 
 
   return {
     misEnCauseTypeId: toNullableId(misEnCauseData.misEnCauseType),
-    professionTypeId: toNullableId(misEnCauseData.professionType),
-    professionDomicileTypeId: toNullableId(misEnCauseData.professionDomicileType),
+    misEnCauseTypePrecisionId: toNullableId(misEnCauseData.misEnCausePrecision),
     rpps: misEnCauseData.rpps || null,
     commentaire: cleanNullOrEmpty(misEnCauseData.commentaire),
   };
@@ -747,7 +752,11 @@ const updateExistingSituation = async (
   }
 };
 
-const createNewSituation = async (tx: Prisma.TransactionClient, requeteId: string, situationData: SituationInput) => {
+const createNewSituation = async (
+  tx: Prisma.TransactionClient,
+  requeteId: string,
+  situationData: SituationInput,
+): Promise<{ id: string }> => {
   const situationCreateData = mapSituationToPrismaCreate(situationData);
   const createdSituation = await tx.situation.create({
     data: {
@@ -766,11 +775,56 @@ const createNewSituation = async (tx: Prisma.TransactionClient, requeteId: strin
   return createdSituation;
 };
 
-export const updateRequeteSituation = async (
-  requeteId: string,
-  situationId: string | undefined,
-  situationData: SituationInput,
-) => {
+export const createRequeteSituation = async (requeteId: string, situationData: SituationInput) => {
+  const requete = await prisma.requete.findUnique({
+    where: { id: requeteId },
+  });
+
+  if (!requete) {
+    throw new Error('Requete not found');
+  }
+
+  let createdSituationId: string | null = null;
+
+  const result = await prisma.$transaction(async (tx) => {
+    const newSituation = await createNewSituation(tx, requeteId, situationData);
+    createdSituationId = newSituation.id;
+
+    return tx.requete.findUnique({
+      where: { id: requeteId },
+      include: { situations: { include: SITUATION_INCLUDE_FULL } },
+    });
+  });
+
+  if (result?.situations && createdSituationId) {
+    const situation = result.situations.find((s) => s.id === createdSituationId);
+
+    if (situation) {
+      const fileUpdates = [];
+
+      if (situationData.fait?.fileIds?.length) {
+        fileUpdates.push(setFaitFiles(situation.id, situationData.fait.fileIds, null));
+      }
+
+      if (situationData.demarchesEngagees?.fileIds?.length && situation.demarchesEngagees) {
+        fileUpdates.push(
+          setDemarchesEngageesFiles(situation.demarchesEngagees.id, situationData.demarchesEngagees.fileIds, null),
+        );
+      }
+
+      if (fileUpdates.length > 0) {
+        await Promise.all(fileUpdates);
+      }
+    }
+  }
+
+  return prisma.requete.findUnique({
+    where: { id: requeteId },
+    include: { situations: { include: SITUATION_INCLUDE_FULL } },
+  });
+};
+
+export const updateRequeteSituation = async (requeteId: string, situationId: string, situationData: SituationInput) => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
     include: { situations: { include: SITUATION_INCLUDE_BASE } },
@@ -781,15 +835,11 @@ export const updateRequeteSituation = async (
   }
 
   const result = await prisma.$transaction(async (tx) => {
-    const existingSituation = situationId
-      ? requete.situations.find((s) => s.id === situationId)
-      : requete.situations[0];
-
-    if (existingSituation) {
-      await updateExistingSituation(tx, existingSituation, situationData);
-    } else {
-      await createNewSituation(tx, requeteId, situationData);
+    const existingSituation = requete.situations.find((s) => s.id === situationId);
+    if (!existingSituation) {
+      throw new Error('Situation not found');
     }
+    await updateExistingSituation(tx, existingSituation, situationData);
 
     return tx.requete.findUnique({
       where: { id: requeteId },
@@ -798,7 +848,7 @@ export const updateRequeteSituation = async (
   });
 
   if (result?.situations) {
-    const situation = situationId ? result.situations.find((s) => s.id === situationId) : result.situations[0];
+    const situation = result.situations.find((s) => s.id === situationId);
 
     if (situation) {
       const fileUpdates = [];
