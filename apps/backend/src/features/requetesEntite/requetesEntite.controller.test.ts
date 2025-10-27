@@ -111,7 +111,6 @@ describe('RequetesEntite endpoints: /', () => {
           updatedAt: new Date(),
           commentaire: '',
           estNonIdentifiee: false,
-          estAnonyme: false,
           estHandicapee: false,
           estIdentifie: true,
           estVictime: null,

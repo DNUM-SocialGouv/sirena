@@ -7,7 +7,6 @@ import type { Adresse, Identite, PersonneConcernee, Prisma } from '@/libs/prisma
 
 const personneTrackedFields: (keyof PersonneConcernee)[] = [
   'estNonIdentifiee',
-  'estAnonyme',
   'estHandicapee',
   'estIdentifie',
   'estVictime',

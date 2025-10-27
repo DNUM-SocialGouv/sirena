@@ -420,7 +420,6 @@ describe('requetesEntite.service', () => {
       const mockDeclarant: PersonneConcernee = {
         id: 'declarant123',
         estNonIdentifiee: null,
-        estAnonyme: null,
         estHandicapee: null,
         estIdentifie: true,
         estVictime: false,
@@ -488,7 +487,6 @@ describe('requetesEntite.service', () => {
       const mockDeclarant: PersonneConcernee = {
         id: 'declarant123',
         estNonIdentifiee: null,
-        estAnonyme: null,
         estHandicapee: null,
         estIdentifie: true,
         estVictime: false,
@@ -560,7 +558,6 @@ describe('requetesEntite.service', () => {
       const mockDeclarant: PersonneConcernee = {
         id: 'declarant123',
         estNonIdentifiee: null,
-        estAnonyme: null,
         estHandicapee: null,
         estIdentifie: true,
         estVictime: false,

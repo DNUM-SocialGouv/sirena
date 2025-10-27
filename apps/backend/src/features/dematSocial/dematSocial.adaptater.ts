@@ -211,7 +211,7 @@ const getDeclarantVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
     estHandicapee: getBooleanOrNull(champsById[rootMapping.estHandicape.id], rootMapping.estHandicape.options),
     lienVictimeId: null,
     estVictime: true,
-    estAnonyme: getBooleanOrNull(champsById[rootMapping.estAnonyme.id], rootMapping.estAnonyme.options),
+    veutGarderAnonymat: getBooleanOrNull(champsById[rootMapping.estAnonyme.id], rootMapping.estAnonyme.options),
     adresse: address,
   };
   return personneConcernee;
@@ -228,7 +228,7 @@ const declarantNonConcerne = (champsById: MappedChamp, demandeur: Demandeur) => 
       champsById[rootMapping.lienVictime.id]?.stringValue ?? null,
     ),
     estVictime: false,
-    estAnonyme: false,
+    veutGarderAnonymat: false,
     adresse: null,
   };
   return personneConcernee;
@@ -252,6 +252,7 @@ const getVictimeNonConcernee = (champsById: MappedChamp) => {
     ),
     estVictime: true,
     victimeInformeeCommentaire: champsById[rootMapping.estVictimeInformeeCommentaire.id]?.stringValue ?? null,
+    veutGarderAnonymat: getBooleanOrNull(champsById[rootMapping.estAnonyme.id], rootMapping.estAnonyme.options),
     autrePersonnes: champsById[rootMapping.autreVictimesDetails.id]?.stringValue ?? null,
   };
   return personneConcernee;

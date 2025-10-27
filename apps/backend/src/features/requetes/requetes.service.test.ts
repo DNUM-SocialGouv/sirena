@@ -54,6 +54,7 @@ const getfakeRequeteDto = () => {
     estHandicapee: false,
     estVictimeInformee: true,
     victimeInformeeCommentaire: null,
+    veutGarderAnonymat: null,
     autrePersonnes: null,
     adresse,
   };
@@ -68,7 +69,7 @@ const getfakeRequeteDto = () => {
     estHandicapee: false,
     lienVictimeId: LIEN_VICTIME.PROCHE,
     estVictime: false,
-    estAnonyme: false,
+    veutGarderAnonymat: null,
     adresse,
   };
 
@@ -141,7 +142,7 @@ const getMinimalRequeteDto = () => {
       estHandicapee: null,
       lienVictimeId: null,
       estVictime: false,
-      estAnonyme: null,
+      veutGarderAnonymat: null,
       adresse: null,
     },
     participant: {
@@ -151,6 +152,7 @@ const getMinimalRequeteDto = () => {
       estHandicapee: null,
       estVictimeInformee: null,
       victimeInformeeCommentaire: null,
+      veutGarderAnonymat: null,
       autrePersonnes: null,
     },
     situations: [
@@ -328,7 +330,7 @@ describe('requetes.service.ts', () => {
             estHandicapee: false,
             lienVictimeId: '1',
             estVictime: false,
-            estAnonyme: false,
+            veutGarderAnonymat: false,
           },
           participant: {
             adresse: {
@@ -343,6 +345,7 @@ describe('requetes.service.ts', () => {
             estHandicapee: false,
             estVictimeInformee: false,
             victimeInformeeCommentaire: '1234567890',
+            veutGarderAnonymat: null,
             autrePersonnes: '1234567890',
           },
           situations: [],
@@ -499,7 +502,6 @@ describe('requetes.service.ts', () => {
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
         estVictime: true,
-        estAnonyme: false,
         veutGarderAnonymat: null,
         commentaire: '',
         autrePersonnes: '',
@@ -630,10 +632,10 @@ describe('requetes.service.ts', () => {
         data: {
           age: { connect: { id: fakeRequeteDto.declarant.ageId } },
           estVictime: false,
-          estAnonyme: false,
           declarantDe: { connect: { id: '1' } },
           lienVictime: { connect: { id: fakeRequeteDto.declarant.lienVictimeId } },
           estHandicapee: fakeRequeteDto.declarant.estHandicapee,
+          veutGarderAnonymat: null,
           identite: {
             create: {
               nom: fakeRequeteDto.declarant.nom,
@@ -653,6 +655,7 @@ describe('requetes.service.ts', () => {
           autrePersonnes: '',
           estHandicapee: fakeRequeteDto.participant.estHandicapee,
           estVictimeInformee: fakeRequeteDto.participant.estVictimeInformee,
+          veutGarderAnonymat: null,
           identite: {
             create: {
               telephone: fakeRequeteDto.participant.telephone,
@@ -708,7 +711,6 @@ describe('requetes.service.ts', () => {
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
         estVictime: true,
-        estAnonyme: false,
         veutGarderAnonymat: null,
         commentaire: '',
         autrePersonnes: '',
