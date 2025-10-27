@@ -41,6 +41,7 @@ export const MIS_EN_CAUSE_TYPE = {
   PROFESSIONNEL_SANTE: 'PROFESSIONNEL_SANTE',
   PROFESSIONNEL_SOCIAL: 'PROFESSIONNEL_SOCIAL',
   AUTRE_PROFESSIONNEL: 'AUTRE_PROFESSIONNEL',
+  ETABLISSEMENT: 'ETABLISSEMENT',
 } as const;
 
 export type MisEnCauseType = keyof typeof MIS_EN_CAUSE_TYPE;
@@ -52,6 +53,7 @@ export const misEnCauseTypeLabels: Record<MisEnCauseType, string> = {
   PROFESSIONNEL_SANTE: 'Professionnel de santé',
   PROFESSIONNEL_SOCIAL: 'Professionnel social',
   AUTRE_PROFESSIONNEL: 'Autre professionnel',
+  ETABLISSEMENT: 'Établissement',
 };
 
 // Précisions pour chaque type de mis en cause
