@@ -305,6 +305,7 @@ model LieuDeSurvenue {
   societeTransport String @default("")
   finess           String @default("")
   commentaire      String @default("")
+  lieuPrecision    String @default("")
 
   adresse Adresse? @relation("LieuAdresse")
 
@@ -541,7 +542,7 @@ model Crons {
 }
 
 model RequeteClotureReasonEnum {
-  id  String @id @default(uuid())
-  label String @unique
+  id     String         @id @default(uuid())
+  label  String         @unique
   etapes RequeteEtape[]
 }

@@ -1,4 +1,5 @@
 import { demarcheEngageeLabels, misEnCauseTypeLabels } from '@sirena/common/constants';
+import { valueToLabel } from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
 import { FileList } from '@/components/common/FileList';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
@@ -61,7 +62,7 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
           <div className="fr-col-auto">
             <p className="fr-mb-0">
               <span className="fr-icon-draft-line fr-icon--sm" aria-hidden="true" />{' '}
-              {fait.motifs.map((motif) => motif.motif.label).join(', ')}
+              {fait.motifs.map((motif) => valueToLabel(motif.motif.label) || motif.motif.label).join(', ')}
             </p>
           </div>
         )}
@@ -138,7 +139,7 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
             <SectionTitle>Motifs qualifiés</SectionTitle>
             <ul className="fr-mb-3w">
               {fait.motifs.map((motif) => (
-                <li key={motif.motif.label}>{motif.motif.label}</li>
+                <li key={motif.motif.label}>{valueToLabel(motif.motif.label) || motif.motif.label}</li>
               ))}
             </ul>
           </>

@@ -121,7 +121,11 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
                   include: {
                     consequences: true,
                     maltraitanceTypes: true,
-                    motifs: true,
+                    motifs: {
+                      include: {
+                        motif: true,
+                      },
+                    },
                     fichiers: true,
                   },
                 },
@@ -613,6 +617,7 @@ const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) =
 
   return {
     lieuTypeId: toNullableId(lieuData.lieuType),
+    lieuPrecision: cleanNullOrEmpty(lieuData.lieuPrecision),
     codePostal: cleanNullOrEmpty(lieuData.codePostal),
     societeTransport: cleanNullOrEmpty(lieuData.societeTransport),
     finess: cleanNullOrEmpty(lieuData.finess),
@@ -656,12 +661,11 @@ const buildDemarchesEngageesUpdate = (demarchesData: SituationInput['demarchesEn
   if (!demarchesData) return {};
 
   return {
-    dateContactEtablissement: parseNullableDate(demarchesData.dateContactEtablissement),
-    etablissementARepondu: demarchesData.etablissementARepondu ?? null,
-    organisme: cleanNullOrEmpty(demarchesData.organisme),
-    datePlainte: parseNullableDate(demarchesData.datePlainte),
-    commentaire: cleanNullOrEmpty(demarchesData.commentaire),
-    autoriteTypeId: toNullableId(demarchesData.autoriteType),
+    dateContactEtablissement: parseNullableDate(demarchesData.dateContactResponsables),
+    etablissementARepondu: demarchesData.reponseRecueResponsables ?? null,
+    organisme: cleanNullOrEmpty(demarchesData.precisionsOrganisme),
+    datePlainte: parseNullableDate(demarchesData.dateDepotPlainte),
+    autoriteTypeId: toNullableId(demarchesData.lieuDepotPlainte),
     demarches: demarchesData.demarches?.length
       ? { set: demarchesData.demarches.map((demarcheId) => ({ id: demarcheId })) }
       : { set: [] },

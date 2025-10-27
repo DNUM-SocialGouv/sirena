@@ -23,15 +23,11 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
     lieuDeSurvenue: lieuDeSurvenue
       ? {
           lieuType: lieuDeSurvenue.lieuType?.id || undefined,
+          lieuPrecision: lieuDeSurvenue.lieuPrecision || undefined,
           adresse: adresse?.label || undefined,
-          numero: adresse?.numero || undefined,
-          rue: adresse?.rue || undefined,
           codePostal: lieuDeSurvenue.codePostal || adresse?.codePostal || undefined,
-          ville: adresse?.ville || undefined,
-          transportType: lieuDeSurvenue.transportType?.id || undefined,
           societeTransport: lieuDeSurvenue.societeTransport || undefined,
           finess: lieuDeSurvenue.finess || undefined,
-          commentaire: lieuDeSurvenue.commentaire || undefined,
         }
       : undefined,
     misEnCause: misEnCause
@@ -44,7 +40,6 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
       : undefined,
     fait: fait
       ? {
-          maltraitanceTypes: fait.maltraitanceTypes?.map((mt) => mt.maltraitanceType.id) || undefined,
           sousMotifs: fait.motifs?.map((m) => m.motif.label) || undefined,
           commentaire: fait.commentaire || undefined,
           dateDebut: fait.dateDebut ? new Date(fait.dateDebut).toISOString().split('T')[0] : undefined,
@@ -67,7 +62,6 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
           dateDepotPlainte: demarchesEngagees.datePlainte
             ? new Date(demarchesEngagees.datePlainte).toISOString().split('T')[0]
             : undefined,
-          commentaire: demarchesEngagees.commentaire || undefined,
         }
       : undefined,
   };

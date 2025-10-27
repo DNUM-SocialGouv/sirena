@@ -93,6 +93,7 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
     lieuDeSurvenue: {
       create: {
         lieuTypeId: lieuData?.lieuType || null,
+        lieuPrecision: lieuData?.lieuPrecision || '',
         codePostal: lieuData?.codePostal || '',
         societeTransport: lieuData?.societeTransport || '',
         finess: lieuData?.finess || '',
@@ -125,14 +126,14 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
     },
     demarchesEngagees: {
       create: {
-        dateContactEtablissement: demarchesData?.dateContactEtablissement
-          ? new Date(demarchesData.dateContactEtablissement)
+        dateContactEtablissement: demarchesData?.dateContactResponsables
+          ? new Date(demarchesData.dateContactResponsables)
           : null,
-        etablissementARepondu: demarchesData?.etablissementARepondu ?? null,
-        organisme: demarchesData?.organisme || '',
-        datePlainte: demarchesData?.datePlainte ? new Date(demarchesData.datePlainte) : null,
-        commentaire: demarchesData?.commentaire || '',
-        autoriteTypeId: demarchesData?.autoriteType || null,
+        etablissementARepondu: demarchesData?.reponseRecueResponsables ?? null,
+        organisme: demarchesData?.precisionsOrganisme || '',
+        datePlainte: demarchesData?.dateDepotPlainte ? new Date(demarchesData.dateDepotPlainte) : null,
+        commentaire: '',
+        autoriteTypeId: demarchesData?.lieuDepotPlainte || null,
         demarches: demarchesData?.demarches?.length
           ? {
               connect: demarchesData.demarches.map((demarcheId) => ({ id: demarcheId })),

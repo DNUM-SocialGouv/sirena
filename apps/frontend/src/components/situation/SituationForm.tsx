@@ -42,6 +42,7 @@ import {
   professionSocialPrecisionLabels,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
+import { labelsToValues, valuesToLabels } from '@sirena/common/utils';
 import { SelectWithChildren } from '@sirena/ui';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -669,13 +670,13 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
             <div className="fr-col-12">
               <SelectWithChildren
                 options={MOTIFS_SOUS_MOTIFS_DATA}
-                value={formData.fait?.sousMotifs || []}
+                value={labelsToValues(formData.fait?.sousMotifs || [])}
                 onChange={(values) =>
                   setFormData((prev) => ({
                     ...prev,
                     fait: {
                       ...prev.fait,
-                      sousMotifs: values,
+                      sousMotifs: valuesToLabels(values),
                     },
                   }))
                 }
