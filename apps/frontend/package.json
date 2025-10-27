@@ -37,7 +37,7 @@
     "@playwright/test": "^1.56.1",
     "@sentry/vite-plugin": "^3.6.1",
     "tsx": "catalog:",
-    "@tanstack/react-router-devtools": "^1.133.15",
+    "@tanstack/react-router-devtools": "^1.133.32",
     "@tanstack/router-plugin": "^1.133.15",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
