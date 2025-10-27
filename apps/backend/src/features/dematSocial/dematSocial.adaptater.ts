@@ -30,6 +30,11 @@ const splitRepetitionChamp = (champs: RepetitionChamp[]) => {
 };
 
 const getEnumIdFromLabel = (options: { key: string; label: string }[], label: string | null) => {
+  // Handle special case for "Établissement" vs "Établissement où se sont déroulés les faits"
+  if (label === 'Établissement') {
+    return 'ETABLISSEMENT';
+  }
+
   const element = options.find((o) => o.label === label)?.key ?? null;
   if (!element) {
     return null;
