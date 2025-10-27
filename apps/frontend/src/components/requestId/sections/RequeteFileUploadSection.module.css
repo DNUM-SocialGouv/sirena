@@ -5,7 +5,7 @@
   align-items: flex-start;
   align-self: stretch;
   border-radius: 4px;
-  background: var(--light-options-illustration-color-975-default-beige-gris-galet-975, #f9f6f2);
+  background: var(--background-alt-beige-gris-galet);
 }
 
 .fileItem {
