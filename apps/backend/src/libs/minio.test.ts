@@ -26,7 +26,9 @@ const { mockMinioClient, mockReadStream, mockUnlink } = vi.hoisted(() => {
 });
 
 vi.mock('minio', () => ({
-  Client: vi.fn().mockImplementation(() => mockMinioClient),
+  Client: function MockClient() {
+    return mockMinioClient;
+  },
 }));
 
 vi.mock('node:fs', () => ({
