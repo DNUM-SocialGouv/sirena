@@ -21,10 +21,17 @@ export const useDropdownState = () => {
     };
   }, [isOpen]);
 
+  const handleBlur = (event: React.FocusEvent) => {
+    if (!dropdownRef.current?.contains(event.relatedTarget as Node)) {
+      setIsOpen(false);
+    }
+  };
+
   return {
     isOpen,
     setIsOpen,
     dropdownRef,
     buttonRef,
+    handleBlur,
   };
 };

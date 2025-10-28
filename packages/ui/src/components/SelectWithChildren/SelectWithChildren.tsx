@@ -30,7 +30,7 @@ export function SelectWithChildren({
   const buttonId = `${componentId}-button`;
   const dropdownId = `${componentId}-dropdown`;
 
-  const { isOpen, setIsOpen, dropdownRef, buttonRef } = useDropdownState();
+  const { isOpen, setIsOpen, dropdownRef, buttonRef, handleBlur } = useDropdownState();
   const { navigationPath, navigateInto, navigateBack } = useSelectNavigation();
   const { focusedIndex, setFocusedIndex, setOptionRef } = useFocusManagement(isOpen);
 
@@ -86,6 +86,7 @@ export function SelectWithChildren({
           id={buttonId}
           onClick={() => setIsOpen(!isOpen)}
           onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           aria-labelledby={buttonId}
@@ -113,7 +114,7 @@ export function SelectWithChildren({
             )}
 
             {navigationPath.length > 0 && (
-              <h2 className={styles.submotifTitle}>{navigationPath[navigationPath.length - 1].label}</h2>
+              <div className={styles.submotifTitle}>{navigationPath[navigationPath.length - 1].label}</div>
             )}
 
             <div className={navigationPath.length > 0 ? styles.submotifList : ''}>
