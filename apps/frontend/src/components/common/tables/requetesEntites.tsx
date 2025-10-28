@@ -3,13 +3,7 @@ import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
-import {
-  type Motif,
-  motifShortLabels,
-  REQUETE_STATUT_TYPES,
-  type RequeteStatutType,
-  requeteStatutType,
-} from '@sirena/common/constants';
+import { REQUETE_STATUT_TYPES, type RequeteStatutType, requeteStatutType } from '@sirena/common/constants';
 import { valueToLabel } from '@sirena/common/utils';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';

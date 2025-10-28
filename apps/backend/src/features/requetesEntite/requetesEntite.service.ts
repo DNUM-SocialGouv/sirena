@@ -613,7 +613,7 @@ export const updateRequeteParticipant = async (
 const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) => {
   if (!lieuData) return {};
 
-  const hasAdresseData = lieuData.adresse || lieuData.numero || lieuData.rue || lieuData.codePostal || lieuData.ville;
+  const hasAdresseData = lieuData.adresse || lieuData.codePostal;
 
   return {
     lieuTypeId: toNullableId(lieuData.lieuType),
@@ -621,24 +621,16 @@ const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) =
     codePostal: cleanNullOrEmpty(lieuData.codePostal),
     societeTransport: cleanNullOrEmpty(lieuData.societeTransport),
     finess: cleanNullOrEmpty(lieuData.finess),
-    commentaire: cleanNullOrEmpty(lieuData.commentaire),
-    transportTypeId: toNullableId(lieuData.transportType),
     adresse: hasAdresseData
       ? {
           upsert: {
             create: {
               label: cleanNullOrEmpty(lieuData.adresse),
-              numero: cleanNullOrEmpty(lieuData.numero),
-              rue: cleanNullOrEmpty(lieuData.rue),
               codePostal: cleanNullOrEmpty(lieuData.codePostal),
-              ville: cleanNullOrEmpty(lieuData.ville),
             },
             update: {
               label: cleanNullOrEmpty(lieuData.adresse),
-              numero: cleanNullOrEmpty(lieuData.numero),
-              rue: cleanNullOrEmpty(lieuData.rue),
               codePostal: cleanNullOrEmpty(lieuData.codePostal),
-              ville: cleanNullOrEmpty(lieuData.ville),
             },
           },
         }
@@ -714,14 +706,6 @@ const updateFaitRelations = async (
     relationCreates.push(
       tx.faitConsequence.createMany({
         data: faitData.consequences.map((consequenceId) => ({ situationId, consequenceId })),
-      }),
-    );
-  }
-
-  if (faitData.maltraitanceTypes?.length) {
-    relationCreates.push(
-      tx.faitMaltraitanceType.createMany({
-        data: faitData.maltraitanceTypes.map((maltraitanceTypeId) => ({ situationId, maltraitanceTypeId })),
       }),
     );
   }
@@ -804,20 +788,8 @@ export const createRequeteSituation = async (requeteId: string, situationData: S
     const situation = result.situations.find((s) => s.id === createdSituationId);
 
     if (situation) {
-      const fileUpdates = [];
-
       if (situationData.fait?.fileIds?.length) {
-        fileUpdates.push(setFaitFiles(situation.id, situationData.fait.fileIds, null));
-      }
-
-      if (situationData.demarchesEngagees?.fileIds?.length && situation.demarchesEngagees) {
-        fileUpdates.push(
-          setDemarchesEngageesFiles(situation.demarchesEngagees.id, situationData.demarchesEngagees.fileIds, null),
-        );
-      }
-
-      if (fileUpdates.length > 0) {
-        await Promise.all(fileUpdates);
+        await setFaitFiles(situation.id, situationData.fait.fileIds, null);
       }
     }
   }
@@ -855,20 +827,8 @@ export const updateRequeteSituation = async (requeteId: string, situationId: str
     const situation = result.situations.find((s) => s.id === situationId);
 
     if (situation) {
-      const fileUpdates = [];
-
       if (situationData.fait?.fileIds?.length) {
-        fileUpdates.push(setFaitFiles(situation.id, situationData.fait.fileIds, null));
-      }
-
-      if (situationData.demarchesEngagees?.fileIds?.length && situation.demarchesEngagees) {
-        fileUpdates.push(
-          setDemarchesEngageesFiles(situation.demarchesEngagees.id, situationData.demarchesEngagees.fileIds, null),
-        );
-      }
-
-      if (fileUpdates.length > 0) {
-        await Promise.all(fileUpdates);
+        await setFaitFiles(situation.id, situationData.fait.fileIds, null);
       }
     }
   }

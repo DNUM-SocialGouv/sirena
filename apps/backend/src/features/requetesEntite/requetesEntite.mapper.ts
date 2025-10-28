@@ -87,7 +87,7 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
   const misEnCauseData = situationData.misEnCause;
   const demarchesData = situationData.demarchesEngagees;
 
-  const hasAdresse = lieuData?.adresse || lieuData?.numero || lieuData?.rue || lieuData?.codePostal || lieuData?.ville;
+  const hasAdresse = lieuData?.adresse || lieuData?.codePostal;
 
   return {
     lieuDeSurvenue: {
@@ -97,16 +97,11 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
         codePostal: lieuData?.codePostal || '',
         societeTransport: lieuData?.societeTransport || '',
         finess: lieuData?.finess || '',
-        commentaire: lieuData?.commentaire || '',
-        transportTypeId: lieuData?.transportType || null,
         adresse: hasAdresse
           ? {
               create: {
                 label: lieuData?.adresse || '',
-                numero: lieuData?.numero || '',
-                rue: lieuData?.rue || '',
                 codePostal: lieuData?.codePostal || '',
-                ville: lieuData?.ville || '',
               },
             }
           : undefined,
@@ -132,7 +127,6 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
         etablissementARepondu: demarchesData?.reponseRecueResponsables ?? null,
         organisme: demarchesData?.precisionsOrganisme || '',
         datePlainte: demarchesData?.dateDepotPlainte ? new Date(demarchesData.dateDepotPlainte) : null,
-        commentaire: '',
         autoriteTypeId: demarchesData?.lieuDepotPlainte || null,
         demarches: demarchesData?.demarches?.length
           ? {
@@ -170,15 +164,6 @@ export const mapSituationFaitToPrismaCreate = (situationId: string, faitData?: S
           create: faitData.consequences.map((consequenceId) => ({
             consequence: {
               connect: { id: consequenceId },
-            },
-          })),
-        }
-      : undefined,
-    maltraitanceTypes: faitData.maltraitanceTypes?.length
-      ? {
-          create: faitData.maltraitanceTypes.map((maltraitanceTypeId) => ({
-            maltraitanceType: {
-              connect: { id: maltraitanceTypeId },
             },
           })),
         }
