@@ -22,30 +22,24 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
   return {
     lieuDeSurvenue: lieuDeSurvenue
       ? {
-          lieuType: lieuDeSurvenue.lieuTypeId || undefined,
+          lieuType: lieuDeSurvenue.lieuType?.id || undefined,
+          lieuPrecision: lieuDeSurvenue.lieuPrecision || undefined,
           adresse: adresse?.label || undefined,
-          numero: adresse?.numero || undefined,
-          rue: adresse?.rue || undefined,
           codePostal: lieuDeSurvenue.codePostal || adresse?.codePostal || undefined,
-          ville: adresse?.ville || undefined,
-          transportType: lieuDeSurvenue.transportTypeId || undefined,
           societeTransport: lieuDeSurvenue.societeTransport || undefined,
           finess: lieuDeSurvenue.finess || undefined,
-          commentaire: lieuDeSurvenue.commentaire || undefined,
         }
       : undefined,
     misEnCause: misEnCause
       ? {
-          misEnCauseType: misEnCause.misEnCauseTypeId || undefined,
-          professionType: misEnCause.professionTypeId || undefined,
-          professionDomicileType: misEnCause.professionDomicileTypeId || undefined,
+          misEnCauseType: misEnCause.misEnCauseType?.id || undefined,
+          misEnCausePrecision: misEnCause.misEnCauseTypePrecision?.id || undefined,
           rpps: misEnCause.rpps || undefined,
           commentaire: misEnCause.commentaire || undefined,
         }
       : undefined,
     fait: fait
       ? {
-          maltraitanceTypes: fait.maltraitanceTypes?.map((mt) => mt.maltraitanceType.id) || undefined,
           sousMotifs: fait.motifs?.map((m) => m.motif.label) || undefined,
           commentaire: fait.commentaire || undefined,
           dateDebut: fait.dateDebut ? new Date(fait.dateDebut).toISOString().split('T')[0] : undefined,
@@ -59,16 +53,15 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
     demarchesEngagees: demarchesEngagees
       ? {
           demarches: demarchesEngagees.demarches?.map((d) => d.id) || undefined,
-          dateContactEtablissement: demarchesEngagees.dateContactEtablissement
+          dateContactResponsables: demarchesEngagees.dateContactEtablissement
             ? new Date(demarchesEngagees.dateContactEtablissement).toISOString().split('T')[0]
             : undefined,
-          etablissementARepondu: demarchesEngagees.etablissementARepondu ?? undefined,
-          organisme: demarchesEngagees.organisme || undefined,
-          autoriteType: demarchesEngagees.autoriteTypeId || undefined,
-          datePlainte: demarchesEngagees.datePlainte
+          reponseRecueResponsables: demarchesEngagees.etablissementARepondu ?? undefined,
+          precisionsOrganisme: demarchesEngagees.organisme || undefined,
+          lieuDepotPlainte: demarchesEngagees.autoriteType?.id || undefined,
+          dateDepotPlainte: demarchesEngagees.datePlainte
             ? new Date(demarchesEngagees.datePlainte).toISOString().split('T')[0]
             : undefined,
-          commentaire: demarchesEngagees.commentaire || undefined,
         }
       : undefined,
   };

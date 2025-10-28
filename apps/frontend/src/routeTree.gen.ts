@@ -31,6 +31,8 @@ import { Route as AuthUserRequestRequestIdSituationRouteImport } from './routes/
 import { Route as AuthUserRequestRequestIdProcessingRouteImport } from './routes/_auth/_user/request.$requestId/processing'
 import { Route as AuthUserRequestRequestIdPersonneConcerneeRouteImport } from './routes/_auth/_user/request.$requestId.personne-concernee'
 import { Route as AuthUserRequestRequestIdDeclarantRouteImport } from './routes/_auth/_user/request.$requestId.declarant'
+import { Route as AuthUserRequestRequestIdSituationIndexRouteImport } from './routes/_auth/_user/request.$requestId.situation.index'
+import { Route as AuthUserRequestRequestIdSituationSituationIdRouteImport } from './routes/_auth/_user/request.$requestId.situation.$situationId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -149,6 +151,18 @@ const AuthUserRequestRequestIdDeclarantRoute =
     path: '/declarant',
     getParentRoute: () => AuthUserRequestRequestIdRoute,
   } as any)
+const AuthUserRequestRequestIdSituationIndexRoute =
+  AuthUserRequestRequestIdSituationIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthUserRequestRequestIdSituationRoute,
+  } as any)
+const AuthUserRequestRequestIdSituationSituationIdRoute =
+  AuthUserRequestRequestIdSituationSituationIdRouteImport.update({
+    id: '/$situationId',
+    path: '/$situationId',
+    getParentRoute: () => AuthUserRequestRequestIdSituationRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -166,11 +180,13 @@ export interface FileRoutesByFullPath {
   '/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
   '/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
   '/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
-  '/request/$requestId/situation': typeof AuthUserRequestRequestIdSituationRoute
+  '/request/$requestId/situation': typeof AuthUserRequestRequestIdSituationRouteWithChildren
   '/request/create/declarant': typeof AuthUserRequestCreateDeclarantRoute
   '/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/request/create/situation': typeof AuthUserRequestCreateSituationRoute
   '/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
+  '/request/$requestId/situation/$situationId': typeof AuthUserRequestRequestIdSituationSituationIdRoute
+  '/request/$requestId/situation/': typeof AuthUserRequestRequestIdSituationIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -186,11 +202,12 @@ export interface FileRoutesByTo {
   '/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
   '/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
   '/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
-  '/request/$requestId/situation': typeof AuthUserRequestRequestIdSituationRoute
   '/request/create/declarant': typeof AuthUserRequestCreateDeclarantRoute
   '/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/request/create/situation': typeof AuthUserRequestCreateSituationRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdIndexRoute
+  '/request/$requestId/situation/$situationId': typeof AuthUserRequestRequestIdSituationSituationIdRoute
+  '/request/$requestId/situation': typeof AuthUserRequestRequestIdSituationIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -211,11 +228,13 @@ export interface FileRoutesById {
   '/_auth/_user/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
   '/_auth/_user/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
   '/_auth/_user/request/$requestId/processing': typeof AuthUserRequestRequestIdProcessingRoute
-  '/_auth/_user/request/$requestId/situation': typeof AuthUserRequestRequestIdSituationRoute
+  '/_auth/_user/request/$requestId/situation': typeof AuthUserRequestRequestIdSituationRouteWithChildren
   '/_auth/_user/request/create/declarant': typeof AuthUserRequestCreateDeclarantRoute
   '/_auth/_user/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/_auth/_user/request/create/situation': typeof AuthUserRequestCreateSituationRoute
   '/_auth/_user/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
+  '/_auth/_user/request/$requestId/situation/$situationId': typeof AuthUserRequestRequestIdSituationSituationIdRoute
+  '/_auth/_user/request/$requestId/situation/': typeof AuthUserRequestRequestIdSituationIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -240,6 +259,8 @@ export interface FileRouteTypes {
     | '/request/create/personne-concernee'
     | '/request/create/situation'
     | '/request/$requestId/'
+    | '/request/$requestId/situation/$situationId'
+    | '/request/$requestId/situation/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -255,11 +276,12 @@ export interface FileRouteTypes {
     | '/request/$requestId/declarant'
     | '/request/$requestId/personne-concernee'
     | '/request/$requestId/processing'
-    | '/request/$requestId/situation'
     | '/request/create/declarant'
     | '/request/create/personne-concernee'
     | '/request/create/situation'
     | '/request/$requestId'
+    | '/request/$requestId/situation/$situationId'
+    | '/request/$requestId/situation'
   id:
     | '__root__'
     | '/'
@@ -284,6 +306,8 @@ export interface FileRouteTypes {
     | '/_auth/_user/request/create/personne-concernee'
     | '/_auth/_user/request/create/situation'
     | '/_auth/_user/request/$requestId/'
+    | '/_auth/_user/request/$requestId/situation/$situationId'
+    | '/_auth/_user/request/$requestId/situation/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -448,14 +472,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUserRequestRequestIdDeclarantRouteImport
       parentRoute: typeof AuthUserRequestRequestIdRoute
     }
+    '/_auth/_user/request/$requestId/situation/': {
+      id: '/_auth/_user/request/$requestId/situation/'
+      path: '/'
+      fullPath: '/request/$requestId/situation/'
+      preLoaderRoute: typeof AuthUserRequestRequestIdSituationIndexRouteImport
+      parentRoute: typeof AuthUserRequestRequestIdSituationRoute
+    }
+    '/_auth/_user/request/$requestId/situation/$situationId': {
+      id: '/_auth/_user/request/$requestId/situation/$situationId'
+      path: '/$situationId'
+      fullPath: '/request/$requestId/situation/$situationId'
+      preLoaderRoute: typeof AuthUserRequestRequestIdSituationSituationIdRouteImport
+      parentRoute: typeof AuthUserRequestRequestIdSituationRoute
+    }
   }
 }
+
+interface AuthUserRequestRequestIdSituationRouteChildren {
+  AuthUserRequestRequestIdSituationSituationIdRoute: typeof AuthUserRequestRequestIdSituationSituationIdRoute
+  AuthUserRequestRequestIdSituationIndexRoute: typeof AuthUserRequestRequestIdSituationIndexRoute
+}
+
+const AuthUserRequestRequestIdSituationRouteChildren: AuthUserRequestRequestIdSituationRouteChildren =
+  {
+    AuthUserRequestRequestIdSituationSituationIdRoute:
+      AuthUserRequestRequestIdSituationSituationIdRoute,
+    AuthUserRequestRequestIdSituationIndexRoute:
+      AuthUserRequestRequestIdSituationIndexRoute,
+  }
+
+const AuthUserRequestRequestIdSituationRouteWithChildren =
+  AuthUserRequestRequestIdSituationRoute._addFileChildren(
+    AuthUserRequestRequestIdSituationRouteChildren,
+  )
 
 interface AuthUserRequestRequestIdRouteChildren {
   AuthUserRequestRequestIdDeclarantRoute: typeof AuthUserRequestRequestIdDeclarantRoute
   AuthUserRequestRequestIdPersonneConcerneeRoute: typeof AuthUserRequestRequestIdPersonneConcerneeRoute
   AuthUserRequestRequestIdProcessingRoute: typeof AuthUserRequestRequestIdProcessingRoute
-  AuthUserRequestRequestIdSituationRoute: typeof AuthUserRequestRequestIdSituationRoute
+  AuthUserRequestRequestIdSituationRoute: typeof AuthUserRequestRequestIdSituationRouteWithChildren
   AuthUserRequestRequestIdIndexRoute: typeof AuthUserRequestRequestIdIndexRoute
 }
 
@@ -468,7 +524,7 @@ const AuthUserRequestRequestIdRouteChildren: AuthUserRequestRequestIdRouteChildr
     AuthUserRequestRequestIdProcessingRoute:
       AuthUserRequestRequestIdProcessingRoute,
     AuthUserRequestRequestIdSituationRoute:
-      AuthUserRequestRequestIdSituationRoute,
+      AuthUserRequestRequestIdSituationRouteWithChildren,
     AuthUserRequestRequestIdIndexRoute: AuthUserRequestRequestIdIndexRoute,
   }
 

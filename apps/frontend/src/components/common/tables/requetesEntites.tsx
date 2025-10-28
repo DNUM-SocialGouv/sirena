@@ -3,13 +3,8 @@ import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
-import {
-  type Motif,
-  motifShortLabels,
-  REQUETE_STATUT_TYPES,
-  type RequeteStatutType,
-  requeteStatutType,
-} from '@sirena/common/constants';
+import { REQUETE_STATUT_TYPES, type RequeteStatutType, requeteStatutType } from '@sirena/common/constants';
+import { valueToLabel } from '@sirena/common/utils';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -134,7 +129,7 @@ export function RequetesEntite() {
       const requete = row.requete as typeof row.requete & {
         situations?: Array<{
           faits?: Array<{
-            motifs?: Array<{ motifId: string }>;
+            motifs?: Array<{ motifId: string; motif: { label: string } }>;
             maltraitanceTypes?: Array<unknown>;
           }>;
         }>;
@@ -155,7 +150,7 @@ export function RequetesEntite() {
           {motifs.length > 0 && (
             <ul>
               {motifs.map((motif) => (
-                <li key={motif.motifId}>{motifShortLabels[motif.motifId as Motif]}</li>
+                <li key={motif.motifId}>{valueToLabel(motif.motif.label) || motif.motif.label}</li>
               ))}
             </ul>
           )}

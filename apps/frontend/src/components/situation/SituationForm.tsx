@@ -45,7 +45,7 @@ import type { SituationData } from '@sirena/common/schemas';
 import { labelsToValues, valuesToLabels } from '@sirena/common/utils';
 import { SelectWithChildren } from '@sirena/ui';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FileUploadSection } from '@/components/common/FileUploadSection';
 
 interface SituationFormProps {
@@ -61,6 +61,12 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
   const [formData, setFormData] = useState<SituationData>(initialData || {});
   const [isSaving, setIsSaving] = useState(false);
   const [faitFiles, setFaitFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
   const lieuType = formData.lieuDeSurvenue?.lieuType;
   const misEnCauseType = formData.misEnCause?.misEnCauseType;
@@ -680,9 +686,9 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
             <div className="fr-col-12">
               <SelectWithChildren
                 label="Conséquences sur la personne"
-                options={Object.entries(CONSEQUENCE).map(([key, value]) => ({
+                options={Object.entries(CONSEQUENCE).map(([key]) => ({
                   label: consequenceLabels[key as keyof typeof CONSEQUENCE],
-                  value: value,
+                  value: key,
                 }))}
                 value={formData.fait?.consequences || []}
                 onChange={(values) =>

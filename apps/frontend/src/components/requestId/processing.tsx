@@ -88,8 +88,7 @@ export const Processing = ({ requestId }: ProcessingProps = {}) => {
         }
         misEnCause={
           requestQuery.data?.requete?.situations?.[0]?.misEnCause
-            ? `${requestQuery.data.requete.situations[0].misEnCause.professionType?.label || ''} ${requestQuery.data.requete.situations[0].misEnCause.misEnCauseType?.label || ''}`.trim() ||
-              'Non spécifié'
+            ? requestQuery.data.requete.situations[0].misEnCause.misEnCauseType?.label || 'Non spécifié'
             : undefined
         }
       />

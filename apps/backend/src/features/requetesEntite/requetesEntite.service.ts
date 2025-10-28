@@ -59,8 +59,11 @@ const SITUATION_INCLUDE_FULL = {
   misEnCause: {
     include: {
       misEnCauseType: true,
-      professionType: true,
-      professionDomicileType: true,
+      misEnCauseTypePrecision: {
+        include: {
+          misEnCauseType: true,
+        },
+      },
     },
   },
   faits: {
@@ -118,7 +121,11 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
                   include: {
                     consequences: true,
                     maltraitanceTypes: true,
-                    motifs: true,
+                    motifs: {
+                      include: {
+                        motif: true,
+                      },
+                    },
                     fichiers: true,
                   },
                 },
@@ -196,8 +203,11 @@ export const getRequeteEntiteById = async (requeteId: string, entiteIds: string[
               misEnCause: {
                 include: {
                   misEnCauseType: true,
-                  professionType: true,
-                  professionDomicileType: true,
+                  misEnCauseTypePrecision: {
+                    include: {
+                      misEnCauseType: true,
+                    },
+                  },
                 },
               },
               faits: {
@@ -603,31 +613,24 @@ export const updateRequeteParticipant = async (
 const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) => {
   if (!lieuData) return {};
 
-  const hasAdresseData = lieuData.adresse || lieuData.numero || lieuData.rue || lieuData.codePostal || lieuData.ville;
+  const hasAdresseData = lieuData.adresse || lieuData.codePostal;
 
   return {
     lieuTypeId: toNullableId(lieuData.lieuType),
+    lieuPrecision: cleanNullOrEmpty(lieuData.lieuPrecision),
     codePostal: cleanNullOrEmpty(lieuData.codePostal),
     societeTransport: cleanNullOrEmpty(lieuData.societeTransport),
     finess: cleanNullOrEmpty(lieuData.finess),
-    commentaire: cleanNullOrEmpty(lieuData.commentaire),
-    transportTypeId: toNullableId(lieuData.transportType),
     adresse: hasAdresseData
       ? {
           upsert: {
             create: {
               label: cleanNullOrEmpty(lieuData.adresse),
-              numero: cleanNullOrEmpty(lieuData.numero),
-              rue: cleanNullOrEmpty(lieuData.rue),
               codePostal: cleanNullOrEmpty(lieuData.codePostal),
-              ville: cleanNullOrEmpty(lieuData.ville),
             },
             update: {
               label: cleanNullOrEmpty(lieuData.adresse),
-              numero: cleanNullOrEmpty(lieuData.numero),
-              rue: cleanNullOrEmpty(lieuData.rue),
               codePostal: cleanNullOrEmpty(lieuData.codePostal),
-              ville: cleanNullOrEmpty(lieuData.ville),
             },
           },
         }
@@ -640,8 +643,7 @@ const buildMisEnCauseUpdate = (misEnCauseData: SituationInput['misEnCause']) => 
 
   return {
     misEnCauseTypeId: toNullableId(misEnCauseData.misEnCauseType),
-    professionTypeId: toNullableId(misEnCauseData.professionType),
-    professionDomicileTypeId: toNullableId(misEnCauseData.professionDomicileType),
+    misEnCauseTypePrecisionId: toNullableId(misEnCauseData.misEnCausePrecision),
     rpps: misEnCauseData.rpps || null,
     commentaire: cleanNullOrEmpty(misEnCauseData.commentaire),
   };
@@ -651,12 +653,11 @@ const buildDemarchesEngageesUpdate = (demarchesData: SituationInput['demarchesEn
   if (!demarchesData) return {};
 
   return {
-    dateContactEtablissement: parseNullableDate(demarchesData.dateContactEtablissement),
-    etablissementARepondu: demarchesData.etablissementARepondu ?? null,
-    organisme: cleanNullOrEmpty(demarchesData.organisme),
-    datePlainte: parseNullableDate(demarchesData.datePlainte),
-    commentaire: cleanNullOrEmpty(demarchesData.commentaire),
-    autoriteTypeId: toNullableId(demarchesData.autoriteType),
+    dateContactEtablissement: parseNullableDate(demarchesData.dateContactResponsables),
+    etablissementARepondu: demarchesData.reponseRecueResponsables ?? null,
+    organisme: cleanNullOrEmpty(demarchesData.precisionsOrganisme),
+    datePlainte: parseNullableDate(demarchesData.dateDepotPlainte),
+    autoriteTypeId: toNullableId(demarchesData.lieuDepotPlainte),
     demarches: demarchesData.demarches?.length
       ? { set: demarchesData.demarches.map((demarcheId) => ({ id: demarcheId })) }
       : { set: [] },
@@ -709,14 +710,6 @@ const updateFaitRelations = async (
     );
   }
 
-  if (faitData.maltraitanceTypes?.length) {
-    relationCreates.push(
-      tx.faitMaltraitanceType.createMany({
-        data: faitData.maltraitanceTypes.map((maltraitanceTypeId) => ({ situationId, maltraitanceTypeId })),
-      }),
-    );
-  }
-
   if (relationCreates.length > 0) {
     await Promise.all(relationCreates);
   }
@@ -747,7 +740,11 @@ const updateExistingSituation = async (
   }
 };
 
-const createNewSituation = async (tx: Prisma.TransactionClient, requeteId: string, situationData: SituationInput) => {
+const createNewSituation = async (
+  tx: Prisma.TransactionClient,
+  requeteId: string,
+  situationData: SituationInput,
+): Promise<{ id: string }> => {
   const situationCreateData = mapSituationToPrismaCreate(situationData);
   const createdSituation = await tx.situation.create({
     data: {
@@ -766,11 +763,44 @@ const createNewSituation = async (tx: Prisma.TransactionClient, requeteId: strin
   return createdSituation;
 };
 
-export const updateRequeteSituation = async (
-  requeteId: string,
-  situationId: string | undefined,
-  situationData: SituationInput,
-) => {
+export const createRequeteSituation = async (requeteId: string, situationData: SituationInput) => {
+  const requete = await prisma.requete.findUnique({
+    where: { id: requeteId },
+  });
+
+  if (!requete) {
+    throw new Error('Requete not found');
+  }
+
+  let createdSituationId: string | null = null;
+
+  const result = await prisma.$transaction(async (tx) => {
+    const newSituation = await createNewSituation(tx, requeteId, situationData);
+    createdSituationId = newSituation.id;
+
+    return tx.requete.findUnique({
+      where: { id: requeteId },
+      include: { situations: { include: SITUATION_INCLUDE_FULL } },
+    });
+  });
+
+  if (result?.situations && createdSituationId) {
+    const situation = result.situations.find((s) => s.id === createdSituationId);
+
+    if (situation) {
+      if (situationData.fait?.fileIds?.length) {
+        await setFaitFiles(situation.id, situationData.fait.fileIds, null);
+      }
+    }
+  }
+
+  return prisma.requete.findUnique({
+    where: { id: requeteId },
+    include: { situations: { include: SITUATION_INCLUDE_FULL } },
+  });
+};
+
+export const updateRequeteSituation = async (requeteId: string, situationId: string, situationData: SituationInput) => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
     include: { situations: { include: SITUATION_INCLUDE_BASE } },
@@ -781,15 +811,11 @@ export const updateRequeteSituation = async (
   }
 
   const result = await prisma.$transaction(async (tx) => {
-    const existingSituation = situationId
-      ? requete.situations.find((s) => s.id === situationId)
-      : requete.situations[0];
-
-    if (existingSituation) {
-      await updateExistingSituation(tx, existingSituation, situationData);
-    } else {
-      await createNewSituation(tx, requeteId, situationData);
+    const existingSituation = requete.situations.find((s) => s.id === situationId);
+    if (!existingSituation) {
+      throw new Error('Situation not found');
     }
+    await updateExistingSituation(tx, existingSituation, situationData);
 
     return tx.requete.findUnique({
       where: { id: requeteId },
@@ -798,23 +824,11 @@ export const updateRequeteSituation = async (
   });
 
   if (result?.situations) {
-    const situation = situationId ? result.situations.find((s) => s.id === situationId) : result.situations[0];
+    const situation = result.situations.find((s) => s.id === situationId);
 
     if (situation) {
-      const fileUpdates = [];
-
       if (situationData.fait?.fileIds?.length) {
-        fileUpdates.push(setFaitFiles(situation.id, situationData.fait.fileIds, null));
-      }
-
-      if (situationData.demarchesEngagees?.fileIds?.length && situation.demarchesEngagees) {
-        fileUpdates.push(
-          setDemarchesEngageesFiles(situation.demarchesEngagees.id, situationData.demarchesEngagees.fileIds, null),
-        );
-      }
-
-      if (fileUpdates.length > 0) {
-        await Promise.all(fileUpdates);
+        await setFaitFiles(situation.id, situationData.fait.fileIds, null);
       }
     }
   }

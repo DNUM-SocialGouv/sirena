@@ -87,25 +87,21 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
   const misEnCauseData = situationData.misEnCause;
   const demarchesData = situationData.demarchesEngagees;
 
-  const hasAdresse = lieuData?.adresse || lieuData?.numero || lieuData?.rue || lieuData?.codePostal || lieuData?.ville;
+  const hasAdresse = lieuData?.adresse || lieuData?.codePostal;
 
   return {
     lieuDeSurvenue: {
       create: {
         lieuTypeId: lieuData?.lieuType || null,
+        lieuPrecision: lieuData?.lieuPrecision || '',
         codePostal: lieuData?.codePostal || '',
         societeTransport: lieuData?.societeTransport || '',
         finess: lieuData?.finess || '',
-        commentaire: lieuData?.commentaire || '',
-        transportTypeId: lieuData?.transportType || null,
         adresse: hasAdresse
           ? {
               create: {
                 label: lieuData?.adresse || '',
-                numero: lieuData?.numero || '',
-                rue: lieuData?.rue || '',
                 codePostal: lieuData?.codePostal || '',
-                ville: lieuData?.ville || '',
               },
             }
           : undefined,
@@ -113,23 +109,25 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
     },
     misEnCause: {
       create: {
-        misEnCauseTypeId: misEnCauseData?.misEnCauseType || null,
-        professionTypeId: misEnCauseData?.professionType || null,
-        professionDomicileTypeId: misEnCauseData?.professionDomicileType || null,
+        misEnCauseTypeId:
+          misEnCauseData?.misEnCauseType && misEnCauseData.misEnCauseType !== '' ? misEnCauseData.misEnCauseType : null,
+        misEnCauseTypePrecisionId:
+          misEnCauseData?.misEnCausePrecision && misEnCauseData.misEnCausePrecision !== ''
+            ? misEnCauseData.misEnCausePrecision
+            : null,
         rpps: misEnCauseData?.rpps || null,
         commentaire: misEnCauseData?.commentaire || '',
       },
     },
     demarchesEngagees: {
       create: {
-        dateContactEtablissement: demarchesData?.dateContactEtablissement
-          ? new Date(demarchesData.dateContactEtablissement)
+        dateContactEtablissement: demarchesData?.dateContactResponsables
+          ? new Date(demarchesData.dateContactResponsables)
           : null,
-        etablissementARepondu: demarchesData?.etablissementARepondu ?? null,
-        organisme: demarchesData?.organisme || '',
-        datePlainte: demarchesData?.datePlainte ? new Date(demarchesData.datePlainte) : null,
-        commentaire: demarchesData?.commentaire || '',
-        autoriteTypeId: demarchesData?.autoriteType || null,
+        etablissementARepondu: demarchesData?.reponseRecueResponsables ?? null,
+        organisme: demarchesData?.precisionsOrganisme || '',
+        datePlainte: demarchesData?.dateDepotPlainte ? new Date(demarchesData.dateDepotPlainte) : null,
+        autoriteTypeId: demarchesData?.lieuDepotPlainte || null,
         demarches: demarchesData?.demarches?.length
           ? {
               connect: demarchesData.demarches.map((demarcheId) => ({ id: demarcheId })),
@@ -166,15 +164,6 @@ export const mapSituationFaitToPrismaCreate = (situationId: string, faitData?: S
           create: faitData.consequences.map((consequenceId) => ({
             consequence: {
               connect: { id: consequenceId },
-            },
-          })),
-        }
-      : undefined,
-    maltraitanceTypes: faitData.maltraitanceTypes?.length
-      ? {
-          create: faitData.maltraitanceTypes.map((maltraitanceTypeId) => ({
-            maltraitanceType: {
-              connect: { id: maltraitanceTypeId },
             },
           })),
         }

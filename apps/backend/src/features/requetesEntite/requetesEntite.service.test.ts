@@ -136,7 +136,11 @@ describe('requetesEntite.service', () => {
                     include: {
                       consequences: true,
                       maltraitanceTypes: true,
-                      motifs: true,
+                      motifs: {
+                        include: {
+                          motif: true,
+                        },
+                      },
                       fichiers: true,
                     },
                   },
@@ -196,7 +200,11 @@ describe('requetesEntite.service', () => {
                     include: {
                       consequences: true,
                       maltraitanceTypes: true,
-                      motifs: true,
+                      motifs: {
+                        include: {
+                          motif: true,
+                        },
+                      },
                       fichiers: true,
                     },
                   },
@@ -256,7 +264,11 @@ describe('requetesEntite.service', () => {
                     include: {
                       consequences: true,
                       maltraitanceTypes: true,
-                      motifs: true,
+                      motifs: {
+                        include: {
+                          motif: true,
+                        },
+                      },
                       fichiers: true,
                     },
                   },
@@ -340,8 +352,11 @@ describe('requetesEntite.service', () => {
                   misEnCause: {
                     include: {
                       misEnCauseType: true,
-                      professionType: true,
-                      professionDomicileType: true,
+                      misEnCauseTypePrecision: {
+                        include: {
+                          misEnCauseType: true,
+                        },
+                      },
                     },
                   },
                   faits: {
