@@ -78,17 +78,34 @@ const estHandicape = {
 };
 
 const estAnonyme = {
-  id: 'Champ-34247',
+  id: 'Champ-38953',
   type: 'CheckboxChamp',
   label:
     "Acceptez-vous que votre identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
   options: [
     {
-      key: false,
+      key: true,
       label: 'Oui',
     },
     {
+      key: false,
+      label: 'Non',
+    },
+  ],
+};
+
+const estAnonymeMemePersonne = {
+  id: 'Champ-34247',
+  type: 'TextChamp',
+  label:
+    "Acceptez-vous que votre identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
+  options: [
+    {
       key: true,
+      label: 'Oui',
+    },
+    {
+      key: false,
       label: 'Non',
     },
   ],
@@ -838,6 +855,7 @@ export default {
   age,
   estHandicape,
   estAnonyme,
+  estAnonymeMemePersonne,
 
   // Victime non concernée
   victimeAge,

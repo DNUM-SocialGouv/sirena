@@ -125,7 +125,11 @@ export const createRequeteFromDematSocial = async ({
         data: {
           identite: {
             create: {
+              nom: participant.nom ?? '',
+              prenom: participant.prenom ?? '',
+              email: participant.email ?? '',
               telephone: participant.telephone ?? '',
+              civilite: participant.civiliteId ? { connect: { id: participant.civiliteId } } : undefined,
             },
           },
           estHandicapee: participant.estHandicapee ?? null,

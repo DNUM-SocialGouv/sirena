@@ -30,6 +30,10 @@ type Declarant = {
 };
 
 type Participant = {
+  nom: string;
+  prenom: string;
+  email: string;
+  civiliteId: string | null;
   telephone: string | null;
   ageId: string | null;
   adresse: {

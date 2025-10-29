@@ -50,6 +50,10 @@ const getfakeRequeteDto = () => {
 
   const fakeParticipant = {
     ageId: AGE['18-29'],
+    prenom: '',
+    nom: '',
+    civiliteId: null,
+    email: '',
     telephone: '0987654321',
     estHandicapee: false,
     estVictimeInformee: true,
@@ -146,6 +150,10 @@ const getMinimalRequeteDto = () => {
       adresse: null,
     },
     participant: {
+      nom: '',
+      prenom: '',
+      email: '',
+      civiliteId: null,
       telephone: null,
       ageId: null,
       adresse: null,
@@ -333,6 +341,10 @@ describe('requetes.service.ts', () => {
             veutGarderAnonymat: false,
           },
           participant: {
+            nom: '',
+            prenom: '',
+            email: '',
+            civiliteId: null,
             adresse: {
               label: '123 Main St',
               codePostal: '12345',
@@ -658,6 +670,12 @@ describe('requetes.service.ts', () => {
           veutGarderAnonymat: null,
           identite: {
             create: {
+              prenom: fakeRequeteDto.participant.prenom,
+              nom: fakeRequeteDto.participant.nom,
+              civilite: fakeRequeteDto.participant.civiliteId
+                ? { connect: { id: fakeRequeteDto.participant.civiliteId } }
+                : undefined,
+              email: fakeRequeteDto.participant.email,
               telephone: fakeRequeteDto.participant.telephone,
             },
           },

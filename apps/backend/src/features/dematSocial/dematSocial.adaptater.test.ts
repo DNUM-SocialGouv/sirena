@@ -169,7 +169,7 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
     expect(dto.receptionDate.toISOString()).toBe(new Date(receptionDateIso).toISOString());
 
     expect(dto.declarant?.estVictime).toBe(true);
-    expect(dto.participant).toBeNull();
+    expect(dto.participant).not.toBeNull();
 
     expect(dto.situations.length).toBeGreaterThan(0);
     const s0 = dto.situations[0];
