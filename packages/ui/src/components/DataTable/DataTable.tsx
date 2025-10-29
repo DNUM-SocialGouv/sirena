@@ -205,4 +205,4 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
 };
 
 export const DataTable = memo(DataTableComponent) as typeof DataTableComponent;
-export * from './DataTable.type';
+export type { Cells, Column, ColumnKey, NestedKeys, OnSortChangeParams, Row, RowWithId } from './DataTable.type';

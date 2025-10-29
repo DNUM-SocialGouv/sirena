@@ -1,5 +1,7 @@
 export * from './components/Button/Button';
 export * from './components/DataTable/DataTable';
+export * from './components/DataTable/DataTable.type';
+export type { SortDirection } from './components/DataTable/SortButton/SortButton.constants';
 export { default as Drawer } from './components/Drawer/Drawer';
 export * from './components/InfoSection/InfoSection';
 export * from './components/Loader/Loader';

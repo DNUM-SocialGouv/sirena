@@ -16,7 +16,7 @@ type DataTableRowProps<Datum extends RowWithId<RowId>, RowId extends string> = {
   getCell: (row: Datum, key: ColumnKey<Datum>) => ReactNode;
 };
 
-const DataTableRowComponent = <Datum extends RowWithId<RowId>, RowId extends string>({
+const dataTableRowComponent = <Datum extends RowWithId<RowId>, RowId extends string>({
   row,
   rowIndex,
   rowId,
@@ -46,4 +46,4 @@ const DataTableRowComponent = <Datum extends RowWithId<RowId>, RowId extends str
   );
 };
 
-export const DataTableRow = memo(DataTableRowComponent) as typeof DataTableRowComponent;
+export const DataTableRow = memo(dataTableRowComponent) as typeof dataTableRowComponent;

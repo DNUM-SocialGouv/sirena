@@ -1,11 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import type { Column, DataTableProps, OnSortChangeParams } from './DataTable';
-import { DataTable } from './DataTable';
+import { DataTable, type DataTableProps } from './DataTable';
+import type { Column, OnSortChangeParams } from './DataTable.type';
 
 type MyRow = { id: number; name: string; info: { foo: number }; test: number[] };
-
-const MyDataTable = (props: DataTableProps<'id', MyRow>) => <DataTable<'id', MyRow> {...props} />;
 
 const mockColumns: DataTableProps<'id', MyRow>['columns'] = [
   { key: 'name', label: 'Name', isSortable: true },
@@ -186,9 +184,9 @@ export function FullExample() {
 | \`onSortChange\`          | \`(params: { sort: ColumnKey<T>; sortDirection }) => void\` | Callback fired when sorting changes |
 `;
 
-const meta: Meta<typeof MyDataTable> = {
+const meta: Meta<typeof DataTable<'id', MyRow>> = {
   title: 'Components/DataTable',
-  component: MyDataTable,
+  component: DataTable,
   tags: ['autodocs'],
   parameters: {
     docs: {
