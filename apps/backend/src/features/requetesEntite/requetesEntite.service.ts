@@ -6,7 +6,7 @@ import type { z } from 'zod';
 import { createChangeLog } from '@/features/changelog/changelog.service';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { generateRequeteId } from '@/features/requetes/functionalId.service';
-import { setDemarchesEngageesFiles, setFaitFiles } from '@/features/uploadedFiles/uploadedFiles.service';
+import { setFaitFiles } from '@/features/uploadedFiles/uploadedFiles.service';
 import { parseAdresseDomicile } from '@/helpers/address';
 import { sortObject } from '@/helpers/prisma/sort';
 import { createSearchConditionsForRequeteEntite } from '@/helpers/search';
@@ -244,29 +244,29 @@ interface CreateRequeteInput {
   participant?: PersonneConcerneeInput;
 }
 
-// Helper function to create changelog for RequeteEtape
-const createRequeteEtapeChangelog = async (
-  etapeId: string,
-  action: ChangeLogAction,
-  before: Prisma.JsonObject | null,
-  after: Prisma.JsonObject | null,
-  changedById: string,
-) => {
-  await createChangeLog({
-    entity: 'RequeteEtape',
-    entityId: etapeId,
-    action,
-    before,
-    after,
-    changedById,
-  });
-};
-
 export const createRequeteEntite = async (
   entiteIds: string[] | null,
   data?: CreateRequeteInput,
   changedById?: string,
 ) => {
+  // Helper function to create changelog for RequeteEtape
+  const createRequeteEtapeChangelog = async (
+    etapeId: string,
+    action: ChangeLogAction,
+    before: Prisma.JsonObject | null,
+    after: Prisma.JsonObject | null,
+    changedById: string,
+  ) => {
+    await createChangeLog({
+      entity: 'RequeteEtape',
+      entityId: etapeId,
+      action,
+      before,
+      after,
+      changedById,
+    });
+  };
+
   const entiteId = entiteIds?.[0];
   if (!entiteId) {
     throw new Error('No entity ID provided');
@@ -908,6 +908,42 @@ export const closeRequeteForEntite = async (
   precision?: string,
   fileIds?: string[],
 ) => {
+  // Helper function to create changelog for RequeteEtapeNote
+  const createRequeteEtapeNoteChangelog = async (
+    noteId: string,
+    action: ChangeLogAction,
+    before: Prisma.JsonObject | null,
+    after: Prisma.JsonObject | null,
+    changedById: string,
+  ) => {
+    await createChangeLog({
+      entity: 'RequeteEtapeNote',
+      entityId: noteId,
+      action,
+      before,
+      after,
+      changedById,
+    });
+  };
+
+  // Helper function to create changelog for UploadedFile
+  const createUploadedFileChangelog = async (
+    fileId: string,
+    action: ChangeLogAction,
+    before: Prisma.JsonObject | null,
+    after: Prisma.JsonObject | null,
+    changedById: string,
+  ) => {
+    await createChangeLog({
+      entity: 'UploadedFile',
+      entityId: fileId,
+      action,
+      before,
+      after,
+      changedById,
+    });
+  };
+
   const requeteEntite = await prisma.requeteEntite.findUnique({
     where: {
       requeteId_entiteId: {
@@ -998,8 +1034,50 @@ export const closeRequeteForEntite = async (
       etapeId: etape.id,
       closedAt: etape.createdAt.toISOString(),
       noteId,
+      etape,
+      note,
     };
   });
+
+  // Create changelogs for the created step and note
+  await createRequeteEtapeNoteChangelog(
+    result.noteId,
+    ChangeLogAction.CREATED,
+    null,
+    {
+      id: result.note.id,
+      texte: result.note.texte,
+      authorId: result.note.authorId,
+      requeteEtapeId: result.note.requeteEtapeId,
+      createdAt: result.note.createdAt.toISOString(),
+    } as Prisma.JsonObject,
+    authorId,
+  );
+
+  // Create changelogs for the uploaded files if any
+  if (fileIds && fileIds.length > 0) {
+    const files = await prisma.uploadedFile.findMany({
+      where: {
+        id: { in: fileIds },
+      },
+    });
+
+    for (const file of files) {
+      await createUploadedFileChangelog(
+        file.id,
+        ChangeLogAction.UPDATED,
+        {
+          requeteEtapeNoteId: null,
+          metadata: file.metadata,
+        } as Prisma.JsonObject,
+        {
+          requeteEtapeNoteId: result.noteId,
+          metadata: file.metadata,
+        } as Prisma.JsonObject,
+        authorId,
+      );
+    }
+  }
 
   return result;
 };

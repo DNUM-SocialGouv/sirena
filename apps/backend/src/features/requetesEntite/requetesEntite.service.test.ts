@@ -29,6 +29,10 @@ vi.mock('@sirena/backend-utils', () => ({
   },
 }));
 
+vi.mock('@/features/changelog/changelog.service', () => ({
+  createChangeLog: vi.fn().mockResolvedValue({}),
+}));
+
 vi.mock('@/libs/prisma', () => ({
   prisma: {
     $transaction: vi.fn(),
@@ -663,7 +667,7 @@ describe('requetesEntite.service', () => {
         id: 'reason123',
         label: 'Reason 123',
       });
-      vi.mocked(prisma.uploadedFile.findMany).mockResolvedValueOnce([
+      vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([
         {
           id: 'file123',
           fileName: 'File 123',
@@ -694,7 +698,7 @@ describe('requetesEntite.service', () => {
         label: 'Reason 123',
       });
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
-      vi.mocked(prisma.uploadedFile.findMany).mockResolvedValueOnce([
+      vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([
         {
           id: 'fileid1',
           fileName: 'File 1',
@@ -734,10 +738,20 @@ describe('requetesEntite.service', () => {
       const transactionSpy = vi.mocked(prisma.$transaction);
       const mockEtape = {
         id: 'etape123',
+        nom: 'Requête clôturée le 01/01/2024',
+        estPartagee: false,
+        statutId: 'CLOTUREE',
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        clotureReasonId: 'reason123',
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
       const mockNote = {
         id: 'note123',
+        texte: 'Test precision',
+        authorId: 'user123',
+        requeteEtapeId: 'etape123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
       };
 
       transactionSpy.mockImplementation(async (cb) => {
@@ -767,6 +781,8 @@ describe('requetesEntite.service', () => {
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
         noteId: 'note123',
+        etape: mockEtape,
+        note: mockNote,
       });
     });
 
@@ -781,11 +797,21 @@ describe('requetesEntite.service', () => {
       const transactionSpy = vi.mocked(prisma.$transaction);
       const mockEtape = {
         id: 'etape123',
+        nom: 'Requête clôturée le 01/01/2024',
+        estPartagee: false,
+        statutId: 'CLOTUREE',
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        clotureReasonId: 'reason123',
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
 
       const mockNote = {
         id: 'note123',
+        texte: 'Test precision',
+        authorId: 'user123',
+        requeteEtapeId: 'etape123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
       };
 
       transactionSpy.mockImplementation(async (cb) => {
@@ -809,6 +835,8 @@ describe('requetesEntite.service', () => {
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
         noteId: 'note123',
+        etape: mockEtape,
+        note: mockNote,
       });
     });
 
@@ -819,14 +847,25 @@ describe('requetesEntite.service', () => {
         label: 'Reason 123',
       });
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
+      vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([]);
 
       const transactionSpy = vi.mocked(prisma.$transaction);
       const mockEtape = {
         id: 'etape123',
+        nom: 'Requête clôturée le 01/01/2024',
+        estPartagee: false,
+        statutId: 'CLOTUREE',
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        clotureReasonId: 'reason123',
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
       const mockNote = {
         id: 'note123',
+        texte: 'Test precision',
+        authorId: 'user123',
+        requeteEtapeId: 'etape123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
       };
 
       transactionSpy.mockImplementation(async (cb) => {
@@ -849,6 +888,8 @@ describe('requetesEntite.service', () => {
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
         noteId: 'note123',
+        etape: mockEtape,
+        note: mockNote,
       });
     });
 
@@ -859,7 +900,7 @@ describe('requetesEntite.service', () => {
         label: 'Reason 123',
       });
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
-      vi.mocked(prisma.uploadedFile.findMany).mockResolvedValueOnce([
+      vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([
         {
           id: 'fileid1',
           fileName: 'File 1',
@@ -882,10 +923,20 @@ describe('requetesEntite.service', () => {
       const transactionSpy = vi.mocked(prisma.$transaction);
       const mockEtape = {
         id: 'etape123',
+        nom: 'Requête clôturée le 01/01/2024',
+        estPartagee: false,
+        statutId: 'CLOTUREE',
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        clotureReasonId: 'reason123',
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
       const mockNote = {
         id: 'note123',
+        texte: 'Test precision',
+        authorId: 'user123',
+        requeteEtapeId: 'etape123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
       };
 
       transactionSpy.mockImplementation(async (cb) => {
@@ -912,6 +963,8 @@ describe('requetesEntite.service', () => {
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
         noteId: 'note123',
+        etape: mockEtape,
+        note: mockNote,
       });
     });
   });

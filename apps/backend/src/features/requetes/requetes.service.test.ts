@@ -535,6 +535,7 @@ describe('requetes.service.ts', () => {
         vi.mocked(prisma.lieuDeSurvenue.create).mockResolvedValueOnce({
           ...situation.lieuDeSurvenue,
           id: '1',
+          lieuPrecision: '',
         });
 
         if (situation.lieuDeSurvenue.adresse) {
@@ -549,6 +550,7 @@ describe('requetes.service.ts', () => {
         vi.mocked(prisma.misEnCause.create).mockResolvedValueOnce({
           ...situation.misEnCause,
           id: '1',
+          misEnCauseTypePrecisionId: null,
         });
 
         vi.mocked(prisma.demarchesEngagees.create).mockResolvedValueOnce({
@@ -743,12 +745,14 @@ describe('requetes.service.ts', () => {
         vi.mocked(prisma.lieuDeSurvenue.create).mockResolvedValueOnce({
           ...situation.lieuDeSurvenue,
           id: '1',
+          lieuPrecision: '',
         });
 
         vi.mocked(prisma.misEnCause.create).mockResolvedValueOnce({
           ...situation.misEnCause,
           commentaire: '',
           id: '1',
+          misEnCauseTypePrecisionId: null,
         });
 
         vi.mocked(prisma.demarchesEngagees.create).mockResolvedValueOnce({
