@@ -3,6 +3,8 @@ import { mappers } from '@sirena/common';
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
+import { createChangeLog } from '@/features/changelog/changelog.service';
+import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { generateRequeteId } from '@/features/requetes/functionalId.service';
 import { setDemarchesEngageesFiles, setFaitFiles } from '@/features/uploadedFiles/uploadedFiles.service';
 import { parseAdresseDomicile } from '@/helpers/address';
@@ -242,7 +244,29 @@ interface CreateRequeteInput {
   participant?: PersonneConcerneeInput;
 }
 
-export const createRequeteEntite = async (entiteIds: string[] | null, data?: CreateRequeteInput) => {
+// Helper function to create changelog for RequeteEtape
+const createRequeteEtapeChangelog = async (
+  etapeId: string,
+  action: ChangeLogAction,
+  before: Prisma.JsonObject | null,
+  after: Prisma.JsonObject | null,
+  changedById: string,
+) => {
+  await createChangeLog({
+    entity: 'RequeteEtape',
+    entityId: etapeId,
+    action,
+    before,
+    after,
+    changedById,
+  });
+};
+
+export const createRequeteEntite = async (
+  entiteIds: string[] | null,
+  data?: CreateRequeteInput,
+  changedById?: string,
+) => {
   const entiteId = entiteIds?.[0];
   if (!entiteId) {
     throw new Error('No entity ID provided');
@@ -300,7 +324,7 @@ export const createRequeteEntite = async (entiteIds: string[] | null, data?: Cre
 
       // Create default processing steps for each entity
       for (const entite of requete.requeteEntites) {
-        await prisma.requeteEtape.create({
+        const etape1 = await prisma.requeteEtape.create({
           data: {
             requeteId: requete.id,
             entiteId: entite.entiteId,
@@ -320,7 +344,7 @@ export const createRequeteEntite = async (entiteIds: string[] | null, data?: Cre
           },
         });
 
-        await prisma.requeteEtape.create({
+        const etape2 = await prisma.requeteEtape.create({
           data: {
             requeteId: requete.id,
             entiteId: entite.entiteId,
@@ -328,6 +352,43 @@ export const createRequeteEntite = async (entiteIds: string[] | null, data?: Cre
             nom: 'Envoyer un accusé de réception au déclarant',
           },
         });
+
+        // Create changelogs for the created steps if changedById is provided
+        if (changedById) {
+          await createRequeteEtapeChangelog(
+            etape1.id,
+            ChangeLogAction.CREATED,
+            null,
+            {
+              id: etape1.id,
+              nom: etape1.nom,
+              estPartagee: etape1.estPartagee,
+              statutId: etape1.statutId,
+              requeteId: etape1.requeteId,
+              entiteId: etape1.entiteId,
+              clotureReasonId: etape1.clotureReasonId,
+              createdAt: etape1.createdAt.toISOString(),
+            } as Prisma.JsonObject,
+            changedById,
+          );
+
+          await createRequeteEtapeChangelog(
+            etape2.id,
+            ChangeLogAction.CREATED,
+            null,
+            {
+              id: etape2.id,
+              nom: etape2.nom,
+              estPartagee: etape2.estPartagee,
+              statutId: etape2.statutId,
+              requeteId: etape2.requeteId,
+              entiteId: etape2.entiteId,
+              clotureReasonId: etape2.clotureReasonId,
+              createdAt: etape2.createdAt.toISOString(),
+            } as Prisma.JsonObject,
+            changedById,
+          );
+        }
       }
 
       return requete;

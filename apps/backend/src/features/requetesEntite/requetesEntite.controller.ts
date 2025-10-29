@@ -182,7 +182,7 @@ const app = factoryWithLogs
         }
       }
 
-      const requete = await createRequeteEntite(entiteIds, body);
+      const requete = await createRequeteEntite(entiteIds, body, userId);
 
       if (fileIds.length > 0) {
         const entiteId = entiteIds?.[0];

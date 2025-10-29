@@ -3,7 +3,7 @@ import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { getRequeteEntiteById } from '@/features/requetesEntite/requetesEntite.service';
 import factoryWithChangelog from '@/helpers/factories/appWithChangeLog';
 import { isEqual, pick } from '@/helpers/object';
-import type { Adresse, Identite, PersonneConcernee, Prisma } from '@/libs/prisma';
+import type { Adresse, Identite, PersonneConcernee, Prisma, Requete } from '@/libs/prisma';
 
 const personneTrackedFields: (keyof PersonneConcernee)[] = [
   'estNonIdentifiee',
@@ -36,6 +36,15 @@ const adresseTrackedFields: (keyof Adresse)[] = [
   'ville',
   'personneConcerneeId',
   'lieuDeSurvenueId',
+];
+const requeteTrackedFields: (keyof Requete)[] = [
+  'id',
+  'commentaire',
+  'receptionDate',
+  'dematSocialId',
+  'receptionTypeId',
+  'createdAt',
+  'updatedAt',
 ];
 
 type RequeteChangelogMiddleware = {
@@ -95,7 +104,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
 
     // Helper function to create changelog for an entity
     const createEntityChangelog = async (
-      entity: 'PersonneConcernee' | 'Identite' | 'Adresse',
+      entity: 'PersonneConcernee' | 'Identite' | 'Adresse' | 'Requete',
       entityId: string,
       action: ChangeLogAction,
       before: Prisma.JsonObject | null,
@@ -122,7 +131,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
 
     // Helper function to handle entity changes (UPDATED action)
     const handleEntityChanges = async (
-      entity: 'PersonneConcernee' | 'Identite' | 'Adresse',
+      entity: 'PersonneConcernee' | 'Identite' | 'Adresse' | 'Requete',
       entityId: string,
       before: Record<string, unknown> | null,
       after: Record<string, unknown> | null,
@@ -146,7 +155,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
 
     // Helper function to handle entity creation (CREATED action)
     const handleEntityCreation = async (
-      entity: 'PersonneConcernee' | 'Identite' | 'Adresse',
+      entity: 'PersonneConcernee' | 'Identite' | 'Adresse' | 'Requete',
       entityId: string,
       data: Record<string, unknown>,
       trackedFields: string[],
@@ -166,6 +175,11 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
     // Scenario 1: CREATED action (new requete with declarant/participant)
     if (action === 'CREATED') {
       const requeteEntite = await getRequeteEntiteById(changelogId, entiteIds);
+
+      // Handle requete creation
+      if (requeteEntite?.requete) {
+        await handleEntityCreation('Requete', requeteEntite.requete.id, requeteEntite.requete, requeteTrackedFields);
+      }
 
       // Handle declarant creation
       if (requeteEntite?.requete?.declarant) {
