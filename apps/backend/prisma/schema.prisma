@@ -184,7 +184,6 @@ model DemarchesEngageesEnum {
 model PersonneConcernee {
   id                         String   @id @default(uuid())
   estNonIdentifiee           Boolean?
-  estAnonyme                 Boolean?
   estHandicapee              Boolean?
   estIdentifie               Boolean?
   estVictime                 Boolean?

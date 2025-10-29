@@ -30,6 +30,11 @@ const splitRepetitionChamp = (champs: RepetitionChamp[]) => {
 };
 
 const getEnumIdFromLabel = (options: { key: string; label: string }[], label: string | null) => {
+  // Handle special case for "Établissement" vs "Établissement où se sont déroulés les faits"
+  if (label === 'Établissement') {
+    return 'ETABLISSEMENT';
+  }
+
   const element = options.find((o) => o.label === label)?.key ?? null;
   if (!element) {
     return null;
@@ -95,15 +100,14 @@ const createAddress = (champ: RootChampFragmentFragment | RepetitionChamp) => {
     champ.address?.label &&
     champ.address?.postalCode &&
     champ.address?.cityName &&
-    champ.address?.streetName &&
-    champ.address?.streetNumber
+    champ.address?.streetName
   ) {
     return {
       label: champ.address.label,
       codePostal: champ.address.postalCode,
       ville: champ.address.cityName,
       rue: champ.address.streetName,
-      numero: champ.address.streetNumber,
+      numero: champ.address.streetNumber || '',
     };
   }
   return null;
@@ -201,74 +205,112 @@ const getFait = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mappi
   return fait;
 };
 
-const getDeclarantVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
-  const address = champsById[rootMapping.victimeAdresse.id]
-    ? createAddress(champsById[rootMapping.victimeAdresse.id])
-    : null;
-  const personneConcernee = {
-    ...demandeur,
-    ageId: getEnumIdFromLabel(rootMapping.age.options, champsById[rootMapping.age.id]?.stringValue ?? null),
-    telephone: champsById[rootMapping.telephone.id]?.stringValue ?? null,
-    estHandicapee: getBooleanOrNull(champsById[rootMapping.estHandicape.id], rootMapping.estHandicape.options),
-    lienVictimeId: null,
-    estVictime: true,
-    estAnonyme: getBooleanOrNull(champsById[rootMapping.estAnonyme.id], rootMapping.estAnonyme.options),
-    adresse: address,
-  };
-  return personneConcernee;
-};
-
-const declarantNonConcerne = (champsById: MappedChamp, demandeur: Demandeur) => {
-  const personneConcernee = {
-    ...demandeur,
-    ageId: null,
-    telephone: champsById[rootMapping.declarantTelephone.id]?.stringValue ?? null,
-    estHandicapee: null,
-    lienVictimeId: getEnumIdFromLabel(
-      rootMapping.lienVictime.options,
-      champsById[rootMapping.lienVictime.id]?.stringValue ?? null,
-    ),
-    estVictime: false,
-    estAnonyme: false,
-    adresse: null,
-  };
-  return personneConcernee;
-};
-
-const getVictimeNonConcernee = (champsById: MappedChamp) => {
-  const address = champsById[rootMapping.victimeAdressePostale.id]
-    ? createAddress(champsById[rootMapping.victimeAdressePostale.id])
-    : null;
-  const personneConcernee = {
-    telephone: champsById[rootMapping.victimeTelephone.id]?.stringValue ?? null,
-    ageId: getEnumIdFromLabel(
-      rootMapping.victimeAge.options,
-      champsById[rootMapping.victimeAge.id]?.stringValue ?? null,
-    ),
-    adresse: address,
-    estHandicapee: getBooleanOrNull(champsById[rootMapping.victimeEstHandicape.id], rootMapping.estHandicape.options),
-    estVictimeInformee: getBooleanOrNull(
-      champsById[rootMapping.estVictimeInformee.id],
-      rootMapping.estVictimeInformee.options,
-    ),
-    estVictime: true,
-    victimeInformeeCommentaire: champsById[rootMapping.estVictimeInformeeCommentaire.id]?.stringValue ?? null,
-    autrePersonnes: champsById[rootMapping.autreVictimesDetails.id]?.stringValue ?? null,
-  };
-  return personneConcernee;
-};
-
 const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
-  if (getBooleanOrNull(champsById[rootMapping.estVictime.id], rootMapping.estVictime.options)) {
+  const estVictimeChamp = champsById[rootMapping.estVictime.id];
+  const estVictime = getBooleanOrNull(estVictimeChamp, rootMapping.estVictime.options);
+
+  if (estVictime === true) {
+    // "Oui, je suis la personne concernée"
+    // → The declarant AND the participant are the same person (demandeur)
+    // Use estAnonymeMemePersonne for this case
+
+    const estAnonymeChamp = champsById[rootMapping.estAnonymeMemePersonne.id];
+    const veutCommuniquerIdentite = getBooleanOrNull(estAnonymeChamp, rootMapping.estAnonymeMemePersonne.options);
+    const veutGarderAnonymat = veutCommuniquerIdentite === null ? null : !veutCommuniquerIdentite;
+
+    const personneConcernee = {
+      // Use demandeur info for identity
+      prenom: demandeur.prenom,
+      nom: demandeur.nom,
+      civiliteId: demandeur.civiliteId,
+      email: demandeur.email,
+      telephone: champsById[rootMapping.telephone.id]?.stringValue ?? null,
+      ageId: getEnumIdFromLabel(rootMapping.age.options, champsById[rootMapping.age.id]?.stringValue ?? null),
+      estHandicapee: getBooleanOrNull(champsById[rootMapping.estHandicape.id], rootMapping.estHandicape.options),
+      lienVictimeId: null, // No link as it's the "Personne concernée"
+      estVictime: true,
+      estVictimeInformee: null,
+      victimeInformeeCommentaire: null,
+      veutGarderAnonymat,
+      adresse: champsById[rootMapping.victimeAdresse.id]
+        ? createAddress(champsById[rootMapping.victimeAdresse.id])
+        : null,
+      autrePersonnes: null,
+    };
+
     return {
-      declarant: getDeclarantVictime(champsById, demandeur),
-      victime: null,
+      declarant: personneConcernee,
+      victime: personneConcernee, // Same entity
+    };
+  } else {
+    // "Non, je suis témoin, aidant ou proche d'une personne concernée"
+    // → The declarant is the mandataire, the participant is the "Personne concernée"
+
+    const estAnonymeChamp = champsById[rootMapping.estAnonyme.id];
+    const declarantVeutAnonymat = getBooleanOrNull(estAnonymeChamp, rootMapping.estAnonyme.options);
+    // Invert the logic: if they want anonymity, they don't want to communicate identity
+    const declarantVeutGarderAnonymat = declarantVeutAnonymat === null ? null : !declarantVeutAnonymat;
+
+    const victimeIdentiteCommuniqueChamp = champsById[rootMapping.victimeIdentiteCommunique.id];
+    const veutCommuniquerIdentite = getBooleanOrNull(
+      victimeIdentiteCommuniqueChamp,
+      rootMapping.victimeIdentiteCommunique.options,
+    );
+    // Invert the logic: if they want to communicate identity, they don't want anonymity
+    const victimeVeutGarderAnonymat = veutCommuniquerIdentite === null ? null : !veutCommuniquerIdentite;
+
+    // Declarant = mandataire (uses usager email + mandataire fields)
+    const declarant = {
+      prenom: 'MandataireDéclarantPrénom', // Fictive identity as no info is available
+      nom: 'MandataireDéclarantNom',
+      civiliteId: null,
+      email: demandeur.email, // Usager email = mandataire email
+      telephone: champsById[rootMapping.declarantTelephone.id]?.stringValue ?? null,
+      ageId: null, // No age for mandataire
+      estHandicapee: null,
+      lienVictimeId: getEnumIdFromLabel(
+        rootMapping.lienVictime.options,
+        champsById[rootMapping.lienVictime.id]?.stringValue ?? null,
+      ),
+      estVictime: false,
+      veutGarderAnonymat: declarantVeutGarderAnonymat,
+      adresse: null,
+    };
+
+    // Participant = personne concernée
+    const victime = {
+      prenom: demandeur.prenom,
+      nom: demandeur.nom,
+      civiliteId: demandeur.civiliteId,
+      email: champsById[rootMapping.victimeEmail.id]?.stringValue ?? demandeur.email,
+      telephone: champsById[rootMapping.victimeTelephone.id]?.stringValue ?? null,
+      ageId: getEnumIdFromLabel(
+        rootMapping.victimeAge.options,
+        champsById[rootMapping.victimeAge.id]?.stringValue ?? null,
+      ),
+      estHandicapee: getBooleanOrNull(
+        champsById[rootMapping.victimeEstHandicape.id],
+        rootMapping.victimeEstHandicape.options,
+      ),
+      lienVictimeId: null,
+      estVictime: true,
+      estVictimeInformee: getBooleanOrNull(
+        champsById[rootMapping.estVictimeInformee.id],
+        rootMapping.estVictimeInformee.options,
+      ),
+      victimeInformeeCommentaire: champsById[rootMapping.estVictimeInformeeCommentaire.id]?.stringValue ?? null,
+      veutGarderAnonymat: victimeVeutGarderAnonymat,
+      adresse: champsById[rootMapping.victimeAdressePostale.id]
+        ? createAddress(champsById[rootMapping.victimeAdressePostale.id])
+        : null,
+      autrePersonnes: champsById[rootMapping.autreVictimesDetails.id]?.stringValue ?? null,
+    };
+
+    return {
+      declarant,
+      victime,
     };
   }
-  return {
-    declarant: declarantNonConcerne(champsById, demandeur),
-    victime: getVictimeNonConcernee(champsById),
-  };
 };
 
 const getOtherSituations = (champsById: MappedChamp) => {

@@ -41,17 +41,24 @@ export const MIS_EN_CAUSE_TYPE = {
   PROFESSIONNEL_SANTE: 'PROFESSIONNEL_SANTE',
   PROFESSIONNEL_SOCIAL: 'PROFESSIONNEL_SOCIAL',
   AUTRE_PROFESSIONNEL: 'AUTRE_PROFESSIONNEL',
+  ETABLISSEMENT: 'ETABLISSEMENT',
+  PROFESSIONNEL: 'PROFESSIONNEL',
+  AUTRE: 'AUTRE',
 } as const;
 
 export type MisEnCauseType = keyof typeof MIS_EN_CAUSE_TYPE;
 
 export const misEnCauseTypeLabels: Record<MisEnCauseType, string> = {
   MEMBRE_FAMILLE: 'Membre de la famille',
-  PROCHE: 'Proche',
+  PROCHE: 'Proche (ami, voisin,...)',
   AUTRE_PERSONNE_NON_PRO: 'Autre personne non professionnelle',
-  PROFESSIONNEL_SANTE: 'Professionnel de santé',
-  PROFESSIONNEL_SOCIAL: 'Professionnel social',
+  PROFESSIONNEL_SANTE:
+    'Professionnel de santé (médecin généraliste, spécialiste, dentiste, kinésithérapeute, orthophoniste, infirmier, aide-soignant...)',
+  PROFESSIONNEL_SOCIAL: 'Professionnel social (éducateur, assistant social...)',
   AUTRE_PROFESSIONNEL: 'Autre professionnel',
+  ETABLISSEMENT: 'Établissement où se sont déroulés les faits',
+  PROFESSIONNEL: 'Professionnel',
+  AUTRE: 'Autre',
 };
 
 // Précisions pour chaque type de mis en cause

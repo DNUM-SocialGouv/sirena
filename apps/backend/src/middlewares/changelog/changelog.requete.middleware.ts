@@ -3,11 +3,10 @@ import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { getRequeteEntiteById } from '@/features/requetesEntite/requetesEntite.service';
 import factoryWithChangelog from '@/helpers/factories/appWithChangeLog';
 import { isEqual, pick } from '@/helpers/object';
-import type { Adresse, Identite, PersonneConcernee, Prisma } from '@/libs/prisma';
+import type { Adresse, Identite, PersonneConcernee, Prisma, Requete } from '@/libs/prisma';
 
 const personneTrackedFields: (keyof PersonneConcernee)[] = [
   'estNonIdentifiee',
-  'estAnonyme',
   'estHandicapee',
   'estIdentifie',
   'estVictime',
@@ -37,6 +36,15 @@ const adresseTrackedFields: (keyof Adresse)[] = [
   'ville',
   'personneConcerneeId',
   'lieuDeSurvenueId',
+];
+const requeteTrackedFields: (keyof Requete)[] = [
+  'id',
+  'commentaire',
+  'receptionDate',
+  'dematSocialId',
+  'receptionTypeId',
+  'createdAt',
+  'updatedAt',
 ];
 
 type RequeteChangelogMiddleware = {
@@ -96,7 +104,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
 
     // Helper function to create changelog for an entity
     const createEntityChangelog = async (
-      entity: 'PersonneConcernee' | 'Identite' | 'Adresse',
+      entity: 'PersonneConcernee' | 'Identite' | 'Adresse' | 'Requete',
       entityId: string,
       action: ChangeLogAction,
       before: Prisma.JsonObject | null,
@@ -123,7 +131,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
 
     // Helper function to handle entity changes (UPDATED action)
     const handleEntityChanges = async (
-      entity: 'PersonneConcernee' | 'Identite' | 'Adresse',
+      entity: 'PersonneConcernee' | 'Identite' | 'Adresse' | 'Requete',
       entityId: string,
       before: Record<string, unknown> | null,
       after: Record<string, unknown> | null,
@@ -147,7 +155,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
 
     // Helper function to handle entity creation (CREATED action)
     const handleEntityCreation = async (
-      entity: 'PersonneConcernee' | 'Identite' | 'Adresse',
+      entity: 'PersonneConcernee' | 'Identite' | 'Adresse' | 'Requete',
       entityId: string,
       data: Record<string, unknown>,
       trackedFields: string[],
@@ -167,6 +175,11 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
     // Scenario 1: CREATED action (new requete with declarant/participant)
     if (action === 'CREATED') {
       const requeteEntite = await getRequeteEntiteById(changelogId, entiteIds);
+
+      // Handle requete creation
+      if (requeteEntite?.requete) {
+        await handleEntityCreation('Requete', requeteEntite.requete.id, requeteEntite.requete, requeteTrackedFields);
+      }
 
       // Handle declarant creation
       if (requeteEntite?.requete?.declarant) {
@@ -212,6 +225,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
           personneTrackedFields,
         );
 
+        // Handle identity updates for existing declarant
         if (declarantIdentiteBefore && declarantAfter.identite) {
           await handleEntityChanges(
             'Identite',
@@ -222,11 +236,32 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
           );
         }
 
+        // Handle new identity creation for existing declarant
+        if (!declarantIdentiteBefore && declarantAfter.identite) {
+          await handleEntityCreation(
+            'Identite',
+            declarantAfter.identite.id,
+            declarantAfter.identite,
+            identiteTrackedFields,
+          );
+        }
+
+        // Handle address updates for existing declarant
         if (declarantAdresseBefore && declarantAfter.adresse) {
           await handleEntityChanges(
             'Adresse',
             declarantAfter.adresse.id,
             declarantAdresseBefore,
+            declarantAfter.adresse,
+            adresseTrackedFields,
+          );
+        }
+
+        // Handle new address creation for existing declarant
+        if (!declarantAdresseBefore && declarantAfter.adresse) {
+          await handleEntityCreation(
+            'Adresse',
+            declarantAfter.adresse.id,
             declarantAfter.adresse,
             adresseTrackedFields,
           );
@@ -244,6 +279,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
           personneTrackedFields,
         );
 
+        // Handle identity updates for existing participant
         if (participantIdentiteBefore && participantAfter.identite) {
           await handleEntityChanges(
             'Identite',
@@ -254,11 +290,32 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
           );
         }
 
+        // Handle new identity creation for existing participant
+        if (!participantIdentiteBefore && participantAfter.identite) {
+          await handleEntityCreation(
+            'Identite',
+            participantAfter.identite.id,
+            participantAfter.identite,
+            identiteTrackedFields,
+          );
+        }
+
+        // Handle address updates for existing participant
         if (participantAdresseBefore && participantAfter.adresse) {
           await handleEntityChanges(
             'Adresse',
             participantAfter.adresse.id,
             participantAdresseBefore,
+            participantAfter.adresse,
+            adresseTrackedFields,
+          );
+        }
+
+        // Handle new address creation for existing participant
+        if (!participantAdresseBefore && participantAfter.adresse) {
+          await handleEntityCreation(
+            'Adresse',
+            participantAfter.adresse.id,
             participantAfter.adresse,
             adresseTrackedFields,
           );

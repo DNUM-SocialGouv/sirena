@@ -6,7 +6,6 @@ import { requeteClotureReasonLabels } from '@sirena/common/constants';
 import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useCloseRequete } from '@/hooks/mutations/closeRequete.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
-import { HttpError } from '@/lib/api/tanstackQuery';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 
 export type CloseRequeteModalRef = {
@@ -151,34 +150,9 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
         });
 
         closeModal.close();
-      } catch (error) {
+      } catch {
         setIsSubmitting(false);
-
-        if (error instanceof HttpError) {
-          const errorData = error.data as { error?: string; message?: string };
-
-          switch (errorData.error) {
-            case 'INVALID_INPUT':
-            case 'REASON_REQUIRED':
-            case 'REASON_INVALID':
-              setErrors({ reasonId: errorData.message || 'Raison invalide' });
-              break;
-            case 'FILES_INVALID':
-              setErrorMessage('Certains fichiers ne peuvent pas être attachés.');
-              break;
-            case 'REQUETE_NOT_FOUND':
-              setErrorMessage('Requête introuvable.');
-              break;
-            case 'ALREADY_CLOSED_FOR_ENTITY':
-              setErrorMessage('La requête semble déjà clôturée pour votre entité.');
-              break;
-            default:
-              setErrorMessage('Une erreur est survenue. Veuillez réessayer.');
-              break;
-          }
-        } else {
-          setErrorMessage('Une erreur est survenue. Veuillez réessayer.');
-        }
+        setErrorMessage('Une erreur est survenue. Veuillez réessayer.');
       }
     };
 

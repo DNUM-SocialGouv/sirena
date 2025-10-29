@@ -50,10 +50,15 @@ const getfakeRequeteDto = () => {
 
   const fakeParticipant = {
     ageId: AGE['18-29'],
+    prenom: '',
+    nom: '',
+    civiliteId: null,
+    email: '',
     telephone: '0987654321',
     estHandicapee: false,
     estVictimeInformee: true,
     victimeInformeeCommentaire: null,
+    veutGarderAnonymat: null,
     autrePersonnes: null,
     adresse,
   };
@@ -68,7 +73,7 @@ const getfakeRequeteDto = () => {
     estHandicapee: false,
     lienVictimeId: LIEN_VICTIME.PROCHE,
     estVictime: false,
-    estAnonyme: false,
+    veutGarderAnonymat: null,
     adresse,
   };
 
@@ -141,16 +146,21 @@ const getMinimalRequeteDto = () => {
       estHandicapee: null,
       lienVictimeId: null,
       estVictime: false,
-      estAnonyme: null,
+      veutGarderAnonymat: null,
       adresse: null,
     },
     participant: {
+      nom: '',
+      prenom: '',
+      email: '',
+      civiliteId: null,
       telephone: null,
       ageId: null,
       adresse: null,
       estHandicapee: null,
       estVictimeInformee: null,
       victimeInformeeCommentaire: null,
+      veutGarderAnonymat: null,
       autrePersonnes: null,
     },
     situations: [
@@ -328,9 +338,13 @@ describe('requetes.service.ts', () => {
             estHandicapee: false,
             lienVictimeId: '1',
             estVictime: false,
-            estAnonyme: false,
+            veutGarderAnonymat: false,
           },
           participant: {
+            nom: '',
+            prenom: '',
+            email: '',
+            civiliteId: null,
             adresse: {
               label: '123 Main St',
               codePostal: '12345',
@@ -343,6 +357,7 @@ describe('requetes.service.ts', () => {
             estHandicapee: false,
             estVictimeInformee: false,
             victimeInformeeCommentaire: '1234567890',
+            veutGarderAnonymat: null,
             autrePersonnes: '1234567890',
           },
           situations: [],
@@ -499,7 +514,6 @@ describe('requetes.service.ts', () => {
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
         estVictime: true,
-        estAnonyme: false,
         veutGarderAnonymat: null,
         commentaire: '',
         autrePersonnes: '',
@@ -521,6 +535,7 @@ describe('requetes.service.ts', () => {
         vi.mocked(prisma.lieuDeSurvenue.create).mockResolvedValueOnce({
           ...situation.lieuDeSurvenue,
           id: '1',
+          lieuPrecision: '',
         });
 
         if (situation.lieuDeSurvenue.adresse) {
@@ -535,6 +550,7 @@ describe('requetes.service.ts', () => {
         vi.mocked(prisma.misEnCause.create).mockResolvedValueOnce({
           ...situation.misEnCause,
           id: '1',
+          misEnCauseTypePrecisionId: null,
         });
 
         vi.mocked(prisma.demarchesEngagees.create).mockResolvedValueOnce({
@@ -630,10 +646,10 @@ describe('requetes.service.ts', () => {
         data: {
           age: { connect: { id: fakeRequeteDto.declarant.ageId } },
           estVictime: false,
-          estAnonyme: false,
           declarantDe: { connect: { id: '1' } },
           lienVictime: { connect: { id: fakeRequeteDto.declarant.lienVictimeId } },
           estHandicapee: fakeRequeteDto.declarant.estHandicapee,
+          veutGarderAnonymat: null,
           identite: {
             create: {
               nom: fakeRequeteDto.declarant.nom,
@@ -653,8 +669,15 @@ describe('requetes.service.ts', () => {
           autrePersonnes: '',
           estHandicapee: fakeRequeteDto.participant.estHandicapee,
           estVictimeInformee: fakeRequeteDto.participant.estVictimeInformee,
+          veutGarderAnonymat: null,
           identite: {
             create: {
+              prenom: fakeRequeteDto.participant.prenom,
+              nom: fakeRequeteDto.participant.nom,
+              civilite: fakeRequeteDto.participant.civiliteId
+                ? { connect: { id: fakeRequeteDto.participant.civiliteId } }
+                : undefined,
+              email: fakeRequeteDto.participant.email,
               telephone: fakeRequeteDto.participant.telephone,
             },
           },
@@ -708,7 +731,6 @@ describe('requetes.service.ts', () => {
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
         estVictime: true,
-        estAnonyme: false,
         veutGarderAnonymat: null,
         commentaire: '',
         autrePersonnes: '',
@@ -723,12 +745,14 @@ describe('requetes.service.ts', () => {
         vi.mocked(prisma.lieuDeSurvenue.create).mockResolvedValueOnce({
           ...situation.lieuDeSurvenue,
           id: '1',
+          lieuPrecision: '',
         });
 
         vi.mocked(prisma.misEnCause.create).mockResolvedValueOnce({
           ...situation.misEnCause,
           commentaire: '',
           id: '1',
+          misEnCauseTypePrecisionId: null,
         });
 
         vi.mocked(prisma.demarchesEngagees.create).mockResolvedValueOnce({

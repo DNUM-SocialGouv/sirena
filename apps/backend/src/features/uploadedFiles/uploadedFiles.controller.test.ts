@@ -104,6 +104,16 @@ vi.mock('@/middlewares/role.middleware', () => {
   };
 });
 
+vi.mock('@/middlewares/changelog/changelog.uploadedFile.middleware', () => {
+  return {
+    default: () => {
+      return (_c: Context, next: Next) => {
+        return next();
+      };
+    },
+  };
+});
+
 vi.mock('node:fs', () => ({
   default: {
     promises: {

@@ -111,7 +111,6 @@ describe('RequetesEntite endpoints: /', () => {
           updatedAt: new Date(),
           commentaire: '',
           estNonIdentifiee: false,
-          estAnonyme: false,
           estHandicapee: false,
           estIdentifie: true,
           estVictime: null,
@@ -438,6 +437,25 @@ describe('RequetesEntite endpoints: /', () => {
       etapeId: 'etape123',
       closedAt: '2024-01-01T10:00:00.000Z',
       noteId: 'note123',
+      etape: {
+        id: 'etape123',
+        nom: 'Requête clôturée le 01/01/2024',
+        estPartagee: false,
+        statutId: 'CLOTUREE',
+        requeteId: 'requeteId',
+        entiteId: 'e1',
+        clotureReasonId: 'reason123',
+        createdAt: new Date('2024-01-01T10:00:00.000Z'),
+        updatedAt: new Date('2024-01-01T10:00:00.000Z'),
+      },
+      note: {
+        id: 'note123',
+        texte: 'Test precision',
+        authorId: 'id1',
+        requeteEtapeId: 'etape123',
+        createdAt: new Date('2024-01-01T10:00:00.000Z'),
+        updatedAt: new Date('2024-01-01T10:00:00.000Z'),
+      },
     };
 
     it('should close requete successfully with precision and files', async () => {
@@ -454,7 +472,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json).toEqual({ data: mockCloseResult });
+      expect(json).toEqual({ data: convertDatesToStrings(mockCloseResult) });
 
       expect(closeRequeteForEntite).toHaveBeenCalledWith('requeteId', 'e1', 'reason123', 'id1', 'Test precision', [
         'file1',
@@ -467,6 +485,25 @@ describe('RequetesEntite endpoints: /', () => {
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
         noteId: 'note123',
+        etape: {
+          id: 'etape123',
+          nom: 'Requête clôturée le 01/01/2024',
+          estPartagee: false,
+          statutId: 'CLOTUREE',
+          requeteId: 'requeteId',
+          entiteId: 'e1',
+          clotureReasonId: 'reason123',
+          createdAt: new Date('2024-01-01T10:00:00.000Z'),
+          updatedAt: new Date('2024-01-01T10:00:00.000Z'),
+        },
+        note: {
+          id: 'note123',
+          texte: '',
+          authorId: 'id1',
+          requeteEtapeId: 'etape123',
+          createdAt: new Date('2024-01-01T10:00:00.000Z'),
+          updatedAt: new Date('2024-01-01T10:00:00.000Z'),
+        },
       };
 
       vi.mocked(closeRequeteForEntite).mockResolvedValueOnce(mockCloseResultMinimal);
@@ -480,7 +517,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json).toEqual({ data: mockCloseResultMinimal });
+      expect(json).toEqual({ data: convertDatesToStrings(mockCloseResultMinimal) });
 
       expect(closeRequeteForEntite).toHaveBeenCalledWith('requeteId', 'e1', 'reason123', 'id1', undefined, undefined);
     });

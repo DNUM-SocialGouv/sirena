@@ -19,7 +19,7 @@ type Declarant = {
   estHandicapee: boolean | null;
   lienVictimeId: string | null;
   estVictime: boolean;
-  estAnonyme: boolean | null;
+  veutGarderAnonymat: boolean | null;
   adresse: {
     label: string;
     codePostal: string;
@@ -30,6 +30,10 @@ type Declarant = {
 };
 
 type Participant = {
+  nom: string;
+  prenom: string;
+  email: string;
+  civiliteId: string | null;
   telephone: string | null;
   ageId: string | null;
   adresse: {
@@ -42,6 +46,7 @@ type Participant = {
   estHandicapee: boolean | null;
   estVictimeInformee: boolean | null;
   victimeInformeeCommentaire: string | null;
+  veutGarderAnonymat: boolean | null;
   autrePersonnes: string | null;
 } | null;
 

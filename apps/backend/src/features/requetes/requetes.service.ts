@@ -99,7 +99,7 @@ export const createRequeteFromDematSocial = async ({
         },
         estHandicapee: declarant.estHandicapee ?? null,
         estVictime: declarant.estVictime ?? null,
-        estAnonyme: declarant.estAnonyme ?? null,
+        veutGarderAnonymat: declarant.veutGarderAnonymat ?? null,
         lienVictime: declarant.lienVictimeId ? { connect: { id: declarant.lienVictimeId } } : undefined,
         age: declarant.ageId ? { connect: { id: declarant.ageId } } : undefined,
         declarantDe: { connect: { id: requete.id } },
@@ -125,12 +125,17 @@ export const createRequeteFromDematSocial = async ({
         data: {
           identite: {
             create: {
+              nom: participant.nom ?? '',
+              prenom: participant.prenom ?? '',
+              email: participant.email ?? '',
               telephone: participant.telephone ?? '',
+              civilite: participant.civiliteId ? { connect: { id: participant.civiliteId } } : undefined,
             },
           },
           estHandicapee: participant.estHandicapee ?? null,
           estVictimeInformee: participant.estVictimeInformee ?? null,
           victimeInformeeCommentaire: participant.victimeInformeeCommentaire ?? '',
+          veutGarderAnonymat: participant.veutGarderAnonymat ?? null,
           autrePersonnes: participant.autrePersonnes ?? '',
           age: participant.ageId ? { connect: { id: participant.ageId } } : undefined,
           participantDe: { connect: { id: requete.id } },
