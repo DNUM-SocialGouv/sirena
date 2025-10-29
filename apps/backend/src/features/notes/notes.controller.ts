@@ -36,7 +36,7 @@ const app = factoryWithLogs
       const requeteEtape = await getRequeteEtapeById(requeteEtapeId);
 
       if (!requeteEtape) {
-        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
       // TODO: check real access with entiteIds when implemented
@@ -46,7 +46,7 @@ const app = factoryWithLogs
         entiteId: requeteEtape.entiteId,
       });
       if (!hasAccess) {
-        return throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
+        throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
           res: c.res,
         });
       }
@@ -56,7 +56,7 @@ const app = factoryWithLogs
         const isAllowed = await isUserOwner(userId, fileIds);
 
         if (!isAllowed) {
-          return throwHTTPException403Forbidden('You are not allowed to add notes with these files', {
+          throwHTTPException403Forbidden('You are not allowed to add notes with these files', {
             res: c.res,
           });
         }
@@ -96,13 +96,13 @@ const app = factoryWithLogs
       const existingNote = await getNoteById(noteId);
 
       if (!existingNote) {
-        return throwHTTPException404NotFound('Note not found', { res: c.res });
+        throwHTTPException404NotFound('Note not found', { res: c.res });
       }
 
       const requeteEtape = await getRequeteEtapeById(existingNote.requeteEtapeId);
 
       if (!requeteEtape) {
-        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
       // TODO: check real access with entiteIds when implemented
@@ -111,7 +111,7 @@ const app = factoryWithLogs
         entiteId: requeteEtape.entiteId,
       });
       if (!hasAccess) {
-        return throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
+        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
         });
       }
@@ -123,7 +123,7 @@ const app = factoryWithLogs
         const isAllowed = await isUserOwner(userId, fileIds);
 
         if (!isAllowed) {
-          return throwHTTPException403Forbidden('You are not allowed to add these files to the note', {
+          throwHTTPException403Forbidden('You are not allowed to add these files to the note', {
             res: c.res,
           });
         }
@@ -155,13 +155,13 @@ const app = factoryWithLogs
       const existingNote = await getNoteById(noteId);
 
       if (!existingNote) {
-        return throwHTTPException404NotFound('Note not found', { res: c.res });
+        throwHTTPException404NotFound('Note not found', { res: c.res });
       }
 
       const requeteEtape = await getRequeteEtapeById(existingNote.requeteEtapeId);
 
       if (!requeteEtape) {
-        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
       // TODO: check real access with entiteIds when implemented
@@ -170,7 +170,7 @@ const app = factoryWithLogs
         entiteId: requeteEtape.entiteId,
       });
       if (!hasAccess) {
-        return throwHTTPException403Forbidden('You are not allowed to delete notes from this requete etape', {
+        throwHTTPException403Forbidden('You are not allowed to delete notes from this requete etape', {
           res: c.res,
         });
       }

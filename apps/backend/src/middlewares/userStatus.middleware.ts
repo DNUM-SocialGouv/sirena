@@ -20,7 +20,7 @@ const userStatusMiddleware = factoryWithAuth.createMiddleware(async (c, next) =>
     (user.statutId === STATUT_TYPES.INACTIF || user.statutId === STATUT_TYPES.NON_RENSEIGNE) &&
     user.roleId !== ROLES.SUPER_ADMIN
   ) {
-    return throwHTTPException403Forbidden('Account inactive', {
+    throwHTTPException403Forbidden('Account inactive', {
       res: c.res,
       cause: { name: PERMISSION_ERROR.ACCOUNT_INACTIVE },
     });

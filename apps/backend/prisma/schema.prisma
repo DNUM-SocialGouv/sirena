@@ -41,9 +41,8 @@ model User {
   email  String  @unique /// @zod.string.email({ message: 'Invalid email address' }),
   prenom String
   nom    String
-  uid    String  @unique
-  sub    String  @unique
-  active Boolean @default(false)
+  uid    String @unique
+  sub    String @unique
   pcData Json
 
   roleId String

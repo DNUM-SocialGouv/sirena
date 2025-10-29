@@ -80,7 +80,7 @@ const app = factoryWithLogs
     const topUserEntite = entiteIds[0];
 
     if (!topUserEntite) {
-      return throwHTTPException404NotFound('Requete not found', {
+      throwHTTPException404NotFound('Requete not found', {
         res: c.res,
       });
     }
@@ -90,7 +90,7 @@ const app = factoryWithLogs
     const requeteEntite = await getRequeteEntiteById(id, topEntite);
 
     if (!requeteEntite) {
-      return throwHTTPException404NotFound('Requete not found', {
+      throwHTTPException404NotFound('Requete not found', {
         res: c.res,
       });
     }
@@ -110,7 +110,7 @@ const app = factoryWithLogs
     const hasAccess = true;
 
     if (!hasAccess) {
-      return throwHTTPException404NotFound('Requete entite not found', {
+      throwHTTPException404NotFound('Requete entite not found', {
         res: c.res,
       });
     }
@@ -134,7 +134,7 @@ const app = factoryWithLogs
     const requeteEntite = await getRequeteEntiteById(id, topEntite);
 
     if (!requeteEntite) {
-      return throwHTTPException404NotFound('Requete not found', {
+      throwHTTPException404NotFound('Requete not found', {
         res: c.res,
       });
     }
@@ -142,14 +142,14 @@ const app = factoryWithLogs
     const file = await getUploadedFileById(fileId, null);
 
     if (!file) {
-      return throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res });
     }
 
     const belongsToRequete = await isFileBelongsToRequete(fileId, id);
 
     if (!belongsToRequete) {
       logger.warn({ requeteId: id, fileId }, 'Attempt to access file not belonging to requete');
-      return throwHTTPException403Forbidden('File does not belong to this requete', { res: c.res });
+      throwHTTPException403Forbidden('File does not belong to this requete', { res: c.res });
     }
 
     logger.info({ requeteId: id, fileId }, 'Retrieving file for requete');
@@ -176,7 +176,7 @@ const app = factoryWithLogs
         const isAllowed = await isUserOwner(userId, fileIds);
 
         if (!isAllowed) {
-          return throwHTTPException403Forbidden('You are not allowed to add these files to the requete', {
+          throwHTTPException403Forbidden('You are not allowed to add these files to the requete', {
             res: c.res,
           });
         }
@@ -221,7 +221,7 @@ const app = factoryWithLogs
       const requeteEntite = await getRequeteEntiteById(id, entiteIds);
 
       if (!requeteEntite) {
-        return throwHTTPException404NotFound('Requete not found', {
+        throwHTTPException404NotFound('Requete not found', {
           res: c.res,
         });
       }
@@ -253,7 +253,7 @@ const app = factoryWithLogs
       const requeteEntite = await getRequeteEntiteById(id, entiteIds);
 
       if (!requeteEntite) {
-        return throwHTTPException404NotFound('Requete not found', {
+        throwHTTPException404NotFound('Requete not found', {
           res: c.res,
         });
       }
@@ -293,7 +293,7 @@ const app = factoryWithLogs
     const requeteEntite = await getRequeteEntiteById(id, entiteIds);
 
     if (!requeteEntite) {
-      return throwHTTPException404NotFound('Requete not found', {
+      throwHTTPException404NotFound('Requete not found', {
         res: c.res,
       });
     }
@@ -301,7 +301,7 @@ const app = factoryWithLogs
     const isAllowed = await isUserOwner(userId, fileIds);
 
     if (!isAllowed) {
-      return throwHTTPException403Forbidden('You are not allowed to add these files to the requete', {
+      throwHTTPException403Forbidden('You are not allowed to add these files to the requete', {
         res: c.res,
       });
     }
@@ -324,7 +324,7 @@ const app = factoryWithLogs
     const requeteEntite = await getRequeteEntiteById(id, entiteIds);
 
     if (!requeteEntite) {
-      return throwHTTPException404NotFound('Requete not found', {
+      throwHTTPException404NotFound('Requete not found', {
         res: c.res,
       });
     }
@@ -346,7 +346,7 @@ const app = factoryWithLogs
     const requeteEntite = await getRequeteEntiteById(id, entiteIds);
 
     if (!requeteEntite) {
-      return throwHTTPException404NotFound('Requete not found', {
+      throwHTTPException404NotFound('Requete not found', {
         res: c.res,
       });
     }
@@ -366,27 +366,27 @@ const app = factoryWithLogs
     const requeteEntite = await getRequeteEntiteById(id, entiteIds);
 
     if (!requeteEntite) {
-      return throwHTTPException404NotFound('Requete entite not found', { res: c.res });
+      throwHTTPException404NotFound('Requete entite not found', { res: c.res });
     }
 
     const situation = requeteEntite.requete?.situations?.find((s) => s.id === situationId);
 
     if (!situation) {
       logger.warn({ requeteId: id, situationId }, 'Situation not found in requete');
-      return throwHTTPException404NotFound('Situation not found', { res: c.res });
+      throwHTTPException404NotFound('Situation not found', { res: c.res });
     }
 
     const file = await getUploadedFileById(fileId, null);
 
     if (!file) {
-      return throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res });
     }
 
     const belongsToRequete = await isFileBelongsToRequete(fileId, id);
 
     if (!belongsToRequete) {
       logger.warn({ requeteId: id, situationId, fileId }, 'Attempt to access file not belonging to requete');
-      return throwHTTPException403Forbidden('File does not belong to this requete', { res: c.res });
+      throwHTTPException403Forbidden('File does not belong to this requete', { res: c.res });
     }
 
     logger.info({ requeteId: id, situationId, fileId }, 'Retrieving file for situation');
@@ -411,7 +411,7 @@ const app = factoryWithLogs
       const hasAccess = true;
 
       if (!hasAccess) {
-        return throwHTTPException404NotFound('Requete entite not found', {
+        throwHTTPException404NotFound('Requete entite not found', {
           res: c.res,
         });
       }
@@ -422,7 +422,7 @@ const app = factoryWithLogs
 
       if (!step) {
         logger.error({ requestId: id, userId }, 'Inconsistent state: step not created');
-        return throwHTTPException404NotFound('Requete entite not found', {
+        throwHTTPException404NotFound('Requete entite not found', {
           res: c.res,
         });
       }
@@ -449,7 +449,7 @@ const app = factoryWithLogs
       const entiteId = entiteIds?.[0];
 
       if (!entiteId) {
-        return throwHTTPException403Forbidden('You are not allowed to close this requête', {
+        throwHTTPException403Forbidden('You are not allowed to close this requête', {
           res: c.res,
         });
       }
@@ -475,8 +475,9 @@ const app = factoryWithLogs
       } catch (error: unknown) {
         if (error instanceof Error) {
           switch (error.message) {
+            // biome-ignore lint/suspicious/noFallthroughSwitchClause: throwHTTPException404NotFound is throwing error
             case 'REQUETE_NOT_FOUND':
-              return throwHTTPException404NotFound('Requête not found', { res: c.res });
+              throwHTTPException404NotFound('Requête not found', { res: c.res });
             case 'REASON_INVALID':
               return c.json({ error: 'REASON_INVALID', message: 'Invalid reason provided' }, 400);
             case 'READONLY_FOR_ENTITY':

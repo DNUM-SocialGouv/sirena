@@ -7,7 +7,7 @@ const app = (roles: Role[]) =>
     const userRole = c.get('roleId') as Role;
 
     if (!userRole || !roles.includes(userRole)) {
-      return throwHTTPException403Forbidden('Forbidden, you do not have the required role to access this resource', {
+      throwHTTPException403Forbidden('Forbidden, you do not have the required role to access this resource', {
         res: c.res,
       });
     }

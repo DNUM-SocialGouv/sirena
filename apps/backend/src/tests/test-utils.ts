@@ -120,7 +120,6 @@ export const createTestUser = (overrides: Partial<TestUser> = {}): TestUser => (
   sub: 'test-sub',
   createdAt: new Date(),
   updatedAt: new Date(),
-  active: true,
   pcData: {},
   roleId: 'role-789',
   statutId: 'statut-123',

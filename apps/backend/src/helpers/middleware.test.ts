@@ -101,7 +101,6 @@ const TEST_USER: TestUser = {
   roleId: 'role-789',
   statutId: 'statut-123',
   entiteId: 'entite-456',
-  active: true,
   pcData: {},
   createdAt: new Date(),
   updatedAt: new Date(),
