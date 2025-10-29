@@ -5,6 +5,7 @@ import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Toast } from '@sirena/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
 import { useSetRequeteFile } from '@/hooks/mutations/setRequeteFile.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
@@ -53,9 +54,6 @@ const TOAST_MESSAGES = {
 } as const;
 
 // Utility functions
-const truncateFileName = (fileName: string, maxLength: number = 50, sliceLength: number = 30): string => {
-  return fileName.length > maxLength ? `${fileName.slice(0, sliceLength)}...` : fileName;
-};
 
 interface UploadedFile {
   id: string;
@@ -77,7 +75,6 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
   const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
   const [isUploading, setIsUploading] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<UploadedFile | null>(null);
-  const firstFileLinkRef = useRef<HTMLAnchorElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const { canEdit } = useCanEdit({ requeteId: requeteId });
 
@@ -194,22 +191,10 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
   );
 
   const addModalEventListener = useCallback(() => {
-    const handleModalClose = () => {
-      setTimeout(() => {
-        firstFileLinkRef.current?.focus();
-      }, 100);
-    };
-
     const checkForModal = () => {
       const modalElement = document.querySelector(`#${deleteFileModal.id}`);
 
       if (modalElement) {
-        modalElement.addEventListener('dsfr.conceal', handleModalClose);
-
-        cleanupRef.current = () => {
-          modalElement.removeEventListener('dsfr.conceal', handleModalClose);
-        };
-
         return true;
       }
       return false;
@@ -271,25 +256,20 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
           <h4 className={fr.cx('fr-text--lg')}>Fichiers uploadés</h4>
           <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
             <ul>
-              {files.map((file, index) => {
+              {files.map((file) => {
                 const fileWithMetadata = file as UploadedFile & { metadata: { originalName?: string } };
                 const originalName = fileWithMetadata.metadata?.originalName || 'Unknown';
-                const fileExtension = originalName.split('.')?.[1]?.toUpperCase();
 
                 return (
                   <li key={file.id} className={noteStyles['request-note__file']}>
                     <div className={styles.fileItem}>
                       <div className={styles.fileName}>
-                        <a
-                          ref={index === 0 ? firstFileLinkRef : undefined}
+                        <FileDownloadLink
                           href={`/api/requetes-entite/${requeteId}/file/${file.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          fileName={originalName}
+                          fileSize={file.size}
                           className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
-                          title={originalName}
-                        >
-                          {truncateFileName(originalName)}
-                        </a>
+                        />
                       </div>
                       {canEdit && (
                         <Button
@@ -303,9 +283,6 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
                         </Button>
                       )}
                     </div>
-                    <p className={fr.cx('fr-text--xs')}>
-                      {fileExtension} - {(file.size / 1024).toFixed(2)} Ko
-                    </p>
                   </li>
                 );
               })}
