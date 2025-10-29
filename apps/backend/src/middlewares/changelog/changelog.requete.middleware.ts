@@ -225,6 +225,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
           personneTrackedFields,
         );
 
+        // Handle identity updates for existing declarant
         if (declarantIdentiteBefore && declarantAfter.identite) {
           await handleEntityChanges(
             'Identite',
@@ -235,11 +236,32 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
           );
         }
 
+        // Handle new identity creation for existing declarant
+        if (!declarantIdentiteBefore && declarantAfter.identite) {
+          await handleEntityCreation(
+            'Identite',
+            declarantAfter.identite.id,
+            declarantAfter.identite,
+            identiteTrackedFields,
+          );
+        }
+
+        // Handle address updates for existing declarant
         if (declarantAdresseBefore && declarantAfter.adresse) {
           await handleEntityChanges(
             'Adresse',
             declarantAfter.adresse.id,
             declarantAdresseBefore,
+            declarantAfter.adresse,
+            adresseTrackedFields,
+          );
+        }
+
+        // Handle new address creation for existing declarant
+        if (!declarantAdresseBefore && declarantAfter.adresse) {
+          await handleEntityCreation(
+            'Adresse',
+            declarantAfter.adresse.id,
             declarantAfter.adresse,
             adresseTrackedFields,
           );
@@ -257,6 +279,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
           personneTrackedFields,
         );
 
+        // Handle identity updates for existing participant
         if (participantIdentiteBefore && participantAfter.identite) {
           await handleEntityChanges(
             'Identite',
@@ -267,11 +290,32 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
           );
         }
 
+        // Handle new identity creation for existing participant
+        if (!participantIdentiteBefore && participantAfter.identite) {
+          await handleEntityCreation(
+            'Identite',
+            participantAfter.identite.id,
+            participantAfter.identite,
+            identiteTrackedFields,
+          );
+        }
+
+        // Handle address updates for existing participant
         if (participantAdresseBefore && participantAfter.adresse) {
           await handleEntityChanges(
             'Adresse',
             participantAfter.adresse.id,
             participantAdresseBefore,
+            participantAfter.adresse,
+            adresseTrackedFields,
+          );
+        }
+
+        // Handle new address creation for existing participant
+        if (!participantAdresseBefore && participantAfter.adresse) {
+          await handleEntityCreation(
+            'Adresse',
+            participantAfter.adresse.id,
             participantAfter.adresse,
             adresseTrackedFields,
           );
