@@ -36,6 +36,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/backend-utils/' | sed 's|^packages/backend-utils/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
     "lint": "biome check"
   },
