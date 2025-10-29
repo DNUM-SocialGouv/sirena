@@ -1,6 +1,8 @@
+import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
+import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
-import { useId } from 'react';
+import { useId, useMemo } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
@@ -56,6 +58,10 @@ export const Details = ({ requestId }: DetailsProps) => {
     }
   };
 
+  const isRequestClosed = useMemo(() => {
+    return requestQuery.data?.requeteEtape?.some((etape) => etape.statutId === REQUETE_STATUT_TYPES.CLOTUREE);
+  }, [requestQuery.data?.requeteEtape]);
+
   if (!requestId) {
     return (
       <>
@@ -76,6 +82,20 @@ export const Details = ({ requestId }: DetailsProps) => {
 
         return (
           <>
+            <div>
+              {requestId && !canEdit && (
+                <Alert
+                  severity={isRequestClosed ? 'warning' : 'info'}
+                  title=""
+                  description={
+                    isRequestClosed
+                      ? 'Accès en lecture seule : cette requête est clôturée et ne peut plus être modifiée.'
+                      : "Accès en lecture seule : l'édition n'est pas disponible avec vos autorisations actuelles."
+                  }
+                  className="fr-mb-3w"
+                />
+              )}
+            </div>
             <DeclarantSection
               requestId={requestId}
               id={declarantSectionId}
