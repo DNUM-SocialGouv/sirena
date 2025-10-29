@@ -5,10 +5,12 @@ import { validator as zValidator } from 'hono-openapi/zod';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { deleteFileFromMinio, getSignedUrl, uploadFileToMinio } from '@/libs/minio';
 import authMiddleware from '@/middlewares/auth.middleware';
+import uploadedFileChangelogMiddleware from '@/middlewares/changelog/changelog.uploadedFile.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import extractUploadedFileMiddleware from '@/middlewares/upload.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
+import { ChangeLogAction } from '../changelog/changelog.type';
 import {
   createUploadedFileRoute,
   deleteUploadedFileRoute,
@@ -98,94 +100,112 @@ const app = factoryWithLogs
     return c.json({ data: { signedUrl } }, 200);
   })
 
-  .post('/', createUploadedFileRoute, extractUploadedFileMiddleware, async (c) => {
-    const logger = c.get('logger');
-    const uploadedFile = c.get('uploadedFile');
-    if (!uploadedFile) {
-      throwHTTPException400BadRequest('No file uploaded', {
-        res: c.res,
-      });
-    }
-
-    try {
-      const userId = c.get('userId');
-      const entiteIds = c.get('entiteIds');
-      // Force parent/main entiteId
-      const fileEntiteId = entiteIds?.[0];
-      if (!fileEntiteId) {
-        throwHTTPException400BadRequest('You must have an assigned entite to create an uploaded file.', {
+  .post(
+    '/',
+    createUploadedFileRoute,
+    extractUploadedFileMiddleware,
+    uploadedFileChangelogMiddleware({ action: ChangeLogAction.CREATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const uploadedFile = c.get('uploadedFile');
+      if (!uploadedFile) {
+        throwHTTPException400BadRequest('No file uploaded', {
           res: c.res,
         });
       }
-      logger.info({ fileName: uploadedFile.fileName }, 'Uploaded file creation requested');
 
-      const { objectPath, rollback: rollbackMinio } = await uploadFileToMinio(
-        uploadedFile.tempFilePath,
-        uploadedFile.fileName,
-        uploadedFile.contentType,
-      );
+      try {
+        const userId = c.get('userId');
+        const entiteIds = c.get('entiteIds');
+        // Force parent/main entiteId
+        const fileEntiteId = entiteIds?.[0];
+        if (!fileEntiteId) {
+          throwHTTPException400BadRequest('You must have an assigned entite to create an uploaded file.', {
+            res: c.res,
+          });
+        }
+        logger.info({ fileName: uploadedFile.fileName }, 'Uploaded file creation requested');
 
-      const fileName = objectPath.split('/')?.[1] || '';
-      const id = fileName.split('.')?.[0] || '';
+        const { objectPath, rollback: rollbackMinio } = await uploadFileToMinio(
+          uploadedFile.tempFilePath,
+          uploadedFile.fileName,
+          uploadedFile.contentType,
+        );
 
-      if (!fileName || !id) {
-        throw new Error('File name is not valid');
+        const fileName = objectPath.split('/')?.[1] || '';
+        const id = fileName.split('.')?.[0] || '';
+
+        if (!fileName || !id) {
+          throw new Error('File name is not valid');
+        }
+
+        const uploadedFileRecord = await createUploadedFile({
+          id,
+          fileName,
+          filePath: objectPath,
+          mimeType: uploadedFile.contentType,
+          size: uploadedFile.size,
+          metadata: { originalName: uploadedFile.fileName },
+          entiteId: fileEntiteId,
+          uploadedById: userId,
+          requeteEtapeNoteId: null,
+          requeteId: null,
+          faitSituationId: null,
+          demarchesEngageesId: null,
+          status: 'PENDING',
+        }).catch(async (err) => {
+          await rollbackMinio();
+          throw err;
+        });
+
+        logger.info({ uploadedFileId: uploadedFileRecord.id }, 'Uploaded file created successfully');
+
+        // Set changelogId for changelog middleware
+        c.set('changelogId', uploadedFileRecord.id);
+
+        return c.json({ data: uploadedFileRecord }, 201);
+      } finally {
+        await fs.promises.unlink(uploadedFile.tempFilePath);
+      }
+    },
+  )
+  .delete(
+    '/:id',
+    deleteUploadedFileRoute,
+    zValidator('param', UploadedFileParamsIdSchema),
+    uploadedFileChangelogMiddleware({ action: ChangeLogAction.DELETED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const id = c.req.valid('param').id;
+      const userId = c.get('userId');
+      const entiteIds = c.get('entiteIds');
+
+      if (!entiteIds?.length) {
+        throwHTTPException400BadRequest('You are not allowed to delete uploaded files without entiteIds.', {
+          res: c.res,
+        });
       }
 
-      const uploadedFileRecord = await createUploadedFile({
-        id,
-        fileName,
-        filePath: objectPath,
-        mimeType: uploadedFile.contentType,
-        size: uploadedFile.size,
-        metadata: { originalName: uploadedFile.fileName },
-        entiteId: fileEntiteId,
-        uploadedById: userId,
-        requeteEtapeNoteId: null,
-        requeteId: null,
-        faitSituationId: null,
-        demarchesEngageesId: null,
-        status: 'PENDING',
-      }).catch(async (err) => {
-        await rollbackMinio();
-        throw err;
-      });
+      // TODO: temporarily remove entiteIds filter. We need to check if the uploaded file is within the EntiteId scope for the user
+      const uploadedFile = await getUploadedFileById(id, null);
+      if (!uploadedFile) {
+        logger.warn({ uploadedFileId: id }, 'Uploaded file not found or unauthorized access');
+        throwHTTPException404NotFound('Uploaded file not found', {
+          res: c.res,
+        });
+      }
 
-      logger.info({ uploadedFileId: uploadedFileRecord.id }, 'Uploaded file created successfully');
+      await deleteUploadedFile(id);
 
-      return c.json({ data: uploadedFileRecord }, 201);
-    } finally {
-      await fs.promises.unlink(uploadedFile.tempFilePath);
-    }
-  })
-  .delete('/:id', deleteUploadedFileRoute, zValidator('param', UploadedFileParamsIdSchema), async (c) => {
-    const logger = c.get('logger');
-    const id = c.req.valid('param').id;
-    const userId = c.get('userId');
-    const entiteIds = c.get('entiteIds');
+      await deleteFileFromMinio(uploadedFile.filePath);
 
-    if (!entiteIds?.length) {
-      throwHTTPException400BadRequest('You are not allowed to delete uploaded files without entiteIds.', {
-        res: c.res,
-      });
-    }
+      // Set changelogId for changelog middleware
+      c.set('changelogId', id);
 
-    // TODO: temporarily remove entiteIds filter. We need to check if the uploaded file is within the EntiteId scope for the user
-    const uploadedFile = await getUploadedFileById(id, null);
-    if (!uploadedFile) {
-      logger.warn({ uploadedFileId: id }, 'Uploaded file not found or unauthorized access');
-      throwHTTPException404NotFound('Uploaded file not found', {
-        res: c.res,
-      });
-    }
+      logger.info({ uploadedFileId: id, userId }, 'Uploaded file deleted successfully');
 
-    await deleteUploadedFile(id);
-
-    await deleteFileFromMinio(uploadedFile.filePath);
-
-    logger.info({ uploadedFileId: id, userId }, 'Uploaded file deleted successfully');
-
-    return c.body(null, 204);
-  });
+      return c.body(null, 204);
+    },
+  );
 
 export default app;
