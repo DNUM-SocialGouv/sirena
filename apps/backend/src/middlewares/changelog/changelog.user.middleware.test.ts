@@ -30,7 +30,6 @@ describe('changelog.user.middleware.ts', () => {
     roleId: 'role1',
     entiteId: 'entite1',
     statutId: 'statut1',
-    active: true,
     createdAt: new Date(),
     updatedAt: new Date(),
     pcData: {},
@@ -64,7 +63,12 @@ describe('changelog.user.middleware.ts', () => {
 
   describe('userChangelogMiddleware', () => {
     it('should track changes to user fields', async () => {
-      const updatedUser = { ...testUser, roleId: 'role2', active: false, role: { id: 'role2', label: 'Updated Role' } };
+      const updatedUser = {
+        ...testUser,
+        roleId: 'role2',
+        statutId: 'statut2',
+        role: { id: 'role2', label: 'Updated Role' },
+      };
       mockGetUserById.mockResolvedValueOnce(testUser).mockResolvedValueOnce(updatedUser);
 
       const app = createUserTestApp();
@@ -82,13 +86,11 @@ describe('changelog.user.middleware.ts', () => {
           roleId: testUser.roleId,
           entiteId: testUser.entiteId,
           statutId: testUser.statutId,
-          active: testUser.active,
         },
         after: {
           roleId: updatedUser.roleId,
           entiteId: updatedUser.entiteId,
           statutId: updatedUser.statutId,
-          active: updatedUser.active,
         },
       });
     });

@@ -19,7 +19,7 @@ const filterByRoles = (roles: string[] | null) => {
 };
 
 export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery = {}) => {
-  const { offset = 0, limit, sort = 'nom', order = 'asc', roleId, active, search } = query;
+  const { offset = 0, limit, sort = 'nom', order = 'asc', roleId, statutId, search } = query;
 
   const entiteFilter = filterByEntities(entiteIds);
   const roleFilter = filterByRoles(roleId ?? null);
@@ -35,7 +35,7 @@ export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery 
   const where: Prisma.UserWhereInput = {
     ...(entiteFilter ?? {}),
     ...(roleFilter ?? {}),
-    ...(active !== undefined ? { active } : {}),
+    ...(statutId !== undefined ? { statutId: { in: statutId } } : {}),
     ...(searchConditions ? { OR: searchConditions } : {}),
   };
 

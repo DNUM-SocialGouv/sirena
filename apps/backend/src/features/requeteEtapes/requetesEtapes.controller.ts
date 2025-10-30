@@ -54,7 +54,7 @@ const app = factoryWithLogs
     const hasAccess = true;
 
     if (!hasAccess) {
-      return throwHTTPException404NotFound('Requete entite not found', {
+      throwHTTPException404NotFound('Requete entite not found', {
         res: c.res,
       });
     }
@@ -63,7 +63,7 @@ const app = factoryWithLogs
     const userId = c.get('userId');
     const user = await getUserById(userId, null, null);
     if (!user?.entiteId) {
-      return throwHTTPException401Unauthorized('User not found', {
+      throwHTTPException401Unauthorized('User not found', {
         res: c.res,
       });
     }
@@ -81,14 +81,14 @@ const app = factoryWithLogs
     const requeteEtape = await getRequeteEtapeById(id);
 
     if (!requeteEtape) {
-      return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
     }
 
     // TODO: check real access with entiteIds when implemented
     //   const entiteIds = c.get('entiteIds');
     const hasAccess = await hasAccessToRequete({ requeteId: requeteEtape.requeteId, entiteId: requeteEtape.entiteId });
     if (!hasAccess) {
-      return throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
+      throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
         res: c.res,
       });
     }
@@ -96,7 +96,7 @@ const app = factoryWithLogs
     const file = await getUploadedFileById(fileId, null);
 
     if (!file) {
-      return throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res });
     }
 
     logger.info({ requeteEtapeId: id, fileId }, 'Retrieving file for requete etape');
@@ -154,7 +154,7 @@ const app = factoryWithLogs
       const hasAccess = true;
 
       if (!hasAccess) {
-        return throwHTTPException404NotFound('Requete entite not found', {
+        throwHTTPException404NotFound('Requete entite not found', {
           res: c.res,
         });
       }
@@ -162,7 +162,7 @@ const app = factoryWithLogs
       // TODO: Temporary: Here we are using a permission and access management system that will not be the final system: HERE only the user's entiteId is used to create the step linked to this same entiteId, it WILL likely be more complex later with maybe a parent/child permission chain.
       const user = await getUserById(userId, null, null);
       if (!user?.entiteId) {
-        return throwHTTPException401Unauthorized('User not found', {
+        throwHTTPException401Unauthorized('User not found', {
           res: c.res,
         });
       }
@@ -172,7 +172,7 @@ const app = factoryWithLogs
 
       if (!step) {
         logger.error({ requestId: requeteId, userId }, 'Inconsistent state: step not created');
-        return throwHTTPException404NotFound('Requete entite not found', {
+        throwHTTPException404NotFound('Requete entite not found', {
           res: c.res,
         });
       }
@@ -198,7 +198,7 @@ const app = factoryWithLogs
       const requeteEtape = await getRequeteEtapeById(id);
 
       if (!requeteEtape) {
-        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
       // TODO: check real access with entiteIds when implemented
@@ -208,7 +208,7 @@ const app = factoryWithLogs
         entiteId: requeteEtape.entiteId,
       });
       if (!hasAccess) {
-        return throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
+        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
         });
       }
@@ -218,7 +218,7 @@ const app = factoryWithLogs
       });
 
       if (!updatedRequeteEtape) {
-        return throwHTTPException404NotFound('RequeteEtape not found', {
+        throwHTTPException404NotFound('RequeteEtape not found', {
           res: c.res,
         });
       }
@@ -253,7 +253,7 @@ const app = factoryWithLogs
       const requeteEtape = await getRequeteEtapeById(id);
 
       if (!requeteEtape) {
-        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
       // TODO: check real access with entiteIds when implemented
@@ -263,7 +263,7 @@ const app = factoryWithLogs
         entiteId: requeteEtape.entiteId,
       });
       if (!hasAccess) {
-        return throwHTTPException401Unauthorized('You are not allowed to update this requete etape', {
+        throwHTTPException401Unauthorized('You are not allowed to update this requete etape', {
           res: c.res,
         });
       }
@@ -273,7 +273,7 @@ const app = factoryWithLogs
       });
 
       if (!updatedRequeteEtape) {
-        return throwHTTPException404NotFound('RequeteEtape not found', {
+        throwHTTPException404NotFound('RequeteEtape not found', {
           res: c.res,
         });
       }
@@ -306,7 +306,7 @@ const app = factoryWithLogs
       const requeteEtape = await getRequeteEtapeById(id);
 
       if (!requeteEtape) {
-        return throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
       // TODO: check real access with entiteIds when implemented
@@ -316,7 +316,7 @@ const app = factoryWithLogs
         entiteId: requeteEtape.entiteId,
       });
       if (!hasAccess) {
-        return throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
+        throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
           res: c.res,
         });
       }

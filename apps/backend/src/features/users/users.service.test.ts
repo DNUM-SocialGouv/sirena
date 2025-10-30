@@ -50,7 +50,6 @@ const mockUser = {
   sub: 'sub1',
   createdAt: new Date(),
   updatedAt: new Date(),
-  active: true,
   pcData: {},
   roleId: 'PENDING',
   statutId: 'NON_RENSEIGNE',
@@ -67,11 +66,11 @@ describe('user.service.ts', () => {
     it('should call findMany with correct filters', async () => {
       mockedUser.findMany.mockResolvedValueOnce([mockUser]);
       mockedUser.count.mockResolvedValueOnce(1);
-      const result = await getUsers(null, { roleId: ['PENDING'], active: true });
+      const result = await getUsers(null, { roleId: ['PENDING'], statutId: ['ACTIF'] });
       expect(mockedUser.findMany).toHaveBeenCalledWith({
         where: {
           roleId: { in: ['PENDING'] },
-          active: true,
+          statutId: { in: ['ACTIF'] },
         },
         skip: 0,
         orderBy: { nom: 'asc' },
@@ -83,9 +82,9 @@ describe('user.service.ts', () => {
     it('should call findMany with correct filters when RoleId[]', async () => {
       mockedUser.findMany.mockResolvedValueOnce([mockUser]);
       mockedUser.count.mockResolvedValueOnce(1);
-      const result = await getUsers(['e1'], { roleId: ['PENDING', 'SUPER_ADMIN'], active: true });
+      const result = await getUsers(['e1'], { roleId: ['PENDING', 'SUPER_ADMIN'], statutId: ['ACTIF'] });
       expect(mockedUser.findMany).toHaveBeenCalledWith({
-        where: { roleId: { in: ['PENDING', 'SUPER_ADMIN'] }, active: true, entiteId: { in: ['e1'] } },
+        where: { roleId: { in: ['PENDING', 'SUPER_ADMIN'] }, statutId: { in: ['ACTIF'] }, entiteId: { in: ['e1'] } },
         skip: 0,
         orderBy: { nom: 'asc' },
         include: { role: true },

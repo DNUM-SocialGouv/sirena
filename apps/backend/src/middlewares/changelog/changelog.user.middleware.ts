@@ -16,7 +16,7 @@ const userChangelogMiddleware = ({ action }: UserChangelogMiddleware) =>
       return getUserById(id, null, null);
     },
     getEntityId: (c) => c.req.param('id'),
-    trackedFields: ['roleId', 'entiteId', 'statutId', 'active'],
+    trackedFields: ['roleId', 'entiteId', 'statutId'],
   });
 
 export default userChangelogMiddleware;

@@ -32,9 +32,9 @@ export const GetUsersQuerySchema = paginationQueryParamsSchema(columns).extend({
     .string()
     .transform((val) => val.split(',').map((id) => id.trim()))
     .optional(),
-  active: z
+  statutId: z
     .string()
-    .transform((val) => val === 'true')
+    .transform((val) => val.split(',').map((id) => id.trim()))
     .optional(),
 });
 

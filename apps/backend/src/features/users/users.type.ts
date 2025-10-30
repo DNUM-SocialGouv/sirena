@@ -2,7 +2,7 @@ import type { User } from '@/libs/prisma';
 import type { z } from '@/libs/zod';
 import type { GetUsersQuerySchema } from './users.schema';
 
-export type CreateUserDto = Omit<User, 'id' | 'createdAt' | 'roleId' | 'active' | 'statutId' | 'updatedAt'> & {
+export type CreateUserDto = Omit<User, 'id' | 'createdAt' | 'roleId' | 'statutId' | 'updatedAt'> & {
   statutId?: string;
 };
 

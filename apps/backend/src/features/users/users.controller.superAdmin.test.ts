@@ -71,9 +71,8 @@ const fakeUser = {
   createdAt: new Date(0),
   updatedAt: new Date(0),
   roleId: 'SUPER_ADMIN',
-  active: true,
   pcData: {},
-  statutId: '1',
+  statutId: 'ACTIF',
   entiteId: null,
   role: { id: 'SUPER_ADMIN', label: 'Super Admin' },
 };

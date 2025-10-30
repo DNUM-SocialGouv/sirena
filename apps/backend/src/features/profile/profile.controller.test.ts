@@ -40,9 +40,8 @@ describe('Profile endpoints: /profile', () => {
     createdAt: new Date(0),
     updatedAt: new Date(0),
     roleId: 'role1',
-    active: true,
     pcData: {},
-    statutId: '1',
+    statutId: 'ACTIF',
     entiteId: null,
     role: { id: 'role1', label: 'Admin' },
   };

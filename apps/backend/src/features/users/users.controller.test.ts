@@ -79,9 +79,8 @@ describe('Users endpoints: /users', () => {
       createdAt: new Date(0),
       updatedAt: new Date(0),
       roleId: 'role1',
-      active: true,
       pcData: {},
-      statutId: '1',
+      statutId: 'ACTIF',
       entiteId: null,
       role: { id: ROLES.NATIONAL_STEERING, label: 'Admin' },
     },
@@ -95,9 +94,8 @@ describe('Users endpoints: /users', () => {
       createdAt: new Date(0),
       updatedAt: new Date(0),
       roleId: 'role2',
-      active: false,
       pcData: {},
-      statutId: '1',
+      statutId: 'INACTIF',
       entiteId: null,
       role: { id: ROLES.READER, label: 'Admin' },
     },
@@ -108,7 +106,7 @@ describe('Users endpoints: /users', () => {
       vi.mocked(getUsers).mockResolvedValueOnce({ data: fakeData, total: 2 });
 
       const res = await client.index.$get({
-        query: { roleId: ROLES.NATIONAL_STEERING, active: 'true' },
+        query: { roleId: ROLES.NATIONAL_STEERING, statutId: 'ACTIF' },
       });
 
       expect(res.status).toBe(200);
@@ -119,13 +117,13 @@ describe('Users endpoints: /users', () => {
       });
       expect(getUsers).toHaveBeenCalledWith(['e1', 'e2', 'e3'], {
         roleId: [ROLES.NATIONAL_STEERING],
-        active: true,
+        statutId: ['ACTIF'],
       });
     });
 
     it('should return an error, "You are not allowed to filter on this role."', async () => {
       const res = await client.index.$get({
-        query: { roleId: ROLES.SUPER_ADMIN, active: 'true' },
+        query: { roleId: ROLES.SUPER_ADMIN, statutId: 'ACTIF' },
       });
 
       expect(res.status).toBe(400);
@@ -141,7 +139,7 @@ describe('Users endpoints: /users', () => {
       const res = await client.index.$get({
         query: {
           roleId: `${ROLES.ENTITY_ADMIN},${ROLES.PENDING}`,
-          active: 'true',
+          statutId: 'ACTIF,INACTIF',
           offset: '10',
           limit: '5',
         },
@@ -156,7 +154,7 @@ describe('Users endpoints: /users', () => {
 
       expect(getUsers).toHaveBeenCalledWith(['e1', 'e2', 'e3'], {
         roleId: [ROLES.ENTITY_ADMIN, ROLES.PENDING],
-        active: true,
+        statutId: ['ACTIF', 'INACTIF'],
         offset: 10,
         limit: 5,
       });
