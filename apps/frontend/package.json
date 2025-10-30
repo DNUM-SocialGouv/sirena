@@ -12,6 +12,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test": "vitest --typecheck",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc --noEmit",
     "lint": "biome check",
     "preview": "vite preview",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/frontend/' | sed 's|^packages/frontend/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
