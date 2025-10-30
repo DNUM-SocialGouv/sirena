@@ -110,11 +110,11 @@
 }
 
 .submotifList {
-  padding: 0.5rem 0;
+  padding: 0 0 0.5rem 0;
 }
 
 .submotifTitle {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1rem 0.25rem 1rem;
   font-weight: bold;
   color: var(--text-title-grey);
   font-size: 1rem;
