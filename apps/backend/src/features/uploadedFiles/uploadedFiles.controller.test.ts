@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import type { Context, Next } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -122,14 +121,18 @@ vi.mock('node:fs', () => ({
   },
 }));
 
-vi.mock('@/helpers/errors', () => ({
-  errorHandler: vi.fn((err, c) => {
-    if (err instanceof HTTPException) {
-      return err.getResponse();
-    }
-    return c.json({ message: 'Internal server error' }, 500);
-  }),
-}));
+vi.mock('@/helpers/errors', async () => {
+  const actual = await vi.importActual<typeof import('@/helpers/errors')>('@/helpers/errors');
+  return {
+    ...actual,
+    errorHandler: vi.fn((err, c) => {
+      if (actual.isHTTPException(err)) {
+        return err.getResponse();
+      }
+      return c.json({ message: 'Internal server error' }, 500);
+    }),
+  };
+});
 
 describe('uploadedFiles.controller.ts', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', UploadedFilesController).onError(errorHandler);

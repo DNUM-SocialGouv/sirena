@@ -5,13 +5,23 @@ import { envVars } from '@/config/env';
 import { sentryStorage } from '@/libs/asyncLocalStorage';
 import type { AppBindings } from './factories/appWithLogs';
 
+export const isHTTPException = (err: unknown): err is HTTPException => {
+  const errObj = err as unknown as Record<string, unknown>;
+  return (
+    err instanceof HTTPException ||
+    (err !== null && typeof errObj.getResponse === 'function' && typeof errObj.status === 'number')
+  );
+};
+
 export const errorHandler: ErrorHandler<AppBindings> = (err, c) => {
-  if (err instanceof HTTPException) {
+  if (isHTTPException(err)) {
     return err.getResponse();
   }
 
   const logger = c.get('logger');
-  logger.error({ err }, 'Internal server error');
+  if (logger) {
+    logger.error({ err }, 'Internal server error');
+  }
 
   if (envVars.SENTRY_ENABLED) {
     const sentryScope = sentryStorage.getStore();

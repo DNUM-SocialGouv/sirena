@@ -10,7 +10,7 @@ type CheckboxCellProps<Datum extends RowWithId<RowId>, RowId extends string> = {
   onToggleSelect: (id: Datum[RowId]) => void;
 };
 
-const CheckboxCellComponent = <Datum extends RowWithId<RowId>, RowId extends string>({
+const checkboxCellComponent = <Datum extends RowWithId<RowId>, RowId extends string>({
   id,
   row,
   rowIndex,
@@ -39,4 +39,4 @@ const CheckboxCellComponent = <Datum extends RowWithId<RowId>, RowId extends str
   );
 };
 
-export const CheckboxCell = memo(CheckboxCellComponent) as typeof CheckboxCellComponent;
+export const CheckboxCell = memo(checkboxCellComponent) as typeof checkboxCellComponent;

@@ -1,6 +1,5 @@
 import { Readable } from 'node:stream';
 import type { Context, Next } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -93,14 +92,18 @@ vi.mock('@/libs/minio', () => ({
   getFileStream: vi.fn(),
 }));
 
-vi.mock('@/helpers/errors', () => ({
-  errorHandler: vi.fn((err, c) => {
-    if (err instanceof HTTPException) {
-      return err.getResponse();
-    }
-    return c.json({ message: 'Internal server error' }, 500);
-  }),
-}));
+vi.mock('@/helpers/errors', async () => {
+  const actual = await vi.importActual<typeof import('@/helpers/errors')>('@/helpers/errors');
+  return {
+    ...actual,
+    errorHandler: vi.fn((err, c) => {
+      if (actual.isHTTPException(err)) {
+        return err.getResponse();
+      }
+      return c.json({ message: 'Internal server error' }, 500);
+    }),
+  };
+});
 
 const fakeRequeteEtape: RequeteEtape = {
   id: 'step1',

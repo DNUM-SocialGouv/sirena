@@ -7,7 +7,7 @@ type DataCellProps<Datum extends RowWithId<RowId>, RowId extends string> = {
   getCell: (row: Datum, key: ColumnKey<Datum>) => ReactNode;
 };
 
-const DataCellComponent = <Datum extends RowWithId<RowId>, RowId extends string>({
+const dataCellComponent = <Datum extends RowWithId<RowId>, RowId extends string>({
   row,
   column,
   getCell,
@@ -21,4 +21,4 @@ const DataCellComponent = <Datum extends RowWithId<RowId>, RowId extends string>
   );
 };
 
-export const DataCell = memo(DataCellComponent) as typeof DataCellComponent;
+export const DataCell = memo(dataCellComponent) as typeof dataCellComponent;
