@@ -1,3 +1,5 @@
+import { fr } from '@codegouvfr/react-dsfr';
+
 export const formatFullName = (identite?: { civilite?: { label?: string }; prenom?: string; nom?: string } | null) => {
   if (!identite) return '';
   return [`${identite.civilite?.label ? `${identite.civilite?.label}.` : ''}`, identite.nom, identite.prenom]
@@ -27,7 +29,7 @@ export const ContactInfo = ({
   ariaLabel: string;
 }) => (
   <div className="fr-col-auto">
-    <p className="fr-mb-0">
+    <p className={fr.cx('fr-mb-0')}>
       <span className={icon} role="img" aria-label={ariaLabel} />
       {children}
     </p>
@@ -35,5 +37,5 @@ export const ContactInfo = ({
 );
 
 export const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="fr-text--sm fr-text--bold fr-mb-1w fr-mt-3w">{children}</h3>
+  <h3 className={fr.cx('fr-text--sm', 'fr-mb-1w', 'fr-mt-3w')}>{children}</h3>
 );
