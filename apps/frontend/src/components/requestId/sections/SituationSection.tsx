@@ -62,7 +62,9 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
           <div className="fr-col-auto">
             <p className="fr-mb-0">
               <span className="fr-icon-draft-line fr-icon--sm" aria-hidden="true" />{' '}
-              {fait.motifs.map((motif) => valueToLabel(motif.motif.label) || motif.motif.label).join(', ')}
+              {fait.motifs
+                .map((motif) => valueToLabel(motif?.motif?.label || '') || motif?.motif?.label || '')
+                .join(', ')}
             </p>
           </div>
         )}
