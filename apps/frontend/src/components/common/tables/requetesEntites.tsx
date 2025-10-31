@@ -150,7 +150,7 @@ export function RequetesEntite() {
           {motifs.length > 0 && (
             <ul>
               {motifs.map((motif) => (
-                <li key={motif.motifId}>{valueToLabel(motif.motif.label) || motif.motif.label}</li>
+                <li key={motif?.motifId}>{valueToLabel(motif?.motif?.label || '') || motif?.motif?.label || ''}</li>
               ))}
             </ul>
           )}
