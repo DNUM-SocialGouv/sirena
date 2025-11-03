@@ -1,6 +1,7 @@
 version: 2
 updates:
-  # Configuration pour les dépendances npm/pnpm
+  # Configuration optimisée pour monorepo pnpm
+  # Une seule configuration pour toutes les dépendances npm/pnpm
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -8,6 +9,7 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
+    versioning-strategy: increase
     commit-message:
       prefix: "chore(dependabot): "
       include: "scope"
@@ -18,103 +20,16 @@ updates:
       # Ignorer les mises à jour majeures automatiquement
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+    groups:
+      # Groupe toutes les dépendances mineures et patches ensemble
+      all-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
-  # Configuration pour les dépendances npm/pnpm dans le dossier apps/backend
-  - package-ecosystem: "npm"
-    directory: "/apps/backend"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "chore(dependabot): "
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "npm"
-      - "backend"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-
-  # Configuration pour les dépendances npm/pnpm dans le dossier apps/frontend
-  - package-ecosystem: "npm"
-    directory: "/apps/frontend"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "chore(dependabot): "
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "npm"
-      - "frontend"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-
-  # Configuration pour les dépendances npm/pnpm dans le dossier packages/backend-utils
-  - package-ecosystem: "npm"
-    directory: "/packages/backend-utils"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "chore(dependabot): "
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "npm"
-      - "backend-utils"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-
-  # Configuration pour les dépendances npm/pnpm dans le dossier packages/common
-  - package-ecosystem: "npm"
-    directory: "/packages/common"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "chore(dependabot): "
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "npm"
-      - "common"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-
-  # Configuration pour les dépendances npm/pnpm dans le dossier packages/ui
-  - package-ecosystem: "npm"
-    directory: "/packages/ui"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "chore(dependabot): "
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "npm"
-      - "ui"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-
-  # Configuration pour les dépendances npm/pnpm dans le dossier deploy
+  # Configuration pour le dossier deploy (utilise npm, pas pnpm)
   - package-ecosystem: "npm"
     directory: "/deploy"
     schedule:
@@ -122,6 +37,7 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
+    versioning-strategy: increase
     commit-message:
       prefix: "chore(dependabot): "
       include: "scope"
@@ -132,6 +48,13 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Configuration pour les images Docker dans apps/backend
   - package-ecosystem: "docker"
@@ -152,6 +75,13 @@ updates:
       # Ignorer les mises à jour majeures automatiquement
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Configuration pour les images Docker dans apps/frontend
   - package-ecosystem: "docker"
@@ -172,6 +102,13 @@ updates:
       # Ignorer les mises à jour majeures automatiquement
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Configuration pour les GitHub Actions
   - package-ecosystem: "github-actions"
@@ -187,3 +124,7 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+    groups:
+      all-updates:
+        patterns:
+          - "*"
