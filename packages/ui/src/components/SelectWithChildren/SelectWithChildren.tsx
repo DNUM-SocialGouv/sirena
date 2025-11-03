@@ -38,10 +38,14 @@ export function SelectWithChildren({
   const totalOptions = getTotalOptionsCount(currentOptions, navigationPath.length > 0);
 
   const toggleSelection = (optionValue: string) => {
-    if (value.includes(optionValue)) {
-      onChange(value.filter((v) => v !== optionValue));
+    // Build full hierarchical value: PARENT/CHILD
+    const fullValue =
+      navigationPath.length > 0 ? `${navigationPath.map((p) => p.value).join('/')}/${optionValue}` : optionValue;
+
+    if (value.includes(fullValue)) {
+      onChange(value.filter((v) => v !== fullValue));
     } else {
-      onChange([...value, optionValue]);
+      onChange([...value, fullValue]);
     }
   };
 
@@ -137,11 +141,17 @@ export function SelectWithChildren({
                   );
                 }
 
+                // Build full hierarchical value for checking selection state
+                const fullValue =
+                  navigationPath.length > 0
+                    ? `${navigationPath.map((p) => p.value).join('/')}/${option.value}`
+                    : option.value;
+
                 return (
                   <CheckboxOption
                     key={option.value}
                     option={option}
-                    isSelected={value.includes(option.value)}
+                    isSelected={value.includes(fullValue)}
                     onToggle={() => toggleSelection(option.value)}
                     onKeyDown={handleKeyDown}
                     setRef={setOptionRef(adjustedIndex)}

@@ -31,7 +31,7 @@ import {
   MIS_EN_CAUSE_FAMILLE_PRECISION,
   MIS_EN_CAUSE_PROCHE_PRECISION,
   MIS_EN_CAUSE_TYPE,
-  MOTIFS_SOUS_MOTIFS_DATA,
+  MOTIFS_HIERARCHICAL_DATA,
   misEnCauseAutreNonProPrecisionLabels,
   misEnCauseFamillePrecisionLabels,
   misEnCauseProchePrecisionLabels,
@@ -42,7 +42,6 @@ import {
   professionSocialPrecisionLabels,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { labelsToValues, valuesToLabels } from '@sirena/common/utils';
 import { SelectWithChildren } from '@sirena/ui';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -669,14 +668,14 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
           <div className="fr-grid-row fr-grid-row--gutters">
             <div className="fr-col-12">
               <SelectWithChildren
-                options={MOTIFS_SOUS_MOTIFS_DATA}
-                value={labelsToValues(formData.fait?.sousMotifs || [])}
+                options={MOTIFS_HIERARCHICAL_DATA}
+                value={formData.fait?.motifs || []}
                 onChange={(values) =>
                   setFormData((prev) => ({
                     ...prev,
                     fait: {
                       ...prev.fait,
-                      sousMotifs: valuesToLabels(values),
+                      motifs: values,
                     },
                   }))
                 }

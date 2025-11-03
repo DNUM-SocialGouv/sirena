@@ -8,6 +8,7 @@ import {
   entiteTypes,
   lienVictimeLabels,
   lieuTypeLabels,
+  MOTIFS_DATA,
   maltraitanceTypeLabels,
   misEnCauseAutreNonProPrecisionLabels,
   misEnCauseFamillePrecisionLabels,
@@ -150,14 +151,39 @@ async function seedMisEnCauseTypeEnum(prisma: PrismaClient) {
 
 async function seedMotifEnum(prisma: PrismaClient) {
   let added = 0;
-  for (const [id, label] of Object.entries(motifLabels)) {
-    const exists = await prisma.motifEnum.findUnique({ where: { id } });
+
+  for (const motif of MOTIFS_DATA) {
+    const exists = await prisma.motifEnum.findUnique({ where: { id: motif.id } });
     if (!exists) {
-      await prisma.motifEnum.create({ data: { id, label } });
+      await prisma.motifEnum.create({
+        data: {
+          id: motif.id,
+          label: motif.label,
+        },
+      });
       added++;
     }
   }
   return { table: 'motifEnum', added };
+}
+
+async function seedMotifDeclaratifEnum(prisma: PrismaClient) {
+  let added = 0;
+
+  for (const [id, label] of Object.entries(motifLabels)) {
+    const exists = await prisma.motifDeclaratifEnum.findUnique({ where: { id } });
+    if (!exists) {
+      await prisma.motifDeclaratifEnum.create({
+        data: {
+          id,
+          label,
+        },
+      });
+      added++;
+    }
+  }
+
+  return { table: 'motifDeclaratifEnum', added };
 }
 
 async function seedMisEnCauseTypePrecisionEnum(prisma: PrismaClient) {
@@ -284,6 +310,7 @@ export async function seedEnums(prisma: PrismaClient) {
     seedMisEnCauseTypeEnum(prisma),
     seedMisEnCauseTypePrecisionEnum(prisma),
     seedMotifEnum(prisma),
+    seedMotifDeclaratifEnum(prisma),
     seedReceptionTypeEnum(prisma),
     seedRequeteClotureReasonEnum(prisma),
     seedRequeteStatutEnum(prisma),

@@ -23,7 +23,7 @@ export const SituationDataSchema = z.object({
 
   fait: z
     .object({
-      sousMotifs: z.array(z.string()).optional(),
+      motifs: z.array(z.string()).optional(),
       commentaire: z.string().optional(),
       dateDebut: z.string().optional(),
       dateFin: z.string().optional(),

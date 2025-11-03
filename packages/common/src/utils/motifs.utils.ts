@@ -1,4 +1,4 @@
-import { MOTIFS_SOUS_MOTIFS_DATA } from '../constants/motifs.constant';
+import { MOTIFS_HIERARCHICAL_DATA } from '../constants/motifs.constant';
 
 export interface MotifOption {
   label: string;
@@ -22,20 +22,20 @@ export function getAllOptionsFlat(options: MotifOption[]): MotifOption[] {
   return result;
 }
 
-export function valueToLabel(value: string, options: MotifOption[] = MOTIFS_SOUS_MOTIFS_DATA): string | undefined {
+export function valueToLabel(value: string, options: MotifOption[] = MOTIFS_HIERARCHICAL_DATA): string | undefined {
   const flatOptions = getAllOptionsFlat(options);
   return flatOptions.find((opt) => opt.value === value)?.label;
 }
 
-export function labelToValue(label: string, options: MotifOption[] = MOTIFS_SOUS_MOTIFS_DATA): string | undefined {
+export function labelToValue(label: string, options: MotifOption[] = MOTIFS_HIERARCHICAL_DATA): string | undefined {
   const flatOptions = getAllOptionsFlat(options);
   return flatOptions.find((opt) => opt.label === label)?.value;
 }
 
-export function labelsToValues(labels: string[], options: MotifOption[] = MOTIFS_SOUS_MOTIFS_DATA): string[] {
+export function labelsToValues(labels: string[], options: MotifOption[] = MOTIFS_HIERARCHICAL_DATA): string[] {
   return labels.map((label) => labelToValue(label, options) || label);
 }
 
-export function valuesToLabels(values: string[], options: MotifOption[] = MOTIFS_SOUS_MOTIFS_DATA): string[] {
+export function valuesToLabels(values: string[], options: MotifOption[] = MOTIFS_HIERARCHICAL_DATA): string[] {
   return values.map((value) => valueToLabel(value, options) || value);
 }
