@@ -1,23 +1,27 @@
-name: 'Deploy to GitOps'
-description: 'Generate Kubernetes manifests and deploy to GitOps repository'
+name: "Deploy to GitOps"
+description: "Generate Kubernetes manifests and deploy to GitOps repository"
 
 inputs:
   environment:
-    description: 'Environment name (test, integration, etc.)'
+    description: "Environment name (test, integration, etc.)"
     required: true
   version:
-    description: 'Version identifier for versioning (tag name or short SHA)'
+    description: "Version identifier for versioning (tag name or short SHA)"
     required: true
   gitops-repo:
-    description: 'GitOps repository name'
+    description: "GitOps repository name"
     required: false
-    default: 'fabrique-atlas/org-sdpsn-ws-sirena'
+    default: "fabrique-atlas/org-sdpsn-ws-sirena"
   gitops-repo-key:
-    description: 'SSH key for GitOps repository access'
+    description: "SSH key for GitOps repository access"
     required: true
+  db-reset-enabled:
+    description: "Enable database reset before migrations"
+    required: false
+    default: "false"
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Install dependencies
       shell: bash
@@ -37,6 +41,7 @@ runs:
         cd deploy
         export IMAGE_TAG=${{ inputs.version }}
         export ENVIRONNEMENT=${{ inputs.environment }}
+        export DB_RESET_ENABLED=${{ inputs.db-reset-enabled }}
         npm run build
 
     - name: Checkout GitOps repository
@@ -53,15 +58,15 @@ runs:
         cp -r deploy/dist gitops-repo/deployment-targets/${{ inputs.environment }}
 
         git config --global user.name "github-actions[bot]"
-        # mail standard bot github Actions  
+        # mail standard bot github Actions
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         cd gitops-repo
         git add .
-        
+
         # Check if there are changes to commit
         if git diff --staged --quiet; then
           echo "No changes to commit, skipping commit and push"
         else
           git commit -m '[${{ inputs.environment }}] new version ${{ inputs.version }}'
-          git push 
-        fi 
+          git push
+        fi

@@ -1,6 +1,7 @@
 import { App as CdkApp, YamlOutputType } from 'cdk8s';
 import { App, Worker } from './charts/app';
 import { ExternalSecrets } from './charts/external-secrets';
+import { MigrationJob } from './charts/migration-job';
 import { RedisChart } from './charts/redis';
 import * as k8s from './imports/k8s';
 
@@ -14,6 +15,7 @@ if (!process.env.ENVIRONNEMENT) {
 }
 const imageTag: string = process.env.IMAGE_TAG;
 const environnement: string = process.env.ENVIRONNEMENT;
+const dbResetEnabled: string = process.env.DB_RESET_ENABLED || 'false';
 
 // Common configuration values
 const COMMON_CONFIG = {
@@ -34,6 +36,7 @@ interface EnvironmentConfig {
   subdomain: string;
   domain: string;
   replicas: number;
+  dbResetEnabled: string;
 }
 
 const ENV_CONFIGS: Record<string, EnvironmentConfig> = {
@@ -41,21 +44,25 @@ const ENV_CONFIGS: Record<string, EnvironmentConfig> = {
     subdomain: 'sirena.integration',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
+    dbResetEnabled,
   },
   test: {
     subdomain: 'sirena.test',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
+    dbResetEnabled,
   },
   validation: {
     subdomain: 'sirena.validation',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
+    dbResetEnabled,
   },
   preproduction: {
     subdomain: 'sirena.preproduction',
     domain: 'prod.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.prod.replicas,
+    dbResetEnabled,
   },
   // production: {
   //   subdomain: "sirena",
@@ -84,6 +91,15 @@ function createApps(
   // Redis
   new RedisChart(app, 'redis', {
     namespace,
+  });
+
+  // Database migrations
+  new MigrationJob(app, {
+    name: 'backend',
+    image: `${COMMON_CONFIG.imageRegistry}:${imageTag}-backend`,
+    namespace,
+    environment,
+    dbResetEnabled: envConfig.dbResetEnabled,
   });
 
   // Worker
