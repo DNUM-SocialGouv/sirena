@@ -1,5 +1,5 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { demarcheEngageeLabels, misEnCauseTypeLabels } from '@sirena/common/constants';
+import { demarcheEngageeLabels, MOTIFS_HIERARCHICAL_DATA, misEnCauseTypeLabels } from '@sirena/common/constants';
 import { valueToLabel } from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
 import { FileList } from '@/components/common/FileList';
@@ -7,6 +7,33 @@ import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { formatFileFromServer } from '@/utils/fileHelpers';
 import { SectionTitle } from './helpers';
+
+const groupMotifsByParent = (
+  motifs: Array<{ motif?: { id?: string; label?: string } | null }>,
+): Map<string, { parentLabel: string; children: string[] }> => {
+  const grouped = new Map<string, { parentLabel: string; children: string[] }>();
+
+  for (const motif of motifs) {
+    const motifId = motif?.motif?.id || '';
+    const parts = motifId.split('/');
+    if (parts.length !== 2) continue;
+
+    const [parentValue, childValue] = parts;
+    const parent = MOTIFS_HIERARCHICAL_DATA.find((p) => p.value === parentValue);
+    if (!parent) continue;
+
+    const child = parent.children.find((c) => c.value === childValue);
+    if (!child) continue;
+
+    if (!grouped.has(parentValue)) {
+      grouped.set(parentValue, { parentLabel: parent.label, children: [] });
+    }
+
+    grouped.get(parentValue)?.children.push(child.label);
+  }
+
+  return grouped;
+};
 
 type SituationData = NonNullable<
   NonNullable<ReturnType<typeof useRequeteDetails>['data']>['requete']['situations']
@@ -165,11 +192,18 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
           <>
             <SectionTitle>Motifs qualifiés</SectionTitle>
             <ul className={fr.cx('fr-mb-3w')}>
-              {fait.motifs.map((motif) => (
-                <li key={motif?.motif?.label || ''}>
-                  {valueToLabel(motif?.motif?.label || '') || motif?.motif?.label || ''}
-                </li>
-              ))}
+              {Array.from(groupMotifsByParent(fait.motifs).entries()).map(
+                ([parentValue, { parentLabel, children }]) => (
+                  <li key={parentValue}>
+                    {parentLabel}
+                    <ul>
+                      {children.map((childLabel) => (
+                        <li key={childLabel}>{childLabel}</li>
+                      ))}
+                    </ul>
+                  </li>
+                ),
+              )}
             </ul>
           </>
         )}

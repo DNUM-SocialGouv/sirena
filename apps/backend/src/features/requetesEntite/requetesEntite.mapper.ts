@@ -147,13 +147,12 @@ export const mapSituationFaitToPrismaCreate = (situationId: string, faitData?: S
     dateFin: faitData.dateFin ? new Date(faitData.dateFin) : null,
     commentaire: faitData.commentaire || '',
     autresPrecisions: faitData.autresPrecisions || '',
-    motifs: faitData.sousMotifs?.length
+    motifs: faitData.motifs?.length
       ? {
-          create: faitData.sousMotifs.map((sousMotifLabel) => ({
+          create: faitData.motifs.map((motifId) => ({
             motif: {
-              connectOrCreate: {
-                where: { label: sousMotifLabel },
-                create: { label: sousMotifLabel },
+              connect: {
+                id: motifId,
               },
             },
           })),

@@ -366,6 +366,7 @@ describe('requetesEntite.service', () => {
                   faits: {
                     include: {
                       motifs: { include: { motif: true } },
+                      motifsDeclaratifs: { include: { motifDeclaratif: true } },
                       consequences: { include: { consequence: true } },
                       maltraitanceTypes: { include: { maltraitanceType: true } },
                       fichiers: true,

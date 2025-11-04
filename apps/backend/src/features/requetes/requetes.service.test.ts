@@ -297,8 +297,8 @@ describe('requetes.service.ts', () => {
               ...prisma.fait,
               create: vi.fn().mockResolvedValue({ id: 'fait-1' }),
             },
-            faitMotif: {
-              ...prisma.faitMotif,
+            faitMotifDeclaratif: {
+              ...prisma.faitMotifDeclaratif,
               createMany: vi.fn().mockResolvedValue({ count: 1 }),
             },
             faitConsequence: {
@@ -407,6 +407,7 @@ describe('requetes.service.ts', () => {
 
       const transactionSpy = vi.mocked(prisma.$transaction);
       transactionSpy.mockImplementation(async (cb) => {
+        // @ts-expect-error - Mocking complex Prisma transaction types
         const mockTx = {
           ...prisma,
           requete: {
@@ -450,9 +451,9 @@ describe('requetes.service.ts', () => {
             ...prisma.fait,
             create: vi.mocked(prisma.fait.create),
           },
-          faitMotif: {
-            ...prisma.faitMotif,
-            createMany: vi.mocked(prisma.faitMotif.createMany),
+          faitMotifDeclaratif: {
+            ...prisma.faitMotifDeclaratif,
+            createMany: vi.mocked(prisma.faitMotifDeclaratif.createMany),
           },
           faitConsequence: {
             ...prisma.faitConsequence,
@@ -574,7 +575,7 @@ describe('requetes.service.ts', () => {
             autresPrecisions: '',
           });
 
-          vi.mocked(prisma.faitMotif.createMany).mockResolvedValueOnce({
+          vi.mocked(prisma.faitMotifDeclaratif.createMany).mockResolvedValueOnce({
             count: fait.motifs.length,
           });
 
@@ -778,7 +779,7 @@ describe('requetes.service.ts', () => {
             autresPrecisions: '',
           });
 
-          vi.mocked(prisma.faitMotif.createMany).mockResolvedValueOnce({
+          vi.mocked(prisma.faitMotifDeclaratif.createMany).mockResolvedValueOnce({
             count: fait.motifs.length,
           });
 

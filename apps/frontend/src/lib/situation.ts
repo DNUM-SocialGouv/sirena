@@ -40,7 +40,7 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
       : undefined,
     fait: fait
       ? {
-          sousMotifs: fait.motifs?.map((m) => m.motif.label) || undefined,
+          motifs: fait.motifs?.map((m) => m.motif.id) || undefined,
           commentaire: fait.commentaire || undefined,
           dateDebut: fait.dateDebut ? new Date(fait.dateDebut).toISOString().split('T')[0] : undefined,
           dateFin: fait.dateFin ? new Date(fait.dateFin).toISOString().split('T')[0] : undefined,

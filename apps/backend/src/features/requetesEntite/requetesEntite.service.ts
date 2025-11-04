@@ -71,6 +71,7 @@ const SITUATION_INCLUDE_FULL = {
   faits: {
     include: {
       motifs: { include: { motif: true } },
+      motifsDeclaratifs: { include: { motifDeclaratif: true } },
       consequences: { include: { consequence: true } },
       maltraitanceTypes: { include: { maltraitanceType: true } },
       fichiers: true,
@@ -215,6 +216,7 @@ export const getRequeteEntiteById = async (requeteId: string, entiteIds: string[
               faits: {
                 include: {
                   motifs: { include: { motif: true } },
+                  motifsDeclaratifs: { include: { motifDeclaratif: true } },
                   consequences: { include: { consequence: true } },
                   maltraitanceTypes: { include: { maltraitanceType: true } },
                   fichiers: true,
@@ -748,13 +750,15 @@ const updateFaitRelations = async (
     },
   });
 
-  if (faitData.sousMotifs?.length) {
-    for (const sousMotifLabel of faitData.sousMotifs) {
-      const motif = await tx.motifEnum.upsert({
-        where: { label: sousMotifLabel },
-        create: { label: sousMotifLabel },
-        update: {},
+  if (faitData.motifs?.length) {
+    for (const motifId of faitData.motifs) {
+      const motif = await tx.motifEnum.findUnique({
+        where: { id: motifId },
       });
+
+      if (!motif) {
+        throw new Error(`Motif "${motifId}" not found in database. Please seed the database first.`);
+      }
 
       await tx.faitMotif.create({
         data: { situationId, motifId: motif.id },

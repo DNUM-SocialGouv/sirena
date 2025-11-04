@@ -2,11 +2,12 @@ import type { SelectWithChildrenOption } from './SelectWithChildren.types';
 
 export const getAllLabelsMap = (options: SelectWithChildrenOption[]): Map<string, string> => {
   const map = new Map<string, string>();
-  const traverse = (traverseOptions: SelectWithChildrenOption[]) => {
+  const traverse = (traverseOptions: SelectWithChildrenOption[], parentValue?: string) => {
     for (const opt of traverseOptions) {
-      map.set(opt.value, opt.label);
+      const fullValue = parentValue ? `${parentValue}/${opt.value}` : opt.value;
+      map.set(fullValue, opt.label);
       if (opt.children) {
-        traverse(opt.children);
+        traverse(opt.children, fullValue);
       }
     }
   };
@@ -16,14 +17,16 @@ export const getAllLabelsMap = (options: SelectWithChildrenOption[]): Map<string
 
 export const getSelectedCountInCategory = (option: SelectWithChildrenOption, selectedValues: string[]): number => {
   let count = 0;
-  const traverse = (opt: SelectWithChildrenOption) => {
+  const traverse = (opt: SelectWithChildrenOption, parentValue?: string) => {
+    const fullValue = parentValue ? `${parentValue}/${opt.value}` : opt.value;
+
     if (!opt.children || opt.children.length === 0) {
-      if (selectedValues.includes(opt.value)) {
+      if (selectedValues.includes(fullValue)) {
         count++;
       }
     } else {
       for (const child of opt.children) {
-        traverse(child);
+        traverse(child, fullValue);
       }
     }
   };

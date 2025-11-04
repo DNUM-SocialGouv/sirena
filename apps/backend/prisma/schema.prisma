@@ -374,15 +374,23 @@ model Fait {
   fichiers UploadedFile[]
 
   motifs            FaitMotif[]
+  motifsDeclaratifs FaitMotifDeclaratif[]
   consequences      FaitConsequence[]
   maltraitanceTypes FaitMaltraitanceType[]
 }
 
 model MotifEnum {
-  id    String @id @default(uuid())
-  label String @unique
+  id    String @id
+  label String
 
   faits FaitMotif[]
+}
+
+model MotifDeclaratifEnum {
+  id    String @id
+  label String
+
+  faits FaitMotifDeclaratif[]
 }
 
 model ConsequenceEnum {
@@ -407,6 +415,16 @@ model FaitMotif {
   motif   MotifEnum @relation(fields: [motifId], references: [id])
 
   @@id([situationId, motifId])
+}
+
+model FaitMotifDeclaratif {
+  situationId String
+  fait        Fait   @relation(fields: [situationId], references: [situationId], onDelete: Cascade)
+
+  motifDeclaratifId String
+  motifDeclaratif   MotifDeclaratifEnum @relation(fields: [motifDeclaratifId], references: [id])
+
+  @@id([situationId, motifDeclaratifId])
 }
 
 model FaitConsequence {

@@ -65,12 +65,12 @@ describe('SelectWithChildren', () => {
     });
 
     it('should show selected count when items are selected', () => {
-      render(<SelectWithChildren value={['opt-a1', 'opt-b1']} onChange={vi.fn()} options={TEST_OPTIONS} />);
+      render(<SelectWithChildren value={['cat-a/opt-a1', 'cat-b/opt-b1']} onChange={vi.fn()} options={TEST_OPTIONS} />);
       expect(screen.getByText('2 options sélectionnées')).toBeInTheDocument();
     });
 
     it('should show selected count in button label', () => {
-      render(<SelectWithChildren value={['opt-a1', 'opt-b1']} onChange={vi.fn()} options={TEST_OPTIONS} />);
+      render(<SelectWithChildren value={['cat-a/opt-a1', 'cat-b/opt-b1']} onChange={vi.fn()} options={TEST_OPTIONS} />);
       expect(screen.getByText('2 options sélectionnées')).toBeInTheDocument();
     });
   });
@@ -210,16 +210,16 @@ describe('SelectWithChildren', () => {
       const checkbox = checkboxOption.querySelector('input[type="checkbox"]') as HTMLInputElement;
       await user.click(checkbox);
 
-      expect(onChange).toHaveBeenCalledWith(['opt-a1']);
+      expect(onChange).toHaveBeenCalledWith(['cat-a/opt-a1']);
     });
 
     it('should call onChange when deselecting an option', async () => {
       const user = userEvent.setup();
       const onChange = vi.fn();
-      render(<SelectWithChildren value={['opt-a1']} onChange={onChange} options={TEST_OPTIONS} />);
+      render(<SelectWithChildren value={['cat-a/opt-a1']} onChange={onChange} options={TEST_OPTIONS} />);
 
-      const buttons = screen.getAllByText('Option A1');
-      await user.click(buttons[0]);
+      const button = screen.getByText('Option A1');
+      await user.click(button);
 
       await user.click(screen.getByRole('option', { name: /catégorie a/i }));
 
@@ -243,21 +243,21 @@ describe('SelectWithChildren', () => {
       const checkboxOption1 = screen.getByRole('option', { name: /option a1/i });
       const checkbox1 = checkboxOption1.querySelector('input[type="checkbox"]') as HTMLInputElement;
       await user.click(checkbox1);
-      expect(onChange).toHaveBeenLastCalledWith(['opt-a1']);
+      expect(onChange).toHaveBeenLastCalledWith(['cat-a/opt-a1']);
 
       const checkboxOption2 = screen.getByRole('option', { name: /option a2/i });
       const checkbox2 = checkboxOption2.querySelector('input[type="checkbox"]') as HTMLInputElement;
       await user.click(checkbox2);
-      expect(onChange).toHaveBeenLastCalledWith(['opt-a2']);
+      expect(onChange).toHaveBeenLastCalledWith(['cat-a/opt-a2']);
     });
 
     it('should maintain selection when navigating between categories', async () => {
       const user = userEvent.setup();
       const onChange = vi.fn();
-      render(<SelectWithChildren value={['opt-a1']} onChange={onChange} options={TEST_OPTIONS} />);
+      render(<SelectWithChildren value={['cat-a/opt-a1']} onChange={onChange} options={TEST_OPTIONS} />);
 
-      const buttons = screen.getAllByText('Option A1');
-      await user.click(buttons[0]);
+      const button = screen.getByText('Option A1');
+      await user.click(button);
 
       await user.click(screen.getByRole('option', { name: /catégorie a/i }));
       const checkboxOption1 = screen.getByRole('option', { name: /option a1/i });
@@ -270,7 +270,7 @@ describe('SelectWithChildren', () => {
       const checkboxOption2 = screen.getByRole('option', { name: /option b1/i });
       const checkbox2 = checkboxOption2.querySelector('input[type="checkbox"]') as HTMLInputElement;
       await user.click(checkbox2);
-      expect(onChange).toHaveBeenCalledWith(['opt-a1', 'opt-b1']);
+      expect(onChange).toHaveBeenCalledWith(['cat-a/opt-a1', 'cat-b/opt-b1']);
     });
   });
 

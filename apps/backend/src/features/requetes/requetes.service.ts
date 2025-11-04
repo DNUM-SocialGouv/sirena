@@ -283,10 +283,10 @@ export const createRequeteFromDematSocial = async ({
         });
 
         if (f.motifs?.length) {
-          await tx.faitMotif.createMany({
+          await tx.faitMotifDeclaratif.createMany({
             data: f.motifs.map((motifId) => ({
               situationId: situation.id,
-              motifId,
+              motifDeclaratifId: motifId,
             })),
             skipDuplicates: true,
           });
@@ -367,6 +367,7 @@ export const createRequeteFromDematSocial = async ({
             faits: {
               include: {
                 motifs: { include: { motif: true } },
+                motifsDeclaratifs: { include: { motifDeclaratif: true } },
                 consequences: { include: { consequence: true } },
                 maltraitanceTypes: { include: { maltraitanceType: true } },
               },
