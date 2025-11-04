@@ -9,7 +9,7 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
-    versioning-strategy: increase
+    versioning-strategy: increase-if-necessary
     commit-message:
       prefix: "chore(dependabot): "
       include: "scope"
