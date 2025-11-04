@@ -20,6 +20,7 @@ export const createRequeteFromDematSocial = async ({
   declarant,
   participant,
   situations,
+  pdf,
 }: CreateRequeteFromDematSocialDto) => {
   // TODO remove that when we create assignation algo
   const logger = getLoggerStore();
@@ -32,7 +33,12 @@ export const createRequeteFromDematSocial = async ({
   });
 
   return await prisma.$transaction(async (tx) => {
-    const createFileForRequete = async (file: File, element: ElementLinked, entiteId: string | null) => {
+    const createFileForRequete = async (
+      file: File,
+      element: ElementLinked,
+      entiteId: string | null,
+      canDelete: boolean = true,
+    ) => {
       const { stream, mimeFromHeader, mimeSniffed, size, extSniffed } = await urlToStream(file.url);
 
       const mimeType = mimeSniffed ?? mimeFromHeader ?? 'application/octet-stream';
@@ -57,10 +63,11 @@ export const createRequeteFromDematSocial = async ({
             entiteId,
             uploadedById: null,
             requeteEtapeNoteId: null,
-            requeteId: null,
+            requeteId: element.requeteId ?? null,
             demarchesEngageesId: element.demarchesEngageesId ?? null,
             faitSituationId: element.faitSituationId ?? null,
             status: 'COMPLETED',
+            canDelete,
           },
         })
         .catch(async (err) => {
@@ -314,6 +321,10 @@ export const createRequeteFromDematSocial = async ({
       });
 
       await Promise.all(faits);
+    }
+
+    if (pdf) {
+      await createFileForRequete(pdf, { requeteId: requete.id }, defaultEntity?.id ?? null, false);
     }
 
     const requeteWithEntites = await tx.requete.findUniqueOrThrow({

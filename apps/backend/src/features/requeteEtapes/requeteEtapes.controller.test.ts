@@ -339,6 +339,7 @@ describe('requeteEtapes.controller.ts', () => {
       status: 'PENDING',
       requeteEtapeNoteId: 'step1',
       demarchesEngageesId: null,
+      canDelete: true,
     };
 
     it('streams the file with correct headers (inline) and body content', async () => {

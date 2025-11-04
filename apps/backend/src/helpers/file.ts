@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import { fileTypeFromStream } from 'file-type';
+import { fileTypeFromBuffer } from 'file-type';
 import type { Context } from 'hono';
 import { stream as honoStream } from 'hono/streaming';
 import { MAX_FILE_SIZE } from '@/config/files.constant';
@@ -28,13 +28,16 @@ export const urlToStream = async (url: string) => {
   const size = sizeHdr ? Number(sizeHdr) : undefined;
   if (size && size > MAX_FILE_SIZE) throw new Error('File too large');
 
-  const sniff = await fileTypeFromStream(res.body);
+  // Read the entire stream into a buffer first to avoid consuming the stream
+  const buffer = Buffer.from(await res.arrayBuffer());
+
+  const sniff = await fileTypeFromBuffer(buffer);
 
   const mimeSniffed = sniff?.mime;
 
   const mimeFromHeader = res.headers.get('content-type');
 
-  const node = Readable.fromWeb(res.body);
+  const node = Readable.from(buffer);
 
   return {
     stream: node,

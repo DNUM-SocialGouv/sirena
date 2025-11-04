@@ -131,6 +131,10 @@ query getDossier($dossierNumber: Int!) {
       __typename
       ...RootChampFragment
     }
+
+    pdf {
+      ...FileFragment
+    }
   }
 }
 

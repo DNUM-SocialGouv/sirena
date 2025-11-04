@@ -504,6 +504,7 @@ model UploadedFile {
   mimeType String
   size     Int
   status   String @default("PENDING") // e.g. "PENDING", "COMPLETED", "FAILED"
+  canDelete Boolean @default(true)
 
   metadata Json?
 

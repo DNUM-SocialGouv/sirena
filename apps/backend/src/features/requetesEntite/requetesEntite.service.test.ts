@@ -685,6 +685,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeNoteId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          canDelete: true,
         },
       ]);
       await expect(
@@ -716,6 +717,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeNoteId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          canDelete: true,
         },
         {
           id: 'fileid2',
@@ -733,6 +735,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeNoteId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          canDelete: true,
         },
       ]);
 
@@ -918,6 +921,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeNoteId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          canDelete: true,
         },
       ]);
 
