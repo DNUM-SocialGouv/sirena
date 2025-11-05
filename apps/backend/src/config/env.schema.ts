@@ -185,6 +185,7 @@ export const AppEnvSchema = z.object({
       }
       return parsed;
     }),
+  REDIS_TLS: z.string().optional().default('false'),
   REDIS_USERNAME: z.string().optional(),
   REDIS_PASSWORD: z.string().optional(),
 });
