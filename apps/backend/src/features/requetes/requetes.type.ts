@@ -1,6 +1,4 @@
-export type ElementLinked =
-  | { demarchesEngageesId: string; faitSituationId?: never }
-  | { faitSituationId: string; demarchesEngageesId?: never };
+export type ElementLinked = { requeteId?: string; faitSituationId?: string; demarchesEngageesId?: string };
 
 export type File = {
   name: string;
@@ -109,4 +107,5 @@ export type CreateRequeteFromDematSocialDto = {
   declarant: Declarant;
   participant: Participant;
   situations: Situation[];
+  pdf?: File | null;
 };

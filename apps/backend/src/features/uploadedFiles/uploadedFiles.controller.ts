@@ -153,6 +153,7 @@ const app = factoryWithLogs
           faitSituationId: null,
           demarchesEngageesId: null,
           status: 'PENDING',
+          canDelete: true,
         }).catch(async (err) => {
           await rollbackMinio();
           throw err;
@@ -191,6 +192,12 @@ const app = factoryWithLogs
       if (!uploadedFile) {
         logger.warn({ uploadedFileId: id }, 'Uploaded file not found or unauthorized access');
         throwHTTPException404NotFound('Uploaded file not found', {
+          res: c.res,
+        });
+      }
+
+      if (!uploadedFile.canDelete) {
+        throwHTTPException400BadRequest('You are not allowed to delete this uploaded file.', {
           res: c.res,
         });
       }

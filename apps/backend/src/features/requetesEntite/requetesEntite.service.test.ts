@@ -145,11 +145,31 @@ describe('requetesEntite.service', () => {
                           motif: true,
                         },
                       },
+                      motifsDeclaratifs: {
+                        include: {
+                          motifDeclaratif: true,
+                        },
+                      },
                       fichiers: true,
                     },
                   },
-                  lieuDeSurvenue: true,
-                  misEnCause: true,
+                  lieuDeSurvenue: {
+                    include: {
+                      adresse: true,
+                      lieuType: true,
+                      transportType: true,
+                    },
+                  },
+                  misEnCause: {
+                    include: {
+                      misEnCauseType: true,
+                      misEnCauseTypePrecision: {
+                        include: {
+                          misEnCauseType: true,
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -209,11 +229,31 @@ describe('requetesEntite.service', () => {
                           motif: true,
                         },
                       },
+                      motifsDeclaratifs: {
+                        include: {
+                          motifDeclaratif: true,
+                        },
+                      },
                       fichiers: true,
                     },
                   },
-                  lieuDeSurvenue: true,
-                  misEnCause: true,
+                  lieuDeSurvenue: {
+                    include: {
+                      adresse: true,
+                      lieuType: true,
+                      transportType: true,
+                    },
+                  },
+                  misEnCause: {
+                    include: {
+                      misEnCauseType: true,
+                      misEnCauseTypePrecision: {
+                        include: {
+                          misEnCauseType: true,
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -273,11 +313,31 @@ describe('requetesEntite.service', () => {
                           motif: true,
                         },
                       },
+                      motifsDeclaratifs: {
+                        include: {
+                          motifDeclaratif: true,
+                        },
+                      },
                       fichiers: true,
                     },
                   },
-                  lieuDeSurvenue: true,
-                  misEnCause: true,
+                  lieuDeSurvenue: {
+                    include: {
+                      adresse: true,
+                      lieuType: true,
+                      transportType: true,
+                    },
+                  },
+                  misEnCause: {
+                    include: {
+                      misEnCauseType: true,
+                      misEnCauseTypePrecision: {
+                        include: {
+                          misEnCauseType: true,
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -685,6 +745,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeNoteId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          canDelete: true,
         },
       ]);
       await expect(
@@ -716,6 +777,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeNoteId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          canDelete: true,
         },
         {
           id: 'fileid2',
@@ -733,6 +795,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeNoteId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          canDelete: true,
         },
       ]);
 
@@ -918,6 +981,7 @@ describe('requetesEntite.service', () => {
           requeteEtapeNoteId: null,
           faitSituationId: null,
           demarchesEngageesId: null,
+          canDelete: true,
         },
       ]);
 

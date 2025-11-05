@@ -61,6 +61,7 @@ interface UploadedFile {
   filePath: string;
   mimeType: string;
   size: number;
+  canDelete: boolean;
 }
 
 interface RequeteFileUploadProps {
@@ -271,7 +272,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
                           className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
                         />
                       </div>
-                      {canEdit && (
+                      {canEdit && file.canDelete && (
                         <Button
                           aria-label="Supprimer le fichier"
                           title="Supprimer le fichier"

@@ -1,14 +1,13 @@
-import { fr } from '@codegouvfr/react-dsfr';
 import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import { REQUETE_STATUT_TYPES, type RequeteStatutType, requeteStatutType } from '@sirena/common/constants';
-import { valueToLabel } from '@sirena/common/utils';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
+import { renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
 
 type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number] & {
   id: string;
@@ -78,7 +77,7 @@ export function RequetesEntite() {
     { key: 'custom:personne', label: 'Personne Concernée' },
     { key: 'custom:motifs', label: 'Motifs' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },
-    { key: 'custom:action', label: 'Action' },
+    { key: 'custom:action', label: 'Action', isFixedRight: true },
   ];
 
   const cells: Cells<RequeteEntiteRow> = {
@@ -108,15 +107,8 @@ export function RequetesEntite() {
       const requete = row.requete as typeof row.requete & {
         participant?: { estVictime?: boolean; identite?: { prenom: string; nom: string } } | null;
       };
-      const { declarant, participant } = requete;
-      if (declarant?.estVictime && declarant.identite) {
-        return (
-          <span className="one-line">
-            {declarant.identite.prenom} {declarant.identite.nom}
-          </span>
-        );
-      }
-      if (participant?.estVictime && participant.identite) {
+      const { participant } = requete;
+      if (participant?.identite) {
         return (
           <span className="one-line">
             {participant.identite.prenom} {participant.identite.nom}
@@ -125,38 +117,8 @@ export function RequetesEntite() {
       }
       return '-';
     },
-    'custom:motifs': (row) => {
-      const requete = row.requete as typeof row.requete & {
-        situations?: Array<{
-          faits?: Array<{
-            motifs?: Array<{ motifId: string; motif: { label: string } }>;
-            maltraitanceTypes?: Array<unknown>;
-          }>;
-        }>;
-      };
-      const situation = requete.situations?.[0];
-      const fait = situation?.faits?.[0];
-      const motifs = fait?.motifs || [];
-      const isMaltraitance = (fait?.maltraitanceTypes?.length ?? 0) > 0;
-      return (
-        <>
-          <div>
-            {isMaltraitance && (
-              <Badge noIcon className={fr.cx('fr-badge--purple-glycine')}>
-                Maltraitance
-              </Badge>
-            )}
-          </div>
-          {motifs.length > 0 && (
-            <ul>
-              {motifs.map((motif) => (
-                <li key={motif?.motifId}>{valueToLabel(motif?.motif?.label || '') || motif?.motif?.label || ''}</li>
-              ))}
-            </ul>
-          )}
-        </>
-      );
-    },
+    'custom:motifs': renderMotifsCell,
+    'custom:misEnCause': renderMisEnCauseCell,
     'custom:action': (row) => (
       <Link to="/request/$requestId" className="one-line" params={{ requestId: row.requeteId }}>
         Voir la requête

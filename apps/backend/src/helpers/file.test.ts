@@ -4,10 +4,10 @@ import { sanitizeFilename, urlToStream } from './file';
 
 vi.mock('@/config/files.constant', () => ({ MAX_FILE_SIZE: 5 }));
 
-const fileTypeFromStreamMock = vi.fn();
+const fileTypeFromBufferMock = vi.fn();
 
 vi.mock('file-type', () => ({
-  fileTypeFromStream: () => fileTypeFromStreamMock(),
+  fileTypeFromBuffer: () => fileTypeFromBufferMock(),
 }));
 
 function webStreamFromString(s: string) {
@@ -71,7 +71,7 @@ describe('file.ts', () => {
     const originalFetch = globalThis.fetch;
 
     beforeEach(() => {
-      fileTypeFromStreamMock.mockReset();
+      fileTypeFromBufferMock.mockReset();
     });
 
     afterEach(() => {
@@ -87,7 +87,7 @@ describe('file.ts', () => {
         }),
       );
 
-      fileTypeFromStreamMock.mockResolvedValue({ mime: 'text/plain', ext: 'txt' });
+      fileTypeFromBufferMock.mockResolvedValue({ mime: 'text/plain', ext: 'txt' });
 
       const out = await urlToStream('https://example.com/x');
 
@@ -100,7 +100,7 @@ describe('file.ts', () => {
       const buf = await collect(out.stream);
       expect(buf.toString()).toBe('data');
 
-      expect(fileTypeFromStreamMock).toHaveBeenCalledTimes(1);
+      expect(fileTypeFromBufferMock).toHaveBeenCalledTimes(1);
     });
 
     it('throws on non-ok response', async () => {
@@ -131,7 +131,7 @@ describe('file.ts', () => {
       globalThis.fetch = vi
         .fn()
         .mockResolvedValue(new Response(body, { status: 200, headers: { 'content-type': 'text/plain' } }));
-      fileTypeFromStreamMock.mockResolvedValue({ mime: 'text/plain', ext: 'txt' });
+      fileTypeFromBufferMock.mockResolvedValue({ mime: 'text/plain', ext: 'txt' });
 
       const out = await urlToStream('https://e/x');
 

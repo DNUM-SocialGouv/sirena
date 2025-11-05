@@ -129,11 +129,31 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
                         motif: true,
                       },
                     },
+                    motifsDeclaratifs: {
+                      include: {
+                        motifDeclaratif: true,
+                      },
+                    },
                     fichiers: true,
                   },
                 },
-                misEnCause: true,
-                lieuDeSurvenue: true,
+                misEnCause: {
+                  include: {
+                    misEnCauseType: true,
+                    misEnCauseTypePrecision: {
+                      include: {
+                        misEnCauseType: true,
+                      },
+                    },
+                  },
+                },
+                lieuDeSurvenue: {
+                  include: {
+                    adresse: true,
+                    lieuType: true,
+                    transportType: true,
+                  },
+                },
               },
             },
           },
