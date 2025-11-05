@@ -145,11 +145,31 @@ describe('requetesEntite.service', () => {
                           motif: true,
                         },
                       },
+                      motifsDeclaratifs: {
+                        include: {
+                          motifDeclaratif: true,
+                        },
+                      },
                       fichiers: true,
                     },
                   },
-                  lieuDeSurvenue: true,
-                  misEnCause: true,
+                  lieuDeSurvenue: {
+                    include: {
+                      adresse: true,
+                      lieuType: true,
+                      transportType: true,
+                    },
+                  },
+                  misEnCause: {
+                    include: {
+                      misEnCauseType: true,
+                      misEnCauseTypePrecision: {
+                        include: {
+                          misEnCauseType: true,
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -209,11 +229,31 @@ describe('requetesEntite.service', () => {
                           motif: true,
                         },
                       },
+                      motifsDeclaratifs: {
+                        include: {
+                          motifDeclaratif: true,
+                        },
+                      },
                       fichiers: true,
                     },
                   },
-                  lieuDeSurvenue: true,
-                  misEnCause: true,
+                  lieuDeSurvenue: {
+                    include: {
+                      adresse: true,
+                      lieuType: true,
+                      transportType: true,
+                    },
+                  },
+                  misEnCause: {
+                    include: {
+                      misEnCauseType: true,
+                      misEnCauseTypePrecision: {
+                        include: {
+                          misEnCauseType: true,
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -273,11 +313,31 @@ describe('requetesEntite.service', () => {
                           motif: true,
                         },
                       },
+                      motifsDeclaratifs: {
+                        include: {
+                          motifDeclaratif: true,
+                        },
+                      },
                       fichiers: true,
                     },
                   },
-                  lieuDeSurvenue: true,
-                  misEnCause: true,
+                  lieuDeSurvenue: {
+                    include: {
+                      adresse: true,
+                      lieuType: true,
+                      transportType: true,
+                    },
+                  },
+                  misEnCause: {
+                    include: {
+                      misEnCauseType: true,
+                      misEnCauseTypePrecision: {
+                        include: {
+                          misEnCauseType: true,
+                        },
+                      },
+                    },
+                  },
                 },
               },
             },
