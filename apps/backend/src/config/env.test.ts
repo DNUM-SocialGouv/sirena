@@ -31,6 +31,7 @@ process.env = {
 
   REDIS_HOST: 'localhost',
   REDIS_PORT: '6379',
+  REDIS_TLS: 'false',
   REDIS_USERNAME: 'redis-username',
   REDIS_PASSWORD: 'redis-password',
 };
@@ -96,5 +97,6 @@ describe('env.ts', () => {
     expect(result.REDIS_PASSWORD).toBeUndefined();
     expect(result.REDIS_HOST).toBe('localhost');
     expect(result.REDIS_PORT).toBe(6379);
+    expect(result.REDIS_TLS).toBe('false');
   });
 });

@@ -78,6 +78,7 @@ describe('logging configuration', () => {
 
       REDIS_HOST: 'localhost',
       REDIS_PORT: '6379',
+      REDIS_TLS: 'false',
       REDIS_PASSWORD: '',
       REDIS_USERNAME: 'redis-user',
 

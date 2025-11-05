@@ -28,6 +28,7 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
     SARBACANE_API_KEY: 'token',
     REDIS_HOST: 'localhost',
     REDIS_PORT: '6379',
+    REDIS_TLS: 'false',
   };
 
   const createConfig = (logExtraContext?: string) => ({
