@@ -8,7 +8,12 @@ import { seedEnums } from './seed/add_enums';
 import { seedRequeteFromDematSocial } from './seed/get_demat_social';
 import '@/libs/instrument';
 async function main() {
-  const prisma = new PrismaClient();
+  const prisma = new PrismaClient({
+    transactionOptions: {
+      timeout: 120000,
+      maxWait: 20000,
+    },
+  });
   const logger = createDefaultLogger();
   async function seeding() {
     try {
