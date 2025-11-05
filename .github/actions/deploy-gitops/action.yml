@@ -15,10 +15,6 @@ inputs:
   gitops-repo-key:
     description: "SSH key for GitOps repository access"
     required: true
-  db-reset-enabled:
-    description: "Enable database reset before migrations"
-    required: false
-    default: "false"
 
 runs:
   using: "composite"
@@ -41,7 +37,6 @@ runs:
         cd deploy
         export IMAGE_TAG=${{ inputs.version }}
         export ENVIRONNEMENT=${{ inputs.environment }}
-        export DB_RESET_ENABLED=${{ inputs.db-reset-enabled }}
         npm run build
 
     - name: Checkout GitOps repository

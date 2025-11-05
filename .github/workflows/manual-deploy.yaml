@@ -12,11 +12,6 @@ on:
           - preproduction
           - prod
         default: "validation"
-      db_reset_enabled:
-        description: "Reset database before migrations (WARNING: destructive)"
-        required: false
-        type: boolean
-        default: false
 
 jobs:
   build-docker:
@@ -68,4 +63,3 @@ jobs:
           environment: ${{ github.event.inputs.environment }}
           version: ${{ needs.build-docker.outputs.VERSION }}
           gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }}
-          db-reset-enabled: ${{ github.event.inputs.db_reset_enabled }}
