@@ -53,22 +53,33 @@ services:
       MINIO_ROOT_PASSWORD: ${S3_BUCKET_SECRET_KEY}
       MINIO_REGION: ${S3_BUCKET_REGION}
     command: server /data --console-address ":9001"
-
   redis:
     image: redis:8-alpine
     container_name: sirena-redis-dev
     ports:
-    - "127.0.0.1:6379:6379"
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+      - "127.0.0.1:6379:6379"
     environment:
+      REDIS_USERNAME: ${REDIS_USERNAME}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command:
+      - sh
+      - -c
+      - |
+        cat > /tmp/users.acl <<'ACL'
+        user default off
+        user ${REDIS_USERNAME} on +@all ~* &* >${REDIS_PASSWORD}
+        ACL
+        sed -i "s|\${REDIS_USERNAME}|${REDIS_USERNAME}|g; s|\${REDIS_PASSWORD}|${REDIS_PASSWORD}|g" /tmp/users.acl
+        exec redis-server --aclfile /tmp/users.acl --protected-mode no --port 6379
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+        [
+          "CMD-SHELL",
+          "redis-cli -u redis://${REDIS_USERNAME}:${REDIS_PASSWORD}@127.0.0.1:6379 ping | grep PONG",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
-
-
 volumes:
   pgdata:
   miniodata:
