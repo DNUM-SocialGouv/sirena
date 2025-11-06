@@ -90,7 +90,19 @@ export const importRequetes = async (createdSince?: Date) => {
     try {
       const demandeur = getDemandeur(data.dossier.demandeur, data.dossier.usager.email);
       const requete = mapDataForPrisma(data.dossier.champs, dossier.number, dossier.dateDepot, demandeur);
-      await createRequeteFromDematSocial(requete);
+
+      const ext = data.dossier.pdf?.filename?.split('.')?.pop() ?? '';
+
+      const pdf = data.dossier.pdf
+        ? {
+            name: `Requete originale formulaire - ${dossier.number}.${ext}`,
+            url: data.dossier.pdf.url,
+            size: BigInt(data.dossier.pdf.byteSize),
+            mimeType: data.dossier.pdf.contentType || 'application/pdf',
+          }
+        : null;
+
+      await createRequeteFromDematSocial({ ...requete, pdf });
       i += 1;
     } catch (err) {
       logger.error({ err }, `Error processing dossier ${dossier.number}:`);

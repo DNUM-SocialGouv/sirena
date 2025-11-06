@@ -230,6 +230,7 @@ describe('notes.controller.ts', () => {
           metadata: { originalName: 'test.pdf' },
           uploadedById: 'user1',
           demarchesEngageesId: null,
+          canDelete: true,
         },
         {
           id: 'f2',
@@ -247,6 +248,7 @@ describe('notes.controller.ts', () => {
           metadata: { originalName: 'test2.pdf' },
           uploadedById: 'user1',
           demarchesEngageesId: null,
+          canDelete: true,
         },
       ]);
 

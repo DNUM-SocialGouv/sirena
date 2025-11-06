@@ -29,6 +29,7 @@ const fakeFile: UploadedFile = {
   requeteId: 'requeteId',
   uploadedById: 'user1',
   demarchesEngageesId: null,
+  canDelete: true,
 };
 
 const fakeData: UploadedFile[] = [fakeFile];

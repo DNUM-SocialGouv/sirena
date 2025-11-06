@@ -103,7 +103,9 @@ const getfakeRequeteDto = () => {
         commentaire: '',
         organisme: 'ARS Île-de-France',
         datePlainte: null,
-        files: [{ name: 'test', url: 'https://example.com/file.pdf', size: 1n, mimeType: 'application/pdf' }],
+        files: [
+          { name: 'test', url: 'https://example.com/file.pdf', size: 1n, mimeType: 'application/pdf', canDelete: true },
+        ],
         autoriteTypeId: AUTORITE_TYPE.GENDARMERIE,
       },
       faits: [

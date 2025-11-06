@@ -151,11 +151,13 @@ describe('dematSocial.service.ts', () => {
         dematSocialId: 101,
         createdAt: dateDepot,
         entiteIds: undefined,
+        pdf: null,
       });
       expect(createRequeteFromDematSocial).toHaveBeenCalledWith({
         dematSocialId: 101,
         createdAt: dateDepot,
         entiteIds: undefined,
+        pdf: null,
       });
       expect(result).toEqual({ count: 2, errorCount: 0 });
     });

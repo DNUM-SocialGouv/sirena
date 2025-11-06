@@ -298,6 +298,7 @@ describe('RequetesEntite endpoints: /', () => {
       status: 'PENDING',
       requeteEtapeNoteId: 'step1',
       demarchesEngageesId: null,
+      canDelete: true,
     };
 
     const fakeRequeteEntite = {
