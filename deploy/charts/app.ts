@@ -275,6 +275,30 @@ function createConfigMap(scope: Construct, isBackend: boolean) {
 }
 
 function createDeployment(scope: Construct, props: AppProps, labels: Record<string, string>) {
+  const isBackend = props.name === 'backend';
+
+  const initContainers = isBackend
+    ? [
+        {
+          name: 'migration',
+          image: props.image,
+          workingDir: '/app',
+          command: ['pnpm', '--filter', '@sirena/backend', 'db:deploy'],
+          resources: {
+            limits: {
+              cpu: k8s.Quantity.fromString('250m'),
+              memory: k8s.Quantity.fromString('500Mi'),
+            },
+            requests: {
+              cpu: k8s.Quantity.fromString('100m'),
+              memory: k8s.Quantity.fromString('256Mi'),
+            },
+          },
+          env: createDatabaseEnvVars(),
+        },
+      ]
+    : undefined;
+
   return new k8s.KubeDeployment(scope, 'deployment', {
     metadata: {
       name: props.name,
@@ -290,6 +314,7 @@ function createDeployment(scope: Construct, props: AppProps, labels: Record<stri
           labels: labels,
         },
         spec: {
+          initContainers,
           containers: [createContainer(props)],
           imagePullSecrets: [
             {
