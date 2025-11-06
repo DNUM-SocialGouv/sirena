@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { envVars } from '@/config/env';
 import { mapDataForPrisma } from '@/features/dematSocial/dematSocial.adaptater';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '@/features/requetes/requetes.service';
+import { isPrismaUniqueConstraintError, retryWithBackoff } from '@/helpers/retry';
 import { abortControllerStorage, getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
 import {
   ChangerInstructionDocument,
@@ -102,7 +103,10 @@ export const importRequetes = async (createdSince?: Date) => {
           }
         : null;
 
-      await createRequeteFromDematSocial({ ...requete, pdf });
+      await retryWithBackoff(() => createRequeteFromDematSocial({ ...requete, pdf }), {
+        shouldRetry: (err) => isPrismaUniqueConstraintError(err, 'id'),
+        context: { dossierNumber: dossier.number },
+      });
       i += 1;
     } catch (err) {
       logger.error({ err }, `Error processing dossier ${dossier.number}:`);

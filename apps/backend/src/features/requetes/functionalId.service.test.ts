@@ -4,13 +4,13 @@ import { determineSource, generateRequeteId } from './functionalId.service';
 
 vi.mock('@/libs/prisma', () => ({
   prisma: {
-    $transaction: vi.fn(),
+    requete: {
+      count: vi.fn(),
+    },
   },
 }));
 
 describe('functionalId.service', () => {
-  const mockTransaction = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
@@ -25,20 +25,12 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
-      const mockCount = vi.fn().mockResolvedValue(0);
-      mockTransaction.mockImplementation(async (callback) => {
-        return callback({
-          requete: {
-            count: mockCount,
-          },
-        });
-      });
-      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+      vi.mocked(prisma.requete.count).mockResolvedValue(0);
 
       const result = await generateRequeteId('SIRENA');
 
       expect(result).toBe('RS-2025-09-1');
-      expect(mockCount).toHaveBeenCalledWith({
+      expect(prisma.requete.count).toHaveBeenCalledWith({
         where: {
           id: {
             startsWith: 'RS-2025-09-',
@@ -51,15 +43,7 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2024-11-20');
       vi.setSystemTime(mockDate);
 
-      const mockCount = vi.fn().mockResolvedValue(119);
-      mockTransaction.mockImplementation(async (callback) => {
-        return callback({
-          requete: {
-            count: mockCount,
-          },
-        });
-      });
-      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+      vi.mocked(prisma.requete.count).mockResolvedValue(119);
 
       const result = await generateRequeteId('DEMAT_SOCIAL');
 
@@ -70,15 +54,7 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-01-05');
       vi.setSystemTime(mockDate);
 
-      const mockCount = vi.fn().mockResolvedValue(41);
-      mockTransaction.mockImplementation(async (callback) => {
-        return callback({
-          requete: {
-            count: mockCount,
-          },
-        });
-      });
-      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+      vi.mocked(prisma.requete.count).mockResolvedValue(41);
 
       const result = await generateRequeteId('SIRENA');
 
@@ -89,18 +65,7 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
-      let callCount = 0;
-      mockTransaction.mockImplementation(async (callback) => {
-        const mockCount = vi.fn().mockResolvedValue(callCount);
-        callCount++;
-
-        return callback({
-          requete: {
-            count: mockCount,
-          },
-        });
-      });
-      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+      vi.mocked(prisma.requete.count).mockResolvedValueOnce(0).mockResolvedValueOnce(1).mockResolvedValueOnce(2);
 
       const result1 = await generateRequeteId('SIRENA');
       const result2 = await generateRequeteId('SIRENA');
@@ -115,16 +80,7 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
-      const mockCount = vi.fn().mockResolvedValueOnce(5).mockResolvedValueOnce(3);
-
-      mockTransaction.mockImplementation(async (callback) => {
-        return callback({
-          requete: {
-            count: mockCount,
-          },
-        });
-      });
-      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+      vi.mocked(prisma.requete.count).mockResolvedValueOnce(5).mockResolvedValueOnce(3);
 
       const result1 = await generateRequeteId('SIRENA');
       const result2 = await generateRequeteId('DEMAT_SOCIAL');
@@ -134,16 +90,7 @@ describe('functionalId.service', () => {
     });
 
     it('should reset counter on new day', async () => {
-      const mockCount = vi.fn().mockResolvedValueOnce(10).mockResolvedValueOnce(0);
-
-      mockTransaction.mockImplementation(async (callback) => {
-        return callback({
-          requete: {
-            count: mockCount,
-          },
-        });
-      });
-      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+      vi.mocked(prisma.requete.count).mockResolvedValueOnce(10).mockResolvedValueOnce(0);
 
       // Day 1
       vi.setSystemTime(new Date('2025-09-15'));
@@ -160,15 +107,7 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
-      const mockCount = vi.fn().mockResolvedValue(0);
-      mockTransaction.mockImplementation(async (callback) => {
-        return callback({
-          requete: {
-            count: mockCount,
-          },
-        });
-      });
-      vi.mocked(prisma.$transaction).mockImplementation(mockTransaction);
+      vi.mocked(prisma.requete.count).mockResolvedValue(0);
 
       const result = await generateRequeteId('SIRENA');
 
