@@ -80,8 +80,9 @@ export const importRequetes = async (createdSince?: Date) => {
     }
     const update = await updateInstruction(`Dossier-${dossier.number}`);
     if (!update?.dossierPasserEnInstruction?.dossier) {
-      const err = update?.dossierPasserEnInstruction?.errors || [];
-      logger.warn({ err }, `Failed to change instruction for dossier ${dossier.number}`);
+      const errors = update?.dossierPasserEnInstruction?.errors || [];
+      const errorMessage = errors.map((e) => e.message).join(', ');
+      logger.warn(`Failed to change instruction for dossier ${dossier.number}: ${errorMessage || 'Unknown error'}`);
     }
     const data = await getRequete(dossier.number);
     if (!data) {

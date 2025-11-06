@@ -1,5 +1,4 @@
-import type { Prisma } from '@prisma/client';
-import { prisma } from '@/libs/prisma';
+import { type Prisma, prisma } from '@/libs/prisma';
 
 export type FunctionalIdSource = 'SIRENA' | 'DEMAT_SOCIAL';
 

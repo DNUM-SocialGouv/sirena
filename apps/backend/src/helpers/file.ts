@@ -18,7 +18,7 @@ export const sanitizeFilename = (originalName: string, detectedExtension: string
   return `${sanitizedName}.${detectedExtension}`;
 };
 
-export const urlToStream = async (url: string) => {
+export const urlToStream = async (url: string, maxSize = MAX_FILE_SIZE) => {
   const res = await fetch(url, { redirect: 'follow' });
   if (!res.ok || !res.body) {
     throw new Error(`Failed to fetch ${url} (HTTP ${res.status})`);
@@ -26,7 +26,11 @@ export const urlToStream = async (url: string) => {
 
   const sizeHdr = res.headers.get('content-length');
   const size = sizeHdr ? Number(sizeHdr) : undefined;
-  if (size && size > MAX_FILE_SIZE) throw new Error('File too large');
+  if (size && size > maxSize) {
+    throw new Error(
+      `File too large: ${(size / 1024 / 1024).toFixed(2)}MB exceeds limit of ${(maxSize / 1024 / 1024).toFixed(2)}MB`,
+    );
+  }
 
   // Read the entire stream into a buffer first to avoid consuming the stream
   const buffer = Buffer.from(await res.arrayBuffer());
