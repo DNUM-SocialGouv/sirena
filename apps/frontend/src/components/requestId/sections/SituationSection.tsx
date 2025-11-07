@@ -1,6 +1,6 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { demarcheEngageeLabels, MOTIFS_HIERARCHICAL_DATA, misEnCauseTypeLabels } from '@sirena/common/constants';
-import { valueToLabel } from '@sirena/common/utils';
+import { getLieuPrecisionLabel, valueToLabel } from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
 import { FileList } from '@/components/common/FileList';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
@@ -139,7 +139,8 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
             </p>
             {situation?.lieuDeSurvenue?.lieuPrecision && (
               <p className={fr.cx('fr-mb-1w')}>
-                <span>Précision du lieu :</span> {situation.lieuDeSurvenue.lieuPrecision}
+                <span>Précision du lieu :</span>{' '}
+                {getLieuPrecisionLabel(situation.lieuDeSurvenue.lieuType?.id, situation.lieuDeSurvenue.lieuPrecision)}
               </p>
             )}
             {situation?.lieuDeSurvenue?.adresse?.label && (
