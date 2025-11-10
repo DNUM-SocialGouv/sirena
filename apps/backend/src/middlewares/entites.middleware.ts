@@ -1,3 +1,4 @@
+import { getEntiteAscendanteId } from '@/features/entites/entites.service';
 import { getUserEntities } from '@/features/users/users.service';
 import factoryWithRole from '@/helpers/factories/appWithRole';
 
@@ -5,7 +6,10 @@ const app = factoryWithRole.createMiddleware(async (c, next) => {
   const userId = c.get('userId');
 
   const entities = await getUserEntities(userId, null);
+  const topEntiteId = entities?.[0] ? await getEntiteAscendanteId(entities[0]) : null;
+
   c.set('entiteIds', entities);
+  c.set('topEntiteId', topEntiteId);
 
   return next();
 });
