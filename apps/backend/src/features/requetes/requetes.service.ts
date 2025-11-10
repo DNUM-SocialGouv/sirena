@@ -77,7 +77,7 @@ export const createRequeteFromDematSocial = async ({
     };
 
     const source = determineSource(dematSocialId);
-    const id = await generateRequeteId(source);
+    const id = await generateRequeteId(source, tx);
     const requete = await tx.requete.create({
       data: {
         requeteEntites: {
@@ -194,24 +194,14 @@ export const createRequeteFromDematSocial = async ({
         });
       }
 
-      const misEnCauseData: {
-        rpps: string | null;
-        commentaire: string;
-        misEnCauseTypeId?: string | null;
-        misEnCauseTypePrecisionId?: string | null;
-      } = {
+      const precisionId = s.misEnCause.professionTypeId || s.misEnCause.professionDomicileTypeId;
+
+      const misEnCauseData = {
         rpps: s.misEnCause.rpps ?? null,
         commentaire: s.misEnCause.commentaire ?? '',
+        ...(s.misEnCause.misEnCauseTypeId && { misEnCauseTypeId: s.misEnCause.misEnCauseTypeId }),
+        ...(precisionId && { misEnCauseTypePrecisionId: precisionId }),
       };
-
-      if (s.misEnCause.misEnCauseTypeId) {
-        misEnCauseData.misEnCauseTypeId = s.misEnCause.misEnCauseTypeId;
-      }
-
-      if (s.misEnCause.professionTypeId || s.misEnCause.professionDomicileTypeId) {
-        misEnCauseData.misEnCauseTypePrecisionId =
-          s.misEnCause.professionTypeId || s.misEnCause.professionDomicileTypeId;
-      }
 
       const mec = await tx.misEnCause.create({
         data: misEnCauseData,

@@ -293,39 +293,59 @@ async function seedRequeteClotureReasonEnum(prisma: PrismaClient) {
   return { table: 'requeteClotureReasonEnum', added };
 }
 
+type SeedFunction = (prisma: PrismaClient) => Promise<{ table: string; added: number }>;
+
+async function seedLevel(
+  level: number,
+  seedFunctions: SeedFunction[],
+  prisma: PrismaClient,
+): Promise<PromiseSettledResult<{ table: string; added: number }>[]> {
+  const logger = getLoggerStore();
+  logger.info(`  📊 Seeding Level ${level}: ${level === 0 ? 'Base enums (no dependencies)' : 'Dependent enums'}`);
+
+  const results = await Promise.allSettled(seedFunctions.map((fn) => fn(prisma)));
+
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      logger.info(`    ✅ ${result.value.table} : ${result.value.added} ajoutés`);
+    } else {
+      logger.error({ err: result.reason }, `    ❌ Erreur pendant le seeding Level ${level}`);
+    }
+  }
+
+  return results;
+}
+
 export async function seedEnums(prisma: PrismaClient) {
   const logger = getLoggerStore();
   logger.info('🌱 Début du seeding des enums...');
 
-  const results = await Promise.allSettled([
-    seedAgeEnum(prisma),
-    seedAutoritesTypes(prisma),
-    seedCiviliteEnum(prisma),
-    seedConsequenceEnum(prisma),
-    seedDemarchesEngageesEnum(prisma),
-    seedEntiteTypeEnum(prisma),
-    seedLienVictimeEnum(prisma),
-    seedLieuTypeEnum(prisma),
-    seedMaltraitanceTypeEnum(prisma),
-    seedMisEnCauseTypeEnum(prisma),
-    seedMisEnCauseTypePrecisionEnum(prisma),
-    seedMotifEnum(prisma),
-    seedMotifDeclaratifEnum(prisma),
-    seedReceptionTypeEnum(prisma),
-    seedRequeteClotureReasonEnum(prisma),
-    seedRequeteStatutEnum(prisma),
-    seedRoleEnum(prisma),
-    seedStatutEnum(prisma),
-    seedTransportTypeEnum(prisma),
-  ]);
+  await seedLevel(
+    0,
+    [
+      seedAgeEnum,
+      seedAutoritesTypes,
+      seedCiviliteEnum,
+      seedConsequenceEnum,
+      seedDemarchesEngageesEnum,
+      seedEntiteTypeEnum,
+      seedLienVictimeEnum,
+      seedLieuTypeEnum,
+      seedMaltraitanceTypeEnum,
+      seedMisEnCauseTypeEnum,
+      seedMotifEnum,
+      seedMotifDeclaratifEnum,
+      seedReceptionTypeEnum,
+      seedRequeteClotureReasonEnum,
+      seedRequeteStatutEnum,
+      seedRoleEnum,
+      seedStatutEnum,
+      seedTransportTypeEnum,
+    ],
+    prisma,
+  );
 
-  for (const result of results) {
-    if (result.status === 'fulfilled') {
-      logger.info(`  ✅ ${result.value.table} : ${result.value.added} ajoutés`);
-    } else {
-      logger.info({ err: result.reason }, '  ❌ Erreur pendant le seeding');
-    }
-  }
+  await seedLevel(1, [seedMisEnCauseTypePrecisionEnum], prisma);
 
   logger.info('🎉 Seeding pour des enums terminé !');
 }

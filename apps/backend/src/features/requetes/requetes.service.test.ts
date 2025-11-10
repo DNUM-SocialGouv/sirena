@@ -279,6 +279,22 @@ describe('requetes.service.ts', () => {
               ...prisma.misEnCause,
               create: vi.fn().mockResolvedValue({ id: 'mec-1' }),
             },
+            misEnCauseTypeEnum: {
+              ...prisma.misEnCauseTypeEnum,
+              findUnique: vi
+                .fn()
+                .mockImplementation((args) =>
+                  args.where.id ? Promise.resolve({ id: args.where.id }) : Promise.resolve(null),
+                ),
+            },
+            misEnCauseTypePrecisionEnum: {
+              ...prisma.misEnCauseTypePrecisionEnum,
+              findUnique: vi
+                .fn()
+                .mockImplementation((args) =>
+                  args.where.id ? Promise.resolve({ id: args.where.id }) : Promise.resolve(null),
+                ),
+            },
             autoriteTypeEnum: {
               ...prisma.autoriteTypeEnum,
               findUnique: vi.fn().mockResolvedValue({ id: 'autorite-1' }),

@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { envVars } from '@/config/env';
 import { mapDataForPrisma } from '@/features/dematSocial/dematSocial.adaptater';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '@/features/requetes/requetes.service';
+import { isPrismaUniqueConstraintError, retryWithBackoff } from '@/helpers/retry';
 import { abortControllerStorage, getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
 import {
   ChangerInstructionDocument,
@@ -79,8 +80,9 @@ export const importRequetes = async (createdSince?: Date) => {
     }
     const update = await updateInstruction(`Dossier-${dossier.number}`);
     if (!update?.dossierPasserEnInstruction?.dossier) {
-      const err = update?.dossierPasserEnInstruction?.errors || [];
-      logger.warn({ err }, `Failed to change instruction for dossier ${dossier.number}`);
+      const errors = update?.dossierPasserEnInstruction?.errors || [];
+      const errorMessage = errors.map((e) => e.message).join(', ');
+      logger.warn(`Failed to change instruction for dossier ${dossier.number}: ${errorMessage || 'Unknown error'}`);
     }
     const data = await getRequete(dossier.number);
     if (!data) {
@@ -102,7 +104,10 @@ export const importRequetes = async (createdSince?: Date) => {
           }
         : null;
 
-      await createRequeteFromDematSocial({ ...requete, pdf });
+      await retryWithBackoff(() => createRequeteFromDematSocial({ ...requete, pdf }), {
+        shouldRetry: (err) => isPrismaUniqueConstraintError(err, 'id'),
+        context: { dossierNumber: dossier.number },
+      });
       i += 1;
     } catch (err) {
       logger.error({ err }, `Error processing dossier ${dossier.number}:`);

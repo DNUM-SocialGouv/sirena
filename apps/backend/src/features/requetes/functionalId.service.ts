@@ -1,4 +1,4 @@
-import { prisma } from '@/libs/prisma';
+import { type Prisma, prisma } from '@/libs/prisma';
 
 export type FunctionalIdSource = 'SIRENA' | 'DEMAT_SOCIAL';
 
@@ -7,34 +7,27 @@ export type FunctionalIdSource = 'SIRENA' | 'DEMAT_SOCIAL';
  * RS = created via SIRENA
  * RD = created via DematSocial
  */
-export async function generateRequeteId(source: FunctionalIdSource): Promise<string> {
+export async function generateRequeteId(source: FunctionalIdSource, tx?: Prisma.TransactionClient): Promise<string> {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
 
-  const result = await prisma.$transaction(
-    async (tx) => {
-      const prefix = source === 'SIRENA' ? 'RS' : 'RD';
-      const monthPrefix = `${prefix}-${year}-${month}-`;
+  const prefix = source === 'SIRENA' ? 'RS' : 'RD';
+  const monthPrefix = `${prefix}-${year}-${month}-`;
 
-      const count = await tx.requete.count({
-        where: {
-          id: {
-            startsWith: monthPrefix,
-          },
-        },
-      });
+  const prismaClient = tx || prisma;
 
-      const nextNumber = count + 1;
-
-      return `${prefix}-${year}-${month}-${nextNumber}`;
+  const count = await prismaClient.requete.count({
+    where: {
+      id: {
+        startsWith: monthPrefix,
+      },
     },
-    {
-      isolationLevel: 'Serializable',
-    },
-  );
+  });
 
-  return result;
+  const nextNumber = count + 1;
+
+  return `${prefix}-${year}-${month}-${nextNumber}`;
 }
 
 export function determineSource(dematSocialId: number | null | undefined): FunctionalIdSource {
