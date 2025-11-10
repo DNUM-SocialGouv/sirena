@@ -60,14 +60,6 @@ export const uploadFileToMinio = async (
   };
 };
 
-export const getSignedUrl = async (filePath: string, expirySeconds = 60 * 60): Promise<string> => {
-  if (!minioClient) {
-    throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
-  }
-
-  return minioClient.presignedUrl('GET', S3_BUCKET_NAME, filePath, expirySeconds);
-};
-
 export const deleteFileFromMinio = async (filePath: string): Promise<void> => {
   if (!minioClient) {
     throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
