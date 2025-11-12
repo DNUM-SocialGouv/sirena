@@ -25,7 +25,6 @@ type UploadedFileChangelogMiddleware = {
   action: ChangeLogAction;
 };
 
-// TODO: ici ?
 const uploadedFileChangelogMiddleware = ({ action }: UploadedFileChangelogMiddleware) => {
   return factoryWithChangelog.createMiddleware(async (c, next) => {
     const changedById = c.get('userId');
