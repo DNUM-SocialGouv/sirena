@@ -120,11 +120,7 @@ export const setRequeteFile = async (
   return updateFilesWithRelation(uploadedFileId, { requeteId }, entiteId);
 };
 
-export const setFaitFiles = async (
-  faitSituationId: string,
-  uploadedFileId: UploadedFile['id'][],
-  entiteId: string | null = null,
-) => {
+export const setFaitFiles = async (faitSituationId: string, uploadedFileId: UploadedFile['id'][], entiteId: string) => {
   return updateFilesWithRelation(uploadedFileId, { faitSituationId }, entiteId);
 };
 

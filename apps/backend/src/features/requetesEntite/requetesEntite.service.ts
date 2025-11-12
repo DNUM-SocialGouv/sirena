@@ -11,6 +11,7 @@ import { parseAdresseDomicile } from '@/helpers/address';
 import { sortObject } from '@/helpers/prisma/sort';
 import { createSearchConditionsForRequeteEntite } from '@/helpers/search';
 import { type Prisma, prisma } from '@/libs/prisma';
+import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service';
 import {
   mapDeclarantToPrismaCreate,
   mapPersonneConcerneeToPrismaCreate,
@@ -184,15 +185,15 @@ export const hasAccessToRequete = async ({ requeteId, entiteId }: RequeteEntiteK
   return !!requete;
 };
 
-export const getRequeteEntiteById = async (requeteId: string, entiteIds: string[] | null) => {
-  if (!entiteIds || entiteIds.length === 0) {
+export const getRequeteEntiteById = async (requeteId: string, entiteId: string | null) => {
+  if (!entiteId) {
     return null;
   }
 
   return await prisma.requeteEntite.findFirst({
     where: {
       requeteId,
-      entiteId: { in: entiteIds },
+      entiteId,
     },
     include: {
       requete: {
@@ -266,11 +267,7 @@ interface CreateRequeteInput {
   participant?: PersonneConcerneeInput;
 }
 
-export const createRequeteEntite = async (
-  entiteIds: string[] | null,
-  data?: CreateRequeteInput,
-  changedById?: string,
-) => {
+export const createRequeteEntite = async (entiteId: string, data?: CreateRequeteInput, changedById?: string) => {
   // Helper function to create changelog for RequeteEtape
   const createRequeteEtapeChangelog = async (
     etapeId: string,
@@ -288,11 +285,6 @@ export const createRequeteEntite = async (
       changedById,
     });
   };
-
-  const entiteId = entiteIds?.[0];
-  if (!entiteId) {
-    throw new Error('No entity ID provided');
-  }
 
   const maxRetries = 5;
   let retryCount = 0;
@@ -346,35 +338,17 @@ export const createRequeteEntite = async (
 
       // Create default processing steps for each entity
       for (const entite of requete.requeteEntites) {
-        const etape1 = await prisma.requeteEtape.create({
-          data: {
-            requeteId: requete.id,
-            entiteId: entite.entiteId,
-            statutId: REQUETE_STATUT_TYPES.FAIT,
-            nom: `Création de la requête le ${
-              requete.receptionDate?.toLocaleDateString('fr-FR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-              }) ||
-              new Date().toLocaleDateString('fr-FR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-              })
-            }`,
-          },
-        });
+        const result = await createDefaultRequeteEtapes(
+          requete.id,
+          entite.entiteId,
+          requete.receptionDate || new Date(),
+        );
 
-        const etape2 = await prisma.requeteEtape.create({
-          data: {
-            requeteId: requete.id,
-            entiteId: entite.entiteId,
-            statutId: REQUETE_STATUT_TYPES.A_FAIRE,
-            nom: 'Envoyer un accusé de réception au déclarant',
-          },
-        });
+        if (!result) {
+          continue;
+        }
 
+        const { etape1, etape2 } = result;
         // Create changelogs for the created steps if changedById is provided
         if (changedById) {
           await createRequeteEtapeChangelog(
@@ -848,7 +822,7 @@ const createNewSituation = async (
   return createdSituation;
 };
 
-export const createRequeteSituation = async (requeteId: string, situationData: SituationInput) => {
+export const createRequeteSituation = async (requeteId: string, situationData: SituationInput, entiteId: string) => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
   });
@@ -874,7 +848,7 @@ export const createRequeteSituation = async (requeteId: string, situationData: S
 
     if (situation) {
       if (situationData.fait?.fileIds?.length) {
-        await setFaitFiles(situation.id, situationData.fait.fileIds, null);
+        await setFaitFiles(situation.id, situationData.fait.fileIds, entiteId);
       }
     }
   }
@@ -885,7 +859,12 @@ export const createRequeteSituation = async (requeteId: string, situationData: S
   });
 };
 
-export const updateRequeteSituation = async (requeteId: string, situationId: string, situationData: SituationInput) => {
+export const updateRequeteSituation = async (
+  requeteId: string,
+  situationId: string,
+  situationData: SituationInput,
+  entiteId: string,
+) => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
     include: { situations: { include: SITUATION_INCLUDE_BASE } },
@@ -913,7 +892,7 @@ export const updateRequeteSituation = async (requeteId: string, situationId: str
 
     if (situation) {
       if (situationData.fait?.fileIds?.length) {
-        await setFaitFiles(situation.id, situationData.fait.fileIds, null);
+        await setFaitFiles(situation.id, situationData.fait.fileIds, entiteId);
       }
     }
   }

@@ -1,6 +1,32 @@
-import { openApiDeleteResponse, openApiProtectedRoute, openApiResponse } from '@sirena/backend-utils/helpers';
+import {
+  openApiDeleteResponse,
+  openApiProtectedRoute,
+  openApiResponse,
+  openApiResponses,
+} from '@sirena/backend-utils/helpers';
 import { z } from 'zod';
-import { RequeteEtapeSchema } from '@/libs/zod';
+import { RequeteEtapeNoteSchema, RequeteEtapeSchema } from '@/libs/zod';
+
+export const addProcessingStepRoute = openApiProtectedRoute({
+  description: 'Add a processing step to a request',
+  responses: {
+    ...openApiResponse(RequeteEtapeSchema),
+  },
+});
+
+export const getProcessingStepsRoute = openApiProtectedRoute({
+  description: 'Get processing steps for a request',
+  responses: {
+    ...openApiResponses(RequeteEtapeSchema),
+  },
+});
+
+export const addProcessingStepNoteRoute = openApiProtectedRoute({
+  description: 'Add a processing note to a step of a request',
+  responses: {
+    ...openApiResponse(RequeteEtapeNoteSchema),
+  },
+});
 
 export const updateRequeteEtapeStatutRoute = openApiProtectedRoute({
   description: 'Update the statut of a RequeteEtape',

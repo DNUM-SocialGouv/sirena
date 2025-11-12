@@ -377,12 +377,12 @@ describe('requetesEntite.service', () => {
     it('should fetch requeteEntite by id with related data', async () => {
       vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce(mockRequeteEntite);
 
-      const result = await getRequeteEntiteById(mockRequeteEntite.requeteId, [mockRequeteEntite.entiteId]);
+      const result = await getRequeteEntiteById(mockRequeteEntite.requeteId, mockRequeteEntite.entiteId);
 
       expect(prisma.requeteEntite.findFirst).toHaveBeenCalledWith({
         where: {
           requeteId: mockRequeteEntite.requeteId,
-          entiteId: { in: [mockRequeteEntite.entiteId] },
+          entiteId: mockRequeteEntite.entiteId,
         },
         include: {
           requete: {
@@ -454,7 +454,7 @@ describe('requetesEntite.service', () => {
     });
 
     it('should return null when entiteIds is empty', async () => {
-      const result = await getRequeteEntiteById(mockRequeteEntite.requeteId, []);
+      const result = await getRequeteEntiteById(mockRequeteEntite.requeteId, null);
       expect(result).toBeNull();
     });
 

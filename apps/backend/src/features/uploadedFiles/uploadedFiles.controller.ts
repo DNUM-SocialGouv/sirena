@@ -38,14 +38,13 @@ const app = factoryWithLogs
 
       try {
         const userId = c.get('userId');
-        const entiteIds = c.get('entiteIds');
-        // Force parent/main entiteId
-        const fileEntiteId = entiteIds?.[0];
-        if (!fileEntiteId) {
-          throwHTTPException400BadRequest('You must have an assigned entite to create an uploaded file.', {
+        const topEntiteId = c.get('topEntiteId');
+        if (!topEntiteId) {
+          throwHTTPException400BadRequest('You are not allowed to create uploaded files without topEntiteId.', {
             res: c.res,
           });
         }
+
         logger.info({ fileName: uploadedFile.fileName }, 'Uploaded file creation requested');
 
         const { objectPath, rollback: rollbackMinio } = await uploadFileToMinio(
@@ -68,7 +67,7 @@ const app = factoryWithLogs
           mimeType: uploadedFile.contentType,
           size: uploadedFile.size,
           metadata: { originalName: uploadedFile.fileName },
-          entiteId: fileEntiteId,
+          entiteId: topEntiteId,
           uploadedById: userId,
           requeteEtapeNoteId: null,
           requeteId: null,
@@ -101,16 +100,15 @@ const app = factoryWithLogs
       const logger = c.get('logger');
       const id = c.req.valid('param').id;
       const userId = c.get('userId');
-      const entiteIds = c.get('entiteIds');
+      const topEntiteId = c.get('topEntiteId');
 
-      if (!entiteIds?.length) {
-        throwHTTPException400BadRequest('You are not allowed to delete uploaded files without entiteIds.', {
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to delete uploaded files without topEntiteId.', {
           res: c.res,
         });
       }
 
-      // TODO: temporarily remove entiteIds filter. We need to check if the uploaded file is within the EntiteId scope for the user
-      const uploadedFile = await getUploadedFileById(id, null);
+      const uploadedFile = await getUploadedFileById(id, [topEntiteId]);
       if (!uploadedFile) {
         logger.warn({ uploadedFileId: id }, 'Uploaded file not found or unauthorized access');
         throwHTTPException404NotFound('Uploaded file not found', {

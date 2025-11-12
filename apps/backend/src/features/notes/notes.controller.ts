@@ -1,4 +1,8 @@
-import { throwHTTPException403Forbidden, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
+import {
+  throwHTTPException400BadRequest,
+  throwHTTPException403Forbidden,
+  throwHTTPException404NotFound,
+} from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
@@ -31,6 +35,12 @@ const app = factoryWithLogs
       const logger = c.get('logger');
       const body = c.req.valid('json');
       const userId = c.get('userId');
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+        });
+      }
       const { requeteEtapeId } = body;
 
       const requeteEtape = await getRequeteEtapeById(requeteEtapeId);
@@ -39,13 +49,18 @@ const app = factoryWithLogs
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
-      // TODO: check real access with entiteIds when implemented
-      //   const entiteIds = c.get('entiteIds');
-      const hasAccess = await hasAccessToRequete({
+      if (topEntiteId !== requeteEtape.entiteId) {
+        throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
+          res: c.res,
+        });
+      }
+
+      const hasAccessToReq = await hasAccessToRequete({
         requeteId: requeteEtape.requeteId,
-        entiteId: requeteEtape.entiteId,
+        entiteId: topEntiteId,
       });
-      if (!hasAccess) {
+
+      if (!hasAccessToReq) {
         throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
           res: c.res,
         });
@@ -70,8 +85,7 @@ const app = factoryWithLogs
       });
 
       if (fileIds.length > 0) {
-        // TODO: set requeteEntite entiteId to the note
-        await setNoteFile(note.id, fileIds, null);
+        await setNoteFile(note.id, fileIds, topEntiteId);
       }
 
       c.set('changelogId', note.id);
@@ -92,6 +106,12 @@ const app = factoryWithLogs
       const { id: noteId } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+        });
+      }
 
       const existingNote = await getNoteById(noteId);
 
@@ -105,12 +125,17 @@ const app = factoryWithLogs
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
-      // TODO: check real access with entiteIds when implemented
-      const hasAccess = await hasAccessToRequete({
+      if (topEntiteId !== requeteEtape.entiteId) {
+        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
+          res: c.res,
+        });
+      }
+
+      const hasAccessToReq = await hasAccessToRequete({
         requeteId: requeteEtape.requeteId,
-        entiteId: requeteEtape.entiteId,
+        entiteId: topEntiteId,
       });
-      if (!hasAccess) {
+      if (!hasAccessToReq) {
         throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
         });
@@ -128,8 +153,7 @@ const app = factoryWithLogs
           });
         }
 
-        // TODO: set requeteEntite entiteId to the note
-        await setNoteFile(noteId, fileIds, null);
+        await setNoteFile(noteId, fileIds, topEntiteId);
       }
 
       c.set('changelogId', noteId);
@@ -151,7 +175,12 @@ const app = factoryWithLogs
       const logger = c.get('logger');
       const { noteId } = c.req.param();
       const userId = c.get('userId');
-
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+        });
+      }
       const existingNote = await getNoteById(noteId);
 
       if (!existingNote) {
@@ -164,13 +193,18 @@ const app = factoryWithLogs
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
-      // TODO: check real access with entiteIds when implemented
-      const hasAccess = await hasAccessToRequete({
+      if (topEntiteId !== requeteEtape.entiteId) {
+        throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
+          res: c.res,
+        });
+      }
+
+      const hasAccessToReq = await hasAccessToRequete({
         requeteId: requeteEtape.requeteId,
-        entiteId: requeteEtape.entiteId,
+        entiteId: topEntiteId,
       });
-      if (!hasAccess) {
-        throwHTTPException403Forbidden('You are not allowed to delete notes from this requete etape', {
+      if (!hasAccessToReq) {
+        throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
           res: c.res,
         });
       }

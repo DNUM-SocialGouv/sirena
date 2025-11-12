@@ -10,6 +10,12 @@ const columns = [
   Prisma.RequeteEtapeScalarFieldEnum.statutId,
 ] as const;
 
+export const AddProcessingStepBodySchema = z.object({
+  nom: z
+    .string()
+    .min(1, { message: "Le champ 'Nom de l'étape' est obligatoire. Veuillez le renseigner pour ajouter une étape." }),
+});
+
 export const GetRequeteEtapesQuerySchema = paginationQueryParamsSchema(columns);
 
 export const UpdateRequeteEtapeStatutSchema = z.object({

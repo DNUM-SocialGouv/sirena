@@ -1,7 +1,7 @@
 import { Readable } from 'node:stream';
 import * as Sentry from '@sentry/node';
 import {
-  throwHTTPException401Unauthorized,
+  throwHTTPException400BadRequest,
   throwHTTPException403Forbidden,
   throwHTTPException404NotFound,
 } from '@sirena/backend-utils/helpers';
@@ -25,17 +25,20 @@ import requeteEtapesChangelogMiddleware from '@/middlewares/changelog/changelog.
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-import { addProcessingStepRoute } from '../requetesEntite/requetesEntite.route';
-import { AddProcessingStepBodySchema } from '../requetesEntite/requetesEntite.schema';
+
 import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service';
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service';
-import { getUserById } from '../users/users.service';
 import {
+  addProcessingStepRoute,
   deleteRequeteEtapeRoute,
   updateRequeteEtapeNomRoute,
   updateRequeteEtapeStatutRoute,
 } from './requetesEtapes.route';
-import { UpdateRequeteEtapeNomSchema, UpdateRequeteEtapeStatutSchema } from './requetesEtapes.schema';
+import {
+  AddProcessingStepBodySchema,
+  UpdateRequeteEtapeNomSchema,
+  UpdateRequeteEtapeStatutSchema,
+} from './requetesEtapes.schema';
 
 const app = factoryWithLogs
   .createApp()
@@ -47,28 +50,14 @@ const app = factoryWithLogs
   .get('/:id/processing-steps', async (c) => {
     const logger = c.get('logger');
     const { id: requeteId } = c.req.param();
-    // const entiteIds = c.get('entiteIds');
-
-    // TODO: Use real entiteIds when implemented
-    // const hasAccess = await hasAccessToRequete({ requeteId: id, entiteId });
-    const hasAccess = true;
-
-    if (!hasAccess) {
-      throwHTTPException404NotFound('Requete entite not found', {
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
       });
     }
 
-    // TODO: Temporary: Here we are using a permission and access management system that will not be the final system: HERE only the user's entiteId is used to retrieve the steps linked to this same entiteId, it WILL likely be more complex later with a parent/child permission chain.
-    const userId = c.get('userId');
-    const user = await getUserById(userId, null, null);
-    if (!user?.entiteId) {
-      throwHTTPException401Unauthorized('User not found', {
-        res: c.res,
-      });
-    }
-
-    const { data, total } = await getRequeteEtapes(requeteId, [user.entiteId], {});
+    const { data, total } = await getRequeteEtapes(requeteId, topEntiteId, {});
 
     logger.info({ requestId: requeteId, stepCount: total }, 'Processing steps retrieved successfully');
 
@@ -77,6 +66,12 @@ const app = factoryWithLogs
   .get('/:id/file/:fileId', async (c) => {
     const logger = c.get('logger');
     const { id, fileId } = c.req.param();
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
 
     const requeteEtape = await getRequeteEtapeById(id);
 
@@ -84,16 +79,24 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
     }
 
-    // TODO: check real access with entiteIds when implemented
-    //   const entiteIds = c.get('entiteIds');
-    const hasAccess = await hasAccessToRequete({ requeteId: requeteEtape.requeteId, entiteId: requeteEtape.entiteId });
-    if (!hasAccess) {
-      throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
+    if (topEntiteId !== requeteEtape.entiteId) {
+      throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
         res: c.res,
       });
     }
 
-    const file = await getUploadedFileById(fileId, null);
+    const hasAccessToReq = await hasAccessToRequete({
+      requeteId: requeteEtape.requeteId,
+      entiteId: topEntiteId,
+    });
+
+    if (!hasAccessToReq) {
+      throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
+        res: c.res,
+      });
+    }
+
+    const file = await getUploadedFileById(fileId, [topEntiteId]);
 
     if (!file) {
       throwHTTPException404NotFound('File not found', { res: c.res });
@@ -147,11 +150,14 @@ const app = factoryWithLogs
       const { id: requeteId } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
-      // const entiteIds = c.get('entiteIds');
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+        });
+      }
 
-      // TODO: Use real entiteIds when implemented
-      // const hasAccess = await hasAccessToRequete(id, null);
-      const hasAccess = true;
+      const hasAccess = hasAccessToRequete({ requeteId, entiteId: topEntiteId });
 
       if (!hasAccess) {
         throwHTTPException404NotFound('Requete entite not found', {
@@ -159,14 +165,7 @@ const app = factoryWithLogs
         });
       }
 
-      // TODO: Temporary: Here we are using a permission and access management system that will not be the final system: HERE only the user's entiteId is used to create the step linked to this same entiteId, it WILL likely be more complex later with maybe a parent/child permission chain.
-      const user = await getUserById(userId, null, null);
-      if (!user?.entiteId) {
-        throwHTTPException401Unauthorized('User not found', {
-          res: c.res,
-        });
-      }
-      const step = await addProcessingEtape(requeteId, [user.entiteId], {
+      const step = await addProcessingEtape(requeteId, topEntiteId, {
         nom: body.nom,
       });
 
@@ -194,20 +193,30 @@ const app = factoryWithLogs
       const { id } = c.req.param();
       const body = c.req.valid('json');
       const userId = c.get('userId');
-
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+        });
+      }
       const requeteEtape = await getRequeteEtapeById(id);
 
       if (!requeteEtape) {
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
-      // TODO: check real access with entiteIds when implemented
-      //   const entiteIds = c.get('entiteIds');
-      const hasAccess = await hasAccessToRequete({
+      const hasAccessToReq = await hasAccessToRequete({
         requeteId: requeteEtape.requeteId,
-        entiteId: requeteEtape.entiteId,
+        entiteId: topEntiteId,
       });
-      if (!hasAccess) {
+
+      if (!hasAccessToReq) {
+        throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
+          res: c.res,
+        });
+      }
+
+      if (topEntiteId !== requeteEtape.entiteId) {
         throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
         });
@@ -250,20 +259,30 @@ const app = factoryWithLogs
       const body = c.req.valid('json');
       const userId = c.get('userId');
 
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+        });
+      }
       const requeteEtape = await getRequeteEtapeById(id);
 
       if (!requeteEtape) {
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
-
-      // TODO: check real access with entiteIds when implemented
-      //   const entiteIds = c.get('entiteIds');
-      const hasAccess = await hasAccessToRequete({
+      const hasAccessToReq = await hasAccessToRequete({
         requeteId: requeteEtape.requeteId,
-        entiteId: requeteEtape.entiteId,
+        entiteId: topEntiteId,
       });
-      if (!hasAccess) {
-        throwHTTPException401Unauthorized('You are not allowed to update this requete etape', {
+
+      if (!hasAccessToReq) {
+        throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
+          res: c.res,
+        });
+      }
+
+      if (topEntiteId !== requeteEtape.entiteId) {
+        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
         });
       }
@@ -302,20 +321,30 @@ const app = factoryWithLogs
       const logger = c.get('logger');
       const { id } = c.req.param();
       const userId = c.get('userId');
-
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+        });
+      }
       const requeteEtape = await getRequeteEtapeById(id);
 
       if (!requeteEtape) {
         throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
       }
 
-      // TODO: check real access with entiteIds when implemented
-      //   const entiteIds = c.get('entiteIds');
-      const hasAccess = await hasAccessToRequete({
+      const hasAccessToReq = await hasAccessToRequete({
         requeteId: requeteEtape.requeteId,
-        entiteId: requeteEtape.entiteId,
+        entiteId: topEntiteId,
       });
-      if (!hasAccess) {
+
+      if (!hasAccessToReq) {
+        throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
+          res: c.res,
+        });
+      }
+
+      if (topEntiteId !== requeteEtape.entiteId) {
         throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
           res: c.res,
         });

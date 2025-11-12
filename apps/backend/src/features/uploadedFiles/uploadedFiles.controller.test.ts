@@ -78,7 +78,7 @@ vi.mock('@/middlewares/userStatus.middleware', () => {
 vi.mock('@/middlewares/entites.middleware', () => {
   return {
     default: vi.fn((c: Context, next: Next) => {
-      c.set('entiteIds', ['e1', 'e2', 'e3']);
+      c.set('topEntiteId', 'e1');
       return next();
     }),
   };
@@ -171,9 +171,9 @@ describe('uploadedFiles.controller.ts', () => {
       });
     });
 
-    it('should return a 400 error if entiteIds is not set', async () => {
+    it('should return a 400 error if topEntiteId is not set', async () => {
       vi.mocked(entitesMiddleware).mockImplementationOnce((c: Context, next: Next) => {
-        c.set('entiteIds', null);
+        c.set('topEntiteId', null);
         return next();
       });
 
@@ -182,7 +182,7 @@ describe('uploadedFiles.controller.ts', () => {
 
       expect(res.status).toBe(400);
       expect(body).toEqual({
-        message: 'You must have an assigned entite to create an uploaded file.',
+        message: 'You are not allowed to create uploaded files without topEntiteId.',
       });
     });
 
@@ -236,14 +236,14 @@ describe('uploadedFiles.controller.ts', () => {
 
       expect(res.status).toBe(204);
       expect(await res.text()).toBe('');
-      expect(getUploadedFileById).toHaveBeenCalledWith('file1', null);
+      expect(getUploadedFileById).toHaveBeenCalledWith('file1', ['e1']);
       expect(deleteUploadedFile).toHaveBeenCalledWith('file1');
       expect(deleteFileFromMinio).toHaveBeenCalledWith('/uploads/test.pdf');
     });
 
-    it('should return 400 if entiteIds is not set', async () => {
+    it('should return 400 if topEntiteId is not set', async () => {
       vi.mocked(entitesMiddleware).mockImplementationOnce((c: Context, next: Next) => {
-        c.set('entiteIds', null);
+        c.set('topEntiteId', null);
         return next();
       });
 
@@ -255,7 +255,7 @@ describe('uploadedFiles.controller.ts', () => {
 
       expect(res.status).toBe(400);
       expect(body).toEqual({
-        message: 'You are not allowed to delete uploaded files without entiteIds.',
+        message: 'You are not allowed to delete uploaded files without topEntiteId.',
       });
       expect(deleteUploadedFile).not.toHaveBeenCalled();
       expect(deleteFileFromMinio).not.toHaveBeenCalled();
