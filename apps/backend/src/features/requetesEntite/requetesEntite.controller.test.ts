@@ -70,6 +70,14 @@ vi.mock('@/features/uploadedFiles/uploadedFiles.service', () => ({
   isFileBelongsToRequete: vi.fn(),
 }));
 
+vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
+  return {
+    default: () => (_: Context, next: Next) => {
+      return next();
+    },
+  };
+});
+
 describe('RequetesEntite endpoints: /', () => {
   beforeEach(() => {
     vi.resetAllMocks();
