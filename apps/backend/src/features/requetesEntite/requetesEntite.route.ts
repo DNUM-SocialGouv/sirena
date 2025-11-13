@@ -1,5 +1,5 @@
 import { openApiProtectedRoute, openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
-import { RequeteEtapeNoteSchema, RequeteEtapeSchema, RequeteSchema } from '@/libs/zod';
+import { RequeteSchema } from '@/libs/zod';
 import { CloseRequeteResponseSchema, GetRequetesEntiteResponseSchema } from './requetesEntite.schema';
 
 export const getRequetesEntiteRoute = openApiProtectedRoute({
@@ -23,31 +23,9 @@ export const createRequeteRoute = openApiProtectedRoute({
   },
 });
 
-export const addProcessingStepRoute = openApiProtectedRoute({
-  description: 'Add a processing step to a request',
-  responses: {
-    ...openApiResponse(RequeteEtapeSchema),
-  },
-});
-
-export const addProcessingStepNoteRoute = openApiProtectedRoute({
-  description: 'Add a processing note to a step of a request',
-  responses: {
-    ...openApiResponse(RequeteEtapeNoteSchema),
-  },
-});
-
 export const closeRequeteRoute = openApiProtectedRoute({
   description: 'Close a Requete for a specific entity',
   responses: {
     ...openApiResponse(CloseRequeteResponseSchema),
-  },
-});
-
-// TODO-act
-export const getProcessingStepsRoute = openApiProtectedRoute({
-  description: 'Get processing steps for a request',
-  responses: {
-    ...openApiResponses(RequeteEtapeSchema.array()),
   },
 });

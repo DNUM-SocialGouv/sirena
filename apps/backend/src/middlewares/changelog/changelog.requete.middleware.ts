@@ -60,7 +60,17 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
     const changedById = c.get('userId');
     const requeteId = c.req.param('id');
     const logger = c.get('logger');
-    const entiteIds = c.get('entiteIds');
+    const topEntiteId = c.get('topEntiteId');
+
+    if (!topEntiteId) {
+      logger.error(
+        {
+          topEntiteId,
+        },
+        'requeteChangelogMiddleware: Top entite ID is required. Skipping changelog.',
+      );
+      return await next();
+    }
 
     if (!requeteId && action === 'UPDATED') {
       logger.error(
@@ -80,7 +90,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
     let participantAdresseBefore: Adresse | null = null;
 
     if (action === 'UPDATED' && requeteId) {
-      const requeteEntite = await getRequeteEntiteById(requeteId, entiteIds);
+      const requeteEntite = await getRequeteEntiteById(requeteId, topEntiteId);
 
       if (requeteEntite?.requete?.declarant) {
         declarantBefore = requeteEntite.requete.declarant;
@@ -174,7 +184,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
 
     // Scenario 1: CREATED action (new requete with declarant/participant)
     if (action === 'CREATED') {
-      const requeteEntite = await getRequeteEntiteById(changelogId, entiteIds);
+      const requeteEntite = await getRequeteEntiteById(changelogId, topEntiteId);
 
       // Handle requete creation
       if (requeteEntite?.requete) {
@@ -212,7 +222,7 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
 
     // Scenario 2: UPDATED action (modify existing declarant/participant)
     if (action === 'UPDATED' && requeteId) {
-      const requeteEntite = await getRequeteEntiteById(requeteId, entiteIds);
+      const requeteEntite = await getRequeteEntiteById(requeteId, topEntiteId);
 
       // Handle declarant updates
       if (declarantBefore && requeteEntite?.requete?.declarant) {

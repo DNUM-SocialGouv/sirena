@@ -64,6 +64,7 @@ vi.mock('@/middlewares/entites.middleware', () => {
   return {
     default: vi.fn((c: Context, next: Next) => {
       c.set('entiteIds', ['e1', 'e2', 'e3']);
+      c.set('topEntiteId', 'entiteId');
       return next();
     }),
   };
@@ -272,7 +273,7 @@ describe('notes.controller.ts', () => {
         fileIds: ['f1', 'f2'],
       });
 
-      expect(setNoteFile).toHaveBeenCalledWith('note1', ['f1', 'f2'], null);
+      expect(setNoteFile).toHaveBeenCalledWith('note1', ['f1', 'f2'], 'entiteId');
     });
   });
 
@@ -433,7 +434,7 @@ describe('notes.controller.ts', () => {
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to delete notes from this requete etape',
+        message: 'You are not allowed to delete this requete etape',
       });
       expect(deleteNote).not.toHaveBeenCalled();
     });

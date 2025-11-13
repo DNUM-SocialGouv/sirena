@@ -1,8 +1,8 @@
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { sanitizeFilename, urlToStream } from '@/helpers/file';
 import { getLoggerStore } from '@/libs/asyncLocalStorage';
 import { uploadFileToMinio } from '@/libs/minio';
 import { prisma } from '@/libs/prisma';
+import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service';
 import { determineSource, generateRequeteId } from './functionalId.service';
 import type { CreateRequeteFromDematSocialDto, ElementLinked, File } from './requetes.type';
 
@@ -323,27 +323,7 @@ export const createRequeteFromDematSocial = async ({
     });
 
     for (const entite of requeteWithEntites.requeteEntites) {
-      await tx.requeteEtape.create({
-        data: {
-          requeteId: requete.id,
-          entiteId: entite.entiteId,
-          statutId: REQUETE_STATUT_TYPES.FAIT,
-          nom: `Création de la requête le ${receptionDate.toLocaleDateString('fr-FR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-          })}`,
-        },
-      });
-
-      await tx.requeteEtape.create({
-        data: {
-          requeteId: requete.id,
-          entiteId: entite.entiteId,
-          statutId: REQUETE_STATUT_TYPES.A_FAIRE,
-          nom: 'Envoyer un accusé de réception au déclarant',
-        },
-      });
+      await createDefaultRequeteEtapes(requete.id, entite.entiteId, receptionDate, tx);
     }
 
     return await tx.requete.findUniqueOrThrow({

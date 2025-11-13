@@ -331,6 +331,13 @@ describe('requetes.service.ts', () => {
               ...prisma.requeteEtape,
               create: vi.fn().mockResolvedValue({ id: 'etape-1' }),
             },
+            requeteEntite: {
+              ...prisma.requeteEntite,
+              findUnique: vi
+                .fn()
+                .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-1' })
+                .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-2' }),
+            },
           } as typeof prisma;
           return cb(mockTx);
         });
@@ -484,6 +491,13 @@ describe('requetes.service.ts', () => {
           requeteEtape: {
             ...prisma.requeteEtape,
             create: vi.fn().mockResolvedValue({ id: 'etape-1' }),
+          },
+          requeteEntite: {
+            ...prisma.requeteEntite,
+            findUnique: vi
+              .fn()
+              .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-1' })
+              .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-2' }),
           },
         } as typeof prisma;
         return cb(mockTx);

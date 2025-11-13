@@ -13,6 +13,7 @@ import {
 } from '@/libs/prisma';
 import {
   addProcessingEtape,
+  createDefaultRequeteEtapes,
   deleteRequeteEtape,
   getRequeteEtapeById,
   getRequeteEtapes,
@@ -27,6 +28,7 @@ vi.mock('@/libs/prisma', () => ({
       findUnique: vi.fn(),
     },
     requeteEntite: {
+      findUnique: vi.fn(),
       upsert: vi.fn(),
     },
     requeteEtape: {
@@ -34,6 +36,7 @@ vi.mock('@/libs/prisma', () => ({
       findMany: vi.fn(),
       count: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
@@ -107,21 +110,313 @@ describe('RequeteEtapes.service.ts', () => {
     vi.clearAllMocks();
   });
 
+  describe('createDefaultRequeteEtapes()', () => {
+    it('should create two default etapes with correct statuts and names', async () => {
+      const requeteId = 'requeteId';
+      const entiteId = 'entiteId';
+      const receptionDate = new Date('2024-01-15T10:00:00Z');
+
+      const mockRequeteEntite: RequeteEntite = {
+        requeteId,
+        entiteId,
+      };
+
+      const mockEtape1: RequeteEtape = {
+        id: 'etape1Id',
+        requeteId,
+        entiteId,
+        nom: 'Création de la requête le 15/01/2024',
+        estPartagee: false,
+        statutId: 'FAIT',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        clotureReasonId: null,
+      };
+
+      const mockEtape2: RequeteEtape = {
+        id: 'etape2Id',
+        requeteId,
+        entiteId,
+        nom: 'Envoyer un accusé de réception au déclarant',
+        estPartagee: false,
+        statutId: 'A_FAIRE',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        clotureReasonId: null,
+      };
+
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
+
+      const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
+
+      expect(result).toEqual({ etape1: mockEtape1, etape2: mockEtape2 });
+      expect(prisma.requeteEntite.findUnique).toHaveBeenCalledWith({
+        where: {
+          requeteId_entiteId: {
+            requeteId,
+            entiteId,
+          },
+        },
+      });
+      expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
+
+      expect(prisma.requeteEtape.create).toHaveBeenNthCalledWith(1, {
+        data: {
+          requeteId,
+          entiteId,
+          statutId: 'FAIT',
+          nom: 'Création de la requête le 15/01/2024',
+        },
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenNthCalledWith(2, {
+        data: {
+          requeteId,
+          entiteId,
+          statutId: 'A_FAIRE',
+          nom: 'Envoyer un accusé de réception au déclarant',
+        },
+      });
+    });
+
+    it('should use current date when receptionDate is not provided', async () => {
+      const requeteId = 'requeteId';
+      const entiteId = 'entiteId';
+      const receptionDate = new Date('2024-03-20T14:30:00Z');
+      const currentDate = new Date();
+
+      const mockRequeteEntite: RequeteEntite = {
+        requeteId,
+        entiteId,
+      };
+
+      const originalToLocaleDateString = Date.prototype.toLocaleDateString;
+      Date.prototype.toLocaleDateString = vi.fn().mockReturnValue('20/03/2024');
+
+      const mockEtape1: RequeteEtape = {
+        id: 'etape1Id',
+        requeteId,
+        entiteId,
+        nom: 'Création de la requête le 20/03/2024',
+        estPartagee: false,
+        statutId: 'FAIT',
+        createdAt: currentDate,
+        updatedAt: currentDate,
+        clotureReasonId: null,
+      };
+
+      const mockEtape2: RequeteEtape = {
+        id: 'etape2Id',
+        requeteId,
+        entiteId,
+        nom: 'Envoyer un accusé de réception au déclarant',
+        estPartagee: false,
+        statutId: 'A_FAIRE',
+        createdAt: currentDate,
+        updatedAt: currentDate,
+        clotureReasonId: null,
+      };
+
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
+
+      const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
+
+      expect(result).toEqual({ etape1: mockEtape1, etape2: mockEtape2 });
+      expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
+
+      Date.prototype.toLocaleDateString = originalToLocaleDateString;
+    });
+
+    it('should use transaction client when provided', async () => {
+      const requeteId = 'requeteId';
+      const entiteId = 'entiteId';
+      const receptionDate = new Date('2024-02-10T09:00:00Z');
+
+      const mockRequeteEntite: RequeteEntite = {
+        requeteId,
+        entiteId,
+      };
+
+      const mockFindUnique = vi.fn();
+      const mockCreate = vi.fn();
+      const mockTx = {
+        requeteEntite: {
+          findUnique: mockFindUnique,
+        },
+        requeteEtape: {
+          create: mockCreate,
+        },
+      } as unknown as NonNullable<Parameters<typeof createDefaultRequeteEtapes>[3]>;
+
+      const mockEtape1: RequeteEtape = {
+        id: 'etape1Id',
+        requeteId,
+        entiteId,
+        nom: 'Création de la requête le 10/02/2024',
+        estPartagee: false,
+        statutId: 'FAIT',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        clotureReasonId: null,
+      };
+
+      const mockEtape2: RequeteEtape = {
+        id: 'etape2Id',
+        requeteId,
+        entiteId,
+        nom: 'Envoyer un accusé de réception au déclarant',
+        estPartagee: false,
+        statutId: 'A_FAIRE',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        clotureReasonId: null,
+      };
+
+      mockFindUnique.mockResolvedValueOnce(mockRequeteEntite);
+      mockCreate.mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
+
+      const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate, mockTx);
+
+      expect(result).toEqual({ etape1: mockEtape1, etape2: mockEtape2 });
+      expect(mockFindUnique).toHaveBeenCalledWith({
+        where: {
+          requeteId_entiteId: {
+            requeteId,
+            entiteId,
+          },
+        },
+      });
+      expect(mockCreate).toHaveBeenCalledTimes(2);
+      expect(prisma.requeteEtape.create).not.toHaveBeenCalled();
+
+      expect(mockCreate).toHaveBeenNthCalledWith(1, {
+        data: {
+          requeteId,
+          entiteId,
+          statutId: 'FAIT',
+          nom: 'Création de la requête le 10/02/2024',
+        },
+      });
+
+      expect(mockCreate).toHaveBeenNthCalledWith(2, {
+        data: {
+          requeteId,
+          entiteId,
+          statutId: 'A_FAIRE',
+          nom: 'Envoyer un accusé de réception au déclarant',
+        },
+      });
+    });
+
+    it('should format date correctly in French locale', async () => {
+      const requeteId = 'requeteId';
+      const entiteId = 'entiteId';
+      const receptionDate = new Date('2024-12-25T00:00:00Z');
+
+      const mockRequeteEntite: RequeteEntite = {
+        requeteId,
+        entiteId,
+      };
+
+      const mockEtape1: RequeteEtape = {
+        id: 'etape1Id',
+        requeteId,
+        entiteId,
+        nom: 'Création de la requête le 25/12/2024',
+        estPartagee: false,
+        statutId: 'FAIT',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        clotureReasonId: null,
+      };
+
+      const mockEtape2: RequeteEtape = {
+        id: 'etape2Id',
+        requeteId,
+        entiteId,
+        nom: 'Envoyer un accusé de réception au déclarant',
+        estPartagee: false,
+        statutId: 'A_FAIRE',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        clotureReasonId: null,
+      };
+
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
+
+      await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
+
+      const firstCall = vi.mocked(prisma.requeteEtape.create).mock.calls[0];
+      expect(firstCall[0].data.nom).toMatch(/Création de la requête le \d{2}\/\d{2}\/\d{4}/);
+    });
+
+    it('should create etapes with correct order (FAIT first, then A_FAIRE)', async () => {
+      const requeteId = 'requeteId';
+      const entiteId = 'entiteId';
+      const receptionDate = new Date('2024-06-01T12:00:00Z');
+
+      const mockRequeteEntite: RequeteEntite = {
+        requeteId,
+        entiteId,
+      };
+
+      const mockEtape1: RequeteEtape = {
+        id: 'etape1Id',
+        requeteId,
+        entiteId,
+        nom: 'Création de la requête le 01/06/2024',
+        estPartagee: false,
+        statutId: 'FAIT',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        clotureReasonId: null,
+      };
+
+      const mockEtape2: RequeteEtape = {
+        id: 'etape2Id',
+        requeteId,
+        entiteId,
+        nom: 'Envoyer un accusé de réception au déclarant',
+        estPartagee: false,
+        statutId: 'A_FAIRE',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        clotureReasonId: null,
+      };
+
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
+
+      const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
+
+      expect(result).not.toBeNull();
+      expect(result?.etape1.statutId).toBe('FAIT');
+      expect(result?.etape2.statutId).toBe('A_FAIRE');
+      expect(result?.etape1.nom).toContain('Création de la requête');
+      expect(result?.etape2.nom).toBe('Envoyer un accusé de réception au déclarant');
+    });
+  });
+
   describe('addProcessingEtape()', () => {
     it('should add a processing etape when requete exists', async () => {
-      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+      const mockRequete = {
         id: 'requeteId',
         commentaire: 'Test',
-        receptionDate: new Date(),
+        receptionDate: new Date('2024-01-15T10:00:00Z'),
         dematSocialId: 123,
         receptionTypeId: 'type',
         createdAt: new Date(),
         updatedAt: new Date(),
-      });
+      };
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequete);
       vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce(requeteEntite);
       vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(requeteEtape);
 
-      const result = await addProcessingEtape('requeteId', ['entiteId'], {
+      const result = await addProcessingEtape('requeteId', 'entiteId', {
         nom: requeteEtape.nom,
       });
 
@@ -155,7 +450,7 @@ describe('RequeteEtapes.service.ts', () => {
     it('should return null if requete does not exist', async () => {
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(null);
 
-      const result = await addProcessingEtape('nonExistentRequeteId', ['entiteId'], {
+      const result = await addProcessingEtape('nonExistentRequeteId', 'entiteId', {
         nom: 'Processing Etape',
       });
 
@@ -170,7 +465,7 @@ describe('RequeteEtapes.service.ts', () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([requeteEtapeWithNotesAndFiles]);
       vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
 
-      const result = await getRequeteEtapes('requeteId', ['entiteId'], { offset: 0, limit: 10 });
+      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0, limit: 10 });
 
       expect(result.data).toEqual([requeteEtapeWithNotesAndFiles]);
       expect(result.total).toBe(1);
@@ -223,7 +518,7 @@ describe('RequeteEtapes.service.ts', () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([requeteEtapeWithNotesAndFiles]);
       vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(1);
 
-      const result = await getRequeteEtapes('requeteId', ['entiteId'], { offset: 0 });
+      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0 });
 
       expect(result.data).toEqual([requeteEtapeWithNotesAndFiles]);
       expect(result.total).toBe(1);

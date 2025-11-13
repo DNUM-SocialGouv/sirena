@@ -4,18 +4,6 @@ import { envVars } from './env';
 
 const logger = createDefaultLogger();
 
-// TODO: Debug - Log minimal à retirer (sans le mot de passe)
-logger.info(
-  {
-    REDIS_HOST: envVars.REDIS_HOST ?? '(absent)',
-    REDIS_PORT: envVars.REDIS_PORT ?? '(absent)',
-    REDIS_USERNAME: envVars.REDIS_USERNAME ?? '(absent)',
-    REDIS_PASSWORD: envVars.REDIS_PASSWORD ? `(present, ${envVars.REDIS_PASSWORD.length} chars)` : '(absent)',
-    REDIS_TLS: envVars.REDIS_TLS ?? '(absent)',
-  },
-  '[Redis] init config',
-);
-
 const useTLS = envVars.REDIS_TLS === 'true';
 
 export const connection = new Redis({

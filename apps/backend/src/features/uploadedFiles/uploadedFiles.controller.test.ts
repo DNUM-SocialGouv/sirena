@@ -78,7 +78,7 @@ vi.mock('@/middlewares/userStatus.middleware', () => {
 vi.mock('@/middlewares/entites.middleware', () => {
   return {
     default: vi.fn((c: Context, next: Next) => {
-      c.set('entiteIds', ['e1', 'e2', 'e3']);
+      c.set('topEntiteId', 'e1');
       return next();
     }),
   };
@@ -143,162 +143,6 @@ describe('uploadedFiles.controller.ts', () => {
     vi.clearAllMocks();
   });
 
-  describe('GET /', () => {
-    it('should return a list of uploaded files', async () => {
-      const res = await client.index.$get({
-        query: {},
-      });
-
-      const body = await res.json();
-
-      expect(res.status).toBe(200);
-      expect(body).toEqual({
-        data: convertDatesToStrings(fakeData),
-        meta: {
-          total: 1,
-        },
-      });
-    });
-
-    it('should return a list of uploaded files with offset and limit', async () => {
-      const res = await client.index.$get({
-        query: {
-          offset: '10',
-          limit: '5',
-        },
-      });
-
-      const body = await res.json();
-
-      expect(res.status).toBe(200);
-      expect(body).toEqual({
-        data: convertDatesToStrings(fakeData),
-        meta: {
-          offset: 10,
-          limit: 5,
-          total: 1,
-        },
-      });
-    });
-
-    it('should return a 400 error if entiteIds is not set', async () => {
-      vi.mocked(entitesMiddleware).mockImplementationOnce((c: Context, next: Next) => {
-        c.set('entiteIds', null);
-        return next();
-      });
-
-      const res = await client.index.$get({
-        query: {},
-      });
-
-      const body = await res.json();
-
-      expect(res.status).toBe(400);
-      expect(body).toEqual({
-        message: 'You are not allowed to read uploaded files without entiteIds.',
-      });
-    });
-  });
-
-  describe('GET /:id', () => {
-    it('should return a 200 and the uploaded file if found', async () => {
-      const res = await client[':id'].$get({
-        param: { id: 'file1' },
-      });
-
-      const body = await res.json();
-
-      expect(res.status).toBe(200);
-      expect(body).toEqual({
-        data: convertDatesToStrings(fakeData[0]),
-      });
-    });
-
-    it('should return a 400 error if entiteIds is not set', async () => {
-      vi.mocked(entitesMiddleware).mockImplementationOnce((c: Context, next: Next) => {
-        c.set('entiteIds', null);
-        return next();
-      });
-
-      const res = await client[':id'].$get({
-        param: { id: 'file1' },
-      });
-
-      const body = await res.json();
-
-      expect(res.status).toBe(400);
-      expect(body).toEqual({
-        message: 'You are not allowed to read uploaded files without entiteIds.',
-      });
-    });
-
-    it('should return a 404 error if uploaded file is not found', async () => {
-      vi.mocked(getUploadedFileById).mockImplementationOnce(() => {
-        return Promise.resolve(null);
-      });
-
-      const res = await client[':id'].$get({
-        param: { id: 'file1' },
-      });
-
-      const body = await res.json();
-
-      expect(res.status).toBe(404);
-      expect(body).toEqual({
-        message: 'Uploaded file not found',
-      });
-    });
-  });
-
-  describe('GET /signed-url/:id', () => {
-    it('should return a 200 and the signed url if found', async () => {
-      const res = await client['signed-url'][':id'].$get({
-        param: { id: 'file1' },
-      });
-      const body = await res.json();
-
-      expect(res.status).toBe(200);
-      expect(body).toEqual({
-        data: {
-          signedUrl: signedUrl,
-        },
-      });
-    });
-
-    it('should return a 400 error if entiteIds is not set', async () => {
-      vi.mocked(entitesMiddleware).mockImplementationOnce((c: Context, next: Next) => {
-        c.set('entiteIds', null);
-        return next();
-      });
-
-      const res = await client['signed-url'][':id'].$get({
-        param: { id: 'file1' },
-      });
-      const body = await res.json();
-
-      expect(res.status).toBe(400);
-      expect(body).toEqual({
-        message: 'You are not allowed to read uploaded files without entiteIds.',
-      });
-    });
-
-    it('should return a 404 error if uploaded file is not found', async () => {
-      vi.mocked(getUploadedFileById).mockImplementationOnce(() => {
-        return Promise.resolve(null);
-      });
-
-      const res = await client['signed-url'][':id'].$get({
-        param: { id: 'file1' },
-      });
-      const body = await res.json();
-
-      expect(res.status).toBe(404);
-      expect(body).toEqual({
-        message: 'Uploaded file not found',
-      });
-    });
-  });
-
   describe('POST /', () => {
     it('should create a uploaded file', async () => {
       const res = await client.index.$post();
@@ -327,9 +171,9 @@ describe('uploadedFiles.controller.ts', () => {
       });
     });
 
-    it('should return a 400 error if entiteIds is not set', async () => {
+    it('should return a 400 error if topEntiteId is not set', async () => {
       vi.mocked(entitesMiddleware).mockImplementationOnce((c: Context, next: Next) => {
-        c.set('entiteIds', null);
+        c.set('topEntiteId', null);
         return next();
       });
 
@@ -338,7 +182,7 @@ describe('uploadedFiles.controller.ts', () => {
 
       expect(res.status).toBe(400);
       expect(body).toEqual({
-        message: 'You must have an assigned entite to create an uploaded file.',
+        message: 'You are not allowed to create uploaded files without topEntiteId.',
       });
     });
 
@@ -392,14 +236,14 @@ describe('uploadedFiles.controller.ts', () => {
 
       expect(res.status).toBe(204);
       expect(await res.text()).toBe('');
-      expect(getUploadedFileById).toHaveBeenCalledWith('file1', null);
+      expect(getUploadedFileById).toHaveBeenCalledWith('file1', ['e1']);
       expect(deleteUploadedFile).toHaveBeenCalledWith('file1');
       expect(deleteFileFromMinio).toHaveBeenCalledWith('/uploads/test.pdf');
     });
 
-    it('should return 400 if entiteIds is not set', async () => {
+    it('should return 400 if topEntiteId is not set', async () => {
       vi.mocked(entitesMiddleware).mockImplementationOnce((c: Context, next: Next) => {
-        c.set('entiteIds', null);
+        c.set('topEntiteId', null);
         return next();
       });
 
@@ -411,7 +255,7 @@ describe('uploadedFiles.controller.ts', () => {
 
       expect(res.status).toBe(400);
       expect(body).toEqual({
-        message: 'You are not allowed to delete uploaded files without entiteIds.',
+        message: 'You are not allowed to delete uploaded files without topEntiteId.',
       });
       expect(deleteUploadedFile).not.toHaveBeenCalled();
       expect(deleteFileFromMinio).not.toHaveBeenCalled();

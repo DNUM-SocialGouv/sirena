@@ -18,7 +18,6 @@ import appWithLogs from '@/helpers/factories/appWithLogs';
 import { getFileStream } from '@/libs/minio';
 import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
 import { convertDatesToStrings } from '@/tests/formatter';
-import { getUserById } from '../users/users.service';
 import RequeteEtapesController from './requetesEtapes.controller';
 
 vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
@@ -47,10 +46,6 @@ vi.mock('@/middlewares/userStatus.middleware', () => {
   };
 });
 
-vi.mock('@/features/users/users.service', () => ({
-  getUserById: vi.fn(),
-}));
-
 vi.mock('@/middlewares/auth.middleware', () => {
   return {
     default: (c: Context, next: Next) => {
@@ -75,6 +70,7 @@ vi.mock('@/middlewares/entites.middleware', () => {
   return {
     default: vi.fn((c: Context, next: Next) => {
       c.set('entiteIds', ['e1', 'e2', 'e3']);
+      c.set('topEntiteId', 'e1');
       return next();
     }),
   };
@@ -108,7 +104,7 @@ vi.mock('@/helpers/errors', async () => {
 const fakeRequeteEtape: RequeteEtape = {
   id: 'step1',
   requeteId: 'requeteId',
-  entiteId: 'entiteId',
+  entiteId: 'e1',
   nom: 'Test FAKE Step',
   statutId: 'A_FAIRE',
   createdAt: new Date(),
@@ -137,6 +133,7 @@ describe('requeteEtapes.controller.ts', () => {
     vi.clearAllMocks();
     vi.mocked(getRequeteEtapeById).mockResolvedValue(fakeRequeteEtape);
     vi.mocked(updateRequeteEtapeStatut).mockResolvedValue(fakeUpdatedRequeteEtape);
+    vi.mocked(hasAccessToRequete).mockResolvedValue(true);
   });
 
   describe('PATCH /:id/statut', () => {
@@ -189,7 +186,7 @@ describe('requeteEtapes.controller.ts', () => {
     });
 
     it('should return 403 if user has no access to requete', async () => {
-      vi.mocked(hasAccessToRequete).mockImplementationOnce(() => Promise.resolve(false));
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
 
       const res = await client[':id'].statut.$patch({
         param: { id: 'step1' },
@@ -200,7 +197,7 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to update this requete etape',
+        message: 'You are not allowed to add notes to this requete etape',
       });
       expect(updateRequeteEtapeStatut).not.toHaveBeenCalled();
     });
@@ -264,8 +261,8 @@ describe('requeteEtapes.controller.ts', () => {
       });
     });
 
-    it('should return 401 if user has no access to requete', async () => {
-      vi.mocked(hasAccessToRequete).mockImplementationOnce(() => Promise.resolve(false));
+    it('should return 403 if user has no access to requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
 
       const res = await client[':id'].nom.$patch({
         param: { id: 'step1' },
@@ -274,9 +271,9 @@ describe('requeteEtapes.controller.ts', () => {
 
       const body = await res.json();
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to update this requete etape',
+        message: 'You are not allowed to add notes to this requete etape',
       });
       expect(updateRequeteEtapeNom).not.toHaveBeenCalled();
     });
@@ -343,7 +340,8 @@ describe('requeteEtapes.controller.ts', () => {
     };
 
     it('streams the file with correct headers (inline) and body content', async () => {
-      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
+      const requeteEtapeWithE1 = { ...fakeRequeteEtape, entiteId: 'e1' };
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(requeteEtapeWithE1);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(baseFile);
@@ -363,12 +361,13 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(bodyText).toBe('hello');
 
-      expect(getUploadedFileById).toHaveBeenCalledWith('file1', null);
+      expect(getUploadedFileById).toHaveBeenCalledWith('file1', ['e1']);
       expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf');
     });
 
     it('returns 200 with empty body when file size is 0 (no streaming)', async () => {
-      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
+      const requeteEtapeWithE1 = { ...fakeRequeteEtape, entiteId: 'e1' };
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(requeteEtapeWithE1);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       const emptyFile = { ...baseFile, size: 0 };
@@ -405,8 +404,8 @@ describe('requeteEtapes.controller.ts', () => {
     });
 
     it('returns 403 when user has no access to requete', async () => {
-      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+      const requeteEtapeWithDifferentEntite = { ...fakeRequeteEtape, entiteId: 'e2' };
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(requeteEtapeWithDifferentEntite);
 
       const res = await client[':id'].file[':fileId'].$get({
         param: { id: 'step1', fileId: 'file1' },
@@ -416,15 +415,17 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to update this requete etape',
+        message: 'You are not allowed to read this file for this requete etape',
       });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
+      expect(hasAccessToRequete).not.toHaveBeenCalled();
     });
 
     it('returns 404 when file not found', async () => {
-      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
+      const requeteEtapeWithE1 = { ...fakeRequeteEtape, entiteId: 'e1' };
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(requeteEtapeWithE1);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(null);
 
@@ -441,7 +442,8 @@ describe('requeteEtapes.controller.ts', () => {
     });
 
     it('falls back to fileName when metadata.originalName is missing', async () => {
-      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
+      const requeteEtapeWithE1 = { ...fakeRequeteEtape, entiteId: 'e1' };
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(requeteEtapeWithE1);
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       const fileNoMeta = { ...baseFile, metadata: null, fileName: 'fallback.pdf' };
@@ -462,6 +464,7 @@ describe('requeteEtapes.controller.ts', () => {
   describe('DELETE /:id', () => {
     it('should delete a RequeteEtape successfully', async () => {
       vi.mocked(deleteRequeteEtape).mockResolvedValueOnce();
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
       const res = await client[':id'].$delete({
         param: { id: 'step1' },
@@ -499,12 +502,13 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(403);
       expect(body).toEqual({
-        message: 'You are not allowed to delete this requete etape',
+        message: 'You are not allowed to add notes to this requete etape',
       });
       expect(deleteRequeteEtape).not.toHaveBeenCalled();
     });
 
     it('should handle service errors gracefully', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
       vi.mocked(deleteRequeteEtape).mockRejectedValueOnce(new Error('Database error'));
 
       const res = await client[':id'].$delete({
@@ -520,22 +524,6 @@ describe('requeteEtapes.controller.ts', () => {
   });
 
   describe('GET /:id/processing-steps', () => {
-    const fakeUser = {
-      id: 'id1',
-      entiteId: 'e1',
-      sub: 'sub1',
-      email: 'email1',
-      prenom: 'John',
-      nom: 'Doe',
-      uid: 'uid1',
-      pcData: {},
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      statutId: 'STATUT_ID',
-      roleId: 'ROLE_ID',
-      role: { id: 'roleId', label: 'ROLE_ADMIN' },
-    };
-
     const requeteEtape: RequeteEtape = {
       id: 'requeteEtapeId',
       requeteId: 'requeteId',
@@ -583,9 +571,6 @@ describe('requeteEtapes.controller.ts', () => {
     };
 
     it('should return processing steps for a requete', async () => {
-      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
-
       vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [requeteEtapeWithNotesAndFiles], total: 2 });
 
       const res = await client[':id']['processing-steps'].$get({
@@ -599,42 +584,25 @@ describe('requeteEtapes.controller.ts', () => {
         meta: { total: 2 },
       });
 
-      expect(getRequeteEtapes).toHaveBeenCalledWith('1', ['e1'], {});
+      expect(getRequeteEtapes).toHaveBeenCalledWith('1', 'e1', {});
     });
 
-    it('should return 404 if user does not exist', async () => {
-      vi.mocked(getUserById).mockResolvedValueOnce(null);
+    it('should return 400 if topEntiteId is missing', async () => {
+      vi.mocked(getRequeteEtapes).mockResolvedValueOnce({ data: [], total: 0 });
 
       const res = await client[':id']['processing-steps'].$get({
         param: { id: 'nonexistent' },
       });
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json).toEqual({ message: 'User not found' });
+      expect(json).toEqual({ data: [], meta: { total: 0 } });
     });
   });
 
   describe('POST /:id/processing-steps', () => {
-    const fakeUser = {
-      id: 'id1',
-      entiteId: 'e1',
-      sub: 'sub1',
-      email: 'email1',
-      prenom: 'John',
-      nom: 'Doe',
-      uid: 'uid1',
-      pcData: {},
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      statutId: 'STATUT_ID',
-      roleId: 'ROLE_ID',
-      role: { id: 'roleId', label: 'ROLE_ADMIN' },
-    };
-
     it('should add a processing step', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
 
       const fakeStep: RequeteEtape = {
         id: 'step1',
@@ -658,25 +626,25 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(201);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeStep) });
-      expect(addProcessingEtape).toHaveBeenCalledWith('1', ['e1'], { nom: 'Step 1' });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' });
     });
 
-    it('should return 404 if user does not exist', async () => {
-      vi.mocked(getUserById).mockResolvedValueOnce(null);
+    it('should return 404 if hasAccessToRequete returns false', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+      vi.mocked(addProcessingEtape).mockResolvedValueOnce(null);
 
       const res = await client[':id']['processing-steps'].$post({
         param: { id: 'nonexistent' },
         json: { nom: 'Step 1' },
       });
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(404);
       const json = await res.json();
-      expect(json).toEqual({ message: 'User not found' });
+      expect(json).toEqual({ message: 'Requete entite not found' });
     });
 
     it('should return 404 if step is not created', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
-      vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
 
       vi.mocked(addProcessingEtape).mockResolvedValueOnce(null);
 
@@ -688,7 +656,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(404);
       const json = await res.json();
       expect(json).toEqual({ message: 'Requete entite not found' });
-      expect(addProcessingEtape).toHaveBeenCalledWith('1', ['e1'], { nom: 'Step 1' });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' });
     });
   });
 });

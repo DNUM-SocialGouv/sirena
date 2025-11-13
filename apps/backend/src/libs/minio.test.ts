@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deleteFileFromMinio, getSignedUrl, uploadFileToMinio } from './minio';
+import { deleteFileFromMinio, uploadFileToMinio } from './minio';
 
 vi.mock('@/config/env', () => ({
   envVars: {
@@ -92,18 +92,6 @@ describe('minio.ts', () => {
         },
       );
       expect(objectPath).toBe('uploads/test-uuid.pdf');
-    });
-  });
-
-  describe('getSignedUrl', () => {
-    it('should generate a signed URL with default expiry', async () => {
-      const filePath = 'uploads/test-file.pdf';
-      const expectedUrl = 'https://test-signed-url.com';
-
-      const result = await getSignedUrl(filePath);
-
-      expect(mockMinioClient.presignedUrl).toHaveBeenCalledWith('GET', 'test-bucket', filePath, 60 * 60);
-      expect(result).toBe(expectedUrl);
     });
   });
 

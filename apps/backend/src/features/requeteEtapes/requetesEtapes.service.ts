@@ -12,16 +12,64 @@ import type {
   UpdateRequeteEtapeStatutDto,
 } from './requetesEtapes.type';
 
-export const addProcessingEtape = async (
+export const createDefaultRequeteEtapes = async (
   requeteId: string,
-  entiteIds: string[] | null,
-  data: RequeteEtapeCreationDto,
+  entiteId: string,
+  receptionDate: Date,
+  tx?: Prisma.TransactionClient,
 ) => {
-  if (!entiteIds || entiteIds.length === 0) {
+  const prismaClient = tx ?? prisma;
+
+  // Ensure RequeteEntite exists
+  const requeteEntite = await prismaClient.requeteEntite.findUnique({
+    where: {
+      requeteId_entiteId: {
+        requeteId,
+        entiteId,
+      },
+    },
+  });
+
+  if (!requeteEntite) {
     return null;
   }
 
-  const [entiteId] = entiteIds;
+  const etape1 = await prismaClient.requeteEtape.create({
+    data: {
+      requeteId: requeteId,
+      entiteId: entiteId,
+      statutId: REQUETE_STATUT_TYPES.FAIT,
+      nom: `Création de la requête le ${
+        receptionDate?.toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        }) ||
+        new Date().toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
+      }`,
+    },
+  });
+
+  const etape2 = await prismaClient.requeteEtape.create({
+    data: {
+      requeteId: requeteId,
+      entiteId: entiteId,
+      statutId: REQUETE_STATUT_TYPES.A_FAIRE,
+      nom: 'Envoyer un accusé de réception au déclarant',
+    },
+  });
+
+  return { etape1, etape2 };
+};
+
+export const addProcessingEtape = async (requeteId: string, entiteId: string | null, data: RequeteEtapeCreationDto) => {
+  if (!entiteId) {
+    return null;
+  }
 
   // First check if the requete exists
   const requete = await prisma.requete.findUnique({
@@ -59,8 +107,7 @@ export const addProcessingEtape = async (
   return etape;
 };
 
-export const getRequeteEtapes = async (requeteId: string, entiteIds: string[], query: GetRequeteEtapesQuery) => {
-  const [entiteId] = entiteIds;
+export const getRequeteEtapes = async (requeteId: string, entiteId: string | null, query: GetRequeteEtapesQuery) => {
   if (!entiteId) {
     return { data: [], total: 0 };
   }

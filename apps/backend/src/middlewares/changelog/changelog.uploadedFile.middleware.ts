@@ -28,7 +28,7 @@ type UploadedFileChangelogMiddleware = {
 const uploadedFileChangelogMiddleware = ({ action }: UploadedFileChangelogMiddleware) => {
   return factoryWithChangelog.createMiddleware(async (c, next) => {
     const changedById = c.get('userId');
-    const entiteIds = c.get('entiteIds');
+    const topEntiteId = c.get('topEntiteId');
 
     let uploadedFileBefore: UploadedFile | null = null;
 
@@ -36,7 +36,7 @@ const uploadedFileChangelogMiddleware = ({ action }: UploadedFileChangelogMiddle
     if (action === 'UPDATED' || action === 'DELETED') {
       const fileId = c.req.param('id');
       if (fileId) {
-        uploadedFileBefore = await getUploadedFileById(fileId, entiteIds);
+        uploadedFileBefore = await getUploadedFileById(fileId, topEntiteId ? [topEntiteId] : null);
       }
     }
 
@@ -75,7 +75,7 @@ const uploadedFileChangelogMiddleware = ({ action }: UploadedFileChangelogMiddle
 
     // Handle CREATED action
     if (action === 'CREATED') {
-      const uploadedFileAfter = await getUploadedFileById(changelogId, entiteIds);
+      const uploadedFileAfter = await getUploadedFileById(changelogId, topEntiteId ? [topEntiteId] : null);
       if (uploadedFileAfter) {
         const afterPicked = pick(uploadedFileAfter, uploadedFileTrackedFields);
         await createUploadedFileChangelog(changelogId, action, null, afterPicked as unknown as Prisma.JsonObject);
@@ -84,7 +84,7 @@ const uploadedFileChangelogMiddleware = ({ action }: UploadedFileChangelogMiddle
 
     // Handle UPDATED action
     if (action === 'UPDATED' && uploadedFileBefore) {
-      const uploadedFileAfter = await getUploadedFileById(changelogId, entiteIds);
+      const uploadedFileAfter = await getUploadedFileById(changelogId, topEntiteId ? [topEntiteId] : null);
       if (uploadedFileAfter) {
         const beforePicked = pick(uploadedFileBefore, uploadedFileTrackedFields);
         const afterPicked = pick(uploadedFileAfter, uploadedFileTrackedFields);
