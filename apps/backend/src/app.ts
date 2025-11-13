@@ -2,6 +2,7 @@ import { csrf } from 'hono/csrf';
 import '@/libs/instrument';
 import AuthController from '@/features/auth/auth.controller';
 import EntitesController from '@/features/entites/entites.controller';
+import EsanteController from '@/features/esante/esante.controller';
 import HealthController from '@/features/health/health.controller';
 import NotesController from '@/features/notes/notes.controller';
 import ProfileController from '@/features/profile/profile.controller';
@@ -31,6 +32,7 @@ export const app = baseApp
   .route('/roles', RolesController)
   .route('/users', UsersController)
   .route('/entites', EntitesController)
+  .route('/esante', EsanteController)
   .route('/uploaded-files', UploadedFilesController)
   .route('/requetes-entite', RequetesEntiteController)
   .route('/requete-etapes', RequeteEtapesController)

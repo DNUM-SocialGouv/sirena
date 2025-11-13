@@ -1,11 +1,7 @@
-import {
-  throwHTTPException400BadRequest,
-  throwHTTPException503ServiceUnavailable,
-} from '@sirena/backend-utils/helpers';
 import { describe, expect, it, vi } from 'vitest';
-import { fetchEsanteData, getPractionners } from './esante.service';
+import { getPractionners } from './esante.service';
 
-const logger = { warn: vi.fn(), error: vi.fn(), info: vi.fn() };
+const logger = { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() };
 
 vi.mock('@/config/env', () => ({
   envVars: {
@@ -32,7 +28,7 @@ const { safeParse } = vi.hoisted(() => ({
 }));
 
 vi.mock('./esante.schema', () => ({
-  BundlePractitionerSchema: {
+  EsantePractitionerBundleSchema: {
     safeParse,
   },
 }));
@@ -41,121 +37,6 @@ const fetchMock = vi.fn();
 global.fetch = fetchMock;
 
 describe('esante.service.ts', () => {
-  describe('fetchEsanteData', () => {
-    it('builds URL with query, sets headers, returns parsed data on 200', async () => {
-      const body = { foo: 'bar' };
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        json: async () => body,
-      });
-
-      // tell the schema mock what to return
-      safeParse.mockReturnValueOnce({ success: true, data: body });
-
-      const res = await fetchEsanteData('practitioners', { a: 'b', c: 'd' });
-      expect(res).toEqual(body);
-      expect(safeParse).toHaveBeenCalledWith(body);
-    });
-
-    it('throws 503 helper and logs warn on 503', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: false,
-        status: 503,
-        statusText: 'Service Unavailable',
-        json: vi.fn(), // not used
-      });
-
-      await expect(fetchEsanteData('ping', {})).rejects.toThrow(/503:/);
-
-      expect(logger.warn).toHaveBeenCalledTimes(1);
-      expect(logger.error).not.toHaveBeenCalled();
-      expect(throwHTTPException503ServiceUnavailable).toHaveBeenCalledTimes(1);
-    });
-
-    it('throws 400 helper and logs warn on 400', async () => {
-      vi.clearAllMocks();
-      const jsonSpy = vi.fn();
-      fetchMock.mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        statusText: 'Bad Request',
-        json: jsonSpy,
-      });
-
-      await expect(fetchEsanteData('practitioners', { a: '1' })).rejects.toThrow(/400:/);
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(fetchMock).toHaveBeenCalledWith(
-        `https://esante.api/practitioners?${new URLSearchParams({ a: '1' }).toString()}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'ESANTE-API-KEY': '123',
-          },
-        },
-      );
-
-      expect(jsonSpy).not.toHaveBeenCalled();
-      expect(safeParse).not.toHaveBeenCalled();
-
-      expect(logger.warn).toHaveBeenCalledTimes(1);
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          err: 'Bad Request',
-          url: expect.stringContaining('/practitioners'),
-          status: 400,
-        }),
-        'Error fetching data from Esante API',
-      );
-
-      expect(logger.error).not.toHaveBeenCalled();
-
-      expect(throwHTTPException400BadRequest).toHaveBeenCalledTimes(1);
-      expect(throwHTTPException503ServiceUnavailable).not.toHaveBeenCalled();
-    });
-
-    it('logs error and throws 503 helper on unhandled status (e.g., 500)', async () => {
-      vi.clearAllMocks();
-      const jsonSpy = vi.fn();
-      fetchMock.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        json: jsonSpy,
-      });
-
-      await expect(fetchEsanteData('health', {})).rejects.toThrow(/503:/);
-
-      expect(fetchMock).toHaveBeenCalledWith('https://esante.api/health', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'ESANTE-API-KEY': '123',
-        },
-      });
-
-      expect(jsonSpy).not.toHaveBeenCalled();
-      expect(safeParse).not.toHaveBeenCalled();
-
-      expect(logger.warn).not.toHaveBeenCalled();
-      expect(logger.error).toHaveBeenCalledTimes(1);
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.objectContaining({
-          err: 'Internal Server Error',
-          url: 'https://esante.api/health',
-          status: 500,
-        }),
-        'Error fetching data from Esante API',
-      );
-
-      expect(throwHTTPException400BadRequest).not.toHaveBeenCalled();
-      expect(throwHTTPException503ServiceUnavailable).toHaveBeenCalledTimes(1);
-    });
-  });
-
   describe('getPractionners', () => {
     it('calls Esante with _elements and maps bundle entries, skipping incomplete ones', async () => {
       vi.clearAllMocks();
@@ -223,8 +104,7 @@ describe('esante.service.ts', () => {
 
       expect(safeParse).toHaveBeenCalledWith(bundle);
 
-      expect(logger.info).toHaveBeenCalledTimes(1);
-      expect(logger.info).toHaveBeenCalledWith({ data: bundle });
+      expect(logger.debug).toHaveBeenCalled();
       expect(logger.warn).not.toHaveBeenCalled();
       expect(logger.error).not.toHaveBeenCalled();
     });

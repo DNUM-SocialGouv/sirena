@@ -46,6 +46,8 @@ import { SelectWithChildren } from '@sirena/ui';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { FileUploadSection } from '@/components/common/FileUploadSection';
+import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
+import { PractitionerSearchField } from '@/components/common/PractitionerSearchField';
 
 interface SituationFormProps {
   mode: 'create' | 'edit';
@@ -319,16 +321,15 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
 
             {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE && (
               <div className="fr-col-12">
-                <Input
-                  label="Identité du professionnel ou numéro RPPS"
-                  nativeInputProps={{
-                    value: formData.misEnCause?.rpps || '',
-                    onChange: (e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        misEnCause: { ...prev.misEnCause, rpps: e.target.value },
-                      })),
-                  }}
+                <PractitionerSearchField
+                  value={formData.misEnCause?.rpps || ''}
+                  onChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      misEnCause: { ...prev.misEnCause, rpps: value },
+                    }))
+                  }
+                  disabled={isSaving}
                 />
               </div>
             )}
@@ -590,16 +591,15 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
 
             {lieuType === LIEU_TYPE.ETABLISSEMENT_SANTE && (
               <div className="fr-col-12">
-                <Input
-                  label="Nom de l'établissement ou code FINESS"
-                  nativeInputProps={{
-                    value: formData.lieuDeSurvenue?.finess || '',
-                    onChange: (e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: e.target.value },
-                      })),
-                  }}
+                <OrganizationSearchField
+                  value={formData.lieuDeSurvenue?.finess || ''}
+                  onChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: value },
+                    }))
+                  }
+                  disabled={isSaving}
                 />
               </div>
             )}
@@ -614,16 +614,16 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
               ).includes(lieuType) && (
                 <>
                   <div className="fr-col-12">
-                    <Input
+                    <OrganizationSearchField
+                      value={formData.lieuDeSurvenue?.finess || ''}
+                      onChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: value },
+                        }))
+                      }
                       label="Numéro FINESS"
-                      nativeInputProps={{
-                        value: formData.lieuDeSurvenue?.finess || '',
-                        onChange: (e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: e.target.value },
-                          })),
-                      }}
+                      disabled={isSaving}
                     />
                   </div>
                   <div className="fr-col-12">
