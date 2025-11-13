@@ -113,7 +113,7 @@ export const Details = ({ requestId }: DetailsProps) => {
                 {situations.map((situation) => (
                   <SituationSection
                     key={situation.id}
-                    id={situationSectionId}
+                    id={`situation-${situation.id}`}
                     requestId={requestId}
                     situation={situation}
                     onEdit={handleEditSituation}
