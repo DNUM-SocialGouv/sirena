@@ -132,7 +132,17 @@ export const createTestError = (message = 'Test error'): Error => {
   return new Error(message);
 };
 
-export const setupSentryMocks = () => {
+export const setupSentryMocks = (): {
+  mockScope: ReturnType<typeof createMockSentryScope>;
+  mockSpan: ReturnType<typeof createMockSentrySpan>;
+  sentryMocks: {
+    getCurrentScope: ReturnType<typeof vi.fn>;
+    startSpan: ReturnType<typeof vi.fn>;
+    withScope: ReturnType<typeof vi.fn>;
+    captureException: ReturnType<typeof vi.fn>;
+    captureMessage: ReturnType<typeof vi.fn>;
+  };
+} => {
   const mockScope = createMockSentryScope();
   const mockSpan = createMockSentrySpan();
 
@@ -151,7 +161,12 @@ export const setupSentryMocks = () => {
   return { mockScope, mockSpan, sentryMocks };
 };
 
-export const setupMiddlewareHelperMocks = (requestContext?: Partial<RequestContext>) => {
+export const setupMiddlewareHelperMocks = (
+  requestContext?: Partial<RequestContext>,
+): {
+  helperMocks: Record<string, ReturnType<typeof vi.fn> | string>;
+  testContext: RequestContext;
+} => {
   const testContext = createTestRequestContext(requestContext);
 
   const middlewareHelpers = {

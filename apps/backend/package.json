@@ -52,6 +52,7 @@
     "@sirena/backend-utils": "workspace:*",
     "@sirena/common": "workspace:*",
     "bullmq": "^5.61.2",
+    "fhir": "^4.12.0",
     "file-type": "^21.0.0",
     "graffle": "8.0.0-next.173",
     "graphql": "^16.11.0",

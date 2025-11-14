@@ -1,0 +1,20 @@
+.itemContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.itemName {
+  font-size: 1rem;
+  color: var(--text-default-grey);
+}
+
+.prefix {
+  color: var(--text-mention-grey);
+  font-weight: normal;
+}
+
+.itemRpps {
+  font-size: 0.875rem;
+  color: var(--text-mention-grey);
+}

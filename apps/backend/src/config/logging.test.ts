@@ -76,6 +76,9 @@ describe('logging configuration', () => {
       SARBACANE_API_URL: 'https://api.sarbacane.com/sendkit',
       SARBACANE_API_KEY: 'test-api-key',
 
+      ANNUAIRE_SANTE_API_KEY: 'test-annuaire-sante-api-key',
+      ANNUAIRE_SANTE_API_URL: 'https://api.annuairesante.test',
+
       REDIS_HOST: 'localhost',
       REDIS_PORT: '6379',
       REDIS_TLS: 'false',

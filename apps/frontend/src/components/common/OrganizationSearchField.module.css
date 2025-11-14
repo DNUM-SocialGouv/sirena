@@ -1,0 +1,26 @@
+.itemContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.itemName {
+  font-size: 1rem;
+  color: var(--text-default-grey);
+}
+
+.itemDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.875rem;
+  color: var(--text-mention-grey);
+}
+
+.itemIdentifier {
+  color: var(--text-mention-grey);
+}
+
+.itemAddress {
+  color: var(--text-mention-grey);
+}
