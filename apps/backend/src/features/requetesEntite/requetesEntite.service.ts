@@ -85,6 +85,11 @@ const SITUATION_INCLUDE_FULL = {
       etablissementReponse: true,
     },
   },
+  situationEntites: {
+    include: {
+      entite: true,
+    },
+  },
 };
 
 // TODO handle entiteIds
@@ -774,11 +779,21 @@ const updateFaitRelations = async (
   }
 };
 
+const captureSituationState = async (tx: Prisma.TransactionClient, situationId: string) => {
+  return tx.situation.findUnique({
+    where: { id: situationId },
+    include: SITUATION_INCLUDE_FULL,
+  });
+};
+
 const updateExistingSituation = async (
   tx: Prisma.TransactionClient,
   existingSituation: { id: string; faits: unknown[] },
   situationData: SituationInput,
+  changedById?: string,
 ) => {
+  const before = changedById ? await captureSituationState(tx, existingSituation.id) : null;
+
   await tx.situation.update({
     where: { id: existingSituation.id },
     data: {
@@ -797,12 +812,25 @@ const updateExistingSituation = async (
       await tx.fait.create({ data: faitCreateData });
     }
   }
+
+  if (changedById) {
+    const after = await captureSituationState(tx, existingSituation.id);
+    await createChangeLog({
+      entity: 'Situation',
+      entityId: existingSituation.id,
+      action: ChangeLogAction.UPDATED,
+      before: JSON.parse(JSON.stringify(before)) as Prisma.JsonObject,
+      after: JSON.parse(JSON.stringify(after)) as Prisma.JsonObject,
+      changedById,
+    });
+  }
 };
 
 const createNewSituation = async (
   tx: Prisma.TransactionClient,
   requeteId: string,
   situationData: SituationInput,
+  changedById?: string,
 ): Promise<{ id: string }> => {
   const situationCreateData = mapSituationToPrismaCreate(situationData);
   const createdSituation = await tx.situation.create({
@@ -819,10 +847,27 @@ const createNewSituation = async (
     }
   }
 
+  if (changedById) {
+    const after = await captureSituationState(tx, createdSituation.id);
+    await createChangeLog({
+      entity: 'Situation',
+      entityId: createdSituation.id,
+      action: ChangeLogAction.CREATED,
+      before: null,
+      after: JSON.parse(JSON.stringify(after)) as Prisma.JsonObject,
+      changedById,
+    });
+  }
+
   return createdSituation;
 };
 
-export const createRequeteSituation = async (requeteId: string, situationData: SituationInput, entiteId: string) => {
+export const createRequeteSituation = async (
+  requeteId: string,
+  situationData: SituationInput,
+  entiteId: string,
+  changedById?: string,
+) => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
   });
@@ -834,7 +879,7 @@ export const createRequeteSituation = async (requeteId: string, situationData: S
   let createdSituationId: string | null = null;
 
   const result = await prisma.$transaction(async (tx) => {
-    const newSituation = await createNewSituation(tx, requeteId, situationData);
+    const newSituation = await createNewSituation(tx, requeteId, situationData, changedById);
     createdSituationId = newSituation.id;
 
     return tx.requete.findUnique({
@@ -864,6 +909,7 @@ export const updateRequeteSituation = async (
   situationId: string,
   situationData: SituationInput,
   entiteId: string,
+  changedById?: string,
 ) => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
@@ -879,7 +925,7 @@ export const updateRequeteSituation = async (
     if (!existingSituation) {
       throw new Error('Situation not found');
     }
-    await updateExistingSituation(tx, existingSituation, situationData);
+    await updateExistingSituation(tx, existingSituation, situationData, changedById);
 
     return tx.requete.findUnique({
       where: { id: requeteId },
