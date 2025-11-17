@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - chore/deploy
+      - feat/helmchart
 
 jobs:
   build-docker:
@@ -50,4 +51,5 @@ jobs:
         with:
           environment: test
           version: ${{ needs.build-docker.outputs.SHORT_SHA }}
-          gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }} 
+          gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }}
+          helm-repo-pat: ${{ secrets.HELM_REPO_PAT }}

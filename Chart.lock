@@ -1,0 +1,6 @@
+dependencies:
+- name: SDPSN-devops-charts
+  repository: https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable
+  version: v1.1.0
+digest: sha256:547359ed05669d10586838ac5aebc4bfe6392aa1c7fb04a425f3ecc7a8b080e3
+generated: "2025-11-20T10:09:20.321089+01:00"

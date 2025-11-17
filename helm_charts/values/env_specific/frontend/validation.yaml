@@ -1,0 +1,7 @@
+---
+SDPSN-devops-charts:
+  ingress:
+    host: sirena.validation.dev.atlas.fabrique.social.gouv.fr
+    tls:
+      hosts:
+        - sirena.validation.dev.atlas.fabrique.social.gouv.fr

@@ -1,0 +1,15 @@
+---
+redis_unmanaged: true
+
+externalSecret:
+  redis:
+    enable: false
+  database:
+    databaseName: sirena-validation
+
+SDPSN-devops-charts:
+  externalSecret:
+    redis:
+      clusterName: sirena-validation-redis
+    bucket:
+      bucketName: sirena-validation-s3

@@ -55,6 +55,7 @@ jobs:
           environment: integration
           version: ${{ needs.build-docker.outputs.SHORT_SHA }}
           gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }}
+          helm-repo-pat: ${{ secrets.HELM_REPO_PAT }}
 
   e2e-tests:
     name: End-to-End Tests

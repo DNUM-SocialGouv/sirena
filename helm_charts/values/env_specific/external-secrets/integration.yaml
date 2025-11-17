@@ -1,0 +1,15 @@
+---
+redis_unmanaged: true
+
+externalSecret:
+  redis:
+    enable: false
+  database:
+    databaseName: sirena-integration
+
+SDPSN-devops-charts:
+  externalSecret:
+    redis:
+      clusterName: sirena-integration-redis
+    bucket:
+      bucketName: sirena-integration-s3

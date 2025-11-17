@@ -64,3 +64,4 @@ jobs:
           environment: ${{ github.event.inputs.environment }}
           version: ${{ needs.build-docker.outputs.VERSION }}
           gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }}
+          helm-repo-pat: ${{ secrets.HELM_REPO_PAT }}

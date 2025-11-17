@@ -1,0 +1,11 @@
+---
+externalSecret:
+  database:
+    databaseName: sirena-preproduction
+
+SDPSN-devops-charts:
+  externalSecret:
+    redis:
+      clusterName: sirena-preproduction-redis
+    bucket:
+      bucketName: sirena-preproduction-s3

@@ -1,0 +1,8 @@
+---
+SDPSN-devops-charts:
+  ingress:
+    host: sirena-sante.social.gouv.fr
+    tls:
+      hosts:
+        - sirena-sante.social.gouv.fr
+        - sirena-sante.social.prod.atlas.fabrique.social.gouv.fr

@@ -15,34 +15,27 @@ inputs:
   gitops-repo-key:
     description: "SSH key for GitOps repository access"
     required: true
+  helm-repo-pat:
+    description: "PAT pour télécharger la chart helm"
+    required: true
 
 runs:
   using: "composite"
   steps:
-    - name: Audit dependencies
-      shell: bash
-      run: |
-        cd deploy
-        npm audit --audit-level=moderate
-    - name: Install dependencies
-      shell: bash
-      run: |
-        cd deploy
-        npm ci
+    - uses: azure/setup-helm@v4.3.0
+      with:
+         version: v3.19.0
+      id: install
 
-    - name: Check format and lint
+    - name: render manifests using helm chart
       shell: bash
       run: |
-        cd deploy
-        npm run lint
-
-    - name: Render manifests
-      shell: bash
-      run: |
-        cd deploy
-        export IMAGE_TAG=${{ inputs.version }}
-        export ENVIRONNEMENT=${{ inputs.environment }}
-        npm run build
+        cd helm_charts
+        helm repo add SDPSN-devops-charts https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable --username oauth2 --password ${{ inputs.helm-repo-pat }}
+        helm dependency update
+        helm dependency build
+        echo "${{ inputs.environment }} ${{ inputs.version }}"
+        ./generate_manifests.sh ${{ inputs.environment }} ${{ inputs.version }}
 
     - name: Checkout GitOps repository
       uses: actions/checkout@v5
@@ -50,12 +43,16 @@ runs:
         repository: ${{ inputs.gitops-repo }}
         path: gitops-repo
         ssh-key: ${{ inputs.gitops-repo-key }}
-
+#
     - name: Deploy to GitOps
       shell: bash
       run: |
-        rm -r gitops-repo/deployment-targets/${{ inputs.environment }}
-        cp -r deploy/dist gitops-repo/deployment-targets/${{ inputs.environment }}
+        rm -r \
+        gitops-repo/deployment-targets/${{ inputs.environment }}/backend \
+        gitops-repo/deployment-targets/${{ inputs.environment }}/frontend \
+        gitops-repo/deployment-targets/${{ inputs.environment }}/external-secrets \
+        gitops-repo/deployment-targets/${{ inputs.environment }}/worker
+        mv helm_charts/generated_manifests/* gitops-repo/deployment-targets/${{ inputs.environment }}/
 
         git config --global user.name "github-actions[bot]"
         # mail standard bot github Actions
