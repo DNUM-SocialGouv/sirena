@@ -1,0 +1,153 @@
+---
+name: backend
+
+deployment:
+  image: ghcr.io/dnum-socialgouv/sirena:5c85c71-backend
+  containerPort: 4000
+  imagePullSecretsName: registry-secret
+
+  readinessProbe:
+    enable: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 3
+    path: /health
+    port: 4000
+  livenessProbe:
+    enable: true
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    failureThreshold: 3
+    path: /version
+    port: 4000
+
+  resources:
+    limits:
+      cpu: 250m
+      memory: 500Mi
+    requests:
+      cpu: 250m
+      memory: 500Mi
+
+  variables:
+    HOST: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr
+    LOG_FORMAT: json
+    PC_DOMAIN: https://auth.agentconnect.gouv.fr/api/v2
+    PC_REDIRECT_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr/api/auth/callback
+    PC_ID_TOKEN_SIGNED_RESPONSE_ALG: RS256
+    PC_USERINFO_SIGNED_RESPONSE_ALG: RS256
+    AUTH_TOKEN_NAME: auth_token
+    REFRESH_TOKEN_NAME: refresh_token
+    IS_LOGGED_TOKEN_NAME: is_logged_token
+    AUTH_TOKEN_EXPIRATION: "600"
+    REFRESH_TOKEN_EXPIRATION: "86400"
+    FRONTEND_REDIRECT_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr/home
+    FRONTEND_REDIRECT_LOGIN_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr/login
+    FRONTEND_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr
+    DEMAT_SOCIAL_API_URL: "https://demat.social.gouv.fr/api/v2/graphql "
+    DEMAT_SOCIAL_API_DIRECTORY: "798"
+    DEMAT_SOCIAL_INSTRUCTEUR_ID: "Instructeur-1166"
+    SENTRY_ENABLED: "true"
+    SENTRY_ENVIRONMENT: preproduction
+    SARBACANE_API_URL: https://api.sarbacane.com/sendkit
+    S3_BUCKET_ENDPOINT: s3.gra.io.cloud.ovh.net
+    S3_BUCKET_ROOT_DIR: ""
+    S3_BUCKET_PORT: "443"
+    CRON_DEMAT_SOCIAL: "3600"
+    REDIS_TLS: "true"
+  variables_from_secret:
+    - name: PG_SIRENA_DB
+      valueFrom:
+        secretKeyRef:
+          key: dbname
+          name: db
+    - name: PG_SIRENA_USER
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: db
+    - name: PG_SIRENA_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: db
+    - name: PG_PORT
+      valueFrom:
+        secretKeyRef:
+          key: port
+          name: db
+    - name: PG_HOST
+      valueFrom:
+        secretKeyRef:
+          key: host
+          name: db
+    - name: PG_URL
+      valueFrom:
+        secretKeyRef:
+          key: url
+          name: db
+    - name: REDIS_HOST
+      valueFrom:
+        secretKeyRef:
+          key: host
+          name: redis
+    - name: REDIS_USERNAME
+      valueFrom:
+        secretKeyRef:
+          key: username
+          name: redis
+    - name: REDIS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: redis
+    - name: REDIS_PORT
+      valueFrom:
+        secretKeyRef:
+          key: port
+          name: redis
+    - name: REDIS_PORT
+      valueFrom:
+        secretKeyRef:
+          key: port
+          name: redis
+    - name: S3_BUCKET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          key: accessKey
+          name: buckets
+    - name: S3_BUCKET_NAME
+      valueFrom:
+        secretKeyRef:
+          key: name
+          name: buckets
+    - name: S3_BUCKET_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          key: secretKey
+          name: buckets
+
+
+ingress:
+  enable: true
+  ingress_list:
+    - name: backend
+      ingressClassName: public
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-http01
+        nginx.ingress.kubernetes.io/proxy-body-size: 60m
+        nginx.ingress.kubernetes.io/rewrite-target: /$1
+        nginx.ingress.kubernetes.io/use-regex: "true"
+      rules:
+        - host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
+          paths:
+            - path: /api/(.*)
+              serviceName: backend
+              servicePort: 80
+      tls:
+        hosts:
+          - sirena.formation.prod.atlas.fabrique.social.gouv.fr
+        secretName: frontend-tls
+
+service:
+  targetPort: 4000
