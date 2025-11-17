@@ -372,9 +372,20 @@ const app = factoryWithLogs
       });
     }
 
+    const fileIds = situationData.fait?.fileIds || [];
+    if (fileIds.length > 0) {
+      const isAllowed = await isUserOwner(userId, fileIds);
+
+      if (!isAllowed) {
+        throwHTTPException403Forbidden('You are not allowed to add these files to the situation', {
+          res: c.res,
+        });
+      }
+    }
+
     const updatedRequete = await createRequeteSituation(id, situationData, topEntiteId, userId);
 
-    logger.info({ requeteId: id, userId }, 'Situation created successfully');
+    logger.info({ requeteId: id, userId, fileCount: fileIds.length }, 'Situation created successfully');
 
     return c.json({ data: updatedRequete });
   })
@@ -399,9 +410,20 @@ const app = factoryWithLogs
       });
     }
 
+    const fileIds = situationData.fait?.fileIds || [];
+    if (fileIds.length > 0) {
+      const isAllowed = await isUserOwner(userId, fileIds);
+
+      if (!isAllowed) {
+        throwHTTPException403Forbidden('You are not allowed to add these files to the situation', {
+          res: c.res,
+        });
+      }
+    }
+
     const updatedRequete = await updateRequeteSituation(id, situationId, situationData, topEntiteId, userId);
 
-    logger.info({ requeteId: id, situationId, userId }, 'Situation updated successfully');
+    logger.info({ requeteId: id, situationId, userId, fileCount: fileIds.length }, 'Situation updated successfully');
 
     return c.json({ data: updatedRequete });
   })

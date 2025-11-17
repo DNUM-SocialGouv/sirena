@@ -109,14 +109,15 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
     setIsSaving(true);
     try {
       const hasAnyData =
-        Object.keys(formData).length > 0 &&
-        Object.values(formData).some((section) => {
-          if (!section || typeof section !== 'object') return false;
-          return Object.values(section).some((value) => {
-            if (Array.isArray(value)) return value.length > 0;
-            return value !== undefined && value !== '' && value !== false;
-          });
-        });
+        faitFiles.length > 0 ||
+        (Object.keys(formData).length > 0 &&
+          Object.values(formData).some((section) => {
+            if (!section || typeof section !== 'object') return false;
+            return Object.values(section).some((value) => {
+              if (Array.isArray(value)) return value.length > 0;
+              return value !== undefined && value !== '' && value !== false;
+            });
+          }));
 
       const shouldCreateRequest = mode === 'create' && !requestId && hasAnyData;
       await onSave(formData, shouldCreateRequest, faitFiles);

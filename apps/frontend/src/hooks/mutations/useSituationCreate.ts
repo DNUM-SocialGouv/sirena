@@ -26,7 +26,11 @@ export const useSituationCreate = () => {
 
       const enrichedData: SituationData = {
         ...data,
-        fait: data.fait ? { ...data.fait, fileIds: faitFileIds } : undefined,
+        fait: data.fait
+          ? { ...data.fait, fileIds: faitFileIds }
+          : faitFileIds.length > 0
+            ? { fileIds: faitFileIds }
+            : undefined,
       };
 
       const updateResponse = await client['requetes-entite'][':id'].situation.$post({
