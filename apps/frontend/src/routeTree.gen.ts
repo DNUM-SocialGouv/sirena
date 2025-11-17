@@ -23,6 +23,7 @@ import { Route as AuthAdminUsersAllRouteImport } from './routes/_auth/admin/user
 import { Route as AuthAdminUserUserIdRouteImport } from './routes/_auth/admin/user/$userId'
 import { Route as AuthUserRequestCreateRouteImport } from './routes/_auth/_user/request.create'
 import { Route as AuthUserRequestRequestIdRouteImport } from './routes/_auth/_user/request.$requestId'
+import { Route as AuthUserRequestCreateIndexRouteImport } from './routes/_auth/_user/request.create.index'
 import { Route as AuthUserRequestRequestIdIndexRouteImport } from './routes/_auth/_user/request.$requestId.index'
 import { Route as AuthUserRequestCreateSituationRouteImport } from './routes/_auth/_user/request.create.situation'
 import { Route as AuthUserRequestCreatePersonneConcerneeRouteImport } from './routes/_auth/_user/request.create.personne-concernee'
@@ -102,6 +103,12 @@ const AuthUserRequestRequestIdRoute =
     id: '/request/$requestId',
     path: '/request/$requestId',
     getParentRoute: () => AuthUserRouteRoute,
+  } as any)
+const AuthUserRequestCreateIndexRoute =
+  AuthUserRequestCreateIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthUserRequestCreateRoute,
   } as any)
 const AuthUserRequestRequestIdIndexRoute =
   AuthUserRequestRequestIdIndexRouteImport.update({
@@ -185,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/request/create/situation': typeof AuthUserRequestCreateSituationRoute
   '/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
+  '/request/create/': typeof AuthUserRequestCreateIndexRoute
   '/request/$requestId/situation/$situationId': typeof AuthUserRequestRequestIdSituationSituationIdRoute
   '/request/$requestId/situation/': typeof AuthUserRequestRequestIdSituationIndexRoute
 }
@@ -195,7 +203,6 @@ export interface FileRoutesByTo {
   '/inactive': typeof AuthInactiveRouteRoute
   '/home': typeof AuthUserHomeRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
-  '/request/create': typeof AuthUserRequestCreateRouteWithChildren
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
   '/admin/users': typeof AuthAdminUsersIndexRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/request/create/situation': typeof AuthUserRequestCreateSituationRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdIndexRoute
+  '/request/create': typeof AuthUserRequestCreateIndexRoute
   '/request/$requestId/situation/$situationId': typeof AuthUserRequestRequestIdSituationSituationIdRoute
   '/request/$requestId/situation': typeof AuthUserRequestRequestIdSituationIndexRoute
 }
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/_auth/_user/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/_auth/_user/request/create/situation': typeof AuthUserRequestCreateSituationRoute
   '/_auth/_user/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
+  '/_auth/_user/request/create/': typeof AuthUserRequestCreateIndexRoute
   '/_auth/_user/request/$requestId/situation/$situationId': typeof AuthUserRequestRequestIdSituationSituationIdRoute
   '/_auth/_user/request/$requestId/situation/': typeof AuthUserRequestRequestIdSituationIndexRoute
 }
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/request/create/personne-concernee'
     | '/request/create/situation'
     | '/request/$requestId/'
+    | '/request/create/'
     | '/request/$requestId/situation/$situationId'
     | '/request/$requestId/situation/'
   fileRoutesByTo: FileRoutesByTo
@@ -269,7 +279,6 @@ export interface FileRouteTypes {
     | '/inactive'
     | '/home'
     | '/admin/entities'
-    | '/request/create'
     | '/admin/user/$userId'
     | '/admin/users/all'
     | '/admin/users'
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/request/create/personne-concernee'
     | '/request/create/situation'
     | '/request/$requestId'
+    | '/request/create'
     | '/request/$requestId/situation/$situationId'
     | '/request/$requestId/situation'
   id:
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/_auth/_user/request/create/personne-concernee'
     | '/_auth/_user/request/create/situation'
     | '/_auth/_user/request/$requestId/'
+    | '/_auth/_user/request/create/'
     | '/_auth/_user/request/$requestId/situation/$situationId'
     | '/_auth/_user/request/$requestId/situation/'
   fileRoutesById: FileRoutesById
@@ -415,6 +426,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/request/$requestId'
       preLoaderRoute: typeof AuthUserRequestRequestIdRouteImport
       parentRoute: typeof AuthUserRouteRoute
+    }
+    '/_auth/_user/request/create/': {
+      id: '/_auth/_user/request/create/'
+      path: '/'
+      fullPath: '/request/create/'
+      preLoaderRoute: typeof AuthUserRequestCreateIndexRouteImport
+      parentRoute: typeof AuthUserRequestCreateRoute
     }
     '/_auth/_user/request/$requestId/': {
       id: '/_auth/_user/request/$requestId/'
@@ -537,6 +555,7 @@ interface AuthUserRequestCreateRouteChildren {
   AuthUserRequestCreateDeclarantRoute: typeof AuthUserRequestCreateDeclarantRoute
   AuthUserRequestCreatePersonneConcerneeRoute: typeof AuthUserRequestCreatePersonneConcerneeRoute
   AuthUserRequestCreateSituationRoute: typeof AuthUserRequestCreateSituationRoute
+  AuthUserRequestCreateIndexRoute: typeof AuthUserRequestCreateIndexRoute
 }
 
 const AuthUserRequestCreateRouteChildren: AuthUserRequestCreateRouteChildren = {
@@ -544,6 +563,7 @@ const AuthUserRequestCreateRouteChildren: AuthUserRequestCreateRouteChildren = {
   AuthUserRequestCreatePersonneConcerneeRoute:
     AuthUserRequestCreatePersonneConcerneeRoute,
   AuthUserRequestCreateSituationRoute: AuthUserRequestCreateSituationRoute,
+  AuthUserRequestCreateIndexRoute: AuthUserRequestCreateIndexRoute,
 }
 
 const AuthUserRequestCreateRouteWithChildren =
