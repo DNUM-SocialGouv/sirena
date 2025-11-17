@@ -54,7 +54,7 @@
     "bullmq": "^5.61.2",
     "fhir": "^4.12.0",
     "file-type": "^21.0.0",
-    "graffle": "8.0.0-next.173",
+    "graffle": "8.0.0-next.219",
     "graphql": "^16.11.0",
     "handlebars": "^4.7.8",
     "hono": "catalog:",
