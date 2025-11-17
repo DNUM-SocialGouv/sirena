@@ -372,7 +372,7 @@ const app = factoryWithLogs
       });
     }
 
-    const updatedRequete = await createRequeteSituation(id, situationData, topEntiteId);
+    const updatedRequete = await createRequeteSituation(id, situationData, topEntiteId, userId);
 
     logger.info({ requeteId: id, userId }, 'Situation created successfully');
 
@@ -399,7 +399,7 @@ const app = factoryWithLogs
       });
     }
 
-    const updatedRequete = await updateRequeteSituation(id, situationId, situationData, topEntiteId);
+    const updatedRequete = await updateRequeteSituation(id, situationId, situationData, topEntiteId, userId);
 
     logger.info({ requeteId: id, situationId, userId }, 'Situation updated successfully');
 
