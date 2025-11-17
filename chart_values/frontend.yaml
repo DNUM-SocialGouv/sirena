@@ -4,6 +4,7 @@ name: frontend
 deployment:
   image: ghcr.io/dnum-socialgouv/sirena:5c85c71-frontend
   imagePullSecretsName: registry-secret
+  replicas: 2
 
   readinessProbe:
     enable: false
