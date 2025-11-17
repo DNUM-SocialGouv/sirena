@@ -4,6 +4,7 @@ name: backend
 deployment:
   image: ghcr.io/dnum-socialgouv/sirena:5c85c71-backend
   containerPort: 4000
+  replicas: 2
   imagePullSecretsName: registry-secret
 
   readinessProbe:
@@ -55,6 +56,7 @@ deployment:
     S3_BUCKET_PORT: "443"
     CRON_DEMAT_SOCIAL: "3600"
     REDIS_TLS: "true"
+
   variables_from_secret:
     - name: PG_SIRENA_DB
       valueFrom:
@@ -126,7 +128,9 @@ deployment:
         secretKeyRef:
           key: secretKey
           name: buckets
-
+  envFrom:
+    - secretRef:
+        name: backend
 
 ingress:
   enable: true

@@ -4,6 +4,7 @@ name: worker
 deployment:
   image: ghcr.io/dnum-socialgouv/sirena:5c85c71-worker
   imagePullSecretsName: registry-secret
+  replicas: 2
 
   readinessProbe:
     enable: false
@@ -115,5 +116,8 @@ deployment:
         secretKeyRef:
           key: secretKey
           name: buckets
+  envFrom:
+    - secretRef:
+        name: backend
 service:
   enable: false
