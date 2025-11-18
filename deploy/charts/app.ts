@@ -116,7 +116,7 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
     { name: 'DEMAT_SOCIAL_INSTRUCTEUR_ID', value: 'Instructeur-1166' },
     {
       name: 'ANNUAIRE_SANTE_API_URL',
-      value: 'https://annuaire.sante.fr/api/v1',
+      value: 'https://gateway.api.esante.gouv.fr/fhir/v2',
     },
   ];
 }
