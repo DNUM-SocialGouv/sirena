@@ -48,6 +48,7 @@ import { useEffect, useState } from 'react';
 import { FileUploadSection } from '@/components/common/FileUploadSection';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
 import { PractitionerSearchField } from '@/components/common/PractitionerSearchField';
+import { hasSituationContent } from '@/utils/situationHelpers';
 
 interface SituationFormProps {
   mode: 'create' | 'edit';
@@ -108,18 +109,12 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const hasAnyData =
-        faitFiles.length > 0 ||
-        (Object.keys(formData).length > 0 &&
-          Object.values(formData).some((section) => {
-            if (!section || typeof section !== 'object') return false;
-            return Object.values(section).some((value) => {
-              if (Array.isArray(value)) return value.length > 0;
-              return value !== undefined && value !== '' && value !== false;
-            });
-          }));
+      if (!hasSituationContent(formData, faitFiles)) {
+        handleCancel();
+        return;
+      }
 
-      const shouldCreateRequest = mode === 'create' && !requestId && hasAnyData;
+      const shouldCreateRequest = mode === 'create' && !requestId;
       await onSave(formData, shouldCreateRequest, faitFiles);
     } finally {
       setIsSaving(false);

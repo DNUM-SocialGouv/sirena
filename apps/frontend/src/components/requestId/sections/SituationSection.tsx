@@ -6,6 +6,7 @@ import { FileList } from '@/components/common/FileList';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { formatFileFromServer } from '@/utils/fileHelpers';
+import { hasSituationContent } from '@/utils/situationHelpers';
 import { SectionTitle } from './helpers';
 
 const groupMotifsByParent = (
@@ -54,13 +55,7 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
   const hasMisEnCause = situation?.misEnCause?.misEnCauseType?.label;
   const hasFaits = fait?.maltraitanceTypes && fait.maltraitanceTypes.length > 0;
 
-  const hasLieuDetails =
-    situation?.lieuDeSurvenue?.lieuType?.label ||
-    situation?.lieuDeSurvenue?.finess ||
-    situation?.lieuDeSurvenue?.adresse?.codePostal;
-  const hasMisEnCauseDetails = situation?.misEnCause?.commentaire || situation?.misEnCause?.rpps;
-
-  const isFulfilled = hasLieu || hasMisEnCause || hasFaits || hasLieuDetails || hasMisEnCauseDetails;
+  const isFulfilled = hasSituationContent(situation);
 
   const renderSummary = () => {
     if (!hasLieu && !hasMisEnCause && !hasFaits) return null;
