@@ -859,7 +859,7 @@ const createNewSituation = async (
     });
   }
 
-  return createdSituation;
+  return { id: createdSituation.id };
 };
 
 export const createRequeteSituation = async (
@@ -878,7 +878,7 @@ export const createRequeteSituation = async (
 
   let createdSituationId: string | null = null;
 
-  const result = await prisma.$transaction(async (tx) => {
+  const _result = await prisma.$transaction(async (tx) => {
     const newSituation = await createNewSituation(tx, requeteId, situationData, changedById);
     createdSituationId = newSituation.id;
 
@@ -888,14 +888,8 @@ export const createRequeteSituation = async (
     });
   });
 
-  if (result?.situations && createdSituationId) {
-    const situation = result.situations.find((s) => s.id === createdSituationId);
-
-    if (situation) {
-      if (situationData.fait?.fileIds?.length) {
-        await setFaitFiles(situation.id, situationData.fait.fileIds, entiteId);
-      }
-    }
+  if (createdSituationId && situationData.fait?.fileIds?.length) {
+    await setFaitFiles(createdSituationId, situationData.fait.fileIds, entiteId);
   }
 
   return prisma.requete.findUnique({
@@ -920,7 +914,7 @@ export const updateRequeteSituation = async (
     throw new Error('Requete not found');
   }
 
-  const result = await prisma.$transaction(async (tx) => {
+  const _result = await prisma.$transaction(async (tx) => {
     const existingSituation = requete.situations.find((s) => s.id === situationId);
     if (!existingSituation) {
       throw new Error('Situation not found');
@@ -933,14 +927,8 @@ export const updateRequeteSituation = async (
     });
   });
 
-  if (result?.situations) {
-    const situation = result.situations.find((s) => s.id === situationId);
-
-    if (situation) {
-      if (situationData.fait?.fileIds?.length) {
-        await setFaitFiles(situation.id, situationData.fait.fileIds, entiteId);
-      }
-    }
+  if (situationData.fait?.fileIds?.length) {
+    await setFaitFiles(situationId, situationData.fait.fileIds, entiteId);
   }
 
   return prisma.requete.findUnique({
