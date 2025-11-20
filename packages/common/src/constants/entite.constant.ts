@@ -3,3 +3,5 @@ export const entiteTypes = {
   DDETS: 'DDETS',
   CD: 'CD',
 } as const;
+
+export type EntiteType = keyof typeof entiteTypes;

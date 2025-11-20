@@ -1,6 +1,11 @@
 import { openApiProtectedRoute, openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
 import { RequeteSchema } from '@/libs/zod';
-import { CloseRequeteResponseSchema, GetRequetesEntiteResponseSchema } from './requetesEntite.schema';
+import {
+  CloseRequeteResponseSchema,
+  GetOtherEntitesAffectedResponseSchema,
+  GetRequeteEntiteResponseSchema,
+  GetRequetesEntiteResponseSchema,
+} from './requetesEntite.schema';
 
 export const getRequetesEntiteRoute = openApiProtectedRoute({
   description: 'Get requetes entites',
@@ -9,10 +14,17 @@ export const getRequetesEntiteRoute = openApiProtectedRoute({
   },
 });
 
+export const getOtherEntitesAffectedRoute = openApiProtectedRoute({
+  description: 'Get other entites affected by the requete',
+  responses: {
+    ...openApiResponses(GetOtherEntitesAffectedResponseSchema),
+  },
+});
+
 export const getRequeteEntiteRoute = openApiProtectedRoute({
   description: 'Get a single requete entite by ID',
   responses: {
-    ...openApiResponse(RequeteSchema),
+    ...openApiResponse(GetRequeteEntiteResponseSchema),
   },
 });
 
