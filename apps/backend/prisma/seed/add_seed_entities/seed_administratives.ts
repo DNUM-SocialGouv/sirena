@@ -14,6 +14,14 @@ const AdministrativeRowSchema = z.object({
     .string()
     .nullable()
     .transform((v) => (v === '' ? null : v)),
+  departement_code: z
+    .string()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
+  region_code: z
+    .string()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
 });
 
 export async function seedAdministratives(prisma: PrismaClient) {
@@ -39,6 +47,8 @@ export async function seedAdministratives(prisma: PrismaClient) {
         emailDomain: row['Domaine mail'] ?? '',
         organizationalUnit: row.Organizational_unit ?? '',
         entiteTypeId: row["Type d'entité"],
+        departementCode: row.departement_code,
+        regionCode: row.region_code,
       }));
 
     const createdEntities = await prisma.entite.createMany({
