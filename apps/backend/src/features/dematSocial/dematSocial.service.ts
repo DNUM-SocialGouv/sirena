@@ -12,6 +12,7 @@ import {
   GetInstructeursDocument,
   graffle,
 } from '@/libs/graffle';
+import { assignEntitesToRequeteTask } from './affectation/affectation';
 import type { Demandeur, DematSocialCivilite } from './dematSocial.type';
 
 export const getInstructeurs = async () => {
@@ -60,6 +61,8 @@ export const getDemandeur = (d: DemandeurData, email: string): Demandeur => ({
 
 export const importRequetes = async (createdSince?: Date) => {
   const logger = getLoggerStore();
+  const sentry = getSentryStore();
+
   if (createdSince) {
     logger.info(`Importing requetes from ${createdSince.toUTCString()}`);
   } else {
@@ -108,10 +111,17 @@ export const importRequetes = async (createdSince?: Date) => {
         shouldRetry: (err) => isPrismaUniqueConstraintError(err, 'id'),
         context: { dossierNumber: dossier.number },
       });
+
+      try {
+        await assignEntitesToRequeteTask(dossier.number.toString());
+      } catch (err) {
+        logger.error({ err }, `Error assigning entities to requete ${dossier.number}:`);
+        sentry.captureException(err);
+      }
+
       i += 1;
     } catch (err) {
       logger.error({ err }, `Error processing dossier ${dossier.number}:`);
-      const sentry = getSentryStore();
       sentry.captureException(err);
       errorCount += 1;
     }

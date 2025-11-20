@@ -663,15 +663,6 @@ describe('requetes.service.ts', () => {
           dematSocialId: fakeRequeteDto.dematSocialId,
           receptionDate: fakeRequeteDto.receptionDate,
           receptionType: { connect: { id: fakeRequeteDto.receptionTypeId } },
-          requeteEntites: {
-            create: {
-              entite: {
-                connect: {
-                  id: undefined,
-                },
-              },
-            },
-          },
         },
       });
 

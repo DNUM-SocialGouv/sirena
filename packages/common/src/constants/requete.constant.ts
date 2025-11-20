@@ -98,21 +98,21 @@ export const misEnCauseAutreNonProPrecisionLabels: Record<MisEnCauseAutreNonProP
   AUTRE: 'Autre (patient ou résident, inconnu, escroc...)',
 };
 
-export const LIEN_VICTIME = {
-  MEMBRE_FAMILLE: 'MEMBRE_FAMILLE',
-  PROCHE: 'PROCHE',
-  PROFESSIONNEL: 'PROFESSIONNEL',
-  AUTRE: 'AUTRE',
-} as const;
+// Union type for all MisEnCauseTypePrecisionEnum values
+export type MisEnCauseTypePrecisionUnion =
+  | MisEnCauseFamillePrecision
+  | MisEnCauseProchePrecision
+  | MisEnCauseAutreNonProPrecision
+  | ProfessionSantePrecision
+  | ProfessionSocialPrecision
+  | AutreProfessionnelPrecision
+  | ProfessionType
+  | ProfessionDomicileType;
 
-export type LienVictime = keyof typeof LIEN_VICTIME;
-
-export const lienVictimeLabels: Record<LienVictime, string> = {
-  MEMBRE_FAMILLE: 'Membre de la famille',
-  PROCHE: 'Proche',
-  PROFESSIONNEL: 'Professionnel',
-  AUTRE: 'Autre',
-};
+// MIS_EN_CAUSE_TYPE = LIEN_VICTIME
+export const LIEN_VICTIME = MIS_EN_CAUSE_TYPE;
+export type LienVictime = MisEnCauseType;
+export const lienVictimeLabels: Record<LienVictime, string> = misEnCauseTypeLabels;
 
 export const MOTIF = {
   PROBLEME_COMPORTEMENTAL: 'PROBLEME_COMPORTEMENTAL',
