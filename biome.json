@@ -40,6 +40,9 @@
       },
       "correctness": {
         "useHookAtTopLevel": "off"
+      },
+      "style": {
+        "useComponentExportOnlyModules": "off"
       }
     }
   },
