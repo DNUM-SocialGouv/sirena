@@ -1,0 +1,26 @@
+.entiteTag-ars {
+  background-color: var(--light-options-illustration-color-850-hover-pink-tuile-850-hover, #fb907d);
+  color: var(--light-options-illustration-color-100-white, #ffffff);
+}
+
+.entiteTag-ddets {
+  background-color: var(--light-options-illustration-color-850-hover-blue-ecume-tuile-850-hover, #8ba7f8);
+  color: var(--light-options-illustration-color-100-white, #ffffff);
+}
+
+.entiteTag-cd {
+  background-color: var(--light-options-illustration-color-850-hover-green-menthe-850-hover, #5bb5a7);
+  color: var(--light-options-illustration-color-100-white, #ffffff);
+}
+
+.entiteTag-text {
+  color: var(--light-decisions-text-text-title-grey, #161616);
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 28px;
+}
+
+.entiteTag-container {
+  display: inline-flex;
+}
