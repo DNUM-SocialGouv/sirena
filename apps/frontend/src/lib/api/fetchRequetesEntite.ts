@@ -26,3 +26,21 @@ export async function closeRequete(requestId: string, json: CloseRequeteData) {
   const response = await x.json();
   return response;
 }
+
+export async function fetchRequeteDetails(requestId: string) {
+  const res = await client['requetes-entite'][':id'].$get({
+    param: { id: requestId },
+  });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
+export async function fetchRequeteOtherEntitiesAffected(requestId: string) {
+  const res = await client['requetes-entite'][':id']['other-entites-affected'].$get({
+    param: { id: requestId },
+  });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}

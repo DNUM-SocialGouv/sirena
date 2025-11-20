@@ -180,14 +180,14 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
         ]}
       >
         <div className="fr-mb-4w">
-          <p className="fr-text--sm fr-text--grey">
+          <div className="fr-text--sm fr-text--grey">
             <Alert
               small={false}
               title=""
               severity="info"
               description={`Vous allez clôturer la requête ${requestId} prise en charge le ${date} avec pour mise en cause "${misEnCause}".`}
             />
-          </p>
+          </div>
         </div>
 
         <div className="fr-mb-4w">
