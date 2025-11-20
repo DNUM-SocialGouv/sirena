@@ -53,13 +53,9 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
   const [fait] = situation?.faits ?? [];
   const hasLieu = situation?.lieuDeSurvenue?.lieuType?.label;
   const hasMisEnCause = situation?.misEnCause?.misEnCauseType?.label;
-  const hasFaits = fait?.maltraitanceTypes && fait.maltraitanceTypes.length > 0;
-
   const isFulfilled = hasSituationContent(situation);
 
   const renderSummary = () => {
-    if (!hasLieu && !hasMisEnCause && !hasFaits) return null;
-
     return (
       <div className="fr-grid-row fr-grid-row--gutters">
         {hasMisEnCause && (
