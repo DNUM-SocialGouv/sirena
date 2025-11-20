@@ -1,15 +1,15 @@
-﻿Libellé;Libéllé court;Type d'entité;Domaine mail;Organizational_unit
-ARS - Normandie;ARS NORM;ARS;;ARS-NORMANDIE
-CD - Calvados;CD CAL;CD;@calvados.fr;
-CD - Eure;CD EURE;CD;@eure.fr;
-DDETS - Calvados;DDETS CAL;DDETS;@calvados.gouv.fr;
-DDETS Eure;DDETS EURE;DDETS;@eure.gouv.fr;
-DDETS Manche;DDETS 50;DDETS;@manche.gouv.fr;
-DDETS - Seine-Maritime;DDETS SEINE-M;DDETS;@seine-maritime.gouv.fr;
-ARS - Nouvelle-Aquitaine;ARS NA;ARS;;ARS-NA,ARS NA
-ARS - Corse;ARS CORSE;ARS;;ARS-CORSE
-ARS - Hauts-de-France;ARS HDF;ARS;;ARS-HDF
-ARS - Auvergne-Rhône-Alpes;ARS ARA;ARS;;ARS-ARA
-CD - Haute-Garonne;CD HG;CD;@cd31.fr;
-CD - Manche;CD 50;CD;@manche.fr;
-DDETSPP Orne;DDETSPP 61;DDETS;@orne.gouv.fr;
+Libellé;Libéllé court;Type d'entité;Domaine mail;Organizational_unit;departement_code;region_code
+ARS - Normandie;ARS NORM;ARS;;ARS-NORMANDIE;;28
+CD - Calvados;CD CAL;CD;@calvados.fr;;14;
+CD - Eure;CD EURE;CD;@eure.fr;;27;
+DDETS - Calvados;DDETS CAL;DDETS;@calvados.gouv.fr;;14;
+DDETS Eure;DDETS EURE;DDETS;@eure.gouv.fr;;27;
+DDETS Manche;DDETS 50;DDETS;@manche.gouv.fr;;50;
+DDETS - Seine-Maritime;DDETS SEINE-M;DDETS;@seine-maritime.gouv.fr;;76;
+ARS - Nouvelle-Aquitaine;ARS NA;ARS;;ARS-NA,ARS NA;;75
+ARS - Corse;ARS CORSE;ARS;;ARS-CORSE;;94
+ARS - Hauts-de-France;ARS HDF;ARS;;ARS-HDF;;32
+ARS - Auvergne-Rhône-Alpes;ARS ARA;ARS;;ARS-ARA;;84
+CD - Haute-Garonne;CD HG;CD;@cd31.fr;;31;
+CD - Manche;CD 50;CD;@manche.fr;;50;
+DDETSPP Orne;DDETSPP 61;DDETS;@orne.gouv.fr;;61;

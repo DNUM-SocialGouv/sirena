@@ -22,15 +22,7 @@ export const createRequeteFromDematSocial = async ({
   situations,
   pdf,
 }: CreateRequeteFromDematSocialDto) => {
-  // TODO remove that when we create assignation algo
   const logger = getLoggerStore();
-  const defaultEntity = await prisma.entite.findFirst({
-    where: {
-      entiteMereId: null,
-      label: 'ARS NORM',
-    },
-    select: { id: true },
-  });
 
   return await prisma.$transaction(async (tx) => {
     const createFileForRequete = async (
@@ -80,12 +72,6 @@ export const createRequeteFromDematSocial = async ({
     const id = await generateRequeteId(source, tx);
     const requete = await tx.requete.create({
       data: {
-        requeteEntites: {
-          create: {
-            // TODO remove that when we create assignation algo
-            entite: { connect: { id: defaultEntity?.id } },
-          },
-        },
         id,
         dematSocialId,
         receptionDate,
@@ -227,7 +213,7 @@ export const createRequeteFromDematSocial = async ({
       });
 
       const files = s.demarchesEngagees.files.map(
-        async (file) => await createFileForRequete(file, { demarchesEngageesId: dem.id }, defaultEntity?.id ?? null),
+        async (file) => await createFileForRequete(file, { demarchesEngageesId: dem.id }, null),
       );
 
       const results = await Promise.allSettled(files);
@@ -246,10 +232,6 @@ export const createRequeteFromDematSocial = async ({
           lieuDeSurvenue: { connect: { id: lieu.id } },
           misEnCause: { connect: { id: mec.id } },
           demarchesEngagees: { connect: { id: dem.id } },
-          situationEntites: {
-            // TODO remove that when we create assignation algo
-            create: { entiteId: defaultEntity?.id || '' },
-          },
         },
         select: { id: true },
       });
@@ -265,8 +247,7 @@ export const createRequeteFromDematSocial = async ({
         });
 
         const files = f.files.map(
-          async (file) =>
-            await createFileForRequete(file, { faitSituationId: situation.id }, defaultEntity?.id ?? null),
+          async (file) => await createFileForRequete(file, { faitSituationId: situation.id }, null),
         );
 
         const results = await Promise.allSettled(files);
@@ -314,7 +295,7 @@ export const createRequeteFromDematSocial = async ({
     }
 
     if (pdf) {
-      await createFileForRequete(pdf, { requeteId: requete.id }, defaultEntity?.id ?? null, false);
+      await createFileForRequete(pdf, { requeteId: requete.id }, null, false);
     }
 
     const requeteWithEntites = await tx.requete.findUniqueOrThrow({
