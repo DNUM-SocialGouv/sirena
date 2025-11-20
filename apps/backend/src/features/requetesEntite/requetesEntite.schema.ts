@@ -1,11 +1,21 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import { Prisma } from '@/libs/prisma';
-import { RequeteEntiteSchema, RequeteEtapeSchema, RequeteSchema, z } from '@/libs/zod';
+import { EntiteSchema, RequeteEntiteSchema, RequeteEtapeSchema, RequeteSchema, z } from '@/libs/zod';
 
 const columns = [Prisma.RequeteEntiteScalarFieldEnum.requeteId, Prisma.RequeteEntiteScalarFieldEnum.entiteId] as const;
 
 export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns);
+
+export const GetRequeteEntiteResponseSchema = RequeteSchema.extend({
+  entite: EntiteSchema,
+});
+
+export const GetOtherEntitesAffectedResponseSchema = z.array(
+  RequeteEntiteSchema.extend({
+    entite: EntiteSchema,
+  }),
+);
 
 export const GetRequeteEntiteSchema = RequeteEntiteSchema.extend({
   requete: RequeteSchema,

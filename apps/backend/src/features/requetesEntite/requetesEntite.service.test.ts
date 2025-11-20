@@ -10,6 +10,7 @@ import {
 } from '@/libs/prisma';
 import {
   closeRequeteForEntite,
+  getOtherEntitesAffected,
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
@@ -373,6 +374,60 @@ describe('requetesEntite.service', () => {
     });
   });
 
+  describe('getOtherEntitesAffected', () => {
+    it('should return other entites affected by the requete', async () => {
+      const mockOtherEntite = {
+        entiteId: mockRequeteEntite.entiteId,
+        requeteId: mockRequeteEntite.requeteId,
+        entite: {
+          id: 'Entite 1',
+          label: 'Entite 1',
+          nomComplet: 'Entite 1',
+          entiteTypeId: 'Entite 1',
+        },
+        requeteEtape: [],
+      };
+      const mockSecondOtherEntite = {
+        entiteId: 'entite-2',
+        requeteId: mockRequeteEntite.requeteId,
+        entite: {
+          id: 'Entite 2',
+          label: 'Entite 2',
+          nomComplet: 'Entite 2',
+          entiteTypeId: 'Entite 2',
+        },
+        requeteEtape: [
+          {
+            id: 'etape-1',
+            statutId: 'A_QUALIFIER',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            entiteId: 'entite-2',
+            estPartagee: false,
+            nom: 'Etape 1',
+            requeteId: mockRequeteEntite.requeteId,
+            clotureReasonId: null,
+          },
+        ],
+      };
+      vi.mocked(prisma.requeteEntite.findMany).mockResolvedValueOnce([mockOtherEntite, mockSecondOtherEntite]);
+      const result = await getOtherEntitesAffected(mockRequeteEntite.requeteId, mockRequeteEntite.entiteId);
+
+      expect(prisma.requeteEntite.findMany).toHaveBeenCalled();
+
+      expect(result).toEqual([
+        {
+          entite: mockOtherEntite.entite,
+          lastEtape: null,
+        },
+        {
+          entite: mockSecondOtherEntite.entite,
+          lastEtape: mockSecondOtherEntite.requeteEtape[0],
+        },
+      ]);
+    });
+  });
+
   describe('getRequeteEntiteById', () => {
     it('should fetch requeteEntite by id with related data', async () => {
       vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce(mockRequeteEntite);
@@ -385,6 +440,7 @@ describe('requetesEntite.service', () => {
           entiteId: mockRequeteEntite.entiteId,
         },
         include: {
+          entite: true,
           requete: {
             include: {
               declarant: {

@@ -14,6 +14,7 @@ import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { UpdateProcessingStepNameSchema } from '@/schemas/processingSteps.schema';
+import { allBadges } from '@/utils/requeteStatutBadage.constant';
 import { StepNote } from './StepNote';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
@@ -56,29 +57,6 @@ const StepComponent = ({
   const [editStepName, setEditStepName] = useState(nom ?? '');
   const [editError, setEditError] = useState<string | null>(null);
   const { canEdit } = useCanEdit({ requeteId: requestId });
-
-  const allBadges = [
-    {
-      type: 'success',
-      text: 'Fait',
-      value: REQUETE_STATUT_TYPES.FAIT,
-    },
-    {
-      type: 'new',
-      text: 'En cours',
-      value: REQUETE_STATUT_TYPES.EN_COURS,
-    },
-    {
-      type: 'info',
-      text: 'À faire',
-      value: REQUETE_STATUT_TYPES.A_FAIRE,
-    },
-    {
-      type: 'error',
-      text: 'Clôturée',
-      value: REQUETE_STATUT_TYPES.CLOTUREE,
-    },
-  ];
 
   const badges = allBadges.filter((badge) => {
     if (statutId === REQUETE_STATUT_TYPES.CLOTUREE) {
