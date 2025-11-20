@@ -1,5 +1,6 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
+import type { EntiteType } from '@sirena/common/constants';
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -10,9 +11,11 @@ import { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
+import { EntiteTag } from '../common/EntiteTag';
 import { CloseRequeteModal, type CloseRequeteModalRef } from './processing/CloseRequeteModal';
 import { CreateNoteDrawer, type CreateNoteDrawerRef } from './processing/CreateNoteDrawer';
 import { EditNoteDrawer, type EditNoteDrawerRef } from './processing/EditNoteDrawer';
+import { OtherEntitiesAffected } from './sections/OtherEntitesAffected';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 type NoteData = Parameters<EditNoteDrawerRef['openDrawer']>[1];
@@ -98,11 +101,14 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
       Les étapes de traitement seront disponibles après la création de la requête.
     </p>
   );
+
+  console.log('requestQuery.data', requestQuery.data);
+
   return (
     <div>
       <div className="fr-container--fluid">
         <div className="fr-grid-row fr-grid-row--gutters">
-          <div className="fr-col">
+          <div className="fr-col-8">
             <div className="fr-mb-4w">
               {requestId && !canEdit && (
                 <Alert
@@ -118,32 +124,35 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
               )}
               <div className="fr-grid-row fr-grid-row--middle fr-mb-3w">
                 <div className="fr-col">
-                  <h2 className="fr-mb-0">Étapes du traitement</h2>
+                  {requestQuery.data && (
+                    <EntiteTag
+                      entiteTypeId={requestQuery.data?.entite.entiteTypeId as EntiteType}
+                      label={requestQuery.data?.entite.nomComplet}
+                    />
+                  )}
                 </div>
                 {requestId && canEdit && (
                   <div className="fr-col-auto">
                     <Button
-                      ref={closeRequeteButtonRef}
-                      className="fr-mr-2w"
-                      size="small"
-                      priority="primary"
-                      onClick={handleCloseRequete}
-                    >
-                      Clôturer la requête
-                    </Button>
-                    <Button
                       priority="secondary"
+                      className="fr-mr-2w"
                       size="small"
                       onClick={() => setIsAddingStep(true)}
                       disabled={isAddingStep}
                     >
                       Ajouter une étape
                     </Button>
+                    <Button ref={closeRequeteButtonRef} size="small" priority="primary" onClick={handleCloseRequete}>
+                      Clôturer
+                    </Button>
                   </div>
                 )}
               </div>
               {content}
             </div>
+          </div>
+          <div className="fr-col-4">
+            <OtherEntitiesAffected />
           </div>
         </div>
       </div>
