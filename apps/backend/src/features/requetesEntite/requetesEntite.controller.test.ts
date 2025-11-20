@@ -13,6 +13,7 @@ import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/up
 import RequetesEntiteController from './requetesEntite.controller';
 import {
   closeRequeteForEntite,
+  getOtherEntitesAffected,
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
@@ -23,6 +24,7 @@ vi.mock('./requetesEntite.service', () => ({
   getRequeteEntiteById: vi.fn(),
   getRequetesEntite: vi.fn(),
   hasAccessToRequete: vi.fn(),
+  getOtherEntitesAffected: vi.fn(),
 }));
 
 vi.mock('@/libs/minio', () => ({
@@ -77,6 +79,35 @@ vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
     },
   };
 });
+
+const fakeRequeteEntite = {
+  requeteId: 'requeteId',
+  entiteId: 'entiteId',
+  entite: {
+    id: '456',
+    label: 'Entite 456',
+    email: 'entite@entite.fr',
+    nomComplet: 'Entite Complete',
+    emailDomain: 'entite.fr',
+    organizationalUnit: 'Unit 1',
+    entiteTypeId: 'type1',
+    entiteMereId: null,
+  },
+  requete: {
+    id: 'requeteId',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    commentaire: 'Commentaire',
+    receptionDate: new Date(),
+    dematSocialId: 123,
+    receptionTypeId: 'receptionTypeId',
+    declarant: null,
+    participant: null,
+    situations: [],
+    fichiersRequeteOriginale: [],
+  },
+  requeteEtape: [],
+};
 
 describe('RequetesEntite endpoints: /', () => {
   beforeEach(() => {
@@ -180,25 +211,6 @@ describe('RequetesEntite endpoints: /', () => {
       requeteEtapeNoteId: 'step1',
       demarchesEngageesId: null,
       canDelete: true,
-    };
-
-    const fakeRequeteEntite = {
-      requeteId: 'requeteId',
-      entiteId: 'entiteId',
-      requete: {
-        id: 'requeteId',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        commentaire: 'Commentaire',
-        receptionDate: new Date(),
-        dematSocialId: 123,
-        receptionTypeId: 'receptionTypeId',
-        declarant: null,
-        participant: null,
-        situations: [],
-        fichiersRequeteOriginale: [],
-      },
-      requeteEtape: [],
     };
 
     it('streams the file with correct headers (inline) and body content', async () => {
@@ -311,6 +323,60 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(200);
       expect(res.headers.get('content-disposition')).toBe('inline; filename="fallback.pdf"');
+    });
+  });
+
+  describe('GET /:id/other-entites-affected', () => {
+    it('should return other entites affected by the requete', async () => {
+      const fakeOtherEntites = [
+        {
+          entite: {
+            id: '456',
+            label: 'Entite 456',
+            email: 'entite@entite.fr',
+            nomComplet: 'Entite Complete',
+            emailDomain: 'entite.fr',
+            organizationalUnit: 'Unit 1',
+            entiteTypeId: 'type1',
+            entiteMereId: null,
+          },
+          lastEtape: {
+            id: 'etape1',
+            nom: 'Étape 1',
+            estPartagee: false,
+            statutId: 'OUVERTE',
+            requeteId: 'r1',
+            entiteId: 'e2',
+            clotureReasonId: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        },
+      ];
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(getOtherEntitesAffected).mockResolvedValueOnce(fakeOtherEntites);
+
+      const res = await client[':id']['other-entites-affected'].$get({
+        param: { id: 'requeteId' },
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({
+        data: convertDatesToStrings(fakeOtherEntites),
+      });
+    });
+
+    it('should return 404 when requeteEntite not found', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(null);
+
+      const res = await client[':id']['other-entites-affected'].$get({
+        param: { id: 'requeteId' },
+      });
+
+      expect(res.status).toBe(404);
+      const json = await res.json();
+      expect(json).toEqual({ message: 'Requete not found' });
     });
   });
 

@@ -1,6 +1,6 @@
 import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { type EntiteType, REQUETE_STATUT_TYPES, type RequeteStatutType } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
 import { createChangeLog } from '@/features/changelog/changelog.service';
@@ -190,6 +190,41 @@ export const hasAccessToRequete = async ({ requeteId, entiteId }: RequeteEntiteK
   return !!requete;
 };
 
+export const getOtherEntitesAffected = async (requeteId: string, excludeEntiteId: string) => {
+  const requeteEntites = await prisma.requeteEntite.findMany({
+    where: {
+      requeteId,
+      entiteId: { not: excludeEntiteId },
+    },
+    include: {
+      entite: {
+        select: {
+          id: true,
+          entiteTypeId: true,
+          nomComplet: true,
+          label: true,
+        },
+      },
+      requeteEtape: { orderBy: { createdAt: 'desc' }, take: 1 },
+    },
+  });
+
+  return requeteEntites.map((re) => {
+    return {
+      entite: {
+        ...re.entite,
+        entiteTypeId: re.entite.entiteTypeId as EntiteType,
+      },
+      lastEtape: re.requeteEtape[0]
+        ? {
+            ...re.requeteEtape[0],
+            statutId: re.requeteEtape[0].statutId as RequeteStatutType,
+          }
+        : null,
+    };
+  });
+};
+
 export const getRequeteEntiteById = async (requeteId: string, entiteId: string | null) => {
   if (!entiteId) {
     return null;
@@ -201,6 +236,7 @@ export const getRequeteEntiteById = async (requeteId: string, entiteId: string |
       entiteId,
     },
     include: {
+      entite: true,
       requete: {
         include: {
           declarant: {
