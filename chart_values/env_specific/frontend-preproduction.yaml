@@ -34,7 +34,7 @@ SDPSN-devops-charts:
           cert-manager.io/cluster-issuer: letsencrypt-http01
           nginx.ingress.kubernetes.io/proxy-body-size: 60m
         rules:
-          - host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
+          - host: sirena.test.dev.atlas.fabrique.social.gouv.fr
             paths:
               - path: /
                 pathType: Prefix
@@ -42,5 +42,5 @@ SDPSN-devops-charts:
                 servicePort: 80
         tls:
           hosts:
-            - sirena.formation.prod.atlas.fabrique.social.gouv.fr
+            - sirena.test.dev.atlas.fabrique.social.gouv.fr
           secretName: frontend-tls
