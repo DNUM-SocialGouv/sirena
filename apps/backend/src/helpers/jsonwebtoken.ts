@@ -18,12 +18,12 @@ type authUserParams = { id: User['id']; roleId: RoleEnum['id'] };
 
 export const signAuthCookie = ({ id, roleId }: authUserParams, date: Date) =>
   jwt.sign({ id, roleId }, envVars.AUTH_TOKEN_SECRET_KEY, {
-    expiresIn: date.getTime() - Date.now(),
+    expiresIn: (date.getTime() - Date.now()) / 1000,
   });
 
 export const signRefreshCookie = (userId: User['id'], date: Date) =>
   jwt.sign({ id: userId }, envVars.REFRESH_TOKEN_SECRET_KEY, {
-    expiresIn: date.getTime() - Date.now(),
+    expiresIn: (date.getTime() - Date.now()) / 1000,
   });
 
 export const getJwtExpirationDate = (timestamp: string) => new Date(Date.now() + Number.parseInt(timestamp, 10) * 1000);
