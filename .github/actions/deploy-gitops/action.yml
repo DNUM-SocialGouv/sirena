@@ -44,29 +44,57 @@ runs:
         export ENVIRONNEMENT=${{ inputs.environment }}
         npm run build
 
-    - name: Checkout GitOps repository
-      uses: actions/checkout@v5
-      with:
-        repository: ${{ inputs.gitops-repo }}
-        path: gitops-repo
-        ssh-key: ${{ inputs.gitops-repo-key }}
-
-    - name: Deploy to GitOps
+    - name: Render manifests
       shell: bash
       run: |
-        rm -r gitops-repo/deployment-targets/${{ inputs.environment }}
-        cp -r deploy/dist gitops-repo/deployment-targets/${{ inputs.environment }}
+        cd deploy
+        export IMAGE_TAG=${{ inputs.version }}
+        export ENVIRONNEMENT=${{ inputs.environment }}
+        npm run build
 
-        git config --global user.name "github-actions[bot]"
-        # mail standard bot github Actions
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        cd gitops-repo
-        git add .
+    - name: render manifests using helm chart
+      shell: bash
+      run: |
+        export ENVIRONNEMENT=${{ inputs.environment }}
+        helm template backend . -f chart_values/backend.yaml -f chart_values/env_specific/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
+        mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated_manifests/backend
+        rm -rf ./generated_manifests/sirena
+        
+        helm template frontend . -f chart_values/env_specific/frontend-${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
+        mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated_manifests/frontend
+        rm -rf ./generated_manifests/sirena
+        
+        helm template external-secrets . -f chart_values/external-secrets.yaml -f chart_values/env_specific/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
+        mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated_manifests/external-secrets
+        rm -rf ./generated_manifests/sirena
+        
+        helm template worker . -f chart_values/worker.yaml -f chart_values/env_specific/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
+        mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated_manifests/worker
+        rm -rf ./generated_manifests/sirena
 
-        # Check if there are changes to commit
-        if git diff --staged --quiet; then
-          echo "No changes to commit, skipping commit and push"
-        else
-          git commit -m '[${{ inputs.environment }}] new version ${{ inputs.version }}'
-          git push
-        fi
+#    - name: Checkout GitOps repository
+#      uses: actions/checkout@v5
+#      with:
+#        repository: ${{ inputs.gitops-repo }}
+#        path: gitops-repo
+#        ssh-key: ${{ inputs.gitops-repo-key }}
+#
+#    - name: Deploy to GitOps
+#      shell: bash
+#      run: |
+#        rm -r gitops-repo/deployment-targets/${{ inputs.environment }}
+#        cp -r deploy/dist gitops-repo/deployment-targets/${{ inputs.environment }}
+#
+#        git config --global user.name "github-actions[bot]"
+#        # mail standard bot github Actions
+#        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+#        cd gitops-repo
+#        git add .
+#
+#        # Check if there are changes to commit
+#        if git diff --staged --quiet; then
+#          echo "No changes to commit, skipping commit and push"
+#        else
+#          git commit -m '[${{ inputs.environment }}] new version ${{ inputs.version }}'
+#          git push
+#        fi
