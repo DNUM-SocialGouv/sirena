@@ -7,7 +7,7 @@ import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHand
 import { CreateStep } from '@/components/requestId/processing/createStep';
 import { Step } from '@/components/requestId/processing/Step';
 import { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
-import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
+import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { CloseRequeteModal, type CloseRequeteModalRef } from './processing/CloseRequeteModal';
@@ -19,9 +19,10 @@ type NoteData = Parameters<EditNoteDrawerRef['openDrawer']>[1];
 
 interface ProcessingProps {
   requestId?: string;
+  requestQuery: ReturnType<typeof useRequeteDetails>;
 }
 
-export const Processing = ({ requestId }: ProcessingProps = {}) => {
+export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const navigate = useNavigate();
   const [isAddingStep, setIsAddingStep] = useState(false);
   const createNoteDrawerRef = useRef<CreateNoteDrawerRef>(null);
@@ -29,7 +30,6 @@ export const Processing = ({ requestId }: ProcessingProps = {}) => {
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
   const closeRequeteButtonRef = useRef<HTMLButtonElement>(null);
   const queryProcessingSteps = useProcessingSteps(requestId || '');
-  const requestQuery = useRequeteDetails(requestId);
   const { canEdit } = useCanEdit({ requeteId: requestId });
 
   const isRequestClosed = useMemo(() => {

@@ -4,7 +4,7 @@ import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { useId, useMemo } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
-import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
+import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { DeclarantSection } from './sections/DeclarantSection';
 import { PersonneConcerneeSection } from './sections/PersonneConcerneeSection';
@@ -13,14 +13,14 @@ import { SituationSection } from './sections/SituationSection';
 
 interface DetailsProps {
   requestId?: string;
+  requestQuery: ReturnType<typeof useRequeteDetails>;
 }
 
-export const Details = ({ requestId }: DetailsProps) => {
+export const Details = ({ requestId, requestQuery }: DetailsProps) => {
   const navigate = useNavigate();
   const declarantSectionId = useId();
   const personneSectionId = useId();
   const situationSectionId = useId();
-  const requestQuery = useRequeteDetails(requestId);
   const { canEdit } = useCanEdit({ requeteId: requestId });
 
   const handleEditDeclarant = () => {
@@ -75,10 +75,10 @@ export const Details = ({ requestId }: DetailsProps) => {
 
   return (
     <QueryStateHandler query={requestQuery}>
-      {() => {
-        const declarant = requestQuery.data?.requete?.declarant;
-        const personne = requestQuery.data?.requete?.participant;
-        const situations = requestQuery.data?.requete?.situations ?? [];
+      {({ data }) => {
+        const declarant = data?.requete.declarant;
+        const personne = data?.requete.participant;
+        const situations = data?.requete.situations ?? [];
 
         return (
           <>
@@ -133,7 +133,7 @@ export const Details = ({ requestId }: DetailsProps) => {
             <RequeteFileUploadSection
               requeteId={requestId}
               mode="edit"
-              existingFiles={requestQuery.data?.requete?.fichiersRequeteOriginale || []}
+              existingFiles={data?.requete?.fichiersRequeteOriginale || []}
             />
           </>
         );
