@@ -1,7 +1,8 @@
 ---
-apiVersion: v4
+apiVersion: v2
 name: sirena
+version: 1.0.0
 dependencies:
   - name: SDPSN-devops-charts
-    version: v1.1.0
-    repository: https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable
+    version: "v1.1.0"
+    repository: "https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable"
