@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Details } from '@/components/requestId/details';
 import { Processing } from '@/components/requestId/processing';
 import { RequestInfos } from '@/components/requestId/requestInfos';
+import { formatFullName } from '@/components/requestId/sections/helpers';
+import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { AffectationTab } from './tabs/AffectationTab';
 
@@ -24,6 +26,19 @@ interface RequestFormProps {
 
 export function RequestForm({ requestId }: RequestFormProps) {
   const [activeTab, setActiveTab] = useState(0);
+  const requestQuery = useRequeteDetails(requestId);
+  const declarantIdentite = requestQuery.data?.requete.declarant?.identite;
+  const fullName = formatFullName(
+    declarantIdentite
+      ? {
+          civilite: declarantIdentite.civiliteId ? { label: declarantIdentite.civiliteId } : undefined,
+          prenom: declarantIdentite.prenom,
+          nom: declarantIdentite.nom?.toUpperCase() || '',
+        }
+      : null,
+  );
+
+  const motif = requestQuery.data?.requete.situations?.[0]?.faits?.[0]?.motifs?.[0]?.motif.label || null;
 
   const tabs: TabDescriptor[] = [
     { label: 'Détails de la requête', tabPanelId: 'panel-details', tabId: 'tab-details' },
@@ -56,14 +71,14 @@ export function RequestForm({ requestId }: RequestFormProps) {
               <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
             </Link>
           </div>
-          <RequestInfos requestId={requestId} />
+          <RequestInfos requestId={requestId} fullName={fullName} motif={motif} />
         </div>
       </div>
       <div className="fr-container">
         <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange} className={styles['request-tabs']}>
-          {activeTab === 0 && <Details requestId={requestId} />}
+          {activeTab === 0 && <Details requestId={requestId} requestQuery={requestQuery} />}
           {activeTab === 1 && <AffectationTab />}
-          {activeTab === 2 && <Processing requestId={requestId} />}
+          {activeTab === 2 && <Processing requestId={requestId} requestQuery={requestQuery} />}
         </Tabs>
       </div>
     </>
