@@ -5,10 +5,16 @@ export const SituationDataSchema = z.object({
     .object({
       lieuType: z.string().optional(),
       lieuPrecision: z.string().optional(),
-      adresse: z.string().optional(),
       codePostal: z.string().optional(),
       societeTransport: z.string().optional(),
       finess: z.string().optional(),
+      adresse: z
+        .object({
+          label: z.string().optional(),
+          ville: z.string().optional(),
+          codePostal: z.string().optional(),
+        })
+        .optional(),
     })
     .optional(),
 

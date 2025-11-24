@@ -87,7 +87,7 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
   const misEnCauseData = situationData.misEnCause;
   const demarchesData = situationData.demarchesEngagees;
 
-  const hasAdresse = lieuData?.adresse || lieuData?.codePostal;
+  const hasAdresse = lieuData?.adresse?.label || lieuData?.adresse?.codePostal || lieuData?.adresse?.ville;
 
   return {
     lieuDeSurvenue: {
@@ -100,8 +100,9 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
         adresse: hasAdresse
           ? {
               create: {
-                label: lieuData?.adresse || '',
-                codePostal: lieuData?.codePostal || '',
+                label: lieuData?.adresse?.label || '',
+                codePostal: lieuData?.adresse?.codePostal || '',
+                ville: lieuData?.adresse?.ville || '',
               },
             }
           : undefined,

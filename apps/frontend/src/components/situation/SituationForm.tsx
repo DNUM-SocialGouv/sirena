@@ -48,6 +48,8 @@ import { useEffect, useState } from 'react';
 import { FileUploadSection } from '@/components/common/FileUploadSection';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
 import { PractitionerSearchField } from '@/components/common/PractitionerSearchField';
+import { buildOrganizationAddress, extractOrganizationName, updateOrganizationName } from '@/utils/organizationHelpers';
+import { formatPractitionerName } from '@/utils/practitionerHelpers';
 import { hasSituationContent } from '@/utils/situationHelpers';
 
 interface SituationFormProps {
@@ -316,18 +318,64 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
             )}
 
             {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE && (
-              <div className="fr-col-12">
-                <PractitionerSearchField
-                  value={formData.misEnCause?.rpps || ''}
-                  onChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      misEnCause: { ...prev.misEnCause, rpps: value },
-                    }))
-                  }
-                  disabled={isSaving}
-                />
-              </div>
+              <>
+                <div className="fr-col-12 fr-col-md-6">
+                  <PractitionerSearchField
+                    value={formData.misEnCause?.rpps || ''}
+                    onChange={(value, practitioner) => {
+                      if (practitioner) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          misEnCause: {
+                            ...prev.misEnCause,
+                            rpps: value,
+                            commentaire: formatPractitionerName(practitioner),
+                          },
+                        }));
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          misEnCause: {
+                            ...prev.misEnCause,
+                            rpps: value,
+                          },
+                        }));
+                      }
+                    }}
+                    label="Numéro RPPS"
+                    disabled={isSaving}
+                    searchMode="rpps"
+                    hintText="Seul le numéro exact peut être trouvé"
+                    minSearchLength={6}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <PractitionerSearchField
+                    value={formData.misEnCause?.commentaire || ''}
+                    onChange={(value, practitioner) => {
+                      if (practitioner) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          misEnCause: {
+                            ...prev.misEnCause,
+                            rpps: practitioner.rpps,
+                            commentaire: value,
+                          },
+                        }));
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          misEnCause: { ...prev.misEnCause, commentaire: value },
+                        }));
+                      }
+                    }}
+                    label="Identité du professionnel"
+                    disabled={isSaving}
+                    searchMode="name"
+                    minSearchLength={2}
+                  />
+                </div>
+              </>
             )}
 
             {misEnCauseType === MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE && (
@@ -405,13 +453,48 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
                 </div>
                 <div className="fr-col-12">
                   <Input
-                    label="Adresse"
+                    label="Nom de l'adresse"
                     nativeInputProps={{
-                      value: formData.lieuDeSurvenue?.adresse || '',
+                      value: formData.lieuDeSurvenue?.adresse?.label || '',
                       onChange: (e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          lieuDeSurvenue: { ...prev.lieuDeSurvenue, adresse: e.target.value },
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, label: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label="Code postal"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label="Ville"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.ville || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
+                          },
                         })),
                     }}
                   />
@@ -586,18 +669,103 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
             )}
 
             {lieuType === LIEU_TYPE.ETABLISSEMENT_SANTE && (
-              <div className="fr-col-12">
-                <OrganizationSearchField
-                  value={formData.lieuDeSurvenue?.finess || ''}
-                  onChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: value },
-                    }))
-                  }
-                  disabled={isSaving}
-                />
-              </div>
+              <>
+                <div className="fr-col-12 fr-col-md-6">
+                  <OrganizationSearchField
+                    value={formData.lieuDeSurvenue?.finess || ''}
+                    onChange={(value, organization) => {
+                      if (organization) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            finess: value,
+                            adresse: buildOrganizationAddress(
+                              organization.name,
+                              organization.addressPostalcode,
+                              organization.addressCity,
+                            ),
+                          },
+                        }));
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: value },
+                        }));
+                      }
+                    }}
+                    label="Numéro FINESS"
+                    disabled={isSaving}
+                    searchMode="finess"
+                    minSearchLength={6}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <OrganizationSearchField
+                    value={extractOrganizationName(formData.lieuDeSurvenue?.adresse)}
+                    onChange={(value, organization) => {
+                      if (organization) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            finess: organization.identifier,
+                            adresse: buildOrganizationAddress(
+                              organization.name,
+                              organization.addressPostalcode,
+                              organization.addressCity,
+                            ),
+                          },
+                        }));
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: updateOrganizationName(prev.lieuDeSurvenue?.adresse, value),
+                          },
+                        }));
+                      }
+                    }}
+                    label="Nom de l'établissement"
+                    disabled={isSaving}
+                    searchMode="name"
+                    minSearchLength={2}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label="Code postal"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label="Ville"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.ville || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+              </>
             )}
 
             {lieuType &&
@@ -609,28 +777,97 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
                 ] as string[]
               ).includes(lieuType) && (
                 <>
-                  <div className="fr-col-12">
+                  <div className="fr-col-12 fr-col-md-6">
                     <OrganizationSearchField
                       value={formData.lieuDeSurvenue?.finess || ''}
-                      onChange={(value) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: value },
-                        }))
-                      }
+                      onChange={(value, organization) => {
+                        if (organization) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            lieuDeSurvenue: {
+                              ...prev.lieuDeSurvenue,
+                              finess: value,
+                              adresse: buildOrganizationAddress(
+                                organization.name,
+                                organization.addressPostalcode,
+                                organization.addressCity,
+                              ),
+                            },
+                          }));
+                        } else {
+                          setFormData((prev) => ({
+                            ...prev,
+                            lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: value },
+                          }));
+                        }
+                      }}
                       label="Numéro FINESS"
                       disabled={isSaving}
+                      searchMode="finess"
+                      minSearchLength={6}
                     />
                   </div>
-                  <div className="fr-col-12">
+                  <div className="fr-col-12 fr-col-md-6">
+                    <OrganizationSearchField
+                      value={extractOrganizationName(formData.lieuDeSurvenue?.adresse)}
+                      onChange={(value, organization) => {
+                        if (organization) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            lieuDeSurvenue: {
+                              ...prev.lieuDeSurvenue,
+                              finess: organization.identifier,
+                              adresse: buildOrganizationAddress(
+                                organization.name,
+                                organization.addressPostalcode,
+                                organization.addressCity,
+                              ),
+                            },
+                          }));
+                        } else {
+                          setFormData((prev) => ({
+                            ...prev,
+                            lieuDeSurvenue: {
+                              ...prev.lieuDeSurvenue,
+                              adresse: updateOrganizationName(prev.lieuDeSurvenue?.adresse, value),
+                            },
+                          }));
+                        }
+                      }}
+                      label="Nom de l'établissement"
+                      disabled={isSaving}
+                      searchMode="name"
+                      minSearchLength={2}
+                    />
+                  </div>
+                  <div className="fr-col-12 fr-col-md-6">
                     <Input
-                      label="Adresse"
+                      label="Code postal"
                       nativeInputProps={{
-                        value: formData.lieuDeSurvenue?.adresse || '',
+                        value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
                         onChange: (e) =>
                           setFormData((prev) => ({
                             ...prev,
-                            lieuDeSurvenue: { ...prev.lieuDeSurvenue, adresse: e.target.value },
+                            lieuDeSurvenue: {
+                              ...prev.lieuDeSurvenue,
+                              adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
+                            },
+                          })),
+                      }}
+                    />
+                  </div>
+                  <div className="fr-col-12 fr-col-md-6">
+                    <Input
+                      label="Ville"
+                      nativeInputProps={{
+                        value: formData.lieuDeSurvenue?.adresse?.ville || '',
+                        onChange: (e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            lieuDeSurvenue: {
+                              ...prev.lieuDeSurvenue,
+                              adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
+                            },
                           })),
                       }}
                     />
@@ -639,19 +876,56 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
               )}
 
             {lieuType === LIEU_TYPE.AUTRES_ETABLISSEMENTS && (
-              <div className="fr-col-12">
-                <Input
-                  label="Adresse"
-                  nativeInputProps={{
-                    value: formData.lieuDeSurvenue?.adresse || '',
-                    onChange: (e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        lieuDeSurvenue: { ...prev.lieuDeSurvenue, adresse: e.target.value },
-                      })),
-                  }}
-                />
-              </div>
+              <>
+                <div className="fr-col-12">
+                  <Input
+                    label="Nom de l'établissement"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.label || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, label: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label="Code postal"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label="Ville"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.ville || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+              </>
             )}
           </div>
         </div>

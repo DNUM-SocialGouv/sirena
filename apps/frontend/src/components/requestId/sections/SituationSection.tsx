@@ -108,10 +108,16 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
               </p>
             )}
             {situation?.misEnCause?.rpps && (
-              <p className={fr.cx('fr-mb-2w')}>
-                <span>Identité du professionnel ou numéro RPPS :</span> {situation.misEnCause.rpps}
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Numéro RPPS :</span> {situation.misEnCause.rpps}
               </p>
             )}
+            {situation?.misEnCause?.commentaire &&
+              situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.PROFESSIONNEL_SANTE && (
+                <p className={fr.cx('fr-mb-2w')}>
+                  <span>Identité du professionnel :</span> {situation.misEnCause.commentaire}
+                </p>
+              )}
             {situation?.misEnCause?.commentaire &&
               situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.MEMBRE_FAMILLE && (
                 <>
@@ -156,14 +162,8 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
               </p>
             )}
             {situation?.lieuDeSurvenue?.finess && (
-              <p className={fr.cx('fr-mb-3w')}>
-                <span>
-                  {situation.lieuDeSurvenue.lieuType?.label?.includes('santé')
-                    ? "Nom de l'établissement ou code FINESS"
-                    : 'Numéro FINESS'}{' '}
-                  :
-                </span>{' '}
-                {situation.lieuDeSurvenue.finess}
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Numéro FINESS :</span> {situation.lieuDeSurvenue.finess}
               </p>
             )}
           </>

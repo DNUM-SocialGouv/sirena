@@ -18,7 +18,7 @@ const app = factoryWithLogs
     const query = c.req.valid('query');
 
     const data = await getPractionners({
-      'given:contains': query.fullName,
+      'name:contains': query.fullName,
       identifier: query.identifier,
     });
 
@@ -27,11 +27,10 @@ const app = factoryWithLogs
 
   .get('/organizations', getOrganizationsRoute, zValidator('query', GetOrganizationsQuerySchema), async (c) => {
     const query = c.req.valid('query');
-    console.log('foo');
     const data = await getOrganizations({
       'name:contains': query.name,
       identifier: query.identifier,
-      'address-postalcode': query.addressPostalcode,
+      'address-postalcode:contains': query.addressPostalcode,
     });
 
     return c.json({ data });

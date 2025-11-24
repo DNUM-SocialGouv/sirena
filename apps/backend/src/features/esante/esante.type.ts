@@ -1,10 +1,10 @@
 export type GetPractionnersParams = {
-  'given:contains'?: string;
+  'name:contains'?: string;
   identifier?: string;
 };
 
 export type GetOrganizationsParams = {
   'name:contains'?: string;
   identifier?: string;
-  'address-postalcode'?: string;
+  'address-postalcode:contains'?: string;
 };

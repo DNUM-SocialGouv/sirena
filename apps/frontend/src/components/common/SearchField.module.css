@@ -53,3 +53,12 @@
   outline: 2px solid var(--border-plain-blue-france);
   outline-offset: -2px;
 }
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

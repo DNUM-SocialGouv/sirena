@@ -675,7 +675,7 @@ export const updateRequeteParticipant = async (
 const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) => {
   if (!lieuData) return {};
 
-  const hasAdresseData = lieuData.adresse || lieuData.codePostal;
+  const hasAdresseData = lieuData.adresse?.label || lieuData.adresse?.codePostal || lieuData.adresse?.ville;
 
   return {
     lieuTypeId: toNullableId(lieuData.lieuType),
@@ -687,12 +687,14 @@ const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) =
       ? {
           upsert: {
             create: {
-              label: cleanNullOrEmpty(lieuData.adresse),
-              codePostal: cleanNullOrEmpty(lieuData.codePostal),
+              label: cleanNullOrEmpty(lieuData.adresse?.label),
+              codePostal: cleanNullOrEmpty(lieuData.adresse?.codePostal),
+              ville: cleanNullOrEmpty(lieuData.adresse?.ville),
             },
             update: {
-              label: cleanNullOrEmpty(lieuData.adresse),
-              codePostal: cleanNullOrEmpty(lieuData.codePostal),
+              label: cleanNullOrEmpty(lieuData.adresse?.label),
+              codePostal: cleanNullOrEmpty(lieuData.adresse?.codePostal),
+              ville: cleanNullOrEmpty(lieuData.adresse?.ville),
             },
           },
         }
