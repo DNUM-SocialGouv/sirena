@@ -37,6 +37,17 @@ export const AppEnvSchema = z.object({
   FRONTEND_REDIRECT_LOGIN_URI: z.string({
     required_error: "La variable d'environnement FRONTEND_REDIRECT_LOGIN_URI est requise",
   }),
+  MONITORING_PORT: z
+    .string()
+    .optional()
+    .default('9090')
+    .transform((val) => {
+      const parsed = Number.parseInt(val, 10);
+      if (Number.isNaN(parsed)) {
+        throw new Error("La variable d'environnement MONITORING_PORT doit etre un integer");
+      }
+      return parsed;
+    }),
   AUTH_TOKEN_SECRET_KEY: z.string({
     required_error: "La variable d'environnement AUTH_TOKEN_SECRET_KEY est requise",
   }),

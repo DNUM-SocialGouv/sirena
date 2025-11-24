@@ -2,6 +2,7 @@ import { App as CdkApp, YamlOutputType } from 'cdk8s';
 import { App, Worker } from './charts/app';
 import { ExternalSecrets } from './charts/external-secrets';
 import { RedisChart } from './charts/redis';
+import { ServiceMonitor } from './charts/service-monitor';
 import * as k8s from './imports/k8s';
 
 if (!process.env.IMAGE_TAG) {
@@ -118,6 +119,16 @@ function createApps(
     image: `${COMMON_CONFIG.imageRegistry}:${imageTag}-frontend`,
     namespace,
     environment,
+  });
+
+  // ServiceMonitor for VictoriaMetrics (backend metrics)
+  new ServiceMonitor(app, 'backend-service-monitor', {
+    namespace,
+    serviceName: 'backend',
+    port: 'monitoring',
+    path: '/metrics',
+    interval: '30s',
+    scrapeTimeout: '10s',
   });
 }
 
