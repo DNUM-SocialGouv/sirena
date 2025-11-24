@@ -10,10 +10,8 @@ SDPSN-devops-charts:
       FRONTEND_URI: https://sirena.preproduction.prod.atlas.fabrique.social.gouv.fr
       SENTRY_ENVIRONMENT: preproduction
 
-  externalSecret:
-    database:
-      databaseName: sirena-preproduction
-    redis:
-      clusterName: sirena-preproduction-redis
-    bucket:
-      bucketName: sirena-preproduction-s3
+  ingress:
+    host: sirena.preproduction.prod.atlas.fabrique.social.gouv.fr
+    tls:
+      hosts:
+        - sirena.preproduction.prod.atlas.fabrique.social.gouv.fr

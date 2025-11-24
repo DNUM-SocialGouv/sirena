@@ -1,0 +1,11 @@
+---
+SDPSN-devops-charts:
+  name: frontend
+
+  enableSecurityHeaders: true
+
+  ingress:
+    host: sirena.test.dev.atlas.fabrique.social.gouv.fr
+    tls:
+      hosts:
+        - sirena.test.dev.atlas.fabrique.social.gouv.fr

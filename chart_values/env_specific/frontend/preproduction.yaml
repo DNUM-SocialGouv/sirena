@@ -1,0 +1,11 @@
+---
+SDPSN-devops-charts:
+  name: frontend
+
+  enableSecurityHeaders: true
+
+  ingress:
+    host: sirena.preproduction.prod.atlas.fabrique.social.gouv.fr
+    tls:
+      hosts:
+        - sirena.preproduction.prod.atlas.fabrique.social.gouv.fr

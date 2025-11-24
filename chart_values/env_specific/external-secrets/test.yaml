@@ -1,0 +1,9 @@
+---
+SDPSN-devops-charts:
+  externalSecret:
+    database:
+      databaseName: sirena-test
+    redis:
+      clusterName: sirena-test-redis
+    bucket:
+      bucketName: sirena-test-s3

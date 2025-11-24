@@ -1,0 +1,9 @@
+---
+SDPSN-devops-charts:
+  externalSecret:
+    database:
+      databaseName: sirena-formation
+    redis:
+      clusterName: sirena-formation-redis
+    bucket:
+      bucketName: sirena-formation-s3

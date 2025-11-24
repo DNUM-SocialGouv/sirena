@@ -130,25 +130,23 @@ SDPSN-devops-charts:
 
   ingress:
     enable: true
-    ingress_list:
-      - name: backend
-        ingressClassName: public
-        annotations:
-          cert-manager.io/cluster-issuer: letsencrypt-http01
-          nginx.ingress.kubernetes.io/proxy-body-size: 60m
-          nginx.ingress.kubernetes.io/rewrite-target: /$1
-          nginx.ingress.kubernetes.io/use-regex: "true"
-        rules:
-          - host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
-            paths:
-              - path: /api/(.*)
-                pathType: ImplementationSpecific
-                serviceName: backend
-                servicePort: 80
-        tls:
-          hosts:
-            - sirena.formation.prod.atlas.fabrique.social.gouv.fr
-          secretName: frontend-tls
+    name: backend
+    ingressClassName: public
+    host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-http01
+      nginx.ingress.kubernetes.io/proxy-body-size: 60m
+      nginx.ingress.kubernetes.io/rewrite-target: /$1
+      nginx.ingress.kubernetes.io/use-regex: "true"
+    paths:
+      - path: /api/(.*)
+        pathType: ImplementationSpecific
+        serviceName: backend
+        servicePort: 80
+    tls:
+      hosts:
+        - sirena.formation.prod.atlas.fabrique.social.gouv.fr
+      secretName: frontend-tls
 
   service:
     targetPort: 4000
