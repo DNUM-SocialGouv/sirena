@@ -10,10 +10,8 @@ SDPSN-devops-charts:
       FRONTEND_URI: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr
       SENTRY_ENVIRONMENT: integration
 
-  externalSecret:
-    database:
-      databaseName: sirena-integration
-    redis:
-      clusterName: sirena-integration-redis
-    bucket:
-      bucketName: sirena-integration-s3
+  ingress:
+    host: sirena.integration.dev.atlas.fabrique.social.gouv.fr
+    tls:
+      hosts:
+        - sirena.integration.dev.atlas.fabrique.social.gouv.fr
