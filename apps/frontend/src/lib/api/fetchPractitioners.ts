@@ -16,7 +16,7 @@ export type Practitioner = {
 
 export async function fetchPractitioners(query: PractitionerQuery): Promise<Practitioner[]> {
   const res = await client.esante.practionners.$get({ query });
-  await handleRequestErrors(res);
+  await handleRequestErrors(res, { silentToastError: true });
   const { data } = await res.json();
   return data;
 }
