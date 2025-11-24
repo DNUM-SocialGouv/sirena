@@ -119,7 +119,7 @@ export const getOrganizations = async (params: GetOrganizationsParams) => {
     'Organization',
     {
       ...params,
-      _elements: 'identifier',
+      _elements: 'identifier,address,name',
     },
     EsanteOrganizationBundleSchema,
   );

@@ -6,15 +6,37 @@ interface PractitionerSearchFieldProps {
   value?: string;
   onChange: (value: string, practitioner?: Practitioner) => void;
   label?: string;
+  hintText?: string;
   disabled?: boolean;
+  searchMode: 'rpps' | 'name';
+  minSearchLength?: number;
+  debounceMs?: number;
 }
 
-export function PractitionerSearchField({ value = '', onChange, label, disabled }: PractitionerSearchFieldProps) {
-  const fetchFn = async (searchTerm: string, isNumeric: boolean) => {
-    return fetchPractitioners(isNumeric ? { identifier: searchTerm.trim() } : { fullName: searchTerm });
-  };
+const buildPractitionerQuery = (searchTerm: string, mode: 'rpps' | 'name') => {
+  return mode === 'rpps' ? { identifier: searchTerm.trim() } : { fullName: searchTerm };
+};
+
+export function PractitionerSearchField({
+  value = '',
+  onChange,
+  label,
+  hintText,
+  disabled,
+  searchMode,
+  minSearchLength = 3,
+  debounceMs = 300,
+}: PractitionerSearchFieldProps) {
+  const fetchFn = (searchTerm: string) => fetchPractitioners(buildPractitionerQuery(searchTerm, searchMode));
 
   const formatDisplay = (practitioner: Practitioner) => {
+    if (searchMode === 'rpps') {
+      return practitioner.rpps;
+    }
+    if (searchMode === 'name') {
+      const prefix = practitioner.prefix ? `${practitioner.prefix} ` : '';
+      return `${prefix}${practitioner.fullName}`;
+    }
     const prefix = practitioner.prefix ? `${practitioner.prefix} ` : '';
     return `${prefix}${practitioner.fullName} (RPPS: ${practitioner.rpps})`;
   };
@@ -29,19 +51,33 @@ export function PractitionerSearchField({ value = '', onChange, label, disabled 
     </div>
   );
 
+  const getItemId = (practitioner: Practitioner) => {
+    if (searchMode === 'rpps') {
+      return practitioner.rpps;
+    }
+    if (searchMode === 'name') {
+      const prefix = practitioner.prefix ? `${practitioner.prefix} ` : '';
+      return `${prefix}${practitioner.fullName}`;
+    }
+    return practitioner.rpps;
+  };
+
   return (
     <SearchField<Practitioner>
       value={value}
       onChange={onChange}
       label={label || 'Identité du professionnel ou numéro RPPS'}
+      hintText={hintText}
       disabled={disabled}
       queryKey="practitioners"
       fetchFn={fetchFn}
       formatDisplay={formatDisplay}
       renderItem={renderItem}
       getItemKey={(practitioner) => practitioner.rpps}
-      getItemId={(practitioner) => practitioner.rpps}
+      getItemId={getItemId}
       noResultsMessage="Aucun praticien trouvé"
+      minSearchLength={minSearchLength}
+      debounceMs={debounceMs}
     />
   );
 }

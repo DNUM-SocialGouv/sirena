@@ -24,10 +24,16 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
       ? {
           lieuType: lieuDeSurvenue.lieuType?.id || undefined,
           lieuPrecision: lieuDeSurvenue.lieuPrecision || undefined,
-          adresse: adresse?.label || undefined,
-          codePostal: lieuDeSurvenue.codePostal || adresse?.codePostal || undefined,
+          codePostal: lieuDeSurvenue.codePostal || undefined,
           societeTransport: lieuDeSurvenue.societeTransport || undefined,
           finess: lieuDeSurvenue.finess || undefined,
+          adresse: adresse
+            ? {
+                label: adresse.label || undefined,
+                codePostal: adresse.codePostal || undefined,
+                ville: adresse.ville || undefined,
+              }
+            : undefined,
         }
       : undefined,
     misEnCause: misEnCause

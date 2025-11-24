@@ -10,20 +10,21 @@ interface SearchFieldProps<T> {
   hintText?: string;
   disabled?: boolean;
   queryKey: string;
-  fetchFn: (searchTerm: string, isNumeric: boolean) => Promise<T[]>;
+  fetchFn: (searchTerm: string) => Promise<T[]>;
   formatDisplay: (item: T) => string;
   renderItem: (item: T) => React.ReactNode;
   getItemKey: (item: T) => string;
   getItemId: (item: T) => string;
   noResultsMessage?: string;
   minSearchLength?: number;
+  debounceMs?: number;
 }
 
 export function SearchField<T>({
   value = '',
   onChange,
   label,
-  hintText = 'Saisir au moins 3 caractères pour rechercher',
+  hintText,
   disabled,
   queryKey,
   fetchFn,
@@ -33,29 +34,64 @@ export function SearchField<T>({
   getItemId,
   noResultsMessage = 'Aucun résultat trouvé',
   minSearchLength = 3,
+  debounceMs = 300,
 }: SearchFieldProps<T>) {
+  const defaultHintText = `Saisir au moins ${minSearchLength} caractère${minSearchLength > 1 ? 's' : ''} pour rechercher`;
+  const displayHintText = hintText ?? defaultHintText;
   const [searchTerm, setSearchTerm] = useState(value);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(value);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [hasSelected, setHasSelected] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialValueRef = useRef(value);
 
-  const isNumericSearch = /^\d+$/.test(searchTerm.trim());
-  const isSearchEnabled = searchTerm.length >= minSearchLength && !hasSelected;
+  const isSearchEnabled = debouncedSearchTerm.length >= minSearchLength && !hasSelected;
 
-  const { data: items = [], isLoading } = useQuery({
-    queryKey: [queryKey, searchTerm, isNumericSearch],
-    queryFn: () => fetchFn(searchTerm, isNumericSearch),
+  const {
+    data: items = [],
+    isLoading,
+    isError,
+    error,
+    failureCount,
+  } = useQuery({
+    queryKey: [queryKey, debouncedSearchTerm],
+    queryFn: () => fetchFn(debouncedSearchTerm),
     enabled: isSearchEnabled,
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   useEffect(() => {
-    if (!hasSelected) {
+    if (value !== initialValueRef.current) {
       setSearchTerm(value);
+      if (value.length < minSearchLength) {
+        setDebouncedSearchTerm(value);
+      }
+      initialValueRef.current = value;
+      setHasSelected(true);
     }
-  }, [value, hasSelected]);
+  }, [value, minSearchLength]);
+
+  useEffect(() => {
+    if (hasSelected) return;
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, debounceMs);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchTerm, debounceMs, hasSelected]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -71,7 +107,6 @@ export function SearchField<T>({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setSearchTerm(newValue);
-    onChange(newValue);
     setShowSuggestions(newValue.length >= minSearchLength);
     setSelectedIndex(-1);
     setHasSelected(false);
@@ -119,7 +154,7 @@ export function SearchField<T>({
     <div ref={wrapperRef} className={styles.wrapper}>
       <Input
         label={label}
-        hintText={hintText}
+        hintText={displayHintText}
         nativeInputProps={{
           ref: inputRef,
           value: searchTerm,
@@ -134,12 +169,33 @@ export function SearchField<T>({
         <div className={styles.dropdown}>
           {isLoading && (
             <div className={styles.message}>
-              <span className="fr-icon-refresh-line fr-icon--sm" aria-hidden="true" />
-              Recherche en cours...
+              <span
+                className="fr-icon-refresh-line fr-icon--sm"
+                aria-hidden="true"
+                style={{ animation: 'spin 1s linear infinite' }}
+              />
+              Recherche en cours...{failureCount > 0 && ' (nouvelle tentative)'}
             </div>
           )}
-          {!isLoading && !hasSuggestions && <div className={styles.message}>{noResultsMessage}</div>}
-          {!isLoading && hasSuggestions && (
+          {isError && (
+            <div className={styles.message} style={{ color: 'var(--text-default-error)' }}>
+              <span className="fr-icon-error-warning-line fr-icon--sm" aria-hidden="true" />
+              <div style={{ textAlign: 'center' }}>
+                <div>
+                  {error instanceof Error && error.message.includes('timed out')
+                    ? 'Le moteur de recherche ne répond pas. Veuillez réessayer.'
+                    : 'Une erreur est survenue lors de la recherche.'}
+                </div>
+                {searchTerm.length > minSearchLength && (
+                  <div style={{ fontSize: '0.875rem', marginTop: '0.25rem', color: 'var(--text-mention-grey)' }}>
+                    Essayez avec moins de caractères pour des résultats plus larges.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {!isLoading && !isError && !hasSuggestions && <div className={styles.message}>{noResultsMessage}</div>}
+          {!isLoading && !isError && hasSuggestions && (
             <div className={styles.list} role="listbox">
               {items.map((item, index) => (
                 <div
