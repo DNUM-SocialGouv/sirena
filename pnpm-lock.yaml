@@ -157,8 +157,8 @@ importers:
         specifier: ^4.2.4
         version: 4.2.4(zod@3.25.76)
       zod-prisma-types:
-        specifier: 3.3.5
-        version: 3.3.5(@prisma/client@6.19.0(prisma@6.19.0(typescript@5.9.3))(typescript@5.9.3))(prisma@6.19.0(typescript@5.9.3))(zod@3.25.76)
+        specifier: 3.2.4
+        version: 3.2.4(@prisma/client@6.19.0(prisma@6.19.0(typescript@5.9.3))(typescript@5.9.3))(prisma@6.19.0(typescript@5.9.3))
     devDependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
@@ -2534,8 +2534,8 @@ packages:
     resolution: {integrity: sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==}
     engines: {node: '>=0.10.0'}
 
-  code-block-writer@13.0.3:
-    resolution: {integrity: sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg==}
+  code-block-writer@12.0.0:
+    resolution: {integrity: sha512-q4dMFMlXtKR3XNBHyMHt/3pwYNA69EDk00lloMOaaUMKPUXBw6lpXtbu3MMVG6/uOihGnRDOlkyqsONEUj60+w==}
 
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
@@ -5043,13 +5043,12 @@ packages:
     peerDependencies:
       zod: ^3.21.4
 
-  zod-prisma-types@3.3.5:
-    resolution: {integrity: sha512-PDuRRCdX1d6ch6UclNvrqM1SLb2qvuaQPvZT/OHRrcxOQqQUnCz009aBc1uxuwMho1+d42TTDCQr+HPXhTSJtQ==}
+  zod-prisma-types@3.2.4:
+    resolution: {integrity: sha512-S4spVBMJAmecLv+aLyRhXK26qW9nWwcsOf1H1fRcEmiI8DPbftZ99u0fhqHlymuTpmMcUpuKxcNNOIqNY0ScSQ==}
     hasBin: true
     peerDependencies:
       '@prisma/client': ^4.x.x || ^5.x.x || ^6.x.x
       prisma: ^4.x.x || ^5.x.x || ^6.x.x
-      zod: ^3.25.0 || ^4.0.0
 
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
@@ -7645,7 +7644,7 @@ snapshots:
 
   cluster-key-slot@1.1.2: {}
 
-  code-block-writer@13.0.3: {}
+  code-block-writer@12.0.0: {}
 
   color-convert@2.0.1:
     dependencies:
@@ -10065,12 +10064,11 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  zod-prisma-types@3.3.5(@prisma/client@6.19.0(prisma@6.19.0(typescript@5.9.3))(typescript@5.9.3))(prisma@6.19.0(typescript@5.9.3))(zod@3.25.76):
+  zod-prisma-types@3.2.4(@prisma/client@6.19.0(prisma@6.19.0(typescript@5.9.3))(typescript@5.9.3))(prisma@6.19.0(typescript@5.9.3)):
     dependencies:
       '@prisma/client': 6.19.0(prisma@6.19.0(typescript@5.9.3))(typescript@5.9.3)
-      '@prisma/dmmf': 6.19.0
       '@prisma/generator-helper': 6.19.0
-      code-block-writer: 13.0.3
+      code-block-writer: 12.0.0
       lodash: 4.17.21
       prisma: 6.19.0(typescript@5.9.3)
       zod: 3.25.76

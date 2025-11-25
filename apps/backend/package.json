@@ -72,7 +72,7 @@
     "tsx": "catalog:",
     "zod": "catalog:",
     "zod-openapi": "^4.2.4",
-    "zod-prisma-types": "3.3.5"
+    "zod-prisma-types": "3.2.4"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
