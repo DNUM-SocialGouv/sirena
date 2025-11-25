@@ -19,7 +19,7 @@ export class PodMonitor extends Chart {
     const { namespace, appName, port, path, interval = '30s', scrapeTimeout = '10s' } = props;
 
     new ApiObject(this, 'pod-monitor', {
-      apiVersion: 'operator.victoriametrics.com/v1beta1',
+      apiVersion: 'monitoring.coreos.com/v1',
       kind: 'PodMonitor',
       metadata: {
         name: `${appName}-metrics`,
@@ -34,9 +34,6 @@ export class PodMonitor extends Chart {
             app: appName,
           },
         },
-        namespaceSelector: {
-          matchNames: [namespace],
-        },
         podMetricsEndpoints: [
           {
             port,
@@ -45,7 +42,7 @@ export class PodMonitor extends Chart {
             scrapeTimeout,
             scheme: 'http',
             honorLabels: true,
-            relabelConfigs: [
+            relabelings: [
               {
                 sourceLabels: ['__meta_kubernetes_pod_name'],
                 targetLabel: 'pod',
