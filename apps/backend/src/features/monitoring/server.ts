@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { envVars } from '@/config/env';
 import { createDefaultLogger } from '@/helpers/pino';
+import { loggerStorage } from '@/libs/asyncLocalStorage';
 
 interface MonitoringServerOptions {
   getMetrics: () => Promise<string>;
@@ -16,7 +17,7 @@ export function createMonitoringServer(options: MonitoringServerOptions) {
   const app = new Hono();
 
   app.get('/metrics', async (c) => {
-    const metrics = await getMetrics();
+    const metrics = await loggerStorage.run(logger, () => getMetrics());
     return c.text(metrics, 200, {
       'Content-Type': getContentType(),
     });

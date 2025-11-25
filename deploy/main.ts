@@ -1,8 +1,8 @@
 import { App as CdkApp, YamlOutputType } from 'cdk8s';
 import { App, Worker } from './charts/app';
 import { ExternalSecrets } from './charts/external-secrets';
+import { PodMonitor } from './charts/pod-monitor';
 import { RedisChart } from './charts/redis';
-import { ServiceMonitor } from './charts/service-monitor';
 import * as k8s from './imports/k8s';
 
 if (!process.env.IMAGE_TAG) {
@@ -121,14 +121,19 @@ function createApps(
     environment,
   });
 
-  // ServiceMonitor for VictoriaMetrics (backend metrics)
-  new ServiceMonitor(app, 'backend-service-monitor', {
+  // PodMonitors for VictoriaMetrics
+  new PodMonitor(app, 'backend-pod-monitor', {
     namespace,
-    serviceName: 'backend',
+    appName: 'backend',
     port: 'monitoring',
     path: '/metrics',
-    interval: '30s',
-    scrapeTimeout: '10s',
+  });
+
+  new PodMonitor(app, 'worker-pod-monitor', {
+    namespace,
+    appName: 'worker',
+    port: 'monitoring',
+    path: '/metrics',
   });
 }
 

@@ -360,6 +360,7 @@ function createWorkerDeployment(scope: Construct, props: WorkerProps, labels: Re
             {
               name: props.name,
               image: props.image,
+              ports: [{ containerPort: 9090, name: 'monitoring' }],
               resources: {
                 limits: {
                   cpu: k8s.Quantity.fromString('250m'),

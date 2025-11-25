@@ -1,5 +1,5 @@
 import { Counter, Gauge, Histogram } from 'prom-client';
-import { createDefaultLogger } from '@/helpers/pino';
+import { getLoggerStore } from '@/libs/asyncLocalStorage';
 import { prisma } from '@/libs/prisma';
 import { createMetricsRegistry } from './metrics.common';
 
@@ -66,7 +66,7 @@ function daysSince(date: Date): number {
 }
 
 export async function updateMetricsFromDatabase(): Promise<void> {
-  const logger = createDefaultLogger();
+  const logger = getLoggerStore();
   const now = Date.now();
 
   if (now - lastUpdateTime < CACHE_TTL_MS) {

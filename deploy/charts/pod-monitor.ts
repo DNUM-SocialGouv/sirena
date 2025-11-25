@@ -1,43 +1,43 @@
 import { ApiObject, Chart } from 'cdk8s';
 import type { Construct } from 'constructs';
 
-interface ServiceMonitorProps {
+interface PodMonitorProps {
   namespace: string;
-  serviceName: string;
+  appName: 'backend' | 'worker';
   port: string;
   path: string;
   interval?: string;
   scrapeTimeout?: string;
 }
 
-export class ServiceMonitor extends Chart {
-  constructor(scope: Construct, id: string, props: ServiceMonitorProps) {
+export class PodMonitor extends Chart {
+  constructor(scope: Construct, id: string, props: PodMonitorProps) {
     super(scope, id, {
       disableResourceNameHashes: true,
     });
 
-    const { namespace, serviceName, port, path, interval = '30s', scrapeTimeout = '10s' } = props;
+    const { namespace, appName, port, path, interval = '30s', scrapeTimeout = '10s' } = props;
 
-    new ApiObject(this, 'service-monitor', {
+    new ApiObject(this, 'pod-monitor', {
       apiVersion: 'operator.victoriametrics.com/v1beta1',
-      kind: 'ServiceMonitor',
+      kind: 'PodMonitor',
       metadata: {
-        name: `${serviceName}-metrics`,
+        name: `${appName}-metrics`,
         namespace,
         labels: {
-          app: serviceName,
+          app: appName,
         },
       },
       spec: {
         selector: {
           matchLabels: {
-            app: serviceName,
+            app: appName,
           },
         },
         namespaceSelector: {
           matchNames: [namespace],
         },
-        endpoints: [
+        podMetricsEndpoints: [
           {
             port,
             path,
@@ -55,8 +55,8 @@ export class ServiceMonitor extends Chart {
                 targetLabel: 'namespace',
               },
               {
-                sourceLabels: ['__meta_kubernetes_service_name'],
-                targetLabel: 'service',
+                targetLabel: 'app_type',
+                replacement: appName,
               },
             ],
           },
