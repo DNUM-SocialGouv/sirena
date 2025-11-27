@@ -16,7 +16,7 @@ export type Organization = {
 
 export async function fetchOrganizations(query: OrganizationQuery): Promise<Organization[]> {
   const res = await client.esante.organizations.$get({ query });
-  await handleRequestErrors(res);
+  await handleRequestErrors(res, { silentToastError: true });
   const { data } = await res.json();
   return data;
 }
