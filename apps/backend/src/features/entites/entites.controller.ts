@@ -7,13 +7,13 @@ import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { getEntiteChainRoute, getEntitesRoute } from './entites.route';
 import { GetEntitiesQuerySchema } from './entites.schema';
-import { getEditableEntitiesChain, getEntites } from './entites.service';
+import { getEditableEntitiesChain, getEntiteDescendantIds, getEntites, getEntitesByIds } from './entites.service';
 
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
   .use(userStatusMiddleware)
-  .use(roleMiddleware([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN]))
+  .use(roleMiddleware([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN, ROLES.WRITER, ROLES.READER, ROLES.NATIONAL_STEERING]))
   .use(entitesMiddleware)
 
   .get('/chain/:id?', getEntiteChainRoute, async (c) => {
@@ -32,6 +32,26 @@ const app = factoryWithLogs
 
     logger.info({ entiteId: id, chainLength: chains.length }, 'Entity chain retrieved successfully');
     return c.json({ data: chains });
+  })
+
+  .get('/descendants/:id', async (c) => {
+    const id = c.req.param('id');
+
+    const allIds = await getEntiteDescendantIds(id);
+
+    if (!allIds) {
+      return c.json({ data: [] });
+    }
+
+    const descendantIds = allIds.filter((entiteId) => entiteId !== id);
+
+    if (descendantIds.length === 0) {
+      return c.json({ data: [] });
+    }
+
+    const descendants = await getEntitesByIds(descendantIds);
+
+    return c.json({ data: descendants });
   })
 
   .get('/:id?', getEntitesRoute, zValidator('query', GetEntitiesQuerySchema), async (c) => {
