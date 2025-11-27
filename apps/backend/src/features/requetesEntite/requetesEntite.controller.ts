@@ -24,6 +24,7 @@ import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import {
   closeRequeteRoute,
   createRequeteRoute,
+  getOtherEntitesAffectedRoute,
   getRequeteEntiteRoute,
   getRequetesEntiteRoute,
 } from './requetesEntite.route';
@@ -40,6 +41,7 @@ import {
   closeRequeteForEntite,
   createRequeteEntite,
   createRequeteSituation,
+  getOtherEntitesAffected,
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
@@ -99,6 +101,28 @@ const app = factoryWithLogs
     logger.info({ requeteId: id }, 'Requete details retrieved successfully');
 
     return c.json({ data: requeteEntite });
+  })
+
+  .get('/:id/other-entites-affected', getOtherEntitesAffectedRoute, async (c) => {
+    const { id } = c.req.param();
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
+
+    const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
+
+    if (!requeteEntite) {
+      throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    const otherEntites = await getOtherEntitesAffected(requeteEntite.requeteId, requeteEntite.entiteId);
+
+    return c.json({ data: otherEntites });
   })
 
   .get('/:id/file/:fileId', async (c) => {
