@@ -1,4 +1,4 @@
-import { ROLES } from '@sirena/common/constants';
+import { type ReceptionType, ROLES } from '@sirena/common/constants';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { z } from 'zod';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -33,11 +33,12 @@ function RouteComponent() {
 
   return (
     <QueryStateHandler query={requestQuery}>
-      {() => {
-        const request = requestQuery.data;
+      {({ data }) => {
+        const request = data;
         const situations = request?.requete?.situations ?? [];
 
         const situation = situations.find((s) => s.id === situationId);
+        const receptionTypeId = data?.requete.receptionTypeId as ReceptionType | undefined;
 
         const formattedData = formatSituationFromServer(situation);
 
@@ -56,6 +57,7 @@ function RouteComponent() {
             requestId={requestId}
             situationId={situationId}
             initialData={formattedData}
+            receptionType={receptionTypeId}
             onSave={handleSave}
           />
         );

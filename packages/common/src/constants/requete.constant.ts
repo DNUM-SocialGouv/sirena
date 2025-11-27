@@ -200,6 +200,19 @@ export const maltraitanceTypeLabels: Record<MaltraitanceType, string> = {
   NON: "Non, je n'ai pas subi de maltraitance",
 };
 
+export const maltraitanceQualifiedLabels: Record<MaltraitanceType, string> = {
+  PHYSIQUE: 'Maltraitance physique',
+  SEXUELLE: 'Maltraitance sexuelle',
+  PSYCHOLOGIQUE: 'Maltraitance psychologique',
+  MATERIELLE_FINANCIERE: 'Maltraitance matérielles et financières',
+  NEGLIGENCES: 'Négligence, abandon, privation (maltraitance)',
+  DISCRIMINATION: 'Discrimination (maltraitance)',
+  INSTITUTIONNELLE: 'Violence institutionnelle (maltraitance)',
+  AUTRE: 'Autre maltraitance',
+  NE_SAIS_PAS: 'Ne sait pas si a subi de la maltraitance',
+  NON: '',
+};
+
 export const LIEU_TYPE = {
   DOMICILE: 'DOMICILE',
   ETABLISSEMENT_SANTE: 'ETABLISSEMENT_SANTE',
