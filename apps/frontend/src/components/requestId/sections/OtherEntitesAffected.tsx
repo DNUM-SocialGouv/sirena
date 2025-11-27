@@ -9,11 +9,11 @@ export const OtherEntitiesAffected = () => {
   });
   const { data = [], isLoading, error } = useRequeteOtherEntitiesAffected(requestId);
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Chargement...</div>;
   }
 
   if (error) {
-    return <div>Error loading other entities affected.</div>;
+    return <div>Erreur lors du chargement des autres entités affectées.</div>;
   }
 
   const hasOtherEntitiesAffected = data.length > 0;

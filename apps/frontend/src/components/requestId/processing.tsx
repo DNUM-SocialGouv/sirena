@@ -102,8 +102,6 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
     </p>
   );
 
-  console.log('requestQuery.data', requestQuery.data);
-
   return (
     <div>
       <div className="fr-container--fluid">

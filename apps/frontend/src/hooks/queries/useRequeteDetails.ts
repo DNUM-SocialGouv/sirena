@@ -6,8 +6,7 @@ export const useRequeteDetails = (requestId?: string) => {
     queryKey: ['requete', requestId],
     queryFn: async () => {
       if (!requestId) return null;
-      const response = await fetchRequeteDetails(requestId);
-      return response;
+      return await fetchRequeteDetails(requestId);
     },
     enabled: !!requestId,
   });
@@ -17,8 +16,7 @@ export const useRequeteOtherEntitiesAffected = (requestId: string) => {
   return useQuery({
     queryKey: ['requeteOtherEntitiesAffected', requestId],
     queryFn: async () => {
-      const response = await fetchRequeteOtherEntitiesAffected(requestId);
-      return response;
+      return await fetchRequeteOtherEntitiesAffected(requestId);
     },
     placeholderData: [],
     enabled: !!requestId,
