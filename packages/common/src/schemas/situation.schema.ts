@@ -52,6 +52,19 @@ export const SituationDataSchema = z.object({
       lieuDepotPlainte: z.string().optional(),
     })
     .optional(),
+
+  traitementDesFaits: z
+    .object({
+      entites: z
+        .array(
+          z.object({
+            entiteId: z.string(),
+            directionServiceId: z.string().optional(),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
 });
 
 export type SituationData = z.infer<typeof SituationDataSchema>;
