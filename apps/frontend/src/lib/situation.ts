@@ -64,5 +64,6 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
             : undefined,
         }
       : undefined,
+    traitementDesFaits: situation.traitementDesFaits,
   };
 }

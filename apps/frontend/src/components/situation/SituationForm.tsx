@@ -44,11 +44,14 @@ import {
 import type { SituationData } from '@sirena/common/schemas';
 import { SelectWithChildren } from '@sirena/ui';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FileUploadSection } from '@/components/common/FileUploadSection';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
 import { PractitionerSearchField } from '@/components/common/PractitionerSearchField';
+import { useEntites } from '@/hooks/queries/entites.hook';
+import { useProfile } from '@/hooks/queries/profile.hook';
 import { hasSituationContent } from '@/utils/situationHelpers';
+import TraitementDesFaitsSection from './TraitementDesFaits';
 
 interface SituationFormProps {
   mode: 'create' | 'edit';
@@ -63,6 +66,9 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
   const [formData, setFormData] = useState<SituationData>(initialData || {});
   const [isSaving, setIsSaving] = useState(false);
   const [faitFiles, setFaitFiles] = useState<File[]>([]);
+  const [isTraitementDesFaitsValid, setIsTraitementDesFaitsValid] = useState(true);
+  const { data: entitesData } = useEntites(undefined);
+  const { data: profile } = useProfile();
 
   useEffect(() => {
     if (initialData) {
@@ -73,6 +79,21 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
   const lieuType = formData.lieuDeSurvenue?.lieuType;
   const misEnCauseType = formData.misEnCause?.misEnCauseType;
   const demarches = formData.demarchesEngagees?.demarches || [];
+
+  const handleTraitementDesFaitsChange = useCallback(
+    (data: { entites: Array<{ entiteId: string; directionServiceId?: string }> }) => {
+      setFormData((prev) => ({
+        ...prev,
+        traitementDesFaits: {
+          entites: data.entites.map((e) => ({
+            entiteId: e.entiteId,
+            directionServiceId: e.directionServiceId,
+          })),
+        },
+      }));
+    },
+    [],
+  );
 
   const handleFaitInputChange =
     (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -924,11 +945,24 @@ export function SituationForm({ mode, requestId, situationId, initialData, onSav
           />
         </div>
 
+        <TraitementDesFaitsSection
+          entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({
+            id: e.id,
+            nomComplet: e.nomComplet,
+          }))}
+          userEntiteId={profile?.entiteId}
+          initialEntites={formData.traitementDesFaits?.entites}
+          onChange={handleTraitementDesFaitsChange}
+          onValidationChange={setIsTraitementDesFaitsValid}
+          disabled={isSaving}
+        />
+
+        {/* Actions */}
         <div className="fr-btns-group fr-btns-group--inline-md fr-mb-6w">
           <Button priority="secondary" onClick={handleCancel} disabled={isSaving}>
             Annuler
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSave} disabled={isSaving || !isTraitementDesFaitsValid}>
             Enregistrer
           </Button>
         </div>
