@@ -11,6 +11,7 @@ import { parseAdresseDomicile } from '@/helpers/address';
 import { sortObject } from '@/helpers/prisma/sort';
 import { createSearchConditionsForRequeteEntite } from '@/helpers/search';
 import { type Prisma, prisma } from '@/libs/prisma';
+import { getEntiteAscendanteId, getEntiteChain } from '../entites/entites.service';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service';
 import {
   mapDeclarantToPrismaCreate,
@@ -90,6 +91,52 @@ const SITUATION_INCLUDE_FULL = {
       entite: true,
     },
   },
+};
+
+type SituationWithIncludes = Prisma.SituationGetPayload<{
+  include: typeof SITUATION_INCLUDE_FULL;
+}>;
+
+export const enrichSituationWithTraitementDesFaits = async (
+  situation: SituationWithIncludes,
+): Promise<
+  SituationWithIncludes & {
+    traitementDesFaits: SituationInput['traitementDesFaits'];
+  }
+> => {
+  const entitesTraitement: Array<{ entiteId: string; directionServiceId?: string }> = [];
+  const seen = new Set<string>(); // avoid duplicates
+
+  for (const situationEntite of situation.situationEntites) {
+    const entite = situationEntite.entite;
+
+    const chain = await getEntiteChain(entite.id);
+    if (!chain.length) continue;
+
+    const rootId = chain[0].id;
+    const isRoot = entite.entiteMereId === null;
+
+    const entiteId = rootId;
+    const directionServiceId = isRoot ? undefined : entite.id;
+
+    const key = `${entiteId}::${directionServiceId ?? 'null'}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+
+    entitesTraitement.push({
+      entiteId,
+      directionServiceId,
+    });
+  }
+
+  return {
+    ...situation,
+    traitementDesFaits: {
+      entites: entitesTraitement,
+    },
+  };
 };
 
 // TODO handle entiteIds
@@ -195,7 +242,7 @@ export const getRequeteEntiteById = async (requeteId: string, entiteId: string |
     return null;
   }
 
-  return await prisma.requeteEntite.findFirst({
+  const result = await prisma.requeteEntite.findFirst({
     where: {
       requeteId,
       entiteId,
@@ -225,37 +272,7 @@ export const getRequeteEntiteById = async (requeteId: string, entiteId: string |
           },
           fichiersRequeteOriginale: true,
           situations: {
-            include: {
-              lieuDeSurvenue: {
-                include: { adresse: true, lieuType: true, transportType: true },
-              },
-              misEnCause: {
-                include: {
-                  misEnCauseType: true,
-                  misEnCauseTypePrecision: {
-                    include: {
-                      misEnCauseType: true,
-                    },
-                  },
-                },
-              },
-              faits: {
-                include: {
-                  motifs: { include: { motif: true } },
-                  motifsDeclaratifs: { include: { motifDeclaratif: true } },
-                  consequences: { include: { consequence: true } },
-                  maltraitanceTypes: { include: { maltraitanceType: true } },
-                  fichiers: true,
-                },
-              },
-              demarchesEngagees: {
-                include: {
-                  demarches: true,
-                  autoriteType: true,
-                  etablissementReponse: true,
-                },
-              },
-            },
+            include: SITUATION_INCLUDE_FULL,
           },
         },
       },
@@ -265,6 +282,23 @@ export const getRequeteEntiteById = async (requeteId: string, entiteId: string |
       },
     },
   });
+
+  if (!result) {
+    return null;
+  }
+
+  // Populate traitementDesFaits for each situation with associated directionServiceId
+  const enrichedSituations = await Promise.all(
+    result.requete?.situations?.map((situation) => enrichSituationWithTraitementDesFaits(situation)) ?? [],
+  );
+
+  return {
+    ...result,
+    requete: {
+      ...result.requete,
+      situations: enrichedSituations,
+    },
+  };
 };
 
 interface CreateRequeteInput {
@@ -786,6 +820,100 @@ const captureSituationState = async (tx: Prisma.TransactionClient, situationId: 
   });
 };
 
+// Update Situation Affectation (traitementDesFaits)
+const updateSituationEntites = async (
+  tx: Prisma.TransactionClient,
+  situationId: string,
+  traitementDesFaits: SituationInput['traitementDesFaits'],
+) => {
+  const situation = await tx.situation.findUnique({
+    where: { id: situationId },
+    select: { requeteId: true },
+  });
+
+  if (!situation?.requeteId) {
+    throw new Error(`Situation ${situationId} does not have a requeteId`);
+  }
+
+  const { requeteId } = situation;
+
+  // Get existing entities already associated with the situation
+  const existingSituationEntites = await tx.situationEntite.findMany({
+    where: { situationId },
+    select: { entiteId: true },
+  });
+
+  const existingEntiteIds = new Set(existingSituationEntites.map((se) => se.entiteId));
+
+  // If no entities are sent, delete everything
+  if (!traitementDesFaits?.entites || traitementDesFaits.entites.length === 0) {
+    await tx.situationEntite.deleteMany({ where: { situationId } });
+
+    return;
+  }
+
+  // Calculate newEntiteIds from entiteId / directionServiceId
+  const newEntiteIds = new Set(
+    traitementDesFaits.entites.map((entite) => entite.directionServiceId || entite.entiteId), // link entiteId (top entite) only if directionServiceId is not set
+  );
+
+  // Determine what is added / removed
+  const entitesToAdd = Array.from(newEntiteIds).filter((id) => !existingEntiteIds.has(id));
+  const entitesToRemove = Array.from(existingEntiteIds).filter((id) => !newEntiteIds.has(id));
+
+  // Delete obsolete SituationEntite
+  if (entitesToRemove.length > 0) {
+    await tx.situationEntite.deleteMany({
+      where: {
+        situationId,
+        entiteId: { in: entitesToRemove },
+      },
+    });
+  }
+
+  // Add new SituationEntite (newEntiteIds)
+  await Promise.all(
+    Array.from(newEntiteIds).map((newEntiteId) =>
+      tx.situationEntite.upsert({
+        where: {
+          situationId_entiteId: { situationId, entiteId: newEntiteId },
+        },
+        update: {},
+        create: {
+          situationId,
+          entiteId: newEntiteId,
+        },
+      }),
+    ),
+  );
+
+  // Update RequeteEntite (parent entities only)
+  const entiteMereIdsToAdd = new Set<string>();
+
+  await Promise.all(
+    entitesToAdd.map(async (entiteToAdd) => {
+      const rootId = await getEntiteAscendanteId(entiteToAdd); // Get top entity (ARS/CD/DDETS)
+      if (rootId) entiteMereIdsToAdd.add(rootId);
+    }),
+  );
+
+  // Add parent entities for all added entities
+  await Promise.all(
+    Array.from(entiteMereIdsToAdd).map(async (rootId) => {
+      return tx.requeteEntite.upsert({
+        where: {
+          requeteId_entiteId: { requeteId, entiteId: rootId },
+        },
+        update: {},
+        create: {
+          requeteId,
+          entiteId: rootId,
+        },
+      });
+    }),
+  );
+};
+
 const updateExistingSituation = async (
   tx: Prisma.TransactionClient,
   existingSituation: { id: string; faits: unknown[] },
@@ -812,6 +940,8 @@ const updateExistingSituation = async (
       await tx.fait.create({ data: faitCreateData });
     }
   }
+
+  await updateSituationEntites(tx, existingSituation.id, situationData.traitementDesFaits);
 
   if (changedById) {
     const after = await captureSituationState(tx, existingSituation.id);
@@ -846,6 +976,8 @@ const createNewSituation = async (
       await tx.fait.create({ data: faitCreateData });
     }
   }
+
+  await updateSituationEntites(tx, createdSituation.id, situationData.traitementDesFaits);
 
   if (changedById) {
     const after = await captureSituationState(tx, createdSituation.id);
