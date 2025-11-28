@@ -8,33 +8,38 @@ jobs:
     name: Lint and Unit Tests
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-    - name: Use Node.js 22
-      uses: actions/setup-node@v6
-      with:
-        node-version: 22
-        cache: 'pnpm'
-    - name: Install dependencies
-      run: pnpm install
-    - name: Run linter
-      run: pnpm lint
-    - name: Install deploy dependencies
-      working-directory: deploy
-      run: npm install
-    - name: Run deploy linter
-      working-directory: deploy
-      run: npm run lint
-    - name: Run gitLeaks
-      run: pnpm gitleaks:ci
-    - name: Build common
-      run: pnpm build:common
-    - name: Build backend-utils
-      run: pnpm build:backend-utils
-    - name: Generate types
-      run: pnpm db:generate
-    - name: Build backend
-      run: pnpm build:backend
-    - name: Run tests
-      run: pnpm test:unit
+      - uses: actions/checkout@v6
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+      - name: Use Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=moderate
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run linter
+        run: pnpm lint
+      - name: Audit deploy dependencies
+        working-directory: deploy
+        run: npm audit --audit-level=moderate
+      - name: Install deploy dependencies
+        working-directory: deploy
+        run: npm install
+      - name: Run deploy linter
+        working-directory: deploy
+        run: npm run lint
+      - name: Run gitLeaks
+        run: pnpm gitleaks:ci
+      - name: Build common
+        run: pnpm build:common
+      - name: Build backend-utils
+        run: pnpm build:backend-utils
+      - name: Generate types
+        run: pnpm db:generate
+      - name: Build backend
+        run: pnpm build:backend
+      - name: Run tests
+        run: pnpm test:unit
