@@ -1,6 +1,12 @@
 import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
-import { type EntiteType, REQUETE_STATUT_TYPES, type RequeteStatutType } from '@sirena/common/constants';
+import {
+  type EntiteType,
+  REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_STATUT_TYPES,
+  type RequeteEtapeStatutType,
+  type RequeteStatutType,
+} from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
 import { createChangeLog } from '@/features/changelog/changelog.service';
@@ -218,7 +224,7 @@ export const getOtherEntitesAffected = async (requeteId: string, excludeEntiteId
       lastEtape: re.requeteEtape[0]
         ? {
             ...re.requeteEtape[0],
-            statutId: re.requeteEtape[0].statutId as RequeteStatutType,
+            statutId: re.requeteEtape[0].statutId as RequeteEtapeStatutType,
           }
         : null,
     };
@@ -352,6 +358,7 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
           }),
           requeteEntites: {
             create: {
+              statutId: REQUETE_STATUT_TYPES.EN_COURS,
               entiteId,
             },
           },
@@ -1074,7 +1081,7 @@ export const closeRequeteForEntite = async (
       data: {
         requeteId,
         entiteId,
-        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
         clotureReasonId: reasonId,
         nom: `Requête clôturée le ${new Date().toLocaleDateString('fr-FR', {
           day: '2-digit',
@@ -1104,6 +1111,8 @@ export const closeRequeteForEntite = async (
         },
       });
     }
+
+    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE);
 
     return {
       etapeId: etape.id,
@@ -1155,4 +1164,11 @@ export const closeRequeteForEntite = async (
   }
 
   return result;
+};
+
+export const updateStatusRequete = async (requeteId: string, entiteId: string, statut: RequeteStatutType) => {
+  return prisma.requeteEntite.update({
+    where: { requeteId_entiteId: { requeteId, entiteId } },
+    data: { statutId: statut },
+  });
 };

@@ -4,7 +4,7 @@ import {
   throwHTTPException403Forbidden,
   throwHTTPException404NotFound,
 } from '@sirena/backend-utils/helpers';
-import { ROLES } from '@sirena/common/constants';
+import { REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import {
@@ -48,6 +48,7 @@ import {
   updateRequeteDeclarant,
   updateRequeteParticipant,
   updateRequeteSituation,
+  updateStatusRequete,
 } from './requetesEntite.service';
 
 const app = factoryWithLogs
@@ -286,6 +287,10 @@ const app = factoryWithLogs
         c.set('changelogId', updatedRequete.declarant.id);
       }
 
+      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+        await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+      }
+
       logger.info({ requeteId: id, userId }, 'Declarant data updated successfully');
 
       return c.json({ data: updatedRequete });
@@ -322,6 +327,10 @@ const app = factoryWithLogs
         // Set the participant ID in context for changelog middleware
         if (updatedRequete.participant) {
           c.set('changelogId', updatedRequete.participant.id);
+        }
+
+        if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+          await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
         }
 
         logger.info({ requeteId: id, userId }, 'Participant data updated successfully');
@@ -371,6 +380,10 @@ const app = factoryWithLogs
 
     await setRequeteFile(id, fileIds, topEntiteId);
 
+    if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+      await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+    }
+
     logger.info({ requeteId: id, userId, fileIds }, 'Files linked to requete successfully');
 
     return c.json({ data: { requeteId: id, fileIds } });
@@ -409,6 +422,10 @@ const app = factoryWithLogs
 
     const updatedRequete = await createRequeteSituation(id, situationData, topEntiteId, userId);
 
+    if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+      await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+    }
+
     logger.info({ requeteId: id, userId, fileCount: fileIds.length }, 'Situation created successfully');
 
     return c.json({ data: updatedRequete });
@@ -446,6 +463,10 @@ const app = factoryWithLogs
     }
 
     const updatedRequete = await updateRequeteSituation(id, situationId, situationData, topEntiteId, userId);
+
+    if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+      await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+    }
 
     logger.info({ requeteId: id, situationId, userId, fileCount: fileIds.length }, 'Situation updated successfully');
 
