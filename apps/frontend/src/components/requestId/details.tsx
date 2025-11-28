@@ -1,6 +1,6 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { useId, useMemo } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -59,7 +59,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
   };
 
   const isRequestClosed = useMemo(() => {
-    return requestQuery.data?.requeteEtape?.some((etape) => etape.statutId === REQUETE_STATUT_TYPES.CLOTUREE);
+    return requestQuery.data?.requeteEtape?.some((etape) => etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE);
   }, [requestQuery.data?.requeteEtape]);
 
   if (!requestId) {
