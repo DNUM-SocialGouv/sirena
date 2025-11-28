@@ -19,6 +19,11 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Audit dependencies
+      shell: bash
+      run: |
+        cd deploy
+        npm audit --audit-level=moderate
     - name: Install dependencies
       shell: bash
       run: |

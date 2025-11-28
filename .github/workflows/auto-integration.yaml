@@ -54,7 +54,7 @@ jobs:
         with:
           environment: integration
           version: ${{ needs.build-docker.outputs.SHORT_SHA }}
-          gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }} 
+          gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }}
 
   e2e-tests:
     name: End-to-End Tests
@@ -72,9 +72,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
 
+      - name: Audit dependencies
+        run: |
+          cd apps/frontend
+          pnpm audit --audit-level=moderate
       - name: Install dependencies
         run: |
           cd apps/frontend
