@@ -18,6 +18,7 @@ import {
   updateRequete,
   updateRequeteDeclarant,
   updateRequeteSituation,
+  updateStatusRequete,
 } from './requetesEntite.service';
 
 vi.mock('@sirena/backend-utils', () => ({
@@ -51,6 +52,7 @@ vi.mock('@/libs/prisma', () => ({
       count: vi.fn(),
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+      update: vi.fn(),
     },
     requete: {
       findUnique: vi.fn(),
@@ -73,6 +75,7 @@ const mockRequeteEntite: RequeteEntite & { requete: Requete & { situations?: unk
 } = {
   requeteId: 'req123',
   entiteId: 'ent123',
+  statutId: 'EN_COURS',
   requete: {
     id: 'req123',
     dematSocialId: 123,
@@ -391,6 +394,7 @@ describe('requetesEntite.service', () => {
       const mockOtherEntite = {
         entiteId: mockRequeteEntite.entiteId,
         requeteId: mockRequeteEntite.requeteId,
+        statutId: mockRequeteEntite.statutId,
         entite: {
           id: 'Entite 1',
           label: 'Entite 1',
@@ -402,6 +406,7 @@ describe('requetesEntite.service', () => {
       const mockSecondOtherEntite = {
         entiteId: 'entite-2',
         requeteId: mockRequeteEntite.requeteId,
+        statutId: mockRequeteEntite.statutId,
         entite: {
           id: 'Entite 2',
           label: 'Entite 2',
@@ -929,6 +934,7 @@ describe('requetesEntite.service', () => {
           canDelete: true,
         },
       ]);
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
 
       const transactionSpy = vi.mocked(prisma.$transaction);
       const mockEtape = {
@@ -1712,6 +1718,19 @@ describe('requetesEntite.service', () => {
       expect(result.id).toBe('sit1');
       expect(result.situationEntites).toEqual(mockSituation.situationEntites);
       expect(result.traitementDesFaits).toBeDefined();
+  describe('updateStatusRequete', () => {
+    it('should update the status of the requeteEntite', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: 'CLOTUREE',
+      });
+
+      const result = await updateStatusRequete('req123', 'ent123', 'CLOTUREE');
+
+      expect(prisma.requeteEntite.update).toHaveBeenCalledOnce();
+
+      expect(result.statutId).toBe('CLOTUREE');
     });
   });
 });

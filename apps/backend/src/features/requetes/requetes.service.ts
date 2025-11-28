@@ -1,3 +1,4 @@
+import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { sanitizeFilename, urlToStream } from '@/helpers/file';
 import { getLoggerStore } from '@/libs/asyncLocalStorage';
 import { uploadFileToMinio } from '@/libs/minio';
@@ -23,6 +24,10 @@ export const createRequeteFromDematSocial = async ({
   pdf,
 }: CreateRequeteFromDematSocialDto) => {
   const logger = getLoggerStore();
+  const entiteIds = Array.from(
+    new Set(situations.flatMap((s) => s.entiteIds).filter((id): id is string => Boolean(id))),
+  );
+  const primaryEntiteId = entiteIds[0] ?? null;
 
   return await prisma.$transaction(async (tx) => {
     const createFileForRequete = async (
@@ -72,6 +77,18 @@ export const createRequeteFromDematSocial = async ({
     const id = await generateRequeteId(source, tx);
     const requete = await tx.requete.create({
       data: {
+        ...(entiteIds.length > 0
+          ? {
+              requeteEntites: {
+                create: entiteIds.map((entiteId) => ({
+                  statut: {
+                    connect: { id: REQUETE_STATUT_TYPES.NOUVEAU },
+                  },
+                  entite: { connect: { id: entiteId } },
+                })),
+              },
+            }
+          : {}),
         id,
         dematSocialId,
         receptionDate,
@@ -152,6 +169,9 @@ export const createRequeteFromDematSocial = async ({
     }
 
     for (const s of situations) {
+      const situationEntiteIds = Array.from(new Set(s.entiteIds.filter((id): id is string => Boolean(id))));
+      const situationPrimaryEntiteId = situationEntiteIds[0] ?? primaryEntiteId;
+
       const lieu = await tx.lieuDeSurvenue.create({
         data: {
           codePostal: s.lieuDeSurvenue.codePostal ?? '',
@@ -213,7 +233,7 @@ export const createRequeteFromDematSocial = async ({
       });
 
       const files = s.demarchesEngagees.files.map(
-        async (file) => await createFileForRequete(file, { demarchesEngageesId: dem.id }, null),
+        async (file) => await createFileForRequete(file, { demarchesEngageesId: dem.id }, situationPrimaryEntiteId),
       );
 
       const results = await Promise.allSettled(files);
@@ -232,8 +252,19 @@ export const createRequeteFromDematSocial = async ({
           lieuDeSurvenue: { connect: { id: lieu.id } },
           misEnCause: { connect: { id: mec.id } },
           demarchesEngagees: { connect: { id: dem.id } },
+          ...(situationEntiteIds.length > 0
+            ? {
+                situationEntites: {
+                  create: situationEntiteIds.map((entiteId) => ({
+                    entite: { connect: { id: entiteId } },
+                  })),
+                },
+              }
+            : {}),
         },
-        select: { id: true },
+        select: {
+          id: true,
+        },
       });
 
       const faits = s.faits.map(async (f) => {
@@ -247,7 +278,7 @@ export const createRequeteFromDematSocial = async ({
         });
 
         const files = f.files.map(
-          async (file) => await createFileForRequete(file, { faitSituationId: situation.id }, null),
+          async (file) => await createFileForRequete(file, { faitSituationId: situation.id }, situationPrimaryEntiteId),
         );
 
         const results = await Promise.allSettled(files);
@@ -295,7 +326,7 @@ export const createRequeteFromDematSocial = async ({
     }
 
     if (pdf) {
-      await createFileForRequete(pdf, { requeteId: requete.id }, null, false);
+      await createFileForRequete(pdf, { requeteId: requete.id }, primaryEntiteId, false);
     }
 
     const requeteWithEntites = await tx.requete.findUniqueOrThrow({

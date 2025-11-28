@@ -13,6 +13,7 @@ import {
   PROFESSION_DOMICILE_TYPE,
   PROFESSION_TYPE,
   RECEPTION_TYPE,
+  REQUETE_STATUT_TYPES,
   TRANSPORT_TYPE,
 } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -663,6 +664,16 @@ describe('requetes.service.ts', () => {
           dematSocialId: fakeRequeteDto.dematSocialId,
           receptionDate: fakeRequeteDto.receptionDate,
           receptionType: { connect: { id: fakeRequeteDto.receptionTypeId } },
+          requeteEntites: {
+            create: fakeRequeteDto.situations[0].entiteIds.map((entiteId) => ({
+              statut: { connect: { id: REQUETE_STATUT_TYPES.NOUVEAU } },
+              entite: {
+                connect: {
+                  id: entiteId,
+                },
+              },
+            })),
+          },
         },
       });
 

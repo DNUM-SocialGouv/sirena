@@ -1,5 +1,5 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
 import { Prisma } from '@/libs/prisma';
 import { z } from '@/libs/zod';
 
@@ -19,7 +19,11 @@ export const AddProcessingStepBodySchema = z.object({
 export const GetRequeteEtapesQuerySchema = paginationQueryParamsSchema(columns);
 
 export const UpdateRequeteEtapeStatutSchema = z.object({
-  statutId: z.enum([REQUETE_STATUT_TYPES.A_FAIRE, REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.FAIT]),
+  statutId: z.enum([
+    REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+    REQUETE_ETAPE_STATUT_TYPES.EN_COURS,
+    REQUETE_ETAPE_STATUT_TYPES.FAIT,
+  ]),
 });
 
 export const UpdateRequeteEtapeNomSchema = z.object({
