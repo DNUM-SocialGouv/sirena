@@ -1,7 +1,7 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
-import { REQUETE_STATUT_TYPES, type RequeteStatutType } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, type RequeteEtapeStatutType } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
 
 import { clsx } from 'clsx';
@@ -14,7 +14,7 @@ import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { UpdateProcessingStepNameSchema } from '@/schemas/processingSteps.schema';
-import { allBadges } from '@/utils/requeteStatutBadage.constant';
+import { requeteEtapeStatutBadges } from '@/utils/requeteStatutBadge.constant';
 import { StepNote } from './StepNote';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
@@ -58,18 +58,18 @@ const StepComponent = ({
   const [editError, setEditError] = useState<string | null>(null);
   const { canEdit } = useCanEdit({ requeteId: requestId });
 
-  const badges = allBadges.filter((badge) => {
-    if (statutId === REQUETE_STATUT_TYPES.CLOTUREE) {
+  const badges = requeteEtapeStatutBadges.filter((badge) => {
+    if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
       return true;
     }
-    return badge.value !== REQUETE_STATUT_TYPES.CLOTUREE;
+    return badge.value !== REQUETE_ETAPE_STATUT_TYPES.CLOTUREE;
   });
 
   const handleStatusChange = (newStatutId: string) => {
     if (newStatutId !== statutId && id && newStatutId !== 'CLOTUREE') {
       updateStatusMutation.mutate({
         id,
-        statutId: newStatutId as Exclude<RequeteStatutType, 'CLOTUREE'>,
+        statutId: newStatutId as Exclude<RequeteEtapeStatutType, 'CLOTUREE'>,
       });
     }
   };
@@ -211,7 +211,7 @@ const StepComponent = ({
               requeteStateId={id}
               onEdit={(noteData) => openEditNote?.({ id, nom, statutId, notes, ...rest }, noteData)}
               clotureReasonLabel={
-                statutId === REQUETE_STATUT_TYPES.CLOTUREE ? rest.clotureReason?.label || 'Non spécifié' : null
+                statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ? rest.clotureReason?.label || 'Non spécifié' : null
               }
             />
           ))}

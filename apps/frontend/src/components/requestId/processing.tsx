@@ -1,7 +1,6 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import type { EntiteType } from '@sirena/common/constants';
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { type EntiteType, REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -36,7 +35,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const { canEdit } = useCanEdit({ requeteId: requestId });
 
   const isRequestClosed = useMemo(() => {
-    return queryProcessingSteps.data?.data?.some((step) => step.statutId === REQUETE_STATUT_TYPES.CLOTUREE);
+    return queryProcessingSteps.data?.data?.some((step) => step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE);
   }, [queryProcessingSteps.data?.data]);
 
   useEffect(() => {
@@ -67,7 +66,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 key={step.id}
                 requestId={requestId}
                 {...step}
-                disabled={index === data.data.length - 1 || step.statutId === REQUETE_STATUT_TYPES.CLOTUREE}
+                disabled={index === data.data.length - 1 || step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE}
                 openEdit={handleOpenEdit}
                 openEditNote={handleOpenEditNote}
               />

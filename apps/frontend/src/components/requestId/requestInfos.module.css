@@ -2,3 +2,8 @@
   display: flex;
   gap: 2rem;
 }
+
+.requete-statut-tag {
+  margin-left: 2rem;
+  vertical-align: middle;
+}

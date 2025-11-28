@@ -1,12 +1,12 @@
-import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
-import { REQUETE_STATUT_TYPES, type RequeteStatutType, requeteStatutType } from '@sirena/common/constants';
+import type { RequeteStatutType } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
+import { RequeteStatutTag } from '../RequeteStatutTag';
 import { renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
 
 type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number] & {
@@ -14,13 +14,6 @@ type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>
 };
 
 const DEFAULT_PAGE_SIZE = 10;
-
-const statutSeverity = {
-  [REQUETE_STATUT_TYPES.EN_COURS]: 'info',
-  [REQUETE_STATUT_TYPES.A_FAIRE]: 'new',
-  [REQUETE_STATUT_TYPES.FAIT]: 'success',
-  [REQUETE_STATUT_TYPES.CLOTUREE]: 'error',
-} as const;
 
 export function RequetesEntite() {
   const queries = useSearch({ from: '/_auth/_user/home' });
@@ -92,16 +85,7 @@ export function RequetesEntite() {
       </div>
     ),
     'custom:statut': (row) => {
-      const statutId = row.requeteEtape?.[0]?.statutId;
-      const severity = statutId ? statutSeverity[statutId as RequeteStatutType] : undefined;
-      const label = statutId ? requeteStatutType[statutId as RequeteStatutType] : 'Inconnu';
-      return severity ? (
-        <Badge noIcon severity={severity} className="one-line">
-          {label}
-        </Badge>
-      ) : (
-        ''
-      );
+      return <RequeteStatutTag statut={row.statutId as RequeteStatutType} noIcon={true} />;
     },
     'custom:personne': (row) => {
       const requete = row.requete as typeof row.requete & {

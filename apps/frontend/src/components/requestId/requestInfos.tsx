@@ -1,3 +1,4 @@
+import { RequeteStatutTag } from '../common/RequeteStatutTag';
 import style from './requestInfos.module.css';
 import { ContactInfo } from './sections/helpers';
 
@@ -5,14 +6,23 @@ interface RequestInfosProps {
   requestId?: string;
   fullName: string | null;
   motif: string | null;
+  statutId: string;
 }
 
-export const RequestInfos = ({ requestId, fullName, motif }: RequestInfosProps) => {
+export const RequestInfos = ({ requestId, fullName, motif, statutId }: RequestInfosProps) => {
   // TODO: add more information about the request in header
   return (
     <div className="fr-grid-row fr-grid-row--gutters">
       <div className="fr-col">
-        <h1 className="fr-mb-2w">{requestId ? `Requête ${requestId}` : 'Nouvelle requête'}</h1>
+        <h1 className="fr-mb-2w">
+          {requestId ? (
+            <>
+              Requête {requestId} <RequeteStatutTag className={style['requete-statut-tag']} statut={statutId} noIcon />
+            </>
+          ) : (
+            'Nouvelle requête'
+          )}
+        </h1>
         {fullName && (
           <div className={style['legend-display']}>
             <ContactInfo icon="fr-icon-user-line" ariaLabel="Identité">
