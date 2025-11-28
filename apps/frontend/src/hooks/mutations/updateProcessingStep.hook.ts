@@ -1,4 +1,4 @@
-import type { RequeteStatutType } from '@sirena/common/constants';
+import type { RequeteEtapeStatutType } from '@sirena/common/constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   type AddProcessingStepData,
@@ -73,7 +73,7 @@ export const useDeleteProcessingStepNote = (requestId: string) => {
 
 type UpdateProcessingStepStatusParams = {
   id: string;
-  statutId: Exclude<RequeteStatutType, 'CLOTUREE'>;
+  statutId: Exclude<RequeteEtapeStatutType, 'CLOTUREE'>;
 };
 
 export const useUpdateProcessingStepStatus = (requestId: string) => {

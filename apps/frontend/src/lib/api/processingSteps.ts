@@ -1,4 +1,4 @@
-import type { RequeteStatutType } from '@sirena/common/constants';
+import type { RequeteEtapeStatutType } from '@sirena/common/constants';
 import { client } from '@/lib/api/hc.ts';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery.ts';
 
@@ -24,7 +24,7 @@ export async function addProcessingStep(requestId: string, data: AddProcessingSt
 }
 
 export type UpdateProcessingStepStatusData = {
-  statutId: Exclude<RequeteStatutType, 'CLOTUREE'>;
+  statutId: Exclude<RequeteEtapeStatutType, 'CLOTUREE'>;
 };
 
 export async function updateProcessingStepStatus(stepId: string, data: UpdateProcessingStepStatusData) {
