@@ -24,9 +24,13 @@ export function checkRequired(node: DecisionNode, ctx: SituationContext) {
   }
 }
 
+function isMotif(value: Motif | string): value is Motif {
+  return MOTIFS_SET.has(value as Motif);
+}
+
 export function filterMotifs(ctx: SituationContext): Motif[] {
   // keep only motifs (sirena motifs not motifsDeclaratifs) that are in the MOTIF enum to map decision tree schema
-  return Array.isArray(ctx?.motifs) ? (ctx.motifs.filter((m) => MOTIFS_KEYS.includes(m as Motif)) as Motif[]) : [];
+  return Array.isArray(ctx?.motifs) ? ctx.motifs.filter(isMotif) : [];
 }
 
 export function computeEntitesFromMotifs(ctx: SituationContext): EntiteAdminType[] {
@@ -62,6 +66,7 @@ const DOMICILE_PRO_SANTE_MAPPING: Record<ProfessionDomicileType, EntiteAdminType
 };
 
 const MOTIFS_KEYS: Motif[] = Object.keys(MOTIF) as Motif[];
+const MOTIFS_SET = new Set(MOTIFS_KEYS);
 const MOTIF_DECLARATIFS_TO_ENTITES: Partial<Record<Motif, EntiteAdminType[]>> = {
   PROBLEME_QUALITE_SOINS: ['ARS'],
   DIFFICULTES_ACCES_SOINS: ['ARS'],
