@@ -22,6 +22,10 @@ const AdministrativeRowSchema = z.object({
     .string()
     .nullable()
     .transform((v) => (v === '' ? null : v)),
+  ctcd_code: z
+    .string()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
 });
 
 export async function seedAdministratives(prisma: PrismaClient) {
@@ -48,6 +52,7 @@ export async function seedAdministratives(prisma: PrismaClient) {
         organizationalUnit: row.Organizational_unit ?? '',
         entiteTypeId: row["Type d'entité"],
         departementCode: row.departement_code,
+        ctcdCode: row.ctcd_code,
         regionCode: row.region_code,
       }));
 

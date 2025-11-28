@@ -30,6 +30,7 @@ const fakeEntiteBase: Omit<Entite, 'id'> = {
   emailDomain: 'domain.fr',
   departementCode: '1',
   regionCode: '1',
+  ctcdCode: '1',
 };
 
 const fakeEntite = (id: string): Entite => ({
@@ -50,6 +51,7 @@ describe('entites.service', () => {
       emailDomain: '',
       departementCode: '1',
       regionCode: '1',
+      ctcdCode: '1',
     };
     const mockEntite2 = {
       id: '1',
@@ -62,6 +64,7 @@ describe('entites.service', () => {
       emailDomain: 'domain.fr',
       departementCode: '1',
       regionCode: '1',
+      ctcdCode: '1',
     };
 
     beforeEach(() => {
@@ -120,6 +123,7 @@ describe('entites.service', () => {
         emailDomain: '',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       };
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite]);
       vi.mocked(prisma.entite.count).mockResolvedValueOnce(1);
@@ -154,6 +158,7 @@ describe('entites.service', () => {
         emailDomain: '',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       };
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite]);
       vi.mocked(prisma.entite.count).mockResolvedValueOnce(1);
@@ -200,6 +205,7 @@ describe('entites.service', () => {
         emailDomain: '',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       };
       const mockEntite2 = {
         id: '1',
@@ -212,6 +218,7 @@ describe('entites.service', () => {
         emailDomain: 'domain.fr',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       };
 
       vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(mockEntite2).mockResolvedValueOnce(mockEntite1);
@@ -252,6 +259,7 @@ describe('entites.service', () => {
         emailDomain: 'domain.fr',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       };
       const mockEntite3 = {
         id: '3',
@@ -264,6 +272,7 @@ describe('entites.service', () => {
         emailDomain: 'domain.fr',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       };
 
       vi.mocked(prisma.entite.findMany)
@@ -306,6 +315,7 @@ describe('entites.service', () => {
         organizationalUnit: '',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       },
       {
         id: '4',
@@ -318,6 +328,7 @@ describe('entites.service', () => {
         organizationalUnit: '',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       },
       {
         id: '3',
@@ -330,6 +341,7 @@ describe('entites.service', () => {
         organizationalUnit: '',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       },
       {
         id: '2',
@@ -342,6 +354,7 @@ describe('entites.service', () => {
         organizationalUnit: '',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       },
       {
         id: '1',
@@ -354,6 +367,7 @@ describe('entites.service', () => {
         organizationalUnit: '',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       },
     ];
 
@@ -428,6 +442,7 @@ describe('entites.service', () => {
         emailDomain: '',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       };
       const mockEntite2 = {
         id: '1',
@@ -440,6 +455,7 @@ describe('entites.service', () => {
         emailDomain: 'domain.fr',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       };
 
       vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(mockEntite2);
@@ -468,6 +484,7 @@ describe('entites.service', () => {
         emailDomain: '',
         departementCode: '1',
         regionCode: '1',
+        ctcdCode: '1',
       };
 
       vi.mocked(prisma.entite.findUnique).mockResolvedValue(mockEntite1);

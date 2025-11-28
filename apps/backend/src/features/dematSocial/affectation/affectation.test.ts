@@ -219,6 +219,7 @@ describe('assignEntitesToRequeteTask', () => {
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS']);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
       departementCode: '75',
+      ctcdCode: '75C',
       regionCode: '11',
     });
     (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
@@ -256,6 +257,7 @@ describe('assignEntitesToRequeteTask', () => {
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS'] as EntiteAdminType[]);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
       departementCode: '75',
+      ctcdCode: '75C',
       regionCode: '11',
     });
     (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockEntite);
@@ -319,6 +321,7 @@ describe('assignEntitesToRequeteTask', () => {
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['CD', 'DDETS'] as EntiteAdminType[]);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
       departementCode: '75',
+      ctcdCode: '75C',
       regionCode: '11',
     });
     (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>)
@@ -357,7 +360,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it('should use departementCode for CD and DDETS entity types', async () => {
+  it('should use ctcdCode for CD and DDETS entity types', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),
@@ -385,6 +388,7 @@ describe('assignEntitesToRequeteTask', () => {
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['CD'] as EntiteAdminType[]);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
       departementCode: '75',
+      ctcdCode: '75C',
       regionCode: '11',
     });
     (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockEntite);
@@ -395,7 +399,7 @@ describe('assignEntitesToRequeteTask', () => {
       where: {
         entiteTypeId: 'CD',
         entiteMereId: null,
-        departementCode: '75',
+        ctcdCode: '75C',
       },
     });
   });
@@ -428,6 +432,7 @@ describe('assignEntitesToRequeteTask', () => {
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS'] as EntiteAdminType[]);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
       departementCode: '75',
+      ctcdCode: '75C',
       regionCode: '11',
     });
     (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockEntite);
@@ -471,6 +476,7 @@ describe('assignEntitesToRequeteTask', () => {
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS'] as EntiteAdminType[]);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
       departementCode: '75',
+      ctcdCode: '75C',
       regionCode: '11',
     });
     (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockEntite);

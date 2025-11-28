@@ -90,6 +90,7 @@ model Entite {
   entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
 
   departementCode String?
+  ctcdCode        String?
   regionCode      String?
 
   users            User[]
