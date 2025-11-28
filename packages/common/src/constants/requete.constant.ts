@@ -100,6 +100,17 @@ export const misEnCauseAutreNonProPrecisionLabels: Record<MisEnCauseAutreNonProP
   AUTRE: 'Autre (patient ou résident, inconnu, escroc...)',
 };
 
+// Union type for all MisEnCauseTypePrecisionEnum values
+export type MisEnCauseTypePrecisionUnion =
+  | MisEnCauseFamillePrecision
+  | MisEnCauseProchePrecision
+  | MisEnCauseAutreNonProPrecision
+  | ProfessionSantePrecision
+  | ProfessionSocialPrecision
+  | AutreProfessionnelPrecision
+  | ProfessionType
+  | ProfessionDomicileType;
+
 // MIS_EN_CAUSE_TYPE = LIEN_VICTIME
 export const LIEN_VICTIME = MIS_EN_CAUSE_TYPE;
 export type LienVictime = MisEnCauseType;

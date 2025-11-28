@@ -89,6 +89,10 @@ model Entite {
   entiteMereId String?
   entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
 
+  departementCode String?
+  ctcdCode        String?
+  regionCode      String?
+
   users            User[]
   uploads          UploadedFile[]
   requeteEntite    RequeteEntite[]

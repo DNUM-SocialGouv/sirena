@@ -1,8 +1,11 @@
 import { fr } from '@codegouvfr/react-dsfr';
+import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import { demarcheEngageeLabels, MOTIFS_HIERARCHICAL_DATA, misEnCauseTypeLabels } from '@sirena/common/constants';
 import { getLieuPrecisionLabel, valueToLabel } from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
+import { useMemo } from 'react';
 import { FileList } from '@/components/common/FileList';
+import { useEntiteDescendants, useEntites } from '@/hooks/queries/entites.hook';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { formatFileFromServer } from '@/utils/fileHelpers';
@@ -40,6 +43,35 @@ type SituationData = NonNullable<
   NonNullable<ReturnType<typeof useRequeteDetails>['data']>['requete']['situations']
 >[number];
 
+interface TraitementDesFaitsBadgeWithDirectionProps {
+  entiteId: string;
+  directionServiceId: string;
+  entiteName: string;
+  entiteType: string;
+}
+
+const getBadgeClassName = (entiteType: string): string => {
+  const type = entiteType.toLowerCase();
+  if (type === 'ars') return 'fr-badge--pink-tuile';
+  if (type === 'ddets') return 'fr-badge--blue-ecume';
+  if (type === 'cd') return 'fr-badge--green-menthe';
+  return 'fr-badge';
+};
+
+const TraitementDesFaitsBadgeWithDirection = ({
+  entiteId,
+  directionServiceId,
+  entiteName,
+  entiteType,
+}: TraitementDesFaitsBadgeWithDirectionProps) => {
+  const { data: descendants = [] } = useEntiteDescendants(entiteId);
+  const directionName = descendants.find((d: { id: string }) => d.id === directionServiceId)?.nomComplet || '';
+
+  const label = directionName ? `${entiteName} - ${directionName}` : entiteName;
+
+  return <Badge className={getBadgeClassName(entiteType)}>{label}</Badge>;
+};
+
 interface SituationSectionProps {
   id: string;
   requestId?: string;
@@ -57,8 +89,66 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
 
   const isFulfilled = hasSituationContent(situation);
 
+  const traitementDesFaits = situation?.traitementDesFaits;
+  const { data: allEntites } = useEntites(undefined);
+  const entitesMap = useMemo(() => {
+    const map = new Map<string, { nomComplet: string; entiteTypeId: string }>();
+    if (allEntites?.data) {
+      allEntites.data.forEach((entite) => {
+        map.set(entite.id, { nomComplet: entite.nomComplet, entiteTypeId: entite.entiteTypeId });
+      });
+    }
+    return map;
+  }, [allEntites?.data]);
+
+  const renderTraitementDesFaitsBadges = (showTitle = false) => {
+    if (!traitementDesFaits?.entites || traitementDesFaits.entites.length === 0) return null;
+
+    const badges = (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+        {traitementDesFaits.entites.map((entite, index) => {
+          const entiteInfo = entitesMap.get(entite.entiteId);
+          if (!entiteInfo) return null;
+
+          const entiteName = entiteInfo.nomComplet;
+          const entiteType = entiteInfo.entiteTypeId.toLowerCase();
+
+          if (entite.directionServiceId) {
+            return (
+              <TraitementDesFaitsBadgeWithDirection
+                key={`${entite.entiteId}-${entite.directionServiceId}-${index}`}
+                entiteId={entite.entiteId}
+                directionServiceId={entite.directionServiceId}
+                entiteName={entiteName}
+                entiteType={entiteType}
+              />
+            );
+          }
+
+          return (
+            <Badge key={`${entite.entiteId}-${index}`} className={getBadgeClassName(entiteType)}>
+              {entiteName}
+            </Badge>
+          );
+        })}
+      </div>
+    );
+
+    if (showTitle) {
+      return (
+        <>
+          <SectionTitle>Traitement des faits</SectionTitle>
+          <div className={fr.cx('fr-mb-3w')}>{badges}</div>
+        </>
+      );
+    }
+
+    return badges;
+  };
+
   const renderSummary = () => {
-    if (!hasLieu && !hasMisEnCause && !hasMotifs) return null;
+    const hasTraitementDesFaits = traitementDesFaits?.entites && traitementDesFaits.entites.length > 0;
+    if (!hasLieu && !hasMisEnCause && !hasMotifs && !hasTraitementDesFaits) return null;
 
     return (
       <div className="fr-grid-row fr-grid-row--gutters">
@@ -91,12 +181,22 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
             </p>
           </div>
         )}
+        {hasTraitementDesFaits && (
+          <div className="fr-col-auto">
+            <p className={fr.cx('fr-mb-0')}>
+              <span className={fr.cx('fr-icon-draft-line', 'fr-icon--sm')} aria-hidden="true" /> Traitement des faits
+            </p>
+            <div className={fr.cx('fr-mt-1w')}>{renderTraitementDesFaitsBadges()}</div>
+          </div>
+        )}
       </div>
     );
   };
 
   const renderDetails = () => {
     if (!isFulfilled) return null;
+
+    const hasTraitementDesFaits = traitementDesFaits?.entites && traitementDesFaits.entites.length > 0;
 
     return (
       <>
@@ -297,6 +397,7 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
             </ul>
           </>
         )}
+        {hasTraitementDesFaits && renderTraitementDesFaitsBadges(true)}
       </>
     );
   };

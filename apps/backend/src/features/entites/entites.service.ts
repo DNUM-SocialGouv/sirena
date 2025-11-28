@@ -143,6 +143,13 @@ export const getEntiteDescendantIds = async (entiteId: string | null) => {
   return results;
 };
 
+export const getEntitesByIds = async (ids: string[]) =>
+  ids.length === 0
+    ? []
+    : prisma.entite.findMany({
+        where: { id: { in: ids } },
+      });
+
 export async function getEntiteAscendanteId(entiteId: string) {
   const CYCLE_LIMIT = 6;
   let currentEntiteId = entiteId;
