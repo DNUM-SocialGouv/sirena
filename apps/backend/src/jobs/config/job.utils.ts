@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/node';
 import type { Job } from 'bullmq';
 import { envVars } from '@/config/env';
 import { endCron, startCron } from '@/crons/crons.service';
+import { recordCronJobRun } from '@/features/monitoring/metrics.worker';
 import { serializeError } from '@/helpers/errors';
 import { getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
 
@@ -22,15 +23,21 @@ export async function withCronLifecycle<R extends Record<string, unknown>, J ext
   try {
     const result = await fn(job);
     const endedAt = new Date();
+    const durationSeconds = (endedAt.getTime() - startedAt.getTime()) / 1000;
+
     await endCron({
       id: startedCron.id,
       endedAt,
       result,
       state: 'success',
     });
+
+    recordCronJobRun(name, 'success', durationSeconds);
+
     return result;
   } catch (error) {
     const endedAt = new Date();
+    const durationSeconds = (endedAt.getTime() - startedAt.getTime()) / 1000;
     const result = serializeError(error);
 
     await endCron({
@@ -39,6 +46,8 @@ export async function withCronLifecycle<R extends Record<string, unknown>, J ext
       result,
       state: 'error',
     });
+
+    recordCronJobRun(name, 'error', durationSeconds);
 
     if (envVars.SENTRY_ENABLED) {
       try {

@@ -1,6 +1,7 @@
 import { App as CdkApp, YamlOutputType } from 'cdk8s';
 import { App, Worker } from './charts/app';
 import { ExternalSecrets } from './charts/external-secrets';
+import { PodMonitor } from './charts/pod-monitor';
 import { RedisChart } from './charts/redis';
 import * as k8s from './imports/k8s';
 
@@ -118,6 +119,21 @@ function createApps(
     image: `${COMMON_CONFIG.imageRegistry}:${imageTag}-frontend`,
     namespace,
     environment,
+  });
+
+  // PodMonitors for VictoriaMetrics
+  new PodMonitor(app, 'backend-pod-monitor', {
+    namespace,
+    appName: 'backend',
+    port: 'monitoring',
+    path: '/metrics',
+  });
+
+  new PodMonitor(app, 'worker-pod-monitor', {
+    namespace,
+    appName: 'worker',
+    port: 'monitoring',
+    path: '/metrics',
   });
 }
 

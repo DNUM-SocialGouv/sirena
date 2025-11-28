@@ -3,6 +3,8 @@ import { app } from './app';
 import { prisma } from './libs/prisma';
 import { setupOpenAPI } from './openAPI';
 import '@/config/env.ts';
+import { getPrometheusContentType, getPrometheusMetrics } from '@/features/monitoring/metrics.backend';
+import { createMonitoringServer } from '@/features/monitoring/server';
 import { createDefaultLogger } from '@/helpers/pino';
 import '@/jobs/scheduler';
 
@@ -19,12 +21,29 @@ const server = serve(
   },
 );
 
+const monitoringServer = createMonitoringServer({
+  getMetrics: getPrometheusMetrics,
+  getContentType: getPrometheusContentType,
+});
+
 // Graceful shutdown handling
 const gracefulShutdown = async (signal: string) => {
   logger.info({ signal }, 'Graceful shutdown initiated');
 
   try {
-    // Close HTTP server
+    // Close monitoring server
+    await new Promise<void>((resolve, reject) => {
+      monitoringServer.close((err) => {
+        if (err) {
+          reject(err);
+        } else {
+          logger.info('Monitoring server closed');
+          resolve();
+        }
+      });
+    });
+
+    // Close main HTTP server
     await new Promise<void>((resolve, reject) => {
       server.close((err) => {
         if (err) {

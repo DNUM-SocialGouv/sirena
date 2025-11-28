@@ -94,6 +94,10 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
       value: environment,
     },
     {
+      name: 'MONITORING_PORT',
+      value: '9090',
+    },
+    {
       name: 'SARBACANE_API_URL',
       value: 'https://api.sarbacane.com/sendkit',
     },
@@ -183,6 +187,11 @@ function createContainer(props: AppProps): k8s.Container {
   const isBackend = props.name === 'backend';
   const containerPort = Number(props.targetPort.value);
 
+  const ports = [{ containerPort, name: 'http' }];
+  if (isBackend) {
+    ports.push({ containerPort: 9090, name: 'monitoring' });
+  }
+
   return {
     name: props.name,
     resources: {
@@ -196,7 +205,7 @@ function createContainer(props: AppProps): k8s.Container {
       },
     },
     image: props.image,
-    ...('targetPort' in props ? { ports: [{ containerPort: Number(props.targetPort.value) }] } : {}),
+    ports,
     env: isBackend
       ? [
           ...createBackendEnvVars(props.host, props.environment),
@@ -351,6 +360,7 @@ function createWorkerDeployment(scope: Construct, props: WorkerProps, labels: Re
             {
               name: props.name,
               image: props.image,
+              ports: [{ containerPort: 9090, name: 'monitoring' }],
               resources: {
                 limits: {
                   cpu: k8s.Quantity.fromString('250m'),
@@ -382,14 +392,27 @@ function createWorkerDeployment(scope: Construct, props: WorkerProps, labels: Re
 }
 
 function createService(scope: Construct, props: AppProps, labels: Record<string, string>) {
+  const isBackend = props.name === 'backend';
+
+  const ports = [{ port: props.port, targetPort: props.targetPort, name: 'http' }];
+
+  if (isBackend) {
+    ports.push({
+      port: 9090,
+      targetPort: k8s.IntOrString.fromNumber(9090),
+      name: 'monitoring',
+    });
+  }
+
   return new k8s.KubeService(scope, 'service', {
     metadata: {
       name: props.name,
+      labels,
     },
     spec: {
       type: 'ClusterIP',
       selector: labels,
-      ports: [{ port: props.port, targetPort: props.targetPort }],
+      ports,
     },
   });
 }
