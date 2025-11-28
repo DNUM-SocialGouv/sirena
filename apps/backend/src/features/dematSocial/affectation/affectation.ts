@@ -1,7 +1,7 @@
 import { createChangeLog } from '@/features/changelog/changelog.service';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { createDefaultRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
-import { createDefaultLogger } from '@/helpers/pino';
+import { getLoggerStore } from '@/libs/asyncLocalStorage';
 import { type Prisma, PrismaClient } from '../../../../generated/client';
 import { buildSituationContextFromDemat } from './buildSituationContext';
 import { runDecisionTree } from './decisionTree';
@@ -9,8 +9,6 @@ import { findGeoByPostalCode } from './geo/geoIndex';
 import type { EntiteAdminType, SituationContext } from './types';
 
 type Assignment = { situationId: string; types: EntiteAdminType[]; context: SituationContext };
-
-const logger = createDefaultLogger();
 
 const assignDefaultRequeteEtapes = async (
   requeteId: string,
@@ -91,6 +89,7 @@ const assignDefaultRequeteEtapes = async (
 
     await Promise.all([p1, p2]);
   } catch (err) {
+    const logger = getLoggerStore();
     logger.error({ requeteId, entiteId, err }, 'Error assigning default requete etapes');
   }
 };
@@ -100,6 +99,7 @@ const assignDefaultRequeteEtapes = async (
  * @param unknownId - The requete.id (RD-****-***) or the dematSocialId
  */
 export async function assignEntitesToRequeteTask(unknownId: string) {
+  const logger = getLoggerStore();
   const prisma = new PrismaClient({
     transactionOptions: {
       timeout: 120000,

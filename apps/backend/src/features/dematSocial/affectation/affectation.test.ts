@@ -19,8 +19,8 @@ vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
   createDefaultRequeteEtapes: vi.fn(),
 }));
 
-vi.mock('@/helpers/pino', () => ({
-  createDefaultLogger: vi.fn(() => ({
+vi.mock('@/libs/asyncLocalStorage', () => ({
+  getLoggerStore: vi.fn(() => ({
     error: vi.fn(),
     info: vi.fn(),
   })),
