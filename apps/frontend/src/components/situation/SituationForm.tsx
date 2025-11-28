@@ -2,13 +2,16 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import type { ReceptionType } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { MisEnCause } from '@/components/situation/sections/MisEnCause';
+import { useEntites } from '@/hooks/queries/entites.hook';
+import { useProfile } from '@/hooks/queries/profile.hook';
 import { hasSituationContent } from '@/utils/situationHelpers';
 import { AttachedFiles } from './sections/AttachedFiles';
 import { DemarchesEngagees } from './sections/DemarchesEngagees';
 import { DescriptionFaits } from './sections/DescriptionFaits';
 import { LieuSurvenu } from './sections/LieuSurvenu';
+import TraitementDesFaitsSection from './TraitementDesFaits';
 
 interface SituationFormProps {
   mode: 'create' | 'edit';
@@ -31,6 +34,9 @@ export function SituationForm({
   const [formData, setFormData] = useState<SituationData>(initialData || {});
   const [isSaving, setIsSaving] = useState(false);
   const [faitFiles, setFaitFiles] = useState<File[]>([]);
+  const [isTraitementDesFaitsValid, setIsTraitementDesFaitsValid] = useState(true);
+  const { data: entitesData } = useEntites(undefined);
+  const { data: profile } = useProfile();
 
   useEffect(() => {
     if (initialData) {
@@ -38,6 +44,20 @@ export function SituationForm({
     }
   }, [initialData]);
 
+  const handleTraitementDesFaitsChange = useCallback(
+    (data: { entites: Array<{ entiteId: string; directionServiceId?: string }> }) => {
+      setFormData((prev) => ({
+        ...prev,
+        traitementDesFaits: {
+          entites: data.entites.map((e) => ({
+            entiteId: e.entiteId,
+            directionServiceId: e.directionServiceId,
+          })),
+        },
+      }));
+    },
+    [],
+  );
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -95,11 +115,24 @@ export function SituationForm({
           isSaving={isSaving}
         />
 
+        <TraitementDesFaitsSection
+          entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({
+            id: e.id,
+            nomComplet: e.nomComplet,
+          }))}
+          userEntiteId={profile?.entiteId}
+          initialEntites={formData.traitementDesFaits?.entites}
+          onChange={handleTraitementDesFaitsChange}
+          onValidationChange={setIsTraitementDesFaitsValid}
+          disabled={isSaving}
+        />
+
+        {/* Actions */}
         <div className="fr-btns-group fr-btns-group--inline-md fr-mb-6w">
           <Button priority="secondary" onClick={handleCancel} disabled={isSaving}>
             Annuler
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSave} disabled={isSaving || !isTraitementDesFaitsValid}>
             Enregistrer
           </Button>
         </div>
