@@ -10,12 +10,14 @@ import {
 } from '@/libs/prisma';
 import {
   closeRequeteForEntite,
+  enrichSituationWithTraitementDesFaits,
   getOtherEntitesAffected,
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
   updateRequete,
   updateRequeteDeclarant,
+  updateRequeteSituation,
 } from './requetesEntite.service';
 
 vi.mock('@sirena/backend-utils', () => ({
@@ -33,6 +35,13 @@ vi.mock('@sirena/backend-utils', () => ({
 vi.mock('@/features/changelog/changelog.service', () => ({
   createChangeLog: vi.fn().mockResolvedValue({}),
 }));
+
+vi.mock('../entites/entites.service', () => ({
+  getEntiteChain: vi.fn().mockResolvedValue([]),
+  getEntiteAscendanteId: vi.fn(),
+}));
+
+import { getEntiteAscendanteId, getEntiteChain } from '../entites/entites.service';
 
 vi.mock('@/libs/prisma', () => ({
   prisma: {
@@ -59,7 +68,9 @@ vi.mock('@/libs/prisma', () => ({
   },
 }));
 
-const mockRequeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: RequeteEtape[] } = {
+const mockRequeteEntite: RequeteEntite & { requete: Requete & { situations?: unknown[] } } & {
+  requeteEtape: RequeteEtape[];
+} = {
   requeteId: 'req123',
   entiteId: 'ent123',
   requete: {
@@ -70,6 +81,7 @@ const mockRequeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: 
     commentaire: 'Commentaire',
     receptionDate: new Date(),
     receptionTypeId: 'receptionTypeId',
+    situations: [],
   },
   requeteEtape: [
     {
@@ -495,6 +507,11 @@ describe('requetesEntite.service', () => {
                       etablissementReponse: true,
                     },
                   },
+                  situationEntites: {
+                    include: {
+                      entite: true,
+                    },
+                  },
                 },
               },
             },
@@ -517,6 +534,64 @@ describe('requetesEntite.service', () => {
     it('should return null when entiteIds is null', async () => {
       const result = await getRequeteEntiteById(mockRequeteEntite.requeteId, null);
       expect(result).toBeNull();
+    });
+
+    it('should call enrichSituationWithTraitementDesFaits for each situation', async () => {
+      const mockEntite1 = { id: 'ent1', nomComplet: 'Entité 1', entiteMereId: null };
+      const mockEntite2 = { id: 'ent2', nomComplet: 'Entité 2', entiteMereId: null };
+      const mockEntite3 = { id: 'ent3', nomComplet: 'Entité 3', entiteMereId: null };
+
+      const mockSituation1 = {
+        id: 'sit1',
+        situationEntites: [
+          {
+            entite: mockEntite1,
+          },
+        ],
+      };
+      const mockSituation2 = {
+        id: 'sit2',
+        situationEntites: [
+          {
+            entite: mockEntite2,
+          },
+        ],
+      };
+      const mockSituation3 = {
+        id: 'sit3',
+        situationEntites: [
+          {
+            entite: mockEntite3,
+          },
+        ],
+      };
+
+      const mockRequeteEntiteWithSituations = {
+        ...mockRequeteEntite,
+        requete: {
+          ...mockRequeteEntite.requete,
+          situations: [mockSituation1, mockSituation2, mockSituation3],
+        },
+      };
+
+      vi.mocked(getEntiteChain)
+        .mockResolvedValueOnce([{ id: 'root1', nomComplet: 'Root 1' }])
+        .mockResolvedValueOnce([{ id: 'root2', nomComplet: 'Root 2' }])
+        .mockResolvedValueOnce([{ id: 'root3', nomComplet: 'Root 3' }]);
+
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce(mockRequeteEntiteWithSituations);
+
+      const result = await getRequeteEntiteById(mockRequeteEntite.requeteId, mockRequeteEntite.entiteId);
+
+      expect(result).toBeDefined();
+      expect(result?.requete.situations).toHaveLength(3);
+      expect(getEntiteChain).toHaveBeenCalledTimes(3);
+      expect(getEntiteChain).toHaveBeenCalledWith('ent1');
+      expect(getEntiteChain).toHaveBeenCalledWith('ent2');
+      expect(getEntiteChain).toHaveBeenCalledWith('ent3');
+      expect(result?.requete.situations[0]).toHaveProperty('traitementDesFaits');
+      expect(result?.requete.situations[1]).toHaveProperty('traitementDesFaits');
+      expect(result?.requete.situations[2]).toHaveProperty('traitementDesFaits');
     });
   });
 
@@ -1087,6 +1162,556 @@ describe('requetesEntite.service', () => {
         etape: mockEtape,
         note: mockNote,
       });
+    });
+  });
+
+  describe('updateSituationEntites', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    const createMockTx = (overrides: Partial<Record<string, Record<string, unknown>>> = {}) => {
+      const base = {
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(null),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue([]),
+          deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+          upsert: vi.fn().mockResolvedValue({}),
+        },
+        requeteEntite: {
+          upsert: vi.fn().mockResolvedValue({}),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue(null),
+        },
+      };
+
+      return {
+        ...base,
+        ...Object.fromEntries(
+          Object.entries(overrides).map(([key, value]) => [key, { ...base[key as keyof typeof base], ...value }]),
+        ),
+      };
+    };
+
+    it('should delete all situationEntites when no entities are provided', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const existingSituationEntites = [{ entiteId: 'ent1' }, { entiteId: 'ent2' }];
+
+      const mockSituation = {
+        id: situationId,
+        requeteId,
+      };
+
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue(existingSituationEntites),
+          deleteMany: vi.fn().mockResolvedValue({ count: 2 }),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: requeteId,
+            situations: [],
+          }),
+        },
+      });
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: requeteId,
+        situations: [
+          {
+            id: situationId,
+            faits: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        'ent1',
+      );
+
+      expect(mockTx.situationEntite.deleteMany).toHaveBeenCalledWith({
+        where: { situationId },
+      });
+      expect(mockTx.situationEntite.findMany).toHaveBeenCalledWith({
+        where: { situationId },
+        select: { entiteId: true },
+      });
+    });
+
+    it('should add new situationEntites when entities are provided', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const existingSituationEntites: Array<{ entiteId: string }> = [];
+
+      const mockSituation = {
+        id: situationId,
+        requeteId,
+      };
+
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue(existingSituationEntites),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: requeteId,
+            situations: [],
+          }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteId).mockResolvedValue('root1');
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: requeteId,
+        situations: [
+          {
+            id: situationId,
+            faits: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'ent1' }],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        'ent1',
+      );
+
+      expect(mockTx.situationEntite.upsert).toHaveBeenCalledWith({
+        where: {
+          situationId_entiteId: { situationId, entiteId: 'ent1' },
+        },
+        update: {},
+        create: {
+          situationId,
+          entiteId: 'ent1',
+        },
+      });
+      expect(getEntiteAscendanteId).toHaveBeenCalledWith('ent1');
+      expect(mockTx.requeteEntite.upsert).toHaveBeenCalledWith({
+        where: {
+          requeteId_entiteId: { requeteId, entiteId: 'root1' },
+        },
+        update: {},
+        create: {
+          requeteId,
+          entiteId: 'root1',
+        },
+      });
+    });
+
+    it('should remove obsolete situationEntites and add new ones', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const existingSituationEntites = [{ entiteId: 'ent1' }, { entiteId: 'ent2' }];
+
+      const mockSituation = {
+        id: situationId,
+        requeteId,
+      };
+
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue(existingSituationEntites),
+          deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: requeteId,
+            situations: [],
+          }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteId).mockResolvedValue('root3');
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: requeteId,
+        situations: [
+          {
+            id: situationId,
+            faits: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'ent2' }, { entiteId: 'ent3' }],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        'ent1',
+      );
+
+      // Should remove ent1
+      expect(mockTx.situationEntite.deleteMany).toHaveBeenCalledWith({
+        where: {
+          situationId,
+          entiteId: { in: ['ent1'] },
+        },
+      });
+
+      // Should upsert ent2 and ent3
+      expect(mockTx.situationEntite.upsert).toHaveBeenCalledTimes(2);
+      expect(mockTx.situationEntite.upsert).toHaveBeenCalledWith({
+        where: {
+          situationId_entiteId: { situationId, entiteId: 'ent2' },
+        },
+        update: {},
+        create: {
+          situationId,
+          entiteId: 'ent2',
+        },
+      });
+      expect(mockTx.situationEntite.upsert).toHaveBeenCalledWith({
+        where: {
+          situationId_entiteId: { situationId, entiteId: 'ent3' },
+        },
+        update: {},
+        create: {
+          situationId,
+          entiteId: 'ent3',
+        },
+      });
+    });
+
+    it('should use directionServiceId when provided instead of entiteId', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const existingSituationEntites: Array<{ entiteId: string }> = [];
+
+      const mockSituation = {
+        id: situationId,
+        requeteId,
+      };
+
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue(existingSituationEntites),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: requeteId,
+            situations: [],
+          }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteId).mockResolvedValue('root1');
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: requeteId,
+        situations: [
+          {
+            id: situationId,
+            faits: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'root1', directionServiceId: 'dir1' }],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        'ent1',
+      );
+
+      // Should use directionServiceId (dir1) instead of entiteId (root1)
+      expect(mockTx.situationEntite.upsert).toHaveBeenCalledWith({
+        where: {
+          situationId_entiteId: { situationId, entiteId: 'dir1' },
+        },
+        update: {},
+        create: {
+          situationId,
+          entiteId: 'dir1',
+        },
+      });
+      expect(getEntiteAscendanteId).toHaveBeenCalledWith('dir1');
+    });
+
+    it('should throw error if situation does not have requeteId', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(null),
+          update: vi.fn().mockResolvedValue({}),
+        },
+      });
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: requeteId,
+        situations: [
+          {
+            id: situationId,
+            faits: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await expect(
+        updateRequeteSituation(
+          requeteId,
+          situationId,
+          {
+            traitementDesFaits: {
+              entites: [{ entiteId: 'ent1' }],
+            },
+          } as Parameters<typeof updateRequeteSituation>[2],
+          'ent1',
+        ),
+      ).rejects.toThrow(`Situation ${situationId} does not have a requeteId`);
+    });
+  });
+
+  describe('enrichSituationWithTraitementDesFaits', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should return situation with traitementDesFaits for root entity', async () => {
+      const mockSituation = {
+        id: 'sit1',
+        situationEntites: [
+          {
+            entite: {
+              id: 'ent1',
+              nomComplet: 'Entité Racine',
+              entiteMereId: null,
+            },
+          },
+        ],
+      } as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
+
+      vi.mocked(getEntiteChain).mockResolvedValue([{ id: 'root1', nomComplet: 'Root Entity' }]);
+
+      const result = await enrichSituationWithTraitementDesFaits(mockSituation);
+
+      expect(result.traitementDesFaits).toBeDefined();
+      expect(result.traitementDesFaits?.entites).toHaveLength(1);
+      expect(result.traitementDesFaits?.entites?.[0]).toEqual({
+        entiteId: 'root1',
+        directionServiceId: undefined,
+      });
+      expect(getEntiteChain).toHaveBeenCalledWith('ent1');
+    });
+
+    it('should return situation with traitementDesFaits for non-root entity', async () => {
+      const mockSituation = {
+        id: 'sit1',
+        situationEntites: [
+          {
+            entite: {
+              id: 'dir1',
+              nomComplet: 'Direction Service',
+              entiteMereId: 'root1',
+            },
+          },
+        ],
+      } as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
+
+      vi.mocked(getEntiteChain).mockResolvedValue([
+        { id: 'root1', nomComplet: 'Root Entity' },
+        { id: 'dir1', nomComplet: 'Direction Service' },
+      ]);
+
+      const result = await enrichSituationWithTraitementDesFaits(mockSituation);
+
+      expect(result.traitementDesFaits).toBeDefined();
+      expect(result.traitementDesFaits?.entites).toHaveLength(1);
+      expect(result.traitementDesFaits?.entites?.[0]).toEqual({
+        entiteId: 'root1',
+        directionServiceId: 'dir1',
+      });
+      expect(getEntiteChain).toHaveBeenCalledWith('dir1');
+    });
+
+    it('should skip entities with empty chain', async () => {
+      const mockSituation = {
+        id: 'sit1',
+        situationEntites: [
+          {
+            entite: {
+              id: 'ent1',
+              nomComplet: 'Entité',
+              entiteMereId: null,
+            },
+          },
+        ],
+      } as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
+
+      vi.mocked(getEntiteChain).mockResolvedValue([]);
+
+      const result = await enrichSituationWithTraitementDesFaits(mockSituation);
+
+      expect(result.traitementDesFaits).toBeDefined();
+      expect(result.traitementDesFaits?.entites).toHaveLength(0);
+    });
+
+    it('should handle multiple situationEntites', async () => {
+      const mockSituation = {
+        id: 'sit1',
+        situationEntites: [
+          {
+            entite: {
+              id: 'root1',
+              nomComplet: 'Root 1',
+              entiteMereId: null,
+            },
+          },
+          {
+            entite: {
+              id: 'dir1',
+              nomComplet: 'Direction 1',
+              entiteMereId: 'root1',
+            },
+          },
+        ],
+      } as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
+
+      vi.mocked(getEntiteChain)
+        .mockResolvedValueOnce([{ id: 'root1', nomComplet: 'Root 1' }])
+        .mockResolvedValueOnce([
+          { id: 'root1', nomComplet: 'Root 1' },
+          { id: 'dir1', nomComplet: 'Direction 1' },
+        ]);
+
+      const result = await enrichSituationWithTraitementDesFaits(mockSituation);
+
+      expect(result.traitementDesFaits?.entites).toHaveLength(2);
+      expect(result.traitementDesFaits?.entites?.[0]).toEqual({
+        entiteId: 'root1',
+        directionServiceId: undefined,
+      });
+      expect(result.traitementDesFaits?.entites?.[1]).toEqual({
+        entiteId: 'root1',
+        directionServiceId: 'dir1',
+      });
+    });
+
+    it('should avoid duplicates with same entiteId and directionServiceId', async () => {
+      const mockSituation = {
+        id: 'sit1',
+        situationEntites: [
+          {
+            entite: {
+              id: 'dir1',
+              nomComplet: 'Direction 1',
+              entiteMereId: 'root1',
+            },
+          },
+          {
+            entite: {
+              id: 'dir1',
+              nomComplet: 'Direction 1',
+              entiteMereId: 'root1',
+            },
+          },
+        ],
+      } as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
+
+      vi.mocked(getEntiteChain).mockResolvedValue([
+        { id: 'root1', nomComplet: 'Root 1' },
+        { id: 'dir1', nomComplet: 'Direction 1' },
+      ]);
+
+      const result = await enrichSituationWithTraitementDesFaits(mockSituation);
+
+      expect(result.traitementDesFaits?.entites).toHaveLength(1);
+      expect(result.traitementDesFaits?.entites?.[0]).toEqual({
+        entiteId: 'root1',
+        directionServiceId: 'dir1',
+      });
+    });
+
+    it('should preserve all other situation properties', async () => {
+      const createdAt = new Date();
+      const updatedAt = new Date();
+      const mockSituation = {
+        id: 'sit1',
+        createdAt,
+        updatedAt,
+        situationEntites: [
+          {
+            entite: {
+              id: 'ent1',
+              nomComplet: 'Entité',
+              entiteMereId: null,
+            },
+          },
+        ],
+      } as unknown as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
+
+      vi.mocked(getEntiteChain).mockResolvedValue([{ id: 'root1', nomComplet: 'Root Entity' }]);
+
+      const result = await enrichSituationWithTraitementDesFaits(mockSituation);
+
+      expect(result.id).toBe('sit1');
+      expect(result.situationEntites).toEqual(mockSituation.situationEntites);
+      expect(result.traitementDesFaits).toBeDefined();
     });
   });
 });
