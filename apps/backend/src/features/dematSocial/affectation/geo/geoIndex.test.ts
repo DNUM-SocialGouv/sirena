@@ -18,6 +18,7 @@ vi.mock('./liste_entites.json', () => ({
       DPT_LIB_ACTUEL: 'Paris',
       REG_CODE_ACTUEL: '11',
       REG_LIB_ACTUEL: 'Île-de-France',
+      CTCD_CODE_ACTUEL: '75C',
     },
     {
       COM_CODE: '75002',
@@ -25,6 +26,7 @@ vi.mock('./liste_entites.json', () => ({
       DPT_LIB_ACTUEL: 'Paris',
       REG_CODE_ACTUEL: '11',
       REG_LIB_ACTUEL: 'Île-de-France',
+      CTCD_CODE_ACTUEL: '75C',
     },
     {
       COM_CODE: '13001',
@@ -32,6 +34,7 @@ vi.mock('./liste_entites.json', () => ({
       DPT_LIB_ACTUEL: 'Bouches-du-Rhône',
       REG_CODE_ACTUEL: '93',
       REG_LIB_ACTUEL: "Provence-Alpes-Côte d'Azur",
+      CTCD_CODE_ACTUEL: '13D',
     },
     {
       COM_CODE: '69001',
@@ -39,6 +42,7 @@ vi.mock('./liste_entites.json', () => ({
       DPT_LIB_ACTUEL: 'Rhône',
       REG_CODE_ACTUEL: '84',
       REG_LIB_ACTUEL: 'Auvergne-Rhône-Alpes',
+      CTCD_CODE_ACTUEL: '69D',
     },
   ],
 }));
@@ -68,6 +72,7 @@ describe('geoIndex', () => {
         inseeCode: '75001',
         postalCode: '75001',
         departementCode: '75',
+        ctcdCode: '75C',
         departementName: 'Paris',
         regionCode: '11',
         regionName: 'Île-de-France',
@@ -103,6 +108,7 @@ describe('geoIndex', () => {
       expect(entity).toHaveProperty('inseeCode');
       expect(entity).toHaveProperty('postalCode');
       expect(entity).toHaveProperty('departementCode');
+      expect(entity).toHaveProperty('ctcdCode');
       expect(entity).toHaveProperty('departementName');
       expect(entity).toHaveProperty('regionCode');
       expect(entity).toHaveProperty('regionName');
@@ -111,6 +117,7 @@ describe('geoIndex', () => {
         expect(typeof entity.inseeCode).toBe('string');
         expect(typeof entity.postalCode).toBe('string');
         expect(typeof entity.departementCode).toBe('string');
+        expect(typeof entity.ctcdCode).toBe('string');
         expect(typeof entity.departementName).toBe('string');
         expect(typeof entity.regionCode).toBe('string');
         expect(typeof entity.regionName).toBe('string');
@@ -127,6 +134,7 @@ describe('geoIndex', () => {
         inseeCode: '75001',
         postalCode: '75001',
         departementCode: '75',
+        ctcdCode: '75C',
         departementName: 'Paris',
         regionCode: '11',
         regionName: 'Île-de-France',
@@ -167,8 +175,11 @@ describe('geoIndex', () => {
       const lyon = findGeoByPostalCode('69001');
 
       expect(paris?.departementCode).toBe('75');
+      expect(paris?.ctcdCode).toBe('75C');
       expect(marseille?.departementCode).toBe('13');
+      expect(marseille?.ctcdCode).toBe('13D');
       expect(lyon?.departementCode).toBe('69');
+      expect(lyon?.ctcdCode).toBe('69D');
     });
   });
 });

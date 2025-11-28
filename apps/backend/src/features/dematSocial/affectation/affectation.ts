@@ -204,7 +204,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
         where: {
           entiteTypeId: t,
           entiteMereId: null,
-          ...(['CD', 'DDETS'].includes(t) ? { departementCode: geo.departementCode } : {}),
+          ...(['CD', 'DDETS'].includes(t) ? { ctcdCode: geo.ctcdCode } : {}),
           ...(['ARS'].includes(t) ? { regionCode: geo.regionCode } : {}),
         },
       });

@@ -21,8 +21,6 @@ export type SituationContext = {
   motifs?: (Motif | string)[];
 };
 
-export type Geo = { departementName: string; departementCode: string; regionName: string };
-
 export type BaseNode = {
   id: string;
   description?: string;

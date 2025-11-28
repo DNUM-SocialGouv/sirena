@@ -12,12 +12,14 @@ type ListeEntiteRow = {
   DPT_LIB_ACTUEL: string;
   REG_CODE_ACTUEL: string;
   REG_LIB_ACTUEL: string;
+  CTCD_CODE_ACTUEL: string;
 };
 
 export type GeoEntite = {
   inseeCode: string;
   postalCode: string;
   departementCode: string;
+  ctcdCode: string;
   departementName: string;
   regionCode: string;
   regionName: string;
@@ -41,6 +43,7 @@ export function buildIndex(): Map<string, GeoEntite[]> {
       inseeCode: row.codeInsee,
       postalCode: row.codePostal,
       departementCode: entite.DPT_CODE_ACTUEL,
+      ctcdCode: entite.CTCD_CODE_ACTUEL,
       departementName: entite.DPT_LIB_ACTUEL,
       regionCode: entite.REG_CODE_ACTUEL,
       regionName: entite.REG_LIB_ACTUEL,
