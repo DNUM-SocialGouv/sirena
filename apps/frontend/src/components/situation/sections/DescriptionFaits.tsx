@@ -56,7 +56,7 @@ export function DescriptionFaits({ formData, setFormData, receptionType }: Descr
         {receptionType === RECEPTION_TYPE.FORMULAIRE && (
           <div className="fr-col-12">
             <label className="fr-label" htmlFor="situation-fait-motifs">
-              Motifs Renseigné par le déclarant
+              Motifs renseignés par le déclarant
             </label>
             <div style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem', padding: '0.5rem' }}>
               {motifs.length ? (
