@@ -1,6 +1,6 @@
-import { misEnCauseTypeLabels } from '../constants/requete.constant';
+import { lienVictimeLabels } from '../constants/requete.constant';
 
-export const lienAvecPersonneConcerneeOptions = Object.entries(misEnCauseTypeLabels).map(([value, label]) => ({
+export const lienAvecPersonneConcerneeOptions = Object.entries(lienVictimeLabels).map(([value, label]) => ({
   label,
   value,
 }));
