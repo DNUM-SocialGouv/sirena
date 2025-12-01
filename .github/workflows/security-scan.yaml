@@ -102,7 +102,7 @@ jobs:
         with:
           sarif_file: "trivy-container-${{ matrix.image }}-results.sarif"
           category: "trivy-container-${{ matrix.image }}"
-          ref: ${{ github.event.workflow_run.head_branch }}
+          ref: refs/heads/${{ github.event.workflow_run.head_branch }}
           sha: ${{ github.event.workflow_run.head_sha }}
 
   trivy-iac-scan:
