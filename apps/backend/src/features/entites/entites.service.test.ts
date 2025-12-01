@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { prisma } from '@/libs/prisma';
+import { type Entite, prisma } from '@/libs/prisma';
 import {
   getEditableEntitiesChain,
   getEntiteAscendanteIds,
@@ -7,6 +7,7 @@ import {
   getEntiteDescendantIds,
   getEntiteForUser,
   getEntites,
+  getEntitesByIds,
 } from './entites.service';
 
 vi.mock('@/libs/prisma', () => ({
@@ -19,6 +20,24 @@ vi.mock('@/libs/prisma', () => ({
   },
 }));
 
+const fakeEntiteBase: Omit<Entite, 'id'> = {
+  label: 'A',
+  email: 'test@domain.fr',
+  entiteTypeId: 'ENTITE_TYPE_A',
+  entiteMereId: null,
+  nomComplet: 'Entite A',
+  organizationalUnit: '',
+  emailDomain: 'domain.fr',
+  departementCode: '1',
+  regionCode: '1',
+  ctcdCode: '1',
+};
+
+const fakeEntite = (id: string): Entite => ({
+  ...fakeEntiteBase,
+  id,
+});
+
 describe('entites.service', () => {
   describe('getEntiteForUser()', () => {
     const mockEntite1 = {
@@ -30,6 +49,9 @@ describe('entites.service', () => {
       nomComplet: 'Entite B',
       organizationalUnit: 'ARS-CORSE',
       emailDomain: '',
+      departementCode: '1',
+      regionCode: '1',
+      ctcdCode: '1',
     };
     const mockEntite2 = {
       id: '1',
@@ -40,6 +62,9 @@ describe('entites.service', () => {
       nomComplet: 'Entite A',
       organizationalUnit: '',
       emailDomain: 'domain.fr',
+      departementCode: '1',
+      regionCode: '1',
+      ctcdCode: '1',
     };
 
     beforeEach(() => {
@@ -96,6 +121,9 @@ describe('entites.service', () => {
         nomComplet: 'Entite B',
         organizationalUnit: 'ARS-CORSE',
         emailDomain: '',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       };
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite]);
       vi.mocked(prisma.entite.count).mockResolvedValueOnce(1);
@@ -128,6 +156,9 @@ describe('entites.service', () => {
         nomComplet: 'Entite B',
         organizationalUnit: 'ARS-CORSE',
         emailDomain: '',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       };
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite]);
       vi.mocked(prisma.entite.count).mockResolvedValueOnce(1);
@@ -172,6 +203,9 @@ describe('entites.service', () => {
         nomComplet: 'Entite B',
         organizationalUnit: 'ARS-CORSE',
         emailDomain: '',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       };
       const mockEntite2 = {
         id: '1',
@@ -182,6 +216,9 @@ describe('entites.service', () => {
         nomComplet: 'Entite A',
         organizationalUnit: '',
         emailDomain: 'domain.fr',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       };
 
       vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(mockEntite2).mockResolvedValueOnce(mockEntite1);
@@ -220,6 +257,9 @@ describe('entites.service', () => {
         nomComplet: 'Entite A',
         organizationalUnit: '',
         emailDomain: 'domain.fr',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       };
       const mockEntite3 = {
         id: '3',
@@ -230,6 +270,9 @@ describe('entites.service', () => {
         nomComplet: 'Entite A',
         organizationalUnit: '',
         emailDomain: 'domain.fr',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       };
 
       vi.mocked(prisma.entite.findMany)
@@ -270,6 +313,9 @@ describe('entites.service', () => {
         emailDomain: '',
         entiteTypeId: '',
         organizationalUnit: '',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       },
       {
         id: '4',
@@ -280,6 +326,9 @@ describe('entites.service', () => {
         emailDomain: '',
         entiteTypeId: '',
         organizationalUnit: '',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       },
       {
         id: '3',
@@ -290,6 +339,9 @@ describe('entites.service', () => {
         emailDomain: '',
         entiteTypeId: '',
         organizationalUnit: '',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       },
       {
         id: '2',
@@ -300,6 +352,9 @@ describe('entites.service', () => {
         emailDomain: '',
         entiteTypeId: '',
         organizationalUnit: '',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       },
       {
         id: '1',
@@ -310,6 +365,9 @@ describe('entites.service', () => {
         emailDomain: '',
         entiteTypeId: '',
         organizationalUnit: '',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       },
     ];
 
@@ -382,6 +440,9 @@ describe('entites.service', () => {
         nomComplet: 'Entite B',
         organizationalUnit: 'ARS-CORSE',
         emailDomain: '',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       };
       const mockEntite2 = {
         id: '1',
@@ -392,6 +453,9 @@ describe('entites.service', () => {
         nomComplet: 'Entite A',
         organizationalUnit: '',
         emailDomain: 'domain.fr',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       };
 
       vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(mockEntite2);
@@ -418,6 +482,9 @@ describe('entites.service', () => {
         nomComplet: 'Entite B',
         organizationalUnit: 'ARS-CORSE',
         emailDomain: '',
+        departementCode: '1',
+        regionCode: '1',
+        ctcdCode: '1',
       };
 
       vi.mocked(prisma.entite.findUnique).mockResolvedValue(mockEntite1);
@@ -425,5 +492,19 @@ describe('entites.service', () => {
       await expect(getEntiteAscendanteIds('A')).rejects.toThrow(/Possible cycle detected in entite hierarchy/);
       expect(prisma.entite.findMany).not.toHaveBeenCalled();
     });
+  });
+
+  describe('getEntitesByIds()', () => {
+    it('returns [] when input is empty', async () => {
+      const result = await getEntitesByIds([]);
+      expect(result).toEqual([]);
+    });
+  });
+
+  it('returns all entities when input is not empty', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([fakeEntite('1'), fakeEntite('2'), fakeEntite('3')]);
+
+    const result = await getEntitesByIds(['1', '2', '3']);
+    expect(result).toEqual([fakeEntite('1'), fakeEntite('2'), fakeEntite('3')]);
   });
 });

@@ -114,6 +114,17 @@ export const lienVictimeLabels: Record<LienVictime, string> = {
   AUTRE: 'Autre',
 };
 
+// Union type for all MisEnCauseTypePrecisionEnum values
+export type MisEnCauseTypePrecisionUnion =
+  | MisEnCauseFamillePrecision
+  | MisEnCauseProchePrecision
+  | MisEnCauseAutreNonProPrecision
+  | ProfessionSantePrecision
+  | ProfessionSocialPrecision
+  | AutreProfessionnelPrecision
+  | ProfessionType
+  | ProfessionDomicileType;
+
 export const MOTIF = {
   PROBLEME_COMPORTEMENTAL: 'PROBLEME_COMPORTEMENTAL',
   PROBLEME_FACTURATION: 'PROBLEME_FACTURATION',
