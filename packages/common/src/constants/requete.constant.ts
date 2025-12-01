@@ -42,7 +42,6 @@ export const MIS_EN_CAUSE_TYPE = {
   PROFESSIONNEL_SOCIAL: 'PROFESSIONNEL_SOCIAL',
   AUTRE_PROFESSIONNEL: 'AUTRE_PROFESSIONNEL',
   ETABLISSEMENT: 'ETABLISSEMENT',
-  PROFESSIONNEL: 'PROFESSIONNEL',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -57,7 +56,6 @@ export const misEnCauseTypeLabels: Record<MisEnCauseType, string> = {
   PROFESSIONNEL_SOCIAL: 'Professionnel social (éducateur, assistant social...)',
   AUTRE_PROFESSIONNEL: 'Autre professionnel',
   ETABLISSEMENT: 'Établissement où se sont déroulés les faits',
-  PROFESSIONNEL: 'Professionnel',
   AUTRE: 'Autre',
 };
 
@@ -100,10 +98,21 @@ export const misEnCauseAutreNonProPrecisionLabels: Record<MisEnCauseAutreNonProP
   AUTRE: 'Autre (patient ou résident, inconnu, escroc...)',
 };
 
-// MIS_EN_CAUSE_TYPE = LIEN_VICTIME
-export const LIEN_VICTIME = MIS_EN_CAUSE_TYPE;
-export type LienVictime = MisEnCauseType;
-export const lienVictimeLabels: Record<LienVictime, string> = misEnCauseTypeLabels;
+export const LIEN_VICTIME = {
+  MEMBRE_FAMILLE: 'MEMBRE_FAMILLE',
+  PROCHE: 'PROCHE',
+  PROFESSIONNEL: 'PROFESSIONNEL',
+  AUTRE: 'AUTRE',
+} as const;
+
+export type LienVictime = keyof typeof LIEN_VICTIME;
+
+export const lienVictimeLabels: Record<LienVictime, string> = {
+  MEMBRE_FAMILLE: 'Membre de la famille',
+  PROCHE: 'Proche',
+  PROFESSIONNEL: 'Professionnel',
+  AUTRE: 'Autre',
+};
 
 export const MOTIF = {
   PROBLEME_COMPORTEMENTAL: 'PROBLEME_COMPORTEMENTAL',
