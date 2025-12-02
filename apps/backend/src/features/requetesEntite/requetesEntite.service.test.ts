@@ -1718,6 +1718,8 @@ describe('requetesEntite.service', () => {
       expect(result.id).toBe('sit1');
       expect(result.situationEntites).toEqual(mockSituation.situationEntites);
       expect(result.traitementDesFaits).toBeDefined();
+    });
+  });
   describe('updateStatusRequete', () => {
     it('should update the status of the requeteEntite', async () => {
       vi.clearAllMocks();
