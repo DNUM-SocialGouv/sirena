@@ -42,6 +42,7 @@ vi.mock('../entites/entites.service', () => ({
   getEntiteAscendanteId: vi.fn(),
 }));
 
+import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { getEntiteAscendanteId, getEntiteChain } from '../entites/entites.service';
 
 vi.mock('@/libs/prisma', () => ({
@@ -1335,6 +1336,7 @@ describe('requetesEntite.service', () => {
         update: {},
         create: {
           requeteId,
+          statutId: REQUETE_STATUT_TYPES.EN_COURS,
           entiteId: 'root1',
         },
       });
