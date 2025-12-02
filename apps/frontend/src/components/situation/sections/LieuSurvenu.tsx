@@ -393,7 +393,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
                       ...prev,
                       lieuDeSurvenue: {
                         ...prev.lieuDeSurvenue,
-                        adresse: updateOrganizationName(prev.lieuDeSurvenue?.adresse, value),
+                        adresse: value === '' ? undefined : updateOrganizationName(prev.lieuDeSurvenue?.adresse, value),
                       },
                     }));
                   }
@@ -500,7 +500,8 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
                         ...prev,
                         lieuDeSurvenue: {
                           ...prev.lieuDeSurvenue,
-                          adresse: updateOrganizationName(prev.lieuDeSurvenue?.adresse, value),
+                          adresse:
+                            value === '' ? undefined : updateOrganizationName(prev.lieuDeSurvenue?.adresse, value),
                         },
                       }));
                     }

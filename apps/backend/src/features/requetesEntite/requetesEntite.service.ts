@@ -749,10 +749,36 @@ export const updateRequeteParticipant = async (
   });
 };
 
+const buildAdresseUpdate = (adresse: NonNullable<SituationInput['lieuDeSurvenue']>['adresse']) => {
+  const hasAdresseData = adresse?.label || adresse?.codePostal || adresse?.ville;
+
+  if (hasAdresseData) {
+    return {
+      upsert: {
+        create: {
+          label: cleanNullOrEmpty(adresse?.label),
+          codePostal: cleanNullOrEmpty(adresse?.codePostal),
+          ville: cleanNullOrEmpty(adresse?.ville),
+        },
+        update: {
+          label: cleanNullOrEmpty(adresse?.label),
+          codePostal: cleanNullOrEmpty(adresse?.codePostal),
+          ville: cleanNullOrEmpty(adresse?.ville),
+        },
+      },
+    };
+  }
+
+  return {
+    upsert: {
+      create: { label: '', codePostal: '', ville: '' },
+      update: { label: '', codePostal: '', ville: '' },
+    },
+  };
+};
+
 const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) => {
   if (!lieuData) return {};
-
-  const hasAdresseData = lieuData.adresse?.label || lieuData.adresse?.codePostal || lieuData.adresse?.ville;
 
   return {
     lieuTypeId: toNullableId(lieuData.lieuType),
@@ -760,22 +786,7 @@ const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) =
     codePostal: cleanNullOrEmpty(lieuData.codePostal),
     societeTransport: cleanNullOrEmpty(lieuData.societeTransport),
     finess: cleanNullOrEmpty(lieuData.finess),
-    adresse: hasAdresseData
-      ? {
-          upsert: {
-            create: {
-              label: cleanNullOrEmpty(lieuData.adresse?.label),
-              codePostal: cleanNullOrEmpty(lieuData.adresse?.codePostal),
-              ville: cleanNullOrEmpty(lieuData.adresse?.ville),
-            },
-            update: {
-              label: cleanNullOrEmpty(lieuData.adresse?.label),
-              codePostal: cleanNullOrEmpty(lieuData.adresse?.codePostal),
-              ville: cleanNullOrEmpty(lieuData.adresse?.ville),
-            },
-          },
-        }
-      : undefined,
+    adresse: buildAdresseUpdate(lieuData.adresse),
   };
 };
 

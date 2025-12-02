@@ -153,18 +153,24 @@ const getDemarchesEngagees = (
 
 const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
   const address = champsById[mapping.lieuAdresse.id] ? createAddress(champsById[mapping.lieuAdresse.id]) : null;
+  const finessValue = champsById[mapping.finess.id]?.stringValue ?? '';
+  const nomEtablissementValue =
+    'nomEtablissement' in mapping ? (champsById[mapping.nomEtablissement.id]?.stringValue ?? '') : '';
+  const adresse =
+    address ??
+    (nomEtablissementValue ? { label: nomEtablissementValue, codePostal: '', ville: '', rue: '', numero: '' } : null);
 
   const lieux = {
     codePostal: champsById[mapping.lieuCodePostal.id]?.stringValue ?? '',
     commentaire: champsById[mapping.lieuCommentaire.id]?.stringValue ?? '',
-    adresse: address,
+    adresse,
     lieuTypeId: getEnumIdFromLabel(mapping.lieuType.options, champsById[mapping.lieuType.id]?.stringValue ?? null),
     transportTypeId: getEnumIdFromLabel(
       mapping.transportType.options,
       champsById[mapping.transportType.id]?.stringValue ?? null,
     ),
     societeTransport: champsById[mapping.transportSociete.id]?.stringValue ?? '',
-    finess: champsById[mapping.finess.id]?.stringValue ?? '',
+    finess: finessValue,
   };
   return lieux;
 };

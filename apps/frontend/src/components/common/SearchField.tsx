@@ -110,6 +110,9 @@ export function SearchField<T>({
     setShowSuggestions(newValue.length >= minSearchLength);
     setSelectedIndex(-1);
     setHasSelected(false);
+    if (newValue === '') {
+      onChange('');
+    }
   };
 
   const handleSelectItem = (item: T) => {
