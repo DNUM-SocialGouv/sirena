@@ -53,7 +53,7 @@ interface TraitementDesFaitsBadgeWithDirectionProps {
 const getBadgeClassName = (entiteType: string): string => {
   const type = entiteType.toLowerCase();
   if (type === 'ars') return 'fr-badge--pink-tuile';
-  if (type === 'ddets') return 'fr-badge--blue-ecume';
+  if (type === 'dd') return 'fr-badge--blue-ecume';
   if (type === 'cd') return 'fr-badge--green-menthe';
   return 'fr-badge';
 };

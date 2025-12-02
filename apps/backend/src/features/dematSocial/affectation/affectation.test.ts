@@ -289,7 +289,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(createDefaultRequeteEtapes).toHaveBeenCalled();
   });
 
-  it('should handle multiple entity types (CD and DDETS)', async () => {
+  it('should handle multiple entity types (CD and DD)', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),
@@ -310,8 +310,8 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'CD - Paris',
     };
 
-    const mockEntiteDDETS = {
-      id: 'entite-ddets-1',
+    const mockEntiteDD = {
+      id: 'entite-dd-1',
       nomComplet: 'DDETS - Paris',
     };
 
@@ -319,7 +319,7 @@ describe('assignEntitesToRequeteTask', () => {
     (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
-    (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['CD', 'DDETS'] as EntiteAdminType[]);
+    (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['CD', 'DD'] as EntiteAdminType[]);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
       departementCode: '75',
       ctcdCode: '75C',
@@ -327,7 +327,7 @@ describe('assignEntitesToRequeteTask', () => {
     });
     (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>)
       .mockResolvedValueOnce(mockEntiteCD)
-      .mockResolvedValueOnce(mockEntiteDDETS);
+      .mockResolvedValueOnce(mockEntiteDD);
 
     await assignEntitesToRequeteTask('requete-1');
 
@@ -361,7 +361,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it('should use ctcdCode for CD and DDETS entity types', async () => {
+  it('should use ctcdCode for CD and DD entity types', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),

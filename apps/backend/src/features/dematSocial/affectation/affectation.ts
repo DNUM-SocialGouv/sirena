@@ -158,7 +158,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
 
   const requeteId = requete.id;
 
-  // 2) For each situation, determine the authority types to assign (ARS, CD, DDETS)
+  // 2) For each situation, determine the authority types to assign (ARS, CD, DD)
   const allAssignments: Array<Assignment> = [];
 
   for (const situation of requete.situations) {
@@ -205,7 +205,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
         where: {
           entiteTypeId: t,
           entiteMereId: null,
-          ...(['CD', 'DDETS'].includes(t) ? { ctcdCode: geo.ctcdCode, departementCode: geo.departementCode } : {}),
+          ...(['CD', 'DD'].includes(t) ? { ctcdCode: geo.ctcdCode, departementCode: geo.departementCode } : {}),
           ...(['ARS'].includes(t) ? { ctcdCode: geo.ctcdCode } : {}),
         },
       });

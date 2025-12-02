@@ -1,6 +1,6 @@
 export const entiteTypes = {
   ARS: 'ARS',
-  DDETS: 'DDETS',
+  DD: 'DD',
   CD: 'CD',
 } as const;
 

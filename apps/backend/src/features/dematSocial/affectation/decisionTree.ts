@@ -61,7 +61,7 @@ const DOMICILE_PRO_SANTE_MAPPING: Record<ProfessionDomicileType, EntiteAdminType
   REPAS: ['CD'],
   TRAITEMENT: ['CD'],
   SAADF: ['CD'],
-  MJPM: ['DDETS'],
+  MJPM: ['DD'],
   AUTRE: ['CD'],
 };
 
@@ -176,9 +176,9 @@ function nonDomicileMaltraitanceSubtree(): DecisionNode {
       },
       MJPM: {
         kind: 'leaf',
-        id: 'maltraitance_mjpm_add_ddets',
+        id: 'maltraitance_mjpm_add_dd',
         description: 'Maltraitance par un MJPM',
-        add: ['DDETS'],
+        add: ['DD'],
         next: nonDomicileLieuDeSurvenue(),
       },
     },
@@ -322,8 +322,8 @@ export async function runDecisionTree(ctx: SituationContext): Promise<EntiteAdmi
 
   await evalNode(rootNode, ctx, found);
 
-  // TODO: Temporary not affecting DDETS for now
-  found.delete('DDETS');
+  // TODO: Temporary not affecting DD for now
+  found.delete('DD');
 
   return Array.from(found);
 }
