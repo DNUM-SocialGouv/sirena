@@ -953,6 +953,7 @@ const updateSituationEntites = async (
         create: {
           requeteId,
           entiteId: rootId,
+          statutId: REQUETE_STATUT_TYPES.EN_COURS,
         },
       });
     }),
