@@ -1,6 +1,7 @@
 import { z } from '@/libs/zod';
 import type { PrismaClient } from '../../../generated/client';
 import { parseCsv } from '../../helpers/parseCsv';
+import { normalizeParentName } from './utils';
 
 const AdministrativeRowSchema = z.object({
   'Entité administrative (parent)': z.string().min(1),
@@ -12,10 +13,7 @@ export async function seedDirections(prisma: PrismaClient) {
   return await parseCsv('./prisma/documents/directions.csv', AdministrativeRowSchema, async (rows) => {
     const parentEntities = await prisma.entite.findMany({
       where: {
-        OR: rows.map((row) => ({
-          nomComplet: row['Entité administrative (parent)'],
-          entiteMereId: null,
-        })),
+        entiteMereId: null,
       },
       select: {
         nomComplet: true,
@@ -25,11 +23,24 @@ export async function seedDirections(prisma: PrismaClient) {
       },
     });
 
+    const parentNormalizedNameMap = new Map<string, (typeof parentEntities)[number]>();
+
+    for (const parent of parentEntities) {
+      const key = normalizeParentName(parent.nomComplet);
+      parentNormalizedNameMap.set(key, parent);
+    }
+
     const directionsWithParents = rows.map((row) => {
-      const parent = parentEntities.find((p) => p.nomComplet === row['Entité administrative (parent)']);
+      const rawParentName = row['Entité administrative (parent)'];
+      const parentKey = normalizeParentName(rawParentName);
+      const parent = parentNormalizedNameMap.get(parentKey);
+
       if (!parent) {
-        throw new Error(`Missing parent for: ${row['Direction (libellé long)']}`);
+        throw new Error(
+          `Missing parent "${rawParentName}" (normalized: "${parentKey}") for: ${row['Direction (libellé long)']}`,
+        );
       }
+
       return {
         nomComplet: row['Direction (libellé long)'],
         label: row['Direction (libéllé court)'],
