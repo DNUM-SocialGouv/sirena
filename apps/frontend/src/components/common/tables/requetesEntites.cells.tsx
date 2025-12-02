@@ -195,7 +195,11 @@ export function renderMisEnCauseCell(row: RequeteEntiteRow): ReactNode {
   const itemsArray = Array.from(misEnCauseItems);
 
   if (itemsArray.length === 1) {
-    return <span className="one-line">{itemsArray[0]}</span>;
+    return (
+      <ul className="fr-mb-0">
+        <li>{itemsArray[0]}</li>
+      </ul>
+    );
   }
 
   return (

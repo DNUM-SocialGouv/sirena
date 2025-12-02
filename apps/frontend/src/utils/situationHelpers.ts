@@ -64,6 +64,16 @@ const checkDemarches = (demarchesEngagees: unknown): boolean => {
   return hasValue(demarches.demarches);
 };
 
+const checkTraitementDesFaits = (traitementDesFaits: ServerSituationData['traitementDesFaits']): boolean => {
+  if (!traitementDesFaits || typeof traitementDesFaits !== 'object') return false;
+  return (
+    hasValue(traitementDesFaits.entites) &&
+    traitementDesFaits?.entites !== undefined &&
+    traitementDesFaits.entites.length > 0 &&
+    traitementDesFaits.entites.some((e) => e.entiteId && e.entiteId !== '')
+  );
+};
+
 export const hasSituationContent = (
   situation: SituationData | ServerSituationData | null | undefined,
   additionalFiles?: File[],
@@ -77,6 +87,7 @@ export const hasSituationContent = (
   const hasLieu = checkLieu(situation.lieuDeSurvenue);
   const hasFaits = checkFaits(fait, additionalFiles);
   const hasDemarches = checkDemarches(situation.demarchesEngagees);
+  const hasTraitementDesFaits = checkTraitementDesFaits(situation.traitementDesFaits);
 
-  return hasMisEnCause || hasLieu || hasFaits || hasDemarches;
+  return hasMisEnCause || hasLieu || hasFaits || hasDemarches || hasTraitementDesFaits;
 };

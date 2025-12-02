@@ -37,8 +37,8 @@ model StatutEnum {
 }
 
 model User {
-  id     String  @id @default(cuid())
-  email  String  @unique /// @zod.string.email({ message: 'Invalid email address' }),
+  id     String @id @default(cuid())
+  email  String @unique /// @zod.string.email({ message: 'Invalid email address' }),
   prenom String
   nom    String
   uid    String @unique
@@ -89,6 +89,10 @@ model Entite {
   entiteMereId String?
   entiteMere   Entite?        @relation("EntiteMereToServices", fields: [entiteMereId], references: [id])
 
+  departementCode String?
+  ctcdCode        String?
+  regionCode      String?
+
   users            User[]
   uploads          UploadedFile[]
   requeteEntite    RequeteEntite[]
@@ -136,11 +140,21 @@ model RequeteEntite {
   requeteId String
   requete   Requete @relation(fields: [requeteId], references: [id], onDelete: Cascade)
 
+  statutId String
+  statut   RequeteStatusEnum @relation(fields: [statutId], references: [id])
+
   entiteId     String
   entite       Entite         @relation(fields: [entiteId], references: [id])
   requeteEtape RequeteEtape[]
 
   @@id([requeteId, entiteId])
+}
+
+model RequeteStatusEnum {
+  id    String @id
+  label String
+
+  requeteEntites RequeteEntite[]
 }
 
 model ReceptionTypeEnum {
@@ -453,7 +467,7 @@ model RequeteEtape {
   estPartagee Boolean @default(false)
 
   statutId String
-  statut   RequeteStatutEnum @relation(fields: [statutId], references: [id])
+  statut   RequeteEtapeStatutEnum @relation(fields: [statutId], references: [id])
 
   requeteId String
   requete   Requete @relation(fields: [requeteId], references: [id], onDelete: Cascade)
@@ -474,7 +488,7 @@ model RequeteEtape {
   @@index([requeteId, entiteId])
 }
 
-model RequeteStatutEnum {
+model RequeteEtapeStatutEnum {
   id    String @id
   label String
 
@@ -498,12 +512,12 @@ model RequeteEtapeNote {
 }
 
 model UploadedFile {
-  id       String @id @default(uuid())
-  fileName String
-  filePath String @unique
-  mimeType String
-  size     Int
-  status   String @default("PENDING") // e.g. "PENDING", "COMPLETED", "FAILED"
+  id        String  @id @default(uuid())
+  fileName  String
+  filePath  String  @unique
+  mimeType  String
+  size      Int
+  status    String  @default("PENDING") // e.g. "PENDING", "COMPLETED", "FAILED"
   canDelete Boolean @default(true)
 
   metadata Json?

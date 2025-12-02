@@ -15,3 +15,10 @@ export async function fetchEntiteChain(id: string | undefined) {
   const { data } = await res.json();
   return data;
 }
+
+export async function fetchEntiteDescendants(id: string) {
+  const res = await client.entites.descendants[':id'].$get({ param: { id } });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}

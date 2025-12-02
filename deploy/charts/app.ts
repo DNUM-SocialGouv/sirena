@@ -197,11 +197,11 @@ function createContainer(props: AppProps): k8s.Container {
     resources: {
       limits: {
         cpu: k8s.Quantity.fromString('250m'),
-        memory: k8s.Quantity.fromString('500Mi'),
+        memory: k8s.Quantity.fromString('900Mi'),
       },
       requests: {
         cpu: k8s.Quantity.fromString('250m'),
-        memory: k8s.Quantity.fromString('500Mi'),
+        memory: k8s.Quantity.fromString('900Mi'),
       },
     },
     image: props.image,
@@ -300,11 +300,11 @@ function createDeployment(scope: Construct, props: AppProps, labels: Record<stri
           resources: {
             limits: {
               cpu: k8s.Quantity.fromString('250m'),
-              memory: k8s.Quantity.fromString('500Mi'),
+              memory: k8s.Quantity.fromString('900Mi'),
             },
             requests: {
               cpu: k8s.Quantity.fromString('100m'),
-              memory: k8s.Quantity.fromString('256Mi'),
+              memory: k8s.Quantity.fromString('512Mi'),
             },
           },
           env: createDatabaseEnvVars(),
@@ -364,11 +364,11 @@ function createWorkerDeployment(scope: Construct, props: WorkerProps, labels: Re
               resources: {
                 limits: {
                   cpu: k8s.Quantity.fromString('250m'),
-                  memory: k8s.Quantity.fromString('500Mi'),
+                  memory: k8s.Quantity.fromString('900Mi'),
                 },
                 requests: {
                   cpu: k8s.Quantity.fromString('250m'),
-                  memory: k8s.Quantity.fromString('500Mi'),
+                  memory: k8s.Quantity.fromString('900Mi'),
                 },
               },
               env: [
