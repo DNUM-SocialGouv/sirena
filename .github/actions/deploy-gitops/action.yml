@@ -55,20 +55,21 @@ runs:
     - name: render manifests using helm chart
       shell: bash
       run: |
+        cd helm_charts
         export ENVIRONNEMENT=${{ inputs.environment }}
-        helm template backend . -f chart_values/backend.yaml -f chart_values/env_specific/backend/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
+        helm template backend . -f values/backend.yaml -f values/env_specific/backend/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
         mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated_manifests/backend
         rm -rf ./generated_manifests/sirena
         
-        helm template frontend . -f chart_values/env_specific/frontend/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
+        helm template frontend . -f values/env_specific/frontend/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
         mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated_manifests/frontend
         rm -rf ./generated_manifests/sirena
         
-        helm template external-secrets . -f chart_values/external-secrets.yaml -f chart_values/env_specific/external-secrets/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
+        helm template external-secrets . -f values/external-secrets.yaml -f values/env_specific/external-secrets/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
         mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated_manifests/external-secrets
         rm -rf ./generated_manifests/sirena
         
-        helm template worker . -f chart_values/worker.yaml -f chart_values/env_specific/backend/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
+        helm template worker . -f values/worker.yaml -f values/env_specific/backend/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
         mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated_manifests/worker
         rm -rf ./generated_manifests/sirena
 
