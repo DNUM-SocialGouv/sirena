@@ -237,9 +237,9 @@ function TraitementDesFaitsSection({
     <div
       className="fr-p-4w fr-mb-4w"
       style={{
-        border: '2px solid #8BA7F8',
+        border: '2px solid var(--border-action-high-blue-france)',
         borderRadius: '0.25rem',
-        background: '#F4F6FE',
+        background: 'var(--background-alt-blue-france)',
       }}
     >
       <h2 className="fr-h6 fr-mb-3w">Traitement des faits</h2>
