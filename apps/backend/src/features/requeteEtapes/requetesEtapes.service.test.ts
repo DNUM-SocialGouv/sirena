@@ -93,6 +93,7 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
 const requeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: RequeteEtape[] } = {
   entiteId: 'entiteId',
   requeteId: 'requeteId',
+  statutId: 'EN_COURS',
   requete: {
     id: 'requeteId',
     commentaire: 'Commentaire',
@@ -119,6 +120,7 @@ describe('RequeteEtapes.service.ts', () => {
       const mockRequeteEntite: RequeteEntite = {
         requeteId,
         entiteId,
+        statutId: 'EN_COURS',
       };
 
       const mockEtape1: RequeteEtape = {
@@ -189,6 +191,7 @@ describe('RequeteEtapes.service.ts', () => {
       const mockRequeteEntite: RequeteEntite = {
         requeteId,
         entiteId,
+        statutId: 'EN_COURS',
       };
 
       const originalToLocaleDateString = Date.prototype.toLocaleDateString;
@@ -237,6 +240,7 @@ describe('RequeteEtapes.service.ts', () => {
       const mockRequeteEntite: RequeteEntite = {
         requeteId,
         entiteId,
+        statutId: 'EN_COURS',
       };
 
       const mockFindUnique = vi.fn();
@@ -318,6 +322,7 @@ describe('RequeteEtapes.service.ts', () => {
       const mockRequeteEntite: RequeteEntite = {
         requeteId,
         entiteId,
+        statutId: 'EN_COURS',
       };
 
       const mockEtape1: RequeteEtape = {
@@ -361,6 +366,7 @@ describe('RequeteEtapes.service.ts', () => {
       const mockRequeteEntite: RequeteEntite = {
         requeteId,
         entiteId,
+        statutId: 'EN_COURS',
       };
 
       const mockEtape1: RequeteEtape = {
@@ -434,6 +440,7 @@ describe('RequeteEtapes.service.ts', () => {
         create: {
           requeteId: 'requeteId',
           entiteId: 'entiteId',
+          statutId: 'EN_COURS',
         },
         update: {},
       });

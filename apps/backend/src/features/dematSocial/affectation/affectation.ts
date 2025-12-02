@@ -1,3 +1,4 @@
+import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { createChangeLog } from '@/features/changelog/changelog.service';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { createDefaultRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
@@ -229,7 +230,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
     for (const entiteId of entiteIdsToLinkToRequete) {
       await tx.requeteEntite.upsert({
         where: { requeteId_entiteId: { requeteId, entiteId } },
-        create: { requeteId, entiteId },
+        create: { requeteId, entiteId, statutId: REQUETE_STATUT_TYPES.EN_COURS },
         update: {},
       });
 

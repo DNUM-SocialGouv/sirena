@@ -1,13 +1,13 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Tag } from '@codegouvfr/react-dsfr/Tag';
-import type { EntiteType, RequeteStatutType } from '@sirena/common/constants';
+import type { EntiteType, RequeteEtapeStatutType } from '@sirena/common/constants';
 import style from './EntiteTag.module.css';
-import { RequeteStatutTag } from './RequeteStatutTag';
+import { RequeteEtapeStatutTag } from './RequeteStatutTag';
 
 type EntiteTagProps = {
   label: string;
   entiteTypeId: EntiteType;
-  statut?: RequeteStatutType;
+  statut?: RequeteEtapeStatutType;
 };
 
 export const EntiteTag = ({ entiteTypeId, label, statut }: EntiteTagProps) => {
@@ -22,7 +22,7 @@ export const EntiteTag = ({ entiteTypeId, label, statut }: EntiteTagProps) => {
           <div>
             Statut de la requête:
             <div className={fr.cx('fr-mt-1w')}>
-              <RequeteStatutTag statut={statut} />
+              <RequeteEtapeStatutTag statut={statut} />
             </div>
           </div>
         )}

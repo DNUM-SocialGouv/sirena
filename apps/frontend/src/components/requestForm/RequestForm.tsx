@@ -39,6 +39,7 @@ export function RequestForm({ requestId }: RequestFormProps) {
   );
 
   const motif = requestQuery.data?.requete.situations?.[0]?.faits?.[0]?.motifs?.[0]?.motif.label || null;
+  const statutId = requestQuery.data?.statutId || '';
 
   const tabs: TabDescriptor[] = [
     { label: 'Détails de la requête', tabPanelId: 'panel-details', tabId: 'tab-details' },
@@ -71,7 +72,7 @@ export function RequestForm({ requestId }: RequestFormProps) {
               <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
             </Link>
           </div>
-          <RequestInfos requestId={requestId} fullName={fullName} motif={motif} />
+          <RequestInfos requestId={requestId} fullName={fullName} motif={motif} statutId={statutId} />{' '}
         </div>
       </div>
       <div className="fr-container">

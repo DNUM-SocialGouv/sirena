@@ -1,17 +1,28 @@
 import Badge from '@codegouvfr/react-dsfr/Badge';
-import type { RequeteStatutType } from '@sirena/common/constants';
-import { allBadges } from '@/utils/requeteStatutBadage.constant';
+import { requeteEtapeStatutBadges, requeteStatutBadges, type StatutBadge } from '@/utils/requeteStatutBadge.constant';
 
 type Props = {
-  statut: RequeteStatutType;
+  statut: string;
+  noIcon?: boolean;
+  className?: string;
 };
 
-export const RequeteStatutTag = ({ statut }: Props) => {
-  const badge = allBadges.find((badge) => badge.value === statut);
+export const StatutTag =
+  (badges: StatutBadge[]) =>
+  ({ statut, noIcon, className = '' }: Props) => {
+    const badge = badges.find((badge) => badge.value === statut);
 
-  if (!badge) {
-    return null;
-  }
+    if (!badge) {
+      return null;
+    }
 
-  return <Badge severity={badge.type}>{badge.text}</Badge>;
-};
+    return (
+      <Badge noIcon={noIcon} severity={badge.type} className={className}>
+        {badge.text}
+      </Badge>
+    );
+  };
+
+export const RequeteStatutTag = StatutTag(requeteStatutBadges);
+
+export const RequeteEtapeStatutTag = StatutTag(requeteEtapeStatutBadges);

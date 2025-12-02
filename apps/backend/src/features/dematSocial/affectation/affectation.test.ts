@@ -1,3 +1,4 @@
+import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PrismaClient } from '../../../../generated/client';
 import { assignEntitesToRequeteTask } from './affectation';
@@ -267,7 +268,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockPrisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'entite-1' } },
-      create: { requeteId: 'requete-1', entiteId: 'entite-1' },
+      create: { requeteId: 'requete-1', entiteId: 'entite-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
       update: {},
     });
     expect(mockTransaction.situationEntite.upsert).toHaveBeenCalledWith({

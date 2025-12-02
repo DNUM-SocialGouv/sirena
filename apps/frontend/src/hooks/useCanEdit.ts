@@ -1,4 +1,4 @@
-import { REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import { useMemo } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import { useProcessingSteps } from './queries/processingSteps.hook';
@@ -18,7 +18,9 @@ export function useCanEdit({ requeteId }: { requeteId?: string } = {}) {
 
     // Then check if the request is closed
     if (requestQuery?.data?.data) {
-      const hasClosedStep = requestQuery.data.data.some((step) => step.statutId === REQUETE_STATUT_TYPES.CLOTUREE);
+      const hasClosedStep = requestQuery.data.data.some(
+        (step) => step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+      );
       return !hasClosedStep;
     }
 

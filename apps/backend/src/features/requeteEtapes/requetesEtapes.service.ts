@@ -1,4 +1,4 @@
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
 import { createChangeLog } from '@/features/changelog/changelog.service';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
@@ -38,7 +38,7 @@ export const createDefaultRequeteEtapes = async (
     data: {
       requeteId: requeteId,
       entiteId: entiteId,
-      statutId: REQUETE_STATUT_TYPES.FAIT,
+      statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
       nom: `Création de la requête le ${
         receptionDate?.toLocaleDateString('fr-FR', {
           day: '2-digit',
@@ -58,7 +58,7 @@ export const createDefaultRequeteEtapes = async (
     data: {
       requeteId: requeteId,
       entiteId: entiteId,
-      statutId: REQUETE_STATUT_TYPES.A_FAIRE,
+      statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
       nom: 'Envoyer un accusé de réception au déclarant',
     },
   });
@@ -91,6 +91,7 @@ export const addProcessingEtape = async (requeteId: string, entiteId: string | n
     create: {
       requeteId,
       entiteId,
+      statutId: REQUETE_STATUT_TYPES.EN_COURS,
     },
     update: {},
   });
@@ -100,7 +101,7 @@ export const addProcessingEtape = async (requeteId: string, entiteId: string | n
       requeteId,
       entiteId,
       nom: data.nom,
-      statutId: REQUETE_STATUT_TYPES.A_FAIRE,
+      statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
     },
   });
 
