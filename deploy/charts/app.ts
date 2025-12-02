@@ -197,11 +197,11 @@ function createContainer(props: AppProps): k8s.Container {
     resources: {
       limits: {
         cpu: k8s.Quantity.fromString('250m'),
-        memory: k8s.Quantity.fromString('500Mi'),
+        memory: k8s.Quantity.fromString('750Mi'),
       },
       requests: {
         cpu: k8s.Quantity.fromString('250m'),
-        memory: k8s.Quantity.fromString('500Mi'),
+        memory: k8s.Quantity.fromString('750Mi'),
       },
     },
     image: props.image,
@@ -364,11 +364,11 @@ function createWorkerDeployment(scope: Construct, props: WorkerProps, labels: Re
               resources: {
                 limits: {
                   cpu: k8s.Quantity.fromString('250m'),
-                  memory: k8s.Quantity.fromString('500Mi'),
+                  memory: k8s.Quantity.fromString('750Mi'),
                 },
                 requests: {
                   cpu: k8s.Quantity.fromString('250m'),
-                  memory: k8s.Quantity.fromString('500Mi'),
+                  memory: k8s.Quantity.fromString('750Mi'),
                 },
               },
               env: [
