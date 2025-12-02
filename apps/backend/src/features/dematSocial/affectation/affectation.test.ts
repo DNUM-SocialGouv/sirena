@@ -361,7 +361,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it('should use ctcdCode for CD and DD entity types', async () => {
+  it('should use ctcdCode AND departementCode for CD and DD entity types', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),
@@ -401,11 +401,12 @@ describe('assignEntitesToRequeteTask', () => {
         entiteTypeId: 'CD',
         entiteMereId: null,
         ctcdCode: '75C',
+        departementCode: '75',
       },
     });
   });
 
-  it('should use regionCode for ARS entity type', async () => {
+  it('should use ctcdCode for ARS entity type', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),
@@ -444,7 +445,7 @@ describe('assignEntitesToRequeteTask', () => {
       where: {
         entiteTypeId: 'ARS',
         entiteMereId: null,
-        regionCode: '11',
+        ctcdCode: '75C',
       },
     });
   });
