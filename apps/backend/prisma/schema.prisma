@@ -92,6 +92,8 @@ model Entite {
   departementCode String?
   ctcdCode        String?
   regionCode      String?
+  regLib          String?
+  dptLib          String?
 
   users            User[]
   uploads          UploadedFile[]
