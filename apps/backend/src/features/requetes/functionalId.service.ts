@@ -3,7 +3,7 @@ import { type Prisma, prisma } from '@/libs/prisma';
 export type FunctionalIdSource = 'SIRENA' | 'DEMAT_SOCIAL';
 
 /**
- * Format: R[S ou D]-AAAA-MM-XXXX
+ * Format: AAAA-MM-R[S ou D]N
  * RS = created via SIRENA
  * RD = created via DematSocial
  */
@@ -12,8 +12,8 @@ export async function generateRequeteId(source: FunctionalIdSource, tx?: Prisma.
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
 
-  const prefix = source === 'SIRENA' ? 'RS' : 'RD';
-  const monthPrefix = `${prefix}-${year}-${month}-`;
+  const sourcePrefix = source === 'SIRENA' ? 'RS' : 'RD';
+  const monthPrefix = `${year}-${month}-${sourcePrefix}`;
 
   const prismaClient = tx || prisma;
 
@@ -27,7 +27,7 @@ export async function generateRequeteId(source: FunctionalIdSource, tx?: Prisma.
 
   const nextNumber = count + 1;
 
-  return `${prefix}-${year}-${month}-${nextNumber}`;
+  return `${year}-${month}-${sourcePrefix}${nextNumber}`;
 }
 
 export function determineSource(dematSocialId: number | null | undefined): FunctionalIdSource {

@@ -29,11 +29,11 @@ describe('functionalId.service', () => {
 
       const result = await generateRequeteId('SIRENA');
 
-      expect(result).toBe('RS-2025-09-1');
+      expect(result).toBe('2025-09-RS1');
       expect(prisma.requete.count).toHaveBeenCalledWith({
         where: {
           id: {
-            startsWith: 'RS-2025-09-',
+            startsWith: '2025-09-RS',
           },
         },
       });
@@ -47,7 +47,7 @@ describe('functionalId.service', () => {
 
       const result = await generateRequeteId('DEMAT_SOCIAL');
 
-      expect(result).toBe('RD-2024-11-120');
+      expect(result).toBe('2024-11-RD120');
     });
 
     it('should handle month with leading zero', async () => {
@@ -58,7 +58,7 @@ describe('functionalId.service', () => {
 
       const result = await generateRequeteId('SIRENA');
 
-      expect(result).toBe('RS-2025-01-42');
+      expect(result).toBe('2025-01-RS42');
     });
 
     it('should increment counter for multiple calls on same day', async () => {
@@ -71,9 +71,9 @@ describe('functionalId.service', () => {
       const result2 = await generateRequeteId('SIRENA');
       const result3 = await generateRequeteId('SIRENA');
 
-      expect(result1).toBe('RS-2025-09-1');
-      expect(result2).toBe('RS-2025-09-2');
-      expect(result3).toBe('RS-2025-09-3');
+      expect(result1).toBe('2025-09-RS1');
+      expect(result2).toBe('2025-09-RS2');
+      expect(result3).toBe('2025-09-RS3');
     });
 
     it('should have separate counters for different sources', async () => {
@@ -85,22 +85,22 @@ describe('functionalId.service', () => {
       const result1 = await generateRequeteId('SIRENA');
       const result2 = await generateRequeteId('DEMAT_SOCIAL');
 
-      expect(result1).toBe('RS-2025-09-6');
-      expect(result2).toBe('RD-2025-09-4');
+      expect(result1).toBe('2025-09-RS6');
+      expect(result2).toBe('2025-09-RD4');
     });
 
-    it('should reset counter on new day', async () => {
+    it('should reset counter on new month', async () => {
       vi.mocked(prisma.requete.count).mockResolvedValueOnce(10).mockResolvedValueOnce(0);
 
-      // Day 1
+      // Month 1
       vi.setSystemTime(new Date('2025-09-15'));
       const result1 = await generateRequeteId('SIRENA');
-      expect(result1).toBe('RS-2025-09-11');
+      expect(result1).toBe('2025-09-RS11');
 
-      // Day 2 - counter should reset
-      vi.setSystemTime(new Date('2025-09-16'));
+      // Month 2 - counter should reset
+      vi.setSystemTime(new Date('2025-10-01'));
       const result2 = await generateRequeteId('SIRENA');
-      expect(result2).toBe('RS-2025-09-1');
+      expect(result2).toBe('2025-10-RS1');
     });
 
     it('should handle malformed IDs gracefully', async () => {
@@ -111,7 +111,7 @@ describe('functionalId.service', () => {
 
       const result = await generateRequeteId('SIRENA');
 
-      expect(result).toBe('RS-2025-09-1');
+      expect(result).toBe('2025-09-RS1');
     });
   });
 
