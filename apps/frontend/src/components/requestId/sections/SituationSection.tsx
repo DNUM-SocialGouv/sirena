@@ -1,6 +1,12 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Badge } from '@codegouvfr/react-dsfr/Badge';
-import { demarcheEngageeLabels, MOTIFS_HIERARCHICAL_DATA, misEnCauseTypeLabels } from '@sirena/common/constants';
+import {
+  demarcheEngageeLabels,
+  type MaltraitanceType,
+  MOTIFS_HIERARCHICAL_DATA,
+  maltraitanceQualifiedLabels,
+  misEnCauseTypeLabels,
+} from '@sirena/common/constants';
 import { getLieuPrecisionLabel, valueToLabel } from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
 import { useMemo } from 'react';
@@ -86,6 +92,24 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
   const hasLieu = situation?.lieuDeSurvenue?.lieuType?.label;
   const hasMisEnCause = situation?.misEnCause?.misEnCauseType?.label;
   const hasMotifs = fait?.motifs?.length > 0;
+
+  const motifsDeclares: string[] = [];
+
+  situation?.faits.forEach((fait) => {
+    fait.maltraitanceTypes?.forEach((maltraitance) => {
+      if (maltraitance.maltraitanceTypeId in maltraitanceQualifiedLabels) {
+        const label = maltraitanceQualifiedLabels[maltraitance.maltraitanceTypeId as MaltraitanceType];
+        if (motifsDeclares.indexOf(label) === -1) {
+          motifsDeclares.push(label);
+        }
+      }
+    });
+    fait.motifsDeclaratifs?.forEach((motif) => {
+      if (motifsDeclares.indexOf(motif.motifDeclaratif.label) === -1) {
+        motifsDeclares.push(motif.motifDeclaratif.label);
+      }
+    });
+  });
 
   const isFulfilled = hasSituationContent(situation);
 
@@ -277,8 +301,8 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
           <>
             <SectionTitle>Motifs renseignés par le déclarant</SectionTitle>
             <ul className={fr.cx('fr-mb-3w')}>
-              {fait.maltraitanceTypes.map((type) => (
-                <li key={type.maltraitanceType.label}>{type.maltraitanceType.label}</li>
+              {motifsDeclares.map((type) => (
+                <li key={type}>{type}</li>
               ))}
             </ul>
           </>
