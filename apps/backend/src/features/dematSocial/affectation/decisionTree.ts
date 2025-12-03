@@ -322,8 +322,5 @@ export async function runDecisionTree(ctx: SituationContext): Promise<EntiteAdmi
 
   await evalNode(rootNode, ctx, found);
 
-  // TODO: Temporary not affecting DD for now
-  found.delete('DD');
-
   return Array.from(found);
 }
