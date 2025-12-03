@@ -45,9 +45,13 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
   if (authToken) {
     try {
       const decoded = verify<{ id: string; roleId: string }>(authToken, envVars.AUTH_TOKEN_SECRET_KEY);
+      const user = await getUserById(decoded.id, null, null);
+      if (!user) {
+        throw new Error(`User with ID ${decoded.id} not found`);
+      }
       c.set('userId', decoded.id);
-      c.set('roleId', decoded.roleId);
-      updateSentryUserContext(decoded.id, { ...decoded, ip });
+      c.set('roleId', user.roleId);
+      updateSentryUserContext(decoded.id, { ...user, ip });
       return next();
     } catch (error) {
       if (!isJwtError(error)) {
