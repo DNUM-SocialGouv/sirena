@@ -27,7 +27,7 @@ interface RequestFormProps {
 export function RequestForm({ requestId }: RequestFormProps) {
   const [activeTab, setActiveTab] = useState(0);
   const requestQuery = useRequeteDetails(requestId);
-  const declarantIdentite = requestQuery.data?.requete.declarant?.identite;
+  const declarantIdentite = requestQuery.data?.requete.participant?.identite;
   const fullName = formatFullName(
     declarantIdentite
       ? {
