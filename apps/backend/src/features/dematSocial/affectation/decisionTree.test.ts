@@ -144,7 +144,7 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
     expect(result.sort()).toEqual(['ARS', 'CD']);
   });
 
-  it('should assign ARS only for maltraitance by MJPM (DDETS filtered out for now) in health establishment', async () => {
+  it('should assign ARS + DD for maltraitance by MJPM in health establishment', async () => {
     const ctx: SituationContext = {
       lieuType: 'ETABLISSEMENT_SANTE',
       isMaltraitance: true,
@@ -154,7 +154,7 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
 
     const result = await runDecisionTree(ctx);
 
-    expect(result.sort()).toEqual(['ARS']);
+    expect(result.sort()).toEqual(['ARS', 'DD']);
   });
 });
 

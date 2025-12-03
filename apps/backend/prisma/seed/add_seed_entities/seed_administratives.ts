@@ -26,6 +26,14 @@ const AdministrativeRowSchema = z.object({
     .string()
     .nullable()
     .transform((v) => (v === '' ? null : v)),
+  REG_LIB: z
+    .string()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
+  DPT_LIB: z
+    .string()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
 });
 
 export async function seedAdministratives(prisma: PrismaClient) {
@@ -54,6 +62,8 @@ export async function seedAdministratives(prisma: PrismaClient) {
         departementCode: row.departement_code,
         ctcdCode: row.ctcd_code,
         regionCode: row.region_code,
+        regLib: row.REG_LIB,
+        dptLib: row.DPT_LIB,
       }));
 
     const createdEntities = await prisma.entite.createMany({

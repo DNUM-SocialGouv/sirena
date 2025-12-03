@@ -948,7 +948,7 @@ const updateSituationEntites = async (
 
   await Promise.all(
     entitesToAdd.map(async (entiteToAdd) => {
-      const rootId = await getEntiteAscendanteId(entiteToAdd); // Get top entity (ARS/CD/DDETS)
+      const rootId = await getEntiteAscendanteId(entiteToAdd); // Get top entity (ARS/CD/DD)
       if (rootId) entiteMereIdsToAdd.add(rootId);
     }),
   );

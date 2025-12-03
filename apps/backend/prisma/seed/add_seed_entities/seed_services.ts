@@ -1,6 +1,7 @@
 import { z } from '@/libs/zod';
 import type { PrismaClient } from '../../../generated/client';
 import { parseCsv } from '../../helpers/parseCsv';
+import { normalizeParentName } from './utils';
 
 const ServiceRowSchema = z.object({
   'Entité administrative': z.string().min(1),
@@ -13,31 +14,48 @@ export async function seedServices(prisma: PrismaClient) {
   return await parseCsv('./prisma/documents/services.csv', ServiceRowSchema, async (rows) => {
     const parentEntities = await prisma.entite.findMany({
       where: {
-        OR: rows.map((row) => ({
-          nomComplet: row['Direction (libellé long)'],
-          entiteMere: {
-            is: {
-              nomComplet: row['Entité administrative'],
-              entiteMereId: null,
-            },
+        entiteMere: {
+          is: {
+            entiteMereId: null, // Get directions
           },
-        })),
+        },
       },
       select: {
         nomComplet: true,
         id: true,
         entiteTypeId: true,
-        entiteMere: true,
+        entiteMere: {
+          select: {
+            nomComplet: true,
+          },
+        },
       },
     });
 
+    const parentNormalizedNameMap = new Map<string, (typeof parentEntities)[number]>();
+
+    for (const parent of parentEntities) {
+      if (!parent.entiteMere) continue; // safety
+      const adminName = normalizeParentName(parent.entiteMere.nomComplet);
+      const directionName = normalizeParentName(parent.nomComplet);
+      const key = `${adminName}|${directionName}`;
+      parentNormalizedNameMap.set(key, parent);
+    }
+
     const servicesWithParents = rows.map((row) => {
-      const parent = parentEntities.find(
-        (p) =>
-          p.nomComplet === row['Direction (libellé long)'] && p.entiteMere?.nomComplet === row['Entité administrative'],
-      );
+      const rawAdminName = row['Entité administrative'];
+      const rawDirectionName = row['Direction (libellé long)'];
+
+      const adminKey = normalizeParentName(rawAdminName);
+      const directionKey = normalizeParentName(rawDirectionName);
+      const key = `${adminKey}|${directionKey}`;
+
+      const parent = parentNormalizedNameMap.get(key);
+
       if (!parent) {
-        throw new Error(`Parent not found for service: ${row['Service (libellé long)']}`);
+        throw new Error(
+          `Parent not found for service "${row['Service (libellé long)']}" (admin: "${rawAdminName}", direction: "${rawDirectionName}", key: "${key}")`,
+        );
       }
 
       return {
