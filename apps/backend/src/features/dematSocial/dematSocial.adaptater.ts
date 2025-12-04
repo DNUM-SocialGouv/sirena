@@ -159,7 +159,7 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
   const adresse =
     address ??
     (nomEtablissementValue ? { label: nomEtablissementValue, codePostal: '', ville: '', rue: '', numero: '' } : null);
-
+  console.log({ lieu: champsById[mapping.lieuType.id] });
   const lieux = {
     codePostal: champsById[mapping.lieuCodePostal.id]?.stringValue ?? '',
     commentaire: champsById[mapping.lieuCommentaire.id]?.stringValue ?? '',
@@ -172,6 +172,7 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
     societeTransport: champsById[mapping.transportSociete.id]?.stringValue ?? '',
     finess: finessValue,
   };
+  console.log({ lieu: lieux });
   return lieux;
 };
 
