@@ -121,6 +121,7 @@ export function SituationForm({
             nomComplet: e.nomComplet,
           }))}
           userEntiteId={profile?.entiteId}
+          topEntiteId={profile?.topEntiteId}
           initialEntites={formData.traitementDesFaits?.entites}
           onChange={handleTraitementDesFaitsChange}
           onValidationChange={setIsTraitementDesFaitsValid}

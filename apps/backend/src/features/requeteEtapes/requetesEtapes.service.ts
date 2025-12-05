@@ -34,6 +34,18 @@ export const createDefaultRequeteEtapes = async (
     return null;
   }
 
+  // Check default step already created
+  const existingEtapes = await prismaClient.requeteEtape.findMany({
+    where: {
+      requeteId,
+      entiteId,
+    },
+  });
+
+  if (existingEtapes.length > 0) {
+    return null;
+  }
+
   const etape1 = await prismaClient.requeteEtape.create({
     data: {
       requeteId: requeteId,
