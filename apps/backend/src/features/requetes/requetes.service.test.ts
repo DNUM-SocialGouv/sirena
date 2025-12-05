@@ -330,14 +330,15 @@ describe('requetes.service.ts', () => {
             },
             requeteEtape: {
               ...prisma.requeteEtape,
+              findMany: vi.fn().mockResolvedValue([]),
               create: vi.fn().mockResolvedValue({ id: 'etape-1' }),
             },
             requeteEntite: {
               ...prisma.requeteEntite,
               findUnique: vi
                 .fn()
-                .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-1' })
-                .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-2' }),
+                .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-1', statutId: 'EN_COURS' })
+                .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-2', statutId: 'EN_COURS' }),
             },
           } as typeof prisma;
           return cb(mockTx);
@@ -491,14 +492,15 @@ describe('requetes.service.ts', () => {
           },
           requeteEtape: {
             ...prisma.requeteEtape,
+            findMany: vi.fn().mockResolvedValue([]),
             create: vi.fn().mockResolvedValue({ id: 'etape-1' }),
           },
           requeteEntite: {
             ...prisma.requeteEntite,
             findUnique: vi
               .fn()
-              .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-1' })
-              .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-2' }),
+              .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-1', statutId: 'EN_COURS' })
+              .mockResolvedValueOnce({ requeteId: '1', entiteId: 'entite-2', statutId: 'EN_COURS' }),
           },
         } as typeof prisma;
         return cb(mockTx);
