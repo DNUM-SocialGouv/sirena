@@ -1,0 +1,26 @@
+.row {
+  align-items: flex-start;
+}
+
+.row :global(.fr-col-md-6 .fr-select-group) {
+  margin-top: 0;
+}
+
+.row :global(.fr-col-md-6 .fr-select-group .fr-label) {
+  margin-bottom: 0.5rem;
+}
+
+.row :global(.fr-col-md-6:last-child .fr-select-group .selectWrapper button) {
+  min-height: 2.5rem;
+  box-sizing: border-box;
+}
+
+.modifyButtonContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 0;
+  margin-top: 0;
+  padding-top: 0;
+  min-height: 4.5rem;
+}
