@@ -189,6 +189,7 @@ const getMinimalRequeteDto = () => {
           dateContactEtablissement: null,
           etablissementARepondu: false,
           organisme: '',
+          commentaire: '',
           datePlainte: null,
           autoriteTypeId: null,
           files: [],

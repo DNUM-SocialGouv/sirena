@@ -74,7 +74,7 @@ export const importRequetes = async (createdSince?: Date) => {
   for (const dossier of dossiers) {
     // legacy, we don't support
     // TODO: remove after some time
-    if (dossier.number < 271846) {
+    if (dossier.number <= 271846) {
       continue;
     }
     const isDossierAlreadyImported = await getRequeteByDematSocialId(dossier.number);

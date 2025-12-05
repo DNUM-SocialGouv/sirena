@@ -324,7 +324,7 @@ const lieuType = {
 
 /* lieuType = Cabinet medical... || Autre start */
 
-const nomEtablisement = {
+const nomEtablissement = {
   id: 'Champ-42814',
   type: 'TextChamp',
   label: "Quel est le nom de l'établissement ?",
@@ -572,8 +572,8 @@ const autreFaits = {
     },
     /* lieuType = 'Dans un établissement... end */
     /* lieuType = 'Un cabinet... || Autre start */
-    nomEtablisement: {
-      ...nomEtablisement,
+    nomEtablissement: {
+      ...nomEtablissement,
       id: 'Champ-42818',
     },
     /* lieuType = 'Un cabinet... || Autre end */
@@ -708,7 +708,7 @@ export default {
   // Lieux
   lieuCodePostal,
   lieuType,
-  nomEtablisement,
+  nomEtablissement,
   lieuAdresse,
   transportType,
   transportSociete,

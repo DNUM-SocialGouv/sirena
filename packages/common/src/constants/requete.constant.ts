@@ -194,7 +194,22 @@ export const maltraitanceTypeLabels: Record<MaltraitanceType, string> = {
   NON: 'Aucune de ces situations',
 };
 
-export const maltraitanceQualifiedLabels: Record<MaltraitanceType, string> = {
+export const MALTRATIANCEQUALIFIED_TYPE = {
+  PHYSIQUE: 'PHYSIQUE',
+  SEXUELLE: 'SEXUELLE',
+  PSYCHOLOGIQUE: 'PSYCHOLOGIQUE',
+  MATERIELLE_FINANCIERE: 'MATERIELLE_FINANCIERE',
+  NEGLIGENCES: 'NEGLIGENCES',
+  DISCRIMINATION: 'DISCRIMINATION',
+  INSTITUTIONNELLE: 'INSTITUTIONNELLE',
+  AUTRE: 'AUTRE',
+  NE_SAIS_PAS: 'NE_SAIS_PAS',
+  NON: 'NON',
+} as const;
+
+export type MaltraitanceQualifiedType = keyof typeof MALTRATIANCEQUALIFIED_TYPE;
+
+export const maltraitanceQualifiedLabels: Record<MaltraitanceQualifiedType, string> = {
   PHYSIQUE: 'Maltraitance physique',
   SEXUELLE: 'Maltraitance sexuelle',
   PSYCHOLOGIQUE: 'Maltraitance psychologique',
@@ -1137,5 +1152,5 @@ export type DeclarationType = keyof typeof DECLARATION_TYPE;
 
 export const declarationTypeLabels: Record<DeclarationType, string> = {
   QUALITE_COMPORTEMENT: 'Un problème de qualité de prise en charge ou un comportement inapproprié',
-  FACTURATION_MATERIEL: 'Un problème de facturation ou matérie',
+  FACTURATION_MATERIEL: 'Un problème de facturation ou matériel',
 } as const;

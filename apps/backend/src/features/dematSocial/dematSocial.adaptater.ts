@@ -140,7 +140,7 @@ const getDemarchesEngagees = (
     demarches: getEnumsFromLabel(mapping.demarchesEngagees.options, champsById[mapping.demarchesEngagees.id]),
     dateContactEtablissement: getDateByChamps(champsById[mapping.demarchesEngageesDateContactEtablissement.id]),
     etablissementARepondu: getBooleanOrNull(champsById[mapping.demarchesEngageesEtablissementARepondu.id]) || false,
-    organisme: champsById[mapping.demarchesEngageesOrganisme.id]?.stringValue ?? '',
+    commentaire: champsById[mapping.demarchesEngageesAutre.id]?.stringValue ?? '',
     datePlainte: getDateByChamps(champsById[mapping.demarcheEngageDatePlainte.id]),
     files: getFilesByChamps(champsById[mapping.demarchesEngageesReponseFile.id]),
     autoriteTypeId: getEnumIdFromLabel(
@@ -153,16 +153,16 @@ const getDemarchesEngagees = (
 
 const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
   const address = champsById[mapping.lieuAdresse.id] ? createAddress(champsById[mapping.lieuAdresse.id]) : null;
-  const finessValue = champsById[mapping.finess.id]?.stringValue ?? '';
+  console.log(champsById[mapping.finess.id]);
   const nomEtablissementValue =
     'nomEtablissement' in mapping ? (champsById[mapping.nomEtablissement.id]?.stringValue ?? '') : '';
   const adresse =
     address ??
     (nomEtablissementValue ? { label: nomEtablissementValue, codePostal: '', ville: '', rue: '', numero: '' } : null);
-  console.log({ lieu: champsById[mapping.lieuType.id] });
+  const finessValue = champsById[mapping.finess.id]?.stringValue ?? '';
   const lieux = {
     codePostal: champsById[mapping.lieuCodePostal.id]?.stringValue ?? '',
-    commentaire: champsById[mapping.lieuCommentaire.id]?.stringValue ?? '',
+    commentaire: '',
     adresse,
     lieuTypeId: getEnumIdFromLabel(mapping.lieuType.options, champsById[mapping.lieuType.id]?.stringValue ?? null),
     transportTypeId: getEnumIdFromLabel(
@@ -172,16 +172,27 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
     societeTransport: champsById[mapping.transportSociete.id]?.stringValue ?? '',
     finess: finessValue,
   };
-  console.log({ lieu: lieux });
   return lieux;
+};
+
+const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
+  if (champsById[mapping.responsableType.id]?.stringValue) {
+    return getEnumIdFromLabel(
+      mapping.responsableType.options,
+      champsById[mapping.responsableType.id]?.stringValue ?? null,
+    );
+  } else if (champsById[mapping.responsableType2.id]?.stringValue) {
+    return getEnumIdFromLabel(
+      mapping.responsableType2.options,
+      champsById[mapping.responsableType2.id]?.stringValue ?? null,
+    );
+  }
+  return null;
 };
 
 const getMisEnCause = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
   const misEnCause = {
-    misEnCauseTypeId: getEnumIdFromLabel(
-      mapping.responsableType.options,
-      champsById[mapping.responsableType.id]?.stringValue ?? null,
-    ),
+    misEnCauseTypeId: getResponsable(champsById, mapping),
     professionTypeId: getEnumIdFromLabel(
       mapping.professionnelResponsable.options,
       champsById[mapping.professionnelResponsable.id]?.stringValue ?? null,
@@ -191,14 +202,24 @@ const getMisEnCause = (champsById: MappedChamp | MappedRepetitionChamp, mapping:
       champsById[mapping.professionnelResponsableDomicile.id]?.stringValue ?? null,
     ),
     rpps: champsById[mapping.professionnelResponsableIdentite.id]?.stringValue ?? null,
-    commentaire: champsById[mapping.responsableComment.id]?.stringValue ?? null,
+    commentaire: champsById[mapping.faitsCommentaire.id]?.stringValue ?? null,
   };
   return misEnCause;
 };
 
+const getMotifs = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
+  const qualite = champsById[mapping.declarationQualiteType.id]
+    ? getEnumsFromLabel(mapping.declarationQualiteType.options, champsById[mapping.declarationQualiteType.id])
+    : [];
+  const facturation = champsById[mapping.declarationFacturationType.id]
+    ? getEnumsFromLabel(mapping.declarationFacturationType.options, champsById[mapping.declarationFacturationType.id])
+    : [];
+  return [...qualite, ...facturation];
+};
+
 const getFait = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
   const fait = {
-    motifs: getEnumsFromLabel(mapping.motifsMap.options, champsById[mapping.motifsMap.id]),
+    motifs: getMotifs(champsById, mapping),
     consequences: getEnumsFromLabel(mapping.consequencesMap.options, champsById[mapping.consequencesMap.id]),
     maltraitanceTypes: getEnumsFromLabel(
       mapping.maltraitanceTypesMap.options,
@@ -239,10 +260,8 @@ const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
       estVictimeInformee: null,
       victimeInformeeCommentaire: null,
       veutGarderAnonymat,
-      adresse: champsById[rootMapping.victimeAdresse.id]
-        ? createAddress(champsById[rootMapping.victimeAdresse.id])
-        : null,
-      autrePersonnes: null,
+      adresse: champsById[rootMapping.adresse.id] ? createAddress(champsById[rootMapping.adresse.id]) : null,
+      autrePersonnes: champsById[rootMapping.autreVictimes.id]?.stringValue ?? '',
     };
 
     return {
@@ -268,9 +287,9 @@ const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
 
     // Declarant = mandataire (uses usager email + mandataire fields)
     const declarant = {
-      prenom: 'MandataireDéclarantPrénom', // Fictive identity as no info is available
-      nom: 'MandataireDéclarantNom',
-      civiliteId: null,
+      prenom: demandeur.prenom,
+      nom: demandeur.nom,
+      civiliteId: demandeur.civiliteId,
       email: demandeur.email, // Usager email = mandataire email
       telephone: champsById[rootMapping.declarantTelephone.id]?.stringValue ?? null,
       ageId: null, // No age for mandataire
@@ -286,8 +305,8 @@ const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
 
     // Participant = personne concernée
     const victime = {
-      prenom: demandeur.prenom,
-      nom: demandeur.nom,
+      prenom: 'PersonneConcernéePrénom', // Fictive identity as no info is available
+      nom: 'PersonneConcernéeNom',
       civiliteId: demandeur.civiliteId,
       email: champsById[rootMapping.victimeEmail.id]?.stringValue ?? demandeur.email,
       telephone: champsById[rootMapping.victimeTelephone.id]?.stringValue ?? null,
@@ -305,12 +324,12 @@ const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
         champsById[rootMapping.estVictimeInformee.id],
         rootMapping.estVictimeInformee.options,
       ),
-      victimeInformeeCommentaire: champsById[rootMapping.estVictimeInformeeCommentaire.id]?.stringValue ?? null,
+      victimeInformeeCommentaire: champsById[rootMapping.raisons.id]?.stringValue ?? null,
       veutGarderAnonymat: victimeVeutGarderAnonymat,
       adresse: champsById[rootMapping.victimeAdressePostale.id]
         ? createAddress(champsById[rootMapping.victimeAdressePostale.id])
         : null,
-      autrePersonnes: champsById[rootMapping.autreVictimesDetails.id]?.stringValue ?? null,
+      autrePersonnes: champsById[rootMapping.autreVictimes.id]?.stringValue ?? '',
     };
 
     return {

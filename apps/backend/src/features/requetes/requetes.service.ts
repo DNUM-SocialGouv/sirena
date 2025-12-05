@@ -201,12 +201,15 @@ export const createRequeteFromDematSocial = async ({
       }
 
       const precisionId = s.misEnCause.professionTypeId || s.misEnCause.professionDomicileTypeId;
+      const precision = precisionId
+        ? await tx.misEnCauseTypePrecisionEnum.findUnique({ where: { id: precisionId } })
+        : null;
 
       const misEnCauseData = {
         rpps: s.misEnCause.rpps ?? null,
         commentaire: s.misEnCause.commentaire ?? '',
         ...(s.misEnCause.misEnCauseTypeId && { misEnCauseTypeId: s.misEnCause.misEnCauseTypeId }),
-        ...(precisionId && { misEnCauseTypePrecisionId: precisionId }),
+        ...(precision && { misEnCauseTypePrecisionId: precision.id }),
       };
 
       const mec = await tx.misEnCause.create({
@@ -225,7 +228,7 @@ export const createRequeteFromDematSocial = async ({
         data: {
           dateContactEtablissement: s.demarchesEngagees.dateContactEtablissement ?? null,
           etablissementARepondu: s.demarchesEngagees.etablissementARepondu ?? null,
-          organisme: s.demarchesEngagees.organisme ?? '',
+          commentaire: s.demarchesEngagees.commentaire ?? '',
           datePlainte: s.demarchesEngagees.datePlainte ?? null,
           autoriteType: autorite ? { connect: { id: autorite.id } } : undefined,
           demarches: demIds.length ? { connect: demIds } : undefined,

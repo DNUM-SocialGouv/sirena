@@ -71,6 +71,15 @@ fragment ChampFragment on Champ {
       ...AddressFragment
     }
   }
+
+  ... on SiretChamp {
+    etablissement {
+      address {
+        ...AddressFragment
+      }
+      siret
+    }
+  }
 }
 
 query getDossiersMetadata($demarcheNumber: Int!) {
