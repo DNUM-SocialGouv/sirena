@@ -108,7 +108,7 @@ const requeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: Requ
 
 describe('RequeteEtapes.service.ts', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('createDefaultRequeteEtapes()', () => {
@@ -148,6 +148,7 @@ describe('RequeteEtapes.service.ts', () => {
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
       vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
 
       const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
@@ -222,6 +223,7 @@ describe('RequeteEtapes.service.ts', () => {
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
       vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
 
       const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
@@ -244,12 +246,14 @@ describe('RequeteEtapes.service.ts', () => {
       };
 
       const mockFindUnique = vi.fn();
+      const mockFindMany = vi.fn();
       const mockCreate = vi.fn();
       const mockTx = {
         requeteEntite: {
           findUnique: mockFindUnique,
         },
         requeteEtape: {
+          findMany: mockFindMany,
           create: mockCreate,
         },
       } as unknown as NonNullable<Parameters<typeof createDefaultRequeteEtapes>[3]>;
@@ -279,6 +283,7 @@ describe('RequeteEtapes.service.ts', () => {
       };
 
       mockFindUnique.mockResolvedValueOnce(mockRequeteEntite);
+      mockFindMany.mockResolvedValueOnce([]);
       mockCreate.mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
 
       const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate, mockTx);
@@ -350,6 +355,7 @@ describe('RequeteEtapes.service.ts', () => {
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
       vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
 
       await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
@@ -394,6 +400,7 @@ describe('RequeteEtapes.service.ts', () => {
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
       vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
 
       const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
@@ -417,6 +424,10 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+
+      vi.mocked(prisma.requete.findUnique).mockReset();
+      vi.mocked(prisma.requeteEntite.upsert).mockReset();
+      vi.mocked(prisma.requeteEtape.create).mockReset();
 
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequete);
       vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce(requeteEntite);

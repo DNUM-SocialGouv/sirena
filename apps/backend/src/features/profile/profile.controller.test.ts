@@ -25,6 +25,15 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
+vi.mock('@/middlewares/entites.middleware', () => {
+  return {
+    default: async (c: Context, next: Next) => {
+      c.set('topEntiteId', 'topEntiteId1');
+      return next();
+    },
+  };
+});
+
 describe('Profile endpoints: /profile', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/profile', ProfileController).onError(errorHandler);
 
@@ -54,7 +63,7 @@ describe('Profile endpoints: /profile', () => {
       const json = await res.json();
 
       expect(res.status).toBe(200);
-      expect(json).toEqual({ data: convertDatesToStrings(fakeUser) });
+      expect(json).toEqual({ data: convertDatesToStrings({ ...fakeUser, topEntiteId: 'topEntiteId1' }) });
       expect(getUserById).toHaveBeenCalledWith('id1', null, null);
     });
 
