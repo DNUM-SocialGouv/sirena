@@ -1,7 +1,6 @@
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { envVars } from '@/config/env';
-import { getSession } from '@/features/sessions/sessions.service';
 import { getUserById } from '@/features/users/users.service';
 import { errorHandler } from '@/helpers/errors';
 import appWithAuth from '@/helpers/factories/appWithAuth';

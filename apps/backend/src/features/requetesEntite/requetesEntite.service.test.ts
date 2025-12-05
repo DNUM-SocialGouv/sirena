@@ -1189,7 +1189,12 @@ describe('requetesEntite.service', () => {
           upsert: vi.fn().mockResolvedValue({}),
         },
         requeteEntite: {
+          findUnique: vi.fn().mockResolvedValue({ requeteId: 'req1', entiteId: 'root1', statutId: 'EN_COURS' }),
           upsert: vi.fn().mockResolvedValue({}),
+        },
+        requeteEtape: {
+          findMany: vi.fn().mockResolvedValue([]),
+          create: vi.fn().mockResolvedValue({ id: 'etape1', requeteId: 'req1', entiteId: 'root1' }),
         },
         requete: {
           findUnique: vi.fn().mockResolvedValue(null),

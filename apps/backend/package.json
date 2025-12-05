@@ -62,7 +62,7 @@
     "hono-pino": "^0.10.3",
     "html-to-text": "^9.0.5",
     "ioredis": "^5.8.2",
-    "jsonwebtoken": "^9.0.2",
+    "jsonwebtoken": "^9.0.3",
     "juice": "^11.0.3",
     "minio": "^8.0.6",
     "openid-client": "^6.8.1",

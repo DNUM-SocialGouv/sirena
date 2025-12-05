@@ -908,10 +908,13 @@ const updateSituationEntites = async (
     return;
   }
 
-  // Calculate newEntiteIds from entiteId / directionServiceId
-  const newEntiteIds = new Set(
-    traitementDesFaits.entites.map((entite) => entite.directionServiceId || entite.entiteId), // link entiteId (top entite) only if directionServiceId is not set
-  );
+  const newEntiteIds = new Set<string>();
+  traitementDesFaits.entites.forEach((entite) => {
+    newEntiteIds.add(entite.entiteId);
+    if (entite.directionServiceId) {
+      newEntiteIds.add(entite.directionServiceId);
+    }
+  });
 
   // Determine what is added / removed
   const entitesToAdd = Array.from(newEntiteIds).filter((id) => !existingEntiteIds.has(id));
@@ -967,6 +970,13 @@ const updateSituationEntites = async (
           statutId: REQUETE_STATUT_TYPES.EN_COURS,
         },
       });
+    }),
+  );
+
+  // Create default steps for all added top entities
+  await Promise.all(
+    Array.from(entiteMereIdsToAdd).map(async (rootId) => {
+      await createDefaultRequeteEtapes(requeteId, rootId, new Date(), tx);
     }),
   );
 };
