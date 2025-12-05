@@ -2,15 +2,17 @@ import { throwHTTPException401Unauthorized } from '@sirena/backend-utils/helpers
 import { getUserById } from '@/features/users/users.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
+import entitesMiddleware from '@/middlewares/entites.middleware';
 import { getProfileRoute } from './profile.route';
 
 const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
-
+  .use(entitesMiddleware)
   .get('/', getProfileRoute, async (c) => {
     const logger = c.get('logger');
     const userId = c.get('userId');
+    const topEntiteId = c.get('topEntiteId');
 
     logger.info({ userId }, 'User profile requested');
     const user = await getUserById(userId, null, null);
@@ -21,7 +23,7 @@ const app = factoryWithLogs
     }
 
     logger.info({ userId }, 'User profile retrieved successfully');
-    return c.json({ data: user }, 200);
+    return c.json({ data: { ...user, topEntiteId } }, 200);
   });
 
 export default app;
