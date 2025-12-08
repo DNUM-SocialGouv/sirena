@@ -12,17 +12,42 @@ export type CloseRequeteModalRef = {
   openModal: (closeButtonRef?: React.RefObject<HTMLButtonElement | null>) => void;
 };
 
+export type OtherEntityAffected = {
+  entite: {
+    id: string;
+    nomComplet: string;
+    entiteTypeId: string;
+  };
+};
+
 export type CloseRequeteModalProps = {
   requestId: string;
   misEnCause?: string;
   date?: string;
+  initialReasonId?: string;
+  otherEntitiesAffected?: OtherEntityAffected[];
+  customDescription?: string;
+  onCancel?: () => void;
+  onSuccess?: () => void;
 };
 
 export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteModalProps>(
-  ({ requestId, misEnCause, date }, ref) => {
+  (
+    {
+      requestId,
+      misEnCause,
+      date,
+      initialReasonId,
+      otherEntitiesAffected = [],
+      customDescription,
+      onCancel,
+      onSuccess,
+    },
+    ref,
+  ) => {
     const reasonSelectId = useId();
     const reasonErrorId = useId();
-    const [reasonId, setReasonId] = useState<string>('');
+    const [reasonId, setReasonId] = useState<string>(initialReasonId || '');
     const [precision, setPrecision] = useState<string>('');
     const [files, setFiles] = useState<File[]>([]);
     const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
@@ -45,7 +70,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     );
 
     const openModal = (buttonRef?: React.RefObject<HTMLButtonElement | null>) => {
-      setReasonId('');
+      setReasonId(initialReasonId || '');
       setPrecision('');
       setFiles([]);
       setFileErrors({});
@@ -150,6 +175,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
         });
 
         closeModal.close();
+        onSuccess?.();
       } catch {
         setIsSubmitting(false);
         setErrorMessage('Une erreur est survenue. Veuillez réessayer.');
@@ -161,14 +187,24 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       label,
     }));
 
+    const handleCancel = () => {
+      closeModal.close();
+      onCancel?.();
+    };
+
+    const descriptionText =
+      customDescription ||
+      `Vous allez clôturer la requête ${requestId} prise en charge le ${date} avec pour mise en cause "${misEnCause}".`;
+
     return (
       <closeModal.Component
         size="large"
         title="Clôturer la requête"
         buttons={[
           {
-            doClosesModal: true,
-            children: 'Annuler',
+            doClosesModal: false,
+            children: onCancel ? 'Ne pas clôturer la requête' : 'Annuler',
+            onClick: handleCancel,
             disabled: isSubmitting,
           },
           {
@@ -181,14 +217,31 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       >
         <div className="fr-mb-4w">
           <div className="fr-text--sm fr-text--grey">
+            <Alert small={false} title="" severity="warning" description={descriptionText} />
+          </div>
+        </div>
+
+        {otherEntitiesAffected.length > 0 && (
+          <div className="fr-mb-4w">
             <Alert
               small={false}
               title=""
               severity="info"
-              description={`Vous allez clôturer la requête ${requestId} prise en charge le ${date} avec pour mise en cause "${misEnCause}".`}
+              description={
+                <div>
+                  <p className="fr-mb-2w">
+                    Les autres entités administratives affectées ne seront pas impactées par la clôture :
+                  </p>
+                  <ul className="fr-mb-0">
+                    {otherEntitiesAffected.map((entity) => (
+                      <li key={entity.entite.id}>{entity.entite.nomComplet}</li>
+                    ))}
+                  </ul>
+                </div>
+              }
             />
           </div>
-        </div>
+        )}
 
         <div className="fr-mb-4w">
           <div className="fr-select-group">
