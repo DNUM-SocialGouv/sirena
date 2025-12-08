@@ -298,8 +298,8 @@ function TraitementDesFaitsSection({
 
           const isFirstRow = idx === 0;
           const shouldShowAsReadOnly = isFirstRow && !isFirstRowEditable && row.existing;
-          const isLastRow = rows.editableRows.length === 1;
-          const canRemove = !isLastRow;
+          const totalEntitesCount = rows.editableRows.length + rows.readOnlyRows.length;
+          const canRemove = totalEntitesCount > 1;
 
           return (
             <div key={row.id}>
