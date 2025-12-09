@@ -128,7 +128,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                     />
                   )}
                 </div>
-                {requestId && canEdit && (
+                {requestId && canEdit && !requestQuery.error && (
                   <div className="fr-col-auto">
                     <Button
                       priority="secondary"
