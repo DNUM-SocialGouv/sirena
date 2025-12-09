@@ -1,0 +1,48 @@
+.row {
+  align-items: flex-start;
+}
+
+.row :global(.fr-col-md-6 .fr-select-group) {
+  margin-top: 0;
+}
+
+.row :global(.fr-col-md-6 .fr-select-group .fr-label) {
+  margin-bottom: 0.5rem;
+}
+
+.row :global(.fr-col-md-6:last-child .fr-select-group .selectWrapper button) {
+  min-height: 2.5rem;
+  box-sizing: border-box;
+}
+
+.modifyButtonContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 0;
+  margin-top: 0;
+  padding-top: 0;
+  min-height: 4.5rem;
+}
+
+.container {
+  border: 2px solid var(--border-action-high-blue-france);
+  border-radius: 0.25rem;
+  background: var(--background-alt-blue-france);
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+[data-fr-theme="dark"] .container,
+html[data-fr-theme="dark"] .container {
+  border-color: var(--border-default-grey, var(--grey-925-125, #3a3a3a));
+  background: var(--background-default-grey, var(--grey-1000-50, #1e1e1e));
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-fr-theme="light"]) .container {
+    border-color: var(--border-default-grey, #3a3a3a);
+    background: var(--background-raised-grey, #161616);
+  }
+}

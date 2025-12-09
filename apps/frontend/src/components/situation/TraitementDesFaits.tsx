@@ -1,32 +1,42 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { SelectWithChildren } from '@sirena/ui';
+import { useEffect, useRef, useState } from 'react';
 import { useEntiteDescendants } from '@/hooks/queries/entites.hook';
+import styles from './TraitementDesFaits.module.css';
+
+const alignSelectStyle = {
+  display: 'flex',
+  flexDirection: 'column' as const,
+};
 
 interface TraitementDesFaitsSectionProps {
   entites: Array<{ id: string; nomComplet: string }>;
   userEntiteId?: string | null;
+  topEntiteId?: string | null;
   initialEntites?: Array<{ entiteId: string; directionServiceId?: string }>;
   onChange: (data: { entites: Array<{ entiteId: string; directionServiceId?: string }> }) => void;
   onValidationChange?: (isValid: boolean) => void;
   disabled?: boolean;
+  hasAttemptedSave?: boolean;
 }
 
 type TraitementDesFaitsRow = {
   id: string;
   entiteId: string;
-  directionServiceId?: string;
+  directionServiceIds?: string[];
   existing: boolean;
+  canEdit: boolean;
 };
 
 interface TraitementDesFaitsRowProps {
   row: TraitementDesFaitsRow;
   entites: Array<{ id: string; nomComplet: string }>;
-  onChange: (id: string, field: 'entiteId' | 'directionServiceId', value: string) => void;
+  onChange: (id: string, field: 'entiteId' | 'directionServiceIds', value: string | string[]) => void;
   onRemove?: (id: string) => void;
-  isMain: boolean;
   disabled?: boolean;
+  selectedEntiteIds?: string[];
 }
 
 function TraitementDesFaitsRowComponent({
@@ -34,23 +44,29 @@ function TraitementDesFaitsRowComponent({
   entites,
   onChange,
   onRemove,
-  isMain,
   disabled,
+  selectedEntiteIds = [],
 }: TraitementDesFaitsRowProps) {
-  const isReadOnly = row.existing;
+  const isReadOnly = row.existing && !row.canEdit;
   const { data: directionsServices = [] } = useEntiteDescendants(row.entiteId);
 
   const entiteLabel = entites.find((e) => e.id === row.entiteId)?.nomComplet || '';
-  const directionLabel =
-    directionsServices.find((d: { id: string }) => d.id === row.directionServiceId)?.nomComplet || '';
+  const directionLabels = (row.directionServiceIds || [])
+    .map((id) => directionsServices.find((d: { id: string }) => d.id === id)?.nomComplet)
+    .filter(Boolean)
+    .join(', ');
+
+  const availableEntites = entites.filter(
+    (entite) => !selectedEntiteIds.includes(entite.id) || entite.id === row.entiteId,
+  );
 
   return (
-    <div className="fr-grid-row fr-grid-row--gutters fr-mb-2w">
+    <div className={`fr-grid-row fr-grid-row--gutters fr-mb-2w ${styles.row}`}>
       {/* Entite */}
-      <div className="fr-col-12 fr-col-md-6">
+      <div className="fr-col-12 fr-col-md-6" style={alignSelectStyle}>
         {isReadOnly ? (
           <Input
-            label={isMain ? 'Entité affectée (obligatoire)' : 'Entité'}
+            label={'Entité administrative'}
             nativeInputProps={{
               value: entiteLabel,
               readOnly: true,
@@ -59,7 +75,7 @@ function TraitementDesFaitsRowComponent({
           />
         ) : (
           <Select
-            label={isMain ? 'Entité affectée (obligatoire)' : 'Entité'}
+            label={'Entité administrative'}
             nativeSelectProps={{
               value: row.entiteId || '',
               onChange: (e) => onChange(row.id, 'entiteId', e.target.value),
@@ -67,7 +83,7 @@ function TraitementDesFaitsRowComponent({
             }}
           >
             <option value="">Sélectionner une option</option>
-            {entites.map((entite) => (
+            {availableEntites.map((entite) => (
               <option key={entite.id} value={entite.id}>
                 {entite.nomComplet}
               </option>
@@ -78,37 +94,31 @@ function TraitementDesFaitsRowComponent({
 
       {/* Direction / service */}
       {row.entiteId && (
-        <div className="fr-col-12 fr-col-md-6">
+        <div className="fr-col-12 fr-col-md-6" style={alignSelectStyle}>
           {isReadOnly ? (
             <Input
               label="Direction ou service"
               nativeInputProps={{
-                value: directionLabel,
+                value: directionLabels,
                 readOnly: true,
                 disabled: true,
               }}
             />
           ) : (
-            <Select
-              label="Direction ou service"
-              nativeSelectProps={{
-                value: row.directionServiceId || '',
-                onChange: (e) => onChange(row.id, 'directionServiceId', e.target.value),
-                disabled: disabled || !row.entiteId,
-              }}
-            >
-              <option value="">Sélectionner une option</option>
-              {directionsServices.map((direction: { id: string; nomComplet: string }) => (
-                <option key={direction.id} value={direction.id}>
-                  {direction.nomComplet}
-                </option>
-              ))}
-            </Select>
+            <SelectWithChildren
+              value={row.directionServiceIds || []}
+              onChange={(newValues) => onChange(row.id, 'directionServiceIds', newValues)}
+              options={directionsServices.map((entite) => ({
+                label: entite.nomComplet,
+                value: entite.id,
+              }))}
+              label="Direction ou Service"
+            />
           )}
         </div>
       )}
 
-      {!isReadOnly && !isMain && onRemove && (
+      {onRemove && (
         <div className="fr-col-12">
           <Button iconId="fr-icon-delete-line" priority="tertiary" onClick={() => onRemove(row.id)} disabled={disabled}>
             Supprimer cette entité
@@ -119,160 +129,247 @@ function TraitementDesFaitsRowComponent({
   );
 }
 
-/**
- * Behavior:
- * - If initialEntites contains valid entities => they are displayed as read-only (existing: true)
- *   + an empty editable row is added to allow adding a new entity.
- * - Otherwise => a single main editable row is shown (pre-filled with the user's entity if available).
- */
 function TraitementDesFaitsSection({
   entites,
   userEntiteId,
+  topEntiteId,
   initialEntites,
   onChange,
   onValidationChange,
   disabled,
+  hasAttemptedSave = false,
 }: TraitementDesFaitsSectionProps) {
-  const defaultEntiteUtilisateur = useMemo(
-    () => (userEntiteId ? entites.find((e) => e.id === userEntiteId) : undefined),
-    [userEntiteId, entites],
+  const [rows, setRows] = useState<{ editableRows: TraitementDesFaitsRow[]; readOnlyRows: TraitementDesFaitsRow[] }>({
+    editableRows: [],
+    readOnlyRows: [],
+  });
+  const [isFirstRowEditable, setIsFirstRowEditable] = useState(false);
+  const [globalError, setGlobalError] = useState<string | undefined>();
+  const initDoneRef = useRef(false);
+  const { data: topEntiteDescendants = [], isLoading: isLoadingDescendants } = useEntiteDescendants(
+    topEntiteId ?? undefined,
   );
 
-  const [rows, setRows] = useState<TraitementDesFaitsRow[]>([]);
-  const initDoneRef = useRef(false);
-
   useEffect(() => {
-    if (initDoneRef.current) return;
-    initDoneRef.current = true;
+    if (initialEntites && initialEntites.length > 0) {
+      if (initDoneRef.current) return;
+      initDoneRef.current = true;
 
-    const validInitial = (initialEntites || []).filter((e) => e.entiteId);
+      const entitesMap = new Map<string, string[]>();
+      initialEntites.forEach((e) => {
+        if (!entitesMap.has(e.entiteId)) {
+          entitesMap.set(e.entiteId, []);
+        }
 
-    if (validInitial.length > 0) {
-      const existingRows: TraitementDesFaitsRow[] = validInitial.map((e, idx) => ({
-        id: `existing-${idx}`,
-        entiteId: e.entiteId,
-        directionServiceId: e.directionServiceId,
+        if (e.directionServiceId) {
+          const existing = entitesMap.get(e.entiteId);
+          if (existing && !existing.includes(e.directionServiceId)) {
+            existing.push(e.directionServiceId);
+          }
+        }
+      });
+
+      const initialEntitesRows = Array.from(entitesMap.entries()).map(([entiteId, directionServiceIds]) => ({
+        id: `${entiteId}-${Date.now()}`,
+        entiteId,
+        directionServiceIds: directionServiceIds.length > 0 ? directionServiceIds : undefined,
         existing: true,
+        canEdit: entiteId === topEntiteId,
       }));
-
-      setRows(existingRows);
-    } else {
-      setRows([
-        {
-          id: 'main',
-          entiteId: defaultEntiteUtilisateur?.id ?? '',
-          directionServiceId: undefined,
-          existing: false,
-        },
-      ]);
+      const editableRows = initialEntitesRows.filter((e) => e.canEdit);
+      setRows({
+        editableRows,
+        readOnlyRows: initialEntitesRows.filter((e) => !e.canEdit),
+      });
+      setIsFirstRowEditable(editableRows.length === 0);
+      return;
     }
-  }, [initialEntites, defaultEntiteUtilisateur?.id]);
+
+    if (topEntiteId && !initDoneRef.current) {
+      if (isLoadingDescendants && userEntiteId) {
+        return;
+      }
+
+      initDoneRef.current = true;
+      const isUserEntiteDirectionService =
+        userEntiteId &&
+        topEntiteId &&
+        topEntiteDescendants.some((descendant: { id: string }) => descendant.id === userEntiteId);
+
+      setRows({
+        editableRows: [
+          {
+            id: 'main',
+            entiteId: topEntiteId ?? '',
+            directionServiceIds: isUserEntiteDirectionService ? [userEntiteId] : undefined,
+            existing: false,
+            canEdit: true,
+          },
+        ],
+        readOnlyRows: [],
+      });
+      setIsFirstRowEditable(true);
+    }
+  }, [userEntiteId, topEntiteId, initialEntites, topEntiteDescendants, isLoadingDescendants]);
 
   useEffect(() => {
+    const entitesArray: Array<{ entiteId: string; directionServiceId?: string }> = [];
+    [...rows.editableRows, ...rows.readOnlyRows]
+      .filter((r) => r.entiteId)
+      .forEach((r) => {
+        if (r.directionServiceIds && r.directionServiceIds.length > 0) {
+          r.directionServiceIds.forEach((directionServiceId) => {
+            entitesArray.push({
+              entiteId: r.entiteId,
+              directionServiceId,
+            });
+          });
+        } else {
+          entitesArray.push({
+            entiteId: r.entiteId,
+          });
+        }
+      });
     onChange({
-      entites: rows
-        .filter((r) => r.entiteId)
-        .map((r) => ({
-          entiteId: r.entiteId,
-          directionServiceId: r.directionServiceId,
-        })),
+      entites: entitesArray,
     });
   }, [rows, onChange]);
 
   useEffect(() => {
-    if (rows.length === 0) {
-      onValidationChange?.(false);
-      return;
-    }
-
-    const mainRow = rows[0];
-    const isValid = mainRow.existing || Boolean(mainRow.entiteId);
+    const hasReadOnlyRows = rows.readOnlyRows.length > 0;
+    const hasValidEditableRow = rows.editableRows.some((row) => Boolean(row.entiteId));
+    const isValid = hasReadOnlyRows || hasValidEditableRow;
     onValidationChange?.(isValid);
   }, [rows, onValidationChange]);
 
-  const handleRowChange = (id: string, field: 'entiteId' | 'directionServiceId', value: string) => {
-    setRows((prev) =>
-      prev.map((row) =>
+  useEffect(() => {
+    if (hasAttemptedSave) {
+      const hasReadOnlyRows = rows.readOnlyRows.length > 0;
+      const hasValidEditableRow = rows.editableRows.some((row) => Boolean(row.entiteId));
+      const hasAtLeastOneEntite = hasReadOnlyRows || hasValidEditableRow;
+
+      if (!hasAtLeastOneEntite) {
+        setGlobalError('Au moins une entité administrative doit être renseignée.');
+      } else {
+        setGlobalError(undefined);
+      }
+    } else {
+      setGlobalError(undefined);
+    }
+  }, [hasAttemptedSave, rows]);
+
+  const handleAddRow = () => {
+    setRows((prev) => ({
+      editableRows: [
+        ...prev.editableRows,
+        {
+          id: `new-${Date.now()}`,
+          entiteId: '',
+          directionServiceIds: undefined,
+          existing: false,
+          canEdit: true,
+        },
+      ],
+      readOnlyRows: prev.readOnlyRows,
+    }));
+    if (globalError) {
+      setGlobalError(undefined);
+    }
+  };
+
+  const handleRemoveRow = (id: string) => {
+    setRows((prev) => ({
+      editableRows: prev.editableRows.filter((row) => row.id !== id),
+      readOnlyRows: prev.readOnlyRows.filter((row) => row.id !== id),
+    }));
+    if (globalError) {
+      setGlobalError(undefined);
+    }
+  };
+
+  const handleRowChange = (id: string, field: 'entiteId' | 'directionServiceIds', value: string | string[]) => {
+    setRows((prev) => ({
+      readOnlyRows: prev.readOnlyRows,
+      editableRows: prev.editableRows.map((row) =>
         row.id === id
           ? {
               ...row,
               [field]: value,
-              ...(field === 'entiteId' ? { directionServiceId: undefined } : {}),
+              ...(field === 'entiteId' ? { directionServiceIds: undefined } : {}),
             }
           : row,
       ),
-    );
+    }));
+
+    if (globalError) {
+      setGlobalError(undefined);
+    }
   };
-
-  const handleAddRow = () => {
-    setRows((prev) => [
-      ...prev,
-      {
-        id: `new-${Date.now()}`,
-        entiteId: '',
-        directionServiceId: undefined,
-        existing: false,
-      },
-    ]);
-  };
-
-  const handleRemoveRow = (id: string) => {
-    setRows((prev) =>
-      prev.filter((row, index) => {
-        if (index === 0) return true;
-        if (row.existing) return true;
-        return row.id !== id;
-      }),
-    );
-  };
-
-  if (rows.length === 0) {
-    return null;
-  }
-
-  const mainRow = rows[0];
-  const otherRows = rows.slice(1);
 
   return (
-    <div
-      className="fr-p-4w fr-mb-4w"
-      style={{
-        border: '2px solid var(--border-action-high-blue-france)',
-        borderRadius: '0.25rem',
-        background: 'var(--background-alt-blue-france)',
-      }}
-    >
+    <div className={`fr-p-4w fr-mb-4w ${styles.container}`}>
       <h2 className="fr-h6 fr-mb-3w">Traitement des faits</h2>
+      {globalError && (
+        <p className="fr-message fr-message--error fr-text--md fr-mb-3w" role="alert">
+          {globalError}
+        </p>
+      )}
 
-      {/* Main row */}
-      <TraitementDesFaitsRowComponent
-        row={mainRow}
-        entites={entites}
-        onChange={handleRowChange}
-        isMain
-        disabled={disabled}
-      />
-
-      <hr className="fr-mt-4w" />
+      {rows.editableRows.length > 0 && <hr className="fr-mt-4w" />}
 
       <div>
-        {rows.length === 1 && (
-          <p className="fr-text--md fr-mb-2w">
-            Ajoutez une autre entité si le traitement de la situation concerne plusieurs entités.
-          </p>
-        )}
+        {rows.editableRows.map((row, idx) => {
+          const selectedEntiteIds = rows.editableRows
+            .filter((r) => r.id !== row.id && r.entiteId)
+            .map((r) => r.entiteId);
 
-        {otherRows.map((row) => (
-          <TraitementDesFaitsRowComponent
-            key={row.id}
-            row={row}
-            entites={entites}
-            onChange={handleRowChange}
-            onRemove={handleRemoveRow}
-            isMain={false}
-            disabled={disabled}
-          />
-        ))}
+          const isFirstRow = idx === 0;
+          const shouldShowAsReadOnly = isFirstRow && !isFirstRowEditable && row.existing;
+          const totalEntitesCount = rows.editableRows.length + rows.readOnlyRows.length;
+          const canRemove = totalEntitesCount > 1;
+
+          return (
+            <div key={row.id}>
+              {shouldShowAsReadOnly ? (
+                <div className="fr-grid-row fr-grid-row--gutters fr-mb-2w">
+                  <div className="fr-col-12 fr-col-md-10">
+                    <TraitementDesFaitsRowComponent
+                      row={{
+                        ...row,
+                        existing: true,
+                        canEdit: false,
+                      }}
+                      onChange={handleRowChange}
+                      entites={entites}
+                      selectedEntiteIds={selectedEntiteIds}
+                    />
+                  </div>
+                  <div className={`fr-col-12 fr-col-md-2 ${styles.modifyButtonContainer}`}>
+                    <Button
+                      iconId="fr-icon-edit-line"
+                      priority="secondary"
+                      onClick={() => setIsFirstRowEditable(true)}
+                      disabled={disabled}
+                    >
+                      Modifier
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <TraitementDesFaitsRowComponent
+                  row={row}
+                  onChange={handleRowChange}
+                  entites={entites}
+                  onRemove={canRemove ? handleRemoveRow : undefined}
+                  selectedEntiteIds={selectedEntiteIds}
+                />
+              )}
+            </div>
+          );
+        })}
+        <p className="fr-text--md fr-mb-2w">
+          Ajoutez une autre entité si le traitement de la situation concerne plusieurs entités.
+        </p>
 
         <Button
           iconId="fr-icon-add-line"
@@ -283,6 +380,13 @@ function TraitementDesFaitsSection({
         >
           Ajouter une autre entité
         </Button>
+        <hr className="fr-mt-4w" />
+        {rows.readOnlyRows.length > 0 && (
+          <p className="fr-text--md fr-mb-2w fr-text--bold">Autres entités affectées au traitement</p>
+        )}
+        {rows.readOnlyRows.map((row) => (
+          <TraitementDesFaitsRowComponent key={row.id} row={row} entites={entites} onChange={handleRowChange} />
+        ))}
       </div>
     </div>
   );
