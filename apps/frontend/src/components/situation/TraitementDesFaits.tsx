@@ -307,14 +307,7 @@ function TraitementDesFaitsSection({
   };
 
   return (
-    <div
-      className="fr-p-4w fr-mb-4w"
-      style={{
-        border: '2px solid var(--border-action-high-blue-france)',
-        borderRadius: '0.25rem',
-        background: 'var(--background-alt-blue-france)',
-      }}
-    >
+    <div className={`fr-p-4w fr-mb-4w ${styles.container}`}>
       <h2 className="fr-h6 fr-mb-3w">Traitement des faits</h2>
       {globalError && (
         <p className="fr-message fr-message--error fr-text--md fr-mb-3w" role="alert">
