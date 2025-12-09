@@ -2,9 +2,9 @@ import { fr } from '@codegouvfr/react-dsfr';
 
 export const formatFullName = (identite?: { civilite?: { label?: string }; prenom?: string; nom?: string } | null) => {
   if (!identite) return '';
-  return [`${identite.civilite?.label ? `${identite.civilite?.label}.` : ''}`, identite.nom, identite.prenom]
-    .filter(Boolean)
-    .join(' ');
+  const civiliteLabel = identite.civilite?.label;
+  const formattedCivilite = civiliteLabel ? (civiliteLabel === 'M' ? `${civiliteLabel}.` : civiliteLabel) : '';
+  return [formattedCivilite, identite.nom, identite.prenom].filter(Boolean).join(' ');
 };
 
 export const formatAddress = (
