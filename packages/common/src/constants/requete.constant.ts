@@ -1,3 +1,5 @@
+// Attention aux espaces insécables dans les labels renvoyées par dematSocial
+
 export const AGE = {
   '-18': '-18',
   '18-29': '18-29',
@@ -49,7 +51,7 @@ export const misEnCauseTypeLabels: Record<MisEnCauseType, string> = {
   PROFESSIONNEL: 'Un professionnel',
   ETABLISSEMENT: 'Un établissement ou un service',
   MEMBRE_FAMILLE: 'Un membre de la famille',
-  PROCHE: 'Un autre proche, par exemple : voisinage ou connaissance',
+  PROCHE: 'Un autre proche, par exemple : voisinage ou connaissance',
   AUTRE: 'Autre',
   PROFESSION_DOMICILE: 'Un professionnel ou un service d’aide à domicile',
 };
@@ -139,11 +141,11 @@ export const motifLabels: Record<Motif, string> = {
   PROBLEME_LOCAUX: 'Les locaux ou la restauration',
   NON_RESPECT_DROITS: 'Un manque d’information sur l’organisation de l’établissement ou du service',
   PROBLEME_ORGANISATION:
-    'Problème d’organisation ou de fonctionnement de l’établissement ou du service (ex : Management, plannings, condition de travail...)',
+    'Problème d’organisation ou de fonctionnement de l’établissement ou du service (ex : Management, plannings, condition de travail...)',
   PROBLEME_QUALITE_SOINS: 'La qualité des soins médicaux ou paramédicaux',
   DIFFICULTES_ACCES_SOINS:
     "Difficultés d'accès aux soins (établissement ou professionnel) (ex: manque de moyen humain...)",
-  AUTRE: 'Autre, par exemple : tatouage ou esthétique',
+  AUTRE: 'Autre, par exemple : tatouage ou esthétique',
 };
 
 export const motifShortLabels: Record<Motif, string> = {
@@ -237,11 +239,11 @@ export type LieuType = keyof typeof LIEU_TYPE;
 
 export const lieuTypeLabels: Record<LieuType, string> = {
   DOMICILE: 'À Domicile',
-  ETABLISSEMENT_SANTE: 'Un établissement de santé, par exemple : CHU, clinique',
-  ETABLISSEMENT_PERSONNES_AGEES: 'Un établissement pour personnes âgées, par exemple : EHPAD, résidence autonomie',
+  ETABLISSEMENT_SANTE: 'Un établissement de santé, par exemple : CHU, clinique',
+  ETABLISSEMENT_PERSONNES_AGEES: 'Un établissement pour personnes âgées, par exemple : EHPAD, résidence autonomie',
   ETABLISSEMENT_HANDICAP:
-    'Un établissement pour personnes en situation de handicap, par exemple : maison d’accueil spécialisée',
-  ETABLISSEMENT_SOCIAL: 'Un établissement social, par exemple : centre d’hébergement',
+    'Un établissement pour personnes en situation de handicap, par exemple : maison d’accueil spécialisée',
+  ETABLISSEMENT_SOCIAL: 'Un établissement social, par exemple : centre d’hébergement',
   CABINET: 'Un cabinet médical, par exemple : dentiste, médecin généraliste',
   AUTRES_ETABLISSEMENTS: 'Autre, par exemple un salon de tatouage ou un institut d’esthétique',
   TRAJET: 'Dans un moyen de transport',
@@ -448,8 +450,8 @@ export const lieuTrajetPrecisionLabels: Record<LieuTrajetPrecision, string> = {
 export const PROFESSION_DOMICILE_TYPE = {
   PROF_SANTE: 'SANTE',
   PROF_SOIN: 'SOIN',
-  INTERVENANT_DOMICILE: 'AIDE',
-  SERVICE_EDUCATION: 'EDUCATION',
+  INTERVENANT_DOMICILE: 'INTERVENANT_DOMICILE',
+  SERVICE_EDUCATION: 'SERVICE_EDUCATION',
   SERVICE_AIDE: 'SERVICE_AIDE',
   TUTEUR: 'TUTEUR',
   AUTRE: 'AUTRE',
@@ -459,7 +461,7 @@ export type ProfessionDomicileType = keyof typeof PROFESSION_DOMICILE_TYPE;
 
 export const professionDomicileTypeLabels: Record<ProfessionDomicileType, string> = {
   PROF_SANTE: 'Un professionnel de santé, par exemple : médecin, SAMU',
-  PROF_SOIN: 'Un professionnel du soin, par exemple : infirmier, aide-soignant',
+  PROF_SOIN: 'Un professionnel du soin, par exemple : infirmier, aide-soignant',
   INTERVENANT_DOMICILE: 'Un intervenant à domicile : aide à domicile, aide ménagère, aide au repas',
   SERVICE_EDUCATION: 'Un professionnel d’un service d’éducation spéciale et de soins',
   SERVICE_AIDE:
@@ -496,10 +498,10 @@ export const PROFESSION_TYPE = {
 export type ProfessionType = keyof typeof PROFESSION_TYPE;
 
 export const professionTypeLabels: Record<ProfessionType, string> = {
-  PROF_SANTE: 'Un professionnel de santé, par exemple : médecin, dentiste, infirmier, aide-soignant',
-  TRAVAILLEUR_SOCIAL: 'Un travailleur social, par exemple : éducateur, assistant social',
+  PROF_SANTE: 'Un professionnel de santé, par exemple : médecin, dentiste, infirmier, aide-soignant',
+  TRAVAILLEUR_SOCIAL: 'Un travailleur social, par exemple : éducateur, assistant social',
   TUTEUR: 'Un tuteur, curateur ou mandataire judiciaire',
-  AUTRE: 'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
+  AUTRE: 'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
 };
 
 // Professionnel de santé - Précisions
@@ -912,7 +914,7 @@ export const sousMotifMAUVAISE_ATTITUDE_DES_PROFESSIONNELSLabels: Record<
   REFUS_DE_CONSULTATION_PAR_UN_PROFESSIONNEL_DE_SANTE_LIBERAL:
     'Refus de consultation par un professionnel de santé libéral ',
   REFUS_D_INTERVENTION_AU_DOMICILE_EXEMPLE_SOS_MEDECINS_IDEL:
-    "Refus d'intervention au domicile (exemple : SOS médecins, IDEL ...)",
+    "Refus d'intervention au domicile (exemple : SOS médecins, IDEL ...)",
 };
 
 // Sous-motifs pour: Pratique non conventionnelle
@@ -983,7 +985,7 @@ export const sousMotifQUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICELabels: Record<
   string
 > = {
   PROBLEME_D_ACCOMPAGNEMENT_ET_OU_SUIVI_INDIVIDUEL_PROJET_DE_VIE_SUIVI_SOCIAL_EDUCATIF_ADMINISTRATIF:
-    "Problème d'accompagnement et/ou suivi individuel : projet de vie, suivi social, éducatif, administratif…",
+    "Problème d'accompagnement et/ou suivi individuel : projet de vie, suivi social, éducatif, administratif…",
   NON_RESPECT_DES_PROGRAMMES_DE_FORMATION: 'Non respect des programmes de formation',
   ABSENCE_D_ANIMATION: "Absence d'animation",
   AUTRES: 'Autres',
@@ -1026,7 +1028,7 @@ export const sousMotifQUALITE_DES_SOINSLabels: Record<SousMotifQUALITE_DES_SOINS
     'Absence ou insuffisance de soins paramédicaux (repas, hygiène…)',
   ABSENCE_OU_INSUFFISANCE_DE_LA_REEDUCATION: 'Absence ou insuffisance de la rééducation',
   AFFECTIONS_IATROGENES_INFECTIONS_LIEES_AUX_SOINS_INFECTIONS_NOSOCOMIALES_EVENEMENTS_LIES_A_UN_PRODUIT_DE_SANTE:
-    'Affections iatrogénes : infections liées aux soins, infections nosocomiales, événements liés à un produit de santé',
+    'Affections iatrogénes : infections liées aux soins, infections nosocomiales, événements liés à un produit de santé',
   AIDE_MEDICALE_URGENTE_SAMU: 'Aide médicale urgente (SAMU)',
   AUTRES: 'Autres',
   DEFAILLANCE_OU_INCIDENT_LIE_AUX_SOINS_OU_A_LA_SURVEILLANCE_COMPLICATIONS_INCAPACITE_DECES:
@@ -1091,7 +1093,7 @@ export const sousMotifPROBLEMES_ENVIRONNEMENTAUXLabels: Record<SousMotifPROBLEME
   PROBLEMATIQUES_OU_GESTION_DES_DECHETS_D_ACTIVITES_DE_SOINS_A_RISQUES_INFECTIEUX_DASRI:
     "Problématiques ou gestion des déchets d'activités de soins à risques infectieux (DASRI)",
   SITUATION_EXCEPTIONNELLE_EXEMPLE_CANICULE_INNONDATIONS:
-    'Situation exceptionnelle (exemple : canicule, innondations..)',
+    'Situation exceptionnelle (exemple : canicule, innondations..)',
 };
 
 // Sous-motifs pour: Problèmes liés au transport Sanitaire
