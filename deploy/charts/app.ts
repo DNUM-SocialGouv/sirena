@@ -248,6 +248,8 @@ function createIngressAnnotations(isBackend: boolean, namespace: string): Record
   const baseAnnotations = {
     'cert-manager.io/cluster-issuer': 'letsencrypt-http01',
     'nginx.ingress.kubernetes.io/proxy-body-size': '60m',
+    'nginx.ingress.kubernetes.io/proxy-hide-headers': 'Server',
+    'nginx.ingress.kubernetes.io/custom-headers': `${namespace}/security-headers`,
   };
 
   if (isBackend) {
@@ -257,34 +259,34 @@ function createIngressAnnotations(isBackend: boolean, namespace: string): Record
       'nginx.ingress.kubernetes.io/rewrite-target': '/$1',
     };
   }
-
-  console.log(`namespace: ${namespace}`);
-
-  return {
-    ...baseAnnotations,
-    'nginx.ingress.kubernetes.io/custom-headers': `${namespace}/security-headers`,
-  };
+  return baseAnnotations;
 }
 
+const securityHeadersData = {
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Robots-Tag': 'noindex, nofollow, nosnippet, noarchive',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+};
+
+const backendCsp = "default-src 'none'; frame-ancestors 'none'; sandbox";
+const frontendCsp =
+  "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'";
+
 function createConfigMap(scope: Construct, isBackend: boolean) {
-  if (!isBackend) {
-    return new k8s.KubeConfigMap(scope, 'security-headers', {
-      metadata: {
-        name: 'security-headers',
-      },
-      data: {
-        'X-Frame-Options': 'DENY',
-        'X-Content-Type-Options': 'nosniff',
-        'X-XSS-Protection': '1; mode=block',
-        'Referrer-Policy': 'strict-origin-when-cross-origin',
-        'X-Robots-Tag': 'noindex, nofollow, nosnippet, noarchive',
-        'Content-Security-Policy':
-          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'",
-        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-      },
-    });
-  }
-  return undefined;
+  const data = {
+    ...securityHeadersData,
+    'Content-Security-Policy': isBackend ? backendCsp : frontendCsp,
+  };
+
+  return new k8s.KubeConfigMap(scope, 'security-headers', {
+    metadata: {
+      name: 'security-headers',
+    },
+    data,
+  });
 }
 
 function createDeployment(scope: Construct, props: AppProps, labels: Record<string, string>) {
