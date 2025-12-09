@@ -23,6 +23,18 @@ const textChamp = (mappingId: string, stringValue: string | null): RootChampFrag
   stringValue,
 });
 
+const communeChamp = (mappingId: string, postalCode: string): RootChampFragmentFragment => ({
+  __typename: 'CommuneChamp',
+  label: '',
+  id: toB64(mappingId),
+  commune: {
+    __typename: 'Commune',
+    code: postalCode,
+    name: '',
+    postalCode,
+  },
+});
+
 const multiSelectChamp = (mappingId: string, values: string[]): RootChampFragmentFragment => ({
   __typename: 'MultipleDropDownListChamp',
   label: '',
@@ -102,7 +114,8 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
     const estAnonLabel = firstLabel(rootMapping.estAnonyme.options);
     const estHandiLabel = firstLabel(rootMapping.estHandicape.options);
 
-    const motifsLbl = firstLabel(rootMapping.motifsMap.options);
+    const declarationQualiteLbl = firstLabel(rootMapping.declarationQualiteType.options);
+    const declarationFacturationLbl = firstLabel(rootMapping.declarationFacturationType.options);
     const consequencesLbl = firstLabel(rootMapping.consequencesMap.options);
     const maltraitanceLbl = firstLabel(rootMapping.maltraitanceTypesMap.options);
     const demarchesLbl = firstLabel(rootMapping.demarchesEngagees.options);
@@ -113,7 +126,8 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
 
     const rep = repetitionChamp(rootMapping.autreFaits.id, {
       faits: [
-        multiSelectChamp(rootMapping.autreFaits.champs.motifsMap.id, [motifsLbl]),
+        multiSelectChamp(rootMapping.autreFaits.champs.declarationQualiteType.id, [declarationQualiteLbl]),
+        multiSelectChamp(rootMapping.autreFaits.champs.declarationFacturationType.id, [declarationFacturationLbl]),
         multiSelectChamp(rootMapping.autreFaits.champs.consequencesMap.id, [consLbl]),
         multiSelectChamp(rootMapping.autreFaits.champs.maltraitanceTypesMap.id, [maltLbl]),
         dateChamp(rootMapping.autreFaits.champs.dateDebut.id, '2025-03-01'),
@@ -125,7 +139,6 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
         multiSelectChamp(rootMapping.autreFaits.champs.demarchesEngagees.id, [demLbl]),
         dateChamp(rootMapping.autreFaits.champs.demarchesEngageesDateContactEtablissement.id, '2025-03-02'),
         booleanChamp(rootMapping.autreFaits.champs.demarchesEngageesEtablissementARepondu.id, true),
-        textChamp(rootMapping.autreFaits.champs.demarchesEngageesOrganisme.id, 'Org'),
         dateChamp(rootMapping.autreFaits.champs.demarcheEngageDatePlainte.id, null),
         textChamp(
           rootMapping.autreFaits.champs.demarcheEngageAutoriteType.id,
@@ -135,6 +148,7 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
           rootMapping.autreFaits.champs.lieuType.id,
           firstLabel(rootMapping.autreFaits.champs.lieuType.options),
         ),
+        communeChamp(rootMapping.autreFaits.champs.lieuCodePostal.id, '75001'),
         textChamp(
           rootMapping.autreFaits.champs.transportType.id,
           firstLabel(rootMapping.autreFaits.champs.transportType.options),
@@ -147,7 +161,8 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
       textChamp(rootMapping.estAnonyme.id, estAnonLabel),
       textChamp(rootMapping.estHandicape.id, estHandiLabel),
 
-      multiSelectChamp(rootMapping.motifsMap.id, [motifsLbl]),
+      multiSelectChamp(rootMapping.declarationQualiteType.id, [declarationQualiteLbl]),
+      multiSelectChamp(rootMapping.autreFaits.champs.declarationFacturationType.id, [declarationFacturationLbl]),
       multiSelectChamp(rootMapping.consequencesMap.id, [consequencesLbl]),
       multiSelectChamp(rootMapping.maltraitanceTypesMap.id, [maltraitanceLbl]),
       dateChamp(rootMapping.dateDebut.id, '2025-01-03T10:00:00.000Z'),
@@ -155,7 +170,8 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
 
       multiSelectChamp(rootMapping.demarchesEngagees.id, [demarchesLbl]),
       repetitionEmpty(rootMapping.autreFaits.id),
-      addressChamp(rootMapping.victimeAdresse.id),
+      communeChamp(rootMapping.lieuCodePostal.id, '75001'),
+      addressChamp(rootMapping.lieuAdresse.id),
       rep,
     ];
 
@@ -176,12 +192,18 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
 
     expect(s0.faits[0].dateDebut instanceof Date).toBe(true);
 
-    const motifsKey = rootMapping.motifsMap.options.find((o) => o.label === motifsLbl)?.key;
+    const declarationQualiteKey = rootMapping.declarationQualiteType.options.find(
+      (o) => o.label === declarationQualiteLbl,
+    )?.key;
+    const declarationFacturationKey = rootMapping.declarationFacturationType.options.find(
+      (o) => o.label === declarationFacturationLbl,
+    )?.key;
     const consKey = rootMapping.consequencesMap.options.find((o) => o.label === consequencesLbl)?.key;
     const maltKey = rootMapping.maltraitanceTypesMap.options.find((o) => o.label === maltraitanceLbl)?.key;
     const demarchesKey = rootMapping.demarchesEngagees.options.find((o) => o.label === demarchesLbl)?.key;
 
-    expect(s0.faits[0].motifs).toContain(motifsKey);
+    expect(s0.faits[0].motifs).toContain(declarationQualiteKey);
+    expect(s0.faits[0].motifs).toContain(declarationFacturationKey);
     expect(s0.faits[0].consequences).toContain(consKey);
     expect(s0.faits[0].maltraitanceTypes).toContain(maltKey);
     expect(s0.demarchesEngagees.demarches).toContain(demarchesKey);

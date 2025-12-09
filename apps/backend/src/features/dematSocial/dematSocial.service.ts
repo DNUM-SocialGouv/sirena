@@ -74,7 +74,7 @@ export const importRequetes = async (createdSince?: Date) => {
   for (const dossier of dossiers) {
     // legacy, we don't support
     // TODO: remove after some time
-    if (dossier.number === 247791) {
+    if (dossier.number <= 271846) {
       continue;
     }
     const isDossierAlreadyImported = await getRequeteByDematSocialId(dossier.number);
@@ -111,14 +111,12 @@ export const importRequetes = async (createdSince?: Date) => {
         shouldRetry: (err) => isPrismaUniqueConstraintError(err, 'id'),
         context: { dossierNumber: dossier.number },
       });
-
       try {
         await assignEntitesToRequeteTask(dossier.number.toString());
       } catch (err) {
         logger.error({ err }, `Error assigning entities to requete ${dossier.number}:`);
         sentry.captureException(err);
       }
-
       i += 1;
     } catch (err) {
       logger.error({ err }, `Error processing dossier ${dossier.number}:`);
