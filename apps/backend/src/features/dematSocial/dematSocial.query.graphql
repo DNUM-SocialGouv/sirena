@@ -22,6 +22,17 @@ fragment AddressFragment on Address {
   regionCode
 }
 
+fragment CommuneFragment on Commune {
+  code
+  name
+  postalCode
+}
+
+fragment departementFragment on Departement {
+  code
+  name
+}
+
 fragment FileFragment on File {
   __typename
   filename
@@ -69,6 +80,14 @@ fragment ChampFragment on Champ {
   ... on AddressChamp {
     address {
       ...AddressFragment
+    }
+  }
+  ... on CommuneChamp {
+    commune {
+      ...CommuneFragment
+    }
+    departement {
+      ...departementFragment
     }
   }
 }
