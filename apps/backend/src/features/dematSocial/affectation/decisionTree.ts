@@ -20,6 +20,7 @@ export function checkRequired(node: DecisionNode, ctx: SituationContext) {
 
   const missing = node.required.filter((key) => ctx[key] === null || ctx[key] === undefined);
   if (missing.length > 0) {
+    console.log({ ctx });
     throw new Error(`Node ${node.id} requires the following variables to be defined: ${missing.join(', ')}`);
   }
 }
@@ -52,16 +53,12 @@ export function computeEntitesFromMotifs(ctx: SituationContext): EntiteAdminType
  *********************/
 
 const DOMICILE_PRO_SANTE_MAPPING: Record<ProfessionDomicileType, EntiteAdminType[]> = {
-  PROF_LIBERAL: ['ARS'],
-  HAD: ['ARS'],
-  SSIAD: ['ARS'],
-  SAAD: ['CD'],
-  SESSAD: ['ARS'],
-  AIDE_MENAGERE: ['CD'],
-  REPAS: ['CD'],
-  TRAITEMENT: ['CD'],
-  SAADF: ['CD'],
-  MJPM: ['DD'],
+  PROF_SANTE: ['ARS'],
+  PROF_SOIN: ['ARS'],
+  INTERVENANT_DOMICILE: ['CD'],
+  SERVICE_EDUCATION: ['CD'],
+  SERVICE_AIDE: ['CD'],
+  TUTEUR: ['DD'],
   AUTRE: ['CD'],
 };
 
@@ -146,8 +143,8 @@ function nonDomicileMaltraitanceSubtree(): DecisionNode {
     kind: 'switch',
     id: 'maltraitance_mis_en_cause',
     description: 'Mis en cause : famille, proche, professionnel, autre',
-    select: (ctx): MisEnCauseType | Extract<MisEnCauseTypePrecisionUnion, 'MJPM'> | null => {
-      if (ctx.misEnCauseTypePrecision === 'MJPM') return 'MJPM';
+    select: (ctx): MisEnCauseType | Extract<MisEnCauseTypePrecisionUnion, 'TUTEUR'> | null => {
+      if (ctx.misEnCauseTypePrecision === 'TUTEUR') return 'TUTEUR';
 
       return ctx.misEnCauseType ?? null;
     },

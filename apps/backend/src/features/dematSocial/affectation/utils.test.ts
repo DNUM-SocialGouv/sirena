@@ -5,16 +5,12 @@ describe('utils.ts', () => {
   describe('extractProfessionDomicileTypeFromRawText', () => {
     describe('when input is a valid ProfessionDomicileType', () => {
       it.each([
-        ['PROF_LIBERAL', 'PROF_LIBERAL'],
-        ['HAD', 'HAD'],
-        ['SESSAD', 'SESSAD'],
-        ['AIDE_MENAGERE', 'AIDE_MENAGERE'],
-        ['REPAS', 'REPAS'],
-        ['TRAITEMENT', 'TRAITEMENT'],
-        ['SAADF', 'SAADF'],
-        ['MJPM', 'MJPM'],
-        ['SSIAD', 'SSIAD'],
-        ['SAAD', 'SAAD'],
+        ['PROF_SANTE', 'PROF_SANTE'],
+        ['PROF_SOIN', 'PROF_SOIN'],
+        ['INTERVENANT_DOMICILE', 'INTERVENANT_DOMICILE'],
+        ['SERVICE_EDUCATION', 'SERVICE_EDUCATION'],
+        ['SERVICE_AIDE', 'SERVICE_AIDE'],
+        ['TUTEUR', 'TUTEUR'],
         ['AUTRE', 'AUTRE'],
       ])('should return the type for valid input: %s', (input, expected) => {
         expect(extractProfessionDomicileTypeFromRawText(input)).toBe(expected);
