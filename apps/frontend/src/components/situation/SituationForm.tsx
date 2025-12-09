@@ -35,6 +35,7 @@ export function SituationForm({
   const [isSaving, setIsSaving] = useState(false);
   const [faitFiles, setFaitFiles] = useState<File[]>([]);
   const [isTraitementDesFaitsValid, setIsTraitementDesFaitsValid] = useState(true);
+  const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
   const { data: entitesData } = useEntites(undefined);
   const { data: profile } = useProfile();
 
@@ -59,6 +60,12 @@ export function SituationForm({
     [],
   );
   const handleSave = async () => {
+    setHasAttemptedSave(true);
+
+    if (!isTraitementDesFaitsValid) {
+      return;
+    }
+
     setIsSaving(true);
     try {
       if (!hasSituationContent(formData, faitFiles)) {
@@ -126,6 +133,7 @@ export function SituationForm({
           onChange={handleTraitementDesFaitsChange}
           onValidationChange={setIsTraitementDesFaitsValid}
           disabled={isSaving}
+          hasAttemptedSave={hasAttemptedSave}
         />
 
         {/* Actions */}
@@ -133,7 +141,7 @@ export function SituationForm({
           <Button priority="secondary" onClick={handleCancel} disabled={isSaving}>
             Annuler
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || !isTraitementDesFaitsValid}>
+          <Button onClick={handleSave} disabled={isSaving}>
             Enregistrer
           </Button>
         </div>

@@ -19,6 +19,7 @@ interface TraitementDesFaitsSectionProps {
   onChange: (data: { entites: Array<{ entiteId: string; directionServiceId?: string }> }) => void;
   onValidationChange?: (isValid: boolean) => void;
   disabled?: boolean;
+  hasAttemptedSave?: boolean;
 }
 
 type TraitementDesFaitsRow = {
@@ -136,12 +137,14 @@ function TraitementDesFaitsSection({
   onChange,
   onValidationChange,
   disabled,
+  hasAttemptedSave = false,
 }: TraitementDesFaitsSectionProps) {
   const [rows, setRows] = useState<{ editableRows: TraitementDesFaitsRow[]; readOnlyRows: TraitementDesFaitsRow[] }>({
     editableRows: [],
     readOnlyRows: [],
   });
   const [isFirstRowEditable, setIsFirstRowEditable] = useState(false);
+  const [globalError, setGlobalError] = useState<string | undefined>();
   const initDoneRef = useRef(false);
   const { data: topEntiteDescendants = [], isLoading: isLoadingDescendants } = useEntiteDescendants(
     topEntiteId ?? undefined,
@@ -239,6 +242,22 @@ function TraitementDesFaitsSection({
     onValidationChange?.(isValid);
   }, [rows, onValidationChange]);
 
+  useEffect(() => {
+    if (hasAttemptedSave) {
+      const hasReadOnlyRows = rows.readOnlyRows.length > 0;
+      const hasValidEditableRow = rows.editableRows.some((row) => Boolean(row.entiteId));
+      const hasAtLeastOneEntite = hasReadOnlyRows || hasValidEditableRow;
+
+      if (!hasAtLeastOneEntite) {
+        setGlobalError('Au moins une entité administrative doit être renseignée.');
+      } else {
+        setGlobalError(undefined);
+      }
+    } else {
+      setGlobalError(undefined);
+    }
+  }, [hasAttemptedSave, rows]);
+
   const handleAddRow = () => {
     setRows((prev) => ({
       editableRows: [
@@ -253,6 +272,9 @@ function TraitementDesFaitsSection({
       ],
       readOnlyRows: prev.readOnlyRows,
     }));
+    if (globalError) {
+      setGlobalError(undefined);
+    }
   };
 
   const handleRemoveRow = (id: string) => {
@@ -260,6 +282,9 @@ function TraitementDesFaitsSection({
       editableRows: prev.editableRows.filter((row) => row.id !== id),
       readOnlyRows: prev.readOnlyRows.filter((row) => row.id !== id),
     }));
+    if (globalError) {
+      setGlobalError(undefined);
+    }
   };
 
   const handleRowChange = (id: string, field: 'entiteId' | 'directionServiceIds', value: string | string[]) => {
@@ -275,6 +300,10 @@ function TraitementDesFaitsSection({
           : row,
       ),
     }));
+
+    if (globalError) {
+      setGlobalError(undefined);
+    }
   };
 
   return (
@@ -287,6 +316,11 @@ function TraitementDesFaitsSection({
       }}
     >
       <h2 className="fr-h6 fr-mb-3w">Traitement des faits</h2>
+      {globalError && (
+        <p className="fr-message fr-message--error fr-text--md fr-mb-3w" role="alert">
+          {globalError}
+        </p>
+      )}
 
       {rows.editableRows.length > 0 && <hr className="fr-mt-4w" />}
 
