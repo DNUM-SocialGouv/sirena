@@ -4,6 +4,7 @@ import {
   MOTIF,
   type Motif,
   type ProfessionDomicileType,
+  type ProfessionType,
 } from '@sirena/common/constants';
 import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types';
 
@@ -51,7 +52,8 @@ export function computeEntitesFromMotifs(ctx: SituationContext): EntiteAdminType
  *  CONSTANTS
  *********************/
 
-const DOMICILE_PRO_SANTE_MAPPING: Record<ProfessionDomicileType, EntiteAdminType[]> = {
+const DOMICILE_PRO_SANTE_MAPPING: Record<ProfessionDomicileType | ProfessionType, EntiteAdminType[]> = {
+  TRAVAILLEUR_SOCIAL: ['CD'],
   PROF_SANTE: ['ARS'],
   PROF_SOIN: ['ARS'],
   INTERVENANT_DOMICILE: ['CD'],
