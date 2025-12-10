@@ -27,3 +27,17 @@ export const requeteStatutType: Record<RequeteStatutType, string> = {
   [REQUETE_STATUT_TYPES.EN_COURS]: 'En cours',
   [REQUETE_STATUT_TYPES.CLOTUREE]: 'Clôturée',
 } as const;
+
+export const REQUETE_PRIORITE_TYPES = {
+  BASSE: 'BASSE',
+  MOYENNE: 'MOYENNE',
+  HAUTE: 'HAUTE',
+} as const;
+
+export type RequetePrioriteType = keyof typeof REQUETE_PRIORITE_TYPES;
+
+export const requetePrioriteType: Record<RequetePrioriteType, string> = {
+  [REQUETE_PRIORITE_TYPES.BASSE]: 'Basse',
+  [REQUETE_PRIORITE_TYPES.MOYENNE]: 'Moyenne',
+  [REQUETE_PRIORITE_TYPES.HAUTE]: 'Haute',
+} as const;

@@ -22,6 +22,7 @@ import {
   receptionTypeLabels,
   requeteClotureReasonLabels,
   requeteEtapeStatutType,
+  requetePrioriteType,
   roles,
   statutTypes,
   transportTypeLabels,
@@ -248,6 +249,18 @@ async function seedRequeteEtapeStatutEnum(prisma: PrismaClient) {
   return { table: 'requeteEtapeStatutEnum', added };
 }
 
+async function seedRequetePrioriteEnum(prisma: PrismaClient) {
+  let added = 0;
+  for (const [id, label] of Object.entries(requetePrioriteType)) {
+    const exists = await prisma.requetePrioriteEnum.findUnique({ where: { id } });
+    if (!exists) {
+      await prisma.requetePrioriteEnum.create({ data: { id, label } });
+      added++;
+    }
+  }
+  return { table: 'requetePrioriteEnum', added };
+}
+
 async function seedRoleEnum(prisma: PrismaClient) {
   let added = 0;
   for (const [id, label] of Object.entries(roles)) {
@@ -341,6 +354,7 @@ export async function seedEnums(prisma: PrismaClient) {
       seedReceptionTypeEnum,
       seedRequeteClotureReasonEnum,
       seedRequeteEtapeStatutEnum,
+      seedRequetePrioriteEnum,
       seedRoleEnum,
       seedStatutEnum,
       seedTransportTypeEnum,
