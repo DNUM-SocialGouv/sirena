@@ -107,7 +107,7 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
 
   const handleCancel = () => {
     if (mode === 'create' && !requestId) {
-      navigate({ to: '/home' });
+      navigate({ to: '/request/create' });
     } else if (requestId) {
       navigate({ to: '/request/$requestId', params: { requestId } });
     } else {
