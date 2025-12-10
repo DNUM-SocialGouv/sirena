@@ -1,0 +1,10 @@
+.priorite-menu-trigger {
+  font-size: 0.75rem !important;
+  line-height: 1.5rem !important;
+  padding: 0.25rem 0.5rem !important;
+  min-height: 1.5rem !important;
+  height: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}

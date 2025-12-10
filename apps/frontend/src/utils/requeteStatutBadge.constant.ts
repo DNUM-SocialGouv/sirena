@@ -1,7 +1,9 @@
 import {
   REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_PRIORITE_TYPES,
   REQUETE_STATUT_TYPES,
   requeteEtapeStatutType,
+  requetePrioriteType,
   requeteStatutType,
 } from '@sirena/common/constants';
 
@@ -49,5 +51,23 @@ export const requeteEtapeStatutBadges: StatutBadge[] = [
     type: 'error',
     text: requeteEtapeStatutType.CLOTUREE,
     value: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+  },
+] as const;
+
+export const requetePrioriteBadges: StatutBadge[] = [
+  {
+    type: 'info',
+    text: requetePrioriteType.BASSE,
+    value: REQUETE_PRIORITE_TYPES.BASSE,
+  },
+  {
+    type: 'new',
+    text: requetePrioriteType.MOYENNE,
+    value: REQUETE_PRIORITE_TYPES.MOYENNE,
+  },
+  {
+    type: 'error',
+    text: requetePrioriteType.HAUTE,
+    value: REQUETE_PRIORITE_TYPES.HAUTE,
   },
 ] as const;
