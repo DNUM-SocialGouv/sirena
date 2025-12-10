@@ -96,13 +96,23 @@ jobs:
           output: "trivy-container-${{ matrix.image }}-results.sarif"
           severity: "CRITICAL,HIGH,MEDIUM"
 
+      - name: Determine ref type
+        id: ref_type
+        run: |
+          HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
+          if git show-ref --verify --quiet "refs/tags/${HEAD_BRANCH}" 2>/dev/null || [[ "${HEAD_BRANCH}" =~ ^v[0-9] ]]; then
+            echo "ref=refs/tags/${HEAD_BRANCH}" >> $GITHUB_OUTPUT
+          else
+            echo "ref=refs/heads/${HEAD_BRANCH}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload Trivy container scan results
         uses: github/codeql-action/upload-sarif@cf1bb45a277cb3c205638b2cd5c984db1c46a412 # v3
         if: always()
         with:
           sarif_file: "trivy-container-${{ matrix.image }}-results.sarif"
           category: "trivy-container-${{ matrix.image }}"
-          ref: refs/heads/${{ github.event.workflow_run.head_branch }}
+          ref: ${{ steps.ref_type.outputs.ref }}
           sha: ${{ github.event.workflow_run.head_sha }}
 
   trivy-iac-scan:
