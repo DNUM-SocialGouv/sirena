@@ -7,6 +7,14 @@ type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
 type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
 type SituationInput = z.infer<typeof SituationDataSchema>;
 
+const hasIdentiteData = (data: {
+  nom?: string;
+  prenom?: string;
+  courrierElectronique?: string;
+  numeroTelephone?: string;
+  civilite?: string;
+}) => data.nom || data.prenom || data.courrierElectronique || data.numeroTelephone || data.civilite;
+
 export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
   estIdentifie: true,
   veutGarderAnonymat: declarantData.neSouhaitePasCommuniquerIdentite || false,
@@ -19,15 +27,17 @@ export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
       ? declarantData.lienAvecPersonneConcernee
       : undefined,
   lienAutrePrecision: declarantData.lienAvecPersonneConcerneePrecision || undefined,
-  identite: {
-    create: {
-      nom: declarantData.nom || '',
-      prenom: declarantData.prenom || '',
-      email: declarantData.courrierElectronique || '',
-      telephone: declarantData.numeroTelephone || '',
-      civiliteId: mappers.mapCiviliteToDatabase(declarantData.civilite),
-    },
-  },
+  identite: hasIdentiteData(declarantData)
+    ? {
+        create: {
+          nom: declarantData.nom || '',
+          prenom: declarantData.prenom || '',
+          email: declarantData.courrierElectronique || '',
+          telephone: declarantData.numeroTelephone || '',
+          civiliteId: mappers.mapCiviliteToDatabase(declarantData.civilite),
+        },
+      }
+    : undefined,
   adresse:
     declarantData.adresseDomicile || declarantData.codePostal || declarantData.ville
       ? {
@@ -54,15 +64,17 @@ export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConc
   autrePersonnes: participantData.autrePersonnes || '',
   commentaire: participantData.commentaire || '',
   ageId: participantData.age || undefined,
-  identite: {
-    create: {
-      nom: participantData.nom || '',
-      prenom: participantData.prenom || '',
-      email: participantData.courrierElectronique || '',
-      telephone: participantData.numeroTelephone || '',
-      civiliteId: mappers.mapCiviliteToDatabase(participantData.civilite),
-    },
-  },
+  identite: hasIdentiteData(participantData)
+    ? {
+        create: {
+          nom: participantData.nom || '',
+          prenom: participantData.prenom || '',
+          email: participantData.courrierElectronique || '',
+          telephone: participantData.numeroTelephone || '',
+          civiliteId: mappers.mapCiviliteToDatabase(participantData.civilite),
+        },
+      }
+    : undefined,
   adresse:
     participantData.adresseDomicile || participantData.codePostal || participantData.ville
       ? {

@@ -163,6 +163,17 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
       }
     };
 
+    // Helper function to check if data has meaningful values (not empty strings, null, undefined, or false)
+    const hasMeaningfulData = (data: Record<string, unknown>, fields: string[]): boolean => {
+      return fields.some((field) => {
+        const value = data[field];
+        if (value === null || value === undefined || value === '' || value === false) {
+          return false;
+        }
+        return true;
+      });
+    };
+
     // Helper function to handle entity creation (CREATED action)
     const handleEntityCreation = async (
       entity: 'PersonneConcernee' | 'Identite' | 'Adresse' | 'Requete',
@@ -171,6 +182,12 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
       trackedFields: string[],
     ) => {
       const pickedData = pick(data, trackedFields);
+
+      // Skip changelog creation if all tracked fields are empty
+      if (!hasMeaningfulData(pickedData, trackedFields)) {
+        return;
+      }
+
       await createEntityChangelog(
         entity,
         entityId,
