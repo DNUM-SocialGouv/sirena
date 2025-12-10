@@ -44,18 +44,18 @@ runs:
         export ENVIRONNEMENT=${{ inputs.environment }}
         npm run build
 
-    - name: Render manifests
-      shell: bash
-      run: |
-        cd deploy
-        export IMAGE_TAG=${{ inputs.version }}
-        export ENVIRONNEMENT=${{ inputs.environment }}
-        npm run build
+    - uses: azure/setup-helm@v4.3.0
+      with:
+         version: v3.19.0
+      id: install
 
     - name: render manifests using helm chart
       shell: bash
       run: |
         cd helm_charts
+        helm repo add SDPSN-devops-charts https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable --username oauth2 --password ${HELM_REPO_PAT}
+        helm dependency update
+        
         export ENVIRONNEMENT=${{ inputs.environment }}
         helm template backend . -f values/backend.yaml -f values/env_specific/backend/${ENVIRONNEMENT}.yaml --output-dir ./generated_manifests
         mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated_manifests/backend

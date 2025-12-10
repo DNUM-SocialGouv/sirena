@@ -9,6 +9,12 @@ SDPSN-devops-charts:
       FRONTEND_REDIRECT_LOGIN_URI: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr/login
       FRONTEND_URI: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr
       SENTRY_ENVIRONMENT: integration
+    resources:
+      limits:
+        memory: 900Mi
+      requests:
+        memory: 900Mi
+    replicas: 1
 
   ingress:
     host: sirena.integration.dev.atlas.fabrique.social.gouv.fr

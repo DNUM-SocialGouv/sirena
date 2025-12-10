@@ -14,14 +14,15 @@ SDPSN-devops-charts:
       initialDelaySeconds: 30
       periodSeconds: 30
       path: /
+      timeoutSeconds: 5
 
     resources:
       limits:
         cpu: 250m
-        memory: 500Mi
+        memory: 900Mi
       requests:
         cpu: 250m
-        memory: 500Mi
+        memory: 900Mi
 
   enableSecurityHeaders: true
 
@@ -32,6 +33,7 @@ SDPSN-devops-charts:
     host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-http01
+      nginx.ingress.kubernetes.io/custom-headers: org-sdpsn-ws-sirena-integration/security-headers
       nginx.ingress.kubernetes.io/proxy-body-size: 60m
     paths:
       - path: /

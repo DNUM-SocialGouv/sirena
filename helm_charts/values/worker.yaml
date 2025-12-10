@@ -5,6 +5,9 @@ SDPSN-devops-charts:
   deployment:
     image: ghcr.io/dnum-socialgouv/sirena:5c85c71-worker
     imagePullSecretsName: registry-secret
+    additionnalPortsDefinition:
+      - name: monitoring
+        containerPort: 9090
     replicas: 2
 
     readinessProbe:
