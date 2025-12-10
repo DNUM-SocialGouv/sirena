@@ -34,6 +34,7 @@ import {
   GetRequetesEntiteQuerySchema,
   UpdateDeclarantBodySchema,
   UpdateParticipantBodySchema,
+  UpdatePrioriteBodySchema,
   UpdateRequeteFilesBodySchema,
   UpdateSituationBodySchema,
 } from './requetesEntite.schema';
@@ -45,6 +46,7 @@ import {
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
+  updatePrioriteRequete,
   updateRequeteDeclarant,
   updateRequeteParticipant,
   updateRequeteSituation,
@@ -387,6 +389,33 @@ const app = factoryWithLogs
     logger.info({ requeteId: id, userId, fileIds }, 'Files linked to requete successfully');
 
     return c.json({ data: { requeteId: id, fileIds } });
+  })
+
+  .patch('/:id/priorite', zValidator('json', UpdatePrioriteBodySchema), async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
+    const { prioriteId } = c.req.valid('json');
+
+    const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
+
+    if (!requeteEntite) {
+      throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    const updatedRequete = await updatePrioriteRequete(id, topEntiteId, prioriteId);
+
+    logger.info({ requeteId: id, userId, prioriteId }, 'Priorite updated successfully');
+
+    return c.json({ data: updatedRequete });
   })
 
   .post('/:id/situation', zValidator('json', UpdateSituationBodySchema), async (c) => {

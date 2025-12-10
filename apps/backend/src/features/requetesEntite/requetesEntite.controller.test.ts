@@ -1,4 +1,5 @@
 import { Readable } from 'node:stream';
+import type { EntiteType, RequeteEtapeStatutType } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -83,6 +84,8 @@ vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
 const fakeRequeteEntite = {
   requeteId: 'requeteId',
   entiteId: 'entiteId',
+  statutId: 'EN_COURS',
+  prioriteId: null,
   entite: {
     id: '456',
     label: 'Entite 456',
@@ -92,6 +95,11 @@ const fakeRequeteEntite = {
     organizationalUnit: 'Unit 1',
     entiteTypeId: 'type1',
     entiteMereId: null,
+    departementCode: '12',
+    ctcdCode: '123',
+    regionCode: '123',
+    regLib: 'Region 1',
+    dptLib: 'Departement 1',
   },
   requete: {
     id: 'requeteId',
@@ -154,6 +162,8 @@ describe('RequetesEntite endpoints: /', () => {
         },
       },
       requeteEtape: [],
+      statutId: 'EN_COURS',
+      prioriteId: null,
     },
   ] satisfies Awaited<ReturnType<typeof getRequetesEntite>>['data'];
 
@@ -337,14 +347,19 @@ describe('RequetesEntite endpoints: /', () => {
             nomComplet: 'Entite Complete',
             emailDomain: 'entite.fr',
             organizationalUnit: 'Unit 1',
-            entiteTypeId: 'type1',
+            entiteTypeId: 'ARS' as EntiteType,
             entiteMereId: null,
+            departementCode: '12',
+            ctcdCode: '123',
+            regionCode: '123',
+            regLib: 'Region 1',
+            dptLib: 'Departement 1',
           },
           lastEtape: {
             id: 'etape1',
             nom: 'Étape 1',
             estPartagee: false,
-            statutId: 'OUVERTE',
+            statutId: 'FAIT' as RequeteEtapeStatutType,
             requeteId: 'r1',
             entiteId: 'e2',
             clotureReasonId: null,

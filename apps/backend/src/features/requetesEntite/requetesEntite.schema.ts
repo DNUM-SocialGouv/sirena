@@ -1,4 +1,5 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
+import { REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import { Prisma } from '@/libs/prisma';
 import { EntiteSchema, RequeteEntiteSchema, RequeteEtapeSchema, RequeteSchema, z } from '@/libs/zod';
@@ -57,6 +58,12 @@ export const UpdateRequeteFilesBodySchema = z.object({
 });
 export const UpdateSituationBodySchema = z.object({
   situation: SituationDataSchema,
+});
+
+export const UpdatePrioriteBodySchema = z.object({
+  prioriteId: z
+    .enum([REQUETE_PRIORITE_TYPES.BASSE, REQUETE_PRIORITE_TYPES.MOYENNE, REQUETE_PRIORITE_TYPES.HAUTE])
+    .nullable(),
 });
 
 export const CloseRequeteBodySchema = z.object({
