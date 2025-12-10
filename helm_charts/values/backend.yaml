@@ -5,6 +5,9 @@ SDPSN-devops-charts:
   deployment:
     image: ghcr.io/dnum-socialgouv/sirena:5c85c71-backend
     containerPort: 4000
+    additionnalPortsDefinition:
+      - name: monitoring
+        containerPort: 9090
     replicas: 2
     imagePullSecretsName: registry-secret
 
@@ -33,6 +36,54 @@ SDPSN-devops-charts:
         cpu: 250m
         memory: 500Mi
 
+    initContainer:
+      name: migration
+      image: ghcr.io/dnum-socialgouv/sirena:5c85c71-backend
+      command:
+        - pnpm
+        - --filter
+        - "@sirena/backend"
+        - db:deploy
+      variables_from_secret:
+        - name: PG_SIRENA_DB
+          valueFrom:
+            secretKeyRef:
+              key: dbname
+              name: db
+        - name: PG_SIRENA_USER
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: db
+        - name: PG_SIRENA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: db
+        - name: PG_PORT
+          valueFrom:
+            secretKeyRef:
+              key: port
+              name: db
+        - name: PG_HOST
+          valueFrom:
+            secretKeyRef:
+              key: host
+              name: db
+        - name: PG_URL
+          valueFrom:
+            secretKeyRef:
+              key: url
+              name: db
+      resources:
+        limits:
+          cpu: 250m
+          memory: 900Mi
+        requests:
+          cpu: 100m
+          memory: 512Mi
+      workingDir: /app
+
     variables:
       LOG_FORMAT: json
       PC_ID_TOKEN_SIGNED_RESPONSE_ALG: RS256
@@ -52,6 +103,7 @@ SDPSN-devops-charts:
       S3_BUCKET_PORT: "443"
       CRON_DEMAT_SOCIAL: "3600"
       REDIS_TLS: "true"
+      ANNUAIRE_SANTE_API_URL: "https://gateway.api.esante.gouv.fr/fhir/v2"
 
     variables_from_secret:
       - name: PG_SIRENA_DB
@@ -98,11 +150,6 @@ SDPSN-devops-charts:
         valueFrom:
           secretKeyRef:
             key: password
-            name: redis
-      - name: REDIS_PORT
-        valueFrom:
-          secretKeyRef:
-            key: port
             name: redis
       - name: REDIS_PORT
         valueFrom:
