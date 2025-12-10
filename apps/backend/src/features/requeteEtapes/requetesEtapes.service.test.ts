@@ -94,6 +94,7 @@ const requeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: Requ
   entiteId: 'entiteId',
   requeteId: 'requeteId',
   statutId: 'EN_COURS',
+  prioriteId: null,
   requete: {
     id: 'requeteId',
     commentaire: 'Commentaire',
@@ -121,6 +122,7 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         statutId: 'EN_COURS',
+        prioriteId: null,
       };
 
       const mockEtape1: RequeteEtape = {
@@ -193,6 +195,7 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         statutId: 'EN_COURS',
+        prioriteId: null,
       };
 
       const originalToLocaleDateString = Date.prototype.toLocaleDateString;
@@ -243,6 +246,7 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         statutId: 'EN_COURS',
+        prioriteId: null,
       };
 
       const mockFindUnique = vi.fn();
@@ -328,6 +332,7 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         statutId: 'EN_COURS',
+        prioriteId: null,
       };
 
       const mockEtape1: RequeteEtape = {
@@ -373,6 +378,7 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         statutId: 'EN_COURS',
+        prioriteId: null,
       };
 
       const mockEtape1: RequeteEtape = {

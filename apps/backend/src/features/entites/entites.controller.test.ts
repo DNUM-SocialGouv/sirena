@@ -65,6 +65,11 @@ describe('Entites endpoints: /entites', () => {
     nomComplet: 'Entite B',
     organizationalUnit: 'ARS-CORSE',
     emailDomain: '',
+    departementCode: '12',
+    ctcdCode: '123',
+    regionCode: '123',
+    regLib: 'Region 1',
+    dptLib: 'Departement 1',
   };
 
   describe('GET /:id?', () => {
