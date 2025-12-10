@@ -211,7 +211,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
           </div>
         )}
 
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL && (
+        {misEnCauseType === MIS_EN_CAUSE_TYPE.AUTRE && (
           <div className="fr-col-12 fr-col-md-6">
             <Select
               label="Précision"
