@@ -452,7 +452,7 @@ export const PROFESSION_DOMICILE_TYPE = {
   PROF_SOIN: 'SOIN',
   INTERVENANT_DOMICILE: 'INTERVENANT_DOMICILE',
   SERVICE_EDUCATION: 'SERVICE_EDUCATION',
-  SERVICE_AIDE: 'SERVICE_AIDE',
+  SERVICE_AIDE_FAMILLE: 'SERVICE_AIDE_FAMILLE',
   TUTEUR: 'TUTEUR',
   AUTRE: 'AUTRE',
 } as const;
@@ -464,7 +464,7 @@ export const professionDomicileTypeLabels: Record<ProfessionDomicileType, string
   PROF_SOIN: 'Un professionnel du soin, par exemple : infirmier, aide-soignant',
   INTERVENANT_DOMICILE: 'Un intervenant à domicile : aide à domicile, aide ménagère, aide au repas',
   SERVICE_EDUCATION: 'Un professionnel d’un service d’éducation spéciale et de soins',
-  SERVICE_AIDE:
+  SERVICE_AIDE_FAMILLE:
     'Un professionnel d’un service d’aide et d’accompagnement à domicile aux familles, par exemple : éducateur, psychologue',
   TUTEUR: 'Un tuteur, curateur ou mandataire judiciaire',
   AUTRE: 'Une autre personne ou un autre service',

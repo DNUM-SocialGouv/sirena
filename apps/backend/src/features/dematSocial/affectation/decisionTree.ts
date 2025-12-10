@@ -57,8 +57,8 @@ const DOMICILE_PRO_SANTE_MAPPING: Record<ProfessionDomicileType | ProfessionType
   PROF_SANTE: ['ARS'],
   PROF_SOIN: ['ARS'],
   INTERVENANT_DOMICILE: ['CD'],
-  SERVICE_EDUCATION: ['CD'],
-  SERVICE_AIDE: ['CD'],
+  SERVICE_EDUCATION: ['ARS'],
+  SERVICE_AIDE_FAMILLE: ['CD'],
   TUTEUR: ['DD'],
   AUTRE: ['CD'],
 };

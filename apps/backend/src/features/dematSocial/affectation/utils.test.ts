@@ -9,7 +9,7 @@ describe('utils.ts', () => {
         ['PROF_SOIN', 'PROF_SOIN'],
         ['INTERVENANT_DOMICILE', 'INTERVENANT_DOMICILE'],
         ['SERVICE_EDUCATION', 'SERVICE_EDUCATION'],
-        ['SERVICE_AIDE', 'SERVICE_AIDE'],
+        ['SERVICE_AIDE_FAMILLE', 'SERVICE_AIDE_FAMILLE'],
         ['TUTEUR', 'TUTEUR'],
         ['AUTRE', 'AUTRE'],
       ])('should return the type for valid input: %s', (input, expected) => {
