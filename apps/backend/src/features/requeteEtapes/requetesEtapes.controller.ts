@@ -157,7 +157,7 @@ const app = factoryWithLogs
         });
       }
 
-      const hasAccess = hasAccessToRequete({ requeteId, entiteId: topEntiteId });
+      const hasAccess = await hasAccessToRequete({ requeteId, entiteId: topEntiteId });
 
       if (!hasAccess) {
         throwHTTPException404NotFound('Requete entite not found', {
