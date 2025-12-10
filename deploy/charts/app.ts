@@ -245,11 +245,12 @@ function createContainer(props: AppProps): k8s.Container {
 }
 
 function createIngressAnnotations(isBackend: boolean, namespace: string): Record<string, string> {
+  const configMapName = isBackend ? 'security-headers-backend' : 'security-headers-frontend';
   const baseAnnotations = {
     'cert-manager.io/cluster-issuer': 'letsencrypt-http01',
     'nginx.ingress.kubernetes.io/proxy-body-size': '60m',
     'nginx.ingress.kubernetes.io/proxy-hide-headers': 'Server',
-    'nginx.ingress.kubernetes.io/custom-headers': `${namespace}/security-headers`,
+    'nginx.ingress.kubernetes.io/custom-headers': `${namespace}/${configMapName}`,
   };
 
   if (isBackend) {
@@ -271,19 +272,20 @@ const securityHeadersData = {
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
 };
 
-const backendCsp = "default-src 'none'; frame-ancestors 'none'; sandbox";
+const backendCsp = "sandbox; default-src 'none'";
 const frontendCsp =
   "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'";
 
 function createConfigMap(scope: Construct, isBackend: boolean) {
+  const configMapName = isBackend ? 'security-headers-backend' : 'security-headers-frontend';
   const data = {
     ...securityHeadersData,
     'Content-Security-Policy': isBackend ? backendCsp : frontendCsp,
   };
 
-  return new k8s.KubeConfigMap(scope, 'security-headers', {
+  return new k8s.KubeConfigMap(scope, configMapName, {
     metadata: {
-      name: 'security-headers',
+      name: configMapName,
     },
     data,
   });
