@@ -111,19 +111,19 @@ describe('runDecisionTree - domicile', () => {
   it('should assign ARS for domicile with professional health professional', async () => {
     const ctx: SituationContext = {
       lieuType: 'DOMICILE',
-      misEnCauseType: 'PROFESSIONNEL_SANTE',
-      professionDomicileType: 'PROF_LIBERAL',
+      misEnCauseType: 'PROF_SANTE',
+      professionDomicileType: 'PROF_SANTE',
     };
 
     const result = await runDecisionTree(ctx);
     expect(result.sort()).toEqual(['ARS']);
   });
 
-  it('should assign CD for domicile with SAAD', async () => {
+  it('should assign CD for domicile with INTERVENANT_DOMICILE', async () => {
     const ctx: SituationContext = {
       lieuType: 'DOMICILE',
-      misEnCauseType: 'PROFESSIONNEL_SANTE',
-      professionDomicileType: 'SAAD',
+      misEnCauseType: 'PROFESSION_DOMICILE',
+      professionDomicileType: 'INTERVENANT_DOMICILE',
     };
 
     const result = await runDecisionTree(ctx);
@@ -144,17 +144,17 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
     expect(result.sort()).toEqual(['ARS', 'CD']);
   });
 
-  it('should assign ARS + DD for maltraitance by MJPM in health establishment', async () => {
+  it('should assign ARS for maltraitance by TUTEUR in health establishment', async () => {
     const ctx: SituationContext = {
       lieuType: 'ETABLISSEMENT_SANTE',
       isMaltraitance: true,
       misEnCauseType: 'AUTRE',
-      misEnCauseTypePrecision: 'MJPM',
+      misEnCauseTypePrecision: 'TUTEUR',
     };
 
     const result = await runDecisionTree(ctx);
 
-    expect(result.sort()).toEqual(['ARS', 'DD']);
+    expect(result.sort()).toEqual(['ARS']);
   });
 });
 

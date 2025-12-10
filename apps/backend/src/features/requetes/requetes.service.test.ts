@@ -90,9 +90,9 @@ const getfakeRequeteDto = () => {
         finess: '123456789',
       },
       misEnCause: {
-        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE,
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL,
         professionTypeId: PROFESSION_TYPE.PROF_SANTE,
-        professionDomicileTypeId: PROFESSION_DOMICILE_TYPE.SSIAD,
+        professionDomicileTypeId: PROFESSION_DOMICILE_TYPE.PROF_SOIN,
         rpps: '1010101010',
         commentaire: 'Comportement inadapté signalé.',
       },
@@ -113,7 +113,7 @@ const getfakeRequeteDto = () => {
         {
           motifs: [MOTIF.NON_RESPECT_DROITS, MOTIF.PROBLEME_LOCAUX],
           consequences: [CONSEQUENCE.BESOINS],
-          maltraitanceTypes: [MALTRAITANCE_TYPE.PSYCHOLOGIQUE],
+          maltraitanceTypes: [MALTRAITANCE_TYPE.VIOLENCES],
           dateDebut: new Date(),
           dateFin: new Date(),
           files: [],
@@ -189,6 +189,7 @@ const getMinimalRequeteDto = () => {
           dateContactEtablissement: null,
           etablissementARepondu: false,
           organisme: '',
+          commentaire: '',
           datePlainte: null,
           autoriteTypeId: null,
           files: [],

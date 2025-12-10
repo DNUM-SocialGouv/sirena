@@ -1,3 +1,5 @@
+// Attention aux espaces insécables dans les labels renvoyées par dematSocial
+
 export const AGE = {
   '-18': '-18',
   '18-29': '18-29',
@@ -35,28 +37,23 @@ export const civiliteLabels: Record<Civilite, string> = {
 };
 
 export const MIS_EN_CAUSE_TYPE = {
+  PROFESSIONNEL: 'PROFESSIONNEL',
+  ETABLISSEMENT: 'ETABLISSEMENT',
   MEMBRE_FAMILLE: 'MEMBRE_FAMILLE',
   PROCHE: 'PROCHE',
-  AUTRE_PERSONNE_NON_PRO: 'AUTRE_PERSONNE_NON_PRO',
-  PROFESSIONNEL_SANTE: 'PROFESSIONNEL_SANTE',
-  PROFESSIONNEL_SOCIAL: 'PROFESSIONNEL_SOCIAL',
-  AUTRE_PROFESSIONNEL: 'AUTRE_PROFESSIONNEL',
-  ETABLISSEMENT: 'ETABLISSEMENT',
   AUTRE: 'AUTRE',
+  PROFESSION_DOMICILE: 'PROFESSION_DOMICILE',
 } as const;
 
 export type MisEnCauseType = keyof typeof MIS_EN_CAUSE_TYPE;
 
 export const misEnCauseTypeLabels: Record<MisEnCauseType, string> = {
-  MEMBRE_FAMILLE: 'Membre de la famille',
-  PROCHE: 'Proche (ami, voisin,...)',
-  AUTRE_PERSONNE_NON_PRO: 'Autre personne non professionnelle',
-  PROFESSIONNEL_SANTE:
-    'Professionnel de santé (médecin généraliste, spécialiste, dentiste, kinésithérapeute, orthophoniste, infirmier, aide-soignant...)',
-  PROFESSIONNEL_SOCIAL: 'Professionnel social (éducateur, assistant social...)',
-  AUTRE_PROFESSIONNEL: 'Autre professionnel',
-  ETABLISSEMENT: 'Établissement où se sont déroulés les faits',
+  PROFESSIONNEL: 'Un professionnel',
+  ETABLISSEMENT: 'Un établissement ou un service',
+  MEMBRE_FAMILLE: 'Un membre de la famille',
+  PROCHE: 'Un autre proche, par exemple : voisinage ou connaissance',
   AUTRE: 'Autre',
+  PROFESSION_DOMICILE: 'Un professionnel ou un service d’aide à domicile',
 };
 
 // Précisions pour chaque type de mis en cause
@@ -139,18 +136,16 @@ export const MOTIF = {
 export type Motif = keyof typeof MOTIF;
 
 export const motifLabels: Record<Motif, string> = {
-  PROBLEME_COMPORTEMENTAL: 'Problème comportemental, relationnel ou de communication avec une personne',
-  PROBLEME_FACTURATION: 'Problème lié à la facturation ou aux honoraires',
-  PROBLEME_LOCAUX: 'Problème lié aux locaux ou la restauration',
-  NON_RESPECT_DROITS:
-    "Non-respect des droits des usagers dont défaut d’information (ex : non prise en compte de l'expression de besoin de la personne accompagnée, travail illégal...)",
+  PROBLEME_COMPORTEMENTAL: 'Le comportement d’une personne',
+  PROBLEME_FACTURATION: 'La facturation ou les honoraires',
+  PROBLEME_LOCAUX: 'Les locaux ou la restauration',
+  NON_RESPECT_DROITS: 'Un manque d’information sur l’organisation de l’établissement ou du service',
   PROBLEME_ORGANISATION:
-    'Problème d’organisation ou de fonctionnement de l’établissement ou du service (ex : Management, plannings, condition de travail...)',
-  PROBLEME_QUALITE_SOINS:
-    'Problème de qualité des soins médicaux ou paramédicaux (ex: soins et/ou interventions inadaptés, absents ou abusifs...)',
+    'Problème d’organisation ou de fonctionnement de l’établissement ou du service (ex : Management, plannings, condition de travail...)',
+  PROBLEME_QUALITE_SOINS: 'La qualité des soins médicaux ou paramédicaux',
   DIFFICULTES_ACCES_SOINS:
     "Difficultés d'accès aux soins (établissement ou professionnel) (ex: manque de moyen humain...)",
-  AUTRE: 'Autre (ex: tatouage, chirurgie et/ou soins esthétiques...)',
+  AUTRE: 'Autre, par exemple : tatouage ou esthétique',
 };
 
 export const motifShortLabels: Record<Motif, string> = {
@@ -165,28 +160,43 @@ export const motifShortLabels: Record<Motif, string> = {
 };
 
 export const CONSEQUENCE = {
-  SANTE: 'Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...)',
-  DROITS: 'Sur les droits (impossible de porter plainte, d’être écouté, d’avoir un soutien...)',
-  BESOINS:
-    'Sur les besoins du quotidien (difficulté à manger, dormir, se laver, ou à recevoir l’aide dont elle a besoin...)',
-  SOCIAL:
-    'Sur la vie sociale ( isolement, rejet, mise à l’écart, difficulté à aller à l’école, au travail ou à participer à des activités...)',
-  AUTRE: 'AUTRE',
+  SANTE: 'SANTE',
+  DROITS: 'DROITS',
+  BESOINS: 'BESOINS',
+  SOCIAL: 'SOCIAL',
+  AUCUNE: 'AUCUNE',
 } as const;
 
 export type Consequence = keyof typeof CONSEQUENCE;
 
 export const consequenceLabels: Record<Consequence, string> = {
-  SANTE: 'Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...)',
-  DROITS: 'Sur les droits (impossible de porter plainte, d’être écouté, d’avoir un soutien...)',
-  BESOINS:
-    'Sur les besoins du quotidien (difficulté à manger, dormir, se laver, ou à recevoir l’aide dont elle a besoin...)',
-  SOCIAL:
-    'Sur la vie sociale ( isolement, rejet, mise à l’écart, difficulté à aller à l’école, au travail ou à participer à des activités...)',
-  AUTRE: 'Autre conséquence',
+  BESOINS: 'Difficulté à manger, se laver, dormir ou recevoir de l’aide',
+  SANTE: 'Douleurs, stress, fatigue, blessures',
+  SOCIAL: 'Isolement, mise à l’écart, difficulté à participer à des activités, à se rendre à l’école ou au travail',
+  DROITS: 'Impossibilité de recevoir de l’aide ou de porter plainte',
+  AUCUNE: 'Aucune de ces conséquences',
 };
 
 export const MALTRAITANCE_TYPE = {
+  NEGLIGENCES: 'NEGLIGENCES',
+  VIOLENCES: 'VIOLENCES',
+  MATERIELLE_FINANCIERE: 'MATERIELLE_FINANCIERE',
+  SEXUELLE: 'SEXUELLE',
+  NON: 'NON',
+} as const;
+
+export type MaltraitanceType = keyof typeof MALTRAITANCE_TYPE;
+
+export const maltraitanceTypeLabels: Record<MaltraitanceType, string> = {
+  NEGLIGENCES: 'Manque de soins, de nourriture, d’hygiène ou de sécurité',
+  VIOLENCES: 'Insultes, coups, soin médical ou isolement forcé, autres violences',
+  MATERIELLE_FINANCIERE: 'Vol d’argent ou d’objets, confiscation',
+  SEXUELLE:
+    'Contact physique sans accord sur les parties intimes, attouchements forcés, exhibitionnisme, relation sexuelle forcée',
+  NON: 'Aucune de ces situations',
+};
+
+export const MALTRATIANCEQUALIFIED_TYPE = {
   PHYSIQUE: 'PHYSIQUE',
   SEXUELLE: 'SEXUELLE',
   PSYCHOLOGIQUE: 'PSYCHOLOGIQUE',
@@ -199,28 +209,9 @@ export const MALTRAITANCE_TYPE = {
   NON: 'NON',
 } as const;
 
-export type MaltraitanceType = keyof typeof MALTRAITANCE_TYPE;
+export type MaltraitanceQualifiedType = keyof typeof MALTRATIANCEQUALIFIED_TYPE;
 
-export const maltraitanceTypeLabels: Record<MaltraitanceType, string> = {
-  PHYSIQUE:
-    'Oui, de la maltraitance physique (châtiments corporels, agressions physiques, intervention médicale sans consentement éclairé, enfermement...)',
-  SEXUELLE:
-    'Oui, de la maltraitance sexuelle (viols, agressions sexuelles, atteintes sexuelles, attentats à la pudeur...)',
-  PSYCHOLOGIQUE:
-    'Oui, de la maltraitance psychologique (humiliations, insulte, intimidation, harcèlement, menaces, dénigrement, isolement...)',
-  MATERIELLE_FINANCIERE:
-    "Oui, de la maltraitance matérielles et financières (fraude, vol d'effets personnels d'argent ou de biens, privation de gestion de ses ressources, dégradation de biens d'une personne...)",
-  NEGLIGENCES: "Oui, de la négligence, abandon, privation (manque de soins, de nourriture, d'hygiène, de sécurité)",
-  DISCRIMINATION:
-    "Oui, de la discrimination (accès difficile, dégradé ou impossible aux droits aux soins ou prestations sociales ou à l'information...)",
-  INSTITUTIONNELLE:
-    'Oui, de la violence institutionnelle (traitement abusif de la part de structures ou d’institutions, menaces, soumission à des actes, comportements ou images violents...)',
-  AUTRE: 'Oui, un autre type de maltraitance',
-  NE_SAIS_PAS: "Je ne sais pas si j'ai subi de la maltraitance",
-  NON: "Non, je n'ai pas subi de maltraitance",
-};
-
-export const maltraitanceQualifiedLabels: Record<MaltraitanceType, string> = {
+export const maltraitanceQualifiedLabels: Record<MaltraitanceQualifiedType, string> = {
   PHYSIQUE: 'Maltraitance physique',
   SEXUELLE: 'Maltraitance sexuelle',
   PSYCHOLOGIQUE: 'Maltraitance psychologique',
@@ -239,6 +230,7 @@ export const LIEU_TYPE = {
   ETABLISSEMENT_PERSONNES_AGEES: 'ETABLISSEMENT_PERSONNES_AGEES',
   ETABLISSEMENT_HANDICAP: 'ETABLISSEMENT_HANDICAP',
   ETABLISSEMENT_SOCIAL: 'ETABLISSEMENT_SOCIAL',
+  CABINET: 'CABINET',
   AUTRES_ETABLISSEMENTS: 'AUTRES_ETABLISSEMENTS',
   TRAJET: 'TRAJET',
 } as const;
@@ -246,13 +238,15 @@ export const LIEU_TYPE = {
 export type LieuType = keyof typeof LIEU_TYPE;
 
 export const lieuTypeLabels: Record<LieuType, string> = {
-  DOMICILE: 'Domicile',
-  ETABLISSEMENT_SANTE: 'Etablissements de santé',
-  ETABLISSEMENT_PERSONNES_AGEES: 'Etablissements pour personnes âgées',
-  ETABLISSEMENT_HANDICAP: 'Etablissements pour personnes handicapées',
-  ETABLISSEMENT_SOCIAL: 'Etablissements sociaux',
-  AUTRES_ETABLISSEMENTS: 'Autres établissements',
-  TRAJET: 'Trajet',
+  DOMICILE: 'À Domicile',
+  ETABLISSEMENT_SANTE: 'Un établissement de santé, par exemple : CHU, clinique',
+  ETABLISSEMENT_PERSONNES_AGEES: 'Un établissement pour personnes âgées, par exemple : EHPAD, résidence autonomie',
+  ETABLISSEMENT_HANDICAP:
+    'Un établissement pour personnes en situation de handicap, par exemple : maison d’accueil spécialisée',
+  ETABLISSEMENT_SOCIAL: 'Un établissement social, par exemple : centre d’hébergement',
+  CABINET: 'Un cabinet médical, par exemple : dentiste, médecin généraliste',
+  AUTRES_ETABLISSEMENTS: 'Autre, par exemple un salon de tatouage ou un institut d’esthétique',
+  TRAJET: 'Dans un moyen de transport',
 };
 
 // Domicile - Précisions
@@ -454,40 +448,32 @@ export const lieuTrajetPrecisionLabels: Record<LieuTrajetPrecision, string> = {
 };
 
 export const PROFESSION_DOMICILE_TYPE = {
-  PROF_LIBERAL: 'PROF_LIBERAL',
-  HAD: 'HAD',
-  SESSAD: 'SESSAD',
-  AIDE_MENAGERE: 'AIDE_MENAGERE',
-  REPAS: 'REPAS',
-  TRAITEMENT: 'TRAITEMENT',
-  SAADF: 'SAADF',
-  MJPM: 'MJPM',
-  SSIAD: 'SSIAD',
-  SAAD: 'SAAD',
+  PROF_SANTE: 'SANTE',
+  PROF_SOIN: 'SOIN',
+  INTERVENANT_DOMICILE: 'INTERVENANT_DOMICILE',
+  SERVICE_EDUCATION: 'SERVICE_EDUCATION',
+  SERVICE_AIDE_FAMILLE: 'SERVICE_AIDE_FAMILLE',
+  TUTEUR: 'TUTEUR',
   AUTRE: 'AUTRE',
-};
+} as const;
 
 export type ProfessionDomicileType = keyof typeof PROFESSION_DOMICILE_TYPE;
 
 export const professionDomicileTypeLabels: Record<ProfessionDomicileType, string> = {
-  PROF_LIBERAL: "Intervention d'un professionnel libéral ou service (SAMU, médecin)",
-  HAD: 'Hospitalisation à domicile',
-  SESSAD: "Service d'éducation spéciale et de soins",
-  AIDE_MENAGERE: "Service d'aide ménagère",
-  REPAS: 'Service de repas',
-  TRAITEMENT: 'Traitements spécialisés',
-  SAADF: "Service d'Aide et d'Accompagnement à Domicile aux Familles (SAADF)",
-  MJPM: 'Mandataire Judiciaire à la Protection des Majeurs (curatelle, tutelle)',
-  SSIAD: 'Service de Soins Infirmier à Domicile (SSIAD)',
-  SAAD: "Service d'Aide et d'Accompagnement à Domicile (SAAD)",
-  AUTRE: 'Autre',
+  PROF_SANTE: 'Un professionnel de santé, par exemple : médecin, SAMU',
+  PROF_SOIN: 'Un professionnel du soin, par exemple : infirmier, aide-soignant',
+  INTERVENANT_DOMICILE: 'Un intervenant à domicile : aide à domicile, aide ménagère, aide au repas',
+  SERVICE_EDUCATION: 'Un professionnel d’un service d’éducation spéciale et de soins',
+  SERVICE_AIDE_FAMILLE:
+    'Un professionnel d’un service d’aide et d’accompagnement à domicile aux familles, par exemple : éducateur, psychologue',
+  TUTEUR: 'Un tuteur, curateur ou mandataire judiciaire',
+  AUTRE: 'Une autre personne ou un autre service',
 };
 
 export const TRANSPORT_TYPE = {
-  ASSU: 'ASSU',
-  VSAV: 'VSAV',
+  POMPIER: 'POMPIER',
+  SAMU: 'SAMU',
   AMBULANCE: 'AMBULANCE',
-  VSL: 'VSL',
   TAXI: 'TAXI',
   AUTRE: 'AUTRE',
 } as const;
@@ -495,33 +481,27 @@ export const TRANSPORT_TYPE = {
 export type TransportType = keyof typeof TRANSPORT_TYPE;
 
 export const transportTypeLabels: Record<TransportType, string> = {
-  ASSU: "Ambulance de secours et de soins d'urgence (ASSU)",
-  VSAV: "Véhicule de secours et d'assistance aux victimes (VSAV)",
-  AMBULANCE: 'Ambulance',
-  VSL: 'Véhicule sanitaire léger',
-  TAXI: 'Chauffeur de taxi',
-  AUTRE: 'Autre type de transport',
+  POMPIER: 'Véhicule de pompier',
+  SAMU: 'Véhicule du SAMU',
+  AMBULANCE: 'Ambulance privée',
+  TAXI: 'Taxi subventionné',
+  AUTRE: 'Autre moyen de transport',
 };
 
 export const PROFESSION_TYPE = {
   PROF_SANTE: 'PROF_SANTE',
   TRAVAILLEUR_SOCIAL: 'TRAVAILLEUR_SOCIAL',
-  PROF_SOIN: 'PROF_SOIN',
-  RESPONSABLE: 'RESPONSABLE',
-  MJPM: 'MJPM',
+  TUTEUR: 'TUTEUR',
   AUTRE: 'AUTRE',
 } as const;
 
 export type ProfessionType = keyof typeof PROFESSION_TYPE;
 
 export const professionTypeLabels: Record<ProfessionType, string> = {
-  PROF_SANTE:
-    'Un professionnel de santé (médecin généraliste, spécialiste, dentiste, kinésithérapeute, orthophoniste, infirmier, aide-soignant...)',
-  TRAVAILLEUR_SOCIAL: 'Travailleur social (éducateur, assistant social...)',
-  PROF_SOIN: 'Un professionnel du soin (coiffeur, esthéticienne, naturopathe, ...)',
-  RESPONSABLE: 'Responsable (directeur, cadre de santé...)',
-  MJPM: 'Mandataire judiciaire à la protection des majeurs (curateur, tuteur...)',
-  AUTRE: 'Autre (animateur, agent d’entretien...)',
+  PROF_SANTE: 'Un professionnel de santé, par exemple : médecin, dentiste, infirmier, aide-soignant',
+  TRAVAILLEUR_SOCIAL: 'Un travailleur social, par exemple : éducateur, assistant social',
+  TUTEUR: 'Un tuteur, curateur ou mandataire judiciaire',
+  AUTRE: 'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
 };
 
 // Professionnel de santé - Précisions
@@ -683,14 +663,18 @@ export const DEMARCHES_ENGAGEES = {
   CONTACT_RESPONSABLES: 'CONTACT_RESPONSABLES',
   CONTACT_ORGANISME: 'CONTACT_ORGANISME',
   PLAINTE: 'PLAINTE',
+  AUTRE: 'AUTRE',
+  AUCUNE: 'AUCUNE',
 } as const;
 
 export type DemarchesEngagees = keyof typeof DEMARCHES_ENGAGEES;
 
 export const demarcheEngageeLabels: Record<DemarchesEngagees, string> = {
-  CONTACT_RESPONSABLES: "Prise de contact avec l'établissement ou les responsables des faits",
+  CONTACT_RESPONSABLES: "L'établissement ou le responsables des faits a été contacté",
   CONTACT_ORGANISME: "Démarches engagées auprès d'autres organismes",
-  PLAINTE: 'Dépôt de plainte',
+  PLAINTE: 'Une plainte a été déposée auprès des autorités judiciaires',
+  AUTRE: "D'autres démarches ont été engagées",
+  AUCUNE: "Aucune démarche n'est en cours",
 };
 // Motifs principaux
 export const MOTIF_PRINCIPAL = {
@@ -930,7 +914,7 @@ export const sousMotifMAUVAISE_ATTITUDE_DES_PROFESSIONNELSLabels: Record<
   REFUS_DE_CONSULTATION_PAR_UN_PROFESSIONNEL_DE_SANTE_LIBERAL:
     'Refus de consultation par un professionnel de santé libéral ',
   REFUS_D_INTERVENTION_AU_DOMICILE_EXEMPLE_SOS_MEDECINS_IDEL:
-    "Refus d'intervention au domicile (exemple : SOS médecins, IDEL ...)",
+    "Refus d'intervention au domicile (exemple : SOS médecins, IDEL ...)",
 };
 
 // Sous-motifs pour: Pratique non conventionnelle
@@ -1001,7 +985,7 @@ export const sousMotifQUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICELabels: Record<
   string
 > = {
   PROBLEME_D_ACCOMPAGNEMENT_ET_OU_SUIVI_INDIVIDUEL_PROJET_DE_VIE_SUIVI_SOCIAL_EDUCATIF_ADMINISTRATIF:
-    "Problème d'accompagnement et/ou suivi individuel : projet de vie, suivi social, éducatif, administratif…",
+    "Problème d'accompagnement et/ou suivi individuel : projet de vie, suivi social, éducatif, administratif…",
   NON_RESPECT_DES_PROGRAMMES_DE_FORMATION: 'Non respect des programmes de formation',
   ABSENCE_D_ANIMATION: "Absence d'animation",
   AUTRES: 'Autres',
@@ -1044,7 +1028,7 @@ export const sousMotifQUALITE_DES_SOINSLabels: Record<SousMotifQUALITE_DES_SOINS
     'Absence ou insuffisance de soins paramédicaux (repas, hygiène…)',
   ABSENCE_OU_INSUFFISANCE_DE_LA_REEDUCATION: 'Absence ou insuffisance de la rééducation',
   AFFECTIONS_IATROGENES_INFECTIONS_LIEES_AUX_SOINS_INFECTIONS_NOSOCOMIALES_EVENEMENTS_LIES_A_UN_PRODUIT_DE_SANTE:
-    'Affections iatrogénes : infections liées aux soins, infections nosocomiales, événements liés à un produit de santé',
+    'Affections iatrogénes : infections liées aux soins, infections nosocomiales, événements liés à un produit de santé',
   AIDE_MEDICALE_URGENTE_SAMU: 'Aide médicale urgente (SAMU)',
   AUTRES: 'Autres',
   DEFAILLANCE_OU_INCIDENT_LIE_AUX_SOINS_OU_A_LA_SURVEILLANCE_COMPLICATIONS_INCAPACITE_DECES:
@@ -1109,7 +1093,7 @@ export const sousMotifPROBLEMES_ENVIRONNEMENTAUXLabels: Record<SousMotifPROBLEME
   PROBLEMATIQUES_OU_GESTION_DES_DECHETS_D_ACTIVITES_DE_SOINS_A_RISQUES_INFECTIEUX_DASRI:
     "Problématiques ou gestion des déchets d'activités de soins à risques infectieux (DASRI)",
   SITUATION_EXCEPTIONNELLE_EXEMPLE_CANICULE_INNONDATIONS:
-    'Situation exceptionnelle (exemple : canicule, innondations..)',
+    'Situation exceptionnelle (exemple : canicule, innondations..)',
 };
 
 // Sous-motifs pour: Problèmes liés au transport Sanitaire
@@ -1159,4 +1143,16 @@ export const requeteClotureReasonLabels: Record<RequeteClotureReason, string> = 
   MISSION_D_INSPECTION_ET_CONTROLE: 'Mission d’inspection et contrôle',
   SANS_SUITE: 'Sans suite',
   AUTRE: 'Autre',
+} as const;
+
+export const DECLARATION_TYPE = {
+  QUALITE_COMPORTEMENT: 'QUALITE_COMPORTEMENT',
+  FACTURATION_MATERIEL: 'FACTURATION_MATERIEL',
+} as const;
+
+export type DeclarationType = keyof typeof DECLARATION_TYPE;
+
+export const declarationTypeLabels: Record<DeclarationType, string> = {
+  QUALITE_COMPORTEMENT: 'Un problème de qualité de prise en charge ou un comportement inapproprié',
+  FACTURATION_MATERIEL: 'Un problème de facturation ou matériel',
 } as const;

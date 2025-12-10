@@ -211,7 +211,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
       });
 
       if (!entite) {
-        logger.error({ requeteId, situationId: s.id, type: t }, 'Entite not found, skipping assignment');
+        logger.error({ requeteId, situationId: s.id, type: t, geo }, 'Entite not found, skipping assignment');
         continue;
       }
 

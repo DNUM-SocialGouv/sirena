@@ -217,7 +217,7 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
               </p>
             )}
             {situation?.misEnCause?.commentaire &&
-              situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.PROFESSIONNEL_SANTE && (
+              situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.PROFESSIONNEL && (
                 <p className={fr.cx('fr-mb-2w')}>
                   <span>Identité du professionnel :</span> {situation.misEnCause.commentaire}
                 </p>

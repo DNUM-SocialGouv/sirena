@@ -76,7 +76,7 @@ type DemarchesEngagees = {
   demarches: string[];
   dateContactEtablissement: Date | null;
   etablissementARepondu: boolean;
-  organisme: string;
+  commentaire: string;
   datePlainte: Date | null;
   files: File[];
   autoriteTypeId: string | null;

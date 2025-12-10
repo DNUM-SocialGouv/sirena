@@ -98,11 +98,11 @@ describe('dematSocial.service.ts', () => {
           dossiers: {
             nodes: [
               {
-                number: 101,
+                number: 3000000,
                 dateDepot,
               },
               {
-                number: 102,
+                number: 3000001,
                 dateDepot,
               },
             ],
