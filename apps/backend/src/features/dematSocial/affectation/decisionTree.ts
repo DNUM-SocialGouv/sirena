@@ -20,7 +20,6 @@ export function checkRequired(node: DecisionNode, ctx: SituationContext) {
 
   const missing = node.required.filter((key) => ctx[key] === null || ctx[key] === undefined);
   if (missing.length > 0) {
-    console.log({ ctx });
     throw new Error(`Node ${node.id} requires the following variables to be defined: ${missing.join(', ')}`);
   }
 }
