@@ -1,5 +1,6 @@
 import { App as CdkApp, YamlOutputType } from 'cdk8s';
 import { App, Worker } from './charts/app';
+import { CustomIssuer } from './charts/cert-issuer';
 import { ExternalSecrets } from './charts/external-secrets';
 import { PodMonitor } from './charts/pod-monitor';
 import { RedisChart } from './charts/redis';
@@ -35,6 +36,7 @@ interface EnvironmentConfig {
   subdomain: string;
   domain: string;
   replicas: number;
+  custom_issuer: boolean;
 }
 
 const ENV_CONFIGS: Record<string, EnvironmentConfig> = {
@@ -42,27 +44,32 @@ const ENV_CONFIGS: Record<string, EnvironmentConfig> = {
     subdomain: 'sirena.integration',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
+    custom_issuer: false,
   },
   test: {
     subdomain: 'sirena.test',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
+    custom_issuer: false,
   },
   validation: {
     subdomain: 'sirena.validation',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
+    custom_issuer: false,
   },
   preproduction: {
     subdomain: 'sirena.preproduction',
     domain: 'prod.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.prod.replicas,
+    custom_issuer: false,
   },
-  // production: {
-  //   subdomain: "sirena",
-  //   domain: "prod.atlas.fabrique.social.gouv.fr",
-  //   replicas: COMMON_CONFIG.resources.prod.replicas,
-  // },
+  production: {
+    subdomain: "sirena",
+    domain: "prod.atlas.fabrique.social.gouv.fr",
+    replicas: COMMON_CONFIG.resources.prod.replicas,
+    custom_issuer: true,
+  },
 };
 
 // Helper functions
@@ -135,6 +142,10 @@ function createApps(
     port: 'monitoring',
     path: '/metrics',
   });
+
+  if (ENV_CONFIGS[environnement].custom_issuer) {
+    new CustomIssuer(app, 'certigna');
+  }
 }
 
 const app = new CdkApp({
