@@ -3,7 +3,7 @@ import type { Construct } from 'constructs';
 import * as externalSecrets from '../imports/external-secrets.io';
 
 export class ExternalSecrets extends Chart {
-  constructor(scope: Construct, id: string, environnement: string) {
+  constructor(scope: Construct, id: string, environnement: string, use_managed_redis: boolean) {
     super(scope, id, {
       disableResourceNameHashes: true,
     });
@@ -137,5 +137,39 @@ export class ExternalSecrets extends Chart {
         },
       },
     });
+    if (use_managed_redis) {
+      // Redis External Secret
+      new externalSecrets.ExternalSecret(this, 'redis-external-secret', {
+        metadata: {
+          name: 'redis',
+        },
+        spec: {
+          dataFrom: [
+            {
+              extract: {
+                key: `redis-servers/sirena-${environnement}-redis`,
+              },
+            },
+          ],
+          refreshInterval: '1h',
+          secretStoreRef: {
+            name: 'local-secret-store',
+          },
+          target: {
+            name: 'redis',
+            template: {
+              data: {
+                host: '{{ .host }}',
+                password: '{{ .password }}',
+                port: '{{ .port }}',
+                server: '{{ .server }}',
+                url: '{{ .url }}',
+                username: '{{ .username }}',
+              },
+            },
+          },
+        },
+      });
+    }
   }
 }

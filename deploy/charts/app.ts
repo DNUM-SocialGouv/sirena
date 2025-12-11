@@ -13,13 +13,20 @@ interface AppProps extends SharedProps {
   host: string;
   port: number;
   targetPort: k8s.IntOrString;
+  has_custom_certificate: boolean;
+  technical_fqdn?: string;
+  use_managed_redis: boolean;
+  pc_domain: string;
 }
 
 interface WorkerProps extends SharedProps {
   host: '';
+  has_custom_certificate: boolean;
+  use_managed_redis: boolean;
+  pc_domain: string;
 }
 
-function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
+function createBackendEnvVars(host: string, environment: string, pc_domain: string): k8s.EnvVar[] {
   return [
     {
       name: 'HOST',
@@ -31,7 +38,7 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
     },
     {
       name: 'PC_DOMAIN',
-      value: 'https://fca.integ01.dev-agentconnect.fr/api/v2',
+      value: pc_domain,
     },
     {
       name: 'PC_REDIRECT_URI',
@@ -174,21 +181,75 @@ function createBucketEnvVars(): k8s.EnvVar[] {
   }));
 }
 
-function createRedisEnvVars(): k8s.EnvVar[] {
-  return [
-    {
-      name: 'REDIS_HOST',
-      value: 'redis-master',
-    },
-    {
-      name: 'REDIS_PORT',
-      value: '6379',
-    },
-    {
-      name: 'REDIS_URL',
-      value: 'redis://redis-master:6379',
-    },
-  ];
+function createRedisEnvVars(use_managed_redis: boolean): k8s.EnvVar[] {
+  if (use_managed_redis) {
+    return [
+      {
+        name: 'REDIS_HOST',
+        valueFrom: {
+          secretKeyRef: {
+            name: `redis`,
+            key: 'host',
+          },
+        },
+      },
+      {
+        name: 'REDIS_PASSWORD',
+        valueFrom: {
+          secretKeyRef: {
+            name: `redis`,
+            key: 'password',
+          },
+        },
+      },
+      {
+        name: 'REDIS_PORT',
+        valueFrom: {
+          secretKeyRef: {
+            name: `redis`,
+            key: 'port',
+          },
+        },
+      },
+      {
+        name: 'REDIS_URL',
+        valueFrom: {
+          secretKeyRef: {
+            name: `redis`,
+            key: 'url',
+          },
+        },
+      },
+      {
+        name: 'REDIS_USERNAME',
+        valueFrom: {
+          secretKeyRef: {
+            name: `redis`,
+            key: 'username',
+          },
+        },
+      },
+      {
+        name: 'REDIS_TLS',
+        value: 'true',
+      },
+    ];
+  } else {
+    return [
+      {
+        name: 'REDIS_HOST',
+        value: 'redis-master',
+      },
+      {
+        name: 'REDIS_PORT',
+        value: '6379',
+      },
+      {
+        name: 'REDIS_URL',
+        value: 'redis://redis-master:6379',
+      },
+    ];
+  }
 }
 
 function createContainer(props: AppProps): k8s.Container {
@@ -216,9 +277,9 @@ function createContainer(props: AppProps): k8s.Container {
     ports,
     env: isBackend
       ? [
-          ...createBackendEnvVars(props.host, props.environment),
+          ...createBackendEnvVars(props.host, props.environment, props.pc_domain),
           ...createDatabaseEnvVars(),
-          ...createRedisEnvVars(),
+          ...createRedisEnvVars(props.use_managed_redis),
           ...createBucketEnvVars(),
         ]
       : [],
@@ -252,13 +313,19 @@ function createContainer(props: AppProps): k8s.Container {
   };
 }
 
-function createIngressAnnotations(isBackend: boolean, namespace: string): Record<string, string> {
+function createIngressAnnotations(isBackend: boolean, namespace: string, props: AppProps): Record<string, string> {
   const configMapName = isBackend ? 'security-headers-backend' : 'security-headers-frontend';
   const baseAnnotations = {
-    'cert-manager.io/cluster-issuer': 'letsencrypt-http01',
+    ...(props.has_custom_certificate
+      ? {
+          'cert-manager.io/issuer': 'certigna',
+          'cert-manager.io/private-key-size': '4096',
+        }
+      : { 'cert-manager.io/cluster-issuer': 'letsencrypt-http01' }),
     'nginx.ingress.kubernetes.io/proxy-body-size': '60m',
     'nginx.ingress.kubernetes.io/proxy-hide-headers': 'Server',
     'nginx.ingress.kubernetes.io/custom-headers': `${namespace}/${configMapName}`,
+    ...(props.technical_fqdn ? { 'external-dns.alpha.kubernetes.io/hostname': props.technical_fqdn } : {}),
   };
 
   if (isBackend) {
@@ -384,9 +451,9 @@ function createWorkerDeployment(scope: Construct, props: WorkerProps, labels: Re
                 },
               },
               env: [
-                ...createBackendEnvVars('', props.environment),
+                ...createBackendEnvVars('', props.environment, props.pc_domain),
                 ...createDatabaseEnvVars(),
-                ...createRedisEnvVars(),
+                ...createRedisEnvVars(props.use_managed_redis),
                 ...createBucketEnvVars(),
               ],
               envFrom: [{ secretRef: { name: 'backend' } }],
@@ -439,7 +506,7 @@ function createIngress(
   return new k8s.KubeIngress(scope, 'ingress', {
     metadata: {
       name: props.name,
-      annotations: createIngressAnnotations(isBackend, namespace),
+      annotations: createIngressAnnotations(isBackend, namespace, props),
     },
     spec: {
       ingressClassName: 'public',
@@ -466,7 +533,7 @@ function createIngress(
       ],
       tls: [
         {
-          hosts: [props.host.replace('https://', '')],
+          hosts: [props.host.replace('https://', ''), ...(props.technical_fqdn ? [props.technical_fqdn] : [])],
           secretName: 'frontend-tls',
         },
       ],
