@@ -1,5 +1,10 @@
 import Badge from '@codegouvfr/react-dsfr/Badge';
-import { requeteEtapeStatutBadges, requeteStatutBadges, type StatutBadge } from '@/utils/requeteStatutBadge.constant';
+import {
+  requeteEtapeStatutBadges,
+  requetePrioriteBadges,
+  requeteStatutBadges,
+  type StatutBadge,
+} from '@/utils/requeteStatutBadge.constant';
 
 type Props = {
   statut: string;
@@ -26,3 +31,5 @@ export const StatutTag =
 export const RequeteStatutTag = StatutTag(requeteStatutBadges);
 
 export const RequeteEtapeStatutTag = StatutTag(requeteEtapeStatutBadges);
+
+export const RequetePrioriteTag = StatutTag(requetePrioriteBadges);

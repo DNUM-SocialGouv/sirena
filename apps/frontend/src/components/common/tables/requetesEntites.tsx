@@ -1,12 +1,12 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
-import type { RequeteStatutType } from '@sirena/common/constants';
+import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
-import { RequeteStatutTag } from '../RequeteStatutTag';
+import { RequetePrioriteTag, RequeteStatutTag } from '../RequeteStatutTag';
 import { renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
 
 type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number] & {
@@ -86,6 +86,9 @@ export function RequetesEntite() {
     ),
     'custom:statut': (row) => {
       return <RequeteStatutTag statut={row.statutId as RequeteStatutType} noIcon={true} />;
+    },
+    'custom:priorite': (row) => {
+      return <RequetePrioriteTag statut={row.prioriteId as RequetePrioriteType} noIcon={true} />;
     },
     'custom:personne': (row) => {
       const requete = row.requete as typeof row.requete & {
