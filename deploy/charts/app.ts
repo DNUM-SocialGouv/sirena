@@ -13,10 +13,12 @@ interface AppProps extends SharedProps {
   host: string;
   port: number;
   targetPort: k8s.IntOrString;
+  has_custom_certificate: boolean;
 }
 
 interface WorkerProps extends SharedProps {
   host: '';
+  has_custom_certificate: boolean;
 }
 
 function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
@@ -244,9 +246,11 @@ function createContainer(props: AppProps): k8s.Container {
   };
 }
 
-function createIngressAnnotations(isBackend: boolean, namespace: string): Record<string, string> {
+function createIngressAnnotations(isBackend: boolean, namespace: string, has_custom_certificate: boolean): Record<string, string> {
   const baseAnnotations = {
-    'cert-manager.io/cluster-issuer': 'letsencrypt-http01',
+    ...(has_custom_certificate
+      ? { 'cert-manager.io/issuer': 'certigna' }
+      : { 'cert-manager.io/cluster-issuer': 'letsencrypt-http01' }),
     'nginx.ingress.kubernetes.io/proxy-body-size': '60m',
     'nginx.ingress.kubernetes.io/proxy-hide-headers': 'Server',
     'nginx.ingress.kubernetes.io/custom-headers': `${namespace}/security-headers`,
@@ -429,7 +433,7 @@ function createIngress(
   return new k8s.KubeIngress(scope, 'ingress', {
     metadata: {
       name: props.name,
-      annotations: createIngressAnnotations(isBackend, namespace),
+      annotations: createIngressAnnotations(isBackend, namespace, props.has_custom_certificate),
     },
     spec: {
       ingressClassName: 'public',

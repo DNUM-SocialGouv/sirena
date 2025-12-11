@@ -36,7 +36,7 @@ interface EnvironmentConfig {
   subdomain: string;
   domain: string;
   replicas: number;
-  custom_issuer: boolean;
+  has_custom_issuer: boolean;
 }
 
 const ENV_CONFIGS: Record<string, EnvironmentConfig> = {
@@ -44,31 +44,31 @@ const ENV_CONFIGS: Record<string, EnvironmentConfig> = {
     subdomain: 'sirena.integration',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
-    custom_issuer: false,
+    has_custom_issuer: false,
   },
   test: {
     subdomain: 'sirena.test',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
-    custom_issuer: false,
+    has_custom_issuer: false,
   },
   validation: {
     subdomain: 'sirena.validation',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
-    custom_issuer: false,
+    has_custom_issuer: false,
   },
   preproduction: {
     subdomain: 'sirena.preproduction',
     domain: 'prod.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.prod.replicas,
-    custom_issuer: false,
+    has_custom_issuer: false,
   },
   production: {
     subdomain: "sirena",
     domain: "prod.atlas.fabrique.social.gouv.fr",
     replicas: COMMON_CONFIG.resources.prod.replicas,
-    custom_issuer: true,
+    has_custom_issuer: true,
   },
 };
 
@@ -102,6 +102,7 @@ function createApps(
     namespace,
     environment,
     host: '',
+    has_custom_certificate: envConfig.has_custom_issuer,
   });
 
   // Backend
@@ -114,6 +115,7 @@ function createApps(
     image: `${COMMON_CONFIG.imageRegistry}:${imageTag}-backend`,
     namespace,
     environment,
+    has_custom_certificate: envConfig.has_custom_issuer,
   });
 
   // Frontend
@@ -126,6 +128,7 @@ function createApps(
     image: `${COMMON_CONFIG.imageRegistry}:${imageTag}-frontend`,
     namespace,
     environment,
+    has_custom_certificate: envConfig.has_custom_issuer,
   });
 
   // PodMonitors for VictoriaMetrics
@@ -143,7 +146,7 @@ function createApps(
     path: '/metrics',
   });
 
-  if (ENV_CONFIGS[environnement].custom_issuer) {
+  if (ENV_CONFIGS[environnement].has_custom_issuer) {
     new CustomIssuer(app, 'certigna');
   }
 }
