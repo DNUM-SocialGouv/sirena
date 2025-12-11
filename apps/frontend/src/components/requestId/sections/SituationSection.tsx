@@ -2,7 +2,7 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import {
   demarcheEngageeLabels,
-  type MaltraitanceType,
+  type MaltraitanceQualifiedType,
   MOTIFS_HIERARCHICAL_DATA,
   maltraitanceQualifiedLabels,
   misEnCauseTypeLabels,
@@ -98,7 +98,7 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
   situation?.faits.forEach((fait) => {
     fait.maltraitanceTypes?.forEach((maltraitance) => {
       if (maltraitance.maltraitanceTypeId in maltraitanceQualifiedLabels) {
-        const label = maltraitanceQualifiedLabels[maltraitance.maltraitanceTypeId as MaltraitanceType];
+        const label = maltraitanceQualifiedLabels[maltraitance.maltraitanceTypeId as MaltraitanceQualifiedType];
         if (motifsDeclares.indexOf(label) === -1) {
           motifsDeclares.push(label);
         }
