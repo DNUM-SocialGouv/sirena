@@ -165,6 +165,7 @@ model RequeteStatusEnum {
 model RequetePrioriteEnum {
   id    String @id
   label String @unique
+  sortOrder Int
 
   requeteEntites RequeteEntite[]
 }

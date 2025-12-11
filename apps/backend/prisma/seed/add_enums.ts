@@ -251,11 +251,25 @@ async function seedRequeteEtapeStatutEnum(prisma: PrismaClient) {
 
 async function seedRequetePrioriteEnum(prisma: PrismaClient) {
   let added = 0;
-  for (const [id, label] of Object.entries(requetePrioriteType)) {
+  // Get correct order
+  const prioriteEntries = Object.entries(requetePrioriteType).reverse();
+
+  for (let i = 0; i < prioriteEntries.length; i++) {
+    const [id, label] = prioriteEntries[i];
+    const sortOrder = prioriteEntries.length - i;
+
     const exists = await prisma.requetePrioriteEnum.findUnique({ where: { id } });
     if (!exists) {
-      await prisma.requetePrioriteEnum.create({ data: { id, label } });
+      await prisma.requetePrioriteEnum.create({
+        data: { id, label, sortOrder },
+      });
       added++;
+    } else {
+      // ensure order is set
+      await prisma.requetePrioriteEnum.update({
+        where: { id },
+        data: { sortOrder },
+      });
     }
   }
   return { table: 'requetePrioriteEnum', added };
