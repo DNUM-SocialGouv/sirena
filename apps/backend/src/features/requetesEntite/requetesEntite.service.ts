@@ -4,7 +4,6 @@ import {
   type EntiteType,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_STATUT_TYPES,
-  type RequeteEtapeStatutType,
   type RequeteStatutType,
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
@@ -258,7 +257,6 @@ export const getOtherEntitesAffected = async (requeteId: string, excludeEntiteId
           label: true,
         },
       },
-      requeteEtape: { orderBy: { createdAt: 'desc' }, take: 1 },
     },
   });
 
@@ -268,12 +266,7 @@ export const getOtherEntitesAffected = async (requeteId: string, excludeEntiteId
         ...re.entite,
         entiteTypeId: re.entite.entiteTypeId as EntiteType,
       },
-      lastEtape: re.requeteEtape[0]
-        ? {
-            ...re.requeteEtape[0],
-            statutId: re.requeteEtape[0].statutId as RequeteEtapeStatutType,
-          }
-        : null,
+      statutId: re.statutId as RequeteStatutType,
     };
   });
 };
@@ -967,7 +960,7 @@ const updateSituationEntites = async (
         create: {
           requeteId,
           entiteId: rootId,
-          statutId: REQUETE_STATUT_TYPES.EN_COURS,
+          statutId: REQUETE_STATUT_TYPES.NOUVEAU,
         },
       });
     }),

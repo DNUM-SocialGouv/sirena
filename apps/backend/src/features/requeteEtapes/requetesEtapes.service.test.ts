@@ -451,7 +451,7 @@ describe('RequeteEtapes.service.ts', () => {
         create: {
           requeteId: 'requeteId',
           entiteId: 'entiteId',
-          statutId: 'EN_COURS',
+          statutId: 'NOUVEAU',
         },
         update: {},
       });

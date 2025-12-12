@@ -25,11 +25,11 @@ export const OtherEntitiesAffected = () => {
         <div className={styles['other-entities-affected-container']}>
           {data.map((entity) => (
             <div className={styles['other-entities-affected']} key={entity.entite.id}>
-              {!!entity.lastEtape && (
+              {!!entity && (
                 <EntiteTag
                   label={entity.entite.nomComplet}
                   entiteTypeId={entity.entite.entiteTypeId}
-                  statut={entity.lastEtape.statutId}
+                  statut={entity.statutId}
                 />
               )}
             </div>
