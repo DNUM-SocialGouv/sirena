@@ -44,3 +44,19 @@ export async function fetchRequeteOtherEntitiesAffected(requestId: string) {
   const { data } = await res.json();
   return data;
 }
+
+export type UpdatePrioriteData = {
+  prioriteId: 'BASSE' | 'MOYENNE' | 'HAUTE' | null;
+};
+
+export async function updatePriorite(requestId: string, json: UpdatePrioriteData) {
+  const res = await client['requetes-entite'][':id'].priorite.$patch({
+    param: { id: requestId },
+    json,
+  });
+
+  await handleRequestErrors(res);
+
+  const response = await res.json();
+  return response;
+}

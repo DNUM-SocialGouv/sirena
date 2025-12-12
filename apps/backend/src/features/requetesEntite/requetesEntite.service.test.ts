@@ -15,6 +15,7 @@ import {
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
+  updatePrioriteRequete,
   updateRequete,
   updateRequeteDeclarant,
   updateRequeteSituation,
@@ -77,6 +78,7 @@ const mockRequeteEntite: RequeteEntite & { requete: Requete & { situations?: unk
   requeteId: 'req123',
   entiteId: 'ent123',
   statutId: 'EN_COURS',
+  prioriteId: null,
   requete: {
     id: 'req123',
     dematSocialId: 123,
@@ -393,6 +395,7 @@ describe('requetesEntite.service', () => {
   describe('getOtherEntitesAffected', () => {
     it('should return other entites affected by the requete', async () => {
       const mockOtherEntite = {
+        prioriteId: mockRequeteEntite.prioriteId,
         entiteId: mockRequeteEntite.entiteId,
         requeteId: mockRequeteEntite.requeteId,
         statutId: mockRequeteEntite.statutId,
@@ -405,6 +408,7 @@ describe('requetesEntite.service', () => {
         requeteEtape: [],
       };
       const mockSecondOtherEntite = {
+        prioriteId: mockRequeteEntite.prioriteId,
         entiteId: 'entite-2',
         requeteId: mockRequeteEntite.requeteId,
         statutId: mockRequeteEntite.statutId,
@@ -1727,6 +1731,76 @@ describe('requetesEntite.service', () => {
       expect(prisma.requeteEntite.update).toHaveBeenCalledOnce();
 
       expect(result.statutId).toBe('CLOTUREE');
+    });
+  });
+
+  describe('updatePrioriteRequete', () => {
+    it('should update the priority of the requeteEntite to HAUTE', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        prioriteId: 'HAUTE',
+      });
+
+      const result = await updatePrioriteRequete('req123', 'ent123', 'HAUTE');
+
+      expect(prisma.requeteEntite.update).toHaveBeenCalledWith({
+        where: { requeteId_entiteId: { requeteId: 'req123', entiteId: 'ent123' } },
+        data: { prioriteId: 'HAUTE' },
+      });
+
+      expect(result.prioriteId).toBe('HAUTE');
+    });
+
+    it('should update the priority of the requeteEntite to MOYENNE', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        prioriteId: 'MOYENNE',
+      });
+
+      const result = await updatePrioriteRequete('req123', 'ent123', 'MOYENNE');
+
+      expect(prisma.requeteEntite.update).toHaveBeenCalledWith({
+        where: { requeteId_entiteId: { requeteId: 'req123', entiteId: 'ent123' } },
+        data: { prioriteId: 'MOYENNE' },
+      });
+
+      expect(result.prioriteId).toBe('MOYENNE');
+    });
+
+    it('should update the priority of the requeteEntite to BASSE', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        prioriteId: 'BASSE',
+      });
+
+      const result = await updatePrioriteRequete('req123', 'ent123', 'BASSE');
+
+      expect(prisma.requeteEntite.update).toHaveBeenCalledWith({
+        where: { requeteId_entiteId: { requeteId: 'req123', entiteId: 'ent123' } },
+        data: { prioriteId: 'BASSE' },
+      });
+
+      expect(result.prioriteId).toBe('BASSE');
+    });
+
+    it('should set priority to null when null is provided', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        prioriteId: null,
+      });
+
+      const result = await updatePrioriteRequete('req123', 'ent123', null);
+
+      expect(prisma.requeteEntite.update).toHaveBeenCalledWith({
+        where: { requeteId_entiteId: { requeteId: 'req123', entiteId: 'ent123' } },
+        data: { prioriteId: null },
+      });
+
+      expect(result.prioriteId).toBeNull();
     });
   });
 });

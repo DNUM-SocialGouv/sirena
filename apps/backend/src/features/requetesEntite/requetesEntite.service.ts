@@ -4,6 +4,7 @@ import {
   type EntiteType,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_STATUT_TYPES,
+  type RequetePrioriteType,
   type RequeteStatutType,
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
@@ -1317,5 +1318,16 @@ export const updateStatusRequete = async (requeteId: string, entiteId: string, s
   return prisma.requeteEntite.update({
     where: { requeteId_entiteId: { requeteId, entiteId } },
     data: { statutId: statut },
+  });
+};
+
+export const updatePrioriteRequete = async (
+  requeteId: string,
+  entiteId: string,
+  prioriteId: RequetePrioriteType | null,
+) => {
+  return prisma.requeteEntite.update({
+    where: { requeteId_entiteId: { requeteId, entiteId } },
+    data: { prioriteId: prioriteId || null },
   });
 };
