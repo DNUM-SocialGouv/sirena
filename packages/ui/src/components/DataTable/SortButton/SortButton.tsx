@@ -22,6 +22,26 @@ const getNextDirection = (current: SortDirection): SortDirection => {
   return directions[current];
 };
 
+const getSortIcon = (isActive: boolean, sortDirection: SortDirection): string => {
+  if (!isActive || sortDirection === SORT_DIRECTIONS.NONE) {
+    return 'fr-icon-arrow-up-down-line';
+  }
+  if (sortDirection === SORT_DIRECTIONS.ASC) {
+    return 'fr-icon-arrow-up-line';
+  }
+  return 'fr-icon-arrow-down-line';
+};
+
+const getSortLabel = (isActive: boolean, sortDirection: SortDirection): string => {
+  if (!isActive || sortDirection === SORT_DIRECTIONS.NONE) {
+    return 'Trier';
+  }
+  if (sortDirection === SORT_DIRECTIONS.ASC) {
+    return 'Tri croissant';
+  }
+  return 'Tri décroissant';
+};
+
 export const SortButtonComponent = <T extends string>({
   sortKey,
   sort,
@@ -29,6 +49,7 @@ export const SortButtonComponent = <T extends string>({
   onSortChange,
 }: SortButtonProps<T>) => {
   const isActive = sort === sortKey;
+  const currentDirection = isActive ? sortDirection : SORT_DIRECTIONS.NONE;
   const nextDirection = isActive ? getNextDirection(sortDirection) : SORT_DIRECTIONS.ASC;
 
   const onClick = () => {
@@ -36,9 +57,18 @@ export const SortButtonComponent = <T extends string>({
     onSortChange({ sort: nextSort, sortDirection: nextDirection });
   };
 
+  const iconClass = getSortIcon(isActive, currentDirection);
+  const label = getSortLabel(isActive, currentDirection);
+
   return (
-    <button type="button" onClick={onClick} className="fr-btn--sort fr-btn fr-btn--sm">
-      Trier
+    <button
+      type="button"
+      onClick={onClick}
+      className="data-table-sort-button"
+      aria-label={label}
+      aria-pressed={isActive ? 'true' : 'false'}
+    >
+      <span className={iconClass} aria-hidden="true" />
     </button>
   );
 };

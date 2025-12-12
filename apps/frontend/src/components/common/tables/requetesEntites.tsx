@@ -2,7 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
-import { type Cells, type Column, DataTable } from '@sirena/ui';
+import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
@@ -15,6 +15,44 @@ type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>
 
 const DEFAULT_PAGE_SIZE = 10;
 
+const mapColumnKeyToSortKey = (columnKey: string): string | undefined => {
+  switch (columnKey) {
+    case 'requete.id':
+      return 'requete.id';
+    case 'requete.receptionDate':
+      return 'requete.createdAt';
+    case 'custom:statut':
+      return 'statutId';
+    case 'custom:priorite':
+      return 'priorite.sortOrder';
+    case 'custom:personne':
+      return 'requete.participant.identite.nom';
+    default:
+      return undefined;
+  }
+};
+
+const mapSortKeyToColumnKey = (sortKey: string | undefined): string => {
+  switch (sortKey) {
+    case 'requete.id':
+      return 'requete.id';
+    case 'requeteId':
+      return 'requete.id';
+    case 'requete.createdAt':
+      return 'requete.receptionDate';
+    case 'statutId':
+      return 'custom:statut';
+    case 'prioriteId':
+      return 'custom:priorite';
+    case 'priorite.sortOrder':
+      return 'custom:priorite';
+    case 'requete.participant.identite.nom':
+      return 'custom:personne';
+    default:
+      return '';
+  }
+};
+
 export function RequetesEntite() {
   const queries = useSearch({ from: '/_auth/_user/home' });
   const navigate = useNavigate({ from: '/home' });
@@ -26,7 +64,7 @@ export function RequetesEntite() {
   const [searchTerm, setSearchTerm] = useState<string>(queries.search || '');
 
   const { data: requetes, isFetching } = useRequetesEntite({
-    ...(queries.sort && { sort: queries.sort as 'requeteId' | 'entiteId' }),
+    ...(queries.sort && { sort: queries.sort }),
     ...(queries.order && { order: queries.order as 'asc' | 'desc' }),
     ...(queries.search && { search: queries.search }),
     offset: offset.toString(),
@@ -62,12 +100,37 @@ export function RequetesEntite() {
     });
   }, [navigate]);
 
+  const handleSortChange = useCallback(
+    (params: OnSortChangeParams<RequeteEntiteRow>) => {
+      const { sort: columnKey, sortDirection } = params;
+      const sortKey = mapColumnKeyToSortKey(columnKey);
+
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          sort: sortKey && sortDirection ? sortKey : undefined,
+          order: sortKey && sortDirection ? (sortDirection as 'asc' | 'desc') : undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
+  const currentSort = useMemo((): OnSortChangeParams<RequeteEntiteRow> => {
+    const sortKey = queries.sort;
+    const columnKey = mapSortKeyToColumnKey(sortKey);
+    return {
+      sort: (columnKey || '') as OnSortChangeParams<RequeteEntiteRow>['sort'],
+      sortDirection: (queries.order || '') as OnSortChangeParams<RequeteEntiteRow>['sortDirection'],
+    };
+  }, [queries.sort, queries.order]);
+
   const columns: Column<RequeteEntiteRow>[] = [
-    { key: 'requete.id', label: 'ID Requête' },
-    { key: 'custom:statut', label: 'Statut' },
-    { key: 'requete.receptionDate', label: 'Réception' },
-    { key: 'custom:priorite', label: 'Priorité' },
-    { key: 'custom:personne', label: 'Personne Concernée' },
+    { key: 'requete.id', label: 'ID Requête', isSortable: true },
+    { key: 'custom:statut', label: 'Statut', isSortable: true },
+    { key: 'requete.receptionDate', label: 'Réception', isSortable: true },
+    { key: 'custom:priorite', label: 'Priorité', isSortable: true },
+    { key: 'custom:personne', label: 'Personne Concernée', isSortable: true },
     { key: 'custom:motifs', label: 'Motifs' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },
     { key: 'custom:action', label: 'Action', isFixedRight: true },
@@ -195,7 +258,16 @@ export function RequetesEntite() {
           </div>
         )}
       </div>
-      <DataTable title={title} rowId="id" data={dataWithId} columns={columns} cells={cells} isLoading={isFetching} />
+      <DataTable
+        title={title}
+        rowId="id"
+        data={dataWithId}
+        columns={columns}
+        cells={cells}
+        isLoading={isFetching}
+        sort={currentSort}
+        onSortChange={handleSortChange}
+      />
       {shouldShowPagination && (
         <div className="fr-mt-3w fr-grid-row fr-grid-row--center">
           <Pagination count={totalPages} defaultPage={currentPage} getPageLinkProps={getPageLinkProps} />

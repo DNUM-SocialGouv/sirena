@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { Column, ColumnKey, OnSortChangeParams, RowWithId } from '../DataTable.type';
 import { SortButton } from '../SortButton/SortButton';
+import { ARIA_SORT_VALUES } from '../SortButton/SortButton.constants';
 
 type DataTableHeaderProps<T extends RowWithId<string>> = {
   id: string;
@@ -43,25 +44,39 @@ export const DataTableHeaderComponent = <T extends RowWithId<string>>({
             </div>
           </th>
         )}
-        {columns.map((column) => (
-          <th
-            key={column.key}
-            className={`${column.isFixedLeft ? 'fr-cell--fixed' : ''} ${column.isFixedRight ? 'fr-cell--fixed-right' : ''}`}
-            scope="col"
-          >
-            <div className="fr-cell--sort">
-              <span className="fr-cell__title">{column.label}</span>
-              {column.isSortable && (
-                <SortButton<ColumnKey<T>>
-                  sort={sort.sort}
-                  sortKey={column.key}
-                  sortDirection={sort.sortDirection}
-                  onSortChange={onSortChange}
-                />
-              )}
-            </div>
-          </th>
-        ))}
+        {columns.map((column) => {
+          const isActive = sort.sort === column.key;
+          const getAriaSort = () => {
+            if (!isActive || sort.sortDirection === '') {
+              return ARIA_SORT_VALUES.NONE;
+            }
+            if (sort.sortDirection === 'asc') {
+              return ARIA_SORT_VALUES.ASC;
+            }
+            return ARIA_SORT_VALUES.DESC;
+          };
+
+          return (
+            <th
+              key={column.key}
+              className={`${column.isFixedLeft ? 'fr-cell--fixed' : ''} ${column.isFixedRight ? 'fr-cell--fixed-right' : ''}`}
+              scope="col"
+              aria-sort={column.isSortable ? getAriaSort() : undefined}
+            >
+              <div className="fr-cell--sort">
+                <span className="fr-cell__title">{column.label}</span>
+                {column.isSortable && (
+                  <SortButton<ColumnKey<T>>
+                    sort={sort.sort}
+                    sortKey={column.key}
+                    sortDirection={sort.sortDirection}
+                    onSortChange={onSortChange}
+                  />
+                )}
+              </div>
+            </th>
+          );
+        })}
       </tr>
     </thead>
   );

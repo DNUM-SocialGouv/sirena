@@ -12,7 +12,7 @@
 .fr-table__content .fr-cell--fixed-right {
   background-image:
     linear-gradient(0deg, var(--border-contrast-grey), var(--border-contrast-grey)),
-    linear-gradient(0deg, var(var(--border-plain-grey)), var(var(--border-plain-grey)));
+    linear-gradient(0deg, var(--border-plain-grey), var(--border-plain-grey));
   background-position:
     0px 100%,
     0px 0px !important;
@@ -38,4 +38,60 @@
 .fr-table__caption-with-loader .loader {
   margin: 0;
   flex-shrink: 0;
+}
+
+.fr-cell--sort {
+  gap: 0.25rem !important;
+  justify-content: flex-start !important;
+}
+
+.data-table-sort-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-action-high-blue-france);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+  border-radius: 0.25rem;
+}
+
+.fr-cell--sort .data-table-sort-button {
+  margin-left: 0.25rem !important;
+}
+
+.data-table-sort-button:hover {
+  background-color: var(--background-action-low-blue-france);
+  color: var(--text-action-high-blue-france);
+}
+
+.data-table-sort-button:focus {
+  outline: 2px solid var(--border-plain-blue-france);
+  outline-offset: 2px;
+}
+
+.data-table-sort-button:active {
+  background-color: var(--background-action-low-blue-france-active);
+}
+
+.data-table-sort-button[aria-pressed="true"] {
+  color: var(--text-action-high-blue-france);
+}
+
+.data-table-sort-button span[class*="fr-icon-"] {
+  display: inline-block;
+  transition: opacity 0.2s ease;
+}
+
+.data-table-sort-button span[class*="fr-icon-"]::before {
+  transition: opacity 0.2s ease;
+  transform: scale(0.55) !important;
+  transform-origin: center;
 }
