@@ -30,7 +30,7 @@ export const RequestInfos = ({ requestId, fullName, motifs, statutId }: RequestI
             </ContactInfo>
           )}
           {motifs.map((motif) => (
-            <ContactInfo key={motif} icon="fr-icon-todo-line" ariaLabel="Motif de la requête">
+            <ContactInfo key={motif} icon="fr-icon-todo-line" ariaLabel={motif}>
               {motif}
             </ContactInfo>
           ))}
