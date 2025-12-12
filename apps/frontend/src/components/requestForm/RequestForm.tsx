@@ -38,7 +38,13 @@ export function RequestForm({ requestId }: RequestFormProps) {
       : null,
   );
 
-  const motif = requestQuery.data?.requete.situations?.[0]?.faits?.[0]?.motifs?.[0]?.motif.label || null;
+  const motifs = [
+    ...new Set(
+      requestQuery.data?.requete.situations?.[0]?.faits?.[0]?.motifs?.flatMap((m) =>
+        m.motif.label ? [m.motif.label] : [],
+      ) || [],
+    ),
+  ];
   const statutId = requestQuery.data?.statutId || '';
 
   const tabs: TabDescriptor[] = [
@@ -72,7 +78,7 @@ export function RequestForm({ requestId }: RequestFormProps) {
               <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
             </Link>
           </div>
-          <RequestInfos requestId={requestId} fullName={fullName} motif={motif} statutId={statutId} />{' '}
+          <RequestInfos requestId={requestId} fullName={fullName} motifs={motifs} statutId={statutId} />{' '}
         </div>
       </div>
       <div className="fr-container">
