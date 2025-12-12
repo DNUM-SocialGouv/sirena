@@ -414,19 +414,6 @@ describe('requetesEntite.service', () => {
           nomComplet: 'Entite 2',
           entiteTypeId: 'Entite 2',
         },
-        requeteEtape: [
-          {
-            id: 'etape-1',
-            statutId: 'A_QUALIFIER',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            entiteId: 'entite-2',
-            estPartagee: false,
-            nom: 'Etape 1',
-            requeteId: mockRequeteEntite.requeteId,
-            clotureReasonId: null,
-          },
-        ],
       };
       vi.mocked(prisma.requeteEntite.findMany).mockResolvedValueOnce([mockOtherEntite, mockSecondOtherEntite]);
       const result = await getOtherEntitesAffected(mockRequeteEntite.requeteId, mockRequeteEntite.entiteId);
@@ -436,11 +423,11 @@ describe('requetesEntite.service', () => {
       expect(result).toEqual([
         {
           entite: mockOtherEntite.entite,
-          lastEtape: null,
+          statutId: mockOtherEntite.statutId,
         },
         {
           entite: mockSecondOtherEntite.entite,
-          lastEtape: mockSecondOtherEntite.requeteEtape[0],
+          statutId: mockOtherEntite.statutId,
         },
       ]);
     });
@@ -1341,7 +1328,7 @@ describe('requetesEntite.service', () => {
         update: {},
         create: {
           requeteId,
-          statutId: REQUETE_STATUT_TYPES.EN_COURS,
+          statutId: REQUETE_STATUT_TYPES.NOUVEAU,
           entiteId: 'root1',
         },
       });

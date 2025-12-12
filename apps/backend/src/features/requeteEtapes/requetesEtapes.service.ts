@@ -103,7 +103,7 @@ export const addProcessingEtape = async (requeteId: string, entiteId: string | n
     create: {
       requeteId,
       entiteId,
-      statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      statutId: REQUETE_STATUT_TYPES.NOUVEAU,
     },
     update: {},
   });
