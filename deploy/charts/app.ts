@@ -14,6 +14,7 @@ interface AppProps extends SharedProps {
   port: number;
   targetPort: k8s.IntOrString;
   has_custom_certificate: boolean;
+  technical_fqdn?: string;
 }
 
 interface WorkerProps extends SharedProps {
@@ -246,14 +247,17 @@ function createContainer(props: AppProps): k8s.Container {
   };
 }
 
-function createIngressAnnotations(isBackend: boolean, namespace: string, has_custom_certificate: boolean): Record<string, string> {
+function createIngressAnnotations(isBackend: boolean, namespace: string, props: AppProps): Record<string, string> {
   const baseAnnotations = {
-    ...(has_custom_certificate
+    ...(props.has_custom_certificate
       ? { 'cert-manager.io/issuer': 'certigna' }
       : { 'cert-manager.io/cluster-issuer': 'letsencrypt-http01' }),
     'nginx.ingress.kubernetes.io/proxy-body-size': '60m',
     'nginx.ingress.kubernetes.io/proxy-hide-headers': 'Server',
     'nginx.ingress.kubernetes.io/custom-headers': `${namespace}/security-headers`,
+    ...(props.technical_fqdn
+      ? { 'external-dns.alpha.kubernetes.io/hostname': props.technical_fqdn }
+      : {}),
   };
 
   if (isBackend) {
@@ -433,7 +437,7 @@ function createIngress(
   return new k8s.KubeIngress(scope, 'ingress', {
     metadata: {
       name: props.name,
-      annotations: createIngressAnnotations(isBackend, namespace, props.has_custom_certificate),
+      annotations: createIngressAnnotations(isBackend, namespace, props),
     },
     spec: {
       ingressClassName: 'public',
@@ -460,7 +464,7 @@ function createIngress(
       ],
       tls: [
         {
-          hosts: [props.host.replace('https://', '')],
+          hosts: [props.host.replace('https://', ''), ...(props.technical_fqdn ? [props.technical_fqdn] : [])],
           secretName: 'frontend-tls',
         },
       ],

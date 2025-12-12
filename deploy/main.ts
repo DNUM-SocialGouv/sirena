@@ -37,6 +37,7 @@ interface EnvironmentConfig {
   domain: string;
   replicas: number;
   has_custom_issuer: boolean;
+  technical_fqdn?: string;
 }
 
 const ENV_CONFIGS: Record<string, EnvironmentConfig> = {
@@ -69,6 +70,7 @@ const ENV_CONFIGS: Record<string, EnvironmentConfig> = {
     domain: "prod.atlas.fabrique.social.gouv.fr",
     replicas: COMMON_CONFIG.resources.prod.replicas,
     has_custom_issuer: true,
+    technical_fqdn: "toto.com"
   },
 };
 
@@ -116,6 +118,10 @@ function createApps(
     namespace,
     environment,
     has_custom_certificate: envConfig.has_custom_issuer,
+    ...(envConfig.technical_fqdn
+      ? { technical_fqdn: envConfig.technical_fqdn }
+      : {}
+    ),
   });
 
   // Frontend
@@ -129,6 +135,10 @@ function createApps(
     namespace,
     environment,
     has_custom_certificate: envConfig.has_custom_issuer,
+    ...(envConfig.technical_fqdn
+      ? { technical_fqdn: envConfig.technical_fqdn }
+      : {}
+    ),
   });
 
   // PodMonitors for VictoriaMetrics
