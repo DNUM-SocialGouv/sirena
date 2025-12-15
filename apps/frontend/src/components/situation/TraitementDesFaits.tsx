@@ -37,6 +37,8 @@ interface TraitementDesFaitsRowProps {
   onRemove?: (id: string) => void;
   disabled?: boolean;
   selectedEntiteIds?: string[];
+  isEntiteReadOnly?: boolean;
+  onEntiteEditClick?: () => void;
 }
 
 function TraitementDesFaitsRowComponent({
@@ -46,75 +48,74 @@ function TraitementDesFaitsRowComponent({
   onRemove,
   disabled,
   selectedEntiteIds = [],
+  isEntiteReadOnly = false,
+  onEntiteEditClick,
 }: TraitementDesFaitsRowProps) {
-  const isReadOnly = row.existing && !row.canEdit;
   const { data: directionsServices = [] } = useEntiteDescendants(row.entiteId);
 
   const entiteLabel = entites.find((e) => e.id === row.entiteId)?.nomComplet || '';
-  const directionLabels = (row.directionServiceIds || [])
-    .map((id) => directionsServices.find((d: { id: string }) => d.id === id)?.nomComplet)
-    .filter(Boolean)
-    .join(', ');
 
   const availableEntites = entites.filter(
     (entite) => !selectedEntiteIds.includes(entite.id) || entite.id === row.entiteId,
   );
 
+  const showModifyButton = isEntiteReadOnly && onEntiteEditClick;
+
   return (
     <div className={`fr-grid-row fr-grid-row--gutters fr-mb-2w ${styles.row}`}>
       {/* Entite */}
-      <div className="fr-col-12 fr-col-md-6" style={alignSelectStyle}>
-        {isReadOnly ? (
-          <Input
-            label={'Entité administrative'}
-            nativeInputProps={{
-              value: entiteLabel,
-              readOnly: true,
-              disabled: true,
-            }}
-          />
-        ) : (
-          <Select
-            label={'Entité administrative'}
-            nativeSelectProps={{
-              value: row.entiteId || '',
-              onChange: (e) => onChange(row.id, 'entiteId', e.target.value),
-              disabled,
-            }}
-          >
-            <option value="">Sélectionner une option</option>
-            {availableEntites.map((entite) => (
-              <option key={entite.id} value={entite.id}>
-                {entite.nomComplet}
-              </option>
-            ))}
-          </Select>
-        )}
+      <div className={`fr-col-12 fr-col-md-6 ${styles.entiteContainer}`}>
+        <div className={styles.entiteWrapper}>
+          <div className={styles.entiteField}>
+            {isEntiteReadOnly ? (
+              <Input
+                label={'Entité administrative'}
+                nativeInputProps={{
+                  value: entiteLabel,
+                  readOnly: true,
+                  disabled: true,
+                }}
+              />
+            ) : (
+              <Select
+                label={'Entité administrative'}
+                nativeSelectProps={{
+                  value: row.entiteId || '',
+                  onChange: (e) => onChange(row.id, 'entiteId', e.target.value),
+                  disabled,
+                }}
+              >
+                <option value="">Sélectionner une option</option>
+                {availableEntites.map((entite) => (
+                  <option key={entite.id} value={entite.id}>
+                    {entite.nomComplet}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </div>
+          {showModifyButton && (
+            <div className={styles.modifyButtonWrapper}>
+              <Button iconId="fr-icon-edit-line" priority="secondary" onClick={onEntiteEditClick} disabled={disabled}>
+                Modifier
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Direction / service */}
       {row.entiteId && (
         <div className="fr-col-12 fr-col-md-6" style={alignSelectStyle}>
-          {isReadOnly ? (
-            <Input
-              label="Direction ou service"
-              nativeInputProps={{
-                value: directionLabels,
-                readOnly: true,
-                disabled: true,
-              }}
-            />
-          ) : (
-            <SelectWithChildren
-              value={row.directionServiceIds || []}
-              onChange={(newValues) => onChange(row.id, 'directionServiceIds', newValues)}
-              options={directionsServices.map((entite) => ({
-                label: entite.nomComplet,
-                value: entite.id,
-              }))}
-              label="Direction ou Service"
-            />
-          )}
+          <SelectWithChildren
+            value={row.directionServiceIds || []}
+            onChange={(newValues) => onChange(row.id, 'directionServiceIds', newValues)}
+            options={directionsServices.map((entite) => ({
+              label: entite.nomComplet,
+              value: entite.id,
+            }))}
+            label="Direction ou Service"
+          />
         </div>
       )}
 
@@ -330,40 +331,15 @@ function TraitementDesFaitsSection({
 
           return (
             <div key={row.id}>
-              {shouldShowAsReadOnly ? (
-                <div className="fr-grid-row fr-grid-row--gutters fr-mb-2w">
-                  <div className="fr-col-12 fr-col-md-10">
-                    <TraitementDesFaitsRowComponent
-                      row={{
-                        ...row,
-                        existing: true,
-                        canEdit: false,
-                      }}
-                      onChange={handleRowChange}
-                      entites={entites}
-                      selectedEntiteIds={selectedEntiteIds}
-                    />
-                  </div>
-                  <div className={`fr-col-12 fr-col-md-2 ${styles.modifyButtonContainer}`}>
-                    <Button
-                      iconId="fr-icon-edit-line"
-                      priority="secondary"
-                      onClick={() => setIsFirstRowEditable(true)}
-                      disabled={disabled}
-                    >
-                      Modifier
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <TraitementDesFaitsRowComponent
-                  row={row}
-                  onChange={handleRowChange}
-                  entites={entites}
-                  onRemove={canRemove ? handleRemoveRow : undefined}
-                  selectedEntiteIds={selectedEntiteIds}
-                />
-              )}
+              <TraitementDesFaitsRowComponent
+                row={row}
+                onChange={handleRowChange}
+                entites={entites}
+                onRemove={canRemove ? handleRemoveRow : undefined}
+                selectedEntiteIds={selectedEntiteIds}
+                isEntiteReadOnly={shouldShowAsReadOnly}
+                onEntiteEditClick={shouldShowAsReadOnly ? () => setIsFirstRowEditable(true) : undefined}
+              />
             </div>
           );
         })}
