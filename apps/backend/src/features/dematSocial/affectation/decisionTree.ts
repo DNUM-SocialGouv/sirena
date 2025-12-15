@@ -113,6 +113,7 @@ function domicileProfessionnelSubtree(): DecisionNode {
     kind: 'switch',
     id: 'domicile_professionnel_type',
     description: 'Type de service / intervention à domicile',
+    required: ['professionDomicileType'],
     select: (ctx) => ctx.professionDomicileType ?? null,
     cases: Object.fromEntries(
       Object.entries(DOMICILE_PRO_SANTE_MAPPING).map(([key, entites]) => [
@@ -120,8 +121,6 @@ function domicileProfessionnelSubtree(): DecisionNode {
         leaf(`domicile_pro_${key.toLowerCase()}`, `Domicile - professionnel (${key})`, entites),
       ]),
     ),
-    default: leaf('domicile_pro_inconnu', 'Type de service à domicile non géré', []),
-    required: ['professionDomicileType'],
   };
 }
 
@@ -172,9 +171,9 @@ function nonDomicileMaltraitanceSubtree(): DecisionNode {
         add: ['ARS'],
         next: nonDomicileLieuDeSurvenue(),
       },
-      MJPM: {
+      TUTEUR: {
         kind: 'leaf',
-        id: 'maltraitance_mjpm_add_dd',
+        id: 'maltraitance_mjpm_tuteur_add_dd',
         description: 'Maltraitance par un MJPM',
         add: ['DD'],
         next: nonDomicileLieuDeSurvenue(),
@@ -199,6 +198,12 @@ function nonDomicileLieuDeSurvenue(): DecisionNode {
         description: 'Lieu : établissement de santé (hôpital, clinique, laboratoire, pharmacie…)',
         add: ['ARS'],
       },
+      CABINET: {
+        kind: 'leaf',
+        id: 'lieu_cabinet_ars',
+        description: 'Lieu : cabinet médical',
+        add: ['ARS'],
+      },
       ETABLISSEMENT_PERSONNES_AGEES: motifReclamationSubtree(),
       ETABLISSEMENT_HANDICAP: motifReclamationSubtree(),
       ETABLISSEMENT_SOCIAL: motifReclamationSubtree(),
@@ -215,7 +220,6 @@ function nonDomicileLieuDeSurvenue(): DecisionNode {
         add: ['ARS'],
       },
     },
-    default: leaf('lieu_non_domicile_inconnu', 'Lieu de survenue hors domicile non géré', []),
   };
 }
 
@@ -302,10 +306,25 @@ async function evalNode(
     }
     case 'switch': {
       const key = node.select(ctx);
-      const next = (key && node.cases[key]) ?? node.default;
+      const next = key && node.cases[key];
+
       if (!next) {
+        // If default exists, use it (intentional fallback for unhandled cases)
+        if (node.default) {
+          await evalNode(node.default, ctx, found);
+          return;
+        }
+        // If no default and key exists but is not in cases, and field is required, throw error
+        if (key && node.required && node.required.length > 0) {
+          const requiredField = node.required[0]; // Get the field used for the switch
+          throw new Error(
+            `Node ${node.id}: Unsupported value "${key}" for required field "${requiredField}". Supported values: ${Object.keys(node.cases).join(', ')}`,
+          );
+        }
+        // If no default and no key, just return
         return;
       }
+
       await evalNode(next, ctx, found);
       return;
     }

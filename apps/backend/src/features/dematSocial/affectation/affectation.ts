@@ -164,7 +164,9 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
   for (const situation of requete.situations) {
     try {
       const context = buildSituationContextFromDemat(situation);
+      logger.debug({ context }, `Contexte de la requête ${requeteId} - situation ${situation.id}`);
       const types = await runDecisionTree(context); // -> ['ARS', 'CD'] for example
+      logger.debug({ types }, `Types d'entités déterminés pour la requête ${requeteId} - situation ${situation.id}`);
 
       allAssignments.push({ situationId: situation.id, types, context });
     } catch (err) {
@@ -199,21 +201,38 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
       continue;
     }
 
+    logger.debug({ geo }, `Geolocation trouvée pour la requête ${requeteId} - situation ${s.id}`);
+    logger.debug({ types: a.types }, `Recherche d'entités pour la requête ${requeteId} - situation ${s.id}`);
+
     // 3.2) Find the entities in the database for each type
     for (const t of a.types) {
+      const whereClause = {
+        entiteTypeId: t,
+        entiteMereId: null,
+        ...(['CD', 'DD'].includes(t) ? { ctcdCode: geo.ctcdCode, departementCode: geo.departementCode } : {}),
+        ...(['ARS'].includes(t) ? { regionCode: geo.regionCode } : {}),
+      };
+      logger.debug(
+        { type: t, whereClause },
+        `Recherche entité de type ${t} pour la requête ${requeteId} - situation ${s.id}`,
+      );
+
       const entite = await prisma.entite.findFirst({
-        where: {
-          entiteTypeId: t,
-          entiteMereId: null,
-          ...(['CD', 'DD'].includes(t) ? { ctcdCode: geo.ctcdCode, departementCode: geo.departementCode } : {}),
-          ...(['ARS'].includes(t) ? { regionCode: geo.regionCode } : {}),
-        },
+        where: whereClause,
       });
 
       if (!entite) {
-        logger.error({ requeteId, situationId: s.id, type: t, geo }, 'Entite not found, skipping assignment');
+        logger.error(
+          { requeteId, situationId: s.id, type: t, geo, whereClause },
+          'Entite not found, skipping assignment',
+        );
         continue;
       }
+
+      logger.debug(
+        { entiteId: entite.id, entiteNom: entite.nomComplet },
+        `Entité trouvée pour la requête ${requeteId} - situation ${s.id} - type ${t}`,
+      );
 
       entiteIdsToLinkToRequete.add(entite.id);
       situationEntitesToLink.push({ situationId: s.id, entiteId: entite.id });
