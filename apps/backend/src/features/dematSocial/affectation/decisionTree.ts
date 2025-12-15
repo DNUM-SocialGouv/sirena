@@ -144,7 +144,18 @@ function nonDomicileMaltraitanceSubtree(): DecisionNode {
     id: 'maltraitance_mis_en_cause',
     description: 'Mis en cause : famille, proche, professionnel, autre',
     select: (ctx): MisEnCauseType | Extract<MisEnCauseTypePrecisionUnion, 'TUTEUR'> | null => {
-      if (ctx.misEnCauseTypePrecision === 'TUTEUR') return 'TUTEUR';
+      const isProfessionnelOrProfessionDomicile = (misEnCauseType: MisEnCauseType) => {
+        const professionMisEnCause: MisEnCauseType[] = ['PROFESSIONNEL', 'PROFESSION_DOMICILE'];
+        return professionMisEnCause.includes(misEnCauseType);
+      };
+
+      // Special case : MJPM/TUTEUR
+      if (
+        ctx.misEnCauseType &&
+        isProfessionnelOrProfessionDomicile(ctx.misEnCauseType) &&
+        ctx.misEnCauseTypePrecision === 'TUTEUR'
+      )
+        return 'TUTEUR';
 
       return ctx.misEnCauseType ?? null;
     },

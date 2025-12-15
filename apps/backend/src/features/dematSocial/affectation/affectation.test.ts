@@ -24,6 +24,7 @@ vi.mock('@/libs/asyncLocalStorage', () => ({
   getLoggerStore: vi.fn(() => ({
     error: vi.fn(),
     info: vi.fn(),
+    debug: vi.fn(),
   })),
 }));
 

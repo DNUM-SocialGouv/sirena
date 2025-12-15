@@ -111,7 +111,7 @@ describe('runDecisionTree - domicile', () => {
   it('should assign ARS for domicile with professional health professional', async () => {
     const ctx: SituationContext = {
       lieuType: 'DOMICILE',
-      misEnCauseType: 'PROF_SANTE',
+      misEnCauseType: 'PROFESSION_DOMICILE',
       professionDomicileType: 'PROF_SANTE',
     };
 
@@ -205,16 +205,16 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
     expect(result.sort()).toEqual(['ARS']);
   });
 
-  it('should return empty when no motifs and no other rules hit (ex: lieu non géré)', async () => {
+  it('should throw error when lieu type is not supported (ex: lieu non géré)', async () => {
     const ctx: SituationContext = {
       lieuType: 'AUTRE_LIEU_NON_GERE' as LieuType,
       isMaltraitance: false,
       motifsDeclaratifs: [],
     };
 
-    const result = await runDecisionTree(ctx);
-
-    expect(result.sort()).toEqual([]);
+    await expect(runDecisionTree(ctx)).rejects.toThrow(
+      'Node non_domicile_lieu_de_survenue: Unsupported value "AUTRE_LIEU_NON_GERE" for required field "lieuType". Supported values: ETABLISSEMENT_SANTE, CABINET, ETABLISSEMENT_PERSONNES_AGEES, ETABLISSEMENT_HANDICAP, ETABLISSEMENT_SOCIAL, TRAJET, AUTRES_ETABLISSEMENTS',
+    );
   });
 });
 
