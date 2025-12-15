@@ -566,8 +566,8 @@ model ChangeLog {
   action      String // e.g. "ADDED", "EDITED", "DELETED"
   before      Json?
   after       Json?
-  changedById String
-  changedBy   User     @relation(fields: [changedById], references: [id])
+  changedById String?
+  changedBy   User?   @relation(fields: [changedById], references: [id])
   changedAt   DateTime @default(now())
 
   @@index([entity, entityId])

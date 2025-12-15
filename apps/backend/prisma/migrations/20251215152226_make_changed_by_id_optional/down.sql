@@ -1,0 +1,7 @@
+-- This migration cannot be safely reversed without data loss.
+-- Reversing would require deleting ChangeLog records with NULL changedById (system modifications).
+-- To reverse manually, you would need to:
+-- 1. Delete or update records with NULL changedById
+-- 2. Drop the foreign key constraint
+-- 3. Set changedById to NOT NULL
+-- 4. Recreate the foreign key with ON DELETE RESTRICT

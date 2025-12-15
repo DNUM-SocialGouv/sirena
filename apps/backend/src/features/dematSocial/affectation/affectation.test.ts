@@ -283,7 +283,7 @@ describe('assignEntitesToRequeteTask', () => {
         action: 'AFFECTATION_ENTITES',
         before: undefined,
         after: { entiteIds: ['entite-1'] },
-        changedById: 'system',
+        changedById: null,
       },
     });
     expect(createDefaultRequeteEtapes).toHaveBeenCalled();

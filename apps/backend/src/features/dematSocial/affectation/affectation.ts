@@ -22,7 +22,7 @@ const assignDefaultRequeteEtapes = async (
     action: ChangeLogAction,
     before: Prisma.JsonObject | null,
     after: Prisma.JsonObject | null,
-    changedById: string,
+    changedById: string | null,
   ) => {
     await createChangeLog({
       entity: 'RequeteEtape',
@@ -30,7 +30,7 @@ const assignDefaultRequeteEtapes = async (
       action,
       before,
       after,
-      changedById,
+      changedById: changedById,
     });
   };
   try {
@@ -68,7 +68,7 @@ const assignDefaultRequeteEtapes = async (
         clotureReasonId: etape1.clotureReasonId,
         createdAt: etape1.createdAt.toISOString(),
       } as Prisma.JsonObject,
-      'SYSTEM',
+      null,
     );
 
     const p2 = createRequeteEtapeChangelog(
@@ -85,7 +85,7 @@ const assignDefaultRequeteEtapes = async (
         clotureReasonId: etape2.clotureReasonId,
         createdAt: etape2.createdAt.toISOString(),
       } as Prisma.JsonObject,
-      'SYSTEM',
+      null,
     );
 
     await Promise.all([p1, p2]);
@@ -252,7 +252,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
         action: 'AFFECTATION_ENTITES',
         before: undefined,
         after: { entiteIds: Array.from(entiteIdsToLinkToRequete) },
-        changedById: 'system',
+        changedById: null,
       },
     });
   });
