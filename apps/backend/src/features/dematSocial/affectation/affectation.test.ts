@@ -406,7 +406,7 @@ describe('assignEntitesToRequeteTask', () => {
     });
   });
 
-  it('should use ctcdCode for ARS entity type', async () => {
+  it('should use regionCode for ARS entity type', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),
@@ -445,7 +445,7 @@ describe('assignEntitesToRequeteTask', () => {
       where: {
         entiteTypeId: 'ARS',
         entiteMereId: null,
-        ctcdCode: '75C',
+        regionCode: '11',
       },
     });
   });
