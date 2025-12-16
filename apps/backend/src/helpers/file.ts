@@ -32,7 +32,6 @@ export const urlToStream = async (url: string, maxSize = MAX_FILE_SIZE) => {
     );
   }
 
-  // Read the entire stream into a buffer first to avoid consuming the stream
   const buffer = Buffer.from(await res.arrayBuffer());
 
   const sniff = await fileTypeFromBuffer(buffer);
@@ -57,22 +56,23 @@ export const getOriginalFileName = (file: UploadedFile): string => {
   return metadata?.originalName?.toString() || file.fileName;
 };
 
-export const streamFileResponse = async (c: Context, file: UploadedFile) => {
-  const logger = c.get('logger');
+interface StreamFileOptions {
+  filePath: string;
+  fileName: string;
+  contentType: string;
+  fileId: string;
+}
 
-  const contentType = file.mimeType || 'application/octet-stream';
-  const originalName = getOriginalFileName(file);
+const createFileStreamResponse = async (c: Context, options: StreamFileOptions) => {
+  const logger = c.get('logger');
+  const { filePath, fileName, contentType, fileId } = options;
 
   c.header('Content-Type', contentType);
-  c.header('Content-Disposition', `inline; filename="${originalName}"`);
-
-  if (file.size === 0) {
-    return c.body(null, 200);
-  }
+  c.header('Content-Disposition', `inline; filename="${fileName}"`);
 
   return honoStream(c, async (s) => {
     try {
-      const nodeStream = await getFileStream(file.filePath);
+      const { stream: nodeStream } = await getFileStream(filePath);
       const webStream = Readable.toWeb(nodeStream);
 
       s.onAbort(() => {
@@ -83,8 +83,36 @@ export const streamFileResponse = async (c: Context, file: UploadedFile) => {
 
       await s.pipe(webStream);
     } catch (error) {
-      logger.error({ error, fileId: file.id }, 'Error streaming file');
+      logger.error({ error, fileId, filePath }, 'Error streaming file');
       throw error;
     }
+  });
+};
+
+export const streamFileResponse = async (c: Context, file: UploadedFile) => {
+  if (file.size === 0) {
+    c.header('Content-Type', file.mimeType || 'application/octet-stream');
+    c.header('Content-Disposition', `inline; filename="${getOriginalFileName(file)}"`);
+    return c.body(null, 200);
+  }
+
+  return createFileStreamResponse(c, {
+    filePath: file.filePath,
+    fileName: getOriginalFileName(file),
+    contentType: file.mimeType || 'application/octet-stream',
+    fileId: file.id,
+  });
+};
+
+export const streamSafeFileResponse = async (c: Context, file: UploadedFile) => {
+  if (!file.safeFilePath) {
+    throw new Error('Safe file path not available');
+  }
+
+  return createFileStreamResponse(c, {
+    filePath: file.safeFilePath,
+    fileName: `safe_${getOriginalFileName(file)}`,
+    contentType: file.mimeType || 'application/octet-stream',
+    fileId: file.id,
   });
 };

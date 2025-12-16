@@ -6,6 +6,11 @@ export interface FileWithMetadata {
   size: number;
   metadata?: unknown;
   canDelete?: boolean;
+  status?: string;
+  scanStatus?: string;
+  sanitizeStatus?: string;
+  safeFilePath?: string | null;
+  processingError?: string | null;
 }
 
 export interface FileInfo {
@@ -13,6 +18,11 @@ export interface FileInfo {
   fileName: string;
   size: number;
   canDelete?: boolean;
+  status?: string;
+  scanStatus?: string;
+  sanitizeStatus?: string;
+  safeFilePath?: string | null;
+  processingError?: string | null;
 }
 
 export function getOriginalFileName(file: FileWithMetadata): string {
@@ -26,6 +36,11 @@ export function formatFileFromServer(file: FileWithMetadata): FileInfo {
     fileName: getOriginalFileName(file),
     size: file.size,
     canDelete: file.canDelete,
+    status: file.status,
+    scanStatus: file.scanStatus,
+    sanitizeStatus: file.sanitizeStatus,
+    safeFilePath: file.safeFilePath,
+    processingError: file.processingError,
   };
 }
 

@@ -36,40 +36,15 @@ const createUploadMockContext = (overrides: UploadMockContextOverrides = {}) => 
   };
 };
 
-const { mockFileTypeFromBuffer, mockThrowHTTPException400BadRequest, mockWriteFile } = vi.hoisted(() => {
+const { mockFileTypeFromBuffer, mockThrowHTTPException400BadRequest } = vi.hoisted(() => {
   const mockFileTypeFromBuffer = vi.fn();
   const mockThrowHTTPException400BadRequest = vi.fn();
-  const mockWriteFile = vi.fn();
 
-  return { mockFileTypeFromBuffer, mockThrowHTTPException400BadRequest, mockWriteFile };
+  return { mockFileTypeFromBuffer, mockThrowHTTPException400BadRequest };
 });
-
-vi.mock('tmp-promise', () => ({
-  file: vi.fn().mockResolvedValue({
-    path: '/tmp/test-document.pdf',
-  }),
-}));
-
-vi.mock('node:fs', () => ({
-  default: {
-    promises: {
-      writeFile: mockWriteFile,
-    },
-  },
-}));
 
 vi.mock('@sirena/backend-utils/helpers', () => ({
   throwHTTPException400BadRequest: mockThrowHTTPException400BadRequest,
-}));
-
-vi.mock('node:os', () => ({
-  default: {
-    tmpdir: vi.fn().mockReturnValue('/tmp'),
-  },
-}));
-
-vi.mock('node:crypto', () => ({
-  randomUUID: vi.fn().mockReturnValue('test-uuid'),
 }));
 
 vi.mock('file-type', () => ({
@@ -82,7 +57,6 @@ describe('upload.middleware.ts', () => {
     vi.setSystemTime(FIXED_DATE);
     vi.clearAllMocks();
 
-    mockWriteFile.mockResolvedValue(undefined);
     mockFileTypeFromBuffer.mockResolvedValue({
       mime: 'application/pdf',
       ext: 'pdf',
@@ -98,12 +72,17 @@ describe('upload.middleware.ts', () => {
       expect(extractUploadedFileMiddleware).toBeDefined();
     });
 
-    it('should successfully extract and process a valid PDF file', async () => {
+    it('should successfully extract and process a valid file', async () => {
+      mockFileTypeFromBuffer.mockResolvedValue({
+        mime: 'image/png',
+        ext: 'png',
+      });
+
       const mockContext = createUploadMockContext({
         req: {
           parseBody: vi.fn().mockResolvedValue({
-            file: new File([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x25, 0x50, 0x44, 0x46])], 'test-document.pdf', {
-              type: 'application/pdf',
+            file: new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'test-image.png', {
+              type: 'image/png',
             }),
           }),
         },
@@ -115,12 +94,11 @@ describe('upload.middleware.ts', () => {
 
       await extractUploadedFileMiddleware(mockContext as unknown as Context<AppBindings>, next);
 
-      expect(mockWriteFile).toHaveBeenCalled();
       expect(mockContext.set).toHaveBeenCalledWith('uploadedFile', {
-        tempFilePath: `/tmp/test-document.pdf`,
-        fileName: 'test-document.pdf',
-        contentType: 'application/pdf',
-        size: 8,
+        buffer: expect.any(Buffer),
+        fileName: 'test-image.png',
+        contentType: 'image/png',
+        size: 4,
       });
       expect(next).toHaveBeenCalled();
     });

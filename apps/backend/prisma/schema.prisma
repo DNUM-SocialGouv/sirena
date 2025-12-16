@@ -530,8 +530,15 @@ model UploadedFile {
   filePath  String  @unique
   mimeType  String
   size      Int
-  status    String  @default("PENDING") // e.g. "PENDING", "COMPLETED", "FAILED"
+  status    String  @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
   canDelete Boolean @default(true)
+
+  // File processing status
+  scanStatus      String  @default("PENDING") // PENDING, SCANNING, CLEAN, INFECTED, ERROR, SKIPPED
+  sanitizeStatus  String  @default("PENDING") // PENDING, SANITIZING, COMPLETED, ERROR, SKIPPED
+  safeFilePath    String? // Path to sanitized version of the file (if PDF)
+  scanResult      Json? // Detailed scan results (viruses found, etc.)
+  processingError String? // Error message if processing failed
 
   metadata Json?
 

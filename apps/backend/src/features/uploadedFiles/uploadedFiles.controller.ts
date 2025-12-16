@@ -1,8 +1,8 @@
-import fs from 'node:fs';
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
+import { addFileProcessingJob } from '@/jobs/queues/fileProcessing.queue';
 import { deleteFileFromMinio, uploadFileToMinio } from '@/libs/minio';
 import authMiddleware from '@/middlewares/auth.middleware';
 import uploadedFileChangelogMiddleware from '@/middlewares/changelog/changelog.uploadedFile.middleware';
@@ -11,7 +11,7 @@ import roleMiddleware from '@/middlewares/role.middleware';
 import extractUploadedFileMiddleware from '@/middlewares/upload.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { ChangeLogAction } from '../changelog/changelog.type';
-import { createUploadedFileRoute, deleteUploadedFileRoute } from './uploadedFiles.route';
+import { createUploadedFileRoute, deleteUploadedFileRoute, getFileProcessingStatusRoute } from './uploadedFiles.route';
 import { UploadedFileParamsIdSchema } from './uploadedFiles.schema';
 import { createUploadedFile, deleteUploadedFile, getUploadedFileById } from './uploadedFiles.service';
 
@@ -36,59 +36,68 @@ const app = factoryWithLogs
         });
       }
 
-      try {
-        const userId = c.get('userId');
-        const topEntiteId = c.get('topEntiteId');
-        if (!topEntiteId) {
-          throwHTTPException400BadRequest('You are not allowed to create uploaded files without topEntiteId.', {
-            res: c.res,
-          });
-        }
-
-        logger.info({ fileName: uploadedFile.fileName }, 'Uploaded file creation requested');
-
-        const { objectPath, rollback: rollbackMinio } = await uploadFileToMinio(
-          uploadedFile.tempFilePath,
-          uploadedFile.fileName,
-          uploadedFile.contentType,
-        );
-
-        const fileName = objectPath.split('/')?.[1] || '';
-        const id = fileName.split('.')?.[0] || '';
-
-        if (!fileName || !id) {
-          throw new Error('File name is not valid');
-        }
-
-        const uploadedFileRecord = await createUploadedFile({
-          id,
-          fileName,
-          filePath: objectPath,
-          mimeType: uploadedFile.contentType,
-          size: uploadedFile.size,
-          metadata: { originalName: uploadedFile.fileName },
-          entiteId: topEntiteId,
-          uploadedById: userId,
-          requeteEtapeNoteId: null,
-          requeteId: null,
-          faitSituationId: null,
-          demarchesEngageesId: null,
-          status: 'PENDING',
-          canDelete: true,
-        }).catch(async (err) => {
-          await rollbackMinio();
-          throw err;
+      const userId = c.get('userId');
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to create uploaded files without topEntiteId.', {
+          res: c.res,
         });
-
-        logger.info({ uploadedFileId: uploadedFileRecord.id }, 'Uploaded file created successfully');
-
-        // Set changelogId for changelog middleware
-        c.set('changelogId', uploadedFileRecord.id);
-
-        return c.json({ data: uploadedFileRecord }, 201);
-      } finally {
-        await fs.promises.unlink(uploadedFile.tempFilePath);
       }
+
+      logger.info({ fileName: uploadedFile.fileName }, 'Uploaded file creation requested');
+
+      const {
+        objectPath,
+        rollback: rollbackMinio,
+        encryptionMetadata,
+      } = await uploadFileToMinio(uploadedFile.buffer, uploadedFile.fileName, uploadedFile.contentType);
+
+      const pathParts = objectPath.split('/');
+      const fileName = pathParts[pathParts.length - 1] || '';
+      const id = fileName.split('.')[0] || '';
+
+      if (!fileName || !id) {
+        throw new Error('File name is not valid');
+      }
+
+      const uploadedFileRecord = await createUploadedFile({
+        id,
+        fileName,
+        filePath: objectPath,
+        mimeType: uploadedFile.contentType,
+        size: uploadedFile.size,
+        metadata: {
+          originalName: uploadedFile.fileName,
+          ...(encryptionMetadata && { encryption: encryptionMetadata }),
+        },
+        entiteId: topEntiteId,
+        uploadedById: userId,
+        requeteEtapeNoteId: null,
+        requeteId: null,
+        faitSituationId: null,
+        demarchesEngageesId: null,
+        status: 'PENDING',
+        canDelete: true,
+      }).catch(async (err) => {
+        await rollbackMinio();
+        throw err;
+      });
+
+      logger.info({ uploadedFileId: uploadedFileRecord.id }, 'Uploaded file created successfully');
+
+      await addFileProcessingJob({
+        fileId: uploadedFileRecord.id,
+        fileName: uploadedFileRecord.fileName,
+        filePath: uploadedFileRecord.filePath,
+        mimeType: uploadedFileRecord.mimeType,
+      });
+
+      logger.info({ uploadedFileId: uploadedFileRecord.id }, 'File processing job queued');
+
+      // Set changelogId for changelog middleware
+      c.set('changelogId', uploadedFileRecord.id);
+
+      return c.json({ data: uploadedFileRecord }, 201);
     },
   )
   .delete(
@@ -134,6 +143,34 @@ const app = factoryWithLogs
 
       return c.body(null, 204);
     },
-  );
+  )
+  .get('/:id/status', getFileProcessingStatusRoute, zValidator('param', UploadedFileParamsIdSchema), async (c) => {
+    const id = c.req.valid('param').id;
+    const topEntiteId = c.get('topEntiteId');
+
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to access uploaded files without topEntiteId.', {
+        res: c.res,
+      });
+    }
+
+    const uploadedFile = await getUploadedFileById(id, [topEntiteId]);
+    if (!uploadedFile) {
+      throwHTTPException404NotFound('Uploaded file not found', {
+        res: c.res,
+      });
+    }
+
+    return c.json({
+      data: {
+        id: uploadedFile.id,
+        status: uploadedFile.status,
+        scanStatus: uploadedFile.scanStatus,
+        sanitizeStatus: uploadedFile.sanitizeStatus,
+        processingError: uploadedFile.processingError,
+        safeFilePath: uploadedFile.safeFilePath,
+      },
+    });
+  });
 
 export default app;

@@ -2,6 +2,7 @@ import { getPrometheusContentType, getPrometheusMetrics } from './features/monit
 import { createMonitoringServer } from './features/monitoring/server';
 import { createDefaultLogger } from './helpers/pino';
 import { cronWorker } from './jobs/worker/cron.worker';
+import { createFileProcessingWorker } from './jobs/workers/fileProcessing.worker';
 import './libs/instrument';
 
 const logger = createDefaultLogger();
@@ -15,6 +16,9 @@ cronWorker.on('completed', (job) => {
 cronWorker.on('failed', (job, err) => {
   logger.error({ err }, `[worker] Job "${job?.name}" failed:`);
 });
+
+const fileProcessingWorker = createFileProcessingWorker();
+logger.info(`[worker] Starting file processing worker for queue "${fileProcessingWorker.name}"`);
 
 const monitoringServer = createMonitoringServer({
   getMetrics: getPrometheusMetrics,
@@ -36,6 +40,7 @@ const shutdown = async () => {
   });
 
   await cronWorker.close();
+  await fileProcessingWorker.close();
   process.exit(0);
 };
 

@@ -70,12 +70,13 @@ export const deleteUploadedFile = async (id: UploadedFile['id']): Promise<Upload
 export const createUploadedFile = async (
   uploadedFileData: CreateUploadedFileDto,
 ): Promise<UploadedFileCreateResult> => {
-  const { metadata, ...rest } = uploadedFileData;
+  const { metadata, scanResult, ...rest } = uploadedFileData;
 
   return prisma.uploadedFile.create({
     data: {
       ...rest,
       metadata: metadata as Prisma.InputJsonValue,
+      scanResult: scanResult as Prisma.InputJsonValue | undefined,
     },
   });
 };
@@ -147,4 +148,27 @@ export const isFileBelongsToRequete = async (fileId: UploadedFile['id'], requete
   });
 
   return exists !== null;
+};
+
+export type FileProcessingStatus = {
+  scanStatus?: string;
+  sanitizeStatus?: string;
+  safeFilePath?: string | null;
+  scanResult?: Prisma.InputJsonValue;
+  processingError?: string | null;
+  status?: string;
+};
+
+export const updateFileProcessingStatus = async (
+  id: UploadedFile['id'],
+  updates: FileProcessingStatus,
+): Promise<UploadedFile> => {
+  return prisma.uploadedFile.update({
+    where: { id },
+    data: updates,
+  });
+};
+
+export const getUploadedFileByIdInternal = async (id: UploadedFile['id']): Promise<UploadedFileByIdResult> => {
+  return prisma.uploadedFile.findUnique({ where: { id } });
 };
