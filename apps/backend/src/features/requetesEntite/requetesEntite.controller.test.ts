@@ -622,8 +622,12 @@ describe('RequetesEntite endpoints: /', () => {
       },
     };
 
+    const formatDate = (date: Date) => {
+      return date.toISOString().split('T')[0];
+    };
+
     it('updates reception date and type and returns updated requete', async () => {
-      const newDate = new Date('2025-05-01T12:00:00.000Z');
+      const newDate = new Date('2025-05-01T00:00:00.000Z');
       const updatedRequete = {
         ...baseRequeteEntite.requete,
         receptionDate: newDate,
@@ -637,7 +641,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id']['date-type'].$patch({
         param: { id: 'requeteId' },
         json: {
-          receptionDate: newDate.toISOString(),
+          receptionDate: formatDate(newDate),
           receptionTypeId: RECEPTION_TYPE.COURRIER,
           controls: { updatedAt: baseRequeteEntite.requete.updatedAt.toISOString() },
         },
@@ -665,7 +669,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id']['date-type'].$patch({
         param: { id: 'requeteId' },
         json: {
-          receptionDate: new Date('2025-05-02T00:00:00.000Z').toISOString(),
+          receptionDate: formatDate(new Date('2025-05-02T00:00:00.000Z')),
           receptionTypeId: RECEPTION_TYPE.COURRIER,
         },
       });
