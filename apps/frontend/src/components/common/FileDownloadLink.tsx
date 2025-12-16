@@ -403,7 +403,7 @@ export const FileDownloadLink = ({
 
       <downloadModal.Component
         title="Téléchargement de fichier"
-        iconId="fr-icon-download-line"
+        iconId="ri-download-line"
         buttons={[
           {
             doClosesModal: true,

@@ -11,6 +11,8 @@
       "./deploy/**/*",
       "!deploy/imports/**/*",
       "./apps/backend/src/**/*",
+      "!apps/backend/src/features/dematSocial/affectation/geo/inseetocodepostal.json",
+      "!apps/backend/src/features/dematSocial/affectation/geo/liste_entites.json",
       "./apps/backend/prisma/**/*.ts",
       "./apps/backend/scripts/**/*",
       "./apps/frontend/src/**/*",
