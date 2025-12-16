@@ -80,9 +80,27 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  clamav:
+    image: clamav/clamav:1.5.1_base
+    platform: linux/amd64 # There is no arm64 image available
+    container_name: sirena-clamav-dev
+    restart: unless-stopped
+    volumes:
+      - clamav-db:/var/lib/clamav
+    ports:
+      - "127.0.0.1:3310:3310"
+    healthcheck:
+      test: ["CMD", "clamdscan", "--ping", "2"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
 volumes:
   pgdata:
   miniodata:
+  clamav-db:
 
 networks:
   sirena-postgres-network:
