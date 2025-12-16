@@ -46,6 +46,9 @@ const processEnv = {
   S3_BUCKET_REGION: process.env.S3_BUCKET_REGION,
   S3_BUCKET_ROOT_DIR: process.env.S3_BUCKET_ROOT_DIR,
   S3_BUCKET_PORT: process.env.S3_BUCKET_PORT,
+  S3_ENCRYPTION_KEY: process.env.S3_ENCRYPTION_KEY,
+  CLAMAV_HOST: process.env.CLAMAV_HOST,
+  CLAMAV_PORT: process.env.CLAMAV_PORT,
   // Sarbacane
   SARBACANE_API_URL: process.env.SARBACANE_API_URL,
   SARBACANE_API_KEY: process.env.SARBACANE_API_KEY,

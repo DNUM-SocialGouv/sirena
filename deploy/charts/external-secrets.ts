@@ -38,6 +38,7 @@ export class ExternalSecrets extends Chart {
               SENTRY_DSN_BACKEND: '{{ .SENTRY_DSN_BACKEND }}',
               SARBACANE_API_KEY: '{{ .SARBACANE_API_KEY }}',
               ANNUAIRE_SANTE_API_KEY: '{{ .ANNUAIRE_SANTE_API_KEY }}',
+              S3_ENCRYPTION_KEY: '{{ .S3_ENCRYPTION_KEY }}',
             },
           },
         },

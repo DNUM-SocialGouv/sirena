@@ -176,6 +176,14 @@ export const AppEnvSchema = z.object({
       required_error: "La variable d'environnement S3_BUCKET_PORT est requise",
     })
     .default(''),
+  S3_ENCRYPTION_KEY: z
+    .string({
+      required_error: "La variable d'environnement S3_ENCRYPTION_KEY est requise",
+    })
+    .length(64, 'S3_ENCRYPTION_KEY must be exactly 64 characters (32 bytes hex)')
+    .regex(/^[0-9a-fA-F]+$/, 'S3_ENCRYPTION_KEY must be a valid hexadecimal string'),
+  CLAMAV_HOST: z.string().optional().default('').describe('Hostname of the ClamAV daemon (e.g., clamav or localhost)'),
+  CLAMAV_PORT: z.string().optional().default('3310').describe('Port of the ClamAV daemon (default: 3310)'),
   SARBACANE_API_URL: z
     .string({
       required_error: "La variable d'environnement SARBACANE_API_URL est requise",
