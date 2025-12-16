@@ -338,6 +338,8 @@ export const getRequeteEntiteById = async (requeteId: string, entiteId: string |
 };
 
 interface CreateRequeteInput {
+  receptionTypeId?: string;
+  receptionDate?: string;
   declarant?: DeclarantInput;
   participant?: PersonneConcerneeInput;
 }
@@ -372,8 +374,8 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
       const requete = await prisma.requete.create({
         data: {
           id: requeteId,
-          receptionDate: new Date(),
-          receptionTypeId: 'EMAIL',
+          receptionDate: data?.receptionDate ?? null,
+          receptionTypeId: data?.receptionTypeId ?? null,
           ...(data?.declarant && {
             declarant: {
               create: mapDeclarantToPrismaCreate(data.declarant),

@@ -105,7 +105,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
     <div>
       <div className="fr-container--fluid">
         <div className="fr-grid-row fr-grid-row--gutters">
-          <div className="fr-col-8">
+          <div className="fr-col-md-12 fr-col-lg-8 ">
             <div className="fr-mb-4w">
               {requestId && !canEdit && (
                 <Alert
@@ -148,7 +148,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
               {content}
             </div>
           </div>
-          <div className="fr-col-4">
+          <div className="fr-col-md-12 fr-col-lg-4 ">
             <OtherEntitiesAffected />
           </div>
         </div>

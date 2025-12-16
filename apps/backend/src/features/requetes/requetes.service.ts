@@ -374,3 +374,36 @@ export const createRequeteFromDematSocial = async ({
     });
   });
 };
+
+export const updateDateAndTypeRequete = async (
+  requeteId: string,
+  data: { receptionDate?: Date; receptionTypeId?: string },
+  controls?: { updatedAt: string },
+) => {
+  const requete = await prisma.requete.findUnique({
+    where: { id: requeteId },
+  });
+
+  if (!requete) {
+    throw new Error('Requete not found');
+  }
+
+  if (controls?.updatedAt) {
+    const clientUpdatedAt = new Date(controls.updatedAt);
+    const serverUpdatedAt = requete.updatedAt;
+
+    if (serverUpdatedAt.getTime() !== clientUpdatedAt.getTime()) {
+      const error = new Error('CONFLICT: The participant identity has been modified by another user.');
+      (error as Error & { conflictData?: unknown }).conflictData = {
+        serverData: requete,
+        serverUpdatedAt: serverUpdatedAt.toISOString(),
+      };
+      throw error;
+    }
+  }
+
+  return prisma.requete.update({
+    where: { id: requeteId },
+    data,
+  });
+};

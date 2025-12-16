@@ -4,7 +4,7 @@ import {
   throwHTTPException403Forbidden,
   throwHTTPException404NotFound,
 } from '@sirena/backend-utils/helpers';
-import { REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
+import { RECEPTION_TYPE, REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import {
@@ -21,6 +21,7 @@ import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
+import { updateDateAndTypeRequete } from '../requetes/requetes.service';
 import {
   closeRequeteRoute,
   createRequeteRoute,
@@ -37,6 +38,7 @@ import {
   UpdatePrioriteBodySchema,
   UpdateRequeteFilesBodySchema,
   UpdateSituationBodySchema,
+  UpdateTypeAndDateRequeteBodySchema,
 } from './requetesEntite.schema';
 import {
   closeRequeteForEntite,
@@ -380,6 +382,68 @@ const app = factoryWithLogs
       }
     },
   )
+
+  .patch('/:id/date-type', zValidator('json', UpdateTypeAndDateRequeteBodySchema), async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
+    const topEntiteId = c.get('topEntiteId');
+
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
+    const { receptionDate, receptionTypeId, controls } = c.req.valid('json');
+
+    const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
+
+    if (!requeteEntite) {
+      throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    if (requeteEntite.requete.receptionTypeId === RECEPTION_TYPE.FORMULAIRE) {
+      throwHTTPException400BadRequest('You are not allowed to update requetes from formulaire.', {
+        res: c.res,
+      });
+    }
+
+    const payload = {
+      ...(receptionDate ? { receptionDate: new Date(receptionDate) } : {}),
+      ...(receptionTypeId ? { receptionTypeId } : {}),
+    };
+
+    if (Object.keys(payload).length === 0) {
+      throwHTTPException400BadRequest('No valid fields provided for update.', {
+        res: c.res,
+      });
+    }
+
+    try {
+      const updatedRequete = await updateDateAndTypeRequete(id, payload, controls);
+
+      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+        await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+      }
+
+      logger.info({ requeteId: id, userId }, 'Reception date and type updated successfully');
+
+      return c.json({ data: updatedRequete });
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message.startsWith('CONFLICT')) {
+        const conflictResponse = {
+          message: 'The requete has been modified by another user.',
+          conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
+        };
+
+        return c.json(conflictResponse, 409);
+      }
+
+      throw error;
+    }
+  })
 
   .patch('/:id/files', zValidator('json', UpdateRequeteFilesBodySchema), async (c) => {
     const logger = c.get('logger');

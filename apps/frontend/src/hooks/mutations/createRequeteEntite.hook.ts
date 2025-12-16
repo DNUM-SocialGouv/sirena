@@ -4,6 +4,8 @@ import type { DeclarantData } from '@/lib/declarant';
 
 interface CreateRequeteInput {
   declarant?: DeclarantData;
+  receptionTypeId?: string;
+  receptionDate?: string;
 }
 
 export function useCreateRequeteEntite() {

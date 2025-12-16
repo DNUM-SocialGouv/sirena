@@ -25,6 +25,10 @@ body {
   justify-content: flex-end;
 }
 
+.align-right {
+  text-align: right;
+}
+
 .fr-btn-link {
   --text-spacing: 0;
   --title-spacing: 0;
