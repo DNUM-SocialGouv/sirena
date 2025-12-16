@@ -19,7 +19,12 @@ interface SituationFormProps {
   situationId?: string;
   initialData?: SituationData;
   receptionType?: ReceptionType;
-  onSave: (data: SituationData, shouldCreateRequest: boolean, faitFiles: File[]) => Promise<void>;
+  onSave: (
+    data: SituationData,
+    shouldCreateRequest: boolean,
+    faitFiles: File[],
+    initialFileIds?: string[],
+  ) => Promise<void>;
 }
 
 export function SituationForm({
@@ -74,7 +79,8 @@ export function SituationForm({
       }
 
       const shouldCreateRequest = mode === 'create' && !requestId;
-      await onSave(formData, shouldCreateRequest, faitFiles);
+      const initialFileIds = initialData?.fait?.fileIds;
+      await onSave(formData, shouldCreateRequest, faitFiles, initialFileIds);
     } finally {
       setIsSaving(false);
     }
@@ -119,6 +125,7 @@ export function SituationForm({
           requestId={requestId}
           faitFiles={faitFiles}
           setFaitFiles={setFaitFiles}
+          setFormData={setFormData}
           isSaving={isSaving}
         />
 

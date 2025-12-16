@@ -19,12 +19,12 @@ const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
   .use(userStatusMiddleware)
-  .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]))
   .use(entitesMiddleware)
 
   .post(
     '/',
     createUploadedFileRoute,
+    roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]),
     extractUploadedFileMiddleware,
     uploadedFileChangelogMiddleware({ action: ChangeLogAction.CREATED }),
     async (c) => {
@@ -94,6 +94,7 @@ const app = factoryWithLogs
   .delete(
     '/:id',
     deleteUploadedFileRoute,
+    roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]),
     zValidator('param', UploadedFileParamsIdSchema),
     uploadedFileChangelogMiddleware({ action: ChangeLogAction.DELETED }),
     async (c) => {

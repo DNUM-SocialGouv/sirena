@@ -1,0 +1,23 @@
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.fileName {
+  flex: 1;
+  margin-right: 8px;
+}
+
+.fileNameLink {
+  display: inline-block;
+}
+
+.deleteButton {
+  flex-shrink: 0;
+}
+
+.errorText {
+  color: var(--text-default-error);
+}

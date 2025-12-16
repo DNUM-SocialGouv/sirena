@@ -1,6 +1,6 @@
 import type { SituationData } from '@sirena/common/schemas';
 import { useMutation } from '@tanstack/react-query';
-import { uploadFile } from '@/lib/api/fetchUploadedFiles';
+import { deleteUploadedFile, uploadFile } from '@/lib/api/fetchUploadedFiles';
 import { client } from '@/lib/api/hc';
 import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
 import { toastManager } from '@/lib/toastManager';
@@ -14,7 +14,21 @@ interface UseSituationSaveProps {
 
 export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess }: UseSituationSaveProps) => {
   const saveMutation = useMutation({
-    mutationFn: async ({ data, faitFiles }: { data: SituationData; faitFiles: File[] }) => {
+    mutationFn: async ({
+      data,
+      faitFiles,
+      initialFileIds,
+    }: {
+      data: SituationData;
+      faitFiles: File[];
+      initialFileIds?: string[];
+    }) => {
+      // Get existing files before update (for deletion)
+      let previousFileIds: string[] = [];
+      if (situationId && initialFileIds) {
+        previousFileIds = initialFileIds;
+      }
+
       const newFaitFileIds: string[] = [];
       if (faitFiles.length > 0) {
         const uploadedFaitFiles = await Promise.all(faitFiles.map((file) => uploadFile(file)));
@@ -23,6 +37,14 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
 
       const existingFileIds = data.fait?.fileIds || [];
       const allFileIds = [...existingFileIds, ...newFaitFileIds];
+
+      // Delete files that were removed
+      if (situationId && previousFileIds.length > 0) {
+        const filesToDelete = previousFileIds.filter((id) => !allFileIds.includes(id));
+        if (filesToDelete.length > 0) {
+          await Promise.allSettled(filesToDelete.map((fileId) => deleteUploadedFile(fileId)));
+        }
+      }
 
       const enrichedData: SituationData = {
         ...data,
@@ -66,8 +88,13 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
     },
   });
 
-  const handleSave = async (data: SituationData, _shouldCreateRequest: boolean, faitFiles: File[]) => {
-    await saveMutation.mutateAsync({ data, faitFiles });
+  const handleSave = async (
+    data: SituationData,
+    _shouldCreateRequest: boolean,
+    faitFiles: File[],
+    initialFileIds?: string[],
+  ) => {
+    await saveMutation.mutateAsync({ data, faitFiles, initialFileIds });
   };
 
   return {
