@@ -24,6 +24,7 @@ vi.mock('@/libs/asyncLocalStorage', () => ({
   getLoggerStore: vi.fn(() => ({
     error: vi.fn(),
     info: vi.fn(),
+    debug: vi.fn(),
   })),
 }));
 
@@ -283,7 +284,7 @@ describe('assignEntitesToRequeteTask', () => {
         action: 'AFFECTATION_ENTITES',
         before: undefined,
         after: { entiteIds: ['entite-1'] },
-        changedById: 'system',
+        changedById: null,
       },
     });
     expect(createDefaultRequeteEtapes).toHaveBeenCalled();
@@ -406,7 +407,7 @@ describe('assignEntitesToRequeteTask', () => {
     });
   });
 
-  it('should use ctcdCode for ARS entity type', async () => {
+  it('should use regionCode for ARS entity type', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),
@@ -445,7 +446,7 @@ describe('assignEntitesToRequeteTask', () => {
       where: {
         entiteTypeId: 'ARS',
         entiteMereId: null,
-        ctcdCode: '75C',
+        regionCode: '11',
       },
     });
   });
