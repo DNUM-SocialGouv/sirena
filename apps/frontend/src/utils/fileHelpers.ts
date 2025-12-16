@@ -5,12 +5,14 @@ export interface FileWithMetadata {
   fileName: string;
   size: number;
   metadata?: unknown;
+  canDelete?: boolean;
 }
 
 export interface FileInfo {
   id: string;
   fileName: string;
   size: number;
+  canDelete?: boolean;
 }
 
 export function getOriginalFileName(file: FileWithMetadata): string {
@@ -23,6 +25,7 @@ export function formatFileFromServer(file: FileWithMetadata): FileInfo {
     id: file.id,
     fileName: getOriginalFileName(file),
     size: file.size,
+    canDelete: file.canDelete,
   };
 }
 
