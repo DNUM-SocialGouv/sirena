@@ -4,6 +4,7 @@ import { FileDownloadLink } from './FileDownloadLink';
 interface FileListProps {
   files: FileInfo[];
   getFileUrl: (fileId: string) => string;
+  getSafeFileUrl?: (fileId: string, safeFilePath: string) => string;
   title?: string;
   emptyMessage?: string;
   className?: string;
@@ -12,6 +13,7 @@ interface FileListProps {
 export const FileList = ({
   files,
   getFileUrl,
+  getSafeFileUrl,
   title = 'Fichiers déjà ajoutés :',
   emptyMessage,
   className = 'fr-col-12 fr-mb-3w',
@@ -26,7 +28,16 @@ export const FileList = ({
       <ul>
         {files.map((file) => (
           <li key={file.id}>
-            <FileDownloadLink href={getFileUrl(file.id)} fileName={file.fileName} fileSize={file.size} />
+            <FileDownloadLink
+              href={getFileUrl(file.id)}
+              safeHref={file.safeFilePath && getSafeFileUrl ? getSafeFileUrl(file.id, file.safeFilePath) : undefined}
+              fileName={file.fileName}
+              fileId={file.id}
+              fileSize={file.size}
+              status={file.status}
+              scanStatus={file.scanStatus}
+              sanitizeStatus={file.sanitizeStatus}
+            />
           </li>
         ))}
       </ul>

@@ -34,6 +34,8 @@ process.env = {
   REDIS_TLS: 'false',
   REDIS_USERNAME: 'redis-username',
   REDIS_PASSWORD: 'redis-password',
+
+  S3_ENCRYPTION_KEY: 'a'.repeat(64),
 };
 
 describe('env.ts', () => {
@@ -68,6 +70,7 @@ describe('env.ts', () => {
       REDIS_HOST: 'localhost',
       REDIS_PORT: '6379',
       REDIS_PASSWORD: 'redis-password',
+      S3_ENCRYPTION_KEY: 'a'.repeat(64),
     };
 
     expect(() => AppEnvSchema.parse(invalidEnv)).toThrowError(
@@ -96,6 +99,7 @@ describe('env.ts', () => {
       LOG_FORMAT: 'json',
       REDIS_HOST: 'localhost',
       REDIS_PORT: '6379',
+      S3_ENCRYPTION_KEY: 'a'.repeat(64),
     };
 
     const result = AppEnvSchema.parse(envWithoutRedisPassword);

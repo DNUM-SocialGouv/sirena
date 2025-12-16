@@ -14,7 +14,7 @@ import {
   setRequeteFile,
 } from '@/features/uploadedFiles/uploadedFiles.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import { streamFileResponse } from '@/helpers/file';
+import { streamFileResponse, streamSafeFileResponse } from '@/helpers/file';
 import authMiddleware from '@/middlewares/auth.middleware';
 import requeteChangelogMiddleware from '@/middlewares/changelog/changelog.requete.middleware';
 import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtape.middleware';
@@ -163,15 +163,44 @@ const app = factoryWithLogs
 
     return streamFileResponse(c, file);
   })
-  .get('/:id/situation/:situationId/file/:fileId', async (c) => {
+  .get('/:id/file/:fileId/safe', async (c) => {
     const logger = c.get('logger');
-    const { id, situationId, fileId } = c.req.param();
-    const topEntiteId = c.get('topEntiteId');
-    if (!topEntiteId) {
-      throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
+    const { id, fileId } = c.req.param();
+    const topEntiteId = c.get('topEntiteId') as string;
+
+    const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
+
+    if (!requeteEntite) {
+      throwHTTPException404NotFound('Requete not found', {
         res: c.res,
       });
     }
+
+    const file = await getUploadedFileById(fileId, [topEntiteId]);
+
+    if (!file) {
+      throwHTTPException404NotFound('File not found', { res: c.res });
+    }
+
+    if (!file.safeFilePath) {
+      throwHTTPException404NotFound('Safe file not available', { res: c.res });
+    }
+
+    const belongsToRequete = await isFileBelongsToRequete(fileId, id);
+
+    if (!belongsToRequete) {
+      logger.warn({ requeteId: id, fileId }, 'Attempt to access safe file not belonging to requete');
+      throwHTTPException403Forbidden('File does not belong to this requete', { res: c.res });
+    }
+
+    logger.info({ requeteId: id, fileId }, 'Retrieving safe file for requete');
+
+    return streamSafeFileResponse(c, file);
+  })
+  .get('/:id/situation/:situationId/file/:fileId', async (c) => {
+    const logger = c.get('logger');
+    const { id, situationId, fileId } = c.req.param();
+    const topEntiteId = c.get('topEntiteId') as string;
 
     const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
 
