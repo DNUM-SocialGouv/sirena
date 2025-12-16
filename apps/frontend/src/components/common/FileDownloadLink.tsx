@@ -6,6 +6,8 @@ import { type FileProcessingStatus, getFileProcessingStatus } from '@/lib/api/fe
 import { formatFileSize } from '@/utils/fileHelpers';
 
 // Separate component to isolate checkbox state from parent re-renders
+type FrIconId = React.ComponentProps<ReturnType<typeof createModal>['Component']>['iconId'];
+
 const ModalWithCheckbox = ({
   modal,
   title,
@@ -19,7 +21,7 @@ const ModalWithCheckbox = ({
 }: {
   modal: ReturnType<typeof createModal>;
   title: string;
-  iconId: string;
+  iconId: FrIconId;
   message: string;
   fileName: string;
   cancelLabel: string;
@@ -403,7 +405,7 @@ export const FileDownloadLink = ({
 
       <downloadModal.Component
         title="Téléchargement de fichier"
-        iconId="ri-download-line"
+        iconId="fr-icon-download-line"
         buttons={[
           {
             doClosesModal: true,
