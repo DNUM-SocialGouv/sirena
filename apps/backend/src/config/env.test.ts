@@ -28,7 +28,7 @@ process.env = {
   LOG_FORMAT: 'json',
 
   CRON_DEMAT_SOCIAL: '',
-
+  CRON_RETRY_AFFECTATION: '',
   REDIS_HOST: 'localhost',
   REDIS_PORT: '6379',
   REDIS_TLS: 'false',
@@ -64,6 +64,7 @@ describe('env.ts', () => {
       ANNUAIRE_SANTE_API_URL: 'https://annuairesante.api',
       LOG_FORMAT: 'json',
       CRON_DEMAT_SOCIAL: '',
+      CRON_RETRY_AFFECTATION: '',
       REDIS_HOST: 'localhost',
       REDIS_PORT: '6379',
       REDIS_PASSWORD: 'redis-password',

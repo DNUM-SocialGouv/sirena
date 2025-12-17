@@ -211,6 +211,7 @@ export const CronEnvSchema = z.object({
   CRON_DEMAT_SOCIAL: z.string({
     required_error: "La variable d'environnement CRON_DEMAT_SOCIAL est requise",
   }),
+  CRON_RETRY_AFFECTATION: z.string().optional().default('3600'),
 });
 
 /**
