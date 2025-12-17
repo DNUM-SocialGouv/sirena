@@ -15,17 +15,17 @@ export type StatutBadge = {
 
 export const requeteStatutBadges: StatutBadge[] = [
   {
-    type: 'info',
+    type: 'new',
     text: requeteStatutType.NOUVEAU,
     value: REQUETE_STATUT_TYPES.NOUVEAU,
   },
   {
-    type: 'new',
+    type: 'info',
     text: requeteStatutType.EN_COURS,
     value: REQUETE_STATUT_TYPES.EN_COURS,
   },
   {
-    type: 'error',
+    type: 'success',
     text: requeteStatutType.CLOTUREE,
     value: REQUETE_STATUT_TYPES.CLOTUREE,
   },
