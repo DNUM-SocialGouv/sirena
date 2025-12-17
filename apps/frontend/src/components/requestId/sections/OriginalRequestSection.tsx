@@ -58,10 +58,15 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
 
   const receptionOptions = useMemo(
     () =>
-      Object.values(RECEPTION_TYPE).map((value) => ({
-        value,
-        label: receptionTypeLabels[value as ReceptionType],
-      })),
+      Object.values(RECEPTION_TYPE).flatMap((value) => {
+        if (value === RECEPTION_TYPE.FORMULAIRE) return [];
+        return [
+          {
+            value,
+            label: receptionTypeLabels[value as ReceptionType],
+          },
+        ];
+      }),
     [],
   );
 
