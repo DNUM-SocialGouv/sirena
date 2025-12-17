@@ -102,7 +102,9 @@ export const checkClamAvHealth = async (): Promise<ClamAvHealthResult> => {
   }
 };
 
-const scanWithInstream = (buffer: Buffer): Promise<string> => {
+const CHUNK_SIZE = 8192;
+
+const scanBufferWithInstream = (buffer: Buffer): Promise<string> => {
   return new Promise((resolve, reject) => {
     const socket = new net.Socket();
     let response = '';
@@ -129,9 +131,7 @@ const scanWithInstream = (buffer: Buffer): Promise<string> => {
     socket.connect(CLAMD_PORT, CLAMAV_HOST, () => {
       socket.write('zINSTREAM\0');
 
-      const CHUNK_SIZE = 8192;
       let offset = 0;
-
       while (offset < buffer.length) {
         const chunk = buffer.subarray(offset, offset + CHUNK_SIZE);
         const sizeBuffer = Buffer.alloc(4);
@@ -144,6 +144,63 @@ const scanWithInstream = (buffer: Buffer): Promise<string> => {
       const endBuffer = Buffer.alloc(4);
       endBuffer.writeUInt32BE(0, 0);
       socket.write(endBuffer);
+    });
+  });
+};
+
+const scanStreamWithInstream = (inputStream: Readable): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const socket = new net.Socket();
+    let response = '';
+
+    socket.setTimeout(SCAN_TIMEOUT);
+
+    socket.on('data', (data) => {
+      response += data.toString();
+    });
+
+    socket.on('end', () => {
+      resolve(response.trim());
+    });
+
+    socket.on('error', (err) => {
+      inputStream.destroy();
+      reject(err);
+    });
+
+    socket.on('timeout', () => {
+      inputStream.destroy();
+      socket.destroy();
+      reject(new Error('Scan timeout'));
+    });
+
+    socket.connect(CLAMD_PORT, CLAMAV_HOST, () => {
+      socket.write('zINSTREAM\0');
+
+      inputStream.on('data', (chunk: Buffer) => {
+        // Send chunks in CHUNK_SIZE pieces
+        let offset = 0;
+        while (offset < chunk.length) {
+          const piece = chunk.subarray(offset, offset + CHUNK_SIZE);
+          const sizeBuffer = Buffer.alloc(4);
+          sizeBuffer.writeUInt32BE(piece.length, 0);
+          socket.write(sizeBuffer);
+          socket.write(piece);
+          offset += CHUNK_SIZE;
+        }
+      });
+
+      inputStream.on('end', () => {
+        // Send zero-length chunk to signal end
+        const endBuffer = Buffer.alloc(4);
+        endBuffer.writeUInt32BE(0, 0);
+        socket.write(endBuffer);
+      });
+
+      inputStream.on('error', (err) => {
+        socket.destroy();
+        reject(err);
+      });
     });
   });
 };
@@ -186,7 +243,7 @@ export const scanBuffer = async (buffer: Buffer, fileName: string): Promise<Clam
   const startTime = Date.now();
 
   try {
-    const response = await scanWithInstream(buffer);
+    const response = await scanBufferWithInstream(buffer);
     const latencyMs = Date.now() - startTime;
 
     const result = parseClamscanResponse(response, fileName);
@@ -214,12 +271,41 @@ export const scanBuffer = async (buffer: Buffer, fileName: string): Promise<Clam
 };
 
 export const scanStream = async (stream: Readable, fileName: string): Promise<ClamAvScanResult> => {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(chunk);
+  if (!isClamAvEnabled()) {
+    return {
+      success: false,
+      error: 'ClamAV not configured',
+    };
   }
-  const buffer = Buffer.concat(chunks);
-  return scanBuffer(buffer, fileName);
+
+  const logger = getLoggerStore();
+  const startTime = Date.now();
+
+  try {
+    const response = await scanStreamWithInstream(stream);
+    const latencyMs = Date.now() - startTime;
+
+    const result = parseClamscanResponse(response, fileName);
+
+    logger.info(
+      {
+        fileName,
+        latencyMs,
+        isInfected: result.data?.result?.[0]?.is_infected ?? false,
+        viruses: result.data?.result?.[0]?.viruses ?? [],
+      },
+      'ClamAV stream scan completed',
+    );
+
+    return result;
+  } catch (error) {
+    const latencyMs = Date.now() - startTime;
+    logger.error({ error, fileName, latencyMs }, 'ClamAV stream scan error');
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error during scan',
+    };
+  }
 };
 
 export const isFileInfected = (scanResult: ClamAvScanResult): boolean => {

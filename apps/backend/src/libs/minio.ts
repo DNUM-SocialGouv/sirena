@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Readable } from 'node:stream';
+import { PassThrough, Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { Client } from 'minio';
 import { envVars } from '@/config/env';
-import { createDecryptionStream, type DecryptionParams, encryptBuffer } from './encryption';
+import { createDecryptionStream, createEncryptionStream, type DecryptionParams } from './encryption';
 
 const {
   S3_BUCKET_ACCESS_KEY,
@@ -36,7 +37,7 @@ export interface UploadResult {
 }
 
 export const uploadFileToMinio = async (
-  filePath: string | Readable | Buffer,
+  input: string | Readable | Buffer,
   originalName: string,
   contentType?: string,
 ): Promise<UploadResult> => {
@@ -49,22 +50,30 @@ export const uploadFileToMinio = async (
   const filename = `${fileId}${fileExtension}`;
   const objectPath = S3_BUCKET_ROOT_DIR ? `${S3_BUCKET_ROOT_DIR}/${filename}` : filename;
 
-  let buffer: Buffer;
-
-  if (Buffer.isBuffer(filePath)) {
-    buffer = filePath;
-  } else if (typeof filePath === 'string') {
-    buffer = await fs.promises.readFile(filePath);
+  // Create source stream from input
+  let sourceStream: Readable;
+  if (Buffer.isBuffer(input)) {
+    sourceStream = Readable.from(input);
+  } else if (typeof input === 'string') {
+    sourceStream = fs.createReadStream(input);
   } else {
-    const chunks: Buffer[] = [];
-    for await (const chunk of filePath) {
-      chunks.push(chunk);
-    }
-    buffer = Buffer.concat(chunks);
+    sourceStream = input;
   }
 
-  const encrypted = encryptBuffer(buffer);
-  const encryptionMetadata = { iv: encrypted.iv, authTag: encrypted.authTag };
+  // Create encryption stream
+  const { stream: encryptStream, getMetadata } = createEncryptionStream();
+
+  // Create passthrough to collect encrypted data for MinIO
+  // (MinIO client needs the full stream to calculate content-length)
+  const encryptedChunks: Buffer[] = [];
+  const collectStream = new PassThrough();
+  collectStream.on('data', (chunk) => encryptedChunks.push(chunk));
+
+  // Pipe: source → encrypt → collect
+  await pipeline(sourceStream, encryptStream, collectStream);
+
+  const encryptedBuffer = Buffer.concat(encryptedChunks);
+  const encryptionMetadata = getMetadata();
 
   const metadata: Record<string, string> = {
     'Content-Type': contentType || 'application/octet-stream',
@@ -75,7 +84,7 @@ export const uploadFileToMinio = async (
     'x-amz-meta-encryption-authtag': encryptionMetadata.authTag,
   };
 
-  await minioClient.putObject(S3_BUCKET_NAME, objectPath, encrypted.encryptedBuffer, undefined, metadata);
+  await minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptedBuffer, undefined, metadata);
 
   return {
     objectPath,

@@ -10,8 +10,6 @@ vi.mock('@/config/env', () => ({
 }));
 
 describe('encryption', () => {
-  let encryptBuffer: typeof import('./encryption').encryptBuffer;
-  let decryptBuffer: typeof import('./encryption').decryptBuffer;
   let createEncryptionStream: typeof import('./encryption').createEncryptionStream;
   let createDecryptionStream: typeof import('./encryption').createDecryptionStream;
   let generateEncryptionKey: typeof import('./encryption').generateEncryptionKey;
@@ -19,90 +17,9 @@ describe('encryption', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     const encryption = await import('./encryption');
-    encryptBuffer = encryption.encryptBuffer;
-    decryptBuffer = encryption.decryptBuffer;
     createEncryptionStream = encryption.createEncryptionStream;
     createDecryptionStream = encryption.createDecryptionStream;
     generateEncryptionKey = encryption.generateEncryptionKey;
-  });
-
-  describe('encryptBuffer / decryptBuffer', () => {
-    it('should encrypt and decrypt a buffer correctly', () => {
-      const originalData = Buffer.from('Hello, World! This is a test message.');
-
-      const encrypted = encryptBuffer(originalData);
-
-      expect(encrypted.iv).toHaveLength(24);
-      expect(encrypted.authTag).toHaveLength(32);
-      expect(encrypted.encryptedBuffer).toBeInstanceOf(Buffer);
-      expect(encrypted.encryptedBuffer.toString()).not.toBe(originalData.toString());
-
-      const decrypted = decryptBuffer(encrypted.encryptedBuffer, {
-        iv: encrypted.iv,
-        authTag: encrypted.authTag,
-      });
-
-      expect(decrypted.toString()).toBe(originalData.toString());
-    });
-
-    it('should produce different ciphertexts for the same plaintext (different IVs)', () => {
-      const originalData = Buffer.from('Same message');
-
-      const encrypted1 = encryptBuffer(originalData);
-      const encrypted2 = encryptBuffer(originalData);
-
-      expect(encrypted1.iv).not.toBe(encrypted2.iv);
-      expect(encrypted1.encryptedBuffer.toString('hex')).not.toBe(encrypted2.encryptedBuffer.toString('hex'));
-    });
-
-    it('should fail decryption with wrong auth tag', () => {
-      const originalData = Buffer.from('Test data');
-      const encrypted = encryptBuffer(originalData);
-
-      expect(() =>
-        decryptBuffer(encrypted.encryptedBuffer, {
-          iv: encrypted.iv,
-          authTag: 'b'.repeat(32),
-        }),
-      ).toThrow();
-    });
-
-    it('should fail decryption with wrong IV', () => {
-      const originalData = Buffer.from('Test data');
-      const encrypted = encryptBuffer(originalData);
-
-      expect(() =>
-        decryptBuffer(encrypted.encryptedBuffer, {
-          iv: 'c'.repeat(24),
-          authTag: encrypted.authTag,
-        }),
-      ).toThrow();
-    });
-
-    it('should handle empty buffers', () => {
-      const originalData = Buffer.from('');
-
-      const encrypted = encryptBuffer(originalData);
-      const decrypted = decryptBuffer(encrypted.encryptedBuffer, {
-        iv: encrypted.iv,
-        authTag: encrypted.authTag,
-      });
-
-      expect(decrypted.toString()).toBe('');
-    });
-
-    it('should handle large buffers', () => {
-      const originalData = Buffer.alloc(1024 * 1024, 'x');
-
-      const encrypted = encryptBuffer(originalData);
-      const decrypted = decryptBuffer(encrypted.encryptedBuffer, {
-        iv: encrypted.iv,
-        authTag: encrypted.authTag,
-      });
-
-      expect(decrypted.length).toBe(originalData.length);
-      expect(decrypted.toString()).toBe(originalData.toString());
-    });
   });
 
   describe('createEncryptionStream / createDecryptionStream', () => {

@@ -15,50 +15,10 @@ const getEncryptionKey = (): Buffer => {
   return Buffer.from(keyHex, 'hex');
 };
 
-export interface EncryptedData {
-  iv: string;
-  authTag: string;
-  encryptedBuffer: Buffer;
-}
-
 export interface DecryptionParams {
   iv: string;
   authTag: string;
 }
-
-/**
- * Encrypts a buffer using AES-256-GCM
- * Returns the IV, auth tag, and encrypted data separately for storage
- */
-export const encryptBuffer = (buffer: Buffer): EncryptedData => {
-  const key = getEncryptionKey();
-  const iv = randomBytes(IV_LENGTH);
-
-  const cipher = createCipheriv(ALGORITHM, key, iv, { authTagLength: AUTH_TAG_LENGTH });
-
-  const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
-  const authTag = cipher.getAuthTag();
-
-  return {
-    iv: iv.toString('hex'),
-    authTag: authTag.toString('hex'),
-    encryptedBuffer: encrypted,
-  };
-};
-
-/**
- * Decrypts a buffer using AES-256-GCM
- */
-export const decryptBuffer = (encryptedBuffer: Buffer, params: DecryptionParams): Buffer => {
-  const key = getEncryptionKey();
-  const iv = Buffer.from(params.iv, 'hex');
-  const authTag = Buffer.from(params.authTag, 'hex');
-
-  const decipher = createDecipheriv(ALGORITHM, key, iv, { authTagLength: AUTH_TAG_LENGTH });
-  decipher.setAuthTag(authTag);
-
-  return Buffer.concat([decipher.update(encryptedBuffer), decipher.final()]);
-};
 
 /**
  * Creates an encryption transform stream for streaming encryption
