@@ -160,13 +160,15 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
 
   // 2) For each situation, determine the authority types to assign (ARS, CD, DD)
   const allAssignments: Array<Assignment> = [];
+  const entiteIdsToLinkToRequete = new Set<string>();
+  const situationEntitesToLink: Array<{ situationId: string; entiteId: string }> = [];
 
   for (const situation of requete.situations) {
     try {
       const context = buildSituationContextFromDemat(situation);
-      logger.debug({ context }, `Contexte de la requête ${requeteId} - situation ${situation.id}`);
+      logger.debug({ context }, `Request context for ${requeteId} - situation ${situation.id}`);
       const types = await runDecisionTree(context); // -> ['ARS', 'CD'] for example
-      logger.debug({ types }, `Types d'entités déterminés pour la requête ${requeteId} - situation ${situation.id}`);
+      logger.debug({ types }, `Entity types determined for request ${requeteId} - situation ${situation.id}`);
 
       allAssignments.push({ situationId: situation.id, types, context });
     } catch (err) {
@@ -178,9 +180,6 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
   }
 
   // 3) Resolve the concrete entities (ex: "ARS - Normandie", "CD - Calvados") from the postal code/INSEE
-  const entiteIdsToLinkToRequete = new Set<string>();
-  const situationEntitesToLink: Array<{ situationId: string; entiteId: string }> = [];
-
   for (const a of allAssignments) {
     const s = requete.situations.find((x) => x.id === a.situationId);
     if (!s) {
@@ -201,8 +200,8 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
       continue;
     }
 
-    logger.debug({ geo }, `Geolocation trouvée pour la requête ${requeteId} - situation ${s.id}`);
-    logger.debug({ types: a.types }, `Recherche d'entités pour la requête ${requeteId} - situation ${s.id}`);
+    logger.debug({ geo }, `Geolocation found for request ${requeteId} - situation ${s.id}`);
+    logger.debug({ types: a.types }, `Searching for entities for request ${requeteId} - situation ${s.id}`);
 
     // 3.2) Find the entities in the database for each type
     for (const t of a.types) {
@@ -214,7 +213,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
       };
       logger.debug(
         { type: t, whereClause },
-        `Recherche entité de type ${t} pour la requête ${requeteId} - situation ${s.id}`,
+        `Searching for entity of type ${t} for request ${requeteId} - situation ${s.id}`,
       );
 
       const entite = await prisma.entite.findFirst({
@@ -231,7 +230,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
 
       logger.debug(
         { entiteId: entite.id, entiteNom: entite.nomComplet },
-        `Entité trouvée pour la requête ${requeteId} - situation ${s.id} - type ${t}`,
+        `Entity found for request ${requeteId} - situation ${s.id} - type ${t}`,
       );
 
       entiteIdsToLinkToRequete.add(entite.id);
@@ -240,43 +239,67 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
   }
 
   // 4) Upsert of RequeteEntite + SituationEntite + create default requete etapes for each entite
-  if (entiteIdsToLinkToRequete.size === 0) {
-    logger.info({ requeteId }, 'No entity to assign for now');
-    return;
-  }
+  // If no entity was assigned, fallback to ARS Normandie
+  try {
+    if (entiteIdsToLinkToRequete.size === 0) {
+      logger.warn({ requeteId }, 'No entity assigned, falling back to ARS Normandie');
 
-  await prisma.$transaction(async (tx) => {
-    for (const entiteId of entiteIdsToLinkToRequete) {
-      await tx.requeteEntite.upsert({
-        where: { requeteId_entiteId: { requeteId, entiteId } },
-        create: { requeteId, entiteId, statutId: REQUETE_STATUT_TYPES.EN_COURS },
-        update: {},
+      // Find ARS Normandie (regionCode: '28')
+      const arsNormandie = await prisma.entite.findFirst({
+        where: {
+          entiteTypeId: 'ARS',
+          entiteMereId: null,
+          regionCode: '28',
+        },
       });
 
-      await assignDefaultRequeteEtapes(requeteId, entiteId, requete.receptionDate || new Date(), tx);
+      if (!arsNormandie) {
+        logger.error({ requeteId }, 'ARS Normandie not found in database, cannot assign fallback');
+        throw new Error('ARS Normandie not found in database');
+      }
+
+      logger.info({ requeteId, arsNormandieId: arsNormandie.id }, 'Assigning ARS Normandie as fallback');
+
+      // Assign ARS Normandie to all situations
+      entiteIdsToLinkToRequete.add(arsNormandie.id);
+      for (const situation of requete.situations) {
+        situationEntitesToLink.push({ situationId: situation.id, entiteId: arsNormandie.id });
+      }
     }
 
-    for (const { situationId, entiteId } of situationEntitesToLink) {
-      await tx.situationEntite.upsert({
-        where: { situationId_entiteId: { situationId, entiteId } },
-        create: { situationId, entiteId },
-        update: {},
+    await prisma.$transaction(async (tx) => {
+      for (const entiteId of entiteIdsToLinkToRequete) {
+        await tx.requeteEntite.upsert({
+          where: { requeteId_entiteId: { requeteId, entiteId } },
+          create: { requeteId, entiteId, statutId: REQUETE_STATUT_TYPES.EN_COURS },
+          update: {},
+        });
+
+        await assignDefaultRequeteEtapes(requeteId, entiteId, requete.receptionDate || new Date(), tx);
+      }
+
+      for (const { situationId, entiteId } of situationEntitesToLink) {
+        await tx.situationEntite.upsert({
+          where: { situationId_entiteId: { situationId, entiteId } },
+          create: { situationId, entiteId },
+          update: {},
+        });
+      }
+
+      await tx.changeLog.create({
+        data: {
+          entity: 'Requete',
+          entityId: requeteId,
+          action: 'AFFECTATION_ENTITES',
+          before: undefined,
+          after: { entiteIds: Array.from(entiteIdsToLinkToRequete) },
+          changedById: null,
+        },
       });
-    }
-
-    await tx.changeLog.create({
-      data: {
-        entity: 'Requete',
-        entityId: requeteId,
-        action: 'AFFECTATION_ENTITES',
-        before: undefined,
-        after: { entiteIds: Array.from(entiteIdsToLinkToRequete) },
-        changedById: null,
-      },
     });
-  });
 
-  logger.info({ requeteId, entiteIds: Array.from(entiteIdsToLinkToRequete) }, 'Affectation OK');
-
-  await prisma.$disconnect();
+    logger.info({ requeteId, entiteIds: Array.from(entiteIdsToLinkToRequete) }, 'Affectation OK');
+  } finally {
+    await prisma.$disconnect();
+  }
 }
