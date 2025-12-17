@@ -17,7 +17,7 @@ export const getRequetesEntiteRoute = openApiProtectedRoute({
 export const getOtherEntitesAffectedRoute = openApiProtectedRoute({
   description: 'Get other entites affected by the requete',
   responses: {
-    ...openApiResponses(GetOtherEntitesAffectedResponseSchema),
+    ...openApiResponse(GetOtherEntitesAffectedResponseSchema),
   },
 });
 

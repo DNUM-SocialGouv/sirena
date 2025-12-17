@@ -7,7 +7,7 @@ export const OtherEntitiesAffected = () => {
   const { requestId } = useParams({
     from: '/_auth/_user/request/$requestId',
   });
-  const { data = [], isLoading, error } = useRequeteOtherEntitiesAffected(requestId);
+  const { data: { otherEntites = [] } = {}, isLoading, error } = useRequeteOtherEntitiesAffected(requestId);
   if (isLoading) {
     return <div>Chargement...</div>;
   }
@@ -16,21 +16,17 @@ export const OtherEntitiesAffected = () => {
     return <div>Erreur lors du chargement des autres entités affectées.</div>;
   }
 
-  const hasOtherEntitiesAffected = data.length > 0;
+  const hasOtherEntitiesAffected = otherEntites.length > 0;
 
   return (
     <div>
       <span>{hasOtherEntitiesAffected ? 'Autres entités affectées' : 'Aucune autre entité affectée'}</span>
       {hasOtherEntitiesAffected && (
         <div className={styles['other-entities-affected-container']}>
-          {data.map((entity) => (
-            <div className={styles['other-entities-affected']} key={entity.entite.id}>
+          {otherEntites.map((entity) => (
+            <div className={styles['other-entities-affected']} key={entity.id}>
               {!!entity && (
-                <EntiteTag
-                  label={entity.entite.nomComplet}
-                  entiteTypeId={entity.entite.entiteTypeId}
-                  statut={entity.statutId}
-                />
+                <EntiteTag label={entity.nomComplet} entiteTypeId={entity.entiteTypeId} statut={entity.statutId} />
               )}
             </div>
           ))}

@@ -7,7 +7,7 @@ import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHand
 import { CreateStep } from '@/components/requestId/processing/createStep';
 import { Step } from '@/components/requestId/processing/Step';
 import { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
-import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
+import { type useRequeteDetails, useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { EntiteTag } from '../common/EntiteTag';
@@ -33,6 +33,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const closeRequeteButtonRef = useRef<HTMLButtonElement>(null);
   const queryProcessingSteps = useProcessingSteps(requestId || '');
   const { canEdit } = useCanEdit({ requeteId: requestId });
+  const { data: { directions = [] } = {} } = useRequeteOtherEntitiesAffected(requestId);
 
   const isRequestClosed = useMemo(() => {
     return queryProcessingSteps.data?.data?.some((step) => step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE);
@@ -121,12 +122,19 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
               )}
               <div className="fr-grid-row fr-grid-row--middle fr-mb-3w">
                 <div className="fr-col">
-                  {requestQuery.data && (
-                    <EntiteTag
-                      entiteTypeId={requestQuery.data?.entite.entiteTypeId as EntiteType}
-                      label={requestQuery.data?.entite.nomComplet}
-                    />
-                  )}
+                  <span className="fr-mr-2w">
+                    {requestQuery.data && (
+                      <EntiteTag
+                        entiteTypeId={requestQuery.data?.entite.entiteTypeId as EntiteType}
+                        label={requestQuery.data?.entite.nomComplet}
+                      />
+                    )}
+                  </span>
+                  {directions.map((entite) => (
+                    <span className="fr-mr-2w" key={entite.id}>
+                      {entite.label}
+                    </span>
+                  ))}
                 </div>
                 {requestId && canEdit && !requestQuery.error && (
                   <div className="fr-col-auto">

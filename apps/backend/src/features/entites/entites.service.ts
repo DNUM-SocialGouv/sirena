@@ -197,3 +197,23 @@ export async function getEntiteAscendanteIds(entiteId: string | null) {
 
   return await getEntiteDescendantIds(ascendanteId);
 }
+
+export const getDirectionsFromRequeteEntiteId = async (requeteId: string, entiteId: string) => {
+  return await prisma.entite.findMany({
+    where: {
+      entiteMereId: entiteId,
+      situationEntites: {
+        some: {
+          situation: {
+            requeteId: requeteId,
+          },
+        },
+      },
+    },
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+    },
+  });
+};

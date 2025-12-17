@@ -21,11 +21,30 @@ export const GetRequeteEntiteResponseSchema = RequeteSchema.extend({
   entite: EntiteSchema,
 });
 
-export const GetOtherEntitesAffectedResponseSchema = z.array(
-  RequeteEntiteSchema.extend({
-    entite: EntiteSchema,
-  }),
-);
+const OtherEntiteAffectedSchema = z
+  .object({
+    statutId: z.string(),
+  })
+  .merge(
+    EntiteSchema.pick({
+      id: true,
+      label: true,
+      nomComplet: true,
+      entiteTypeId: true,
+    }),
+  );
+
+const DirectionSchema = EntiteSchema.pick({
+  entiteMereId: true,
+  id: true,
+  nomComplet: true,
+  label: true,
+});
+
+export const GetOtherEntitesAffectedResponseSchema = z.object({
+  otherEntites: z.array(OtherEntiteAffectedSchema),
+  directions: z.array(DirectionSchema),
+});
 
 const receptionDate = z.string().date().optional();
 const receptionTypeId = z.enum(Object.keys(RECEPTION_TYPE) as [string, ...string[]]).optional();

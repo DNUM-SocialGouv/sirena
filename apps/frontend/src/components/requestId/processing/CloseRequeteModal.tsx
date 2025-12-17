@@ -13,11 +13,10 @@ export type CloseRequeteModalRef = {
 };
 
 export type OtherEntityAffected = {
-  entite: {
-    id: string;
-    nomComplet: string;
-    entiteTypeId: string;
-  };
+  id: string;
+  nomComplet: string;
+  entiteTypeId: string;
+  statutId: string;
 };
 
 export type CloseRequeteModalProps = {
@@ -234,7 +233,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
                   </p>
                   <ul className="fr-mb-0">
                     {otherEntitiesAffected.map((entity) => (
-                      <li key={entity.entite.id}>{entity.entite.nomComplet}</li>
+                      <li key={entity.id}>{entity.nomComplet}</li>
                     ))}
                   </ul>
                 </div>
