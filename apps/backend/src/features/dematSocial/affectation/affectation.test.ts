@@ -201,7 +201,7 @@ describe('assignEntitesToRequeteTask', () => {
         entityId: 'requete-1',
         action: 'AFFECTATION_ENTITES',
         before: undefined,
-        after: { entiteIds: ['ars-normandie-1'] },
+        after: { entiteIds: ['ars-normandie-1'], isFallback: true },
         changedById: null,
       },
     });
@@ -466,7 +466,7 @@ describe('assignEntitesToRequeteTask', () => {
         entityId: 'requete-1',
         action: 'AFFECTATION_ENTITES',
         before: undefined,
-        after: { entiteIds: ['entite-1'] },
+        after: { entiteIds: ['entite-1'], isFallback: false },
         changedById: null,
       },
     });

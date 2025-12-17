@@ -240,9 +240,11 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
 
   // 4) Upsert of RequeteEntite + SituationEntite + create default requete etapes for each entite
   // If no entity was assigned, fallback to ARS Normandie
+  let isFallback = false;
   try {
     if (entiteIdsToLinkToRequete.size === 0) {
       logger.warn({ requeteId }, 'No entity assigned, falling back to ARS Normandie');
+      isFallback = true;
 
       // Find ARS Normandie (regionCode: '28')
       const arsNormandie = await prisma.entite.findFirst({
@@ -292,7 +294,10 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
           entityId: requeteId,
           action: 'AFFECTATION_ENTITES',
           before: undefined,
-          after: { entiteIds: Array.from(entiteIdsToLinkToRequete) },
+          after: {
+            entiteIds: Array.from(entiteIdsToLinkToRequete),
+            isFallback,
+          },
           changedById: null,
         },
       });
