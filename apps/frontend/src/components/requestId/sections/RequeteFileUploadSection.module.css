@@ -1,23 +1,6 @@
 .requeteFileUploadSection {
   display: flex;
-  padding: 20px 24px 24px 24px;
   flex-direction: column;
-  align-items: flex-start;
-  align-self: stretch;
-  border-radius: 4px;
-  background: var(--background-alt-beige-gris-galet);
-}
-
-.fileItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.fileName {
-  flex: 1;
-  margin-right: 8px;
 }
 
 .fileNameLink {
@@ -30,4 +13,77 @@
 
 .errorText {
   color: var(--text-default-error);
+}
+
+.dropZone {
+  margin-top: 1rem;
+  position: relative;
+  width: 100%;
+  padding: 20px 24px;
+  border: 2px dashed var(--light-decisions-border-border-action-high-blue-france, #000091);
+  border-radius: 6px;
+  background: var(--light-decisions-background-background-alt-blue-france, #f5f5fe);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.dropZone:hover {
+  border-color: var(--info-700-700);
+}
+
+.dropZoneTitle {
+  margin: 0;
+  color: var(--text-default-grey);
+  font-weight: 600;
+}
+
+.dropZoneButton {
+  align-self: flex-start;
+}
+
+.dropZoneHint {
+  margin: 0;
+  color: var(--text-mention-grey);
+  font-size: 0.9rem;
+}
+
+.dropZoneInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.fileList {
+  list-style: none;
+  margin: 12px 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fileCard {
+  border: 1px solid var(--border-default-grey);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fileCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fileMeta {
+  margin: 0;
+  color: var(--text-mention-grey);
+  font-size: 0.9rem;
 }

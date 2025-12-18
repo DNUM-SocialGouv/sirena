@@ -2,11 +2,14 @@
   border: 1px solid var(--border-default-grey, var(--grey-925-125, #dddddd));
   border-radius: 4px;
   background-color: var(--background-default-grey, var(--grey-1000-50, #ffffff));
-  margin: 1.5rem 0;
   padding: 20px 24px 24px 24px;
   transition:
     background-color 0.3s ease,
     border-color 0.3s ease;
+}
+
+.section:not(:first-child) {
+  margin: 1.5rem 0;
 }
 
 [data-fr-theme="dark"] .section,

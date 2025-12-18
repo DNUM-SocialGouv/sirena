@@ -1,0 +1,9 @@
+.detailsLayout {
+  flex-direction: column;
+}
+
+@media (min-width: 992px) {
+  .detailsLayout {
+    flex-direction: row-reverse;
+  }
+}

@@ -1,7 +1,6 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
-import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Toast } from '@sirena/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -10,7 +9,7 @@ import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.ho
 import { useSetRequeteFile } from '@/hooks/mutations/setRequeteFile.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
-import noteStyles from '@/routes/_auth/_user/request.$requestId.module.css';
+import { formatFileSize, getOriginalFileName } from '@/utils/fileHelpers';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 import styles from './RequeteFileUploadSection.module.css';
 
@@ -62,11 +61,6 @@ interface UploadedFile {
   mimeType: string;
   size: number;
   canDelete: boolean;
-  status?: string;
-  scanStatus?: string;
-  sanitizeStatus?: string;
-  safeFilePath?: string | null;
-  processingError?: string | null;
 }
 
 interface RequeteFileUploadProps {
@@ -256,75 +250,77 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
 
   return (
     <div className={`${fr.cx('fr-mb-3w')} ${styles.requeteFileUploadSection}`}>
-      <h2 className={fr.cx('fr-h4')}>Requête originale</h2>
       {files.length > 0 && (
         <div className={fr.cx('fr-mt-3w')} style={{ width: '100%' }}>
           <h4 className={fr.cx('fr-text--lg')}>Fichiers uploadés</h4>
-          <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
-            <ul>
-              {files.map((file) => {
-                const fileWithMetadata = file as UploadedFile & { metadata: { originalName?: string } };
-                const originalName = fileWithMetadata.metadata?.originalName || 'Unknown';
+          <ul className={styles.fileList}>
+            {files.map((file) => {
+              const fileWithMetadata = file as UploadedFile & { metadata?: { originalName?: string } };
+              const originalName = getOriginalFileName({
+                id: file.id,
+                fileName: fileWithMetadata.fileName,
+                size: file.size,
+                metadata: fileWithMetadata.metadata,
+              });
+              const extension = originalName?.split('.').pop()?.toUpperCase();
+              const metaText = `${extension ? `${extension} – ` : ''}${formatFileSize(file.size)}`;
 
-                return (
-                  <li key={file.id} className={noteStyles['request-note__file']}>
-                    <div className={styles.fileItem}>
-                      <div className={styles.fileName}>
-                        <FileDownloadLink
-                          href={`/api/requetes-entite/${requeteId}/file/${file.id}`}
-                          fileName={originalName}
-                          fileId={file.id}
-                          fileSize={file.size}
-                          status={file.status}
-                          scanStatus={file.scanStatus}
-                          sanitizeStatus={file.sanitizeStatus}
-                          safeHref={
-                            file.safeFilePath ? `/api/requetes-entite/${requeteId}/file/${file.id}/safe` : undefined
-                          }
-                          className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
-                        />
-                      </div>
-                      {canEdit && file.canDelete && (
-                        <Button
-                          aria-label="Supprimer le fichier"
-                          title="Supprimer le fichier"
-                          type="button"
-                          className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
-                          onClick={(event) => handleDeleteFile(file, event)}
-                        >
-                          <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
-                        </Button>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+              return (
+                <li key={file.id} className={styles.fileCard}>
+                  <div className={styles.fileCardHeader}>
+                    <FileDownloadLink
+                      href={`/api/requetes-entite/${requeteId}/file/${file.id}`}
+                      fileName={originalName}
+                      fileSize={file.size}
+                      className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
+                    />
+                    {canEdit && file.canDelete && (
+                      <Button
+                        aria-label="Supprimer le fichier"
+                        title="Supprimer le fichier"
+                        type="button"
+                        className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
+                        onClick={(event) => handleDeleteFile(file, event)}
+                      >
+                        <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
+                      </Button>
+                    )}
+                  </div>
+                  <p className={styles.fileMeta}>{metaText}</p>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
       {selectedFiles.length === 0 && mode === 'create' && (
         <p className={fr.cx('fr-text--sm', 'fr-text--light')}>Aucun fichier sélectionné.</p>
       )}
       {canEdit && (
-        <Upload
-          label=""
-          hint="Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"
-          multiple
-          disabled={isUploading}
-          nativeInputProps={{
-            ref: uploadInputRef,
-            accept:
-              '.pdf,.eml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.msg,.csv,.txt,.png,.jpeg,.jpg,.heic,.heif,.webp,.tiff',
-            onChange: (e) => {
+        <label className={styles.dropZone}>
+          <p className={styles.dropZoneTitle}>Sélectionner un fichier ou glisser-le ici</p>
+          <Button priority="secondary" disabled={isUploading} className={styles.dropZoneButton}>
+            Sélectionner un fichier
+          </Button>
+          <p className={styles.dropZoneHint}>
+            Taille maximale: 10 Mo. Formats supportés : PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT,
+            images (PNG, JPEG, HEIC, WEBP, TIFF)
+          </p>
+          <input
+            ref={uploadInputRef}
+            type="file"
+            multiple
+            className={styles.dropZoneInput}
+            accept=".pdf,.eml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.msg,.csv,.txt,.png,.jpeg,.jpg,.heic,.heif,.webp,.tiff"
+            onChange={(e) => {
               const files = e.target.files;
               if (files) {
                 const fileArray = Array.from(files);
-                handleFileSelect(fileArray.map((file) => new File([file], file.name, { type: file.type })));
+                handleFileSelect(fileArray);
               }
-            },
-          }}
-        />
+            }}
+          />
+        </label>
       )}
 
       {Object.keys(fileErrors).length > 0 && (

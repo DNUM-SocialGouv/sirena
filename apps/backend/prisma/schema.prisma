@@ -121,8 +121,8 @@ model Requete {
   receptionDate DateTime?
   dematSocialId Int?
 
-  receptionTypeId String
-  receptionType   ReceptionTypeEnum @relation(fields: [receptionTypeId], references: [id])
+  receptionTypeId String?
+  receptionType   ReceptionTypeEnum? @relation(fields: [receptionTypeId], references: [id])
 
   declarant PersonneConcernee? @relation("DeclarantRequete")
 

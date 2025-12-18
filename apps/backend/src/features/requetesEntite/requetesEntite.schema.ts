@@ -1,5 +1,5 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
-import { REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
+import { RECEPTION_TYPE, REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import { Prisma } from '@/libs/prisma';
 import { EntiteSchema, RequeteEntiteSchema, RequeteEtapeSchema, RequeteSchema, z } from '@/libs/zod';
@@ -27,6 +27,12 @@ export const GetOtherEntitesAffectedResponseSchema = z.array(
   }),
 );
 
+const receptionDate = z.string().date().optional();
+const receptionTypeId = z.enum(Object.keys(RECEPTION_TYPE) as [string, ...string[]]).optional();
+const requeteControl = z.object({
+  updatedAt: z.string().datetime(),
+});
+
 export const GetRequeteEntiteSchema = RequeteEntiteSchema.extend({
   requete: RequeteSchema,
   requeteEtape: z.array(RequeteEtapeSchema),
@@ -37,6 +43,8 @@ export const GetRequetesEntiteResponseSchema = z.array(GetRequeteEntiteSchema);
 export const CreateRequeteBodySchema = z.object({
   declarant: DeclarantDataSchema.optional(),
   participant: PersonneConcerneeDataSchema.optional(),
+  receptionDate,
+  receptionTypeId,
   fileIds: z.array(z.string()).optional(),
 });
 
@@ -67,6 +75,11 @@ export const UpdateRequeteFilesBodySchema = z.object({
 });
 export const UpdateSituationBodySchema = z.object({
   situation: SituationDataSchema,
+});
+export const UpdateTypeAndDateRequeteBodySchema = z.object({
+  receptionDate,
+  receptionTypeId,
+  controls: requeteControl.optional(),
 });
 
 export const UpdatePrioriteBodySchema = z.object({

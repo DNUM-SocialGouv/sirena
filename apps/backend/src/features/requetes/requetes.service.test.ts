@@ -20,7 +20,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sanitizeFilename, urlToStream } from '@/helpers/file';
 import { prisma } from '@/libs/__mocks__/prisma';
 import * as functionalIdService from './functionalId.service';
-import { createRequeteFromDematSocial, getRequeteByDematSocialId } from './requetes.service';
+import { createRequeteFromDematSocial, getRequeteByDematSocialId, updateDateAndTypeRequete } from './requetes.service';
 import type { CreateRequeteFromDematSocialDto } from './requetes.type';
 
 vi.mock('@/libs/prisma');
@@ -839,6 +839,78 @@ describe('requetes.service.ts', () => {
           updatedAt: new Date(),
         });
       });
+    });
+  });
+
+  describe('updateDateAndTypeRequete()', () => {
+    it('updates reception date and type when control timestamp matches', async () => {
+      const requeteId = 'REQ-1';
+      const existingUpdatedAt = new Date('2025-01-01T00:00:00.000Z');
+      const existing = {
+        id: requeteId,
+        commentaire: '',
+        receptionDate: new Date('2025-01-02T00:00:00.000Z'),
+        dematSocialId: null,
+        receptionTypeId: RECEPTION_TYPE.EMAIL,
+        createdAt: new Date('2024-12-31T00:00:00.000Z'),
+        updatedAt: existingUpdatedAt,
+      };
+
+      const newDate = new Date('2025-02-01T12:00:00.000Z');
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValue(existing);
+      vi.mocked(prisma.requete.update).mockResolvedValue({
+        ...existing,
+        receptionDate: newDate,
+        receptionTypeId: RECEPTION_TYPE.COURRIER,
+        updatedAt: newDate,
+      });
+
+      const result = await updateDateAndTypeRequete(
+        requeteId,
+        { receptionDate: newDate, receptionTypeId: RECEPTION_TYPE.COURRIER },
+        { updatedAt: existingUpdatedAt.toISOString() },
+      );
+
+      expect(prisma.requete.findUnique).toHaveBeenCalledWith({ where: { id: requeteId } });
+      expect(prisma.requete.update).toHaveBeenCalledWith({
+        where: { id: requeteId },
+        data: { receptionDate: newDate, receptionTypeId: RECEPTION_TYPE.COURRIER },
+      });
+      expect(result.receptionDate).toEqual(newDate);
+      expect(result.receptionTypeId).toBe(RECEPTION_TYPE.COURRIER);
+    });
+
+    it('throws conflict error when timestamps differ', async () => {
+      const requeteId = 'REQ-2';
+      const serverUpdatedAt = new Date('2025-03-01T00:00:00.000Z');
+      const existing = {
+        id: requeteId,
+        commentaire: '',
+        receptionDate: new Date('2025-02-02T00:00:00.000Z'),
+        dematSocialId: null,
+        receptionTypeId: RECEPTION_TYPE.EMAIL,
+        createdAt: new Date('2025-02-01T00:00:00.000Z'),
+        updatedAt: serverUpdatedAt,
+      };
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValue(existing);
+
+      await expect(
+        updateDateAndTypeRequete(
+          requeteId,
+          { receptionDate: new Date('2025-04-01T00:00:00.000Z'), receptionTypeId: RECEPTION_TYPE.COURRIER },
+          { updatedAt: new Date('2025-02-01T00:00:00.000Z').toISOString() },
+        ),
+      ).rejects.toMatchObject({
+        message: 'CONFLICT: The participant identity has been modified by another user.',
+        conflictData: {
+          serverData: existing,
+          serverUpdatedAt: serverUpdatedAt.toISOString(),
+        },
+      });
+
+      expect(prisma.requete.update).not.toHaveBeenCalled();
     });
   });
 });

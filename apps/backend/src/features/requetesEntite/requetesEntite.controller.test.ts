@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import type { EntiteType, RequeteEtapeStatutType } from '@sirena/common/constants';
+import { type EntiteType, RECEPTION_TYPE, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +10,7 @@ import type { UploadedFile } from '@/libs/prisma';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
+import { updateDateAndTypeRequete } from '../requetes/requetes.service';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service';
 import RequetesEntiteController from './requetesEntite.controller';
 import {
@@ -18,6 +19,7 @@ import {
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
+  updateStatusRequete,
 } from './requetesEntite.service';
 
 vi.mock('./requetesEntite.service', () => ({
@@ -26,6 +28,7 @@ vi.mock('./requetesEntite.service', () => ({
   getRequetesEntite: vi.fn(),
   hasAccessToRequete: vi.fn(),
   getOtherEntitesAffected: vi.fn(),
+  updateStatusRequete: vi.fn(),
 }));
 
 vi.mock('@/libs/minio', () => ({
@@ -81,6 +84,10 @@ vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
   };
 });
 
+vi.mock('../requetes/requetes.service', () => ({
+  updateDateAndTypeRequete: vi.fn(),
+}));
+
 const fakeRequeteEntite = {
   requeteId: 'requeteId',
   entiteId: 'entiteId',
@@ -129,6 +136,7 @@ describe('RequetesEntite endpoints: /', () => {
     {
       requeteId: 'r1',
       entiteId: 'e1',
+      statutId: REQUETE_STATUT_TYPES.EN_COURS,
       requete: {
         id: 'r1',
         createdAt: new Date(),
@@ -161,9 +169,8 @@ describe('RequetesEntite endpoints: /', () => {
           adresse: null,
         },
       },
-      requeteEtape: [],
-      statutId: 'EN_COURS',
       prioriteId: null,
+      requeteEtape: [],
     },
   ] satisfies Awaited<ReturnType<typeof getRequetesEntite>>['data'];
 
@@ -340,6 +347,7 @@ describe('RequetesEntite endpoints: /', () => {
     it('should return other entites affected by the requete', async () => {
       const fakeOtherEntites = [
         {
+          statutId: 'EN_COURS',
           entite: {
             id: '456',
             label: 'Entite 456',
@@ -359,14 +367,14 @@ describe('RequetesEntite endpoints: /', () => {
             id: 'etape1',
             nom: 'Étape 1',
             estPartagee: false,
-            statutId: 'FAIT' as RequeteEtapeStatutType,
+            statutId: 'FAIT',
             requeteId: 'r1',
             entiteId: 'e2',
             clotureReasonId: null,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
-        },
+        } as const,
       ];
       vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
       vi.mocked(getOtherEntitesAffected).mockResolvedValueOnce(fakeOtherEntites);
@@ -601,6 +609,79 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(500);
       const json = await res.json();
       expect(json).toEqual({ error: 'INTERNAL_ERROR', message: 'Internal server error' });
+    });
+  });
+
+  describe('PATCH /:id/date-type', () => {
+    const baseRequeteEntite = {
+      ...fakeRequeteEntite,
+      statutId: 'OUVERTE',
+      requete: {
+        ...fakeRequeteEntite.requete,
+        receptionTypeId: RECEPTION_TYPE.EMAIL,
+      },
+    };
+
+    const formatDate = (date: Date) => {
+      return date.toISOString().split('T')[0];
+    };
+
+    it('updates reception date and type and returns updated requete', async () => {
+      const newDate = new Date('2025-05-01T00:00:00.000Z');
+      const updatedRequete = {
+        ...baseRequeteEntite.requete,
+        receptionDate: newDate,
+        receptionTypeId: RECEPTION_TYPE.COURRIER,
+        updatedAt: newDate,
+      };
+
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
+      vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
+
+      const res = await client[':id']['date-type'].$patch({
+        param: { id: 'requeteId' },
+        json: {
+          receptionDate: formatDate(newDate),
+          receptionTypeId: RECEPTION_TYPE.COURRIER,
+          controls: { updatedAt: baseRequeteEntite.requete.updatedAt.toISOString() },
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toEqual({ data: convertDatesToStrings(updatedRequete) });
+
+      expect(updateDateAndTypeRequete).toHaveBeenCalledWith(
+        'requeteId',
+        { receptionDate: newDate, receptionTypeId: RECEPTION_TYPE.COURRIER },
+        { updatedAt: baseRequeteEntite.requete.updatedAt.toISOString() },
+      );
+      expect(updateStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
+    });
+
+    it('returns 409 when updateDateAndTypeRequete throws conflict', async () => {
+      const conflictError = new Error('CONFLICT: test');
+      (conflictError as Error & { conflictData?: unknown }).conflictData = { serverData: { id: 'requeteId' } };
+
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
+      vi.mocked(updateDateAndTypeRequete).mockRejectedValueOnce(conflictError);
+
+      const res = await client[':id']['date-type'].$patch({
+        param: { id: 'requeteId' },
+        json: {
+          receptionDate: formatDate(new Date('2025-05-02T00:00:00.000Z')),
+          receptionTypeId: RECEPTION_TYPE.COURRIER,
+        },
+      });
+
+      expect(res.status).toBe(409);
+      const body = await res.json();
+      expect(body).toEqual({
+        message: 'The requete has been modified by another user.',
+        conflictData: { serverData: { id: 'requeteId' } },
+      });
+
+      expect(updateStatusRequete).not.toHaveBeenCalled();
     });
   });
 });
