@@ -30,6 +30,7 @@ scan_file() {
   if command -v gitleaks &> /dev/null; then
     gitleaks detect \
       --no-git \
+      --config "${ROOT_DIR}/.gitleaks.toml" \
       --source "${ROOT_DIR}/${file}" \
       --baseline-path "${ROOT_DIR}/${BASELINE_FILE}" \
       --redact
@@ -38,6 +39,7 @@ scan_file() {
       -v "${ROOT_DIR}:/src" \
       zricethezav/gitleaks:latest detect \
         --no-git \
+        --config "/src/.gitleaks.toml" \
         --source "/src/${file}" \
         --baseline-path "/src/${BASELINE_FILE}" \
         --redact

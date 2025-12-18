@@ -29,3 +29,16 @@ export const GetUploadedFilesQuerySchema = paginationQueryParamsSchema(columns).
   mimeType: z.string().optional(),
   fileName: z.string().optional(),
 });
+
+export const FileProcessingStatusSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  scanStatus: z.string(),
+  sanitizeStatus: z.string(),
+  processingError: z.string().nullable(),
+  safeFilePath: z.string().nullable(),
+});
+
+export const GetFileProcessingStatusResponseSchema = z.object({
+  data: FileProcessingStatusSchema,
+});

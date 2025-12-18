@@ -9,7 +9,7 @@ export type AppBindings = {
     roleId: string;
     entiteIds: string[];
     uploadedFile?: {
-      tempFilePath: string;
+      buffer: Buffer;
       fileName: string;
       contentType: string;
       size: number;

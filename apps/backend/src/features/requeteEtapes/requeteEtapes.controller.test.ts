@@ -347,7 +347,7 @@ describe('requeteEtapes.controller.ts', () => {
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(baseFile);
 
       const nodeReadable = Readable.from(Buffer.from('hello'));
-      vi.mocked(getFileStream).mockResolvedValueOnce(nodeReadable);
+      vi.mocked(getFileStream).mockResolvedValueOnce({ stream: nodeReadable, metadata: { encrypted: false } });
 
       const res = await client[':id'].file[':fileId'].$get({
         param: { id: 'step1', fileId: 'file1' },
@@ -450,7 +450,7 @@ describe('requeteEtapes.controller.ts', () => {
       vi.mocked(getUploadedFileById).mockResolvedValueOnce(fileNoMeta);
 
       const nodeReadable = Readable.from(Buffer.from('x'));
-      vi.mocked(getFileStream).mockResolvedValueOnce(nodeReadable);
+      vi.mocked(getFileStream).mockResolvedValueOnce({ stream: nodeReadable, metadata: { encrypted: false } });
 
       const res = await client[':id'].file[':fileId'].$get({
         param: { id: 'step1', fileId: 'file1' },

@@ -24,6 +24,7 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
     S3_BUCKET_NAME: 'files',
     S3_BUCKET_REGION: 'us-east-1',
     S3_BUCKET_ROOT_DIR: 'uploads',
+    S3_ENCRYPTION_KEY: 'a'.repeat(64),
     SARBACANE_API_URL: 'http://localhost:3003',
     SARBACANE_API_KEY: 'token',
     ANNUAIRE_SANTE_API_KEY: '123',

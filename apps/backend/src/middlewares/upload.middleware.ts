@@ -1,15 +1,13 @@
-import { randomUUID } from 'node:crypto';
-import fs from 'node:fs';
 import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
 import { API_ERROR_CODES } from '@sirena/common/constants';
 import { fileTypeFromBuffer } from 'file-type';
-import { file as tmpAsync } from 'tmp-promise';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '@/config/files.constant';
 import factoryWithUploadedFile from '@/helpers/factories/appWithUploadedFile';
 import { sanitizeFilename } from '@/helpers/file';
 
 /**
- * @description Extracts the uploaded file from the request body and sets it in the context. You must delete the temp file in the controller.
+ * @description Extracts the uploaded file from the request body and sets it in the context.
+ * The file is kept in memory as a Buffer - no temp files are created.
  */
 const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(async (c, next) => {
   const body = await c.req.parseBody();
@@ -44,7 +42,6 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
     if (detectedType?.mime === 'application/x-cfb') {
       detectedType = { mime: 'application/x-cfb', ext: 'msg' };
     } else if (!detectedType) {
-      // If detection failed, assume it's a valid MSG file based on extension
       detectedType = { mime: 'application/vnd.ms-outlook', ext: 'msg' };
     }
   }
@@ -57,17 +54,9 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
   }
 
   const sanitizedFilename = sanitizeFilename(file.name, detectedType.ext);
-  const tmpFile = await tmpAsync({
-    prefix: `${randomUUID()}-`,
-    postfix: `-${sanitizedFilename}`,
-    discardDescriptor: true,
-    mode: 0o600,
-  });
-
-  await fs.promises.writeFile(tmpFile.path, buffer);
 
   c.set('uploadedFile', {
-    tempFilePath: tmpFile.path,
+    buffer,
     fileName: sanitizedFilename,
     contentType: detectedType.mime,
     size: buffer.length,

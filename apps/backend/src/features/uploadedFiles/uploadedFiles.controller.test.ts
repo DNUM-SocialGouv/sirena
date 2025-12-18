@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
@@ -30,6 +29,11 @@ const fakeFile: UploadedFile = {
   uploadedById: 'user1',
   demarchesEngageesId: null,
   canDelete: true,
+  scanStatus: 'PENDING',
+  sanitizeStatus: 'PENDING',
+  safeFilePath: null,
+  scanResult: null,
+  processingError: null,
 };
 
 const fakeData: UploadedFile[] = [fakeFile];
@@ -58,7 +62,7 @@ vi.mock('./uploadedFiles.service', () => ({
 vi.mock('@/middlewares/upload.middleware', () => ({
   default: vi.fn((c: Context, next: Next) => {
     c.set('uploadedFile', {
-      tempFilePath: fakeFile.filePath,
+      buffer: Buffer.from('test pdf content'),
       fileName: fakeFile.fileName,
       contentType: fakeFile.mimeType,
       size: fakeFile.size,
@@ -114,12 +118,8 @@ vi.mock('@/middlewares/changelog/changelog.uploadedFile.middleware', () => {
   };
 });
 
-vi.mock('node:fs', () => ({
-  default: {
-    promises: {
-      unlink: vi.fn().mockResolvedValue(undefined),
-    },
-  },
+vi.mock('@/jobs/queues/fileProcessing.queue', () => ({
+  addFileProcessingJob: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock('@/helpers/errors', async () => {
@@ -149,7 +149,6 @@ describe('uploadedFiles.controller.ts', () => {
       const body = await res.json();
 
       expect(createUploadedFile).toHaveBeenCalledTimes(1);
-      expect(fs.promises.unlink).toHaveBeenCalledTimes(1);
       expect(res.status).toBe(201);
       expect(body).toEqual({
         data: convertDatesToStrings(fakeFile),
@@ -212,7 +211,7 @@ describe('uploadedFiles.controller.ts', () => {
     it('should return a 500 error if file name is not valid', async () => {
       vi.mocked(uploadFileToMinio).mockImplementationOnce(() => {
         return Promise.resolve({
-          objectPath: 'badpath.pdf',
+          objectPath: '',
           rollback: vi.fn(),
         });
       });
@@ -303,6 +302,60 @@ describe('uploadedFiles.controller.ts', () => {
       const body = await res.json();
       expect(body).toEqual({
         message: 'Internal server error',
+      });
+    });
+  });
+
+  describe('GET /:id/status', () => {
+    it('should return file processing status', async () => {
+      const res = await client[':id'].status.$get({
+        param: { id: 'file1' },
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toEqual({
+        data: {
+          id: fakeFile.id,
+          status: fakeFile.status,
+          scanStatus: fakeFile.scanStatus,
+          sanitizeStatus: fakeFile.sanitizeStatus,
+          processingError: fakeFile.processingError,
+          safeFilePath: fakeFile.safeFilePath,
+        },
+      });
+    });
+
+    it('should return 400 if topEntiteId is not set', async () => {
+      vi.mocked(entitesMiddleware).mockImplementationOnce((c: Context, next: Next) => {
+        c.set('topEntiteId', null);
+        return next();
+      });
+
+      const res = await client[':id'].status.$get({
+        param: { id: 'file1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(body).toEqual({
+        message: 'You are not allowed to access uploaded files without topEntiteId.',
+      });
+    });
+
+    it('should return 404 if file not found', async () => {
+      vi.mocked(getUploadedFileById).mockImplementationOnce(() => Promise.resolve(null));
+
+      const res = await client[':id'].status.$get({
+        param: { id: 'file1' },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(404);
+      expect(body).toEqual({
+        message: 'Uploaded file not found',
       });
     });
   });

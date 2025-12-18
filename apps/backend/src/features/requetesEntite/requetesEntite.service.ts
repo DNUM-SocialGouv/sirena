@@ -490,6 +490,36 @@ interface UpdateRequeteControls {
   participant?: { updatedAt?: string };
 }
 
+const buildPersonneAdresseUpsert = (data: {
+  adresseDomicile?: string | null;
+  codePostal?: string | null;
+  ville?: string | null;
+}) => {
+  if (!data.adresseDomicile && !data.codePostal && !data.ville) {
+    return undefined;
+  }
+
+  const createUpdateData = () => {
+    const { numero, rue } = parseAdresseDomicile(data.adresseDomicile || '');
+    return {
+      label: `${data.adresseDomicile || ''} ${data.codePostal || ''} ${data.ville || ''}` || '',
+      numero,
+      rue,
+      codePostal: data.codePostal || '',
+      ville: data.ville || '',
+    };
+  };
+
+  const payload = createUpdateData();
+
+  return {
+    upsert: {
+      create: payload,
+      update: payload,
+    },
+  };
+};
+
 export const updateRequete = async (requeteId: string, data: UpdateRequeteInput, controls?: UpdateRequeteControls) => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
@@ -562,37 +592,7 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
                   civiliteId: mappers.mapCiviliteToDatabase(declarantData.civilite),
                 },
               },
-              adresse:
-                declarantData.adresseDomicile || declarantData.codePostal || declarantData.ville
-                  ? {
-                      upsert: {
-                        create: (() => {
-                          const { numero, rue } = parseAdresseDomicile(declarantData.adresseDomicile || '');
-                          return {
-                            label:
-                              `${declarantData.adresseDomicile || ''} ${declarantData.codePostal || ''} ${declarantData.ville || ''}` ||
-                              '',
-                            numero,
-                            rue,
-                            codePostal: declarantData.codePostal || '',
-                            ville: declarantData.ville || '',
-                          };
-                        })(),
-                        update: (() => {
-                          const { numero, rue } = parseAdresseDomicile(declarantData.adresseDomicile || '');
-                          return {
-                            label:
-                              `${declarantData.adresseDomicile || ''} ${declarantData.codePostal || ''} ${declarantData.ville || ''}` ||
-                              '',
-                            numero,
-                            rue,
-                            codePostal: declarantData.codePostal || '',
-                            ville: declarantData.ville || '',
-                          };
-                        })(),
-                      },
-                    }
-                  : undefined,
+              adresse: buildPersonneAdresseUpsert(declarantData),
             },
           },
         },
@@ -690,37 +690,7 @@ export const updateRequeteParticipant = async (
                 civiliteId: mappers.mapCiviliteToDatabase(participantData.civilite),
               },
             },
-            adresse:
-              participantData.adresseDomicile || participantData.codePostal || participantData.ville
-                ? {
-                    upsert: {
-                      create: (() => {
-                        const { numero, rue } = parseAdresseDomicile(participantData.adresseDomicile || '');
-                        return {
-                          label:
-                            `${participantData.adresseDomicile || ''} ${participantData.codePostal || ''} ${participantData.ville || ''}` ||
-                            '',
-                          numero,
-                          rue,
-                          codePostal: participantData.codePostal || '',
-                          ville: participantData.ville || '',
-                        };
-                      })(),
-                      update: (() => {
-                        const { numero, rue } = parseAdresseDomicile(participantData.adresseDomicile || '');
-                        return {
-                          label:
-                            `${participantData.adresseDomicile || ''} ${participantData.codePostal || ''} ${participantData.ville || ''}` ||
-                            '',
-                          numero,
-                          rue,
-                          codePostal: participantData.codePostal || '',
-                          ville: participantData.ville || '',
-                        };
-                      })(),
-                    },
-                  }
-                : undefined,
+            adresse: buildPersonneAdresseUpsert(participantData),
           },
         },
       },
@@ -1107,17 +1077,12 @@ export const updateRequeteSituation = async (
     throw new Error('Requete not found');
   }
 
-  const _result = await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     const existingSituation = requete.situations.find((s) => s.id === situationId);
     if (!existingSituation) {
       throw new Error('Situation not found');
     }
     await updateExistingSituation(tx, existingSituation, situationData, changedById);
-
-    return tx.requete.findUnique({
-      where: { id: requeteId },
-      include: { situations: { include: SITUATION_INCLUDE_FULL } },
-    });
   });
 
   if (situationData.fait?.fileIds?.length) {

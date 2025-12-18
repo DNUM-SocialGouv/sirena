@@ -9,20 +9,24 @@ vi.mock('@/config/env', () => ({
     S3_BUCKET_PORT: '9000',
     S3_BUCKET_NAME: 'test-bucket',
     S3_BUCKET_ROOT_DIR: 'uploads',
+    S3_ENCRYPTION_KEY: 'a'.repeat(64),
   },
 }));
 
-const { mockMinioClient, mockReadStream, mockUnlink } = vi.hoisted(() => {
+const { mockMinioClient, mockReadStream, mockUnlink, mockReadFile } = vi.hoisted(() => {
   const mockMinioClient = {
     putObject: vi.fn(),
     presignedUrl: vi.fn(),
     removeObject: vi.fn(),
+    statObject: vi.fn(),
+    getObject: vi.fn(),
   };
 
   const mockReadStream = vi.fn();
   const mockUnlink = vi.fn();
+  const mockReadFile = vi.fn();
 
-  return { mockMinioClient, mockReadStream, mockUnlink };
+  return { mockMinioClient, mockReadStream, mockUnlink, mockReadFile };
 });
 
 vi.mock('minio', () => ({
@@ -35,11 +39,25 @@ vi.mock('node:fs', () => ({
   default: {
     createReadStream: mockReadStream,
     unlink: mockUnlink,
+    promises: {
+      readFile: mockReadFile,
+    },
   },
 }));
 
 vi.mock('node:crypto', () => ({
   randomUUID: vi.fn().mockReturnValue('test-uuid'),
+  randomBytes: vi.fn().mockReturnValue(Buffer.alloc(12)),
+  createCipheriv: vi.fn().mockReturnValue({
+    update: vi.fn().mockReturnValue(Buffer.from('encrypted')),
+    final: vi.fn().mockReturnValue(Buffer.from('')),
+    getAuthTag: vi.fn().mockReturnValue(Buffer.alloc(16)),
+  }),
+  createDecipheriv: vi.fn().mockReturnValue({
+    update: vi.fn().mockReturnValue(Buffer.from('decrypted')),
+    final: vi.fn().mockReturnValue(Buffer.from('')),
+    setAuthTag: vi.fn(),
+  }),
 }));
 
 describe('minio.ts', () => {
@@ -53,45 +71,43 @@ describe('minio.ts', () => {
   });
 
   describe('uploadFileToMinio', () => {
-    it('should successfully upload a file to MinIO', async () => {
-      const filePath = '/tmp/test-file.pdf';
+    it('should successfully upload an encrypted file to MinIO', async () => {
+      const fileBuffer = Buffer.from('test content');
       const originalName = 'test-document.pdf';
       const contentType = 'application/pdf';
 
-      const { objectPath } = await uploadFileToMinio(filePath, originalName, contentType);
+      const { objectPath, encryptionMetadata } = await uploadFileToMinio(fileBuffer, originalName, contentType);
 
-      expect(mockMinioClient.putObject).toHaveBeenCalledWith(
-        'test-bucket',
-        'uploads/test-uuid.pdf',
-        expect.any(Object),
-        undefined,
-        {
-          'Content-Type': contentType,
-          'x-amz-meta-filename': originalName,
-          uploadedFileId: 'test-uuid',
-        },
-      );
+      expect(mockMinioClient.putObject).toHaveBeenCalled();
       expect(objectPath).toBe('uploads/test-uuid.pdf');
+      expect(encryptionMetadata).toBeDefined();
+      expect(encryptionMetadata?.iv).toBeDefined();
+      expect(encryptionMetadata?.authTag).toBeDefined();
+
+      const putObjectCall = mockMinioClient.putObject.mock.calls[0];
+      const metadata = putObjectCall[4];
+      expect(metadata['Content-Type']).toBe(contentType);
+      expect(metadata['x-amz-meta-filename']).toBe(originalName);
+      expect(metadata['x-amz-meta-uploadedfileid']).toBe('test-uuid');
+      expect(metadata['x-amz-meta-encrypted']).toBe('true');
+      expect(metadata['x-amz-meta-encryption-iv']).toBeDefined();
+      expect(metadata['x-amz-meta-encryption-authtag']).toBeDefined();
     });
 
     it('should fallback to octet-stream if no contentType is provided', async () => {
-      const filePath = '/tmp/test-file.pdf';
+      const fileBuffer = Buffer.from('test content');
       const originalName = 'test-document.pdf';
 
-      const { objectPath } = await uploadFileToMinio(filePath, originalName);
+      const { objectPath, encryptionMetadata } = await uploadFileToMinio(fileBuffer, originalName);
 
-      expect(mockMinioClient.putObject).toHaveBeenCalledWith(
-        'test-bucket',
-        'uploads/test-uuid.pdf',
-        expect.any(Object),
-        undefined,
-        {
-          'Content-Type': 'application/octet-stream',
-          'x-amz-meta-filename': originalName,
-          uploadedFileId: 'test-uuid',
-        },
-      );
+      expect(mockMinioClient.putObject).toHaveBeenCalled();
       expect(objectPath).toBe('uploads/test-uuid.pdf');
+      expect(encryptionMetadata).toBeDefined();
+
+      const putObjectCall = mockMinioClient.putObject.mock.calls[0];
+      const metadata = putObjectCall[4];
+      expect(metadata['Content-Type']).toBe('application/octet-stream');
+      expect(metadata['x-amz-meta-encrypted']).toBe('true');
     });
   });
 

@@ -15,7 +15,7 @@ import {
   updateRequeteEtapeStatut,
 } from '@/features/requeteEtapes/requetesEtapes.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import { streamFileResponse } from '@/helpers/file';
+import { streamFileResponse, streamSafeFileResponse } from '@/helpers/file';
 import authMiddleware from '@/middlewares/auth.middleware';
 import requeteEtapesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtape.middleware';
 import entitesMiddleware from '@/middlewares/entites.middleware';
@@ -101,6 +101,53 @@ const app = factoryWithLogs
     logger.info({ requeteEtapeId: id, fileId }, 'Retrieving file for requete etape');
 
     return streamFileResponse(c, file);
+  })
+  .get('/:id/file/:fileId/safe', async (c) => {
+    const logger = c.get('logger');
+    const { id, fileId } = c.req.param();
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
+
+    const requeteEtape = await getRequeteEtapeById(id);
+
+    if (!requeteEtape) {
+      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+    }
+
+    if (topEntiteId !== requeteEtape.entiteId) {
+      throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
+        res: c.res,
+      });
+    }
+
+    const hasAccessToReq = await hasAccessToRequete({
+      requeteId: requeteEtape.requeteId,
+      entiteId: topEntiteId,
+    });
+
+    if (!hasAccessToReq) {
+      throwHTTPException403Forbidden('You are not allowed to access this file', {
+        res: c.res,
+      });
+    }
+
+    const file = await getUploadedFileById(fileId, [topEntiteId]);
+
+    if (!file) {
+      throwHTTPException404NotFound('File not found', { res: c.res });
+    }
+
+    if (!file.safeFilePath) {
+      throwHTTPException404NotFound('Safe file not available', { res: c.res });
+    }
+
+    logger.info({ requeteEtapeId: id, fileId }, 'Retrieving safe file for requete etape');
+
+    return streamSafeFileResponse(c, file);
   })
 
   .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]))
