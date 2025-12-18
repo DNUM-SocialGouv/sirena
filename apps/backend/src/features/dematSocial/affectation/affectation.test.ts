@@ -25,6 +25,7 @@ vi.mock('@/libs/asyncLocalStorage', () => ({
     error: vi.fn(),
     info: vi.fn(),
     debug: vi.fn(),
+    warn: vi.fn(),
   })),
 }));
 
@@ -103,7 +104,13 @@ describe('assignEntitesToRequeteTask', () => {
       situations: [],
     };
 
+    const mockArsNormandie = {
+      id: 'ars-normandie-1',
+      nomComplet: 'ARS Normandie',
+    };
+
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
 
     await assignEntitesToRequeteTask('12345');
 
@@ -113,9 +120,95 @@ describe('assignEntitesToRequeteTask', () => {
       },
       include: expect.any(Object),
     });
+    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+      where: {
+        entiteTypeId: 'ARS',
+        entiteMereId: null,
+        regionCode: '28',
+      },
+    });
   });
 
-  it('should return early when no entities are found', async () => {
+  it('should fallback to ARS Normandie when no entities are found', async () => {
+    const mockRequete = {
+      id: 'requete-1',
+      receptionDate: new Date('2024-01-01'),
+      situations: [
+        {
+          id: 'situation-1',
+          lieuDeSurvenue: {
+            adresse: { codePostal: '75001' },
+          },
+          misEnCause: {},
+          faits: [],
+        },
+        {
+          id: 'situation-2',
+          lieuDeSurvenue: {
+            adresse: { codePostal: '75002' },
+          },
+          misEnCause: {},
+          faits: [],
+        },
+      ],
+    };
+
+    const mockArsNormandie = {
+      id: 'ars-normandie-1',
+      nomComplet: 'ARS Normandie',
+    };
+
+    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+      postalCode: '75001',
+    });
+    (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue(null);
+    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
+
+    await assignEntitesToRequeteTask('requete-1');
+
+    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+      where: {
+        entiteTypeId: 'ARS',
+        entiteMereId: null,
+        regionCode: '28',
+      },
+    });
+
+    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
+      where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      update: {},
+    });
+
+    expect(mockTransaction.situationEntite.upsert).toHaveBeenCalledTimes(2);
+    expect(mockTransaction.situationEntite.upsert).toHaveBeenCalledWith({
+      where: { situationId_entiteId: { situationId: 'situation-1', entiteId: 'ars-normandie-1' } },
+      create: { situationId: 'situation-1', entiteId: 'ars-normandie-1' },
+      update: {},
+    });
+    expect(mockTransaction.situationEntite.upsert).toHaveBeenCalledWith({
+      where: { situationId_entiteId: { situationId: 'situation-2', entiteId: 'ars-normandie-1' } },
+      create: { situationId: 'situation-2', entiteId: 'ars-normandie-1' },
+      update: {},
+    });
+
+    expect(mockTransaction.changeLog.create).toHaveBeenCalledWith({
+      data: {
+        entity: 'Requete',
+        entityId: 'requete-1',
+        action: 'AFFECTATION_ENTITES',
+        before: undefined,
+        after: { entiteIds: ['ars-normandie-1'], isFallback: true },
+        changedById: null,
+      },
+    });
+    expect(createDefaultRequeteEtapes).toHaveBeenCalled();
+  });
+
+  it('should throw error when ARS Normandie is not found in database during fallback', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),
@@ -137,13 +230,24 @@ describe('assignEntitesToRequeteTask', () => {
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue(null);
+    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-    await assignEntitesToRequeteTask('requete-1');
+    await expect(assignEntitesToRequeteTask('requete-1')).rejects.toThrow('ARS Normandie not found in database');
+
+    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+      where: {
+        entiteTypeId: 'ARS',
+        entiteMereId: null,
+        regionCode: '28',
+      },
+    });
+
+    expect(mockPrisma.$disconnect).toHaveBeenCalled();
 
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it('should skip situation when postal code is missing', async () => {
+  it('should fallback to ARS Normandie when assignment process throws an error', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),
@@ -159,18 +263,36 @@ describe('assignEntitesToRequeteTask', () => {
       ],
     };
 
+    const mockArsNormandie = {
+      id: 'ars-normandie-1',
+      nomComplet: 'ARS Normandie',
+    };
+
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
-      postalCode: null,
+    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      throw new Error('Unexpected error during assignment');
     });
-    (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS']);
+    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+      where: {
+        entiteTypeId: 'ARS',
+        entiteMereId: null,
+        regionCode: '28',
+      },
+    });
+
+    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
+      where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      update: {},
+    });
   });
 
-  it('should skip situation when geolocation is not found', async () => {
+  it('should skip situation when postal code is missing and fallback to ARS Normandie', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),
@@ -184,6 +306,49 @@ describe('assignEntitesToRequeteTask', () => {
           faits: [],
         },
       ],
+    };
+
+    const mockArsNormandie = {
+      id: 'ars-normandie-1',
+      nomComplet: 'ARS Normandie',
+    };
+
+    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+      postalCode: null,
+    });
+    (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS']);
+    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
+
+    await assignEntitesToRequeteTask('requete-1');
+
+    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
+      where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      update: {},
+    });
+  });
+
+  it('should skip situation when geolocation is not found and fallback to ARS Normandie', async () => {
+    const mockRequete = {
+      id: 'requete-1',
+      receptionDate: new Date('2024-01-01'),
+      situations: [
+        {
+          id: 'situation-1',
+          lieuDeSurvenue: {
+            adresse: { codePostal: '75001' },
+          },
+          misEnCause: {},
+          faits: [],
+        },
+      ],
+    };
+
+    const mockArsNormandie = {
+      id: 'ars-normandie-1',
+      nomComplet: 'ARS Normandie',
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
@@ -192,13 +357,19 @@ describe('assignEntitesToRequeteTask', () => {
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS']);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue(null);
+    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
+      where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      update: {},
+    });
   });
 
-  it('should skip when entity is not found in database', async () => {
+  it('should skip when entity is not found in database and fallback to ARS Normandie', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),
@@ -212,6 +383,11 @@ describe('assignEntitesToRequeteTask', () => {
           faits: [],
         },
       ],
+    };
+
+    const mockArsNormandie = {
+      id: 'ars-normandie-1',
+      nomComplet: 'ARS Normandie',
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
@@ -224,11 +400,18 @@ describe('assignEntitesToRequeteTask', () => {
       ctcdCode: '75C',
       regionCode: '11',
     });
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(mockArsNormandie);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
+      where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      update: {},
+    });
   });
 
   it('should successfully assign entities and create links', async () => {
@@ -283,7 +466,7 @@ describe('assignEntitesToRequeteTask', () => {
         entityId: 'requete-1',
         action: 'AFFECTATION_ENTITES',
         before: undefined,
-        after: { entiteIds: ['entite-1'] },
+        after: { entiteIds: ['entite-1'], isFallback: false },
         changedById: null,
       },
     });
@@ -336,7 +519,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockTransaction.situationEntite.upsert).toHaveBeenCalledTimes(2);
   });
 
-  it('should handle errors in buildSituationContext or runDecisionTree gracefully', async () => {
+  it('should handle errors in buildSituationContext or runDecisionTree gracefully and fallback to ARS Normandie', async () => {
     const mockRequete = {
       id: 'requete-1',
       receptionDate: new Date('2024-01-01'),
@@ -352,14 +535,25 @@ describe('assignEntitesToRequeteTask', () => {
       ],
     };
 
+    const mockArsNormandie = {
+      id: 'ars-normandie-1',
+      nomComplet: 'ARS Normandie',
+    };
+
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
     (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockImplementation(() => {
       throw new Error('Context build error');
     });
+    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
+      where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      update: {},
+    });
   });
 
   it('should use ctcdCode AND departementCode for CD and DD entity types', async () => {

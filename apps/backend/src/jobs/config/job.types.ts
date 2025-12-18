@@ -4,6 +4,9 @@ export type JobDataMap = {
   'fetch-requetes': {
     timeoutMs: number;
   };
+  'retry-affectation': {
+    batchSize: number;
+  };
 };
 
 export type JobName = keyof JobDataMap;

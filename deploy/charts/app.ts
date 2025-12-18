@@ -117,6 +117,10 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
       name: 'CRON_DEMAT_SOCIAL',
       value: '300',
     },
+    {
+      name: 'CRON_RETRY_AFFECTATION',
+      value: '1800',
+    },
     { name: 'DEMAT_SOCIAL_INSTRUCTEUR_ID', value: 'Instructeur-1166' },
     {
       name: 'ANNUAIRE_SANTE_API_URL',

@@ -86,6 +86,7 @@ describe('logging configuration', () => {
       REDIS_USERNAME: 'redis-user',
 
       CRON_DEMAT_SOCIAL: '10000',
+      CRON_RETRY_AFFECTATION: '10000',
     };
   }
 });

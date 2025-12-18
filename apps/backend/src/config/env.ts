@@ -51,6 +51,7 @@ const processEnv = {
   SARBACANE_API_KEY: process.env.SARBACANE_API_KEY,
   // Cron
   CRON_DEMAT_SOCIAL: process.env.CRON_DEMAT_SOCIAL,
+  CRON_RETRY_AFFECTATION: process.env.CRON_RETRY_AFFECTATION,
   CRON_MONITOR_REQUESTS: process.env.CRON_MONITOR_REQUESTS,
   // Redis
   REDIS_HOST: process.env.REDIS_HOST,
