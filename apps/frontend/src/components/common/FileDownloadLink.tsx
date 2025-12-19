@@ -114,8 +114,16 @@ const isFilePreviewable = (fileName: string): boolean => {
   return previewableExtensions.includes(fileExtension);
 };
 
-const isProcessingComplete = (status?: string): boolean => {
-  return status === 'COMPLETED' || status === 'FAILED';
+const SCAN_FINAL_STATES = ['CLEAN', 'INFECTED', 'ERROR', 'SKIPPED'];
+const SANITIZE_FINAL_STATES = ['COMPLETED', 'ERROR', 'SKIPPED', 'NOT_APPLICABLE'];
+
+const isProcessingComplete = (fileStatus: FileProcessingStatus | null): boolean => {
+  if (!fileStatus) return false;
+
+  const scanComplete = SCAN_FINAL_STATES.includes(fileStatus.scanStatus || '');
+  const sanitizeComplete = SANITIZE_FINAL_STATES.includes(fileStatus.sanitizeStatus || '');
+
+  return scanComplete && sanitizeComplete;
 };
 
 const isSafeFileAvailable = (sanitizeStatus?: string): boolean => {
@@ -261,7 +269,7 @@ export const FileDownloadLink = ({
   }, [fileId]);
 
   useEffect(() => {
-    if (!fileId || isProcessingComplete(fileStatus?.status)) return;
+    if (!fileId || isProcessingComplete(fileStatus)) return;
 
     // Poll immediately on first run if no initial status was provided
     if (!initialPollDoneRef.current && !initialStatus) {
@@ -271,7 +279,7 @@ export const FileDownloadLink = ({
 
     const interval = setInterval(pollStatus, POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [fileId, fileStatus?.status, pollStatus, initialStatus]);
+  }, [fileId, fileStatus, pollStatus, initialStatus]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
