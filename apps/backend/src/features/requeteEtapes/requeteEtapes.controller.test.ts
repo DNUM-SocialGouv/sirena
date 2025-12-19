@@ -11,13 +11,17 @@ import {
   updateRequeteEtapeNom,
   updateRequeteEtapeStatut,
 } from '@/features/requeteEtapes/requetesEtapes.service';
-import { hasAccessToRequete } from '@/features/requetesEntite/requetesEntite.service';
 import { getUploadedFileById } from '@/features/uploadedFiles/uploadedFiles.service';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import { getFileStream } from '@/libs/minio';
 import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
 import { convertDatesToStrings } from '@/tests/formatter';
+import {
+  getRequeteEntiteById,
+  hasAccessToRequete,
+  updateStatusRequete,
+} from '../requetesEntite/requetesEntite.service';
 import RequeteEtapesController from './requetesEtapes.controller';
 
 vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
@@ -34,8 +38,10 @@ vi.mock('@/features/uploadedFiles/uploadedFiles.service', () => ({
   isFileBelongsToRequete: vi.fn(() => Promise.resolve(true)),
 }));
 
-vi.mock('@/features/requetesEntite/requetesEntite.service', () => ({
+vi.mock('../requetesEntite/requetesEntite.service', () => ({
   hasAccessToRequete: vi.fn(() => Promise.resolve(true)),
+  getRequeteEntiteById: vi.fn(),
+  updateStatusRequete: vi.fn(),
 }));
 
 vi.mock('@/middlewares/userStatus.middleware', () => {
@@ -125,6 +131,10 @@ const fakeUpdatedNomRequeteEtape: RequeteEtape = {
   updatedAt: new Date(),
 };
 
+const fakeRequeteEntite = {
+  statutId: 'EN_COURS',
+};
+
 describe('requeteEtapes.controller.ts', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequeteEtapesController).onError(errorHandler);
   const client = testClient(app);
@@ -134,6 +144,13 @@ describe('requeteEtapes.controller.ts', () => {
     vi.mocked(getRequeteEtapeById).mockResolvedValue(fakeRequeteEtape);
     vi.mocked(updateRequeteEtapeStatut).mockResolvedValue(fakeUpdatedRequeteEtape);
     vi.mocked(hasAccessToRequete).mockResolvedValue(true);
+    vi.mocked(getRequeteEntiteById).mockResolvedValue(fakeRequeteEntite);
+    vi.mocked(updateStatusRequete).mockResolvedValue({
+      statutId: 'EN_COURS',
+      requeteId: 'requeteId',
+      entiteId: 'e1',
+      prioriteId: null,
+    });
   });
 
   describe('PATCH /:id/statut', () => {

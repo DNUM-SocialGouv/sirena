@@ -3,7 +3,7 @@ import {
   throwHTTPException403Forbidden,
   throwHTTPException404NotFound,
 } from '@sirena/backend-utils/helpers';
-import { ROLES } from '@sirena/common/constants';
+import { REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import {
@@ -21,8 +21,11 @@ import requeteEtapesChangelogMiddleware from '@/middlewares/changelog/changelog.
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-
-import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service';
+import {
+  getRequeteEntiteById,
+  hasAccessToRequete,
+  updateStatusRequete,
+} from '../requetesEntite/requetesEntite.service';
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service';
 import {
   addProcessingStepRoute,
@@ -175,6 +178,12 @@ const app = factoryWithLogs
         throwHTTPException404NotFound('Requete entite not found', {
           res: c.res,
         });
+      }
+
+      const requete = await getRequeteEntiteById(requeteId, topEntiteId);
+
+      if (requete?.statutId === REQUETE_STATUT_TYPES.NOUVEAU) {
+        await updateStatusRequete(requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
       }
 
       const step = await addProcessingEtape(requeteId, topEntiteId, {

@@ -88,7 +88,7 @@ vi.mock('../requetes/requetes.service', () => ({
   updateDateAndTypeRequete: vi.fn(),
 }));
 
-const fakeRequeteEntite = {
+export const fakeRequeteEntite = {
   requeteId: 'requeteId',
   entiteId: 'entiteId',
   statutId: 'EN_COURS',
