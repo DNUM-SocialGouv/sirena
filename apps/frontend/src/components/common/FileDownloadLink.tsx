@@ -248,6 +248,7 @@ export const FileDownloadLink = ({
   // Refs to reset checkbox state when modals open (avoids re-render issues)
   const resetRiskModalRef = useRef<(() => void) | null>(null);
   const resetWarningModalRef = useRef<(() => void) | null>(null);
+  const initialPollDoneRef = useRef(false);
 
   const pollStatus = useCallback(async () => {
     if (!fileId) return;
@@ -262,9 +263,15 @@ export const FileDownloadLink = ({
   useEffect(() => {
     if (!fileId || isProcessingComplete(fileStatus?.status)) return;
 
+    // Poll immediately on first run if no initial status was provided
+    if (!initialPollDoneRef.current && !initialStatus) {
+      initialPollDoneRef.current = true;
+      pollStatus();
+    }
+
     const interval = setInterval(pollStatus, POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [fileId, fileStatus?.status, pollStatus]);
+  }, [fileId, fileStatus?.status, pollStatus, initialStatus]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();

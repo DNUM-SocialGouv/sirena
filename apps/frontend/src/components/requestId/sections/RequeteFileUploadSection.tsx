@@ -61,6 +61,10 @@ interface UploadedFile {
   mimeType: string;
   size: number;
   canDelete: boolean;
+  status?: string;
+  scanStatus?: string;
+  sanitizeStatus?: string;
+  safeFilePath?: string | null;
 }
 
 interface RequeteFileUploadProps {
@@ -270,8 +274,15 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
                   <div className={styles.fileCardHeader}>
                     <FileDownloadLink
                       href={`/api/requetes-entite/${requeteId}/file/${file.id}`}
+                      safeHref={
+                        file.safeFilePath ? `/api/requetes-entite/${requeteId}/file/${file.id}/safe` : undefined
+                      }
                       fileName={originalName}
+                      fileId={file.id}
                       fileSize={file.size}
+                      status={file.status}
+                      scanStatus={file.scanStatus}
+                      sanitizeStatus={file.sanitizeStatus}
                       className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
                     />
                     {canEdit && file.canDelete && (

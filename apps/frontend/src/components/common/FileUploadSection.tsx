@@ -8,6 +8,7 @@ interface FileUploadSectionProps {
   label: string;
   existingFiles?: FileInfo[];
   getFileUrl?: (fileId: string) => string;
+  getSafeFileUrl?: (fileId: string, safeFilePath: string) => string;
   selectedFiles: File[];
   onFilesChange: (files: File[]) => void;
   disabled?: boolean;
@@ -22,6 +23,7 @@ export const FileUploadSection = ({
   label,
   existingFiles,
   getFileUrl,
+  getSafeFileUrl,
   selectedFiles,
   onFilesChange,
   disabled = false,
@@ -42,7 +44,14 @@ export const FileUploadSection = ({
 
   return (
     <div className="fr-grid-row fr-grid-row--gutters">
-      {hasExistingFiles && <FileList files={existingFiles} getFileUrl={getFileUrl} title={existingFilesTitle} />}
+      {hasExistingFiles && (
+        <FileList
+          files={existingFiles}
+          getFileUrl={getFileUrl}
+          getSafeFileUrl={getSafeFileUrl}
+          title={existingFilesTitle}
+        />
+      )}
 
       <div className="fr-col-12">
         <Upload

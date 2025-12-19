@@ -128,8 +128,17 @@ export function AttachedFiles({
                             ? `/api/requetes-entite/${requestId}/situation/${situationId}/file/${file.id}`
                             : '#'
                         }
+                        safeHref={
+                          file.safeFilePath && requestId
+                            ? `/api/requetes-entite/${requestId}/file/${file.id}/safe`
+                            : undefined
+                        }
                         fileName={file.fileName}
+                        fileId={file.id}
                         fileSize={file.size}
+                        status={file.status}
+                        scanStatus={file.scanStatus}
+                        sanitizeStatus={file.sanitizeStatus}
                         className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
                       />
                     </div>

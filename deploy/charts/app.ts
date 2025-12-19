@@ -127,10 +127,6 @@ function createBackendEnvVars(host: string, environment: string): k8s.EnvVar[] {
       value: 'https://gateway.api.esante.gouv.fr/fhir/v2',
     },
     {
-      name: 'CLAMAV_HOST',
-      value: '', // Leave empty to disable ClamAV scanning - set to actual ClamAV host in production
-    },
-    {
       name: 'CLAMAV_PORT',
       value: '3310',
     },

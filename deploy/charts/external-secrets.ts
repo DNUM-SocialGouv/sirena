@@ -39,6 +39,7 @@ export class ExternalSecrets extends Chart {
               SARBACANE_API_KEY: '{{ .SARBACANE_API_KEY }}',
               ANNUAIRE_SANTE_API_KEY: '{{ .ANNUAIRE_SANTE_API_KEY }}',
               S3_ENCRYPTION_KEY: '{{ .S3_ENCRYPTION_KEY }}',
+              CLAMAV_HOST: '{{ .CLAMAV_HOST }}',
             },
           },
         },
