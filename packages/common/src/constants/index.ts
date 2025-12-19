@@ -1,5 +1,6 @@
 export * from './apiErrors.constant';
 export * from './authErrors.constant';
+export * from './dematSocial.constant';
 export * from './entite.constant';
 export * from './motifs.constant';
 export * from './requete.constant';

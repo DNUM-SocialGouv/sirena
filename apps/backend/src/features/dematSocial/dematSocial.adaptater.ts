@@ -1,4 +1,15 @@
-import { RECEPTION_TYPE } from '@sirena/common/constants';
+import {
+  DS_DEMARCHE_ENGAGEE,
+  DS_LIEU_TYPE,
+  DS_MIS_EN_CAUSE_TYPE,
+  DS_PROFESSION_DOMICILE_TYPE,
+  DS_PROFESSION_TYPE,
+  LIEU_ETABLISSEMENT_SANTE_PRECISION,
+  LIEU_TYPE,
+  MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION,
+  MIS_EN_CAUSE_TYPE,
+  RECEPTION_TYPE,
+} from '@sirena/common/constants';
 import type { CreateRequeteFromDematSocialDto } from '@/features/requetes/requetes.type';
 import type { RootChampFragmentFragment } from '@/libs/graffle';
 import { ChampMappingError, EnumNotFound } from './dematSocial.error';
@@ -138,8 +149,9 @@ const getDemarchesEngagees = (
   champsById: MappedChamp | MappedRepetitionChamp,
   mapping: Mapping | AutreFaitsMapping,
 ) => {
+  const demarches = getEnumsFromLabel(mapping.demarchesEngagees.options, champsById[mapping.demarchesEngagees.id]);
   const demarchesEngagees = {
-    demarches: getEnumsFromLabel(mapping.demarchesEngagees.options, champsById[mapping.demarchesEngagees.id]),
+    demarches: demarches.filter((d) => d !== DS_DEMARCHE_ENGAGEE.AUCUNE && d !== DS_DEMARCHE_ENGAGEE.AUTRE),
     dateContactEtablissement: getDateByChamps(champsById[mapping.demarchesEngageesDateContactEtablissement.id]),
     etablissementARepondu: getBooleanOrNull(champsById[mapping.demarchesEngageesEtablissementARepondu.id]) || false,
     commentaire: champsById[mapping.demarchesEngageesAutre.id]?.stringValue ?? '',
@@ -153,22 +165,38 @@ const getDemarchesEngagees = (
   return demarchesEngagees;
 };
 
+const getLieuxType = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
+  const lieuxType = getEnumIdFromLabel(mapping.lieuType.options, champsById[mapping.lieuType.id]?.stringValue ?? null);
+  if (lieuxType === DS_LIEU_TYPE.CABINET) {
+    return {
+      lieuTypeId: LIEU_TYPE.ETABLISSEMENT_SANTE,
+      lieuPrecision: LIEU_ETABLISSEMENT_SANTE_PRECISION.CABINET_MEDICAL,
+    };
+  }
+  return {
+    lieuTypeId: lieuxType,
+    lieuPrecision: '',
+  };
+};
+
 const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
+  const { lieuTypeId, lieuPrecision } = getLieuxType(champsById, mapping);
   const address = champsById[mapping.lieuAdresse.id] ? createAddress(champsById[mapping.lieuAdresse.id]) : null;
   const codePostal = getCodePostalByCommuneChamp(champsById[mapping.lieuCodePostal.id]);
   const nomEtablissementValue =
     'nomEtablissement' in mapping ? (champsById[mapping.nomEtablissement.id]?.stringValue ?? '') : '';
   const adresse = address ?? { label: nomEtablissementValue ?? '', codePostal, ville: '', rue: '', numero: '' };
   const finessValue = champsById[mapping.finess.id]?.stringValue ?? '';
+  const transportTypeId =
+    getEnumIdFromLabel(mapping.transportType.options, champsById[mapping.transportType.id]?.stringValue ?? null) ??
+    null;
   const lieux = {
     codePostal,
     commentaire: '',
     adresse,
-    lieuTypeId: getEnumIdFromLabel(mapping.lieuType.options, champsById[mapping.lieuType.id]?.stringValue ?? null),
-    transportTypeId: getEnumIdFromLabel(
-      mapping.transportType.options,
-      champsById[mapping.transportType.id]?.stringValue ?? null,
-    ),
+    lieuTypeId,
+    lieuPrecision,
+    transportTypeId: transportTypeId,
     societeTransport: champsById[mapping.transportSociete.id]?.stringValue ?? '',
     finess: finessValue,
   };
@@ -176,31 +204,151 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
 };
 
 const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
-  if (champsById[mapping.responsableType.id]?.stringValue) {
-    return getEnumIdFromLabel(
-      mapping.responsableType.options,
-      champsById[mapping.responsableType.id]?.stringValue ?? null,
-    );
-  } else if (champsById[mapping.responsableType2.id]?.stringValue) {
-    return getEnumIdFromLabel(
+  const { lieuTypeId } = getLieuxType(champsById, mapping);
+  if (lieuTypeId === DS_LIEU_TYPE.DOMICILE) {
+    const responsable = getEnumIdFromLabel(
       mapping.responsableType2.options,
       champsById[mapping.responsableType2.id]?.stringValue ?? null,
     );
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE) {
+      return {
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE,
+        misEnCauseTypePrecisionId: null,
+      };
+    }
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.PROCHE) {
+      return {
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROCHE,
+        misEnCauseTypePrecisionId: null,
+      };
+    }
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.AUTRE) {
+      return {
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PERSONNE_NON_PRO,
+        misEnCauseTypePrecisionId: MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION.AUTRE,
+      };
+    }
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.PROFESSIONNEL) {
+      const professionelType = getEnumIdFromLabel(
+        mapping.professionnelResponsableDomicile.options,
+        champsById[mapping.professionnelResponsableDomicile.id]?.stringValue ?? null,
+      );
+      if (professionelType === DS_PROFESSION_DOMICILE_TYPE.PROFESSIONNEL_SANTE) {
+        return {
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE,
+          misEnCauseTypePrecisionId: null,
+        };
+      }
+      if (professionelType === DS_PROFESSION_DOMICILE_TYPE.NPJM) {
+        return {
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.NPJM,
+          misEnCauseTypePrecisionId: null,
+        };
+      }
+      if (professionelType === DS_PROFESSION_DOMICILE_TYPE.AUTRE) {
+        return {
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
+          misEnCauseTypePrecisionId: MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION.AUTRE,
+        };
+      }
+    }
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.ETABLISSEMENT) {
+      const professionelType = getEnumIdFromLabel(
+        mapping.professionnelResponsableDomicile.options,
+        champsById[mapping.professionnelResponsableDomicile.id]?.stringValue ?? null,
+      );
+      if (professionelType === DS_PROFESSION_DOMICILE_TYPE.AUTRE_PROFESSIONNEL) {
+        return {
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+          misEnCauseTypePrecisionId: null,
+        };
+      }
+      if (professionelType === DS_PROFESSION_DOMICILE_TYPE.SERVICE_EDUCATION) {
+        return {
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+          misEnCauseTypePrecisionId: null,
+        };
+      }
+    }
+  } else {
+    const responsable = getEnumIdFromLabel(
+      mapping.responsableType.options,
+      champsById[mapping.responsableType.id]?.stringValue ?? null,
+    );
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE) {
+      return {
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE,
+        misEnCauseTypePrecisionId: null,
+      };
+    }
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.PROCHE) {
+      return {
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROCHE,
+        misEnCauseTypePrecisionId: null,
+      };
+    }
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.AUTRE) {
+      return {
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PERSONNE_NON_PRO,
+        misEnCauseTypePrecisionId: MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION.AUTRE,
+      };
+    }
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.ETABLISSEMENT) {
+      return {
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+        misEnCauseTypePrecisionId: null,
+      };
+    }
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.PROFESSIONNEL) {
+      const professionelType = getEnumIdFromLabel(
+        mapping.professionnelResponsable.options,
+        champsById[mapping.professionnelResponsable.id]?.stringValue ?? null,
+      );
+      if (professionelType === DS_PROFESSION_TYPE.PROFESSIONNEL_SANTE) {
+        return {
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE,
+          misEnCauseTypePrecisionId: null,
+        };
+      }
+      if (professionelType === DS_PROFESSION_TYPE.PROFESSIONNEL_SOCIAL) {
+        return {
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SOCIAL,
+          misEnCauseTypePrecisionId: null,
+        };
+      }
+      if (professionelType === DS_PROFESSION_TYPE.NPJM) {
+        return {
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.NPJM,
+          misEnCauseTypePrecisionId: null,
+        };
+      }
+      if (professionelType === DS_PROFESSION_TYPE.AUTRE) {
+        return {
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
+          misEnCauseTypePrecisionId: null,
+        };
+      }
+    }
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.ETABLISSEMENT) {
+      if (lieuTypeId !== LIEU_TYPE.TRAJET) {
+        return {
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+          misEnCauseTypePrecisionId: null,
+        };
+      }
+    }
   }
-  return null;
+  return {
+    misEnCauseTypeId: null,
+    misEnCauseTypePrecisionId: null,
+  };
 };
 
 const getMisEnCause = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
+  const { misEnCauseTypeId, misEnCauseTypePrecisionId } = getResponsable(champsById, mapping);
   const misEnCause = {
-    misEnCauseTypeId: getResponsable(champsById, mapping),
-    professionTypeId: getEnumIdFromLabel(
-      mapping.professionnelResponsable.options,
-      champsById[mapping.professionnelResponsable.id]?.stringValue ?? null,
-    ),
-    professionDomicileTypeId: getEnumIdFromLabel(
-      mapping.professionnelResponsableDomicile.options,
-      champsById[mapping.professionnelResponsableDomicile.id]?.stringValue ?? null,
-    ),
+    misEnCauseTypeId,
+    misEnCauseTypePrecisionId,
     rpps: champsById[mapping.professionnelResponsableIdentite.id]?.stringValue ?? null,
     commentaire: champsById[mapping.faitsCommentaire.id]?.stringValue ?? null,
   };

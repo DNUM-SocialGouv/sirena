@@ -4,7 +4,6 @@ import {
   MOTIF,
   type Motif,
   type ProfessionDomicileType,
-  type ProfessionType,
 } from '@sirena/common/constants';
 import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types';
 
@@ -52,14 +51,17 @@ export function computeEntitesFromMotifs(ctx: SituationContext): EntiteAdminType
  *  CONSTANTS
  *********************/
 
-const DOMICILE_PRO_SANTE_MAPPING: Record<ProfessionDomicileType | ProfessionType, EntiteAdminType[]> = {
-  TRAVAILLEUR_SOCIAL: ['CD'],
-  PROF_SANTE: ['ARS'],
-  PROF_SOIN: ['ARS'],
-  INTERVENANT_DOMICILE: ['CD'],
-  SERVICE_EDUCATION: ['ARS'],
-  SERVICE_AIDE_FAMILLE: ['CD'],
-  TUTEUR: ['DD'],
+const DOMICILE_PRO_SANTE_MAPPING: Record<ProfessionDomicileType, EntiteAdminType[]> = {
+  PROF_LIBERAL: ['ARS'],
+  HAD: ['ARS'],
+  SSIAD: ['ARS'],
+  SAAD: ['CD'],
+  SESSAD: ['ARS'],
+  AIDE_MENAGERE: ['CD'],
+  REPAS: ['CD'],
+  TRAITEMENT: ['CD'],
+  SAADF: ['CD'],
+  MJPM: ['DD'],
   AUTRE: ['CD'],
 };
 
@@ -143,9 +145,13 @@ function nonDomicileMaltraitanceSubtree(): DecisionNode {
     kind: 'switch',
     id: 'maltraitance_mis_en_cause',
     description: 'Mis en cause : famille, proche, professionnel, autre',
-    select: (ctx): MisEnCauseType | Extract<MisEnCauseTypePrecisionUnion, 'TUTEUR'> | null => {
+    select: (ctx): MisEnCauseType | Extract<MisEnCauseTypePrecisionUnion, 'MJPM'> | null => {
       const isProfessionnelOrProfessionDomicile = (misEnCauseType: MisEnCauseType) => {
-        const professionMisEnCause: MisEnCauseType[] = ['PROFESSIONNEL', 'PROFESSION_DOMICILE'];
+        const professionMisEnCause: MisEnCauseType[] = [
+          'PROFESSIONNEL_SANTE',
+          'PROFESSIONNEL_SOCIAL',
+          'AUTRE_PROFESSIONNEL',
+        ];
         return professionMisEnCause.includes(misEnCauseType);
       };
 
@@ -153,9 +159,9 @@ function nonDomicileMaltraitanceSubtree(): DecisionNode {
       if (
         ctx.misEnCauseType &&
         isProfessionnelOrProfessionDomicile(ctx.misEnCauseType) &&
-        ctx.misEnCauseTypePrecision === 'TUTEUR'
+        ctx.misEnCauseTypePrecision === 'MJPM'
       )
-        return 'TUTEUR';
+        return 'MJPM';
 
       return ctx.misEnCauseType ?? null;
     },

@@ -213,14 +213,14 @@ async function seedMisEnCauseTypePrecisionEnum(prisma: PrismaClient) {
    */
   await addPrecisions('MEMBRE_FAMILLE', misEnCauseFamillePrecisionLabels);
   await addPrecisions('PROCHE', misEnCauseProchePrecisionLabels);
-  await addPrecisions('AUTRE', misEnCauseAutreNonProPrecisionLabels);
-  await addPrecisions('PROFESSIONNEL', professionSantePrecisionLabels);
-  await addPrecisions('PROFESSIONNEL', professionSocialPrecisionLabels);
-  await addPrecisions('PROFESSIONNEL', autreProfessionnelPrecisionLabels);
+  await addPrecisions('AUTRE_PERSONNE_NON_PRO', misEnCauseAutreNonProPrecisionLabels);
+  await addPrecisions('PROFESSIONNEL_SANTE', professionSantePrecisionLabels);
+  await addPrecisions('PROFESSIONNEL_SOCIAL', professionSocialPrecisionLabels);
+  await addPrecisions('AUTRE_PROFESSIONNEL', autreProfessionnelPrecisionLabels);
 
   // Also seed old DematSocial enum values for backward compatibility
-  await addPrecisions('PROFESSIONNEL', professionTypeLabels);
-  await addPrecisions('PROFESSION_DOMICILE', professionDomicileTypeLabels);
+  await addPrecisions('PROFESSIONNEL_SANTE', professionTypeLabels);
+  await addPrecisions('PROFESSIONNEL_SANTE', professionDomicileTypeLabels);
 
   return { table: 'misEnCauseTypePrecisionEnum', added };
 }
