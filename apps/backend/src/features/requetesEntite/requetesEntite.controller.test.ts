@@ -400,7 +400,7 @@ describe('RequetesEntite endpoints: /', () => {
       const json = await res.json();
       expect(json).toEqual({
         data: {
-          otherEntites: fakeOtherEntites,
+          otherEntites: convertDatesToStrings(fakeOtherEntites),
           directions: [{ id: 'dir1', nomComplet: 'Direction 1', label: 'DIR1' }],
         },
       });
