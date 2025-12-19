@@ -1,5 +1,6 @@
 import { App as CdkApp, YamlOutputType } from 'cdk8s';
 import { App, Worker } from './charts/app';
+import { CustomIssuer } from './charts/cert-issuer';
 import { ExternalSecrets } from './charts/external-secrets';
 import { PodMonitor } from './charts/pod-monitor';
 import { RedisChart } from './charts/redis';
@@ -35,6 +36,10 @@ interface EnvironmentConfig {
   subdomain: string;
   domain: string;
   replicas: number;
+  has_custom_issuer: boolean;
+  technical_fqdn?: string;
+  use_managed_redis: boolean;
+  pc_domain: string;
 }
 
 const ENV_CONFIGS: Record<string, EnvironmentConfig> = {
@@ -42,27 +47,51 @@ const ENV_CONFIGS: Record<string, EnvironmentConfig> = {
     subdomain: 'sirena.integration',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
+    has_custom_issuer: false,
+    use_managed_redis: false,
+    pc_domain: 'https://fca.integ01.dev-agentconnect.fr/api/v2',
   },
   test: {
     subdomain: 'sirena.test',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
+    has_custom_issuer: false,
+    use_managed_redis: false,
+    pc_domain: 'https://fca.integ01.dev-agentconnect.fr/api/v2',
   },
   validation: {
     subdomain: 'sirena.validation',
     domain: 'dev.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.dev.replicas,
+    has_custom_issuer: false,
+    use_managed_redis: false,
+    pc_domain: 'https://fca.integ01.dev-agentconnect.fr/api/v2',
+  },
+  formation: {
+    subdomain: 'sirena.formation',
+    domain: 'prod.atlas.fabrique.social.gouv.fr',
+    replicas: COMMON_CONFIG.resources.prod.replicas,
+    has_custom_issuer: false,
+    use_managed_redis: true,
+    pc_domain: 'https://auth.agentconnect.gouv.fr/api/v2',
   },
   preproduction: {
     subdomain: 'sirena.preproduction',
     domain: 'prod.atlas.fabrique.social.gouv.fr',
     replicas: COMMON_CONFIG.resources.prod.replicas,
+    has_custom_issuer: false,
+    use_managed_redis: true,
+    pc_domain: 'https://auth.agentconnect.gouv.fr/api/v2',
   },
-  // production: {
-  //   subdomain: "sirena",
-  //   domain: "prod.atlas.fabrique.social.gouv.fr",
-  //   replicas: COMMON_CONFIG.resources.prod.replicas,
-  // },
+  production: {
+    subdomain: 'sirena-sante',
+    domain: 'social.gouv.fr',
+    replicas: COMMON_CONFIG.resources.prod.replicas,
+    has_custom_issuer: true,
+    technical_fqdn: 'sirena-sante.social.prod.atlas.fabrique.social.gouv.fr',
+    use_managed_redis: true,
+    pc_domain: 'https://auth.agentconnect.gouv.fr/api/v2',
+  },
 };
 
 // Helper functions
@@ -80,12 +109,14 @@ function createApps(
   const hostUrl = getHostUrl(envConfig);
 
   // External secrets (database and backend secrets)
-  new ExternalSecrets(app, 'external-secrets', environnement);
+  new ExternalSecrets(app, 'external-secrets', environnement, envConfig.use_managed_redis);
 
-  // Redis
-  new RedisChart(app, 'redis', {
-    namespace,
-  });
+  if (!envConfig.use_managed_redis) {
+    // Redis
+    new RedisChart(app, 'redis', {
+      namespace,
+    });
+  }
 
   // Worker
   new Worker(app, {
@@ -95,6 +126,9 @@ function createApps(
     namespace,
     environment,
     host: '',
+    use_managed_redis: envConfig.use_managed_redis,
+    has_custom_certificate: envConfig.has_custom_issuer,
+    pc_domain: envConfig.pc_domain,
   });
 
   // Backend
@@ -107,6 +141,10 @@ function createApps(
     image: `${COMMON_CONFIG.imageRegistry}:${imageTag}-backend`,
     namespace,
     environment,
+    use_managed_redis: envConfig.use_managed_redis,
+    has_custom_certificate: envConfig.has_custom_issuer,
+    ...(envConfig.technical_fqdn ? { technical_fqdn: envConfig.technical_fqdn } : {}),
+    pc_domain: envConfig.pc_domain,
   });
 
   // Frontend
@@ -119,6 +157,10 @@ function createApps(
     image: `${COMMON_CONFIG.imageRegistry}:${imageTag}-frontend`,
     namespace,
     environment,
+    use_managed_redis: envConfig.use_managed_redis,
+    has_custom_certificate: envConfig.has_custom_issuer,
+    ...(envConfig.technical_fqdn ? { technical_fqdn: envConfig.technical_fqdn } : {}),
+    pc_domain: envConfig.pc_domain,
   });
 
   // PodMonitors for VictoriaMetrics
@@ -135,6 +177,10 @@ function createApps(
     port: 'monitoring',
     path: '/metrics',
   });
+
+  if (ENV_CONFIGS[environnement].has_custom_issuer) {
+    new CustomIssuer(app, 'certigna');
+  }
 }
 
 const app = new CdkApp({

@@ -10,7 +10,7 @@ on:
         options:
           - validation
           - preproduction
-          - prod
+          - production
         default: "validation"
 
 jobs:
