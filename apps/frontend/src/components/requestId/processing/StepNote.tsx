@@ -19,12 +19,24 @@ type StepNoteProps = {
     id: string;
     size: number;
     originalName: string;
+    status?: string;
+    scanStatus?: string;
+    sanitizeStatus?: string;
+    safeFilePath?: string | null;
   }[];
   onEdit?: (noteData: {
     id: string;
     requeteStateId: string;
     content: string;
-    files: { id: string; size: number; originalName: string }[];
+    files: {
+      id: string;
+      size: number;
+      originalName: string;
+      status?: string;
+      scanStatus?: string;
+      sanitizeStatus?: string;
+      safeFilePath?: string | null;
+    }[];
   }) => void;
 };
 
@@ -105,8 +117,15 @@ export const StepNote = ({
               <li key={file.id} className={styles['request-note__file']}>
                 <FileDownloadLink
                   href={`/api/requete-etapes/${requeteStateId}/file/${file.id}`}
+                  safeHref={
+                    file.safeFilePath ? `/api/requete-etapes/${requeteStateId}/file/${file.id}/safe` : undefined
+                  }
                   fileName={file.originalName}
+                  fileId={file.id}
                   fileSize={file.size}
+                  status={file.status}
+                  scanStatus={file.scanStatus}
+                  sanitizeStatus={file.sanitizeStatus}
                 />
               </li>
             ))}

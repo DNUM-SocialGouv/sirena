@@ -6,6 +6,7 @@ import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Drawer, Toast } from '@sirena/ui';
 import { useParams } from '@tanstack/react-router';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { useDeleteProcessingStepNote, useUpdateProcessingStepNote } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
@@ -17,6 +18,10 @@ type NoteFiles = {
   id: string;
   size: number;
   originalName: string;
+  status?: string;
+  scanStatus?: string;
+  sanitizeStatus?: string;
+  safeFilePath?: string | null;
 };
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
@@ -322,32 +327,32 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                             <ul>
                               {noteData.existingFiles.map((file) => (
                                 <li key={file.id} className={styles['request-note__file']}>
-                                  <div>
-                                    <a
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <FileDownloadLink
                                       href={`/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                      safeHref={
+                                        file.safeFilePath
+                                          ? `/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}/safe`
+                                          : undefined
+                                      }
+                                      fileName={file.originalName}
+                                      fileId={file.id}
+                                      fileSize={file.size}
+                                      status={file.status}
+                                      scanStatus={file.scanStatus}
+                                      sanitizeStatus={file.sanitizeStatus}
                                       className="fr-link fr-text--sm"
-                                      title={file.originalName}
-                                    >
-                                      {file.originalName.length > 30
-                                        ? `${file.originalName.slice(0, 20)}...`
-                                        : file.originalName}
-                                    </a>
+                                    />
                                     <Button
                                       aria-label="Supprimer le fichier"
                                       title="Supprimer le fichier"
                                       type="button"
-                                      className="fr-btn fr-btn--sm fr-btn--tertiary fr-icon-delete-line fr-ml-2w"
+                                      className="fr-btn fr-btn--sm fr-btn--tertiary fr-icon-delete-line"
                                       onClick={() => handleDeleteFile(file.id)}
                                     >
                                       <span className="fr-sr-only">Supprimer le fichier</span>
                                     </Button>
                                   </div>
-                                  <p className="fr-text--xs">
-                                    {file.originalName.split('.')?.[1]?.toUpperCase()} - {(file.size / 1024).toFixed(2)}{' '}
-                                    Ko
-                                  </p>
                                 </li>
                               ))}
                             </ul>
