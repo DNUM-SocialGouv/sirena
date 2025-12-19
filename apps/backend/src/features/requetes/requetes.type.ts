@@ -66,8 +66,7 @@ type LieuDeSurvenue = {
 
 type MisEnCause = {
   misEnCauseTypeId: string | null;
-  professionTypeId: string | null;
-  professionDomicileTypeId: string | null;
+  misEnCauseTypePrecisionId: string | null;
   rpps: string | null;
   commentaire: string | null;
 };

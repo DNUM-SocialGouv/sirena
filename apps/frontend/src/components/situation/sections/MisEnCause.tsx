@@ -142,7 +142,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
           </div>
         )}
 
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.AUTRE && (
+        {misEnCauseType === MIS_EN_CAUSE_TYPE.AUTRE_PERSONNE_NON_PRO && (
           <div className="fr-col-12 fr-col-md-6">
             <Select
               label="Précision"
@@ -165,7 +165,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
           </div>
         )}
 
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL && (
+        {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE && (
           <div className="fr-col-12 fr-col-md-6">
             <Select
               label="Précision"
@@ -188,7 +188,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
           </div>
         )}
 
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL && (
+        {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SOCIAL && (
           <div className="fr-col-12 fr-col-md-6">
             <Select
               label="Précision"
@@ -211,7 +211,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
           </div>
         )}
 
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.AUTRE && (
+        {misEnCauseType === MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL && (
           <div className="fr-col-12 fr-col-md-6">
             <Select
               label="Précision"
@@ -234,7 +234,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
           </div>
         )}
 
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL && (
+        {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE && (
           <>
             <div className="fr-col-12 fr-col-md-6">
               <PractitionerSearchField

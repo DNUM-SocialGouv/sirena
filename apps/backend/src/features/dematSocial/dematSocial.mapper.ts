@@ -1,17 +1,17 @@
 import {
-  ageLabels,
-  autoriteTypeLabels,
-  consequenceLabels,
-  declarationTypeLabels,
-  demarcheEngageeLabels,
-  lienVictimeLabels,
-  lieuTypeLabels,
-  maltraitanceTypeLabels,
-  misEnCauseTypeLabels,
-  motifLabels,
-  professionDomicileTypeLabels,
-  professionTypeLabels,
-  transportTypeLabels,
+  dsAgeLabels,
+  dsAutoriteTypeLabels,
+  dsConsequenceLabels,
+  dsDeclarationTypeLabels,
+  dsDemarcheEngageeLabels,
+  dsLienVictimeLabels,
+  dsLieuTypeLabels,
+  dsMaltraitanceTypeLabels,
+  dsMisEnCauseTypeLabels,
+  dsMotifLabels,
+  dsProfessionDomicileTypeLabels,
+  dsProfessionTypeLabels,
+  dsTransportTypeLabels,
 } from '@sirena/common/constants';
 
 const estVictime = {
@@ -37,7 +37,7 @@ const age = {
   id: 'Champ-19490',
   type: 'TextChamp',
   label: 'Âge',
-  options: Object.entries(ageLabels).map(([key, label]) => ({
+  options: Object.entries(dsAgeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -98,7 +98,7 @@ const lienVictime = {
   id: 'Champ-19497',
   type: 'TextChamp',
   label: 'Quel est votre lien avec la personne concernée ?',
-  options: Object.entries(lienVictimeLabels).map(([key, label]) => ({
+  options: Object.entries(dsLienVictimeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -112,7 +112,7 @@ const declarantTelephone = {
 
 const estAnonymeMemePersonne = {
   id: 'Champ-34247',
-  type: 'TextChamp',
+  type: 'CheckboxChamp',
   label: 'Acceptez-vous que votre identité soit donnée au responsable des faits lors du suivi du dossier ?',
   options: [
     {
@@ -152,7 +152,7 @@ const victimeAge = {
   id: 'Champ-19493',
   type: 'TextChamp',
   label: 'Son âge',
-  options: Object.entries(ageLabels).map(([key, label]) => ({
+  options: Object.entries(dsAgeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -200,7 +200,7 @@ const victimeIdentiteCommunique = {
   id: 'Champ-34248',
   type: 'CheckboxChamp',
   label:
-    "La personne concernée accepte-t-elle que son identité soit communiquée au(x) mis en cause si cela est nécessaire à l'instruction du dossier ?",
+    'La personne concernée accepte-t-elle que son identité soit donnée au responsable des faits lors du suivi du dossier ? *',
   options: [
     {
       key: true,
@@ -218,7 +218,7 @@ const victimeIdentiteCommunique = {
 const autreVictimes = {
   id: 'Champ-27605',
   type: 'CheckboxChamp',
-  label: "D'autres personnes sont-elles concernées par la réclamation ?",
+  label: "D'autres personnes sont-elles concernées par la situation ?",
   options: [
     {
       key: true,
@@ -237,7 +237,7 @@ const declarationType = {
   id: 'Champ-42500',
   type: 'TextChamp',
   label: 'Vous souhaitez déclarer :',
-  options: Object.entries(declarationTypeLabels).map(([key, label]) => ({
+  options: Object.entries(dsDeclarationTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -248,8 +248,8 @@ const declarationType = {
 const declarationQualiteType = {
   id: 'Champ-42501',
   type: 'MultipleDropDownListChamp',
-  label: 'Cochez ce qui décrit le mieux la situation.',
-  options: Object.entries(motifLabels).map(([key, label]) => ({
+  label: 'Précisez :',
+  options: Object.entries(dsMotifLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -261,8 +261,8 @@ const declarationQualiteType = {
 const declarationFacturationType = {
   id: 'Champ-42502',
   type: 'MultipleDropDownListChamp',
-  label: 'Cochez ce qui décrit le mieux la situation.',
-  options: Object.entries(motifLabels).map(([key, label]) => ({
+  label: 'Précisez :',
+  options: Object.entries(dsMotifLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -316,7 +316,7 @@ const lieuType = {
   id: 'Champ-19505',
   type: 'TextChamp',
   label: 'Dans quel lieu ?',
-  options: Object.entries(lieuTypeLabels).map(([key, label]) => ({
+  options: Object.entries(dsLieuTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -336,7 +336,7 @@ const nomEtablissement = {
 const lieuAdresse = {
   id: 'Champ-27161',
   type: 'AddressChamp',
-  label: 'Adresse concernée',
+  label: 'À quelle adresse ?',
 };
 
 /* lieuType = Autre || Au domicile... || Dans un cabinet... || Domicile end */
@@ -345,8 +345,8 @@ const lieuAdresse = {
 const transportType = {
   id: 'Champ-27166',
   type: 'TextChamp',
-  label: 'Type de transport concerné',
-  options: Object.entries(transportTypeLabels).map(([key, label]) => ({
+  label: 'Quel était le moyen de transport ?',
+  options: Object.entries(dsTransportTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -364,7 +364,7 @@ const transportSociete = {
 const finess = {
   id: 'Champ-19508',
   type: 'TextChamp',
-  label: "Recherchez l'établissement concerné",
+  label: 'Quels sont le nom et la ville de l’établissement ?',
 };
 
 /* lieuType = 'Un établissement... end */
@@ -374,17 +374,20 @@ const responsableType = {
   id: 'Champ-28368',
   type: 'TextChamp',
   label: 'Qui est le principal responsable des faits ?',
-  options: Object.entries(misEnCauseTypeLabels).map(([key, label]) => ({
+  options: Object.entries(dsMisEnCauseTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
 };
 
+/* lieuType != 'Domicile... end */
+/* lieuType = 'Domicile... start */
+
 const responsableType2 = {
   id: 'Champ-42519',
   type: 'TextChamp',
   label: 'Qui est le principal responsable des faits ?',
-  options: Object.entries(misEnCauseTypeLabels).map(([key, label]) => ({
+  options: Object.entries(dsMisEnCauseTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -397,7 +400,7 @@ const professionnelResponsable = {
   id: 'Champ-19515',
   type: 'TextChamp',
   label: 'Cette personne est :',
-  options: Object.entries(professionTypeLabels).map(([key, label]) => ({
+  options: Object.entries(dsProfessionTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -410,7 +413,7 @@ const professionnelResponsableDomicile = {
   id: 'Champ-27168',
   type: 'TextChamp',
   label: 'Cette personne est :',
-  options: Object.entries(professionDomicileTypeLabels).map(([key, label]) => ({
+  options: Object.entries(dsProfessionDomicileTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -424,7 +427,7 @@ const professionnelResponsableDomicile = {
 const professionnelResponsableIdentite = {
   id: 'Champ-19511',
   type: 'TextChamp',
-  label: 'Nom du professionnel de santé',
+  label: 'Quel est le nom du professionnel de santé ?',
 };
 
 /* professionnelResponsable = Professionnel... || professionnelResponsableDomicile = Professionnel d'un ... end */
@@ -439,7 +442,7 @@ const maltraitanceTypesMap = {
   id: 'Champ-27156',
   type: 'MultipleDropDownListChamp',
   label: 'Avez-vous observé ou vécu une ou plusieurs des situations suivantes ?',
-  options: Object.entries(maltraitanceTypeLabels).map(([key, label]) => ({
+  options: Object.entries(dsMaltraitanceTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -449,7 +452,7 @@ const consequencesMap = {
   id: 'Champ-27572',
   type: 'MultipleDropDownListChamp',
   label: 'Quelles sont les conséquences sur le quotidien ?',
-  options: Object.entries(consequenceLabels).map(([key, label]) => ({
+  options: Object.entries(dsConsequenceLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -458,14 +461,14 @@ const consequencesMap = {
 const faitsFichiers = {
   id: 'Champ-37252',
   type: 'PieceJustificativeChamp',
-  label: 'Si vous les pensez utiles au traitement de votre dossier, vous pouvez ajouter des pièces jointes (3 maximum)',
+  label: 'Ajouter un fichier',
 };
 
 const demarchesEngagees = {
   id: 'Champ-37048',
   type: 'MultipleDropDownListChamp',
   label: "Indiquez si des démarches ont été engagées pour ces faits (à l'écrit ou à l'oral)",
-  options: Object.entries(demarcheEngageeLabels).map(([key, label]) => ({
+  options: Object.entries(dsDemarcheEngageeLabels).map(([key, label]) => ({
     key,
     label,
   })),
@@ -491,7 +494,7 @@ const demarchesEngageesEtablissementARepondu = {
 const demarchesEngageesReponseFile = {
   id: 'Champ-19737',
   type: 'PieceJustificativeChamp',
-  label: 'Merci de joindre la réponse obtenue',
+  label: "Ajoutez une copie d'écran ou un résumé des échanges",
 };
 
 /* demarchesEngageesEtablissementARepondu = true end */
@@ -516,7 +519,7 @@ const demarcheEngageAutoriteType = {
   id: 'Champ-19742',
   type: 'TextChamp',
   label: 'Auprès de qui ?',
-  options: Object.entries(autoriteTypeLabels).map(([key, label]) => ({
+  options: Object.entries(dsAutoriteTypeLabels).map(([key, label]) => ({
     key,
     label,
   })),
