@@ -3,6 +3,7 @@ import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { type FileProcessingStatus, getFileProcessingStatus } from '@/lib/api/fetchUploadedFiles';
+import { HttpError } from '@/lib/api/tanstackQuery';
 import { formatFileSize } from '@/utils/fileHelpers';
 
 // Separate component to isolate checkbox state from parent re-renders
@@ -257,19 +258,23 @@ export const FileDownloadLink = ({
   const resetRiskModalRef = useRef<(() => void) | null>(null);
   const resetWarningModalRef = useRef<(() => void) | null>(null);
   const initialPollDoneRef = useRef(false);
+  const pollingDisabledRef = useRef(false);
 
   const pollStatus = useCallback(async () => {
-    if (!fileId) return;
+    if (!fileId || pollingDisabledRef.current) return;
     try {
       const status = await getFileProcessingStatus(fileId);
       setFileStatus(status);
-    } catch {
-      // Polling errors are expected when file is being processed
+    } catch (error) {
+      // Stop polling on 404 (file not found)
+      if (error instanceof HttpError && error.status === 404) {
+        pollingDisabledRef.current = true;
+      }
     }
   }, [fileId]);
 
   useEffect(() => {
-    if (!fileId || isProcessingComplete(fileStatus)) return;
+    if (!fileId || pollingDisabledRef.current || isProcessingComplete(fileStatus)) return;
 
     // Poll immediately on first run if no initial status was provided
     if (!initialPollDoneRef.current && !initialStatus) {

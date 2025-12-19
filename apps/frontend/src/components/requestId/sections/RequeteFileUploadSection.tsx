@@ -88,7 +88,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
   const uploadFileMutation = useUploadFile();
   const setRequeteFileMutation = useSetRequeteFile();
   const createRequeteMutation = useCreateRequeteEntite();
-  const deleteFileMutation = useDeleteUploadedFile();
+  const deleteFileMutation = useDeleteUploadedFile({ requeteId });
 
   const deleteFileModal = useMemo(
     () =>
