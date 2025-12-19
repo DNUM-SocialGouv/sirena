@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Entite, prisma } from '@/libs/prisma';
 import {
+  getDirectionsFromRequeteEntiteId,
   getEditableEntitiesChain,
   getEntiteAscendanteIds,
   getEntiteChain,
@@ -41,6 +42,39 @@ const fakeEntite = (id: string): Entite => ({
 });
 
 describe('entites.service', () => {
+  describe('getDirectionsFromRequeteEntiteId()', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('queries directions (children entites) linked to requete situations', async () => {
+      const mockDirections = [fakeEntite('d1'), fakeEntite('d2')];
+
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce(mockDirections);
+
+      const result = await getDirectionsFromRequeteEntiteId('requeteId', 'e1');
+
+      expect(prisma.entite.findMany).toHaveBeenCalledWith({
+        where: {
+          entiteMereId: 'e1',
+          situationEntites: {
+            some: {
+              situation: {
+                requeteId: 'requeteId',
+              },
+            },
+          },
+        },
+        select: {
+          id: true,
+          nomComplet: true,
+          label: true,
+        },
+      });
+      expect(result).toEqual(mockDirections);
+    });
+  });
+
   describe('getEntiteForUser()', () => {
     const mockEntite1 = {
       id: '2',

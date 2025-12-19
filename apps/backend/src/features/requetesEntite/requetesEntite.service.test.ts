@@ -426,11 +426,11 @@ describe('requetesEntite.service', () => {
 
       expect(result).toEqual([
         {
-          entite: mockOtherEntite.entite,
+          ...mockOtherEntite.entite,
           statutId: mockOtherEntite.statutId,
         },
         {
-          entite: mockSecondOtherEntite.entite,
+          ...mockSecondOtherEntite.entite,
           statutId: mockOtherEntite.statutId,
         },
       ]);

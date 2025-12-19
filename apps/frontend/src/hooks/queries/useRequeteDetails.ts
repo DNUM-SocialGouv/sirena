@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { skipToken, useQuery } from '@tanstack/react-query';
 import { fetchRequeteDetails, fetchRequeteOtherEntitiesAffected } from '@/lib/api/fetchRequetesEntite';
 
 export const useRequeteDetails = (requestId?: string) => {
@@ -12,13 +12,14 @@ export const useRequeteDetails = (requestId?: string) => {
   });
 };
 
-export const useRequeteOtherEntitiesAffected = (requestId: string) => {
-  return useQuery({
-    queryKey: ['requeteOtherEntitiesAffected', requestId],
-    queryFn: async () => {
-      return await fetchRequeteOtherEntitiesAffected(requestId);
-    },
-    placeholderData: [],
-    enabled: !!requestId,
+type RequeteOtherEntitiesAffected = Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>;
+
+const emptyOtherEntitiesAffected: RequeteOtherEntitiesAffected = { otherEntites: [], directions: [] };
+
+export const useRequeteOtherEntitiesAffected = (requestId?: string) => {
+  return useQuery<RequeteOtherEntitiesAffected>({
+    queryKey: ['requeteOtherEntitiesAffected', requestId ?? ''],
+    queryFn: requestId ? () => fetchRequeteOtherEntitiesAffected(requestId) : skipToken,
+    placeholderData: emptyOtherEntitiesAffected,
   });
 };

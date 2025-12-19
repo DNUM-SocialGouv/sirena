@@ -263,10 +263,8 @@ export const getOtherEntitesAffected = async (requeteId: string, excludeEntiteId
 
   return requeteEntites.map((re) => {
     return {
-      entite: {
-        ...re.entite,
-        entiteTypeId: re.entite.entiteTypeId as EntiteType,
-      },
+      ...re.entite,
+      entiteTypeId: re.entite.entiteTypeId as EntiteType,
       statutId: re.statutId as RequeteStatutType,
     };
   });

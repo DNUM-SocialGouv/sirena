@@ -21,6 +21,7 @@ import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
+import { getDirectionsFromRequeteEntiteId } from '../entites/entites.service';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service';
 import {
   closeRequeteRoute,
@@ -125,9 +126,17 @@ const app = factoryWithLogs
       });
     }
 
-    const otherEntites = await getOtherEntitesAffected(requeteEntite.requeteId, requeteEntite.entiteId);
+    const [otherEntites, directions] = await Promise.all([
+      getOtherEntitesAffected(requeteEntite.requeteId, requeteEntite.entiteId),
+      getDirectionsFromRequeteEntiteId(requeteEntite.requeteId, requeteEntite.entiteId),
+    ]);
 
-    return c.json({ data: otherEntites });
+    return c.json({
+      data: {
+        otherEntites,
+        directions,
+      },
+    });
   })
 
   .get('/:id/file/:fileId', async (c) => {

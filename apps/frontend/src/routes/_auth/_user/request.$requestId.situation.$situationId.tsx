@@ -38,7 +38,7 @@ function RouteComponent() {
   const navigate = useNavigate();
   const requestQuery = useRequeteDetails(requestId);
   const { data: profile } = useProfile();
-  const { data: otherEntitiesAffected = [] } = useRequeteOtherEntitiesAffected(requestId);
+  const { data: { otherEntites = [] } = {} } = useRequeteOtherEntitiesAffected(requestId);
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
   const [shouldShowCloseModal, setShouldShowCloseModal] = useState(false);
 
@@ -130,7 +130,7 @@ function RouteComponent() {
                 }
                 misEnCause={situations?.[0]?.misEnCause?.misEnCauseType?.label || 'Non spécifié'}
                 initialReasonId={REQUETE_CLOTURE_REASON.HORS_COMPETENCE}
-                otherEntitiesAffected={otherEntitiesAffected}
+                otherEntitiesAffected={otherEntites}
                 customDescription={`Votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${requestId}.`}
                 onCancel={handleCloseModalCancel}
                 onSuccess={handleCloseModalSuccess}

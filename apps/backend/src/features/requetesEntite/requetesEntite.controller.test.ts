@@ -10,6 +10,7 @@ import type { UploadedFile } from '@/libs/prisma';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
+import { getDirectionsFromRequeteEntiteId } from '../entites/entites.service';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service';
 import RequetesEntiteController from './requetesEntite.controller';
@@ -29,6 +30,10 @@ vi.mock('./requetesEntite.service', () => ({
   hasAccessToRequete: vi.fn(),
   getOtherEntitesAffected: vi.fn(),
   updateStatusRequete: vi.fn(),
+}));
+
+vi.mock('../entites/entites.service', () => ({
+  getDirectionsFromRequeteEntiteId: vi.fn(),
 }));
 
 vi.mock('@/libs/minio', () => ({
@@ -127,6 +132,7 @@ export const fakeRequeteEntite = {
 describe('RequetesEntite endpoints: /', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(getDirectionsFromRequeteEntiteId).mockResolvedValue([]);
   });
 
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequetesEntiteController).onError(errorHandler);
@@ -374,10 +380,17 @@ describe('RequetesEntite endpoints: /', () => {
             createdAt: new Date(),
             updatedAt: new Date(),
           },
+          entiteTypeId: 'ARS',
+          id: '1',
+          nomComplet: 'ARS Nouvelle-Aquitaine',
+          label: 'ARS NA',
         } as const,
       ];
       vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
       vi.mocked(getOtherEntitesAffected).mockResolvedValueOnce(fakeOtherEntites);
+      vi.mocked(getDirectionsFromRequeteEntiteId).mockResolvedValueOnce([
+        { id: 'dir1', nomComplet: 'Direction 1', label: 'DIR1' },
+      ]);
 
       const res = await client[':id']['other-entites-affected'].$get({
         param: { id: 'requeteId' },
@@ -386,8 +399,12 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json).toEqual({
-        data: convertDatesToStrings(fakeOtherEntites),
+        data: {
+          otherEntites: convertDatesToStrings(fakeOtherEntites),
+          directions: [{ id: 'dir1', nomComplet: 'Direction 1', label: 'DIR1' }],
+        },
       });
+      expect(getDirectionsFromRequeteEntiteId).toHaveBeenCalledWith('requeteId', 'entiteId');
     });
 
     it('should return 404 when requeteEntite not found', async () => {
