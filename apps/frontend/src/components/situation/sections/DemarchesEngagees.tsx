@@ -49,10 +49,22 @@ export function DemarchesEngagees({ formData, setFormData }: DemarchesEngageesPr
                   value: DEMARCHES_ENGAGEES.CONTACT_RESPONSABLES,
                   checked: demarches.includes(DEMARCHES_ENGAGEES.CONTACT_RESPONSABLES),
                   onChange: (e) => {
-                    const updated = e.target.checked
-                      ? [...demarches, DEMARCHES_ENGAGEES.CONTACT_RESPONSABLES]
-                      : demarches.filter((v: string) => v !== DEMARCHES_ENGAGEES.CONTACT_RESPONSABLES);
-                    handleMultiSelect('demarchesEngagees', 'demarches')(updated);
+                    if (e.target.checked) {
+                      handleMultiSelect(
+                        'demarchesEngagees',
+                        'demarches',
+                      )([...demarches, DEMARCHES_ENGAGEES.CONTACT_RESPONSABLES]);
+                    } else {
+                      setFormData((prev) => ({
+                        ...prev,
+                        demarchesEngagees: {
+                          ...prev.demarchesEngagees,
+                          demarches: demarches.filter((v: string) => v !== DEMARCHES_ENGAGEES.CONTACT_RESPONSABLES),
+                          dateContactResponsables: undefined,
+                          reponseRecueResponsables: undefined,
+                        },
+                      }));
+                    }
                   },
                 },
               },
@@ -106,10 +118,21 @@ export function DemarchesEngagees({ formData, setFormData }: DemarchesEngageesPr
                   value: DEMARCHES_ENGAGEES.CONTACT_ORGANISME,
                   checked: demarches.includes(DEMARCHES_ENGAGEES.CONTACT_ORGANISME),
                   onChange: (e) => {
-                    const updated = e.target.checked
-                      ? [...demarches, DEMARCHES_ENGAGEES.CONTACT_ORGANISME]
-                      : demarches.filter((v: string) => v !== DEMARCHES_ENGAGEES.CONTACT_ORGANISME);
-                    handleMultiSelect('demarchesEngagees', 'demarches')(updated);
+                    if (e.target.checked) {
+                      handleMultiSelect(
+                        'demarchesEngagees',
+                        'demarches',
+                      )([...demarches, DEMARCHES_ENGAGEES.CONTACT_ORGANISME]);
+                    } else {
+                      setFormData((prev) => ({
+                        ...prev,
+                        demarchesEngagees: {
+                          ...prev.demarchesEngagees,
+                          demarches: demarches.filter((v: string) => v !== DEMARCHES_ENGAGEES.CONTACT_ORGANISME),
+                          precisionsOrganisme: undefined,
+                        },
+                      }));
+                    }
                   },
                 },
               },
@@ -140,10 +163,19 @@ export function DemarchesEngagees({ formData, setFormData }: DemarchesEngageesPr
                   value: DEMARCHES_ENGAGEES.PLAINTE,
                   checked: demarches.includes(DEMARCHES_ENGAGEES.PLAINTE),
                   onChange: (e) => {
-                    const updated = e.target.checked
-                      ? [...demarches, DEMARCHES_ENGAGEES.PLAINTE]
-                      : demarches.filter((v: string) => v !== DEMARCHES_ENGAGEES.PLAINTE);
-                    handleMultiSelect('demarchesEngagees', 'demarches')(updated);
+                    if (e.target.checked) {
+                      handleMultiSelect('demarchesEngagees', 'demarches')([...demarches, DEMARCHES_ENGAGEES.PLAINTE]);
+                    } else {
+                      setFormData((prev) => ({
+                        ...prev,
+                        demarchesEngagees: {
+                          ...prev.demarchesEngagees,
+                          demarches: demarches.filter((v: string) => v !== DEMARCHES_ENGAGEES.PLAINTE),
+                          dateDepotPlainte: undefined,
+                          lieuDepotPlainte: undefined,
+                        },
+                      }));
+                    }
                   },
                 },
               },

@@ -80,9 +80,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                 setFormData((prev) => ({
                   ...prev,
                   misEnCause: {
-                    ...prev.misEnCause,
                     misEnCauseType: e.target.value || undefined,
-                    misEnCausePrecision: undefined,
                   },
                 })),
             }}

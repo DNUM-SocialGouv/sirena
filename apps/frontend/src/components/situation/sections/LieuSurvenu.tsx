@@ -84,9 +84,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
                 setFormData((prev) => ({
                   ...prev,
                   lieuDeSurvenue: {
-                    ...prev.lieuDeSurvenue,
                     lieuType: e.target.value || undefined,
-                    lieuPrecision: undefined,
                   },
                 })),
             }}
