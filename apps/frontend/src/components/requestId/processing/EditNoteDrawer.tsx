@@ -71,7 +71,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
 
   const updateNoteMutation = useUpdateProcessingStepNote(requestId);
   const uploadFileMutation = useUploadFile();
-  const deleteFileMutation = useDeleteUploadedFile();
+  const deleteFileMutation = useDeleteUploadedFile({ requeteId: requestId });
   const deleteNoteMutation = useDeleteProcessingStepNote(requestId);
 
   const toastManager = Toast.useToastManager();

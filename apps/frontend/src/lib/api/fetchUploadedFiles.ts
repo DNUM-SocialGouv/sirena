@@ -31,7 +31,7 @@ export async function getFileProcessingStatus(id: string): Promise<FileProcessin
   const res = await client['uploaded-files'][':id'].status.$get({
     param: { id },
   });
-  await handleRequestErrors(res);
+  await handleRequestErrors(res, { silentToastError: true });
   const { data } = await res.json();
   return data;
 }

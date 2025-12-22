@@ -14,7 +14,11 @@ export const useUploadFile = (options: Partial<RequestErrorOptions> = {}) => {
   });
 };
 
-export const useDeleteUploadedFile = () => {
+type DeleteUploadedFileOptions = {
+  requeteId?: string;
+};
+
+export const useDeleteUploadedFile = (options: DeleteUploadedFileOptions = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -22,6 +26,9 @@ export const useDeleteUploadedFile = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['uploaded-files'] });
       queryClient.invalidateQueries({ queryKey: ['processingSteps'] });
+      if (options.requeteId) {
+        queryClient.invalidateQueries({ queryKey: ['requete', options.requeteId] });
+      }
     },
   });
 };
