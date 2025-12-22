@@ -11,6 +11,7 @@ export interface FileWithMetadata {
   sanitizeStatus?: string;
   safeFilePath?: string | null;
   processingError?: string | null;
+  entiteId?: string | null;
 }
 
 export interface FileInfo {
@@ -23,6 +24,7 @@ export interface FileInfo {
   sanitizeStatus?: string;
   safeFilePath?: string | null;
   processingError?: string | null;
+  entiteId?: string | null;
 }
 
 export function getOriginalFileName(file: FileWithMetadata): string {
@@ -41,6 +43,7 @@ export function formatFileFromServer(file: FileWithMetadata): FileInfo {
     sanitizeStatus: file.sanitizeStatus,
     safeFilePath: file.safeFilePath,
     processingError: file.processingError,
+    entiteId: file.entiteId,
   };
 }
 

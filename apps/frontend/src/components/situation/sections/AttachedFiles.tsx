@@ -5,6 +5,7 @@ import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import type { SituationData } from '@sirena/common/schemas';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
+import { useProfile } from '@/hooks/queries/profile.hook';
 import noteStyles from '@/routes/_auth/_user/request.$requestId.module.css';
 import type { FileInfo } from '@/utils/fileHelpers';
 import { ACCEPTED_FILE_TYPES, FILE_UPLOAD_HINT, formatFileSize } from '@/utils/fileHelpers';
@@ -33,6 +34,7 @@ export function AttachedFiles({
   const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
   const [fileToDelete, setFileToDelete] = useState<FileInfo | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
+  const { data: profile } = useProfile();
 
   const existingFiles = (formData.fait?.files || []) as FileInfo[];
 
@@ -142,7 +144,7 @@ export function AttachedFiles({
                         className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
                       />
                     </div>
-                    {!isSaving && file.canDelete !== false && (
+                    {!isSaving && file.canDelete !== false && file.entiteId === profile?.topEntiteId && (
                       <Button
                         aria-label="Supprimer le fichier"
                         title="Supprimer le fichier"
