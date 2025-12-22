@@ -24,6 +24,7 @@ interface SituationFormProps {
     shouldCreateRequest: boolean,
     faitFiles: File[],
     initialFileIds?: string[],
+    initialFiles?: Array<{ id: string; entiteId?: string | null }>,
   ) => Promise<void>;
 }
 
@@ -80,7 +81,8 @@ export function SituationForm({
 
       const shouldCreateRequest = mode === 'create' && !requestId;
       const initialFileIds = initialData?.fait?.fileIds;
-      await onSave(formData, shouldCreateRequest, faitFiles, initialFileIds);
+      const initialFiles = initialData?.fait?.files || [];
+      await onSave(formData, shouldCreateRequest, faitFiles, initialFileIds, initialFiles);
     } finally {
       setIsSaving(false);
     }

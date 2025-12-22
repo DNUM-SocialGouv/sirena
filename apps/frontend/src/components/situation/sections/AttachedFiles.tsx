@@ -83,12 +83,15 @@ export function AttachedFiles({
       const currentFileIds = prev.fait?.fileIds || [];
       const currentFiles = prev.fait?.files || [];
 
+      const newFileIds = currentFileIds.filter((id) => id !== fileId);
+      const newFiles = currentFiles.filter((f) => f.id !== fileId);
+
       return {
         ...prev,
         fait: {
           ...prev.fait,
-          fileIds: currentFileIds.filter((id) => id !== fileId),
-          files: currentFiles.filter((f) => f.id !== fileId),
+          fileIds: newFileIds,
+          files: newFiles,
         },
       };
     });
