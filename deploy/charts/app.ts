@@ -105,8 +105,16 @@ function createBackendEnvVars(host: string, environment: string, pc_domain: stri
       value: '9090',
     },
     {
-      name: 'SARBACANE_API_URL',
-      value: 'https://api.sarbacane.com/sendkit',
+      name: 'TIPIMAIL_API_URL',
+      value: 'https://api.tipimail.com/v1',
+    },
+    {
+      name: 'TIPIMAIL_FROM_ADDRESS',
+      value: 'ne-pas-repondre@sirena-sante.social.gouv.fr',
+    },
+    {
+      name: 'TIPIMAIL_FROM_PERSONAL_NAME',
+      value: 'Sirena',
     },
     {
       name: 'S3_BUCKET_ENDPOINT',

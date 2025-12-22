@@ -139,8 +139,11 @@ vi.mock('@/config/env', () => ({
     TRUSTED_IP_HEADERS: 'x-forwarded-for',
     LOG_EXTRA_CONTEXT: '',
     SUPER_ADMIN_LIST_EMAIL: 'admin@test.com',
-    // Sarbacane
-    SARBACANE_API_URL: 'http://localhost:3003',
-    SARBACANE_API_KEY: 'test-api-key',
+    // Tipimail
+    TIPIMAIL_API_URL: 'http://localhost:3003',
+    TIPIMAIL_API_KEY: 'test-api-key',
+    TIPIMAIL_USER_ID: 'test-user-id',
+    TIPIMAIL_FROM_ADDRESS: 'test@example.com',
+    TIPIMAIL_FROM_PERSONAL_NAME: 'Test User',
   },
 }));

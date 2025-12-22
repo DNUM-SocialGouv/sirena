@@ -74,9 +74,12 @@ describe('logging configuration', () => {
       S3_BUCKET_REGION: 'us-east-1',
       S3_BUCKET_ROOT_DIR: 'uploads',
       S3_ENCRYPTION_KEY: 'a'.repeat(64),
-      SARBACANE_API_URL: 'https://api.sarbacane.com/sendkit',
-      SARBACANE_API_KEY: 'test-api-key',
 
+      TIPIMAIL_API_URL: 'https://api.tipimail.com/v1',
+      TIPIMAIL_API_KEY: 'test-api-key',
+      TIPIMAIL_USER_ID: 'test-user-id',
+      TIPIMAIL_FROM_ADDRESS: 'test@example.com',
+      TIPIMAIL_FROM_PERSONAL_NAME: 'Test User',
       ANNUAIRE_SANTE_API_KEY: 'test-annuaire-sante-api-key',
       ANNUAIRE_SANTE_API_URL: 'https://api.annuairesante.test',
 
