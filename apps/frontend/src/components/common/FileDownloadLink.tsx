@@ -323,83 +323,77 @@ export const FileDownloadLink = ({
     window.open(href, '_blank');
   };
 
-  const renderStatusBadges = () => {
+  const renderStatusBadge = () => {
     if (!fileStatus) return null;
 
-    const badges: React.ReactNode[] = [];
+    const { scanStatus, sanitizeStatus } = fileStatus;
 
-    // Scan status
-    switch (fileStatus.scanStatus) {
+    // Antivirus statuses take priority - if not clean, show antivirus status only
+    switch (scanStatus) {
       case 'PENDING':
-        badges.push(
-          <Badge key="scan-pending" severity="info" small noIcon>
-            En attente d'analyse
-          </Badge>,
+        return (
+          <Badge severity="info" small noIcon>
+            En attente d'analyse antivirus
+          </Badge>
         );
-        break;
       case 'SCANNING':
-        badges.push(
-          <Badge key="scan-progress" severity="info" small noIcon>
-            Analyse en cours...
-          </Badge>,
+        return (
+          <Badge severity="info" small noIcon>
+            Analyse antivirus en cours...
+          </Badge>
         );
-        break;
-      case 'CLEAN':
-        badges.push(
-          <Badge key="scan-clean" severity="success" small noIcon>
-            Analysé
-          </Badge>,
-        );
-        break;
       case 'SKIPPED':
-        badges.push(
-          <Badge key="scan-skipped" severity="warning" small noIcon>
-            Non analysé
-          </Badge>,
+        return (
+          <Badge severity="warning" small noIcon>
+            Non analysé (antivirus)
+          </Badge>
         );
-        break;
       case 'ERROR':
-        badges.push(
-          <Badge key="scan-error" severity="warning" small noIcon>
-            Analyse échouée
-          </Badge>,
+        return (
+          <Badge severity="warning" small noIcon>
+            Analyse antivirus échouée
+          </Badge>
         );
-        break;
     }
 
-    // Sanitize status (only show if scan is done or skipped)
-    switch (fileStatus.sanitizeStatus) {
-      case 'PENDING':
-        badges.push(
-          <Badge key="sanitize-pending" severity="info" small noIcon>
-            En attente de sécurisation
-          </Badge>,
-        );
-        break;
-      case 'SANITIZING':
-        badges.push(
-          <Badge key="sanitize-progress" severity="info" small noIcon>
-            Sécurisation...
-          </Badge>,
-        );
-        break;
-      case 'COMPLETED':
-        badges.push(
-          <Badge key="sanitize-done" severity="success" small noIcon>
-            Sécurisé
-          </Badge>,
-        );
-        break;
-      case 'ERROR':
-        badges.push(
-          <Badge key="sanitize-error" severity="warning" small noIcon>
-            Sécurisation échouée
-          </Badge>,
-        );
-        break;
+    // Scan is CLEAN - show sanitization status if pertinent
+    if (scanStatus === 'CLEAN') {
+      switch (sanitizeStatus) {
+        case 'PENDING':
+          return (
+            <Badge severity="info" small noIcon>
+              En attente de sécurisation
+            </Badge>
+          );
+        case 'SANITIZING':
+          return (
+            <Badge severity="info" small noIcon>
+              Sécurisation...
+            </Badge>
+          );
+        case 'ERROR':
+          return (
+            <Badge severity="warning" small noIcon>
+              Sécurisation échouée
+            </Badge>
+          );
+        case 'COMPLETED':
+          return (
+            <Badge severity="success" small noIcon>
+              Sécurisé
+            </Badge>
+          );
+        case 'SKIPPED':
+        case 'NOT_APPLICABLE':
+          return (
+            <Badge severity="success" small noIcon>
+              Vérifié
+            </Badge>
+          );
+      }
     }
 
-    return badges.length > 0 ? badges : null;
+    return null;
   };
 
   const displayName = children || (
@@ -415,11 +409,12 @@ export const FileDownloadLink = ({
         <a href={href} target={target} rel={rel} className={className} onClick={handleClick}>
           {displayName}
         </a>
-        {renderStatusBadges()}
-        {isFileInfected(fileStatus?.scanStatus) && (
+        {isFileInfected(fileStatus?.scanStatus) ? (
           <Badge severity="error" small noIcon>
             Risque détecté
           </Badge>
+        ) : (
+          renderStatusBadge()
         )}
       </span>
 
