@@ -111,10 +111,7 @@ export function AttachedFiles({
   };
 
   return (
-    <div
-      className="fr-p-4w fr-mb-4w"
-      style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
-    >
+    <div className={`fr-p-4w fr-mb-4w ${styles.container}`}>
       <h2 className="fr-h6 fr-mb-3w">Pièces jointes</h2>
 
       {/* Existing files */}

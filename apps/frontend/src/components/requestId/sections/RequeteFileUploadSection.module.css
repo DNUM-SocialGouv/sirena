@@ -20,13 +20,16 @@
   position: relative;
   width: 100%;
   padding: 20px 24px;
-  border: 2px dashed var(--light-decisions-border-border-action-high-blue-france, #000091);
+  border: 2px dashed var(--border-action-high-blue-france, #000091);
   border-radius: 6px;
-  background: var(--light-decisions-background-background-alt-blue-france, #f5f5fe);
+  background: var(--background-alt-blue-france, #f5f5fe);
   display: flex;
   flex-direction: column;
   gap: 12px;
   cursor: pointer;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .dropZone:hover {
@@ -69,10 +72,13 @@
   border: 1px solid var(--border-default-grey);
   border-radius: 6px;
   padding: 10px 12px;
-  background: #fff;
+  background: var(--background-default-grey);
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .fileCardHeader {
@@ -86,4 +92,17 @@
   margin: 0;
   color: var(--text-mention-grey);
   font-size: 0.9rem;
+}
+
+[data-fr-theme="dark"] .dropZone,
+html[data-fr-theme="dark"] .dropZone {
+  border-color: var(--border-default-grey, #3a3a3a);
+  background: var(--background-default-grey, #1e1e1e);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-fr-theme="light"]) .dropZone {
+    border-color: var(--border-default-grey, #3a3a3a);
+    background: var(--background-default-grey, #1e1e1e);
+  }
 }
