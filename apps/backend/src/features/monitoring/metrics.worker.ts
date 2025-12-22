@@ -3,6 +3,47 @@ import { createMetricsRegistry } from './metrics.common';
 
 export const register = createMetricsRegistry();
 
+export const fileProcessingCounter = new Counter({
+  name: 'sirena_file_processing_total',
+  help: 'Total number of files processed',
+  labelNames: ['scan_status', 'sanitize_status', 'file_type'],
+  registers: [register],
+});
+
+export const fileProcessingDuration = new Histogram({
+  name: 'sirena_file_processing_duration_seconds',
+  help: 'Duration of file processing in seconds',
+  labelNames: ['file_type'],
+  buckets: [0.5, 1, 2, 5, 10, 30, 60, 120],
+  registers: [register],
+});
+
+export const fileScanCounter = new Counter({
+  name: 'sirena_file_scan_total',
+  help: 'Total number of file scans by status',
+  labelNames: ['status'],
+  registers: [register],
+});
+
+export const fileSanitizeCounter = new Counter({
+  name: 'sirena_file_sanitize_total',
+  help: 'Total number of file sanitizations by status',
+  labelNames: ['status'],
+  registers: [register],
+});
+
+export function recordFileProcessing(
+  scanStatus: string,
+  sanitizeStatus: string,
+  fileType: 'pdf' | 'other',
+  durationSeconds: number,
+): void {
+  fileProcessingCounter.inc({ scan_status: scanStatus, sanitize_status: sanitizeStatus, file_type: fileType });
+  fileProcessingDuration.observe({ file_type: fileType }, durationSeconds);
+  fileScanCounter.inc({ status: scanStatus });
+  fileSanitizeCounter.inc({ status: sanitizeStatus });
+}
+
 export const cronJobRunsCounter = new Counter({
   name: 'sirena_cron_job_runs_total',
   help: 'Total number of cron job runs',

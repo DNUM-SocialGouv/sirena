@@ -2,6 +2,7 @@ import { type Job, Worker } from 'bullmq';
 import type { Logger } from 'pino';
 import { envVars } from '@/config/env';
 import { connection } from '@/config/redis';
+import { recordFileProcessing } from '@/features/monitoring/metrics.worker';
 import {
   getUploadedFileByIdInternal,
   updateFileProcessingStatus,
@@ -13,6 +14,11 @@ import { getFileBuffer, getFileStream, uploadFileToMinio } from '@/libs/minio';
 import { isPdfMimeType, sanitizePdf } from '@/libs/pdfSanitizer';
 import type { FileProcessingJobData } from '../queues/fileProcessing.queue';
 
+interface ProcessingResult {
+  scanStatus: string;
+  sanitizeStatus: string;
+}
+
 const isClamAvEnabled = (): boolean => {
   return Boolean(envVars.CLAMAV_HOST && envVars.CLAMAV_HOST.length > 0);
 };
@@ -20,7 +26,12 @@ const isClamAvEnabled = (): boolean => {
 /**
  * Process non-PDF files using streaming (lower memory footprint)
  */
-const processNonPdfFile = async (fileId: string, fileName: string, filePath: string, logger: Logger): Promise<void> => {
+const processNonPdfFile = async (
+  fileId: string,
+  fileName: string,
+  filePath: string,
+  logger: Logger,
+): Promise<ProcessingResult> => {
   if (isClamAvEnabled()) {
     try {
       const { stream } = await getFileStream(filePath);
@@ -34,7 +45,7 @@ const processNonPdfFile = async (fileId: string, fileName: string, filePath: str
           sanitizeStatus: 'SKIPPED',
           status: 'COMPLETED',
         });
-        return;
+        return { scanStatus: 'ERROR', sanitizeStatus: 'SKIPPED' };
       }
 
       if (isFileInfected(scanResult)) {
@@ -47,7 +58,7 @@ const processNonPdfFile = async (fileId: string, fileName: string, filePath: str
           processingError: `Virus detected: ${viruses.join(', ')}`,
           status: 'FAILED',
         });
-        return;
+        return { scanStatus: 'INFECTED', sanitizeStatus: 'SKIPPED' };
       }
 
       logger.info('File is clean');
@@ -57,6 +68,7 @@ const processNonPdfFile = async (fileId: string, fileName: string, filePath: str
         sanitizeStatus: 'SKIPPED',
         status: 'COMPLETED',
       });
+      return { scanStatus: 'CLEAN', sanitizeStatus: 'SKIPPED' };
     } catch (err) {
       logger.error({ error: err }, 'Failed to scan file');
       await updateFileProcessingStatus(fileId, {
@@ -65,15 +77,17 @@ const processNonPdfFile = async (fileId: string, fileName: string, filePath: str
         processingError: 'Failed to scan file',
         status: 'FAILED',
       });
+      return { scanStatus: 'ERROR', sanitizeStatus: 'SKIPPED' };
     }
-  } else {
-    logger.info('ClamAV not configured, skipping scan');
-    await updateFileProcessingStatus(fileId, {
-      scanStatus: 'SKIPPED',
-      sanitizeStatus: 'SKIPPED',
-      status: 'COMPLETED',
-    });
   }
+
+  logger.info('ClamAV not configured, skipping scan');
+  await updateFileProcessingStatus(fileId, {
+    scanStatus: 'SKIPPED',
+    sanitizeStatus: 'SKIPPED',
+    status: 'COMPLETED',
+  });
+  return { scanStatus: 'SKIPPED', sanitizeStatus: 'SKIPPED' };
 };
 
 /**
@@ -85,8 +99,10 @@ const processPdfFile = async (
   filePath: string,
   mimeType: string,
   logger: Logger,
-): Promise<void> => {
+): Promise<ProcessingResult> => {
   let fileBuffer: Buffer;
+  let scanStatus = 'SKIPPED';
+
   try {
     fileBuffer = await getFileBuffer(filePath);
   } catch (err) {
@@ -97,15 +113,15 @@ const processPdfFile = async (
       processingError: 'Failed to download file from storage',
       status: 'FAILED',
     });
-    return;
+    return { scanStatus: 'ERROR', sanitizeStatus: 'ERROR' };
   }
 
-  // Scan with ClamAV
   if (isClamAvEnabled()) {
     const scanResult = await scanBuffer(fileBuffer, fileName);
 
     if (!scanResult.success) {
       logger.error({ error: scanResult.error }, 'Virus scan failed');
+      scanStatus = 'ERROR';
       await updateFileProcessingStatus(fileId, {
         scanStatus: 'ERROR',
         processingError: scanResult.error || 'Virus scan failed',
@@ -120,9 +136,10 @@ const processPdfFile = async (
         processingError: `Virus detected: ${viruses.join(', ')}`,
         status: 'FAILED',
       });
-      return;
+      return { scanStatus: 'INFECTED', sanitizeStatus: 'SKIPPED' };
     } else {
       logger.info('File is clean');
+      scanStatus = 'CLEAN';
       await updateFileProcessingStatus(fileId, {
         scanStatus: 'CLEAN',
         scanResult: scanResult.data,
@@ -135,7 +152,6 @@ const processPdfFile = async (
     });
   }
 
-  // Sanitize PDF
   await updateFileProcessingStatus(fileId, {
     sanitizeStatus: 'SANITIZING',
   });
@@ -153,6 +169,7 @@ const processPdfFile = async (
       safeFilePath,
       status: 'COMPLETED',
     });
+    return { scanStatus, sanitizeStatus: 'COMPLETED' };
   } catch (err) {
     logger.error({ error: err }, 'PDF sanitization failed');
     await updateFileProcessingStatus(fileId, {
@@ -160,6 +177,7 @@ const processPdfFile = async (
       processingError: err instanceof Error ? err.message : 'PDF sanitization failed',
       status: 'COMPLETED',
     });
+    return { scanStatus, sanitizeStatus: 'ERROR' };
   }
 };
 
@@ -171,6 +189,9 @@ const processFile = async (job: Job<FileProcessingJobData>): Promise<void> => {
     async () => {
       const logger = getLoggerStore();
       logger.info({ fileName }, 'Starting file processing');
+
+      const startTime = Date.now();
+      const fileType = isPdfMimeType(mimeType) ? 'pdf' : 'other';
 
       try {
         const file = await getUploadedFileByIdInternal(fileId);
@@ -184,13 +205,15 @@ const processFile = async (job: Job<FileProcessingJobData>): Promise<void> => {
           status: 'PROCESSING',
         });
 
-        // For PDFs: buffer needed for sanitization (pdf-lib limitation)
-        // For other files: use streaming to reduce memory footprint
+        let result: ProcessingResult;
         if (isPdfMimeType(mimeType)) {
-          await processPdfFile(fileId, fileName, filePath, mimeType, logger);
+          result = await processPdfFile(fileId, fileName, filePath, mimeType, logger);
         } else {
-          await processNonPdfFile(fileId, fileName, filePath, logger);
+          result = await processNonPdfFile(fileId, fileName, filePath, logger);
         }
+
+        const durationSeconds = (Date.now() - startTime) / 1000;
+        recordFileProcessing(result.scanStatus, result.sanitizeStatus, fileType, durationSeconds);
 
         logger.info('File processing completed');
       } catch (error) {
@@ -199,6 +222,10 @@ const processFile = async (job: Job<FileProcessingJobData>): Promise<void> => {
           processingError: error instanceof Error ? error.message : 'Unknown error',
           status: 'FAILED',
         });
+
+        const durationSeconds = (Date.now() - startTime) / 1000;
+        recordFileProcessing('ERROR', 'ERROR', fileType, durationSeconds);
+
         throw error;
       }
     },
