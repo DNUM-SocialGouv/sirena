@@ -8,3 +8,18 @@
   align-items: center;
   box-sizing: border-box;
 }
+
+.priorite-haute {
+  color: #b34000;
+  background-color: #ffe9e6;
+}
+
+.priorite-moyenne {
+  color: #493625;
+  background-color: #f7ece4;
+}
+
+.priorite-basse {
+  color: #57533d;
+  background-color: #fef7da;
+}
