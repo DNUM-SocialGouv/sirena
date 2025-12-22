@@ -1,7 +1,7 @@
 import Badge from '@codegouvfr/react-dsfr/Badge';
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { type FileProcessingStatus, getFileProcessingStatus } from '@/lib/api/fetchUploadedFiles';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { formatFileSize } from '@/utils/fileHelpers';
@@ -239,20 +239,32 @@ export const FileDownloadLink = ({
       : null,
   );
 
-  const downloadModal = createModal({
-    id: `download-modal-${modalId}`,
-    isOpenedByDefault: false,
-  });
+  const downloadModal = useMemo(
+    () =>
+      createModal({
+        id: `download-modal-${modalId}`,
+        isOpenedByDefault: false,
+      }),
+    [modalId],
+  );
 
-  const riskModal = createModal({
-    id: `risk-modal-${modalId}`,
-    isOpenedByDefault: false,
-  });
+  const riskModal = useMemo(
+    () =>
+      createModal({
+        id: `risk-modal-${modalId}`,
+        isOpenedByDefault: false,
+      }),
+    [modalId],
+  );
 
-  const warningModal = createModal({
-    id: `warning-modal-${modalId}`,
-    isOpenedByDefault: false,
-  });
+  const warningModal = useMemo(
+    () =>
+      createModal({
+        id: `warning-modal-${modalId}`,
+        isOpenedByDefault: false,
+      }),
+    [modalId],
+  );
 
   // Refs to reset checkbox state when modals open (avoids re-render issues)
   const resetRiskModalRef = useRef<(() => void) | null>(null);
