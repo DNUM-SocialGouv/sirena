@@ -419,15 +419,14 @@ const app = factoryWithLogs
       });
     }
 
-    const payload = {
-      ...(receptionDate ? { receptionDate: new Date(receptionDate) } : {}),
-      ...(receptionTypeId ? { receptionTypeId } : {}),
-    };
+    const payload: { receptionDate?: Date | null; receptionTypeId?: string | null } = {};
 
-    if (Object.keys(payload).length === 0) {
-      throwHTTPException400BadRequest('No valid fields provided for update.', {
-        res: c.res,
-      });
+    if (receptionDate !== undefined) {
+      payload.receptionDate = receptionDate ? new Date(receptionDate) : null;
+    }
+
+    if (receptionTypeId !== undefined) {
+      payload.receptionTypeId = receptionTypeId;
     }
 
     try {

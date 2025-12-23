@@ -46,8 +46,14 @@ export const GetOtherEntitesAffectedResponseSchema = z.object({
   directions: z.array(DirectionSchema),
 });
 
-const receptionDate = z.string().date().optional();
-const receptionTypeId = z.enum(Object.keys(RECEPTION_TYPE) as [string, ...string[]]).optional();
+const receptionDate = z.preprocess((val) => (val === '' ? null : val), z.string().date().nullable().optional());
+const receptionTypeId = z.preprocess(
+  (val) => (val === '' ? null : val),
+  z
+    .enum(Object.keys(RECEPTION_TYPE) as [string, ...string[]])
+    .nullable()
+    .optional(),
+);
 const requeteControl = z.object({
   updatedAt: z.string().datetime(),
 });

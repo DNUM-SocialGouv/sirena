@@ -700,5 +700,71 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(updateStatusRequete).not.toHaveBeenCalled();
     });
+
+    it('allows removing both date and type by setting them to null', async () => {
+      const updatedRequete = {
+        ...baseRequeteEntite.requete,
+        receptionDate: null,
+        receptionTypeId: null,
+        updatedAt: new Date('2025-05-03T00:00:00.000Z'),
+      };
+
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
+      vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
+
+      const res = await client[':id']['date-type'].$patch({
+        param: { id: 'requeteId' },
+        json: {
+          receptionDate: null,
+          receptionTypeId: null,
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toEqual({ data: convertDatesToStrings(updatedRequete) });
+
+      expect(updateDateAndTypeRequete).toHaveBeenCalledWith(
+        'requeteId',
+        {
+          receptionDate: null,
+          receptionTypeId: null,
+        },
+        undefined,
+      );
+    });
+
+    it('allows removing only the date by setting it to null', async () => {
+      const updatedRequete = {
+        ...baseRequeteEntite.requete,
+        receptionDate: null,
+        receptionTypeId: RECEPTION_TYPE.EMAIL,
+        updatedAt: new Date('2025-05-03T00:00:00.000Z'),
+      };
+
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
+      vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
+
+      const res = await client[':id']['date-type'].$patch({
+        param: { id: 'requeteId' },
+        json: {
+          receptionDate: null,
+          receptionTypeId: RECEPTION_TYPE.EMAIL,
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toEqual({ data: convertDatesToStrings(updatedRequete) });
+
+      expect(updateDateAndTypeRequete).toHaveBeenCalledWith(
+        'requeteId',
+        {
+          receptionDate: null,
+          receptionTypeId: RECEPTION_TYPE.EMAIL,
+        },
+        undefined,
+      );
+    });
   });
 });

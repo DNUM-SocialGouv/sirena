@@ -93,8 +93,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
     try {
       if (!requestId) {
         const createdRequete = await createRequeteMutation.mutateAsync({
-          receptionDate: dateValue || undefined,
-          receptionTypeId: typeValue || undefined,
+          receptionDate: dateValue || null,
+          receptionTypeId: typeValue || null,
         });
         navigate({ to: '/request/$requestId', params: { requestId: createdRequete.id } });
         setIsEdit(false);
@@ -104,8 +104,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
       }
 
       await handleSave({
-        receptionDate: dateValue || undefined,
-        receptionTypeId: typeValue || undefined,
+        receptionDate: dateValue || null,
+        receptionTypeId: typeValue || null,
       });
       setIsEdit(false);
     } finally {
