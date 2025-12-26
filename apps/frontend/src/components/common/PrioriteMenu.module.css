@@ -10,16 +10,16 @@
 }
 
 .priorite-haute {
-  color: #b34000;
-  background-color: #ffe9e6;
+  color: var(--text-default-warning);
+  background-color: var(--background-contrast-warning);
 }
 
 .priorite-moyenne {
-  color: #493625;
-  background-color: #f7ece4;
+  color: var(--brown-opera-200-100);
+  background-color: var(--brown-opera-950-100);
 }
 
 .priorite-basse {
-  color: #57533d;
-  background-color: #fef7da;
+  color: var(--green-tilleul-verveine-75-active);
+  background-color: var(--green-tilleul-verveine-975-75);
 }
