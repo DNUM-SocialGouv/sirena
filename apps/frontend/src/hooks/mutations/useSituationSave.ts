@@ -1,5 +1,6 @@
 import type { SituationData } from '@sirena/common/schemas';
 import { useMutation } from '@tanstack/react-query';
+import { useProfile } from '@/hooks/queries/profile.hook';
 import { deleteUploadedFile, uploadFile } from '@/lib/api/fetchUploadedFiles';
 import { client } from '@/lib/api/hc';
 import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
@@ -13,15 +14,18 @@ interface UseSituationSaveProps {
 }
 
 export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess }: UseSituationSaveProps) => {
+  const { data: profile } = useProfile();
   const saveMutation = useMutation({
     mutationFn: async ({
       data,
       faitFiles,
       initialFileIds,
+      initialFiles,
     }: {
       data: SituationData;
       faitFiles: File[];
       initialFileIds?: string[];
+      initialFiles?: Array<{ id: string; entiteId?: string | null }>;
     }) => {
       // Get existing files before update (for deletion)
       let previousFileIds: string[] = [];
@@ -35,14 +39,38 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
         newFaitFileIds.push(...uploadedFaitFiles.map((file) => file.id));
       }
 
+      // Get fileIds from formData (which reflects user deletions) and filter by user rights
       const existingFileIds = data.fait?.fileIds || [];
-      const allFileIds = [...existingFileIds, ...newFaitFileIds];
+      const existingFiles = (data.fait?.files || []) as Array<{ id: string; entiteId?: string | null }>;
+      const userTopEntiteId = profile?.topEntiteId;
 
-      // Delete files that were removed
+      // Use initialFiles (all files before any deletion) to have complete metadata for deleted files
+      const allInitialFiles = (initialFiles || existingFiles) as Array<{ id: string; entiteId?: string | null }>;
+      const fileEntiteMap = new Map(
+        allInitialFiles.map((file) => [file.id, file.entiteId] as [string, string | null | undefined]),
+      );
+
+      // Filter existing fileIds to only include those the user has rights on (same topEntiteId)
+      // and that are still in fileIds (not deleted by user)
+      const authorizedExistingFileIds = existingFileIds.filter((fileId) => {
+        const fileEntiteId = fileEntiteMap.get(fileId);
+        return !userTopEntiteId || fileEntiteId === userTopEntiteId;
+      });
+
+      const allFileIds = [...authorizedExistingFileIds, ...newFaitFileIds];
+
+      // Delete files that were removed (only files the user has rights on)
       if (situationId && previousFileIds.length > 0) {
-        const filesToDelete = previousFileIds.filter((id) => !allFileIds.includes(id));
+        const filesRemovedByUser = previousFileIds.filter((id) => !allFileIds.includes(id));
+
+        const filesToDelete = filesRemovedByUser.filter((fileId) => {
+          const fileEntiteId = fileEntiteMap.get(fileId);
+          return !userTopEntiteId || fileEntiteId === userTopEntiteId;
+        });
+
         if (filesToDelete.length > 0) {
-          await Promise.allSettled(filesToDelete.map((fileId) => deleteUploadedFile(fileId)));
+          // Wait for all deletions to complete before continuing
+          await Promise.all(filesToDelete.map((fileId) => deleteUploadedFile(fileId)));
         }
       }
 
@@ -71,6 +99,9 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
 
       await handleRequestErrors(response);
       const result = await response.json();
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       return result.data;
     },
     onSuccess: () => {
@@ -93,8 +124,9 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
     _shouldCreateRequest: boolean,
     faitFiles: File[],
     initialFileIds?: string[],
+    initialFiles?: Array<{ id: string; entiteId?: string | null }>,
   ) => {
-    await saveMutation.mutateAsync({ data, faitFiles, initialFileIds });
+    await saveMutation.mutateAsync({ data, faitFiles, initialFileIds, initialFiles });
   };
 
   return {

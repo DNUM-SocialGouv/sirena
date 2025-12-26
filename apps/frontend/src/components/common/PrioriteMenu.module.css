@@ -8,3 +8,18 @@
   align-items: center;
   box-sizing: border-box;
 }
+
+.priorite-haute {
+  color: var(--text-default-warning);
+  background-color: var(--background-contrast-warning);
+}
+
+.priorite-moyenne {
+  color: var(--brown-opera-200-100);
+  background-color: var(--brown-opera-950-100);
+}
+
+.priorite-basse {
+  color: var(--green-tilleul-verveine-75-active);
+  background-color: var(--green-tilleul-verveine-975-75);
+}

@@ -184,18 +184,27 @@ export const AppEnvSchema = z.object({
     .regex(/^[0-9a-fA-F]+$/, 'S3_ENCRYPTION_KEY must be a valid hexadecimal string'),
   CLAMAV_HOST: z.string().optional().default('').describe('Hostname of the ClamAV daemon (e.g., clamav or localhost)'),
   CLAMAV_PORT: z.string().optional().default('3310').describe('Port of the ClamAV daemon (default: 3310)'),
-  SARBACANE_API_URL: z
+  TIPIMAIL_API_URL: z
     .string({
-      required_error: "La variable d'environnement SARBACANE_API_URL est requise",
+      required_error: "La variable d'environnement TIPIMAIL_API_URL est requise",
     })
     .optional()
     .default(''),
-  SARBACANE_API_KEY: z
+  TIPIMAIL_API_KEY: z
     .string({
-      required_error: "La variable d'environnement SARBACANE_API_KEY est requise",
+      required_error: "La variable d'environnement TIPIMAIL_API_KEY est requise",
     })
     .optional()
     .default(''),
+  TIPIMAIL_USER_ID: z.string({
+    required_error: "La variable d'environnement TIPIMAIL_USER_ID est requise",
+  }),
+  TIPIMAIL_FROM_ADDRESS: z.string({
+    required_error: "La variable d'environnement TIPIMAIL_FROM_ADDRESS est requise",
+  }),
+  TIPIMAIL_FROM_PERSONAL_NAME: z.string({
+    required_error: "La variable d'environnement TIPIMAIL_FROM_PERSONAL_NAME est requise",
+  }),
   REDIS_HOST: z.string({
     required_error: "La variable d'environnement REDIS_HOST est requise",
   }),

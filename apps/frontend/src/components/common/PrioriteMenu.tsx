@@ -1,3 +1,4 @@
+import { REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { Menu } from '@sirena/ui';
 import { useState } from 'react';
 import { requetePrioriteBadges } from '@/utils/requeteStatutBadge.constant';
@@ -15,7 +16,13 @@ export const PrioriteMenu = ({ value, onPrioriteClick, isLoading, disabled }: Pr
   const [isOpen, setIsOpen] = useState(false);
 
   const badgeSelected = value ? requetePrioriteBadges.find((badge) => badge.value === value) : null;
-  const badgeSelectedClassName = value && badgeSelected ? `fr-badge--${badgeSelected.type}` : '';
+  const prioriteClassMap: Record<string, string> = {
+    [REQUETE_PRIORITE_TYPES.HAUTE]: prioriteStyles['priorite-haute'],
+    [REQUETE_PRIORITE_TYPES.MOYENNE]: prioriteStyles['priorite-moyenne'],
+    [REQUETE_PRIORITE_TYPES.BASSE]: prioriteStyles['priorite-basse'],
+  };
+  const badgeSelectedClassName =
+    value && badgeSelected ? prioriteClassMap[value] || `fr-badge--${badgeSelected.type}` : '';
   const badgeSelectedText = badgeSelected ? `Priorité : ${badgeSelected.text}` : 'Définir une priorité';
 
   const badgesFiltred = requetePrioriteBadges.filter((badge) => badge.value !== value);
@@ -51,15 +58,18 @@ export const PrioriteMenu = ({ value, onPrioriteClick, isLoading, disabled }: Pr
                 Définir une priorité
               </Menu.Item>
             )}
-            {badgesFiltred.map((badge) => (
-              <Menu.Item
-                key={badge.value}
-                className={`${styles['status-menu__item']} fr-badge fr-badge--no-icon fr-badge--sm fr-badge--${badge.type}`}
-                onClick={() => handleClick(badge.value)}
-              >
-                {badge.text}
-              </Menu.Item>
-            ))}
+            {badgesFiltred.map((badge) => {
+              const badgeClassName = prioriteClassMap[badge.value] || `fr-badge--${badge.type}`;
+              return (
+                <Menu.Item
+                  key={badge.value}
+                  className={`${styles['status-menu__item']} fr-badge fr-badge--no-icon fr-badge--sm ${badgeClassName}`}
+                  onClick={() => handleClick(badge.value)}
+                >
+                  {badge.text}
+                </Menu.Item>
+              );
+            })}
           </Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>
