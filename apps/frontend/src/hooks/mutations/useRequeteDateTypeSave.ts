@@ -8,8 +8,8 @@ import { type ConflictInfo, detectAndMergeConflicts } from '@/lib/conflictResolu
 import { toastManager } from '@/lib/toastManager';
 
 type RequeteDateTypeData = {
-  receptionDate?: string;
-  receptionTypeId?: ReceptionType;
+  receptionDate?: string | null;
+  receptionTypeId?: ReceptionType | null;
 };
 
 type UseRequeteDateTypeSaveProps = {

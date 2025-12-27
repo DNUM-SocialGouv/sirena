@@ -858,13 +858,15 @@ describe('requetes.service.ts', () => {
 
       const newDate = new Date('2025-02-01T12:00:00.000Z');
 
-      vi.mocked(prisma.requete.findUnique).mockResolvedValue(existing);
-      vi.mocked(prisma.requete.update).mockResolvedValue({
+      const updatedRequete = {
         ...existing,
         receptionDate: newDate,
         receptionTypeId: RECEPTION_TYPE.COURRIER,
         updatedAt: newDate,
-      });
+      };
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValue(existing);
+      vi.mocked(prisma.requete.update).mockResolvedValue(updatedRequete);
 
       const result = await updateDateAndTypeRequete(
         requeteId,
@@ -911,6 +913,83 @@ describe('requetes.service.ts', () => {
       });
 
       expect(prisma.requete.update).not.toHaveBeenCalled();
+    });
+
+    it('allows setting date and type to null to remove them', async () => {
+      const requeteId = 'REQ-3';
+      const existingUpdatedAt = new Date('2025-01-01T00:00:00.000Z');
+      const existing = {
+        id: requeteId,
+        commentaire: '',
+        receptionDate: new Date('2025-01-02T00:00:00.000Z'),
+        dematSocialId: null,
+        receptionTypeId: RECEPTION_TYPE.EMAIL,
+        createdAt: new Date('2024-12-31T00:00:00.000Z'),
+        updatedAt: existingUpdatedAt,
+      };
+
+      const updatedDate = new Date('2025-02-01T12:00:00.000Z');
+      const updatedRequete = {
+        ...existing,
+        receptionDate: null,
+        receptionTypeId: null,
+        updatedAt: updatedDate,
+      };
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValue(existing);
+      vi.mocked(prisma.requete.update).mockResolvedValue(updatedRequete);
+
+      const result = await updateDateAndTypeRequete(
+        requeteId,
+        { receptionDate: null, receptionTypeId: null },
+        { updatedAt: existingUpdatedAt.toISOString() },
+      );
+
+      expect(prisma.requete.findUnique).toHaveBeenCalledWith({ where: { id: requeteId } });
+      expect(prisma.requete.update).toHaveBeenCalledWith({
+        where: { id: requeteId },
+        data: { receptionDate: null, receptionTypeId: null },
+      });
+      expect(result.receptionDate).toBeNull();
+      expect(result.receptionTypeId).toBeNull();
+    });
+
+    it('allows setting only date to null while keeping type', async () => {
+      const requeteId = 'REQ-4';
+      const existingUpdatedAt = new Date('2025-01-01T00:00:00.000Z');
+      const existing = {
+        id: requeteId,
+        commentaire: '',
+        receptionDate: new Date('2025-01-02T00:00:00.000Z'),
+        dematSocialId: null,
+        receptionTypeId: RECEPTION_TYPE.EMAIL,
+        createdAt: new Date('2024-12-31T00:00:00.000Z'),
+        updatedAt: existingUpdatedAt,
+      };
+
+      const updatedDate = new Date('2025-02-01T12:00:00.000Z');
+      const updatedRequete = {
+        ...existing,
+        receptionDate: null,
+        updatedAt: updatedDate,
+      };
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValue(existing);
+      vi.mocked(prisma.requete.update).mockResolvedValue(updatedRequete);
+
+      const result = await updateDateAndTypeRequete(
+        requeteId,
+        { receptionDate: null, receptionTypeId: RECEPTION_TYPE.EMAIL },
+        { updatedAt: existingUpdatedAt.toISOString() },
+      );
+
+      expect(prisma.requete.findUnique).toHaveBeenCalledWith({ where: { id: requeteId } });
+      expect(prisma.requete.update).toHaveBeenCalledWith({
+        where: { id: requeteId },
+        data: { receptionDate: null, receptionTypeId: RECEPTION_TYPE.EMAIL },
+      });
+      expect(result.receptionDate).toBeNull();
+      expect(result.receptionTypeId).toBe(RECEPTION_TYPE.EMAIL);
     });
   });
 });

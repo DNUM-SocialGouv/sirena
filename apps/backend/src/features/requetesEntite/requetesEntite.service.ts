@@ -336,8 +336,8 @@ export const getRequeteEntiteById = async (requeteId: string, entiteId: string |
 };
 
 interface CreateRequeteInput {
-  receptionTypeId?: string;
-  receptionDate?: string;
+  receptionTypeId?: string | null;
+  receptionDate?: string | null;
   declarant?: DeclarantInput;
   participant?: PersonneConcerneeInput;
 }
@@ -372,7 +372,7 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
       const requete = await prisma.requete.create({
         data: {
           id: requeteId,
-          receptionDate: data?.receptionDate ?? null,
+          receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
           receptionTypeId: data?.receptionTypeId ?? null,
           ...(data?.declarant && {
             declarant: {

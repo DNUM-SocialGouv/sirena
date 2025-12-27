@@ -5,7 +5,7 @@ import { Select } from '@codegouvfr/react-dsfr/Select';
 import { RECEPTION_TYPE, type ReceptionType, receptionTypeLabels } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { clsx } from 'clsx';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
 import { useRequeteDateTypeSave } from '@/hooks/mutations/useRequeteDateTypeSave';
 import { useCanEdit } from '@/hooks/useCanEdit';
@@ -21,13 +21,24 @@ type OriginalRequestSectionProps = {
   onEdit?: () => void;
 };
 
-const RenderCompleted = ({ date, receptionType }: { date: string; receptionType: ReceptionType }) => {
-  const dateObj = new Date(date);
-  return (
-    <div className="text-vertical-align">
-      Recue le {dateObj.toLocaleDateString('fr-FR')} par {receptionTypeLabels[receptionType]}
-    </div>
-  );
+const RenderCompleted = ({ date, receptionType }: { date?: string; receptionType?: ReceptionType }) => {
+  if (date && receptionType) {
+    return (
+      <div className="text-vertical-align">
+        Reçue le {new Date(date).toLocaleDateString('fr-FR')} par {receptionTypeLabels[receptionType]}
+      </div>
+    );
+  }
+
+  if (date) {
+    return <div className="text-vertical-align">Reçue le {new Date(date).toLocaleDateString('fr-FR')}</div>;
+  }
+
+  if (receptionType) {
+    return <div className="text-vertical-align">Reçue par {receptionTypeLabels[receptionType]}</div>;
+  }
+
+  return null;
 };
 
 const RenderEmpty = () => {
@@ -47,6 +58,12 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   const [isSaving, setIsSaving] = useState(false);
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setDateValue(formatDateForInput(data?.receptionDate));
+    setTypeValue(data?.receptionTypeId ?? '');
+  }, [data?.receptionDate, data?.receptionTypeId]);
+
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const isNotEditable = data?.receptionTypeId === RECEPTION_TYPE.FORMULAIRE;
   const createRequeteMutation = useCreateRequeteEntite();
@@ -76,8 +93,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
     try {
       if (!requestId) {
         const createdRequete = await createRequeteMutation.mutateAsync({
-          receptionDate: dateValue || undefined,
-          receptionTypeId: typeValue || undefined,
+          receptionDate: dateValue || null,
+          receptionTypeId: typeValue || null,
         });
         navigate({ to: '/request/$requestId', params: { requestId: createdRequete.id } });
         setIsEdit(false);
@@ -87,8 +104,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
       }
 
       await handleSave({
-        receptionDate: dateValue || undefined,
-        receptionTypeId: typeValue || undefined,
+        receptionDate: dateValue || null,
+        receptionTypeId: typeValue || null,
       });
       setIsEdit(false);
     } finally {
@@ -151,10 +168,10 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
           </form>
         ) : (
           <div className={style.wrapper}>
-            {!dateValue || !typeValue ? (
+            {!dateValue && !typeValue ? (
               <RenderEmpty />
             ) : (
-              <RenderCompleted date={dateValue} receptionType={typeValue} />
+              <RenderCompleted date={dateValue || undefined} receptionType={typeValue || undefined} />
             )}
             {canEdit && !isNotEditable && (
               <Button
