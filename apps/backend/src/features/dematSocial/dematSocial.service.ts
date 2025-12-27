@@ -95,7 +95,6 @@ export const importRequetes = async (createdSince?: Date) => {
     try {
       const demandeur = getDemandeur(data.dossier.demandeur, data.dossier.usager.email);
       const requete = mapDataForPrisma(data.dossier.champs, dossier.number, dossier.dateDepot, demandeur);
-
       const ext = data.dossier.pdf?.filename?.split('.')?.pop() ?? '';
 
       const pdf = data.dossier.pdf
