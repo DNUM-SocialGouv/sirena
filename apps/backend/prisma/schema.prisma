@@ -598,3 +598,21 @@ model RequeteClotureReasonEnum {
   label  String         @unique
   etapes RequeteEtape[]
 }
+
+model DematSocialImportFailure {
+  id                String    @id @default(cuid())
+  dematSocialId     Int       @unique 
+  errorType         String 
+  errorMessage      String 
+  errorContext      Json? 
+  retryCount        Int       @default(0) 
+  lastRetryAt       DateTime? 
+  resolvedAt        DateTime? 
+  resolvedRequeteId String? 
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([dematSocialId])
+  @@index([errorType])
+  @@index([resolvedAt])
+}
