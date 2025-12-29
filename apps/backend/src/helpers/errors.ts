@@ -42,14 +42,98 @@ export const errorHandler: ErrorHandler<AppBindings> = (err, c) => {
 };
 
 type SerializedError = {
-  message: string;
+  name?: string;
+  message?: string;
   stack?: string;
+  tag?: string;
+  cause?: string;
+  errors?: Array<{
+    name?: string;
+    message?: string;
+    tag?: string;
+    path?: unknown;
+    extensions?: unknown;
+    cause?: string;
+  }>;
 };
 
-export const serializeError = (error: unknown): SerializedError => {
-  if (error instanceof Error) {
-    return { message: error.message, stack: error.stack };
+const SENSITIVE_KEYS = new Set([
+  'headers',
+  'authorization',
+  'cookie',
+  'token',
+  'password',
+  'secret',
+  'apikey',
+  'request',
+  'response',
+  'raw',
+]);
+
+/**
+ * Sanitizes extensions object by filtering out sensitive fields (case-insensitive)
+ */
+function sanitizeExtensions(ext: Record<string, unknown>): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(ext)) {
+    if (!SENSITIVE_KEYS.has(key.toLowerCase())) {
+      sanitized[key] = value;
+    }
+  }
+  return sanitized;
+}
+
+/**
+ * Serializes an error into a JSON-safe object, extracting useful information
+ * from Graffle/GraphQL errors (errors[], extensions, path, cause, etc.)
+ * while avoiding sensitive data like headers or tokens.
+ * This function never throws, even with malformed input.
+ */
+export const serializeError = (err: unknown): SerializedError => {
+  if (!err || typeof err !== 'object') {
+    return { message: String(err) };
   }
 
-  return { message: JSON.stringify(error), stack: undefined };
+  const e = err as Record<string, unknown>;
+
+  // Extract errors array (for Aggregate/Graffle errors)
+  const errors = Array.isArray(e.errors)
+    ? e.errors.map((x: unknown) => {
+        if (!x || typeof x !== 'object') {
+          return { message: String(x) };
+        }
+        const subErr = x as Record<string, unknown>;
+        const cause =
+          subErr.cause && typeof subErr.cause === 'object' && subErr.cause !== null && 'message' in subErr.cause
+            ? String((subErr.cause as Record<string, unknown>).message)
+            : undefined;
+        return {
+          name: typeof subErr.name === 'string' ? subErr.name : undefined,
+          message: typeof subErr.message === 'string' ? subErr.message : undefined,
+          tag: typeof subErr._tag === 'string' ? subErr._tag : undefined,
+          path: subErr.path,
+          // Sanitize extensions to avoid logging sensitive data
+          extensions:
+            subErr.extensions && typeof subErr.extensions === 'object' && subErr.extensions !== null
+              ? sanitizeExtensions(subErr.extensions as Record<string, unknown>)
+              : subErr.extensions,
+          cause,
+        };
+      })
+    : undefined;
+
+  // Extract cause message
+  const causeMessage =
+    e.cause && typeof e.cause === 'object' && e.cause !== null && 'message' in e.cause
+      ? String((e.cause as Record<string, unknown>).message)
+      : undefined;
+
+  return {
+    name: typeof e.name === 'string' ? e.name : undefined,
+    message: typeof e.message === 'string' ? e.message : undefined,
+    stack: typeof e.stack === 'string' ? e.stack : undefined,
+    tag: typeof e._tag === 'string' ? e._tag : undefined,
+    cause: causeMessage,
+    errors,
+  };
 };
