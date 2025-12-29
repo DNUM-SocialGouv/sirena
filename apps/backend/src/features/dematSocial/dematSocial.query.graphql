@@ -111,9 +111,13 @@ query getDossiersMetadata($demarcheNumber: Int!) {
   }
 }
 
-query getDossiersByDate($demarcheNumber: Int!, $createdSince: ISO8601DateTime) {
+query getDossiersByDate($demarcheNumber: Int!, $createdSince: ISO8601DateTime, $after: String) {
   demarche(number: $demarcheNumber) {
-    dossiers(createdSince: $createdSince) {
+    dossiers(createdSince: $createdSince, after: $after, first: 100) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
       nodes {
         id
         number

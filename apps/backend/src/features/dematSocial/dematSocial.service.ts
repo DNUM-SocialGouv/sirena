@@ -35,11 +35,32 @@ export const updateInstruction = async (id: string) => {
 
 export const getRequetes = async (createdSince?: Date) => {
   const abortController = abortControllerStorage.getStore();
-  const data = await graffle
-    .transport({ raw: { signal: abortController?.signal } })
-    .gql(GetDossiersByDateDocument)
-    .send({ demarcheNumber: envVars.DEMAT_SOCIAL_API_DIRECTORY, createdSince: createdSince?.toISOString() });
-  return data?.demarche.dossiers?.nodes?.filter((node) => !!node) || [];
+  const allDossiers = [];
+  let hasNextPage = true;
+  let cursor: string | undefined;
+
+  while (hasNextPage) {
+    const data = await graffle
+      .transport({ raw: { signal: abortController?.signal } })
+      .gql(GetDossiersByDateDocument)
+      .send({
+        demarcheNumber: envVars.DEMAT_SOCIAL_API_DIRECTORY,
+        createdSince: createdSince?.toISOString(),
+        after: cursor,
+      });
+
+    const nodes = data?.demarche.dossiers?.nodes?.filter((node) => !!node) || [];
+    allDossiers.push(...nodes);
+
+    hasNextPage = data?.demarche.dossiers?.pageInfo?.hasNextPage ?? false;
+    cursor = data?.demarche.dossiers?.pageInfo?.endCursor ?? undefined;
+
+    if (hasNextPage && !cursor) {
+      break;
+    }
+  }
+
+  return allDossiers;
 };
 
 export const getRequetesMetaData = async () => {
