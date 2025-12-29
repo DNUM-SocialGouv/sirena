@@ -7,6 +7,9 @@ export type JobDataMap = {
   'retry-affectation': {
     batchSize: number;
   };
+  'retry-import-requetes': {
+    batchSize: number;
+  };
 };
 
 export type JobName = keyof JobDataMap;

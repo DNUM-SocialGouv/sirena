@@ -1,6 +1,7 @@
 import { envVars } from '@/config/env';
 import { fetchRequetes } from '../tasks/fetchRequetes.task';
 import { retryAffectation } from '../tasks/retryAffectation.task';
+import { retryImportRequetes } from '../tasks/retryImportRequetes.task';
 
 export const jobHandlers = [
   {
@@ -17,6 +18,14 @@ export const jobHandlers = [
     repeatEveryMs: parseInt(envVars.CRON_RETRY_AFFECTATION, 10) * 1000,
     data: {
       batchSize: 5,
+    },
+  },
+  {
+    name: 'retry-import-requetes',
+    task: retryImportRequetes,
+    repeatEveryMs: parseInt(envVars.CRON_RETRY_IMPORT_REQUETES, 10) * 1000,
+    data: {
+      batchSize: 10,
     },
   },
 ] as const;
