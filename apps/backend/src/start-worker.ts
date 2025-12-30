@@ -1,3 +1,4 @@
+import { envVars } from './config/env';
 import { getPrometheusContentType, getPrometheusMetrics } from './features/monitoring/metrics.worker';
 import { createMonitoringServer } from './features/monitoring/server';
 import { createDefaultLogger } from './helpers/pino';
@@ -23,6 +24,7 @@ logger.info(`[worker] Starting file processing worker for queue "${fileProcessin
 const monitoringServer = createMonitoringServer({
   getMetrics: getPrometheusMetrics,
   getContentType: getPrometheusContentType,
+  port: envVars.WORKER_MONITORING_PORT,
 });
 
 const shutdown = async () => {
