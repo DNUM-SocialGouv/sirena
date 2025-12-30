@@ -1,11 +1,13 @@
 import { type TabDescriptor, Tabs } from '@sirena/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Details } from '@/components/requestId/details';
 import { Processing } from '@/components/requestId/processing';
 import { RequestInfos } from '@/components/requestId/requestInfos';
 import { formatFullName } from '@/components/requestId/sections/helpers';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
+import { useRequeteStatusSSE } from '@/hooks/useRequeteStatusSSE';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { AffectationTab } from './tabs/AffectationTab';
 
@@ -26,7 +28,18 @@ interface RequestFormProps {
 
 export function RequestForm({ requestId }: RequestFormProps) {
   const [activeTab, setActiveTab] = useState(0);
+  const queryClient = useQueryClient();
   const requestQuery = useRequeteDetails(requestId);
+
+  const handleUpdate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['requete', requestId] });
+  }, [queryClient, requestId]);
+
+  useRequeteStatusSSE({
+    requeteId: requestId || '',
+    enabled: !!requestId,
+    onUpdate: handleUpdate,
+  });
   const declarantIdentite = requestQuery.data?.requete.participant?.identite;
   const fullName = formatFullName(
     declarantIdentite

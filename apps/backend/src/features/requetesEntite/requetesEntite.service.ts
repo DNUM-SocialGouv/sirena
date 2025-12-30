@@ -4,6 +4,7 @@ import {
   type EntiteType,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_STATUT_TYPES,
+  REQUETE_UPDATE_FIELDS,
   type RequetePrioriteType,
   type RequeteStatutType,
 } from '@sirena/common/constants';
@@ -16,6 +17,7 @@ import { setFaitFiles } from '@/features/uploadedFiles/uploadedFiles.service';
 import { parseAdresseDomicile } from '@/helpers/address';
 import { sortObject } from '@/helpers/prisma/sort';
 import { createSearchConditionsForRequeteEntite } from '@/helpers/search';
+import { sseEventManager } from '@/helpers/sse';
 import { type Prisma, prisma } from '@/libs/prisma';
 import { getEntiteAscendanteId, getEntiteChain } from '../entites/entites.service';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service';
@@ -1280,10 +1282,18 @@ export const closeRequeteForEntite = async (
 };
 
 export const updateStatusRequete = async (requeteId: string, entiteId: string, statut: RequeteStatutType) => {
-  return prisma.requeteEntite.update({
+  const requeteEntite = await prisma.requeteEntite.update({
     where: { requeteId_entiteId: { requeteId, entiteId } },
     data: { statutId: statut },
   });
+
+  sseEventManager.emitRequeteUpdated({
+    requeteId,
+    entiteId,
+    field: REQUETE_UPDATE_FIELDS.STATUS,
+  });
+
+  return requeteEntite;
 };
 
 export const updatePrioriteRequete = async (
@@ -1291,8 +1301,16 @@ export const updatePrioriteRequete = async (
   entiteId: string,
   prioriteId: RequetePrioriteType | null,
 ) => {
-  return prisma.requeteEntite.update({
+  const requeteEntite = await prisma.requeteEntite.update({
     where: { requeteId_entiteId: { requeteId, entiteId } },
     data: { prioriteId: prioriteId || null },
   });
+
+  sseEventManager.emitRequeteUpdated({
+    requeteId,
+    entiteId,
+    field: REQUETE_UPDATE_FIELDS.PRIORITY,
+  });
+
+  return requeteEntite;
 };

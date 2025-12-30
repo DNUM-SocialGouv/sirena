@@ -1,10 +1,11 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { AuthLayout } from '@/components/layout/auth/layout';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
+import { useUserStatusSSE } from '@/hooks/useUserStatusSSE';
 import { requireNotPendingOrActif } from '@/lib/auth-guards';
 import { router } from '@/lib/router';
 import { useUserStore } from '@/stores/userStore';
@@ -21,14 +22,34 @@ export const Route = createFileRoute('/_auth/inactive')({
   component: RouteComponent,
 });
 
+const POLL_INTERVAL = 30000;
+
 function RouteComponent() {
+  const queryClient = useQueryClient();
   const profileQuery = useQuery({
     ...profileQueryOptions(),
     enabled: true,
-    refetchInterval: 30000, // Refetch every 30 seconds
-    refetchIntervalInBackground: true,
   });
   const userStore = useUserStore();
+
+  const handleStatusChange = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['profile'] });
+  }, [queryClient]);
+
+  const { isConnected: sseConnected } = useUserStatusSSE({
+    onStatusChange: handleStatusChange,
+  });
+
+  // Fallback to polling if SSE is not connected
+  useEffect(() => {
+    if (sseConnected) return;
+
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [sseConnected, queryClient]);
 
   const reason = useMemo(() => {
     if (profileQuery.data?.statutId !== STATUT_TYPES.ACTIF) {
