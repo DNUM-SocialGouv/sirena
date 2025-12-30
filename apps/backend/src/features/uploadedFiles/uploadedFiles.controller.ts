@@ -1,5 +1,5 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ROLES } from '@sirena/common/constants';
+import { ROLES_READ, ROLES_WRITE } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { addFileProcessingJob } from '@/jobs/queues/fileProcessing.queue';
@@ -24,7 +24,7 @@ const app = factoryWithLogs
   .post(
     '/',
     createUploadedFileRoute,
-    roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]),
+    roleMiddleware([...ROLES_READ]),
     extractUploadedFileMiddleware,
     uploadedFileChangelogMiddleware({ action: ChangeLogAction.CREATED }),
     async (c) => {
@@ -103,7 +103,7 @@ const app = factoryWithLogs
   .delete(
     '/:id',
     deleteUploadedFileRoute,
-    roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]),
+    roleMiddleware([...ROLES_WRITE]),
     zValidator('param', UploadedFileParamsIdSchema),
     uploadedFileChangelogMiddleware({ action: ChangeLogAction.DELETED }),
     async (c) => {

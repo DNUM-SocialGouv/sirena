@@ -1,6 +1,7 @@
 import { ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
 import { envVars } from '@/config/env';
 import { entitesDescendantIdsCache } from '@/features/entites/entites.cache';
+import { sseEventManager } from '@/helpers/sse';
 import { type Prisma, prisma, type User } from '@/libs/prisma';
 import type { CreateUserDto, GetUsersQuery, PatchUserDto } from './users.type';
 
@@ -87,12 +88,27 @@ export const createUser = async (newUser: CreateUserDto) => {
 export const deleteUser = async (id: User['id']) => await prisma.user.delete({ where: { id } });
 
 export const patchUser = async (id: User['id'], data: PatchUserDto) => {
-  return prisma.user.update({
+  const user = await prisma.user.update({
     where: { id },
     data: {
       ...data,
     },
   });
+
+  if (data.statutId || data.roleId) {
+    sseEventManager.emitUserStatus({
+      userId: user.id,
+      statutId: user.statutId,
+      roleId: user.roleId,
+    });
+  }
+
+  sseEventManager.emitUserList({
+    action: 'updated',
+    userId: user.id,
+  });
+
+  return user;
 };
 
 export const getUserEntities = async (userId: User['id'], entiteIds: string[] | null) => {
