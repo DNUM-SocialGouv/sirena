@@ -3,9 +3,11 @@ import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
+import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
 import { RequetePrioriteTag, RequeteStatutTag } from '../RequeteStatutTag';
 import { renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
 
@@ -53,9 +55,35 @@ const mapSortKeyToColumnKey = (sortKey: string | undefined): string => {
   }
 };
 
+const SSE_DEBOUNCE_MS = 500;
+
 export function RequetesEntite() {
   const queries = useSearch({ from: '/_auth/_user/home' });
   const navigate = useNavigate({ from: '/home' });
+  const queryClient = useQueryClient();
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleUpdate = useCallback(() => {
+    // Debounce multiple rapid SSE events to prevent excessive refreshes
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['requetesEntite'] });
+      debounceTimerRef.current = null;
+    }, SSE_DEBOUNCE_MS);
+  }, [queryClient]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  useRequetesListSSE({ onUpdate: handleUpdate });
 
   const limit = useMemo(() => parseInt(queries.limit || DEFAULT_PAGE_SIZE.toString(), 10), [queries.limit]);
   const offset = useMemo(() => parseInt(queries.offset || '0', 10), [queries.offset]);

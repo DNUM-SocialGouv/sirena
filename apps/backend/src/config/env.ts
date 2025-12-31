@@ -65,6 +65,9 @@ const processEnv = {
   REDIS_TLS: process.env.REDIS_TLS,
   REDIS_USERNAME: process.env.REDIS_USERNAME,
   REDIS_PASSWORD: process.env.REDIS_PASSWORD,
+  // Monitoring
+  MONITORING_PORT: process.env.MONITORING_PORT,
+  WORKER_MONITORING_PORT: process.env.WORKER_MONITORING_PORT,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);

@@ -8,6 +8,7 @@ export type AppBindings = {
     userId: string;
     roleId: string;
     entiteIds: string[];
+    topEntiteId: string | null;
   };
 };
 

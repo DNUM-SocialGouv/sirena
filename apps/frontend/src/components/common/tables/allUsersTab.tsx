@@ -1,17 +1,19 @@
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { ROLES, type Role, roles, type StatutType, statutTypes } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { useUsers } from '@/hooks/queries/users.hook';
+import { useUserListSSE } from '@/hooks/useUserListSSE';
 
 type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
 
 const DEFAULT_PAGE_SIZE = 10;
 
 export function AllUsersTab() {
+  const queryClient = useQueryClient();
   const { data } = useQuery({ ...profileQueryOptions(), enabled: false });
 
   const queries = useSearch({ from: '/_auth/admin/users' });
@@ -25,6 +27,15 @@ export function AllUsersTab() {
   const limit = useMemo(() => parseInt(queries.limit || DEFAULT_PAGE_SIZE.toString(), 10), [queries.limit]);
   const offset = useMemo(() => parseInt(queries.offset || '0', 10), [queries.offset]);
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
+
+  const handleUserListChange = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['users'] });
+  }, [queryClient]);
+
+  useUserListSSE({
+    enabled: true,
+    onUserListChange: handleUserListChange,
+  });
 
   const { data: users, isFetching } = useUsers({
     roleId: filteredRoles,

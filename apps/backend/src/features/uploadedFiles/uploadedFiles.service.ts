@@ -1,3 +1,4 @@
+import { sseEventManager } from '@/helpers/sse';
 import { type Prisma, prisma, type UploadedFile } from '@/libs/prisma';
 import type { CreateUploadedFileDto, GetUploadedFilesQuery } from './uploadedFiles.type';
 
@@ -163,10 +164,22 @@ export const updateFileProcessingStatus = async (
   id: UploadedFile['id'],
   updates: FileProcessingStatus,
 ): Promise<UploadedFile> => {
-  return prisma.uploadedFile.update({
+  const file = await prisma.uploadedFile.update({
     where: { id },
     data: updates,
   });
+
+  sseEventManager.emitFileStatus({
+    fileId: file.id,
+    entiteId: file.entiteId,
+    status: file.status,
+    scanStatus: file.scanStatus,
+    sanitizeStatus: file.sanitizeStatus,
+    processingError: file.processingError,
+    safeFilePath: file.safeFilePath,
+  });
+
+  return file;
 };
 
 export const getUploadedFileByIdInternal = async (id: UploadedFile['id']): Promise<UploadedFileByIdResult> => {
