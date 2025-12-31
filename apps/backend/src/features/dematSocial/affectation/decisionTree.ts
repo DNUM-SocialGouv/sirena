@@ -1,10 +1,9 @@
 import {
   type MisEnCauseType,
-  type MisEnCauseTypePrecisionUnion,
   MOTIF,
   type Motif,
-  type ProfessionDomicileType,
-  type ProfessionType,
+  PROFESSION_DOMICILE_TYPE,
+  PROFESSION_SANTE_PRECISION,
 } from '@sirena/common/constants';
 import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types';
 
@@ -52,16 +51,53 @@ export function computeEntitesFromMotifs(ctx: SituationContext): EntiteAdminType
  *  CONSTANTS
  *********************/
 
-const DOMICILE_PRO_SANTE_MAPPING: Record<ProfessionDomicileType | ProfessionType, EntiteAdminType[]> = {
-  TRAVAILLEUR_SOCIAL: ['CD'],
-  PROF_SANTE: ['ARS'],
-  PROF_SOIN: ['ARS'],
-  INTERVENANT_DOMICILE: ['CD'],
-  SERVICE_EDUCATION: ['ARS'],
-  SERVICE_AIDE_FAMILLE: ['CD'],
-  TUTEUR: ['DD'],
+type DomicileProfessionnelCategory =
+  | 'PROFESSIONNEL_SANTE'
+  | 'SERVICE_AIDE_DOMICILE'
+  | 'SESSAD'
+  | 'TUTEUR_MJPM'
+  | 'AUTRE';
+
+const DOMICILE_PROFESSIONNEL_MAPPING: Record<DomicileProfessionnelCategory, EntiteAdminType[]> = {
+  PROFESSIONNEL_SANTE: ['ARS'],
+  SERVICE_AIDE_DOMICILE: ['CD'],
+  SESSAD: ['ARS'],
+  TUTEUR_MJPM: ['DD'],
   AUTRE: ['CD'],
 };
+
+function getDomicileProfessionnelCategory(ctx: SituationContext): DomicileProfessionnelCategory | null {
+  const { misEnCauseType, misEnCauseTypePrecision } = ctx;
+
+  // 4. Tuteur/MJPM
+  if (misEnCauseType === 'NPJM' || misEnCauseTypePrecision === 'MJPM') {
+    return 'TUTEUR_MJPM';
+  }
+
+  // Special case : PROFESSIONNEL_SANTE
+  if (misEnCauseType === 'PROFESSIONNEL_SANTE') {
+    // 3. SESSAD
+    if (misEnCauseTypePrecision === 'SESSAD') {
+      return 'SESSAD';
+    }
+
+    // 2. Service d'aide à domicile (ProfessionDomicileType but not SESSAD)
+    if (misEnCauseTypePrecision && Object.keys(PROFESSION_DOMICILE_TYPE).includes(misEnCauseTypePrecision)) {
+      return 'SERVICE_AIDE_DOMICILE';
+    }
+
+    // 1. Professionnel de santé (ProfessionSantePrecision)
+    if (misEnCauseTypePrecision && Object.keys(PROFESSION_SANTE_PRECISION).includes(misEnCauseTypePrecision)) {
+      return 'PROFESSIONNEL_SANTE';
+    }
+
+    // Default case : PROFESSIONNEL_SANTE
+    return 'PROFESSIONNEL_SANTE';
+  }
+
+  // 5. Autre (PROFESSIONNEL_SOCIAL, AUTRE_PROFESSIONNEL, ...)
+  return 'AUTRE';
+}
 
 const MOTIFS_KEYS: Motif[] = Object.keys(MOTIF) as Motif[];
 const MOTIFS_SET = new Set(MOTIFS_KEYS);
@@ -93,7 +129,7 @@ function domicileSubtree(): DecisionNode {
     description: 'Mis en cause : professionnel ou non ?',
     predicate: (ctx) => {
       const isProfessionnel = !(['MEMBRE_FAMILLE', 'PROCHE', 'AUTRE'] as MisEnCauseType[]).includes(
-        ctx.misEnCauseType as MisEnCauseType,
+        ctx.misEnCauseType as MisEnCauseType, // cast because misEnCauseType is required below
       );
       return isProfessionnel;
     },
@@ -113,12 +149,16 @@ function domicileProfessionnelSubtree(): DecisionNode {
     kind: 'switch',
     id: 'domicile_professionnel_type',
     description: 'Type de service / intervention à domicile',
-    required: ['professionDomicileType'],
-    select: (ctx) => ctx.professionDomicileType ?? null,
+    required: ['misEnCauseType'],
+    select: (ctx) => getDomicileProfessionnelCategory(ctx) ?? null,
     cases: Object.fromEntries(
-      Object.entries(DOMICILE_PRO_SANTE_MAPPING).map(([key, entites]) => [
+      Object.entries(DOMICILE_PROFESSIONNEL_MAPPING).map(([key, entites]) => [
         key,
-        leaf(`domicile_pro_${key.toLowerCase()}`, `Domicile - professionnel (${key})`, entites),
+        leaf(
+          `domicile_pro_${key.toLowerCase()}`,
+          `Domicile - ${key === 'PROFESSIONNEL_SANTE' ? 'Professionnel de santé' : key === 'SERVICE_AIDE_DOMICILE' ? "Service d'aide à domicile" : key === 'SESSAD' ? "Service d'éducation spéciale et de soins (SESSAD)" : key === 'TUTEUR_MJPM' ? 'Tuteur, curateur ou mandataire judiciaire' : 'Autre'}`,
+          entites,
+        ),
       ]),
     ),
   };
@@ -129,6 +169,10 @@ function nonDomicileSubtree(): DecisionNode {
   return {
     kind: 'branch',
     id: 'non_domicile_maltraitance',
+    /*
+    YES = One of the following answers is selected: "Manque de soins, de nourriture, d’hygiène ou de sécurité
+    Insultes, coups, soin médical ou isolement forcé, autres violences Vol d’argent ou d’objets, confiscation Contact physique sans accord sur les parties intimes,  attouchements forcés, exhibitionnisme, relation sexuelle forcée"
+    */
     description: 'Est-ce une maltraitance ?',
     predicate: (ctx) => ctx.isMaltraitance === true,
     ifTrue: nonDomicileMaltraitanceSubtree(),
@@ -142,25 +186,24 @@ function nonDomicileMaltraitanceSubtree(): DecisionNode {
   return {
     kind: 'switch',
     id: 'maltraitance_mis_en_cause',
-    description: 'Mis en cause : famille, proche, professionnel, autre',
-    select: (ctx): MisEnCauseType | Extract<MisEnCauseTypePrecisionUnion, 'TUTEUR'> | null => {
-      const isProfessionnelOrProfessionDomicile = (misEnCauseType: MisEnCauseType) => {
-        const professionMisEnCause: MisEnCauseType[] = ['PROFESSIONNEL', 'PROFESSION_DOMICILE'];
-        return professionMisEnCause.includes(misEnCauseType);
-      };
-
-      // Special case : MJPM/TUTEUR
-      if (
-        ctx.misEnCauseType &&
-        isProfessionnelOrProfessionDomicile(ctx.misEnCauseType) &&
-        ctx.misEnCauseTypePrecision === 'TUTEUR'
-      )
-        return 'TUTEUR';
+    description: 'Mis en cause : famille, proche, professionnel, établissement, tuteur, autre',
+    select: (ctx): MisEnCauseType | 'TUTEUR_MJPM' | null => {
+      // Tuteur/curateur/mandataire judiciaire : NPJM or MJPM via precision
+      if (ctx.misEnCauseType === 'NPJM' || ctx.misEnCauseTypePrecision === 'MJPM') {
+        return 'TUTEUR_MJPM';
+      }
 
       return ctx.misEnCauseType ?? null;
     },
     required: ['misEnCauseType'],
     cases: {
+      ETABLISSEMENT: {
+        kind: 'leaf',
+        id: 'maltraitance_etablissement',
+        description: 'Maltraitance par un établissement',
+        add: [],
+        next: nonDomicileLieuDeSurvenue(),
+      },
       MEMBRE_FAMILLE: {
         kind: 'leaf',
         id: 'maltraitance_membre_famille_add_cd',
@@ -182,10 +225,10 @@ function nonDomicileMaltraitanceSubtree(): DecisionNode {
         add: ['ARS'],
         next: nonDomicileLieuDeSurvenue(),
       },
-      TUTEUR: {
+      TUTEUR_MJPM: {
         kind: 'leaf',
-        id: 'maltraitance_mjpm_tuteur_add_dd',
-        description: 'Maltraitance par un MJPM',
+        id: 'maltraitance_tuteur_mjpm_add_dd',
+        description: 'Maltraitance par un tuteur, curateur ou mandataire judiciaire',
         add: ['DD'],
         next: nonDomicileLieuDeSurvenue(),
       },

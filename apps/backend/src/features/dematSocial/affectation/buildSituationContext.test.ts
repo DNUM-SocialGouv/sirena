@@ -6,7 +6,6 @@ import type { SituationContext } from './types';
 vi.mock('./utils', () => ({
   extractPostalCode: vi.fn((v) => (v ? '75001' : null)),
   extractFinessFromRawText: vi.fn((v) => (v ? '123456789' : null)),
-  extractProfessionDomicileTypeFromRawText: vi.fn((v) => (v ? 'SSIAD' : null)),
 }));
 
 describe('buildSituationContextFromDemat', () => {
@@ -32,7 +31,7 @@ describe('buildSituationContextFromDemat', () => {
     },
     faits: [
       {
-        maltraitanceTypes: [{ maltraitanceType: { id: 'MALTRAITANCE' } }],
+        maltraitanceTypes: [{ maltraitanceType: { id: 'NEGLIGENCES' } }],
         motifsDeclaratifs: [{ motifDeclaratif: { id: 'PROBLEME_QUALITE_SOINS' as Motif } }],
         motifs: [{ motif: { id: 'NON_RESPECT_DROITS' as Motif } }],
       },
@@ -49,16 +48,24 @@ describe('buildSituationContextFromDemat', () => {
     expect(ctx.finessCode).toBe('123456789');
     expect(ctx.postalCode).toBe('75001');
     expect(ctx.misEnCauseType).toBe('PROFESSIONNEL_SANTE');
-    expect(ctx.professionDomicileType).toBe('SSIAD');
     expect(ctx.misEnCauseTypePrecision).toBe('SSIAD');
   });
 
-  it('should detect maltraitance when at least one type is not NON or NE_SAIS_PAS', () => {
-    const ctx = buildSituationContextFromDemat(makeSituation());
+  it('should detect maltraitance when at least one positive type is present (NEGLIGENCES, VIOLENCES, MATERIELLE_FINANCIERE, SEXUELLE)', () => {
+    const situation = makeSituation({
+      faits: [
+        {
+          maltraitanceTypes: [{ maltraitanceType: { id: 'NEGLIGENCES' } }],
+          motifsDeclaratifs: [{ motifDeclaratif: { id: 'PROBLEME_QUALITE_SOINS' as Motif } }],
+          motifs: [{ motif: { id: 'NON_RESPECT_DROITS' as Motif } }],
+        },
+      ],
+    });
+    const ctx = buildSituationContextFromDemat(situation);
     expect(ctx.isMaltraitance).toBe(true);
   });
 
-  it('should detect non-maltraitance when all faits have NON or NE_SAIS_PAS', () => {
+  it('should detect non-maltraitance when all faits have NON', () => {
     const situation = makeSituation({
       faits: [
         {
@@ -69,6 +76,36 @@ describe('buildSituationContextFromDemat', () => {
 
     const ctx = buildSituationContextFromDemat(situation);
     expect(ctx.isMaltraitance).toBe(false);
+  });
+
+  it('should detect non-maltraitance when no positive types are present', () => {
+    const situation = makeSituation({
+      faits: [
+        {
+          maltraitanceTypes: [{ maltraitanceType: { id: 'UNKNOWN_TYPE' } }],
+        },
+      ],
+    });
+
+    const ctx = buildSituationContextFromDemat(situation);
+    expect(ctx.isMaltraitance).toBe(false);
+  });
+
+  it('should detect maltraitance for all positive types', () => {
+    const positiveTypes = ['NEGLIGENCES', 'VIOLENCES', 'MATERIELLE_FINANCIERE', 'SEXUELLE'] as const;
+
+    for (const type of positiveTypes) {
+      const situation = makeSituation({
+        faits: [
+          {
+            maltraitanceTypes: [{ maltraitanceType: { id: type } }],
+          },
+        ],
+      });
+
+      const ctx = buildSituationContextFromDemat(situation);
+      expect(ctx.isMaltraitance).toBe(true);
+    }
   });
 
   it('should extract motifsDeclaratifs and motifs', () => {
@@ -97,7 +134,6 @@ describe('buildSituationContextFromDemat', () => {
     expect(ctx.finessCode).toBe(null);
     expect(ctx.postalCode).toBe(null);
     expect(ctx.misEnCauseType).toBe(undefined);
-    expect(ctx.professionDomicileType).toBe(null);
     expect(ctx.misEnCauseTypePrecision).toBe(undefined);
   });
 });

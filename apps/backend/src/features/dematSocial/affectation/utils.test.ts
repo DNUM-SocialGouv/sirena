@@ -1,48 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { extractFinessFromRawText, extractPostalCode, extractProfessionDomicileTypeFromRawText } from './utils';
+import { extractFinessFromRawText, extractPostalCode } from './utils';
 
 describe('utils.ts', () => {
-  describe('extractProfessionDomicileTypeFromRawText', () => {
-    describe('when input is a valid ProfessionDomicileType', () => {
-      it.each([
-        ['PROF_SANTE', 'PROF_SANTE'],
-        ['PROF_SOIN', 'PROF_SOIN'],
-        ['INTERVENANT_DOMICILE', 'INTERVENANT_DOMICILE'],
-        ['SERVICE_EDUCATION', 'SERVICE_EDUCATION'],
-        ['SERVICE_AIDE_FAMILLE', 'SERVICE_AIDE_FAMILLE'],
-        ['TUTEUR', 'TUTEUR'],
-        ['AUTRE', 'AUTRE'],
-      ])('should return the type for valid input: %s', (input, expected) => {
-        expect(extractProfessionDomicileTypeFromRawText(input)).toBe(expected);
-      });
-    });
-
-    describe('when input is null or undefined', () => {
-      it('should return null for null input', () => {
-        expect(extractProfessionDomicileTypeFromRawText(null)).toBeNull();
-      });
-
-      it('should return null for undefined input', () => {
-        expect(extractProfessionDomicileTypeFromRawText(undefined)).toBeNull();
-      });
-    });
-
-    describe('when input is an invalid value', () => {
-      it.each([
-        [''],
-        ['INVALID_TYPE'],
-        ['prof_liberal'],
-        ['Prof_Liberal'],
-        ['PROF_LIBERAL '],
-        [' PROF_LIBERAL'],
-        ['123'],
-        ['some random text'],
-      ])('should return null for invalid input: %s', (input) => {
-        expect(extractProfessionDomicileTypeFromRawText(input)).toBeNull();
-      });
-    });
-  });
-
   describe('extractPostalCode', () => {
     describe('when input contains a valid 5-digit postal code', () => {
       it.each([

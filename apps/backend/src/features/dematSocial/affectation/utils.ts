@@ -1,10 +1,3 @@
-import { type ProfessionDomicileType, professionDomicileTypeLabels } from '@sirena/common/constants';
-
-export function extractProfessionDomicileTypeFromRawText(raw?: string | null): ProfessionDomicileType | null {
-  if (!raw) return null;
-  return Object.keys(professionDomicileTypeLabels).includes(raw) ? (raw as ProfessionDomicileType) : null;
-}
-
 export function extractPostalCode(raw?: string | null): string | null {
   if (!raw) return null;
 

@@ -37,23 +37,30 @@ export const civiliteLabels: Record<Civilite, string> = {
 };
 
 export const MIS_EN_CAUSE_TYPE = {
-  PROFESSIONNEL: 'PROFESSIONNEL',
-  ETABLISSEMENT: 'ETABLISSEMENT',
   MEMBRE_FAMILLE: 'MEMBRE_FAMILLE',
+  AUTRE_PERSONNE_NON_PRO: 'AUTRE_PERSONNE_NON_PRO',
+  PROFESSIONNEL_SANTE: 'PROFESSIONNEL_SANTE',
+  PROFESSIONNEL_SOCIAL: 'PROFESSIONNEL_SOCIAL',
+  AUTRE_PROFESSIONNEL: 'AUTRE_PROFESSIONNEL',
+  ETABLISSEMENT: 'ETABLISSEMENT',
+  NPJM: 'NPJM',
   PROCHE: 'PROCHE',
   AUTRE: 'AUTRE',
-  PROFESSION_DOMICILE: 'PROFESSION_DOMICILE',
 } as const;
 
 export type MisEnCauseType = keyof typeof MIS_EN_CAUSE_TYPE;
 
 export const misEnCauseTypeLabels: Record<MisEnCauseType, string> = {
-  PROFESSIONNEL: 'Un professionnel',
+  MEMBRE_FAMILLE: 'Membre de la famille',
+  PROCHE: 'Proche (ami, voisin,...)',
+  AUTRE_PERSONNE_NON_PRO: 'Autre personne non professionnelle',
+  PROFESSIONNEL_SANTE:
+    'Professionnel de santé (médecin généraliste, spécialiste, dentiste, kinésithérapeute, orthophoniste, infirmier, aide-soignant...)',
+  PROFESSIONNEL_SOCIAL: 'Professionnel social (éducateur, assistant social...)',
+  NPJM: 'Un tuteur, curateur ou mandataire judiciaire',
   ETABLISSEMENT: 'Un établissement ou un service',
-  MEMBRE_FAMILLE: 'Un membre de la famille',
-  PROCHE: 'Un autre proche, par exemple : voisinage ou connaissance',
+  AUTRE_PROFESSIONNEL: 'Autre professionnel',
   AUTRE: 'Autre',
-  PROFESSION_DOMICILE: 'Un professionnel ou un service d’aide à domicile',
 };
 
 // Précisions pour chaque type de mis en cause
@@ -136,16 +143,19 @@ export const MOTIF = {
 export type Motif = keyof typeof MOTIF;
 
 export const motifLabels: Record<Motif, string> = {
-  PROBLEME_COMPORTEMENTAL: 'Le comportement d’une personne',
-  PROBLEME_FACTURATION: 'La facturation ou les honoraires',
-  PROBLEME_LOCAUX: 'Les locaux ou la restauration',
-  NON_RESPECT_DROITS: 'Un manque d’information sur l’organisation de l’établissement ou du service',
+  PROBLEME_COMPORTEMENTAL: 'Problème comportemental, relationnel ou de communication avec une personne',
+  PROBLEME_FACTURATION: 'Problème lié à la facturation ou aux honoraires',
+  PROBLEME_LOCAUX: 'Problème lié aux locaux ou la restauration',
+  NON_RESPECT_DROITS:
+    "Non-respect des droits des usagers dont défaut d’information (ex : non prise en compte de l'expression de besoin de la personne accompagnée, travail illégal...)",
+
   PROBLEME_ORGANISATION:
-    'Problème d’organisation ou de fonctionnement de l’établissement ou du service (ex : Management, plannings, condition de travail...)',
-  PROBLEME_QUALITE_SOINS: 'La qualité des soins médicaux ou paramédicaux',
+    'Problème d’organisation ou de fonctionnement de l’établissement ou du service (ex : Management, plannings, condition de travail...)',
+  PROBLEME_QUALITE_SOINS:
+    'Problème de qualité des soins médicaux ou paramédicaux (ex: soins et/ou interventions inadaptés, absents ou abusifs...)',
   DIFFICULTES_ACCES_SOINS:
     "Difficultés d'accès aux soins (établissement ou professionnel) (ex: manque de moyen humain...)",
-  AUTRE: 'Autre, par exemple : tatouage ou esthétique',
+  AUTRE: 'Autre (ex: tatouage, chirurgie et/ou soins esthétiques...)',
 };
 
 export const motifShortLabels: Record<Motif, string> = {
@@ -170,10 +180,12 @@ export const CONSEQUENCE = {
 export type Consequence = keyof typeof CONSEQUENCE;
 
 export const consequenceLabels: Record<Consequence, string> = {
-  BESOINS: 'Difficulté à manger, se laver, dormir ou recevoir de l’aide',
-  SANTE: 'Douleurs, stress, fatigue, blessures',
-  SOCIAL: 'Isolement, mise à l’écart, difficulté à participer à des activités, à se rendre à l’école ou au travail',
-  DROITS: 'Impossibilité de recevoir de l’aide ou de porter plainte',
+  SANTE: 'Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...)',
+  DROITS: "Sur les droits (impossible de porter plainte, d'être écouté, d'avoir un soutien...)",
+  BESOINS:
+    "Sur les besoins du quotidien (difficulté à manger, dormir, se laver, ou à recevoir l'aide dont elle a besoin...)",
+  SOCIAL:
+    "Sur la vie sociale ( isolement, rejet, mise à l'écart, difficulté à aller à l'école, au travail ou à participer à des activités...)",
   AUCUNE: 'Aucune de ces conséquences',
 };
 
@@ -196,7 +208,7 @@ export const maltraitanceTypeLabels: Record<MaltraitanceType, string> = {
   NON: 'Aucune de ces situations',
 };
 
-export const MALTRATIANCEQUALIFIED_TYPE = {
+export const MALTRAITANCEQUALIFIED_TYPE = {
   PHYSIQUE: 'PHYSIQUE',
   SEXUELLE: 'SEXUELLE',
   PSYCHOLOGIQUE: 'PSYCHOLOGIQUE',
@@ -209,7 +221,7 @@ export const MALTRATIANCEQUALIFIED_TYPE = {
   NON: 'NON',
 } as const;
 
-export type MaltraitanceQualifiedType = keyof typeof MALTRATIANCEQUALIFIED_TYPE;
+export type MaltraitanceQualifiedType = keyof typeof MALTRAITANCEQUALIFIED_TYPE;
 
 export const maltraitanceQualifiedLabels: Record<MaltraitanceQualifiedType, string> = {
   PHYSIQUE: 'Maltraitance physique',
@@ -230,7 +242,6 @@ export const LIEU_TYPE = {
   ETABLISSEMENT_PERSONNES_AGEES: 'ETABLISSEMENT_PERSONNES_AGEES',
   ETABLISSEMENT_HANDICAP: 'ETABLISSEMENT_HANDICAP',
   ETABLISSEMENT_SOCIAL: 'ETABLISSEMENT_SOCIAL',
-  CABINET: 'CABINET',
   AUTRES_ETABLISSEMENTS: 'AUTRES_ETABLISSEMENTS',
   TRAJET: 'TRAJET',
 } as const;
@@ -238,15 +249,13 @@ export const LIEU_TYPE = {
 export type LieuType = keyof typeof LIEU_TYPE;
 
 export const lieuTypeLabels: Record<LieuType, string> = {
-  DOMICILE: 'À Domicile',
-  ETABLISSEMENT_SANTE: 'Un établissement de santé, par exemple : CHU, clinique',
-  ETABLISSEMENT_PERSONNES_AGEES: 'Un établissement pour personnes âgées, par exemple : EHPAD, résidence autonomie',
-  ETABLISSEMENT_HANDICAP:
-    'Un établissement pour personnes en situation de handicap, par exemple : maison d’accueil spécialisée',
-  ETABLISSEMENT_SOCIAL: 'Un établissement social, par exemple : centre d’hébergement',
-  CABINET: 'Un cabinet médical, par exemple : dentiste, médecin généraliste',
-  AUTRES_ETABLISSEMENTS: 'Autre, par exemple un salon de tatouage ou un institut d’esthétique',
-  TRAJET: 'Dans un moyen de transport',
+  DOMICILE: 'Domicile',
+  ETABLISSEMENT_SANTE: 'Etablissements de santé',
+  ETABLISSEMENT_PERSONNES_AGEES: 'Etablissements pour personnes âgées',
+  ETABLISSEMENT_HANDICAP: 'Etablissements pour personnes handicapées',
+  ETABLISSEMENT_SOCIAL: 'Etablissements sociaux',
+  AUTRES_ETABLISSEMENTS: 'Autres établissements',
+  TRAJET: 'Trajet',
 };
 
 // Domicile - Précisions
@@ -448,32 +457,53 @@ export const lieuTrajetPrecisionLabels: Record<LieuTrajetPrecision, string> = {
 };
 
 export const PROFESSION_DOMICILE_TYPE = {
-  PROF_SANTE: 'SANTE',
-  PROF_SOIN: 'SOIN',
-  INTERVENANT_DOMICILE: 'INTERVENANT_DOMICILE',
-  SERVICE_EDUCATION: 'SERVICE_EDUCATION',
-  SERVICE_AIDE_FAMILLE: 'SERVICE_AIDE_FAMILLE',
-  TUTEUR: 'TUTEUR',
+  PROF_LIBERAL: 'PROF_LIBERAL',
+  HAD: 'HAD',
+  SESSAD: 'SESSAD',
+  SSAD: 'SSAD',
+  SAVS: 'SAVS',
+  SPST: 'SPST',
+  SAMSAH: 'SAMSAH',
+  AIDE_MENAGERE: 'AIDE_MENAGERE',
+  REPAS: 'REPAS',
+  TRAITEMENT: 'TRAITEMENT',
+  SAADF: 'SAADF',
+  MJPM: 'MJPM',
+  SSIAD: 'SSIAD',
+  SAED: 'SAED',
+  SAEMO: 'SAEMO',
+  SAAD: 'SAAD',
   AUTRE: 'AUTRE',
 } as const;
 
 export type ProfessionDomicileType = keyof typeof PROFESSION_DOMICILE_TYPE;
 
 export const professionDomicileTypeLabels: Record<ProfessionDomicileType, string> = {
-  PROF_SANTE: 'Un professionnel de santé, par exemple : médecin, SAMU',
-  PROF_SOIN: 'Un professionnel du soin, par exemple : infirmier, aide-soignant',
-  INTERVENANT_DOMICILE: 'Un intervenant à domicile : aide à domicile, aide ménagère, aide au repas',
-  SERVICE_EDUCATION: 'Un professionnel d’un service d’éducation spéciale et de soins',
-  SERVICE_AIDE_FAMILLE:
-    'Un professionnel d’un service d’aide et d’accompagnement à domicile aux familles, par exemple : éducateur, psychologue',
-  TUTEUR: 'Un tuteur, curateur ou mandataire judiciaire',
-  AUTRE: 'Une autre personne ou un autre service',
+  PROF_LIBERAL: "Intervention d'un professionnel libéral ou service (SAMU, médecin)",
+  HAD: 'Hospitalisation à domicile',
+  SSAD: "Services de soins infirmiers ou d'aide à domicile (SAAD, SSIAD, SPASAD)",
+  SAMSAH: 'SAMSAH',
+  SAVS: "SAVS (Service d'accompagnement à la vie sociale)",
+  SAEMO: "SAEMO (services d'action éducative en milieu ouvert)",
+  SAED: "SAED (Services d'action éducative à domicile)",
+  SPST: 'SPST',
+  SESSAD: "Service d'éducation spéciale et de soins",
+  AIDE_MENAGERE: "Service d'aide ménagère",
+  REPAS: 'Service de repas',
+  TRAITEMENT: 'Traitements spécialisés',
+  SAADF: "Service d'Aide et d'Accompagnement à Domicile aux Familles (SAADF)",
+  MJPM: 'Mandataire Judiciaire à la Protection des Majeurs (curatelle, tutelle)',
+  SSIAD: 'Service de Soins Infirmier à Domicile (SSIAD)',
+  SAAD: "Service d'Aide et d'Accompagnement à Domicile (SAAD)",
+  AUTRE: 'Autre',
 };
 
 export const TRANSPORT_TYPE = {
   POMPIER: 'POMPIER',
-  SAMU: 'SAMU',
+  ASSU: 'ASSU',
+  VSAV: 'VSAV',
   AMBULANCE: 'AMBULANCE',
+  VSL: 'VSL',
   TAXI: 'TAXI',
   AUTRE: 'AUTRE',
 } as const;
@@ -481,27 +511,34 @@ export const TRANSPORT_TYPE = {
 export type TransportType = keyof typeof TRANSPORT_TYPE;
 
 export const transportTypeLabels: Record<TransportType, string> = {
-  POMPIER: 'Véhicule de pompier',
-  SAMU: 'Véhicule du SAMU',
-  AMBULANCE: 'Ambulance privée',
-  TAXI: 'Taxi subventionné',
-  AUTRE: 'Autre moyen de transport',
+  POMPIER: 'Sapeurs pompiers',
+  ASSU: "Ambulance de secours et de soins d'urgence (ASSU)",
+  VSAV: "Véhicule de secours et d'assistance aux victimes (VSAV)",
+  AMBULANCE: 'Ambulance',
+  VSL: 'Véhicule sanitaire léger',
+  TAXI: 'Chauffeur de taxi',
+  AUTRE: 'Autre type de transport',
 };
 
 export const PROFESSION_TYPE = {
   PROF_SANTE: 'PROF_SANTE',
   TRAVAILLEUR_SOCIAL: 'TRAVAILLEUR_SOCIAL',
-  TUTEUR: 'TUTEUR',
+  PROF_SOIN: 'PROF_SOIN',
+  RESPONSABLE: 'RESPONSABLE',
+  MJPM: 'MJPM',
   AUTRE: 'AUTRE',
 } as const;
 
 export type ProfessionType = keyof typeof PROFESSION_TYPE;
 
 export const professionTypeLabels: Record<ProfessionType, string> = {
-  PROF_SANTE: 'Un professionnel de santé, par exemple : médecin, dentiste, infirmier, aide-soignant',
-  TRAVAILLEUR_SOCIAL: 'Un travailleur social, par exemple : éducateur, assistant social',
-  TUTEUR: 'Un tuteur, curateur ou mandataire judiciaire',
-  AUTRE: 'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
+  PROF_SANTE:
+    'Un professionnel de santé (médecin généraliste, spécialiste, dentiste, kinésithérapeute, orthophoniste, infirmier, aide-soignant...)',
+  TRAVAILLEUR_SOCIAL: 'Travailleur social (éducateur, assistant social...)',
+  PROF_SOIN: 'Un professionnel du soin (coiffeur, esthéticienne, naturopathe, ...)',
+  RESPONSABLE: 'Responsable (directeur, cadre de santé...)',
+  MJPM: 'Mandataire judiciaire à la protection des majeurs (curateur, tuteur...)',
+  AUTRE: 'Autre (animateur, agent d’entretien...)',
 };
 
 // Professionnel de santé - Précisions
@@ -663,8 +700,6 @@ export const DEMARCHES_ENGAGEES = {
   CONTACT_RESPONSABLES: 'CONTACT_RESPONSABLES',
   CONTACT_ORGANISME: 'CONTACT_ORGANISME',
   PLAINTE: 'PLAINTE',
-  AUTRE: 'AUTRE',
-  AUCUNE: 'AUCUNE',
 } as const;
 
 export type DemarchesEngagees = keyof typeof DEMARCHES_ENGAGEES;
@@ -673,9 +708,8 @@ export const demarcheEngageeLabels: Record<DemarchesEngagees, string> = {
   CONTACT_RESPONSABLES: "L'établissement ou le responsables des faits a été contacté",
   CONTACT_ORGANISME: "Démarches engagées auprès d'autres organismes",
   PLAINTE: 'Une plainte a été déposée auprès des autorités judiciaires',
-  AUTRE: "D'autres démarches ont été engagées",
-  AUCUNE: "Aucune démarche n'est en cours",
 };
+
 // Motifs principaux
 export const MOTIF_PRINCIPAL = {
   ACTIVITES_D_ESTHETIQUE_NON_REGLEMENTEES: 'ACTIVITES_D_ESTHETIQUE_NON_REGLEMENTEES',
@@ -1143,16 +1177,4 @@ export const requeteClotureReasonLabels: Record<RequeteClotureReason, string> = 
   MISSION_D_INSPECTION_ET_CONTROLE: 'Mission d’inspection et contrôle',
   SANS_SUITE: 'Sans suite',
   AUTRE: 'Autre',
-} as const;
-
-export const DECLARATION_TYPE = {
-  QUALITE_COMPORTEMENT: 'QUALITE_COMPORTEMENT',
-  FACTURATION_MATERIEL: 'FACTURATION_MATERIEL',
-} as const;
-
-export type DeclarationType = keyof typeof DECLARATION_TYPE;
-
-export const declarationTypeLabels: Record<DeclarationType, string> = {
-  QUALITE_COMPORTEMENT: 'Un problème de qualité de prise en charge ou un comportement inapproprié',
-  FACTURATION_MATERIEL: 'Un problème de facturation ou matériel',
 } as const;

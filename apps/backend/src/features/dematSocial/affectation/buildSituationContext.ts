@@ -1,7 +1,13 @@
-import type { LieuType, MisEnCauseType, MisEnCauseTypePrecisionUnion, Motif } from '@sirena/common/constants';
+import {
+  type LieuType,
+  MALTRAITANCE_TYPE,
+  type MisEnCauseType,
+  type MisEnCauseTypePrecisionUnion,
+  type Motif,
+} from '@sirena/common/constants';
 import type { Prisma } from '../../../../generated/client';
 import type { SituationContext } from './types';
-import { extractFinessFromRawText, extractPostalCode, extractProfessionDomicileTypeFromRawText } from './utils';
+import { extractFinessFromRawText, extractPostalCode } from './utils';
 
 type RequeteWithSituations = Prisma.RequeteGetPayload<{
   include: {
@@ -55,22 +61,24 @@ export function buildSituationContextFromDemat(situation: SituationWithLieu): Si
 
   ctx.misEnCauseType = situation?.misEnCause?.misEnCauseType?.id as MisEnCauseType;
 
-  ctx.professionDomicileType = extractProfessionDomicileTypeFromRawText(
-    situation?.misEnCause?.misEnCauseTypePrecision?.id,
-  );
-
   ctx.misEnCauseTypePrecision = situation?.misEnCause?.misEnCauseTypePrecision?.id as MisEnCauseTypePrecisionUnion;
 
-  // Check if at least one "fait" has a "yes" answer to the "maltraitance" question
-  // (exclude "NON" and "NE_SAIS_PAS" which are negative answers)
+  // YES = One of the following answers is selected:
+  // - "NEGLIGENCES"
+  // - "VIOLENCES""
+  // - "MATERIELLE_FINANCIERE"
+  // - "SEXUELLE"
   const faits = situation?.faits || [];
+  const positiveMaltraitanceTypes = [
+    MALTRAITANCE_TYPE.NEGLIGENCES,
+    MALTRAITANCE_TYPE.VIOLENCES,
+    MALTRAITANCE_TYPE.MATERIELLE_FINANCIERE,
+    MALTRAITANCE_TYPE.SEXUELLE,
+  ] as const;
   ctx.isMaltraitance = faits.some((fait) => {
     const maltraitanceTypes = fait?.maltraitanceTypes || [];
-    return (
-      maltraitanceTypes.length > 0 &&
-      maltraitanceTypes.some(
-        (type) => type?.maltraitanceType?.id !== 'NON' && type?.maltraitanceType?.id !== 'NE_SAIS_PAS',
-      )
+    return maltraitanceTypes.some((type) =>
+      positiveMaltraitanceTypes.includes(type?.maltraitanceType?.id as (typeof positiveMaltraitanceTypes)[number]),
     );
   });
 
