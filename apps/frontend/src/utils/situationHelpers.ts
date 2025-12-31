@@ -82,12 +82,13 @@ export const hasSituationContent = (
 
   const serverSituation = situation as ServerSituationData;
   const [fait] = serverSituation.faits ?? [(situation as SituationData).fait];
+  const traitementDesFaits = serverSituation.traitementDesFaits;
 
   const hasMisEnCause = checkMisEnCause(situation.misEnCause);
   const hasLieu = checkLieu(situation.lieuDeSurvenue);
   const hasFaits = checkFaits(fait, additionalFiles);
   const hasDemarches = checkDemarches(situation.demarchesEngagees);
-  const hasTraitementDesFaits = checkTraitementDesFaits(situation.traitementDesFaits);
+  const hasTraitementDesFaits = checkTraitementDesFaits(traitementDesFaits);
 
   return hasMisEnCause || hasLieu || hasFaits || hasDemarches || hasTraitementDesFaits;
 };

@@ -72,3 +72,12 @@ body {
 .one-line {
   white-space: nowrap;
 }
+
+.color-purple-glycine {
+  color: var(--light-options-illustration-color-sun-default-purple-glycine-sun-319, #6e445a);
+  background: var(--light-options-illustration-color-925-default-purple-glycine-925, #fddbfa);
+}
+
+.bold {
+  font-weight: 700;
+}

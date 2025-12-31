@@ -105,14 +105,13 @@ type SituationWithIncludes = Prisma.SituationGetPayload<{
   include: typeof SITUATION_INCLUDE_FULL;
 }>;
 
-export const enrichSituationWithTraitementDesFaits = async (
-  situation: SituationWithIncludes,
-): Promise<
-  SituationWithIncludes & {
-    traitementDesFaits: SituationInput['traitementDesFaits'];
-  }
-> => {
-  const entitesTraitement: Array<{ entiteId: string; directionServiceId?: string }> = [];
+export const enrichSituationWithTraitementDesFaits = async (situation: SituationWithIncludes) => {
+  const entitesTraitement: Array<{
+    entiteId: string;
+    directionServiceId?: string;
+    entiteName: string;
+    directionServiceName?: string;
+  }> = [];
   const seen = new Set<string>(); // avoid duplicates
 
   for (const situationEntite of situation.situationEntites) {
@@ -122,10 +121,12 @@ export const enrichSituationWithTraitementDesFaits = async (
     if (!chain.length) continue;
 
     const rootId = chain[0].id;
+    const rootName = chain[0].nomComplet;
     const isRoot = entite.entiteMereId === null;
 
     const entiteId = rootId;
     const directionServiceId = isRoot ? undefined : entite.id;
+    const directionName = isRoot ? undefined : entite.nomComplet;
 
     const key = `${entiteId}::${directionServiceId ?? 'null'}`;
     if (seen.has(key)) {
@@ -135,7 +136,9 @@ export const enrichSituationWithTraitementDesFaits = async (
 
     entitesTraitement.push({
       entiteId,
+      entiteName: rootName,
       directionServiceId,
+      directionServiceName: directionName,
     });
   }
 
