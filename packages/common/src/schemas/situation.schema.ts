@@ -67,6 +67,8 @@ export const SituationDataSchema = z.object({
         .array(
           z.object({
             entiteId: z.string(),
+            entiteName: z.string().optional(),
+            directionServiceName: z.string().optional(),
             directionServiceId: z.string().optional(),
           }),
         )

@@ -1558,7 +1558,9 @@ describe('requetesEntite.service', () => {
       expect(result.traitementDesFaits?.entites).toHaveLength(1);
       expect(result.traitementDesFaits?.entites?.[0]).toEqual({
         entiteId: 'root1',
+        entiteName: 'Root Entity',
         directionServiceId: undefined,
+        directionServiceName: undefined,
       });
       expect(getEntiteChain).toHaveBeenCalledWith('ent1');
     });
@@ -1588,7 +1590,9 @@ describe('requetesEntite.service', () => {
       expect(result.traitementDesFaits?.entites).toHaveLength(1);
       expect(result.traitementDesFaits?.entites?.[0]).toEqual({
         entiteId: 'root1',
+        entiteName: 'Root Entity',
         directionServiceId: 'dir1',
+        directionServiceName: 'Direction Service',
       });
       expect(getEntiteChain).toHaveBeenCalledWith('dir1');
     });
@@ -1648,11 +1652,15 @@ describe('requetesEntite.service', () => {
       expect(result.traitementDesFaits?.entites).toHaveLength(2);
       expect(result.traitementDesFaits?.entites?.[0]).toEqual({
         entiteId: 'root1',
+        entiteName: 'Root 1',
         directionServiceId: undefined,
+        directionServiceName: undefined,
       });
       expect(result.traitementDesFaits?.entites?.[1]).toEqual({
         entiteId: 'root1',
+        entiteName: 'Root 1',
         directionServiceId: 'dir1',
+        directionServiceName: 'Direction 1',
       });
     });
 
@@ -1687,7 +1695,9 @@ describe('requetesEntite.service', () => {
       expect(result.traitementDesFaits?.entites).toHaveLength(1);
       expect(result.traitementDesFaits?.entites?.[0]).toEqual({
         entiteId: 'root1',
+        entiteName: 'Root 1',
         directionServiceId: 'dir1',
+        directionServiceName: 'Direction 1',
       });
     });
 

@@ -85,7 +85,19 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
               id={personneSectionId}
               onEdit={handleEditPersonneConcernee}
             />
-            <SituationSection id={situationSectionId} requestId={requestId} onEdit={handleEditSituation} />
+            <SituationSection
+              id={situationSectionId}
+              receptionType={null}
+              requestId={requestId}
+              onEdit={handleEditSituation}
+            />
+            {canEdit && (
+              <div className="fr-mb-4w">
+                <Button priority="secondary" iconId="fr-icon-add-line" onClick={() => handleEditSituation()}>
+                  Ajouter un lieu, mis en cause, faits
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -143,26 +155,30 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                   onEdit={handleEditPersonneConcernee}
                 />
                 {situations.length > 0 ? (
-                  <>
-                    {situations.map((situation) => (
-                      <SituationSection
-                        key={situation.id}
-                        id={`situation-${situation.id}`}
-                        requestId={requestId}
-                        situation={situation}
-                        onEdit={handleEditSituation}
-                      />
-                    ))}
-                    {canEdit && (
-                      <div className="fr-mb-4w">
-                        <Button priority="secondary" iconId="fr-icon-add-line" onClick={() => handleEditSituation()}>
-                          Ajouter un lieu, mis en cause, faits
-                        </Button>
-                      </div>
-                    )}
-                  </>
+                  situations.map((situation) => (
+                    <SituationSection
+                      key={situation.id}
+                      id={`situation-${situation.id}`}
+                      receptionType={data?.requete.receptionTypeId || null}
+                      requestId={requestId}
+                      situation={situation}
+                      onEdit={handleEditSituation}
+                    />
+                  ))
                 ) : (
-                  <SituationSection id={situationSectionId} requestId={requestId} onEdit={handleEditSituation} />
+                  <SituationSection
+                    receptionType={data?.requete.receptionTypeId || null}
+                    id={situationSectionId}
+                    requestId={requestId}
+                    onEdit={handleEditSituation}
+                  />
+                )}
+                {canEdit && (
+                  <div className="fr-mb-4w">
+                    <Button priority="secondary" iconId="fr-icon-add-line" onClick={() => handleEditSituation()}>
+                      Ajouter un lieu, mis en cause, faits
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
