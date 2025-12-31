@@ -174,19 +174,19 @@ export const CONSEQUENCE = {
   DROITS: 'DROITS',
   BESOINS: 'BESOINS',
   SOCIAL: 'SOCIAL',
-  AUTRE: 'AUTRE',
+  AUCUNE: 'AUCUNE',
 } as const;
 
 export type Consequence = keyof typeof CONSEQUENCE;
 
 export const consequenceLabels: Record<Consequence, string> = {
   SANTE: 'Sur la santé (douleurs, blessures, stress, angoisse, troubles du sommeil, fatigue, mal-être...)',
-  DROITS: 'Sur les droits (impossible de porter plainte, d’être écouté, d’avoir un soutien...)',
+  DROITS: "Sur les droits (impossible de porter plainte, d'être écouté, d'avoir un soutien...)",
   BESOINS:
-    'Sur les besoins du quotidien (difficulté à manger, dormir, se laver, ou à recevoir l’aide dont elle a besoin...)',
+    "Sur les besoins du quotidien (difficulté à manger, dormir, se laver, ou à recevoir l'aide dont elle a besoin...)",
   SOCIAL:
-    'Sur la vie sociale ( isolement, rejet, mise à l’écart, difficulté à aller à l’école, au travail ou à participer à des activités...)',
-  AUTRE: 'Autre conséquence',
+    "Sur la vie sociale ( isolement, rejet, mise à l'écart, difficulté à aller à l'école, au travail ou à participer à des activités...)",
+  AUCUNE: 'Aucune de ces conséquences',
 };
 
 export const MALTRAITANCE_TYPE = {

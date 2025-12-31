@@ -40,8 +40,19 @@ const splitRepetitionChamp = (champs: RepetitionChamp[]) => {
   return Object.values(parts);
 };
 
+// Normalize apostrophes to handle different Unicode variants (straight, typographic, etc.)
+const normalizeApostrophes = (str: string): string => {
+  return str
+    .replace(/\u2019/g, "'")
+    .replace(/\u2018/g, "'")
+    .replace(/\u02BC/g, "'")
+    .replace(/\uFF07/g, "'");
+};
+
 const getEnumIdFromLabel = (options: { key: string; label: string }[], label: string | null) => {
-  const element = options.find((o) => o.label === label)?.key ?? null;
+  if (!label) return null;
+  const normalizedLabel = normalizeApostrophes(label);
+  const element = options.find((o) => normalizeApostrophes(o.label) === normalizedLabel)?.key ?? null;
   if (!element) {
     return null;
   }
@@ -56,7 +67,8 @@ const getEnumsFromLabel = (
     throw new ChampMappingError(champ, 'MultipleDropDownListChamp', 'Invalid mapping value');
   }
   const keys = champ.values.map((value) => {
-    const element = options.find((o) => o.label === value)?.key ?? null;
+    const normalizedValue = normalizeApostrophes(value);
+    const element = options.find((o) => normalizeApostrophes(o.label) === normalizedValue)?.key ?? null;
     if (!element) {
       throw new EnumNotFound(`No enum found for label: ${value}`);
     }

@@ -173,13 +173,13 @@ export type DsMotif = keyof typeof DS_MOTIF;
 
 export const dsMotifLabels: Record<DsMotif, string> = {
   PROBLEME_QUALITE_SOINS: 'La qualité des soins médicaux ou paramédicaux',
-  PROBLEME_COMPORTEMENTAL: 'Le comportement d’une personne',
-  NON_RESPECT_DROITS: 'Un manque d’information sur l’organisation de l’établissement ou du service',
+  PROBLEME_COMPORTEMENTAL: "Le comportement d'une personne",
+  NON_RESPECT_DROITS: 'Le non-respect des droits ou du secret médical',
   PROBLEME_FACTURATION: 'La facturation ou les honoraires',
   PROBLEME_LOCAUX: 'Les locaux ou la restauration',
-  PROBLEME_ORGANISATION: 'Un manque d’information sur l’organisation de l’établissement ou du service',
-  DIFFICULTES_ACCES_SOINS: 'Un manque d’information sur les droits des usagers',
-  AUTRE: 'Autre, par exemple : tatouage ou esthétique',
+  PROBLEME_ORGANISATION: "Un manque d'information sur l'organisation de l'établissement ou du service",
+  DIFFICULTES_ACCES_SOINS: "Un manque d'information sur les droits des usagers",
+  AUTRE: 'Autre, par exemple : tatouage ou esthétique',
 };
 
 export const DS_PROFESSION_DOMICILE_TYPE = {
