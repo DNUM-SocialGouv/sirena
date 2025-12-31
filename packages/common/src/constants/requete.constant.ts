@@ -208,7 +208,7 @@ export const maltraitanceTypeLabels: Record<MaltraitanceType, string> = {
   NON: 'Aucune de ces situations',
 };
 
-export const MALTRATIANCEQUALIFIED_TYPE = {
+export const MALTRAITANCEQUALIFIED_TYPE = {
   PHYSIQUE: 'PHYSIQUE',
   SEXUELLE: 'SEXUELLE',
   PSYCHOLOGIQUE: 'PSYCHOLOGIQUE',
@@ -221,7 +221,7 @@ export const MALTRATIANCEQUALIFIED_TYPE = {
   NON: 'NON',
 } as const;
 
-export type MaltraitanceQualifiedType = keyof typeof MALTRATIANCEQUALIFIED_TYPE;
+export type MaltraitanceQualifiedType = keyof typeof MALTRAITANCEQUALIFIED_TYPE;
 
 export const maltraitanceQualifiedLabels: Record<MaltraitanceQualifiedType, string> = {
   PHYSIQUE: 'Maltraitance physique',
