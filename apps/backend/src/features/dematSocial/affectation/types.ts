@@ -4,7 +4,6 @@ import type {
   MisEnCauseType,
   MisEnCauseTypePrecisionUnion,
   Motif,
-  ProfessionDomicileType,
 } from '@sirena/common/constants';
 
 export type EntiteAdminType = keyof typeof entiteTypes;
@@ -14,7 +13,6 @@ export type SituationContext = {
   finessCode?: string | null;
   postalCode?: string | null;
   misEnCauseType?: MisEnCauseType | null;
-  professionDomicileType?: ProfessionDomicileType | null;
   misEnCauseTypePrecision?: MisEnCauseTypePrecisionUnion | null;
   isMaltraitance?: boolean;
   motifsDeclaratifs?: Motif[];

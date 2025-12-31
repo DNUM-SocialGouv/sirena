@@ -200,16 +200,13 @@ export const createRequeteFromDematSocial = async ({
         });
       }
 
-      const precisionId = s.misEnCause.professionTypeId || s.misEnCause.professionDomicileTypeId;
-      const precision = precisionId
-        ? await tx.misEnCauseTypePrecisionEnum.findUnique({ where: { id: precisionId } })
-        : null;
-
       const misEnCauseData = {
         rpps: s.misEnCause.rpps ?? null,
         commentaire: s.misEnCause.commentaire ?? '',
         ...(s.misEnCause.misEnCauseTypeId && { misEnCauseTypeId: s.misEnCause.misEnCauseTypeId }),
-        ...(precision && { misEnCauseTypePrecisionId: precision.id }),
+        ...(s.misEnCause.misEnCauseTypePrecisionId && {
+          misEnCauseTypePrecisionId: s.misEnCause.misEnCauseTypePrecisionId,
+        }),
       };
 
       const mec = await tx.misEnCause.create({
