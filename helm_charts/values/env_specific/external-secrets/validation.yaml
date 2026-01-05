@@ -1,9 +1,11 @@
 ---
+externalSecret:
+  database:
+    databaseName: sirena-validation
+
 SDPSN-devops-charts:
   externalSecret:
-    database:
-      databaseName: sirena-formation
     redis:
-      clusterName: sirena-formation-redis
+      clusterName: sirena-validation-redis
     bucket:
-      bucketName: sirena-formation-s3
+      bucketName: sirena-validation-s3

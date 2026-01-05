@@ -1,8 +1,10 @@
 ---
+externalSecret:
+  database:
+    databaseName: sirena-test
+
 SDPSN-devops-charts:
   externalSecret:
-    database:
-      databaseName: sirena-test
     redis:
       clusterName: sirena-test-redis
     bucket:

@@ -1,8 +1,10 @@
 ---
+externalSecret:
+  database:
+    databaseName: sirena-integration
+
 SDPSN-devops-charts:
   externalSecret:
-    database:
-      databaseName: sirena-integration
     redis:
       clusterName: sirena-integration-redis
     bucket:
