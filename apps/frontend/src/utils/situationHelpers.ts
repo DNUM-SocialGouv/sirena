@@ -19,7 +19,11 @@ const checkMisEnCause = (misEnCause: unknown): boolean => {
   const mc = misEnCause as Record<string, unknown>;
 
   return (
-    hasValue(mc.misEnCauseType) || hasValue(mc.misEnCausePrecision) || hasValue(mc.rpps) || hasValue(mc.commentaire)
+    hasValue(mc.misEnCauseType) ||
+    hasValue(mc.misEnCauseTypePrecision) ||
+    hasValue(mc.autrePrecision) ||
+    hasValue(mc.rpps) ||
+    hasValue(mc.commentaire)
   );
 };
 

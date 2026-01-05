@@ -21,7 +21,8 @@ export const SituationDataSchema = z.object({
   misEnCause: z
     .object({
       misEnCauseType: z.string().optional(),
-      misEnCausePrecision: z.string().optional(),
+      misEnCauseTypePrecision: z.string().optional(),
+      autrePrecision: z.string().optional(),
       rpps: z.string().optional(),
       commentaire: z.string().optional(),
     })

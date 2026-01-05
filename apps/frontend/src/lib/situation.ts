@@ -39,7 +39,8 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
     misEnCause: misEnCause
       ? {
           misEnCauseType: misEnCause.misEnCauseType?.id || undefined,
-          misEnCausePrecision: misEnCause.misEnCauseTypePrecision?.id || undefined,
+          misEnCauseTypePrecision: misEnCause.misEnCauseTypePrecision?.id || undefined,
+          autrePrecision: misEnCause.autrePrecision || undefined,
           rpps: misEnCause.rpps || undefined,
           commentaire: misEnCause.commentaire || undefined,
         }

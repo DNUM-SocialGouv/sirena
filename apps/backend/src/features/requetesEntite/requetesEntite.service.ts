@@ -762,9 +762,15 @@ const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) =
 const buildMisEnCauseUpdate = (misEnCauseData: SituationInput['misEnCause']) => {
   if (!misEnCauseData) return {};
 
+  const misEnCauseTypeId = toNullableId(misEnCauseData.misEnCauseType);
+  const misEnCauseTypePrecisionId = toNullableId(misEnCauseData.misEnCauseTypePrecision);
+
   return {
-    misEnCauseTypeId: toNullableId(misEnCauseData.misEnCauseType),
-    misEnCauseTypePrecisionId: toNullableId(misEnCauseData.misEnCausePrecision),
+    misEnCauseType: misEnCauseTypeId ? { connect: { id: misEnCauseTypeId } } : { disconnect: true },
+    misEnCauseTypePrecision: misEnCauseTypePrecisionId
+      ? { connect: { id: misEnCauseTypePrecisionId } }
+      : { disconnect: true },
+    autrePrecision: cleanNullOrEmpty(misEnCauseData.autrePrecision),
     rpps: misEnCauseData.rpps || null,
     commentaire: cleanNullOrEmpty(misEnCauseData.commentaire),
   };

@@ -163,8 +163,8 @@ model RequeteStatusEnum {
 }
 
 model RequetePrioriteEnum {
-  id    String @id
-  label String @unique
+  id        String @id
+  label     String @unique
   sortOrder Int
 
   requeteEntites RequeteEntite[]
@@ -358,9 +358,10 @@ model TransportTypeEnum {
 }
 
 model MisEnCause {
-  id          String  @id @default(uuid())
-  rpps        String?
-  commentaire String  @default("")
+  id             String  @id @default(uuid())
+  rpps           String?
+  commentaire    String  @default("")
+  autrePrecision String  @default("")
 
   misEnCauseTypeId String?
   misEnCauseType   MisEnCauseTypeEnum? @relation(fields: [misEnCauseTypeId], references: [id])
@@ -574,7 +575,7 @@ model ChangeLog {
   before      Json?
   after       Json?
   changedById String?
-  changedBy   User?   @relation(fields: [changedById], references: [id])
+  changedBy   User?    @relation(fields: [changedById], references: [id])
   changedAt   DateTime @default(now())
 
   @@index([entity, entityId])

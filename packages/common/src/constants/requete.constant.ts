@@ -263,7 +263,6 @@ export const LIEU_DOMICILE_PRECISION = {
   PERSONNE_CONCERNEE: 'PERSONNE_CONCERNEE',
   REQUERANT: 'REQUERANT',
   CHEZ_TIERS: 'CHEZ_TIERS',
-  SERVICES_SOINS_DOMICILE: 'SERVICES_SOINS_DOMICILE',
   HABITAT_INCLUSIF: 'HABITAT_INCLUSIF',
   EQUIPES_MOBILES: 'EQUIPES_MOBILES',
   AUTRE: 'AUTRE',
@@ -275,7 +274,6 @@ export const lieuDomicilePrecisionLabels: Record<LieuDomicilePrecision, string> 
   PERSONNE_CONCERNEE: 'De la personne concernée',
   REQUERANT: 'Du réquérant',
   CHEZ_TIERS: 'Chez un tiers',
-  SERVICES_SOINS_DOMICILE: "Services de soins infirmiers ou d'aide à domicile (SAAD, SSIAD, SPASAD)",
   HABITAT_INCLUSIF: 'Habitat inclusif',
   EQUIPES_MOBILES: 'Equipes mobiles',
   AUTRE: 'Autre',
@@ -290,7 +288,6 @@ export const LIEU_ETABLISSEMENT_SANTE_PRECISION = {
   CLCC: 'CLCC',
   SSR_SMR: 'SSR_SMR',
   USLD: 'USLD',
-  CMPP_CMP: 'CMPP_CMP',
   BAPU: 'BAPU',
   AUTRE: 'AUTRE',
 } as const;
@@ -305,7 +302,6 @@ export const lieuEtablissementSantePrecisionLabels: Record<LieuEtablissementSant
   CLCC: 'CLCC (Centre de lutte contre le cancer)',
   SSR_SMR: 'SSR/SMR',
   USLD: 'USLD',
-  CMPP_CMP: 'CMPP (Centres médico-psycho-pédagogiques, CMP (Centre médico-psychologique)',
   BAPU: "BAPU (Bureaux d'aide psychologique universitaires)",
   AUTRE: 'Autre',
 };
@@ -314,7 +310,6 @@ export const lieuEtablissementSantePrecisionLabels: Record<LieuEtablissementSant
 export const LIEU_ETABLISSEMENT_PERSONNES_AGEES_PRECISION = {
   EHPAD: 'EHPAD',
   PASA: 'PASA',
-  UHR: 'UHR',
   ACCUEIL_JOUR: 'ACCUEIL_JOUR',
   PUV: 'PUV',
   RA: 'RA',
@@ -327,7 +322,6 @@ export const lieuEtablissementPersonnesAgeesPrecisionLabels: Record<LieuEtabliss
   {
     EHPAD: 'EHPAD',
     PASA: "PASA (Pôles d'activité et soins adaptés)",
-    UHR: "UHR (Unité d'hébergement renforcé)",
     ACCUEIL_JOUR: 'Accueil de jour',
     PUV: 'PUV (Petite unité de vie)',
     RA: 'RA (résidence autonomie)',
@@ -339,13 +333,11 @@ export const LIEU_ETABLISSEMENT_HANDICAP_PRECISION = {
   MAS: 'MAS',
   EAM: 'EAM',
   EANM: 'EANM',
-  SAMSAH: 'SAMSAH',
   SAVS: 'SAVS',
   IEM: 'IEM',
   EEAP: 'EEAP',
   IDA: 'IDA',
   IDV: 'IDV',
-  SESSAD: 'SESSAD',
   CAMSP: 'CAMSP',
   ESAT: 'ESAT',
   CPO: 'CPO',
@@ -362,17 +354,15 @@ export const lieuEtablissementHandicapPrecisionLabels: Record<LieuEtablissementH
   MAS: "MAS (Maison d'accueil spécialisée)",
   EAM: "EAM (Foyer d'acceuil médicalisés)",
   EANM: 'EANM',
-  SAMSAH: 'SAMSAH',
   SAVS: "SAVS (Service d'accompagnement à la vie sociale)",
   IEM: "IEM (Instituts d'éducation motrice)",
   EEAP: 'EEAP (Etablissements pour enfants ou adolescents polyhandicapés)',
   IDA: 'IDA (instituts pour déficients auditifs)',
   IDV: 'IDV (instituts our déficients visuels)',
-  SESSAD: "SESSAD (Service d'Education Spéciale et de Soins à Domicile) non rattaché à un établissement",
   CAMSP: "CAMSP (Centre d'action médico-sociale précoce)",
   ESAT: "ESAT (Etablissement et services d'aide par le travail)",
   CPO: 'CPO (Centres de pré orientation pour handicapés)',
-  CERFP: "CERFP (Centre d'éducation de rééducation et de formation professionnell)",
+  CERFP: "CERFP (Centre d'éducation de rééducation et de formation professionnel)",
   IME: 'IME (Instituts médicoéducatifs)',
   ITEP: 'ITEP (Instituts thérapeutiques, éducatifs et pédagogiques)',
   ACCUEIL_JOUR: 'Accueil de jour',
@@ -382,9 +372,6 @@ export const lieuEtablissementHandicapPrecisionLabels: Record<LieuEtablissementH
 // Etablissements sociaux - Précisions
 export const LIEU_ETABLISSEMENT_SOCIAL_PRECISION = {
   CAARUD: 'CAARUD',
-  SPST: 'SPST',
-  SAEMO: 'SAEMO',
-  SAED: 'SAED',
   CPFSE: 'CPFSE',
   CADA: 'CADA',
   CENTRE_MATERNEL: 'CENTRE_MATERNEL',
@@ -404,9 +391,6 @@ export type LieuEtablissementSocialPrecision = keyof typeof LIEU_ETABLISSEMENT_S
 
 export const lieuEtablissementSocialPrecisionLabels: Record<LieuEtablissementSocialPrecision, string> = {
   CAARUD: 'CAARUD',
-  SPST: 'SPST',
-  SAEMO: "SAEMO (services d'action éducative en milieu ouvert)",
-  SAED: "SAED (Services d'action éducative à domicile)",
   CPFSE: 'CPFSE (centres de placement familial socioéducatif)',
   CADA: "CADA (Centre d'accueil pour demandeurs d'asile)",
   CENTRE_MATERNEL: "CENTRE MATERNEL (Etablissement d'accueil mère-enfant)",
@@ -417,7 +401,7 @@ export const lieuEtablissementSocialPrecisionLabels: Record<LieuEtablissementSoc
   CHRS: "CHRS (Centre d'hébergement et de réinsertion)",
   CHU: "CHU (Centre d'hébergement d'urgence)",
   CHS: "CHS (Centre d'hébergement de stabilisation)",
-  RESIDENCES_SOCIALES: 'Résidences sociales (dont pensions de familles ou maisons relais et résdiences acceuil)',
+  RESIDENCES_SOCIALES: 'Résidences sociales (dont pensions de familles ou maisons relais et résidences accueil)',
   CPH: "CPH (Centres provisoires d'hébergement)",
   AUTRE: 'Autre',
 };
@@ -443,17 +427,19 @@ export const LIEU_TRAJET_PRECISION = {
   AMBULANCE: 'AMBULANCE',
   VSL: 'VSL',
   TAXI: 'TAXI',
+  AUTRE: 'AUTRE',
 } as const;
 
 export type LieuTrajetPrecision = keyof typeof LIEU_TRAJET_PRECISION;
 
 export const lieuTrajetPrecisionLabels: Record<LieuTrajetPrecision, string> = {
-  BSPP: 'BSPP (pompiers)',
+  BSPP: 'Sapeurs Pompiers',
   ASSU: 'ASSU',
   VSAV: 'VSAV',
   AMBULANCE: 'Ambulance',
   VSL: 'Véhicule sanitaire léger',
   TAXI: 'Taxi',
+  AUTRE: 'Autre',
 };
 
 export const PROFESSION_DOMICILE_TYPE = {
