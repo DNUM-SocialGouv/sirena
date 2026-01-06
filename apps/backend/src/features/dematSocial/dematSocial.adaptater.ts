@@ -240,6 +240,12 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
         misEnCauseTypePrecisionId: MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION.AUTRE,
       };
     }
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.PROFESSIONNEL_DOMICILE) {
+      return {
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
+        misEnCauseTypePrecisionId: null,
+      };
+    }
     if (responsable === DS_MIS_EN_CAUSE_TYPE.PROFESSIONNEL) {
       const professionelType = getEnumIdFromLabel(
         mapping.professionnelResponsableDomicile.options,
@@ -282,6 +288,10 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
         };
       }
     }
+    return {
+      misEnCauseTypeId: null,
+      misEnCauseTypePrecisionId: null,
+    };
   } else {
     const responsable = getEnumIdFromLabel(
       mapping.responsableType.options,
@@ -308,6 +318,12 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
     if (responsable === DS_MIS_EN_CAUSE_TYPE.ETABLISSEMENT) {
       return {
         misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+        misEnCauseTypePrecisionId: null,
+      };
+    }
+    if (responsable === DS_MIS_EN_CAUSE_TYPE.PROFESSIONNEL_DOMICILE) {
+      return {
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
         misEnCauseTypePrecisionId: null,
       };
     }
@@ -349,11 +365,11 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
         };
       }
     }
+    return {
+      misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE,
+      misEnCauseTypePrecisionId: null,
+    };
   }
-  return {
-    misEnCauseTypeId: null,
-    misEnCauseTypePrecisionId: null,
-  };
 };
 
 const getMisEnCause = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
