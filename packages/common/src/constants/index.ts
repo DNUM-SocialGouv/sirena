@@ -6,4 +6,5 @@ export * from './motifs.constant';
 export * from './requete.constant';
 export * from './requeteStatut.constant';
 export * from './role.constant';
+export * from './sse.constant';
 export * from './statut.constant';

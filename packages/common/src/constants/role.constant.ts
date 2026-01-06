@@ -9,6 +9,12 @@ export const ROLES = {
 
 export type Role = keyof typeof ROLES;
 
+export const ROLES_READ = [ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER] as const;
+
+export const ROLES_WRITE = [ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER] as const;
+
+export const ROLES_ADMIN = [ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN] as const;
+
 export const roles: Record<Role, string> = {
   [ROLES.PENDING]: "En attente d'affectation",
   [ROLES.READER]: 'Agent en lecture',

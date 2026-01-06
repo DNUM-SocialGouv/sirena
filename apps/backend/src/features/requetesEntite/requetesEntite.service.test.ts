@@ -38,6 +38,12 @@ vi.mock('@/features/changelog/changelog.service', () => ({
   createChangeLog: vi.fn().mockResolvedValue({}),
 }));
 
+vi.mock('@/helpers/sse', () => ({
+  sseEventManager: {
+    emitRequeteUpdated: vi.fn(),
+  },
+}));
+
 vi.mock('../entites/entites.service', () => ({
   getEntiteChain: vi.fn().mockResolvedValue([]),
   getEntiteAscendanteId: vi.fn(),

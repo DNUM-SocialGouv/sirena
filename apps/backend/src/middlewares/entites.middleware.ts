@@ -6,9 +6,10 @@ const app = factoryWithRole.createMiddleware(async (c, next) => {
   const userId = c.get('userId');
 
   const entities = await getUserEntities(userId, null);
-  const topEntiteId = entities?.[0] ? await getEntiteAscendanteId(entities[0]) : null;
+  const [firstEntity] = entities ?? [];
+  const topEntiteId = firstEntity ? await getEntiteAscendanteId(firstEntity) : null;
 
-  c.set('entiteIds', entities);
+  c.set('entiteIds', entities ?? []);
   c.set('topEntiteId', topEntiteId);
 
   return next();

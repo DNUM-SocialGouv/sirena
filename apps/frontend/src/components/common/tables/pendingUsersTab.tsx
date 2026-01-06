@@ -1,15 +1,18 @@
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
 import { useUsers } from '@/hooks/queries/users.hook';
+import { useUserListSSE } from '@/hooks/useUserListSSE';
 
 type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
 
 const DEFAULT_PAGE_SIZE = 10;
 
 export function PendingUsersTab() {
+  const queryClient = useQueryClient();
   const pendingRoleId = ROLES.PENDING;
 
   const queries = useSearch({ from: '/_auth/admin/users' });
@@ -18,6 +21,15 @@ export function PendingUsersTab() {
   const limit = useMemo(() => parseInt(queries.limit || DEFAULT_PAGE_SIZE.toString(), 10), [queries.limit]);
   const offset = useMemo(() => parseInt(queries.offset || '0', 10), [queries.offset]);
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
+
+  const handleUserListChange = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['users'] });
+  }, [queryClient]);
+
+  useUserListSSE({
+    enabled: true,
+    onUserListChange: handleUserListChange,
+  });
 
   const { data: users, isFetching } = useUsers({
     roleId: pendingRoleId,

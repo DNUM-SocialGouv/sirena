@@ -4,7 +4,13 @@ import {
   throwHTTPException403Forbidden,
   throwHTTPException404NotFound,
 } from '@sirena/backend-utils/helpers';
-import { RECEPTION_TYPE, REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
+import {
+  RECEPTION_TYPE,
+  REQUETE_STATUT_TYPES,
+  REQUETE_UPDATE_FIELDS,
+  ROLES_READ,
+  ROLES_WRITE,
+} from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi/zod';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import {
@@ -15,6 +21,7 @@ import {
 } from '@/features/uploadedFiles/uploadedFiles.service';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { streamFileResponse, streamSafeFileResponse } from '@/helpers/file';
+import { sseEventManager } from '@/helpers/sse';
 import authMiddleware from '@/middlewares/auth.middleware';
 import requeteChangelogMiddleware from '@/middlewares/changelog/changelog.requete.middleware';
 import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtape.middleware';
@@ -60,7 +67,7 @@ const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
   .use(userStatusMiddleware)
-  .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]))
+  .use(roleMiddleware([...ROLES_READ]))
   .use(entitesMiddleware)
 
   .get('/', getRequetesEntiteRoute, zValidator('query', GetRequetesEntiteQuerySchema), async (c) => {
@@ -243,8 +250,7 @@ const app = factoryWithLogs
     return streamFileResponse(c, file);
   })
 
-  // Roles with edit permissions
-  .use(roleMiddleware([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]))
+  .use(roleMiddleware([...ROLES_WRITE]))
 
   .post(
     '/',
@@ -282,6 +288,12 @@ const app = factoryWithLogs
       }
 
       c.set('changelogId', requete.id);
+
+      sseEventManager.emitRequeteUpdated({
+        requeteId: requete.id,
+        entiteId: topEntiteId,
+        field: REQUETE_UPDATE_FIELDS.CREATED,
+      });
 
       logger.info(
         {
@@ -324,10 +336,15 @@ const app = factoryWithLogs
 
       const updatedRequete = await updateRequeteDeclarant(id, declarantData, controls);
 
-      // Set the declarant ID in context for changelog middleware
       if (updatedRequete.declarant) {
         c.set('changelogId', updatedRequete.declarant.id);
       }
+
+      sseEventManager.emitRequeteUpdated({
+        requeteId: id,
+        entiteId: topEntiteId,
+        field: REQUETE_UPDATE_FIELDS.DECLARANT,
+      });
 
       if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
         await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
@@ -366,10 +383,15 @@ const app = factoryWithLogs
       try {
         const updatedRequete = await updateRequeteParticipant(id, participantData, controls);
 
-        // Set the participant ID in context for changelog middleware
         if (updatedRequete.participant) {
           c.set('changelogId', updatedRequete.participant.id);
         }
+
+        sseEventManager.emitRequeteUpdated({
+          requeteId: id,
+          entiteId: topEntiteId,
+          field: REQUETE_UPDATE_FIELDS.PARTICIPANT,
+        });
 
         if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
           await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
@@ -432,6 +454,12 @@ const app = factoryWithLogs
     try {
       const updatedRequete = await updateDateAndTypeRequete(id, payload, controls);
 
+      sseEventManager.emitRequeteUpdated({
+        requeteId: id,
+        entiteId: topEntiteId,
+        field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
+      });
+
       if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
         await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
       }
@@ -482,6 +510,12 @@ const app = factoryWithLogs
     }
 
     await setRequeteFile(id, fileIds, topEntiteId);
+
+    sseEventManager.emitRequeteUpdated({
+      requeteId: id,
+      entiteId: topEntiteId,
+      field: REQUETE_UPDATE_FIELDS.FILES,
+    });
 
     if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
       await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
@@ -552,6 +586,12 @@ const app = factoryWithLogs
 
     const updatedRequete = await createRequeteSituation(id, situationData, topEntiteId, userId);
 
+    sseEventManager.emitRequeteUpdated({
+      requeteId: id,
+      entiteId: topEntiteId,
+      field: REQUETE_UPDATE_FIELDS.SITUATION,
+    });
+
     if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
       await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
     }
@@ -594,6 +634,12 @@ const app = factoryWithLogs
 
     const updatedRequete = await updateRequeteSituation(id, situationId, situationData, topEntiteId, userId);
 
+    sseEventManager.emitRequeteUpdated({
+      requeteId: id,
+      entiteId: topEntiteId,
+      field: REQUETE_UPDATE_FIELDS.SITUATION,
+    });
+
     if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
       await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
     }
@@ -631,6 +677,12 @@ const app = factoryWithLogs
         const result = await closeRequeteForEntite(id, topEntiteId, reasonId, userId, precision, fileIds);
 
         c.set('changelogId', result.etapeId);
+
+        sseEventManager.emitRequeteUpdated({
+          requeteId: id,
+          entiteId: topEntiteId,
+          field: REQUETE_UPDATE_FIELDS.CLOSED,
+        });
 
         logger.info(
           {

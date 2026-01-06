@@ -6,10 +6,22 @@ import '@/config/env.ts';
 import { getPrometheusContentType, getPrometheusMetrics } from '@/features/monitoring/metrics.backend';
 import { createMonitoringServer } from '@/features/monitoring/server';
 import { createDefaultLogger } from '@/helpers/pino';
+import { sseEventManager } from '@/helpers/sse';
 import '@/jobs/scheduler';
 
 const logger = createDefaultLogger();
 setupOpenAPI(app);
+
+// Initialize SSE Redis subscriber before starting the server
+const initSSE = async () => {
+  try {
+    await sseEventManager.initSubscriber();
+  } catch (err) {
+    logger.error({ err }, 'Failed to initialize SSE subscriber, continuing without distributed SSE');
+  }
+};
+
+initSSE();
 
 const server = serve(
   {
@@ -58,6 +70,10 @@ const gracefulShutdown = async (signal: string) => {
     // Close database connection
     await prisma.$disconnect();
     logger.info('Database connection closed');
+
+    // Close SSE Redis subscriber
+    await sseEventManager.cleanup();
+    logger.info('SSE subscriber closed');
 
     logger.info('Graceful shutdown completed');
     process.exit(0);

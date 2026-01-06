@@ -2,6 +2,7 @@ import Badge from '@codegouvfr/react-dsfr/Badge';
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useFileStatusSSE } from '@/hooks/useFileStatusSSE';
 import { type FileProcessingStatus, getFileProcessingStatus } from '@/lib/api/fetchUploadedFiles';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { formatFileSize } from '@/utils/fileHelpers';
@@ -271,6 +272,24 @@ export const FileDownloadLink = ({
   const resetWarningModalRef = useRef<(() => void) | null>(null);
   const initialPollDoneRef = useRef(false);
   const pollingDisabledRef = useRef(false);
+  const sseDisconnectedRef = useRef(false);
+
+  const handleSSEStatusChange = useCallback((status: FileProcessingStatus) => {
+    setFileStatus(status);
+  }, []);
+
+  const { isConnected: sseConnected } = useFileStatusSSE({
+    fileId: fileId || '',
+    enabled: !!fileId && !pollingDisabledRef.current && !isProcessingComplete(fileStatus),
+    onStatusChange: handleSSEStatusChange,
+  });
+
+  // Track SSE disconnection to fallback to polling
+  useEffect(() => {
+    if (!sseConnected && !sseDisconnectedRef.current && fileId) {
+      sseDisconnectedRef.current = true;
+    }
+  }, [sseConnected, fileId]);
 
   const pollStatus = useCallback(async () => {
     if (!fileId || pollingDisabledRef.current) return;
@@ -285,8 +304,12 @@ export const FileDownloadLink = ({
     }
   }, [fileId]);
 
+  // Fallback to polling if SSE is not connected
   useEffect(() => {
     if (!fileId || pollingDisabledRef.current || isProcessingComplete(fileStatus)) return;
+
+    // If SSE is connected, don't poll
+    if (sseConnected) return;
 
     // Poll immediately on first run if no initial status was provided
     if (!initialPollDoneRef.current && !initialStatus) {
@@ -296,7 +319,7 @@ export const FileDownloadLink = ({
 
     const interval = setInterval(pollStatus, POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [fileId, fileStatus, pollStatus, initialStatus]);
+  }, [fileId, fileStatus, pollStatus, initialStatus, sseConnected]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
