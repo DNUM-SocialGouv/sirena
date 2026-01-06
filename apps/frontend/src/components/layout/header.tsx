@@ -37,16 +37,6 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
         id={id}
         quickAccessItems={quickAccessItems}
       />
-      {userStore.isLogged && userStore.role === ROLES.SUPER_ADMIN && (
-        <Button
-          type="button"
-          onClick={() => {
-            throw new Error('test sentry');
-          }}
-        >
-          Test gestion d'érreur
-        </Button>
-      )}
       <div className={style['header-separator']} />
     </>
   );
