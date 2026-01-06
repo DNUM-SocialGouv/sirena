@@ -1,6 +1,4 @@
-import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Header } from '@codegouvfr/react-dsfr/Header';
-import { ROLES } from '@sirena/common/constants';
 import { useId } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import style from './header.module.css';

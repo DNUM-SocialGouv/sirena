@@ -70,4 +70,31 @@ describe('entite.middleware.ts', () => {
     const json = await res.json();
     expect(json.topEntiteId).toEqual(mockTopEntiteId);
   });
+
+  it('should keep entiteIds as null for super admins (not default to empty array)', async () => {
+    const mockUserId = 'super-admin-123';
+
+    vi.mocked(getUserEntities).mockResolvedValueOnce(null);
+
+    const route = appWithAuth
+      .createApp()
+      .use((c, next) => {
+        c.set('userId', mockUserId);
+        return next();
+      })
+      .use(entitesMiddleware)
+      .get('/', (c) => {
+        const entiteIds = c.get('entiteIds');
+        return c.json({ entiteIds, isNull: entiteIds === null });
+      });
+
+    const app = appWithLogs.createApp().route('/test', route).onError(errorHandler);
+    const client = testClient(app);
+
+    const res = await client.test.$get();
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.entiteIds).toBeNull();
+    expect(json.isNull).toBe(true);
+  });
 });
