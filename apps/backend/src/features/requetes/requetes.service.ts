@@ -45,8 +45,9 @@ export const createRequeteFromDematSocial = async ({
 
       const { objectPath, rollback: rollbackMinio } = await uploadFileToMinio(stream, filename, mimeType);
 
-      const fileName = objectPath.split('/')?.[1] || '';
-      const id = fileName.split('.')?.[0] || '';
+      const pathParts = objectPath.split('/');
+      const fileName = pathParts[pathParts.length - 1] || '';
+      const id = fileName.split('.')[0] || '';
 
       return tx.uploadedFile
         .create({

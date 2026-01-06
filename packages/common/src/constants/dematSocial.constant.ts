@@ -108,7 +108,7 @@ export const DS_LIEU_TYPE = {
 export type DsLieuType = keyof typeof DS_LIEU_TYPE;
 
 export const dsLieuTypeLabels: Record<DsLieuType, string> = {
-  DOMICILE: 'À Domicile',
+  DOMICILE: 'À domicile',
   ETABLISSEMENT_SANTE: 'Un établissement de santé, par exemple : CHU, clinique',
   ETABLISSEMENT_PERSONNES_AGEES: 'Un établissement pour personnes âgées, par exemple : EHPAD, résidence autonomie',
   ETABLISSEMENT_HANDICAP:
@@ -144,7 +144,7 @@ export const DS_MIS_EN_CAUSE_TYPE = {
   MEMBRE_FAMILLE: 'MEMBRE_FAMILLE',
   PROCHE: 'PROCHE',
   AUTRE: 'AUTRE',
-  PROFESSIONEL_DOMICILE: 'PROFESSIONEL_DOMICILE',
+  PROFESSIONNEL_DOMICILE: 'PROFESSIONNEL_DOMICILE',
 } as const;
 
 export type DsMisEnCauseType = keyof typeof DS_MIS_EN_CAUSE_TYPE;
@@ -155,7 +155,7 @@ export const dsMisEnCauseTypeLabels: Record<DsMisEnCauseType, string> = {
   MEMBRE_FAMILLE: 'Un membre de la famille',
   PROCHE: 'Un autre proche, par exemple : voisinage ou connaissance',
   AUTRE: 'Autre',
-  PROFESSIONEL_DOMICILE: 'Un professionnel ou un service d’aide à domicile',
+  PROFESSIONNEL_DOMICILE: 'Un professionnel ou un service d’aide à domicile',
 };
 
 export const DS_MOTIF = {
