@@ -357,7 +357,7 @@ const securityHeadersData = {
 
 const backendCsp = "sandbox; default-src 'none'";
 const frontendCsp =
-  "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'";
+  "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://sentry2.fabrique.social.gouv.fr; frame-ancestors 'none'";
 
 function createConfigMap(scope: Construct, isBackend: boolean) {
   const configMapName = isBackend ? 'security-headers-backend' : 'security-headers-frontend';
