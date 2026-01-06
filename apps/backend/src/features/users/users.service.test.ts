@@ -39,6 +39,13 @@ vi.mock('@/features/entites/entites.cache', () => ({
   },
 }));
 
+vi.mock('@/helpers/sse', () => ({
+  sseEventManager: {
+    emitUserStatus: vi.fn(),
+    emitUserList: vi.fn(),
+  },
+}));
+
 const mockedUser = vi.mocked(prisma.user);
 
 const mockUser = {

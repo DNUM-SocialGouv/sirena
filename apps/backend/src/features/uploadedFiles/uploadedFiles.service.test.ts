@@ -22,6 +22,12 @@ vi.mock('@/libs/prisma', () => ({
   },
 }));
 
+vi.mock('@/helpers/sse', () => ({
+  sseEventManager: {
+    emitFileStatus: vi.fn(),
+  },
+}));
+
 const mockedUploadedFile = vi.mocked(prisma.uploadedFile);
 
 const mockUploadedFile = {
