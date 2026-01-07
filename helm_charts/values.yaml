@@ -4,3 +4,5 @@ externalSecret:
     enable: false
     databaseType: databases
     targetSecretName: db-secret
+
+redis_unmanaged: false
