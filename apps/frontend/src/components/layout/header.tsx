@@ -1,6 +1,4 @@
-import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Header } from '@codegouvfr/react-dsfr/Header';
-import { ROLES } from '@sirena/common/constants';
 import { useId } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import style from './header.module.css';
@@ -37,16 +35,6 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
         id={id}
         quickAccessItems={quickAccessItems}
       />
-      {userStore.isLogged && userStore.role === ROLES.SUPER_ADMIN && (
-        <Button
-          type="button"
-          onClick={() => {
-            throw new Error('test sentry');
-          }}
-        >
-          Test gestion d'érreur
-        </Button>
-      )}
       <div className={style['header-separator']} />
     </>
   );
