@@ -53,8 +53,8 @@ export function RequestForm({ requestId }: RequestFormProps) {
 
   const motifs = [
     ...new Set(
-      requestQuery.data?.requete.situations?.[0]?.faits?.[0]?.motifs?.flatMap((m) =>
-        m.motif.label ? [m.motif.label] : [],
+      requestQuery.data?.requete.situations.flatMap((s) =>
+        s.faits.flatMap((f) => f.motifs.flatMap((m) => (m.motif.label ? [m.motif.label] : []))),
       ) || [],
     ),
   ];
