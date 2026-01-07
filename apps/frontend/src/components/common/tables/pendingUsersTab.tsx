@@ -18,8 +18,8 @@ export function PendingUsersTab() {
   const queries = useSearch({ from: '/_auth/admin/users' });
   const navigate = useNavigate({ from: '/admin/users' });
 
-  const limit = useMemo(() => parseInt(queries.limit || DEFAULT_PAGE_SIZE.toString(), 10), [queries.limit]);
-  const offset = useMemo(() => parseInt(queries.offset || '0', 10), [queries.offset]);
+  const limit = queries.limit ?? DEFAULT_PAGE_SIZE;
+  const offset = queries.offset ?? 0;
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
   const handleUserListChange = useCallback(() => {
@@ -33,8 +33,8 @@ export function PendingUsersTab() {
 
   const { data: users, isFetching } = useUsers({
     roleId: pendingRoleId,
-    limit: limit.toString(),
-    offset: offset.toString(),
+    limit,
+    offset,
   });
 
   const columns: Column<User>[] = [
@@ -76,8 +76,8 @@ export function PendingUsersTab() {
           navigate({
             search: (prev) => ({
               ...prev,
-              offset: newOffset === 0 ? undefined : newOffset.toString(),
-              limit: limit === DEFAULT_PAGE_SIZE ? undefined : limit.toString(),
+              offset: newOffset === 0 ? undefined : newOffset,
+              limit: limit === DEFAULT_PAGE_SIZE ? undefined : limit,
             }),
           });
           window.scrollTo({ top: 0, behavior: 'smooth' });
