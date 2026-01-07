@@ -312,7 +312,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
         <div className="fr-mb-4w">
           <Upload
             label="Pièces jointes (facultatif)"
-            hint="Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"
+            hint="Taille maximale: 200 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)"
             multiple
             disabled={isSubmitting}
             state={errorMessage ? 'error' : undefined}

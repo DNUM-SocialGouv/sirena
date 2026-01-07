@@ -330,7 +330,7 @@ function createIngressAnnotations(isBackend: boolean, namespace: string, props: 
           'cert-manager.io/private-key-size': '4096',
         }
       : { 'cert-manager.io/cluster-issuer': 'letsencrypt-http01' }),
-    'nginx.ingress.kubernetes.io/proxy-body-size': '60m',
+    'nginx.ingress.kubernetes.io/proxy-body-size': '200m',
     'nginx.ingress.kubernetes.io/proxy-hide-headers': 'Server',
     'nginx.ingress.kubernetes.io/custom-headers': `${namespace}/${configMapName}`,
     ...(props.technical_fqdn ? { 'external-dns.alpha.kubernetes.io/hostname': props.technical_fqdn } : {}),

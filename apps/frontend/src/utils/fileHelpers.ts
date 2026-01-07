@@ -61,4 +61,4 @@ export function formatFileSize(bytes: number): string {
 export const ACCEPTED_FILE_TYPES = ALLOWED_EXTENSIONS.join(',');
 
 export const FILE_UPLOAD_HINT =
-  'Taille maximale: 10 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)';
+  'Taille maximale: 200 Mo. Formats supportés: PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)';
