@@ -32,8 +32,6 @@ SDPSN-devops-charts:
     ingressClassName: public
     host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
     annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-http01
-      nginx.ingress.kubernetes.io/custom-headers: org-sdpsn-ws-sirena-integration/security-headers
       nginx.ingress.kubernetes.io/proxy-body-size: 60m
     paths:
       - path: /

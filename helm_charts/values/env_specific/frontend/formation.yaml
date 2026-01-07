@@ -1,9 +1,5 @@
 ---
 SDPSN-devops-charts:
-  name: frontend
-
-  enableSecurityHeaders: true
-
   ingress:
     host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
     tls:
