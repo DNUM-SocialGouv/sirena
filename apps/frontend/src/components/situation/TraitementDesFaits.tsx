@@ -69,16 +69,16 @@ function TraitementDesFaitsRowComponent({
           <div className={styles.entiteField}>
             {isEntiteReadOnly ? (
               <Input
-                label={'Entité administrative'}
+                label={'Entité administrative *'}
                 nativeInputProps={{
                   value: entiteLabel,
                   readOnly: true,
-                  disabled: true,
+                  'aria-readonly': true,
                 }}
               />
             ) : (
               <Select
-                label={'Entité administrative'}
+                label={'Entité administrative *'}
                 nativeSelectProps={{
                   value: row.entiteId || '',
                   onChange: (e) => onChange(row.id, 'entiteId', e.target.value),
@@ -115,6 +115,7 @@ function TraitementDesFaitsRowComponent({
               value: entite.id,
             }))}
             label="Direction ou Service"
+            readOnly={disabled}
           />
         </div>
       )}
@@ -361,7 +362,14 @@ function TraitementDesFaitsSection({
           <p className="fr-text--md fr-mb-2w fr-text--bold">Autres entités affectées au traitement</p>
         )}
         {rows.readOnlyRows.map((row) => (
-          <TraitementDesFaitsRowComponent key={row.id} row={row} entites={entites} onChange={handleRowChange} />
+          <TraitementDesFaitsRowComponent
+            key={row.id}
+            row={row}
+            entites={entites}
+            onChange={handleRowChange}
+            isEntiteReadOnly
+            disabled
+          />
         ))}
       </div>
     </div>

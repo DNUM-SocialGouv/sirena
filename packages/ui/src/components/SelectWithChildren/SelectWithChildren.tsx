@@ -24,6 +24,8 @@ export function SelectWithChildren({
   label = "Motifs qualifiés par l'agent",
   options,
   id,
+  disabled = false,
+  readOnly = false,
 }: SelectWithChildrenProps) {
   const generatedId = useId();
   const componentId = id || generatedId;
@@ -86,15 +88,17 @@ export function SelectWithChildren({
         <button
           ref={buttonRef}
           type="button"
-          className={styles.selectButton}
+          className={`${styles.selectButton} ${readOnly ? styles.selectButtonReadOnly : ''}`}
           id={buttonId}
-          onClick={() => setIsOpen(!isOpen)}
-          onKeyDown={handleKeyDown}
+          onClick={() => !disabled && !readOnly && setIsOpen(!isOpen)}
+          onKeyDown={disabled || readOnly ? undefined : handleKeyDown}
           onBlur={handleBlur}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           aria-labelledby={buttonId}
           aria-controls={dropdownId}
+          aria-disabled={disabled || readOnly}
+          disabled={disabled}
         >
           {displayText}
           <span className={isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'} aria-hidden="true" />

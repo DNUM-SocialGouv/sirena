@@ -1206,9 +1206,12 @@ describe('requetesEntite.service', () => {
       };
     };
 
-    it('should delete all situationEntites when no entities are provided', async () => {
+    it('should delete user situationEntites when no entities are provided but other entities exist', async () => {
       const situationId = 'sit1';
       const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
+      const otherTopEntiteId = 'root2';
+      // ent1 belongs to user, ent2 belongs to other entity
       const existingSituationEntites = [{ entiteId: 'ent1' }, { entiteId: 'ent2' }];
 
       const mockSituation = {
@@ -1223,7 +1226,7 @@ describe('requetesEntite.service', () => {
         },
         situationEntite: {
           findMany: vi.fn().mockResolvedValue(existingSituationEntites),
-          deleteMany: vi.fn().mockResolvedValue({ count: 2 }),
+          deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
         },
         requete: {
           findUnique: vi.fn().mockResolvedValue({
@@ -1231,6 +1234,12 @@ describe('requetesEntite.service', () => {
             situations: [],
           }),
         },
+      });
+
+      vi.mocked(getEntiteAscendanteId).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1') return userTopEntiteId;
+        if (entiteId === 'ent2') return otherTopEntiteId;
+        return null;
       });
 
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
@@ -1255,11 +1264,12 @@ describe('requetesEntite.service', () => {
             entites: [],
           },
         } as Parameters<typeof updateRequeteSituation>[2],
-        'ent1',
+        userTopEntiteId,
       );
 
+      // Should only delete user's entity (ent1), not other entity (ent2)
       expect(mockTx.situationEntite.deleteMany).toHaveBeenCalledWith({
-        where: { situationId },
+        where: { situationId, entiteId: { in: ['ent1'] } },
       });
       expect(mockTx.situationEntite.findMany).toHaveBeenCalledWith({
         where: { situationId },
@@ -1270,6 +1280,7 @@ describe('requetesEntite.service', () => {
     it('should add new situationEntites when entities are provided', async () => {
       const situationId = 'sit1';
       const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
       const existingSituationEntites: Array<{ entiteId: string }> = [];
 
       const mockSituation = {
@@ -1293,7 +1304,7 @@ describe('requetesEntite.service', () => {
         },
       });
 
-      vi.mocked(getEntiteAscendanteId).mockResolvedValue('root1');
+      vi.mocked(getEntiteAscendanteId).mockResolvedValue(userTopEntiteId);
 
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
         id: requeteId,
@@ -1317,7 +1328,7 @@ describe('requetesEntite.service', () => {
             entites: [{ entiteId: 'ent1' }],
           },
         } as Parameters<typeof updateRequeteSituation>[2],
-        'ent1',
+        userTopEntiteId,
       );
 
       expect(mockTx.situationEntite.upsert).toHaveBeenCalledWith({
@@ -1344,9 +1355,11 @@ describe('requetesEntite.service', () => {
       });
     });
 
-    it('should remove obsolete situationEntites and add new ones', async () => {
+    it('should remove obsolete situationEntites and add new ones within user hierarchy', async () => {
       const situationId = 'sit1';
       const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
+      // All entities belong to user's hierarchy
       const existingSituationEntites = [{ entiteId: 'ent1' }, { entiteId: 'ent2' }];
 
       const mockSituation = {
@@ -1371,7 +1384,8 @@ describe('requetesEntite.service', () => {
         },
       });
 
-      vi.mocked(getEntiteAscendanteId).mockResolvedValue('root3');
+      // All entities belong to user's hierarchy
+      vi.mocked(getEntiteAscendanteId).mockResolvedValue(userTopEntiteId);
 
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
         id: requeteId,
@@ -1395,10 +1409,10 @@ describe('requetesEntite.service', () => {
             entites: [{ entiteId: 'ent2' }, { entiteId: 'ent3' }],
           },
         } as Parameters<typeof updateRequeteSituation>[2],
-        'ent1',
+        userTopEntiteId,
       );
 
-      // Should remove ent1
+      // Should remove ent1 (no longer in the list)
       expect(mockTx.situationEntite.deleteMany).toHaveBeenCalledWith({
         where: {
           situationId,
@@ -1430,9 +1444,10 @@ describe('requetesEntite.service', () => {
       });
     });
 
-    it('should use directionServiceId when provided instead of entiteId', async () => {
+    it('should use directionServiceId when provided in addition to entiteId', async () => {
       const situationId = 'sit1';
       const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
       const existingSituationEntites: Array<{ entiteId: string }> = [];
 
       const mockSituation = {
@@ -1456,7 +1471,7 @@ describe('requetesEntite.service', () => {
         },
       });
 
-      vi.mocked(getEntiteAscendanteId).mockResolvedValue('root1');
+      vi.mocked(getEntiteAscendanteId).mockResolvedValue(userTopEntiteId);
 
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
         id: requeteId,
@@ -1477,13 +1492,24 @@ describe('requetesEntite.service', () => {
         situationId,
         {
           traitementDesFaits: {
-            entites: [{ entiteId: 'root1', directionServiceId: 'dir1' }],
+            entites: [{ entiteId: userTopEntiteId, directionServiceId: 'dir1' }],
           },
         } as Parameters<typeof updateRequeteSituation>[2],
-        'ent1',
+        userTopEntiteId,
       );
 
-      // Should use directionServiceId (dir1) instead of entiteId (root1)
+      // Should upsert both entiteId (root1) and directionServiceId (dir1)
+      expect(mockTx.situationEntite.upsert).toHaveBeenCalledTimes(2);
+      expect(mockTx.situationEntite.upsert).toHaveBeenCalledWith({
+        where: {
+          situationId_entiteId: { situationId, entiteId: userTopEntiteId },
+        },
+        update: {},
+        create: {
+          situationId,
+          entiteId: userTopEntiteId,
+        },
+      });
       expect(mockTx.situationEntite.upsert).toHaveBeenCalledWith({
         where: {
           situationId_entiteId: { situationId, entiteId: 'dir1' },
@@ -1494,7 +1520,6 @@ describe('requetesEntite.service', () => {
           entiteId: 'dir1',
         },
       });
-      expect(getEntiteAscendanteId).toHaveBeenCalledWith('dir1');
     });
 
     it('should throw error if situation does not have requeteId', async () => {
@@ -1534,6 +1559,314 @@ describe('requetesEntite.service', () => {
           'ent1',
         ),
       ).rejects.toThrow(`Situation ${situationId} does not have a requeteId`);
+    });
+
+    it('should only modify affectations belonging to user entity and preserve others', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
+      const otherTopEntiteId = 'root2';
+
+      // Existing affectations: one from user's entity (ent1 -> root1), one from other entity (ent2 -> root2)
+      const existingSituationEntites = [{ entiteId: 'ent1' }, { entiteId: 'ent2' }];
+
+      const mockSituation = {
+        id: situationId,
+        requeteId,
+      };
+
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue(existingSituationEntites),
+          deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: requeteId,
+            situations: [],
+          }),
+        },
+      });
+
+      // Mock getEntiteAscendanteId to return different roots for different entities
+      vi.mocked(getEntiteAscendanteId).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1' || entiteId === 'ent3') return userTopEntiteId;
+        if (entiteId === 'ent2') return otherTopEntiteId;
+        return null;
+      });
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: requeteId,
+        situations: [
+          {
+            id: situationId,
+            faits: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      // User tries to replace ent1 with ent3 (both in their hierarchy)
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'ent3' }],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        userTopEntiteId,
+      );
+
+      // Should only delete ent1 (user's entity), not ent2 (other entity)
+      expect(mockTx.situationEntite.deleteMany).toHaveBeenCalledWith({
+        where: {
+          situationId,
+          entiteId: { in: ['ent1'] },
+        },
+      });
+
+      // Should add ent3 (user's new affectation)
+      expect(mockTx.situationEntite.upsert).toHaveBeenCalledWith({
+        where: {
+          situationId_entiteId: { situationId, entiteId: 'ent3' },
+        },
+        update: {},
+        create: {
+          situationId,
+          entiteId: 'ent3',
+        },
+      });
+    });
+
+    it('should allow adding new entities from other hierarchies', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
+      const otherTopEntiteId = 'root2';
+
+      const existingSituationEntites = [{ entiteId: 'ent1' }];
+
+      const mockSituation = {
+        id: situationId,
+        requeteId,
+      };
+
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue(existingSituationEntites),
+          deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: requeteId,
+            situations: [],
+          }),
+        },
+      });
+
+      // Mock getEntiteAscendanteId
+      vi.mocked(getEntiteAscendanteId).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1') return userTopEntiteId;
+        if (entiteId === 'ent-from-other') return otherTopEntiteId;
+        return null;
+      });
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: requeteId,
+        situations: [
+          {
+            id: situationId,
+            faits: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      // User adds an entity from another hierarchy (should be allowed)
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [{ entiteId: 'ent1' }, { entiteId: 'ent-from-other' }],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        userTopEntiteId,
+      );
+
+      // Should upsert both ent1 (user's entity) and ent-from-other (new entity from other hierarchy)
+      expect(mockTx.situationEntite.upsert).toHaveBeenCalledTimes(2);
+      expect(mockTx.situationEntite.upsert).toHaveBeenCalledWith({
+        where: {
+          situationId_entiteId: { situationId, entiteId: 'ent1' },
+        },
+        update: {},
+        create: {
+          situationId,
+          entiteId: 'ent1',
+        },
+      });
+      expect(mockTx.situationEntite.upsert).toHaveBeenCalledWith({
+        where: {
+          situationId_entiteId: { situationId, entiteId: 'ent-from-other' },
+        },
+        update: {},
+        create: {
+          situationId,
+          entiteId: 'ent-from-other',
+        },
+      });
+    });
+
+    it('should throw error when no entities remain after update', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
+
+      // Only user's entity exists
+      const existingSituationEntites = [{ entiteId: 'ent1' }];
+
+      const mockSituation = {
+        id: situationId,
+        requeteId,
+      };
+
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue(existingSituationEntites),
+          deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: requeteId,
+            situations: [],
+          }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteId).mockResolvedValue(userTopEntiteId);
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: requeteId,
+        situations: [
+          {
+            id: situationId,
+            faits: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      // User tries to remove all entities
+      await expect(
+        updateRequeteSituation(
+          requeteId,
+          situationId,
+          {
+            traitementDesFaits: {
+              entites: [],
+            },
+          } as Parameters<typeof updateRequeteSituation>[2],
+          userTopEntiteId,
+        ),
+      ).rejects.toThrow('Au moins une entité administrative doit être affectée à la situation');
+    });
+
+    it('should allow removing user entity when other entities exist', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
+      const otherTopEntiteId = 'root2';
+
+      // Both user's and other's entities exist
+      const existingSituationEntites = [{ entiteId: 'ent1' }, { entiteId: 'ent2' }];
+
+      const mockSituation = {
+        id: situationId,
+        requeteId,
+      };
+
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue(existingSituationEntites),
+          deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: requeteId,
+            situations: [],
+          }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteId).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1') return userTopEntiteId;
+        if (entiteId === 'ent2') return otherTopEntiteId;
+        return null;
+      });
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        id: requeteId,
+        situations: [
+          {
+            id: situationId,
+            faits: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      // User removes their own entity (other entity still exists)
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          traitementDesFaits: {
+            entites: [],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        userTopEntiteId,
+      );
+
+      // Should delete user's entity
+      expect(mockTx.situationEntite.deleteMany).toHaveBeenCalledWith({
+        where: {
+          situationId,
+          entiteId: { in: ['ent1'] },
+        },
+      });
+
+      // Should not add any new entities
+      expect(mockTx.situationEntite.upsert).not.toHaveBeenCalled();
     });
   });
 
