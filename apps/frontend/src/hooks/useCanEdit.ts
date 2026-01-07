@@ -16,6 +16,10 @@ export function useCanEdit({ requeteId }: { requeteId?: string } = {}) {
       return false;
     }
 
+    if (!requeteId) {
+      return true;
+    }
+
     // Then check if the request is closed
     if (requestQuery?.data?.data) {
       const hasClosedStep = requestQuery.data.data.some(
@@ -25,7 +29,7 @@ export function useCanEdit({ requeteId }: { requeteId?: string } = {}) {
     }
 
     return true;
-  }, [userStore.role, requestQuery]);
+  }, [userStore.role, requestQuery, requeteId]);
 
   return { canEdit };
 }

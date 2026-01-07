@@ -1,17 +1,15 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import {
   demarcheEngageeLabels,
   type MaltraitanceQualifiedType,
   MOTIFS_HIERARCHICAL_DATA,
   maltraitanceQualifiedLabels,
   misEnCauseTypeLabels,
+  RECEPTION_TYPE,
 } from '@sirena/common/constants';
-import { getLieuPrecisionLabel, valueToLabel } from '@sirena/common/utils';
+import { getLieuPrecisionLabel } from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
-import { useMemo } from 'react';
 import { FileList } from '@/components/common/FileList';
-import { useEntiteDescendants, useEntites } from '@/hooks/queries/entites.hook';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { formatFileFromServer } from '@/utils/fileHelpers';
@@ -49,43 +47,132 @@ type SituationData = NonNullable<
   NonNullable<ReturnType<typeof useRequeteDetails>['data']>['requete']['situations']
 >[number];
 
-interface TraitementDesFaitsBadgeWithDirectionProps {
-  entiteId: string;
-  directionServiceId: string;
-  entiteName: string;
-  entiteType: string;
-}
-
-const getBadgeClassName = (entiteType: string): string => {
-  const type = entiteType.toLowerCase();
-  if (type === 'ars') return 'fr-badge--pink-tuile';
-  if (type === 'dd') return 'fr-badge--blue-ecume';
-  if (type === 'cd') return 'fr-badge--green-menthe';
-  return 'fr-badge';
+const getLieuDeSurvenue = (situation: SituationData) => {
+  if (situation.lieuDeSurvenue.adresse?.label) {
+    return situation.lieuDeSurvenue.adresse?.label;
+  }
+  let text = '';
+  if (situation.lieuDeSurvenue.lieuType?.label) {
+    text += situation.lieuDeSurvenue.lieuType.label;
+    const lieuPrecision = getLieuPrecisionLabel(
+      situation.lieuDeSurvenue.lieuType?.id,
+      situation.lieuDeSurvenue.lieuPrecision,
+    );
+    if (lieuPrecision) {
+      text += ` - ${lieuPrecision}`;
+    }
+  }
+  return text;
 };
 
-const TraitementDesFaitsBadgeWithDirection = ({
-  entiteId,
-  directionServiceId,
-  entiteName,
-  entiteType,
-}: TraitementDesFaitsBadgeWithDirectionProps) => {
-  const { data: descendants = [] } = useEntiteDescendants(entiteId);
-  const directionName = descendants.find((d: { id: string }) => d.id === directionServiceId)?.nomComplet || '';
+const Affectations = ({ situation }: { situation?: SituationData | null }) => {
+  if (!situation?.traitementDesFaits?.entites || situation.traitementDesFaits.entites.length === 0) {
+    return null;
+  }
+  const traitements = situation.traitementDesFaits.entites.reduce(
+    (acc, curr) => {
+      if (!acc[curr.entiteName]) {
+        acc[curr.entiteName] = [];
+      }
+      if (curr.directionServiceName) {
+        acc[curr.entiteName].push(curr.directionServiceName);
+      }
+      return acc;
+    },
+    {} as Record<string, string[]>,
+  );
+  const entries = Object.entries(traitements).sort(([_, a], [__, b]) => b.length - a.length);
+  return (
+    <div>
+      {entries.map(([entiteName, services]) => (
+        <Affectation key={entiteName} entiteName={entiteName} services={services} />
+      ))}
+    </div>
+  );
+};
 
-  const label = directionName ? `${entiteName} - ${directionName}` : entiteName;
+const Affectation = ({ entiteName, services }: { entiteName: string; services: string[] }) => {
+  return (
+    <ul className="fr-tags-group">
+      <li>
+        <p className="fr-tag fr-tag--sm color-purple-glycine">{entiteName}</p>
+      </li>
+      {services.length !== 0 && (
+        <li>
+          {services.map((service) => (
+            <span key={service} className="fr-tag fr-tag--sm fr-tag-default">
+              {service}
+            </span>
+          ))}
+        </li>
+      )}
+    </ul>
+  );
+};
 
-  return <Badge className={getBadgeClassName(entiteType)}>{label}</Badge>;
+const TraitementDesFaits = ({ situation, details }: { situation?: SituationData | null; details: boolean }) => {
+  return (
+    <div className="fr-col-12">
+      <div className={fr.cx('fr-mb-0')}>
+        {details ? <SectionTitle>Traitement des faits</SectionTitle> : <span className="bold">Traitement :</span>}
+      </div>
+      <div className={fr.cx('fr-mt-1w')}>
+        <Affectations situation={situation} />
+      </div>
+    </div>
+  );
+};
+
+const Motifs = ({ motifs, isQualified }: { motifs: string[]; isQualified: boolean }) => {
+  const formater = new Intl.ListFormat('fr', { style: 'long', type: 'conjunction' });
+  const formated = formater.format(motifs);
+  const icon = isQualified ? 'fr-icon-clipboard-line' : 'fr-icon-todo-line';
+  const labelText = isQualified ? 'Motifs qualifiés' : 'Motifs déclaratifs';
+
+  return (
+    <p className={fr.cx('fr-mb-0')}>
+      <span className={fr.cx(icon, 'fr-icon--sm')} aria-hidden="true" /> {labelText}: {formated || 'À renseigner'}
+    </p>
+  );
+};
+
+const MotifsQualified = ({ situation }: { situation?: SituationData | null }) => {
+  if (!situation) return null;
+
+  const motifs = new Set<string>();
+  situation.faits.forEach((fait) => {
+    fait.motifs?.forEach((m) => {
+      if (m.motif.label) {
+        motifs.add(m.motif.label);
+      }
+    });
+  });
+  return <Motifs motifs={Array.from(motifs)} isQualified={true} />;
+};
+
+const MotifsDeclared = ({ situation }: { situation?: SituationData | null }) => {
+  if (!situation) return null;
+
+  const motifs = new Set<string>();
+  situation.faits.forEach((fait) => {
+    fait.motifsDeclaratifs?.forEach((motif) => {
+      if (motif.motifDeclaratif.label) {
+        motifs.add(motif.motifDeclaratif.label);
+      }
+    });
+  });
+  return motifs.size > 0 ? <Motifs motifs={Array.from(motifs)} isQualified={false} /> : null;
 };
 
 interface SituationSectionProps {
   id: string;
   requestId?: string;
+  receptionType: string | null;
   situation?: SituationData | null;
   onEdit: (situationId?: string) => void;
 }
 
-export const SituationSection = ({ id, requestId, situation, onEdit }: SituationSectionProps) => {
+export const SituationSection = ({ id, requestId, situation, receptionType, onEdit }: SituationSectionProps) => {
   const situationId = situation?.id;
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const [fait] = situation?.faits ?? [];
@@ -114,61 +201,6 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
   const isFulfilled = hasSituationContent(situation);
 
   const traitementDesFaits = situation?.traitementDesFaits;
-  const { data: allEntites } = useEntites(undefined);
-  const entitesMap = useMemo(() => {
-    const map = new Map<string, { nomComplet: string; entiteTypeId: string }>();
-    if (allEntites?.data) {
-      allEntites.data.forEach((entite) => {
-        map.set(entite.id, { nomComplet: entite.nomComplet, entiteTypeId: entite.entiteTypeId });
-      });
-    }
-    return map;
-  }, [allEntites?.data]);
-
-  const renderTraitementDesFaitsBadges = (showTitle = false) => {
-    if (!traitementDesFaits?.entites || traitementDesFaits.entites.length === 0) return null;
-
-    const badges = (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-        {traitementDesFaits.entites.map((entite, index) => {
-          const entiteInfo = entitesMap.get(entite.entiteId);
-          if (!entiteInfo) return null;
-
-          const entiteName = entiteInfo.nomComplet;
-          const entiteType = entiteInfo.entiteTypeId.toLowerCase();
-
-          if (entite.directionServiceId) {
-            return (
-              <TraitementDesFaitsBadgeWithDirection
-                key={`${entite.entiteId}-${entite.directionServiceId}-${index}`}
-                entiteId={entite.entiteId}
-                directionServiceId={entite.directionServiceId}
-                entiteName={entiteName}
-                entiteType={entiteType}
-              />
-            );
-          }
-
-          return (
-            <Badge key={`${entite.entiteId}-${index}`} className={getBadgeClassName(entiteType)}>
-              {entiteName}
-            </Badge>
-          );
-        })}
-      </div>
-    );
-
-    if (showTitle) {
-      return (
-        <>
-          <SectionTitle>Traitement des faits</SectionTitle>
-          <div className={fr.cx('fr-mb-3w')}>{badges}</div>
-        </>
-      );
-    }
-
-    return badges;
-  };
 
   const renderSummary = () => {
     const hasTraitementDesFaits = traitementDesFaits?.entites && traitementDesFaits.entites.length > 0;
@@ -179,9 +211,10 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
         {hasMisEnCause && (
           <div className="fr-col-auto">
             <p className={fr.cx('fr-mb-0')}>
-              <span className={fr.cx('fr-icon-error-warning-line', 'fr-icon--sm')} aria-hidden="true" />{' '}
+              <span className={fr.cx('fr-icon-error-warning-line', 'fr-icon--sm')} aria-hidden="true" />
+              <span className="fr-hidden fr-sr-only">Identité de la personne concernée :</span>{' '}
+              {situation?.misEnCause?.commentaire && `${situation.misEnCause.commentaire} - `}
               {situation?.misEnCause?.misEnCauseType?.label}
-              {situation?.misEnCause?.commentaire && ` - ${situation.misEnCause.commentaire}`}
             </p>
           </div>
         )}
@@ -189,30 +222,19 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
         {hasLieu && (
           <div className="fr-col-auto">
             <p className={fr.cx('fr-mb-0')}>
-              <span className={fr.cx('fr-icon-map-pin-2-line', 'fr-icon--sm')} aria-hidden="true" />{' '}
-              {situation?.lieuDeSurvenue?.lieuType?.label}
+              <span className={fr.cx('fr-icon-map-pin-2-line', 'fr-icon--sm')} aria-hidden="true" />
+              <span className="fr-hidden fr-sr-only"> Lieu de survenue des faits :</span> {getLieuDeSurvenue(situation)}
             </p>
           </div>
         )}
 
         {fait?.motifs?.length > 0 && (
           <div className="fr-col-auto">
-            <p className={fr.cx('fr-mb-0')}>
-              <span className={fr.cx('fr-icon-draft-line', 'fr-icon--sm')} aria-hidden="true" />{' '}
-              {fait.motifs
-                .map((motif) => valueToLabel(motif?.motif?.label || '') || motif?.motif?.label || '')
-                .join(', ')}
-            </p>
+            <MotifsQualified situation={situation} />
+            {receptionType === RECEPTION_TYPE.FORMULAIRE ? <MotifsDeclared situation={situation} /> : null}
           </div>
         )}
-        {hasTraitementDesFaits && (
-          <div className="fr-col-auto">
-            <p className={fr.cx('fr-mb-0')}>
-              <span className={fr.cx('fr-icon-draft-line', 'fr-icon--sm')} aria-hidden="true" /> Traitement des faits
-            </p>
-            <div className={fr.cx('fr-mt-1w')}>{renderTraitementDesFaitsBadges()}</div>
-          </div>
-        )}
+        {hasTraitementDesFaits && <TraitementDesFaits situation={situation} details={false} />}
       </div>
     );
   };
@@ -255,7 +277,6 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
               )}
           </>
         )}
-
         {hasLieu && (
           <>
             <SectionTitle>Lieu où se sont déroulés les faits</SectionTitle>
@@ -270,7 +291,7 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
             )}
             {situation?.lieuDeSurvenue?.adresse?.label && (
               <p className={fr.cx('fr-mb-1w')}>
-                <span>Adresse :</span> {situation.lieuDeSurvenue.adresse.label}
+                <span>Nom de l'établissement :</span> {situation.lieuDeSurvenue.adresse.label}
               </p>
             )}
             {situation?.lieuDeSurvenue?.adresse?.numero && situation?.lieuDeSurvenue?.adresse?.rue && (
@@ -422,7 +443,7 @@ export const SituationSection = ({ id, requestId, situation, onEdit }: Situation
             </ul>
           </>
         )}
-        {hasTraitementDesFaits && renderTraitementDesFaitsBadges(true)}
+        {hasTraitementDesFaits && <TraitementDesFaits situation={situation} details={true} />}
       </>
     );
   };

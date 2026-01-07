@@ -30,6 +30,17 @@ type LieuSurvenuProps = {
 
 export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProps) {
   const lieuType = formData.lieuDeSurvenue?.lieuType;
+  const lieuPrecision = formData.lieuDeSurvenue?.lieuPrecision;
+  const shouldShowDomicileAddressFields =
+    lieuType === LIEU_TYPE.DOMICILE &&
+    !!lieuPrecision &&
+    !(
+      [
+        LIEU_DOMICILE_PRECISION.PERSONNE_CONCERNEE,
+        LIEU_DOMICILE_PRECISION.REQUERANT,
+        LIEU_DOMICILE_PRECISION.EQUIPES_MOBILES,
+      ] as string[]
+    ).includes(lieuPrecision);
 
   const lieuTypeOptions = Object.entries(LIEU_TYPE).map(([key, value]) => ({
     key,
@@ -120,54 +131,58 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
                 ))}
               </Select>
             </div>
-            <div className="fr-col-12">
-              <Input
-                label="Nom de l'adresse"
-                nativeInputProps={{
-                  value: formData.lieuDeSurvenue?.adresse?.label || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: {
-                        ...prev.lieuDeSurvenue,
-                        adresse: { ...prev.lieuDeSurvenue?.adresse, label: e.target.value },
-                      },
-                    })),
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label="Code postal"
-                nativeInputProps={{
-                  value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: {
-                        ...prev.lieuDeSurvenue,
-                        adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
-                      },
-                    })),
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label="Ville"
-                nativeInputProps={{
-                  value: formData.lieuDeSurvenue?.adresse?.ville || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: {
-                        ...prev.lieuDeSurvenue,
-                        adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
-                      },
-                    })),
-                }}
-              />
-            </div>
+            {shouldShowDomicileAddressFields && (
+              <>
+                <div className="fr-col-12">
+                  <Input
+                    label="Nom de l'adresse"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.label || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, label: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label="Code postal"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label="Ville"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.ville || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+              </>
+            )}
           </>
         )}
 
