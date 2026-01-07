@@ -16,16 +16,28 @@ type OriginalRequestSectionProps = {
   data?: {
     receptionDate?: string | null;
     receptionTypeId?: ReceptionType | null;
+    dematSocialId?: number | null;
   };
   updatedAt?: string | null;
   onEdit?: () => void;
 };
 
-const RenderCompleted = ({ date, receptionType }: { date?: string; receptionType?: ReceptionType }) => {
+const RenderCompleted = ({
+  date,
+  receptionType,
+  dematSocialId,
+}: {
+  date?: string;
+  receptionType?: ReceptionType;
+  dematSocialId?: number | null;
+}) => {
   if (date && receptionType) {
     return (
       <div className="text-vertical-align">
         Reçue le {new Date(date).toLocaleDateString('fr-FR')} par {receptionTypeLabels[receptionType]}
+        {receptionType === RECEPTION_TYPE.FORMULAIRE && (
+          <div className={fr.cx('fr-text--xs')}>Dossier Demat.Social n° {dematSocialId}</div>
+        )}
       </div>
     );
   }
@@ -171,7 +183,11 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
             {!dateValue && !typeValue ? (
               <RenderEmpty />
             ) : (
-              <RenderCompleted date={dateValue || undefined} receptionType={typeValue || undefined} />
+              <RenderCompleted
+                date={dateValue || undefined}
+                receptionType={typeValue || undefined}
+                dematSocialId={data?.dematSocialId}
+              />
             )}
             {canEdit && !isNotEditable && (
               <Button
