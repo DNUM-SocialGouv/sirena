@@ -202,8 +202,6 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
 
   const traitementDesFaits = situation?.traitementDesFaits;
 
-  // ici
-
   const renderSummary = () => {
     const hasTraitementDesFaits = traitementDesFaits?.entites && traitementDesFaits.entites.length > 0;
     if (!hasLieu && !hasMisEnCause && !hasMotifs && !hasTraitementDesFaits) return null;
