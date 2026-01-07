@@ -185,3 +185,36 @@ export const updateFileProcessingStatus = async (
 export const getUploadedFileByIdInternal = async (id: UploadedFile['id']): Promise<UploadedFileByIdResult> => {
   return prisma.uploadedFile.findUnique({ where: { id } });
 };
+
+const PROCESSING_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+export const getUnprocessedFiles = async (): Promise<UploadedFile[]> => {
+  const stuckThreshold = new Date(Date.now() - PROCESSING_TIMEOUT_MS);
+
+  return prisma.uploadedFile.findMany({
+    where: {
+      OR: [
+        { status: 'PENDING' },
+        { status: 'PROCESSING', updatedAt: { lt: stuckThreshold } },
+        { scanStatus: 'PENDING' },
+      ],
+    },
+  });
+};
+
+export const tryAcquireProcessingLock = async (fileId: string): Promise<boolean> => {
+  const stuckThreshold = new Date(Date.now() - PROCESSING_TIMEOUT_MS);
+
+  const result = await prisma.uploadedFile.updateMany({
+    where: {
+      id: fileId,
+      OR: [{ status: 'PENDING' }, { status: 'PROCESSING', updatedAt: { lt: stuckThreshold } }],
+    },
+    data: {
+      status: 'PROCESSING',
+      scanStatus: 'SCANNING',
+    },
+  });
+
+  return result.count > 0;
+};
