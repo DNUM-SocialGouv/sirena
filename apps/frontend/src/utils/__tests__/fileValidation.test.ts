@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_FILE_SIZE, validateFile, validateFiles } from '../fileValidation';
 
+const createMockFile = (name: string, type: string, size: number): File => {
+  const file = new File([''], name, { type });
+  Object.defineProperty(file, 'size', { value: size });
+  return file;
+};
+
 describe('fileValidation', () => {
   describe('validateFile', () => {
     it('should validate a valid PDF file', () => {
@@ -28,8 +34,7 @@ describe('fileValidation', () => {
     });
 
     it('should reject file that is too large', () => {
-      const largeContent = new Array(MAX_FILE_SIZE + 1).fill('a').join('');
-      const file = new File([largeContent], 'large.pdf', { type: 'application/pdf' });
+      const file = createMockFile('large.pdf', 'application/pdf', MAX_FILE_SIZE + 1);
       const errors = validateFile(file);
 
       expect(errors).toHaveLength(1);
@@ -61,8 +66,7 @@ describe('fileValidation', () => {
     });
 
     it('should reject file with both size and format errors', () => {
-      const largeContent = new Array(MAX_FILE_SIZE + 1).fill('a').join('');
-      const file = new File([largeContent], 'large.exe', { type: 'application/x-executable' });
+      const file = createMockFile('large.exe', 'application/x-executable', MAX_FILE_SIZE + 1);
       const errors = validateFile(file);
 
       expect(errors).toHaveLength(2);
@@ -82,10 +86,9 @@ describe('fileValidation', () => {
     });
 
     it('should return errors for invalid files', () => {
-      const largeContent = new Array(MAX_FILE_SIZE + 1).fill('a').join('');
       const files = [
         new File(['content'], 'valid.pdf', { type: 'application/pdf' }),
-        new File([largeContent], 'large.pdf', { type: 'application/pdf' }),
+        createMockFile('large.pdf', 'application/pdf', MAX_FILE_SIZE + 1),
         new File(['content'], 'invalid.exe', { type: 'application/x-executable' }),
       ];
       const errors = validateFiles(files);

@@ -1,4 +1,4 @@
-export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 Mo
+export const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200 Mo (aligné sur demat.social)
 
 export const ALLOWED_MIME_TYPES = [
   'application/pdf',
@@ -59,7 +59,7 @@ export const validateFile = (file: File): FileValidationError[] => {
   if (file.size > MAX_FILE_SIZE) {
     errors.push({
       type: 'size',
-      message: 'Le fichier dépasse la taille maximale. Veuillez sélectionner un fichier de moins de 10 Mo',
+      message: 'Le fichier dépasse la taille maximale autorisée de 200 Mo.',
     });
   }
 

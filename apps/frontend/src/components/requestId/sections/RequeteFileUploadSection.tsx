@@ -314,7 +314,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
             Sélectionner un fichier
           </Button>
           <p className={styles.dropZoneHint}>
-            Taille maximale: 10 Mo. Formats supportés : PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT,
+            Taille maximale: 200 Mo. Formats supportés : PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT,
             images (PNG, JPEG, HEIC, WEBP, TIFF)
           </p>
           <input
