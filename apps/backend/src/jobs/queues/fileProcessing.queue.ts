@@ -28,7 +28,17 @@ export const fileProcessingQueue = new Queue<FileProcessingJobData>('file-proces
 });
 
 export const addFileProcessingJob = async (data: FileProcessingJobData): Promise<void> => {
-  await fileProcessingQueue.add('process-file', data, {
-    jobId: `file-${data.fileId}`,
-  });
+  const jobId = `file-${data.fileId}`;
+  const existingJob = await fileProcessingQueue.getJob(jobId);
+
+  if (existingJob) {
+    const state = await existingJob.getState();
+    if (state === 'completed' || state === 'failed') {
+      await existingJob.remove();
+    } else {
+      return;
+    }
+  }
+
+  await fileProcessingQueue.add('process-file', data, { jobId });
 };

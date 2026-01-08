@@ -1,5 +1,6 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { sanitizeFilename, urlToStream } from '@/helpers/file';
+import { addFileProcessingJob } from '@/jobs/queues/fileProcessing.queue';
 import { getLoggerStore } from '@/libs/asyncLocalStorage';
 import { uploadFileToMinio } from '@/libs/minio';
 import { prisma } from '@/libs/prisma';
@@ -43,13 +44,17 @@ export const createRequeteFromDematSocial = async ({
 
       const filename = sanitizeFilename(file.name, ext);
 
-      const { objectPath, rollback: rollbackMinio } = await uploadFileToMinio(stream, filename, mimeType);
+      const {
+        objectPath,
+        rollback: rollbackMinio,
+        encryptionMetadata,
+      } = await uploadFileToMinio(stream, filename, mimeType);
 
       const pathParts = objectPath.split('/');
       const fileName = pathParts[pathParts.length - 1] || '';
       const id = fileName.split('.')[0] || '';
 
-      return tx.uploadedFile
+      const uploadedFile = await tx.uploadedFile
         .create({
           data: {
             id,
@@ -57,14 +62,17 @@ export const createRequeteFromDematSocial = async ({
             filePath: objectPath,
             mimeType,
             size: size ?? 0,
-            metadata: { originalName: file.name },
+            metadata: {
+              originalName: file.name,
+              ...(encryptionMetadata && { encryption: encryptionMetadata }),
+            },
             entiteId,
             uploadedById: null,
             requeteEtapeNoteId: null,
             requeteId: element.requeteId ?? null,
             demarchesEngageesId: element.demarchesEngageesId ?? null,
             faitSituationId: element.faitSituationId ?? null,
-            status: 'COMPLETED',
+            status: 'PENDING',
             canDelete,
           },
         })
@@ -72,6 +80,15 @@ export const createRequeteFromDematSocial = async ({
           await rollbackMinio();
           throw err;
         });
+
+      await addFileProcessingJob({
+        fileId: uploadedFile.id,
+        fileName: uploadedFile.fileName,
+        filePath: uploadedFile.filePath,
+        mimeType: uploadedFile.mimeType,
+      });
+
+      return uploadedFile;
     };
 
     const source = determineSource(dematSocialId);
