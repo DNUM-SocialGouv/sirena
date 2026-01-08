@@ -171,23 +171,14 @@ export const importSingleDossier = async (
   }
 
   let step:
-    | 'updateInstruction'
     | 'getRequete'
+    | 'updateInstruction'
     | 'mapDataForPrisma'
     | 'createRequeteFromDematSocial'
     | 'assignEntitesToRequeteTask'
     | 'unknown' = 'unknown';
 
   try {
-    // Update the instruction
-    step = 'updateInstruction';
-    const update = await updateInstruction(`Dossier-${dossierNumber}`);
-    if (!update?.dossierPasserEnInstruction?.dossier) {
-      const errors = update?.dossierPasserEnInstruction?.errors || [];
-      const errorMessage = errors.map((e) => e.message).join(', ');
-      logger.warn({ dossierNumber, errors: errorMessage }, `Failed to change instruction for dossier ${dossierNumber}`);
-    }
-
     step = 'getRequete';
     const data = await getRequete(dossierNumber);
     if (!data) {
@@ -206,6 +197,14 @@ export const importSingleDossier = async (
 
       logger.error({ dossierNumber, errorType }, `Failed to fetch dossier data for ${dossierNumber}`);
       return { success: false };
+    }
+
+    step = 'updateInstruction';
+    const update = await updateInstruction(`Dossier-${dossierNumber}`);
+    if (!update?.dossierPasserEnInstruction?.dossier) {
+      const errors = update?.dossierPasserEnInstruction?.errors || [];
+      const errorMessage = errors.map((e) => e.message).join(', ');
+      logger.warn({ dossierNumber, errors: errorMessage }, `Failed to change instruction for dossier ${dossierNumber}`);
     }
 
     step = 'mapDataForPrisma';
