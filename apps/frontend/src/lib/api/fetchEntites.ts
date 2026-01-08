@@ -3,7 +3,14 @@ import { handleRequestErrors } from '@/lib/api/tanstackQuery.ts';
 import type { QueryParams } from '@/types/pagination.type.ts';
 
 export async function fetchEntites(id: string | undefined, query: QueryParams = {}) {
-  const res = await client.entites[':id?'].$get({ param: { id }, query });
+  const res = await client.entites[':id?'].$get({
+    param: { id },
+    query: {
+      ...query,
+      limit: query.limit?.toString(),
+      offset: query.offset?.toString(),
+    },
+  });
   await handleRequestErrors(res);
   const { data, meta } = await res.json();
   return { data, meta };

@@ -24,8 +24,8 @@ export function AllUsersTab() {
 
   const filteredRoles = (Object.keys(roles) as Role[]).filter((roleId) => !rolesToFilter.includes(roleId)).join(',');
 
-  const limit = useMemo(() => parseInt(queries.limit || DEFAULT_PAGE_SIZE.toString(), 10), [queries.limit]);
-  const offset = useMemo(() => parseInt(queries.offset || '0', 10), [queries.offset]);
+  const limit = queries.limit ?? DEFAULT_PAGE_SIZE;
+  const offset = queries.offset ?? 0;
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
   const handleUserListChange = useCallback(() => {
@@ -39,8 +39,8 @@ export function AllUsersTab() {
 
   const { data: users, isFetching } = useUsers({
     roleId: filteredRoles,
-    limit: limit.toString(),
-    offset: offset.toString(),
+    limit,
+    offset,
   });
 
   const columns: Column<User>[] = [
@@ -75,8 +75,8 @@ export function AllUsersTab() {
           navigate({
             search: (prev) => ({
               ...prev,
-              offset: newOffset === 0 ? undefined : newOffset.toString(),
-              limit: limit === DEFAULT_PAGE_SIZE ? undefined : limit.toString(),
+              offset: newOffset === 0 ? undefined : newOffset,
+              limit: limit === DEFAULT_PAGE_SIZE ? undefined : limit,
             }),
           });
           window.scrollTo({ top: 0, behavior: 'smooth' });

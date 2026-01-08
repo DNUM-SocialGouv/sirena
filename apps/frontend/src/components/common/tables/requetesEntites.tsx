@@ -85,8 +85,8 @@ export function RequetesEntite() {
 
   useRequetesListSSE({ onUpdate: handleUpdate });
 
-  const limit = useMemo(() => parseInt(queries.limit || DEFAULT_PAGE_SIZE.toString(), 10), [queries.limit]);
-  const offset = useMemo(() => parseInt(queries.offset || '0', 10), [queries.offset]);
+  const limit = queries.limit ?? DEFAULT_PAGE_SIZE;
+  const offset = queries.offset ?? 0;
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
   const [searchTerm, setSearchTerm] = useState<string>(queries.search || '');
@@ -95,8 +95,8 @@ export function RequetesEntite() {
     ...(queries.sort && { sort: queries.sort }),
     ...(queries.order && { order: queries.order as 'asc' | 'desc' }),
     ...(queries.search && { search: queries.search }),
-    offset: offset.toString(),
-    limit: limit.toString(),
+    offset,
+    limit,
   });
 
   const [title, setTitle] = useState<string>('Requêtes');
@@ -138,6 +138,7 @@ export function RequetesEntite() {
           ...prev,
           sort: sortKey && sortDirection ? sortKey : undefined,
           order: sortKey && sortDirection ? (sortDirection as 'asc' | 'desc') : undefined,
+          offset: undefined,
         }),
       });
     },
@@ -219,8 +220,8 @@ export function RequetesEntite() {
           navigate({
             search: (prev) => ({
               ...prev,
-              offset: newOffset === 0 ? undefined : newOffset.toString(),
-              limit: limit === DEFAULT_PAGE_SIZE ? undefined : limit.toString(),
+              offset: newOffset === 0 ? undefined : newOffset,
+              limit: limit === DEFAULT_PAGE_SIZE ? undefined : limit,
             }),
           });
           window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -3,7 +3,13 @@ import { handleRequestErrors } from '@/lib/api/tanstackQuery';
 import type { GetUsersQuery } from '@/types/queries.type';
 
 export async function fetchUsers(query: GetUsersQuery) {
-  const res = await client.users.$get({ query });
+  const res = await client.users.$get({
+    query: {
+      ...query,
+      limit: query.limit?.toString(),
+      offset: query.offset?.toString(),
+    },
+  });
   await handleRequestErrors(res);
   const { data, meta } = await res.json();
   return { data, meta };
