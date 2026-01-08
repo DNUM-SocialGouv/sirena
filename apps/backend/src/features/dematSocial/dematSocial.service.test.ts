@@ -63,11 +63,11 @@ vi.mock('@/features/dematSocial/dematSocialImportFailure.service', () => ({
 }));
 
 vi.mock('./dematSocial.adaptater', () => ({
-  mapDataForPrisma: vi.fn().mockReturnValue({
-    dematSocialId: 300000,
-    createdAt: new Date('2024-01-01'),
+  mapDataForPrisma: vi.fn((_champs, dossierNumber, dateDepot) => ({
+    dematSocialId: dossierNumber,
+    createdAt: typeof dateDepot === 'string' ? new Date(dateDepot) : dateDepot,
     entiteIds: undefined,
-  }),
+  })),
 }));
 
 vi.mock('@/features/dematSocial/affectation/affectation', () => ({
@@ -82,7 +82,12 @@ describe('dematSocial.service.ts', () => {
   describe('getRequetes()', () => {
     it('should call graffle with correct variables and return filtered nodes', async () => {
       sendMock.mockResolvedValueOnce({
-        demarche: { dossiers: { nodes: [{ number: 1 }, null, { number: 2 }] } },
+        demarche: {
+          dossiers: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [{ number: 1 }, null, { number: 2 }],
+          },
+        },
       });
 
       const result = await getRequetes(new Date('2024-01-01'));
@@ -91,6 +96,7 @@ describe('dematSocial.service.ts', () => {
       expect(sendMock).toHaveBeenCalledWith({
         demarcheNumber: 9999,
         createdSince: '2024-01-01T00:00:00.000Z',
+        after: undefined,
       });
 
       expect(result).toEqual([{ number: 1 }, { number: 2 }]);
@@ -98,7 +104,12 @@ describe('dematSocial.service.ts', () => {
 
     it('should return empty array when no dossiers found', async () => {
       sendMock.mockResolvedValueOnce({
-        demarche: { dossiers: { nodes: null } },
+        demarche: {
+          dossiers: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: null,
+          },
+        },
       });
 
       const result = await getRequetes();
@@ -113,6 +124,7 @@ describe('dematSocial.service.ts', () => {
       sendMock.mockResolvedValueOnce({
         demarche: {
           dossiers: {
+            pageInfo: { hasNextPage: false, endCursor: null },
             nodes: [
               {
                 number: 300000,
@@ -127,13 +139,7 @@ describe('dematSocial.service.ts', () => {
         },
       });
 
-      sendMock.mockResolvedValueOnce({
-        dossierPasserEnInstruction: {
-          dossier: {
-            id: '1',
-          },
-        },
-      });
+      vi.mocked(getRequeteByDematSocialId).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
 
       sendMock.mockResolvedValueOnce({
         dossier: {
@@ -163,7 +169,13 @@ describe('dematSocial.service.ts', () => {
         },
       });
 
-      vi.mocked(getRequeteByDematSocialId).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+      sendMock.mockResolvedValueOnce({
+        dossierPasserEnInstruction: {
+          dossier: {
+            id: '2',
+          },
+        },
+      });
 
       const result = await importRequetes(new Date('2024-01-01'));
 
@@ -175,7 +187,7 @@ describe('dematSocial.service.ts', () => {
         pdf: null,
       });
       expect(createRequeteFromDematSocial).toHaveBeenCalledWith({
-        dematSocialId: 300000,
+        dematSocialId: 300001,
         createdAt: dateDepot,
         entiteIds: undefined,
         pdf: null,
@@ -188,6 +200,7 @@ describe('dematSocial.service.ts', () => {
       sendMock.mockResolvedValueOnce({
         demarche: {
           dossiers: {
+            pageInfo: { hasNextPage: false, endCursor: null },
             nodes: [
               {
                 number: 300000,
@@ -225,12 +238,17 @@ describe('dematSocial.service.ts', () => {
       const result = await importRequetes(new Date('2024-01-01'));
 
       expect(createRequeteFromDematSocial).toHaveBeenCalledTimes(0);
-      expect(result).toEqual({ count: 2, errorCount: 0, skippedCount: 0 });
+      expect(result).toEqual({ count: 0, errorCount: 0, skippedCount: 0 });
     });
 
     it('should do nothing if no dossiers returned', async () => {
       sendMock.mockResolvedValueOnce({
-        demarche: { dossiers: { nodes: [] } },
+        demarche: {
+          dossiers: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [],
+          },
+        },
       });
 
       const result = await importRequetes();
