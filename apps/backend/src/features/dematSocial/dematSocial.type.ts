@@ -11,6 +11,12 @@ export type Demandeur = {
   email: string;
 };
 
+export type Mandataire = {
+  nom: string;
+  prenom: string;
+  email: string;
+};
+
 export type MappedChamp = Record<string, RootChampFragmentFragment>;
 
 export type RepetitionChamp = Extract<RootChampFragmentFragment, { __typename?: 'RepetitionChamp' }>['champs'][number];

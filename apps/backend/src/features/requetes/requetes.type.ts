@@ -46,6 +46,7 @@ type Participant = {
   victimeInformeeCommentaire: string | null;
   veutGarderAnonymat: boolean | null;
   autrePersonnes: string | null;
+  aAutrePersonnes?: boolean;
 } | null;
 
 type LieuDeSurvenue = {

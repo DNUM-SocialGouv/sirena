@@ -15,6 +15,7 @@ const personneTrackedFields: (keyof PersonneConcernee)[] = [
   'veutGarderAnonymat',
   'commentaire',
   'autrePersonnes',
+  'aAutrePersonnes',
   'ageId',
   'lienVictimeId',
   'lienAutrePrecision',

@@ -124,8 +124,11 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
               )}
               {personne?.estVictimeInformee && <li>Il/elle a été informé(e) de la démarche par le déclarant</li>}
             </ul>
-            {personne?.autrePersonnes && (
-              <p className="fr-mb-1w">Autres personnes concernées : {personne.autrePersonnes}</p>
+            {personne?.aAutrePersonnes && (
+              <>
+                <p className="fr-mb-1w">Autres personnes concernées : {personne.aAutrePersonnes ? 'Oui' : 'Non'}</p>
+                <p className="fr-mb-1w">{personne.autrePersonnes}</p>
+              </>
             )}
             {personne?.commentaire && <p className="fr-mb-2w">Précisions supplémentaires : {personne.commentaire}</p>}
           </>

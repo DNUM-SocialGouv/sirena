@@ -215,7 +215,7 @@ const victimeIdentiteCommunique = {
 
 /* estVictime = true || estVictime = false start */
 
-const autreVictimes = {
+const aAutreVictimes = {
   id: 'Champ-27605',
   type: 'CheckboxChamp',
   label: "D'autres personnes sont-elles concernées par la situation ?",
@@ -230,6 +230,16 @@ const autreVictimes = {
     },
   ],
 };
+
+/* aAutreVictimes = true start */
+
+const autreVictimes = {
+  id: 'Champ-27606',
+  type: 'TextChamp',
+  label: 'Informations complémentaires',
+};
+
+/* aAutreVictimes = true end */
 
 /* estVictime = true || estVictime = false end */
 
@@ -259,7 +269,7 @@ const declarationQualiteType = {
 /* declarationType = ...facturation start */
 
 const declarationFacturationType = {
-  id: 'Champ-42502',
+  id: 'Champ-19526',
   type: 'MultipleDropDownListChamp',
   label: 'Précisez :',
   options: Object.entries(dsMotifLabels).map(([key, label]) => ({
@@ -431,6 +441,12 @@ const professionnelResponsableIdentite = {
 };
 
 /* professionnelResponsable = Professionnel... || professionnelResponsableDomicile = Professionnel d'un ... end */
+
+const responsableCommentaire = {
+  id: 'Champ-37819',
+  type: 'TextChamp',
+  label: 'Informations complémentaires',
+};
 
 const faitsCommentaire = {
   id: 'Champ-19528',
@@ -626,9 +642,13 @@ const autreFaits = {
       id: 'Champ-37314',
     },
     /* professionnelResponsable = Professionnel... || professionnelResponsableDomicile = Intervention d'un ... end */
+    responsableCommentaire: {
+      ...responsableCommentaire,
+      id: 'Champ-37318',
+    },
     faitsCommentaire: {
       ...faitsCommentaire,
-      id: 'Champ-37323',
+      id: 'Champ-37259',
     },
     maltraitanceTypesMap: {
       ...maltraitanceTypesMap,
@@ -700,6 +720,7 @@ export default {
   victimeIdentiteCommunique,
 
   // Autres victimes
+  aAutreVictimes,
   autreVictimes,
 
   // Déclarant
@@ -723,6 +744,7 @@ export default {
   professionnelResponsable,
   professionnelResponsableDomicile,
   professionnelResponsableIdentite,
+  responsableCommentaire,
 
   // Faits
   declarationType,

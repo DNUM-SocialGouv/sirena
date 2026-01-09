@@ -683,6 +683,7 @@ export const updateRequeteParticipant = async (
             veutGarderAnonymat: participantData.veutGarderAnonymat || false,
             estVictimeInformee: participantData.estVictimeInformee || false,
             autrePersonnes: participantData.autrePersonnes || '',
+            aAutrePersonnes: participantData.aAutrePersonnes || false,
             commentaire: participantData.commentaire || '',
             ageId: participantData.age || undefined,
             updatedAt: new Date(),

@@ -222,6 +222,18 @@ export function DemarchesEngagees({ formData, setFormData }: DemarchesEngageesPr
             </div>
           </div>
         )}
+        {demarches.includes(DEMARCHES_ENGAGEES.AUTRE) && (
+          <div className="fr-col-12">
+            <Input
+              label="Précisez les autres démarches engagées"
+              nativeInputProps={{
+                type: 'date',
+                value: formData.demarchesEngagees?.commentaire || '',
+                onChange: handleDemarchesInputChange('commentaire'),
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

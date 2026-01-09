@@ -17,6 +17,7 @@ import rootMapping from './dematSocial.mapper';
 import type {
   AutreFaitsMapping,
   Demandeur,
+  Mandataire,
   MappedChamp,
   MappedRepetitionChamp,
   Mapping,
@@ -163,7 +164,7 @@ const getDemarchesEngagees = (
 ) => {
   const demarches = getEnumsFromLabel(mapping.demarchesEngagees.options, champsById[mapping.demarchesEngagees.id]);
   const demarchesEngagees = {
-    demarches: demarches.filter((d) => d !== DS_DEMARCHE_ENGAGEE.AUCUNE && d !== DS_DEMARCHE_ENGAGEE.AUTRE),
+    demarches: demarches.filter((d) => d !== DS_DEMARCHE_ENGAGEE.AUCUNE),
     dateContactEtablissement: getDateByChamps(champsById[mapping.demarchesEngageesDateContactEtablissement.id]),
     etablissementARepondu: getBooleanOrNull(champsById[mapping.demarchesEngageesEtablissementARepondu.id]) || false,
     commentaire: champsById[mapping.demarchesEngageesAutre.id]?.stringValue ?? '',
@@ -378,7 +379,7 @@ const getMisEnCause = (champsById: MappedChamp | MappedRepetitionChamp, mapping:
     misEnCauseTypeId,
     misEnCauseTypePrecisionId,
     rpps: champsById[mapping.professionnelResponsableIdentite.id]?.stringValue ?? null,
-    commentaire: champsById[mapping.faitsCommentaire.id]?.stringValue ?? null,
+    commentaire: champsById[mapping.responsableCommentaire.id]?.stringValue ?? '',
   };
   return misEnCause;
 };
@@ -409,9 +410,12 @@ const getFait = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mappi
   return fait;
 };
 
-const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
+const getVictime = (champsById: MappedChamp, mandataire: Mandataire, demandeur: Demandeur) => {
   const estVictimeChamp = champsById[rootMapping.estVictime.id];
   const estVictime = getBooleanOrNull(estVictimeChamp, rootMapping.estVictime.options);
+  const aAutrePersonnes =
+    getBooleanOrNull(champsById[rootMapping.aAutreVictimes.id], rootMapping.aAutreVictimes.options) || false;
+  const autrePersonnes = champsById[rootMapping.autreVictimes.id]?.stringValue ?? '';
 
   if (estVictime === true) {
     // "Oui, je suis la personne concernée"
@@ -437,7 +441,8 @@ const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
       victimeInformeeCommentaire: null,
       veutGarderAnonymat,
       adresse: champsById[rootMapping.adresse.id] ? createAddress(champsById[rootMapping.adresse.id]) : null,
-      autrePersonnes: champsById[rootMapping.autreVictimes.id]?.stringValue ?? '',
+      aAutrePersonnes,
+      autrePersonnes,
     };
 
     return {
@@ -446,7 +451,7 @@ const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
     };
   } else {
     // "Non, je suis témoin, aidant ou proche d'une personne concernée"
-    // → The declarant is the mandataire, the participant is the "Personne concernée"
+    // → The declarant is the mandataire, the participant (demandeur) is the "Personne concernée"
 
     const estAnonymeChamp = champsById[rootMapping.estAnonyme.id];
     const declarantVeutAnonymat = getBooleanOrNull(estAnonymeChamp, rootMapping.estAnonyme.options);
@@ -463,10 +468,10 @@ const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
 
     // Declarant = mandataire (uses usager email + mandataire fields)
     const declarant = {
-      prenom: demandeur.prenom,
-      nom: demandeur.nom,
-      civiliteId: demandeur.civiliteId,
-      email: demandeur.email, // Usager email = mandataire email
+      prenom: mandataire.prenom,
+      nom: mandataire.nom,
+      civiliteId: null, // No civilite for mandataire
+      email: mandataire.email,
       telephone: champsById[rootMapping.declarantTelephone.id]?.stringValue ?? null,
       ageId: null, // No age for mandataire
       estHandicapee: null,
@@ -479,10 +484,9 @@ const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
       adresse: null,
     };
 
-    // Participant = personne concernée
     const victime = {
-      prenom: 'PersonneConcernéePrénom', // Fictive identity as no info is available
-      nom: 'PersonneConcernéeNom',
+      prenom: demandeur.prenom,
+      nom: demandeur.nom,
       civiliteId: demandeur.civiliteId,
       email: champsById[rootMapping.victimeEmail.id]?.stringValue ?? demandeur.email,
       telephone: champsById[rootMapping.victimeTelephone.id]?.stringValue ?? null,
@@ -505,7 +509,8 @@ const getVictime = (champsById: MappedChamp, demandeur: Demandeur) => {
       adresse: champsById[rootMapping.victimeAdressePostale.id]
         ? createAddress(champsById[rootMapping.victimeAdressePostale.id])
         : null,
-      autrePersonnes: champsById[rootMapping.autreVictimes.id]?.stringValue ?? '',
+      aAutrePersonnes,
+      autrePersonnes,
     };
 
     return {
@@ -541,11 +546,12 @@ export const mapDataForPrisma = (
   champs: RootChampFragmentFragment[],
   id: number,
   date: string,
+  mandataire: Mandataire,
   demandeur: Demandeur,
 ): CreateRequeteFromDematSocialDto => {
   const champsById = indexChamps(champs);
 
-  const { declarant, victime } = getVictime(champsById, demandeur);
+  const { declarant, victime } = getVictime(champsById, mandataire, demandeur);
   const faits = [getFait(champsById, rootMapping)];
   const demarchesEngagees = getDemarchesEngagees(champsById, rootMapping);
   const lieuDeSurvenue = getLieuDeSurvenue(champsById, rootMapping);

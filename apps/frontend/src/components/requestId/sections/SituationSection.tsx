@@ -1,9 +1,8 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import {
   demarcheEngageeLabels,
-  type MaltraitanceQualifiedType,
+  MALTRAITANCEQUALIFIED_TYPE,
   MOTIFS_HIERARCHICAL_DATA,
-  maltraitanceQualifiedLabels,
   misEnCauseTypeLabels,
   RECEPTION_TYPE,
 } from '@sirena/common/constants';
@@ -184,11 +183,11 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
 
   situation?.faits.forEach((fait) => {
     fait.maltraitanceTypes?.forEach((maltraitance) => {
-      if (maltraitance.maltraitanceTypeId in maltraitanceQualifiedLabels) {
-        const label = maltraitanceQualifiedLabels[maltraitance.maltraitanceTypeId as MaltraitanceQualifiedType];
-        if (motifsDeclares.indexOf(label) === -1) {
-          motifsDeclares.push(label);
-        }
+      if (maltraitance.maltraitanceType.id === MALTRAITANCEQUALIFIED_TYPE.NON) {
+        return;
+      }
+      if (motifsDeclares.indexOf(maltraitance.maltraitanceType.label) === -1) {
+        motifsDeclares.push(maltraitance.maltraitanceType.label);
       }
     });
     fait.motifsDeclaratifs?.forEach((motif) => {
@@ -283,6 +282,11 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
             <p className={fr.cx('fr-mb-1w')}>
               <span>Type de lieu :</span> {situation?.lieuDeSurvenue?.lieuType?.label}
             </p>
+            {situation?.lieuDeSurvenue.codePostal && (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Code postal :</span> {situation.lieuDeSurvenue.codePostal}
+              </p>
+            )}
             {situation?.lieuDeSurvenue?.lieuPrecision && (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Précision du lieu :</span>{' '}
@@ -441,6 +445,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
                 </li>
               ))}
             </ul>
+            <p className={fr.cx('fr-mb-3w')}>{situation.demarchesEngagees.commentaire}</p>
           </>
         )}
         {hasTraitementDesFaits && <TraitementDesFaits situation={situation} details={true} />}

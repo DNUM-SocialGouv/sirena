@@ -686,6 +686,7 @@ export const DEMARCHES_ENGAGEES = {
   CONTACT_RESPONSABLES: 'CONTACT_RESPONSABLES',
   CONTACT_ORGANISME: 'CONTACT_ORGANISME',
   PLAINTE: 'PLAINTE',
+  AUTRE: 'AUTRE',
 } as const;
 
 export type DemarchesEngagees = keyof typeof DEMARCHES_ENGAGEES;
@@ -694,6 +695,7 @@ export const demarcheEngageeLabels: Record<DemarchesEngagees, string> = {
   CONTACT_RESPONSABLES: "L'établissement ou le responsables des faits a été contacté",
   CONTACT_ORGANISME: "Démarches engagées auprès d'autres organismes",
   PLAINTE: 'Une plainte a été déposée auprès des autorités judiciaires',
+  AUTRE: 'Autre',
 };
 
 // Motifs principaux
