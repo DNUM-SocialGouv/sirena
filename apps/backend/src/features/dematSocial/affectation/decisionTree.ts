@@ -1,6 +1,6 @@
 import {
+  type DsMotif,
   type MisEnCauseType,
-  MOTIF,
   type Motif,
   PROFESSION_DOMICILE_TYPE,
   PROFESSION_SANTE_PRECISION,
@@ -24,21 +24,12 @@ export function checkRequired(node: DecisionNode, ctx: SituationContext) {
   }
 }
 
-function isMotif(value: Motif | string): value is Motif {
-  return MOTIFS_SET.has(value as Motif);
-}
-
-export function filterMotifs(ctx: SituationContext): Motif[] {
-  // keep only motifs (sirena motifs not motifsDeclaratifs) that are in the MOTIF enum to map decision tree schema
-  return Array.isArray(ctx?.motifs) ? ctx.motifs.filter(isMotif) : [];
-}
-
 export function computeEntitesFromMotifs(ctx: SituationContext): EntiteAdminType[] {
   const acc = new Set<EntiteAdminType>();
 
-  const allMotifs = [...filterMotifs(ctx), ...(ctx.motifsDeclaratifs ?? [])];
+  const motifsDeclaratifs = ctx.motifsDeclaratifs ?? [];
 
-  for (const motif of allMotifs) {
+  for (const motif of motifsDeclaratifs) {
     const entites = MOTIF_DECLARATIFS_TO_ENTITES[motif];
     if (entites) {
       for (const e of entites) acc.add(e);
@@ -99,11 +90,8 @@ function getDomicileProfessionnelCategory(ctx: SituationContext): DomicileProfes
   return 'AUTRE';
 }
 
-const MOTIFS_KEYS: Motif[] = Object.keys(MOTIF) as Motif[];
-const MOTIFS_SET = new Set(MOTIFS_KEYS);
-const MOTIF_DECLARATIFS_TO_ENTITES: Partial<Record<Motif, EntiteAdminType[]>> = {
+const MOTIF_DECLARATIFS_TO_ENTITES: Partial<Record<Motif | DsMotif, EntiteAdminType[]>> = {
   PROBLEME_QUALITE_SOINS: ['ARS'],
-  DIFFICULTES_ACCES_SOINS: ['ARS'],
 };
 
 /*********************
@@ -249,13 +237,7 @@ function nonDomicileLieuDeSurvenue(): DecisionNode {
       ETABLISSEMENT_SANTE: {
         kind: 'leaf',
         id: 'lieu_etablissement_sante_ars',
-        description: 'Lieu : établissement de santé (hôpital, clinique, laboratoire, pharmacie…)',
-        add: ['ARS'],
-      },
-      CABINET: {
-        kind: 'leaf',
-        id: 'lieu_cabinet_ars',
-        description: 'Lieu : cabinet médical',
+        description: 'Lieu : établissement de santé (hôpital, clinique, laboratoire, pharmacie, cabinet médical…)',
         add: ['ARS'],
       },
       ETABLISSEMENT_PERSONNES_AGEES: motifReclamationSubtree(),
@@ -278,33 +260,41 @@ function nonDomicileLieuDeSurvenue(): DecisionNode {
 }
 
 // 5 - MOTIF RÉCLAMATION SUBTREE
+// Processes each declared motif individually:
+// - If PROBLEME_QUALITE_SOINS → assign ARS directly (skip FINESS)
+// - Else → apply the FINESS referential for each
 function motifReclamationSubtree(): DecisionNode {
   return {
-    kind: 'branch',
+    kind: 'forEach',
     id: 'motifs_reclamation_multi',
-    description: 'Traitement multi-motifs de la réclamation',
-    predicate: (ctx: SituationContext) => {
-      const finessExempt: Motif[] = ['PROBLEME_QUALITE_SOINS', 'DIFFICULTES_ACCES_SOINS'];
-
-      // merge motifs and declarative motifs
-      const all = [...filterMotifs(ctx), ...(ctx.motifsDeclaratifs ?? [])];
-
-      // If only one motif is not exempt → FINESS required
-      return all.some((m) => !finessExempt.includes(m));
+    description: 'Traitement de chaque motif déclaratif de la réclamation',
+    // Iterate over all declared motifs
+    iterate: (ctx: SituationContext) => ctx.motifsDeclaratifs ?? [],
+    // Create a modified context with a single declared motif at a time
+    mapContext: (ctx: SituationContext, motif: unknown) => ({
+      ...ctx,
+      motifsDeclaratifs: [motif as DsMotif],
+    }),
+    forEach: {
+      kind: 'branch',
+      id: 'motif_reclamation_single',
+      description: "Traitement d'un motif déclaratif",
+      predicate: (ctx: SituationContext) => {
+        // If the motif is not PROBLEME_QUALITE_SOINS → FINESS required
+        const motif = ctx.motifsDeclaratifs?.[0];
+        return motif !== 'PROBLEME_QUALITE_SOINS';
+      },
+      // If the motif requires FINESS → apply the FINESS referential
+      ifTrue: finessReferentielPlaceholderSubtree(),
+      // If the motif is PROBLEME_QUALITE_SOINS → ARS directly and terminate
+      ifFalse: leaf('motif_reclamation_qualite_soins_ars', 'Qualité des soins → ARS directement', ['ARS']),
     },
-    // add entities (both cases)
-    addIfTrue: computeEntitesFromMotifs,
-    addIfFalse: computeEntitesFromMotifs,
-    // if at least one motif requires FINESS
-    ifTrue: finessReferentielPlaceholderSubtree(),
-    // otherwise → end of motif treatment
-    ifFalse: leaf('motif_reclamation_no_finess', 'Aucun motif nécessitant FINESS', []),
   };
 }
 
 // 6 - Referentiel FINESS
 // TODO: implémenter le référentiel via FINESS
-function finessReferentielPlaceholderSubtree(): DecisionNode {
+export function finessReferentielPlaceholderSubtree(): DecisionNode {
   return {
     kind: 'leaf',
     id: 'finess_referentiel',
@@ -380,6 +370,24 @@ async function evalNode(
       }
 
       await evalNode(next, ctx, found);
+      return;
+    }
+    case 'forEach': {
+      const items = node.iterate(ctx);
+
+      // For each item, create a modified context and apply the subtree
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        // Create a modified context for this item
+        const itemContext = node.mapContext ? node.mapContext(ctx, item, i) : ctx;
+        // Apply the subtree for this item
+        await evalNode(node.forEach, itemContext, found, depth + 1);
+      }
+
+      // If an "after" node is defined, apply it after all iterations
+      if (node.after) {
+        await evalNode(node.after, ctx, found, depth + 1);
+      }
       return;
     }
     default: {
