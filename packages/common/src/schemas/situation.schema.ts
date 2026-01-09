@@ -59,6 +59,7 @@ export const SituationDataSchema = z.object({
       precisionsOrganisme: z.string().optional(),
       dateDepotPlainte: z.string().optional(),
       lieuDepotPlainte: z.string().optional(),
+      commentaire: z.string().optional(),
     })
     .optional(),
 
