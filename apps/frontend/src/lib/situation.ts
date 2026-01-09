@@ -71,6 +71,7 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
           dateDepotPlainte: demarchesEngagees.datePlainte
             ? new Date(demarchesEngagees.datePlainte).toISOString().split('T')[0]
             : undefined,
+          commentaire: demarchesEngagees.commentaire || '',
         }
       : undefined,
     traitementDesFaits: situation.traitementDesFaits,
