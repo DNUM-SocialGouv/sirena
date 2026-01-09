@@ -28,6 +28,7 @@ export type CloseRequeteModalProps = {
   customDescription?: string;
   onCancel?: () => void;
   onSuccess?: () => void;
+  onDismiss?: () => void;
 };
 
 export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteModalProps>(
@@ -41,6 +42,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       customDescription,
       onCancel,
       onSuccess,
+      onDismiss,
     },
     ref,
   ) => {
@@ -53,6 +55,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     const [errors, setErrors] = useState<{ reasonId?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [closeButtonRef, setCloseButtonRef] = useState<React.RefObject<HTMLButtonElement | null> | null>(null);
+    const wasActionTakenRef = useRef(false);
 
     const closeRequeteMutation = useCloseRequete(requestId);
     const uploadFileMutation = useUploadFile({ silentToastError: true });
@@ -77,6 +80,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       setIsSubmitting(false);
       setErrorMessage(null);
       setCloseButtonRef(buttonRef || null);
+      wasActionTakenRef.current = false;
       closeModal.open();
       setTimeout(() => {
         addModalEventListener();
@@ -101,6 +105,10 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
         setTimeout(() => {
           closeButtonRef?.current?.focus();
         }, 100);
+
+        if (!wasActionTakenRef.current) {
+          onDismiss?.();
+        }
       };
 
       const checkForModal = () => {
@@ -154,9 +162,9 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       }
 
       setIsSubmitting(true);
+      wasActionTakenRef.current = true;
 
       try {
-        // Upload files first if any
         let fileIds: string[] = [];
         if (files.length > 0) {
           const uploadPromises = files.map(async (file) => {
@@ -166,7 +174,6 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
           fileIds = await Promise.all(uploadPromises);
         }
 
-        // Close the requête
         await closeRequeteMutation.mutateAsync({
           reasonId,
           precision: precision.trim() || undefined,
@@ -177,6 +184,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
         onSuccess?.();
       } catch {
         setIsSubmitting(false);
+        wasActionTakenRef.current = false;
         setErrorMessage('Une erreur est survenue. Veuillez réessayer.');
       }
     };
@@ -187,6 +195,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     }));
 
     const handleCancel = () => {
+      wasActionTakenRef.current = true;
       closeModal.close();
       onCancel?.();
     };
