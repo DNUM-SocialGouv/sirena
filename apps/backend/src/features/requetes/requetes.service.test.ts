@@ -701,6 +701,7 @@ describe('requetes.service.ts', () => {
           age: { connect: { id: fakeRequeteDto.participant.ageId } },
           participantDe: { connect: { id: '1' } },
           autrePersonnes: '',
+          aAutrePersonnes: null,
           estHandicapee: fakeRequeteDto.participant.estHandicapee,
           estVictimeInformee: fakeRequeteDto.participant.estVictimeInformee,
           veutGarderAnonymat: null,

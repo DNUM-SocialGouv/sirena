@@ -35,6 +35,7 @@ export const personneConcerneeFieldMetadata: Record<string, FieldMetadata> = {
   veutGarderAnonymat: { label: 'Elle ne souhaite pas que son identité soit communiquée', type: 'checkbox' },
   estVictimeInformee: { label: 'Elle a été informée de la démarche par le déclarant', type: 'checkbox' },
   autrePersonnes: { label: 'Autres personnes concernées par la requête', type: 'textarea' },
+  aAutrePersonnes: { label: 'Il y a d’autres personnes concernées par la requête', type: 'checkbox' },
   commentaire: { label: 'Autres précisions', type: 'textarea' },
 };
 

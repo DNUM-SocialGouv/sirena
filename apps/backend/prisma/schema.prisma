@@ -218,6 +218,7 @@ model PersonneConcernee {
   veutGarderAnonymat         Boolean?
   commentaire                String   @default("")
   autrePersonnes             String   @default("")
+  aAutrePersonnes            Boolean?
 
   identite Identite? @relation("PersonneIdentite")
 
