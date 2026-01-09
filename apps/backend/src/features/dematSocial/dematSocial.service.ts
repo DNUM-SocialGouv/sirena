@@ -21,7 +21,7 @@ import {
   graffle,
 } from '@/libs/graffle';
 import { assignEntitesToRequeteTask } from './affectation/affectation';
-import type { Demandeur, DematSocialCivilite } from './dematSocial.type';
+import type { Demandeur, DematSocialCivilite, Mandataire } from './dematSocial.type';
 
 export const getInstructeurs = async () => {
   return await graffle.gql(GetInstructeursDocument).send({ demarcheNumber: envVars.DEMAT_SOCIAL_API_DIRECTORY });
@@ -74,9 +74,11 @@ export const getRequete = async (id: number) => {
   return await graffle.gql(GetDossierDocument).send({ dossierNumber: id });
 };
 
-type DemandeurData = NonNullable<Awaited<ReturnType<typeof getRequete>>>['dossier']['demandeur'];
+type DossierData = NonNullable<Awaited<ReturnType<typeof getRequete>>>['dossier'];
 
-export const getDemandeur = (d: DemandeurData, email: string): Demandeur => ({
+type DemandeurData = DossierData['demandeur'];
+
+export const getDemandeur = (d: DemandeurData): Demandeur => ({
   nom: d?.__typename === 'PersonnePhysique' ? d.nom : '',
   prenom: d?.__typename === 'PersonnePhysique' ? d.prenom : '',
   civiliteId:
@@ -85,6 +87,16 @@ export const getDemandeur = (d: DemandeurData, email: string): Demandeur => ({
         ? (d.civilite.toUpperCase() as DematSocialCivilite)
         : null
       : null,
+  // email: d?.__typename === 'PersonnePhysique' ? d.email : '',
+  email: '',
+});
+
+export const getMandataire = (_d: DossierData, email: string): Mandataire => ({
+  nom: '',
+  prenom: '',
+  // email,
+  // nom: d?.mandataireFirstName || '',
+  // prenom: d?.mandataireLastName || '',
   email,
 });
 
@@ -208,8 +220,9 @@ export const importSingleDossier = async (
     }
 
     step = 'mapDataForPrisma';
-    const demandeur = getDemandeur(data.dossier.demandeur, data.dossier.usager.email);
-    const requete = mapDataForPrisma(data.dossier.champs, dossierNumber, data.dossier.dateDepot, demandeur);
+    const demandeur = getDemandeur(data.dossier.demandeur);
+    const mandataire = getMandataire(data.dossier, demandeur.email);
+    const requete = mapDataForPrisma(data.dossier.champs, dossierNumber, data.dossier.dateDepot, mandataire, demandeur);
 
     const ext = data.dossier.pdf?.filename?.split('.')?.pop() ?? '';
 

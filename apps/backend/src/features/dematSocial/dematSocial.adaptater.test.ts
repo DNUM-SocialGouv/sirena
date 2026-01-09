@@ -176,9 +176,10 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
     ];
 
     const demandeur = { nom: 'X', prenom: 'Y', civiliteId: 'M', email: '' } as const;
+    const mandataire = { nom: 'A', prenom: 'B', email: 'mandataire@example.test' } as const;
     const receptionDateIso = '2025-01-02T00:00:00.000Z';
 
-    const dto = mapDataForPrisma(champs, 123, receptionDateIso, demandeur);
+    const dto = mapDataForPrisma(champs, 123, receptionDateIso, mandataire, demandeur);
 
     expect(dto.receptionTypeId).toBe(RECEPTION_TYPE.FORMULAIRE);
     expect(dto.dematSocialId).toBe(123);
