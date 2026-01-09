@@ -1,7 +1,7 @@
 import type { LieuType, Motif } from '@sirena/common/constants';
 import { describe, expect, it } from 'vitest';
-import { checkRequired, computeEntitesFromMotifs, filterMotifs, leaf, rootNode, runDecisionTree } from './decisionTree';
-import type { DecisionLeaf, EntiteAdminType, SituationContext } from './types';
+import { checkRequired, computeEntitesFromMotifs, leaf, rootNode, runDecisionTree } from './decisionTree';
+import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types';
 
 describe('leaf helper', () => {
   it('should build a DecisionLeaf with given parameters', () => {
@@ -13,27 +13,6 @@ describe('leaf helper', () => {
       description: 'Desc',
       add: ['ARS', 'CD'],
     });
-  });
-});
-
-describe('filterMotifs', () => {
-  it('should keep only motifs that are valid MOTIF enum keys', () => {
-    const ctx: SituationContext = {
-      motifs: ['PROBLEME_QUALITE_SOINS', 'DIFFICULTES_ACCES_SOINS', 'UNKNOWN_MOTIF'],
-    };
-
-    const result = filterMotifs(ctx);
-
-    expect(result).toContain('PROBLEME_QUALITE_SOINS');
-    expect(result).toContain('DIFFICULTES_ACCES_SOINS');
-    expect(result).not.toContain('UNKNOWN_MOTIF');
-  });
-
-  it('should return empty array when ctx.motifs is undefined', () => {
-    const ctx: SituationContext = {};
-    const result = filterMotifs(ctx);
-
-    expect(result).toEqual([]);
   });
 });
 
@@ -75,10 +54,9 @@ describe('checkRequired', () => {
 });
 
 describe('computeEntitesFromMotifs', () => {
-  it('should map ARS-related motifs to ARS and deduplicate', () => {
+  it('should map ARS-related motifs déclaratifs to ARS', () => {
     const ctx = {
-      motifs: ['PROBLEME_QUALITE_SOINS', 'UNKNOWN_MOTIF'] as Motif[],
-      motifsDeclaratifs: ['DIFFICULTES_ACCES_SOINS'] as Motif[],
+      motifsDeclaratifs: ['PROBLEME_QUALITE_SOINS'] as Motif[],
     };
 
     const result = computeEntitesFromMotifs(ctx);
@@ -86,11 +64,17 @@ describe('computeEntitesFromMotifs', () => {
     expect(result).toEqual(['ARS']);
   });
 
-  it('should return empty array when no mapped motifs', () => {
+  it('should return empty array when no mapped motifs déclaratifs', () => {
     const ctx = {
-      motifs: ['AUTRE_TRUC'] as unknown as Motif[],
       motifsDeclaratifs: ['UN_MOTIF_NON_MAPPE'] as unknown as Motif[],
     };
+
+    const result = computeEntitesFromMotifs(ctx);
+    expect(result).toEqual([]);
+  });
+
+  it('should return empty array when motifsDeclaratifs is undefined', () => {
+    const ctx: SituationContext = {};
 
     const result = computeEntitesFromMotifs(ctx);
     expect(result).toEqual([]);
@@ -331,7 +315,43 @@ describe('runDecisionTree - non domicile sans maltraitance (lieu de survenue)', 
 });
 
 describe('runDecisionTree - motifs / FINESS branch', () => {
-  it('should go through motifReclamationSubtree and use FINESS when at least one non-exempt motif', async () => {
+  it('should assign ARS when single motif is PROBLEME_QUALITE_SOINS', async () => {
+    const ctx: SituationContext = {
+      lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+      isMaltraitance: false,
+      motifsDeclaratifs: ['PROBLEME_QUALITE_SOINS'],
+    };
+
+    const result = await runDecisionTree(ctx);
+
+    expect(result.sort()).toEqual(['ARS']);
+  });
+
+  it('should go through FINESS when single motif is not PROBLEME_QUALITE_SOINS', async () => {
+    const ctx: SituationContext = {
+      lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+      isMaltraitance: false,
+      motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+    };
+
+    const result = await runDecisionTree(ctx);
+
+    expect(result.sort()).toEqual([]);
+  });
+
+  it('should assign ARS when all motifs are PROBLEME_QUALITE_SOINS', async () => {
+    const ctx: SituationContext = {
+      lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+      isMaltraitance: false,
+      motifsDeclaratifs: ['PROBLEME_QUALITE_SOINS', 'PROBLEME_QUALITE_SOINS'],
+    };
+
+    const result = await runDecisionTree(ctx);
+
+    expect(result.sort()).toEqual(['ARS']);
+  });
+
+  it('should assign ARS when at least one motif is PROBLEME_QUALITE_SOINS (others go through FINESS)', async () => {
     const ctx: SituationContext = {
       lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
       isMaltraitance: false,
@@ -343,16 +363,127 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
     expect(result.sort()).toEqual(['ARS']);
   });
 
-  it('should NOT go through FINESS when all motifs are exempt (only ARS via motifs)', async () => {
+  it('should go through FINESS for all motifs when none is PROBLEME_QUALITE_SOINS', async () => {
     const ctx: SituationContext = {
       lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
       isMaltraitance: false,
-      motifsDeclaratifs: ['PROBLEME_QUALITE_SOINS', 'DIFFICULTES_ACCES_SOINS'],
+      motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL', 'PROBLEME_FACTURATION'],
     };
 
     const result = await runDecisionTree(ctx);
 
-    expect(result.sort()).toEqual(['ARS']);
+    expect(result.sort()).toEqual([]);
+  });
+
+  it('should handle empty motifsDeclaratifs array', async () => {
+    const ctx: SituationContext = {
+      lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+      isMaltraitance: false,
+      motifsDeclaratifs: [],
+    };
+
+    const result = await runDecisionTree(ctx);
+
+    expect(result.sort()).toEqual([]);
+  });
+
+  it('should evaluate FINESS node X times for X non-PROBLEME_QUALITE_SOINS motifs', async () => {
+    let finessNodeCallCount = 0;
+
+    const modifyFinessNode = (node: DecisionNode): void => {
+      if (node.kind === 'leaf' && node.id === 'finess_referentiel') {
+        const originalAdd = node.add;
+        node.add = (ctx: SituationContext) => {
+          finessNodeCallCount += 1;
+          if (typeof originalAdd === 'function') {
+            return originalAdd(ctx);
+          }
+          return originalAdd;
+        };
+        return;
+      }
+      if (node.kind === 'branch') {
+        if (node.ifTrue) modifyFinessNode(node.ifTrue);
+        if (node.ifFalse) modifyFinessNode(node.ifFalse);
+      }
+      if (node.kind === 'switch') {
+        Object.values(node.cases).forEach((caseNode) => {
+          modifyFinessNode(caseNode);
+        });
+        if (node.default) modifyFinessNode(node.default);
+      }
+      if (node.kind === 'forEach') {
+        modifyFinessNode(node.forEach);
+        if (node.after) modifyFinessNode(node.after);
+      }
+      if (node.kind === 'leaf' && node.next) {
+        modifyFinessNode(node.next);
+      }
+    };
+
+    modifyFinessNode(rootNode);
+
+    const ctx: SituationContext = {
+      lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+      isMaltraitance: false,
+      motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL', 'PROBLEME_FACTURATION', 'PROBLEME_LOCAUX'],
+    };
+
+    await runDecisionTree(ctx);
+
+    expect(finessNodeCallCount).toBe(3);
+  });
+
+  it('should evaluate FINESS node only for non-PROBLEME_QUALITE_SOINS motifs', async () => {
+    let finessNodeCallCount = 0;
+
+    const modifyFinessNode = (node: DecisionNode): void => {
+      if (node.kind === 'leaf' && node.id === 'finess_referentiel') {
+        const originalAdd = node.add;
+        node.add = (ctx: SituationContext) => {
+          finessNodeCallCount += 1;
+          if (typeof originalAdd === 'function') {
+            return originalAdd(ctx);
+          }
+          return originalAdd;
+        };
+        return;
+      }
+      if (node.kind === 'branch') {
+        if (node.ifTrue) modifyFinessNode(node.ifTrue);
+        if (node.ifFalse) modifyFinessNode(node.ifFalse);
+      }
+      if (node.kind === 'switch') {
+        Object.values(node.cases).forEach((caseNode) => {
+          modifyFinessNode(caseNode);
+        });
+        if (node.default) modifyFinessNode(node.default);
+      }
+      if (node.kind === 'forEach') {
+        modifyFinessNode(node.forEach);
+        if (node.after) modifyFinessNode(node.after);
+      }
+      if (node.kind === 'leaf' && node.next) {
+        modifyFinessNode(node.next);
+      }
+    };
+
+    modifyFinessNode(rootNode);
+
+    const ctx: SituationContext = {
+      lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+      isMaltraitance: false,
+      motifsDeclaratifs: [
+        'PROBLEME_QUALITE_SOINS',
+        'PROBLEME_COMPORTEMENTAL',
+        'PROBLEME_QUALITE_SOINS',
+        'PROBLEME_FACTURATION',
+      ],
+    };
+
+    await runDecisionTree(ctx);
+
+    expect(finessNodeCallCount).toBe(2);
   });
 
   it('should throw error when lieu type is not supported (ex: lieu non géré)', async () => {
@@ -363,7 +494,7 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
     };
 
     await expect(runDecisionTree(ctx)).rejects.toThrow(
-      'Node non_domicile_lieu_de_survenue: Unsupported value "AUTRE_LIEU_NON_GERE" for required field "lieuType". Supported values: ETABLISSEMENT_SANTE, CABINET, ETABLISSEMENT_PERSONNES_AGEES, ETABLISSEMENT_HANDICAP, ETABLISSEMENT_SOCIAL, TRAJET, AUTRES_ETABLISSEMENTS',
+      'Node non_domicile_lieu_de_survenue: Unsupported value "AUTRE_LIEU_NON_GERE" for required field "lieuType". Supported values: ETABLISSEMENT_SANTE, ETABLISSEMENT_PERSONNES_AGEES, ETABLISSEMENT_HANDICAP, ETABLISSEMENT_SOCIAL, TRAJET, AUTRES_ETABLISSEMENTS',
     );
   });
 });
@@ -387,7 +518,6 @@ describe('runDecisionTree - required fields / validation', () => {
     const ctx: SituationContext = {
       lieuType: 'DOMICILE',
       misEnCauseType: 'PROFESSIONNEL_SANTE',
-      // misEnCauseTypePrecision is required but can be null
       misEnCauseTypePrecision: null,
     };
 

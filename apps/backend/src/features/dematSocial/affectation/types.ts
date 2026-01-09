@@ -1,9 +1,9 @@
 import type {
+  DsMotif,
   entiteTypes,
   LieuType,
   MisEnCauseType,
   MisEnCauseTypePrecisionUnion,
-  Motif,
 } from '@sirena/common/constants';
 
 export type EntiteAdminType = keyof typeof entiteTypes;
@@ -15,8 +15,7 @@ export type SituationContext = {
   misEnCauseType?: MisEnCauseType | null;
   misEnCauseTypePrecision?: MisEnCauseTypePrecisionUnion | null;
   isMaltraitance?: boolean;
-  motifsDeclaratifs?: Motif[];
-  motifs?: (Motif | string)[];
+  motifsDeclaratifs?: DsMotif[];
 };
 
 export type BaseNode = {
@@ -52,4 +51,16 @@ export type DecisionSwitch = BaseNode & {
   default?: DecisionNode;
 };
 
-export type DecisionNode = DecisionLeaf | DecisionBranch | DecisionSwitch;
+export type DecisionForEach = BaseNode & {
+  kind: 'forEach';
+  // Extracts the list to iterate from the context
+  iterate: (ctx: SituationContext) => unknown[];
+  // Creates a new context for each item (optional, defaults to using the original context)
+  mapContext?: (ctx: SituationContext, item: unknown, index: number) => SituationContext;
+  // The node to apply for each item
+  forEach: DecisionNode;
+  // Optional: node to apply after all iterations
+  after?: DecisionNode;
+};
+
+export type DecisionNode = DecisionLeaf | DecisionBranch | DecisionSwitch | DecisionForEach;
