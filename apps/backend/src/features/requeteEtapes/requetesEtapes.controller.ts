@@ -243,6 +243,12 @@ const app = factoryWithLogs
         });
       }
 
+      const requete = await getRequeteEntiteById(requeteEtape.requeteId, topEntiteId);
+
+      if (requete?.statutId === REQUETE_STATUT_TYPES.NOUVEAU) {
+        await updateStatusRequete(requeteEtape.requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+      }
+
       const updatedRequeteEtape = await updateRequeteEtapeStatut(id, {
         statutId: body.statutId,
       });
@@ -306,6 +312,12 @@ const app = factoryWithLogs
         throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
         });
+      }
+
+      const requete = await getRequeteEntiteById(requeteEtape.requeteId, topEntiteId);
+
+      if (requete?.statutId === REQUETE_STATUT_TYPES.NOUVEAU) {
+        await updateStatusRequete(requeteEtape.requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
       }
 
       const updatedRequeteEtape = await updateRequeteEtapeNom(id, {

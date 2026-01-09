@@ -273,7 +273,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
       for (const entiteId of entiteIdsToLinkToRequete) {
         await tx.requeteEntite.upsert({
           where: { requeteId_entiteId: { requeteId, entiteId } },
-          create: { requeteId, entiteId, statutId: REQUETE_STATUT_TYPES.EN_COURS },
+          create: { requeteId, entiteId, statutId: REQUETE_STATUT_TYPES.NOUVEAU },
           update: {},
         });
 
