@@ -179,7 +179,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockPrisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
-      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
       update: {},
     });
 
@@ -287,7 +287,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockPrisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
-      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
       update: {},
     });
   });
@@ -325,7 +325,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockPrisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
-      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
       update: {},
     });
   });
@@ -364,7 +364,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockPrisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
-      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
       update: {},
     });
   });
@@ -409,7 +409,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockPrisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
-      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
       update: {},
     });
   });
@@ -452,7 +452,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockPrisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'entite-1' } },
-      create: { requeteId: 'requete-1', entiteId: 'entite-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      create: { requeteId: 'requete-1', entiteId: 'entite-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
       update: {},
     });
     expect(mockTransaction.situationEntite.upsert).toHaveBeenCalledWith({
@@ -551,7 +551,7 @@ describe('assignEntitesToRequeteTask', () => {
     expect(mockPrisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
-      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.EN_COURS },
+      create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
       update: {},
     });
   });
