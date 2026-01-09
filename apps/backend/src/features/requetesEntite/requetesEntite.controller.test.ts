@@ -166,6 +166,7 @@ describe('RequetesEntite endpoints: /', () => {
           victimeInformeeCommentaire: '',
           veutGarderAnonymat: false,
           autrePersonnes: '',
+          aAutrePersonnes: null,
           declarantDeId: 'd1',
           lienAutrePrecision: '',
           lienVictimeId: '',

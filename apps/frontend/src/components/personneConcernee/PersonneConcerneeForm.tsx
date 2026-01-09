@@ -312,6 +312,20 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
             />
           </div>
 
+          <div className="fr-mb-3w">
+            <Checkbox
+              options={[
+                {
+                  label: personneConcerneeFieldMetadata.aAutrePersonnes.label,
+                  nativeInputProps: {
+                    checked: formData.aAutrePersonnes || false,
+                    onChange: handleCheckboxChange('aAutrePersonnes'),
+                  },
+                },
+              ]}
+            />
+          </div>
+
           <Input
             label={personneConcerneeFieldMetadata.autrePersonnes.label}
             textArea
