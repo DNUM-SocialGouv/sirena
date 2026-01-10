@@ -10,4 +10,6 @@ export interface SelectWithChildrenProps {
   label?: string;
   options: SelectWithChildrenOption[];
   id?: string;
+  disabled?: boolean;
+  readOnly?: boolean;
 }

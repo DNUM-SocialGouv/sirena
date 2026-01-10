@@ -852,10 +852,12 @@ const captureSituationState = async (tx: Prisma.TransactionClient, situationId: 
 };
 
 // Update Situation Affectation (traitementDesFaits)
+// topEntiteId is used to validate that the user can only modify affectations belonging to their entity
 const updateSituationEntites = async (
   tx: Prisma.TransactionClient,
   situationId: string,
   traitementDesFaits: SituationInput['traitementDesFaits'],
+  topEntiteId: string,
 ) => {
   const situation = await tx.situation.findUnique({
     where: { id: situationId },
@@ -876,26 +878,55 @@ const updateSituationEntites = async (
 
   const existingEntiteIds = new Set(existingSituationEntites.map((se) => se.entiteId));
 
-  // If no entities are sent, delete everything
-  if (!traitementDesFaits?.entites || traitementDesFaits.entites.length === 0) {
-    await tx.situationEntite.deleteMany({ where: { situationId } });
+  // Determine which existing entities belong to user's hierarchy vs other entities
+  const existingEntitesWithRoots = await Promise.all(
+    Array.from(existingEntiteIds).map(async (entiteId) => ({
+      entiteId,
+      rootId: await getEntiteAscendanteId(entiteId),
+    })),
+  );
 
-    return;
+  const existingUserEntiteIds = new Set(
+    existingEntitesWithRoots.filter((e) => e.rootId === topEntiteId).map((e) => e.entiteId),
+  );
+  const existingOtherEntiteIds = new Set(
+    existingEntitesWithRoots.filter((e) => e.rootId !== topEntiteId).map((e) => e.entiteId),
+  );
+
+  // Extract entity IDs from input, separating user's entities from others
+  const newUserEntiteIds = new Set<string>();
+  const newOtherEntiteIds = new Set<string>();
+
+  if (traitementDesFaits?.entites) {
+    for (const entite of traitementDesFaits.entites) {
+      const rootId = await getEntiteAscendanteId(entite.entiteId);
+      if (rootId === topEntiteId) {
+        // Entity belongs to user's hierarchy
+        newUserEntiteIds.add(entite.entiteId);
+        if (entite.directionServiceId) {
+          newUserEntiteIds.add(entite.directionServiceId);
+        }
+      } else {
+        // Entity belongs to another hierarchy - only allow adding NEW ones
+        if (!existingOtherEntiteIds.has(entite.entiteId)) {
+          newOtherEntiteIds.add(entite.entiteId);
+        }
+        if (entite.directionServiceId && !existingOtherEntiteIds.has(entite.directionServiceId)) {
+          newOtherEntiteIds.add(entite.directionServiceId);
+        }
+      }
+    }
   }
 
-  const newEntiteIds = new Set<string>();
-  traitementDesFaits.entites.forEach((entite) => {
-    newEntiteIds.add(entite.entiteId);
-    if (entite.directionServiceId) {
-      newEntiteIds.add(entite.directionServiceId);
-    }
-  });
-
   // Determine what is added / removed
-  const entitesToAdd = Array.from(newEntiteIds).filter((id) => !existingEntiteIds.has(id));
-  const entitesToRemove = Array.from(existingEntiteIds).filter((id) => !newEntiteIds.has(id));
+  // - User can add entities from any hierarchy
+  // - User can only remove entities from their own hierarchy
+  const userEntitesToAdd = Array.from(newUserEntiteIds).filter((id) => !existingUserEntiteIds.has(id));
+  const otherEntitesToAdd = Array.from(newOtherEntiteIds);
+  const entitesToAdd = [...userEntitesToAdd, ...otherEntitesToAdd];
+  const entitesToRemove = Array.from(existingUserEntiteIds).filter((id) => !newUserEntiteIds.has(id));
 
-  // Delete obsolete SituationEntite
+  // Delete obsolete SituationEntite (only from user's entity hierarchy)
   if (entitesToRemove.length > 0) {
     await tx.situationEntite.deleteMany({
       where: {
@@ -905,9 +936,10 @@ const updateSituationEntites = async (
     });
   }
 
-  // Add new SituationEntite (newEntiteIds)
+  // Add new SituationEntite (from user's hierarchy + new entities from other hierarchies)
+  const allEntitiesToUpsert = [...newUserEntiteIds, ...newOtherEntiteIds];
   await Promise.all(
-    Array.from(newEntiteIds).map((newEntiteId) =>
+    allEntitiesToUpsert.map((newEntiteId) =>
       tx.situationEntite.upsert({
         where: {
           situationId_entiteId: { situationId, entiteId: newEntiteId },
@@ -920,6 +952,12 @@ const updateSituationEntites = async (
       }),
     ),
   );
+
+  // Validate that at least one entity remains (user's + new other's + existing other's)
+  const remainingEntitiesCount = newUserEntiteIds.size + newOtherEntiteIds.size + existingOtherEntiteIds.size;
+  if (remainingEntitiesCount === 0) {
+    throw new Error('Au moins une entité administrative doit être affectée à la situation');
+  }
 
   // Update RequeteEntite (parent entities only)
   const entiteMereIdsToAdd = new Set<string>();
@@ -960,6 +998,7 @@ const updateExistingSituation = async (
   tx: Prisma.TransactionClient,
   existingSituation: { id: string; faits: unknown[] },
   situationData: SituationInput,
+  topEntiteId: string,
   changedById?: string,
 ) => {
   const before = changedById ? await captureSituationState(tx, existingSituation.id) : null;
@@ -983,7 +1022,7 @@ const updateExistingSituation = async (
     }
   }
 
-  await updateSituationEntites(tx, existingSituation.id, situationData.traitementDesFaits);
+  await updateSituationEntites(tx, existingSituation.id, situationData.traitementDesFaits, topEntiteId);
 
   if (changedById) {
     const after = await captureSituationState(tx, existingSituation.id);
@@ -1002,6 +1041,7 @@ const createNewSituation = async (
   tx: Prisma.TransactionClient,
   requeteId: string,
   situationData: SituationInput,
+  topEntiteId: string,
   changedById?: string,
 ): Promise<{ id: string }> => {
   const situationCreateData = mapSituationToPrismaCreate(situationData);
@@ -1019,7 +1059,7 @@ const createNewSituation = async (
     }
   }
 
-  await updateSituationEntites(tx, createdSituation.id, situationData.traitementDesFaits);
+  await updateSituationEntites(tx, createdSituation.id, situationData.traitementDesFaits, topEntiteId);
 
   if (changedById) {
     const after = await captureSituationState(tx, createdSituation.id);
@@ -1053,7 +1093,7 @@ export const createRequeteSituation = async (
   let createdSituationId: string | null = null;
 
   const _result = await prisma.$transaction(async (tx) => {
-    const newSituation = await createNewSituation(tx, requeteId, situationData, changedById);
+    const newSituation = await createNewSituation(tx, requeteId, situationData, entiteId, changedById);
     createdSituationId = newSituation.id;
 
     return tx.requete.findUnique({
@@ -1093,7 +1133,7 @@ export const updateRequeteSituation = async (
     if (!existingSituation) {
       throw new Error('Situation not found');
     }
-    await updateExistingSituation(tx, existingSituation, situationData, changedById);
+    await updateExistingSituation(tx, existingSituation, situationData, entiteId, changedById);
   });
 
   if (situationData.fait?.fileIds?.length) {
