@@ -10,6 +10,7 @@ export type JobDataMap = {
   'retry-import-requetes': {
     batchSize: number;
   };
+  'queue-unprocessed-files': Record<string, never>;
 };
 
 export type JobName = keyof JobDataMap;
@@ -21,6 +22,7 @@ export type JobHandler<N extends JobName = JobName> = {
   task: (job: Job<JobDataMap[N]>) => JobResult;
   repeatEveryMs: number;
   data: JobDataMap[N];
+  runOnStart?: boolean;
 };
 
 export type CronContext<J extends Job> = {

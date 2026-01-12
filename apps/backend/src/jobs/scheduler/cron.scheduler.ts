@@ -12,7 +12,7 @@ export async function startScheduler() {
     const runScheduler = async () => {
       const jobs = await cronQueue.getJobSchedulers();
 
-      for (const { name, repeatEveryMs, data } of jobHandlers) {
+      for (const { name, repeatEveryMs, data, runOnStart } of jobHandlers) {
         const job = jobs.find((j) => j.name === name);
         if (job) {
           await cronQueue.removeJobScheduler(job.key);
@@ -23,6 +23,13 @@ export async function startScheduler() {
           removeOnComplete: true,
         });
         logger.info(`[Scheduler] Scheduled ${name}`);
+
+        if (runOnStart) {
+          await cronQueue.add(name, data, {
+            removeOnComplete: true,
+          });
+          logger.info(`[Scheduler] Triggered immediate run for ${name}`);
+        }
       }
     };
 
