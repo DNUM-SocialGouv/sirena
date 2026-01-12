@@ -445,6 +445,7 @@ export const lieuTrajetPrecisionLabels: Record<LieuTrajetPrecision, string> = {
 };
 
 export const PROFESSION_DOMICILE_TYPE = {
+  SESSAD: 'SESSAD',
   PROF_LIBERAL: 'PROF_LIBERAL',
   HAD: 'HAD',
   SSAD: 'SSAD',
@@ -472,6 +473,7 @@ export const professionDomicileTypeLabels: Record<ProfessionDomicileType, string
   SAMSAH: 'SAMSAH',
   SAVS: "SAVS (Service d'accompagnement à la vie sociale)",
   SAEMO: "SAEMO (services d'action éducative en milieu ouvert)",
+  SESSAD: "Service d'éducation spéciale et de soins",
   SAED: "SAED (Services d'action éducative à domicile)",
   SPST: 'SPST',
   AIDE_MENAGERE: "Service d'aide ménagère",
