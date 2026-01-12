@@ -108,18 +108,16 @@ describe('buildSituationContextFromDemat', () => {
     }
   });
 
-  it('should extract motifsDeclaratifs and motifs', () => {
+  it('should extract motifsDeclaratifs', () => {
     const ctx = buildSituationContextFromDemat(makeSituation());
 
     expect(ctx.motifsDeclaratifs).toEqual(['PROBLEME_QUALITE_SOINS']);
-    expect(ctx.motifs).toEqual(['NON_RESPECT_DROITS']);
   });
 
   it('should handle empty or missing faits gracefully', () => {
     const ctx = buildSituationContextFromDemat(makeSituation({ faits: [] }));
 
     expect(ctx.isMaltraitance).toBe(false);
-    expect(ctx.motifs).toEqual([]);
     expect(ctx.motifsDeclaratifs).toEqual([]);
   });
 

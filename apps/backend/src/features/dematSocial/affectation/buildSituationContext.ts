@@ -1,9 +1,9 @@
 import {
+  type DsMotif,
   type LieuType,
   MALTRAITANCE_TYPE,
   type MisEnCauseType,
   type MisEnCauseTypePrecisionUnion,
-  type Motif,
 } from '@sirena/common/constants';
 import type { Prisma } from '../../../../generated/client';
 import type { SituationContext } from './types';
@@ -83,11 +83,9 @@ export function buildSituationContextFromDemat(situation: SituationWithLieu): Si
   });
 
   ctx.motifsDeclaratifs =
-    situation?.faits?.flatMap((fait) => fait?.motifsDeclaratifs?.map((motif) => motif?.motifDeclaratif?.id as Motif)) ??
-    [];
-
-  ctx.motifs =
-    situation?.faits?.flatMap((fait) => fait?.motifs?.map((motif) => motif?.motif?.id as Motif | string)) ?? [];
+    situation?.faits?.flatMap((fait) =>
+      fait?.motifsDeclaratifs?.map((motif) => motif?.motifDeclaratif?.id as DsMotif),
+    ) ?? [];
 
   return ctx;
 }
