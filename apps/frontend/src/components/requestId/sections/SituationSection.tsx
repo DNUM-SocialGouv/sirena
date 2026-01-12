@@ -74,7 +74,11 @@ const Affectations = ({ situation }: { situation?: SituationData | null }) => {
         acc[curr.entiteName] = [];
       }
       if (curr.directionServiceName) {
-        acc[curr.entiteName].push(curr.directionServiceName);
+        let name = curr.directionServiceName;
+        if (curr.chain.length > 2) {
+          name += ` (${curr.chain[curr.chain.length - 2].label})`;
+        }
+        acc[curr.entiteName].push(name);
       }
       return acc;
     },
@@ -211,7 +215,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
           <div className="fr-col-auto">
             <p className={fr.cx('fr-mb-0')}>
               <span className={fr.cx('fr-icon-error-warning-line', 'fr-icon--sm')} aria-hidden="true" />
-              <span className="fr-hidden fr-sr-only">Identité de la personne concernée :</span>{' '}
+              <span className="fr-sr-only">Identité de la personne concernée :</span>{' '}
               {situation?.misEnCause?.commentaire && `${situation.misEnCause.commentaire} - `}
               {situation?.misEnCause?.misEnCauseType?.label}
             </p>
@@ -222,7 +226,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
           <div className="fr-col-auto">
             <p className={fr.cx('fr-mb-0')}>
               <span className={fr.cx('fr-icon-map-pin-2-line', 'fr-icon--sm')} aria-hidden="true" />
-              <span className="fr-hidden fr-sr-only"> Lieu de survenue des faits :</span> {getLieuDeSurvenue(situation)}
+              <span className="fr-sr-only"> Lieu de survenue des faits :</span> {getLieuDeSurvenue(situation)}
             </p>
           </div>
         )}
@@ -254,6 +258,11 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
             {situation?.misEnCause?.misEnCauseTypePrecision && (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Précision :</span> {situation.misEnCause.misEnCauseTypePrecision.label}
+              </p>
+            )}
+            {situation?.misEnCause?.autrePrecision && (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Précision supplémentaire :</span> {situation.misEnCause.autrePrecision}
               </p>
             )}
             {situation?.misEnCause?.rpps && (
@@ -333,21 +342,25 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
           </>
         )}
 
-        {fait?.motifs && fait.motifs.length > 0 && (
+        {((fait?.motifs && fait.motifs.length > 0) || receptionType === RECEPTION_TYPE.FORMULAIRE) && (
           <>
             <SectionTitle>Motifs qualifiés</SectionTitle>
             <ul className={fr.cx('fr-mb-3w')}>
-              {Array.from(groupMotifsByParent(fait.motifs).entries()).map(
-                ([parentValue, { parentLabel, children }]) => (
-                  <li key={parentValue}>
-                    {parentLabel}
-                    <ul>
-                      {children.map((childLabel) => (
-                        <li key={childLabel}>{childLabel}</li>
-                      ))}
-                    </ul>
-                  </li>
-                ),
+              {fait.motifs.length ? (
+                Array.from(groupMotifsByParent(fait.motifs).entries()).map(
+                  ([parentValue, { parentLabel, children }]) => (
+                    <li key={parentValue}>
+                      {parentLabel}
+                      <ul>
+                        {children.map((childLabel) => (
+                          <li key={childLabel}>{childLabel}</li>
+                        ))}
+                      </ul>
+                    </li>
+                  ),
+                )
+              ) : (
+                <li>Motif à renseigner</li>
               )}
             </ul>
           </>

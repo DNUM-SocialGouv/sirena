@@ -58,7 +58,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
     return (
       <div className="fr-grid-row fr-grid-row--gutters">
         {fullName && (
-          <ContactInfo icon="fr-icon-user-line" ariaLabel="Identité">
+          <ContactInfo icon="fr-icon-user-line" ariaLabel="Identité nom prénom">
             {fullName}
           </ContactInfo>
         )}
