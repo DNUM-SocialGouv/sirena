@@ -77,6 +77,10 @@ fragment ChampFragment on Champ {
       ...FileFragment
     }
   }
+  # ... on FinessChamp {
+  #   data
+  #   stringValue
+  # }
   ... on AddressChamp {
     address {
       ...AddressFragment
@@ -136,6 +140,9 @@ query getDossier($dossierNumber: Int!) {
     state
     dateDerniereModification
     dateDepot
+    archived
+    # mandataireFirstName
+    # mandataireLastName
 
     usager {
       email
@@ -147,6 +154,7 @@ query getDossier($dossierNumber: Int!) {
         nom
         prenom
         civilite
+        # email
       }
     }
 

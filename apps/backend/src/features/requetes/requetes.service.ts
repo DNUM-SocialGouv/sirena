@@ -165,6 +165,7 @@ export const createRequeteFromDematSocial = async ({
           victimeInformeeCommentaire: participant.victimeInformeeCommentaire ?? '',
           veutGarderAnonymat: participant.veutGarderAnonymat ?? null,
           autrePersonnes: participant.autrePersonnes ?? '',
+          aAutrePersonnes: participant.aAutrePersonnes ?? null,
           age: participant.ageId ? { connect: { id: participant.ageId } } : undefined,
           participantDe: { connect: { id: requete.id } },
         },

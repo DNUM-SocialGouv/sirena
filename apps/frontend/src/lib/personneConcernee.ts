@@ -14,6 +14,7 @@ export interface PersonneConcerneeData {
   veutGarderAnonymat?: boolean;
   estVictimeInformee?: boolean;
   autrePersonnes?: string;
+  aAutrePersonnes?: boolean;
   commentaire?: string;
 }
 
@@ -57,6 +58,7 @@ export function formatPersonneConcerneeToServer(data: PersonneConcerneeData) {
     veutGarderAnonymat: data.veutGarderAnonymat,
     estVictimeInformee: data.estVictimeInformee,
     autrePersonnes: data.autrePersonnes,
+    aAutrePersonnes: data.aAutrePersonnes,
     commentaire: data.commentaire,
   };
 }

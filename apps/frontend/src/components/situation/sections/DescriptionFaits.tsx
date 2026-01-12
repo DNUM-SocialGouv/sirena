@@ -2,6 +2,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import {
   CONSEQUENCE,
   consequenceLabels,
+  MALTRAITANCEQUALIFIED_TYPE,
   type MaltraitanceQualifiedType,
   MOTIFS_HIERARCHICAL_DATA,
   type Motif,
@@ -20,18 +21,22 @@ type DescriptionFaitsProps = {
 };
 
 export function DescriptionFaits({ formData, setFormData, receptionType }: DescriptionFaitsProps) {
+  const ignoredMotifs: string[] = [MALTRAITANCEQUALIFIED_TYPE.NON];
   const motifs = [
-    ...(formData.fait?.maltraitanceTypes || []).map((maltraitance) => {
-      if (maltraitance in maltraitanceQualifiedLabels) {
-        return maltraitanceQualifiedLabels[maltraitance as MaltraitanceQualifiedType];
+    ...(formData.fait?.maltraitanceTypes || []).flatMap((maltraitance) => {
+      if (ignoredMotifs.includes(maltraitance)) {
+        return [];
       }
-      return maltraitance;
+      if (maltraitance in maltraitanceQualifiedLabels) {
+        return [maltraitanceQualifiedLabels[maltraitance as MaltraitanceQualifiedType]];
+      }
+      return [];
     }),
-    ...(formData.fait?.motifsDeclaratifs || []).map((motif) => {
+    ...(formData.fait?.motifsDeclaratifs || []).flatMap((motif) => {
       if (motif in motifLabels) {
         return motifLabels[motif as Motif];
       }
-      return motif;
+      return [];
     }),
   ];
 
