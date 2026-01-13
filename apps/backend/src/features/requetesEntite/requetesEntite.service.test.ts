@@ -1900,6 +1900,7 @@ describe('requetesEntite.service', () => {
         entiteName: 'Root Entity',
         directionServiceId: undefined,
         directionServiceName: undefined,
+        chain: [{ id: 'root1', nomComplet: 'Root Entity' }],
       });
       expect(getEntiteChain).toHaveBeenCalledWith('ent1');
     });
@@ -1932,6 +1933,10 @@ describe('requetesEntite.service', () => {
         entiteName: 'Root Entity',
         directionServiceId: 'dir1',
         directionServiceName: 'Direction Service',
+        chain: [
+          { id: 'root1', nomComplet: 'Root Entity' },
+          { id: 'dir1', nomComplet: 'Direction Service' },
+        ],
       });
       expect(getEntiteChain).toHaveBeenCalledWith('dir1');
     });
@@ -1994,12 +1999,17 @@ describe('requetesEntite.service', () => {
         entiteName: 'Root 1',
         directionServiceId: undefined,
         directionServiceName: undefined,
+        chain: [{ id: 'root1', nomComplet: 'Root 1' }],
       });
       expect(result.traitementDesFaits?.entites?.[1]).toEqual({
         entiteId: 'root1',
         entiteName: 'Root 1',
         directionServiceId: 'dir1',
         directionServiceName: 'Direction 1',
+        chain: [
+          { id: 'root1', nomComplet: 'Root 1' },
+          { id: 'dir1', nomComplet: 'Direction 1' },
+        ],
       });
     });
 
@@ -2037,6 +2047,10 @@ describe('requetesEntite.service', () => {
         entiteName: 'Root 1',
         directionServiceId: 'dir1',
         directionServiceName: 'Direction 1',
+        chain: [
+          { id: 'root1', nomComplet: 'Root 1' },
+          { id: 'dir1', nomComplet: 'Direction 1' },
+        ],
       });
     });
 

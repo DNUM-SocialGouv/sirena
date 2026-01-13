@@ -289,6 +289,7 @@ export const LIEU_ETABLISSEMENT_SANTE_PRECISION = {
   SSR_SMR: 'SSR_SMR',
   USLD: 'USLD',
   BAPU: 'BAPU',
+  CMP: 'CMP',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -303,6 +304,7 @@ export const lieuEtablissementSantePrecisionLabels: Record<LieuEtablissementSant
   SSR_SMR: 'SSR/SMR',
   USLD: 'USLD',
   BAPU: "BAPU (Bureaux d'aide psychologique universitaires)",
+  CMP: 'CMP (Centres médico-psychologiques)',
   AUTRE: 'Autre',
 };
 
@@ -443,11 +445,10 @@ export const lieuTrajetPrecisionLabels: Record<LieuTrajetPrecision, string> = {
 };
 
 export const PROFESSION_DOMICILE_TYPE = {
+  SESSAD: 'SESSAD',
   PROF_LIBERAL: 'PROF_LIBERAL',
   HAD: 'HAD',
-  SESSAD: 'SESSAD',
   SSAD: 'SSAD',
-  SAVS: 'SAVS',
   SPST: 'SPST',
   SAMSAH: 'SAMSAH',
   AIDE_MENAGERE: 'AIDE_MENAGERE',
@@ -469,11 +470,10 @@ export const professionDomicileTypeLabels: Record<ProfessionDomicileType, string
   HAD: 'Hospitalisation à domicile',
   SSAD: "Services de soins infirmiers ou d'aide à domicile (SAAD, SSIAD, SPASAD)",
   SAMSAH: 'SAMSAH',
-  SAVS: "SAVS (Service d'accompagnement à la vie sociale)",
   SAEMO: "SAEMO (services d'action éducative en milieu ouvert)",
+  SESSAD: "Service d'éducation spéciale et de soins",
   SAED: "SAED (Services d'action éducative à domicile)",
   SPST: 'SPST',
-  SESSAD: "Service d'éducation spéciale et de soins",
   AIDE_MENAGERE: "Service d'aide ménagère",
   REPAS: 'Service de repas',
   TRAITEMENT: 'Traitements spécialisés',

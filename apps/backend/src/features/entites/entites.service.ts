@@ -76,6 +76,7 @@ export async function* getEntiteChainGenerator(entiteId: string) {
         id: true,
         nomComplet: true,
         entiteMereId: true,
+        label: true,
       },
     });
 
@@ -88,7 +89,7 @@ export async function* getEntiteChainGenerator(entiteId: string) {
 }
 
 export const getEntiteChain = async (entiteId: string) => {
-  const results: { id: string; nomComplet: string }[] = [];
+  const results: EntiteChain[] = [];
 
   for await (const entite of getEntiteChainGenerator(entiteId)) {
     results.push(entite);

@@ -135,7 +135,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
               <>
                 <div className="fr-col-12">
                   <Input
-                    label="Nom de l'adresse"
+                    label="Adresse"
                     nativeInputProps={{
                       value: formData.lieuDeSurvenue?.adresse?.label || '',
                       onChange: (e) =>

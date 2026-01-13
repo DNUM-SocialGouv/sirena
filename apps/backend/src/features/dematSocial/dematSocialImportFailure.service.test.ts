@@ -6,7 +6,6 @@ import {
   getFailedDossierNumbers,
   getUnresolvedFailures,
   type ImportFailureErrorType,
-  type ImportFailureResult,
   markFailureAsResolved,
 } from './dematSocialImportFailure.service';
 

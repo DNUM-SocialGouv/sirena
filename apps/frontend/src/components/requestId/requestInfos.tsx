@@ -53,7 +53,7 @@ export const RequestInfos = ({ requestId, fullName, motifs, statutId, prioriteId
         </div>
         {fullName && (
           <div className={style['legend-display']}>
-            <ContactInfo icon="fr-icon-user-line" ariaLabel="Identité">
+            <ContactInfo icon="fr-icon-user-line" ariaLabel="Identité - personne concernée">
               {fullName}
             </ContactInfo>
           </div>
@@ -61,7 +61,7 @@ export const RequestInfos = ({ requestId, fullName, motifs, statutId, prioriteId
         {motifs.length > 0 && (
           <div className={style['legend-display']}>
             {motifs.map((motif) => (
-              <ContactInfo key={motif} icon="fr-icon-todo-line" ariaLabel={motif}>
+              <ContactInfo key={motif} icon="fr-icon-todo-line" ariaLabel="Motif de la requête">
                 {motif}
               </ContactInfo>
             ))}

@@ -111,6 +111,7 @@ export const enrichSituationWithTraitementDesFaits = async (situation: Situation
     directionServiceId?: string;
     entiteName: string;
     directionServiceName?: string;
+    chain: Array<{ id: string; nomComplet: string; label: string }>;
   }> = [];
   const seen = new Set<string>(); // avoid duplicates
 
@@ -139,6 +140,7 @@ export const enrichSituationWithTraitementDesFaits = async (situation: Situation
       entiteName: rootName,
       directionServiceId,
       directionServiceName: directionName,
+      chain,
     });
   }
 
