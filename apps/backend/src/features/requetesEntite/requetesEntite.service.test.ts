@@ -195,6 +195,11 @@ describe('requetesEntite.service', () => {
                       },
                     },
                   },
+                  situationEntites: {
+                    include: {
+                      entite: true,
+                    },
+                  },
                 },
               },
             },
@@ -279,6 +284,11 @@ describe('requetesEntite.service', () => {
                       },
                     },
                   },
+                  situationEntites: {
+                    include: {
+                      entite: true,
+                    },
+                  },
                 },
               },
             },
@@ -361,6 +371,11 @@ describe('requetesEntite.service', () => {
                           misEnCauseType: true,
                         },
                       },
+                    },
+                  },
+                  situationEntites: {
+                    include: {
+                      entite: true,
                     },
                   },
                 },

@@ -186,6 +186,11 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
                     transportType: true,
                   },
                 },
+                situationEntites: {
+                  include: {
+                    entite: true,
+                  },
+                },
               },
             },
           },

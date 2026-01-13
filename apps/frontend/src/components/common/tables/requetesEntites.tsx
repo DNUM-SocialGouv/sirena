@@ -6,10 +6,11 @@ import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@si
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
 import { RequetePrioriteTag, RequeteStatutTag } from '../RequeteStatutTag';
-import { renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
+import { renderAffectationCell, renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
 
 type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number] & {
   id: string;
@@ -62,6 +63,9 @@ export function RequetesEntite() {
   const navigate = useNavigate({ from: '/home' });
   const queryClient = useQueryClient();
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { data: profile } = useProfile();
+  const userTopEntiteId = profile?.topEntiteId;
+  const userEntiteId = profile?.entiteId;
 
   const handleUpdate = useCallback(() => {
     // Debounce multiple rapid SSE events to prevent excessive refreshes
@@ -160,6 +164,7 @@ export function RequetesEntite() {
     { key: 'requete.receptionDate', label: 'Réception', isSortable: true },
     { key: 'custom:priorite', label: 'Priorité', isSortable: true },
     { key: 'custom:personne', label: 'Personne Concernée', isSortable: true },
+    { key: 'custom:affectation', label: 'Affectation' },
     { key: 'custom:motifs', label: 'Motifs' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },
     { key: 'custom:action', label: 'Action', isFixedRight: true },
@@ -196,6 +201,8 @@ export function RequetesEntite() {
       }
       return '-';
     },
+    'custom:affectation': (row) =>
+      userTopEntiteId ? renderAffectationCell(row, userTopEntiteId, userEntiteId ?? undefined) : '-',
     'custom:motifs': renderMotifsCell,
     'custom:misEnCause': renderMisEnCauseCell,
     'custom:action': (row) => (

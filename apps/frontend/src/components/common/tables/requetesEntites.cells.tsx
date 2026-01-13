@@ -210,3 +210,137 @@ export function renderMisEnCauseCell(row: RequeteEntiteRow): ReactNode {
     </ul>
   );
 }
+
+type AffectationData = {
+  entiteId: string;
+  entiteName: string;
+  services: Array<{ id: string; name: string; parentName?: string }>;
+};
+
+function extractAffectations(row: RequeteEntiteRow, userTopEntiteId: string): AffectationData[] {
+  const situations = row.requete?.situations || [];
+  const affectationsMap = new Map<string, AffectationData>();
+
+  for (const situation of situations) {
+    const situationEntites = situation?.situationEntites || [];
+
+    for (const situationEntite of situationEntites) {
+      const entite = situationEntite?.entite;
+      if (!entite) continue;
+
+      const isRootEntite = entite.entiteMereId === null;
+
+      if (isRootEntite) {
+        if (entite.id !== userTopEntiteId) continue;
+
+        if (!affectationsMap.has(entite.id)) {
+          affectationsMap.set(entite.id, {
+            entiteId: entite.id,
+            entiteName: entite.label || entite.nomComplet,
+            services: [],
+          });
+        }
+      } else {
+        let parentEntite: AffectationData | undefined;
+
+        const parentMatch = situationEntites.find((se) => {
+          const parent = se?.entite;
+          return parent && parent.id === entite.entiteMereId;
+        });
+
+        const parentEntiteName = parentMatch?.entite?.label || parentMatch?.entite?.nomComplet || '';
+        let grandParentName: string | undefined;
+
+        if (parentMatch?.entite?.entiteMereId) {
+          grandParentName = parentEntiteName;
+        }
+
+        let currentEntiteId: string | null = entite.entiteMereId;
+        let belongsToUserEntity = false;
+        const checkedIds = new Set<string>();
+
+        while (currentEntiteId && !checkedIds.has(currentEntiteId)) {
+          checkedIds.add(currentEntiteId);
+          if (currentEntiteId === userTopEntiteId) {
+            belongsToUserEntity = true;
+            break;
+          }
+          const parentSe = situationEntites.find((se) => se?.entite?.id === currentEntiteId);
+          currentEntiteId = parentSe?.entite?.entiteMereId || null;
+        }
+
+        if (!belongsToUserEntity) continue;
+
+        if (!affectationsMap.has(userTopEntiteId)) {
+          const userEntiteSe = situationEntites.find(
+            (se) => se?.entite?.id === userTopEntiteId && se?.entite?.entiteMereId === null,
+          );
+          affectationsMap.set(userTopEntiteId, {
+            entiteId: userTopEntiteId,
+            entiteName: userEntiteSe?.entite?.label || userEntiteSe?.entite?.nomComplet || '',
+            services: [],
+          });
+        }
+
+        parentEntite = affectationsMap.get(userTopEntiteId);
+        if (parentEntite) {
+          const serviceExists = parentEntite.services.some((s) => s.id === entite.id);
+          if (!serviceExists) {
+            parentEntite.services.push({
+              id: entite.id,
+              name: entite.label || entite.nomComplet,
+              parentName: grandParentName,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return Array.from(affectationsMap.values());
+}
+
+function sortAffectationServices(
+  services: Array<{ id: string; name: string; parentName?: string }>,
+  userEntiteId?: string,
+): Array<{ id: string; name: string; parentName?: string }> {
+  return [...services].sort((a, b) => {
+    if (userEntiteId) {
+      if (a.id === userEntiteId) return -1;
+      if (b.id === userEntiteId) return 1;
+    }
+    return a.name.localeCompare(b.name, 'fr');
+  });
+}
+
+export function renderAffectationCell(
+  row: RequeteEntiteRow,
+  userTopEntiteId: string,
+  userEntiteId?: string,
+): ReactNode {
+  const affectations = extractAffectations(row, userTopEntiteId);
+
+  if (affectations.length === 0) {
+    return '-';
+  }
+
+  const allItems: string[] = [];
+
+  for (const affectation of affectations) {
+    const sortedServices = sortAffectationServices(affectation.services, userEntiteId);
+
+    if (sortedServices.length === 0) {
+      allItems.push(affectation.entiteName);
+    } else {
+      for (const service of sortedServices) {
+        allItems.push(service.parentName ? `${service.name} (${service.parentName})` : service.name);
+      }
+    }
+  }
+
+  if (allItems.length === 0) {
+    return '-';
+  }
+
+  return <span>{allItems.join(',\u00A0')}</span>;
+}
