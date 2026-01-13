@@ -87,17 +87,13 @@ export const getDemandeur = (d: DemandeurData): Demandeur => ({
         ? (d.civilite.toUpperCase() as DematSocialCivilite)
         : null
       : null,
-  // email: d?.__typename === 'PersonnePhysique' ? d.email : '',
-  email: '',
+  email: d?.__typename === 'PersonnePhysique' ? (d.email ?? '') : '',
 });
 
-export const getMandataire = (_d: DossierData, email: string): Mandataire => ({
-  nom: '',
-  prenom: '',
-  // email,
-  // nom: d?.mandataireFirstName || '',
-  // prenom: d?.mandataireLastName || '',
+export const getMandataire = (d: DossierData, email: string): Mandataire => ({
   email,
+  nom: d?.mandataireFirstName || '',
+  prenom: d?.mandataireLastName || '',
 });
 
 /**
@@ -326,7 +322,7 @@ export const importRequetes = async (createdSince?: Date) => {
   for (const dossier of dossiers) {
     // legacy, we don't support
     // TODO: remove after some time
-    if (dossier.number <= 271846) {
+    if (dossier.number <= 280843) {
       skippedCount += 1;
       continue;
     }
