@@ -232,25 +232,26 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
           </div>
         )}
 
+        <div className="fr-col-12">
+          <div className="fr-col-12">
+            <Input
+              label="Précisions supplémentaires"
+              textArea
+              nativeTextAreaProps={{
+                value: formData.misEnCause?.autrePrecision || '',
+                onChange: (e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    misEnCause: { ...prev.misEnCause, autrePrecision: e.target.value },
+                  })),
+                rows: 3,
+              }}
+            />
+          </div>
+        </div>
+
         {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE && (
           <>
-            <div className="fr-col-12">
-              <div className="fr-col-12">
-                <Input
-                  label="Précisions supplémentaires"
-                  textArea
-                  nativeTextAreaProps={{
-                    value: formData.misEnCause?.autrePrecision || '',
-                    onChange: (e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        misEnCause: { ...prev.misEnCause, autrePrecision: e.target.value },
-                      })),
-                    rows: 3,
-                  }}
-                />
-              </div>
-            </div>
             <div className="fr-col-12 fr-col-md-6">
               <PractitionerSearchField
                 value={formData.misEnCause?.rpps || ''}
