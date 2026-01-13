@@ -81,6 +81,7 @@ model Entite {
   email              String @default("")
   emailDomain        String @default("")
   organizationalUnit String @default("")
+  isActive           Boolean @default(false)
 
   services Entite[] @relation("EntiteMereToServices")
 
