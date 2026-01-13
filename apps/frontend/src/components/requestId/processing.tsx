@@ -33,7 +33,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const closeRequeteButtonRef = useRef<HTMLButtonElement>(null);
   const queryProcessingSteps = useProcessingSteps(requestId || '');
   const { canEdit } = useCanEdit({ requeteId: requestId });
-  const { data: { directions = [] } = {} } = useRequeteOtherEntitiesAffected(requestId);
+  const { data: { subAdministrativeEntites = [] } = {} } = useRequeteOtherEntitiesAffected(requestId);
 
   const isRequestClosed = useMemo(() => {
     return queryProcessingSteps.data?.data?.some((step) => step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE);
@@ -122,19 +122,22 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
               )}
               <div className="fr-grid-row fr-grid-row--middle fr-mb-3w">
                 <div className="fr-col">
-                  <span className="fr-mr-2w">
-                    {requestQuery.data && (
-                      <EntiteTag
-                        entiteTypeId={requestQuery.data?.entite.entiteTypeId as EntiteType}
-                        label={requestQuery.data?.entite.nomComplet}
-                      />
-                    )}
-                  </span>
-                  {directions.map((entite) => (
-                    <span className="fr-mr-2w" key={entite.id}>
-                      {entite.label}
-                    </span>
-                  ))}
+                  {requestQuery.data && (
+                    <EntiteTag
+                      entiteTypeId={requestQuery.data?.entite.entiteTypeId as EntiteType}
+                      label={requestQuery.data?.entite.nomComplet}
+                    >
+                      {subAdministrativeEntites.length > 0 && (
+                        <div className={`${styles['entite-sub-list']} fr-text--xs fr-text--grey`}>
+                          {subAdministrativeEntites.map((entite) => (
+                            <span className={styles['entite-sub-item']} key={entite.directionServiceId}>
+                              {entite.directionServiceName}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </EntiteTag>
+                  )}
                 </div>
                 {requestId && canEdit && !requestQuery.error && (
                   <div className="fr-col-auto">

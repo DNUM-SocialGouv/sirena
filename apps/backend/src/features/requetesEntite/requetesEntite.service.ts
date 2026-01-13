@@ -19,7 +19,7 @@ import { sortObject } from '@/helpers/prisma/sort';
 import { createSearchConditionsForRequeteEntite } from '@/helpers/search';
 import { sseEventManager } from '@/helpers/sse';
 import { type Prisma, prisma } from '@/libs/prisma';
-import { getEntiteAscendanteId, getEntiteChain } from '../entites/entites.service';
+import { buildEntitesTraitement, getEntiteAscendanteId } from '../entites/entites.service';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service';
 import {
   mapDeclarantToPrismaCreate,
@@ -106,43 +106,9 @@ type SituationWithIncludes = Prisma.SituationGetPayload<{
 }>;
 
 export const enrichSituationWithTraitementDesFaits = async (situation: SituationWithIncludes) => {
-  const entitesTraitement: Array<{
-    entiteId: string;
-    directionServiceId?: string;
-    entiteName: string;
-    directionServiceName?: string;
-    chain: Array<{ id: string; nomComplet: string; label: string }>;
-  }> = [];
-  const seen = new Set<string>(); // avoid duplicates
-
-  for (const situationEntite of situation.situationEntites) {
-    const entite = situationEntite.entite;
-
-    const chain = await getEntiteChain(entite.id);
-    if (!chain.length) continue;
-
-    const rootId = chain[0].id;
-    const rootName = chain[0].nomComplet;
-    const isRoot = entite.entiteMereId === null;
-
-    const entiteId = rootId;
-    const directionServiceId = isRoot ? undefined : entite.id;
-    const directionName = isRoot ? undefined : entite.nomComplet;
-
-    const key = `${entiteId}::${directionServiceId ?? 'null'}`;
-    if (seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
-
-    entitesTraitement.push({
-      entiteId,
-      entiteName: rootName,
-      directionServiceId,
-      directionServiceName: directionName,
-      chain,
-    });
-  }
+  const entitesTraitement = await buildEntitesTraitement(
+    situation.situationEntites.map((situationEntite) => situationEntite.entite),
+  );
 
   return {
     ...situation,

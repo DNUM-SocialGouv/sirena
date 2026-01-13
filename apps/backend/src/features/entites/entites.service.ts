@@ -1,6 +1,6 @@
 import type { Pagination } from '@sirena/backend-utils/types';
 import { type Entite, prisma } from '@/libs/prisma';
-import type { EntiteChain } from './entites.type';
+import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type';
 
 export const getEntiteForUser = async (organizationalUnit: string | null, email: string) => {
   if (organizationalUnit) {
@@ -217,4 +217,67 @@ export const getDirectionsFromRequeteEntiteId = async (requeteId: string, entite
       label: true,
     },
   });
+};
+
+export const getDirectionsServicesFromRequeteEntiteId = async (
+  requeteId: string,
+  entiteId: string,
+): Promise<EntiteTraitement[]> => {
+  const situationEntites = await prisma.situationEntite.findMany({
+    where: {
+      situation: {
+        requeteId,
+      },
+    },
+    select: {
+      entite: {
+        select: {
+          id: true,
+          nomComplet: true,
+          entiteMereId: true,
+        },
+      },
+    },
+  });
+
+  const entitesTraitement = await buildEntitesTraitement(
+    situationEntites.map((situationEntite) => situationEntite.entite),
+  );
+
+  return entitesTraitement.filter(
+    (entiteTraitement) => entiteTraitement.entiteId === entiteId && entiteTraitement.directionServiceId !== undefined,
+  );
+};
+
+export const buildEntitesTraitement = async (entites: EntiteTraitementInput[]): Promise<EntiteTraitement[]> => {
+  const entitesTraitement: EntiteTraitement[] = [];
+  const seen = new Set<string>();
+
+  for (const entite of entites) {
+    const chain = await getEntiteChain(entite.id);
+    if (!chain.length) continue;
+
+    const root = chain[0];
+    const isRoot = entite.entiteMereId === null;
+
+    const entiteId = root.id;
+    const directionServiceId = isRoot ? undefined : entite.id;
+    const directionName = isRoot ? undefined : entite.nomComplet;
+
+    const key = `${entiteId}::${directionServiceId ?? 'null'}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+
+    entitesTraitement.push({
+      entiteId,
+      entiteName: root.nomComplet,
+      directionServiceId,
+      directionServiceName: directionName,
+      chain,
+    });
+  }
+
+  return entitesTraitement;
 };

@@ -34,16 +34,27 @@ const OtherEntiteAffectedSchema = z
     }),
   );
 
-const DirectionSchema = EntiteSchema.pick({
+const SubAdministrativeEntitesSchema = EntiteSchema.pick({
   entiteMereId: true,
   id: true,
   nomComplet: true,
   label: true,
-});
+}).merge(
+  z.object({
+    chain: z.array(
+      z.object({
+        entiteMereId: z.string().nullable(),
+        id: z.string(),
+        label: z.string(),
+        nomComplet: z.string(),
+      }),
+    ),
+  }),
+);
 
 export const GetOtherEntitesAffectedResponseSchema = z.object({
   otherEntites: z.array(OtherEntiteAffectedSchema),
-  directions: z.array(DirectionSchema),
+  subAdministrativeEntites: z.array(SubAdministrativeEntitesSchema),
 });
 
 const receptionDate = z.preprocess((val) => (val === '' ? null : val), z.string().date().nullable().optional());
