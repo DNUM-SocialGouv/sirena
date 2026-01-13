@@ -16,14 +16,14 @@ export interface ReplyTo {
 }
 
 export interface TipimailAttachment {
-  content: string; // Content is a base64 encoded string
+  content: string;
   filename: string;
   contentType: string;
 }
 
 export interface TipimailImageInput {
   filename: string;
-  content: string; // Content is a base64 encoded string
+  content: string;
   mimeType: string;
   contentId?: string;
 }
@@ -49,10 +49,11 @@ export interface TipimailEmailMessage {
   html?: string;
   text: string;
   attachments?: TipimailAttachment[];
+
   images?: Array<{
     content: string;
     filename: string;
-    type: string;
+    type?: string;
     contentId?: string;
   }>;
 }
@@ -90,7 +91,7 @@ export interface SendTipimailOptions {
   substitutions?: TipimailSubstitution[];
 
   images?: TipimailImageInput[];
-  attachments?: TipimailAttachment[]; // Content is a base64 encoded string
+  attachments?: TipimailAttachment[];
 
   apiKey?: string;
 }
@@ -225,8 +226,8 @@ function createTipimailRequest(options: SendTipimailOptions): TipimailSendReques
     ...(options.images?.length
       ? {
           images: options.images.map((img) => ({
-            filename: img.filename,
             content: img.content,
+            filename: img.filename,
             type: img.mimeType,
             ...(img.contentId ? { contentId: img.contentId } : {}),
           })),

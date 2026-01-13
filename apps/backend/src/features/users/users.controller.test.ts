@@ -1,18 +1,23 @@
-import { ROLES } from '@sirena/common/constants';
+import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
 import UsersController from './users.controller';
+import { sendUserActivationEmail } from './users.notification.service';
 import { getUserById, getUsers, patchUser } from './users.service';
 
 vi.mock('./users.service', () => ({
   getUsers: vi.fn(),
   getUserById: vi.fn(),
   patchUser: vi.fn(),
+}));
+
+vi.mock('./users.notification.service', () => ({
+  sendUserActivationEmail: vi.fn(),
 }));
 
 vi.mock('@/config/env', () => ({
@@ -80,7 +85,7 @@ describe('Users endpoints: /users', () => {
       updatedAt: new Date(0),
       roleId: 'role1',
       pcData: {},
-      statutId: 'ACTIF',
+      statutId: STATUT_TYPES.ACTIF,
       entiteId: null,
       role: { id: ROLES.NATIONAL_STEERING, label: 'Admin' },
     },
@@ -95,7 +100,7 @@ describe('Users endpoints: /users', () => {
       updatedAt: new Date(0),
       roleId: 'role2',
       pcData: {},
-      statutId: 'INACTIF',
+      statutId: STATUT_TYPES.INACTIF,
       entiteId: null,
       role: { id: ROLES.READER, label: 'Admin' },
     },
@@ -191,6 +196,10 @@ describe('Users endpoints: /users', () => {
   });
 
   describe('PATCH /:id', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
     it('should update a user by ID', async () => {
       vi.mocked(getUserById).mockResolvedValueOnce(fakeData[0]);
       vi.mocked(patchUser).mockResolvedValueOnce({
@@ -280,6 +289,126 @@ describe('Users endpoints: /users', () => {
 
       expect(res.status).toBe(200);
       expect(patchUser).toHaveBeenCalledWith('id10', {});
+    });
+
+    it('should send activation email when status changes to ACTIF', async () => {
+      const userWithInactiveStatus = {
+        ...fakeData[1],
+        statutId: STATUT_TYPES.INACTIF,
+      };
+      const userWithActiveStatus = {
+        ...fakeData[1],
+        statutId: STATUT_TYPES.ACTIF,
+      };
+
+      vi.mocked(getUserById).mockResolvedValueOnce(userWithInactiveStatus);
+      vi.mocked(patchUser).mockResolvedValueOnce(userWithActiveStatus);
+      vi.mocked(sendUserActivationEmail).mockResolvedValueOnce();
+
+      const res = await client[':id'].$patch({
+        param: { id: 'user-id-1' },
+        json: { statutId: STATUT_TYPES.ACTIF },
+      });
+
+      expect(res.status).toBe(200);
+      expect(patchUser).toHaveBeenCalledWith('user-id-1', { statutId: STATUT_TYPES.ACTIF });
+      expect(sendUserActivationEmail).toHaveBeenCalledWith('user-id-1', 'id10');
+    });
+
+    it('should not send activation email when status is already ACTIF', async () => {
+      const userWithActiveStatus = {
+        ...fakeData[0],
+        statutId: STATUT_TYPES.ACTIF,
+      };
+
+      vi.mocked(getUserById).mockResolvedValueOnce(userWithActiveStatus);
+      vi.mocked(patchUser).mockResolvedValueOnce(userWithActiveStatus);
+      vi.mocked(sendUserActivationEmail).mockResolvedValueOnce();
+
+      const res = await client[':id'].$patch({
+        param: { id: 'user-id-1' },
+        json: { statutId: STATUT_TYPES.ACTIF },
+      });
+
+      expect(res.status).toBe(200);
+      expect(patchUser).toHaveBeenCalledWith('user-id-1', { statutId: STATUT_TYPES.ACTIF });
+      expect(sendUserActivationEmail).not.toHaveBeenCalled();
+    });
+
+    it('should not send activation email when status changes to something other than ACTIF', async () => {
+      const userWithInactiveStatus = {
+        ...fakeData[1],
+        statutId: STATUT_TYPES.INACTIF,
+      };
+      const userStillInactive = {
+        ...fakeData[1],
+        statutId: STATUT_TYPES.INACTIF,
+      };
+
+      vi.mocked(getUserById).mockResolvedValueOnce(userWithInactiveStatus);
+      vi.mocked(patchUser).mockResolvedValueOnce(userStillInactive);
+      vi.mocked(sendUserActivationEmail).mockResolvedValueOnce();
+
+      const res = await client[':id'].$patch({
+        param: { id: 'user-id-1' },
+        json: { statutId: STATUT_TYPES.INACTIF },
+      });
+
+      expect(res.status).toBe(200);
+      expect(patchUser).toHaveBeenCalledWith('user-id-1', { statutId: STATUT_TYPES.INACTIF });
+      expect(sendUserActivationEmail).not.toHaveBeenCalled();
+    });
+
+    it('should handle activation email failure gracefully without breaking the request', async () => {
+      const userWithInactiveStatus = {
+        ...fakeData[1],
+        statutId: STATUT_TYPES.INACTIF,
+      };
+      const userWithActiveStatus = {
+        ...fakeData[1],
+        statutId: STATUT_TYPES.ACTIF,
+      };
+
+      vi.mocked(getUserById).mockResolvedValueOnce(userWithInactiveStatus);
+      vi.mocked(patchUser).mockResolvedValueOnce(userWithActiveStatus);
+      vi.mocked(sendUserActivationEmail).mockRejectedValueOnce(new Error('Email service unavailable'));
+
+      const res = await client[':id'].$patch({
+        param: { id: 'user-id-1' },
+        json: { statutId: STATUT_TYPES.ACTIF },
+      });
+
+      expect(res.status).toBe(200);
+      expect(patchUser).toHaveBeenCalledWith('user-id-1', { statutId: STATUT_TYPES.ACTIF });
+      expect(sendUserActivationEmail).toHaveBeenCalledWith('user-id-1', 'id10');
+      const json = await res.json();
+      expect(json).toEqual({
+        data: convertDatesToStrings(userWithActiveStatus),
+      });
+    });
+
+    it('should send activation email when status changes from NON_RENSEIGNE to ACTIF', async () => {
+      const userWithNonRenseigneStatus = {
+        ...fakeData[1],
+        statutId: STATUT_TYPES.NON_RENSEIGNE,
+      };
+      const userWithActiveStatus = {
+        ...fakeData[1],
+        statutId: STATUT_TYPES.ACTIF,
+      };
+
+      vi.mocked(getUserById).mockResolvedValueOnce(userWithNonRenseigneStatus);
+      vi.mocked(patchUser).mockResolvedValueOnce(userWithActiveStatus);
+      vi.mocked(sendUserActivationEmail).mockResolvedValueOnce();
+
+      const res = await client[':id'].$patch({
+        param: { id: 'user-id-1' },
+        json: { statutId: STATUT_TYPES.ACTIF },
+      });
+
+      expect(res.status).toBe(200);
+      expect(patchUser).toHaveBeenCalledWith('user-id-1', { statutId: STATUT_TYPES.ACTIF });
+      expect(sendUserActivationEmail).toHaveBeenCalledWith('user-id-1', 'id10');
     });
   });
 });
