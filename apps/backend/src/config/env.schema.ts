@@ -241,6 +241,7 @@ export const CronEnvSchema = z.object({
   }),
   CRON_RETRY_AFFECTATION: z.string().optional().default('3600'),
   CRON_RETRY_IMPORT_REQUETES: z.string().optional().default('3600'),
+  CRON_QUEUE_UNPROCESSED_FILES: z.string().optional().default('3600'),
 });
 
 /**

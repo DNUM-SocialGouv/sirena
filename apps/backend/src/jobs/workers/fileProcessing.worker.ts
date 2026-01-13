@@ -4,7 +4,6 @@ import { envVars } from '@/config/env';
 import { connection } from '@/config/redis';
 import { recordFileProcessing } from '@/features/monitoring/metrics.worker';
 import {
-  getUnprocessedFiles,
   getUploadedFileByIdInternal,
   tryAcquireProcessingLock,
   updateFileProcessingStatus,
@@ -14,7 +13,7 @@ import { getLoggerStore, loggerStorage } from '@/libs/asyncLocalStorage';
 import { getDetectedViruses, isFileInfected, scanBuffer, scanStream } from '@/libs/clamav';
 import { getFileBuffer, getFileStream, uploadFileToMinio } from '@/libs/minio';
 import { isPdfMimeType, sanitizePdf } from '@/libs/pdfSanitizer';
-import { addFileProcessingJob, type FileProcessingJobData } from '../queues/fileProcessing.queue';
+import type { FileProcessingJobData } from '../queues/fileProcessing.queue';
 
 interface ProcessingResult {
   scanStatus: string;
@@ -235,29 +234,6 @@ const processFile = async (job: Job<FileProcessingJobData>): Promise<void> => {
   );
 };
 
-const queueUnprocessedFiles = async (logger: Logger): Promise<void> => {
-  const unprocessedFiles = await getUnprocessedFiles();
-
-  if (unprocessedFiles.length === 0) {
-    logger.info('No unprocessed files found');
-    return;
-  }
-
-  logger.info({ count: unprocessedFiles.length }, 'Found unprocessed files, queueing for processing');
-
-  for (const file of unprocessedFiles) {
-    await addFileProcessingJob({
-      fileId: file.id,
-      fileName: file.fileName,
-      filePath: file.filePath,
-      mimeType: file.mimeType,
-    });
-    logger.debug({ fileId: file.id }, 'Queued unprocessed file');
-  }
-
-  logger.info({ count: unprocessedFiles.length }, 'Finished queueing unprocessed files');
-};
-
 export const createFileProcessingWorker = (): Worker<FileProcessingJobData> => {
   const worker = new Worker<FileProcessingJobData>('file-processing', processFile, {
     connection,
@@ -276,10 +252,6 @@ export const createFileProcessingWorker = (): Worker<FileProcessingJobData> => {
 
   worker.on('failed', (job, err) => {
     eventLogger.error({ jobId: job?.id, fileId: job?.data.fileId, error: err }, 'File processing job failed');
-  });
-
-  queueUnprocessedFiles(eventLogger).catch((err) => {
-    eventLogger.error({ error: err }, 'Failed to queue unprocessed files on startup');
   });
 
   return worker;

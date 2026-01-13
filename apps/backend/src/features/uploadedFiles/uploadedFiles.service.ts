@@ -196,7 +196,10 @@ export const getUnprocessedFiles = async (): Promise<UploadedFile[]> => {
       OR: [
         { status: 'PENDING' },
         { status: 'PROCESSING', updatedAt: { lt: stuckThreshold } },
-        { scanStatus: 'PENDING' },
+        {
+          status: { in: ['COMPLETED', 'FAILED'] },
+          scanStatus: 'PENDING',
+        },
       ],
     },
   });
@@ -208,7 +211,14 @@ export const tryAcquireProcessingLock = async (fileId: string): Promise<boolean>
   const result = await prisma.uploadedFile.updateMany({
     where: {
       id: fileId,
-      OR: [{ status: 'PENDING' }, { status: 'PROCESSING', updatedAt: { lt: stuckThreshold } }],
+      OR: [
+        { status: 'PENDING' },
+        { status: 'PROCESSING', updatedAt: { lt: stuckThreshold } },
+        {
+          status: { in: ['COMPLETED', 'FAILED'] },
+          scanStatus: 'PENDING',
+        },
+      ],
     },
     data: {
       status: 'PROCESSING',
