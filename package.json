@@ -44,8 +44,8 @@
     "dotenv-cli": "^10.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.3.0",
-    "@commitlint/config-conventional": "^20.3.0",
+    "@commitlint/cli": "^20.3.1",
+    "@commitlint/config-conventional": "^20.3.1",
     "husky": "^9.1.7"
   },
   "pnpm": {
@@ -58,7 +58,8 @@
       "prisma"
     ],
     "overrides": {
-      "glob@>=10.2.0 <10.5.0": ">=10.5.0"
+      "glob@>=10.2.0 <10.5.0": ">=10.5.0",
+      "hono@<4.11.4": ">=4.11.4"
     }
   }
 }
