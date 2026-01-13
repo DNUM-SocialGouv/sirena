@@ -107,16 +107,30 @@ function TraitementDesFaitsRowComponent({
       {/* Direction / service */}
       {row.entiteId && (
         <div className="fr-col-12 fr-col-md-6" style={alignSelectStyle}>
-          <SelectWithChildren
-            value={row.directionServiceIds || []}
-            onChange={(newValues) => onChange(row.id, 'directionServiceIds', newValues)}
-            options={directionsServices.map((entite) => ({
-              label: entite.nomComplet,
-              value: entite.id,
-            }))}
-            label="Direction ou Service"
-            readOnly={disabled}
-          />
+          {disabled ? (
+            <Input
+              label="Direction ou Service"
+              nativeInputProps={{
+                value:
+                  row.directionServiceIds
+                    ?.map((id) => directionsServices.find((ds) => ds.id === id)?.nomComplet)
+                    .filter(Boolean)
+                    .join(', ') || '',
+                readOnly: true,
+                'aria-readonly': true,
+              }}
+            />
+          ) : (
+            <SelectWithChildren
+              value={row.directionServiceIds || []}
+              onChange={(newValues) => onChange(row.id, 'directionServiceIds', newValues)}
+              options={directionsServices.map((entite) => ({
+                label: entite.nomComplet,
+                value: entite.id,
+              }))}
+              label="Direction ou Service"
+            />
+          )}
         </div>
       )}
 
