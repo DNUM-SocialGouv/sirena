@@ -45,12 +45,12 @@ vi.mock('@/helpers/sse', () => ({
 }));
 
 vi.mock('../entites/entites.service', () => ({
-  getEntiteChain: vi.fn().mockResolvedValue([]),
+  buildEntitesTraitement: vi.fn(),
   getEntiteAscendanteId: vi.fn(),
 }));
 
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
-import { getEntiteAscendanteId, getEntiteChain } from '../entites/entites.service';
+import { buildEntitesTraitement, getEntiteAscendanteId } from '../entites/entites.service';
 
 vi.mock('@/libs/prisma', () => ({
   prisma: {
@@ -577,10 +577,10 @@ describe('requetesEntite.service', () => {
         },
       };
 
-      vi.mocked(getEntiteChain)
-        .mockResolvedValueOnce([{ id: 'root1', nomComplet: 'Root 1' }])
-        .mockResolvedValueOnce([{ id: 'root2', nomComplet: 'Root 2' }])
-        .mockResolvedValueOnce([{ id: 'root3', nomComplet: 'Root 3' }]);
+      vi.mocked(buildEntitesTraitement)
+        .mockResolvedValueOnce([{ entiteId: 'root1', entiteName: 'Root 1', chain: [] }])
+        .mockResolvedValueOnce([{ entiteId: 'root2', entiteName: 'Root 2', chain: [] }])
+        .mockResolvedValueOnce([{ entiteId: 'root3', entiteName: 'Root 3', chain: [] }]);
 
       vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce(mockRequeteEntiteWithSituations);
 
@@ -588,10 +588,10 @@ describe('requetesEntite.service', () => {
 
       expect(result).toBeDefined();
       expect(result?.requete.situations).toHaveLength(3);
-      expect(getEntiteChain).toHaveBeenCalledTimes(3);
-      expect(getEntiteChain).toHaveBeenCalledWith('ent1');
-      expect(getEntiteChain).toHaveBeenCalledWith('ent2');
-      expect(getEntiteChain).toHaveBeenCalledWith('ent3');
+      expect(buildEntitesTraitement).toHaveBeenCalledTimes(3);
+      expect(buildEntitesTraitement).toHaveBeenCalledWith([mockEntite1]);
+      expect(buildEntitesTraitement).toHaveBeenCalledWith([mockEntite2]);
+      expect(buildEntitesTraitement).toHaveBeenCalledWith([mockEntite3]);
       expect(result?.requete.situations[0]).toHaveProperty('traitementDesFaits');
       expect(result?.requete.situations[1]).toHaveProperty('traitementDesFaits');
       expect(result?.requete.situations[2]).toHaveProperty('traitementDesFaits');
@@ -1889,7 +1889,15 @@ describe('requetesEntite.service', () => {
         ],
       } as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
 
-      vi.mocked(getEntiteChain).mockResolvedValue([{ id: 'root1', nomComplet: 'Root Entity' }]);
+      vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([
+        {
+          entiteId: 'root1',
+          entiteName: 'Root Entity',
+          directionServiceId: undefined,
+          directionServiceName: undefined,
+          chain: [{ id: 'root1', nomComplet: 'Root Entity' }],
+        },
+      ]);
 
       const result = await enrichSituationWithTraitementDesFaits(mockSituation);
 
@@ -1902,7 +1910,13 @@ describe('requetesEntite.service', () => {
         directionServiceName: undefined,
         chain: [{ id: 'root1', nomComplet: 'Root Entity' }],
       });
-      expect(getEntiteChain).toHaveBeenCalledWith('ent1');
+      expect(buildEntitesTraitement).toHaveBeenCalledWith([
+        {
+          id: 'ent1',
+          nomComplet: 'Entité Racine',
+          entiteMereId: null,
+        },
+      ]);
     });
 
     it('should return situation with traitementDesFaits for non-root entity', async () => {
@@ -1919,9 +1933,17 @@ describe('requetesEntite.service', () => {
         ],
       } as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
 
-      vi.mocked(getEntiteChain).mockResolvedValue([
-        { id: 'root1', nomComplet: 'Root Entity' },
-        { id: 'dir1', nomComplet: 'Direction Service' },
+      vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([
+        {
+          entiteId: 'root1',
+          entiteName: 'Root Entity',
+          directionServiceId: 'dir1',
+          directionServiceName: 'Direction Service',
+          chain: [
+            { id: 'root1', nomComplet: 'Root Entity' },
+            { id: 'dir1', nomComplet: 'Direction Service' },
+          ],
+        },
       ]);
 
       const result = await enrichSituationWithTraitementDesFaits(mockSituation);
@@ -1938,7 +1960,13 @@ describe('requetesEntite.service', () => {
           { id: 'dir1', nomComplet: 'Direction Service' },
         ],
       });
-      expect(getEntiteChain).toHaveBeenCalledWith('dir1');
+      expect(buildEntitesTraitement).toHaveBeenCalledWith([
+        {
+          id: 'dir1',
+          nomComplet: 'Direction Service',
+          entiteMereId: 'root1',
+        },
+      ]);
     });
 
     it('should skip entities with empty chain', async () => {
@@ -1955,7 +1983,7 @@ describe('requetesEntite.service', () => {
         ],
       } as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
 
-      vi.mocked(getEntiteChain).mockResolvedValue([]);
+      vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([]);
 
       const result = await enrichSituationWithTraitementDesFaits(mockSituation);
 
@@ -1984,12 +2012,25 @@ describe('requetesEntite.service', () => {
         ],
       } as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
 
-      vi.mocked(getEntiteChain)
-        .mockResolvedValueOnce([{ id: 'root1', nomComplet: 'Root 1' }])
-        .mockResolvedValueOnce([
-          { id: 'root1', nomComplet: 'Root 1' },
-          { id: 'dir1', nomComplet: 'Direction 1' },
-        ]);
+      vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([
+        {
+          entiteId: 'root1',
+          entiteName: 'Root 1',
+          directionServiceId: undefined,
+          directionServiceName: undefined,
+          chain: [{ id: 'root1', nomComplet: 'Root 1' }],
+        },
+        {
+          entiteId: 'root1',
+          entiteName: 'Root 1',
+          directionServiceId: 'dir1',
+          directionServiceName: 'Direction 1',
+          chain: [
+            { id: 'root1', nomComplet: 'Root 1' },
+            { id: 'dir1', nomComplet: 'Direction 1' },
+          ],
+        },
+      ]);
 
       const result = await enrichSituationWithTraitementDesFaits(mockSituation);
 
@@ -2034,9 +2075,17 @@ describe('requetesEntite.service', () => {
         ],
       } as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
 
-      vi.mocked(getEntiteChain).mockResolvedValue([
-        { id: 'root1', nomComplet: 'Root 1' },
-        { id: 'dir1', nomComplet: 'Direction 1' },
+      vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([
+        {
+          entiteId: 'root1',
+          entiteName: 'Root 1',
+          directionServiceId: 'dir1',
+          directionServiceName: 'Direction 1',
+          chain: [
+            { id: 'root1', nomComplet: 'Root 1' },
+            { id: 'dir1', nomComplet: 'Direction 1' },
+          ],
+        },
       ]);
 
       const result = await enrichSituationWithTraitementDesFaits(mockSituation);
@@ -2072,7 +2121,15 @@ describe('requetesEntite.service', () => {
         ],
       } as unknown as Parameters<typeof enrichSituationWithTraitementDesFaits>[0];
 
-      vi.mocked(getEntiteChain).mockResolvedValue([{ id: 'root1', nomComplet: 'Root Entity' }]);
+      vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([
+        {
+          entiteId: 'root1',
+          entiteName: 'Root Entity',
+          directionServiceId: undefined,
+          directionServiceName: undefined,
+          chain: [{ id: 'root1', nomComplet: 'Root Entity' }],
+        },
+      ]);
 
       const result = await enrichSituationWithTraitementDesFaits(mockSituation);
 

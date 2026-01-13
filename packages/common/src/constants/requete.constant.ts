@@ -315,6 +315,7 @@ export const LIEU_ETABLISSEMENT_PERSONNES_AGEES_PRECISION = {
   ACCUEIL_JOUR: 'ACCUEIL_JOUR',
   PUV: 'PUV',
   RA: 'RA',
+  UHR: 'UHR',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -327,6 +328,7 @@ export const lieuEtablissementPersonnesAgeesPrecisionLabels: Record<LieuEtabliss
     ACCUEIL_JOUR: 'Accueil de jour',
     PUV: 'PUV (Petite unité de vie)',
     RA: 'RA (résidence autonomie)',
+    UHR: "UHR (Unité d'Hébergement Renforcé)",
     AUTRE: 'Autre',
   };
 
@@ -335,7 +337,6 @@ export const LIEU_ETABLISSEMENT_HANDICAP_PRECISION = {
   MAS: 'MAS',
   EAM: 'EAM',
   EANM: 'EANM',
-  SAVS: 'SAVS',
   IEM: 'IEM',
   EEAP: 'EEAP',
   IDA: 'IDA',
@@ -356,7 +357,6 @@ export const lieuEtablissementHandicapPrecisionLabels: Record<LieuEtablissementH
   MAS: "MAS (Maison d'accueil spécialisée)",
   EAM: "EAM (Foyer d'acceuil médicalisés)",
   EANM: 'EANM',
-  SAVS: "SAVS (Service d'accompagnement à la vie sociale)",
   IEM: "IEM (Instituts d'éducation motrice)",
   EEAP: 'EEAP (Etablissements pour enfants ou adolescents polyhandicapés)',
   IDA: 'IDA (instituts pour déficients auditifs)',

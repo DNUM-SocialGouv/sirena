@@ -342,7 +342,8 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
           </>
         )}
 
-        {((fait?.motifs && fait.motifs.length > 0) || receptionType === RECEPTION_TYPE.FORMULAIRE) && (
+        {((fait?.motifs && fait.motifs.length > 0) ||
+          (fait?.motifs && receptionType === RECEPTION_TYPE.FORMULAIRE)) && (
           <>
             <SectionTitle>Motifs qualifiés</SectionTitle>
             <ul className={fr.cx('fr-mb-3w')}>

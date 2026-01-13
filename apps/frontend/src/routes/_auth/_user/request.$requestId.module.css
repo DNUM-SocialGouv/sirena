@@ -102,6 +102,23 @@
   color: var(--text-action-high-blue-france);
 }
 
+.entite-sub-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.entite-sub-item {
+  padding-right: 0.75rem;
+  border-right: 1px solid var(--border-default-grey);
+}
+
+.entite-sub-item:last-child {
+  padding-right: 0;
+  border-right: none;
+}
+
 .timeline-step:last-child .request-step {
   border-bottom: none;
 }

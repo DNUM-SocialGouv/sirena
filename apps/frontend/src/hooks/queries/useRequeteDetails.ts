@@ -14,7 +14,7 @@ export const useRequeteDetails = (requestId?: string) => {
 
 type RequeteOtherEntitiesAffected = Awaited<ReturnType<typeof fetchRequeteOtherEntitiesAffected>>;
 
-const emptyOtherEntitiesAffected: RequeteOtherEntitiesAffected = { otherEntites: [], directions: [] };
+const emptyOtherEntitiesAffected: RequeteOtherEntitiesAffected = { otherEntites: [], subAdministrativeEntites: [] };
 
 export const useRequeteOtherEntitiesAffected = (requestId?: string) => {
   return useQuery<RequeteOtherEntitiesAffected>({

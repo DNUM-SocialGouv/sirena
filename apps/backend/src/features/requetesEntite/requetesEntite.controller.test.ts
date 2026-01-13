@@ -10,7 +10,7 @@ import type { UploadedFile } from '@/libs/prisma';
 import entitesMiddleware from '@/middlewares/entites.middleware';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
-import { getDirectionsFromRequeteEntiteId } from '../entites/entites.service';
+import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.service';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service';
 import RequetesEntiteController from './requetesEntite.controller';
@@ -33,7 +33,7 @@ vi.mock('./requetesEntite.service', () => ({
 }));
 
 vi.mock('../entites/entites.service', () => ({
-  getDirectionsFromRequeteEntiteId: vi.fn(),
+  getDirectionsServicesFromRequeteEntiteId: vi.fn(),
 }));
 
 vi.mock('@/libs/minio', () => ({
@@ -132,7 +132,7 @@ export const fakeRequeteEntite = {
 describe('RequetesEntite endpoints: /', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    vi.mocked(getDirectionsFromRequeteEntiteId).mockResolvedValue([]);
+    vi.mocked(getDirectionsServicesFromRequeteEntiteId).mockResolvedValue([]);
   });
 
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequetesEntiteController).onError(errorHandler);
@@ -389,7 +389,7 @@ describe('RequetesEntite endpoints: /', () => {
       ];
       vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
       vi.mocked(getOtherEntitesAffected).mockResolvedValueOnce(fakeOtherEntites);
-      vi.mocked(getDirectionsFromRequeteEntiteId).mockResolvedValueOnce([
+      vi.mocked(getDirectionsServicesFromRequeteEntiteId).mockResolvedValueOnce([
         { id: 'dir1', nomComplet: 'Direction 1', label: 'DIR1' },
       ]);
 
@@ -402,10 +402,10 @@ describe('RequetesEntite endpoints: /', () => {
       expect(json).toEqual({
         data: {
           otherEntites: convertDatesToStrings(fakeOtherEntites),
-          directions: [{ id: 'dir1', nomComplet: 'Direction 1', label: 'DIR1' }],
+          subAdministrativeEntites: [{ id: 'dir1', nomComplet: 'Direction 1', label: 'DIR1' }],
         },
       });
-      expect(getDirectionsFromRequeteEntiteId).toHaveBeenCalledWith('requeteId', 'entiteId');
+      expect(getDirectionsServicesFromRequeteEntiteId).toHaveBeenCalledWith('requeteId', 'entiteId');
     });
 
     it('should return 404 when requeteEntite not found', async () => {

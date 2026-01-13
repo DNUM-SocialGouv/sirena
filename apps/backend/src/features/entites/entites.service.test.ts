@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Entite, prisma } from '@/libs/prisma';
 import {
   getDirectionsFromRequeteEntiteId,
+  getDirectionsServicesFromRequeteEntiteId,
   getEditableEntitiesChain,
   getEntiteAscendanteIds,
   getEntiteChain,
@@ -17,6 +18,9 @@ vi.mock('@/libs/prisma', () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
       count: vi.fn(),
+    },
+    situationEntite: {
+      findMany: vi.fn(),
     },
   },
 }));
@@ -44,7 +48,7 @@ const fakeEntite = (id: string): Entite => ({
 describe('entites.service', () => {
   describe('getDirectionsFromRequeteEntiteId()', () => {
     beforeEach(() => {
-      vi.clearAllMocks();
+      vi.resetAllMocks();
     });
 
     it('queries directions (children entites) linked to requete situations', async () => {
@@ -72,6 +76,89 @@ describe('entites.service', () => {
         },
       });
       expect(result).toEqual(mockDirections);
+    });
+  });
+
+  describe('getDirectionsServicesFromRequeteEntiteId()', () => {
+    beforeEach(() => {
+      vi.resetAllMocks();
+    });
+
+    it('returns direction services with traitement des faits data', async () => {
+      vi.mocked(prisma.situationEntite.findMany).mockResolvedValueOnce([
+        {
+          entite: {
+            id: 'dir1',
+            nomComplet: 'Direction 1',
+            entiteMereId: 'root1',
+          },
+          // biome-ignore lint/suspicious/noExplicitAny: the select doesn't match the type required
+        } as any,
+      ]);
+
+      vi.mocked(prisma.entite.findUnique)
+        .mockResolvedValueOnce({
+          id: 'dir1',
+          nomComplet: 'Direction 1',
+          entiteMereId: 'root1',
+          label: 'DIR1',
+          email: '',
+          emailDomain: '',
+          entiteTypeId: '',
+          organizationalUnit: '',
+          departementCode: '1',
+          regionCode: '1',
+          ctcdCode: '1',
+          dptLib: '1',
+          regLib: '1',
+        })
+        .mockResolvedValueOnce({
+          id: 'root1',
+          nomComplet: 'Root 1',
+          entiteMereId: null,
+          label: 'ROOT',
+          email: '',
+          emailDomain: '',
+          entiteTypeId: '',
+          organizationalUnit: '',
+          departementCode: '1',
+          regionCode: '1',
+          ctcdCode: '1',
+          dptLib: '1',
+          regLib: '1',
+        });
+
+      const result = await getDirectionsServicesFromRequeteEntiteId('requeteId', 'root1');
+
+      expect(prisma.situationEntite.findMany).toHaveBeenCalledWith({
+        where: {
+          situation: {
+            requeteId: 'requeteId',
+          },
+        },
+        select: {
+          entite: {
+            select: {
+              id: true,
+              nomComplet: true,
+              entiteMereId: true,
+            },
+          },
+        },
+      });
+
+      expect(result).toEqual([
+        {
+          entiteId: 'root1',
+          entiteName: 'Root 1',
+          directionServiceId: 'dir1',
+          directionServiceName: 'Direction 1',
+          chain: [
+            expect.objectContaining({ id: 'root1', nomComplet: 'Root 1', label: 'ROOT' }),
+            expect.objectContaining({ id: 'dir1', nomComplet: 'Direction 1', label: 'DIR1' }),
+          ],
+        },
+      ]);
     });
   });
 
@@ -235,7 +322,7 @@ describe('entites.service', () => {
   });
   describe('getEntiteChain()', () => {
     beforeEach(() => {
-      vi.clearAllMocks();
+      vi.resetAllMocks();
     });
     it('should return full entite chain from child to root', async () => {
       const mockEntite1 = {
