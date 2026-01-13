@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import * as Sentry from '@sentry/node';
 import { envVars } from '@/config/env';
+import { sendDeclarantAcknowledgmentEmail } from '@/features/declarants/declarants.notification.service';
 import { mapDataForPrisma } from '@/features/dematSocial/dematSocial.adaptater';
 import {
   createImportFailure,
@@ -248,6 +249,16 @@ export const importSingleDossier = async (
       logger.error(
         { err, dossierNumber, requeteId: createdRequete.id },
         `Error assigning entities to requete ${dossierNumber}`,
+      );
+      sentry.captureException(err);
+    }
+
+    try {
+      await sendDeclarantAcknowledgmentEmail(createdRequete.id);
+    } catch (err) {
+      logger.error(
+        { err, dossierNumber, requeteId: createdRequete.id },
+        `Error sending acknowledgment email for requete ${dossierNumber}`,
       );
       sentry.captureException(err);
     }
