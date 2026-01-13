@@ -92,6 +92,32 @@ export const misEnCauseProchePrecisionLabels: Record<MisEnCauseProchePrecision, 
   AUTRE: 'Autre',
 };
 
+export const MIS_EN_CAUSE_ETABLISSEMENT_PRECISION = {
+  ETABLISSEMENT: 'ETABLISSEMENT',
+  SERVICE: 'SERVICE',
+  SAMSAH: 'SAMSAH',
+  SAVS: 'SAVS',
+  SESSAD: 'SESSAD',
+  SPST: 'SPST',
+  SAEMO: 'SAEMO',
+  SAED: 'SAED',
+  AUTRE: 'AUTRE',
+} as const;
+
+export type MisEnCauseEtablissementPrecision = keyof typeof MIS_EN_CAUSE_ETABLISSEMENT_PRECISION;
+
+export const misEnCauseEtablissementPrecisionLabels: Record<MisEnCauseEtablissementPrecision, string> = {
+  ETABLISSEMENT: 'Etablissement où se sont déroulés les faits',
+  SERVICE: "Services de soins infirmiers ou d'aide à domicile (SAAD, SSIAD, SPASAD)",
+  SAMSAH: 'SAMSAH',
+  SAVS: "SAVS (Service d'accompagnement à la vie sociale)",
+  SESSAD: "SESSAD (Service d'Education Spéciale et de Soins à Domicile) non rattaché à un établissement",
+  SPST: 'SPST',
+  SAEMO: "SAEMO (services d'action éducative en milieu ouvert)",
+  SAED: "SAED (Services d'action éducative à domicile)",
+  AUTRE: 'Autre',
+};
+
 export const MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION = {
   AUTRE: 'AUTRE',
 } as const;
