@@ -97,13 +97,7 @@ function TraitementDesFaitsRowComponent({
           </div>
           {showModifyButton && (
             <div className={styles.modifyButtonWrapper}>
-              <Button
-                iconId="fr-icon-edit-line"
-                priority="secondary"
-                onClick={onEntiteEditClick}
-                disabled={disabled}
-                aria-controls="entite-admin"
-              >
+              <Button iconId="fr-icon-edit-line" priority="secondary" onClick={onEntiteEditClick} disabled={disabled}>
                 Modifier <span className="fr-sr-only">l’entité administrative</span>
               </Button>
             </div>
