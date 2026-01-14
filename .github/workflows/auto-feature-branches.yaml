@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - main
       - validation
+      - formation
       - production
       - preproduction
       # branch use to deploy on test env
