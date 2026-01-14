@@ -18,6 +18,23 @@ type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>
 
 const DEFAULT_PAGE_SIZE = 10;
 
+type SortDir = 'asc' | 'desc' | undefined;
+
+const shouldInvertSortDirection = (columnKey: string) =>
+  columnKey === 'custom:statut' || columnKey === 'custom:priorite';
+
+const uiDirToBackendOrder = (columnKey: string, dir: SortDir): SortDir => {
+  if (!dir) return undefined;
+  if (!shouldInvertSortDirection(columnKey)) return dir;
+  return dir === 'asc' ? 'desc' : 'asc';
+};
+
+const backendOrderToUiDir = (columnKey: string, order: SortDir): SortDir => {
+  if (!order) return undefined;
+  if (!shouldInvertSortDirection(columnKey)) return order;
+  return order === 'asc' ? 'desc' : 'asc';
+};
+
 const mapColumnKeyToSortKey = (columnKey: string): string | undefined => {
   switch (columnKey) {
     case 'requete.id':
@@ -137,11 +154,13 @@ export function RequetesEntite() {
       const { sort: columnKey, sortDirection } = params;
       const sortKey = mapColumnKeyToSortKey(columnKey);
 
+      const backendOrder = uiDirToBackendOrder(columnKey, sortDirection as SortDir);
+
       navigate({
         search: (prev) => ({
           ...prev,
-          sort: sortKey && sortDirection ? sortKey : undefined,
-          order: sortKey && sortDirection ? (sortDirection as 'asc' | 'desc') : undefined,
+          sort: sortKey && backendOrder ? sortKey : undefined,
+          order: sortKey && backendOrder ? (backendOrder as 'asc' | 'desc') : undefined,
           offset: undefined,
         }),
       });
@@ -152,9 +171,12 @@ export function RequetesEntite() {
   const currentSort = useMemo((): OnSortChangeParams<RequeteEntiteRow> => {
     const sortKey = queries.sort;
     const columnKey = mapSortKeyToColumnKey(sortKey);
+
+    const uiDirection = backendOrderToUiDir(columnKey, (queries.order || undefined) as SortDir);
+
     return {
       sort: (columnKey || '') as OnSortChangeParams<RequeteEntiteRow>['sort'],
-      sortDirection: (queries.order || '') as OnSortChangeParams<RequeteEntiteRow>['sortDirection'],
+      sortDirection: (uiDirection || '') as OnSortChangeParams<RequeteEntiteRow>['sortDirection'],
     };
   }, [queries.sort, queries.order]);
 
