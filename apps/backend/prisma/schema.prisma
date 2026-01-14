@@ -618,3 +618,42 @@ model DematSocialImportFailure {
   @@index([errorType])
   @@index([resolvedAt])
 }
+
+model Commune {
+  comCode        String @id // COM_CODE - Code INSEE de la commune
+  comLib         String // COM_LIB - Libellé de la commune
+  metomerLib     String // METOMER_LIB - Métropole ou autre
+  ctcdCodeActuel String // CTCD_CODE_ACTUEL - Code du conseil territorial
+  ctcdLibActuel  String // CTCD_LIB_ACTUEL - Libellé du conseil territorial
+  dptCodeActuel  String // DPT_CODE_ACTUEL - Code département
+  dptLibActuel   String // DPT_LIB_ACTUEL - Libellé du département
+  regCodeActuel  String // REG_CODE_ACTUEL - Code région
+  regLibActuel   String // REG_LIB_ACTUEL - Libellé de la région
+
+  inseePostals InseePostal[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dptCodeActuel])
+  @@index([regCodeActuel])
+  @@index([ctcdCodeActuel])
+}
+
+model InseePostal {
+  id                  String  @id @default(cuid())
+  codeInsee           String // Code INSEE de la commune
+  nomCommune          String // Nom de la commune
+  codePostal          String // Code postal
+  libelleAcheminement String? // Libellé d'acheminement
+  ligne5              String? // Ligne 5 (complément d'adresse)
+
+  commune Commune? @relation(fields: [codeInsee], references: [comCode], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([codeInsee, codePostal])
+  @@index([codeInsee])
+  @@index([codePostal])
+}
