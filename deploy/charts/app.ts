@@ -86,7 +86,7 @@ function createBackendEnvVars(host: string, environment: string, pc_domain: stri
     },
     {
       name: 'DEMAT_SOCIAL_API_URL',
-      value: 'https://demat.social.gouv.fr/api/v2/graphql ',
+      value: 'https://dgos-dds-pp.cegedim.cloud/api/v2/graphql',
     },
     {
       name: 'DEMAT_SOCIAL_API_DIRECTORY',
