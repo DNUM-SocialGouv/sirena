@@ -9,7 +9,6 @@ import { formatFullName } from '@/components/requestId/sections/helpers';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useRequeteStatusSSE } from '@/hooks/useRequeteStatusSSE';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
-import { AffectationTab } from './tabs/AffectationTab';
 
 // TODO: Use API types instead of local interfaces
 interface RequestData {
@@ -64,13 +63,6 @@ export function RequestForm({ requestId }: RequestFormProps) {
   const tabs: TabDescriptor[] = [
     { label: 'Détails de la requête', tabPanelId: 'panel-details', tabId: 'tab-details' },
     {
-      label: 'Affectation',
-      tabPanelId: 'panel-affectation',
-      tabId: 'tab-affectation',
-      disabled: !requestId,
-      title: !requestId ? 'Disponible après la création de la requête' : undefined,
-    },
-    {
       label: 'Traitement',
       tabPanelId: 'panel-traitement',
       tabId: 'tab-traitement',
@@ -104,8 +96,7 @@ export function RequestForm({ requestId }: RequestFormProps) {
       <div className="fr-container">
         <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange} className={styles['request-tabs']}>
           {activeTab === 0 && <Details requestId={requestId} requestQuery={requestQuery} />}
-          {activeTab === 1 && <AffectationTab />}
-          {activeTab === 2 && <Processing requestId={requestId} requestQuery={requestQuery} />}
+          {activeTab === 1 && <Processing requestId={requestId} requestQuery={requestQuery} />}
         </Tabs>
       </div>
     </>
