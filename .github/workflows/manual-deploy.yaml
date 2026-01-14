@@ -8,6 +8,7 @@ on:
         required: true
         type: choice
         options:
+          - formation
           - validation
           - preproduction
           - production
