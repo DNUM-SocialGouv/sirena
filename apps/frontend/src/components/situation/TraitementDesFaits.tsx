@@ -69,7 +69,7 @@ function TraitementDesFaitsRowComponent({
           <div className={styles.entiteField}>
             {isEntiteReadOnly ? (
               <Input
-                label={'Entité administrative *'}
+                label={'Entité administrative (obligatoire) '}
                 nativeInputProps={{
                   value: entiteLabel,
                   readOnly: true,
@@ -78,11 +78,12 @@ function TraitementDesFaitsRowComponent({
               />
             ) : (
               <Select
-                label={'Entité administrative *'}
+                label={'Entité administrative (obligatoire) '}
                 nativeSelectProps={{
                   value: row.entiteId || '',
                   onChange: (e) => onChange(row.id, 'entiteId', e.target.value),
                   disabled,
+                  required: true,
                 }}
               >
                 <option value="">Sélectionner une option</option>
@@ -96,8 +97,14 @@ function TraitementDesFaitsRowComponent({
           </div>
           {showModifyButton && (
             <div className={styles.modifyButtonWrapper}>
-              <Button iconId="fr-icon-edit-line" priority="secondary" onClick={onEntiteEditClick} disabled={disabled}>
-                Modifier
+              <Button
+                iconId="fr-icon-edit-line"
+                priority="secondary"
+                onClick={onEntiteEditClick}
+                disabled={disabled}
+                aria-controls="entite-admin"
+              >
+                Modifier <span className="fr-sr-only">l’entité administrative</span>
               </Button>
             </div>
           )}
