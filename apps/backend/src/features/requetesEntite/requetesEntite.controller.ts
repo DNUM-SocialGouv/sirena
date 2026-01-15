@@ -164,17 +164,17 @@ const app = factoryWithLogs
       });
     }
 
-    const file = await getUploadedFileById(fileId, [topEntiteId]);
-
-    if (!file) {
-      throwHTTPException404NotFound('File not found', { res: c.res });
-    }
-
     const belongsToRequete = await isFileBelongsToRequete(fileId, id);
 
     if (!belongsToRequete) {
       logger.warn({ requeteId: id, fileId }, 'Attempt to access file not belonging to requete');
-      throwHTTPException403Forbidden('File does not belong to this requete', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res });
+    }
+
+    const file = await getUploadedFileById(fileId);
+
+    if (!file) {
+      throwHTTPException404NotFound('File not found', { res: c.res });
     }
 
     logger.info({ requeteId: id, fileId }, 'Retrieving file for requete');
@@ -194,7 +194,14 @@ const app = factoryWithLogs
       });
     }
 
-    const file = await getUploadedFileById(fileId, [topEntiteId]);
+    const belongsToRequete = await isFileBelongsToRequete(fileId, id);
+
+    if (!belongsToRequete) {
+      logger.warn({ requeteId: id, fileId }, 'Attempt to access safe file not belonging to requete');
+      throwHTTPException404NotFound('File not found', { res: c.res });
+    }
+
+    const file = await getUploadedFileById(fileId);
 
     if (!file) {
       throwHTTPException404NotFound('File not found', { res: c.res });
@@ -202,13 +209,6 @@ const app = factoryWithLogs
 
     if (!file.safeFilePath) {
       throwHTTPException404NotFound('Safe file not available', { res: c.res });
-    }
-
-    const belongsToRequete = await isFileBelongsToRequete(fileId, id);
-
-    if (!belongsToRequete) {
-      logger.warn({ requeteId: id, fileId }, 'Attempt to access safe file not belonging to requete');
-      throwHTTPException403Forbidden('File does not belong to this requete', { res: c.res });
     }
 
     logger.info({ requeteId: id, fileId }, 'Retrieving safe file for requete');
@@ -233,16 +233,16 @@ const app = factoryWithLogs
       throwHTTPException404NotFound('Situation not found', { res: c.res });
     }
 
-    const file = await getUploadedFileById(fileId, [topEntiteId]);
-    if (!file) {
-      throwHTTPException404NotFound('File not found', { res: c.res });
-    }
-
     const belongsToRequete = await isFileBelongsToRequete(fileId, id);
 
     if (!belongsToRequete) {
       logger.warn({ requeteId: id, situationId, fileId }, 'Attempt to access file not belonging to requete');
-      throwHTTPException403Forbidden('File does not belong to this requete', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res });
+    }
+
+    const file = await getUploadedFileById(fileId);
+    if (!file) {
+      throwHTTPException404NotFound('File not found', { res: c.res });
     }
 
     logger.info({ requeteId: id, situationId, fileId }, 'Retrieving file for situation');
