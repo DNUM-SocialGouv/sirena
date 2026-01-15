@@ -3,7 +3,7 @@ import * as z from 'zod';
 import { Prisma } from '@/libs/prisma';
 
 export const UploadedFileSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   fileName: z.string(),
   filePath: z.string(),
   mimeType: z.string(),

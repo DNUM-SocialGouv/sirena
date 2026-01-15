@@ -2,7 +2,7 @@ import { openApiDeleteResponse, openApiProtectedRoute, openApiResponse } from '@
 import { z } from 'zod';
 
 const RequeteEtapeNoteSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   texte: z.string(),
   authorId: z.string(),
   requeteEtapeId: z.string(),

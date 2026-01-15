@@ -92,7 +92,7 @@ const receptionTypeId = z
   .nullable()
   .optional();
 const requeteControl = z.object({
-  updatedAt: z.string().datetime(),
+  updatedAt: z.iso.datetime(),
 });
 
 const SituationEntiteWithEntiteSchema = SituationEntiteSchema.extend({
@@ -127,7 +127,7 @@ export const UpdateDeclarantBodySchema = z.object({
   controls: z
     .object({
       declarant: z.object({
-        updatedAt: z.string().datetime(),
+        updatedAt: z.iso.datetime(),
       }),
     })
     .optional(),
@@ -138,7 +138,7 @@ export const UpdateParticipantBodySchema = z.object({
   controls: z
     .object({
       participant: z.object({
-        updatedAt: z.string().datetime(),
+        updatedAt: z.iso.datetime(),
       }),
     })
     .optional(),
@@ -173,6 +173,6 @@ export const CloseRequeteBodySchema = z.object({
 
 export const CloseRequeteResponseSchema = z.object({
   etapeId: z.string(),
-  closedAt: z.string().datetime(),
+  closedAt: z.iso.datetime(),
   noteId: z.string().nullable(),
 });

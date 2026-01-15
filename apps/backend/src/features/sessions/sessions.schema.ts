@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const SessionSchema = z.object({
-  id: z.string().cuid(),
+  id: z.cuid(),
   userId: z.string(),
   token: z.string(),
   expiresAt: z.coerce.date(),

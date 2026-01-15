@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { Prisma } from '@/libs/prisma';
 
 export const EntiteSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   nomComplet: z.string(),
   label: z.string(),
   email: z.string(),

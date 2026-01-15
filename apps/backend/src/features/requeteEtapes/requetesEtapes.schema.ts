@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { Prisma } from '@/libs/prisma';
 
 export const RequeteEtapeSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   nom: z.string(),
   estPartagee: z.boolean(),
   statutId: z.string(),
@@ -16,7 +16,7 @@ export const RequeteEtapeSchema = z.object({
 });
 
 export const RequeteEtapeNoteSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   texte: z.string(),
   authorId: z.string(),
   requeteEtapeId: z.string(),

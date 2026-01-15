@@ -4,8 +4,8 @@ import { Prisma } from '@/libs/prisma';
 import { RoleEnumSchema } from '../roles/roles.schema';
 
 export const UserSchema = z.object({
-  id: z.string().cuid(),
-  email: z.string().email({ message: 'Invalid email address' }),
+  id: z.cuid(),
+  email: z.email({ message: 'Invalid email address' }),
   prenom: z.string(),
   nom: z.string(),
   uid: z.string(),

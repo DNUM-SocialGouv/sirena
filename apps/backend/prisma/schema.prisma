@@ -33,7 +33,7 @@ model StatutEnum {
 
 model User {
   id     String @id @default(cuid())
-  email  String @unique /// @zod.string.email({ message: 'Invalid email address' }),
+  email  String @unique
   prenom String
   nom    String
   uid    String @unique
