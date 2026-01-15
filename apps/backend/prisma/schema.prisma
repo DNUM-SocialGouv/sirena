@@ -19,11 +19,6 @@ generator client {
   output   = "../generated/client"
 }
 
-generator zod {
-  provider = "zod-prisma-types"
-  output   = "../generated/zod"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("PG_URL")
@@ -607,14 +602,14 @@ model RequeteClotureReasonEnum {
 
 model DematSocialImportFailure {
   id                String    @id @default(cuid())
-  dematSocialId     Int       @unique 
-  errorType         String 
-  errorMessage      String 
-  errorContext      Json? 
-  retryCount        Int       @default(0) 
-  lastRetryAt       DateTime? 
-  resolvedAt        DateTime? 
-  resolvedRequeteId String? 
+  dematSocialId     Int       @unique
+  errorType         String
+  errorMessage      String
+  errorContext      Json?
+  retryCount        Int       @default(0)
+  lastRetryAt       DateTime?
+  resolvedAt        DateTime?
+  resolvedRequeteId String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

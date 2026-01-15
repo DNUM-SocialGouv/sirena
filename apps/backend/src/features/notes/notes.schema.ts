@@ -1,4 +1,4 @@
-import { z } from '@/libs/zod';
+import { z } from 'zod';
 
 export const addNoteBodySchema = z
   .object({

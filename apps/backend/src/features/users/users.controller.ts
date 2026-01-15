@@ -1,7 +1,7 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
 import { getAssignableRoles } from '@sirena/common/utils';
-import { validator as zValidator } from 'hono-openapi/zod';
+import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
 import userChangelogMiddleware from '@/middlewares/changelog/changelog.user.middleware';

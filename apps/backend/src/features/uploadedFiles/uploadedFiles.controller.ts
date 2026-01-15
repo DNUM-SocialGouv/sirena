@@ -1,6 +1,6 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES_READ, ROLES_WRITE } from '@sirena/common/constants';
-import { validator as zValidator } from 'hono-openapi/zod';
+import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import { addFileProcessingJob } from '@/jobs/queues/fileProcessing.queue';
 import { deleteFileFromMinio, uploadFileToMinio } from '@/libs/minio';

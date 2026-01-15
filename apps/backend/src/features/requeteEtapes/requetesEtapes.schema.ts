@@ -1,7 +1,28 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
+import { z } from 'zod';
 import { Prisma } from '@/libs/prisma';
-import { z } from '@/libs/zod';
+
+export const RequeteEtapeSchema = z.object({
+  id: z.string().uuid(),
+  nom: z.string(),
+  estPartagee: z.boolean(),
+  statutId: z.string(),
+  requeteId: z.string(),
+  entiteId: z.string(),
+  clotureReasonId: z.string().nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+});
+
+export const RequeteEtapeNoteSchema = z.object({
+  id: z.string().uuid(),
+  texte: z.string(),
+  authorId: z.string(),
+  requeteEtapeId: z.string(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+});
 
 const columns = [
   Prisma.RequeteEtapeScalarFieldEnum.nom,

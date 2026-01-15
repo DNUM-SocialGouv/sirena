@@ -1,5 +1,13 @@
-import type { z as Z } from 'zod';
-import { SessionSchema } from '@/libs/zod';
+import { z } from 'zod';
+
+export const SessionSchema = z.object({
+  id: z.string().cuid(),
+  userId: z.string(),
+  token: z.string(),
+  expiresAt: z.coerce.date(),
+  pcIdToken: z.string(),
+  createdAt: z.coerce.date(),
+});
 
 export const SessionCreationSchema = SessionSchema.pick({
   userId: true,
@@ -8,4 +16,4 @@ export const SessionCreationSchema = SessionSchema.pick({
   expiresAt: true,
 });
 
-export type SessionCreationDto = Z.infer<typeof SessionCreationSchema>;
+export type SessionCreationDto = z.infer<typeof SessionCreationSchema>;
