@@ -1,6 +1,3 @@
--- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
-
 -- DropForeignKey
 ALTER TABLE "public"."InseePostal" DROP CONSTRAINT "InseePostal_codeInsee_fkey";
 
