@@ -80,14 +80,17 @@ export const GetOtherEntitesAffectedResponseSchema = z.object({
   subAdministrativeEntites: z.array(SubAdministrativeEntitesSchema),
 });
 
-const receptionDate = z.preprocess((val) => (val === '' ? null : val), z.string().date().nullable().optional());
-const receptionTypeId = z.preprocess(
-  (val) => (val === '' ? null : val),
-  z
-    .enum(Object.keys(RECEPTION_TYPE) as [string, ...string[]])
-    .nullable()
-    .optional(),
-);
+const receptionDate = z.iso.datetime().nullable().optional();
+const receptionTypeId = z
+  .enum([
+    RECEPTION_TYPE.EMAIL,
+    RECEPTION_TYPE.COURRIER,
+    RECEPTION_TYPE.AUTRE,
+    RECEPTION_TYPE.PLATEFORME,
+    RECEPTION_TYPE.TELEPHONE,
+  ])
+  .nullable()
+  .optional();
 const requeteControl = z.object({
   updatedAt: z.string().datetime(),
 });

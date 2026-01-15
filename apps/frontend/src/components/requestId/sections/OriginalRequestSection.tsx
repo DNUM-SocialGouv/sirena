@@ -84,6 +84,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
     onRefetch: onEdit || (() => {}),
     requeteUpdatedAt: updatedAt,
   });
+  const normalizeReceptionType = (value: ReceptionType | '') =>
+    value === RECEPTION_TYPE.FORMULAIRE ? null : value || null;
 
   const receptionOptions = useMemo(
     () =>
@@ -106,7 +108,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
       if (!requestId) {
         const createdRequete = await createRequeteMutation.mutateAsync({
           receptionDate: dateValue || null,
-          receptionTypeId: typeValue || null,
+          receptionTypeId: normalizeReceptionType(typeValue),
         });
         navigate({ to: '/request/$requestId', params: { requestId: createdRequete.id } });
         setIsEdit(false);
@@ -117,7 +119,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
 
       await handleSave({
         receptionDate: dateValue || null,
-        receptionTypeId: typeValue || null,
+        receptionTypeId: normalizeReceptionType(typeValue),
       });
       setIsEdit(false);
     } finally {

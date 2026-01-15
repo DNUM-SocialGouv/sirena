@@ -37,7 +37,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
             setEmailError(undefined);
           } catch (error) {
             if (error instanceof z.ZodError) {
-              setEmailError(error.errors[0].message);
+              setEmailError(error.issues[0].message);
             }
           }
         }
@@ -48,7 +48,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
             setPhoneError(undefined);
           } catch (error) {
             if (error instanceof z.ZodError) {
-              setPhoneError(error.errors[0].message);
+              setPhoneError(error.issues[0].message);
             }
           }
         }
@@ -70,7 +70,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
         setEmailError(undefined);
       } catch (error) {
         if (error instanceof z.ZodError) {
-          setEmailError(error.errors[0].message);
+          setEmailError(error.issues[0].message);
           hasErrors = true;
         }
       }
@@ -82,7 +82,7 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
         setPhoneError(undefined);
       } catch (error) {
         if (error instanceof z.ZodError) {
-          setPhoneError(error.errors[0].message);
+          setPhoneError(error.issues[0].message);
           hasErrors = true;
         }
       }

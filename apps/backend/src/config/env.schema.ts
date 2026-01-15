@@ -5,22 +5,30 @@ import { z } from 'zod';
  */
 export const ProConnectEnvSchema = z.object({
   PC_DOMAIN: z.string({
-    required_error: "La variable d'environnement PC_DOMAIN est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement PC_DOMAIN est requise" : 'Not a string',
   }),
   PC_CLIENT_ID: z.string({
-    required_error: "La variable d'environnement PC_CLIENT_ID est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement PC_CLIENT_ID est requise" : 'Not a string',
   }),
   PC_CLIENT_SECRET: z.string({
-    required_error: "La variable d'environnement PC_CLIENT_SECRET est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement PC_CLIENT_SECRET est requise" : 'Not a string',
   }),
   PC_ID_TOKEN_SIGNED_RESPONSE_ALG: z.string({
-    required_error: "La variable d'environnement PC_CLIENT_SECRET est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement PC_CLIENT_SECRET est requise" : 'Not a string',
   }),
   PC_USERINFO_SIGNED_RESPONSE_ALG: z.string({
-    required_error: "La variable d'environnement PC_USERINFO_SIGNED_RESPONSE_ALG est requise",
+    error: (issue) =>
+      issue.input === undefined
+        ? "La variable d'environnement PC_USERINFO_SIGNED_RESPONSE_ALG est requise"
+        : 'Not a string',
   }),
   PC_REDIRECT_URI: z.string({
-    required_error: "La variable d'environnement PC_REDIRECT_URI est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement PC_REDIRECT_URI est requise" : 'Not a string',
   }),
 });
 
@@ -29,13 +37,18 @@ export const ProConnectEnvSchema = z.object({
  */
 export const AppEnvSchema = z.object({
   FRONTEND_URI: z.string({
-    required_error: "La variable d'environnement FRONTEND_URI est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement FRONTEND_URI est requise" : 'Not a string',
   }),
   FRONTEND_REDIRECT_URI: z.string({
-    required_error: "La variable d'environnement FRONTEND_REDIRECT_URI est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement FRONTEND_REDIRECT_URI est requise" : 'Not a string',
   }),
   FRONTEND_REDIRECT_LOGIN_URI: z.string({
-    required_error: "La variable d'environnement FRONTEND_REDIRECT_LOGIN_URI est requise",
+    error: (issue) =>
+      issue.input === undefined
+        ? "La variable d'environnement FRONTEND_REDIRECT_LOGIN_URI est requise"
+        : 'Not a string',
   }),
   MONITORING_PORT: z
     .string()
@@ -60,41 +73,55 @@ export const AppEnvSchema = z.object({
       return parsed;
     }),
   AUTH_TOKEN_SECRET_KEY: z.string({
-    required_error: "La variable d'environnement AUTH_TOKEN_SECRET_KEY est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement AUTH_TOKEN_SECRET_KEY est requise" : 'Not a string',
   }),
   REFRESH_TOKEN_SECRET_KEY: z.string({
-    required_error: "La variable d'environnement AUTH_TOKEN_SECRET_KEY est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement AUTH_TOKEN_SECRET_KEY est requise" : 'Not a string',
   }),
   AUTH_TOKEN_EXPIRATION: z.string({
-    required_error: "La variable d'environnement AUTH_TOKEN_EXPIRATION est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement AUTH_TOKEN_EXPIRATION est requise" : 'Not a string',
   }),
   REFRESH_TOKEN_EXPIRATION: z.string({
-    required_error: "La variable d'environnement REFRESH_TOKEN_EXPIRATION est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement REFRESH_TOKEN_EXPIRATION est requise" : 'Not a string',
   }),
   AUTH_TOKEN_NAME: z.string({
-    required_error: "La variable d'environnement AUTH_TOKEN_NAME est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement AUTH_TOKEN_NAME est requise" : 'Not a string',
   }),
   REFRESH_TOKEN_NAME: z.string({
-    required_error: "La variable d'environnement REFRESH_TOKEN_NAME est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement REFRESH_TOKEN_NAME est requise" : 'Not a string',
   }),
   IS_LOGGED_TOKEN_NAME: z.string({
-    required_error: "La variable d'environnement IS_LOGGED_TOKEN_NAME est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement IS_LOGGED_TOKEN_NAME est requise" : 'Not a string',
   }),
   ANNUAIRE_SANTE_API_KEY: z.string({
-    required_error: "La variable d'environnement ANNUAIRE_SANTE_API_KEY est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement ANNUAIRE_SANTE_API_KEY est requise" : 'Not a string',
   }),
   ANNUAIRE_SANTE_API_URL: z.string({
-    required_error: "La variable d'environnement ANNUAIRE_SANTE_API_URL est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement ANNUAIRE_SANTE_API_URL est requise" : 'Not a string',
   }),
   DEMAT_SOCIAL_API_URL: z.string({
-    required_error: "La variable d'environnement DEMAT_SOCIAL_API_URL est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement DEMAT_SOCIAL_API_URL est requise" : 'Not a string',
   }),
   DEMAT_SOCIAL_API_TOKEN: z.string({
-    required_error: "La variable d'environnement DEMAT_SOCIAL_API_TOKEN est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement DEMAT_SOCIAL_API_TOKEN est requise" : 'Not a string',
   }),
   DEMAT_SOCIAL_API_DIRECTORY: z
     .string({
-      required_error: "La variable d'environnement DEMAT_SOCIAL_API_DIRECTORY est requise",
+      error: (issue) =>
+        issue.input === undefined
+          ? "La variable d'environnement DEMAT_SOCIAL_API_DIRECTORY est requise"
+          : 'Not a string',
     })
     .transform((val) => {
       const parsed = Number.parseInt(val, 10);
@@ -105,13 +132,13 @@ export const AppEnvSchema = z.object({
     }),
   DEMAT_SOCIAL_INSTRUCTEUR_ID: z.string(),
   LOG_FORMAT: z
-    .enum(['json', 'pretty'], {
-      invalid_type_error: "La variable d'environnement LOG_FORMAT doit être 'json' ou 'pretty'",
+    .enum(['json', 'pretty'] as const, {
+      error: () => "La variable d'environnement LOG_FORMAT doit être 'json' ou 'pretty'",
     })
     .optional(),
   LOG_LEVEL: z
-    .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'], {
-      invalid_type_error:
+    .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'] as const, {
+      error: () =>
         "La variable d'environnement LOG_LEVEL doit être 'trace', 'debug', 'info', 'warn', 'error', ou 'fatal'",
     })
     .default('info')
@@ -158,38 +185,45 @@ export const AppEnvSchema = z.object({
   SENTRY_ENVIRONMENT: z.string().optional(),
   S3_BUCKET_ACCESS_KEY: z
     .string({
-      required_error: "La variable d'environnement S3_BUCKET_ACCESS_KEY est requise",
+      error: (issue) =>
+        issue.input === undefined ? "La variable d'environnement S3_BUCKET_ACCESS_KEY est requise" : 'Not a string',
     })
     .default(''),
   S3_BUCKET_SECRET_KEY: z
     .string({
-      required_error: "La variable d'environnement S3_BUCKET_SECRET_KEY est requise",
+      error: (issue) =>
+        issue.input === undefined ? "La variable d'environnement S3_BUCKET_SECRET_KEY est requise" : 'Not a string',
     })
     .default(''),
   S3_BUCKET_ENDPOINT: z
     .string({
-      required_error: "La variable d'environnement S3_BUCKET_ENDPOINT est requise",
+      error: (issue) =>
+        issue.input === undefined ? "La variable d'environnement S3_BUCKET_ENDPOINT est requise" : 'Not a string',
     })
     .default(''),
   S3_BUCKET_NAME: z
     .string({
-      required_error: "La variable d'environnement S3_BUCKET_NAME est requise",
+      error: (issue) =>
+        issue.input === undefined ? "La variable d'environnement S3_BUCKET_NAME est requise" : 'Not a string',
     })
     .default(''),
   S3_BUCKET_REGION: z.string().optional().default(''),
   S3_BUCKET_ROOT_DIR: z
     .string({
-      required_error: "La variable d'environnement S3_BUCKET_ROOT_DIR est requise",
+      error: (issue) =>
+        issue.input === undefined ? "La variable d'environnement S3_BUCKET_ROOT_DIR est requise" : 'Not a string',
     })
     .default(''),
   S3_BUCKET_PORT: z
     .string({
-      required_error: "La variable d'environnement S3_BUCKET_PORT est requise",
+      error: (issue) =>
+        issue.input === undefined ? "La variable d'environnement S3_BUCKET_PORT est requise" : 'Not a string',
     })
     .default(''),
   S3_ENCRYPTION_KEY: z
     .string({
-      required_error: "La variable d'environnement S3_ENCRYPTION_KEY est requise",
+      error: (issue) =>
+        issue.input === undefined ? "La variable d'environnement S3_ENCRYPTION_KEY est requise" : 'Not a string',
     })
     .length(64, 'S3_ENCRYPTION_KEY must be exactly 64 characters (32 bytes hex)')
     .regex(/^[0-9a-fA-F]+$/, 'S3_ENCRYPTION_KEY must be a valid hexadecimal string'),
@@ -197,27 +231,35 @@ export const AppEnvSchema = z.object({
   CLAMAV_PORT: z.string().optional().default('3310').describe('Port of the ClamAV daemon (default: 3310)'),
   TIPIMAIL_API_URL: z
     .string({
-      required_error: "La variable d'environnement TIPIMAIL_API_URL est requise",
+      error: (issue) =>
+        issue.input === undefined ? "La variable d'environnement TIPIMAIL_API_URL est requise" : 'Not a string',
     })
     .optional()
     .default(''),
   TIPIMAIL_API_KEY: z
     .string({
-      required_error: "La variable d'environnement TIPIMAIL_API_KEY est requise",
+      error: (issue) =>
+        issue.input === undefined ? "La variable d'environnement TIPIMAIL_API_KEY est requise" : 'Not a string',
     })
     .optional()
     .default(''),
   TIPIMAIL_USER_ID: z.string({
-    required_error: "La variable d'environnement TIPIMAIL_USER_ID est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement TIPIMAIL_USER_ID est requise" : 'Not a string',
   }),
   TIPIMAIL_FROM_ADDRESS: z.string({
-    required_error: "La variable d'environnement TIPIMAIL_FROM_ADDRESS est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement TIPIMAIL_FROM_ADDRESS est requise" : 'Not a string',
   }),
   TIPIMAIL_FROM_PERSONAL_NAME: z.string({
-    required_error: "La variable d'environnement TIPIMAIL_FROM_PERSONAL_NAME est requise",
+    error: (issue) =>
+      issue.input === undefined
+        ? "La variable d'environnement TIPIMAIL_FROM_PERSONAL_NAME est requise"
+        : 'Not a string',
   }),
   REDIS_HOST: z.string({
-    required_error: "La variable d'environnement REDIS_HOST est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement REDIS_HOST est requise" : 'Not a string',
   }),
   REDIS_PORT: z
     .string()
@@ -237,7 +279,8 @@ export const AppEnvSchema = z.object({
 
 export const CronEnvSchema = z.object({
   CRON_DEMAT_SOCIAL: z.string({
-    required_error: "La variable d'environnement CRON_DEMAT_SOCIAL est requise",
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement CRON_DEMAT_SOCIAL est requise" : 'Not a string',
   }),
   CRON_RETRY_AFFECTATION: z.string().optional().default('3600'),
   CRON_RETRY_IMPORT_REQUETES: z.string().optional().default('3600'),

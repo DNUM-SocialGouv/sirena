@@ -1,11 +1,12 @@
+import type { ReceptionType } from '@sirena/common/constants';
 import { client } from '@/lib/api/hc.ts';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery.ts';
 import type { DeclarantData } from '@/lib/declarant';
 
-interface CreateRequeteInput {
+export interface CreateRequeteInput {
   declarant?: DeclarantData;
   receptionDate?: string | null;
-  receptionTypeId?: string | null;
+  receptionTypeId?: Exclude<ReceptionType, 'FORMULAIRE'> | null;
 }
 
 export async function createRequeteEntite(data: CreateRequeteInput) {

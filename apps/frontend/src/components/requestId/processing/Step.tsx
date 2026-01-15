@@ -107,7 +107,7 @@ const StepComponent = ({
     });
 
     if (!validationResult.success) {
-      const firstError = validationResult.error.errors[0];
+      const firstError = validationResult.error.issues[0];
       setEditError(firstError.message);
       return;
     }

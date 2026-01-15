@@ -118,7 +118,7 @@ function RouteComponent() {
     const validationResult = userFormSchema.safeParse(formData);
     if (!validationResult.success) {
       const errors: Record<string, string> = {};
-      validationResult.error.errors.forEach((error) => {
+      validationResult.error.issues.forEach((error) => {
         const field = error.path[0] as string;
         errors[field] = error.message;
       });
