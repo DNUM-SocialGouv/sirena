@@ -8,6 +8,7 @@ import { clsx } from 'clsx';
 import { memo, useState } from 'react';
 import { ButtonLink } from '@/components/common/ButtonLink';
 import { StatusMenu } from '@/components/common/statusMenu';
+import { formatFullName } from '@/components/requestId/sections/helpers';
 import { useDeleteProcessingStep, useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useUpdateProcessingStepName } from '@/hooks/mutations/updateProcessingStepName.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
@@ -32,9 +33,29 @@ type StepProps = StepType & {
   ): void;
 };
 
+const formatStepCreationInfo = (
+  createdBy: { prenom: string; nom: string } | null | undefined,
+  createdAt: string,
+): string => {
+  const formattedDate = new Date(createdAt).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  if (createdBy) {
+    const creatorName = formatFullName({ prenom: createdBy.prenom, nom: createdBy.nom });
+    return `Ajouté par ${creatorName} le ${formattedDate}`;
+  }
+
+  return `Ajouté automatiquement le ${formattedDate}`;
+};
+
 const StepComponent = ({
   requestId,
   nom,
+  createdBy,
+  createdAt,
   statutId,
   disabled,
   openEdit,
@@ -162,33 +183,38 @@ const StepComponent = ({
             </div>
           </div>
         ) : (
-          <div className="fr-grid-row fr-grid-row--middle fr-mb-2w">
-            <div className="fr-col">
-              <h3 className="fr-h6 fr-mb-0">{nom ?? ''}</h3>
+          <div className="fr-mb-2w">
+            <div className="fr-grid-row fr-grid-row--middle">
+              <div className="fr-col">
+                <h3 className="fr-h6 fr-mb-0">{nom ?? ''}</h3>
+              </div>
+              <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
+                <StatusMenu
+                  badges={badges}
+                  value={statutId}
+                  disabled={disabled || !canEdit || updateStatusMutation.isPending}
+                  onBadgeClick={handleStatusChange}
+                />
+              </div>
+              <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
+                {canEdit && (
+                  <Button
+                    priority="tertiary no outline"
+                    size="small"
+                    iconId="fr-icon-edit-line"
+                    title="Modifier le nom de l'étape"
+                    aria-label="Modifier le nom de l'étape"
+                    className="fr-btn--icon-center center-icon-with-sr-only"
+                    onClick={() => handleEditButton(true)}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    <span className="fr-sr-only">Modifier le nom de l'étape</span>
+                  </Button>
+                )}
+              </div>
             </div>
-            <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-              <StatusMenu
-                badges={badges}
-                value={statutId}
-                disabled={disabled || !canEdit || updateStatusMutation.isPending}
-                onBadgeClick={handleStatusChange}
-              />
-            </div>
-            <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-              {canEdit && (
-                <Button
-                  priority="tertiary no outline"
-                  size="small"
-                  iconId="fr-icon-edit-line"
-                  title="Modifier le nom de l'étape"
-                  aria-label="Modifier le nom de l'étape"
-                  className="fr-btn--icon-center center-icon-with-sr-only"
-                  onClick={() => handleEditButton(true)}
-                  style={{ whiteSpace: 'nowrap' }}
-                >
-                  <span className="fr-sr-only">Modifier le nom de l'étape</span>
-                </Button>
-              )}
+            <div>
+              <span className="fr-text--xs fr-text-mention--grey">{formatStepCreationInfo(createdBy, createdAt)}</span>
             </div>
           </div>
         )}
@@ -209,7 +235,9 @@ const StepComponent = ({
                 originalName: (file.metadata as { originalName?: string })?.originalName || 'Unknown',
               }))}
               requeteStateId={id}
-              onEdit={(noteData) => openEditNote?.({ id, nom, statutId, notes, ...rest }, noteData)}
+              onEdit={(noteData) =>
+                openEditNote?.({ id, nom, statutId, notes, createdAt, createdBy, ...rest }, noteData)
+              }
               clotureReasonLabel={
                 statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ? rest.clotureReason?.label || 'Non spécifié' : null
               }
@@ -232,7 +260,7 @@ const StepComponent = ({
             type="button"
             priority="tertiary"
             iconId="fr-icon-add-line"
-            onClick={() => openEdit?.({ id, nom, statutId, notes, ...rest })}
+            onClick={() => openEdit?.({ id, nom, statutId, notes, createdAt, createdBy, ...rest })}
           >
             Note ou fichier
           </Button>

@@ -78,7 +78,12 @@ export const createDefaultRequeteEtapes = async (
   return { etape1, etape2 };
 };
 
-export const addProcessingEtape = async (requeteId: string, entiteId: string | null, data: RequeteEtapeCreationDto) => {
+export const addProcessingEtape = async (
+  requeteId: string,
+  entiteId: string | null,
+  data: RequeteEtapeCreationDto,
+  userId?: string,
+) => {
   if (!entiteId) {
     return null;
   }
@@ -114,6 +119,7 @@ export const addProcessingEtape = async (requeteId: string, entiteId: string | n
       entiteId,
       nom: data.nom,
       statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+      createdById: userId,
     },
   });
 
@@ -149,6 +155,12 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
         },
         createdAt: true,
         updatedAt: true,
+        createdBy: {
+          select: {
+            prenom: true,
+            nom: true,
+          },
+        },
         notes: {
           select: {
             id: true,

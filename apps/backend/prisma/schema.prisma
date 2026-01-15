@@ -54,10 +54,11 @@ model User {
   entiteId String?
   entite   Entite? @relation(fields: [entiteId], references: [id])
 
-  sessions   Session[]
-  changeLogs ChangeLog[]
-  uploads    UploadedFile[]
-  notes      RequeteEtapeNote[]
+  sessions      Session[]
+  changeLogs    ChangeLog[]
+  uploads       UploadedFile[]
+  notes         RequeteEtapeNote[]
+  createdEtapes RequeteEtape[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -496,6 +497,9 @@ model RequeteEtape {
 
   clotureReasonId String?
   clotureReason   RequeteClotureReasonEnum? @relation(fields: [clotureReasonId], references: [id])
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

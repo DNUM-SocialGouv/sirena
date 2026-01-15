@@ -15,7 +15,7 @@ import { getUploadedFileById } from '@/features/uploadedFiles/uploadedFiles.serv
 import { errorHandler } from '@/helpers/errors';
 import appWithLogs from '@/helpers/factories/appWithLogs';
 import { getFileStream } from '@/libs/minio';
-import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
+import type { RequeteEntite, RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
 import { convertDatesToStrings } from '@/tests/formatter';
 import {
   getRequeteEntiteById,
@@ -117,6 +117,7 @@ const fakeRequeteEtape: RequeteEtape = {
   updatedAt: new Date(),
   estPartagee: false,
   clotureReasonId: null,
+  createdById: null,
 };
 
 const fakeUpdatedRequeteEtape: RequeteEtape = {
@@ -133,7 +134,7 @@ const fakeUpdatedNomRequeteEtape: RequeteEtape = {
 
 const fakeRequeteEntite = {
   statutId: 'EN_COURS',
-};
+} as unknown as Awaited<ReturnType<typeof getRequeteEntiteById>>;
 
 describe('requeteEtapes.controller.ts', () => {
   const app = appWithLogs.createApp().use(pinoLogger()).route('/', RequeteEtapesController).onError(errorHandler);
@@ -150,7 +151,7 @@ describe('requeteEtapes.controller.ts', () => {
       requeteId: 'requeteId',
       entiteId: 'e1',
       prioriteId: null,
-    });
+    } as RequeteEntite);
   });
 
   describe('PATCH /:id/statut', () => {
@@ -354,6 +355,11 @@ describe('requeteEtapes.controller.ts', () => {
       requeteEtapeNoteId: 'step1',
       demarchesEngageesId: null,
       canDelete: true,
+      scanStatus: 'PENDING',
+      sanitizeStatus: 'PENDING',
+      safeFilePath: null,
+      scanResult: null,
+      processingError: null,
     };
 
     it('streams the file with correct headers (inline) and body content', async () => {
@@ -551,6 +557,7 @@ describe('requeteEtapes.controller.ts', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       clotureReasonId: null,
+      createdById: null,
     };
 
     const note: RequeteEtapeNote = {
@@ -575,9 +582,11 @@ describe('requeteEtapes.controller.ts', () => {
         uploadedFiles: Pick<UploadedFile, 'id' | 'size' | 'metadata'>[];
       })[];
       clotureReason: { label: string } | null;
+      createdBy: { prenom: string; nom: string } | null;
     } = {
       ...requeteEtape,
       clotureReason: null,
+      createdBy: null,
       notes: [
         {
           ...note,
@@ -631,6 +640,7 @@ describe('requeteEtapes.controller.ts', () => {
         entiteId: 'e1',
         estPartagee: false,
         clotureReasonId: null,
+        createdById: null,
       };
 
       vi.mocked(addProcessingEtape).mockResolvedValueOnce(fakeStep);
@@ -643,7 +653,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(201);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeStep) });
-      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' }, 'test-user-id');
     });
 
     it('should return 404 if hasAccessToRequete returns false', async () => {
@@ -673,7 +683,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(404);
       const json = await res.json();
       expect(json).toEqual({ message: 'Requete entite not found' });
-      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' });
+      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' }, 'test-user-id');
     });
   });
 });
