@@ -12,6 +12,7 @@ on:
           - validation
           - preproduction
           - production
+          - formation
         default: "validation"
 
 jobs:
