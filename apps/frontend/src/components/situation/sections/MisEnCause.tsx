@@ -4,10 +4,12 @@ import {
   AUTRE_PROFESSIONNEL_PRECISION,
   autreProfessionnelPrecisionLabels,
   MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   MIS_EN_CAUSE_FAMILLE_PRECISION,
   MIS_EN_CAUSE_PROCHE_PRECISION,
   MIS_EN_CAUSE_TYPE,
   misEnCauseAutreNonProPrecisionLabels,
+  misEnCauseEtablissementPrecisionLabels,
   misEnCauseFamillePrecisionLabels,
   misEnCauseProchePrecisionLabels,
   misEnCauseTypeLabels,
@@ -26,43 +28,60 @@ type misEnCauseProps = {
   setFormData: React.Dispatch<React.SetStateAction<SituationData>>;
 };
 
+type MisEnCauseTypeSansAutreEtNpjm = keyof Omit<typeof MIS_EN_CAUSE_TYPE, 'AUTRE' | 'NPJM'>;
+
+const misEncauses = Object.entries(MIS_EN_CAUSE_TYPE).map(([key, value]) => ({
+  key,
+  value: misEnCauseTypeLabels[value],
+}));
+
+const misEnCauseProchePrecision = Object.entries(MIS_EN_CAUSE_PROCHE_PRECISION).map(([key, value]) => ({
+  key,
+  value: misEnCauseProchePrecisionLabels[value],
+}));
+
+const misEnCauseFamillePrecision = Object.entries(MIS_EN_CAUSE_FAMILLE_PRECISION).map(([key, value]) => ({
+  key,
+  value: misEnCauseFamillePrecisionLabels[value],
+}));
+
+const misEnCauseAutreNonProPrecision = Object.entries(MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION).map(([key, value]) => ({
+  key,
+  value: misEnCauseAutreNonProPrecisionLabels[value],
+}));
+
+const misEnCauseEtablissementPrecision = Object.entries(MIS_EN_CAUSE_ETABLISSEMENT_PRECISION).map(([key, value]) => ({
+  key,
+  value: misEnCauseEtablissementPrecisionLabels[value],
+}));
+
+const professionSantePrecision = Object.entries(PROFESSION_SANTE_PRECISION).map(([key, value]) => ({
+  key,
+  value: professionSantePrecisionLabels[value],
+}));
+
+const professionSocialPrecision = Object.entries(PROFESSION_SOCIAL_PRECISION).map(([key, value]) => ({
+  key,
+  value: professionSocialPrecisionLabels[value],
+}));
+
+const autreProfessionnelPrecision = Object.entries(AUTRE_PROFESSIONNEL_PRECISION).map(([key, value]) => ({
+  key,
+  value: autreProfessionnelPrecisionLabels[value],
+}));
+
+const precisions: Record<MisEnCauseTypeSansAutreEtNpjm, { key: string; value: string }[]> = {
+  [MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE]: misEnCauseFamillePrecision,
+  [MIS_EN_CAUSE_TYPE.PROCHE]: misEnCauseProchePrecision,
+  [MIS_EN_CAUSE_TYPE.AUTRE_PERSONNE_NON_PRO]: misEnCauseAutreNonProPrecision,
+  [MIS_EN_CAUSE_TYPE.ETABLISSEMENT]: misEnCauseEtablissementPrecision,
+  [MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE]: professionSantePrecision,
+  [MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SOCIAL]: professionSocialPrecision,
+  [MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL]: autreProfessionnelPrecision,
+};
+
 export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps) {
   const misEnCauseType = formData.misEnCause?.misEnCauseType;
-
-  const misEncauses = Object.entries(MIS_EN_CAUSE_TYPE).map(([key, value]) => ({
-    key,
-    value: misEnCauseTypeLabels[value],
-  }));
-
-  const misEnCauseProchePrecision = Object.entries(MIS_EN_CAUSE_PROCHE_PRECISION).map(([key, value]) => ({
-    key,
-    value: misEnCauseProchePrecisionLabels[value],
-  }));
-
-  const misEnCauseFamillePrecision = Object.entries(MIS_EN_CAUSE_FAMILLE_PRECISION).map(([key, value]) => ({
-    key,
-    value: misEnCauseFamillePrecisionLabels[value],
-  }));
-
-  const misEnCauseAutreNonProPrecision = Object.entries(MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION).map(([key, value]) => ({
-    key,
-    value: misEnCauseAutreNonProPrecisionLabels[value],
-  }));
-
-  const professionSantePrecision = Object.entries(PROFESSION_SANTE_PRECISION).map(([key, value]) => ({
-    key,
-    value: professionSantePrecisionLabels[value],
-  }));
-
-  const professionSocialPrecision = Object.entries(PROFESSION_SOCIAL_PRECISION).map(([key, value]) => ({
-    key,
-    value: professionSocialPrecisionLabels[value],
-  }));
-
-  const autreProfessionnelPrecision = Object.entries(AUTRE_PROFESSIONNEL_PRECISION).map(([key, value]) => ({
-    key,
-    value: autreProfessionnelPrecisionLabels[value],
-  }));
 
   return (
     <div
@@ -81,6 +100,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                   ...prev,
                   misEnCause: {
                     misEnCauseType: e.target.value || undefined,
+                    misEnCauseTypePrecision: undefined,
                   },
                 })),
             }}
@@ -94,7 +114,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
           </Select>
         </div>
 
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE && (
+        {misEnCauseType && (
           <div className="fr-col-12 fr-col-md-6">
             <Select
               label="Précision"
@@ -108,122 +128,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
               }}
             >
               <option value="">Sélectionner une option</option>
-              {misEnCauseFamillePrecision.map(({ key, value }) => (
-                <option key={key} value={key}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.PROCHE && (
-          <div className="fr-col-12 fr-col-md-6">
-            <Select
-              label="Précision"
-              nativeSelectProps={{
-                value: formData.misEnCause?.misEnCauseTypePrecision || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    misEnCause: { ...prev.misEnCause, misEnCauseTypePrecision: e.target.value || undefined },
-                  })),
-              }}
-            >
-              <option value="">Sélectionner une option</option>
-              {misEnCauseProchePrecision.map(({ key, value }) => (
-                <option key={key} value={key}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.AUTRE_PERSONNE_NON_PRO && (
-          <div className="fr-col-12 fr-col-md-6">
-            <Select
-              label="Précision"
-              nativeSelectProps={{
-                value: formData.misEnCause?.misEnCauseTypePrecision || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    misEnCause: { ...prev.misEnCause, misEnCauseTypePrecision: e.target.value || undefined },
-                  })),
-              }}
-            >
-              <option value="">Sélectionner une option</option>
-              {misEnCauseAutreNonProPrecision.map(({ key, value }) => (
-                <option key={key} value={key}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE && (
-          <div className="fr-col-12 fr-col-md-6">
-            <Select
-              label="Précision"
-              nativeSelectProps={{
-                value: formData.misEnCause?.misEnCauseTypePrecision || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    misEnCause: { ...prev.misEnCause, misEnCauseTypePrecision: e.target.value || undefined },
-                  })),
-              }}
-            >
-              <option value="">Sélectionner une option</option>
-              {professionSantePrecision.map(({ key, value }) => (
-                <option key={key} value={key}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SOCIAL && (
-          <div className="fr-col-12 fr-col-md-6">
-            <Select
-              label="Précision"
-              nativeSelectProps={{
-                value: formData.misEnCause?.misEnCauseTypePrecision || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    misEnCause: { ...prev.misEnCause, misEnCauseTypePrecision: e.target.value || undefined },
-                  })),
-              }}
-            >
-              <option value="">Sélectionner une option</option>
-              {professionSocialPrecision.map(({ key, value }) => (
-                <option key={key} value={key}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL && (
-          <div className="fr-col-12 fr-col-md-6">
-            <Select
-              label="Précision"
-              nativeSelectProps={{
-                value: formData.misEnCause?.misEnCauseTypePrecision || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    misEnCause: { ...prev.misEnCause, misEnCauseTypePrecision: e.target.value || undefined },
-                  })),
-              }}
-            >
-              <option value="">Sélectionner une option</option>
-              {autreProfessionnelPrecision.map(({ key, value }) => (
+              {precisions[misEnCauseType as MisEnCauseTypeSansAutreEtNpjm]?.map(({ key, value }) => (
                 <option key={key} value={key}>
                   {value}
                 </option>

@@ -11,6 +11,7 @@ import {
   MOTIFS_DATA,
   maltraitanceTypeLabels,
   misEnCauseAutreNonProPrecisionLabels,
+  misEnCauseEtablissementPrecisionLabels,
   misEnCauseFamillePrecisionLabels,
   misEnCauseProchePrecisionLabels,
   misEnCauseTypeLabels,
@@ -193,7 +194,7 @@ async function seedMisEnCauseTypePrecisionEnum(prisma: PrismaClient) {
   // Helper to add precisions for a given parent type
   const addPrecisions = async (parentTypeId: string, precisionLabels: Record<string, string>) => {
     for (const [id, label] of Object.entries(precisionLabels)) {
-      const exists = await prisma.misEnCauseTypePrecisionEnum.findUnique({ where: { id } });
+      const exists = await prisma.misEnCauseTypePrecisionEnum.findUnique({ where: { id, label } });
       if (!exists) {
         await prisma.misEnCauseTypePrecisionEnum.create({
           data: {
@@ -217,6 +218,7 @@ async function seedMisEnCauseTypePrecisionEnum(prisma: PrismaClient) {
   await addPrecisions('PROFESSIONNEL_SANTE', professionSantePrecisionLabels);
   await addPrecisions('PROFESSIONNEL_SOCIAL', professionSocialPrecisionLabels);
   await addPrecisions('AUTRE_PROFESSIONNEL', autreProfessionnelPrecisionLabels);
+  await addPrecisions('ETABLISSEMENT', misEnCauseEtablissementPrecisionLabels);
 
   // Also seed old DematSocial enum values for backward compatibility
   await addPrecisions('PROFESSIONNEL_SANTE', professionTypeLabels);

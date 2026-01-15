@@ -7,6 +7,9 @@ import { seedEntites } from './seed/add_entities';
 import { seedEnums } from './seed/add_enums';
 import { seedRequeteFromDematSocial } from './seed/get_demat_social';
 import '@/libs/instrument';
+import { connection as redisConnection } from '@/config/redis';
+import { prisma as appPrisma } from '@/libs/prisma';
+
 async function main() {
   const prisma = new PrismaClient({
     transactionOptions: {
@@ -46,7 +49,9 @@ async function main() {
         try {
           await seeding();
         } finally {
+          await redisConnection.quit();
           await prisma.$disconnect();
+          await appPrisma.$disconnect();
         }
       });
     });

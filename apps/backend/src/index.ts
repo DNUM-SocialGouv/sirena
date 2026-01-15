@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server';
 import { app } from './app';
 import { prisma } from './libs/prisma';
 import { setupOpenAPI } from './openAPI';
-import '@/config/env.ts';
+import '@/config/env';
 import { getPrometheusContentType, getPrometheusMetrics } from '@/features/monitoring/metrics.backend';
 import { createMonitoringServer } from '@/features/monitoring/server';
 import { createDefaultLogger } from '@/helpers/pino';

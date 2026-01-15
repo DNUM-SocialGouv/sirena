@@ -7,6 +7,7 @@ import {
   LIEU_ETABLISSEMENT_SANTE_PRECISION,
   LIEU_TYPE,
   MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   MIS_EN_CAUSE_TYPE,
   RECEPTION_TYPE,
 } from '@sirena/common/constants';
@@ -279,13 +280,13 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
       if (professionelType === DS_PROFESSION_DOMICILE_TYPE.AUTRE_PROFESSIONNEL) {
         return {
           misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
-          misEnCauseTypePrecisionId: null,
+          misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SERVICE,
         };
       }
       if (professionelType === DS_PROFESSION_DOMICILE_TYPE.SERVICE_EDUCATION) {
         return {
           misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
-          misEnCauseTypePrecisionId: null,
+          misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SESSAD,
         };
       }
     }
@@ -362,7 +363,7 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
       if (lieuTypeId !== LIEU_TYPE.TRAJET) {
         return {
           misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
-          misEnCauseTypePrecisionId: null,
+          misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.ETABLISSEMENT,
         };
       }
     }
