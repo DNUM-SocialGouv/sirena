@@ -224,7 +224,7 @@ function RouteComponent() {
               }
               misEnCause={situations?.[0]?.misEnCause?.misEnCauseType?.label || 'Non spécifié'}
               otherEntitiesAffected={computedOtherEntities}
-              customDescription={`Votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${requestId}.`}
+              customDescription={`Attention : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${requestId}.`}
               triggerButtonRef={saveButtonRef}
               onCancel={handleCloseModalCancel}
               onSuccess={handleCloseModalSuccess}

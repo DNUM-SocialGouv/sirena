@@ -205,7 +205,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
     const descriptionText =
       customDescription ||
-      `Vous allez clôturer la requête ${requestId} prise en charge le ${date} avec pour mise en cause "${misEnCause}".`;
+      `Attention : vous allez clôturer la requête ${requestId} prise en charge le ${date} avec pour mise en cause "${misEnCause}".`;
 
     return (
       <closeModal.Component
@@ -228,20 +228,19 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       >
         <div className="fr-mb-4w">
           <div className="fr-text--sm fr-text--grey">
-            <Alert small={false} title="Attention" severity="warning" description={descriptionText} />
+            <Alert small={true} severity="warning" description={descriptionText} />
           </div>
         </div>
 
         {otherEntitiesAffected.length > 0 && (
           <div className="fr-mb-4w">
             <Alert
-              small={false}
-              title="Information"
+              small={true}
               severity="info"
               description={
                 <div>
                   <p className="fr-mb-2w">
-                    Les autres entités administratives affectées ne seront pas impactées par la clôture :
+                    Information : les autres entités administratives affectées ne seront pas impactées par la clôture :
                   </p>
                   <ul className="fr-mb-0">
                     {otherEntitiesAffected.map((entity) => (
