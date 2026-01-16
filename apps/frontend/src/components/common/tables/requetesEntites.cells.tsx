@@ -9,13 +9,72 @@ import {
 import { valueToLabel } from '@sirena/common/utils';
 import type { ReactNode } from 'react';
 import type { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
+import styles from './requetesEntites.cells.module.css';
 
 type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number];
+type Situation = RequeteEntiteRow['requete']['situations'][number];
+type Fait = NonNullable<Situation['faits']>[number];
+type MisEnCause = Situation['misEnCause'];
+type LieuDeSurvenue = Situation['lieuDeSurvenue'];
+type SituationEntite = NonNullable<Situation['situationEntites']>[number];
+type EntiteInfo = NonNullable<SituationEntite['entite']>;
 
-/**
- * Extracts the parent label (first level) of a motif from its hierarchical ID
- */
-const getParentLabel = (motifId: string | undefined): { label: string | null; isMaltraitance: boolean } => {
+type LabeledItem = { label: string; title: string };
+type ServiceInfo = { id: string; name: string; nomComplet: string; parentName?: string; parentNomComplet?: string };
+
+const UNKNOWN_VALUE = 'Non renseigné';
+const MALTRAITANCE_PARENT_VALUE = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE';
+const NEGATIVE_MALTRAITANCE_ANSWERS = ['NON', 'NE_SAIS_PAS'];
+
+const getDisplayName = (e: EntiteInfo): string => e.label || e.nomComplet;
+const getFullName = (e: EntiteInfo): string => e.nomComplet || e.label;
+const isRootEntite = (e: EntiteInfo): boolean => e.entiteMereId === null;
+
+const uniqueBy = <T, K>(items: T[], keyFn: (item: T) => K): T[] => {
+  const seen = new Set<K>();
+  return items.filter((item) => {
+    const key = keyFn(item);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const flatMap = <T, U>(items: T[], fn: (item: T) => U[]): U[] => items.flatMap(fn);
+
+const renderLabeledItems = (items: LabeledItem[], alwaysShowAbbr = false): ReactNode => (
+  <ul className={styles.inlineList}>
+    {items.map((item) => (
+      <li key={item.label}>
+        {alwaysShowAbbr || item.label !== item.title ? (
+          <abbr title={item.title} style={{ textDecoration: 'none', cursor: 'help' }}>
+            {item.label}
+          </abbr>
+        ) : (
+          item.label
+        )}
+      </li>
+    ))}
+  </ul>
+);
+
+const renderInlineList = (items: string[]): ReactNode => (
+  <ul className={styles.inlineList}>
+    {items.map((item) => (
+      <li key={item}>{item}</li>
+    ))}
+  </ul>
+);
+
+const renderList = (items: string[]): ReactNode => (
+  <ul className={styles.list}>
+    {items.map((item) => (
+      <li key={item}>{item}</li>
+    ))}
+  </ul>
+);
+
+const getMotifParentInfo = (motifId: string | undefined): { label: string | null; isMaltraitance: boolean } => {
   if (!motifId) return { label: null, isMaltraitance: false };
   const parts = motifId.split('/');
   if (parts.length !== 2) return { label: null, isMaltraitance: false };
@@ -24,96 +83,64 @@ const getParentLabel = (motifId: string | undefined): { label: string | null; is
   const parent = MOTIFS_HIERARCHICAL_DATA.find((p) => p.value === parentValue);
   if (!parent) return { label: null, isMaltraitance: false };
 
-  // If it's "Maltraitance professionnels ou entourage", return null for the label
-  // because we'll display the "Maltraitance" tag at the beginning of the line instead
-  if (parentValue === 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE') {
-    return { label: null, isMaltraitance: true };
-  }
-
-  return { label: parent.label, isMaltraitance: false };
+  return parentValue === MALTRAITANCE_PARENT_VALUE
+    ? { label: null, isMaltraitance: true }
+    : { label: parent.label, isMaltraitance: false };
 };
 
-/**
- * Renders the "Motifs" cell for a "requête" row
- */
+const extractMotifsFromFait = (fait: Fait) => ({
+  qualifies: fait?.motifs ?? [],
+  declaratifs: fait?.motifsDeclaratifs ?? [],
+  hasMaltraitance: (fait?.maltraitanceTypes ?? []).some(
+    (t) => !NEGATIVE_MALTRAITANCE_ANSWERS.includes(t?.maltraitanceTypeId ?? ''),
+  ),
+});
+
+const collectMotifs = (situations: Situation[]) => {
+  const allFaits = flatMap(situations, (s) => s?.faits ?? []);
+  const extracted = allFaits.map(extractMotifsFromFait);
+
+  return {
+    qualifies: flatMap(extracted, (e) => e.qualifies),
+    declaratifs: flatMap(extracted, (e) => e.declaratifs),
+    hasMaltraitance: extracted.some((e) => e.hasMaltraitance),
+  };
+};
+
+const processQualifiedMotifs = (motifs: ReturnType<typeof collectMotifs>['qualifies']) => {
+  const results = motifs.map((m) => getMotifParentInfo(m?.motif?.id || m?.motifId));
+  return {
+    labels: [...new Set(results.filter((r) => r.label).map((r) => r.label as string))],
+    showMaltraitance: results.some((r) => r.isMaltraitance),
+  };
+};
+
+const processDeclarativeMotifs = (motifs: ReturnType<typeof collectMotifs>['declaratifs']) => [
+  ...new Set(
+    motifs
+      .map((m) => m?.motifDeclaratif?.label)
+      .filter((l): l is string => Boolean(l))
+      .map((l) => valueToLabel(l) || l),
+  ),
+];
+
 export function renderMotifsCell(row: RequeteEntiteRow): ReactNode {
-  const requete = row.requete;
+  const { situations, dematSocialId } = row.requete;
+  const { qualifies, declaratifs, hasMaltraitance } = collectMotifs(situations ?? []);
 
-  // Check if the "requête" comes from demat.social
-  const isFromDematSocial = requete.dematSocialId != null;
-
-  const situations = requete.situations || [];
-
-  // Collect all "motifs qualifiés" from all "situations" and all "faits"
-  const motifsQualifies: Array<{ motifId?: string; motif?: { id?: string; label?: string } }> = [];
-  // Collect all "motifs déclaratifs" from all "situations" and all "faits"
-  const motifsDeclaratifs: Array<{
-    motifDeclaratifId?: string;
-    motifDeclaratif?: { id?: string; label?: string };
-  }> = [];
-  // Check if at least one "fait" has a "yes" answer to the "maltraitance" question
-  let hasMaltraitanceAnswer = false;
-
-  situations.forEach((situation) => {
-    const faits = situation?.faits || [];
-    faits.forEach((fait) => {
-      // Collect "motifs qualifiés"
-      if (fait?.motifs) {
-        motifsQualifies.push(...fait.motifs);
-      }
-      // Collect "motifs déclaratifs"
-      if (fait?.motifsDeclaratifs) {
-        motifsDeclaratifs.push(...fait.motifsDeclaratifs);
-      }
-      // Check if the user answered yes to the "maltraitance" question
-      // (exclude "NON" and "NE_SAIS_PAS" which are negative answers)
-      const maltraitanceTypes = fait?.maltraitanceTypes || [];
-      if (
-        maltraitanceTypes.length > 0 &&
-        maltraitanceTypes.some(
-          (type) => type?.maltraitanceTypeId !== 'NON' && type?.maltraitanceTypeId !== 'NE_SAIS_PAS',
-        )
-      ) {
-        hasMaltraitanceAnswer = true;
-      }
-    });
-  });
-
-  // Collect unique motifs (without duplicates)
-  const motifItems = new Set<string>();
+  let labels: string[] = [];
   let showMaltraitanceBadge = false;
 
-  // If "motifs qualifiés" exist, use the same rules for "requêtes manuelles" and demat.social
-  if (motifsQualifies.length > 0) {
-    motifsQualifies.forEach((motif) => {
-      const { label, isMaltraitance } = getParentLabel(motif?.motif?.id || motif?.motifId);
-      if (isMaltraitance) {
-        showMaltraitanceBadge = true;
-      } else if (label) {
-        motifItems.add(label);
-      }
-    });
-  }
-  // Otherwise, if it's a demat.social "requête", use "motifs déclaratifs"
-  else if (isFromDematSocial && motifsDeclaratifs.length > 0) {
-    motifsDeclaratifs.forEach((motifDeclaratif) => {
-      const label = motifDeclaratif?.motifDeclaratif?.label || '';
-      if (label) {
-        motifItems.add(valueToLabel(label) || label);
-      }
-    });
-    // Display the "Maltraitance" tag if the user answered yes
-    if (hasMaltraitanceAnswer) {
-      showMaltraitanceBadge = true;
-    }
+  if (qualifies.length > 0) {
+    const processed = processQualifiedMotifs(qualifies);
+    labels = processed.labels;
+    showMaltraitanceBadge = processed.showMaltraitance;
+  } else if (dematSocialId != null && declaratifs.length > 0) {
+    labels = processDeclarativeMotifs(declaratifs);
+    showMaltraitanceBadge = hasMaltraitance;
   }
 
-  // If no motif, display nothing
-  if (motifItems.size === 0 && !showMaltraitanceBadge) {
-    return '-';
-  }
-
-  const itemsArray = Array.from(motifItems);
+  if (labels.length === 0 && !showMaltraitanceBadge) return UNKNOWN_VALUE;
 
   return (
     <>
@@ -124,223 +151,149 @@ export function renderMotifsCell(row: RequeteEntiteRow): ReactNode {
           </Badge>
         </div>
       )}
-      {itemsArray.length > 0 && (
-        <ul className={showMaltraitanceBadge ? 'fr-mt-1w' : ''}>
-          {itemsArray.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      )}
+      {labels.length > 0 && <div className={showMaltraitanceBadge ? 'fr-mt-1w' : ''}>{renderList(labels)}</div>}
     </>
   );
 }
 
-/**
- * Renders the "Mis en cause" cell for a "requête" row
- */
-export function renderMisEnCauseCell(row: RequeteEntiteRow): ReactNode {
-  const requete = row.requete;
-  const situations = requete.situations || [];
+const getMisEnCauseTypeInfo = (misEnCause: MisEnCause) => {
+  const typeId = (misEnCause?.misEnCauseType?.id ?? misEnCause?.misEnCauseTypeId) as MisEnCauseType | undefined;
+  if (!typeId) return null;
 
-  const misEnCauseItems = new Set<string>();
+  const typeLabel =
+    misEnCause?.misEnCauseType?.label ??
+    (typeId in misEnCauseTypeLabels ? misEnCauseTypeLabels[typeId] : undefined) ??
+    typeId;
 
-  situations.forEach((situation) => {
-    const { misEnCause, lieuDeSurvenue } = situation;
-
-    const misEnCauseTypeId =
-      (misEnCause?.misEnCauseType?.id as MisEnCauseType | undefined) ||
-      (misEnCause?.misEnCauseTypeId as MisEnCauseType | undefined);
-
-    if (!misEnCauseTypeId) {
-      return;
-    }
-
-    const misEnCauseTypeLabel =
-      misEnCause?.misEnCauseType?.label ||
-      (misEnCauseTypeId in misEnCauseTypeLabels ? misEnCauseTypeLabels[misEnCauseTypeId] : undefined) ||
-      misEnCauseTypeId;
-
-    // if it's ETABLISSEMENT, display the "établissement" name from "lieuDeSurvenue"
-    if (misEnCauseTypeId === MIS_EN_CAUSE_TYPE.ETABLISSEMENT) {
-      const etablissementName =
-        lieuDeSurvenue?.finess || lieuDeSurvenue?.lieuPrecision || lieuDeSurvenue?.adresse?.label || null;
-
-      if (etablissementName) {
-        misEnCauseItems.add(etablissementName);
-      }
-    }
-    // for MEMBRE_FAMILLE, PROCHE, AUTRE : display the type (and the "précision" if it exists)
-    else if (
-      misEnCauseTypeId === MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE ||
-      misEnCauseTypeId === MIS_EN_CAUSE_TYPE.PROCHE ||
-      misEnCauseTypeId === MIS_EN_CAUSE_TYPE.AUTRE
-    ) {
-      let displayText = misEnCauseTypeLabel;
-      const precisionLabel = misEnCause?.misEnCauseTypePrecision?.label;
-      if (precisionLabel) {
-        displayText = `${displayText} - ${precisionLabel}`;
-      }
-      misEnCauseItems.add(displayText);
-    }
-    // for other types, display just the label
-    else {
-      misEnCauseItems.add(misEnCauseTypeLabel);
-    }
-  });
-
-  if (misEnCauseItems.size === 0) {
-    return '-';
-  }
-
-  const itemsArray = Array.from(misEnCauseItems);
-
-  if (itemsArray.length === 1) {
-    return (
-      <ul className="fr-mb-0">
-        <li>{itemsArray[0]}</li>
-      </ul>
-    );
-  }
-
-  return (
-    <ul className="fr-mb-0">
-      {itemsArray.map((item) => (
-        <li key={item}>{item}</li>
-      ))}
-    </ul>
-  );
-}
-
-type AffectationData = {
-  entiteId: string;
-  entiteName: string;
-  services: Array<{ id: string; name: string; parentName?: string }>;
+  return { typeId, typeLabel, precisionLabel: misEnCause?.misEnCauseTypePrecision?.label };
 };
 
-function extractAffectations(row: RequeteEntiteRow, userTopEntiteId: string): AffectationData[] {
-  const situations = row.requete?.situations || [];
-  const affectationsMap = new Map<string, AffectationData>();
+const getMisEnCauseDisplayValue = (
+  typeId: MisEnCauseType,
+  typeLabel: string,
+  precisionLabel: string | undefined,
+  misEnCause: MisEnCause,
+  lieuDeSurvenue: LieuDeSurvenue,
+): string => {
+  switch (typeId) {
+    case MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE:
+      return misEnCause?.commentaire?.trim() || precisionLabel || typeLabel;
 
-  for (const situation of situations) {
-    const situationEntites = situation?.situationEntites || [];
+    case MIS_EN_CAUSE_TYPE.ETABLISSEMENT:
+      return (
+        lieuDeSurvenue?.finess ||
+        lieuDeSurvenue?.lieuPrecision ||
+        lieuDeSurvenue?.adresse?.label ||
+        precisionLabel ||
+        typeLabel
+      );
 
-    for (const situationEntite of situationEntites) {
-      const entite = situationEntite?.entite;
-      if (!entite) continue;
-
-      const isRootEntite = entite.entiteMereId === null;
-
-      if (isRootEntite) {
-        if (entite.id !== userTopEntiteId) continue;
-
-        if (!affectationsMap.has(entite.id)) {
-          affectationsMap.set(entite.id, {
-            entiteId: entite.id,
-            entiteName: entite.label || entite.nomComplet,
-            services: [],
-          });
-        }
-      } else {
-        let parentEntite: AffectationData | undefined;
-
-        const parentMatch = situationEntites.find((se) => {
-          const parent = se?.entite;
-          return parent && parent.id === entite.entiteMereId;
-        });
-
-        const parentEntiteName = parentMatch?.entite?.label || parentMatch?.entite?.nomComplet || '';
-        let grandParentName: string | undefined;
-
-        if (parentMatch?.entite?.entiteMereId) {
-          grandParentName = parentEntiteName;
-        }
-
-        let currentEntiteId: string | null = entite.entiteMereId;
-        let belongsToUserEntity = false;
-        const checkedIds = new Set<string>();
-
-        while (currentEntiteId && !checkedIds.has(currentEntiteId)) {
-          checkedIds.add(currentEntiteId);
-          if (currentEntiteId === userTopEntiteId) {
-            belongsToUserEntity = true;
-            break;
-          }
-          const parentSe = situationEntites.find((se) => se?.entite?.id === currentEntiteId);
-          currentEntiteId = parentSe?.entite?.entiteMereId || null;
-        }
-
-        if (!belongsToUserEntity) continue;
-
-        if (!affectationsMap.has(userTopEntiteId)) {
-          const userEntiteSe = situationEntites.find(
-            (se) => se?.entite?.id === userTopEntiteId && se?.entite?.entiteMereId === null,
-          );
-          affectationsMap.set(userTopEntiteId, {
-            entiteId: userTopEntiteId,
-            entiteName: userEntiteSe?.entite?.label || userEntiteSe?.entite?.nomComplet || '',
-            services: [],
-          });
-        }
-
-        parentEntite = affectationsMap.get(userTopEntiteId);
-        if (parentEntite) {
-          const serviceExists = parentEntite.services.some((s) => s.id === entite.id);
-          if (!serviceExists) {
-            parentEntite.services.push({
-              id: entite.id,
-              name: entite.label || entite.nomComplet,
-              parentName: grandParentName,
-            });
-          }
-        }
-      }
-    }
+    default:
+      return precisionLabel || typeLabel;
   }
+};
 
-  return Array.from(affectationsMap.values());
+const extractMisEnCauseFromSituation = (situation: Situation): string | null => {
+  const typeInfo = getMisEnCauseTypeInfo(situation.misEnCause);
+  if (!typeInfo) return null;
+
+  return getMisEnCauseDisplayValue(
+    typeInfo.typeId,
+    typeInfo.typeLabel,
+    typeInfo.precisionLabel,
+    situation.misEnCause,
+    situation.lieuDeSurvenue,
+  );
+};
+
+export function renderMisEnCauseCell(row: RequeteEntiteRow): ReactNode {
+  const items = (row.requete.situations ?? [])
+    .map(extractMisEnCauseFromSituation)
+    .filter((v): v is string => v !== null);
+
+  const uniqueItems = [...new Set(items)];
+
+  return uniqueItems.length === 0 ? UNKNOWN_VALUE : renderInlineList(uniqueItems);
 }
 
-function sortAffectationServices(
-  services: Array<{ id: string; name: string; parentName?: string }>,
-  userEntiteId?: string,
-): Array<{ id: string; name: string; parentName?: string }> {
-  return [...services].sort((a, b) => {
+const buildEntitesMap = (situations: Situation[]): Map<string, EntiteInfo> =>
+  new Map(
+    flatMap(situations, (s) => s?.situationEntites ?? [])
+      .filter((se) => se?.entite)
+      .map((se) => [se.entite.id, se.entite]),
+  );
+
+const createServiceInfo = (entite: EntiteInfo, parent: EntiteInfo | undefined): ServiceInfo => ({
+  id: entite.id,
+  name: getDisplayName(entite),
+  nomComplet: getFullName(entite),
+  parentName: parent && !isRootEntite(parent) ? getDisplayName(parent) : undefined,
+  parentNomComplet: parent && !isRootEntite(parent) ? getFullName(parent) : undefined,
+});
+
+const extractServicesFromSituations = (situations: Situation[], entitesMap: Map<string, EntiteInfo>): ServiceInfo[] => {
+  const allEntites = flatMap(situations, (s) => s?.situationEntites ?? [])
+    .map((se) => se?.entite)
+    .filter((e): e is EntiteInfo => e != null && !isRootEntite(e));
+
+  const uniqueEntites = uniqueBy(allEntites, (e) => e.id);
+
+  return uniqueEntites.map((entite) => {
+    const parent = entitesMap.get(entite.entiteMereId ?? '');
+    return createServiceInfo(entite, parent);
+  });
+};
+
+const extractRootEntites = (entitesMap: Map<string, EntiteInfo>): EntiteInfo[] =>
+  [...entitesMap.values()].filter(isRootEntite);
+
+const sortServices = (services: ServiceInfo[], userEntiteId?: string): ServiceInfo[] =>
+  [...services].sort((a, b) => {
     if (userEntiteId) {
       if (a.id === userEntiteId) return -1;
       if (b.id === userEntiteId) return 1;
     }
     return a.name.localeCompare(b.name, 'fr');
   });
-}
+
+const serviceToLabeledItem = (service: ServiceInfo): LabeledItem => ({
+  label: service.parentName ? `${service.name} (${service.parentName})` : service.name,
+  title: service.parentNomComplet ? `${service.nomComplet} (${service.parentNomComplet})` : service.nomComplet,
+});
+
+const entiteToLabeledItem = (entite: EntiteInfo): LabeledItem => ({
+  label: getDisplayName(entite),
+  title: getFullName(entite),
+});
 
 export function renderAffectationCell(
   row: RequeteEntiteRow,
   userTopEntiteId: string,
   userEntiteId?: string,
 ): ReactNode {
-  const affectations = extractAffectations(row, userTopEntiteId);
+  const situations = row.requete.situations ?? [];
+  const entitesMap = buildEntitesMap(situations);
+  const userEntityPresent = entitesMap.has(userTopEntiteId);
 
-  if (affectations.length === 0) {
-    return '-';
+  // If user's entity not present, show other root entities
+  if (!userEntityPresent) {
+    const rootEntites = extractRootEntites(entitesMap);
+    if (rootEntites.length === 0) return UNKNOWN_VALUE;
+
+    const items = uniqueBy(rootEntites.map(entiteToLabeledItem), (i) => i.label);
+    return renderLabeledItems(items, true);
   }
 
-  const allItems: string[] = [];
+  const services = extractServicesFromSituations(situations, entitesMap);
 
-  for (const affectation of affectations) {
-    const sortedServices = sortAffectationServices(affectation.services, userEntiteId);
-
-    if (sortedServices.length === 0) {
-      allItems.push(affectation.entiteName);
-    } else {
-      for (const service of sortedServices) {
-        allItems.push(service.parentName ? `${service.name} (${service.parentName})` : service.name);
-      }
-    }
+  if (services.length > 0) {
+    const sortedServices = sortServices(services, userEntiteId);
+    const items = uniqueBy(sortedServices.map(serviceToLabeledItem), (i) => i.label);
+    return renderLabeledItems(items, true);
   }
 
-  if (allItems.length === 0) {
-    return '-';
-  }
+  const rootEntite = entitesMap.get(userTopEntiteId);
+  if (!rootEntite) return UNKNOWN_VALUE;
 
-  return <span>{allItems.join(',\u00A0')}</span>;
+  return renderLabeledItems([entiteToLabeledItem(rootEntite)], true);
 }
