@@ -6,6 +6,7 @@ import { seedSuperAdmin } from './seed/add_default_super_admin';
 import { seedEntites } from './seed/add_entities';
 import { seedEnums } from './seed/add_enums';
 import { seedRequeteFromDematSocial } from './seed/get_demat_social';
+import { importGeoData } from './seed/importGeoData';
 import '@/libs/instrument';
 import { connection as redisConnection } from '@/config/redis';
 import { prisma as appPrisma } from '@/libs/prisma';
@@ -37,6 +38,13 @@ async function main() {
       logger.error({ err }, '❌ Erreur lors du seeding des entités');
       throw err;
     }
+    try {
+      await importGeoData(prisma);
+    } catch (err) {
+      logger.error({ err }, "❌ Erreur lors de l'importation des données géographiques");
+      throw err;
+    }
+
     try {
       await seedRequeteFromDematSocial();
     } catch (err) {

@@ -193,7 +193,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
     }
 
     // 3.1) Geolocation of the situation (department, region)
-    const geo = findGeoByPostalCode(a.context.postalCode);
+    const geo = await findGeoByPostalCode(a.context.postalCode);
 
     if (!geo) {
       logger.error({ requeteId, situationId: s.id }, 'Geolocation not found, skipping assignment');

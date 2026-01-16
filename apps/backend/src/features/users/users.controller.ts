@@ -1,5 +1,5 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ROLES, type Role } from '@sirena/common/constants';
+import { ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
 import { getAssignableRoles } from '@sirena/common/utils';
 import { validator as zValidator } from 'hono-openapi/zod';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
@@ -9,6 +9,7 @@ import entitesMiddleware from '@/middlewares/entites.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';
 import userStatusMiddleware from '@/middlewares/userStatus.middleware';
 import { ChangeLogAction } from '../changelog/changelog.type';
+import { sendUserActivationEmail } from './users.notification.service';
 import { getUserRoute, getUsersRoute, patchUserRoute } from './users.route';
 import { GetUsersQuerySchema, PatchUserSchema } from './users.schema';
 import { getUserById, getUsers, patchUser } from './users.service';
@@ -110,9 +111,18 @@ const app = factoryWithLogs
         throwHTTPException400BadRequest('No permissions');
       }
 
+      // Check if status is changing to ACTIF to send activation email
+      const isActivating = json.statutId === STATUT_TYPES.ACTIF && userToPatch.statutId !== STATUT_TYPES.ACTIF;
+
       const user = await patchUser(id, json);
 
       logger.info({ userId: id }, 'User updated successfully');
+
+      if (isActivating) {
+        sendUserActivationEmail(id, userId).catch((error) => {
+          logger.error({ userId: id, error }, 'Failed to send activation email');
+        });
+      }
 
       return c.json({ data: user });
     },
