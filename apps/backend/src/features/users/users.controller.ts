@@ -28,7 +28,7 @@ const app = factoryWithLogs
     const roleId = c.get('roleId') as Role;
     const roles: string[] = getAssignableRoles(roleId).map(({ key }) => key);
 
-    if (query.roleId?.some((roleOption) => !roles.includes(roleOption))) {
+    if (query.roleId?.some((roleOption: string) => !roles.includes(roleOption))) {
       throwHTTPException400BadRequest('You are not allowed to filter on this role.', {
         res: c.res,
       });
