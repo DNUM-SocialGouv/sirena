@@ -2,7 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import type { ReceptionType } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { MisEnCause } from '@/components/situation/sections/MisEnCause';
 import { useEntites } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
@@ -26,6 +26,7 @@ interface SituationFormProps {
     initialFileIds?: string[],
     initialFiles?: Array<{ id: string; entiteId?: string | null }>,
   ) => Promise<void>;
+  saveButtonRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
 export function SituationForm({
@@ -35,8 +36,11 @@ export function SituationForm({
   initialData,
   receptionType,
   onSave,
+  saveButtonRef: externalSaveButtonRef,
 }: SituationFormProps) {
   const navigate = useNavigate();
+  const internalSaveButtonRef = useRef<HTMLButtonElement>(null);
+  const saveButtonRef = externalSaveButtonRef || internalSaveButtonRef;
   const [formData, setFormData] = useState<SituationData>(initialData || {});
   const [isSaving, setIsSaving] = useState(false);
   const [faitFiles, setFaitFiles] = useState<File[]>([]);
@@ -44,12 +48,6 @@ export function SituationForm({
   const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
   const { data: entitesData } = useEntites(undefined);
   const { data: profile } = useProfile();
-
-  useEffect(() => {
-    if (initialData) {
-      setFormData(initialData);
-    }
-  }, [initialData]);
 
   const handleTraitementDesFaitsChange = useCallback(
     (data: { entites: Array<{ entiteId: string; directionServiceId?: string }> }) => {
@@ -150,7 +148,7 @@ export function SituationForm({
           <Button priority="secondary" onClick={handleCancel} disabled={isSaving}>
             Annuler
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button ref={saveButtonRef} onClick={handleSave} disabled={isSaving}>
             Enregistrer
           </Button>
         </div>

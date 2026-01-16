@@ -53,7 +53,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const handleOpenEdit = (step: StepType) => createNoteDrawerRef.current?.openDrawer(step);
   const handleOpenEditNote = (step: StepType, noteData: NoteData) =>
     editNoteDrawerRef.current?.openDrawer(step, noteData);
-  const handleCloseRequete = () => closeRequeteModalRef.current?.openModal(closeRequeteButtonRef);
+  const handleCloseRequete = () => closeRequeteModalRef.current?.openModal();
 
   const content = requestId ? (
     <>
@@ -94,6 +94,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
             ? requestQuery.data.requete.situations[0].misEnCause.misEnCauseType?.label || 'Non spécifié'
             : undefined
         }
+        triggerButtonRef={closeRequeteButtonRef}
       />
     </>
   ) : (

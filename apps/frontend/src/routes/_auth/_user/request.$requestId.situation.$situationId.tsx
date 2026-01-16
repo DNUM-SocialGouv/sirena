@@ -1,4 +1,4 @@
-import { REQUETE_CLOTURE_REASON, type ReceptionType, ROLES } from '@sirena/common/constants';
+import { type ReceptionType, ROLES } from '@sirena/common/constants';
 import type { SituationData as SituationDataSchema } from '@sirena/common/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
@@ -54,10 +54,10 @@ function RouteComponent() {
   const { data: profile } = useProfile();
   const { data: entitesData } = useEntites(undefined);
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
-  const [shouldShowCloseModal, setShouldShowCloseModal] = useState(false);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
   const [pendingSaveData, setPendingSaveData] = useState<PendingSaveData | null>(null);
   const [computedOtherEntities, setComputedOtherEntities] = useState<OtherEntityAffected[]>([]);
-  const [formResetKey, setFormResetKey] = useState(0);
+  const [formResetKey] = useState(0);
 
   const willUserBeUnassignedAfterSave = useCallback(
     (newSituationData: SituationDataSchema, allSituations: SituationData[], currentSituationId: string): boolean => {
@@ -158,18 +158,14 @@ function RouteComponent() {
 
   const handleCloseModalCancel = useCallback(async () => {
     await executePendingSave();
-    setShouldShowCloseModal(false);
   }, [executePendingSave]);
 
   const handleCloseModalSuccess = useCallback(async () => {
     await executePendingSave();
-    setShouldShowCloseModal(false);
   }, [executePendingSave]);
 
   const handleModalDismiss = useCallback(() => {
     setPendingSaveData(null);
-    setShouldShowCloseModal(false);
-    setFormResetKey((prev) => prev + 1);
   }, []);
 
   return (
@@ -196,10 +192,7 @@ function RouteComponent() {
             const otherEntities = computeOtherEntitiesAfterSave(formData, situations, situationId);
             setComputedOtherEntities(otherEntities);
             setPendingSaveData({ data: formData, shouldCreateRequest, faitFiles, initialFileIds, initialFiles });
-            setShouldShowCloseModal(true);
-            setTimeout(() => {
-              closeRequeteModalRef.current?.openModal();
-            }, 100);
+            closeRequeteModalRef.current?.openModal();
           } else {
             await performSave(formData, shouldCreateRequest, faitFiles, initialFileIds, initialFiles);
           }
@@ -215,29 +208,28 @@ function RouteComponent() {
               initialData={formattedData}
               receptionType={receptionTypeId}
               onSave={handleSave}
+              saveButtonRef={saveButtonRef}
             />
-            {shouldShowCloseModal && (
-              <CloseRequeteModal
-                ref={closeRequeteModalRef}
-                requestId={requestId}
-                date={
-                  request?.requete?.createdAt
-                    ? new Date(request.requete.createdAt).toLocaleDateString('fr-FR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                      })
-                    : ''
-                }
-                misEnCause={situations?.[0]?.misEnCause?.misEnCauseType?.label || 'Non spécifié'}
-                initialReasonId={REQUETE_CLOTURE_REASON.HORS_COMPETENCE}
-                otherEntitiesAffected={computedOtherEntities}
-                customDescription={`Votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${requestId}.`}
-                onCancel={handleCloseModalCancel}
-                onSuccess={handleCloseModalSuccess}
-                onDismiss={handleModalDismiss}
-              />
-            )}
+            <CloseRequeteModal
+              ref={closeRequeteModalRef}
+              requestId={requestId}
+              date={
+                request?.requete?.createdAt
+                  ? new Date(request.requete.createdAt).toLocaleDateString('fr-FR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })
+                  : ''
+              }
+              misEnCause={situations?.[0]?.misEnCause?.misEnCauseType?.label || 'Non spécifié'}
+              otherEntitiesAffected={computedOtherEntities}
+              customDescription={`Attention : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${requestId}.`}
+              triggerButtonRef={saveButtonRef}
+              onCancel={handleCloseModalCancel}
+              onSuccess={handleCloseModalSuccess}
+              onDismiss={handleModalDismiss}
+            />
           </>
         );
       }}

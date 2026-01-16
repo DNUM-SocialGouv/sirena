@@ -9,7 +9,7 @@ import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 
 export type CloseRequeteModalRef = {
-  openModal: (closeButtonRef?: React.RefObject<HTMLButtonElement | null>) => void;
+  openModal: () => void;
 };
 
 export type OtherEntityAffected = {
@@ -23,9 +23,9 @@ export type CloseRequeteModalProps = {
   requestId: string;
   misEnCause?: string;
   date?: string;
-  initialReasonId?: string;
   otherEntitiesAffected?: OtherEntityAffected[];
   customDescription?: string;
+  triggerButtonRef?: React.RefObject<HTMLButtonElement | null>;
   onCancel?: () => void;
   onSuccess?: () => void;
   onDismiss?: () => void;
@@ -37,9 +37,9 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       requestId,
       misEnCause,
       date,
-      initialReasonId,
       otherEntitiesAffected = [],
       customDescription,
+      triggerButtonRef,
       onCancel,
       onSuccess,
       onDismiss,
@@ -48,13 +48,12 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
   ) => {
     const reasonSelectId = useId();
     const reasonErrorId = useId();
-    const [reasonId, setReasonId] = useState<string>(initialReasonId || '');
+    const [reasonId, setReasonId] = useState<string>('');
     const [precision, setPrecision] = useState<string>('');
     const [files, setFiles] = useState<File[]>([]);
     const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
     const [errors, setErrors] = useState<{ reasonId?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [closeButtonRef, setCloseButtonRef] = useState<React.RefObject<HTMLButtonElement | null> | null>(null);
     const wasActionTakenRef = useRef(false);
 
     const closeRequeteMutation = useCloseRequete(requestId);
@@ -71,15 +70,19 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       [],
     );
 
-    const openModal = (buttonRef?: React.RefObject<HTMLButtonElement | null>) => {
-      setReasonId(initialReasonId || '');
+    const focusTriggerButton = () =>
+      setTimeout(() => {
+        triggerButtonRef?.current?.focus();
+      }, 0);
+
+    const openModal = () => {
+      setReasonId('');
       setPrecision('');
       setFiles([]);
       setFileErrors({});
       setErrors({});
       setIsSubmitting(false);
       setErrorMessage(null);
-      setCloseButtonRef(buttonRef || null);
       wasActionTakenRef.current = false;
       closeModal.open();
       setTimeout(() => {
@@ -102,9 +105,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
     const addModalEventListener = () => {
       const handleModalClose = () => {
-        setTimeout(() => {
-          closeButtonRef?.current?.focus();
-        }, 100);
+        focusTriggerButton();
 
         if (!wasActionTakenRef.current) {
           onDismiss?.();
@@ -181,6 +182,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
         });
 
         closeModal.close();
+        focusTriggerButton();
         onSuccess?.();
       } catch {
         setIsSubmitting(false);
@@ -197,12 +199,13 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     const handleCancel = () => {
       wasActionTakenRef.current = true;
       closeModal.close();
+      focusTriggerButton();
       onCancel?.();
     };
 
     const descriptionText =
       customDescription ||
-      `Vous allez clôturer la requête ${requestId} prise en charge le ${date} avec pour mise en cause "${misEnCause}".`;
+      `Attention : vous allez clôturer la requête ${requestId} prise en charge le ${date} avec pour mise en cause "${misEnCause}".`;
 
     return (
       <closeModal.Component
@@ -225,20 +228,19 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       >
         <div className="fr-mb-4w">
           <div className="fr-text--sm fr-text--grey">
-            <Alert small={false} title="" severity="warning" description={descriptionText} />
+            <Alert small={true} severity="warning" description={descriptionText} />
           </div>
         </div>
 
         {otherEntitiesAffected.length > 0 && (
           <div className="fr-mb-4w">
             <Alert
-              small={false}
-              title=""
+              small={true}
               severity="info"
               description={
                 <div>
                   <p className="fr-mb-2w">
-                    Les autres entités administratives affectées ne seront pas impactées par la clôture :
+                    Information : les autres entités administratives affectées ne seront pas impactées par la clôture :
                   </p>
                   <ul className="fr-mb-0">
                     {otherEntitiesAffected.map((entity) => (
@@ -254,7 +256,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
         <div className="fr-mb-4w">
           <div className="fr-select-group">
             <label className="fr-label" htmlFor={reasonSelectId}>
-              Raison de la clôture
+              Raison de la clôture (obligatoire)
             </label>
             <select
               id={reasonSelectId}
@@ -284,7 +286,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
           <Input
             label="Précisions (facultatif)"
             textArea={true}
-            hintText={`${precision.length}/5000 caractères`}
+            hintText={`${precision.length}/5000 caractères maximum`}
             nativeTextAreaProps={{
               value: precision,
               onChange: (e) => setPrecision(e.target.value),
