@@ -230,13 +230,13 @@ describe('uploadedFiles.controller.ts', () => {
   describe('DELETE /:id', () => {
     it('should delete an uploaded file successfully', async () => {
       const res = await client[':id'].$delete({
-        param: { id: 'file1' },
+        param: { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
       });
 
       expect(res.status).toBe(204);
       expect(await res.text()).toBe('');
-      expect(getUploadedFileById).toHaveBeenCalledWith('file1', ['e1']);
-      expect(deleteUploadedFile).toHaveBeenCalledWith('file1');
+      expect(getUploadedFileById).toHaveBeenCalledWith('ffffffff-ffff-ffff-ffff-ffffffffffff', ['e1']);
+      expect(deleteUploadedFile).toHaveBeenCalledWith('ffffffff-ffff-ffff-ffff-ffffffffffff');
       expect(deleteFileFromMinio).toHaveBeenCalledWith('/uploads/test.pdf');
     });
 
@@ -247,7 +247,7 @@ describe('uploadedFiles.controller.ts', () => {
       });
 
       const res = await client[':id'].$delete({
-        param: { id: 'file1' },
+        param: { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
       });
 
       const body = await res.json();
@@ -264,7 +264,7 @@ describe('uploadedFiles.controller.ts', () => {
       vi.mocked(getUploadedFileById).mockImplementationOnce(() => Promise.resolve(null));
 
       const res = await client[':id'].$delete({
-        param: { id: 'file1' },
+        param: { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
       });
 
       const body = await res.json();
@@ -281,7 +281,7 @@ describe('uploadedFiles.controller.ts', () => {
       vi.mocked(deleteUploadedFile).mockRejectedValueOnce(new Error('Database error'));
 
       const res = await client[':id'].$delete({
-        param: { id: 'file1' },
+        param: { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
       });
 
       expect(res.status).toBe(500);
@@ -295,7 +295,7 @@ describe('uploadedFiles.controller.ts', () => {
       vi.mocked(deleteFileFromMinio).mockRejectedValueOnce(new Error('MinIO error'));
 
       const res = await client[':id'].$delete({
-        param: { id: 'file1' },
+        param: { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
       });
 
       expect(res.status).toBe(500);
@@ -309,7 +309,7 @@ describe('uploadedFiles.controller.ts', () => {
   describe('GET /:id/status', () => {
     it('should return file processing status', async () => {
       const res = await client[':id'].status.$get({
-        param: { id: 'file1' },
+        param: { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
       });
 
       expect(res.status).toBe(200);
@@ -333,7 +333,7 @@ describe('uploadedFiles.controller.ts', () => {
       });
 
       const res = await client[':id'].status.$get({
-        param: { id: 'file1' },
+        param: { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
       });
 
       const body = await res.json();
@@ -348,12 +348,11 @@ describe('uploadedFiles.controller.ts', () => {
       vi.mocked(getUploadedFileById).mockImplementationOnce(() => Promise.resolve(null));
 
       const res = await client[':id'].status.$get({
-        param: { id: 'file1' },
+        param: { id: 'ffffffff-ffff-ffff-ffff-ffffffffffff' },
       });
 
-      const body = await res.json();
-
       expect(res.status).toBe(404);
+      const body = await res.json();
       expect(body).toEqual({
         message: 'Uploaded file not found',
       });

@@ -105,7 +105,7 @@ describe('SessionCreationSchema', () => {
     const result = SessionCreationSchema.safeParse({});
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors.map((e) => e.path)).toEqual([['userId'], ['token'], ['pcIdToken'], ['expiresAt']]);
+      expect(result.error.issues.map((e) => e.path)).toEqual([['userId'], ['token'], ['pcIdToken'], ['expiresAt']]);
     }
   });
 });

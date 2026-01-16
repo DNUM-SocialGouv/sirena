@@ -11,6 +11,7 @@ import entitesMiddleware from '@/middlewares/entites.middleware';
 import pinoLogger from '@/middlewares/pino.middleware';
 import { convertDatesToStrings } from '@/tests/formatter';
 import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.service';
+import type { EntiteTraitement } from '../entites/entites.type';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service';
 import RequetesEntiteController from './requetesEntite.controller';
@@ -235,6 +236,11 @@ describe('RequetesEntite endpoints: /', () => {
       requeteEtapeNoteId: 'step1',
       demarchesEngageesId: null,
       canDelete: true,
+      scanStatus: '',
+      scanResult: '',
+      sanitizeStatus: '',
+      safeFilePath: null,
+      processingError: '',
     };
 
     it('streams the file with correct headers (inline) and body content', async () => {
@@ -429,7 +435,7 @@ describe('RequetesEntite endpoints: /', () => {
       vi.mocked(getOtherEntitesAffected).mockResolvedValueOnce(fakeOtherEntites);
       vi.mocked(getDirectionsServicesFromRequeteEntiteId).mockResolvedValueOnce([
         { id: 'dir1', nomComplet: 'Direction 1', label: 'DIR1' },
-      ]);
+      ] as unknown as EntiteTraitement[]);
 
       const res = await client[':id']['other-entites-affected'].$get({
         param: { id: 'requeteId' },
@@ -679,7 +685,7 @@ describe('RequetesEntite endpoints: /', () => {
     };
 
     const formatDate = (date: Date) => {
-      return date.toISOString().split('T')[0];
+      return date.toISOString();
     };
 
     it('updates reception date and type and returns updated requete', async () => {
