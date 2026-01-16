@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const emailSchema = z.string().email('Adresse email invalide');
+export const emailSchema = z.email('Adresse email invalide');
 
 export const phoneSchema = z.string().refine(
   (value) => {

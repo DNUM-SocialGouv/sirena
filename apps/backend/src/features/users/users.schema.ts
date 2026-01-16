@@ -1,6 +1,22 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
+import { z } from 'zod';
 import { Prisma } from '@/libs/prisma';
-import { RoleEnumSchema, UserSchema, z } from '@/libs/zod';
+import { RoleEnumSchema } from '../roles/roles.schema';
+
+export const UserSchema = z.object({
+  id: z.cuid(),
+  email: z.email({ message: 'Invalid email address' }),
+  prenom: z.string(),
+  nom: z.string(),
+  uid: z.string(),
+  sub: z.string(),
+  pcData: z.record(z.string(), z.string()),
+  roleId: z.string(),
+  statutId: z.string(),
+  entiteId: z.string().nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+});
 
 export const UserWithRoleSchema = UserSchema.extend({
   role: RoleEnumSchema,

@@ -1,4 +1,4 @@
-import { z } from '@/libs/zod';
+import { z } from 'zod';
 import type { PrismaClient } from '../../../generated/client';
 import { parseCsv } from '../../helpers/parseCsv';
 

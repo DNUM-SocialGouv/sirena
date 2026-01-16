@@ -1,16 +1,31 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import { RECEPTION_TYPE, REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
+import { z } from 'zod';
 import { Prisma } from '@/libs/prisma';
-import {
-  EntiteSchema,
-  RequeteEntiteSchema,
-  RequeteEtapeSchema,
-  RequeteSchema,
-  SituationEntiteSchema,
-  SituationSchema,
-  z,
-} from '@/libs/zod';
+import { EntiteSchema } from '../entites/entites.schema';
+import { RequeteEtapeSchema } from '../requeteEtapes/requetesEtapes.schema';
+import { RequeteSchema } from '../requetes/requetes.schema';
+
+const RequeteEntiteSchema = z.object({
+  requeteId: z.string(),
+  statutId: z.string(),
+  prioriteId: z.string().nullable(),
+  entiteId: z.string(),
+});
+
+export const SituationEntiteSchema = z.object({
+  situationId: z.string(),
+  entiteId: z.string(),
+});
+
+export const SituationSchema = z.object({
+  id: z.uuid(),
+  lieuDeSurvenueId: z.string(),
+  misEnCauseId: z.string(),
+  demarchesEngageesId: z.string(),
+  requeteId: z.string().nullable(),
+});
 
 const columns = [
   Prisma.RequeteEntiteScalarFieldEnum.requeteId,
@@ -65,16 +80,19 @@ export const GetOtherEntitesAffectedResponseSchema = z.object({
   subAdministrativeEntites: z.array(SubAdministrativeEntitesSchema),
 });
 
-const receptionDate = z.preprocess((val) => (val === '' ? null : val), z.string().date().nullable().optional());
-const receptionTypeId = z.preprocess(
-  (val) => (val === '' ? null : val),
-  z
-    .enum(Object.keys(RECEPTION_TYPE) as [string, ...string[]])
-    .nullable()
-    .optional(),
-);
+const receptionDate = z.iso.datetime().nullable().optional();
+const receptionTypeId = z
+  .enum([
+    RECEPTION_TYPE.EMAIL,
+    RECEPTION_TYPE.COURRIER,
+    RECEPTION_TYPE.AUTRE,
+    RECEPTION_TYPE.PLATEFORME,
+    RECEPTION_TYPE.TELEPHONE,
+  ])
+  .nullable()
+  .optional();
 const requeteControl = z.object({
-  updatedAt: z.string().datetime(),
+  updatedAt: z.iso.datetime(),
 });
 
 const SituationEntiteWithEntiteSchema = SituationEntiteSchema.extend({
@@ -109,7 +127,7 @@ export const UpdateDeclarantBodySchema = z.object({
   controls: z
     .object({
       declarant: z.object({
-        updatedAt: z.string().datetime(),
+        updatedAt: z.iso.datetime(),
       }),
     })
     .optional(),
@@ -120,7 +138,7 @@ export const UpdateParticipantBodySchema = z.object({
   controls: z
     .object({
       participant: z.object({
-        updatedAt: z.string().datetime(),
+        updatedAt: z.iso.datetime(),
       }),
     })
     .optional(),
@@ -155,6 +173,6 @@ export const CloseRequeteBodySchema = z.object({
 
 export const CloseRequeteResponseSchema = z.object({
   etapeId: z.string(),
-  closedAt: z.string().datetime(),
+  closedAt: z.iso.datetime(),
   noteId: z.string().nullable(),
 });

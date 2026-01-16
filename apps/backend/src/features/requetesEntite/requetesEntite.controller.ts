@@ -11,7 +11,7 @@ import {
   ROLES_READ,
   ROLES_WRITE,
 } from '@sirena/common/constants';
-import { validator as zValidator } from 'hono-openapi/zod';
+import { validator as zValidator } from 'hono-openapi';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import {
   getUploadedFileById,

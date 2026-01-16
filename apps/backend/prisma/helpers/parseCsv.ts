@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import type { ZodType, z } from '@/libs/zod';
+import type { ZodType, z } from 'zod';
 
 export async function parseCsv<Schema extends ZodType<unknown>>(
   path: string,

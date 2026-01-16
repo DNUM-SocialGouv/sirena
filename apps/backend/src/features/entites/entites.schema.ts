@@ -1,6 +1,22 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
+import { z } from 'zod';
 import { Prisma } from '@/libs/prisma';
-import { EntiteSchema, z } from '@/libs/zod';
+
+export const EntiteSchema = z.object({
+  id: z.uuid(),
+  nomComplet: z.string(),
+  label: z.string(),
+  email: z.string(),
+  emailDomain: z.string(),
+  organizationalUnit: z.string(),
+  entiteTypeId: z.string(),
+  entiteMereId: z.string().nullable(),
+  departementCode: z.string().nullable(),
+  ctcdCode: z.string().nullable(),
+  regionCode: z.string().nullable(),
+  regLib: z.string().nullable(),
+  dptLib: z.string().nullable(),
+});
 
 const columns = [
   Prisma.EntiteScalarFieldEnum.nomComplet,

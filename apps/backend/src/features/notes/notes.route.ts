@@ -1,6 +1,14 @@
 import { openApiDeleteResponse, openApiProtectedRoute, openApiResponse } from '@sirena/backend-utils/helpers';
 import { z } from 'zod';
-import { RequeteEtapeNoteSchema } from '@/libs/zod';
+
+const RequeteEtapeNoteSchema = z.object({
+  id: z.uuid(),
+  texte: z.string(),
+  authorId: z.string(),
+  requeteEtapeId: z.string(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+});
 
 export const addNoteRoute = openApiProtectedRoute({
   description: 'Add a processing note to a step of a request',

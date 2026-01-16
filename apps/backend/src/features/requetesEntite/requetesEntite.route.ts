@@ -1,5 +1,5 @@
 import { openApiProtectedRoute, openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
-import { RequeteSchema } from '@/libs/zod';
+import { RequeteSchema } from '../requetes/requetes.schema';
 import {
   CloseRequeteResponseSchema,
   GetOtherEntitesAffectedResponseSchema,

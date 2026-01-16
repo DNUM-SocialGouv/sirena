@@ -1,14 +1,14 @@
 import fs from 'node:fs';
 import { Scalar } from '@scalar/hono-api-reference';
 import type { Hono } from 'hono';
-import { generateSpecs, openAPISpecs } from 'hono-openapi';
+import { generateSpecs, openAPIRouteHandler } from 'hono-openapi';
 import type { AppBindings } from './helpers/factories/appWithLogs';
 
 export function setupOpenAPI(app: Hono<AppBindings>, prefix = '/openapi') {
   // OpenAPI spec
   app.get(
     `${prefix}/spec`,
-    openAPISpecs(app, {
+    openAPIRouteHandler(app, {
       documentation: {
         info: {
           title: 'Sirena backend',

@@ -9,7 +9,7 @@ export const PersonneConcerneeDataSchema = z.object({
   codePostal: z.string().optional(),
   ville: z.string().optional(),
   numeroTelephone: z.string().optional(),
-  courrierElectronique: z.string().email().optional().or(z.literal('')),
+  courrierElectronique: z.email().optional().or(z.literal('')),
   estHandicapee: z.boolean().optional(),
   veutGarderAnonymat: z.boolean().optional(),
   estVictimeInformee: z.boolean().optional(),

@@ -4,7 +4,7 @@ import {
   throwHTTPException404NotFound,
 } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
-import { validator as zValidator } from 'hono-openapi/zod';
+import { validator as zValidator } from 'hono-openapi';
 import { ChangeLogAction } from '@/features/changelog/changelog.type';
 import { getRequeteEtapeById } from '@/features/requeteEtapes/requetesEtapes.service';
 import { isUserOwner, setNoteFile } from '@/features/uploadedFiles/uploadedFiles.service';

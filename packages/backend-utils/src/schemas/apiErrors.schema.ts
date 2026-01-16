@@ -1,4 +1,4 @@
-import { z } from '../utils/zod';
+import { z } from 'zod';
 
 export const ErrorSchema = z.object({
   message: z.string(),

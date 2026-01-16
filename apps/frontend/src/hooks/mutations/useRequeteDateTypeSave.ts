@@ -7,9 +7,11 @@ import { handleRequestErrors } from '@/lib/api/tanstackQuery';
 import { type ConflictInfo, detectAndMergeConflicts } from '@/lib/conflictResolution';
 import { toastManager } from '@/lib/toastManager';
 
+type UpdateReceptionType = Exclude<ReceptionType, 'FORMULAIRE'>;
+
 type RequeteDateTypeData = {
   receptionDate?: string | null;
-  receptionTypeId?: ReceptionType | null;
+  receptionTypeId?: UpdateReceptionType | null;
 };
 
 type UseRequeteDateTypeSaveProps = {

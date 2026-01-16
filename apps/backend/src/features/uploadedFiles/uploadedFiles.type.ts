@@ -1,5 +1,5 @@
+import type { z } from 'zod';
 import type { UploadedFile } from '@/libs/prisma';
-import type { z } from '@/libs/zod';
 import type { GetUploadedFilesQuerySchema } from './uploadedFiles.schema';
 
 export type CreateUploadedFileDto = Omit<

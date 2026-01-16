@@ -1,7 +1,7 @@
 import type { Cause } from '@sirena/common/types';
 import { HTTPException } from 'hono/http-exception';
-import type { ResolverResult } from 'hono-openapi';
-import { resolver } from 'hono-openapi/zod';
+import type { ResolverReturnType } from 'hono-openapi';
+import { resolver } from 'hono-openapi';
 import { ErrorSchema, ZodSafeParseErrorSchema } from '../schemas/apiErrors.schema';
 
 type ErrorOptions = {
@@ -85,8 +85,8 @@ export const throwHTTPException503ServiceUnavailable = (
   throw new HTTPException(status, params);
 };
 
-export const apiErrorResolver = (): ResolverResult => resolver(ErrorSchema);
-export const apiZodErrorResolver = (): ResolverResult => resolver(ZodSafeParseErrorSchema);
+export const apiErrorResolver = (): ResolverReturnType => resolver(ErrorSchema);
+export const apiZodErrorResolver = (): ResolverReturnType => resolver(ZodSafeParseErrorSchema);
 
 export const openApi401Unauthorized = (description = MESSAGES.UNAUTHORIZED) => ({
   401: {

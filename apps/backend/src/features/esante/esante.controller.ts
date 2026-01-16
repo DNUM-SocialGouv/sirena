@@ -1,5 +1,5 @@
 import { ROLES } from '@sirena/common/constants';
-import { validator as zValidator } from 'hono-openapi/zod';
+import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '@/helpers/factories/appWithLogs';
 import authMiddleware from '@/middlewares/auth.middleware';
 import roleMiddleware from '@/middlewares/role.middleware';

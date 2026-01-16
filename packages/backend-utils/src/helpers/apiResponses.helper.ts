@@ -1,9 +1,8 @@
-import type { ResolverResult } from 'hono-openapi';
-import { describeRoute } from 'hono-openapi';
-import { resolver } from 'hono-openapi/zod';
+import type { ResolverReturnType } from 'hono-openapi';
+import { describeRoute, resolver } from 'hono-openapi';
 import type { OpenAPIV3 } from 'openapi-types';
+import { type ZodSchema, z } from 'zod';
 import { MetaSchema } from '../schemas/apiResponses.schema';
-import { type ZodSchema, z } from '../utils/zod';
 import { openApi401Unauthorized } from './apiErrors.helper';
 
 type OpenApiResponse = {
@@ -11,13 +10,13 @@ type OpenApiResponse = {
     description: string;
     content: {
       'application/json': {
-        schema: ResolverResult;
+        schema: ResolverReturnType;
       };
     };
   };
 };
 
-export const apiResponsesResolver = <T extends ZodSchema>(schema: T): ResolverResult =>
+export const apiResponsesResolver = <T extends ZodSchema>(schema: T): ResolverReturnType =>
   resolver(
     z.object({
       data: schema,
@@ -25,14 +24,14 @@ export const apiResponsesResolver = <T extends ZodSchema>(schema: T): ResolverRe
     }),
   );
 
-export const apiResponseResolver = <T extends ZodSchema>(schema: T): ResolverResult =>
+export const apiResponseResolver = <T extends ZodSchema>(schema: T): ResolverReturnType =>
   resolver(
     z.object({
       data: schema,
     }),
   );
 
-export const apiDeleteResponseResolver = <T extends ZodSchema>(id: T): ResolverResult =>
+export const apiDeleteResponseResolver = <T extends ZodSchema>(id: T): ResolverReturnType =>
   resolver(
     z.object({
       data: z.object({

@@ -4,7 +4,7 @@ packages:
 catalog:
   prisma: ^6.13.0
   tsx: ^4.20.6
-  zod: ^3.25.67
+  zod: ^4.3.5
   react: ^19.2.0
   "@types/react": ^19.2.2
   "@types/react-dom": ^19.2.2
@@ -12,7 +12,7 @@ catalog:
   react-dom: ^19.2.0
   "@codegouvfr/react-dsfr": ^1.28.0
   hono: ^4.11.4
-  hono-openapi: ^0.4.8
+  hono-openapi: ^1.1.2
   "@biomejs/biome": ^2.3.1
   vitest: ^4.0.3
   "@vitest/coverage-v8": ^4.0.3

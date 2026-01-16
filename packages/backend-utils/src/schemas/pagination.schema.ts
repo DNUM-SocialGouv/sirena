@@ -1,4 +1,4 @@
-import { z } from '../utils/zod';
+import { z } from 'zod';
 
 export const paginationQueryParamsSchema = (columns: readonly [string, ...string[]]) =>
   z.object({

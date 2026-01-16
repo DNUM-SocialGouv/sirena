@@ -10,7 +10,7 @@ export const DeclarantDataSchema = z.object({
   codePostal: z.string().optional(),
   ville: z.string().optional(),
   numeroTelephone: z.string().optional(),
-  courrierElectronique: z.string().email().optional().or(z.literal('')),
+  courrierElectronique: z.email().optional().or(z.literal('')),
   estPersonneConcernee: z.boolean().optional(),
   neSouhaitePasCommuniquerIdentite: z.boolean().optional(),
   autresPrecisions: z.string().optional(),
