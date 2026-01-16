@@ -125,11 +125,7 @@ export function renderMotifsCell(row: RequeteEntiteRow): ReactNode {
         </div>
       )}
       {itemsArray.length > 0 && (
-        <ul className={showMaltraitanceBadge ? 'fr-mt-1w' : ''}>
-          {itemsArray.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
+        <span className={showMaltraitanceBadge ? 'fr-mt-1w' : ''}>{itemsArray.join(',\u00A0')}</span>
       )}
     </>
   );
@@ -137,6 +133,13 @@ export function renderMotifsCell(row: RequeteEntiteRow): ReactNode {
 
 /**
  * Renders the "Mis en cause" cell for a "requête" row
+ *
+ * Rules:
+ * - PROFESSIONNEL_SANTE with identity (commentaire field) → display the identity
+ * - ETABLISSEMENT with name (finess, lieuPrecision or adresse.label) → display the establishment name
+ * - Otherwise → display type precision (2nd level) if available, otherwise type (1st level)
+ * - No duplicates
+ * - Display mis en cause from all situations
  */
 export function renderMisEnCauseCell(row: RequeteEntiteRow): ReactNode {
   const requete = row.requete;
@@ -160,31 +163,31 @@ export function renderMisEnCauseCell(row: RequeteEntiteRow): ReactNode {
       (misEnCauseTypeId in misEnCauseTypeLabels ? misEnCauseTypeLabels[misEnCauseTypeId] : undefined) ||
       misEnCauseTypeId;
 
-    // if it's ETABLISSEMENT, display the "établissement" name from "lieuDeSurvenue"
-    if (misEnCauseTypeId === MIS_EN_CAUSE_TYPE.ETABLISSEMENT) {
+    const precisionLabel = misEnCause?.misEnCauseTypePrecision?.label;
+
+    // PROFESSIONNEL_SANTE: display identity if available (stored in commentaire field)
+    if (misEnCauseTypeId === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE) {
+      const identite = misEnCause?.commentaire?.trim();
+      if (identite) {
+        misEnCauseItems.add(identite);
+      } else {
+        misEnCauseItems.add(precisionLabel || misEnCauseTypeLabel);
+      }
+    }
+    // ETABLISSEMENT: display establishment name from lieuDeSurvenue if available
+    else if (misEnCauseTypeId === MIS_EN_CAUSE_TYPE.ETABLISSEMENT) {
       const etablissementName =
         lieuDeSurvenue?.finess || lieuDeSurvenue?.lieuPrecision || lieuDeSurvenue?.adresse?.label || null;
 
       if (etablissementName) {
         misEnCauseItems.add(etablissementName);
+      } else {
+        misEnCauseItems.add(precisionLabel || misEnCauseTypeLabel);
       }
     }
-    // for MEMBRE_FAMILLE, PROCHE, AUTRE : display the type (and the "précision" if it exists)
-    else if (
-      misEnCauseTypeId === MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE ||
-      misEnCauseTypeId === MIS_EN_CAUSE_TYPE.PROCHE ||
-      misEnCauseTypeId === MIS_EN_CAUSE_TYPE.AUTRE
-    ) {
-      let displayText = misEnCauseTypeLabel;
-      const precisionLabel = misEnCause?.misEnCauseTypePrecision?.label;
-      if (precisionLabel) {
-        displayText = `${displayText} - ${precisionLabel}`;
-      }
-      misEnCauseItems.add(displayText);
-    }
-    // for other types, display just the label
+    // Other types: display precision (2nd level) if available, otherwise type (1st level)
     else {
-      misEnCauseItems.add(misEnCauseTypeLabel);
+      misEnCauseItems.add(precisionLabel || misEnCauseTypeLabel);
     }
   });
 
@@ -194,21 +197,7 @@ export function renderMisEnCauseCell(row: RequeteEntiteRow): ReactNode {
 
   const itemsArray = Array.from(misEnCauseItems);
 
-  if (itemsArray.length === 1) {
-    return (
-      <ul className="fr-mb-0">
-        <li>{itemsArray[0]}</li>
-      </ul>
-    );
-  }
-
-  return (
-    <ul className="fr-mb-0">
-      {itemsArray.map((item) => (
-        <li key={item}>{item}</li>
-      ))}
-    </ul>
-  );
+  return <span>{itemsArray.join(',\u00A0')}</span>;
 }
 
 type AffectationData = {
