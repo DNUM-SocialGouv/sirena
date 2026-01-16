@@ -186,9 +186,14 @@ const app = factoryWithLogs
         await updateStatusRequete(requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
       }
 
-      const step = await addProcessingEtape(requeteId, topEntiteId, {
-        nom: body.nom,
-      });
+      const step = await addProcessingEtape(
+        requeteId,
+        topEntiteId,
+        {
+          nom: body.nom,
+        },
+        userId,
+      );
 
       if (!step) {
         logger.error({ requestId: requeteId, userId }, 'Inconsistent state: step not created');

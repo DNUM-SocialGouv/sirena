@@ -64,6 +64,7 @@ const requeteEtape: RequeteEtape = {
   createdAt: new Date(),
   updatedAt: new Date(),
   clotureReasonId: null,
+  createdById: null,
 };
 
 const uploadedFile: Pick<UploadedFile, 'id' | 'size' | 'metadata' | 'filePath'> = {
@@ -135,6 +136,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         clotureReasonId: null,
+        createdById: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -147,6 +149,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         clotureReasonId: null,
+        createdById: null,
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
@@ -211,6 +214,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: currentDate,
         updatedAt: currentDate,
         clotureReasonId: null,
+        createdById: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -223,6 +227,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: currentDate,
         updatedAt: currentDate,
         clotureReasonId: null,
+        createdById: null,
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
@@ -272,6 +277,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         clotureReasonId: null,
+        createdById: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -284,6 +290,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         clotureReasonId: null,
+        createdById: null,
       };
 
       mockFindUnique.mockResolvedValueOnce(mockRequeteEntite);
@@ -345,6 +352,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         clotureReasonId: null,
+        createdById: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -357,6 +365,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         clotureReasonId: null,
+        createdById: null,
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
@@ -391,6 +400,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         clotureReasonId: null,
+        createdById: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -403,6 +413,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         clotureReasonId: null,
+        createdById: null,
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
@@ -482,6 +493,63 @@ describe('RequeteEtapes.service.ts', () => {
       expect(prisma.requeteEntite.upsert).not.toHaveBeenCalled();
       expect(prisma.requeteEtape.create).not.toHaveBeenCalled();
     });
+
+    it('should add a processing etape with userId', async () => {
+      const mockRequete = {
+        id: 'requeteId',
+        commentaire: 'Test',
+        receptionDate: new Date('2024-01-15T10:00:00Z'),
+        dematSocialId: 123,
+        receptionTypeId: 'type',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      vi.mocked(prisma.requete.findUnique).mockReset();
+      vi.mocked(prisma.requeteEntite.upsert).mockReset();
+      vi.mocked(prisma.requeteEtape.create).mockReset();
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequete);
+      vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce(requeteEntite);
+      vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(requeteEtape);
+
+      const result = await addProcessingEtape(
+        'requeteId',
+        'entiteId',
+        {
+          nom: requeteEtape.nom,
+        },
+        'userId',
+      );
+
+      expect(result).toEqual(requeteEtape);
+      expect(prisma.requete.findUnique).toHaveBeenCalledWith({
+        where: { id: 'requeteId' },
+      });
+      expect(prisma.requeteEntite.upsert).toHaveBeenCalledWith({
+        where: {
+          requeteId_entiteId: {
+            requeteId: 'requeteId',
+            entiteId: 'entiteId',
+          },
+        },
+        create: {
+          requeteId: 'requeteId',
+          entiteId: 'entiteId',
+          statutId: 'NOUVEAU',
+        },
+        update: {},
+      });
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: requeteEtape.requeteId,
+          entiteId: requeteEtape.entiteId,
+          nom: requeteEtape.nom,
+          statutId: requeteEtape.statutId,
+          createdById: 'userId',
+        },
+      });
+    });
   });
 
   describe('getRequeteEtapes()', () => {
@@ -504,6 +572,12 @@ describe('RequeteEtapes.service.ts', () => {
           clotureReason: {
             select: {
               label: true,
+            },
+          },
+          createdBy: {
+            select: {
+              prenom: true,
+              nom: true,
             },
           },
           notes: {
@@ -557,6 +631,12 @@ describe('RequeteEtapes.service.ts', () => {
           clotureReason: {
             select: {
               label: true,
+            },
+          },
+          createdBy: {
+            select: {
+              prenom: true,
+              nom: true,
             },
           },
           notes: {
