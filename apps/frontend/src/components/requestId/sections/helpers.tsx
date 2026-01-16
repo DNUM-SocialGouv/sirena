@@ -1,5 +1,7 @@
 import { fr } from '@codegouvfr/react-dsfr';
 
+export const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
 export const formatFullName = (identite?: { civilite?: { label?: string }; prenom?: string; nom?: string } | null) => {
   if (!identite) return '';
   const civiliteLabel = identite.civilite?.label;
