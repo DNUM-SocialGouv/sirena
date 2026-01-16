@@ -1,0 +1,19 @@
+.inlineList {
+  display: inline;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.inlineList li {
+  display: inline;
+}
+
+.inlineList li:not(:last-child)::after {
+  content: ", ";
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+}

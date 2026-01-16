@@ -9,18 +9,20 @@ import {
 import { valueToLabel } from '@sirena/common/utils';
 import type { ReactNode } from 'react';
 import type { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
+import styles from './requetesEntites.cells.module.css';
 
 type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number];
 type Situation = RequeteEntiteRow['requete']['situations'][number];
 type Fait = NonNullable<Situation['faits']>[number];
 type MisEnCause = Situation['misEnCause'];
 type LieuDeSurvenue = Situation['lieuDeSurvenue'];
+type SituationEntite = NonNullable<Situation['situationEntites']>[number];
+type EntiteInfo = NonNullable<SituationEntite['entite']>;
 
 type LabeledItem = { label: string; title: string };
-type EntiteInfo = { id: string; label: string; nomComplet: string; entiteMereId: string | null };
 type ServiceInfo = { id: string; name: string; nomComplet: string; parentName?: string; parentNomComplet?: string };
 
-const SEPARATOR = ',\u00A0';
+const UNKNOWN_VALUE = 'Non renseigné';
 const MALTRAITANCE_PARENT_VALUE = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE';
 const NEGATIVE_MALTRAITANCE_ANSWERS = ['NON', 'NE_SAIS_PAS'];
 
@@ -41,10 +43,9 @@ const uniqueBy = <T, K>(items: T[], keyFn: (item: T) => K): T[] => {
 const flatMap = <T, U>(items: T[], fn: (item: T) => U[]): U[] => items.flatMap(fn);
 
 const renderLabeledItems = (items: LabeledItem[], alwaysShowAbbr = false): ReactNode => (
-  <>
-    {items.map((item, index) => (
-      <span key={item.label}>
-        {index > 0 && SEPARATOR}
+  <ul className={styles.inlineList}>
+    {items.map((item) => (
+      <li key={item.label}>
         {alwaysShowAbbr || item.label !== item.title ? (
           <abbr title={item.title} style={{ textDecoration: 'none', cursor: 'help' }}>
             {item.label}
@@ -52,12 +53,26 @@ const renderLabeledItems = (items: LabeledItem[], alwaysShowAbbr = false): React
         ) : (
           item.label
         )}
-      </span>
+      </li>
     ))}
-  </>
+  </ul>
 );
 
-const renderSimpleList = (items: string[]): ReactNode => <span>{items.join(SEPARATOR)}</span>;
+const renderInlineList = (items: string[]): ReactNode => (
+  <ul className={styles.inlineList}>
+    {items.map((item) => (
+      <li key={item}>{item}</li>
+    ))}
+  </ul>
+);
+
+const renderList = (items: string[]): ReactNode => (
+  <ul className={styles.list}>
+    {items.map((item) => (
+      <li key={item}>{item}</li>
+    ))}
+  </ul>
+);
 
 const getMotifParentInfo = (motifId: string | undefined): { label: string | null; isMaltraitance: boolean } => {
   if (!motifId) return { label: null, isMaltraitance: false };
@@ -125,7 +140,7 @@ export function renderMotifsCell(row: RequeteEntiteRow): ReactNode {
     showMaltraitanceBadge = hasMaltraitance;
   }
 
-  if (labels.length === 0 && !showMaltraitanceBadge) return '-';
+  if (labels.length === 0 && !showMaltraitanceBadge) return UNKNOWN_VALUE;
 
   return (
     <>
@@ -136,7 +151,7 @@ export function renderMotifsCell(row: RequeteEntiteRow): ReactNode {
           </Badge>
         </div>
       )}
-      {labels.length > 0 && <span className={showMaltraitanceBadge ? 'fr-mt-1w' : ''}>{renderSimpleList(labels)}</span>}
+      {labels.length > 0 && <div className={showMaltraitanceBadge ? 'fr-mt-1w' : ''}>{renderList(labels)}</div>}
     </>
   );
 }
@@ -198,7 +213,7 @@ export function renderMisEnCauseCell(row: RequeteEntiteRow): ReactNode {
 
   const uniqueItems = [...new Set(items)];
 
-  return uniqueItems.length === 0 ? '-' : renderSimpleList(uniqueItems);
+  return uniqueItems.length === 0 ? UNKNOWN_VALUE : renderInlineList(uniqueItems);
 }
 
 const buildEntitesMap = (situations: Situation[]): Map<string, EntiteInfo> =>
@@ -263,10 +278,10 @@ export function renderAffectationCell(
   // If user's entity not present, show other root entities
   if (!userEntityPresent) {
     const rootEntites = extractRootEntites(entitesMap);
-    if (rootEntites.length === 0) return '-';
+    if (rootEntites.length === 0) return UNKNOWN_VALUE;
 
     const items = uniqueBy(rootEntites.map(entiteToLabeledItem), (i) => i.label);
-    return <span>{renderLabeledItems(items, true)}</span>;
+    return renderLabeledItems(items, true);
   }
 
   const services = extractServicesFromSituations(situations, entitesMap);
@@ -274,11 +289,11 @@ export function renderAffectationCell(
   if (services.length > 0) {
     const sortedServices = sortServices(services, userEntiteId);
     const items = uniqueBy(sortedServices.map(serviceToLabeledItem), (i) => i.label);
-    return <span>{renderLabeledItems(items, true)}</span>;
+    return renderLabeledItems(items, true);
   }
 
   const rootEntite = entitesMap.get(userTopEntiteId);
-  if (!rootEntite) return '-';
+  if (!rootEntite) return UNKNOWN_VALUE;
 
-  return <span>{renderLabeledItems([entiteToLabeledItem(rootEntite)], true)}</span>;
+  return renderLabeledItems([entiteToLabeledItem(rootEntite)], true);
 }
