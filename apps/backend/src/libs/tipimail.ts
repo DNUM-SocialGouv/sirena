@@ -137,11 +137,50 @@ export async function sendTipimailEmail(options: SendTipimailOptions): Promise<T
   });
 }
 
-function normalizeRecipients(to: string | string[] | Recipient[]): Recipient[] {
-  if (Array.isArray(to)) {
-    return to.map((item) => (typeof item === 'string' ? { address: item } : item));
+function shouldRedirectEmail(email: string): boolean {
+  return envVars.REDIRECT_YOPMAIL_EMAILS && email.toLowerCase().includes('yopmail');
+}
+
+function redirectYopmailEmails(recipients: Recipient[]): Recipient[] {
+  if (!envVars.REDIRECT_YOPMAIL_EMAILS) {
+    return recipients;
   }
-  return typeof to === 'string' ? [{ address: to }] : [to];
+
+  return recipients.map((recipient) => {
+    if (shouldRedirectEmail(recipient.address)) {
+      return {
+        ...recipient,
+        address: envVars.REDIRECT_EMAIL,
+      };
+    }
+    return recipient;
+  });
+}
+
+function redirectYopmailSubstitutions(substitutions?: TipimailSubstitution[]): TipimailSubstitution[] | undefined {
+  if (!envVars.REDIRECT_YOPMAIL_EMAILS || !substitutions) {
+    return substitutions;
+  }
+
+  return substitutions.map((sub) => {
+    if (shouldRedirectEmail(sub.email)) {
+      return {
+        ...sub,
+        email: envVars.REDIRECT_EMAIL,
+      };
+    }
+    return sub;
+  });
+}
+
+function normalizeRecipients(to: string | string[] | Recipient[]): Recipient[] {
+  let recipients: Recipient[];
+  if (Array.isArray(to)) {
+    recipients = to.map((item) => (typeof item === 'string' ? { address: item } : item));
+  } else {
+    recipients = typeof to === 'string' ? [{ address: to }] : [to];
+  }
+  return redirectYopmailEmails(recipients);
 }
 
 function normalizeFrom(from?: string | From): From {
@@ -203,8 +242,9 @@ function createTipimailRequest(options: SendTipimailOptions): TipimailSendReques
   const recipients = normalizeRecipients(options.to);
   const from = normalizeFrom(options.from);
   const replyTo = normalizeReplyTo(options.replyTo);
+  const substitutions = redirectYopmailSubstitutions(options.substitutions);
 
-  assertSubstitutionsMatchRecipients(recipients, options.substitutions);
+  assertSubstitutionsMatchRecipients(recipients, substitutions);
 
   const usingTemplate = !!options.template;
 
@@ -241,7 +281,7 @@ function createTipimailRequest(options: SendTipimailOptions): TipimailSendReques
     headers: {
       ...(options.template ? { 'X-TM-TEMPLATE': options.template } : {}),
       ...(options.meta ? { 'X-TM-META': options.meta } : {}),
-      ...(options.substitutions?.length ? { 'X-TM-SUB': options.substitutions } : {}),
+      ...(substitutions?.length ? { 'X-TM-SUB': substitutions } : {}),
       ...(options.tags?.length ? { 'X-TM-TAGS': options.tags } : {}),
     },
   };

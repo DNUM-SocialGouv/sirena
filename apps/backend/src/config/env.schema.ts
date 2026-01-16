@@ -257,6 +257,12 @@ export const AppEnvSchema = z.object({
         ? "La variable d'environnement TIPIMAIL_FROM_PERSONAL_NAME est requise"
         : 'Not a string',
   }),
+  REDIRECT_YOPMAIL_EMAILS: z
+    .string()
+    .optional()
+    .default('false')
+    .transform((val) => val === 'true'),
+  REDIRECT_EMAIL: z.string().optional().default('sirena.redirect@gmail.com'),
   REDIS_HOST: z.string({
     error: (issue) =>
       issue.input === undefined ? "La variable d'environnement REDIS_HOST est requise" : 'Not a string',
