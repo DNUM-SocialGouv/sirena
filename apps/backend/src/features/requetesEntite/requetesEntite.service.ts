@@ -741,9 +741,17 @@ const buildMisEnCauseUpdate = (misEnCauseData: SituationInput['misEnCause']) => 
 
   return {
     misEnCauseType: misEnCauseTypeId ? { connect: { id: misEnCauseTypeId } } : { disconnect: true },
-    misEnCauseTypePrecision: misEnCauseTypePrecisionId
-      ? { connect: { id: misEnCauseTypePrecisionId } }
-      : { disconnect: true },
+    misEnCauseTypePrecision:
+      misEnCauseTypePrecisionId && misEnCauseTypeId
+        ? {
+            connect: {
+              misEnCauseTypeId_id: {
+                misEnCauseTypeId,
+                id: misEnCauseTypePrecisionId,
+              },
+            },
+          }
+        : { disconnect: true },
     autrePrecision: cleanNullOrEmpty(misEnCauseData.autrePrecision),
     rpps: misEnCauseData.rpps || null,
     commentaire: cleanNullOrEmpty(misEnCauseData.commentaire),
