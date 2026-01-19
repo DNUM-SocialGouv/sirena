@@ -365,7 +365,7 @@ model MisEnCause {
   misEnCauseType   MisEnCauseTypeEnum? @relation(fields: [misEnCauseTypeId], references: [id])
 
   misEnCauseTypePrecisionId String?
-  misEnCauseTypePrecision   MisEnCauseTypePrecisionEnum? @relation(fields: [misEnCauseTypePrecisionId], references: [id])
+  misEnCauseTypePrecision MisEnCauseTypePrecisionEnum? @relation(fields: [misEnCauseTypeId, misEnCauseTypePrecisionId], references: [misEnCauseTypeId, id])
 
   situation Situation[]
 }
@@ -379,13 +379,15 @@ model MisEnCauseTypeEnum {
 }
 
 model MisEnCauseTypePrecisionEnum {
-  id    String @id @default(uuid())
-  label String @unique
+  id    String
+  label String
 
   misEnCauseTypeId String
   misEnCauseType   MisEnCauseTypeEnum @relation(fields: [misEnCauseTypeId], references: [id], onDelete: Cascade)
 
   misEnCauses MisEnCause[]
+
+  @@id([misEnCauseTypeId, id])
 }
 
 model Fait {
