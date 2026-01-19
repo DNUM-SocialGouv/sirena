@@ -1,5 +1,5 @@
-import { RoleEnumSchema } from '../roles/roles.schema';
-import { UserSchema } from '../users/users.schema';
+import { RoleEnumSchema } from '../roles/roles.schema.js';
+import { UserSchema } from '../users/users.schema.js';
 
 export const ProfileSchema = UserSchema.extend({
   role: RoleEnumSchema.nullable(),

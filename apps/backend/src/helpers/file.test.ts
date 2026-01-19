@@ -1,8 +1,11 @@
 import { Readable } from 'node:stream';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sanitizeFilename, urlToStream } from './file';
+import { sanitizeFilename, urlToStream } from './file.js';
 
-vi.mock('@/config/files.constant', () => ({ MAX_FILE_SIZE: 5 }));
+vi.mock('../config/files.constant.js', () => ({ MAX_FILE_SIZE: 5 }));
+vi.mock('../libs/minio.js', () => ({
+  getFileStream: vi.fn(),
+}));
 
 const fileTypeFromBufferMock = vi.fn();
 

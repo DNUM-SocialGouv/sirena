@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { prisma } from '@/libs/prisma';
-import { endCron, getLastCron, startCron } from './crons.service';
+import { prisma } from '../libs/prisma.js';
+import { endCron, getLastCron, startCron } from './crons.service.js';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../libs/prisma.js', () => ({
   prisma: {
     crons: {
       findFirst: vi.fn(),

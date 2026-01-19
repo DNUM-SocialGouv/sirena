@@ -2,9 +2,9 @@ import { Readable } from 'node:stream';
 import { fileTypeFromBuffer } from 'file-type';
 import type { Context } from 'hono';
 import { stream as honoStream } from 'hono/streaming';
-import { MAX_FILE_SIZE } from '@/config/files.constant';
-import { getFileStream } from '@/libs/minio';
-import type { Prisma, UploadedFile } from '@/libs/prisma';
+import { MAX_FILE_SIZE } from '../config/files.constant.js';
+import { getFileStream } from '../libs/minio.js';
+import type { Prisma, UploadedFile } from '../libs/prisma.js';
 
 export const sanitizeFilename = (originalName: string, detectedExtension: string): string => {
   const nameWithoutExt = originalName.replace(/\.[^/.]+$/, '');
@@ -73,7 +73,7 @@ const createFileStreamResponse = async (c: Context, options: StreamFileOptions) 
   return honoStream(c, async (s) => {
     try {
       const { stream: nodeStream } = await getFileStream(filePath);
-      const webStream = Readable.toWeb(nodeStream);
+      const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream<Uint8Array>;
 
       s.onAbort(() => {
         if ('destroy' in nodeStream) {

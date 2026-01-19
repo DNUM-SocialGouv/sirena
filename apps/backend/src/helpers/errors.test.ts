@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { serializeError } from './errors';
+import { describe, expect, it, vi } from 'vitest';
+import { serializeError } from './errors.js';
+
+vi.mock('../config/env.js', () => ({
+  envVars: {
+    SENTRY_ENABLED: true,
+  },
+}));
 
 describe('serializeError', () => {
   describe('basic error handling', () => {

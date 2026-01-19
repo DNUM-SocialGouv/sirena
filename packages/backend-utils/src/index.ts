@@ -1,3 +1,3 @@
-export * as helpers from './helpers';
-export * as schemas from './schemas';
-export * as types from './types';
+export * as helpers from './helpers/index.js';
+export * as schemas from './schemas/index.js';
+export * as types from './types/index.js';

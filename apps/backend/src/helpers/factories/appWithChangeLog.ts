@@ -1,5 +1,5 @@
 import { createFactory } from 'hono/factory';
-import type { AppBindings as RoleAppBindings } from './appWithRole';
+import type { AppBindings as RoleAppBindings } from './appWithRole.js';
 
 // ChangeLog-specific variables
 type ChangeLogVariables = {

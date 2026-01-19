@@ -7,7 +7,7 @@ import {
   lieuEtablissementSantePrecisionLabels,
   lieuEtablissementSocialPrecisionLabels,
   lieuTrajetPrecisionLabels,
-} from '../constants/requete.constant';
+} from '../constants/requete.constant.js';
 
 export function getLieuPrecisionLabel(lieuTypeId?: string, lieuPrecision?: string): string {
   if (!lieuPrecision) return '';

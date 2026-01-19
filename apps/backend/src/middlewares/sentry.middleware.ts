@@ -1,11 +1,11 @@
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { createFactory } from 'hono/factory';
-import { envVars } from '@/config/env';
-import type { AppBindings as AuthAppBindings } from '@/helpers/factories/appWithAuth';
-import type { AppBindings as LogsAppBindings } from '@/helpers/factories/appWithLogs';
-import { extractRequestContext, type RequestContext, SOURCE_BACKEND } from '@/helpers/middleware';
-import { sentryStorage } from '@/libs/asyncLocalStorage';
+import { envVars } from '../config/env.js';
+import type { AppBindings as AuthAppBindings } from '../helpers/factories/appWithAuth.js';
+import type { AppBindings as LogsAppBindings } from '../helpers/factories/appWithLogs.js';
+import { extractRequestContext, type RequestContext, SOURCE_BACKEND } from '../helpers/middleware.js';
+import { sentryStorage } from '../libs/asyncLocalStorage.js';
 
 export const createSentryRequestContext = (c: Context, context: RequestContext) => {
   return {

@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { Scope } from '@sentry/node';
-import type { createDefaultLogger } from '@/helpers/pino';
+import type { createDefaultLogger } from '../helpers/pino.js';
 
 export const abortControllerStorage = new AsyncLocalStorage<AbortController>();
 

@@ -1,7 +1,7 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
 import { z } from 'zod';
-import { Prisma } from '@/libs/prisma';
+import { Prisma } from '../../libs/prisma.js';
 
 export const RequeteEtapeSchema = z.object({
   id: z.uuid(),

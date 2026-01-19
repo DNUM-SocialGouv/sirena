@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { connection } from '@/config/redis';
+import { connection } from '../../config/redis.js';
 
 export interface FileProcessingJobData {
   fileId: string;

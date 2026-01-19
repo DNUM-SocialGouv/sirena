@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { MotifOption } from './motifs.utils';
-import { getAllOptionsFlat, labelsToValues, labelToValue, valuesToLabels, valueToLabel } from './motifs.utils';
+import type { MotifOption } from './motifs.utils.js';
+import { getAllOptionsFlat, labelsToValues, labelToValue, valuesToLabels, valueToLabel } from './motifs.utils.js';
 
 const TEST_OPTIONS: MotifOption[] = [
   {

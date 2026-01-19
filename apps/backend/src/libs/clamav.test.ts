@@ -1,14 +1,14 @@
 import { EventEmitter } from 'node:events';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/config/env', () => ({
+vi.mock('../config/env.js', () => ({
   envVars: {
     CLAMAV_HOST: 'clamav',
     CLAMAV_PORT: '3310',
   },
 }));
 
-vi.mock('./asyncLocalStorage', () => ({
+vi.mock('./asyncLocalStorage.js', () => ({
   getLoggerStore: () => ({
     debug: vi.fn(),
     info: vi.fn(),
@@ -44,16 +44,16 @@ vi.mock('node:net', () => {
 });
 
 describe('clamav', () => {
-  let checkClamAvHealth: typeof import('./clamav').checkClamAvHealth;
-  let scanBuffer: typeof import('./clamav').scanBuffer;
-  let isFileInfected: typeof import('./clamav').isFileInfected;
-  let getDetectedViruses: typeof import('./clamav').getDetectedViruses;
+  let checkClamAvHealth: typeof import('./clamav.js').checkClamAvHealth;
+  let scanBuffer: typeof import('./clamav.js').scanBuffer;
+  let isFileInfected: typeof import('./clamav.js').isFileInfected;
+  let getDetectedViruses: typeof import('./clamav.js').getDetectedViruses;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     mockSocketInstance = createMockSocket();
     vi.resetModules();
-    const clamav = await import('./clamav');
+    const clamav = await import('./clamav.js');
     checkClamAvHealth = clamav.checkClamAvHealth;
     scanBuffer = clamav.scanBuffer;
     isFileInfected = clamav.isFileInfected;

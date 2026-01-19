@@ -1,5 +1,5 @@
-import { type Prisma, prisma } from '@/libs/prisma';
-import type { EndCronParams, StartCronParams } from './crons.type';
+import { type Prisma, prisma } from '../libs/prisma.js';
+import type { EndCronParams, StartCronParams } from './crons.type.js';
 
 export const getLastCron = async (name: string) =>
   await prisma.crons.findFirst({

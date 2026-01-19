@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { prisma } from '@/libs/prisma';
+import { prisma } from '../../libs/prisma.js';
 import { determineSource, generateRequeteId } from './functionalId.service';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     requete: {
       count: vi.fn(),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseAdresseDomicile } from './address';
+import { parseAdresseDomicile } from './address.js';
 
 describe('parseAdresseDomicile', () => {
   describe('when address has number and street', () => {

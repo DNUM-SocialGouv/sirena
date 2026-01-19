@@ -1,8 +1,8 @@
 import type { Scope } from '@sentry/node';
 import { describe, expect, it, vi } from 'vitest';
-import type { createDefaultLogger } from '@/helpers/pino';
-import { createDefaultLogger as createLogger } from '@/helpers/pino';
-import { getLoggerStore, getSentryStore, loggerStorage, sentryStorage } from './asyncLocalStorage';
+import type { createDefaultLogger } from '../helpers/pino.js';
+import { createDefaultLogger as createLogger } from '../helpers/pino.js';
+import { getLoggerStore, getSentryStore, loggerStorage, sentryStorage } from './asyncLocalStorage.js';
 
 // Create a mock Scope class for testing
 class MockScope {

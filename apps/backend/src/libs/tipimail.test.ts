@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SendTipimailOptions, TipimailSendResponse, TipimailSubstitution } from './tipimail';
-import { sendTipimailEmail } from './tipimail';
+import type { SendTipimailOptions, TipimailSendResponse, TipimailSubstitution } from './tipimail.js';
 
 global.fetch = vi.fn();
 
-vi.mock('@/config/env', () => ({
+vi.mock('../config/env.js', () => ({
   envVars: {
     TIPIMAIL_API_URL: 'https://api.tipimail.com',
     TIPIMAIL_USER_ID: 'test-user-id',
@@ -13,6 +12,8 @@ vi.mock('@/config/env', () => ({
     TIPIMAIL_FROM_PERSONAL_NAME: 'Default Sender',
   },
 }));
+
+const { sendTipimailEmail } = await import('./tipimail.js');
 
 describe('tipimail', () => {
   beforeEach(() => {

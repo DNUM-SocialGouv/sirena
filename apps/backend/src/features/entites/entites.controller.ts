@@ -1,13 +1,13 @@
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
-import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import authMiddleware from '@/middlewares/auth.middleware';
-import entitesMiddleware from '@/middlewares/entites.middleware';
-import roleMiddleware from '@/middlewares/role.middleware';
-import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-import { getEntiteChainRoute, getEntitesRoute } from './entites.route';
-import { GetEntitiesQuerySchema } from './entites.schema';
-import { getEditableEntitiesChain, getEntiteDescendantIds, getEntites, getEntitesByIds } from './entites.service';
+import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
+import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { getEntiteChainRoute, getEntitesRoute } from './entites.route.js';
+import { GetEntitiesQuerySchema } from './entites.schema.js';
+import { getEditableEntitiesChain, getEntiteDescendantIds, getEntites, getEntitesByIds } from './entites.service.js';
 
 const app = factoryWithLogs
   .createApp()

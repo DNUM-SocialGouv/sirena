@@ -1,14 +1,14 @@
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { envVars } from '@/config/env';
-import { getUserById } from '@/features/users/users.service';
-import { errorHandler } from '@/helpers/errors';
-import appWithAuth from '@/helpers/factories/appWithAuth';
-import appWithLogs from '@/helpers/factories/appWithLogs';
-import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
-import authMiddleware from '@/middlewares/auth.middleware';
+import { envVars } from '../config/env.js';
+import { getUserById } from '../features/users/users.service.js';
+import { errorHandler } from '../helpers/errors.js';
+import appWithAuth from '../helpers/factories/appWithAuth.js';
+import appWithLogs from '../helpers/factories/appWithLogs.js';
+import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '../helpers/jsonwebtoken.js';
+import authMiddleware from './auth.middleware.js';
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {
     AUTH_TOKEN_NAME: 'authToken',
     AUTH_TOKEN_EXPIRATION: '600',

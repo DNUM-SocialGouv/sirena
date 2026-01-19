@@ -1,6 +1,6 @@
 import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
 import type { Role } from '@sirena/common/constants';
-import factoryWithAuth from '@/helpers/factories/appWithAuth';
+import factoryWithAuth from '../helpers/factories/appWithAuth.js';
 
 const app = (roles: Role[]) =>
   factoryWithAuth.createMiddleware(async (c, next) => {

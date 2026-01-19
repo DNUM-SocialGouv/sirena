@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { findGeoByPostalCode } from './geoIndex';
+import { findGeoByPostalCode } from './geoIndex.js';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../../../libs/prisma.js', () => ({
   prisma: {
     inseePostal: {
       findFirst: vi.fn(),
@@ -9,7 +9,7 @@ vi.mock('@/libs/prisma', () => ({
   },
 }));
 
-import { prisma } from '@/libs/prisma';
+import { prisma } from '../../../../libs/prisma.js';
 
 const mockedPrismaInseePostal = vi.mocked(prisma.inseePostal);
 

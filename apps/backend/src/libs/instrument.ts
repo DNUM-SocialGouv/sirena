@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/node';
-import { envVars } from '@/config/env';
-import { APP_VERSION } from '@/config/version.constant';
+import { envVars } from '../config/env.js';
+import { APP_VERSION } from '../config/version.constant.js';
 
 if (envVars.SENTRY_ENABLED) {
   Sentry.init({

@@ -1,8 +1,8 @@
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
-import { prisma } from '@/libs/prisma';
-import { sendTipimailEmail } from '@/libs/tipimail';
+import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
+import { prisma } from '../../libs/prisma.js';
+import { sendTipimailEmail } from '../../libs/tipimail.js';
+import { createChangeLog } from '../changelog/changelog.service.js';
+import { ChangeLogAction } from '../changelog/changelog.type.js';
 
 /**
  * Formats the list of administrative entity names (entities without a parent entity)

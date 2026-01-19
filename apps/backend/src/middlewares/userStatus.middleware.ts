@@ -1,7 +1,7 @@
 import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
 import { PERMISSION_ERROR, ROLES, STATUT_TYPES } from '@sirena/common/constants';
-import { getUserById } from '@/features/users/users.service';
-import factoryWithAuth from '@/helpers/factories/appWithAuth';
+import { getUserById } from '../features/users/users.service.js';
+import factoryWithAuth from '../helpers/factories/appWithAuth.js';
 
 const userStatusMiddleware = factoryWithAuth.createMiddleware(async (c, next) => {
   const userId = c.get('userId');

@@ -1,9 +1,9 @@
 import type { PinoLogger } from 'hono-pino';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { deleteFileFromMinio } from '@/libs/minio';
-import type { Prisma } from '@/libs/prisma';
-import { prisma } from '@/libs/prisma';
+import { deleteFileFromMinio } from '../../libs/minio.js';
+import type { Prisma } from '../../libs/prisma.js';
+import { prisma } from '../../libs/prisma.js';
+import { createChangeLog } from '../changelog/changelog.service.js';
+import { ChangeLogAction } from '../changelog/changelog.type.js';
 
 export const getNoteById = async (id: string) =>
   await prisma.requeteEtapeNote.findUnique({

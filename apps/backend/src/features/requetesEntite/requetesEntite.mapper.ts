@@ -1,7 +1,7 @@
 import { mappers } from '@sirena/common';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
-import { parseAdresseDomicile } from '@/helpers/address';
+import { parseAdresseDomicile } from '../../helpers/address.js';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
 type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;

@@ -1,9 +1,9 @@
 import { deleteCookie, getCookie } from 'hono/cookie';
 import { HTTPException } from 'hono/http-exception';
-import { envVars } from '@/config/env';
-import { deleteSession, getSession } from '@/features/sessions/sessions.service';
-import factoryWithAuth from '@/helpers/factories/appWithAuth';
-import authMiddleware from '@/middlewares/auth.middleware';
+import { envVars } from '../config/env.js';
+import { deleteSession, getSession } from '../features/sessions/sessions.service.js';
+import factoryWithAuth from '../helpers/factories/appWithAuth.js';
+import authMiddleware from './auth.middleware.js';
 
 const app = factoryWithAuth.createMiddleware(async (c, next) => {
   try {

@@ -1,12 +1,12 @@
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
-import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import authMiddleware from '@/middlewares/auth.middleware';
-import roleMiddleware from '@/middlewares/role.middleware';
-import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-import { getOrganizationsRoute, getPractionnersRoute } from './esante.route';
-import { GetOrganizationsQuerySchema, GetPractionnersQuerySchema } from './esante.schema';
-import { getOrganizations, getPractionners } from './esante.service';
+import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
+import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { getOrganizationsRoute, getPractionnersRoute } from './esante.route.js';
+import { GetOrganizationsQuerySchema, GetPractionnersQuerySchema } from './esante.schema.js';
+import { getOrganizations, getPractionners } from './esante.service.js';
 
 const app = factoryWithLogs
   .createApp()

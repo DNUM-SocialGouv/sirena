@@ -1,11 +1,11 @@
 import { openApiProtectedRoute, openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
-import { RequeteSchema } from '../requetes/requetes.schema';
+import { RequeteSchema } from '../requetes/requetes.schema.js';
 import {
   CloseRequeteResponseSchema,
   GetOtherEntitesAffectedResponseSchema,
   GetRequeteEntiteResponseSchema,
   GetRequetesEntiteResponseSchema,
-} from './requetesEntite.schema';
+} from './requetesEntite.schema.js';
 
 export const getRequetesEntiteRoute = openApiProtectedRoute({
   description: 'Get requetes entites',

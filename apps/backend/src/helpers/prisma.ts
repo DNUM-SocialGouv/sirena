@@ -1,4 +1,4 @@
-import { Prisma } from '@/libs/prisma';
+import { Prisma } from '../libs/prisma.js';
 
 export const isPrismaError = (error: unknown): error is Prisma.PrismaClientKnownRequestError =>
   error instanceof Prisma.PrismaClientKnownRequestError;

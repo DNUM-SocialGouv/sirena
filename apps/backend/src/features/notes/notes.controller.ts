@@ -5,19 +5,19 @@ import {
 } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getRequeteEtapeById } from '@/features/requeteEtapes/requetesEtapes.service';
-import { isUserOwner, setNoteFile } from '@/features/uploadedFiles/uploadedFiles.service';
-import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import authMiddleware from '@/middlewares/auth.middleware';
-import requeteEtapesNotesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtapeNote.middleware';
-import entitesMiddleware from '@/middlewares/entites.middleware';
-import roleMiddleware from '@/middlewares/role.middleware';
-import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service';
-import { addNoteRoute, deleteNoteRoute, updateNoteRoute } from './notes.route';
-import { addNoteBodySchema, updateNoteBodySchema } from './notes.schema';
-import { addNote, deleteNote, getNoteById, updateNote } from './notes.service';
+import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import requeteEtapesNotesChangelogMiddleware from '../../middlewares/changelog/changelog.requeteEtapeNote.middleware.js';
+import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
+import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { ChangeLogAction } from '../changelog/changelog.type.js';
+import { getRequeteEtapeById } from '../requeteEtapes/requetesEtapes.service.js';
+import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
+import { isUserOwner, setNoteFile } from '../uploadedFiles/uploadedFiles.service.js';
+import { addNoteRoute, deleteNoteRoute, updateNoteRoute } from './notes.route.js';
+import { addNoteBodySchema, updateNoteBodySchema } from './notes.schema.js';
+import { addNote, deleteNote, getNoteById, updateNote } from './notes.service.js';
 
 const app = factoryWithLogs
   .createApp()

@@ -1,17 +1,17 @@
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
-import { getEntiteAscendanteId } from '@/features/entites/entites.service';
-import { getUserEntities } from '@/features/users/users.service';
-import { errorHandler } from '@/helpers/errors';
-import appWithAuth from '@/helpers/factories/appWithAuth';
-import appWithLogs from '@/helpers/factories/appWithLogs';
-import entitesMiddleware from '@/middlewares/entites.middleware';
+import { getEntiteAscendanteId } from '../features/entites/entites.service.js';
+import { getUserEntities } from '../features/users/users.service.js';
+import { errorHandler } from '../helpers/errors.js';
+import appWithAuth from '../helpers/factories/appWithAuth.js';
+import appWithLogs from '../helpers/factories/appWithLogs.js';
+import entitesMiddleware from './entites.middleware.js';
 
-vi.mock('@/features/users/users.service', () => ({
+vi.mock('../features/users/users.service.js', () => ({
   getUserEntities: vi.fn(),
 }));
 
-vi.mock('@/features/entites/entites.service', () => ({
+vi.mock('../features/entites/entites.service.js', () => ({
   getEntiteAscendanteId: vi.fn(),
 }));
 

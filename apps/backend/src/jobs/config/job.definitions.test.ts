@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { jobHandlers } from './job.definitions';
+import { jobHandlers } from './job.definitions.js';
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {},
 }));
 

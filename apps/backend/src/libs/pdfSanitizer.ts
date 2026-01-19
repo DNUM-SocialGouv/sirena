@@ -1,5 +1,5 @@
 import { PDFArray, PDFDict, PDFDocument, PDFName, type PDFObject } from 'pdf-lib';
-import { getLoggerStore } from './asyncLocalStorage';
+import { getLoggerStore } from './asyncLocalStorage.js';
 
 /**
  * Recursively removes JavaScript actions from a PDF object and its children.

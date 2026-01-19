@@ -1,25 +1,14 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "module": "NodeNext",
     "strict": true,
-    "strictNullChecks": true,
-    "noEmit": true,
+    "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "types": ["node"],
-    "lib": ["ES2023"],
-
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-
-    "sourceMap": true,
-    "inlineSources": true,
-
-    // Set `sourceRoot` to  "/" to strip the build path prefix
-    // from generated source code references.
-    // This improves issue grouping in Sentry.
-    "sourceRoot": "/"
-  }
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "outDir": "./dist"
+  },
+  "exclude": ["node_modules"]
 }

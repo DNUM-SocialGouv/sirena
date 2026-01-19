@@ -1,9 +1,9 @@
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getRequeteEntiteById } from '@/features/requetesEntite/requetesEntite.service';
-import factoryWithChangelog from '@/helpers/factories/appWithChangeLog';
-import { isEqual, pick } from '@/helpers/object';
-import type { Adresse, Identite, PersonneConcernee, Prisma, Requete } from '@/libs/prisma';
+import { createChangeLog } from '../../features/changelog/changelog.service.js';
+import { ChangeLogAction } from '../../features/changelog/changelog.type.js';
+import { getRequeteEntiteById } from '../../features/requetesEntite/requetesEntite.service.js';
+import factoryWithChangelog from '../../helpers/factories/appWithChangeLog.js';
+import { isEqual, pick } from '../../helpers/object.js';
+import type { Adresse, Identite, PersonneConcernee, Prisma, Requete } from '../../libs/prisma.js';
 
 const personneTrackedFields: (keyof PersonneConcernee)[] = [
   'estNonIdentifiee',

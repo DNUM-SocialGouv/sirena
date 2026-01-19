@@ -3,10 +3,10 @@ import {
   throwHTTPException503ServiceUnavailable,
 } from '@sirena/backend-utils/helpers';
 import type { z } from 'zod';
-import { envVars } from '@/config/env';
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
-import { EsanteOrganizationBundleSchema, EsantePractitionerBundleSchema } from './esante.schema';
-import type { GetOrganizationsParams, GetPractionnersParams } from './esante.type';
+import { envVars } from '../../config/env.js';
+import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
+import { EsanteOrganizationBundleSchema, EsantePractitionerBundleSchema } from './esante.schema.js';
+import type { GetOrganizationsParams, GetPractionnersParams } from './esante.type.js';
 
 const fetchEsanteData = async <T>(
   route: string,

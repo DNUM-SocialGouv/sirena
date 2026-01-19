@@ -1,14 +1,14 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PrismaClient } from '../../../../generated/client';
-import { assignEntitesToRequeteTask } from './affectation';
-import type { EntiteAdminType } from './types';
+import type { PrismaClient } from '../../../../generated/client/index.js';
+import { assignEntitesToRequeteTask } from './affectation.js';
+import type { EntiteAdminType } from './types.js';
 
-vi.mock('./buildSituationContext', () => ({
+vi.mock('./buildSituationContext.js', () => ({
   buildSituationContextFromDemat: vi.fn(),
 }));
 
-vi.mock('./decisionTree', () => ({
+vi.mock('./decisionTree.js', () => ({
   runDecisionTree: vi.fn(),
 }));
 
@@ -16,7 +16,7 @@ vi.mock('./geo/geoIndex', () => ({
   findGeoByPostalCode: vi.fn(),
 }));
 
-vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
+vi.mock('../../requeteEtapes/requetesEtapes.service.js', () => ({
   createDefaultRequeteEtapes: vi.fn(),
 }));
 
@@ -29,8 +29,8 @@ vi.mock('@/libs/asyncLocalStorage', () => ({
   })),
 }));
 
-vi.mock('../../../../generated/client', async () => {
-  const actual = await vi.importActual('../../../../generated/client');
+vi.mock('../../../../generated/client/index.js', async () => {
+  const actual = await vi.importActual('../../../../generated/client/index.js');
   return {
     ...actual,
     PrismaClient: class MockPrismaClient {
@@ -44,10 +44,10 @@ vi.mock('../../../../generated/client', async () => {
   };
 });
 
-import { createDefaultRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
-import { buildSituationContextFromDemat } from './buildSituationContext';
-import { runDecisionTree } from './decisionTree';
-import { findGeoByPostalCode } from './geo/geoIndex';
+import { createDefaultRequeteEtapes } from '../../requeteEtapes/requetesEtapes.service.js';
+import { buildSituationContextFromDemat } from './buildSituationContext.js';
+import { runDecisionTree } from './decisionTree.js';
+import { findGeoByPostalCode } from './geo/geoIndex.js';
 
 describe('assignEntitesToRequeteTask', () => {
   let mockPrisma: PrismaClient;

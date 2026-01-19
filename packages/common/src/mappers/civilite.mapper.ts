@@ -1,4 +1,4 @@
-import { CIVILITE, civiliteLabels } from '../constants/requete.constant';
+import { CIVILITE, civiliteLabels } from '../constants/requete.constant.js';
 
 export const CIVILITE_MAPPING = {
   FRONTEND_TO_DB: {

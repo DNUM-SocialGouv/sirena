@@ -1,9 +1,9 @@
 import * as Sentry from '@sentry/node';
-import { envVars } from '@/config/env';
-import { createDefaultLogger } from '@/helpers/pino';
-import { getLoggerStore, loggerStorage, sentryStorage } from '@/libs/asyncLocalStorage';
-import { jobHandlers } from '../config/job.definitions';
-import { cronQueue } from '../config/job.queues';
+import { envVars } from '../../config/env.js';
+import { createDefaultLogger } from '../../helpers/pino.js';
+import { getLoggerStore, loggerStorage, sentryStorage } from '../../libs/asyncLocalStorage.js';
+import { jobHandlers } from '../config/job.definitions.js';
+import { cronQueue } from '../config/job.queues.js';
 
 export async function startScheduler() {
   return loggerStorage.run(createDefaultLogger(), async () => {

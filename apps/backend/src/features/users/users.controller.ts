@@ -2,17 +2,17 @@ import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '
 import { ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
 import { getAssignableRoles } from '@sirena/common/utils';
 import { validator as zValidator } from 'hono-openapi';
-import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import authMiddleware from '@/middlewares/auth.middleware';
-import userChangelogMiddleware from '@/middlewares/changelog/changelog.user.middleware';
-import entitesMiddleware from '@/middlewares/entites.middleware';
-import roleMiddleware from '@/middlewares/role.middleware';
-import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-import { ChangeLogAction } from '../changelog/changelog.type';
-import { sendUserActivationEmail } from './users.notification.service';
-import { getUserRoute, getUsersRoute, patchUserRoute } from './users.route';
-import { GetUsersQuerySchema, PatchUserSchema } from './users.schema';
-import { getUserById, getUsers, patchUser } from './users.service';
+import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import userChangelogMiddleware from '../../middlewares/changelog/changelog.user.middleware.js';
+import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
+import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { ChangeLogAction } from '../changelog/changelog.type.js';
+import { sendUserActivationEmail } from './users.notification.service.js';
+import { getUserRoute, getUsersRoute, patchUserRoute } from './users.route.js';
+import { GetUsersQuerySchema, PatchUserSchema } from './users.schema.js';
+import { getUserById, getUsers, patchUser } from './users.service.js';
 
 const app = factoryWithLogs
   .createApp()

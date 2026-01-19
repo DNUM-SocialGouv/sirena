@@ -1,11 +1,11 @@
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { deleteFileFromMinio } from '@/libs/minio';
-import { type ChangeLog, prisma, type UploadedFile } from '@/libs/prisma';
+import { deleteFileFromMinio } from '../../libs/minio.js';
+import { type ChangeLog, prisma, type UploadedFile } from '../../libs/prisma.js';
+import { createChangeLog } from '../changelog/changelog.service.js';
 import { addNote, deleteNote, getNoteById, updateNote } from './notes.service';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     requeteEtapeNote: {
       create: vi.fn(),

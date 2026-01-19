@@ -2,8 +2,8 @@ import type { ResolverReturnType } from 'hono-openapi';
 import { describeRoute, resolver } from 'hono-openapi';
 import type { OpenAPIV3 } from 'openapi-types';
 import { type ZodSchema, z } from 'zod';
-import { MetaSchema } from '../schemas/apiResponses.schema';
-import { openApi401Unauthorized } from './apiErrors.helper';
+import { MetaSchema } from '../schemas/apiResponses.schema.js';
+import { openApi401Unauthorized } from './apiErrors.helper.js';
 
 type OpenApiResponse = {
   [code: number]: {

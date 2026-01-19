@@ -5,9 +5,9 @@ import {
   type MisEnCauseType,
   type MisEnCauseTypePrecisionUnion,
 } from '@sirena/common/constants';
-import type { Prisma } from '../../../../generated/client';
-import type { SituationContext } from './types';
-import { extractFinessFromRawText, extractPostalCode } from './utils';
+import type { Prisma } from '../../../libs/prisma.js';
+import type { SituationContext } from './types.js';
+import { extractFinessFromRawText, extractPostalCode } from './utils.js';
 
 type RequeteWithSituations = Prisma.RequeteGetPayload<{
   include: {

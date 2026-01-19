@@ -12,9 +12,9 @@ import {
 import type { Context } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import type { Redis } from 'ioredis';
-import { connection } from '@/config/redis';
-import type { AppBindings } from '@/helpers/factories/appWithRole';
-import { createDefaultLogger } from '@/helpers/pino';
+import { connection } from '../config/redis.js';
+import type { AppBindings } from '../helpers/factories/appWithRole.js';
+import { createDefaultLogger } from '../helpers/pino.js';
 
 export type SSEContext = Context<AppBindings>;
 

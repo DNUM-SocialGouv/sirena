@@ -1,18 +1,18 @@
 import { testClient } from 'hono/testing';
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getUserById } from '@/features/users/users.service';
-import appWithAuth from '@/helpers/factories/appWithAuth';
-import type { Prisma } from '@/libs/prisma';
-import userChangelogMiddleware from './changelog.user.middleware';
+import { createChangeLog } from '../../features/changelog/changelog.service.js';
+import { ChangeLogAction } from '../../features/changelog/changelog.type.js';
+import { getUserById } from '../../features/users/users.service.js';
+import appWithAuth from '../../helpers/factories/appWithAuth.js';
+import type { Prisma } from '../../libs/prisma.js';
+import userChangelogMiddleware from './changelog.user.middleware.js';
 
-vi.mock('@/features/changelog/changelog.service', () => ({
+vi.mock('../../features/changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn(),
 }));
 
-vi.mock('@/features/users/users.service', () => ({
+vi.mock('../../features/users/users.service.js', () => ({
   getUserById: vi.fn(),
 }));
 

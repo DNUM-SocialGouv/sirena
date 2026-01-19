@@ -3,27 +3,27 @@ import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import type { IDToken, TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { envVars } from '@/config/env';
-import { deleteSession, getSession } from '@/features/sessions/sessions.service';
-import { errorHandler } from '@/helpers/errors';
-import appWithLogs from '@/helpers/factories/appWithLogs';
-import * as prismaHelpers from '@/helpers/prisma';
-import pinoLogger from '@/middlewares/pino.middleware';
-import AuthController from './auth.controller';
-import { authUser, createRedirectUrl } from './auth.helper';
+import { envVars } from '../../config/env.js';
+import { errorHandler } from '../../helpers/errors.js';
+import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import * as prismaHelpers from '../../helpers/prisma.js';
+import pinoLogger from '../../middlewares/pino.middleware.js';
+import { deleteSession, getSession } from '../sessions/sessions.service.js';
+import AuthController from './auth.controller.js';
+import { authUser, createRedirectUrl } from './auth.helper.js';
 import {
   authorizationCodeGrant,
   buildAuthorizationUrl,
   buildEndSessionUrl,
   fetchUserInfo,
   getOrCreateUser,
-} from './auth.service';
+} from './auth.service.js';
 
-vi.mock('@/helpers/prisma', () => ({
+vi.mock('../../helpers/prisma.js', () => ({
   isPrismaUniqueConstraintError: vi.fn(),
 }));
 
-vi.mock('./auth.service', () => ({
+vi.mock('./auth.service.js', () => ({
   buildAuthorizationUrl: vi.fn(),
   buildEndSessionUrl: vi.fn(),
   authorizationCodeGrant: vi.fn(),
@@ -31,17 +31,17 @@ vi.mock('./auth.service', () => ({
   getOrCreateUser: vi.fn(),
 }));
 
-vi.mock('./auth.helper', () => ({
+vi.mock('./auth.helper.js', () => ({
   authUser: vi.fn(),
   createRedirectUrl: vi.fn(),
 }));
 
-vi.mock('@/features/sessions/sessions.service', () => ({
+vi.mock('../../features/sessions/sessions.service.js', () => ({
   getSession: vi.fn(),
   deleteSession: vi.fn(),
 }));
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {
     PC_REDIRECT_URI: 'https://example.com/redirect',
     REFRESH_TOKEN_NAME: 'refreshToken',

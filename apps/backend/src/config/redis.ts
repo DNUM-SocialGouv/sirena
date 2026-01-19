@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis';
-import { createDefaultLogger } from '@/helpers/pino';
-import { envVars } from './env';
+import { createDefaultLogger } from '../helpers/pino.js';
+import { envVars } from './env.js';
 
 const logger = createDefaultLogger();
 

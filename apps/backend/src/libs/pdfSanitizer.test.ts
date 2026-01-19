@@ -1,8 +1,8 @@
 import { PDFDocument } from 'pdf-lib';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { isPdfMimeType, sanitizePdf } from './pdfSanitizer';
+import { isPdfMimeType, sanitizePdf } from './pdfSanitizer.js';
 
-vi.mock('./asyncLocalStorage', () => ({
+vi.mock('./asyncLocalStorage.js', () => ({
   getLoggerStore: () => ({
     debug: vi.fn(),
     info: vi.fn(),

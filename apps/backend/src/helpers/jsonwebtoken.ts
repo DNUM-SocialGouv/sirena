@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
-import { envVars } from '@/config/env';
-import type { RoleEnum, User } from '@/libs/prisma';
+import { envVars } from '../config/env.js';
+import type { RoleEnum, User } from '../libs/prisma.js';
 
 export const isJwtError = (
   error: unknown,

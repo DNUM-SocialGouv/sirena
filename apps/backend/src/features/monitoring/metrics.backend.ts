@@ -1,7 +1,7 @@
 import { Counter, Gauge, Histogram } from 'prom-client';
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
-import { prisma } from '@/libs/prisma';
-import { createMetricsRegistry } from './metrics.common';
+import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
+import { prisma } from '../../libs/prisma.js';
+import { createMetricsRegistry } from './metrics.common.js';
 
 export const register = createMetricsRegistry();
 

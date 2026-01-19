@@ -5,7 +5,7 @@ import {
   PROFESSION_DOMICILE_TYPE,
   PROFESSION_SANTE_PRECISION,
 } from '@sirena/common/constants';
-import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types';
+import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types.js';
 
 /*********************
  *  UTILITIES

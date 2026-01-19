@@ -1,5 +1,5 @@
 import { Counter, Gauge, Histogram } from 'prom-client';
-import { createMetricsRegistry } from './metrics.common';
+import { createMetricsRegistry } from './metrics.common.js';
 
 export const register = createMetricsRegistry();
 

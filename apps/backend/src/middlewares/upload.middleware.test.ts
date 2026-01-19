@@ -1,8 +1,8 @@
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppBindings } from '@/helpers/factories/appWithUploadedFile';
-import { createMockPinoLogger } from '@/tests/test-utils';
+import type { AppBindings } from '../helpers/factories/appWithUploadedFile.js';
+import { createMockPinoLogger } from '../tests/test-utils.js';
 import extractUploadedFileMiddleware from './upload.middleware';
 
 const FIXED_DATE = new Date('2025-08-06T10:00:00.000Z');
@@ -45,6 +45,10 @@ const { mockFileTypeFromBuffer, mockThrowHTTPException400BadRequest } = vi.hoist
 
 vi.mock('@sirena/backend-utils/helpers', () => ({
   throwHTTPException400BadRequest: mockThrowHTTPException400BadRequest,
+}));
+
+vi.mock('../libs/minio.js', () => ({
+  getFileStream: vi.fn(),
 }));
 
 vi.mock('file-type', () => ({

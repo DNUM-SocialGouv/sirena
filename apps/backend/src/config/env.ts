@@ -1,4 +1,4 @@
-import { EnvSchema } from './env.schema';
+import { EnvSchema } from './env.schema.js';
 
 const processEnv = {
   // PC
