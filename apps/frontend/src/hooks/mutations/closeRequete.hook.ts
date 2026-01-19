@@ -8,7 +8,7 @@ export const useCloseRequete = (requestId: string) => {
     mutationFn: (data: CloseRequeteData) => closeRequete(requestId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
-      queryClient.invalidateQueries({ queryKey: ['request', requestId] });
+      queryClient.invalidateQueries({ queryKey: ['requete', requestId] });
     },
   });
 };

@@ -26,6 +26,7 @@ export type CloseRequeteModalProps = {
   otherEntitiesAffected?: OtherEntityAffected[];
   customDescription?: string;
   triggerButtonRef?: React.RefObject<HTMLButtonElement | null>;
+  onBeforeClose?: () => Promise<void>;
   onCancel?: () => void;
   onSuccess?: () => void;
   onDismiss?: () => void;
@@ -40,6 +41,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       otherEntitiesAffected = [],
       customDescription,
       triggerButtonRef,
+      onBeforeClose,
       onCancel,
       onSuccess,
       onDismiss,
@@ -166,6 +168,10 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       wasActionTakenRef.current = true;
 
       try {
+        if (onBeforeClose) {
+          await onBeforeClose();
+        }
+
         let fileIds: string[] = [];
         if (files.length > 0) {
           const uploadPromises = files.map(async (file) => {
