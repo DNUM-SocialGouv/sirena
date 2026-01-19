@@ -3,7 +3,7 @@ SDPSN-devops-charts:
   name: frontend
 
   deployment:
-    image: ghcr.io/dnum-socialgouv/sirena:5c85c71-frontend
+    image: ghcr.io/dnum-socialgouv/sirena:latest-frontend
     imagePullSecretsName: registry-secret
     replicas: 2
 

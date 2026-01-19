@@ -1,6 +1,0 @@
-language: typescript
-app: npx ts-node main.ts
-imports:
-  - k8s
-  - ./crd/externalsecret-crd.yaml
-  - ./crd/issuers-cert-manager.yaml

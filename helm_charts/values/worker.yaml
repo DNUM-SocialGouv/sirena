@@ -13,7 +13,7 @@ SDPSN-devops-charts:
         replacement: appName
 
   deployment:
-    image: ghcr.io/dnum-socialgouv/sirena:5c85c71-worker
+    image: ghcr.io/dnum-socialgouv/sirena:latest-worker
     imagePullSecretsName: registry-secret
     additionnalPortsDefinition:
       - name: monitoring

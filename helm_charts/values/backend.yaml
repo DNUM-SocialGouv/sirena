@@ -13,7 +13,7 @@ SDPSN-devops-charts:
         replacement: appName
 
   deployment:
-    image: ghcr.io/dnum-socialgouv/sirena:5c85c71-backend
+    image: ghcr.io/dnum-socialgouv/sirena:latest-backend
     containerPort: 4000
     additionnalPortsDefinition:
       - name: monitoring
