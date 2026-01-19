@@ -283,7 +283,7 @@ const app = factoryWithLogs
       const requete = await createRequeteEntite(topEntiteId, body, userId);
 
       if (fileIds.length > 0) {
-        await setRequeteFile(requete.id, fileIds, topEntiteId);
+        await setRequeteFile(requete.id, fileIds, topEntiteId, userId);
         logger.info({ requeteId: requete.id, fileIds }, 'Files linked to requete successfully');
       }
 
@@ -509,7 +509,7 @@ const app = factoryWithLogs
       });
     }
 
-    await setRequeteFile(id, fileIds, topEntiteId);
+    await setRequeteFile(id, fileIds, topEntiteId, userId);
 
     sseEventManager.emitRequeteUpdated({
       requeteId: id,
@@ -546,7 +546,7 @@ const app = factoryWithLogs
       });
     }
 
-    const updatedRequete = await updatePrioriteRequete(id, topEntiteId, prioriteId);
+    const updatedRequete = await updatePrioriteRequete(id, topEntiteId, prioriteId, userId);
 
     logger.info({ requeteId: id, userId, prioriteId }, 'Priorite updated successfully');
 
