@@ -80,7 +80,7 @@ export const GetOtherEntitesAffectedResponseSchema = z.object({
   subAdministrativeEntites: z.array(SubAdministrativeEntitesSchema),
 });
 
-const receptionDate = z.iso.datetime().nullable().optional();
+const receptionDate = z.iso.date().nullable().optional();
 const receptionTypeId = z
   .enum([
     RECEPTION_TYPE.EMAIL,

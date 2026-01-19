@@ -684,12 +684,8 @@ describe('RequetesEntite endpoints: /', () => {
       },
     };
 
-    const formatDate = (date: Date) => {
-      return date.toISOString();
-    };
-
     it('updates reception date and type and returns updated requete', async () => {
-      const newDate = new Date('2025-05-01T00:00:00.000Z');
+      const newDate = '2025-05-01';
       const updatedRequete = {
         ...baseRequeteEntite.requete,
         receptionDate: newDate,
@@ -703,7 +699,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id']['date-type'].$patch({
         param: { id: 'requeteId' },
         json: {
-          receptionDate: formatDate(newDate),
+          receptionDate: newDate,
           receptionTypeId: RECEPTION_TYPE.COURRIER,
           controls: { updatedAt: baseRequeteEntite.requete.updatedAt.toISOString() },
         },
@@ -715,7 +711,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(updateDateAndTypeRequete).toHaveBeenCalledWith(
         'requeteId',
-        { receptionDate: newDate, receptionTypeId: RECEPTION_TYPE.COURRIER },
+        { receptionDate: new Date(newDate), receptionTypeId: RECEPTION_TYPE.COURRIER },
         { updatedAt: baseRequeteEntite.requete.updatedAt.toISOString() },
       );
       expect(updateStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
@@ -731,7 +727,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id']['date-type'].$patch({
         param: { id: 'requeteId' },
         json: {
-          receptionDate: formatDate(new Date('2025-05-02T00:00:00.000Z')),
+          receptionDate: '2025-05-02',
           receptionTypeId: RECEPTION_TYPE.COURRIER,
         },
       });
