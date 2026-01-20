@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { deleteFileFromMinio } from '../../libs/minio.js';
 import { type ChangeLog, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
-import { addNote, deleteNote, getNoteById, updateNote } from './notes.service';
+import { addNote, deleteNote, getNoteById, updateNote } from './notes.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -16,11 +16,11 @@ vi.mock('../../libs/prisma.js', () => ({
   },
 }));
 
-vi.mock('@/features/changelog/changelog.service', () => ({
+vi.mock('../changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn(),
 }));
 
-vi.mock('@/libs/minio', () => ({
+vi.mock('../../libs/minio.js', () => ({
   deleteFileFromMinio: vi.fn(),
 }));
 

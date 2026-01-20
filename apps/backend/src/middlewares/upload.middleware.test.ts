@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../helpers/factories/appWithUploadedFile.js';
 import { createMockPinoLogger } from '../tests/test-utils.js';
-import extractUploadedFileMiddleware from './upload.middleware';
+import extractUploadedFileMiddleware from './upload.middleware.js';
 
 const FIXED_DATE = new Date('2025-08-06T10:00:00.000Z');
 

@@ -6,17 +6,17 @@ import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
 import { getUserById } from '../users/users.service.js';
-import ProfileController from './profile.controller';
+import ProfileController from './profile.controller.js';
 
 vi.mock('../../config/env.js', () => ({
   envVars: {},
 }));
 
-vi.mock('@/features/users/users.service', () => ({
+vi.mock('../users/users.service.js', () => ({
   getUserById: vi.fn(),
 }));
 
-vi.mock('@/middlewares/auth.middleware', () => {
+vi.mock('../../middlewares/auth.middleware.js', () => {
   return {
     default: async (c: Context, next: Next) => {
       c.set('userId', 'id1');
@@ -25,7 +25,7 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/entites.middleware', () => {
+vi.mock('../../middlewares/entites.middleware.js', () => {
   return {
     default: async (c: Context, next: Next) => {
       c.set('topEntiteId', 'topEntiteId1');

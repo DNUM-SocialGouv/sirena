@@ -52,7 +52,7 @@ vi.mock('../../config/env.js', () => ({
   },
 }));
 
-vi.mock('@/middlewares/logout.middleware', () => {
+vi.mock('../../middlewares/logout.middleware.js', () => {
   return {
     default: (_c: Context, next: () => Promise<Next>) => {
       return next();

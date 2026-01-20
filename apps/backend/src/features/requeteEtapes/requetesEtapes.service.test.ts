@@ -46,11 +46,11 @@ vi.mock('../../libs/prisma.js', () => ({
   },
 }));
 
-vi.mock('@/features/changelog/changelog.service', () => ({
+vi.mock('../changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn(),
 }));
 
-vi.mock('@/libs/minio', () => ({
+vi.mock('../../libs/minio.js', () => ({
   deleteFileFromMinio: vi.fn(),
 }));
 

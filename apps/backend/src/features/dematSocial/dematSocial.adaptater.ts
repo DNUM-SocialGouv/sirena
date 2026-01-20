@@ -122,7 +122,7 @@ const getFilesByChamps = (champ: RootChampFragmentFragment | RepetitionChamp) =>
 };
 
 const getFiness = (champ: RootChampFragmentFragment | RepetitionChamp) => {
-  if (champ.stringValue === '') {
+  if (!champ || champ?.stringValue === '') {
     return null;
   }
   if (champ.__typename !== 'FinessChamp' || !champ.data) {

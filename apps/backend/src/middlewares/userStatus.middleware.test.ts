@@ -4,7 +4,7 @@ import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../helpers/factories/appWithAuth.js';
 import type { createMockPinoLogger } from '../tests/test-utils.js';
-import userStatusMiddleware from './userStatus.middleware';
+import userStatusMiddleware from './userStatus.middleware.js';
 
 interface UserStatusMockContextOverrides {
   res?: Record<string, unknown>;

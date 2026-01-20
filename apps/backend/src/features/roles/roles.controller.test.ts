@@ -15,7 +15,7 @@ vi.mock('../../config/env.js', () => ({
   envVars: {},
 }));
 
-vi.mock('@/middlewares/auth.middleware.js', () => {
+vi.mock('../../middlewares/auth.middleware.js', () => {
   return {
     default: (_c: Context, next: () => Promise<Next>) => {
       return next();
@@ -23,7 +23,7 @@ vi.mock('@/middlewares/auth.middleware.js', () => {
   };
 });
 
-vi.mock('@/middlewares/userStatus.middleware.js', () => {
+vi.mock('../../middlewares/userStatus.middleware.js', () => {
   return {
     default: (_: Context, next: Next) => {
       return next();

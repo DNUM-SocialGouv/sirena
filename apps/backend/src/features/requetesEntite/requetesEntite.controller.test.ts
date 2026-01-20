@@ -33,7 +33,7 @@ vi.mock('./requetesEntite.service.js', () => ({
   updateStatusRequete: vi.fn(),
 }));
 
-vi.mock('../entites/entites.service', () => ({
+vi.mock('../entites/entites.service.js', () => ({
   getDirectionsServicesFromRequeteEntiteId: vi.fn(),
 }));
 

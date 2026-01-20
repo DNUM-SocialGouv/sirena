@@ -1,8 +1,8 @@
 import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { describe, expect, it } from 'vitest';
 import { AddressType, type RootChampFragmentFragment } from '../../libs/graffle.js';
-import { mapDataForPrisma } from './dematSocial.adaptater';
-import rootMapping from './dematSocial.mapper';
+import { mapDataForPrisma } from './dematSocial.adaptater.js';
+import rootMapping from './dematSocial.mapper.js';
 
 const toB64 = (s: string) => Buffer.from(s, 'utf8').toString('base64');
 const fromB64 = (s: string) => Buffer.from(s, 'base64').toString('utf8');
@@ -33,6 +33,21 @@ const communeChamp = (mappingId: string, postalCode: string): RootChampFragmentF
     name: '',
     postalCode,
   },
+});
+
+type FinessData = {
+  et_finess: string;
+  et_rs: string;
+  adresse_code_postal: string;
+  adresse_lib_routage: string;
+};
+
+const finessChamp = (mappingId: string, finess: FinessData): RootChampFragmentFragment => ({
+  __typename: 'FinessChamp',
+  label: '',
+  id: toB64(mappingId),
+  data: finess,
+  stringValue: finess.et_finess,
 });
 
 const multiSelectChamp = (mappingId: string, values: string[]): RootChampFragmentFragment => ({
@@ -124,6 +139,13 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
     const maltLbl = firstLabel(rootMapping.autreFaits.champs.maltraitanceTypesMap.options);
     const demLbl = firstLabel(rootMapping.autreFaits.champs.demarchesEngagees.options);
 
+    const finess = {
+      et_finess: '123456789',
+      et_rs: 'Hospital Test',
+      adresse_code_postal: '75001',
+      adresse_lib_routage: '1 rue de Test 75001 Paris',
+    };
+
     const rep = repetitionChamp(rootMapping.autreFaits.id, {
       faits: [
         multiSelectChamp(rootMapping.autreFaits.champs.declarationQualiteType.id, [declarationQualiteLbl]),
@@ -144,6 +166,7 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
           rootMapping.autreFaits.champs.demarcheEngageAutoriteType.id,
           firstLabel(rootMapping.autreFaits.champs.demarcheEngageAutoriteType.options),
         ),
+        finessChamp(rootMapping.finess.id, finess),
         textChamp(
           rootMapping.autreFaits.champs.lieuType.id,
           firstLabel(rootMapping.autreFaits.champs.lieuType.options),
@@ -160,6 +183,7 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
       textChamp(rootMapping.estVictime.id, estVictimeOui),
       textChamp(rootMapping.estAnonyme.id, estAnonLabel),
       textChamp(rootMapping.estHandicape.id, estHandiLabel),
+      finessChamp(rootMapping.finess.id, finess),
 
       multiSelectChamp(rootMapping.declarationQualiteType.id, [declarationQualiteLbl]),
       multiSelectChamp(rootMapping.autreFaits.champs.declarationFacturationType.id, [declarationFacturationLbl]),
