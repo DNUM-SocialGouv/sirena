@@ -1,7 +1,7 @@
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
-import type { PrismaClient } from '../../generated/client';
-import inseePostalRaw from '../documents/inseetocodepostal.json';
-import listeEntitesRaw from '../documents/liste_entites.json';
+import type { PrismaClient } from '../../generated/client/index.js';
+import { getLoggerStore } from '../../src/libs/asyncLocalStorage.js';
+import inseePostalRaw from '../documents/inseetocodepostal.json' with { type: 'json' };
+import listeEntitesRaw from '../documents/liste_entites.json' with { type: 'json' };
 
 type InseePostalRow = {
   codeInsee: string;

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { PrismaClient } from '../../../generated/client';
-import { parseCsv } from '../../helpers/parseCsv';
-import { normalizeParentName } from './utils';
+import type { PrismaClient } from '../../../generated/client/index.js';
+import { parseCsv } from '../../helpers/parseCsv.js';
+import { normalizeParentName } from './utils.js';
 
 const ServiceRowSchema = z.object({
   'Entité administrative': z.string().min(1),
