@@ -62,16 +62,28 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
         <CreateStep requestId={requestId} isAddingStep={isAddingStep} setIsAddingStep={setIsAddingStep} />
         <QueryStateHandler query={queryProcessingSteps}>
           {({ data }) =>
-            data.data.map((step, index: number) => (
-              <Step
-                key={step.id}
-                requestId={requestId}
-                {...step}
-                disabled={index === data.data.length - 1 || step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE}
-                openEdit={handleOpenEdit}
-                openEditNote={handleOpenEditNote}
-              />
-            ))
+            data.data.map((step, index: number) => {
+              // Check if step was automatically updated: created automatically (createdBy === null),
+              // status is FAIT, and it's the acknowledgment step
+              const isAutomaticallyUpdated =
+                step.createdBy === null &&
+                step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT &&
+                step.nom === 'Envoyer un accusé de réception au déclarant';
+              const isDisabled =
+                index === data.data.length - 1 ||
+                step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ||
+                isAutomaticallyUpdated;
+              return (
+                <Step
+                  key={step.id}
+                  requestId={requestId}
+                  {...step}
+                  disabled={isDisabled}
+                  openEdit={handleOpenEdit}
+                  openEditNote={handleOpenEditNote}
+                />
+              );
+            })
           }
         </QueryStateHandler>
       </div>

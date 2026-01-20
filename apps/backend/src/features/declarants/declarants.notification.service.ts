@@ -3,6 +3,7 @@ import { prisma } from '../../libs/prisma.js';
 import { sendTipimailEmail } from '../../libs/tipimail.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
+import { updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
 
 /**
  * Formats the list of administrative entity names (entities without a parent entity)
@@ -153,6 +154,17 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
       { requeteId, declarantEmail, entiteCount: entites.length },
       'Declarant acknowledgment email sent successfully',
     );
+
+    // Update acknowledgment step automatically for all entities
+    const entiteIdsToUpdate = entites.map((e) => e.id);
+    try {
+      await updateAcknowledgmentStep(requeteId, entiteIdsToUpdate);
+    } catch (stepUpdateError) {
+      logger.error(
+        { requeteId, error: stepUpdateError },
+        'Failed to update acknowledgment step automatically, but email was sent',
+      );
+    }
 
     try {
       await createChangeLog({
