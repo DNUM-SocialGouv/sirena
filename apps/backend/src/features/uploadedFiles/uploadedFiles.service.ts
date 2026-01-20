@@ -1,5 +1,7 @@
 import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
+import { createChangeLog } from '../changelog/changelog.service.js';
+import { ChangeLogAction } from '../changelog/changelog.type.js';
 import type { CreateUploadedFileDto, GetUploadedFilesQuery } from './uploadedFiles.type.js';
 
 export type GetUploadedFilesResult = {
@@ -97,41 +99,97 @@ const updateFilesWithRelation = async (
   uploadedFileIds: UploadedFile['id'][],
   relationData: Record<string, string>,
   entiteId: string | null = null,
+  changedById?: string,
 ) => {
+  const filesBefore = changedById
+    ? await prisma.uploadedFile.findMany({
+        where: { id: { in: uploadedFileIds } },
+        select: {
+          id: true,
+          requeteId: true,
+          requeteEtapeNoteId: true,
+          faitSituationId: true,
+          demarchesEngageesId: true,
+          status: true,
+          entiteId: true,
+        },
+      })
+    : [];
+
   await prisma.uploadedFile.updateMany({
     where: { id: { in: uploadedFileIds } },
     data: { ...relationData, status: 'COMPLETED', entiteId } as Prisma.UploadedFileUpdateManyMutationInput,
   });
 
-  return prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileIds } } });
+  const filesAfter = await prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileIds } } });
+
+  if (changedById) {
+    for (const fileAfter of filesAfter) {
+      const fileBefore = filesBefore.find((f) => f.id === fileAfter.id);
+      if (fileBefore) {
+        await createChangeLog({
+          entity: 'UploadedFile',
+          entityId: fileAfter.id,
+          action: ChangeLogAction.UPDATED,
+          before: {
+            requeteId: fileBefore.requeteId,
+            requeteEtapeNoteId: fileBefore.requeteEtapeNoteId,
+            faitSituationId: fileBefore.faitSituationId,
+            demarchesEngageesId: fileBefore.demarchesEngageesId,
+            status: fileBefore.status,
+            entiteId: fileBefore.entiteId,
+          } as Prisma.JsonObject,
+          after: {
+            requeteId: fileAfter.requeteId,
+            requeteEtapeNoteId: fileAfter.requeteEtapeNoteId,
+            faitSituationId: fileAfter.faitSituationId,
+            demarchesEngageesId: fileAfter.demarchesEngageesId,
+            status: fileAfter.status,
+            entiteId: fileAfter.entiteId,
+          } as Prisma.JsonObject,
+          changedById,
+        });
+      }
+    }
+  }
+
+  return filesAfter;
 };
 
 export const setNoteFile = async (
   noteId: string,
   uploadedFileId: UploadedFile['id'][],
   entiteId: string | null = null,
+  changedById?: string,
 ) => {
-  return updateFilesWithRelation(uploadedFileId, { requeteEtapeNoteId: noteId }, entiteId);
+  return updateFilesWithRelation(uploadedFileId, { requeteEtapeNoteId: noteId }, entiteId, changedById);
 };
 
 export const setRequeteFile = async (
   requeteId: string,
   uploadedFileId: UploadedFile['id'][],
   entiteId: string | null = null,
+  changedById?: string,
 ) => {
-  return updateFilesWithRelation(uploadedFileId, { requeteId }, entiteId);
+  return updateFilesWithRelation(uploadedFileId, { requeteId }, entiteId, changedById);
 };
 
-export const setFaitFiles = async (faitSituationId: string, uploadedFileId: UploadedFile['id'][], entiteId: string) => {
-  return updateFilesWithRelation(uploadedFileId, { faitSituationId }, entiteId);
+export const setFaitFiles = async (
+  faitSituationId: string,
+  uploadedFileId: UploadedFile['id'][],
+  entiteId: string,
+  changedById?: string,
+) => {
+  return updateFilesWithRelation(uploadedFileId, { faitSituationId }, entiteId, changedById);
 };
 
 export const setDemarchesEngageesFiles = async (
   demarchesEngageesId: string,
   uploadedFileId: UploadedFile['id'][],
   entiteId: string | null = null,
+  changedById?: string,
 ) => {
-  return updateFilesWithRelation(uploadedFileId, { demarchesEngageesId }, entiteId);
+  return updateFilesWithRelation(uploadedFileId, { demarchesEngageesId }, entiteId, changedById);
 };
 
 export const isFileBelongsToRequete = async (fileId: UploadedFile['id'], requeteId: string): Promise<boolean> => {

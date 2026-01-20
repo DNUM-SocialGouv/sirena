@@ -57,6 +57,7 @@ vi.mock('../../libs/minio.js', () => ({
 }));
 
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { createChangeLog } from '../changelog/changelog.service.js';
 import { buildEntitesTraitement, getEntiteAscendanteId } from '../entites/entites.service';
 
 vi.mock('../../libs/prisma.js', () => ({
@@ -2179,6 +2180,7 @@ describe('requetesEntite.service', () => {
   describe('updatePrioriteRequete', () => {
     it('should update the priority of the requeteEntite to HAUTE', async () => {
       vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: null });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         prioriteId: 'HAUTE',
@@ -2196,6 +2198,7 @@ describe('requetesEntite.service', () => {
 
     it('should update the priority of the requeteEntite to MOYENNE', async () => {
       vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: null });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         prioriteId: 'MOYENNE',
@@ -2213,6 +2216,7 @@ describe('requetesEntite.service', () => {
 
     it('should update the priority of the requeteEntite to BASSE', async () => {
       vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: null });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         prioriteId: 'BASSE',
@@ -2230,6 +2234,7 @@ describe('requetesEntite.service', () => {
 
     it('should set priority to null when null is provided', async () => {
       vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: 'HAUTE' });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         prioriteId: null,
@@ -2243,6 +2248,61 @@ describe('requetesEntite.service', () => {
       });
 
       expect(result.prioriteId).toBeNull();
+    });
+
+    it('should create changelog when changedById is provided and priority changes', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockReset();
+      vi.mocked(prisma.requeteEntite.update).mockReset();
+      vi.mocked(createChangeLog).mockReset();
+
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: 'BASSE' });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        prioriteId: 'HAUTE',
+      });
+
+      await updatePrioriteRequete('req123', 'ent123', 'HAUTE', 'user123');
+
+      expect(vi.mocked(createChangeLog)).toHaveBeenCalledWith({
+        entity: 'RequeteEntite',
+        entityId: 'req123',
+        action: 'UPDATED',
+        before: { prioriteId: 'BASSE' },
+        after: { prioriteId: 'HAUTE' },
+        changedById: 'user123',
+      });
+    });
+
+    it('should not create changelog when priority does not change', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockReset();
+      vi.mocked(prisma.requeteEntite.update).mockReset();
+      vi.mocked(createChangeLog).mockReset();
+
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: 'HAUTE' });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        prioriteId: 'HAUTE',
+      });
+
+      await updatePrioriteRequete('req123', 'ent123', 'HAUTE', 'user123');
+
+      expect(vi.mocked(createChangeLog)).not.toHaveBeenCalled();
+    });
+
+    it('should not create changelog when changedById is not provided', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockReset();
+      vi.mocked(prisma.requeteEntite.update).mockReset();
+      vi.mocked(createChangeLog).mockReset();
+
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: 'BASSE' });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        prioriteId: 'HAUTE',
+      });
+
+      await updatePrioriteRequete('req123', 'ent123', 'HAUTE');
+
+      expect(vi.mocked(createChangeLog)).not.toHaveBeenCalled();
     });
   });
 });

@@ -1085,7 +1085,7 @@ export const createRequeteSituation = async (
   });
 
   if (createdSituationId && situationData.fait?.fileIds?.length) {
-    await setFaitFiles(createdSituationId, situationData.fait.fileIds, entiteId);
+    await setFaitFiles(createdSituationId, situationData.fait.fileIds, entiteId, changedById);
   }
 
   return prisma.requete.findUnique({
@@ -1119,7 +1119,7 @@ export const updateRequeteSituation = async (
   });
 
   if (situationData.fait?.fileIds?.length) {
-    await setFaitFiles(situationId, situationData.fait.fileIds, entiteId);
+    await setFaitFiles(situationId, situationData.fait.fileIds, entiteId, changedById);
   }
 
   return prisma.requete.findUnique({
@@ -1331,11 +1331,28 @@ export const updatePrioriteRequete = async (
   requeteId: string,
   entiteId: string,
   prioriteId: RequetePrioriteType | null,
+  changedById?: string,
 ) => {
+  const before = await prisma.requeteEntite.findUnique({
+    where: { requeteId_entiteId: { requeteId, entiteId } },
+    select: { prioriteId: true },
+  });
+
   const requeteEntite = await prisma.requeteEntite.update({
     where: { requeteId_entiteId: { requeteId, entiteId } },
     data: { prioriteId: prioriteId || null },
   });
+
+  if (changedById && before?.prioriteId !== requeteEntite.prioriteId) {
+    await createChangeLog({
+      entity: 'RequeteEntite',
+      entityId: requeteId,
+      action: ChangeLogAction.UPDATED,
+      before: { prioriteId: before?.prioriteId ?? null } as Prisma.JsonObject,
+      after: { prioriteId: requeteEntite.prioriteId } as Prisma.JsonObject,
+      changedById,
+    });
+  }
 
   sseEventManager.emitRequeteUpdated({
     requeteId,

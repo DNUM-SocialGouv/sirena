@@ -85,7 +85,7 @@ const app = factoryWithLogs
       });
 
       if (fileIds.length > 0) {
-        await setNoteFile(note.id, fileIds, topEntiteId);
+        await setNoteFile(note.id, fileIds, topEntiteId, userId);
       }
 
       c.set('changelogId', note.id);
@@ -153,7 +153,7 @@ const app = factoryWithLogs
           });
         }
 
-        await setNoteFile(noteId, fileIds, topEntiteId);
+        await setNoteFile(noteId, fileIds, topEntiteId, userId);
       }
 
       c.set('changelogId', noteId);
