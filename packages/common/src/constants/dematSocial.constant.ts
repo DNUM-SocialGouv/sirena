@@ -144,7 +144,6 @@ export const DS_MIS_EN_CAUSE_TYPE = {
   MEMBRE_FAMILLE: 'MEMBRE_FAMILLE',
   PROCHE: 'PROCHE',
   AUTRE: 'AUTRE',
-  AUTRE_SANTE: 'AUTRE_SANTE',
   PROFESSIONNEL_DOMICILE: 'PROFESSIONNEL_DOMICILE',
 } as const;
 
@@ -155,7 +154,6 @@ export const dsMisEnCauseTypeLabels: Record<DsMisEnCauseType, string> = {
   ETABLISSEMENT: 'L’établissement où se sont déroulés les faits',
   MEMBRE_FAMILLE: 'Un membre de la famille',
   PROCHE: 'Un autre proche, par exemple : voisinage ou connaissance',
-  AUTRE_SANTE: 'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
   AUTRE: 'Autre',
   PROFESSIONNEL_DOMICILE: 'Un professionnel ou un service d’aide à domicile',
 };
