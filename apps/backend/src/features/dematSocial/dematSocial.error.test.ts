@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RootChampFragmentFragment } from '@/libs/graffle';
+import type { RootChampFragmentFragment } from '../../libs/graffle.js';
 import { ChampMappingError, EnumNotFound } from './dematSocial.error';
 
 describe('dematSocial.error.ts', () => {

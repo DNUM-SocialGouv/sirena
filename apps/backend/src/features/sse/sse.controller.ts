@@ -1,8 +1,6 @@
 import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES, ROLES_READ, SSE_EVENT_TYPES } from '@sirena/common/constants';
-import { getRequeteEntiteById } from '@/features/requetesEntite/requetesEntite.service';
-import { getUploadedFileById } from '@/features/uploadedFiles/uploadedFiles.service';
-import factoryWithRole from '@/helpers/factories/appWithRole';
+import factoryWithRole from '../../helpers/factories/appWithRole.js';
 import {
   createSSEHandler,
   createSSEStream,
@@ -12,11 +10,13 @@ import {
   requireUserId,
   type UserListEvent,
   type UserStatusEvent,
-} from '@/helpers/sse';
-import authMiddleware from '@/middlewares/auth.middleware';
-import entitesMiddleware from '@/middlewares/entites.middleware';
-import roleMiddleware from '@/middlewares/role.middleware';
-import userStatusMiddleware from '@/middlewares/userStatus.middleware';
+} from '../../helpers/sse.js';
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
+import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { getRequeteEntiteById } from '../requetesEntite/requetesEntite.service.js';
+import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
 
 const app = factoryWithRole
   .createApp()

@@ -1,6 +1,6 @@
-import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import { getHealthRoute } from './health.route';
-import { checkHealth } from './health.service';
+import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import { getHealthRoute } from './health.route.js';
+import { checkHealth } from './health.service.js';
 
 const app = factoryWithLogs
   .createApp()

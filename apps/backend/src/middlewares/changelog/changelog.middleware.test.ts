@@ -1,12 +1,12 @@
 import { testClient } from 'hono/testing';
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import appWithAuth from '@/helpers/factories/appWithAuth';
-import createChangelogMiddleware from '@/middlewares/changelog/changelog.middleware';
+import { createChangeLog } from '../../features/changelog/changelog.service.js';
+import { ChangeLogAction } from '../../features/changelog/changelog.type.js';
+import appWithAuth from '../../helpers/factories/appWithAuth.js';
+import createChangelogMiddleware from './changelog.middleware.js';
 
-vi.mock('@/features/changelog/changelog.service', () => ({
+vi.mock('../../features/changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn(),
 }));
 

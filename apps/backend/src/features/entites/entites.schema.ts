@@ -1,6 +1,6 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import { z } from 'zod';
-import { Prisma } from '@/libs/prisma';
+import { Prisma } from '../../libs/prisma.js';
 
 export const EntiteSchema = z.object({
   id: z.uuid(),

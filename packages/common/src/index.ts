@@ -1,5 +1,5 @@
-export * as constants from './constants';
-export * as mappers from './mappers';
-export * as schemas from './schemas';
-export * as types from './types';
-export * as utils from './utils';
+export * as constants from './constants/index.js';
+export * as mappers from './mappers/index.js';
+export * as schemas from './schemas/index.js';
+export * as types from './types/index.js';
+export * as utils from './utils/index.js';

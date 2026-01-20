@@ -1,19 +1,23 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES_READ, ROLES_WRITE } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
-import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import { addFileProcessingJob } from '@/jobs/queues/fileProcessing.queue';
-import { deleteFileFromMinio, uploadFileToMinio } from '@/libs/minio';
-import authMiddleware from '@/middlewares/auth.middleware';
-import uploadedFileChangelogMiddleware from '@/middlewares/changelog/changelog.uploadedFile.middleware';
-import entitesMiddleware from '@/middlewares/entites.middleware';
-import roleMiddleware from '@/middlewares/role.middleware';
-import extractUploadedFileMiddleware from '@/middlewares/upload.middleware';
-import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-import { ChangeLogAction } from '../changelog/changelog.type';
-import { createUploadedFileRoute, deleteUploadedFileRoute, getFileProcessingStatusRoute } from './uploadedFiles.route';
-import { UploadedFileParamsIdSchema } from './uploadedFiles.schema';
-import { createUploadedFile, deleteUploadedFile, getUploadedFileById } from './uploadedFiles.service';
+import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import { addFileProcessingJob } from '../../jobs/queues/fileProcessing.queue.js';
+import { deleteFileFromMinio, uploadFileToMinio } from '../../libs/minio.js';
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import uploadedFileChangelogMiddleware from '../../middlewares/changelog/changelog.uploadedFile.middleware.js';
+import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
+import extractUploadedFileMiddleware from '../../middlewares/upload.middleware.js';
+import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { ChangeLogAction } from '../changelog/changelog.type.js';
+import {
+  createUploadedFileRoute,
+  deleteUploadedFileRoute,
+  getFileProcessingStatusRoute,
+} from './uploadedFiles.route.js';
+import { UploadedFileParamsIdSchema } from './uploadedFiles.schema.js';
+import { createUploadedFile, deleteUploadedFile, getUploadedFileById } from './uploadedFiles.service.js';
 
 const app = factoryWithLogs
   .createApp()

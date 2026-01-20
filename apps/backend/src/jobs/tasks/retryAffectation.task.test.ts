@@ -2,20 +2,20 @@
 import * as Sentry from '@sentry/node';
 import type { Job } from 'bullmq';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { assignEntitesToRequeteTask } from '@/features/dematSocial/affectation/affectation';
-import { withCronLifecycle } from '@/jobs/config/job.utils';
-import { prisma } from '@/libs/prisma';
-import { retryAffectation } from './retryAffectation.task';
+import { assignEntitesToRequeteTask } from '../../features/dematSocial/affectation/affectation.js';
+import { prisma } from '../../libs/prisma.js';
+import { withCronLifecycle } from '../config/job.utils.js';
+import { retryAffectation } from './retryAffectation.task.js';
 
-vi.mock('@/features/dematSocial/affectation/affectation', () => ({
+vi.mock('../../features/dematSocial/affectation/affectation.js', () => ({
   assignEntitesToRequeteTask: vi.fn(),
 }));
 
-vi.mock('@/jobs/config/job.utils', () => ({
+vi.mock('../config/job.utils.js', () => ({
   withCronLifecycle: vi.fn(),
 }));
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     requete: {
       findMany: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock('@/libs/prisma', () => ({
   },
 }));
 
-vi.mock('@/libs/asyncLocalStorage', () => ({
+vi.mock('../../libs/asyncLocalStorage.js', () => ({
   getLoggerStore: () => ({
     info: vi.fn(),
     debug: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock('@sentry/node', () => ({
   captureException: vi.fn(),
 }));
 
-describe('retryAffectation.task', () => {
+describe('retryAffectation.task.js', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

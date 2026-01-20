@@ -1,4 +1,4 @@
-import { envVars } from '../config/env';
+import { envVars } from '../config/env.js';
 
 export interface Recipient {
   address: string;

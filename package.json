@@ -25,6 +25,7 @@
     "db:reset": "dotenv -e .env -- pnpm --filter @sirena/backend db:reset",
     "backend:codegen": "dotenv -e .env -- pnpm --filter @sirena/backend generate:codegen",
     "backend:gql": "dotenv -e .env -- pnpm --filter @sirena/backend gql",
+    "backend:start": "dotenv -e .env -- pnpm --filter @sirena/backend start",
     "test:e2e": "pnpm --filter @sirena/frontend test:e2e",
     "test:e2e:ui": "pnpm --filter @sirena/frontend test:e2e:ui",
     "test:unit": "pnpm -r run test",

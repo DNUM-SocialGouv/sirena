@@ -1,10 +1,10 @@
 import * as Sentry from '@sentry/node';
 import type { Job } from 'bullmq';
-import { assignEntitesToRequeteTask } from '@/features/dematSocial/affectation/affectation';
-import { withCronLifecycle } from '@/jobs/config/job.utils';
-import { getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
-import { prisma } from '@/libs/prisma';
-import type { JobDataMap, JobResult } from '../config/job.types';
+import { assignEntitesToRequeteTask } from '../../features/dematSocial/affectation/affectation.js';
+import { getLoggerStore, getSentryStore } from '../../libs/asyncLocalStorage.js';
+import { prisma } from '../../libs/prisma.js';
+import type { JobDataMap, JobResult } from '../config/job.types.js';
+import { withCronLifecycle } from '../config/job.utils.js';
 
 export async function retryAffectation(job: Job<JobDataMap['retry-affectation']>): JobResult {
   const logger = getLoggerStore();

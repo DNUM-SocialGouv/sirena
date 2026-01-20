@@ -4,29 +4,29 @@ import { Hono } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { envVars } from '@//config/env';
-import { createSession } from '@/features/sessions/sessions.service';
-import type { AppBindings } from '@/helpers/factories/appWithLogs';
-import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '@/helpers/jsonwebtoken';
-import * as prismaHelpers from '@/helpers/prisma';
-import { Prisma } from '@/libs/prisma';
-import * as authHelper from './auth.helper';
+import { envVars } from '../../config/env.js';
+import type { AppBindings } from '../../helpers/factories/appWithLogs.js';
+import { getJwtExpirationDate, signAuthCookie, signRefreshCookie } from '../../helpers/jsonwebtoken.js';
+import * as prismaHelpers from '../../helpers/prisma.js';
+import { Prisma } from '../../libs/prisma.js';
+import { createSession } from '../sessions/sessions.service.js';
+import * as authHelper from './auth.helper.js';
 
-vi.mock('@/helpers/jsonwebtoken', () => ({
+vi.mock('../../helpers/jsonwebtoken.js', () => ({
   getJwtExpirationDate: vi.fn(),
   signRefreshCookie: vi.fn(),
   signAuthCookie: vi.fn(),
 }));
 
-vi.mock('@/features/sessions/sessions.service', () => ({
+vi.mock('../../features/sessions/sessions.service.js', () => ({
   createSession: vi.fn(),
 }));
 
-vi.mock('@/helpers/prisma', () => ({
+vi.mock('../../helpers/prisma.js', () => ({
   isPrismaUniqueConstraintError: vi.fn(),
 }));
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {
     PC_REDIRECT_URI: 'https://example.com/redirect',
     REFRESH_TOKEN_NAME: 'refreshToken',

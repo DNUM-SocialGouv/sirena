@@ -1,10 +1,10 @@
 import { ROLES } from '@sirena/common/constants';
 import { testClient } from 'hono/testing';
 import { describe, expect, it } from 'vitest';
-import { errorHandler } from '@/helpers/errors';
-import appWithAuth from '@/helpers/factories/appWithAuth';
-import appWithLogs from '@/helpers/factories/appWithLogs';
-import roleMiddleware from '@/middlewares/role.middleware';
+import { errorHandler } from '../helpers/errors.js';
+import appWithAuth from '../helpers/factories/appWithAuth.js';
+import appWithLogs from '../helpers/factories/appWithLogs.js';
+import roleMiddleware from './role.middleware.js';
 
 describe('role.middleware.ts', () => {
   it('should handle role verification logic', async () => {

@@ -1,6 +1,6 @@
-import { sseEventManager } from '@/helpers/sse';
-import { type Prisma, prisma, type UploadedFile } from '@/libs/prisma';
-import type { CreateUploadedFileDto, GetUploadedFilesQuery } from './uploadedFiles.type';
+import { sseEventManager } from '../../helpers/sse.js';
+import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
+import type { CreateUploadedFileDto, GetUploadedFilesQuery } from './uploadedFiles.type.js';
 
 export type GetUploadedFilesResult = {
   data: UploadedFile[];

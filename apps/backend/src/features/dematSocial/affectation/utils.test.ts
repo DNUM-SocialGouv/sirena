@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractFinessFromRawText, extractPostalCode } from './utils';
+import { extractFinessFromRawText, extractPostalCode } from './utils.js';
 
 describe('utils.ts', () => {
   describe('extractPostalCode', () => {

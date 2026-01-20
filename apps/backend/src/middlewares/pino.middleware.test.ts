@@ -3,10 +3,9 @@ import { Hono } from 'hono';
 import { testClient } from 'hono/testing';
 import type pino from 'pino';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { EnrichedUserContext, RequestContext } from '@/helpers/middleware';
-import type { createDefaultLogger } from '@/helpers/pino';
-import { createTestRequestContext, createTestUser } from '../tests/test-utils';
-import { enhancedPinoMiddleware } from './pino.middleware';
+import type { EnrichedUserContext, RequestContext } from '../helpers/middleware.js';
+import type { createDefaultLogger } from '../helpers/pino.js';
+import { createTestRequestContext, createTestUser } from '../tests/test-utils.js';
 
 const {
   mockPinoLogger,
@@ -133,12 +132,12 @@ const {
   };
 });
 
-vi.mock('@/helpers/middleware', async () => {
+vi.mock('../helpers/middleware.js', async () => {
   return helperMocks;
 });
 
 // Mock asyncLocalStorage
-vi.mock('@/libs/asyncLocalStorage', () => ({
+vi.mock('../libs/asyncLocalStorage.js', () => ({
   loggerStorage: mockLoggerStorage,
 }));
 
@@ -187,12 +186,14 @@ vi.mock('hono-pino', () => ({
   }),
 }));
 
-vi.mock('@/config/env', () => ({
+vi.mock('../config/env.js', () => ({
   envVars: {
     LOG_LEVEL: 'info',
     LOG_FORMAT: 'json',
   },
 }));
+
+const { enhancedPinoMiddleware } = await import('./pino.middleware.js');
 
 describe('pino.middleware.ts', () => {
   beforeEach(() => {

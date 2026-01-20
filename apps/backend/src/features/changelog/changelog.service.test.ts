@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ChangeLog, prisma } from '@/libs/prisma';
-import { createChangeLog } from './changelog.service';
-import { ChangeLogAction, type CreateChangeLogDto } from './changelog.type';
+import { type ChangeLog, prisma } from '../../libs/prisma.js';
+import { createChangeLog } from './changelog.service.js';
+import { ChangeLogAction, type CreateChangeLogDto } from './changelog.type.js';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     changeLog: {
       create: vi.fn(),

@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import { expect, vi } from 'vitest';
-import type { LogLevel, RequestContext } from '@/helpers/middleware';
-import type { User } from '@/libs/prisma';
+import type { LogLevel, RequestContext } from '../helpers/middleware.js';
+import type { User } from '../libs/prisma.js';
 
 export interface MockSentryScope {
   setContext: ReturnType<typeof vi.fn>;
@@ -290,7 +290,7 @@ export const setupPinoMocks = () => {
 };
 
 export const setupEnvironmentMocks = () => {
-  vi.mock('@/config/env', () => ({
+  vi.mock('../../config/env.js', () => ({
     envVars: {
       LOG_LEVEL: 'info',
       LOG_LEVEL_SENTRY: 'warn',

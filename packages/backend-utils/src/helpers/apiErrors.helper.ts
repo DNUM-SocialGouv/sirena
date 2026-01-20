@@ -2,7 +2,7 @@ import type { Cause } from '@sirena/common/types';
 import { HTTPException } from 'hono/http-exception';
 import type { ResolverReturnType } from 'hono-openapi';
 import { resolver } from 'hono-openapi';
-import { ErrorSchema, ZodSafeParseErrorSchema } from '../schemas/apiErrors.schema';
+import { ErrorSchema, ZodSafeParseErrorSchema } from '../schemas/apiErrors.schema.js';
 
 type ErrorOptions = {
   cause?: Cause;

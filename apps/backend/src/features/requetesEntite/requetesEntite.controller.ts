@@ -12,31 +12,31 @@ import {
   ROLES_WRITE,
 } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
+import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import { streamFileResponse, streamSafeFileResponse } from '../../helpers/file.js';
+import { sseEventManager } from '../../helpers/sse.js';
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import requeteChangelogMiddleware from '../../middlewares/changelog/changelog.requete.middleware.js';
+import requeteStatesChangelogMiddleware from '../../middlewares/changelog/changelog.requeteEtape.middleware.js';
+import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
+import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { ChangeLogAction } from '../changelog/changelog.type.js';
+import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.service.js';
+import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import {
   getUploadedFileById,
   isFileBelongsToRequete,
   isUserOwner,
   setRequeteFile,
-} from '@/features/uploadedFiles/uploadedFiles.service';
-import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import { streamFileResponse, streamSafeFileResponse } from '@/helpers/file';
-import { sseEventManager } from '@/helpers/sse';
-import authMiddleware from '@/middlewares/auth.middleware';
-import requeteChangelogMiddleware from '@/middlewares/changelog/changelog.requete.middleware';
-import requeteStatesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtape.middleware';
-import entitesMiddleware from '@/middlewares/entites.middleware';
-import roleMiddleware from '@/middlewares/role.middleware';
-import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.service';
-import { updateDateAndTypeRequete } from '../requetes/requetes.service';
+} from '../uploadedFiles/uploadedFiles.service.js';
 import {
   closeRequeteRoute,
   createRequeteRoute,
   getOtherEntitesAffectedRoute,
   getRequeteEntiteRoute,
   getRequetesEntiteRoute,
-} from './requetesEntite.route';
+} from './requetesEntite.route.js';
 import {
   CloseRequeteBodySchema,
   CreateRequeteBodySchema,
@@ -47,7 +47,7 @@ import {
   UpdateRequeteFilesBodySchema,
   UpdateSituationBodySchema,
   UpdateTypeAndDateRequeteBodySchema,
-} from './requetesEntite.schema';
+} from './requetesEntite.schema.js';
 import {
   closeRequeteForEntite,
   createRequeteEntite,
@@ -61,7 +61,7 @@ import {
   updateRequeteParticipant,
   updateRequeteSituation,
   updateStatusRequete,
-} from './requetesEntite.service';
+} from './requetesEntite.service.js';
 
 const app = factoryWithLogs
   .createApp()

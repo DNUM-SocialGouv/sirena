@@ -1,10 +1,10 @@
 import * as Sentry from '@sentry/node';
 import type { Job } from 'bullmq';
-import { envVars } from '@/config/env';
-import { endCron, startCron } from '@/crons/crons.service';
-import { recordCronJobRun } from '@/features/monitoring/metrics.worker';
-import { serializeError } from '@/helpers/errors';
-import { getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
+import { envVars } from '../../config/env.js';
+import { endCron, startCron } from '../../crons/crons.service.js';
+import { recordCronJobRun } from '../../features/monitoring/metrics.worker.js';
+import { serializeError } from '../../helpers/errors.js';
+import { getLoggerStore, getSentryStore } from '../../libs/asyncLocalStorage.js';
 
 export async function withCronLifecycle<R extends Record<string, unknown>, J extends Job>(
   job: J,

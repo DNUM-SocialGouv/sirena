@@ -3,7 +3,7 @@ import type {
   GetRequeteEtapesQuerySchema,
   UpdateRequeteEtapeNomSchema,
   UpdateRequeteEtapeStatutSchema,
-} from './requetesEtapes.schema';
+} from './requetesEtapes.schema.js';
 
 export type RequeteEtapeCreationDto = {
   nom: string;

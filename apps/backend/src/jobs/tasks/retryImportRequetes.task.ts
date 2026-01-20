@@ -1,10 +1,10 @@
 import * as Sentry from '@sentry/node';
 import type { Job } from 'bullmq';
-import { importSingleDossier } from '@/features/dematSocial/dematSocial.service';
-import { getUnresolvedFailures } from '@/features/dematSocial/dematSocialImportFailure.service';
-import { withCronLifecycle } from '@/jobs/config/job.utils';
-import { getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
-import type { JobDataMap, JobResult } from '../config/job.types';
+import { importSingleDossier } from '../../features/dematSocial/dematSocial.service.js';
+import { getUnresolvedFailures } from '../../features/dematSocial/dematSocialImportFailure.service.js';
+import { getLoggerStore, getSentryStore } from '../../libs/asyncLocalStorage.js';
+import type { JobDataMap, JobResult } from '../config/job.types.js';
+import { withCronLifecycle } from '../config/job.utils.js';
 
 /**
  * Job to retry importing Démat Social files that failed

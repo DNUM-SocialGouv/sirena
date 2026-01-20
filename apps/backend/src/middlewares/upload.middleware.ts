@@ -1,9 +1,9 @@
 import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
 import { API_ERROR_CODES } from '@sirena/common/constants';
 import { fileTypeFromBuffer } from 'file-type';
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '@/config/files.constant';
-import factoryWithUploadedFile from '@/helpers/factories/appWithUploadedFile';
-import { sanitizeFilename } from '@/helpers/file';
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../config/files.constant.js';
+import factoryWithUploadedFile from '../helpers/factories/appWithUploadedFile.js';
+import { sanitizeFilename } from '../helpers/file.js';
 
 /**
  * @description Extracts the uploaded file from the request body and sets it in the context.

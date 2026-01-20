@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { prisma } from '@/libs/prisma';
+import { prisma } from '../../libs/prisma.js';
 import { checkHealth } from './health.service';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     $queryRaw: vi.fn(),
   },

@@ -1,14 +1,14 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
-import { getUserById } from '@/features/users/users.service';
-import { errorHandler } from '@/helpers/errors';
-import appWithLogs from '@/helpers/factories/appWithLogs';
-import pinoLogger from '@/middlewares/pino.middleware';
-import { convertDatesToStrings } from '@/tests/formatter';
+import { errorHandler } from '../../helpers/errors.js';
+import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import pinoLogger from '../../middlewares/pino.middleware.js';
+import { convertDatesToStrings } from '../../tests/formatter.js';
+import { getUserById } from '../users/users.service.js';
 import ProfileController from './profile.controller';
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {},
 }));
 

@@ -5,39 +5,28 @@
   "description": "",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.js",
-        "import": "./dist/index.js",
-        "require": "./dist/index.js"
-      }
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
     },
     "./constants": {
-      "import": {
-        "types": "./dist/constants/index.d.js",
-        "import": "./dist/constants/index.js",
-        "require": "./dist/constants/index.js"
-      }
+      "types": "./dist/constants/index.d.ts",
+      "import": "./dist/constants/index.js",
+      "require": "./dist/constants/index.js"
     },
     "./utils": {
-      "import": {
-        "types": "./dist/utils/index.d.js",
-        "import": "./dist/utils/index.js",
-        "require": "./dist/utils/index.js"
-      }
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js",
+      "require": "./dist/utils/index.js"
     },
     "./types": {
-      "import": {
-        "types": "./dist/types/index.d.js",
-        "import": "./dist/types/index.js",
-        "require": "./dist/types/index.js"
-      }
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
     },
     "./schemas": {
-      "import": {
-        "types": "./dist/schemas/index.d.js",
-        "import": "./dist/schemas/index.js",
-        "require": "./dist/schemas/index.js"
-      }
+      "types": "./dist/schemas/index.d.ts",
+      "import": "./dist/schemas/index.js",
+      "require": "./dist/schemas/index.js"
     }
   },
   "scripts": {

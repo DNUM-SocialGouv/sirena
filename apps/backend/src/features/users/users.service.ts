@@ -1,9 +1,9 @@
 import { ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
-import { envVars } from '@/config/env';
-import { entitesDescendantIdsCache } from '@/features/entites/entites.cache';
-import { sseEventManager } from '@/helpers/sse';
-import { type Prisma, prisma, type User } from '@/libs/prisma';
-import type { CreateUserDto, GetUsersQuery, PatchUserDto } from './users.type';
+import { envVars } from '../../config/env.js';
+import { sseEventManager } from '../../helpers/sse.js';
+import { type Prisma, prisma, type User } from '../../libs/prisma.js';
+import { entitesDescendantIdsCache } from '../entites/entites.cache.js';
+import type { CreateUserDto, GetUsersQuery, PatchUserDto } from './users.type.js';
 
 const filterByEntities = (entiteIds: string[] | null) => {
   if (!entiteIds) {

@@ -4,8 +4,8 @@ import path from 'node:path';
 import { PassThrough, Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { Client } from 'minio';
-import { envVars } from '@/config/env';
-import { createDecryptionStream, createEncryptionStream, type DecryptionParams } from './encryption';
+import { envVars } from '../config/env.js';
+import { createDecryptionStream, createEncryptionStream, type DecryptionParams } from './encryption.js';
 
 const {
   S3_BUCKET_ACCESS_KEY,

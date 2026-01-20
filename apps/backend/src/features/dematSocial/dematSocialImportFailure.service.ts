@@ -1,5 +1,5 @@
-import type { Prisma } from '@/libs/prisma';
-import { prisma } from '@/libs/prisma';
+import type { Prisma } from '../../libs/prisma.js';
+import { prisma } from '../../libs/prisma.js';
 
 export type ImportFailureErrorType = 'TECHNICAL' | 'FUNCTIONAL' | 'UNKNOWN';
 

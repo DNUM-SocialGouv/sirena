@@ -3,20 +3,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockEncryptionKey = 'a'.repeat(64);
 
-vi.mock('@/config/env', () => ({
+vi.mock('../config/env.js', () => ({
   envVars: {
     S3_ENCRYPTION_KEY: mockEncryptionKey,
   },
 }));
 
 describe('encryption', () => {
-  let createEncryptionStream: typeof import('./encryption').createEncryptionStream;
-  let createDecryptionStream: typeof import('./encryption').createDecryptionStream;
-  let generateEncryptionKey: typeof import('./encryption').generateEncryptionKey;
+  let createEncryptionStream: typeof import('./encryption.js').createEncryptionStream;
+  let createDecryptionStream: typeof import('./encryption.js').createDecryptionStream;
+  let generateEncryptionKey: typeof import('./encryption.js').generateEncryptionKey;
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const encryption = await import('./encryption');
+    const encryption = await import('./encryption.js');
     createEncryptionStream = encryption.createEncryptionStream;
     createDecryptionStream = encryption.createDecryptionStream;
     generateEncryptionKey = encryption.generateEncryptionKey;

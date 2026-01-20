@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { AppEnvSchema } from './env.schema';
+import { describe, expect, it, vi } from 'vitest';
+import { AppEnvSchema } from './env.schema.js';
+
+vi.unmock('./env.js');
 
 process.env = {
   PC_DOMAIN: 'https://example.com',
@@ -24,6 +26,10 @@ process.env = {
   DEMAT_SOCIAL_API_URL: 'https://demat.social/api',
   DEMAT_SOCIAL_API_TOKEN: 'token123',
   DEMAT_SOCIAL_API_DIRECTORY: '123',
+  DEMAT_SOCIAL_INSTRUCTEUR_ID: 'instructeur-456',
+
+  ANNUAIRE_SANTE_API_KEY: '123',
+  ANNUAIRE_SANTE_API_URL: 'https://annuairesante.api',
 
   TIPIMAIL_API_URL: 'https://api.tipimail.com/v1',
   TIPIMAIL_API_KEY: 'test-api-key',
@@ -46,7 +52,8 @@ process.env = {
 
 describe('env.ts', () => {
   it('should parse and return validated environment variables', async () => {
-    const { envVars } = await import('./env'); // Import after env is set
+    vi.resetModules();
+    const { envVars } = await import('./env.js'); // Import after env is set
     expect(envVars.PC_DOMAIN).toBe('https://example.com');
     expect(envVars.AUTH_TOKEN_NAME).toBe('auth_token');
     expect(envVars.LOG_FORMAT).toBe('json');

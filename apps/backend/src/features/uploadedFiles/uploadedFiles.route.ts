@@ -1,6 +1,6 @@
 import { openApiDeleteResponse, openApiProtectedRoute, openApiResponse } from '@sirena/backend-utils/helpers';
 import z from 'zod';
-import { GetFileProcessingStatusResponseSchema, GetUploadedFileResponseSchema } from './uploadedFiles.schema';
+import { GetFileProcessingStatusResponseSchema, GetUploadedFileResponseSchema } from './uploadedFiles.schema.js';
 
 export const createUploadedFileRoute = openApiProtectedRoute({
   description: 'Create uploaded file',

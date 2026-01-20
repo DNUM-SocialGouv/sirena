@@ -2,4 +2,4 @@
 set -e
 
 cd /app/apps/backend
-exec node_modules/.bin/tsx src/index.ts
+exec node dist/index.js

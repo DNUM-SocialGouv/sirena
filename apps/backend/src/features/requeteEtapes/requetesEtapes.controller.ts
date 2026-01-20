@@ -5,7 +5,31 @@ import {
 } from '@sirena/backend-utils/helpers';
 import { REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
+import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import { streamFileResponse, streamSafeFileResponse } from '../../helpers/file.js';
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import requeteEtapesChangelogMiddleware from '../../middlewares/changelog/changelog.requeteEtape.middleware.js';
+import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
+import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { ChangeLogAction } from '../changelog/changelog.type.js';
+import {
+  getRequeteEntiteById,
+  hasAccessToRequete,
+  updateStatusRequete,
+} from '../requetesEntite/requetesEntite.service.js';
+import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import {
+  addProcessingStepRoute,
+  deleteRequeteEtapeRoute,
+  updateRequeteEtapeNomRoute,
+  updateRequeteEtapeStatutRoute,
+} from './requetesEtapes.route.js';
+import {
+  AddProcessingStepBodySchema,
+  UpdateRequeteEtapeNomSchema,
+  UpdateRequeteEtapeStatutSchema,
+} from './requetesEtapes.schema.js';
 import {
   addProcessingEtape,
   deleteRequeteEtape,
@@ -13,31 +37,7 @@ import {
   getRequeteEtapes,
   updateRequeteEtapeNom,
   updateRequeteEtapeStatut,
-} from '@/features/requeteEtapes/requetesEtapes.service';
-import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import { streamFileResponse, streamSafeFileResponse } from '@/helpers/file';
-import authMiddleware from '@/middlewares/auth.middleware';
-import requeteEtapesChangelogMiddleware from '@/middlewares/changelog/changelog.requeteEtape.middleware';
-import entitesMiddleware from '@/middlewares/entites.middleware';
-import roleMiddleware from '@/middlewares/role.middleware';
-import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-import {
-  getRequeteEntiteById,
-  hasAccessToRequete,
-  updateStatusRequete,
-} from '../requetesEntite/requetesEntite.service';
-import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service';
-import {
-  addProcessingStepRoute,
-  deleteRequeteEtapeRoute,
-  updateRequeteEtapeNomRoute,
-  updateRequeteEtapeStatutRoute,
-} from './requetesEtapes.route';
-import {
-  AddProcessingStepBodySchema,
-  UpdateRequeteEtapeNomSchema,
-  UpdateRequeteEtapeStatutSchema,
-} from './requetesEtapes.schema';
+} from './requetesEtapes.service.js';
 
 const app = factoryWithLogs
   .createApp()

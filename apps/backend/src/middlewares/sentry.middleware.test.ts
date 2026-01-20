@@ -15,21 +15,21 @@ const mockEnvVars = {
   SENTRY_ENABLED: false,
 };
 
-vi.mock('@/config/env', () => ({
+vi.mock('../config/env.js', () => ({
   envVars: mockEnvVars,
 }));
 
 // Import the actual implementations instead of mocked ones
-vi.unmock('./sentry.middleware');
-vi.unmock('@/helpers/middleware');
+vi.unmock('./sentry.middleware.js');
+vi.unmock('../helpers/middleware.js');
 
-const sentryModule = await vi.importActual<typeof import('./sentry.middleware')>('./sentry.middleware');
+const sentryModule = await vi.importActual<typeof import('./sentry.middleware.js')>('./sentry.middleware.js');
 const { createSentryRequestContext, sentryContextMiddleware } = sentryModule;
 
-const middlewareModule = await vi.importActual<typeof import('@/helpers/middleware')>('@/helpers/middleware');
+const middlewareModule = await vi.importActual<typeof import('../helpers/middleware.js')>('../helpers/middleware.js');
 const { UNKNOWN_VALUE, SOURCE_BACKEND } = middlewareModule;
 
-import type { RequestContext } from '@/helpers/middleware';
+import type { RequestContext } from '../helpers/middleware.js';
 
 const TEST_HEADERS = {
   REQUEST_ID: 'req-123',

@@ -9,7 +9,7 @@ import { seedRequeteFromDematSocial } from './seed/get_demat_social';
 import { importGeoData } from './seed/importGeoData';
 import '@/libs/instrument';
 import { connection as redisConnection } from '@/config/redis';
-import { prisma as appPrisma } from '@/libs/prisma';
+import { prisma as appPrisma } from '../../libs/prisma.js';
 
 async function main() {
   const prisma = new PrismaClient({

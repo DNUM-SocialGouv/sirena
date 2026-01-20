@@ -1,10 +1,10 @@
 import type { Job } from 'bullmq';
-import { envVars } from '@/config/env';
-import { getLastCron } from '@/crons/crons.service';
-import { importRequetes } from '@/features/dematSocial/dematSocial.service';
-import { withCronLifecycle } from '@/jobs/config/job.utils';
-import { abortControllerStorage, getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
-import type { JobDataMap, JobResult } from '../config/job.types';
+import { envVars } from '../../config/env.js';
+import { getLastCron } from '../../crons/crons.service.js';
+import { importRequetes } from '../../features/dematSocial/dematSocial.service.js';
+import { abortControllerStorage, getLoggerStore, getSentryStore } from '../../libs/asyncLocalStorage.js';
+import type { JobDataMap, JobResult } from '../config/job.types.js';
+import { withCronLifecycle } from '../config/job.utils.js';
 
 export async function fetchRequetes(job: Job<JobDataMap['fetch-requetes']>): JobResult {
   const logger = getLoggerStore();

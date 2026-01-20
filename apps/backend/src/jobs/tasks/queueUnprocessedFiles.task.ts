@@ -1,9 +1,9 @@
 import type { Job } from 'bullmq';
-import { getUnprocessedFiles } from '@/features/uploadedFiles/uploadedFiles.service';
-import { withCronLifecycle } from '@/jobs/config/job.utils';
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
-import type { JobDataMap, JobResult } from '../config/job.types';
-import { addFileProcessingJob } from '../queues/fileProcessing.queue';
+import { getUnprocessedFiles } from '../../features/uploadedFiles/uploadedFiles.service.js';
+import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
+import type { JobDataMap, JobResult } from '../config/job.types.js';
+import { withCronLifecycle } from '../config/job.utils.js';
+import { addFileProcessingJob } from '../queues/fileProcessing.queue.js';
 
 export async function queueUnprocessedFiles(job: Job<JobDataMap['queue-unprocessed-files']>): JobResult {
   const logger = getLoggerStore();

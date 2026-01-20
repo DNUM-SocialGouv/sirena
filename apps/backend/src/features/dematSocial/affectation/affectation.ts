@@ -1,13 +1,13 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { createDefaultRequeteEtapes } from '@/features/requeteEtapes/requetesEtapes.service';
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
-import { type Prisma, PrismaClient } from '../../../../generated/client';
-import { buildSituationContextFromDemat } from './buildSituationContext';
-import { runDecisionTree } from './decisionTree';
-import { findGeoByPostalCode } from './geo/geoIndex';
-import type { EntiteAdminType, SituationContext } from './types';
+import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
+import { type Prisma, PrismaClient } from '../../../libs/prisma.js';
+import { createChangeLog } from '../../changelog/changelog.service.js';
+import { ChangeLogAction } from '../../changelog/changelog.type.js';
+import { createDefaultRequeteEtapes } from '../../requeteEtapes/requetesEtapes.service.js';
+import { buildSituationContextFromDemat } from './buildSituationContext.js';
+import { runDecisionTree } from './decisionTree.js';
+import { findGeoByPostalCode } from './geo/geoIndex.js';
+import type { EntiteAdminType, SituationContext } from './types.js';
 
 type Assignment = { situationId: string; types: EntiteAdminType[]; context: SituationContext };
 

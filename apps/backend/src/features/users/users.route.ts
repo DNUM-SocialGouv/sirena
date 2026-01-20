@@ -4,7 +4,7 @@ import {
   openApiResponse,
   openApiResponses,
 } from '@sirena/backend-utils/helpers';
-import { GetUserResponseSchema, GetUsersResponseSchema } from './users.schema';
+import { GetUserResponseSchema, GetUsersResponseSchema } from './users.schema.js';
 
 export const getUserRoute = openApiProtectedRoute({
   description: 'Get user by id',

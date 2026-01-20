@@ -1,7 +1,6 @@
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { deleteFileFromMinio } from '@/libs/minio';
+import { deleteFileFromMinio } from '../../libs/minio.js';
 import {
   type ChangeLog,
   prisma,
@@ -10,7 +9,8 @@ import {
   type RequeteEtape,
   type RequeteEtapeNote,
   type UploadedFile,
-} from '@/libs/prisma';
+} from '../../libs/prisma.js';
+import { createChangeLog } from '../changelog/changelog.service.js';
 import {
   addProcessingEtape,
   createDefaultRequeteEtapes,
@@ -19,9 +19,9 @@ import {
   getRequeteEtapes,
   updateRequeteEtapeNom,
   updateRequeteEtapeStatut,
-} from './requetesEtapes.service';
+} from './requetesEtapes.service.js';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     $transaction: vi.fn(),
     requete: {

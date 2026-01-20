@@ -1,5 +1,5 @@
-import { type Prisma, prisma } from '@/libs/prisma';
-import type { CreateChangeLogDto } from './changelog.type';
+import { type Prisma, prisma } from '../../libs/prisma.js';
+import type { CreateChangeLogDto } from './changelog.type.js';
 
 export const createChangeLog = async (data: CreateChangeLogDto) => {
   return prisma.changeLog.create({

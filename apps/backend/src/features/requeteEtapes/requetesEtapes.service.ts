@@ -1,16 +1,16 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { deleteFileFromMinio } from '@/libs/minio';
-import type { Prisma } from '@/libs/prisma';
-import { prisma, type RequeteEtape } from '@/libs/prisma';
+import { deleteFileFromMinio } from '../../libs/minio.js';
+import type { Prisma } from '../../libs/prisma.js';
+import { prisma, type RequeteEtape } from '../../libs/prisma.js';
+import { createChangeLog } from '../changelog/changelog.service.js';
+import { ChangeLogAction } from '../changelog/changelog.type.js';
 import type {
   GetRequeteEtapesQuery,
   RequeteEtapeCreationDto,
   UpdateRequeteEtapeNomDto,
   UpdateRequeteEtapeStatutDto,
-} from './requetesEtapes.type';
+} from './requetesEtapes.type.js';
 
 export const createDefaultRequeteEtapes = async (
   requeteId: string,

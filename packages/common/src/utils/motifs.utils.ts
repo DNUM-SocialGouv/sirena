@@ -1,4 +1,4 @@
-import { MOTIFS_HIERARCHICAL_DATA } from '../constants/motifs.constant';
+import { MOTIFS_HIERARCHICAL_DATA } from '../constants/motifs.constant.js';
 
 export interface MotifOption {
   label: string;

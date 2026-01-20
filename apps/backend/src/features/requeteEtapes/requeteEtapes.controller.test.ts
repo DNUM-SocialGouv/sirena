@@ -3,6 +3,18 @@ import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { errorHandler } from '../../helpers/errors.js';
+import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import { getFileStream } from '../../libs/minio.js';
+import type { RequeteEntite, RequeteEtape, RequeteEtapeNote, UploadedFile } from '../../libs/prisma.js';
+import { convertDatesToStrings } from '../../tests/formatter.js';
+import {
+  getRequeteEntiteById,
+  hasAccessToRequete,
+  updateStatusRequete,
+} from '../requetesEntite/requetesEntite.service.js';
+import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
+import RequeteEtapesController from './requetesEtapes.controller.js';
 import {
   addProcessingEtape,
   deleteRequeteEtape,
@@ -10,21 +22,15 @@ import {
   getRequeteEtapes,
   updateRequeteEtapeNom,
   updateRequeteEtapeStatut,
-} from '@/features/requeteEtapes/requetesEtapes.service';
-import { getUploadedFileById } from '@/features/uploadedFiles/uploadedFiles.service';
-import { errorHandler } from '@/helpers/errors';
-import appWithLogs from '@/helpers/factories/appWithLogs';
-import { getFileStream } from '@/libs/minio';
-import type { RequeteEntite, RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
-import { convertDatesToStrings } from '@/tests/formatter';
-import {
-  getRequeteEntiteById,
-  hasAccessToRequete,
-  updateStatusRequete,
-} from '../requetesEntite/requetesEntite.service';
-import RequeteEtapesController from './requetesEtapes.controller';
+} from './requetesEtapes.service.js';
 
-vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
+vi.mock('../../config/env.js', () => ({
+  envVars: {
+    SENTRY_ENABLED: false,
+  },
+}));
+
+vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
   getRequeteEtapeById: vi.fn(),
   updateRequeteEtapeStatut: vi.fn(),
   updateRequeteEtapeNom: vi.fn(() => Promise.resolve(fakeUpdatedNomRequeteEtape)),
@@ -33,18 +39,18 @@ vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
   getRequeteEtapes: vi.fn(),
 }));
 
-vi.mock('@/features/uploadedFiles/uploadedFiles.service', () => ({
+vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
   getUploadedFileById: vi.fn(),
   isFileBelongsToRequete: vi.fn(() => Promise.resolve(true)),
 }));
 
-vi.mock('../requetesEntite/requetesEntite.service', () => ({
+vi.mock('../requetesEntite/requetesEntite.service.js', () => ({
   hasAccessToRequete: vi.fn(() => Promise.resolve(true)),
   getRequeteEntiteById: vi.fn(),
   updateStatusRequete: vi.fn(),
 }));
 
-vi.mock('@/middlewares/userStatus.middleware', () => {
+vi.mock('../../middlewares/userStatus.middleware.js', () => {
   return {
     default: (_: Context, next: Next) => {
       return next();
@@ -52,7 +58,7 @@ vi.mock('@/middlewares/userStatus.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/auth.middleware', () => {
+vi.mock('../../middlewares/auth.middleware.js', () => {
   return {
     default: (c: Context, next: Next) => {
       c.set('userId', 'test-user-id');
@@ -61,7 +67,7 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/role.middleware', () => {
+vi.mock('../../middlewares/role.middleware.js', () => {
   return {
     default: () => {
       return (c: Context, next: Next) => {
@@ -72,7 +78,7 @@ vi.mock('@/middlewares/role.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/entites.middleware', () => {
+vi.mock('../../middlewares/entites.middleware.js', () => {
   return {
     default: vi.fn((c: Context, next: Next) => {
       c.set('entiteIds', ['e1', 'e2', 'e3']);
@@ -82,7 +88,7 @@ vi.mock('@/middlewares/entites.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
+vi.mock('../../middlewares/changelog/changelog.requeteEtape.middleware.js', () => {
   return {
     default: () => (_: Context, next: Next) => {
       return next();
@@ -90,12 +96,12 @@ vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
   };
 });
 
-vi.mock('@/libs/minio', () => ({
+vi.mock('../../libs/minio.js', () => ({
   getFileStream: vi.fn(),
 }));
 
-vi.mock('@/helpers/errors', async () => {
-  const actual = await vi.importActual<typeof import('@/helpers/errors')>('@/helpers/errors');
+vi.mock('../../helpers/errors.js', async () => {
+  const actual = await vi.importActual<typeof import('../../helpers/errors.js')>('../../helpers/errors.js');
   return {
     ...actual,
     errorHandler: vi.fn((err, c) => {

@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import { envVars } from '@/config/env';
+import { envVars } from '../config/env.js';
 
 export const UNKNOWN_VALUE = 'unknown';
 export const SOURCE_BACKEND = 'backend';

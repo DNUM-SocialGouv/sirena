@@ -1,5 +1,5 @@
-import type { RootChampFragmentFragment } from '@/libs/graffle';
-import type { RepetitionChamp } from './dematSocial.type';
+import type { RootChampFragmentFragment } from '../../libs/graffle.js';
+import type { RepetitionChamp } from './dematSocial.type.js';
 
 export class ChampMappingError extends Error {
   constructor(

@@ -1,7 +1,7 @@
-import type { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getUserById } from '@/features/users/users.service';
-import type { User } from '@/libs/prisma';
-import createChangelogMiddleware from './changelog.middleware';
+import type { ChangeLogAction } from '../../features/changelog/changelog.type.js';
+import { getUserById } from '../../features/users/users.service.js';
+import type { User } from '../../libs/prisma.js';
+import createChangelogMiddleware from './changelog.middleware.js';
 
 type UserChangelogMiddleware = {
   action: ChangeLogAction;

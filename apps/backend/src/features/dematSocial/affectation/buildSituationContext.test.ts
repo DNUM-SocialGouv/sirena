@@ -1,9 +1,9 @@
 import type { Motif } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildSituationContextFromDemat } from './buildSituationContext';
-import type { SituationContext } from './types';
+import { buildSituationContextFromDemat } from './buildSituationContext.js';
+import type { SituationContext } from './types.js';
 
-vi.mock('./utils', () => ({
+vi.mock('./utils.js', () => ({
   extractPostalCode: vi.fn((v) => (v ? '75001' : null)),
   extractFinessFromRawText: vi.fn((v) => (v ? '123456789' : null)),
 }));

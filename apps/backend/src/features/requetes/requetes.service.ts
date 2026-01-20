@@ -1,12 +1,12 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
-import { sanitizeFilename, urlToStream } from '@/helpers/file';
-import { addFileProcessingJob } from '@/jobs/queues/fileProcessing.queue';
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
-import { uploadFileToMinio } from '@/libs/minio';
-import { prisma } from '@/libs/prisma';
-import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service';
-import { determineSource, generateRequeteId } from './functionalId.service';
-import type { CreateRequeteFromDematSocialDto, ElementLinked, File } from './requetes.type';
+import { sanitizeFilename, urlToStream } from '../../helpers/file.js';
+import { addFileProcessingJob } from '../../jobs/queues/fileProcessing.queue.js';
+import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
+import { uploadFileToMinio } from '../../libs/minio.js';
+import { prisma } from '../../libs/prisma.js';
+import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
+import { determineSource, generateRequeteId } from './functionalId.service.js';
+import type { CreateRequeteFromDematSocialDto, ElementLinked, File } from './requetes.type.js';
 
 export const getRequeteByDematSocialId = async (id: number) =>
   await prisma.requete.findFirst({

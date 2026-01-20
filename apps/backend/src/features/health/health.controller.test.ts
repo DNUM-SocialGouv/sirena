@@ -1,11 +1,11 @@
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
-import appWithLogs from '@/helpers/factories/appWithLogs';
-import pinoLogger from '@/middlewares/pino.middleware';
-import HealthController from './health.controller';
-import { checkHealth } from './health.service';
+import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import pinoLogger from '../../middlewares/pino.middleware.js';
+import HealthController from './health.controller.js';
+import { checkHealth } from './health.service.js';
 
-vi.mock('./health.service', () => ({
+vi.mock('./health.service.js', () => ({
   checkHealth: vi.fn(),
 }));
 

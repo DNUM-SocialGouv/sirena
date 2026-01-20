@@ -1,4 +1,4 @@
-import { envVars } from '@/config/env';
+import { envVars } from '../config/env.js';
 export const scopes = ['uid', 'openid', 'given_name', 'usual_name', 'siret', 'email', 'organizational_unit'].join(' ');
 
 // const envWithout2FA = ['local', 'integration', 'validation'];

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { prisma } from '@/libs/prisma';
+import { prisma } from '../../libs/prisma.js';
 import {
   countUnresolvedFailuresByType,
   createImportFailure,
@@ -7,9 +7,9 @@ import {
   getUnresolvedFailures,
   type ImportFailureErrorType,
   markFailureAsResolved,
-} from './dematSocialImportFailure.service';
+} from './dematSocialImportFailure.service.js';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     dematSocialImportFailure: {
       upsert: vi.fn(),

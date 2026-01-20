@@ -2,29 +2,29 @@ import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { errorHandler } from '@/helpers/errors';
-import appWithLogs from '@/helpers/factories/appWithLogs';
-import pinoLogger from '@/middlewares/pino.middleware';
-import { convertDatesToStrings } from '@/tests/formatter';
-import UsersController from './users.controller';
-import { sendUserActivationEmail } from './users.notification.service';
-import { getUserById, getUsers, patchUser } from './users.service';
+import { errorHandler } from '../../helpers/errors.js';
+import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import pinoLogger from '../../middlewares/pino.middleware.js';
+import { convertDatesToStrings } from '../../tests/formatter.js';
+import UsersController from './users.controller.js';
+import { sendUserActivationEmail } from './users.notification.service.js';
+import { getUserById, getUsers, patchUser } from './users.service.js';
 
-vi.mock('./users.service', () => ({
+vi.mock('./users.service.js', () => ({
   getUsers: vi.fn(),
   getUserById: vi.fn(),
   patchUser: vi.fn(),
 }));
 
-vi.mock('./users.notification.service', () => ({
+vi.mock('./users.notification.service.js', () => ({
   sendUserActivationEmail: vi.fn(),
 }));
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {},
 }));
 
-vi.mock('@/middlewares/auth.middleware', () => {
+vi.mock('../../middlewares/auth.middleware.js', () => {
   return {
     default: (c: Context, next: Next) => {
       c.set('userId', 'id10');
@@ -33,7 +33,7 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/userStatus.middleware', () => {
+vi.mock('../../middlewares/userStatus.middleware.js', () => {
   return {
     default: (_: Context, next: Next) => {
       return next();
@@ -41,7 +41,7 @@ vi.mock('@/middlewares/userStatus.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/role.middleware', () => {
+vi.mock('../../middlewares/role.middleware.js', () => {
   return {
     default: () => {
       return (c: Context, next: Next) => {
@@ -52,7 +52,7 @@ vi.mock('@/middlewares/role.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/entites.middleware', () => {
+vi.mock('../../middlewares/entites.middleware.js', () => {
   return {
     default: (c: Context, next: Next) => {
       c.set('entiteIds', ['e1', 'e2', 'e3']);
@@ -61,7 +61,7 @@ vi.mock('@/middlewares/entites.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/changelog/changelog.user.middleware', () => {
+vi.mock('../../middlewares/changelog/changelog.user.middleware.js', () => {
   return {
     default: () => (_: Context, next: Next) => {
       return next();
@@ -187,7 +187,7 @@ describe('Users endpoints: /users', () => {
       const res = await client[':id'].$get({ param: { id: 'nonexistent-id' } });
       expect(res.status).toBe(404);
       const body = await res.json();
-      if ('message' in body) {
+      if (typeof body === 'object' && body !== null && 'message' in body) {
         expect(body.message).toBe('User not found');
       } else {
         throw new Error('Expected error message in response');

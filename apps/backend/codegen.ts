@@ -1,5 +1,5 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
-import { envVars } from './src/config/env';
+import { envVars } from './src/config/env.js';
 
 const config: CodegenConfig = {
   overwrite: true,
@@ -15,7 +15,7 @@ const config: CodegenConfig = {
   ],
   documents: 'src/**/*.graphql',
   generates: {
-    './generated/graphql/graphql.ts': {
+    './src/graphql/graphql.ts': {
       plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
       config: {
         useTypeImports: true,

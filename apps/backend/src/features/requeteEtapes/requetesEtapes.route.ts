@@ -5,7 +5,7 @@ import {
   openApiResponses,
 } from '@sirena/backend-utils/helpers';
 import { z } from 'zod';
-import { RequeteEtapeNoteSchema, RequeteEtapeSchema } from './requetesEtapes.schema';
+import { RequeteEtapeNoteSchema, RequeteEtapeSchema } from './requetesEtapes.schema.js';
 
 export const addProcessingStepRoute = openApiProtectedRoute({
   description: 'Add a processing step to a request',

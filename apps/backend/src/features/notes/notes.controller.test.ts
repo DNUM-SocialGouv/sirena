@@ -2,17 +2,17 @@ import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getRequeteEtapeById } from '@/features/requeteEtapes/requetesEtapes.service';
-import { hasAccessToRequete } from '@/features/requetesEntite/requetesEntite.service';
-import { isUserOwner, setNoteFile } from '@/features/uploadedFiles/uploadedFiles.service';
-import { errorHandler } from '@/helpers/errors';
-import appWithLogs from '@/helpers/factories/appWithLogs';
-import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
-import { convertDatesToStrings } from '@/tests/formatter';
-import NotesController from './notes.controller';
-import { addNote, deleteNote, getNoteById, updateNote } from './notes.service';
+import { errorHandler } from '../../helpers/errors.js';
+import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '../../libs/prisma.js';
+import { convertDatesToStrings } from '../../tests/formatter.js';
+import { getRequeteEtapeById } from '../requeteEtapes/requetesEtapes.service.js';
+import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
+import { isUserOwner, setNoteFile } from '../uploadedFiles/uploadedFiles.service.js';
+import NotesController from './notes.controller.js';
+import { addNote, deleteNote, getNoteById, updateNote } from './notes.service.js';
 
-vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
+vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
   getRequeteEtapeById: vi.fn(),
 }));
 
@@ -23,16 +23,16 @@ vi.mock('./notes.service', () => ({
   deleteNote: vi.fn(),
 }));
 
-vi.mock('@/features/uploadedFiles/uploadedFiles.service', () => ({
+vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
   isUserOwner: vi.fn(),
   setNoteFile: vi.fn(),
 }));
 
-vi.mock('@/features/requetesEntite/requetesEntite.service', () => ({
+vi.mock('../requetesEntite/requetesEntite.service.js', () => ({
   hasAccessToRequete: vi.fn(() => Promise.resolve(true)),
 }));
 
-vi.mock('@/middlewares/userStatus.middleware', () => {
+vi.mock('../../middlewares/userStatus.middleware.js', () => {
   return {
     default: (_: Context, next: Next) => {
       return next();
@@ -40,7 +40,7 @@ vi.mock('@/middlewares/userStatus.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/auth.middleware', () => {
+vi.mock('../../middlewares/auth.middleware.js', () => {
   return {
     default: (c: Context, next: Next) => {
       c.set('userId', 'test-user-id');
@@ -49,7 +49,7 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/role.middleware', () => {
+vi.mock('../../middlewares/role.middleware.js', () => {
   return {
     default: () => {
       return (c: Context, next: Next) => {
@@ -60,7 +60,7 @@ vi.mock('@/middlewares/role.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/entites.middleware', () => {
+vi.mock('../../middlewares/entites.middleware.js', () => {
   return {
     default: vi.fn((c: Context, next: Next) => {
       c.set('entiteIds', ['e1', 'e2', 'e3']);
@@ -70,7 +70,7 @@ vi.mock('@/middlewares/entites.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/changelog/changelog.requeteEtapeNote.middleware', () => {
+vi.mock('../../middlewares/changelog/changelog.requeteEtapeNote.middleware.js', () => {
   return {
     default: () => (_: Context, next: Next) => {
       return next();
@@ -78,8 +78,8 @@ vi.mock('@/middlewares/changelog/changelog.requeteEtapeNote.middleware', () => {
   };
 });
 
-vi.mock('@/helpers/errors', async () => {
-  const actual = await vi.importActual<typeof import('@/helpers/errors')>('@/helpers/errors');
+vi.mock('../../helpers/errors.js', async () => {
+  const actual = await vi.importActual<typeof import('../../helpers/errors.js')>('../../helpers/errors.js');
   return {
     ...actual,
     errorHandler: vi.fn((err, c) => {
@@ -101,6 +101,7 @@ const fakeRequeteEtape: RequeteEtape = {
   updatedAt: new Date(),
   estPartagee: false,
   clotureReasonId: null,
+  createdById: 'user1',
 };
 
 describe('notes.controller.ts', () => {
@@ -232,6 +233,11 @@ describe('notes.controller.ts', () => {
           uploadedById: 'user1',
           demarchesEngageesId: null,
           canDelete: true,
+          scanResult: null,
+          scanStatus: 'NONE',
+          sanitizeStatus: 'NONE',
+          safeFilePath: 'safe/test.pdf',
+          processingError: '',
         },
         {
           id: 'f2',
@@ -250,6 +256,11 @@ describe('notes.controller.ts', () => {
           uploadedById: 'user1',
           demarchesEngageesId: null,
           canDelete: true,
+          scanResult: null,
+          scanStatus: 'NONE',
+          sanitizeStatus: 'NONE',
+          safeFilePath: 'safe/test.pdf',
+          processingError: '',
         },
       ]);
 

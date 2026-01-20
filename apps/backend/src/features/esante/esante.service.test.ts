@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getPractionners } from './esante.service';
+import { getPractionners } from './esante.service.js';
 
 const logger = { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() };
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {
     ANNUAIRE_SANTE_API_KEY: '123',
     ANNUAIRE_SANTE_API_URL: 'https://esante.api',
   },
 }));
 
-vi.mock('@/libs/asyncLocalStorage', () => ({
+vi.mock('../../libs/asyncLocalStorage.js', () => ({
   getLoggerStore: vi.fn(() => logger),
 }));
 
@@ -27,7 +27,7 @@ const { safeParse } = vi.hoisted(() => ({
   safeParse: vi.fn(),
 }));
 
-vi.mock('./esante.schema', () => ({
+vi.mock('./esante.schema.js', () => ({
   EsantePractitionerBundleSchema: {
     safeParse,
   },

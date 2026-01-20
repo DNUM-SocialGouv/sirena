@@ -1,5 +1,5 @@
 import { hc } from 'hono/client';
-import type { app } from './app';
+import type { app } from './app.js';
 
 const client = hc<typeof app>('', { init: { credentials: 'include' } });
 export type Client = typeof client;

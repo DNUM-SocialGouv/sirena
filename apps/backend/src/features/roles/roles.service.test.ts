@@ -1,9 +1,9 @@
 import { roles } from '@sirena/common/constants';
 import { describe, expect, it, vi } from 'vitest';
-import { prisma } from '@/libs/prisma';
+import { prisma } from '../../libs/prisma.js';
 import { getRoles } from './roles.service';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     roleEnum: {
       findMany: vi.fn(),

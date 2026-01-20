@@ -2,8 +2,8 @@ import type { Context } from 'hono';
 import { pinoLogger } from 'hono-pino';
 import pino from 'pino';
 import pretty from 'pino-pretty';
-import { envVars } from '@/config/env';
-import { getLogLevelConfig } from '@/helpers/middleware';
+import { envVars } from '../config/env.js';
+import { getLogLevelConfig } from '../helpers/middleware.js';
 
 export const createPinoConfig = (): pino.LoggerOptions => {
   const logConfig = getLogLevelConfig();

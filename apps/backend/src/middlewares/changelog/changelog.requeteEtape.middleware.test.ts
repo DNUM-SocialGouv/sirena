@@ -1,18 +1,18 @@
 import { testClient } from 'hono/testing';
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getRequeteEtapeById } from '@/features/requeteEtapes/requetesEtapes.service';
-import appWithAuth from '@/helpers/factories/appWithAuth';
-import type { RequeteEtape } from '@/libs/prisma';
-import requeteEtapesChangelogMiddleware from './changelog.requeteEtape.middleware';
+import { createChangeLog } from '../../features/changelog/changelog.service.js';
+import { ChangeLogAction } from '../../features/changelog/changelog.type.js';
+import { getRequeteEtapeById } from '../../features/requeteEtapes/requetesEtapes.service.js';
+import appWithAuth from '../../helpers/factories/appWithAuth.js';
+import type { RequeteEtape } from '../../libs/prisma.js';
+import requeteEtapesChangelogMiddleware from './changelog.requeteEtape.middleware.js';
 
-vi.mock('@/features/changelog/changelog.service', () => ({
+vi.mock('../../features/changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn(),
 }));
 
-vi.mock('@/features/requeteEtapes/requetesEtapes.service', () => ({
+vi.mock('../../features/requeteEtapes/requetesEtapes.service.js', () => ({
   getRequeteEtapeById: vi.fn(),
 }));
 
@@ -30,6 +30,7 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     clotureReasonId: null,
+    createdById: 'user-1',
   };
 
   beforeEach(() => {

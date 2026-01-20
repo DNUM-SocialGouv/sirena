@@ -11,10 +11,10 @@ import {
   MIS_EN_CAUSE_TYPE,
   RECEPTION_TYPE,
 } from '@sirena/common/constants';
-import type { CreateRequeteFromDematSocialDto } from '@/features/requetes/requetes.type';
-import type { RootChampFragmentFragment } from '@/libs/graffle';
-import { ChampMappingError, EnumNotFound } from './dematSocial.error';
-import rootMapping from './dematSocial.mapper';
+import type { RootChampFragmentFragment } from '../../libs/graffle.js';
+import type { CreateRequeteFromDematSocialDto } from '../requetes/requetes.type.js';
+import { ChampMappingError, EnumNotFound } from './dematSocial.error.js';
+import rootMapping from './dematSocial.mapper.js';
 import type {
   AutreFaitsMapping,
   Demandeur,
@@ -23,7 +23,7 @@ import type {
   MappedRepetitionChamp,
   Mapping,
   RepetitionChamp,
-} from './dematSocial.type';
+} from './dematSocial.type.js';
 
 const fromB64 = (s: string) => Buffer.from(s, 'base64').toString('utf8');
 

@@ -1,5 +1,5 @@
-import { createDefaultLogger } from '@/helpers/pino';
-import { startScheduler } from './cron.scheduler';
+import { createDefaultLogger } from '../../helpers/pino.js';
+import { startScheduler } from './cron.scheduler.js';
 
 const logger = createDefaultLogger();
 

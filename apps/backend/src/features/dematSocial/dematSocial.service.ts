@@ -1,18 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import * as Sentry from '@sentry/node';
-import { envVars } from '@/config/env';
-import { sendDeclarantAcknowledgmentEmail } from '@/features/declarants/declarants.notification.service';
-import { mapDataForPrisma } from '@/features/dematSocial/dematSocial.adaptater';
-import {
-  createImportFailure,
-  type ImportFailureErrorType,
-  markFailureAsResolved,
-} from '@/features/dematSocial/dematSocialImportFailure.service';
-import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '@/features/requetes/requetes.service';
-import { serializeError } from '@/helpers/errors';
-import { isPrismaUniqueConstraintError, retryWithBackoff } from '@/helpers/retry';
-import { abortControllerStorage, getLoggerStore, getSentryStore } from '@/libs/asyncLocalStorage';
+import { envVars } from '../../config/env.js';
+import { serializeError } from '../../helpers/errors.js';
+import { isPrismaUniqueConstraintError, retryWithBackoff } from '../../helpers/retry.js';
+import { abortControllerStorage, getLoggerStore, getSentryStore } from '../../libs/asyncLocalStorage.js';
 import {
   ChangerInstructionDocument,
   GetDossierDocument,
@@ -20,9 +12,17 @@ import {
   GetDossiersMetadataDocument,
   GetInstructeursDocument,
   graffle,
-} from '@/libs/graffle';
-import { assignEntitesToRequeteTask } from './affectation/affectation';
-import type { Demandeur, DematSocialCivilite, Mandataire } from './dematSocial.type';
+} from '../../libs/graffle.js';
+import { sendDeclarantAcknowledgmentEmail } from '../declarants/declarants.notification.service.js';
+import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '../requetes/requetes.service.js';
+import { assignEntitesToRequeteTask } from './affectation/affectation.js';
+import { mapDataForPrisma } from './dematSocial.adaptater.js';
+import type { Demandeur, DematSocialCivilite, Mandataire } from './dematSocial.type.js';
+import {
+  createImportFailure,
+  type ImportFailureErrorType,
+  markFailureAsResolved,
+} from './dematSocialImportFailure.service.js';
 
 export const getInstructeurs = async () => {
   return await graffle.gql(GetInstructeursDocument).send({ demarcheNumber: envVars.DEMAT_SOCIAL_API_DIRECTORY });
