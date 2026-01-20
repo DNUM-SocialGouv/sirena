@@ -144,6 +144,7 @@ export const DS_MIS_EN_CAUSE_TYPE = {
   MEMBRE_FAMILLE: 'MEMBRE_FAMILLE',
   PROCHE: 'PROCHE',
   AUTRE: 'AUTRE',
+  AUTRE_SANTE: 'AUTRE_SANTE',
   PROFESSIONNEL_DOMICILE: 'PROFESSIONNEL_DOMICILE',
 } as const;
 
@@ -154,6 +155,7 @@ export const dsMisEnCauseTypeLabels: Record<DsMisEnCauseType, string> = {
   ETABLISSEMENT: 'L’établissement où se sont déroulés les faits',
   MEMBRE_FAMILLE: 'Un membre de la famille',
   PROCHE: 'Un autre proche, par exemple : voisinage ou connaissance',
+  AUTRE_SANTE: 'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
   AUTRE: 'Autre',
   PROFESSIONNEL_DOMICILE: 'Un professionnel ou un service d’aide à domicile',
 };
@@ -203,6 +205,7 @@ export const dsProfessionDomicileTypeLabels: Record<DsProfessionDomicileType, st
 export const DS_PROFESSION_TYPE = {
   PROFESSIONNEL_SANTE: 'PROFESSIONNEL_SANTE',
   PROFESSIONNEL_SOCIAL: 'PROFESSIONNEL_SOCIAL',
+  AUTRE_PROFESSIONNEL: 'AUTRE_PROFESSIONNEL',
   NPJM: 'NPJM',
   AUTRE: 'AUTRE',
 } as const;
@@ -212,6 +215,8 @@ export type DsProfessionType = keyof typeof DS_PROFESSION_TYPE;
 export const dsProfessionTypeLabels: Record<DsProfessionType, string> = {
   PROFESSIONNEL_SANTE: 'Un professionnel de santé, par exemple : médecin, dentiste, infirmier, aide-soignant',
   PROFESSIONNEL_SOCIAL: 'Un travailleur social, par exemple : éducateur, assistant social',
+  AUTRE_PROFESSIONNEL:
+    'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
   NPJM: 'Un tuteur, curateur ou mandataire judiciaire',
   AUTRE: 'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
 };

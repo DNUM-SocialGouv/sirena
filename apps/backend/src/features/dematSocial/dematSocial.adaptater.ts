@@ -121,6 +121,23 @@ const getFilesByChamps = (champ: RootChampFragmentFragment | RepetitionChamp) =>
   }));
 };
 
+const getFiness = (champ: RootChampFragmentFragment | RepetitionChamp) => {
+  if (champ.stringValue === '') {
+    return null;
+  }
+  if (champ.__typename !== 'FinessChamp' || !champ.data) {
+    throw new ChampMappingError(champ, 'FinessChamp', 'Invalid mapping value');
+  }
+  return {
+    code: champ.data.et_finess ?? '',
+    adresse: {
+      label: String(champ.data.et_rs) ?? '',
+      codePostal: String(champ.data.adresse_code_postal) ?? '',
+      ville: String(champ.data.adresse_lib_routage) ?? '',
+    },
+  };
+};
+
 const createAddress = (champ: RootChampFragmentFragment | RepetitionChamp) => {
   if (
     champ.__typename === 'AddressChamp' &&
@@ -200,7 +217,12 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
   const nomEtablissementValue =
     'nomEtablissement' in mapping ? (champsById[mapping.nomEtablissement.id]?.stringValue ?? '') : '';
   const adresse = address ?? { label: nomEtablissementValue ?? '', codePostal, ville: '', rue: '', numero: '' };
-  const finessValue = champsById[mapping.finess.id]?.stringValue ?? '';
+  const finess = getFiness(champsById[mapping.finess.id]);
+  if (finess) {
+    adresse.label = finess.adresse.label;
+    adresse.codePostal = finess.adresse.codePostal;
+    adresse.ville = finess.adresse.ville;
+  }
   const transportTypeId =
     getEnumIdFromLabel(mapping.transportType.options, champsById[mapping.transportType.id]?.stringValue ?? null) ??
     null;
@@ -212,7 +234,7 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
     lieuPrecision,
     transportTypeId: transportTypeId,
     societeTransport: champsById[mapping.transportSociete.id]?.stringValue ?? '',
-    finess: finessValue,
+    finess: finess?.code ?? '',
   };
   return lieux;
 };
@@ -334,6 +356,12 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
         mapping.professionnelResponsable.options,
         champsById[mapping.professionnelResponsable.id]?.stringValue ?? null,
       );
+      if (professionelType === DS_PROFESSION_TYPE.AUTRE_PROFESSIONNEL) {
+        return {
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
+          misEnCauseTypePrecisionId: null,
+        };
+      }
       if (professionelType === DS_PROFESSION_TYPE.PROFESSIONNEL_SANTE) {
         return {
           misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE,

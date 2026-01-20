@@ -221,7 +221,7 @@ export const createRequeteFromDematSocial = async ({
 
       const misEnCauseData = {
         rpps: s.misEnCause.rpps ?? null,
-        commentaire: s.misEnCause.commentaire ?? '',
+        autrePrecision: s.misEnCause.commentaire ?? '',
         ...(s.misEnCause.misEnCauseTypeId && { misEnCauseTypeId: s.misEnCause.misEnCauseTypeId }),
         ...(s.misEnCause.misEnCauseTypePrecisionId && {
           misEnCauseTypePrecisionId: s.misEnCause.misEnCauseTypePrecisionId,
