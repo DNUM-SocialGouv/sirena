@@ -1,8 +1,8 @@
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
-import type { PrismaClient } from '../../generated/client';
-import { seedAdministratives } from './add_seed_entities/seed_administratives';
-import { seedDirections } from './add_seed_entities/seed_directions';
-import { seedServices } from './add_seed_entities/seed_services';
+import type { PrismaClient } from '../../generated/client/index.js';
+import { getLoggerStore } from '../../src/libs/asyncLocalStorage.js';
+import { seedAdministratives } from './add_seed_entities/seed_administratives.js';
+import { seedDirections } from './add_seed_entities/seed_directions.js';
+import { seedServices } from './add_seed_entities/seed_services.js';
 
 export async function seedEntites(prisma: PrismaClient) {
   const logger = getLoggerStore();

@@ -1,6 +1,6 @@
 import { STATUT_TYPES } from '@sirena/common/constants';
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
-import type { PrismaClient } from '../../generated/client';
+import type { PrismaClient } from '../../generated/client/index.js';
+import { getLoggerStore } from '../../src/libs/asyncLocalStorage.js';
 
 export async function seedSuperAdmin(prisma: PrismaClient) {
   const logger = getLoggerStore();
