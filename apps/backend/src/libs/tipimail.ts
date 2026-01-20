@@ -115,13 +115,23 @@ async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Prom
     headers,
   });
 
-  const responseData = (await response.json()) as unknown;
+  let responseData: unknown;
+  try {
+    responseData = (await response.json()) as unknown;
+  } catch {
+    const text = await response.text();
+    throw new Error(
+      `Tipimail API error ${response.status}: Failed to parse JSON response. Response body: ${text.substring(0, 500)}`,
+    );
+  }
 
   if (response.status !== 200) {
+    const errorDetails =
+      responseData && typeof responseData === 'object' ? JSON.stringify(responseData, null, 2) : String(responseData);
     const msg =
       responseData && typeof responseData === 'object' && 'status' in responseData
-        ? `Tipimail API error ${(responseData as { status: string }).status}`
-        : `Tipimail API error ${response.status}`;
+        ? `Tipimail API error ${(responseData as { status: string }).status}: ${errorDetails}`
+        : `Tipimail API error ${response.status}: ${errorDetails}`;
     throw new Error(msg);
   }
   return responseData as T;
