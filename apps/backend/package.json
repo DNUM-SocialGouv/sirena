@@ -60,7 +60,7 @@
     "hono": "catalog:",
     "hono-openapi": "catalog:",
     "hono-pino": "^0.10.3",
-    "ioredis": "^5.8.2",
+    "ioredis": "^5.9.1",
     "jsonwebtoken": "^9.0.3",
     "minio": "^8.0.6",
     "openid-client": "^6.8.1",
