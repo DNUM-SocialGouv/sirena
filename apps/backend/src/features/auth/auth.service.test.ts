@@ -6,10 +6,10 @@ import type {
   UserInfoResponse,
 } from 'openid-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Entite, User } from '@/libs/prisma';
-import type { UserInfo } from './auth.type';
+import type { Entite, User } from '../../libs/prisma.js';
+import type { UserInfo } from './auth.type.js';
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {
     PC_DOMAIN: 'https://proconnect.example.com',
     PC_CLIENT_ID: 'test-client-id',
@@ -19,18 +19,18 @@ vi.mock('@/config/env', () => ({
   },
 }));
 
-vi.mock('@/config/openID', () => ({
+vi.mock('../../config/openID.js', () => ({
   authorizationParams: {
     scope: 'scope',
     response_type: 'response_type',
   },
 }));
 
-vi.mock('@/features/entites/entites.service', () => ({
+vi.mock('../entites/entites.service.js', () => ({
   getEntiteForUser: vi.fn(),
 }));
 
-vi.mock('@/features/users/users.service', () => ({
+vi.mock('../users/users.service.js', () => ({
   createUser: vi.fn(),
   getUserByEmail: vi.fn(),
 }));
@@ -52,7 +52,7 @@ async function loadAuthWithOpenIdMock() {
   }));
 
   const client = await import('openid-client');
-  const auth = await import('@/features/auth/auth.service');
+  const auth = await import('../auth/auth.service.js');
 
   return { client, auth };
 }
@@ -315,8 +315,8 @@ describe('auth.service', () => {
       const {
         auth: { getOrCreateUser },
       } = await loadAuthWithOpenIdMock();
-      const { getEntiteForUser } = await import('@/features/entites/entites.service');
-      const { createUser, getUserByEmail } = await import('@/features/users/users.service');
+      const { getEntiteForUser } = await import('../entites/entites.service.js');
+      const { createUser, getUserByEmail } = await import('../users/users.service.js');
 
       const existingUser = { id: 'user1', email: 'test@example.com' } as User;
       vi.mocked(getUserByEmail).mockResolvedValueOnce(existingUser);
@@ -343,8 +343,8 @@ describe('auth.service', () => {
       const {
         auth: { getOrCreateUser },
       } = await loadAuthWithOpenIdMock();
-      const { getEntiteForUser } = await import('@/features/entites/entites.service');
-      const { createUser, getUserByEmail } = await import('@/features/users/users.service');
+      const { getEntiteForUser } = await import('../entites/entites.service.js');
+      const { createUser, getUserByEmail } = await import('../users/users.service.js');
 
       const newUser = { id: 'user2', email: 'test@example.com' } as User;
       const mockEntite = { id: 'entite1' } as Entite;
@@ -383,8 +383,8 @@ describe('auth.service', () => {
       const {
         auth: { getOrCreateUser },
       } = await loadAuthWithOpenIdMock();
-      const { getEntiteForUser } = await import('@/features/entites/entites.service');
-      const { createUser, getUserByEmail } = await import('@/features/users/users.service');
+      const { getEntiteForUser } = await import('../entites/entites.service.js');
+      const { createUser, getUserByEmail } = await import('../users/users.service.js');
 
       vi.mocked(getUserByEmail).mockResolvedValue(null);
       vi.mocked(getEntiteForUser).mockResolvedValue(null);

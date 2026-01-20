@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { prisma } from '@/libs/prisma';
+import { prisma } from '../../libs/prisma.js';
 import {
   createUploadedFile,
   deleteUploadedFile,
@@ -9,7 +9,7 @@ import {
   setNoteFile,
 } from './uploadedFiles.service';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     uploadedFile: {
       findMany: vi.fn(),

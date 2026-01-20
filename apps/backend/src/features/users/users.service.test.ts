@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { entitesDescendantIdsCache } from '@/features/entites/entites.cache';
-import { prisma } from '@/libs/prisma';
+import { prisma } from '../../libs/prisma.js';
+import { entitesDescendantIdsCache } from '../entites/entites.cache.js';
 import {
   createUser,
   deleteUser,
@@ -11,7 +11,7 @@ import {
   patchUser,
 } from './users.service';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     user: {
       findMany: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock('@/libs/prisma', () => ({
   },
 }));
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {
     SUPER_ADMIN_LIST_EMAIL: 'coucou@test.fr;user@admin.fr',
   },

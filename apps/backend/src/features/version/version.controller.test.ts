@@ -1,10 +1,10 @@
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
-import VersionController from './version.controller';
+import VersionController from './version.controller.js';
 
 const client = testClient(VersionController);
 
-vi.mock('@/config/version.constant', () => ({
+vi.mock('../../config/version.constant.js', () => ({
   APP_VERSION: '1.0.0',
 }));
 

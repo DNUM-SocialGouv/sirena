@@ -1,4 +1,4 @@
-import type { Prisma } from '@/libs/prisma';
+import type { Prisma } from '../libs/prisma.js';
 
 // Case insensitive search
 const ci = (s: string) => ({ contains: s, mode: 'insensitive' as const });

@@ -5,32 +5,24 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.js",
-        "import": "./dist/index.js",
-        "require": "./dist/index.js"
-      }
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
     },
     "./helpers": {
-      "import": {
-        "types": "./dist/helpers/index.d.js",
-        "import": "./dist/helpers/index.js",
-        "require": "./dist/helpers/index.js"
-      }
+      "types": "./dist/helpers/index.d.ts",
+      "import": "./dist/helpers/index.js",
+      "require": "./dist/helpers/index.js"
     },
     "./types": {
-      "import": {
-        "types": "./dist/types/index.d.js",
-        "import": "./dist/types/index.js",
-        "require": "./dist/types/index.js"
-      }
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.js"
     },
     "./schemas": {
-      "import": {
-        "types": "./dist/schemas/index.d.js",
-        "import": "./dist/schemas/index.js",
-        "require": "./dist/schemas/index.js"
-      }
+      "types": "./dist/schemas/index.d.ts",
+      "import": "./dist/schemas/index.js",
+      "require": "./dist/schemas/index.js"
     }
   },
   "scripts": {

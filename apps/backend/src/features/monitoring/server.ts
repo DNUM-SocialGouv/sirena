@@ -1,8 +1,8 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
-import { envVars } from '@/config/env';
-import { createDefaultLogger } from '@/helpers/pino';
-import { loggerStorage } from '@/libs/asyncLocalStorage';
+import { envVars } from '../../config/env.js';
+import { createDefaultLogger } from '../../helpers/pino.js';
+import { loggerStorage } from '../../libs/asyncLocalStorage.js';
 
 interface MonitoringServerOptions {
   getMetrics: () => Promise<string>;

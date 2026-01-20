@@ -1,6 +1,6 @@
 import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { describe, expect, it } from 'vitest';
-import { AddressType, type RootChampFragmentFragment } from '@/libs/graffle';
+import { AddressType, type RootChampFragmentFragment } from '../../libs/graffle.js';
 import { mapDataForPrisma } from './dematSocial.adaptater';
 import rootMapping from './dematSocial.mapper';
 

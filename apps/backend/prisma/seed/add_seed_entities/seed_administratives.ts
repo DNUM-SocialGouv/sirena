@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { PrismaClient } from '../../../generated/client';
-import { parseCsv } from '../../helpers/parseCsv';
+import type { PrismaClient } from '../../../generated/client/index.js';
+import { parseCsv } from '../../helpers/parseCsv.js';
 
 const AdministrativeRowSchema = z.object({
   Libellé: z.string().min(1),

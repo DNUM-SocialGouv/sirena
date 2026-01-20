@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AppEnvSchema } from './env.schema';
+import { AppEnvSchema } from './env.schema.js';
 
 describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
   const baseConfig = {

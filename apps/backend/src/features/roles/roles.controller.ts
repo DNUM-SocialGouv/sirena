@@ -1,8 +1,8 @@
-import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import authMiddleware from '@/middlewares/auth.middleware';
-import userStatusMiddleware from '@/middlewares/userStatus.middleware';
-import { getRolesRoute } from './roles.route';
-import { getRoles } from './roles.service';
+import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { getRolesRoute } from './roles.route.js';
+import { getRoles } from './roles.service.js';
 
 const app = factoryWithLogs
   .createApp()

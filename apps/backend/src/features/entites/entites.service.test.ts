@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type Entite, prisma } from '@/libs/prisma';
+import { type Entite, prisma } from '../../libs/prisma.js';
 import {
   getDirectionsFromRequeteEntiteId,
   getDirectionsServicesFromRequeteEntiteId,
@@ -10,9 +10,9 @@ import {
   getEntiteForUser,
   getEntites,
   getEntitesByIds,
-} from './entites.service';
+} from './entites.service.js';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     entite: {
       findMany: vi.fn(),
@@ -38,6 +38,7 @@ const fakeEntiteBase: Omit<Entite, 'id'> = {
   ctcdCode: '1',
   regLib: 'Region 1',
   dptLib: 'Departement 1',
+  isActive: true,
 };
 
 const fakeEntite = (id: string): Entite => ({
@@ -111,6 +112,7 @@ describe('entites.service', () => {
           ctcdCode: '1',
           dptLib: '1',
           regLib: '1',
+          isActive: false,
         })
         .mockResolvedValueOnce({
           id: 'root1',
@@ -126,6 +128,7 @@ describe('entites.service', () => {
           ctcdCode: '1',
           dptLib: '1',
           regLib: '1',
+          isActive: false,
         });
 
       const result = await getDirectionsServicesFromRequeteEntiteId('requeteId', 'root1');
@@ -177,6 +180,7 @@ describe('entites.service', () => {
       ctcdCode: '1',
       regLib: 'Region 1',
       dptLib: 'Departement 1',
+      isActive: false,
     };
     const mockEntite2 = {
       id: '1',
@@ -192,6 +196,7 @@ describe('entites.service', () => {
       ctcdCode: '1',
       regLib: 'Region 1',
       dptLib: 'Departement 1',
+      isActive: true,
     };
 
     beforeEach(() => {
@@ -253,6 +258,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: false,
       };
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite]);
       vi.mocked(prisma.entite.count).mockResolvedValueOnce(1);
@@ -290,6 +296,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: false,
       };
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite]);
       vi.mocked(prisma.entite.count).mockResolvedValueOnce(1);
@@ -339,6 +346,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: true,
       };
       const mockEntite2 = {
         id: '1',
@@ -354,6 +362,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: false,
       };
 
       vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(mockEntite2).mockResolvedValueOnce(mockEntite1);
@@ -397,6 +406,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: false,
       };
       const mockEntite3 = {
         id: '3',
@@ -412,6 +422,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: false,
       };
 
       vi.mocked(prisma.entite.findMany)
@@ -457,6 +468,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: true,
       },
       {
         id: '4',
@@ -472,6 +484,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: true,
       },
       {
         id: '3',
@@ -487,6 +500,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: true,
       },
       {
         id: '2',
@@ -502,6 +516,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: false,
       },
       {
         id: '1',
@@ -517,6 +532,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: false,
       },
     ];
 
@@ -594,6 +610,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: true,
       };
       const mockEntite2 = {
         id: '1',
@@ -609,6 +626,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: true,
       };
 
       vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce(mockEntite2);
@@ -640,6 +658,7 @@ describe('entites.service', () => {
         ctcdCode: '1',
         regLib: 'Region 1',
         dptLib: 'Departement 1',
+        isActive: true,
       };
 
       vi.mocked(prisma.entite.findUnique).mockResolvedValue(mockEntite1);

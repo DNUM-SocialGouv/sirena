@@ -1,4 +1,4 @@
-import type { ChangeLog } from '@/libs/prisma';
+import type { ChangeLog } from '../../libs/prisma.js';
 
 export enum ChangeLogAction {
   CREATED = 'CREATED',

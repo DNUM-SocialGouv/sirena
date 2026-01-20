@@ -1,13 +1,14 @@
 import { serve } from '@hono/node-server';
-import { app } from './app';
-import { prisma } from './libs/prisma';
-import { setupOpenAPI } from './openAPI';
-import '@/config/env';
-import { getPrometheusContentType, getPrometheusMetrics } from '@/features/monitoring/metrics.backend';
-import { createMonitoringServer } from '@/features/monitoring/server';
-import { createDefaultLogger } from '@/helpers/pino';
-import { sseEventManager } from '@/helpers/sse';
-import '@/jobs/scheduler';
+import { app } from './app.js';
+import { prisma } from './libs/prisma.js';
+import { setupOpenAPI } from './openAPI.js';
+import './config/env.js';
+import { getPrometheusContentType, getPrometheusMetrics } from './features/monitoring/metrics.backend.js';
+import { createMonitoringServer } from './features/monitoring/server.js';
+import { createDefaultLogger } from './helpers/pino.js';
+import { sseEventManager } from './helpers/sse.js';
+import './jobs/scheduler/index.js';
+import { connection } from './config/redis.js';
 
 const logger = createDefaultLogger();
 setupOpenAPI(app);
@@ -74,6 +75,10 @@ const gracefulShutdown = async (signal: string) => {
     // Close SSE Redis subscriber
     await sseEventManager.cleanup();
     logger.info('SSE subscriber closed');
+
+    // Close Redis client
+    await connection.quit();
+    logger.info('Redis client disconnected');
 
     logger.info('Graceful shutdown completed');
     process.exit(0);

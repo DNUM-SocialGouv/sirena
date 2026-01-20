@@ -1,9 +1,9 @@
 import * as client from 'openid-client';
-import { envVars } from '@/config/env';
-import { authorizationParams } from '@/config/openID';
-import { getEntiteForUser } from '@/features/entites/entites.service';
-import { createUser, getUserByEmail } from '@/features/users/users.service';
-import type { UserInfo } from './auth.type';
+import { envVars } from '../../config/env.js';
+import { authorizationParams } from '../../config/openID.js';
+import { getEntiteForUser } from '../entites/entites.service.js';
+import { createUser, getUserByEmail } from '../users/users.service.js';
+import type { UserInfo } from './auth.type.js';
 
 export const configOptions =
   process.env.IS_HTTP_PROTOCOL_FORBIDDEN === 'True' ? undefined : { execute: [client.allowInsecureRequests] };

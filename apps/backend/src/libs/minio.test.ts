@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deleteFileFromMinio, uploadFileToMinio } from './minio';
+import { deleteFileFromMinio, uploadFileToMinio } from './minio.js';
 
-vi.mock('@/config/env', () => ({
+vi.mock('../config/env.js', () => ({
   envVars: {
     S3_BUCKET_ACCESS_KEY: 'test-access-key',
     S3_BUCKET_SECRET_KEY: 'test-secret-key',

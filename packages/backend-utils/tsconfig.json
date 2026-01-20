@@ -1,19 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
+    "target": "ES2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "allowImportingTsExtensions": false,
-    "noEmit": false,
     "sourceMap": true,
-    "baseUrl": "."
+    "strict": true,
+    "skipLibCheck": true
   },
   "include": ["src"]
 }

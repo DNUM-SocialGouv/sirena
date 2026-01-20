@@ -1,15 +1,15 @@
 import { throwHTTPException401Unauthorized } from '@sirena/backend-utils/helpers';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
-import { envVars } from '@/config/env';
-import { getSession } from '@/features/sessions/sessions.service';
-import { getUserById } from '@/features/users/users.service';
-import type { AppBindings } from '@/helpers/factories/appWithAuth';
-import factoryWithAuth from '@/helpers/factories/appWithAuth';
-import { getJwtExpirationDate, isJwtError, signAuthCookie, verify } from '@/helpers/jsonwebtoken';
-import { extractClientIp } from '@/helpers/middleware';
-import { sentryStorage } from '@/libs/asyncLocalStorage';
-import type { Session } from '@/libs/prisma';
+import { envVars } from '../config/env.js';
+import { getSession } from '../features/sessions/sessions.service.js';
+import { getUserById } from '../features/users/users.service.js';
+import type { AppBindings } from '../helpers/factories/appWithAuth.js';
+import factoryWithAuth from '../helpers/factories/appWithAuth.js';
+import { getJwtExpirationDate, isJwtError, signAuthCookie, verify } from '../helpers/jsonwebtoken.js';
+import { extractClientIp } from '../helpers/middleware.js';
+import { sentryStorage } from '../libs/asyncLocalStorage.js';
+import type { Session } from '../libs/prisma.js';
 
 const cleanAnSendError = (c: Context<AppBindings>, error: unknown, errorMessage: string, errorResponse: string) => {
   const logger = c.get('logger');

@@ -28,8 +28,8 @@ import {
   statutTypes,
   transportTypeLabels,
 } from '@sirena/common/constants';
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
-import type { PrismaClient } from '../../generated/client';
+import type { PrismaClient } from '../../generated/client/index.js';
+import { getLoggerStore } from '../../src/libs/asyncLocalStorage.js';
 
 async function seedAgeEnum(prisma: PrismaClient) {
   let added = 0;
@@ -194,7 +194,14 @@ async function seedMisEnCauseTypePrecisionEnum(prisma: PrismaClient) {
   // Helper to add precisions for a given parent type
   const addPrecisions = async (parentTypeId: string, precisionLabels: Record<string, string>) => {
     for (const [id, label] of Object.entries(precisionLabels)) {
-      const exists = await prisma.misEnCauseTypePrecisionEnum.findUnique({ where: { id, label } });
+      const exists = await prisma.misEnCauseTypePrecisionEnum.findUnique({
+        where: {
+          misEnCauseTypeId_id: {
+            misEnCauseTypeId: parentTypeId,
+            id,
+          },
+        },
+      });
       if (!exists) {
         await prisma.misEnCauseTypePrecisionEnum.create({
           data: {

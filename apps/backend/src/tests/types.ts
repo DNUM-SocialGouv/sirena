@@ -1,7 +1,7 @@
 import type { Context, Next } from 'hono';
 import type { MockedFunction } from 'vitest';
-import type { LogLevel, LogLevelConfig, RequestContext } from '@/helpers/middleware';
-import type { User } from '@/libs/prisma';
+import type { LogLevel, LogLevelConfig, RequestContext } from '../helpers/middleware.js';
+import type { User } from '../libs/prisma.js';
 
 export interface SentryScope {
   setContext(name: string, context: Record<string, unknown>): void;

@@ -1,22 +1,22 @@
 import { AUTH_ERROR_CODES } from '@sirena/common/constants';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { TokenEndpointResponse, TokenEndpointResponseHelpers, UserInfoResponse } from 'openid-client';
-import { envVars } from '@/config/env';
-import { deleteSession, getSession } from '@/features/sessions/sessions.service';
-import factoryWithLogs from '@/helpers/factories/appWithLogs';
-import { getPropertyTypes } from '@/helpers/logs';
-import { isPrismaUniqueConstraintError } from '@/helpers/prisma';
-import type { User } from '@/libs/prisma';
-import logoutMiddleware from '@/middlewares/logout.middleware';
-import { authUser, createRedirectUrl } from './auth.helper';
-import { getCallbackRoute, postLoginRoute, postLogoutProconnectRoute, postLogoutRoute } from './auth.route';
+import { envVars } from '../../config/env.js';
+import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import { getPropertyTypes } from '../../helpers/logs.js';
+import { isPrismaUniqueConstraintError } from '../../helpers/prisma.js';
+import type { User } from '../../libs/prisma.js';
+import logoutMiddleware from '../../middlewares/logout.middleware.js';
+import { deleteSession, getSession } from '../sessions/sessions.service.js';
+import { authUser, createRedirectUrl } from './auth.helper.js';
+import { getCallbackRoute, postLoginRoute, postLogoutProconnectRoute, postLogoutRoute } from './auth.route.js';
 import {
   authorizationCodeGrant,
   buildAuthorizationUrl,
   buildEndSessionUrl,
   fetchUserInfo,
   getOrCreateUser,
-} from './auth.service';
+} from './auth.service.js';
 
 const app = factoryWithLogs
   .createApp()

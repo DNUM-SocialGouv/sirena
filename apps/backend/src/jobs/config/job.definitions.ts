@@ -1,8 +1,8 @@
-import { envVars } from '@/config/env';
-import { fetchRequetes } from '../tasks/fetchRequetes.task';
-import { queueUnprocessedFiles } from '../tasks/queueUnprocessedFiles.task';
-import { retryAffectation } from '../tasks/retryAffectation.task';
-import { retryImportRequetes } from '../tasks/retryImportRequetes.task';
+import { envVars } from '../../config/env.js';
+import { fetchRequetes } from '../tasks/fetchRequetes.task.js';
+import { queueUnprocessedFiles } from '../tasks/queueUnprocessedFiles.task.js';
+import { retryAffectation } from '../tasks/retryAffectation.task.js';
+import { retryImportRequetes } from '../tasks/retryImportRequetes.task.js';
 
 export const jobHandlers = [
   {

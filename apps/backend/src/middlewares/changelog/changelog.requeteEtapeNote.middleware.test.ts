@@ -1,18 +1,18 @@
 import { testClient } from 'hono/testing';
 import type { PinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getNoteById } from '@/features/notes/notes.service';
-import appWithAuth from '@/helpers/factories/appWithAuth';
-import type { RequeteEtapeNote, UploadedFile } from '@/libs/prisma';
-import requeteEtapesNotesChangelogMiddleware from './changelog.requeteEtapeNote.middleware';
+import { createChangeLog } from '../../features/changelog/changelog.service.js';
+import { ChangeLogAction } from '../../features/changelog/changelog.type.js';
+import { getNoteById } from '../../features/notes/notes.service.js';
+import appWithAuth from '../../helpers/factories/appWithAuth.js';
+import type { RequeteEtapeNote, UploadedFile } from '../../libs/prisma.js';
+import requeteEtapesNotesChangelogMiddleware from './changelog.requeteEtapeNote.middleware.js';
 
-vi.mock('@/features/changelog/changelog.service', () => ({
+vi.mock('../../features/changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn(),
 }));
 
-vi.mock('@/features/notes/notes.service', () => ({
+vi.mock('../../features/notes/notes.service.js', () => ({
   getNoteById: vi.fn(),
 }));
 

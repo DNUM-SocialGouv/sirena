@@ -1,7 +1,7 @@
 import * as net from 'node:net';
 import type { Readable } from 'node:stream';
-import { envVars } from '@/config/env';
-import { getLoggerStore } from './asyncLocalStorage';
+import { envVars } from '../config/env.js';
+import { getLoggerStore } from './asyncLocalStorage.js';
 
 const { CLAMAV_HOST, CLAMAV_PORT } = envVars;
 const CLAMD_PORT = Number.parseInt(CLAMAV_PORT || '3310', 10);

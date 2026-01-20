@@ -1,11 +1,11 @@
 import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getEntiteChain } from '@/features/entites/entites.service';
-import { prisma } from '@/libs/prisma';
 import { sendTipimailEmail } from '@/libs/tipimail';
+import { prisma } from '../../libs/prisma.js';
 import { sendUserActivationEmail } from './users.notification.service';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     user: {
       findUnique: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock('@/libs/asyncLocalStorage', () => ({
   })),
 }));
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {
     FRONTEND_URI: 'https://sirena-sante.social.gouv.fr',
   },

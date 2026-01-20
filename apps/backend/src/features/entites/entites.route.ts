@@ -1,5 +1,5 @@
 import { openApiProtectedRoute, openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
-import { GetEntitiesChainResponseSchema, GetEntitiesResponseSchema } from './entites.schema';
+import { GetEntitiesChainResponseSchema, GetEntitiesResponseSchema } from './entites.schema.js';
 
 export const getEntitesRoute = openApiProtectedRoute({
   description: 'Get entites',

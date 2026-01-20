@@ -180,13 +180,7 @@ const getMisEnCauseDisplayValue = (
       return misEnCause?.commentaire?.trim() || precisionLabel || typeLabel;
 
     case MIS_EN_CAUSE_TYPE.ETABLISSEMENT:
-      return (
-        lieuDeSurvenue?.finess ||
-        lieuDeSurvenue?.lieuPrecision ||
-        lieuDeSurvenue?.adresse?.label ||
-        precisionLabel ||
-        typeLabel
-      );
+      return lieuDeSurvenue?.adresse?.label || precisionLabel || typeLabel;
 
     default:
       return precisionLabel || typeLabel;

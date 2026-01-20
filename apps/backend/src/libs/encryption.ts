@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { Transform } from 'node:stream';
-import { envVars } from '@/config/env';
+import { envVars } from '../config/env.js';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;

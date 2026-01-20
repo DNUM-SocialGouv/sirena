@@ -1,30 +1,39 @@
 import type { Job } from 'bullmq';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getLastCron } from '@/crons/crons.service';
-import { importRequetes } from '@/features/dematSocial/dematSocial.service';
-import { withCronLifecycle } from '@/jobs/config/job.utils';
-import { abortControllerStorage, loggerStorage } from '@/libs/asyncLocalStorage';
-import { fetchRequetes } from './fetchRequetes.task';
+import { getLastCron } from '../../crons/crons.service.js';
+import { importRequetes } from '../../features/dematSocial/dematSocial.service.js';
+import { abortControllerStorage, loggerStorage } from '../../libs/asyncLocalStorage.js';
+import { withCronLifecycle } from '../config/job.utils.js';
+import { fetchRequetes } from './fetchRequetes.task.js';
 
-vi.mock('@/crons/crons.service', () => ({
+vi.mock('../../config/env.js', () => ({
+  envVars: {
+    SENTRY_ENABLED: true,
+  },
+}));
+
+vi.mock('../../crons/crons.service.js', () => ({
   getLastCron: vi.fn(),
 }));
 
-vi.mock('@/jobs/config/job.utils', () => ({
+vi.mock('../config/job.utils.js', () => ({
   withCronLifecycle: vi.fn(),
 }));
 
-vi.mock('@/features/dematSocial/dematSocial.service', () => ({
+vi.mock('../../features/dematSocial/dematSocial.service.js', () => ({
   importRequetes: vi.fn(),
 }));
 
-vi.mock('@/libs/asyncLocalStorage', () => ({
+vi.mock('../../libs/asyncLocalStorage.js', () => ({
   abortControllerStorage: {
     run: vi.fn(),
   },
   loggerStorage: {
     run: vi.fn(),
   },
+  getSentryStore: () => ({
+    setContext: vi.fn(),
+  }),
   getLoggerStore: () => {
     return {
       warn: vi.fn(),
@@ -46,7 +55,7 @@ describe('fetchRequetes.task', () => {
   it('should call getLastCron, run importRequetes in context, and clear timeout', async () => {
     const cronDate = new Date(2000, 1, 1, 13);
     vi.setSystemTime(cronDate);
-    const resultData = { count: 1, errorCount: 0 };
+    const resultData = { count: 1, errorCount: 0, skippedCount: 0 };
 
     const mockJob = {
       name: 'fetch-requetes',

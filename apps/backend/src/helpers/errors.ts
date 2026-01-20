@@ -1,9 +1,9 @@
 import * as Sentry from '@sentry/node';
 import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { envVars } from '@/config/env';
-import { sentryStorage } from '@/libs/asyncLocalStorage';
-import type { AppBindings } from './factories/appWithLogs';
+import { envVars } from '../config/env.js';
+import { sentryStorage } from '../libs/asyncLocalStorage.js';
+import type { AppBindings } from './factories/appWithLogs.js';
 
 export const isHTTPException = (err: unknown): err is HTTPException => {
   const errObj = err as unknown as Record<string, unknown>;

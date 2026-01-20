@@ -1,10 +1,10 @@
-import { envVars } from './config/env';
-import { getPrometheusContentType, getPrometheusMetrics } from './features/monitoring/metrics.worker';
-import { createMonitoringServer } from './features/monitoring/server';
-import { createDefaultLogger } from './helpers/pino';
-import { cronWorker } from './jobs/worker/cron.worker';
-import { createFileProcessingWorker } from './jobs/workers/fileProcessing.worker';
-import './libs/instrument';
+import { envVars } from './config/env.js';
+import { getPrometheusContentType, getPrometheusMetrics } from './features/monitoring/metrics.worker.js';
+import { createMonitoringServer } from './features/monitoring/server.js';
+import { createDefaultLogger } from './helpers/pino.js';
+import { cronWorker } from './jobs/worker/cron.worker.js';
+import { createFileProcessingWorker } from './jobs/workers/fileProcessing.worker.js';
+import './libs/instrument.js';
 
 const logger = createDefaultLogger();
 

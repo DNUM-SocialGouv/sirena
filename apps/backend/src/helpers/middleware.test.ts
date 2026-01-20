@@ -1,8 +1,8 @@
 import type { Context } from 'hono';
 import { beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
-import type { Env } from '@/config/env.schema';
+import type { Env } from '../config/env.schema.js';
 
-const originalMiddleware = await vi.importActual<typeof import('./middleware')>('./middleware');
+const originalMiddleware = await vi.importActual<typeof import('./middleware.js')>('./middleware.js');
 const {
   getRawIpAddress,
   enrichUserContext,
@@ -16,8 +16,8 @@ const {
   UNKNOWN_VALUE,
 } = originalMiddleware;
 
-import type { User } from '@/libs/prisma';
-import type { LogLevel, LogLevelConfig, RequestContext } from './middleware';
+import type { User } from '../libs/prisma.js';
+import type { LogLevel, LogLevelConfig, RequestContext } from './middleware.js';
 
 interface MockRequest {
   header: MockedFunction<(name: string) => string | undefined>;
@@ -162,7 +162,7 @@ function createMockContext(overrides: Partial<MockContext> = {}): MockContext {
 
 function mockEnvironment(envVars: Partial<MockEnvVars>): void {
   vi.resetModules();
-  vi.doMock('@/config/env', () => ({
+  vi.doMock('../config/env.js', () => ({
     envVars: createMockEnvVars(envVars),
   }));
 }
@@ -195,7 +195,7 @@ function createContextWithHeaders(headers: HeaderMap): MockContext {
   });
 }
 
-vi.mock('@/config/env', () => ({
+vi.mock('../config/env.js', () => ({
   envVars: {
     LOG_LEVEL: 'info',
     LOG_LEVEL_SENTRY: 'warn',
@@ -234,7 +234,7 @@ describe('middleware utilities', () => {
 
     it('should return configured trusted headers', async () => {
       mockEnvironment({ TRUSTED_IP_HEADERS: [...TRUSTED_HEADERS] });
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
+      const middleware = await vi.importActual<typeof import('./middleware.js')>('./middleware.js');
       const headers = middleware.getTrustedIpHeaders();
       expect(headers).toEqual(TRUSTED_HEADERS);
     });
@@ -256,7 +256,7 @@ describe('middleware utilities', () => {
     it('should extract IP from x-forwarded-for header when trusted', async () => {
       mockEnvironment({ TRUSTED_IP_HEADERS: ['x-forwarded-for'] });
 
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
+      const middleware = await vi.importActual<typeof import('./middleware.js')>('./middleware.js');
       const context = createContextWithHeaders({
         'x-forwarded-for': TEST_IPS.IPV4_PRIVATE,
       });
@@ -267,7 +267,7 @@ describe('middleware utilities', () => {
     it('should handle comma-separated IPs in x-forwarded-for header when trusted', async () => {
       mockEnvironment({ TRUSTED_IP_HEADERS: ['x-forwarded-for'] });
 
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
+      const middleware = await vi.importActual<typeof import('./middleware.js')>('./middleware.js');
       const context = createContextWithHeaders({
         'x-forwarded-for': `${TEST_IPS.IPV4_PUBLIC}, ${TEST_IPS.IPV4_PRIVATE}`,
       });
@@ -278,7 +278,7 @@ describe('middleware utilities', () => {
     it('should reject invalid IP formats for security when trusted', async () => {
       mockEnvironment({ TRUSTED_IP_HEADERS: ['x-forwarded-for'] });
 
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
+      const middleware = await vi.importActual<typeof import('./middleware.js')>('./middleware.js');
       const context = createContextWithHeaders({
         'x-forwarded-for': `${TEST_IPS.INVALID}, script-injection, ${TEST_IPS.IPV4_PUBLIC}`,
       });
@@ -289,7 +289,7 @@ describe('middleware utilities', () => {
     it('should handle IPv6 addresses correctly when trusted', async () => {
       mockEnvironment({ TRUSTED_IP_HEADERS: ['x-forwarded-for'] });
 
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
+      const middleware = await vi.importActual<typeof import('./middleware.js')>('./middleware.js');
       const context = createContextWithHeaders({
         'x-forwarded-for': TEST_IPS.IPV6_PUBLIC,
       });
@@ -300,7 +300,7 @@ describe('middleware utilities', () => {
     it('should extract IP from x-real-ip header if x-forwarded-for not available when trusted', async () => {
       mockEnvironment({ TRUSTED_IP_HEADERS: ['x-forwarded-for', 'x-real-ip'] });
 
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
+      const middleware = await vi.importActual<typeof import('./middleware.js')>('./middleware.js');
       const context = createContextWithHeaders({
         'x-real-ip': TEST_IPS.IPV4_PRIVATE_10,
       });
@@ -313,7 +313,7 @@ describe('middleware utilities', () => {
         TRUSTED_IP_HEADERS: ['cf-connecting-ip', 'x-forwarded-for'],
       });
 
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
+      const middleware = await vi.importActual<typeof import('./middleware.js')>('./middleware.js');
       const context = createContextWithHeaders({
         'cf-connecting-ip': TEST_IPS.IPV4_PUBLIC,
         'x-forwarded-for': '198.51.100.1',
@@ -325,7 +325,7 @@ describe('middleware utilities', () => {
     it('should only trust configured headers', async () => {
       mockEnvironment({ TRUSTED_IP_HEADERS: ['x-real-ip'] });
 
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
+      const middleware = await vi.importActual<typeof import('./middleware.js')>('./middleware.js');
       const context = createContextWithHeaders({
         'x-forwarded-for': TEST_IPS.IPV4_PUBLIC,
         'x-real-ip': '198.51.100.1',
@@ -503,7 +503,7 @@ describe('middleware utilities', () => {
         LOG_LEVEL_SENTRY: 'error',
       });
 
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
+      const middleware = await vi.importActual<typeof import('./middleware.js')>('./middleware.js');
       const config = middleware.getLogLevelConfig();
 
       expect(config).toEqual({
@@ -533,7 +533,7 @@ describe('middleware utilities', () => {
       };
 
       mockEnvironment({ LOG_EXTRA_CONTEXT: extraContext });
-      const middleware = await vi.importActual<typeof import('./middleware')>('./middleware');
+      const middleware = await vi.importActual<typeof import('./middleware.js')>('./middleware.js');
       const result = middleware.getLogExtraContext();
       expect(result).toEqual(extraContext);
     });

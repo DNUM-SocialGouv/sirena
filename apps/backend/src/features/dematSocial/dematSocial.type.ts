@@ -1,6 +1,6 @@
 import type { Civilite } from '@sirena/common/constants';
-import type { RootChampFragmentFragment } from '@/libs/graffle';
-import type mapping from './dematSocial.mapper';
+import type { RootChampFragmentFragment } from '../../libs/graffle.js';
+import type mapping from './dematSocial.mapper.js';
 
 export type DematSocialCivilite = Extract<Civilite, 'M' | 'MME'>;
 

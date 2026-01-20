@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { prisma as prismaMock } from '@/libs/__mocks__/prisma';
+import { prisma as prismaMock } from '../../libs/__mocks__/prisma.js';
 import {
   type Identite,
   type PersonneConcernee,
@@ -7,7 +7,7 @@ import {
   type Requete,
   type RequeteEntite,
   type RequeteEtape,
-} from '@/libs/prisma';
+} from '../../libs/prisma.js';
 import {
   closeRequeteForEntite,
   enrichSituationWithTraitementDesFaits,
@@ -49,10 +49,17 @@ vi.mock('../entites/entites.service', () => ({
   getEntiteAscendanteId: vi.fn(),
 }));
 
+vi.mock('../../libs/minio.js', () => ({
+  deleteFileFromMinio: vi.fn(),
+  getFileBuffer: vi.fn(),
+  getFileStream: vi.fn(),
+  uploadFileToMinio: vi.fn(),
+}));
+
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { buildEntitesTraitement, getEntiteAscendanteId } from '../entites/entites.service';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     $transaction: vi.fn(),
     requeteEntite: {

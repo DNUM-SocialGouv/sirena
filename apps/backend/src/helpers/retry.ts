@@ -1,4 +1,4 @@
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
+import { getLoggerStore } from '../libs/asyncLocalStorage.js';
 
 export interface RetryOptions {
   maxRetries?: number;

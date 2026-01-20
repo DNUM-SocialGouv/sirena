@@ -1,11 +1,11 @@
 import * as Sentry from '@sentry/node';
 import { Worker } from 'bullmq';
-import { envVars } from '@/config/env';
-import { connection } from '@/config/redis';
-import { createDefaultLogger } from '@/helpers/pino';
-import { loggerStorage, sentryStorage } from '@/libs/asyncLocalStorage';
-import { jobHandlers } from '../config/job.definitions';
-import { cronQueue } from '../config/job.queues';
+import { envVars } from '../../config/env.js';
+import { connection } from '../../config/redis.js';
+import { createDefaultLogger } from '../../helpers/pino.js';
+import { loggerStorage, sentryStorage } from '../../libs/asyncLocalStorage.js';
+import { jobHandlers } from '../config/job.definitions.js';
+import { cronQueue } from '../config/job.queues.js';
 
 const handlerMap = Object.fromEntries(jobHandlers.map((j) => [j.name, j.task]));
 

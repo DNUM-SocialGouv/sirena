@@ -2,10 +2,10 @@ import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import { RECEPTION_TYPE, REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import { z } from 'zod';
-import { Prisma } from '@/libs/prisma';
-import { EntiteSchema } from '../entites/entites.schema';
-import { RequeteEtapeSchema } from '../requeteEtapes/requetesEtapes.schema';
-import { RequeteSchema } from '../requetes/requetes.schema';
+import { Prisma } from '../../libs/prisma.js';
+import { EntiteSchema } from '../entites/entites.schema.js';
+import { RequeteEtapeSchema } from '../requeteEtapes/requetesEtapes.schema.js';
+import { RequeteSchema } from '../requetes/requetes.schema.js';
 
 const RequeteEntiteSchema = z.object({
   requeteId: z.string(),
@@ -80,7 +80,7 @@ export const GetOtherEntitesAffectedResponseSchema = z.object({
   subAdministrativeEntites: z.array(SubAdministrativeEntitesSchema),
 });
 
-const receptionDate = z.iso.datetime().nullable().optional();
+const receptionDate = z.iso.date().nullable().optional();
 const receptionTypeId = z
   .enum([
     RECEPTION_TYPE.EMAIL,

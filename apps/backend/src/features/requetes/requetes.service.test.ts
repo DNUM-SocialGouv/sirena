@@ -15,13 +15,13 @@ import {
   TRANSPORT_TYPE,
 } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { sanitizeFilename, urlToStream } from '@/helpers/file';
-import { prisma } from '@/libs/__mocks__/prisma';
+import { sanitizeFilename, urlToStream } from '../../helpers/file.js';
+import { prisma } from '../../libs/__mocks__/prisma.js';
 import * as functionalIdService from './functionalId.service';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId, updateDateAndTypeRequete } from './requetes.service';
 import type { CreateRequeteFromDematSocialDto } from './requetes.type';
 
-vi.mock('@/libs/prisma');
+vi.mock('../../libs/prisma.js');
 vi.mock('./functionalId.service');
 vi.mock('@/helpers/file', () => ({
   sanitizeFilename: vi.fn(),

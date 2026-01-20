@@ -3,9 +3,10 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "build:ci": "tsc -p tsconfig.build.json && pnpm sentry:sourcemaps",
+    "build": "tsc -p tsconfig.build.json && cp -R generated dist/",
+    "build:ci": "tsc -p tsconfig.build.json && cp -R generated dist/ && pnpm sentry:sourcemaps",
     "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "node ./dist/index.js",
     "gql": "tsx src/gql.ts",
     "worker": "tsx src/start-worker.ts",
     "test": "vitest",
@@ -31,14 +32,14 @@
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/src/index.d.ts",
-        "default": "./dist/src/index.js"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       }
     },
     "./hc": {
       "import": {
-        "types": "./dist/src/hc.d.ts",
-        "default": "./dist/src/hc.js"
+        "types": "./dist/hc.d.ts",
+        "default": "./dist/hc.js"
       }
     }
   },
@@ -59,7 +60,7 @@
     "hono": "catalog:",
     "hono-openapi": "catalog:",
     "hono-pino": "^0.10.3",
-    "ioredis": "^5.8.2",
+    "ioredis": "^5.9.1",
     "jsonwebtoken": "^9.0.3",
     "minio": "^8.0.6",
     "openid-client": "^6.8.1",

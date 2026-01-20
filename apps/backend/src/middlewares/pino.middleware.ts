@@ -2,16 +2,16 @@ import type { Context, MiddlewareHandler } from 'hono';
 import { createFactory } from 'hono/factory';
 import { pinoLogger } from 'hono-pino';
 import pino from 'pino';
-import type { AppBindings as AuthAppBindings } from '@/helpers/factories/appWithAuth';
-import type { AppBindings as LogsAppBindings } from '@/helpers/factories/appWithLogs';
+import type { AppBindings as AuthAppBindings } from '../helpers/factories/appWithAuth.js';
+import type { AppBindings as LogsAppBindings } from '../helpers/factories/appWithLogs.js';
 import {
   createPinoContextData,
   enrichRequestContext,
   enrichUserContext,
   extractRequestContext,
-} from '@/helpers/middleware';
-import { createPinoConfig, createPrettyConfig } from '@/helpers/pino';
-import { loggerStorage } from '@/libs/asyncLocalStorage';
+} from '../helpers/middleware.js';
+import { createPinoConfig, createPrettyConfig } from '../helpers/pino.js';
+import { loggerStorage } from '../libs/asyncLocalStorage.js';
 
 // Pino middleware provides logging and can access optional auth data
 type PinoAppBindings = {

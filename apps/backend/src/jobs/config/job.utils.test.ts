@@ -1,11 +1,11 @@
 import * as Sentry from '@sentry/node';
 import type { Job } from 'bullmq';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { endCron, startCron } from '@/crons/crons.service';
-import { serializeError } from '@/helpers/errors';
-import { withCronLifecycle } from './job.utils';
+import { endCron, startCron } from '../../crons/crons.service.js';
+import { serializeError } from '../../helpers/errors.js';
+import { withCronLifecycle } from './job.utils.js';
 
-vi.mock('@/crons/crons.service', () => ({
+vi.mock('../../crons/crons.service.js', () => ({
   startCron: vi.fn(),
   endCron: vi.fn(),
 }));
@@ -14,7 +14,7 @@ vi.mock('@sentry/node', () => ({
   captureException: vi.fn(),
 }));
 
-vi.mock('@/helpers/errors', () => ({
+vi.mock('../../helpers/errors.js', () => ({
   serializeError: vi.fn((err) => ({ message: err.message })),
 }));
 
@@ -22,7 +22,7 @@ const mockSentryScope = {
   setContext: vi.fn(),
 };
 
-vi.mock('@/libs/asyncLocalStorage', () => ({
+vi.mock('../../libs/asyncLocalStorage.js', () => ({
   getSentryStore: vi.fn(() => mockSentryScope),
 }));
 
@@ -30,7 +30,7 @@ const mockEnvVars = {
   SENTRY_ENABLED: false,
 };
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   get envVars() {
     return mockEnvVars;
   },

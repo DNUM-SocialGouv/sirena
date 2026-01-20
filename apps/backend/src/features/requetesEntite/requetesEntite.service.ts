@@ -10,24 +10,24 @@ import {
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { generateRequeteId } from '@/features/requetes/functionalId.service';
-import { setFaitFiles } from '@/features/uploadedFiles/uploadedFiles.service';
-import { parseAdresseDomicile } from '@/helpers/address';
-import { sortObject } from '@/helpers/prisma/sort';
-import { createSearchConditionsForRequeteEntite } from '@/helpers/search';
-import { sseEventManager } from '@/helpers/sse';
-import { type Prisma, prisma } from '@/libs/prisma';
-import { buildEntitesTraitement, getEntiteAscendanteId } from '../entites/entites.service';
-import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service';
+import { parseAdresseDomicile } from '../../helpers/address.js';
+import { sortObject } from '../../helpers/prisma/sort.js';
+import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
+import { sseEventManager } from '../../helpers/sse.js';
+import { type Prisma, prisma } from '../../libs/prisma.js';
+import { createChangeLog } from '../changelog/changelog.service.js';
+import { ChangeLogAction } from '../changelog/changelog.type.js';
+import { buildEntitesTraitement, getEntiteAscendanteId } from '../entites/entites.service.js';
+import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
+import { generateRequeteId } from '../requetes/functionalId.service.js';
+import { setFaitFiles } from '../uploadedFiles/uploadedFiles.service.js';
 import {
   mapDeclarantToPrismaCreate,
   mapPersonneConcerneeToPrismaCreate,
   mapSituationFaitToPrismaCreate,
   mapSituationToPrismaCreate,
-} from './requetesEntite.mapper';
-import type { GetRequetesEntiteQuery } from './requetesEntite.type';
+} from './requetesEntite.mapper.js';
+import type { GetRequetesEntiteQuery } from './requetesEntite.type.js';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
 type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
@@ -740,10 +740,18 @@ const buildMisEnCauseUpdate = (misEnCauseData: SituationInput['misEnCause']) => 
   const misEnCauseTypePrecisionId = toNullableId(misEnCauseData.misEnCauseTypePrecision);
 
   return {
-    misEnCauseType: misEnCauseTypeId ? { connect: { id: misEnCauseTypeId } } : { disconnect: true },
-    misEnCauseTypePrecision: misEnCauseTypePrecisionId
-      ? { connect: { id: misEnCauseTypePrecisionId } }
-      : { disconnect: true },
+    misEnCauseType: misEnCauseTypeId ? { connect: { id: misEnCauseTypeId } } : { disconnect: true as const },
+    misEnCauseTypePrecision:
+      misEnCauseTypePrecisionId && misEnCauseTypeId
+        ? {
+            connect: {
+              misEnCauseTypeId_id: {
+                misEnCauseTypeId,
+                id: misEnCauseTypePrecisionId,
+              },
+            },
+          }
+        : { disconnect: true as const },
     autrePrecision: cleanNullOrEmpty(misEnCauseData.autrePrecision),
     rpps: misEnCauseData.rpps || null,
     commentaire: cleanNullOrEmpty(misEnCauseData.commentaire),

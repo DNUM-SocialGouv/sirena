@@ -1,9 +1,9 @@
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import type { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getUploadedFileById } from '@/features/uploadedFiles/uploadedFiles.service';
-import factoryWithChangelog from '@/helpers/factories/appWithChangeLog';
-import { isEqual, pick } from '@/helpers/object';
-import type { Prisma, UploadedFile } from '@/libs/prisma';
+import { createChangeLog } from '../../features/changelog/changelog.service.js';
+import type { ChangeLogAction } from '../../features/changelog/changelog.type.js';
+import { getUploadedFileById } from '../../features/uploadedFiles/uploadedFiles.service.js';
+import factoryWithChangelog from '../../helpers/factories/appWithChangeLog.js';
+import { isEqual, pick } from '../../helpers/object.js';
+import type { Prisma, UploadedFile } from '../../libs/prisma.js';
 
 const uploadedFileTrackedFields: (keyof UploadedFile)[] = [
   'id',

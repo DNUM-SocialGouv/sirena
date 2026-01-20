@@ -1,7 +1,7 @@
-import type { ChangeLogAction } from '@/features/changelog/changelog.type';
-import { getRequeteEtapeById } from '@/features/requeteEtapes/requetesEtapes.service';
-import type { RequeteEtape } from '@/libs/prisma';
-import createChangelogMiddleware from './changelog.middleware';
+import type { ChangeLogAction } from '../../features/changelog/changelog.type.js';
+import { getRequeteEtapeById } from '../../features/requeteEtapes/requetesEtapes.service.js';
+import type { RequeteEtape } from '../../libs/prisma.js';
+import createChangelogMiddleware from './changelog.middleware.js';
 
 type requeteEtapesChangelogMiddleware = {
   action: ChangeLogAction;

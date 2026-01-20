@@ -3,18 +3,18 @@ import { type EntiteType, RECEPTION_TYPE, REQUETE_STATUT_TYPES } from '@sirena/c
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { errorHandler } from '@/helpers/errors';
-import appWithLogs from '@/helpers/factories/appWithLogs';
-import { getFileStream } from '@/libs/minio';
-import type { UploadedFile } from '@/libs/prisma';
-import entitesMiddleware from '@/middlewares/entites.middleware';
-import pinoLogger from '@/middlewares/pino.middleware';
-import { convertDatesToStrings } from '@/tests/formatter';
-import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.service';
-import type { EntiteTraitement } from '../entites/entites.type';
-import { updateDateAndTypeRequete } from '../requetes/requetes.service';
-import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service';
-import RequetesEntiteController from './requetesEntite.controller';
+import { errorHandler } from '../../helpers/errors.js';
+import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import { getFileStream } from '../../libs/minio.js';
+import type { UploadedFile } from '../../libs/prisma.js';
+import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import pinoLogger from '../../middlewares/pino.middleware.js';
+import { convertDatesToStrings } from '../../tests/formatter.js';
+import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.service.js';
+import type { EntiteTraitement } from '../entites/entites.type.js';
+import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
+import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service.js';
+import RequetesEntiteController from './requetesEntite.controller.js';
 import {
   closeRequeteForEntite,
   getOtherEntitesAffected,
@@ -22,9 +22,9 @@ import {
   getRequetesEntite,
   hasAccessToRequete,
   updateStatusRequete,
-} from './requetesEntite.service';
+} from './requetesEntite.service.js';
 
-vi.mock('./requetesEntite.service', () => ({
+vi.mock('./requetesEntite.service.js', () => ({
   closeRequeteForEntite: vi.fn(),
   getRequeteEntiteById: vi.fn(),
   getRequetesEntite: vi.fn(),
@@ -37,11 +37,11 @@ vi.mock('../entites/entites.service', () => ({
   getDirectionsServicesFromRequeteEntiteId: vi.fn(),
 }));
 
-vi.mock('@/libs/minio', () => ({
+vi.mock('../../libs/minio.js', () => ({
   getFileStream: vi.fn(),
 }));
 
-vi.mock('@/middlewares/auth.middleware', () => {
+vi.mock('../../middlewares/auth.middleware.js', () => {
   return {
     default: (c: Context, next: Next) => {
       c.set('userId', 'id1');
@@ -50,7 +50,7 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/userStatus.middleware', () => {
+vi.mock('../../middlewares/userStatus.middleware.js', () => {
   return {
     default: (_: Context, next: Next) => {
       return next();
@@ -58,7 +58,7 @@ vi.mock('@/middlewares/userStatus.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/role.middleware', () => {
+vi.mock('../../middlewares/role.middleware.js', () => {
   return {
     default: () => {
       return (c: Context, next: Next) => {
@@ -69,7 +69,7 @@ vi.mock('@/middlewares/role.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/entites.middleware', () => ({
+vi.mock('../../middlewares/entites.middleware.js', () => ({
   default: vi.fn((c: Context, next: Next) => {
     c.set('entiteIds', ['e1', 'e2']);
     c.set('topEntiteId', 'entiteId');
@@ -77,12 +77,12 @@ vi.mock('@/middlewares/entites.middleware', () => ({
   }),
 }));
 
-vi.mock('@/features/uploadedFiles/uploadedFiles.service', () => ({
+vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
   getUploadedFileById: vi.fn(),
   isFileBelongsToRequete: vi.fn(),
 }));
 
-vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
+vi.mock('../../middlewares/changelog/changelog.requeteEtape.middleware.js', () => {
   return {
     default: () => (_: Context, next: Next) => {
       return next();
@@ -90,7 +90,7 @@ vi.mock('@/middlewares/changelog/changelog.requeteEtape.middleware', () => {
   };
 });
 
-vi.mock('../requetes/requetes.service', () => ({
+vi.mock('../requetes/requetes.service.js', () => ({
   updateDateAndTypeRequete: vi.fn(),
 }));
 
@@ -113,6 +113,7 @@ export const fakeRequeteEntite = {
     regionCode: '123',
     regLib: 'Region 1',
     dptLib: 'Departement 1',
+    isActive: true,
   },
   requete: {
     id: 'requeteId',
@@ -478,6 +479,7 @@ describe('RequetesEntite endpoints: /', () => {
         requeteId: 'requeteId',
         entiteId: 'e1',
         clotureReasonId: 'reason123',
+        createdById: 'id1',
         createdAt: new Date('2024-01-01T10:00:00.000Z'),
         updatedAt: new Date('2024-01-01T10:00:00.000Z'),
       },
@@ -531,6 +533,7 @@ describe('RequetesEntite endpoints: /', () => {
           requeteId: 'requeteId',
           entiteId: 'e1',
           clotureReasonId: 'reason123',
+          createdById: 'id1',
           createdAt: new Date('2024-01-01T10:00:00.000Z'),
           updatedAt: new Date('2024-01-01T10:00:00.000Z'),
         },
@@ -684,12 +687,8 @@ describe('RequetesEntite endpoints: /', () => {
       },
     };
 
-    const formatDate = (date: Date) => {
-      return date.toISOString();
-    };
-
     it('updates reception date and type and returns updated requete', async () => {
-      const newDate = new Date('2025-05-01T00:00:00.000Z');
+      const newDate = '2025-05-01';
       const updatedRequete = {
         ...baseRequeteEntite.requete,
         receptionDate: newDate,
@@ -703,7 +702,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id']['date-type'].$patch({
         param: { id: 'requeteId' },
         json: {
-          receptionDate: formatDate(newDate),
+          receptionDate: newDate,
           receptionTypeId: RECEPTION_TYPE.COURRIER,
           controls: { updatedAt: baseRequeteEntite.requete.updatedAt.toISOString() },
         },
@@ -715,7 +714,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(updateDateAndTypeRequete).toHaveBeenCalledWith(
         'requeteId',
-        { receptionDate: newDate, receptionTypeId: RECEPTION_TYPE.COURRIER },
+        { receptionDate: new Date(newDate), receptionTypeId: RECEPTION_TYPE.COURRIER },
         { updatedAt: baseRequeteEntite.requete.updatedAt.toISOString() },
       );
       expect(updateStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.EN_COURS);
@@ -731,7 +730,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id']['date-type'].$patch({
         param: { id: 'requeteId' },
         json: {
-          receptionDate: formatDate(new Date('2025-05-02T00:00:00.000Z')),
+          receptionDate: '2025-05-02',
           receptionTypeId: RECEPTION_TYPE.COURRIER,
         },
       });

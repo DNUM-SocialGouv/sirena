@@ -2,15 +2,21 @@ import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { errorHandler } from '@/helpers/errors';
-import appWithLogs from '@/helpers/factories/appWithLogs';
-import { deleteFileFromMinio, uploadFileToMinio } from '@/libs/minio';
-import type { UploadedFile } from '@/libs/prisma';
-import entitesMiddleware from '@/middlewares/entites.middleware';
-import extractUploadedFileMiddleware from '@/middlewares/upload.middleware';
-import { convertDatesToStrings } from '@/tests/formatter';
-import UploadedFilesController from './uploadedFiles.controller';
-import { createUploadedFile, deleteUploadedFile, getUploadedFileById } from './uploadedFiles.service';
+import { errorHandler } from '../../helpers/errors.js';
+import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import { deleteFileFromMinio, uploadFileToMinio } from '../../libs/minio.js';
+import type { UploadedFile } from '../../libs/prisma.js';
+import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import extractUploadedFileMiddleware from '../../middlewares/upload.middleware.js';
+import { convertDatesToStrings } from '../../tests/formatter.js';
+import UploadedFilesController from './uploadedFiles.controller.js';
+import { createUploadedFile, deleteUploadedFile, getUploadedFileById } from './uploadedFiles.service.js';
+
+vi.mock('../config/env.js', () => ({
+  envVars: {
+    SENTRY_ENABLED: false,
+  },
+}));
 
 const fakeFile: UploadedFile = {
   id: 'file1',
@@ -40,7 +46,7 @@ const fakeData: UploadedFile[] = [fakeFile];
 
 const signedUrl = 'https://test-signed-url.com';
 
-vi.mock('@/libs/minio', () => ({
+vi.mock('../../libs/minio.js', () => ({
   getFileStream: vi.fn(),
   uploadFileToMinio: vi.fn(() => {
     return Promise.resolve({
@@ -52,14 +58,14 @@ vi.mock('@/libs/minio', () => ({
   deleteFileFromMinio: vi.fn(),
 }));
 
-vi.mock('./uploadedFiles.service', () => ({
+vi.mock('./uploadedFiles.service.js', () => ({
   createUploadedFile: vi.fn(() => Promise.resolve(fakeFile)),
   getUploadedFiles: vi.fn(() => Promise.resolve({ data: fakeData, total: 1 })),
   getUploadedFileById: vi.fn(() => Promise.resolve(fakeFile)),
   deleteUploadedFile: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('@/middlewares/upload.middleware', () => ({
+vi.mock('../../middlewares/upload.middleware.js', () => ({
   default: vi.fn((c: Context, next: Next) => {
     c.set('uploadedFile', {
       buffer: Buffer.from('test pdf content'),
@@ -71,7 +77,7 @@ vi.mock('@/middlewares/upload.middleware', () => ({
   }),
 }));
 
-vi.mock('@/middlewares/userStatus.middleware', () => {
+vi.mock('../../middlewares/userStatus.middleware.js', () => {
   return {
     default: (_: Context, next: Next) => {
       return next();
@@ -79,7 +85,7 @@ vi.mock('@/middlewares/userStatus.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/entites.middleware', () => {
+vi.mock('../../middlewares/entites.middleware.js', () => {
   return {
     default: vi.fn((c: Context, next: Next) => {
       c.set('topEntiteId', 'e1');
@@ -88,7 +94,7 @@ vi.mock('@/middlewares/entites.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/auth.middleware', () => {
+vi.mock('../../middlewares/auth.middleware.js', () => {
   return {
     default: (c: Context, next: Next) => {
       c.set('userId', 'id10');
@@ -97,7 +103,7 @@ vi.mock('@/middlewares/auth.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/role.middleware', () => {
+vi.mock('../../middlewares/role.middleware.js', () => {
   return {
     default: () => {
       return (c: Context, next: Next) => {
@@ -108,7 +114,7 @@ vi.mock('@/middlewares/role.middleware', () => {
   };
 });
 
-vi.mock('@/middlewares/changelog/changelog.uploadedFile.middleware', () => {
+vi.mock('../../middlewares/changelog/changelog.uploadedFile.middleware.js', () => {
   return {
     default: () => {
       return (_c: Context, next: Next) => {
@@ -118,12 +124,12 @@ vi.mock('@/middlewares/changelog/changelog.uploadedFile.middleware', () => {
   };
 });
 
-vi.mock('@/jobs/queues/fileProcessing.queue', () => ({
+vi.mock('../../jobs/queues/fileProcessing.queue.js', () => ({
   addFileProcessingJob: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('@/helpers/errors', async () => {
-  const actual = await vi.importActual<typeof import('@/helpers/errors')>('@/helpers/errors');
+vi.mock('../../helpers/errors.js', async () => {
+  const actual = await vi.importActual<typeof import('../../helpers/errors.js')>('../../helpers/errors.js');
   return {
     ...actual,
     errorHandler: vi.fn((err, c) => {

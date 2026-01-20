@@ -1,10 +1,10 @@
 import type { Context } from 'hono';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import type { ChangeLogAction } from '@/features/changelog/changelog.type';
-import type { AppBindings } from '@/helpers/factories/appWithChangeLog';
-import factoryWithChangelog from '@/helpers/factories/appWithChangeLog';
-import { isEqual, pick } from '@/helpers/object';
-import type { Prisma } from '@/libs/prisma';
+import { createChangeLog } from '../../features/changelog/changelog.service.js';
+import type { ChangeLogAction } from '../../features/changelog/changelog.type.js';
+import type { AppBindings } from '../../helpers/factories/appWithChangeLog.js';
+import factoryWithChangelog from '../../helpers/factories/appWithChangeLog.js';
+import { isEqual, pick } from '../../helpers/object.js';
+import type { Prisma } from '../../libs/prisma.js';
 
 interface ChangelogConfig<T> {
   entity: string;

@@ -1,5 +1,5 @@
 import { CacheEntity } from '@sirena/backend-utils/helpers';
-import { getEntiteDescendantIds } from '@/features/entites/entites.service';
+import { getEntiteDescendantIds } from './entites.service.js';
 
 export const entitesDescendantIdsCache = new CacheEntity<
   Awaited<ReturnType<typeof getEntiteDescendantIds>>,

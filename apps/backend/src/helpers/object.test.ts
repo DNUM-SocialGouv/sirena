@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isEqual, pick } from './object';
+import { isEqual, pick } from './object.js';
 
 describe('pick', () => {
   it('should pick specified keys from an object', () => {

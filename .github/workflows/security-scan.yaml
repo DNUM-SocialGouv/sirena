@@ -41,7 +41,7 @@ jobs:
           severity: "CRITICAL,HIGH,MEDIUM"
 
       - name: Upload Trivy filesystem scan results
-        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v3
+        uses: github/codeql-action/upload-sarif@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v3
         if: always()
         with:
           sarif_file: "trivy-fs-results.sarif"
@@ -107,7 +107,7 @@ jobs:
           fi
 
       - name: Upload Trivy container scan results
-        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v3
+        uses: github/codeql-action/upload-sarif@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v3
         if: always()
         with:
           sarif_file: "trivy-container-${{ matrix.image }}-results.sarif"
@@ -137,7 +137,7 @@ jobs:
           severity: "CRITICAL,HIGH,MEDIUM"
 
       - name: Upload Trivy IaC scan results
-        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v3
+        uses: github/codeql-action/upload-sarif@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v3
         if: always()
         with:
           sarif_file: "trivy-iac-results.sarif"

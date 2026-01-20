@@ -1,5 +1,5 @@
-import { importRequetes } from '@/features/dematSocial/dematSocial.service';
-import { getLoggerStore } from '@/libs/asyncLocalStorage';
+import { importRequetes } from '../../src/features/dematSocial/dematSocial.service.js';
+import { getLoggerStore } from '../../src/libs/asyncLocalStorage.js';
 
 export async function seedRequeteFromDematSocial() {
   const logger = getLoggerStore();

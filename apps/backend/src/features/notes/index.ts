@@ -1,4 +1,4 @@
-export { default as NotesController } from './notes.controller';
-export * from './notes.route';
-export * from './notes.schema';
-export * from './notes.service';
+export { default as NotesController } from './notes.controller.js';
+export * from './notes.route.js';
+export * from './notes.schema.js';
+export * from './notes.service.js';

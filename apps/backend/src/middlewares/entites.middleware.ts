@@ -1,6 +1,6 @@
-import { getEntiteAscendanteId } from '@/features/entites/entites.service';
-import { getUserEntities } from '@/features/users/users.service';
-import factoryWithRole from '@/helpers/factories/appWithRole';
+import { getEntiteAscendanteId } from '../features/entites/entites.service.js';
+import { getUserEntities } from '../features/users/users.service.js';
+import factoryWithRole from '../helpers/factories/appWithRole.js';
 
 const app = factoryWithRole.createMiddleware(async (c, next) => {
   const userId = c.get('userId');

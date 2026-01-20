@@ -1,19 +1,19 @@
 import { type Job, Worker } from 'bullmq';
 import type { Logger } from 'pino';
-import { envVars } from '@/config/env';
-import { connection } from '@/config/redis';
-import { recordFileProcessing } from '@/features/monitoring/metrics.worker';
+import { envVars } from '../../config/env.js';
+import { connection } from '../../config/redis.js';
+import { recordFileProcessing } from '../../features/monitoring/metrics.worker.js';
 import {
   getUploadedFileByIdInternal,
   tryAcquireProcessingLock,
   updateFileProcessingStatus,
-} from '@/features/uploadedFiles/uploadedFiles.service';
-import { createDefaultLogger } from '@/helpers/pino';
-import { getLoggerStore, loggerStorage } from '@/libs/asyncLocalStorage';
-import { getDetectedViruses, isFileInfected, scanBuffer, scanStream } from '@/libs/clamav';
-import { getFileBuffer, getFileStream, uploadFileToMinio } from '@/libs/minio';
-import { isPdfMimeType, sanitizePdf } from '@/libs/pdfSanitizer';
-import type { FileProcessingJobData } from '../queues/fileProcessing.queue';
+} from '../../features/uploadedFiles/uploadedFiles.service.js';
+import { createDefaultLogger } from '../../helpers/pino.js';
+import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
+import { getDetectedViruses, isFileInfected, scanBuffer, scanStream } from '../../libs/clamav.js';
+import { getFileBuffer, getFileStream, uploadFileToMinio } from '../../libs/minio.js';
+import { isPdfMimeType, sanitizePdf } from '../../libs/pdfSanitizer.js';
+import type { FileProcessingJobData } from '../queues/fileProcessing.queue.js';
 
 interface ProcessingResult {
   scanStatus: string;

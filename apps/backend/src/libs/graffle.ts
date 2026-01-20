@@ -3,7 +3,7 @@
 
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { Graffle } from 'graffle';
-import { envVars } from '@/config/env';
+import { envVars } from '../config/env.js';
 
 export {
   AddressType,
@@ -13,7 +13,7 @@ export {
   GetDossiersMetadataDocument,
   GetInstructeursDocument,
   type RootChampFragmentFragment,
-} from '../../generated/graphql/graphql';
+} from '../graphql/graphql.js';
 
 type TransportInit = { raw?: { signal?: AbortSignal } };
 

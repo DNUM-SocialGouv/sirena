@@ -2,8 +2,8 @@ import { PERMISSION_ERROR, STATUT_TYPES } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AppBindings } from '@/helpers/factories/appWithAuth';
-import type { createMockPinoLogger } from '@/tests/test-utils';
+import type { AppBindings } from '../helpers/factories/appWithAuth.js';
+import type { createMockPinoLogger } from '../tests/test-utils.js';
 import userStatusMiddleware from './userStatus.middleware';
 
 interface UserStatusMockContextOverrides {

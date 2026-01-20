@@ -1,7 +1,7 @@
 import type { LieuType, Motif } from '@sirena/common/constants';
 import { describe, expect, it } from 'vitest';
-import { checkRequired, computeEntitesFromMotifs, leaf, rootNode, runDecisionTree } from './decisionTree';
-import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types';
+import { checkRequired, computeEntitesFromMotifs, leaf, rootNode, runDecisionTree } from './decisionTree.js';
+import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types.js';
 
 describe('leaf helper', () => {
   it('should build a DecisionLeaf with given parameters', () => {

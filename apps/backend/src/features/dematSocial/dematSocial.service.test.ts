@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '@/features/requetes/requetes.service';
-import { graffle } from '@/libs/graffle';
-import { getRequetes, importRequetes } from './dematSocial.service';
+import { graffle } from '../../libs/graffle.js';
+import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '../requetes/requetes.service.js';
+import { getRequetes, importRequetes } from './dematSocial.service.js';
 
 const sendMock = vi.fn();
 
-vi.mock('@/libs/graffle', () => {
+vi.mock('../../libs/graffle.js', () => {
   const gqlMock = vi.fn(() => ({ send: sendMock }));
   const transportMock = vi.fn(() => ({ gql: gqlMock }));
 
@@ -21,14 +21,14 @@ vi.mock('@/libs/graffle', () => {
   };
 });
 
-vi.mock('@/config/env', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {
     DEMAT_SOCIAL_API_DIRECTORY: 9999,
     DEMAT_SOCIAL_INSTRUCTEUR_ID: 'Instructeur-123',
   },
 }));
 
-vi.mock('@/libs/asyncLocalStorage', () => {
+vi.mock('../../libs/asyncLocalStorage.js', () => {
   const info = vi.fn();
   const error = vi.fn();
   const warn = vi.fn();
@@ -48,7 +48,7 @@ vi.mock('@/libs/asyncLocalStorage', () => {
   };
 });
 
-vi.mock('@/features/requetes/requetes.service', () => ({
+vi.mock('../../features/requetes/requetes.service.js', () => ({
   getRequeteByDematSocialId: vi.fn(),
   createRequeteFromDematSocial: vi.fn().mockResolvedValue({
     id: 'requete-1',
@@ -57,12 +57,12 @@ vi.mock('@/features/requetes/requetes.service', () => ({
   }),
 }));
 
-vi.mock('@/features/dematSocial/dematSocialImportFailure.service', () => ({
+vi.mock('../../features/dematSocial/dematSocialImportFailure.service.js', () => ({
   createImportFailure: vi.fn(),
   markFailureAsResolved: vi.fn(),
 }));
 
-vi.mock('./dematSocial.adaptater', () => ({
+vi.mock('./dematSocial.adaptater.js', () => ({
   mapDataForPrisma: vi.fn((_champs, dossierNumber, dateDepot) => ({
     dematSocialId: dossierNumber,
     createdAt: typeof dateDepot === 'string' ? new Date(dateDepot) : dateDepot,
@@ -70,7 +70,7 @@ vi.mock('./dematSocial.adaptater', () => ({
   })),
 }));
 
-vi.mock('@/features/dematSocial/affectation/affectation', () => ({
+vi.mock('../../features/dematSocial/affectation/affectation.js', () => ({
   assignEntitesToRequeteTask: vi.fn().mockResolvedValue(undefined),
 }));
 

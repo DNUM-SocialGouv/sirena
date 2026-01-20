@@ -1,11 +1,11 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test purposes> */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createChangeLog } from '@/features/changelog/changelog.service';
-import { prisma } from '@/libs/prisma';
-import { sendTipimailEmail } from '@/libs/tipimail';
-import { sendDeclarantAcknowledgmentEmail } from './declarants.notification.service';
+import { prisma } from '../../libs/prisma.js';
+import { sendTipimailEmail } from '../../libs/tipimail.js';
+import { createChangeLog } from '../changelog/changelog.service.js';
+import { sendDeclarantAcknowledgmentEmail } from './declarants.notification.service.js';
 
-vi.mock('@/libs/prisma', () => ({
+vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     requete: {
       findUnique: vi.fn(),
@@ -16,15 +16,15 @@ vi.mock('@/libs/prisma', () => ({
   },
 }));
 
-vi.mock('@/libs/tipimail', () => ({
+vi.mock('../../libs/tipimail.js', () => ({
   sendTipimailEmail: vi.fn(),
 }));
 
-vi.mock('@/features/changelog/changelog.service', () => ({
+vi.mock('../changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn(),
 }));
 
-vi.mock('@/libs/asyncLocalStorage', () => ({
+vi.mock('../../libs/asyncLocalStorage.js', () => ({
   getLoggerStore: vi.fn(() => ({
     warn: vi.fn(),
     debug: vi.fn(),

@@ -160,9 +160,14 @@ function RouteComponent() {
     await executePendingSave();
   }, [executePendingSave]);
 
-  const handleCloseModalSuccess = useCallback(async () => {
+  const handleBeforeClose = useCallback(async () => {
     await executePendingSave();
   }, [executePendingSave]);
+
+  const handleCloseModalSuccess = useCallback(() => {
+    setPendingSaveData(null);
+    navigate({ to: '/request/$requestId', params: { requestId } });
+  }, [navigate, requestId]);
 
   const handleModalDismiss = useCallback(() => {
     setPendingSaveData(null);
@@ -226,6 +231,7 @@ function RouteComponent() {
               otherEntitiesAffected={computedOtherEntities}
               customDescription={`Attention : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${requestId}.`}
               triggerButtonRef={saveButtonRef}
+              onBeforeClose={handleBeforeClose}
               onCancel={handleCloseModalCancel}
               onSuccess={handleCloseModalSuccess}
               onDismiss={handleModalDismiss}
