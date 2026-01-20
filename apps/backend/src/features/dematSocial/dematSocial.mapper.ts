@@ -29,7 +29,6 @@ const estVictime = {
     },
   ],
 };
-1;
 
 /* estVictime = true start */
 
