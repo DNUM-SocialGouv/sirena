@@ -9,7 +9,7 @@ import {
   getUserEntities,
   getUsers,
   patchUser,
-} from './users.service';
+} from './users.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -30,7 +30,7 @@ vi.mock('../../config/env.js', () => ({
   },
 }));
 
-vi.mock('@/features/entites/entites.cache', () => ({
+vi.mock('../entites/entites.cache.js', () => ({
   entitesDescendantIdsCache: {
     get: vi.fn(),
     set: vi.fn(),
@@ -39,7 +39,7 @@ vi.mock('@/features/entites/entites.cache', () => ({
   },
 }));
 
-vi.mock('@/helpers/sse', () => ({
+vi.mock('../../helpers/sse.js', () => ({
   sseEventManager: {
     emitUserStatus: vi.fn(),
     emitUserList: vi.fn(),

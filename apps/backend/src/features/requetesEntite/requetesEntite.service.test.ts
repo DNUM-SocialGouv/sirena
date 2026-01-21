@@ -20,7 +20,7 @@ import {
   updateRequeteDeclarant,
   updateRequeteSituation,
   updateStatusRequete,
-} from './requetesEntite.service';
+} from './requetesEntite.service.js';
 
 vi.mock('@sirena/backend-utils', () => ({
   helpers: {
@@ -34,17 +34,17 @@ vi.mock('@sirena/backend-utils', () => ({
   },
 }));
 
-vi.mock('@/features/changelog/changelog.service', () => ({
+vi.mock('../changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock('@/helpers/sse', () => ({
+vi.mock('../../helpers/sse.js', () => ({
   sseEventManager: {
     emitRequeteUpdated: vi.fn(),
   },
 }));
 
-vi.mock('../entites/entites.service', () => ({
+vi.mock('../entites/entites.service.js', () => ({
   buildEntitesTraitement: vi.fn(),
   getEntiteAscendanteId: vi.fn(),
 }));
@@ -58,7 +58,7 @@ vi.mock('../../libs/minio.js', () => ({
 
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { createChangeLog } from '../changelog/changelog.service.js';
-import { buildEntitesTraitement, getEntiteAscendanteId } from '../entites/entites.service';
+import { buildEntitesTraitement, getEntiteAscendanteId } from '../entites/entites.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -114,6 +114,7 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
       nom: 'Etape 1',
       requeteId: 'req123',
       clotureReasonId: null,
+      createdById: 'user1',
     },
   ],
 };
@@ -128,6 +129,7 @@ const fakeEtape = {
   nom: 'Etape 1',
   estPartagee: false,
   clotureReasonId: null,
+  createdById: 'user1',
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -655,6 +657,7 @@ describe('requetesEntite.service', () => {
         lienAutrePrecision: null,
         declarantDeId: 'req123',
         participantDeId: null,
+        aAutrePersonnes: false,
         createdAt: oldTimestamp,
         updatedAt: oldTimestamp,
       };
@@ -722,6 +725,7 @@ describe('requetesEntite.service', () => {
         lienAutrePrecision: null,
         declarantDeId: 'req123',
         participantDeId: null,
+        aAutrePersonnes: false,
         createdAt: timestamp,
         updatedAt: timestamp,
       };
@@ -793,6 +797,7 @@ describe('requetesEntite.service', () => {
         lienAutrePrecision: null,
         declarantDeId: 'req123',
         participantDeId: null,
+        aAutrePersonnes: false,
         createdAt: timestamp,
         updatedAt: timestamp,
       };
@@ -903,6 +908,11 @@ describe('requetesEntite.service', () => {
           faitSituationId: null,
           demarchesEngageesId: null,
           canDelete: true,
+          scanResult: null,
+          sanitizeStatus: 'PENDING',
+          scanStatus: 'PENDING',
+          safeFilePath: 'test',
+          processingError: null,
         },
       ]);
       await expect(
@@ -935,6 +945,11 @@ describe('requetesEntite.service', () => {
           faitSituationId: null,
           demarchesEngageesId: null,
           canDelete: true,
+          scanResult: null,
+          sanitizeStatus: 'PENDING',
+          scanStatus: 'PENDING',
+          safeFilePath: 'test',
+          processingError: null,
         },
         {
           id: 'fileid2',
@@ -953,6 +968,11 @@ describe('requetesEntite.service', () => {
           faitSituationId: null,
           demarchesEngageesId: null,
           canDelete: true,
+          scanResult: null,
+          sanitizeStatus: 'PENDING',
+          scanStatus: 'PENDING',
+          safeFilePath: 'test',
+          processingError: null,
         },
       ]);
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
@@ -1140,6 +1160,11 @@ describe('requetesEntite.service', () => {
           faitSituationId: null,
           demarchesEngageesId: null,
           canDelete: true,
+          scanResult: null,
+          sanitizeStatus: 'PENDING',
+          scanStatus: 'PENDING',
+          safeFilePath: 'test',
+          processingError: null,
         },
       ]);
 
@@ -1918,7 +1943,7 @@ describe('requetesEntite.service', () => {
           entiteName: 'Root Entity',
           directionServiceId: undefined,
           directionServiceName: undefined,
-          chain: [{ id: 'root1', nomComplet: 'Root Entity' }],
+          chain: [{ id: 'root1', nomComplet: 'Root Entity', label: 'Root Entity' }],
         },
       ]);
 
@@ -1931,7 +1956,7 @@ describe('requetesEntite.service', () => {
         entiteName: 'Root Entity',
         directionServiceId: undefined,
         directionServiceName: undefined,
-        chain: [{ id: 'root1', nomComplet: 'Root Entity' }],
+        chain: [{ id: 'root1', nomComplet: 'Root Entity', label: 'Root Entity' }],
       });
       expect(buildEntitesTraitement).toHaveBeenCalledWith([
         {
@@ -1963,8 +1988,8 @@ describe('requetesEntite.service', () => {
           directionServiceId: 'dir1',
           directionServiceName: 'Direction Service',
           chain: [
-            { id: 'root1', nomComplet: 'Root Entity' },
-            { id: 'dir1', nomComplet: 'Direction Service' },
+            { id: 'root1', nomComplet: 'Root Entity', label: 'Root Entity' },
+            { id: 'dir1', nomComplet: 'Direction Service', label: 'Direction Service' },
           ],
         },
       ]);
@@ -1979,8 +2004,8 @@ describe('requetesEntite.service', () => {
         directionServiceId: 'dir1',
         directionServiceName: 'Direction Service',
         chain: [
-          { id: 'root1', nomComplet: 'Root Entity' },
-          { id: 'dir1', nomComplet: 'Direction Service' },
+          { id: 'root1', nomComplet: 'Root Entity', label: 'Root Entity' },
+          { id: 'dir1', nomComplet: 'Direction Service', label: 'Direction Service' },
         ],
       });
       expect(buildEntitesTraitement).toHaveBeenCalledWith([
@@ -2041,7 +2066,7 @@ describe('requetesEntite.service', () => {
           entiteName: 'Root 1',
           directionServiceId: undefined,
           directionServiceName: undefined,
-          chain: [{ id: 'root1', nomComplet: 'Root 1' }],
+          chain: [{ id: 'root1', nomComplet: 'Root 1', label: 'Root 1' }],
         },
         {
           entiteId: 'root1',
@@ -2049,8 +2074,8 @@ describe('requetesEntite.service', () => {
           directionServiceId: 'dir1',
           directionServiceName: 'Direction 1',
           chain: [
-            { id: 'root1', nomComplet: 'Root 1' },
-            { id: 'dir1', nomComplet: 'Direction 1' },
+            { id: 'root1', nomComplet: 'Root 1', label: 'Root 1' },
+            { id: 'dir1', nomComplet: 'Direction 1', label: 'Direction 1' },
           ],
         },
       ]);
@@ -2063,7 +2088,7 @@ describe('requetesEntite.service', () => {
         entiteName: 'Root 1',
         directionServiceId: undefined,
         directionServiceName: undefined,
-        chain: [{ id: 'root1', nomComplet: 'Root 1' }],
+        chain: [{ id: 'root1', nomComplet: 'Root 1', label: 'Root 1' }],
       });
       expect(result.traitementDesFaits?.entites?.[1]).toEqual({
         entiteId: 'root1',
@@ -2071,8 +2096,8 @@ describe('requetesEntite.service', () => {
         directionServiceId: 'dir1',
         directionServiceName: 'Direction 1',
         chain: [
-          { id: 'root1', nomComplet: 'Root 1' },
-          { id: 'dir1', nomComplet: 'Direction 1' },
+          { id: 'root1', nomComplet: 'Root 1', label: 'Root 1' },
+          { id: 'dir1', nomComplet: 'Direction 1', label: 'Direction 1' },
         ],
       });
     });
@@ -2105,8 +2130,8 @@ describe('requetesEntite.service', () => {
           directionServiceId: 'dir1',
           directionServiceName: 'Direction 1',
           chain: [
-            { id: 'root1', nomComplet: 'Root 1' },
-            { id: 'dir1', nomComplet: 'Direction 1' },
+            { id: 'root1', nomComplet: 'Root 1', label: 'Root 1' },
+            { id: 'dir1', nomComplet: 'Direction 1', label: 'Direction 1' },
           ],
         },
       ]);
@@ -2120,8 +2145,8 @@ describe('requetesEntite.service', () => {
         directionServiceId: 'dir1',
         directionServiceName: 'Direction 1',
         chain: [
-          { id: 'root1', nomComplet: 'Root 1' },
-          { id: 'dir1', nomComplet: 'Direction 1' },
+          { id: 'root1', nomComplet: 'Root 1', label: 'Root 1' },
+          { id: 'dir1', nomComplet: 'Direction 1', label: 'Direction 1' },
         ],
       });
     });
@@ -2150,7 +2175,7 @@ describe('requetesEntite.service', () => {
           entiteName: 'Root Entity',
           directionServiceId: undefined,
           directionServiceName: undefined,
-          chain: [{ id: 'root1', nomComplet: 'Root Entity' }],
+          chain: [{ id: 'root1', nomComplet: 'Root Entity', label: 'Root Entity' }],
         },
       ]);
 
@@ -2180,7 +2205,12 @@ describe('requetesEntite.service', () => {
   describe('updatePrioriteRequete', () => {
     it('should update the priority of the requeteEntite to HAUTE', async () => {
       vi.clearAllMocks();
-      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: null });
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        prioriteId: null,
+        requeteId: '123',
+        entiteId: 'ent123',
+        statutId: 'NOUVEAU',
+      });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         prioriteId: 'HAUTE',
@@ -2198,7 +2228,12 @@ describe('requetesEntite.service', () => {
 
     it('should update the priority of the requeteEntite to MOYENNE', async () => {
       vi.clearAllMocks();
-      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: null });
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        prioriteId: null,
+        requeteId: '123',
+        entiteId: 'ent123',
+        statutId: 'NOUVEAU',
+      });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         prioriteId: 'MOYENNE',
@@ -2216,7 +2251,12 @@ describe('requetesEntite.service', () => {
 
     it('should update the priority of the requeteEntite to BASSE', async () => {
       vi.clearAllMocks();
-      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: null });
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        prioriteId: null,
+        requeteId: '123',
+        entiteId: 'ent123',
+        statutId: 'NOUVEAU',
+      });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         prioriteId: 'BASSE',
@@ -2234,7 +2274,12 @@ describe('requetesEntite.service', () => {
 
     it('should set priority to null when null is provided', async () => {
       vi.clearAllMocks();
-      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: 'HAUTE' });
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        prioriteId: 'HAUTE',
+        requeteId: '123',
+        entiteId: 'ent123',
+        statutId: 'NOUVEAU',
+      });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         prioriteId: null,
@@ -2255,7 +2300,12 @@ describe('requetesEntite.service', () => {
       vi.mocked(prisma.requeteEntite.update).mockReset();
       vi.mocked(createChangeLog).mockReset();
 
-      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: 'BASSE' });
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        prioriteId: 'BASSE',
+        requeteId: '123',
+        entiteId: 'ent123',
+        statutId: 'NOUVEAU',
+      });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         prioriteId: 'HAUTE',
@@ -2278,7 +2328,12 @@ describe('requetesEntite.service', () => {
       vi.mocked(prisma.requeteEntite.update).mockReset();
       vi.mocked(createChangeLog).mockReset();
 
-      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: 'HAUTE' });
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        prioriteId: 'HAUTE',
+        requeteId: '123',
+        entiteId: 'ent123',
+        statutId: 'NOUVEAU',
+      });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         prioriteId: 'HAUTE',
@@ -2294,7 +2349,12 @@ describe('requetesEntite.service', () => {
       vi.mocked(prisma.requeteEntite.update).mockReset();
       vi.mocked(createChangeLog).mockReset();
 
-      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({ prioriteId: 'BASSE' });
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        prioriteId: 'BASSE',
+        requeteId: '123',
+        entiteId: 'ent123',
+        statutId: 'NOUVEAU',
+      });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         prioriteId: 'HAUTE',

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
-import { checkHealth } from './health.service';
+import { checkHealth } from './health.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {

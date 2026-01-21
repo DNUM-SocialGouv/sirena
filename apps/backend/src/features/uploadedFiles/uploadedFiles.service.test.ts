@@ -7,7 +7,7 @@ import {
   getUploadedFiles,
   isUserOwner,
   setNoteFile,
-} from './uploadedFiles.service';
+} from './uploadedFiles.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -22,7 +22,7 @@ vi.mock('../../libs/prisma.js', () => ({
   },
 }));
 
-vi.mock('@/helpers/sse', () => ({
+vi.mock('../../helpers/sse.js', () => ({
   sseEventManager: {
     emitFileStatus: vi.fn(),
   },
@@ -47,6 +47,11 @@ const mockUploadedFile = {
   faitSituationId: '1',
   demarchesEngageesId: null,
   canDelete: true,
+  scanStatus: 'PENDING',
+  sanitizeStatus: 'PENDING',
+  safeFilePath: 'path/to/safe/file.pdf',
+  scanResult: null,
+  processingError: null,
 };
 
 describe('uploadedFiles.service.ts', () => {
@@ -297,6 +302,11 @@ describe('uploadedFiles.service.ts', () => {
           faitSituationId: null,
           demarchesEngageesId: null,
           canDelete: true,
+          scanStatus: 'PENDING',
+          sanitizeStatus: 'PENDING',
+          safeFilePath: 'path/to/safe/file.pdf',
+          scanResult: null,
+          processingError: null,
         },
         {
           id: 'f2',
@@ -315,6 +325,11 @@ describe('uploadedFiles.service.ts', () => {
           faitSituationId: null,
           demarchesEngageesId: null,
           canDelete: true,
+          scanStatus: 'PENDING',
+          sanitizeStatus: 'PENDING',
+          safeFilePath: 'path/to/safe/file.pdf',
+          scanResult: null,
+          processingError: null,
         },
       ];
       mockedUploadedFile.findMany.mockResolvedValueOnce(updatedRows);
@@ -353,6 +368,11 @@ describe('uploadedFiles.service.ts', () => {
           faitSituationId: null,
           demarchesEngageesId: null,
           canDelete: true,
+          scanStatus: 'PENDING',
+          sanitizeStatus: 'PENDING',
+          safeFilePath: 'path/to/safe/file.pdf',
+          scanResult: null,
+          processingError: null,
         },
       ];
       mockedUploadedFile.findMany.mockResolvedValueOnce(updatedRows);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RootChampFragmentFragment } from '../../libs/graffle.js';
-import { ChampMappingError, EnumNotFound } from './dematSocial.error';
+import { ChampMappingError, EnumNotFound } from './dematSocial.error.js';
 
 describe('dematSocial.error.ts', () => {
   describe('ChampMappingError', () => {
@@ -19,7 +19,7 @@ describe('dematSocial.error.ts', () => {
     });
 
     it('cause est optionnelle', () => {
-      const champ = {} as unknown as import('./dematSocial.type').RepetitionChamp;
+      const champ = {} as unknown as import('./dematSocial.type.js').RepetitionChamp;
       const err = new ChampMappingError(champ, 'OtherType', 'Oops');
 
       expect(err.cause).toBeUndefined();

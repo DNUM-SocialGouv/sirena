@@ -1,9 +1,9 @@
 import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getEntiteChain } from '@/features/entites/entites.service';
-import { sendTipimailEmail } from '@/libs/tipimail';
 import { prisma } from '../../libs/prisma.js';
-import { sendUserActivationEmail } from './users.notification.service';
+import { sendTipimailEmail } from '../../libs/tipimail.js';
+import { getEntiteChain } from '../entites/entites.service.js';
+import { sendUserActivationEmail } from './users.notification.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -13,15 +13,15 @@ vi.mock('../../libs/prisma.js', () => ({
   },
 }));
 
-vi.mock('@/libs/tipimail', () => ({
+vi.mock('../../libs/tipimail.js', () => ({
   sendTipimailEmail: vi.fn(),
 }));
 
-vi.mock('@/features/entites/entites.service', () => ({
+vi.mock('../entites/entites.service.js', () => ({
   getEntiteChain: vi.fn(),
 }));
 
-vi.mock('@/libs/asyncLocalStorage', () => ({
+vi.mock('../../libs/asyncLocalStorage.js', () => ({
   getLoggerStore: vi.fn(() => ({
     warn: vi.fn(),
     debug: vi.fn(),
@@ -65,7 +65,9 @@ describe('users.notification.service.ts', () => {
   describe('sendUserActivationEmail()', () => {
     it('should send activation email successfully for ENTITY_ADMIN', async () => {
       mockedPrisma.findUnique.mockResolvedValueOnce(mockUser);
-      mockedGetEntiteChain.mockResolvedValueOnce([{ id: 'entite1', nomComplet: 'ARS Normandie' }]);
+      mockedGetEntiteChain.mockResolvedValueOnce([
+        { id: 'entite1', nomComplet: 'ARS Normandie', label: 'Normandie', entiteMereId: null },
+      ]);
       mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' });
 
       await sendUserActivationEmail('user1');
@@ -106,7 +108,9 @@ describe('users.notification.service.ts', () => {
         role: { id: ROLES.SUPER_ADMIN, label: 'Super administrateur' },
       };
       mockedPrisma.findUnique.mockResolvedValueOnce(superAdminUser);
-      mockedGetEntiteChain.mockResolvedValueOnce([{ id: 'entite1', nomComplet: 'ARS Normandie' }]);
+      mockedGetEntiteChain.mockResolvedValueOnce([
+        { id: 'entite1', nomComplet: 'ARS Normandie', entiteMereId: null, label: 'Normandie' },
+      ]);
       mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' });
 
       await sendUserActivationEmail('user1');
@@ -132,7 +136,9 @@ describe('users.notification.service.ts', () => {
         role: { id: ROLES.WRITER, label: 'Agent en écriture' },
       };
       mockedPrisma.findUnique.mockResolvedValueOnce(writerUser);
-      mockedGetEntiteChain.mockResolvedValueOnce([{ id: 'entite1', nomComplet: 'ARS Normandie' }]);
+      mockedGetEntiteChain.mockResolvedValueOnce([
+        { id: 'entite1', nomComplet: 'ARS Normandie', label: 'Normandie', entiteMereId: null },
+      ]);
       mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' });
 
       await sendUserActivationEmail('user1');
@@ -158,7 +164,9 @@ describe('users.notification.service.ts', () => {
         role: { id: ROLES.READER, label: 'Agent en lecture' },
       };
       mockedPrisma.findUnique.mockResolvedValueOnce(readerUser);
-      mockedGetEntiteChain.mockResolvedValueOnce([{ id: 'entite1', nomComplet: 'ARS Normandie' }]);
+      mockedGetEntiteChain.mockResolvedValueOnce([
+        { id: 'entite1', nomComplet: 'ARS Normandie', label: 'Normandie', entiteMereId: null },
+      ]);
       mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' });
 
       await sendUserActivationEmail('user1');
@@ -184,7 +192,9 @@ describe('users.notification.service.ts', () => {
         role: { id: ROLES.NATIONAL_STEERING, label: 'Pilotage national' },
       };
       mockedPrisma.findUnique.mockResolvedValueOnce(nationalSteeringUser);
-      mockedGetEntiteChain.mockResolvedValueOnce([{ id: 'entite1', nomComplet: 'ARS Normandie' }]);
+      mockedGetEntiteChain.mockResolvedValueOnce([
+        { id: 'entite1', nomComplet: 'ARS Normandie', label: 'Normandie', entiteMereId: null },
+      ]);
       mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' });
 
       await sendUserActivationEmail('user1');
@@ -206,9 +216,14 @@ describe('users.notification.service.ts', () => {
     it('should build entite chain correctly', async () => {
       mockedPrisma.findUnique.mockResolvedValueOnce(mockUser);
       mockedGetEntiteChain.mockResolvedValueOnce([
-        { id: 'entite1', nomComplet: 'ARS Normandie' },
-        { id: 'entite2', nomComplet: "Direction de l'Autonomie" },
-        { id: 'entite3', nomComplet: 'UA 14' },
+        { id: 'entite1', nomComplet: 'ARS Normandie', label: 'Normandie', entiteMereId: null },
+        {
+          id: 'entite2',
+          nomComplet: "Direction de l'Autonomie",
+          label: "Direction de l'Autonomie",
+          entiteMereId: 'entite1',
+        },
+        { id: 'entite3', nomComplet: 'UA 14', label: 'UA 14', entiteMereId: 'entite2' },
       ]);
       mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' });
 
@@ -306,7 +321,9 @@ describe('users.notification.service.ts', () => {
 
     it('should handle email sending failure gracefully', async () => {
       mockedPrisma.findUnique.mockResolvedValueOnce(mockUser);
-      mockedGetEntiteChain.mockResolvedValueOnce([{ id: 'entite1', nomComplet: 'ARS Normandie' }]);
+      mockedGetEntiteChain.mockResolvedValueOnce([
+        { id: 'entite1', nomComplet: 'ARS Normandie', label: 'Normandie', entiteMereId: null },
+      ]);
       const emailError = new Error('Email service unavailable');
       mockedSendTipimailEmail.mockRejectedValueOnce(emailError);
 
@@ -331,7 +348,9 @@ describe('users.notification.service.ts', () => {
         role: { id: ROLES.ENTITY_ADMIN, label: 'Custom Label' },
       };
       mockedPrisma.findUnique.mockResolvedValueOnce(userWithUnmappedRole);
-      mockedGetEntiteChain.mockResolvedValueOnce([{ id: 'entite1', nomComplet: 'ARS Normandie' }]);
+      mockedGetEntiteChain.mockResolvedValueOnce([
+        { id: 'entite1', nomComplet: 'ARS Normandie', label: 'Normandie', entiteMereId: null },
+      ]);
       mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' });
 
       await sendUserActivationEmail('user1');

@@ -20,11 +20,11 @@ vi.mock('../../config/env.js', () => ({
   },
 }));
 
-vi.mock('@/features/sessions/sessions.service', () => ({
+vi.mock('../sessions/sessions.service.js', () => ({
   getSession: vi.fn(),
 }));
 
-vi.mock('@/features/users/users.service', () => ({
+vi.mock('../features/users/users.service.js', () => ({
   getUserById: vi.fn(),
 }));
 

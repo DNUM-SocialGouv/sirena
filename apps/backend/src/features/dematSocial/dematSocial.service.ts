@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
 import * as Sentry from '@sentry/node';
 import { envVars } from '../../config/env.js';
 import { serializeError } from '../../helpers/errors.js';
@@ -64,12 +63,8 @@ export const getRequetes = async (createdSince?: Date) => {
   return allDossiers;
 };
 
-export const getRequetesMetaData = async () => {
-  const data = await graffle
-    .gql(GetDossiersMetadataDocument)
-    .send({ demarcheNumber: envVars.DEMAT_SOCIAL_API_DIRECTORY });
-  writeFile('./dossiersMetaData.json', JSON.stringify(data, null, 2), 'utf-8');
-};
+export const getRequetesMetaData = async () =>
+  await graffle.gql(GetDossiersMetadataDocument).send({ demarcheNumber: envVars.DEMAT_SOCIAL_API_DIRECTORY });
 
 export const getRequete = async (id: number) => {
   return await graffle.gql(GetDossierDocument).send({ dossierNumber: id });
@@ -93,8 +88,8 @@ export const getDemandeur = (d: DemandeurData): Demandeur => ({
 
 export const getMandataire = (d: DossierData, email: string): Mandataire => ({
   email,
-  nom: d?.mandataireFirstName || '',
-  prenom: d?.mandataireLastName || '',
+  nom: d?.mandataireLastName || '',
+  prenom: d?.mandataireFirstName || '',
 });
 
 /**
@@ -332,7 +327,7 @@ export const importRequetes = async (createdSince?: Date) => {
   for (const dossier of dossiers) {
     // legacy, we don't support
     // TODO: remove after some time
-    if (dossier.number <= 280843) {
+    if (dossier.number < 282994) {
       skippedCount += 1;
       continue;
     }

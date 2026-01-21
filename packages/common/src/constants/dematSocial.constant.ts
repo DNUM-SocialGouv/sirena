@@ -203,6 +203,7 @@ export const dsProfessionDomicileTypeLabels: Record<DsProfessionDomicileType, st
 export const DS_PROFESSION_TYPE = {
   PROFESSIONNEL_SANTE: 'PROFESSIONNEL_SANTE',
   PROFESSIONNEL_SOCIAL: 'PROFESSIONNEL_SOCIAL',
+  AUTRE_PROFESSIONNEL: 'AUTRE_PROFESSIONNEL',
   NPJM: 'NPJM',
   AUTRE: 'AUTRE',
 } as const;
@@ -212,6 +213,8 @@ export type DsProfessionType = keyof typeof DS_PROFESSION_TYPE;
 export const dsProfessionTypeLabels: Record<DsProfessionType, string> = {
   PROFESSIONNEL_SANTE: 'Un professionnel de santé, par exemple : médecin, dentiste, infirmier, aide-soignant',
   PROFESSIONNEL_SOCIAL: 'Un travailleur social, par exemple : éducateur, assistant social',
+  AUTRE_PROFESSIONNEL:
+    'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
   NPJM: 'Un tuteur, curateur ou mandataire judiciaire',
   AUTRE: 'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
 };

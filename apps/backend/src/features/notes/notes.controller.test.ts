@@ -16,7 +16,7 @@ vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
   getRequeteEtapeById: vi.fn(),
 }));
 
-vi.mock('./notes.service', () => ({
+vi.mock('./notes.service.js', () => ({
   addNote: vi.fn(),
   getNoteById: vi.fn(),
   updateNote: vi.fn(),

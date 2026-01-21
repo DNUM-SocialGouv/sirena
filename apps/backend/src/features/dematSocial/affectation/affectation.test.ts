@@ -12,7 +12,7 @@ vi.mock('./decisionTree.js', () => ({
   runDecisionTree: vi.fn(),
 }));
 
-vi.mock('./geo/geoIndex', () => ({
+vi.mock('./geo/geoIndex.js', () => ({
   findGeoByPostalCode: vi.fn(),
 }));
 
@@ -20,7 +20,7 @@ vi.mock('../../requeteEtapes/requetesEtapes.service.js', () => ({
   createDefaultRequeteEtapes: vi.fn(),
 }));
 
-vi.mock('@/libs/asyncLocalStorage', () => ({
+vi.mock('../../../libs/asyncLocalStorage.js', () => ({
   getLoggerStore: vi.fn(() => ({
     error: vi.fn(),
     info: vi.fn(),

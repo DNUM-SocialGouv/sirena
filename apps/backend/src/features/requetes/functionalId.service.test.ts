@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
-import { determineSource, generateRequeteId } from './functionalId.service';
+import { determineSource, generateRequeteId } from './functionalId.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {

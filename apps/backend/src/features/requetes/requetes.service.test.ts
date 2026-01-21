@@ -17,20 +17,24 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sanitizeFilename, urlToStream } from '../../helpers/file.js';
 import { prisma } from '../../libs/__mocks__/prisma.js';
-import * as functionalIdService from './functionalId.service';
-import { createRequeteFromDematSocial, getRequeteByDematSocialId, updateDateAndTypeRequete } from './requetes.service';
-import type { CreateRequeteFromDematSocialDto } from './requetes.type';
+import * as functionalIdService from './functionalId.service.js';
+import {
+  createRequeteFromDematSocial,
+  getRequeteByDematSocialId,
+  updateDateAndTypeRequete,
+} from './requetes.service.js';
+import type { CreateRequeteFromDematSocialDto } from './requetes.type.js';
 
 vi.mock('../../libs/prisma.js');
-vi.mock('./functionalId.service');
-vi.mock('@/helpers/file', () => ({
+vi.mock('./functionalId.service.js');
+vi.mock('../../helpers/file.js', () => ({
   sanitizeFilename: vi.fn(),
   urlToStream: vi.fn(),
 }));
-vi.mock('@/libs/minio', () => ({
+vi.mock('../../libs/minio.js', () => ({
   uploadFileToMinio: vi.fn(),
 }));
-vi.mock('@/libs/asyncLocalStorage', async () => ({
+vi.mock('../../libs/asyncLocalStorage.js', async () => ({
   getLoggerStore: () => {
     return {
       error: vi.fn(),
@@ -528,6 +532,7 @@ describe('requetes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         lienAutrePrecision: null,
+        aAutrePersonnes: false,
       });
 
       vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
@@ -555,6 +560,7 @@ describe('requetes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         lienAutrePrecision: null,
+        aAutrePersonnes: false,
       });
 
       vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
@@ -584,6 +590,7 @@ describe('requetes.service.ts', () => {
           ...situation.misEnCause,
           id: '1',
           misEnCauseTypePrecisionId: null,
+          autrePrecision: '',
         });
 
         vi.mocked(prisma.demarchesEngagees.create).mockResolvedValueOnce({
@@ -753,6 +760,7 @@ describe('requetes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         lienAutrePrecision: null,
+        aAutrePersonnes: false,
       });
 
       vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({
@@ -774,6 +782,7 @@ describe('requetes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         lienAutrePrecision: null,
+        aAutrePersonnes: false,
       });
 
       dto.situations.forEach((situation) => {
@@ -788,6 +797,7 @@ describe('requetes.service.ts', () => {
           commentaire: '',
           id: '1',
           misEnCauseTypePrecisionId: null,
+          autrePrecision: '',
         });
 
         vi.mocked(prisma.demarchesEngagees.create).mockResolvedValueOnce({

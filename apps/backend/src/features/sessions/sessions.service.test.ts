@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../libs/prisma.js';
-import { SessionCreationSchema } from './sessions.schema';
-import { createSession, deleteSession, getSession } from './sessions.service';
+import { SessionCreationSchema } from './sessions.schema.js';
+import { createSession, deleteSession, getSession } from './sessions.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
