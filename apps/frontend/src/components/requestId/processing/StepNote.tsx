@@ -1,6 +1,7 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import clsx from 'clsx';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
+import { capitalizeFirst } from '@/components/requestId/sections/helpers';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 
@@ -77,7 +78,7 @@ export const StepNote = ({
           </span>
           par{' '}
           <span className="fr-text--bold">
-            {author.prenom} {author.nom}
+            {capitalizeFirst(author.prenom)} {capitalizeFirst(author.nom)}
           </span>
         </div>
         <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
