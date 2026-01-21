@@ -284,7 +284,7 @@ describe('notes.controller.ts', () => {
         fileIds: ['f1', 'f2'],
       });
 
-      expect(setNoteFile).toHaveBeenCalledWith('note1', ['f1', 'f2'], 'entiteId');
+      expect(setNoteFile).toHaveBeenCalledWith('note1', ['f1', 'f2'], 'entiteId', 'test-user-id');
     });
   });
 

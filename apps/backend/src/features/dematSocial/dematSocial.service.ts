@@ -218,9 +218,8 @@ export const importSingleDossier = async (
 
     step = 'mapDataForPrisma';
     const demandeur = getDemandeur(data.dossier.demandeur);
-    const mandataire = getMandataire(data.dossier, demandeur.email);
+    const mandataire = getMandataire(data.dossier, data.dossier.usager.email);
     const requete = mapDataForPrisma(data.dossier.champs, dossierNumber, data.dossier.dateDepot, mandataire, demandeur);
-
     const ext = data.dossier.pdf?.filename?.split('.')?.pop() ?? '';
 
     const pdf = data.dossier.pdf
