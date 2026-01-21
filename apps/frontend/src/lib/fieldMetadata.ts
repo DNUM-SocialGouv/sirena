@@ -23,7 +23,7 @@ export const declarantFieldMetadata: Record<string, FieldMetadata> = {
       'Le déclarant est un professionnel qui signale des dysfonctionnements et événements indésirables graves (EIG)',
     type: 'checkbox',
   },
-  autresPrecisions: { label: 'Autres précisions', type: 'textarea' },
+  autresPrecisions: { label: 'Autres précisions concernant le déclarant', type: 'textarea' },
 };
 
 export const personneConcerneeFieldMetadata: Record<string, FieldMetadata> = {
