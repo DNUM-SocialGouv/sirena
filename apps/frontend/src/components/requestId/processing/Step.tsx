@@ -8,7 +8,7 @@ import { clsx } from 'clsx';
 import { memo, useState } from 'react';
 import { ButtonLink } from '@/components/common/ButtonLink';
 import { StatusMenu } from '@/components/common/statusMenu';
-import { formatFullName } from '@/components/requestId/sections/helpers';
+import { capitalizeFirst } from '@/components/requestId/sections/helpers';
 import { useDeleteProcessingStep, useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useUpdateProcessingStepName } from '@/hooks/mutations/updateProcessingStepName.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
@@ -44,7 +44,7 @@ const formatStepCreationInfo = (
   });
 
   if (createdBy) {
-    const creatorName = formatFullName({ prenom: createdBy.prenom, nom: createdBy.nom });
+    const creatorName = `${capitalizeFirst(createdBy.prenom)} ${capitalizeFirst(createdBy.nom)}`;
     return `Ajouté par ${creatorName} le ${formattedDate}`;
   }
 
