@@ -1,22 +1,22 @@
-﻿Entité administrative (parent);Direction (libellé long);Direction (libéllé court)
-ARS Normandie;Réclamation signalement;Réclamation
-ARS Normandie;Direction de l'Offre de Soin;DOS
-ARS Normandie;Direction de l'Autonomie;DA
-ARS Normandie;DAMTN;DAMTN
-ARS Normandie;Direction de la Santé Publique;DSP
-Conseil départemental de L'Eure;Direction Autonomie Santé;DAS
-Conseil départemental de la Manche;Maison Départementale de l’autonomie;Autonomie
-DDETS de la Manche;Pôle Solidarités actives et délégation départementale aux droits des femmes et à l'égalité;Solidarités
-DDETSPP de l'Orne;Service protection des personnes vulnérables;Protection
-DDETS du Calvados;Pôle hébergement/logement;Hébergement
-Conseil départemental du Calvados;Direction Autonomie Santé;Autonomie
-DDETS de la Seine-Maritime;Direction Autonomie Santé;Autonomie
-ARS Corse;Direction de l'offre médico-sociale;Médico-social
-ARS Hauts-de-France;Direction de l'offre de soins;DOS
-ARS Hauts-de-France;Direction de l'offre médico-sociale;Médico-social
-ARS Nouvelle-Aquitaine;Direction de l'Offre de Soins;DOS
-ARS Nouvelle-Aquitaine;Direction de la Protection de la Santé et de l'Autonomie;DPSA
-ARS Auvergne-Rhône-Alpes;Direction Autonomie;Autonomie
-ARS Auvergne-Rhône-Alpes;Direction Offre de Soins;Offre de soins
-Conseil départemental de La Haute-Garonne;Direction de l'autonomie;Autonomie
-Conseil départemental de La Haute-Garonne;Direction de l'offre médico-sociale;Médico-social
+Entité administrative (parent);Direction (libellé long);Direction (libéllé court);Actif
+ARS Normandie;Réclamation signalement;Réclamation;true
+ARS Normandie;Direction de l'Offre de Soin;DOS;true
+ARS Normandie;Direction de l'Autonomie;DA;true
+ARS Normandie;DAMTN;DAMTN;true
+ARS Normandie;Direction de la Santé Publique;DSP;true
+Conseil départemental de L'Eure;Direction Autonomie Santé;DAS;true
+Conseil départemental de la Manche;Maison Départementale de l’autonomie;Autonomie;true
+DDETS de la Manche;Pôle Solidarités actives et délégation départementale aux droits des femmes et à l'égalité;Solidarités;true
+DDETSPP de l'Orne;Service protection des personnes vulnérables;Protection;true
+DDETS du Calvados;Pôle hébergement/logement;Hébergement;true
+Conseil départemental du Calvados;Direction Autonomie Santé;Autonomie;true
+DDETS de la Seine-Maritime;Direction Autonomie Santé;Autonomie;true
+ARS Corse;Direction de l'offre médico-sociale;Médico-social;false
+ARS Hauts-de-France;Direction de l'offre de soins;DOS;false
+ARS Hauts-de-France;Direction de l'offre médico-sociale;Médico-social;false
+ARS Nouvelle-Aquitaine;Direction de l'Offre de Soins;DOS;false
+ARS Nouvelle-Aquitaine;Direction de la Protection de la Santé et de l'Autonomie;DPSA;false
+ARS Auvergne-Rhône-Alpes;Direction Autonomie;Autonomie;false
+ARS Auvergne-Rhône-Alpes;Direction Offre de Soins;Offre de soins;false
+Conseil départemental de La Haute-Garonne;Direction de l'autonomie;Autonomie;false
+Conseil départemental de La Haute-Garonne;Direction de l'offre médico-sociale;Médico-social;false

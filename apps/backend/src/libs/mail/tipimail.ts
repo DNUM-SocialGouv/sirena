@@ -1,4 +1,4 @@
-import { envVars } from '../config/env.js';
+import { envVars } from '../../config/env.js';
 
 export interface Recipient {
   address: string;
@@ -115,13 +115,23 @@ async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Prom
     headers,
   });
 
-  const responseData = (await response.json()) as unknown;
+  let responseData: unknown;
+  try {
+    responseData = (await response.json()) as unknown;
+  } catch {
+    const text = await response.text();
+    throw new Error(
+      `Tipimail API error ${response.status}: Failed to parse JSON response. Response body: ${text.substring(0, 500)}`,
+    );
+  }
 
   if (response.status !== 200) {
+    const errorDetails =
+      responseData && typeof responseData === 'object' ? JSON.stringify(responseData, null, 2) : String(responseData);
     const msg =
       responseData && typeof responseData === 'object' && 'status' in responseData
-        ? `Tipimail API error ${(responseData as { status: string }).status}`
-        : `Tipimail API error ${response.status}`;
+        ? `Tipimail API error ${(responseData as { status: string }).status}: ${errorDetails}`
+        : `Tipimail API error ${response.status}: ${errorDetails}`;
     throw new Error(msg);
   }
   return responseData as T;
@@ -135,6 +145,52 @@ export async function sendTipimailEmail(options: SendTipimailOptions): Promise<T
     method: 'POST',
     body: JSON.stringify(request),
   });
+}
+
+export interface TipimailTemplate {
+  id: string;
+  templateName: string;
+  description: string;
+  from: {
+    address: string;
+    personalName: string;
+  };
+  subject: string;
+  htmlContent: string;
+  textContent: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * Gets a template from Tipimail API
+ * @param templateId - The ID or name of the template to retrieve
+ * @returns Template content with HTML and text versions
+ */
+export async function getTipimailTemplate(templateId: string): Promise<TipimailTemplate> {
+  return makeRequest<TipimailTemplate>(`/settings/templates/${templateId}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Applies substitutions to a template string
+ * Replaces {{variable}} or {variable} with the corresponding value from substitutions
+ */
+export function applySubstitutions(template: string, substitutions: Record<string, unknown>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(substitutions)) {
+    const patterns = [
+      new RegExp(`\\{\\{${key}\\}\\}`, 'gi'),
+      new RegExp(`\\{${key}\\}`, 'gi'),
+      new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'gi'),
+      new RegExp(`\\{\\s*${key}\\s*\\}`, 'gi'),
+    ];
+    for (const pattern of patterns) {
+      result = result.replace(pattern, String(value || ''));
+    }
+  }
+  return result;
 }
 
 function normalizeRecipients(to: string | string[] | Recipient[]): Recipient[] {

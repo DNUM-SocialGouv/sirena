@@ -1,5 +1,6 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
+import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { deleteFileFromMinio } from '../../libs/minio.js';
 import type { Prisma } from '../../libs/prisma.js';
 import { prisma, type RequeteEtape } from '../../libs/prisma.js';
@@ -12,11 +13,15 @@ import type {
   UpdateRequeteEtapeStatutDto,
 } from './requetesEtapes.type.js';
 
+export const CREATION_STEP_NAME_PREFIX = 'Création de la requête le';
+export const ACKNOWLEDGMENT_STEP_NAME = 'Envoyer un accusé de réception au déclarant';
+
 export const createDefaultRequeteEtapes = async (
   requeteId: string,
   entiteId: string,
   receptionDate: Date,
   tx?: Prisma.TransactionClient,
+  changedById?: string | null,
 ) => {
   const prismaClient = tx ?? prisma;
 
@@ -46,23 +51,24 @@ export const createDefaultRequeteEtapes = async (
     return null;
   }
 
+  const formattedReceptionDate =
+    receptionDate?.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }) ||
+    new Date().toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+
   const etape1 = await prismaClient.requeteEtape.create({
     data: {
       requeteId: requeteId,
       entiteId: entiteId,
       statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-      nom: `Création de la requête le ${
-        receptionDate?.toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        }) ||
-        new Date().toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        })
-      }`,
+      nom: `${CREATION_STEP_NAME_PREFIX} ${formattedReceptionDate}`,
     },
   });
 
@@ -71,9 +77,58 @@ export const createDefaultRequeteEtapes = async (
       requeteId: requeteId,
       entiteId: entiteId,
       statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
-      nom: 'Envoyer un accusé de réception au déclarant',
+      nom: ACKNOWLEDGMENT_STEP_NAME,
     },
   });
+
+  const createEtapeChangelog = async (
+    etape: RequeteEtape,
+    action: ChangeLogAction,
+    before: Prisma.JsonObject | null,
+    after: Prisma.JsonObject | null,
+  ) => {
+    if (changedById !== undefined) {
+      try {
+        await createChangeLog({
+          entity: 'RequeteEtape',
+          entityId: etape.id,
+          action,
+          before,
+          after,
+          changedById: changedById ?? null,
+        });
+      } catch (changelogError) {
+        const logger = getLoggerStore();
+        logger.error(
+          { requeteId, entiteId, etapeId: etape.id, error: changelogError },
+          'Failed to create changelog entry for requete etape',
+        );
+      }
+    }
+  };
+
+  await Promise.all([
+    createEtapeChangelog(etape1, ChangeLogAction.CREATED, null, {
+      id: etape1.id,
+      nom: etape1.nom,
+      estPartagee: etape1.estPartagee,
+      statutId: etape1.statutId,
+      requeteId: etape1.requeteId,
+      entiteId: etape1.entiteId,
+      clotureReasonId: etape1.clotureReasonId,
+      createdAt: etape1.createdAt.toISOString(),
+    } as Prisma.JsonObject),
+    createEtapeChangelog(etape2, ChangeLogAction.CREATED, null, {
+      id: etape2.id,
+      nom: etape2.nom,
+      estPartagee: etape2.estPartagee,
+      statutId: etape2.statutId,
+      requeteId: etape2.requeteId,
+      entiteId: etape2.entiteId,
+      clotureReasonId: etape2.clotureReasonId,
+      createdAt: etape2.createdAt.toISOString(),
+    } as Prisma.JsonObject),
+  ]);
 
   return { etape1, etape2 };
 };
@@ -236,6 +291,88 @@ export const updateRequeteEtapeNom = async (
       nom: data.nom,
     },
   });
+};
+
+/**
+ * Updates the acknowledgment step for all entities (when acknowledgment email is sent automatically)
+ * @param requeteId - The ID of the requete
+ * @param entiteIds - Array of entity IDs that received the acknowledgment email
+ */
+export const updateAcknowledgmentStep = async (requeteId: string, entiteIds: string[]): Promise<void> => {
+  const logger = getLoggerStore();
+
+  try {
+    const etapes = await prisma.requeteEtape.findMany({
+      where: {
+        requeteId,
+        entiteId: { in: entiteIds },
+        nom: ACKNOWLEDGMENT_STEP_NAME,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+        createdBy: null,
+      },
+    });
+
+    if (etapes.length === 0) {
+      logger.debug({ requeteId, entiteIds }, 'No acknowledgment steps found to update');
+      return;
+    }
+
+    await Promise.all(
+      etapes.map(async (etape) => {
+        const before = {
+          id: etape.id,
+          nom: etape.nom,
+          statutId: etape.statutId,
+          requeteId: etape.requeteId,
+          entiteId: etape.entiteId,
+          createdAt: etape.createdAt.toISOString(),
+          updatedAt: etape.updatedAt.toISOString(),
+        } as Prisma.JsonObject;
+
+        const updatedEtape = await prisma.requeteEtape.update({
+          where: { id: etape.id },
+          data: {
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          },
+        });
+
+        const after = {
+          id: updatedEtape.id,
+          nom: updatedEtape.nom,
+          statutId: updatedEtape.statutId,
+          requeteId: updatedEtape.requeteId,
+          entiteId: updatedEtape.entiteId,
+          createdAt: updatedEtape.createdAt.toISOString(),
+          updatedAt: updatedEtape.updatedAt.toISOString(),
+        } as Prisma.JsonObject;
+
+        // Create changelog
+        try {
+          await createChangeLog({
+            entity: 'RequeteEtape',
+            entityId: etape.id,
+            action: ChangeLogAction.UPDATED,
+            before,
+            after,
+            changedById: null, // System action
+          });
+        } catch (changelogError) {
+          logger.error(
+            { requeteId, etapeId: etape.id, error: changelogError },
+            'Failed to create changelog entry for automatic acknowledgment step update',
+          );
+        }
+      }),
+    );
+
+    logger.info(
+      { requeteId, entiteIds, updatedStepsCount: etapes.length },
+      'Acknowledgment steps updated automatically to FAIT status',
+    );
+  } catch (error) {
+    logger.error({ requeteId, entiteIds, error }, 'Failed to update acknowledgment steps automatically');
+    throw error;
+  }
 };
 
 export const deleteRequeteEtape = async (id: string, logger: PinoLogger, changedById?: string): Promise<void> => {

@@ -3,7 +3,7 @@ import type { SendTipimailOptions, TipimailSendResponse, TipimailSubstitution } 
 
 global.fetch = vi.fn();
 
-vi.mock('../config/env.js', () => ({
+vi.mock('../../config/env.js', () => ({
   envVars: {
     TIPIMAIL_API_URL: 'https://api.tipimail.com',
     TIPIMAIL_USER_ID: 'test-user-id',

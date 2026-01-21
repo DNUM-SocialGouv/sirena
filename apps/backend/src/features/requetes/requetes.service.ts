@@ -354,7 +354,7 @@ export const createRequeteFromDematSocial = async ({
     });
 
     for (const entite of requeteWithEntites.requeteEntites) {
-      await createDefaultRequeteEtapes(requete.id, entite.entiteId, receptionDate, tx);
+      await createDefaultRequeteEtapes(requete.id, entite.entiteId, receptionDate, tx, null);
     }
 
     return await tx.requete.findUniqueOrThrow({

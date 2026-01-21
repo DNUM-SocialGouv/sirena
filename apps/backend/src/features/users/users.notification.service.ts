@@ -4,8 +4,8 @@ import { createChangeLog } from '../../features/changelog/changelog.service.js';
 import { ChangeLogAction } from '../../features/changelog/changelog.type.js';
 import { getEntiteChain } from '../../features/entites/entites.service.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
+import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
 import { prisma } from '../../libs/prisma.js';
-import { sendTipimailEmail } from '../../libs/tipimail.js';
 
 /**
  * Builds the entite chain string (e.g., "ARS Normandie - Direction de l'Autonomie - UA 14")

@@ -8,6 +8,11 @@ const ServiceRowSchema = z.object({
   'Direction (libellé long)': z.string().min(1),
   'Service (libellé long)': z.string().min(1),
   'Service (libellé court)': z.string().min(1),
+  Actif: z
+    .string()
+    .optional()
+    .default('false')
+    .transform((v) => v === 'true' || v === '1' || v === 'TRUE' || v === 'True' || v === 'Oui' || v === 'oui'),
 });
 
 export async function seedServices(prisma: PrismaClient) {
@@ -63,6 +68,7 @@ export async function seedServices(prisma: PrismaClient) {
         label: row['Service (libellé court)'],
         entiteTypeId: parent.entiteTypeId,
         entiteMereId: parent.id,
+        isActive: row.Actif,
       };
     });
 

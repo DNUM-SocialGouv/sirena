@@ -517,8 +517,8 @@ model RequeteEtapeNote {
   id    String @id @default(uuid())
   texte String
 
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id])
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id])
 
   uploadedFiles UploadedFile[]
 

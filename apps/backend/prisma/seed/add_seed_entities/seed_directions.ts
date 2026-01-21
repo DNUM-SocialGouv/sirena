@@ -7,6 +7,11 @@ const AdministrativeRowSchema = z.object({
   'Entité administrative (parent)': z.string().min(1),
   'Direction (libellé long)': z.string().min(1),
   'Direction (libéllé court)': z.string().min(1),
+  Actif: z
+    .string()
+    .optional()
+    .default('false')
+    .transform((v) => v === 'true' || v === '1' || v === 'TRUE' || v === 'True' || v === 'Oui' || v === 'oui'),
 });
 
 export async function seedDirections(prisma: PrismaClient) {
@@ -46,6 +51,7 @@ export async function seedDirections(prisma: PrismaClient) {
         label: row['Direction (libéllé court)'],
         entiteTypeId: parent.entiteTypeId,
         entiteMereId: parent.id,
+        isActive: row.Actif,
       };
     });
 

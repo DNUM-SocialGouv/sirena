@@ -79,6 +79,13 @@ const StepComponent = ({
   const [editError, setEditError] = useState<string | null>(null);
   const { canEdit } = useCanEdit({ requeteId: requestId });
 
+  // Check if step was automatically updated: created automatically (createdBy === null),
+  // status is FAIT, and it's the acknowledgment step
+  const isAutomaticallyUpdated =
+    createdBy === null &&
+    statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT &&
+    nom === 'Envoyer un accusé de réception au déclarant';
+
   const badges = requeteEtapeStatutBadges.filter((badge) => {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
       return true;
@@ -197,7 +204,7 @@ const StepComponent = ({
                 />
               </div>
               <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-                {canEdit && (
+                {canEdit && !isAutomaticallyUpdated && (
                   <Button
                     priority="tertiary no outline"
                     size="small"

@@ -332,7 +332,20 @@ describe('requetes.service.ts', () => {
             requeteEtape: {
               ...prisma.requeteEtape,
               findMany: vi.fn().mockResolvedValue([]),
-              create: vi.fn().mockResolvedValue({ id: 'etape-1' }),
+              create: vi.fn().mockImplementation((args) => {
+                const mockEtape = {
+                  id: 'etape-1',
+                  requeteId: args.data.requeteId,
+                  entiteId: args.data.entiteId,
+                  nom: args.data.nom,
+                  statutId: args.data.statutId,
+                  estPartagee: false,
+                  clotureReasonId: null,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                };
+                return Promise.resolve(mockEtape);
+              }),
             },
             requeteEntite: {
               ...prisma.requeteEntite,
@@ -494,7 +507,20 @@ describe('requetes.service.ts', () => {
           requeteEtape: {
             ...prisma.requeteEtape,
             findMany: vi.fn().mockResolvedValue([]),
-            create: vi.fn().mockResolvedValue({ id: 'etape-1' }),
+            create: vi.fn().mockImplementation((args) => {
+              const mockEtape = {
+                id: 'etape-1',
+                requeteId: args.data.requeteId,
+                entiteId: args.data.entiteId,
+                nom: args.data.nom,
+                statutId: args.data.statutId,
+                estPartagee: false,
+                clotureReasonId: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              };
+              return Promise.resolve(mockEtape);
+            }),
           },
           requeteEntite: {
             ...prisma.requeteEntite,
@@ -532,7 +558,8 @@ describe('requetes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         lienAutrePrecision: null,
-        aAutrePersonnes: false,
+        estSignalementProfessionnel: null,
+        aAutrePersonnes: null,
       });
 
       vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
@@ -560,7 +587,8 @@ describe('requetes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         lienAutrePrecision: null,
-        aAutrePersonnes: false,
+        estSignalementProfessionnel: null,
+        aAutrePersonnes: null,
       });
 
       vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
@@ -583,6 +611,12 @@ describe('requetes.service.ts', () => {
             id: '1',
             personneConcerneeId: null,
             lieuDeSurvenueId: '1',
+            adressePrecision: null,
+            codePostal: '',
+            ville: '',
+            rue: '',
+            numero: '',
+            label: '',
           });
         }
 
@@ -760,7 +794,8 @@ describe('requetes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         lienAutrePrecision: null,
-        aAutrePersonnes: false,
+        estSignalementProfessionnel: null,
+        aAutrePersonnes: null,
       });
 
       vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({
@@ -782,7 +817,8 @@ describe('requetes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         lienAutrePrecision: null,
-        aAutrePersonnes: false,
+        estSignalementProfessionnel: null,
+        aAutrePersonnes: null,
       });
 
       dto.situations.forEach((situation) => {
