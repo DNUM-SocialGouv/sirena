@@ -147,6 +147,52 @@ export async function sendTipimailEmail(options: SendTipimailOptions): Promise<T
   });
 }
 
+export interface TipimailTemplate {
+  id: string;
+  templateName: string;
+  description: string;
+  from: {
+    address: string;
+    personalName: string;
+  };
+  subject: string;
+  htmlContent: string;
+  textContent: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * Gets a template from Tipimail API
+ * @param templateId - The ID or name of the template to retrieve
+ * @returns Template content with HTML and text versions
+ */
+export async function getTipimailTemplate(templateId: string): Promise<TipimailTemplate> {
+  return makeRequest<TipimailTemplate>(`/settings/templates/${templateId}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Applies substitutions to a template string
+ * Replaces {{variable}} or {variable} with the corresponding value from substitutions
+ */
+export function applySubstitutions(template: string, substitutions: Record<string, unknown>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(substitutions)) {
+    const patterns = [
+      new RegExp(`\\{\\{${key}\\}\\}`, 'gi'),
+      new RegExp(`\\{${key}\\}`, 'gi'),
+      new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'gi'),
+      new RegExp(`\\{\\s*${key}\\s*\\}`, 'gi'),
+    ];
+    for (const pattern of patterns) {
+      result = result.replace(pattern, String(value || ''));
+    }
+  }
+  return result;
+}
+
 function normalizeRecipients(to: string | string[] | Recipient[]): Recipient[] {
   if (Array.isArray(to)) {
     return to.map((item) => (typeof item === 'string' ? { address: item } : item));
