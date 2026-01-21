@@ -1,3 +1,4 @@
+import { htmlToText as convertHtmlToText } from 'html-to-text';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { getLoggerStore } from '../asyncLocalStorage.js';
 import { applySubstitutions, getTipimailTemplate, type TipimailTemplate } from './tipimail.js';
@@ -8,24 +9,6 @@ export interface EmailPdfOptions {
   sentDate: Date;
   template: string;
   substitutions: Record<string, unknown>;
-}
-
-/**
- * Converts HTML to plain text (removes HTML tags and decodes entities)
- */
-function htmlToText(html: string): string {
-  return html
-    .replace(/<style[^>]*>.*?<\/style>/gis, '') // Remove style tags
-    .replace(/<script[^>]*>.*?<\/script>/gis, '') // Remove script tags
-    .replace(/<[^>]+>/g, '') // Remove all HTML tags
-    .replace(/&nbsp;/g, ' ') // Replace &nbsp; with space
-    .replace(/&amp;/g, '&') // Replace &amp; with &
-    .replace(/&lt;/g, '<') // Replace &lt; with <
-    .replace(/&gt;/g, '>') // Replace &gt; with >
-    .replace(/&quot;/g, '"') // Replace &quot; with "
-    .replace(/&#39;/g, "'") // Replace &#39; with '
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-    .trim();
 }
 
 /**
@@ -80,7 +63,7 @@ export async function generateEmailPdf(options: EmailPdfOptions): Promise<Buffer
   const htmlContent = template.htmlContent ? applySubstitutions(template.htmlContent, substitutions) : '';
   const textContent = template.textContent
     ? applySubstitutions(template.textContent, substitutions)
-    : htmlToText(htmlContent);
+    : convertHtmlToText(htmlContent);
   const subject = template.subject ? applySubstitutions(template.subject, substitutions) : '';
 
   // Generate PDF
@@ -209,8 +192,8 @@ export async function generateEmailPdf(options: EmailPdfOptions): Promise<Buffer
   yPosition -= lineHeight + 5;
 
   // Use text content (cleaner for PDF) or convert HTML to text
-  const emailBody = textContent || htmlToText(htmlContent);
-  const emailLines = emailBody.split('\n').flatMap((line) => wrapText(line.trim(), maxWidth, font, 10));
+  const emailBody = textContent || convertHtmlToText(htmlContent);
+  const emailLines = emailBody.split('\n').flatMap((line: string) => wrapText(line.trim(), maxWidth, font, 10));
 
   let currentPage = page;
   for (const line of emailLines) {
