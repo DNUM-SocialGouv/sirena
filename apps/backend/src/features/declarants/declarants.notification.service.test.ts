@@ -1,7 +1,8 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test purposes> */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME } from '../../config/tipimail.constant.js';
+import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
 import { prisma } from '../../libs/prisma.js';
-import { sendTipimailEmail } from '../../libs/tipimail.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { sendDeclarantAcknowledgmentEmail } from './declarants.notification.service.js';
 
@@ -16,7 +17,7 @@ vi.mock('../../libs/prisma.js', () => ({
   },
 }));
 
-vi.mock('../../libs/tipimail.js', () => ({
+vi.mock('../../libs/mail/tipimail.js', () => ({
   sendTipimailEmail: vi.fn(),
 }));
 
@@ -135,7 +136,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       to: 'john@example.com',
       subject: '',
       text: '',
-      template: 'ar-declarant',
+      template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
       substitutions: [
         {
           email: 'john@example.com',
@@ -163,7 +164,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
         action: expect.any(String),
         after: expect.objectContaining({
           acknowledgmentEmailSent: true,
-          acknowledgmentEmailTemplate: 'ar-declarant',
+          acknowledgmentEmailTemplate: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
           acknowledgmentEmailRecipient: 'john@example.com',
           acknowledgmentEmailEntites: ['ARS Normandie', 'CD Calvados', 'UA 14'],
         }),

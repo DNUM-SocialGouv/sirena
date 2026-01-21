@@ -12,10 +12,10 @@ type StepNoteProps = {
   requeteStateId: string;
   requestId: string;
   clotureReasonLabel: string | null;
-  author: {
+  author?: {
     prenom: string;
     nom: string;
-  };
+  } | null;
   files: {
     id: string;
     size: number;
@@ -53,6 +53,7 @@ export const StepNote = ({
   clotureReasonLabel,
 }: StepNoteProps) => {
   const { canEdit } = useCanEdit({ requeteId: requestId });
+  const isSystemNote = author === null;
 
   const handleEdit = () => {
     onEdit?.({
@@ -76,13 +77,17 @@ export const StepNote = ({
               year: 'numeric',
             })}{' '}
           </span>
-          par{' '}
-          <span className="fr-text--bold">
-            {capitalizeFirst(author.prenom)} {capitalizeFirst(author.nom)}
-          </span>
+          {author && (
+            <>
+              <span>par </span>
+              <span className="fr-text--bold">
+                {capitalizeFirst(author.prenom)} {capitalizeFirst(author.nom)}
+              </span>
+            </>
+          )}
         </div>
         <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-          {canEdit && (
+          {canEdit && !isSystemNote && (
             <Button
               priority="tertiary no outline"
               size="small"

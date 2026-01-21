@@ -1,9 +1,18 @@
+import { envVars } from '../../config/env.js';
+import {
+  ACKNOWLEDGMENT_EMAIL_TEMPLATE_ID,
+  ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
+} from '../../config/tipimail.constant.js';
+import { pick } from '../../helpers/object.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
-import { prisma } from '../../libs/prisma.js';
-import { sendTipimailEmail } from '../../libs/tipimail.js';
+import { generateEmailPdf } from '../../libs/mail/mailToPdf.js';
+import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
+import { uploadFileToMinio } from '../../libs/minio.js';
+import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
+import { ACKNOWLEDGMENT_STEP_NAME, updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
+import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
 
 /**
  * Formats the list of administrative entity names (entities without a parent entity)
@@ -53,6 +62,160 @@ function formatEntiteCompleteString(
       return parts.join('\n');
     })
     .join('\n\n');
+}
+
+/**
+ * Attaches an email PDF to the acknowledgment step via RequeteEtapeNote
+ */
+async function attachEmailPdfToStep(
+  requeteId: string,
+  entiteId: string,
+  pdfBuffer: Buffer,
+  emailInfo: {
+    from: { address: string; personalName?: string };
+    to: string;
+    sentDate: Date;
+    template?: string;
+    subject?: string;
+    substitutions?: Record<string, unknown>;
+  },
+): Promise<void> {
+  const logger = getLoggerStore();
+
+  try {
+    const etape = await prisma.requeteEtape.findFirst({
+      where: {
+        requeteId,
+        entiteId,
+        nom: ACKNOWLEDGMENT_STEP_NAME,
+      },
+    });
+
+    if (!etape) {
+      logger.warn({ requeteId, entiteId }, 'Acknowledgment step not found for PDF attachment');
+      return;
+    }
+
+    const fileName = `AR_${requeteId}.pdf`;
+
+    const {
+      objectPath,
+      rollback: rollbackMinio,
+      encryptionMetadata,
+    } = await uploadFileToMinio(pdfBuffer, fileName, 'application/pdf');
+
+    try {
+      const pathParts = objectPath.split('/');
+      const fileNameFromPath = pathParts[pathParts.length - 1] || '';
+      const fileId = fileNameFromPath.split('.')[0] || '';
+
+      if (!fileNameFromPath || !fileId) {
+        throw new Error(`Invalid file path format: ${objectPath}. Cannot extract file ID.`);
+      }
+
+      const uploadedFile = await createUploadedFile({
+        id: fileId,
+        fileName,
+        filePath: objectPath,
+        mimeType: 'application/pdf',
+        size: pdfBuffer.length,
+        status: 'COMPLETED',
+        canDelete: false,
+        scanStatus: 'PENDING',
+        sanitizeStatus: 'PENDING',
+        metadata: {
+          originalName: fileName,
+          emailFrom: emailInfo.from.address,
+          emailTo: emailInfo.to,
+          emailSentDate: emailInfo.sentDate.toISOString(),
+          emailTemplate: emailInfo.template,
+          emailSubject: emailInfo.subject,
+          ...(encryptionMetadata && { encryption: encryptionMetadata }),
+        },
+        requeteEtapeNoteId: null,
+        requeteId: null,
+        faitSituationId: null,
+        demarchesEngageesId: null,
+        uploadedById: null,
+        entiteId,
+      });
+
+      const uploadedFileTrackedFields: (keyof UploadedFile)[] = [
+        'id',
+        'fileName',
+        'filePath',
+        'mimeType',
+        'size',
+        'status',
+        'metadata',
+        'entiteId',
+        'uploadedById',
+        'requeteEtapeNoteId',
+        'requeteId',
+        'faitSituationId',
+        'demarchesEngageesId',
+      ];
+
+      try {
+        const afterPicked = pick(uploadedFile, uploadedFileTrackedFields);
+        await createChangeLog({
+          entity: 'UploadedFile',
+          entityId: uploadedFile.id,
+          action: ChangeLogAction.CREATED,
+          before: null,
+          after: afterPicked as unknown as Prisma.JsonObject,
+          changedById: null, // System action
+        });
+      } catch (changelogError) {
+        logger.error(
+          { requeteId, entiteId, fileId: uploadedFile.id, error: changelogError },
+          'Failed to create changelog entry for uploaded file',
+        );
+      }
+
+      const note = await prisma.requeteEtapeNote.create({
+        data: {
+          texte: `Email d'accusé de réception envoyé le ${emailInfo.sentDate.toLocaleString('fr-FR')}`,
+          authorId: null,
+          requeteEtapeId: etape.id,
+          uploadedFiles: {
+            connect: [{ id: uploadedFile.id }],
+          },
+        },
+      });
+
+      try {
+        await createChangeLog({
+          entity: 'RequeteEtapeNote',
+          entityId: note.id,
+          action: ChangeLogAction.CREATED,
+          before: null,
+          after: {
+            texte: note.texte,
+            authorId: note.authorId,
+          },
+          changedById: null, // System action
+        });
+      } catch (changelogError) {
+        logger.error(
+          { requeteId, entiteId, noteId: note.id, error: changelogError },
+          'Failed to create changelog entry for requete etape note',
+        );
+      }
+
+      logger.info(
+        { requeteId, entiteId, etapeId: etape.id, fileId: uploadedFile.id },
+        'Email PDF attached to acknowledgment step',
+      );
+    } catch (error) {
+      // Rollback MinIO upload if database operations fail
+      await rollbackMinio();
+      throw error;
+    }
+  } catch (error) {
+    logger.error({ requeteId, entiteId, error }, 'Failed to attach email PDF to step');
+    throw error;
+  }
 }
 
 /**
@@ -142,11 +305,20 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
       },
     };
 
+    const fromAddress = envVars.TIPIMAIL_FROM_ADDRESS;
+    const fromPersonalName = envVars.TIPIMAIL_FROM_PERSONAL_NAME;
+    const from = {
+      address: fromAddress,
+      personalName: fromPersonalName,
+    };
+
+    const sentDate = new Date();
+
     await sendTipimailEmail({
       to: declarantEmail,
       subject: '',
       text: '',
-      template: 'ar-declarant',
+      template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
       substitutions: [substitutions],
     });
 
@@ -155,8 +327,15 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
       'Declarant acknowledgment email sent successfully',
     );
 
-    // Update acknowledgment step automatically for all entities
-    const entiteIdsToUpdate = entites.map((e) => e.id);
+    const topEntites = entites.filter((e) => e.entiteMereId === null);
+
+    if (topEntites.length === 0) {
+      logger.warn({ requeteId }, 'No top entities found, skipping step updates and PDF attachment');
+      return;
+    }
+
+    // Update acknowledgment step automatically for top entities only
+    const entiteIdsToUpdate = topEntites.map((e) => e.id);
     try {
       await updateAcknowledgmentStep(requeteId, entiteIdsToUpdate);
     } catch (stepUpdateError) {
@@ -164,6 +343,36 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
         { requeteId, error: stepUpdateError },
         'Failed to update acknowledgment step automatically, but email was sent',
       );
+    }
+
+    // Generate and attach PDF to each entity's acknowledgment step
+    try {
+      const emailPdf = await generateEmailPdf({
+        from,
+        to: declarantEmail,
+        sentDate,
+        template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_ID,
+        substitutions: substitutions.values,
+      });
+
+      // Attach PDF to each entity's acknowledgment step
+      await Promise.allSettled(
+        topEntites.map(async (entite) => {
+          try {
+            await attachEmailPdfToStep(requeteId, entite.id, emailPdf, {
+              from,
+              to: declarantEmail,
+              sentDate,
+              template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_ID,
+              substitutions: substitutions.values,
+            });
+          } catch (error) {
+            logger.error({ requeteId, entiteId: entite.id, error }, 'Failed to attach email PDF to step for entity');
+          }
+        }),
+      );
+    } catch (pdfError) {
+      logger.error({ requeteId, error: pdfError }, 'Failed to generate or attach email PDF');
     }
 
     try {
@@ -174,7 +383,7 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
         before: {},
         after: {
           acknowledgmentEmailSent: true,
-          acknowledgmentEmailTemplate: 'ar-declarant',
+          acknowledgmentEmailTemplate: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
           acknowledgmentEmailSentAt: new Date().toISOString(),
           acknowledgmentEmailRecipient: declarantEmail,
           acknowledgmentEmailEntites: entites.map((e) => e.nomComplet),

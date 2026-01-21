@@ -321,24 +321,6 @@ interface CreateRequeteInput {
 }
 
 export const createRequeteEntite = async (entiteId: string, data?: CreateRequeteInput, changedById?: string) => {
-  // Helper function to create changelog for RequeteEtape
-  const createRequeteEtapeChangelog = async (
-    etapeId: string,
-    action: ChangeLogAction,
-    before: Prisma.JsonObject | null,
-    after: Prisma.JsonObject | null,
-    changedById: string,
-  ) => {
-    await createChangeLog({
-      entity: 'RequeteEtape',
-      entityId: etapeId,
-      action,
-      before,
-      after,
-      changedById,
-    });
-  };
-
   const maxRetries = 5;
   let retryCount = 0;
   let lastError: Error | null = null;
@@ -392,53 +374,13 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
 
       // Create default processing steps for each entity
       for (const entite of requete.requeteEntites) {
-        const result = await createDefaultRequeteEtapes(
+        await createDefaultRequeteEtapes(
           requete.id,
           entite.entiteId,
           requete.receptionDate || new Date(),
+          undefined,
+          changedById,
         );
-
-        if (!result) {
-          continue;
-        }
-
-        const { etape1, etape2 } = result;
-        // Create changelogs for the created steps if changedById is provided
-        if (changedById) {
-          await createRequeteEtapeChangelog(
-            etape1.id,
-            ChangeLogAction.CREATED,
-            null,
-            {
-              id: etape1.id,
-              nom: etape1.nom,
-              estPartagee: etape1.estPartagee,
-              statutId: etape1.statutId,
-              requeteId: etape1.requeteId,
-              entiteId: etape1.entiteId,
-              clotureReasonId: etape1.clotureReasonId,
-              createdAt: etape1.createdAt.toISOString(),
-            } as Prisma.JsonObject,
-            changedById,
-          );
-
-          await createRequeteEtapeChangelog(
-            etape2.id,
-            ChangeLogAction.CREATED,
-            null,
-            {
-              id: etape2.id,
-              nom: etape2.nom,
-              estPartagee: etape2.estPartagee,
-              statutId: etape2.statutId,
-              requeteId: etape2.requeteId,
-              entiteId: etape2.entiteId,
-              clotureReasonId: etape2.clotureReasonId,
-              createdAt: etape2.createdAt.toISOString(),
-            } as Prisma.JsonObject,
-            changedById,
-          );
-        }
       }
 
       return requete;
@@ -556,6 +498,7 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
             update: {
               estIdentifie: true,
               veutGarderAnonymat: declarantData.neSouhaitePasCommuniquerIdentite || false,
+              estSignalementProfessionnel: declarantData.estSignalementProfessionnel || false,
               estVictime: declarantData.estPersonneConcernee || false,
               commentaire: declarantData.autresPrecisions || '',
               lienVictimeId: lienVictimeValue,
@@ -971,7 +914,7 @@ const updateSituationEntites = async (
   // Create default steps for all added top entities
   await Promise.all(
     Array.from(entiteMereIdsToAdd).map(async (rootId) => {
-      await createDefaultRequeteEtapes(requeteId, rootId, new Date(), tx);
+      await createDefaultRequeteEtapes(requeteId, rootId, new Date(), tx, null);
     }),
   );
 };

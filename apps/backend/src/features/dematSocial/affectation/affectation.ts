@@ -1,8 +1,6 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
 import { type Prisma, PrismaClient } from '../../../libs/prisma.js';
-import { createChangeLog } from '../../changelog/changelog.service.js';
-import { ChangeLogAction } from '../../changelog/changelog.type.js';
 import { createDefaultRequeteEtapes } from '../../requeteEtapes/requetesEtapes.service.js';
 import { buildSituationContextFromDemat } from './buildSituationContext.js';
 import { runDecisionTree } from './decisionTree.js';
@@ -17,22 +15,6 @@ const assignDefaultRequeteEtapes = async (
   receptionDate: Date,
   tx: Prisma.TransactionClient,
 ) => {
-  const createRequeteEtapeChangelog = async (
-    etapeId: string,
-    action: ChangeLogAction,
-    before: Prisma.JsonObject | null,
-    after: Prisma.JsonObject | null,
-    changedById: string | null,
-  ) => {
-    await createChangeLog({
-      entity: 'RequeteEtape',
-      entityId: etapeId,
-      action,
-      before,
-      after,
-      changedById: changedById,
-    });
-  };
   try {
     const etapes = await tx.requeteEtape.findMany({
       where: {
@@ -46,49 +28,7 @@ const assignDefaultRequeteEtapes = async (
       return;
     }
 
-    const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate, tx);
-
-    if (!result) {
-      return;
-    }
-
-    const { etape1, etape2 } = result;
-
-    const p1 = createRequeteEtapeChangelog(
-      etape1.id,
-      ChangeLogAction.CREATED,
-      null,
-      {
-        id: etape1.id,
-        nom: etape1.nom,
-        estPartagee: etape1.estPartagee,
-        statutId: etape1.statutId,
-        requeteId: etape1.requeteId,
-        entiteId: etape1.entiteId,
-        clotureReasonId: etape1.clotureReasonId,
-        createdAt: etape1.createdAt.toISOString(),
-      } as Prisma.JsonObject,
-      null,
-    );
-
-    const p2 = createRequeteEtapeChangelog(
-      etape2.id,
-      ChangeLogAction.CREATED,
-      null,
-      {
-        id: etape2.id,
-        nom: etape2.nom,
-        estPartagee: etape2.estPartagee,
-        statutId: etape2.statutId,
-        requeteId: etape2.requeteId,
-        entiteId: etape2.entiteId,
-        clotureReasonId: etape2.clotureReasonId,
-        createdAt: etape2.createdAt.toISOString(),
-      } as Prisma.JsonObject,
-      null,
-    );
-
-    await Promise.all([p1, p2]);
+    await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate, tx, null);
   } catch (err) {
     const logger = getLoggerStore();
     logger.error({ requeteId, entiteId, err }, 'Error assigning default requete etapes');

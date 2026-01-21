@@ -13,14 +13,15 @@ import type {
   UpdateRequeteEtapeStatutDto,
 } from './requetesEtapes.type.js';
 
-const CREATION_STEP_NAME_PREFIX = 'Création de la requête le';
-const ACKNOWLEDGMENT_STEP_NAME = 'Envoyer un accusé de réception au déclarant';
+export const CREATION_STEP_NAME_PREFIX = 'Création de la requête le';
+export const ACKNOWLEDGMENT_STEP_NAME = 'Envoyer un accusé de réception au déclarant';
 
 export const createDefaultRequeteEtapes = async (
   requeteId: string,
   entiteId: string,
   receptionDate: Date,
   tx?: Prisma.TransactionClient,
+  changedById?: string | null,
 ) => {
   const prismaClient = tx ?? prisma;
 
@@ -79,6 +80,55 @@ export const createDefaultRequeteEtapes = async (
       nom: ACKNOWLEDGMENT_STEP_NAME,
     },
   });
+
+  const createEtapeChangelog = async (
+    etape: typeof etape1,
+    action: ChangeLogAction,
+    before: Prisma.JsonObject | null,
+    after: Prisma.JsonObject | null,
+  ) => {
+    if (changedById !== undefined) {
+      try {
+        await createChangeLog({
+          entity: 'RequeteEtape',
+          entityId: etape.id,
+          action,
+          before,
+          after,
+          changedById: changedById ?? null,
+        });
+      } catch (changelogError) {
+        const logger = getLoggerStore();
+        logger.error(
+          { requeteId, entiteId, etapeId: etape.id, error: changelogError },
+          'Failed to create changelog entry for requete etape',
+        );
+      }
+    }
+  };
+
+  await Promise.all([
+    createEtapeChangelog(etape1, ChangeLogAction.CREATED, null, {
+      id: etape1.id,
+      nom: etape1.nom,
+      estPartagee: etape1.estPartagee,
+      statutId: etape1.statutId,
+      requeteId: etape1.requeteId,
+      entiteId: etape1.entiteId,
+      clotureReasonId: etape1.clotureReasonId,
+      createdAt: etape1.createdAt.toISOString(),
+    } as Prisma.JsonObject),
+    createEtapeChangelog(etape2, ChangeLogAction.CREATED, null, {
+      id: etape2.id,
+      nom: etape2.nom,
+      estPartagee: etape2.estPartagee,
+      statutId: etape2.statutId,
+      requeteId: etape2.requeteId,
+      entiteId: etape2.entiteId,
+      clotureReasonId: etape2.clotureReasonId,
+      createdAt: etape2.createdAt.toISOString(),
+    } as Prisma.JsonObject),
+  ]);
 
   return { etape1, etape2 };
 };
