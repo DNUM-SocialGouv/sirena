@@ -4,6 +4,7 @@ import {
   ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
 } from '../../config/tipimail.constant.js';
 import { pick } from '../../helpers/object.js';
+import { addFileProcessingJob } from '../../jobs/queues/fileProcessing.queue.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { generateEmailPdf } from '../../libs/mail/mailToPdf.js';
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
@@ -138,6 +139,13 @@ async function attachEmailPdfToStep(
         demarchesEngageesId: null,
         uploadedById: null,
         entiteId,
+      });
+
+      await addFileProcessingJob({
+        fileId: uploadedFile.id,
+        fileName: uploadedFile.fileName,
+        filePath: uploadedFile.filePath,
+        mimeType: uploadedFile.mimeType,
       });
 
       const uploadedFileTrackedFields: (keyof UploadedFile)[] = [
