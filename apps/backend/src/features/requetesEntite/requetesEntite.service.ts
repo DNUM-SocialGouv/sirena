@@ -681,20 +681,11 @@ const buildMisEnCauseUpdate = (misEnCauseData: SituationInput['misEnCause']) => 
 
   const misEnCauseTypeId = toNullableId(misEnCauseData.misEnCauseType);
   const misEnCauseTypePrecisionId = toNullableId(misEnCauseData.misEnCauseTypePrecision);
+  const resolvedPrecisionId = misEnCauseTypeId && misEnCauseTypePrecisionId ? misEnCauseTypePrecisionId : null;
 
   return {
-    misEnCauseType: misEnCauseTypeId ? { connect: { id: misEnCauseTypeId } } : { disconnect: true as const },
-    misEnCauseTypePrecision:
-      misEnCauseTypePrecisionId && misEnCauseTypeId
-        ? {
-            connect: {
-              misEnCauseTypeId_id: {
-                misEnCauseTypeId,
-                id: misEnCauseTypePrecisionId,
-              },
-            },
-          }
-        : { disconnect: true as const },
+    misEnCauseTypeId,
+    misEnCauseTypePrecisionId: resolvedPrecisionId,
     autrePrecision: cleanNullOrEmpty(misEnCauseData.autrePrecision),
     rpps: misEnCauseData.rpps || null,
     commentaire: cleanNullOrEmpty(misEnCauseData.commentaire),

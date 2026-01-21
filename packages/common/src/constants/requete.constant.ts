@@ -43,9 +43,7 @@ export const MIS_EN_CAUSE_TYPE = {
   PROFESSIONNEL_SOCIAL: 'PROFESSIONNEL_SOCIAL',
   AUTRE_PROFESSIONNEL: 'AUTRE_PROFESSIONNEL',
   ETABLISSEMENT: 'ETABLISSEMENT',
-  NPJM: 'NPJM',
   PROCHE: 'PROCHE',
-  AUTRE: 'AUTRE',
 } as const;
 
 export type MisEnCauseType = keyof typeof MIS_EN_CAUSE_TYPE;
@@ -57,10 +55,8 @@ export const misEnCauseTypeLabels: Record<MisEnCauseType, string> = {
   PROFESSIONNEL_SANTE:
     'Professionnel de santé (médecin généraliste, spécialiste, dentiste, kinésithérapeute, orthophoniste, infirmier, aide-soignant...)',
   PROFESSIONNEL_SOCIAL: 'Professionnel social (éducateur, assistant social...)',
-  NPJM: 'Un tuteur, curateur ou mandataire judiciaire',
   ETABLISSEMENT: 'Un établissement ou un service',
   AUTRE_PROFESSIONNEL: 'Autre professionnel',
-  AUTRE: 'Autre',
 };
 
 // Précisions pour chaque type de mis en cause

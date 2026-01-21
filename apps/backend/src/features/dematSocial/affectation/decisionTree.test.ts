@@ -139,8 +139,8 @@ describe('runDecisionTree - domicile', () => {
   it('should assign DD for domicile with NPJM mis en cause', async () => {
     const ctx: SituationContext = {
       lieuType: 'DOMICILE',
-      misEnCauseType: 'NPJM',
-      misEnCauseTypePrecision: null,
+      misEnCauseType: 'PROFESSIONNEL_SOCIAL',
+      misEnCauseTypePrecision: 'MJPM',
     };
 
     const result = await runDecisionTree(ctx);
@@ -222,7 +222,8 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
     const ctx: SituationContext = {
       lieuType: 'ETABLISSEMENT_SANTE',
       isMaltraitance: true,
-      misEnCauseType: 'NPJM',
+      misEnCauseType: 'PROFESSIONNEL_SOCIAL',
+      misEnCauseTypePrecision: 'MJPM',
     };
 
     const result = await runDecisionTree(ctx);
@@ -272,18 +273,6 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
       lieuType: 'ETABLISSEMENT_SANTE',
       isMaltraitance: true,
       misEnCauseType: 'AUTRE_PROFESSIONNEL',
-    };
-
-    const result = await runDecisionTree(ctx);
-
-    expect(result.sort()).toEqual(['ARS']);
-  });
-
-  it('should assign only ARS when maltraitance by AUTRE in health establishment', async () => {
-    const ctx: SituationContext = {
-      lieuType: 'ETABLISSEMENT_SANTE',
-      isMaltraitance: true,
-      misEnCauseType: 'AUTRE',
     };
 
     const result = await runDecisionTree(ctx);
