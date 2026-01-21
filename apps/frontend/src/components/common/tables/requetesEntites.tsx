@@ -11,6 +11,7 @@ import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
 import { RequetePrioriteTag, RequeteStatutTag } from '../RequeteStatutTag';
 import { renderAffectationCell, renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
+import './requetesEntites.css';
 
 type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number] & {
   id: string;
@@ -316,16 +317,18 @@ export function RequetesEntite() {
           </div>
         )}
       </div>
-      <DataTable
-        title={title}
-        rowId="id"
-        data={dataWithId}
-        columns={columns}
-        cells={cells}
-        isLoading={isFetching}
-        sort={currentSort}
-        onSortChange={handleSortChange}
-      />
+      <div className="requetesEntitesTable">
+        <DataTable
+          title={title}
+          rowId="id"
+          data={dataWithId}
+          columns={columns}
+          cells={cells}
+          isLoading={isFetching}
+          sort={currentSort}
+          onSortChange={handleSortChange}
+        />
+      </div>
       {shouldShowPagination && (
         <div className="fr-mt-3w fr-grid-row fr-grid-row--center">
           <Pagination count={totalPages} defaultPage={currentPage} getPageLinkProps={getPageLinkProps} />

@@ -1,0 +1,27 @@
+.requetesEntitesTable thead th:nth-of-type(2),
+.requetesEntitesTable tbody td:nth-of-type(2) {
+  white-space: nowrap;
+  width: auto;
+}
+
+.requetesEntitesTable tbody td:nth-of-type(2) > *,
+.requetesEntitesTable tbody td:nth-of-type(2) .fr-badge {
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.requetesEntitesTable thead th:nth-of-type(7),
+.requetesEntitesTable tbody td:nth-of-type(7) {
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  box-sizing: border-box;
+}
+
+.requetesEntitesTable thead th:nth-of-type(8),
+.requetesEntitesTable tbody td:nth-of-type(8) {
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  box-sizing: border-box;
+}
