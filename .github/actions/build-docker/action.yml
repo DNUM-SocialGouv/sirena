@@ -52,7 +52,18 @@ runs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
+    - name: Check worker version is not already created
+      shell: bash
+      id: check-image-worker
+      run: |
+        if docker manifest inspect ${{ env.IMAGE_TAG }}-worker > /dev/null 2>&1; then
+          echo "worker-exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "worker-exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Build and push Docker worker image
+      if: steps.check-image-worker.outputs.worker-exists == 'false'
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -68,7 +79,18 @@ runs:
           type=gha,mode=max,scope=worker
         platforms: linux/amd64
 
+    - name: Check backend version is not already created
+      shell: bash
+      id: check-image-backend
+      run: |
+        if docker manifest inspect ${{ env.IMAGE_TAG }}-backend > /dev/null 2>&1; then
+          echo "backend-exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "backend-exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Build and push Docker backend image
+      if: steps.check-image-backend.outputs.backend-exists == 'false'
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -86,7 +108,18 @@ runs:
           type=gha,mode=max,scope=backend
         platforms: linux/amd64
 
+    - name: Check frontend version is not already created
+      shell: bash
+      id: check-image-frontend
+      run: |
+        if docker manifest inspect ${{ env.IMAGE_TAG }}-frontend > /dev/null 2>&1; then
+          echo "frontend-exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "frontend-exists=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Build and push Docker frontend image
+      if: steps.check-image-frontend.outputs.frontend-exists == 'false'
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -108,4 +141,4 @@ runs:
           type=gha,scope=frontend
         cache-to: |
           type=gha,mode=max,scope=frontend
-        platforms: linux/amd64 
+        platforms: linux/amd64
