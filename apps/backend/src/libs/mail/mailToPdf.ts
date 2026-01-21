@@ -1,6 +1,6 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { getLoggerStore } from '../asyncLocalStorage';
-import { applySubstitutions, getTipimailTemplate, type TipimailTemplate } from './tipimail';
+import { getLoggerStore } from '../asyncLocalStorage.js';
+import { applySubstitutions, getTipimailTemplate, type TipimailTemplate } from './tipimail.js';
 
 export interface EmailPdfOptions {
   from: { address: string; personalName?: string };
