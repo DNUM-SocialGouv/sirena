@@ -13,6 +13,7 @@ const personneTrackedFields: (keyof PersonneConcernee)[] = [
   'estVictimeInformee',
   'victimeInformeeCommentaire',
   'veutGarderAnonymat',
+  'estSignalementProfessionnel',
   'commentaire',
   'autrePersonnes',
   'aAutrePersonnes',

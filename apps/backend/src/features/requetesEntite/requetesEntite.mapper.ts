@@ -18,6 +18,7 @@ const hasIdentiteData = (data: {
 export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
   estIdentifie: true,
   veutGarderAnonymat: declarantData.neSouhaitePasCommuniquerIdentite || false,
+  estSignalementProfessionnel: declarantData.estSignalementProfessionnel || false,
   estVictime: declarantData.estPersonneConcernee || false,
   commentaire: declarantData.autresPrecisions || '',
   lienVictimeId:

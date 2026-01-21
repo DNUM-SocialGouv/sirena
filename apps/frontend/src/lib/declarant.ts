@@ -26,6 +26,7 @@ function formatDeclarantFromServerImpl(declarant: DeclarantFromAPI) {
     courrierElectronique: identite?.email || '',
     estPersonneConcernee: declarant.estVictime || false,
     neSouhaitePasCommuniquerIdentite: declarant.veutGarderAnonymat || false,
+    estSignalementProfessionnel: declarant.estSignalementProfessionnel || false,
     autresPrecisions: declarant.commentaire || '',
   };
 }

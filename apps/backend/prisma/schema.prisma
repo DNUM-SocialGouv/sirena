@@ -213,6 +213,7 @@ model PersonneConcernee {
   estVictimeInformee         Boolean?
   victimeInformeeCommentaire String   @default("")
   veutGarderAnonymat         Boolean?
+  estSignalementProfessionnel Boolean?
   commentaire                String   @default("")
   autrePersonnes             String   @default("")
   aAutrePersonnes            Boolean?

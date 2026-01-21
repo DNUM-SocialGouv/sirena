@@ -18,6 +18,11 @@ export const declarantFieldMetadata: Record<string, FieldMetadata> = {
     label: 'Le déclarant ne souhaite pas que son identité soit communiquée',
     type: 'checkbox',
   },
+  estSignalementProfessionnel: {
+    label:
+      'Le déclarant est un professionnel qui signale des dysfonctionnements et événements indésirables graves (EIG)',
+    type: 'checkbox',
+  },
   autresPrecisions: { label: 'Autres précisions', type: 'textarea' },
 };
 
