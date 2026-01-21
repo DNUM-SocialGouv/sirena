@@ -114,7 +114,7 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
       nom: 'Etape 1',
       requeteId: 'req123',
       clotureReasonId: null,
-      createdById: 'user1',
+      createdById: 'user123',
     },
   ],
 };
@@ -129,9 +129,9 @@ const fakeEtape = {
   nom: 'Etape 1',
   estPartagee: false,
   clotureReasonId: null,
-  createdById: 'user1',
   createdAt: new Date(),
   updatedAt: new Date(),
+  createdById: 'user123',
 };
 
 describe('requetesEntite.service', () => {
@@ -657,9 +657,10 @@ describe('requetesEntite.service', () => {
         lienAutrePrecision: null,
         declarantDeId: 'req123',
         participantDeId: null,
-        aAutrePersonnes: false,
         createdAt: oldTimestamp,
         updatedAt: oldTimestamp,
+        estSignalementProfessionnel: null,
+        aAutrePersonnes: null,
       };
 
       type RequeteWithDeclarant = Requete & {
@@ -725,9 +726,10 @@ describe('requetesEntite.service', () => {
         lienAutrePrecision: null,
         declarantDeId: 'req123',
         participantDeId: null,
-        aAutrePersonnes: false,
         createdAt: timestamp,
         updatedAt: timestamp,
+        estSignalementProfessionnel: null,
+        aAutrePersonnes: null,
       };
 
       type RequeteWithDeclarant = Requete & {
@@ -785,6 +787,7 @@ describe('requetesEntite.service', () => {
         id: 'declarant123',
         estNonIdentifiee: null,
         estHandicapee: null,
+        estSignalementProfessionnel: null,
         estIdentifie: true,
         estVictime: false,
         estVictimeInformee: null,
@@ -908,10 +911,10 @@ describe('requetesEntite.service', () => {
           faitSituationId: null,
           demarchesEngageesId: null,
           canDelete: true,
-          scanResult: null,
-          sanitizeStatus: 'PENDING',
           scanStatus: 'PENDING',
-          safeFilePath: 'test',
+          sanitizeStatus: 'PENDING',
+          safeFilePath: 'file1.pdf',
+          scanResult: null,
           processingError: null,
         },
       ]);
@@ -945,10 +948,10 @@ describe('requetesEntite.service', () => {
           faitSituationId: null,
           demarchesEngageesId: null,
           canDelete: true,
-          scanResult: null,
-          sanitizeStatus: 'PENDING',
           scanStatus: 'PENDING',
-          safeFilePath: 'test',
+          sanitizeStatus: 'PENDING',
+          safeFilePath: 'file1.pdf',
+          scanResult: null,
           processingError: null,
         },
         {
@@ -968,10 +971,10 @@ describe('requetesEntite.service', () => {
           faitSituationId: null,
           demarchesEngageesId: null,
           canDelete: true,
-          scanResult: null,
-          sanitizeStatus: 'PENDING',
           scanStatus: 'PENDING',
-          safeFilePath: 'test',
+          sanitizeStatus: 'PENDING',
+          safeFilePath: 'file2.pdf',
+          scanResult: null,
           processingError: null,
         },
       ]);
@@ -1160,10 +1163,10 @@ describe('requetesEntite.service', () => {
           faitSituationId: null,
           demarchesEngageesId: null,
           canDelete: true,
-          scanResult: null,
-          sanitizeStatus: 'PENDING',
           scanStatus: 'PENDING',
-          safeFilePath: 'test',
+          sanitizeStatus: 'PENDING',
+          safeFilePath: 'file1.pdf',
+          scanResult: null,
           processingError: null,
         },
       ]);
@@ -1239,7 +1242,30 @@ describe('requetesEntite.service', () => {
         },
         requeteEtape: {
           findMany: vi.fn().mockResolvedValue([]),
-          create: vi.fn().mockResolvedValue({ id: 'etape1', requeteId: 'req1', entiteId: 'root1' }),
+          create: vi
+            .fn()
+            .mockResolvedValueOnce({
+              id: 'etape1',
+              requeteId: 'req1',
+              entiteId: 'root1',
+              nom: 'Création de la requête le 01/01/2024',
+              statutId: 'FAIT',
+              estPartagee: false,
+              clotureReasonId: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .mockResolvedValueOnce({
+              id: 'etape2',
+              requeteId: 'req1',
+              entiteId: 'root1',
+              nom: 'Envoyer un accusé de réception au déclarant',
+              statutId: 'A_FAIRE',
+              estPartagee: false,
+              clotureReasonId: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }),
         },
         requete: {
           findUnique: vi.fn().mockResolvedValue(null),
@@ -2206,10 +2232,10 @@ describe('requetesEntite.service', () => {
     it('should update the priority of the requeteEntite to HAUTE', async () => {
       vi.clearAllMocks();
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
-        prioriteId: null,
-        requeteId: '123',
+        requeteId: 'req123',
         entiteId: 'ent123',
-        statutId: 'NOUVEAU',
+        statutId: 'CLOTUREE',
+        prioriteId: null,
       });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
@@ -2229,10 +2255,10 @@ describe('requetesEntite.service', () => {
     it('should update the priority of the requeteEntite to MOYENNE', async () => {
       vi.clearAllMocks();
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
-        prioriteId: null,
-        requeteId: '123',
+        requeteId: 'req123',
         entiteId: 'ent123',
-        statutId: 'NOUVEAU',
+        statutId: 'CLOTUREE',
+        prioriteId: null,
       });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
@@ -2252,10 +2278,10 @@ describe('requetesEntite.service', () => {
     it('should update the priority of the requeteEntite to BASSE', async () => {
       vi.clearAllMocks();
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
-        prioriteId: null,
-        requeteId: '123',
+        requeteId: 'req123',
         entiteId: 'ent123',
-        statutId: 'NOUVEAU',
+        statutId: 'CLOTUREE',
+        prioriteId: null,
       });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
@@ -2275,10 +2301,10 @@ describe('requetesEntite.service', () => {
     it('should set priority to null when null is provided', async () => {
       vi.clearAllMocks();
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
-        prioriteId: 'HAUTE',
-        requeteId: '123',
+        requeteId: 'req123',
         entiteId: 'ent123',
-        statutId: 'NOUVEAU',
+        statutId: 'CLOTUREE',
+        prioriteId: 'HAUTE',
       });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
@@ -2301,10 +2327,10 @@ describe('requetesEntite.service', () => {
       vi.mocked(createChangeLog).mockReset();
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
-        prioriteId: 'BASSE',
-        requeteId: '123',
+        requeteId: 'req123',
         entiteId: 'ent123',
-        statutId: 'NOUVEAU',
+        statutId: 'CLOTUREE',
+        prioriteId: 'BASSE',
       });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
@@ -2329,10 +2355,10 @@ describe('requetesEntite.service', () => {
       vi.mocked(createChangeLog).mockReset();
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
-        prioriteId: 'HAUTE',
-        requeteId: '123',
+        requeteId: 'req123',
         entiteId: 'ent123',
-        statutId: 'NOUVEAU',
+        statutId: 'CLOTUREE',
+        prioriteId: 'HAUTE',
       });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
@@ -2350,10 +2376,10 @@ describe('requetesEntite.service', () => {
       vi.mocked(createChangeLog).mockReset();
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
-        prioriteId: 'BASSE',
-        requeteId: '123',
+        requeteId: 'req123',
         entiteId: 'ent123',
-        statutId: 'NOUVEAU',
+        statutId: 'CLOTUREE',
+        prioriteId: 'BASSE',
       });
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,

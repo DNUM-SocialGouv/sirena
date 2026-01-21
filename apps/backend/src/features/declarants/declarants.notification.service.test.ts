@@ -34,6 +34,24 @@ vi.mock('../../libs/asyncLocalStorage.js', () => ({
   })),
 }));
 
+vi.mock('../../libs/minio.js', () => ({
+  uploadFileToMinio: vi.fn(),
+  deleteFileFromMinio: vi.fn(),
+}));
+
+vi.mock('../../libs/mail/mailToPdf.js', () => ({
+  generateEmailPdf: vi.fn(),
+}));
+
+vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
+  createUploadedFile: vi.fn(),
+}));
+
+vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
+  updateAcknowledgmentStep: vi.fn(),
+  ACKNOWLEDGMENT_STEP_NAME: 'Envoyer un accusé de réception au déclarant',
+}));
+
 const mockedPrismaRequete = vi.mocked(prisma.requete);
 const mockedPrismaEntite = vi.mocked(prisma.entite);
 const mockedSendTipimailEmail = vi.mocked(sendTipimailEmail);

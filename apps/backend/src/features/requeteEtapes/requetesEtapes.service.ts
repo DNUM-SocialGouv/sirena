@@ -82,7 +82,7 @@ export const createDefaultRequeteEtapes = async (
   });
 
   const createEtapeChangelog = async (
-    etape: typeof etape1,
+    etape: RequeteEtape,
     action: ChangeLogAction,
     before: Prisma.JsonObject | null,
     after: Prisma.JsonObject | null,
