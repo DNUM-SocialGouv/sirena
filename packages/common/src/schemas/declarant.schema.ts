@@ -13,6 +13,7 @@ export const DeclarantDataSchema = z.object({
   courrierElectronique: z.email().optional().or(z.literal('')),
   estPersonneConcernee: z.boolean().optional(),
   neSouhaitePasCommuniquerIdentite: z.boolean().optional(),
+  estSignalementProfessionnel: z.boolean().optional(),
   autresPrecisions: z.string().optional(),
 });
 

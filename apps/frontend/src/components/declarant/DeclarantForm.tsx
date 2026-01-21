@@ -295,6 +295,13 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   onChange: handleCheckboxChange('neSouhaitePasCommuniquerIdentite'),
                 },
               },
+              {
+                label: declarantFieldMetadata.estSignalementProfessionnel.label,
+                nativeInputProps: {
+                  checked: formData.estSignalementProfessionnel || false,
+                  onChange: handleCheckboxChange('estSignalementProfessionnel'),
+                },
+              },
             ]}
           />
 
