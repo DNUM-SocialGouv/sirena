@@ -1,4 +1,4 @@
-import { Menu } from '@base-ui-components/react/menu';
+import { Menu } from '@base-ui/react';
 import './Menu.css';
 import { clsx } from 'clsx';
 import type { HTMLAttributes, ReactNode } from 'react';

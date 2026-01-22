@@ -1,4 +1,4 @@
-import { Toast } from '@base-ui-components/react/toast';
+import { Toast } from '@base-ui/react';
 import { memo } from 'react';
 import './ToastList.css';
 
@@ -27,4 +27,4 @@ function ToastListComponent() {
 }
 
 export const ToastList = memo(ToastListComponent);
-export { Toast } from '@base-ui-components/react/toast';
+export { Toast } from '@base-ui/react';
