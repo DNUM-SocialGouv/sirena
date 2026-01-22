@@ -2,14 +2,13 @@ import * as Sentry from '@sentry/node';
 import { type Prisma, PrismaClient } from '../generated/client/index.js';
 import { createDefaultLogger } from '../src/helpers/pino.js';
 import { loggerStorage, prismaStorage, sentryStorage } from '../src/libs/asyncLocalStorage.js';
-import { seedSuperAdmin } from './seed/add_default_super_admin.js';
+import { prisma as appPrisma } from '../src/libs/prisma.js';
 import { seedEntites } from './seed/add_entities.js';
 import { seedEnums } from './seed/add_enums.js';
 import { seedRequeteFromDematSocial } from './seed/get_demat_social.js';
 import { importGeoData } from './seed/importGeoData.js';
 import '../src/libs/instrument.js';
 import { connection as redisConnection } from '../src/config/redis.js';
-import { prisma as appPrisma } from '../src/libs/prisma.js';
 
 async function main() {
   const args = process.argv.slice(2);
@@ -46,12 +45,6 @@ async function main() {
       await seedEnums(tx);
     } catch (err) {
       logger.error({ err }, '❌ Erreur lors du seeding des enums');
-      throw err;
-    }
-    try {
-      await seedSuperAdmin(tx);
-    } catch (err) {
-      logger.error({ err }, '❌ Erreur lors du seeding du super admin');
       throw err;
     }
     try {
