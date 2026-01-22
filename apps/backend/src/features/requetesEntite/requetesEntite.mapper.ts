@@ -17,7 +17,8 @@ const hasIdentiteData = (data: {
 
 export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
   estIdentifie: true,
-  veutGarderAnonymat: declarantData.neSouhaitePasCommuniquerIdentite || false,
+  veutGarderAnonymat:
+    declarantData.consentCommuniquerIdentite === undefined ? undefined : !declarantData.consentCommuniquerIdentite,
   estSignalementProfessionnel: declarantData.estSignalementProfessionnel || false,
   estVictime: declarantData.estPersonneConcernee || false,
   commentaire: declarantData.autresPrecisions || '',
@@ -60,7 +61,8 @@ export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
 
 export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConcerneeInput) => ({
   estHandicapee: participantData.estHandicapee || false,
-  veutGarderAnonymat: participantData.veutGarderAnonymat || false,
+  veutGarderAnonymat:
+    participantData.consentCommuniquerIdentite === undefined ? undefined : !participantData.consentCommuniquerIdentite,
   estVictimeInformee: participantData.estVictimeInformee || false,
   autrePersonnes: participantData.autrePersonnes || '',
   aAutrePersonnes: participantData.aAutrePersonnes,

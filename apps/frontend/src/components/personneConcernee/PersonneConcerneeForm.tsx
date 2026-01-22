@@ -288,10 +288,10 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
             <Checkbox
               options={[
                 {
-                  label: personneConcerneeFieldMetadata.veutGarderAnonymat.label,
+                  label: personneConcerneeFieldMetadata.consentCommuniquerIdentite.label,
                   nativeInputProps: {
-                    checked: formData.veutGarderAnonymat || false,
-                    onChange: handleCheckboxChange('veutGarderAnonymat'),
+                    checked: formData.consentCommuniquerIdentite || false,
+                    onChange: handleCheckboxChange('consentCommuniquerIdentite'),
                   },
                 },
               ]}

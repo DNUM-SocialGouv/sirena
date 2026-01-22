@@ -289,10 +289,10 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
           <Checkbox
             options={[
               {
-                label: declarantFieldMetadata.neSouhaitePasCommuniquerIdentite.label,
+                label: declarantFieldMetadata.consentCommuniquerIdentite.label,
                 nativeInputProps: {
-                  checked: formData.neSouhaitePasCommuniquerIdentite || false,
-                  onChange: handleCheckboxChange('neSouhaitePasCommuniquerIdentite'),
+                  checked: formData.consentCommuniquerIdentite || false,
+                  onChange: handleCheckboxChange('consentCommuniquerIdentite'),
                 },
               },
               {

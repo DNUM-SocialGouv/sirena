@@ -11,7 +11,7 @@ export interface PersonneConcerneeData {
   numeroTelephone?: string;
   courrierElectronique?: string;
   estHandicapee?: boolean;
-  veutGarderAnonymat?: boolean;
+  consentCommuniquerIdentite?: boolean;
   estVictimeInformee?: boolean;
   autrePersonnes?: string;
   aAutrePersonnes?: boolean;
@@ -36,7 +36,11 @@ export function formatPersonneConcerneeFromServer(participant: unknown): Personn
     numeroTelephone: (identite.telephone as string) || '',
     courrierElectronique: (identite.email as string) || '',
     estHandicapee: (p.estHandicapee as boolean) || false,
-    veutGarderAnonymat: (p.veutGarderAnonymat as boolean) || false,
+    consentCommuniquerIdentite:
+      (p.veutGarderAnonymat as boolean | null | undefined) === null ||
+      (p.veutGarderAnonymat as boolean | null | undefined) === undefined
+        ? undefined
+        : !(p.veutGarderAnonymat as boolean),
     estVictimeInformee: (p.estVictimeInformee as boolean) || false,
     autrePersonnes: (p.autrePersonnes as string) || '',
     commentaire: (p.commentaire as string) || '',
@@ -55,7 +59,7 @@ export function formatPersonneConcerneeToServer(data: PersonneConcerneeData) {
     numeroTelephone: data.numeroTelephone,
     courrierElectronique: data.courrierElectronique,
     estHandicapee: data.estHandicapee,
-    veutGarderAnonymat: data.veutGarderAnonymat,
+    consentCommuniquerIdentite: data.consentCommuniquerIdentite,
     estVictimeInformee: data.estVictimeInformee,
     autrePersonnes: data.autrePersonnes,
     aAutrePersonnes: data.aAutrePersonnes,
