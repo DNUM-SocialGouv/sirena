@@ -21,7 +21,6 @@ export const UserSchema = z.object({
 export const UserWithRoleSchema = UserSchema.extend({
   role: RoleEnumSchema,
 });
-// DEVNOTE: known issue on zod-openapi https://github.com/samchungy/zod-openapi/issues/457
 export const GetUserResponseSchema = UserWithRoleSchema.omit({
   pcData: true,
 });

@@ -1,4 +1,4 @@
-import { Toast } from '@base-ui-components/react';
+import { Toast } from '@base-ui/react';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type ToastData, ToastList } from './ToastList';

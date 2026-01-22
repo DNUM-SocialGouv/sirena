@@ -9,6 +9,7 @@ import {
   MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION,
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   MIS_EN_CAUSE_TYPE,
+  PROFESSION_TYPE,
   RECEPTION_TYPE,
 } from '@sirena/common/constants';
 import type { RootChampFragmentFragment } from '../../libs/graffle.js';
@@ -283,8 +284,8 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
       }
       if (professionelType === DS_PROFESSION_DOMICILE_TYPE.NPJM) {
         return {
-          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.NPJM,
-          misEnCauseTypePrecisionId: null,
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SOCIAL,
+          misEnCauseTypePrecisionId: PROFESSION_TYPE.MJPM,
         };
       }
       if (professionelType === DS_PROFESSION_DOMICILE_TYPE.AUTRE) {
@@ -376,8 +377,8 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
       }
       if (professionelType === DS_PROFESSION_TYPE.NPJM) {
         return {
-          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.NPJM,
-          misEnCauseTypePrecisionId: null,
+          misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SOCIAL,
+          misEnCauseTypePrecisionId: PROFESSION_TYPE.MJPM,
         };
       }
       if (professionelType === DS_PROFESSION_TYPE.AUTRE) {
@@ -396,7 +397,7 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
       }
     }
     return {
-      misEnCauseTypeId: MIS_EN_CAUSE_TYPE.AUTRE,
+      misEnCauseTypeId: null,
       misEnCauseTypePrecisionId: null,
     };
   }

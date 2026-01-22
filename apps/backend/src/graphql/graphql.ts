@@ -2862,7 +2862,33 @@ type RootChampFragment_RnfChamp_Fragment = { __typename?: 'RNFChamp', id: string
 
 type RootChampFragment_RegionChamp_Fragment = { __typename?: 'RegionChamp', id: string, label: string, stringValue?: string | null };
 
-type RootChampFragment_RepetitionChamp_Fragment = { __typename?: 'RepetitionChamp', id: string, label: string, stringValue?: string | null, champs: Array<{ __typename?: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null } | { __typename?: 'CarteChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean } | { __typename?: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null } | { __typename?: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null } | { __typename?: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null } | { __typename?: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null } | { __typename?: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null } | { __typename?: 'DepartementChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'EpciChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string } | { __typename?: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null } | { __typename?: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null } | { __typename?: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null } | { __typename?: 'PaysChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> } | { __typename?: 'RNFChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'RegionChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'RepetitionChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'RppsanteChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'SiretChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'TextChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }> };
+type RootChampFragment_RepetitionChamp_Fragment = { __typename?: 'RepetitionChamp', id: string, label: string, stringValue?: string | null, champs: Array<
+    | { __typename?: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null }
+    | { __typename?: 'CarteChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean }
+    | { __typename?: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null }
+    | { __typename?: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null }
+    | { __typename?: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null }
+    | { __typename?: 'DepartementChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'EpciChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string }
+    | { __typename?: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null }
+    | { __typename?: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'PaysChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
+    | { __typename?: 'RNFChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'RegionChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'RepetitionChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'RppsanteChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'SiretChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'TextChamp', id: string, label: string, stringValue?: string | null }
+    | { __typename?: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }
+  > };
 
 type RootChampFragment_RppsanteChamp_Fragment = { __typename?: 'RppsanteChamp', id: string, label: string, stringValue?: string | null };
 
@@ -2872,7 +2898,33 @@ type RootChampFragment_TextChamp_Fragment = { __typename?: 'TextChamp', id: stri
 
 type RootChampFragment_TitreIdentiteChamp_Fragment = { __typename?: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null };
 
-export type RootChampFragmentFragment = RootChampFragment_AddressChamp_Fragment | RootChampFragment_CarteChamp_Fragment | RootChampFragment_CheckboxChamp_Fragment | RootChampFragment_CiviliteChamp_Fragment | RootChampFragment_CommuneChamp_Fragment | RootChampFragment_DateChamp_Fragment | RootChampFragment_DatetimeChamp_Fragment | RootChampFragment_DecimalNumberChamp_Fragment | RootChampFragment_DepartementChamp_Fragment | RootChampFragment_DossierLinkChamp_Fragment | RootChampFragment_EngagementJuridiqueChamp_Fragment | RootChampFragment_EpciChamp_Fragment | RootChampFragment_FinessChamp_Fragment | RootChampFragment_IntegerNumberChamp_Fragment | RootChampFragment_LinkedDropDownListChamp_Fragment | RootChampFragment_MultipleDropDownListChamp_Fragment | RootChampFragment_PaysChamp_Fragment | RootChampFragment_PieceJustificativeChamp_Fragment | RootChampFragment_RnfChamp_Fragment | RootChampFragment_RegionChamp_Fragment | RootChampFragment_RepetitionChamp_Fragment | RootChampFragment_RppsanteChamp_Fragment | RootChampFragment_SiretChamp_Fragment | RootChampFragment_TextChamp_Fragment | RootChampFragment_TitreIdentiteChamp_Fragment;
+export type RootChampFragmentFragment =
+  | RootChampFragment_AddressChamp_Fragment
+  | RootChampFragment_CarteChamp_Fragment
+  | RootChampFragment_CheckboxChamp_Fragment
+  | RootChampFragment_CiviliteChamp_Fragment
+  | RootChampFragment_CommuneChamp_Fragment
+  | RootChampFragment_DateChamp_Fragment
+  | RootChampFragment_DatetimeChamp_Fragment
+  | RootChampFragment_DecimalNumberChamp_Fragment
+  | RootChampFragment_DepartementChamp_Fragment
+  | RootChampFragment_DossierLinkChamp_Fragment
+  | RootChampFragment_EngagementJuridiqueChamp_Fragment
+  | RootChampFragment_EpciChamp_Fragment
+  | RootChampFragment_FinessChamp_Fragment
+  | RootChampFragment_IntegerNumberChamp_Fragment
+  | RootChampFragment_LinkedDropDownListChamp_Fragment
+  | RootChampFragment_MultipleDropDownListChamp_Fragment
+  | RootChampFragment_PaysChamp_Fragment
+  | RootChampFragment_PieceJustificativeChamp_Fragment
+  | RootChampFragment_RnfChamp_Fragment
+  | RootChampFragment_RegionChamp_Fragment
+  | RootChampFragment_RepetitionChamp_Fragment
+  | RootChampFragment_RppsanteChamp_Fragment
+  | RootChampFragment_SiretChamp_Fragment
+  | RootChampFragment_TextChamp_Fragment
+  | RootChampFragment_TitreIdentiteChamp_Fragment
+;
 
 export type AddressFragmentFragment = { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null };
 
@@ -2932,14 +2984,92 @@ type ChampFragment_TextChamp_Fragment = { __typename?: 'TextChamp', id: string, 
 
 type ChampFragment_TitreIdentiteChamp_Fragment = { __typename?: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null };
 
-export type ChampFragmentFragment = ChampFragment_AddressChamp_Fragment | ChampFragment_CarteChamp_Fragment | ChampFragment_CheckboxChamp_Fragment | ChampFragment_CiviliteChamp_Fragment | ChampFragment_CommuneChamp_Fragment | ChampFragment_DateChamp_Fragment | ChampFragment_DatetimeChamp_Fragment | ChampFragment_DecimalNumberChamp_Fragment | ChampFragment_DepartementChamp_Fragment | ChampFragment_DossierLinkChamp_Fragment | ChampFragment_EngagementJuridiqueChamp_Fragment | ChampFragment_EpciChamp_Fragment | ChampFragment_FinessChamp_Fragment | ChampFragment_IntegerNumberChamp_Fragment | ChampFragment_LinkedDropDownListChamp_Fragment | ChampFragment_MultipleDropDownListChamp_Fragment | ChampFragment_PaysChamp_Fragment | ChampFragment_PieceJustificativeChamp_Fragment | ChampFragment_RnfChamp_Fragment | ChampFragment_RegionChamp_Fragment | ChampFragment_RepetitionChamp_Fragment | ChampFragment_RppsanteChamp_Fragment | ChampFragment_SiretChamp_Fragment | ChampFragment_TextChamp_Fragment | ChampFragment_TitreIdentiteChamp_Fragment;
+export type ChampFragmentFragment =
+  | ChampFragment_AddressChamp_Fragment
+  | ChampFragment_CarteChamp_Fragment
+  | ChampFragment_CheckboxChamp_Fragment
+  | ChampFragment_CiviliteChamp_Fragment
+  | ChampFragment_CommuneChamp_Fragment
+  | ChampFragment_DateChamp_Fragment
+  | ChampFragment_DatetimeChamp_Fragment
+  | ChampFragment_DecimalNumberChamp_Fragment
+  | ChampFragment_DepartementChamp_Fragment
+  | ChampFragment_DossierLinkChamp_Fragment
+  | ChampFragment_EngagementJuridiqueChamp_Fragment
+  | ChampFragment_EpciChamp_Fragment
+  | ChampFragment_FinessChamp_Fragment
+  | ChampFragment_IntegerNumberChamp_Fragment
+  | ChampFragment_LinkedDropDownListChamp_Fragment
+  | ChampFragment_MultipleDropDownListChamp_Fragment
+  | ChampFragment_PaysChamp_Fragment
+  | ChampFragment_PieceJustificativeChamp_Fragment
+  | ChampFragment_RnfChamp_Fragment
+  | ChampFragment_RegionChamp_Fragment
+  | ChampFragment_RepetitionChamp_Fragment
+  | ChampFragment_RppsanteChamp_Fragment
+  | ChampFragment_SiretChamp_Fragment
+  | ChampFragment_TextChamp_Fragment
+  | ChampFragment_TitreIdentiteChamp_Fragment
+;
 
 export type GetDossiersMetadataQueryVariables = Exact<{
   demarcheNumber: Scalars['Int']['input'];
 }>;
 
 
-export type GetDossiersMetadataQuery = { __typename?: 'Query', demarche: { __typename?: 'Demarche', dossiers: { __typename?: 'DossierConnection', edges?: Array<{ __typename?: 'DossierEdge', node?: { __typename?: 'Dossier', id: string, number: number, dateDerniereModification: string, dateDepot: string, champs: Array<{ __typename: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null } | { __typename: 'CarteChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean } | { __typename: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null } | { __typename: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null } | { __typename: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null } | { __typename: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null } | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null } | { __typename: 'DepartementChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'EpciChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string } | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null } | { __typename: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null } | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null } | { __typename: 'PaysChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> } | { __typename: 'RNFChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'RegionChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'RepetitionChamp', id: string, label: string, stringValue?: string | null, champs: Array<{ __typename?: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null } | { __typename?: 'CarteChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean } | { __typename?: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null } | { __typename?: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null } | { __typename?: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null } | { __typename?: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null } | { __typename?: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null } | { __typename?: 'DepartementChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'EpciChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string } | { __typename?: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null } | { __typename?: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null } | { __typename?: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null } | { __typename?: 'PaysChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> } | { __typename?: 'RNFChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'RegionChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'RepetitionChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'RppsanteChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'SiretChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'TextChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }> } | { __typename: 'RppsanteChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'SiretChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'TextChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }> } | null } | null> | null } } };
+export type GetDossiersMetadataQuery = { __typename?: 'Query', demarche: { __typename?: 'Demarche', dossiers: { __typename?: 'DossierConnection', edges?: Array<{ __typename?: 'DossierEdge', node?: { __typename?: 'Dossier', id: string, number: number, dateDerniereModification: string, dateDepot: string, champs: Array<
+            | { __typename: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null }
+            | { __typename: 'CarteChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean }
+            | { __typename: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null }
+            | { __typename: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null }
+            | { __typename: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null }
+            | { __typename: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null }
+            | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null }
+            | { __typename: 'DepartementChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'EpciChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string }
+            | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null }
+            | { __typename: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null }
+            | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null }
+            | { __typename: 'PaysChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
+            | { __typename: 'RNFChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'RegionChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'RepetitionChamp', id: string, label: string, stringValue?: string | null, champs: Array<
+                | { __typename?: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null }
+                | { __typename?: 'CarteChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean }
+                | { __typename?: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null }
+                | { __typename?: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null }
+                | { __typename?: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null }
+                | { __typename?: 'DepartementChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'EpciChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string }
+                | { __typename?: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null }
+                | { __typename?: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'PaysChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
+                | { __typename?: 'RNFChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'RegionChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'RepetitionChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'RppsanteChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'SiretChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'TextChamp', id: string, label: string, stringValue?: string | null }
+                | { __typename?: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }
+              > }
+            | { __typename: 'RppsanteChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'SiretChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'TextChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }
+          > } | null } | null> | null } } };
 
 export type GetDossiersByDateQueryVariables = Exact<{
   demarcheNumber: Scalars['Int']['input'];
@@ -2955,7 +3085,63 @@ export type GetDossierQueryVariables = Exact<{
 }>;
 
 
-export type GetDossierQuery = { __typename?: 'Query', dossier: { __typename?: 'Dossier', id: string, number: number, state: DossierState, dateDerniereModification: string, dateDepot: string, archived: boolean, mandataireFirstName?: string | null, mandataireLastName?: string | null, usager: { __typename?: 'Profile', email: string }, demandeur: { __typename: 'PersonneMorale' } | { __typename: 'PersonneMoraleIncomplete' } | { __typename: 'PersonnePhysique', nom: string, prenom: string, civilite?: Civilite | null, email?: string | null }, champs: Array<{ __typename: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null } | { __typename: 'CarteChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean } | { __typename: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null } | { __typename: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null } | { __typename: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null } | { __typename: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null } | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null } | { __typename: 'DepartementChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'EpciChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string } | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null } | { __typename: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null } | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null } | { __typename: 'PaysChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> } | { __typename: 'RNFChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'RegionChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'RepetitionChamp', id: string, label: string, stringValue?: string | null, champs: Array<{ __typename?: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null } | { __typename?: 'CarteChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean } | { __typename?: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null } | { __typename?: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null } | { __typename?: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null } | { __typename?: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null } | { __typename?: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null } | { __typename?: 'DepartementChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'EpciChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string } | { __typename?: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null } | { __typename?: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null } | { __typename?: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null } | { __typename?: 'PaysChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> } | { __typename?: 'RNFChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'RegionChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'RepetitionChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'RppsanteChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'SiretChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'TextChamp', id: string, label: string, stringValue?: string | null } | { __typename?: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }> } | { __typename: 'RppsanteChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'SiretChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'TextChamp', id: string, label: string, stringValue?: string | null } | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }>, pdf?: { __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint } | null } };
+export type GetDossierQuery = { __typename?: 'Query', dossier: { __typename?: 'Dossier', id: string, number: number, state: DossierState, dateDerniereModification: string, dateDepot: string, archived: boolean, mandataireFirstName?: string | null, mandataireLastName?: string | null, usager: { __typename?: 'Profile', email: string }, demandeur:
+      | { __typename: 'PersonneMorale' }
+      | { __typename: 'PersonneMoraleIncomplete' }
+      | { __typename: 'PersonnePhysique', nom: string, prenom: string, civilite?: Civilite | null, email?: string | null }
+    , champs: Array<
+      | { __typename: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null }
+      | { __typename: 'CarteChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean }
+      | { __typename: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null }
+      | { __typename: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null }
+      | { __typename: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null }
+      | { __typename: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null }
+      | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null }
+      | { __typename: 'DepartementChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'EpciChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string }
+      | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null }
+      | { __typename: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null }
+      | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null }
+      | { __typename: 'PaysChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
+      | { __typename: 'RNFChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'RegionChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'RepetitionChamp', id: string, label: string, stringValue?: string | null, champs: Array<
+          | { __typename?: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null }
+          | { __typename?: 'CarteChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean }
+          | { __typename?: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null }
+          | { __typename?: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null }
+          | { __typename?: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null }
+          | { __typename?: 'DepartementChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'EpciChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string }
+          | { __typename?: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null }
+          | { __typename?: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'PaysChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
+          | { __typename?: 'RNFChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'RegionChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'RepetitionChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'RppsanteChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'SiretChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'TextChamp', id: string, label: string, stringValue?: string | null }
+          | { __typename?: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }
+        > }
+      | { __typename: 'RppsanteChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'SiretChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'TextChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }
+    >, pdf?: { __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint } | null } };
 
 export type GetInstructeursQueryVariables = Exact<{
   demarcheNumber: Scalars['Int']['input'];

@@ -231,12 +231,10 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
           </div>
         )}
 
-        {fait?.motifs?.length > 0 && (
-          <div className="fr-col-auto">
-            <MotifsQualified situation={situation} />
-            {receptionType === RECEPTION_TYPE.FORMULAIRE ? <MotifsDeclared situation={situation} /> : null}
-          </div>
-        )}
+        <div className="fr-col-auto">
+          <MotifsQualified situation={situation} />
+          {receptionType === RECEPTION_TYPE.FORMULAIRE ? <MotifsDeclared situation={situation} /> : null}
+        </div>
         {hasTraitementDesFaits && <TraitementDesFaits situation={situation} details={false} />}
       </div>
     );

@@ -61,7 +61,7 @@ function getDomicileProfessionnelCategory(ctx: SituationContext): DomicileProfes
   const { misEnCauseType, misEnCauseTypePrecision } = ctx;
 
   // 4. Tuteur/MJPM
-  if (misEnCauseType === 'NPJM' || misEnCauseTypePrecision === 'MJPM') {
+  if (misEnCauseTypePrecision === 'MJPM') {
     return 'TUTEUR_MJPM';
   }
 
@@ -176,8 +176,8 @@ function nonDomicileMaltraitanceSubtree(): DecisionNode {
     id: 'maltraitance_mis_en_cause',
     description: 'Mis en cause : famille, proche, professionnel, établissement, tuteur, autre',
     select: (ctx): MisEnCauseType | 'TUTEUR_MJPM' | null => {
-      // Tuteur/curateur/mandataire judiciaire : NPJM or MJPM via precision
-      if (ctx.misEnCauseType === 'NPJM' || ctx.misEnCauseTypePrecision === 'MJPM') {
+      // Tuteur/curateur/mandataire judiciaire : MJPM via precision
+      if (ctx.misEnCauseTypePrecision === 'MJPM') {
         return 'TUTEUR_MJPM';
       }
 

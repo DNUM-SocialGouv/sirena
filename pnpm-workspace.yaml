@@ -14,8 +14,8 @@ catalog:
   hono: ^4.11.4
   hono-openapi: ^1.1.2
   "@biomejs/biome": ^2.3.1
-  vitest: ^4.0.3
-  "@vitest/coverage-v8": ^4.0.3
-  "@vitest/browser": ^3.2.4
+  vitest: ^4.0.17
+  "@vitest/coverage-v8": ^4.0.17
+  "@vitest/browser": ^4.0.17
 onlyBuiltDependencies:
   - "@prisma/client"
