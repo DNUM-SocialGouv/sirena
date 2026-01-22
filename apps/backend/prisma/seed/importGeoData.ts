@@ -1,4 +1,4 @@
-import type { PrismaClient } from '../../generated/client/index.js';
+import type { Prisma, PrismaClient } from '../../generated/client/index.js';
 import { getLoggerStore } from '../../src/libs/asyncLocalStorage.js';
 import inseePostalRaw from '../documents/inseetocodepostal.json' with { type: 'json' };
 import listeEntitesRaw from '../documents/liste_entites.json' with { type: 'json' };
@@ -26,7 +26,7 @@ type ListeEntiteRow = {
 const inseePostal = inseePostalRaw as InseePostalRow[];
 const listeEntites = listeEntitesRaw as ListeEntiteRow[];
 
-export async function importGeoData(prisma: PrismaClient) {
+export async function importGeoData(prisma: PrismaClient | Prisma.TransactionClient) {
   const logger = getLoggerStore();
   logger.info('🌱 Début du seeding des données géographiques...');
 

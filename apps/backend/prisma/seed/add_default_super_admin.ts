@@ -1,8 +1,8 @@
 import { STATUT_TYPES } from '@sirena/common/constants';
-import type { PrismaClient } from '../../generated/client/index.js';
+import type { Prisma, PrismaClient } from '../../generated/client/index.js';
 import { getLoggerStore } from '../../src/libs/asyncLocalStorage.js';
 
-export async function seedSuperAdmin(prisma: PrismaClient) {
+export async function seedSuperAdmin(prisma: PrismaClient | Prisma.TransactionClient) {
   const logger = getLoggerStore();
   logger.info('🌱 Début du seeding des super admin...');
   const superAdminRole = await prisma.roleEnum.findUnique({

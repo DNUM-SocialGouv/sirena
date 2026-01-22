@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { PrismaClient } from '../../../generated/client/index.js';
+import type { Prisma, PrismaClient } from '../../../generated/client/index.js';
 import { parseCsv } from '../../helpers/parseCsv.js';
 import { normalizeParentName } from './utils.js';
 
@@ -15,7 +15,7 @@ const ServiceRowSchema = z.object({
     .transform((v) => v === 'true' || v === '1' || v === 'TRUE' || v === 'True' || v === 'Oui' || v === 'oui'),
 });
 
-export async function seedServices(prisma: PrismaClient) {
+export async function seedServices(prisma: PrismaClient | Prisma.TransactionClient) {
   return await parseCsv('./prisma/documents/services.csv', ServiceRowSchema, async (rows) => {
     const parentEntities = await prisma.entite.findMany({
       where: {

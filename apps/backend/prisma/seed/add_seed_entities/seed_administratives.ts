@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { PrismaClient } from '../../../generated/client/index.js';
+import type { Prisma, PrismaClient } from '../../../generated/client/index.js';
 import { parseCsv } from '../../helpers/parseCsv.js';
 
 const AdministrativeRowSchema = z.object({
@@ -41,7 +41,7 @@ const AdministrativeRowSchema = z.object({
     .transform((v) => v === 'true' || v === '1' || v === 'TRUE' || v === 'True' || v === 'Oui' || v === 'oui'),
 });
 
-export async function seedAdministratives(prisma: PrismaClient) {
+export async function seedAdministratives(prisma: PrismaClient | Prisma.TransactionClient) {
   return await parseCsv('./prisma/documents/administratives.csv', AdministrativeRowSchema, async (rows) => {
     const existing = await prisma.entite.findMany({
       where: {

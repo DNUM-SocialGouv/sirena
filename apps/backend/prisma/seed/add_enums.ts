@@ -28,10 +28,10 @@ import {
   statutTypes,
   transportTypeLabels,
 } from '@sirena/common/constants';
-import type { PrismaClient } from '../../generated/client/index.js';
+import type { Prisma, PrismaClient } from '../../generated/client/index.js';
 import { getLoggerStore } from '../../src/libs/asyncLocalStorage.js';
 
-async function seedAgeEnum(prisma: PrismaClient) {
+async function seedAgeEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(ageLabels)) {
     const exists = await prisma.ageEnum.findUnique({ where: { id } });
@@ -43,7 +43,7 @@ async function seedAgeEnum(prisma: PrismaClient) {
   return { table: 'ageEnum', added };
 }
 
-async function seedAutoritesTypes(prisma: PrismaClient) {
+async function seedAutoritesTypes(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(autoriteTypeLabels)) {
     const exists = await prisma.autoriteTypeEnum.findUnique({ where: { id } });
@@ -55,7 +55,7 @@ async function seedAutoritesTypes(prisma: PrismaClient) {
   return { table: 'autoriteTypeEnum', added };
 }
 
-async function seedCiviliteEnum(prisma: PrismaClient) {
+async function seedCiviliteEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(civiliteLabels)) {
     const exists = await prisma.civiliteEnum.findUnique({ where: { id } });
@@ -67,7 +67,7 @@ async function seedCiviliteEnum(prisma: PrismaClient) {
   return { table: 'civiliteEnum', added };
 }
 
-async function seedConsequenceEnum(prisma: PrismaClient) {
+async function seedConsequenceEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(consequenceLabels)) {
     const exists = await prisma.consequenceEnum.findUnique({ where: { id } });
@@ -79,7 +79,7 @@ async function seedConsequenceEnum(prisma: PrismaClient) {
   return { table: 'consequenceEnum', added };
 }
 
-async function seedDemarchesEngageesEnum(prisma: PrismaClient) {
+async function seedDemarchesEngageesEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(demarcheEngageeLabels)) {
     const exists = await prisma.demarchesEngageesEnum.findUnique({ where: { id } });
@@ -91,7 +91,7 @@ async function seedDemarchesEngageesEnum(prisma: PrismaClient) {
   return { table: 'demarchesEngagees', added };
 }
 
-async function seedEntiteTypeEnum(prisma: PrismaClient) {
+async function seedEntiteTypeEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(entiteTypes)) {
     const exists = await prisma.entiteTypeEnum.findUnique({ where: { id } });
@@ -103,7 +103,7 @@ async function seedEntiteTypeEnum(prisma: PrismaClient) {
   return { table: 'entiteEnum', added };
 }
 
-async function seedLienVictimeEnum(prisma: PrismaClient) {
+async function seedLienVictimeEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(lienVictimeLabels)) {
     const exists = await prisma.lienVictimeEnum.findUnique({ where: { id } });
@@ -115,7 +115,7 @@ async function seedLienVictimeEnum(prisma: PrismaClient) {
   return { table: 'lienVictimeEnum', added };
 }
 
-async function seedLieuTypeEnum(prisma: PrismaClient) {
+async function seedLieuTypeEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(lieuTypeLabels)) {
     const exists = await prisma.lieuTypeEnum.findUnique({ where: { id } });
@@ -127,7 +127,7 @@ async function seedLieuTypeEnum(prisma: PrismaClient) {
   return { table: 'lieuTypeEnum', added };
 }
 
-async function seedMaltraitanceTypeEnum(prisma: PrismaClient) {
+async function seedMaltraitanceTypeEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(maltraitanceTypeLabels)) {
     const exists = await prisma.maltraitanceTypeEnum.findUnique({ where: { id } });
@@ -139,7 +139,7 @@ async function seedMaltraitanceTypeEnum(prisma: PrismaClient) {
   return { table: 'maltraitanceTypeEnum', added };
 }
 
-async function seedMisEnCauseTypeEnum(prisma: PrismaClient) {
+async function seedMisEnCauseTypeEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(misEnCauseTypeLabels)) {
     const exists = await prisma.misEnCauseTypeEnum.findUnique({ where: { id } });
@@ -151,7 +151,7 @@ async function seedMisEnCauseTypeEnum(prisma: PrismaClient) {
   return { table: 'misEnCauseTypeEnum', added };
 }
 
-async function seedMotifEnum(prisma: PrismaClient) {
+async function seedMotifEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
 
   for (const motif of MOTIFS_DATA) {
@@ -169,7 +169,7 @@ async function seedMotifEnum(prisma: PrismaClient) {
   return { table: 'motifEnum', added };
 }
 
-async function seedMotifDeclaratifEnum(prisma: PrismaClient) {
+async function seedMotifDeclaratifEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
 
   for (const [id, label] of Object.entries(motifLabels)) {
@@ -188,7 +188,7 @@ async function seedMotifDeclaratifEnum(prisma: PrismaClient) {
   return { table: 'motifDeclaratifEnum', added };
 }
 
-async function seedMisEnCauseTypePrecisionEnum(prisma: PrismaClient) {
+async function seedMisEnCauseTypePrecisionEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
 
   // Helper to add precisions for a given parent type
@@ -234,7 +234,7 @@ async function seedMisEnCauseTypePrecisionEnum(prisma: PrismaClient) {
   return { table: 'misEnCauseTypePrecisionEnum', added };
 }
 
-async function seedReceptionTypeEnum(prisma: PrismaClient) {
+async function seedReceptionTypeEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(receptionTypeLabels)) {
     const exists = await prisma.receptionTypeEnum.findUnique({ where: { id } });
@@ -246,7 +246,7 @@ async function seedReceptionTypeEnum(prisma: PrismaClient) {
   return { table: 'receptionTypeEnum', added };
 }
 
-async function seedRequeteEtapeStatutEnum(prisma: PrismaClient) {
+async function seedRequeteEtapeStatutEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(requeteEtapeStatutType)) {
     const exists = await prisma.requeteEtapeStatutEnum.findUnique({ where: { id } });
@@ -258,7 +258,7 @@ async function seedRequeteEtapeStatutEnum(prisma: PrismaClient) {
   return { table: 'requeteEtapeStatutEnum', added };
 }
 
-async function seedRequetePrioriteEnum(prisma: PrismaClient) {
+async function seedRequetePrioriteEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   // Get correct order
   const prioriteEntries = Object.entries(requetePrioriteType).reverse();
@@ -284,7 +284,7 @@ async function seedRequetePrioriteEnum(prisma: PrismaClient) {
   return { table: 'requetePrioriteEnum', added };
 }
 
-async function seedRoleEnum(prisma: PrismaClient) {
+async function seedRoleEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(roles)) {
     const exists = await prisma.roleEnum.findUnique({ where: { id } });
@@ -296,7 +296,7 @@ async function seedRoleEnum(prisma: PrismaClient) {
   return { table: 'roleEnum', added };
 }
 
-async function seedStatutEnum(prisma: PrismaClient) {
+async function seedStatutEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(statutTypes)) {
     const exists = await prisma.statutEnum.findUnique({ where: { id } });
@@ -308,7 +308,7 @@ async function seedStatutEnum(prisma: PrismaClient) {
   return { table: 'statutEnum', added };
 }
 
-async function seedTransportTypeEnum(prisma: PrismaClient) {
+async function seedTransportTypeEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(transportTypeLabels)) {
     const exists = await prisma.transportTypeEnum.findUnique({ where: { id } });
@@ -320,7 +320,7 @@ async function seedTransportTypeEnum(prisma: PrismaClient) {
   return { table: 'transportTypeEnum', added };
 }
 
-async function seedRequeteClotureReasonEnum(prisma: PrismaClient) {
+async function seedRequeteClotureReasonEnum(prisma: PrismaClient | Prisma.TransactionClient) {
   let added = 0;
   for (const [id, label] of Object.entries(requeteClotureReasonLabels)) {
     const exists = await prisma.requeteClotureReasonEnum.findUnique({ where: { id } });
@@ -332,12 +332,12 @@ async function seedRequeteClotureReasonEnum(prisma: PrismaClient) {
   return { table: 'requeteClotureReasonEnum', added };
 }
 
-type SeedFunction = (prisma: PrismaClient) => Promise<{ table: string; added: number }>;
+type SeedFunction = (prisma: PrismaClient | Prisma.TransactionClient) => Promise<{ table: string; added: number }>;
 
 async function seedLevel(
   level: number,
   seedFunctions: SeedFunction[],
-  prisma: PrismaClient,
+  prisma: PrismaClient | Prisma.TransactionClient,
 ): Promise<PromiseSettledResult<{ table: string; added: number }>[]> {
   const logger = getLoggerStore();
   logger.info(`  📊 Seeding Level ${level}: ${level === 0 ? 'Base enums (no dependencies)' : 'Dependent enums'}`);
@@ -355,7 +355,7 @@ async function seedLevel(
   return results;
 }
 
-export async function seedEnums(prisma: PrismaClient) {
+export async function seedEnums(prisma: PrismaClient | Prisma.TransactionClient) {
   const logger = getLoggerStore();
   logger.info('🌱 Début du seeding des enums...');
 

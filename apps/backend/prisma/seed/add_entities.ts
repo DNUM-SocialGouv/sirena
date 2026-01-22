@@ -1,10 +1,10 @@
-import type { PrismaClient } from '../../generated/client/index.js';
+import type { Prisma, PrismaClient } from '../../generated/client/index.js';
 import { getLoggerStore } from '../../src/libs/asyncLocalStorage.js';
 import { seedAdministratives } from './add_seed_entities/seed_administratives.js';
 import { seedDirections } from './add_seed_entities/seed_directions.js';
 import { seedServices } from './add_seed_entities/seed_services.js';
 
-export async function seedEntites(prisma: PrismaClient) {
+export async function seedEntites(prisma: PrismaClient | Prisma.TransactionClient) {
   const logger = getLoggerStore();
   logger.info('🌱 Début du seeding des entites...');
   const results: { table: string; added: number }[] = [];
