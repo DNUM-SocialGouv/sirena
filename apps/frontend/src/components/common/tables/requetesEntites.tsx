@@ -205,7 +205,11 @@ export function RequetesEntite() {
       </div>
     ),
     'custom:statut': (row) => {
-      return <RequeteStatutTag statut={row.statutId as RequeteStatutType} noIcon={true} />;
+      return (
+        <div className="requetesEntitesTable__statut-cell">
+          <RequeteStatutTag statut={row.statutId as RequeteStatutType} noIcon={true} />
+        </div>
+      );
     },
     'custom:priorite': (row) => {
       return <RequetePrioriteTag statut={row.prioriteId as RequetePrioriteType} noIcon={true} />;
@@ -226,8 +230,10 @@ export function RequetesEntite() {
     },
     'custom:affectation': (row) =>
       userTopEntiteId ? renderAffectationCell(row, userTopEntiteId, userEntiteId ?? undefined) : '-',
-    'custom:motifs': renderMotifsCell,
-    'custom:misEnCause': renderMisEnCauseCell,
+    'custom:motifs': (row) => <div className="requetesEntitesTable__motifs-cell">{renderMotifsCell(row)}</div>,
+    'custom:misEnCause': (row) => (
+      <div className="requetesEntitesTable__misEnCause-cell">{renderMisEnCauseCell(row)}</div>
+    ),
     'custom:action': (row) => (
       <Link to="/request/$requestId" className="one-line" params={{ requestId: row.requeteId }}>
         Voir la requête
