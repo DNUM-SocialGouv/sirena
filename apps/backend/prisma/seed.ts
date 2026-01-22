@@ -3,7 +3,6 @@ import { type Prisma, PrismaClient } from '../generated/client/index.js';
 import { createDefaultLogger } from '../src/helpers/pino.js';
 import { loggerStorage, prismaStorage, sentryStorage } from '../src/libs/asyncLocalStorage.js';
 import { prisma as appPrisma } from '../src/libs/prisma.js';
-import { seedEntites } from './seed/add_entities.js';
 import { seedEnums } from './seed/add_enums.js';
 import { seedRequeteFromDematSocial } from './seed/get_demat_social.js';
 import { importGeoData } from './seed/importGeoData.js';
@@ -45,12 +44,6 @@ async function main() {
       await seedEnums(tx);
     } catch (err) {
       logger.error({ err }, '❌ Erreur lors du seeding des enums');
-      throw err;
-    }
-    try {
-      await seedEntites(tx);
-    } catch (err) {
-      logger.error({ err }, '❌ Erreur lors du seeding des entités');
       throw err;
     }
     try {
