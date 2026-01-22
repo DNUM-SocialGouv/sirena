@@ -11,6 +11,7 @@ import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
 import { RequetePrioriteTag, RequeteStatutTag } from '../RequeteStatutTag';
 import { renderAffectationCell, renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
+import './requetesEntites.css';
 
 type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number] & {
   id: string;
@@ -204,7 +205,11 @@ export function RequetesEntite() {
       </div>
     ),
     'custom:statut': (row) => {
-      return <RequeteStatutTag statut={row.statutId as RequeteStatutType} noIcon={true} />;
+      return (
+        <div className="requetesEntitesTable__statut-cell">
+          <RequeteStatutTag statut={row.statutId as RequeteStatutType} noIcon={true} />
+        </div>
+      );
     },
     'custom:priorite': (row) => {
       return <RequetePrioriteTag statut={row.prioriteId as RequetePrioriteType} noIcon={true} />;
@@ -225,8 +230,10 @@ export function RequetesEntite() {
     },
     'custom:affectation': (row) =>
       userTopEntiteId ? renderAffectationCell(row, userTopEntiteId, userEntiteId ?? undefined) : '-',
-    'custom:motifs': renderMotifsCell,
-    'custom:misEnCause': renderMisEnCauseCell,
+    'custom:motifs': (row) => <div className="requetesEntitesTable__motifs-cell">{renderMotifsCell(row)}</div>,
+    'custom:misEnCause': (row) => (
+      <div className="requetesEntitesTable__misEnCause-cell">{renderMisEnCauseCell(row)}</div>
+    ),
     'custom:action': (row) => (
       <Link to="/request/$requestId" className="one-line" params={{ requestId: row.requeteId }}>
         Voir la requête
@@ -316,16 +323,18 @@ export function RequetesEntite() {
           </div>
         )}
       </div>
-      <DataTable
-        title={title}
-        rowId="id"
-        data={dataWithId}
-        columns={columns}
-        cells={cells}
-        isLoading={isFetching}
-        sort={currentSort}
-        onSortChange={handleSortChange}
-      />
+      <div className="requetesEntitesTable">
+        <DataTable
+          title={title}
+          rowId="id"
+          data={dataWithId}
+          columns={columns}
+          cells={cells}
+          isLoading={isFetching}
+          sort={currentSort}
+          onSortChange={handleSortChange}
+        />
+      </div>
       {shouldShowPagination && (
         <div className="fr-mt-3w fr-grid-row fr-grid-row--center">
           <Pagination count={totalPages} defaultPage={currentPage} getPageLinkProps={getPageLinkProps} />

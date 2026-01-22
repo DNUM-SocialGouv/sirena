@@ -326,15 +326,18 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
             />
           </div>
 
-          <Input
-            label={personneConcerneeFieldMetadata.autrePersonnes.label}
-            textArea
-            nativeTextAreaProps={{
-              value: formData.autrePersonnes || '',
-              onChange: handleInputChange('autrePersonnes'),
-              rows: 3,
-            }}
-          />
+          {formData.aAutrePersonnes && (
+            <Input
+              label={personneConcerneeFieldMetadata.autrePersonnes.label}
+              hintText="Nom, prénom, lien avec la personne concernée, etc."
+              textArea
+              nativeTextAreaProps={{
+                value: formData.autrePersonnes || '',
+                onChange: handleInputChange('autrePersonnes'),
+                rows: 3,
+              }}
+            />
+          )}
 
           <Input
             label={personneConcerneeFieldMetadata.commentaire.label}

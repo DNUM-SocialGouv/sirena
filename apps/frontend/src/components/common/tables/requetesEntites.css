@@ -1,0 +1,21 @@
+.requetesEntitesTable .fr-cell:has(.requetesEntitesTable__statut-cell) {
+  white-space: nowrap;
+  width: auto;
+}
+
+.requetesEntitesTable__statut-cell {
+  white-space: nowrap;
+}
+
+.requetesEntitesTable__statut-cell .fr-badge {
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.requetesEntitesTable .fr-cell:has(.requetesEntitesTable__motifs-cell) {
+  width: 320px;
+}
+
+.requetesEntitesTable .fr-cell:has(.requetesEntitesTable__misEnCause-cell) {
+  width: 320px;
+}

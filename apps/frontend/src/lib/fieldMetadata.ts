@@ -23,7 +23,7 @@ export const declarantFieldMetadata: Record<string, FieldMetadata> = {
       'Le déclarant est un professionnel qui signale des dysfonctionnements et événements indésirables graves (EIG)',
     type: 'checkbox',
   },
-  autresPrecisions: { label: 'Autres précisions', type: 'textarea' },
+  autresPrecisions: { label: 'Autres précisions concernant le déclarant', type: 'textarea' },
 };
 
 export const personneConcerneeFieldMetadata: Record<string, FieldMetadata> = {
@@ -39,9 +39,9 @@ export const personneConcerneeFieldMetadata: Record<string, FieldMetadata> = {
   estHandicapee: { label: "La personne concernée est en situation d'handicap", type: 'checkbox' },
   veutGarderAnonymat: { label: 'Elle ne souhaite pas que son identité soit communiquée', type: 'checkbox' },
   estVictimeInformee: { label: 'Elle a été informée de la démarche par le déclarant', type: 'checkbox' },
-  autrePersonnes: { label: 'Autres personnes concernées par la requête', type: 'textarea' },
-  aAutrePersonnes: { label: 'Il y a d’autres personnes concernées par la requête', type: 'checkbox' },
-  commentaire: { label: 'Autres précisions', type: 'textarea' },
+  autrePersonnes: { label: 'Précisions sur les autres personnes concernées', type: 'textarea' },
+  aAutrePersonnes: { label: "Il y a d'autres personnes concernées par la requête", type: 'checkbox' },
+  commentaire: { label: 'Autres précisions sur la personne concernée', type: 'textarea' },
 };
 
 export function getFieldLabel(
