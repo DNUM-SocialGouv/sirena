@@ -128,7 +128,6 @@ packages/
 - **[Hono](https://hono.dev)** — Fast, typed web framework.
 - **[Prisma](https://prisma.io)** — Type-safe ORM for database modeling and access.
 - **[Zod](https://github.com/colinhacks/zod)** — Runtime schema validation.
-- **[zod-openapi](https://github.com/asteasolutions/zod-to-openapi)** — Generate OpenAPI schemas from Zod.
 - **[graffle](https://graffle.js.org/)** — Client to make Graphql calls.
 - **[graphql-codegen](https://the-guild.dev/graphql/codegen)** — Client to generate code for Graphql schemas. 
 
