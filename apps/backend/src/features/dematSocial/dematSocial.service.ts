@@ -12,6 +12,7 @@ import {
   GetInstructeursDocument,
   graffle,
 } from '../../libs/graffle.js';
+import { prisma } from '../../libs/prisma.js';
 import { sendDeclarantAcknowledgmentEmail } from '../declarants/declarants.notification.service.js';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '../requetes/requetes.service.js';
 import { assignEntitesToRequeteTask } from './affectation/affectation.js';
@@ -324,6 +325,13 @@ export const importRequetes = async (createdSince?: Date) => {
   let i = 0;
   let errorCount = 0;
   let skippedCount = 0;
+
+  // TODO remove this when dematSocial is mature enough
+  await prisma.requete.deleteMany({
+    where: {
+      dematSocialId: { not: null },
+    },
+  });
 
   for (const dossier of dossiers) {
     // legacy, we don't support
