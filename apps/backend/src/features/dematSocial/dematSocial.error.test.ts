@@ -15,6 +15,8 @@ describe('dematSocial.error.ts', () => {
       expect(err.cause).toBe('bad format');
       expect(err.type).toBe('SomeType');
       expect(err.champ).toBe(champ);
+      expect(err.champId).toBeUndefined();
+      expect(err.champTypename).toBeUndefined();
       expect(typeof err.stack).toBe('string');
     });
 
