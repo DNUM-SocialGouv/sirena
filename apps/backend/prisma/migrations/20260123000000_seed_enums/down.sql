@@ -1,0 +1,337 @@
+-- [DOWN] Revert insertion for AgeEnum
+DELETE FROM "public"."AgeEnum" WHERE "id" = '-18';
+DELETE FROM "public"."AgeEnum" WHERE "id" = '18-29';
+DELETE FROM "public"."AgeEnum" WHERE "id" = '30-59';
+DELETE FROM "public"."AgeEnum" WHERE "id" = '60-79';
+DELETE FROM "public"."AgeEnum" WHERE "id" = '>= 80';
+DELETE FROM "public"."AgeEnum" WHERE "id" = 'Inconnu';
+
+
+-- [DOWN] Revert insertion for AutoriteTypeEnum
+DELETE FROM "public"."AutoriteTypeEnum" WHERE "id" = 'GENDARMERIE';
+DELETE FROM "public"."AutoriteTypeEnum" WHERE "id" = 'COMMISSARIAT';
+DELETE FROM "public"."AutoriteTypeEnum" WHERE "id" = 'TRIBUNAL';
+
+
+-- [DOWN] Revert insertion for CiviliteEnum
+DELETE FROM "public"."CiviliteEnum" WHERE "id" = 'M';
+DELETE FROM "public"."CiviliteEnum" WHERE "id" = 'MME';
+DELETE FROM "public"."CiviliteEnum" WHERE "id" = 'MX';
+DELETE FROM "public"."CiviliteEnum" WHERE "id" = 'NSP';
+
+
+-- [DOWN] Revert insertion for ConsequenceEnum
+DELETE FROM "public"."ConsequenceEnum" WHERE "id" = 'SANTE';
+DELETE FROM "public"."ConsequenceEnum" WHERE "id" = 'DROITS';
+DELETE FROM "public"."ConsequenceEnum" WHERE "id" = 'BESOINS';
+DELETE FROM "public"."ConsequenceEnum" WHERE "id" = 'SOCIAL';
+DELETE FROM "public"."ConsequenceEnum" WHERE "id" = 'AUCUNE';
+
+
+-- [DOWN] Revert insertion for DemarchesEngageesEnum
+DELETE FROM "public"."DemarchesEngageesEnum" WHERE "id" = 'CONTACT_RESPONSABLES';
+DELETE FROM "public"."DemarchesEngageesEnum" WHERE "id" = 'CONTACT_ORGANISME';
+DELETE FROM "public"."DemarchesEngageesEnum" WHERE "id" = 'PLAINTE';
+DELETE FROM "public"."DemarchesEngageesEnum" WHERE "id" = 'AUTRE';
+
+
+-- [DOWN] Revert insertion for EntiteTypeEnum
+DELETE FROM "public"."EntiteTypeEnum" WHERE "id" = 'ARS';
+DELETE FROM "public"."EntiteTypeEnum" WHERE "id" = 'DD';
+DELETE FROM "public"."EntiteTypeEnum" WHERE "id" = 'CD';
+
+
+-- [DOWN] Revert insertion for LienVictimeEnum
+DELETE FROM "public"."LienVictimeEnum" WHERE "id" = 'MEMBRE_FAMILLE';
+DELETE FROM "public"."LienVictimeEnum" WHERE "id" = 'PROCHE';
+DELETE FROM "public"."LienVictimeEnum" WHERE "id" = 'PROFESSIONNEL';
+DELETE FROM "public"."LienVictimeEnum" WHERE "id" = 'AUTRE';
+
+
+-- [DOWN] Revert insertion for LieuTypeEnum
+DELETE FROM "public"."LieuTypeEnum" WHERE "id" = 'DOMICILE';
+DELETE FROM "public"."LieuTypeEnum" WHERE "id" = 'ETABLISSEMENT_SANTE';
+DELETE FROM "public"."LieuTypeEnum" WHERE "id" = 'ETABLISSEMENT_PERSONNES_AGEES';
+DELETE FROM "public"."LieuTypeEnum" WHERE "id" = 'ETABLISSEMENT_HANDICAP';
+DELETE FROM "public"."LieuTypeEnum" WHERE "id" = 'ETABLISSEMENT_SOCIAL';
+DELETE FROM "public"."LieuTypeEnum" WHERE "id" = 'AUTRES_ETABLISSEMENTS';
+DELETE FROM "public"."LieuTypeEnum" WHERE "id" = 'TRAJET';
+
+
+-- [DOWN] Revert insertion for MaltraitanceTypeEnum
+DELETE FROM "public"."MaltraitanceTypeEnum" WHERE "id" = 'NEGLIGENCES';
+DELETE FROM "public"."MaltraitanceTypeEnum" WHERE "id" = 'VIOLENCES';
+DELETE FROM "public"."MaltraitanceTypeEnum" WHERE "id" = 'MATERIELLE_FINANCIERE';
+DELETE FROM "public"."MaltraitanceTypeEnum" WHERE "id" = 'SEXUELLE';
+DELETE FROM "public"."MaltraitanceTypeEnum" WHERE "id" = 'NON';
+
+
+-- [DOWN] Revert insertion for MisEnCauseTypeEnum
+DELETE FROM "public"."MisEnCauseTypeEnum" WHERE "id" = 'MEMBRE_FAMILLE';
+DELETE FROM "public"."MisEnCauseTypeEnum" WHERE "id" = 'PROCHE';
+DELETE FROM "public"."MisEnCauseTypeEnum" WHERE "id" = 'AUTRE_PERSONNE_NON_PRO';
+DELETE FROM "public"."MisEnCauseTypeEnum" WHERE "id" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypeEnum" WHERE "id" = 'PROFESSIONNEL_SOCIAL';
+DELETE FROM "public"."MisEnCauseTypeEnum" WHERE "id" = 'AUTRE_PROFESSIONNEL';
+
+
+-- [DOWN] Revert updates for MisEnCauseTypeEnum
+UPDATE "public"."MisEnCauseTypeEnum" SET "label" = 'Etablissement ou service' WHERE "id" = 'ETABLISSEMENT';
+
+
+-- [DOWN] Revert insertion for MotifDeclaratifEnum
+DELETE FROM "public"."MotifDeclaratifEnum" WHERE "id" = 'PROBLEME_COMPORTEMENTAL';
+DELETE FROM "public"."MotifDeclaratifEnum" WHERE "id" = 'PROBLEME_FACTURATION';
+DELETE FROM "public"."MotifDeclaratifEnum" WHERE "id" = 'PROBLEME_LOCAUX';
+DELETE FROM "public"."MotifDeclaratifEnum" WHERE "id" = 'NON_RESPECT_DROITS';
+DELETE FROM "public"."MotifDeclaratifEnum" WHERE "id" = 'PROBLEME_ORGANISATION';
+DELETE FROM "public"."MotifDeclaratifEnum" WHERE "id" = 'PROBLEME_QUALITE_SOINS';
+DELETE FROM "public"."MotifDeclaratifEnum" WHERE "id" = 'DIFFICULTES_ACCES_SOINS';
+DELETE FROM "public"."MotifDeclaratifEnum" WHERE "id" = 'AUTRE';
+
+
+-- [DOWN] Revert insertion for ReceptionTypeEnum
+DELETE FROM "public"."ReceptionTypeEnum" WHERE "id" = 'EMAIL';
+DELETE FROM "public"."ReceptionTypeEnum" WHERE "id" = 'COURRIER';
+DELETE FROM "public"."ReceptionTypeEnum" WHERE "id" = 'FORMULAIRE';
+DELETE FROM "public"."ReceptionTypeEnum" WHERE "id" = 'PLATEFORME';
+DELETE FROM "public"."ReceptionTypeEnum" WHERE "id" = 'TELEPHONE';
+DELETE FROM "public"."ReceptionTypeEnum" WHERE "id" = 'AUTRE';
+
+
+-- [DOWN] Revert insertion for RequeteEtapeStatutEnum
+DELETE FROM "public"."RequeteEtapeStatutEnum" WHERE "id" = 'EN_COURS';
+DELETE FROM "public"."RequeteEtapeStatutEnum" WHERE "id" = 'A_FAIRE';
+DELETE FROM "public"."RequeteEtapeStatutEnum" WHERE "id" = 'FAIT';
+DELETE FROM "public"."RequeteEtapeStatutEnum" WHERE "id" = 'CLOTUREE';
+
+
+-- [DOWN] Revert insertion for RoleEnum
+DELETE FROM "public"."RoleEnum" WHERE "id" = 'PENDING';
+DELETE FROM "public"."RoleEnum" WHERE "id" = 'READER';
+DELETE FROM "public"."RoleEnum" WHERE "id" = 'WRITER';
+DELETE FROM "public"."RoleEnum" WHERE "id" = 'NATIONAL_STEERING';
+DELETE FROM "public"."RoleEnum" WHERE "id" = 'ENTITY_ADMIN';
+DELETE FROM "public"."RoleEnum" WHERE "id" = 'SUPER_ADMIN';
+
+
+-- [DOWN] Revert insertion for StatutEnum
+DELETE FROM "public"."StatutEnum" WHERE "id" = 'ACTIF';
+DELETE FROM "public"."StatutEnum" WHERE "id" = 'INACTIF';
+DELETE FROM "public"."StatutEnum" WHERE "id" = 'NON_RENSEIGNE';
+
+
+-- [DOWN] Revert insertion for TransportTypeEnum
+DELETE FROM "public"."TransportTypeEnum" WHERE "id" = 'POMPIER';
+DELETE FROM "public"."TransportTypeEnum" WHERE "id" = 'ASSU';
+DELETE FROM "public"."TransportTypeEnum" WHERE "id" = 'VSAV';
+DELETE FROM "public"."TransportTypeEnum" WHERE "id" = 'AMBULANCE';
+DELETE FROM "public"."TransportTypeEnum" WHERE "id" = 'VSL';
+DELETE FROM "public"."TransportTypeEnum" WHERE "id" = 'TAXI';
+DELETE FROM "public"."TransportTypeEnum" WHERE "id" = 'AUTRE';
+
+
+-- [DOWN] Revert insertion for RequeteClotureReasonEnum
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'MESURES_CORRECTIVES';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'REPONSE_APPORTEE_PAR_MIS_EN_CAUSE';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'DEMANDE_MISE_EN_PLACE_ACTIONS_CORRECTIVES';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'ABSENCE_DE_RETOUR';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'IMPOSSIBLE_EVALUER';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'REPONSE_APPORTEE_PAR_SERVICE_INSTRUCTEUR';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'HORS_COMPETENCE';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'MISSION_D_INSPECTION_ET_CONTROLE';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'MISE_EN_PLACE_ACCOMPAGNEMENT';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'MISE_EN_PLACE_RELAIS_FAMILIAL';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'ACCES_REVISION_DROIT_PRESTATION';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'SAISIE_JUSTICE';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'ADMISSION_STRUCTURE';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'SANS_SUITE';
+DELETE FROM "public"."RequeteClotureReasonEnum" WHERE "id" = 'AUTRE';
+
+
+-- [DOWN] Revert insertion for MotifEnum
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/AUTRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/DEFAUT_DECLARATION_ACTIVITE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'ACTIVITES_ESTHETIQUE_NON_REGLEMENTEES/NON_RESPECT_REGLES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MEDICAMENTS/PROBLEMATIQUE_CIRCUIT_MEDICAMENT';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MEDICAMENTS/STOCKAGE_MEDICAMENTS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MEDICAMENTS/VENTE_MEDICAMENTS_INTERNET';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'FACTURATIONS_HONORAIRES/AUTRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'FACTURATIONS_HONORAIRES/PROBLEME_HONORAIRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'FACTURATIONS_HONORAIRES/PROBLEME_FACTURATION';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'FACTURATIONS_HONORAIRES/HONORAIRES_PROFESSIONS_LIBERALES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/ACCESSIBILITE_LOCAUX';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/ACCUEIL';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/ADMISSION';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/AUTRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/CONFIGURATION_LOCAUX';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/ENTRETIEN';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/HYGIENE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/GESTION_RESSOURCES_BIENS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/EQUIPEMENTS_USAGE_PERSONNEL';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/ABSENCE_LIEU_ACCUEIL_FAMILLE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/SECURITE_LOCAUX';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/SECURITE_PERSONNES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'HOTELLERIE_LOCAUX_RESTAURATION/SERVICE_RESTAURATION';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'INFORMATIONS_DROITS_USAGERS/INFO_ACCOMPAGNEMENT_FIN_VIE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'INFORMATIONS_DROITS_USAGERS/AUTRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'INFORMATIONS_DROITS_USAGERS/DOSSIER_MEDICAL_NON_COMMUNIQUE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'INFORMATIONS_DROITS_USAGERS/INFO_DESIGNATION_PERSONNE_CONFIANCE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'INFORMATIONS_DROITS_USAGERS/INFO_PATIENT_EVENEMENT';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'INFORMATIONS_DROITS_USAGERS/INFO_PATIENT_PATHOLOGIE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'INFORMATIONS_DROITS_USAGERS/MODALITES_ANNONCE_DECES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'INFORMATIONS_DROITS_USAGERS/RECUEIL_CONSENTEMENT';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'INFORMATIONS_DROITS_USAGERS/NON_RESPECT_SECRET_MEDICAL';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/DISCRIMINATIONS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/EXPOSITION_ENVIRONNEMENT_VIOLENT';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/NEGLIGENCES_ACTIVES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/NEGLIGENCES_PASSIVES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/PRIVATION_SOIN_BESOINS_FONDAMENTAUX';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/PRIVATION_VIOLATION_DROITS_LIBERTES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/VIOLENCES_MATERIELLES_FINANCIERES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/VIOLENCES_MEDICALES_MEDICAMENTEUSES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/VIOLENCES_PHYSIQUES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/VIOLENCES_PSYCHIQUES_MORALES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE/VIOLENCES_SEXUELLES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MAUVAISE_ATTITUDE_PROFESSIONNELS/AUTRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MAUVAISE_ATTITUDE_PROFESSIONNELS/DEFAUT_ENCADREMENT_STAGE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MAUVAISE_ATTITUDE_PROFESSIONNELS/REFUS_AIDE_PROFESSIONNEL';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MAUVAISE_ATTITUDE_PROFESSIONNELS/RELATIONS_FAMILLE_PROFESSIONNELS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MAUVAISE_ATTITUDE_PROFESSIONNELS/RELATIONS_USAGER_PROFESSIONNELS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MAUVAISE_ATTITUDE_PROFESSIONNELS/REFUS_CONSULTATION_PROFESSIONNEL_LIBERAL';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'MAUVAISE_ATTITUDE_PROFESSIONNELS/REFUS_INTERVENTION_DOMICILE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PRATIQUE_NON_CONVENTIONNELLE/DERIVES_SECTAIRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PRATIQUE_NON_CONVENTIONNELLE/EXERCICE_ILLEGAL_USURPATION_TITRE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES/CONFLIT_DIRECTION_ETABLISSEMENT';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES/CONFLIT_SOCIAL';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES/MANQUE_PERSONNELS_ENCADRANT_INSTITUTS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES/MANQUE_PERSONNEL_SOIGNANT';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES/ABSENCE_MEDEC';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES/MANQUE_QUALIFICATION_PERSONNEL';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_ORGANISATION_RESSOURCES_HUMAINES/MANQUE_PERSONNEL_NON_SOIGNANT';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_ACCOMPAGNEMENT_SERVICE/PROBLEME_ACCOMPAGNEMENT_SUIVI_INDIVIDUEL';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_ACCOMPAGNEMENT_SERVICE/NON_RESPECT_PROGRAMMES_FORMATION';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_ACCOMPAGNEMENT_SERVICE/ABSENCE_ANIMATION';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_ACCOMPAGNEMENT_SERVICE/AUTRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_ACCOMPAGNEMENT_SERVICE/QUALITE_ANIMATIONS_LIEU_INTERVENTIONS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_ACCOMPAGNEMENT_SERVICE/PROBLEMATIQUE_FONCTIONNEMENT_ESSMS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_ACCOMPAGNEMENT_SERVICE/VIOLENCES_ENTRE_USAGERS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_ACCOMPAGNEMENT_SERVICE/VIOLENCES_USAGER_ENTOURAGE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_ACCOMPAGNEMENT_SERVICE/VIOLENCES_USAGER_PROFESSIONNEL';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_ACCOMPAGNEMENT_SERVICE/DEFAUT_SURVEILLANCE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/ABSENCE_INSUFFISANCE_SOINS_MEDICAUX';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/ABSENCE_INSUFFISANCE_SOINS_PARAMEDICAUX';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/ABSENCE_INSUFFISANCE_REEDUCATION';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/AFFECTIONS_IATROGENES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/AIDE_MEDICALE_URGENTE_SAMU';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/AUTRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/DEFAILLANCE_INCIDENT_SOINS_SURVEILLANCE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/DELAIS_PRISE_EN_CHARGE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/DIAGNOSTIC_PERTINENCE_EXAMENS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/ETAT_MATERIEL';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/CONDITIONS_PRELEVEMENTS_BIOLOGIQUES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/PRISE_EN_CHARGE_DOULEUR';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/RESULTATS_EXAMENS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/SOINS_PALLIATIFS';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'QUALITE_SOINS/SOINS_POST_MORTEM';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/AUTRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/GARDE_PERMANENCE_SOINS_AMBULATOIRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/MEDECIN_TRAITANT';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/SPECIALISTE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/RECHERCHE_SMR';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/ETABLISSEMENT_MEDICO_SOCIAL_PA';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/ETABLISSEMENT_MEDICO_SOCIAL_PH';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/TRANSFERT_MANQUE_LIT';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/DELAIS_ATTENTE_PLACE_ETABLISSEMENT';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/RECHERCHE_SERVICE_ACCOMPAGNEMENT_DOMICILE_PA';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'DIFFICULTE_RECHERCHE_ETABLISSEMENT_PROFESSIONNEL_SERVICE/RECHERCHE_SERVICE_ACCOMPAGNEMENT_DOMICILE_PH';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_ENVIRONNEMENTAUX/GESTION_DECHETS_DASRI';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_ENVIRONNEMENTAUX/SITUATION_EXCEPTIONNELLE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_TRANSPORT_SANITAIRE/CONDITIONS_CONDUITE_VEHICULE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_TRANSPORT_SANITAIRE/CONDITIONS_PRISE_EN_CHARGE_PATIENT';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_TRANSPORT_SANITAIRE/DEFAUT_OFFRE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_TRANSPORT_SANITAIRE/DEFAUT_GARDE';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_TRANSPORT_SANITAIRE/NON_RESPECT_DISPOSITIONS_REGLEMENTAIRES';
+DELETE FROM "public"."MotifEnum" WHERE "id" = 'PROBLEMES_TRANSPORT_SANITAIRE/TRANSFERT_ENTRE_ETABLISSEMENTS';
+
+
+-- [DOWN] Revert insertion for RequetePrioriteEnum
+DELETE FROM "public"."RequetePrioriteEnum" WHERE "id" = 'HAUTE';
+DELETE FROM "public"."RequetePrioriteEnum" WHERE "id" = 'MOYENNE';
+DELETE FROM "public"."RequetePrioriteEnum" WHERE "id" = 'BASSE';
+
+
+-- [DOWN] Revert insertion for MisEnCauseTypePrecisionEnum
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'PARENT' AND "misEnCauseTypeId" = 'MEMBRE_FAMILLE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'CONJOINT' AND "misEnCauseTypeId" = 'MEMBRE_FAMILLE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'ENFANT' AND "misEnCauseTypeId" = 'MEMBRE_FAMILLE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'AUTRE' AND "misEnCauseTypeId" = 'MEMBRE_FAMILLE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'ENTOURAGE_SOCIAL' AND "misEnCauseTypeId" = 'PROCHE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'AUTRE' AND "misEnCauseTypeId" = 'PROCHE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'AUTRE' AND "misEnCauseTypeId" = 'AUTRE_PERSONNE_NON_PRO';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'MEDECIN_GENERALISTE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'MEDECIN_SPECIALISTE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'MEDEC' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'IDEC' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'IBODE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'INFIRMIER' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'SAGE_FEMME' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'CADRE_SANTE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'PHARMACIEN' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'AIDE_SOIGNANT' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'ASH' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'BIOLOGISTE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'AMBULANCIER' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'BRANCARDIER' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'AUTRE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'ASSISTANT_SOCIAL' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SOCIAL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'INTERVENANT_SOCIAL' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SOCIAL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'EDUCATEUR_SPECIALISE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SOCIAL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'ANIMATEUR' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SOCIAL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'CESF' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SOCIAL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'MANDATAIRE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SOCIAL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'AUTRE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SOCIAL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'RESPONSABLE_ETABLISSEMENT' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'AGENT_ACCUEIL_ADMIN' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'CHEF_SERVICE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'TATOUEUR' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'PSYCHANALYSTE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'PSYCHOLOGUE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'PSYCHOTHERAPEUTE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'DIETETICIEN' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'OSTEOPATHE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'CHIROPRACTEUR' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'ORTHOPHONISTE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'AUDIOPROTHESISTE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'EPITHESISTE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'MANIPULATEUR_RADIO' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'OCULAIRE_OPTIQUE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'ORTHOPEDISTE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'ORTHESISTE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'PSYCHOMOTRICIEN' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'TECHNICIEN_LABO' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'ACUPUNCTEUR' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'EQUIPE_MOBILE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'SAPEUR_POMPIER' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'MEDECINE_NON_CONVENTIONNELLE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'ESTHETICIEN' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'AUTRE' AND "misEnCauseTypeId" = 'AUTRE_PROFESSIONNEL';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'PROF_SANTE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'TRAVAILLEUR_SOCIAL' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'PROF_SOIN' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'RESPONSABLE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'MJPM' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'PROF_LIBERAL' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'HAD' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'SSAD' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'SAMSAH' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'SAEMO' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'SESSAD' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'SAED' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'SPST' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'AIDE_MENAGERE' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'REPAS' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'TRAITEMENT' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'SAADF' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'SSIAD' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
+DELETE FROM "public"."MisEnCauseTypePrecisionEnum" WHERE "id" = 'SAAD' AND "misEnCauseTypeId" = 'PROFESSIONNEL_SANTE';
