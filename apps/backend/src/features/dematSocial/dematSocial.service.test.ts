@@ -21,6 +21,14 @@ vi.mock('../../libs/graffle.js', () => {
   };
 });
 
+vi.mock('../../libs/prisma.js', () => ({
+  prisma: {
+    requete: {
+      deleteMany: vi.fn(),
+    },
+  },
+}));
+
 vi.mock('../../config/env.js', () => ({
   envVars: {
     DEMAT_SOCIAL_API_DIRECTORY: 9999,
