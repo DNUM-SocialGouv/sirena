@@ -57,7 +57,9 @@ export function buildSituationContextFromDemat(situation: SituationWithLieu): Si
   ctx.finessCode = extractFinessFromRawText(lds?.finess) ?? null;
 
   ctx.postalCode =
-    extractPostalCode(lds?.adresse?.codePostal ?? null) ?? extractPostalCode(lds?.adresse?.label ?? null);
+    lds.codePostal ??
+    extractPostalCode(lds?.adresse?.codePostal ?? null) ??
+    extractPostalCode(lds?.adresse?.label ?? null);
 
   ctx.misEnCauseType = situation?.misEnCause?.misEnCauseType?.id as MisEnCauseType;
 
