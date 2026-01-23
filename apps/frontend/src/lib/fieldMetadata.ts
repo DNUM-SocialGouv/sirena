@@ -31,6 +31,7 @@ export const personneConcerneeFieldMetadata: Record<string, FieldMetadata> = {
   nom: { label: 'Nom', type: 'text' },
   prenom: { label: 'Prénom', type: 'text' },
   age: { label: 'Âge', type: 'select' },
+  dateNaissance: { label: 'Date de naissance', type: 'text' },
   adresseDomicile: { label: 'Adresse du domicile', type: 'text' },
   codePostal: { label: 'Code postal', type: 'text' },
   ville: { label: 'Ville', type: 'text' },

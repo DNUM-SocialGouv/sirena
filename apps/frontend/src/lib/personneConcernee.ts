@@ -5,6 +5,7 @@ export interface PersonneConcerneeData {
   nom?: string;
   prenom?: string;
   age?: string;
+  dateNaissance?: string;
   adresseDomicile?: string;
   codePostal?: string;
   ville?: string;
@@ -30,6 +31,16 @@ export function formatPersonneConcerneeFromServer(participant: unknown): Personn
     nom: (identite.nom as string) || '',
     prenom: (identite.prenom as string) || '',
     age: (p.age as { id: string })?.id || '',
+    dateNaissance:
+      p.dateNaissance === null || p.dateNaissance === undefined
+        ? undefined
+        : typeof p.dateNaissance === 'string'
+          ? p.dateNaissance.includes('T')
+            ? p.dateNaissance.split('T')[0]
+            : p.dateNaissance
+          : p.dateNaissance instanceof Date
+            ? p.dateNaissance.toISOString().split('T')[0]
+            : undefined,
     adresseDomicile: `${adresse.numero || ''} ${adresse.rue || ''}`,
     codePostal: (adresse.codePostal as string) || '',
     ville: (adresse.ville as string) || '',
@@ -53,6 +64,7 @@ export function formatPersonneConcerneeToServer(data: PersonneConcerneeData) {
     nom: data.nom,
     prenom: data.prenom,
     age: data.age,
+    dateNaissance: data.dateNaissance,
     adresseDomicile: data.adresseDomicile,
     codePostal: data.codePostal,
     ville: data.ville,

@@ -68,6 +68,7 @@ export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConc
   aAutrePersonnes: participantData.aAutrePersonnes,
   commentaire: participantData.commentaire || '',
   ageId: participantData.age || undefined,
+  dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : undefined,
   identite: hasIdentiteData(participantData)
     ? {
         create: {

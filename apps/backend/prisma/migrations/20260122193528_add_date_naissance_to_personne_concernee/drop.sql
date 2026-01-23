@@ -1,0 +1,1 @@
+ALTER TABLE "PersonneConcernee" DROP COLUMN "dateNaissance";

@@ -608,6 +608,7 @@ export const updateRequeteParticipant = async (
             aAutrePersonnes: participantData.aAutrePersonnes || false,
             commentaire: participantData.commentaire || '',
             ageId: participantData.age || undefined,
+            dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : undefined,
             updatedAt: new Date(),
             identite: {
               update: {

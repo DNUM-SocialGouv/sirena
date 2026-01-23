@@ -1,6 +1,7 @@
 import { InfoSection } from '@sirena/ui';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
+import { formatDateToFrenchLocale } from '@/utils/date';
 import { ContactInfo, formatAddress, formatFullName, SectionTitle } from './helpers';
 
 type PersonneData = NonNullable<ReturnType<typeof useRequeteDetails>['data']>['requete']['participant'];
@@ -38,9 +39,12 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
       : null,
   );
 
+  const dateNaissanceFormatted = formatDateToFrenchLocale(personne?.dateNaissance);
+
   const isFulfilled =
     !!fullName ||
     !!personne?.age?.label ||
+    !!dateNaissanceFormatted ||
     !!address ||
     !!personneIdentite?.email ||
     !!personneIdentite?.telephone ||
@@ -81,11 +85,14 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
 
     return (
       <>
-        {(fullName || personne?.age?.label) && (
+        {(fullName || personne?.age?.label || dateNaissanceFormatted) && (
           <>
             <SectionTitle>Identité</SectionTitle>
             {fullName && <p className="fr-mb-1w">{fullName}</p>}
-            {personne?.age?.label && <p className="fr-text--sm fr-text--grey fr-mb-2w">Âge : {personne.age.label}</p>}
+            {personne?.age?.label && <p className="fr-text--sm fr-text--grey fr-mb-1w">Âge : {personne.age.label}</p>}
+            {dateNaissanceFormatted && (
+              <p className="fr-text--sm fr-text--grey fr-mb-2w">Date de naissance : {dateNaissanceFormatted}</p>
+            )}
           </>
         )}
 

@@ -5,6 +5,21 @@ export const PersonneConcerneeDataSchema = z.object({
   nom: z.string().optional(),
   prenom: z.string().optional(),
   age: z.string().optional(),
+  dateNaissance: z
+    .string()
+    .optional()
+    .refine(
+      (value) => {
+        if (!value) return true;
+        const date = new Date(value);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        return date <= today;
+      },
+      {
+        message: 'La date de naissance ne peut pas être dans le futur',
+      },
+    ),
   adresseDomicile: z.string().optional(),
   codePostal: z.string().optional(),
   ville: z.string().optional(),
