@@ -12,7 +12,6 @@ import {
   GetInstructeursDocument,
   graffle,
 } from '../../libs/graffle.js';
-import { prisma } from '../../libs/prisma.js';
 import { sendDeclarantAcknowledgmentEmail } from '../declarants/declarants.notification.service.js';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '../requetes/requetes.service.js';
 import { assignEntitesToRequeteTask } from './affectation/affectation.js';
@@ -322,7 +321,6 @@ export const importRequetes = async (createdSince?: Date) => {
   }
   const dossiers = await getRequetes(createdSince);
   logger.info({ totalDossiers: dossiers.length }, 'Found dossiers to process');
-  await prisma.requete.deleteMany();
   let i = 0;
   let errorCount = 0;
   let skippedCount = 0;
