@@ -7,6 +7,7 @@ SDPSN-devops-charts:
     FRONTEND_REDIRECT_URI: https://sirena-sante.social.gouv.fr/home
     FRONTEND_REDIRECT_LOGIN_URI: https://sirena-sante.social.gouv.fr/login
     FRONTEND_URI: https://sirena-sante.social.gouv.fr
+    REDIS_TLS: "true"
     SENTRY_ENVIRONMENT: production
   ingress:
     host: sirena-sante.social.gouv.fr
