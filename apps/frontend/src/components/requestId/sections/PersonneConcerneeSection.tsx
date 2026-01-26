@@ -1,7 +1,6 @@
 import { InfoSection } from '@sirena/ui';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
-import { formatDateToFrenchLocale } from '@/utils/date';
 import { ContactInfo, formatAddress, formatFullName, SectionTitle } from './helpers';
 
 type PersonneData = NonNullable<ReturnType<typeof useRequeteDetails>['data']>['requete']['participant'];
@@ -39,7 +38,9 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
       : null,
   );
 
-  const dateNaissanceFormatted = formatDateToFrenchLocale(personne?.dateNaissance);
+  const dateNaissanceFormatted = personne?.dateNaissance
+    ? new Date(personne.dateNaissance).toLocaleDateString('fr-FR')
+    : undefined;
 
   const isFulfilled =
     !!fullName ||
