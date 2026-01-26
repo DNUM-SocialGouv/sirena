@@ -11,6 +11,8 @@ export type EntiteAdminType = keyof typeof entiteTypes;
 export type SituationContext = {
   lieuType?: LieuType;
   finessCode?: string | null;
+  categCode?: string | null;
+  tutelle?: string | null;
   postalCode?: string | null;
   misEnCauseType?: MisEnCauseType | null;
   misEnCauseTypePrecision?: MisEnCauseTypePrecisionUnion | null;
