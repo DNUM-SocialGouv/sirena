@@ -27,6 +27,9 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
           codePostal: lieuDeSurvenue.codePostal || undefined,
           societeTransport: lieuDeSurvenue.societeTransport || undefined,
           finess: lieuDeSurvenue.finess || undefined,
+          tutelle: lieuDeSurvenue.tutelle || undefined,
+          categCode: lieuDeSurvenue.categCode || undefined,
+          categLib: lieuDeSurvenue.categLib || undefined,
           adresse: adresse
             ? {
                 label: adresse.label || undefined,

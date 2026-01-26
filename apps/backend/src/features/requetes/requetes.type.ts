@@ -63,6 +63,9 @@ type LieuDeSurvenue = {
   transportTypeId: string | null;
   societeTransport: string;
   finess: string;
+  tutelle?: string;
+  categCode?: string;
+  categLib?: string;
 };
 
 type MisEnCause = {

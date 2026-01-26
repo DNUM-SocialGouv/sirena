@@ -703,6 +703,9 @@ const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) =
     codePostal: cleanNullOrEmpty(lieuData.codePostal),
     societeTransport: cleanNullOrEmpty(lieuData.societeTransport),
     finess: cleanNullOrEmpty(lieuData.finess),
+    tutelle: cleanNullOrEmpty(lieuData.tutelle),
+    categCode: cleanNullOrEmpty(lieuData.categCode),
+    categLib: cleanNullOrEmpty(lieuData.categLib),
     adresse: buildAdresseUpdate(lieuData.adresse),
   };
 };
