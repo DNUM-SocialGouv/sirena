@@ -1287,7 +1287,7 @@ export const updatePrioriteRequete = async (
   if (changedById && before?.prioriteId !== requeteEntite.prioriteId) {
     await createChangeLog({
       entity: 'RequeteEntite',
-      entityId: requeteId,
+      entityId: `${requeteId}:${entiteId}`,
       action: ChangeLogAction.UPDATED,
       before: { prioriteId: before?.prioriteId ?? null } as Prisma.JsonObject,
       after: { prioriteId: requeteEntite.prioriteId } as Prisma.JsonObject,

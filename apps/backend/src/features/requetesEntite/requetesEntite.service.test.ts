@@ -2341,7 +2341,7 @@ describe('requetesEntite.service', () => {
 
       expect(vi.mocked(createChangeLog)).toHaveBeenCalledWith({
         entity: 'RequeteEntite',
-        entityId: 'req123',
+        entityId: 'req123:ent123',
         action: 'UPDATED',
         before: { prioriteId: 'BASSE' },
         after: { prioriteId: 'HAUTE' },
