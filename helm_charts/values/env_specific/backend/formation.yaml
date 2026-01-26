@@ -1,0 +1,16 @@
+---
+SDPSN-devops-charts:
+  appVariables:
+    HOST: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr
+    PC_DOMAIN: https://auth.agentconnect.gouv.fr/api/v2
+    PC_REDIRECT_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr/api/auth/callback
+    FRONTEND_REDIRECT_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr/home
+    FRONTEND_REDIRECT_LOGIN_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr/login
+    FRONTEND_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr
+    SENTRY_ENVIRONMENT: preproduction
+
+  ingress:
+    host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
+    tls:
+      hosts:
+        - sirena.formation.prod.atlas.fabrique.social.gouv.fr

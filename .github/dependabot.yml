@@ -29,33 +29,6 @@ updates:
           - "minor"
           - "patch"
 
-  # Configuration pour le dossier deploy (utilise npm, pas pnpm)
-  - package-ecosystem: "npm"
-    directory: "/deploy"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-    open-pull-requests-limit: 10
-    versioning-strategy: increase
-    commit-message:
-      prefix: "chore(dependabot): "
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "npm"
-      - "deploy"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-    groups:
-      all-dependencies:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-
   # Configuration pour les images Docker dans apps/backend
   - package-ecosystem: "docker"
     directory: "/apps/backend"

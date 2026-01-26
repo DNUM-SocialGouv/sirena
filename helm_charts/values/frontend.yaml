@@ -1,0 +1,44 @@
+---
+SDPSN-devops-charts:
+  name: frontend
+
+  deployment:
+    image: ghcr.io/dnum-socialgouv/sirena:latest-frontend
+    imagePullSecretsName: registry-secret
+    replicas: 2
+
+    readinessProbe:
+      enable: false
+    livenessProbe:
+      enable: true
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      path: /
+      timeoutSeconds: 5
+
+    resources:
+      limits:
+        cpu: 250m
+        memory: 900Mi
+      requests:
+        cpu: 250m
+        memory: 900Mi
+
+  enableSecurityHeaders: true
+
+  ingress:
+    enable: true
+    name: frontend
+    ingressClassName: public
+    host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: 60m
+    paths:
+      - path: /
+        pathType: Prefix
+        serviceName: frontend
+        servicePort: 80
+    tls:
+      hosts:
+        - sirena.formation.prod.atlas.fabrique.social.gouv.fr
+      secretName: frontend-tls

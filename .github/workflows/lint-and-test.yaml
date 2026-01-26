@@ -25,15 +25,6 @@ jobs:
         run: pnpm install
       - name: Run linter
         run: pnpm lint
-      - name: Audit deploy dependencies
-        working-directory: deploy
-        run: npm audit --audit-level=moderate
-      - name: Install deploy dependencies
-        working-directory: deploy
-        run: npm install
-      - name: Run deploy linter
-        working-directory: deploy
-        run: npm run lint
       - name: Run gitLeaks
         run: pnpm gitleaks:ci
       - name: Build common

@@ -1,0 +1,47 @@
+---
+SDPSN-devops-charts:
+  name: worker
+
+  podMonitor:
+    enable: true
+    relabelings:
+      - sourceLabels: [__meta_kubernetes_pod_name]
+        targetLabel: pod
+      - sourceLabels: [__meta_kubernetes_namespace]
+        targetLabel: namespace
+      - targetLabel: app_type
+        replacement: appName
+
+  deployment:
+    image: ghcr.io/dnum-socialgouv/sirena:latest-worker
+    imagePullSecretsName: registry-secret
+    additionnalPortsDefinition:
+      - name: monitoring
+        containerPort: 9090
+    replicas: 2
+
+    need_database: true
+    need_redis: true
+    need_bucket: true
+    need_registry: true
+
+    additionalConfigMapRef:
+      - backend-variables
+    additionalsecretRef:
+      - backend
+
+    readinessProbe:
+      enable: false
+    livenessProbe:
+      enable: false
+
+    resources:
+      limits:
+        cpu: 250m
+        memory: 1500Mi
+      requests:
+        cpu: 250m
+        memory: 1500Mi
+
+  service:
+    enable: false

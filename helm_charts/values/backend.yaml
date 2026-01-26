@@ -1,0 +1,126 @@
+---
+SDPSN-devops-charts:
+  name: backend
+
+  podMonitor:
+    enable: true
+    relabelings:
+      - sourceLabels: [__meta_kubernetes_pod_name]
+        targetLabel: pod
+      - sourceLabels: [__meta_kubernetes_namespace]
+        targetLabel: namespace
+      - targetLabel: app_type
+        replacement: appName
+
+  deployment:
+    image: ghcr.io/dnum-socialgouv/sirena:latest-backend
+    containerPort: 4000
+    additionnalPortsDefinition:
+      - name: monitoring
+        containerPort: 9090
+    replicas: 2
+    imagePullSecretsName: registry-secret
+
+    need_database: true
+    need_redis: true
+    need_bucket: true
+    need_registry: true
+    need_app_secret: true
+
+    readinessProbe:
+      enable: true
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      failureThreshold: 3
+      timeoutSeconds: 5
+      path: /health
+      port: 4000
+    livenessProbe:
+      enable: true
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      failureThreshold: 3
+      timeoutSeconds: 5
+      path: /version
+      port: 4000
+
+    resources:
+      limits:
+        cpu: 250m
+        memory: 1500Mi
+      requests:
+        cpu: 250m
+        memory: 1500Mi
+
+    initContainer:
+      name: migration
+      image: ghcr.io/dnum-socialgouv/sirena:5c85c71-backend
+      command:
+        - pnpm
+        - --filter
+        - "@sirena/backend"
+        - db:deploy
+      envFrom_secret_names:
+        - db-secret
+      resources:
+        limits:
+          cpu: 250m
+          memory: 900Mi
+        requests:
+          cpu: 100m
+          memory: 512Mi
+      workingDir: /app
+
+  appVariables:
+    LOG_FORMAT: json
+    PC_ID_TOKEN_SIGNED_RESPONSE_ALG: RS256
+    PC_USERINFO_SIGNED_RESPONSE_ALG: RS256
+    AUTH_TOKEN_NAME: auth_token
+    REFRESH_TOKEN_NAME: refresh_token
+    IS_LOGGED_TOKEN_NAME: is_logged_token
+    AUTH_TOKEN_EXPIRATION: "600"
+    REFRESH_TOKEN_EXPIRATION: "86400"
+    DEMAT_SOCIAL_API_URL: "https://demat.social.gouv.fr/api/v2/graphql"
+    DEMAT_SOCIAL_API_DIRECTORY: "798"
+    DEMAT_SOCIAL_INSTRUCTEUR_ID: "Instructeur-1166"
+    SENTRY_ENABLED: "true"
+    SARBACANE_API_URL: https://api.sarbacane.com/sendkit
+    S3_BUCKET_ENDPOINT: s3.gra.io.cloud.ovh.net
+    S3_BUCKET_ROOT_DIR: ""
+    S3_BUCKET_PORT: "443"
+    CRON_DEMAT_SOCIAL: "3600"
+    CRON_RETRY_AFFECTATION: "1800"
+    REDIS_TLS: "true"
+    ANNUAIRE_SANTE_API_URL: "https://gateway.api.esante.gouv.fr/fhir/v2"
+    TIPIMAIL_API_URL: "https://api.tipimail.com/v1"
+    TIPIMAIL_FROM_ADDRESS: "ne-pas-repondre@sirena-sante.social.gouv.fr"
+    TIPIMAIL_FROM_PERSONAL_NAME: "Sirena"
+    MONITORING_PORT: "9090"
+    CLAMAV_PORT: "3310"
+
+  ingress:
+    enable: true
+    name: backend
+    ingressClassName: public
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: 60m
+      nginx.ingress.kubernetes.io/rewrite-target: /$1
+      nginx.ingress.kubernetes.io/use-regex: "true"
+    paths:
+      - path: /api/(.*)
+        pathType: ImplementationSpecific
+        serviceName: backend
+        servicePort: 80
+    tls:
+      secretName: frontend-tls
+
+  enableSecurityHeaders: true
+  securityHeaders:
+    Content-Security-Policy: "sandbox; default-src 'none'"
+
+  externalSecret:
+    app:
+      targetSecretName: backend
+
+  service:
+    targetPort: 4000

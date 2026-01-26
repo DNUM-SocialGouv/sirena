@@ -1,0 +1,15 @@
+---
+redis_unmanaged: true
+
+externalSecret:
+  redis:
+    enable: false
+  database:
+    databaseName: sirena-test
+
+SDPSN-devops-charts:
+  externalSecret:
+    redis:
+      clusterName: sirena-test-redis
+    bucket:
+      bucketName: sirena-test-s3
