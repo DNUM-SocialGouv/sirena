@@ -12,7 +12,7 @@ mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated
 rm -rf ./generated_manifests/sirena
 
 # FRONTEND
-helm template frontend . -f values/frontend.yaml -f values/env_specific/frontend/${ENVIRONNEMENT}.yaml --set SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-frontend" --output-dir ./generated_manifests
+helm template frontend . -f values/frontend.yaml -f values/env_specific/frontend/${ENVIRONNEMENT}.yaml --set SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-frontend-${ENVIRONNEMENT}" --output-dir ./generated_manifests
 mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated_manifests/frontend
 rm -rf ./generated_manifests/sirena
 

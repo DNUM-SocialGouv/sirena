@@ -112,7 +112,7 @@ runs:
       shell: bash
       id: check-image-frontend
       run: |
-        if docker manifest inspect ${{ env.IMAGE_TAG }}-frontend > /dev/null 2>&1; then
+        if docker manifest inspect ${{ env.IMAGE_TAG }}-frontend-${{ inputs.environment }} > /dev/null 2>&1; then
           echo "frontend-exists=true" >> $GITHUB_OUTPUT
         else
           echo "frontend-exists=false" >> $GITHUB_OUTPUT
@@ -125,7 +125,7 @@ runs:
         context: .
         file: apps/frontend/Dockerfile
         push: true
-        tags: ${{ env.IMAGE_TAG }}-frontend
+        tags: ${{ env.IMAGE_TAG }}-frontend-${{ inputs.environment }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
