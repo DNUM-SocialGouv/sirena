@@ -134,7 +134,7 @@ runs:
           APP_VERSION=${{ inputs.version }}
           SENTRY_DSN_FRONTEND=https://343eb82fc1395b23dc747ac7d2fac3d6@sentry2.fabrique.social.gouv.fr/49
           VITE_MATOMO_URL=https://matomo.fabrique.social.gouv.fr/
-          VITE_MATOMO_SITE_ID=154
+          VITE_MATOMO_SITE_ID=${{ inputs.environment == 'production' && '154' || '155' }}
         secrets: |
           SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
         cache-from: |
