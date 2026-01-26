@@ -1,5 +1,7 @@
 ---
 SDPSN-devops-charts:
+  namespace: org-sdpsn-ws-sirena-production
+
   ingress:
     host: sirena-sante.social.gouv.fr
     tls:

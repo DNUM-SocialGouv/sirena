@@ -101,10 +101,10 @@ SDPSN-devops-charts:
     enable: true
     name: backend
     ingressClassName: public
-    annotations:
+    appAnnotations:
       nginx.ingress.kubernetes.io/proxy-body-size: 60m
       nginx.ingress.kubernetes.io/rewrite-target: /$1
-      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/use-regex: 'true'
     paths:
       - path: /api/(.*)
         pathType: ImplementationSpecific

@@ -1,5 +1,7 @@
 ---
 SDPSN-devops-charts:
+  namespace: org-sdpsn-ws-sirena-integration
+
   appVariables:
     HOST: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr
     PC_DOMAIN: https://fca.integ01.dev-agentconnect.fr/api/v2
