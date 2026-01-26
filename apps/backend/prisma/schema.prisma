@@ -222,6 +222,7 @@ model PersonneConcernee {
 
   ageId String?
   age   AgeEnum? @relation(fields: [ageId], references: [id])
+  dateNaissance DateTime?
 
   adresse Adresse? @relation("PersonneAdresse")
 

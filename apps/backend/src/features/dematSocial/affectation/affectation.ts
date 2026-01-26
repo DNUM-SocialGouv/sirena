@@ -179,7 +179,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
   }
 
   // 4) Upsert of RequeteEntite + SituationEntite + create default requete etapes for each entite
-  // If no entity was assigned, fallback to ARS Normandie
+  // TODO:  If no entity was assigned, fallback to ARS Normandie for now
   let isFallback = false;
   try {
     if (entiteIdsToLinkToRequete.size === 0) {

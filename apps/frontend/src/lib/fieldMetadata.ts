@@ -14,8 +14,8 @@ export const declarantFieldMetadata: Record<string, FieldMetadata> = {
   ville: { label: 'Ville', type: 'text' },
   numeroTelephone: { label: 'Numéro de téléphone', type: 'tel' },
   courrierElectronique: { label: 'Courrier électronique', type: 'email' },
-  neSouhaitePasCommuniquerIdentite: {
-    label: 'Le déclarant ne souhaite pas que son identité soit communiquée',
+  consentCommuniquerIdentite: {
+    label: 'Le déclarant consent à ce que son identité soit communiquée',
     type: 'checkbox',
   },
   estSignalementProfessionnel: {
@@ -31,13 +31,14 @@ export const personneConcerneeFieldMetadata: Record<string, FieldMetadata> = {
   nom: { label: 'Nom', type: 'text' },
   prenom: { label: 'Prénom', type: 'text' },
   age: { label: 'Âge', type: 'select' },
+  dateNaissance: { label: 'Date de naissance', type: 'text' },
   adresseDomicile: { label: 'Adresse du domicile', type: 'text' },
   codePostal: { label: 'Code postal', type: 'text' },
   ville: { label: 'Ville', type: 'text' },
   numeroTelephone: { label: 'Numéro de téléphone', type: 'tel' },
   courrierElectronique: { label: 'Courrier électronique', type: 'email' },
   estHandicapee: { label: "La personne concernée est en situation d'handicap", type: 'checkbox' },
-  veutGarderAnonymat: { label: 'Elle ne souhaite pas que son identité soit communiquée', type: 'checkbox' },
+  consentCommuniquerIdentite: { label: 'Elle consent à ce que son identité soit communiquée', type: 'checkbox' },
   estVictimeInformee: { label: 'Elle a été informée de la démarche par le déclarant', type: 'checkbox' },
   autrePersonnes: { label: 'Précisions sur les autres personnes concernées', type: 'textarea' },
   aAutrePersonnes: { label: "Il y a d'autres personnes concernées par la requête", type: 'checkbox' },

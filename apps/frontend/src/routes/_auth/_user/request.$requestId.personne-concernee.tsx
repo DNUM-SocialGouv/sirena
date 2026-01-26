@@ -48,9 +48,17 @@ function RouteComponent() {
 
         originalDataRef.current = formattedData;
 
+        const isDematSocial = request?.requete?.dematSocialId != null;
+
         return (
           <>
-            <PersonneConcerneeForm mode="edit" requestId={requestId} initialData={formattedData} onSave={handleSave} />
+            <PersonneConcerneeForm
+              mode="edit"
+              requestId={requestId}
+              initialData={formattedData}
+              onSave={handleSave}
+              isDematSocial={isDematSocial}
+            />
             {showConflictDialog && conflicts.length > 0 && (
               <ConflictResolutionDialog
                 conflicts={conflicts}

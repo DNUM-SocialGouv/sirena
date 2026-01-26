@@ -497,7 +497,10 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
           declarant: {
             update: {
               estIdentifie: true,
-              veutGarderAnonymat: declarantData.neSouhaitePasCommuniquerIdentite || false,
+              veutGarderAnonymat:
+                declarantData.consentCommuniquerIdentite === undefined
+                  ? undefined
+                  : !declarantData.consentCommuniquerIdentite,
               estSignalementProfessionnel: declarantData.estSignalementProfessionnel || false,
               estVictime: declarantData.estPersonneConcernee || false,
               commentaire: declarantData.autresPrecisions || '',
@@ -596,12 +599,16 @@ export const updateRequeteParticipant = async (
         participant: {
           update: {
             estHandicapee: participantData.estHandicapee || false,
-            veutGarderAnonymat: participantData.veutGarderAnonymat || false,
+            veutGarderAnonymat:
+              participantData.consentCommuniquerIdentite === undefined
+                ? undefined
+                : !participantData.consentCommuniquerIdentite,
             estVictimeInformee: participantData.estVictimeInformee || false,
             autrePersonnes: participantData.autrePersonnes || '',
             aAutrePersonnes: participantData.aAutrePersonnes || false,
             commentaire: participantData.commentaire || '',
             ageId: participantData.age || undefined,
+            dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : undefined,
             updatedAt: new Date(),
             identite: {
               update: {
