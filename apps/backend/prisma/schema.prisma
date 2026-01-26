@@ -24,6 +24,22 @@ datasource db {
   url      = env("PG_URL")
 }
 
+model AutoriteCompetenteReferentiel {
+  id String @id @default(uuid())
+
+  categCode   String
+  categLib  String?
+  entiteTypeIds String[]
+
+  sourceFileVersion String? // csv hash
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([categCode])
+}
+
+
 model StatutEnum {
   id    String @id
   label String @unique
