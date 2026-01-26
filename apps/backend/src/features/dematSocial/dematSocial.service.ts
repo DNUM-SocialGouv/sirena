@@ -12,10 +12,11 @@ import {
   GetInstructeursDocument,
   graffle,
 } from '../../libs/graffle.js';
+import { prisma } from '../../libs/prisma.js';
 import { sendDeclarantAcknowledgmentEmail } from '../declarants/declarants.notification.service.js';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '../requetes/requetes.service.js';
 import { assignEntitesToRequeteTask } from './affectation/affectation.js';
-import { mapDataForPrisma } from './dematSocial.adaptater.js';
+import { mapDataForPrisma } from './dematSocial.adapter.js';
 import type { Demandeur, DematSocialCivilite, Mandataire } from './dematSocial.type.js';
 import {
   createImportFailure,
@@ -174,6 +175,8 @@ export const importSingleDossier = async (
     return { success: true, requeteId: existingRequete.id, alreadyImported: true };
   }
 
+  logger.info({ dossierNumber }, `Importing single dossier ${dossierNumber}`);
+
   let step:
     | 'getRequete'
     | 'updateInstruction'
@@ -203,14 +206,6 @@ export const importSingleDossier = async (
       return { success: false };
     }
 
-    step = 'updateInstruction';
-    const update = await updateInstruction(`Dossier-${dossierNumber}`);
-    if (!update?.dossierPasserEnInstruction?.dossier) {
-      const errors = update?.dossierPasserEnInstruction?.errors || [];
-      const errorMessage = errors.map((e) => e.message).join(', ');
-      logger.warn({ dossierNumber, errors: errorMessage }, `Failed to change instruction for dossier ${dossierNumber}`);
-    }
-
     step = 'mapDataForPrisma';
     const demandeur = getDemandeur(data.dossier.demandeur);
     const mandataire = getMandataire(data.dossier, data.dossier.usager.email);
@@ -234,6 +229,14 @@ export const importSingleDossier = async (
 
     // Mark the failure as resolved
     await markFailureAsResolved(dossierNumber, createdRequete.id);
+
+    step = 'updateInstruction';
+    const update = await updateInstruction(`Dossier-${dossierNumber}`);
+    if (!update?.dossierPasserEnInstruction?.dossier) {
+      const errors = update?.dossierPasserEnInstruction?.errors || [];
+      const errorMessage = errors.map((e) => e.message).join(', ');
+      logger.warn({ dossierNumber, errors: errorMessage }, `Failed to change instruction for dossier ${dossierNumber}`);
+    }
 
     // Assign the entities (non-blocking error)
     step = 'assignEntitesToRequeteTask';
@@ -319,10 +322,18 @@ export const importRequetes = async (createdSince?: Date) => {
   }
   const dossiers = await getRequetes(createdSince);
   logger.info({ totalDossiers: dossiers.length }, 'Found dossiers to process');
-
   let i = 0;
   let errorCount = 0;
   let skippedCount = 0;
+
+  // TODO remove this when dematSocial is mature enough
+  if (envVars.SENTRY_ENVIRONMENT === 'integration') {
+    await prisma.requete.deleteMany({
+      where: {
+        dematSocialId: { not: null },
+      },
+    });
+  }
 
   for (const dossier of dossiers) {
     // legacy, we don't support

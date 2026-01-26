@@ -1,8 +1,14 @@
 import { RECEPTION_TYPE } from '@sirena/common/constants';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AddressType, type RootChampFragmentFragment } from '../../libs/graffle.js';
-import { mapDataForPrisma } from './dematSocial.adaptater.js';
+import { mapDataForPrisma } from './dematSocial.adapter.js';
 import rootMapping from './dematSocial.mapper.js';
+
+const logger = { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() };
+
+vi.mock('../../libs/asyncLocalStorage.js', () => ({
+  getLoggerStore: vi.fn(() => logger),
+}));
 
 const toB64 = (s: string) => Buffer.from(s, 'utf8').toString('base64');
 const fromB64 = (s: string) => Buffer.from(s, 'base64').toString('utf8');

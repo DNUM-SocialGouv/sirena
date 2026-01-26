@@ -109,14 +109,14 @@ export type DsLieuType = keyof typeof DS_LIEU_TYPE;
 
 export const dsLieuTypeLabels: Record<DsLieuType, string> = {
   DOMICILE: 'À domicile',
-  ETABLISSEMENT_SANTE: 'Un établissement de santé, par exemple : CHU, clinique',
-  ETABLISSEMENT_PERSONNES_AGEES: 'Un établissement pour personnes âgées, par exemple : EHPAD, résidence autonomie',
+  ETABLISSEMENT_SANTE: 'Un établissement de santé, par exemple : CHU, clinique',
+  ETABLISSEMENT_PERSONNES_AGEES: 'Un établissement pour personnes âgées, par exemple : EHPAD, résidence autonomie',
   ETABLISSEMENT_HANDICAP:
-    'Un établissement pour personnes en situation de handicap, par exemple : maison d’accueil spécialisée',
-  ETABLISSEMENT_SOCIAL: 'Un établissement social, par exemple : centre d’hébergement',
+    'Un établissement pour personnes en situation de handicap, par exemple : maison d’accueil spécialisée',
+  ETABLISSEMENT_SOCIAL: 'Un établissement social, par exemple : centre d’hébergement',
   CABINET: 'Un cabinet médical, par exemple : dentiste, médecin généraliste',
   TRAJET: 'Dans un moyen de transport',
-  AUTRES_ETABLISSEMENTS: 'Autre, par exemple un salon de tatouage ou un institut d’esthétique',
+  AUTRES_ETABLISSEMENTS: 'Autre, par exemple : salon de tatouage, institut d’esthétique, centre pénitentiaire',
 };
 
 export const DS_MALTRAITANCE_TYPE = {
@@ -153,7 +153,7 @@ export const dsMisEnCauseTypeLabels: Record<DsMisEnCauseType, string> = {
   PROFESSIONNEL: 'Un professionnel',
   ETABLISSEMENT: 'L’établissement où se sont déroulés les faits',
   MEMBRE_FAMILLE: 'Un membre de la famille',
-  PROCHE: 'Un autre proche, par exemple : voisinage ou connaissance',
+  PROCHE: 'Un autre proche, par exemple : voisinage ou connaissance',
   AUTRE: 'Autre',
   PROFESSIONNEL_DOMICILE: 'Un professionnel ou un service d’aide à domicile',
 };
@@ -193,7 +193,7 @@ export const DS_PROFESSION_DOMICILE_TYPE = {
 export type DsProfessionDomicileType = keyof typeof DS_PROFESSION_DOMICILE_TYPE;
 
 export const dsProfessionDomicileTypeLabels: Record<DsProfessionDomicileType, string> = {
-  PROFESSIONNEL_SANTE: 'Un professionnel de santé, par exemple : médecin, infirmier, aide-soignant, ambulancier',
+  PROFESSIONNEL_SANTE: 'Un professionnel de santé, par exemple : médecin, infirmier, aide-soignant, ambulancier',
   AUTRE_PROFESSIONNEL: 'Un professionnel d’un service d’aide et d’accompagnement à domicile',
   SERVICE_EDUCATION: 'Un professionnel d’un service d’éducation spéciale et de soins (SESSAD)',
   NPJM: 'Un tuteur, curateur ou mandataire judiciaire',
@@ -203,7 +203,6 @@ export const dsProfessionDomicileTypeLabels: Record<DsProfessionDomicileType, st
 export const DS_PROFESSION_TYPE = {
   PROFESSIONNEL_SANTE: 'PROFESSIONNEL_SANTE',
   PROFESSIONNEL_SOCIAL: 'PROFESSIONNEL_SOCIAL',
-  AUTRE_PROFESSIONNEL: 'AUTRE_PROFESSIONNEL',
   NPJM: 'NPJM',
   AUTRE: 'AUTRE',
 } as const;
@@ -213,10 +212,8 @@ export type DsProfessionType = keyof typeof DS_PROFESSION_TYPE;
 export const dsProfessionTypeLabels: Record<DsProfessionType, string> = {
   PROFESSIONNEL_SANTE: 'Un professionnel de santé, par exemple : médecin, dentiste, infirmier, aide-soignant',
   PROFESSIONNEL_SOCIAL: 'Un travailleur social, par exemple : éducateur, assistant social',
-  AUTRE_PROFESSIONNEL:
-    'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
   NPJM: 'Un tuteur, curateur ou mandataire judiciaire',
-  AUTRE: 'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
+  AUTRE: 'Une autre personne, par exemple : animateur, agent d’entretien, équipe de direction, esthéticien',
 };
 
 export const DS_TRANSPORT_TYPE = {

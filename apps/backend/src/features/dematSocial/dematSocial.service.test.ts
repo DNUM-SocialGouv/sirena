@@ -21,6 +21,14 @@ vi.mock('../../libs/graffle.js', () => {
   };
 });
 
+vi.mock('../../libs/prisma.js', () => ({
+  prisma: {
+    requete: {
+      deleteMany: vi.fn(),
+    },
+  },
+}));
+
 vi.mock('../../config/env.js', () => ({
   envVars: {
     DEMAT_SOCIAL_API_DIRECTORY: 9999,
@@ -62,7 +70,7 @@ vi.mock('../../features/dematSocial/dematSocialImportFailure.service.js', () => 
   markFailureAsResolved: vi.fn(),
 }));
 
-vi.mock('./dematSocial.adaptater.js', () => ({
+vi.mock('./dematSocial.adapter.js', () => ({
   mapDataForPrisma: vi.fn((_champs, dossierNumber, dateDepot) => ({
     dematSocialId: dossierNumber,
     createdAt: typeof dateDepot === 'string' ? new Date(dateDepot) : dateDepot,
