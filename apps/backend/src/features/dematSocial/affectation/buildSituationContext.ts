@@ -55,6 +55,8 @@ export function buildSituationContextFromDemat(situation: SituationWithLieu): Si
   ctx.lieuType = lds?.lieuTypeId as LieuType;
 
   ctx.finessCode = extractFinessFromRawText(lds?.finess) ?? null;
+  ctx.categCode = lds?.categCode ?? null;
+  ctx.tutelle = lds?.tutelle ?? null;
 
   ctx.postalCode =
     lds.codePostal ??
