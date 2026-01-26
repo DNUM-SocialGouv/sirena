@@ -1,5 +1,7 @@
 ---
 SDPSN-devops-charts:
+  namespace: org-sdpsn-ws-sirena-preproduction
+
   ingress:
     host: sirena.preproduction.prod.atlas.fabrique.social.gouv.fr
     tls:

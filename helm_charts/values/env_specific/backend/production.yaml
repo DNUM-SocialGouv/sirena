@@ -1,5 +1,7 @@
 ---
 SDPSN-devops-charts:
+  namespace: org-sdpsn-ws-sirena-production
+
   appVariables:
     HOST: https://sirena-sante.social.gouv.fr
     PC_DOMAIN: https://auth.agentconnect.gouv.fr/api/v2
@@ -7,6 +9,7 @@ SDPSN-devops-charts:
     FRONTEND_REDIRECT_URI: https://sirena-sante.social.gouv.fr/home
     FRONTEND_REDIRECT_LOGIN_URI: https://sirena-sante.social.gouv.fr/login
     FRONTEND_URI: https://sirena-sante.social.gouv.fr
+    REDIS_TLS: "true"
     SENTRY_ENVIRONMENT: production
   ingress:
     host: sirena-sante.social.gouv.fr

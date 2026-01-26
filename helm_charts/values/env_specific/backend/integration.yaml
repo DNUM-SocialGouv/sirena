@@ -1,5 +1,7 @@
 ---
 SDPSN-devops-charts:
+  namespace: org-sdpsn-ws-sirena-integration
+
   appVariables:
     HOST: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr
     PC_DOMAIN: https://fca.integ01.dev-agentconnect.fr/api/v2
@@ -7,6 +9,7 @@ SDPSN-devops-charts:
     FRONTEND_REDIRECT_URI: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr/home
     FRONTEND_REDIRECT_LOGIN_URI: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr/login
     FRONTEND_URI: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr
+    REDIS_TLS: "false"
     SENTRY_ENVIRONMENT: integration
 
   deployment:

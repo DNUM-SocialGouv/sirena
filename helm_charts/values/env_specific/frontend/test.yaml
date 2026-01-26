@@ -1,5 +1,7 @@
 ---
 SDPSN-devops-charts:
+  namespace: org-sdpsn-ws-sirena-test
+
   ingress:
     host: sirena.test.dev.atlas.fabrique.social.gouv.fr
     tls:

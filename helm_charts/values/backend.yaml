@@ -90,7 +90,6 @@ SDPSN-devops-charts:
     S3_BUCKET_PORT: "443"
     CRON_DEMAT_SOCIAL: "3600"
     CRON_RETRY_AFFECTATION: "1800"
-    REDIS_TLS: "true"
     ANNUAIRE_SANTE_API_URL: "https://gateway.api.esante.gouv.fr/fhir/v2"
     TIPIMAIL_API_URL: "https://api.tipimail.com/v1"
     TIPIMAIL_FROM_ADDRESS: "ne-pas-repondre@sirena-sante.social.gouv.fr"
@@ -102,10 +101,10 @@ SDPSN-devops-charts:
     enable: true
     name: backend
     ingressClassName: public
-    annotations:
+    appAnnotations:
       nginx.ingress.kubernetes.io/proxy-body-size: 60m
       nginx.ingress.kubernetes.io/rewrite-target: /$1
-      nginx.ingress.kubernetes.io/use-regex: "true"
+      nginx.ingress.kubernetes.io/use-regex: 'true'
     paths:
       - path: /api/(.*)
         pathType: ImplementationSpecific
