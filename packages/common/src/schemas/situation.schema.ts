@@ -8,6 +8,9 @@ export const SituationDataSchema = z.object({
       codePostal: z.string().optional(),
       societeTransport: z.string().optional(),
       finess: z.string().optional(),
+      tutelle: z.string().optional(),
+      categCode: z.string().optional(),
+      categLib: z.string().optional(),
       adresse: z
         .object({
           label: z.string().optional(),
