@@ -1,7 +1,7 @@
 import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { describe, expect, it, vi } from 'vitest';
 import { AddressType, type RootChampFragmentFragment } from '../../libs/graffle.js';
-import { mapDataForPrisma } from './dematSocial.adaptater.js';
+import { mapDataForPrisma } from './dematSocial.adapter.js';
 import rootMapping from './dematSocial.mapper.js';
 
 const logger = { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() };

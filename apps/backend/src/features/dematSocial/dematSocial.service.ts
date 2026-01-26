@@ -16,7 +16,7 @@ import { prisma } from '../../libs/prisma.js';
 import { sendDeclarantAcknowledgmentEmail } from '../declarants/declarants.notification.service.js';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '../requetes/requetes.service.js';
 import { assignEntitesToRequeteTask } from './affectation/affectation.js';
-import { mapDataForPrisma } from './dematSocial.adaptater.js';
+import { mapDataForPrisma } from './dematSocial.adapter.js';
 import type { Demandeur, DematSocialCivilite, Mandataire } from './dematSocial.type.js';
 import {
   createImportFailure,

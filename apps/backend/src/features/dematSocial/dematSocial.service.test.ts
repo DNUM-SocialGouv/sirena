@@ -70,7 +70,7 @@ vi.mock('../../features/dematSocial/dematSocialImportFailure.service.js', () => 
   markFailureAsResolved: vi.fn(),
 }));
 
-vi.mock('./dematSocial.adaptater.js', () => ({
+vi.mock('./dematSocial.adapter.js', () => ({
   mapDataForPrisma: vi.fn((_champs, dossierNumber, dateDepot) => ({
     dematSocialId: dossierNumber,
     createdAt: typeof dateDepot === 'string' ? new Date(dateDepot) : dateDepot,
