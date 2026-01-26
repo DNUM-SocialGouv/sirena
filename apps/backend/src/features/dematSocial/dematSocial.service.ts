@@ -327,11 +327,13 @@ export const importRequetes = async (createdSince?: Date) => {
   let skippedCount = 0;
 
   // TODO remove this when dematSocial is mature enough
-  await prisma.requete.deleteMany({
-    where: {
-      dematSocialId: { not: null },
-    },
-  });
+  if (envVars.SENTRY_ENVIRONMENT === 'integration') {
+    await prisma.requete.deleteMany({
+      where: {
+        dematSocialId: { not: null },
+      },
+    });
+  }
 
   for (const dossier of dossiers) {
     // legacy, we don't support
