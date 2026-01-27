@@ -54,17 +54,12 @@ describe('utils.ts', () => {
     });
 
     describe('when input does not contain a valid postal code', () => {
-      it.each([
-        [''],
-        ['no postal code here'],
-        ['1234'],
-        ['123456'],
-        ['ABCDE'],
-        ['12-345'],
-        ['12 345'],
-      ])('should return null for input without valid postal code: %s', (input) => {
-        expect(extractPostalCode(input)).toBeNull();
-      });
+      it.each([[''], ['no postal code here'], ['1234'], ['123456'], ['ABCDE'], ['12-345'], ['12 345']])(
+        'should return null for input without valid postal code: %s',
+        (input) => {
+          expect(extractPostalCode(input)).toBeNull();
+        },
+      );
     });
   });
 
