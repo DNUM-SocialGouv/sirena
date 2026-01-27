@@ -33,35 +33,38 @@ src/
 
 ## 🚀 Scripts
 
-| Command                           | Description                                                                                  |
-| :-------------------------------- | :------------------------------------------------------------------------------------------- |
-| `pnpm build`                      | Compile TypeScript sources using `tsconfig.build.json` and copy Prisma client to `dist/`    |
-| `pnpm build:ci`                   | Same as `build` then upload Sentry sourcemaps                                                |
-| `pnpm dev`                        | Start the backend in development mode with `tsx` watching `src/index.ts`                    |
-| `pnpm start`                      | Start the compiled backend from `dist/index.js`                                             |
-| `pnpm gql`                        | Run the GraphQL code generation helper script                                               |
-| `pnpm worker`                     | Start the background worker (BullMQ jobs)                                                   |
-| `pnpm test`                       | Run unit tests using Vitest                                                                 |
-| `pnpm coverage`                   | Run tests with coverage report                                                              |
-| `pnpm typecheck`                  | Type-check the project with TypeScript (no emit)                                            |
-| `pnpm db:generate`                | Generate the Prisma client from the schema                                                  |
-| `pnpm db:migrate`                 | Apply pending migrations in development (`prisma migrate dev`)                              |
-| `pnpm db:migrate:resolve`         | Mark a migration as rolled back (`prisma migrate resolve --rolled-back`)                    |
-| `pnpm db:diff`                    | Create a SQL migration script comparing empty DB to current schema                          |
-| `pnpm db:diff-down`               | Create a SQL rollback script comparing schema to current DB                                 |
-| `pnpm db:deploy`                  | Deploy all pending migrations to the database (`prisma migrate deploy`)                     |
-| `pnpm db:execute`                 | Execute a SQL script against the database                                                   |
-| `pnpm db:reset`                   | Reset the database by dropping and recreating it with migrations (`prisma migrate reset`)   |
-| `pnpm db:push`                    | Push the Prisma schema directly to the database without generating migrations               |
-| `pnpm db:studio`                  | Launch Prisma Studio UI for exploring and modifying the database                            |
-| `pnpm op:import:geodata`          | Import geographic reference data (communes / postal codes) into the database               |
-| `pnpm op:diff:enums`              | Diff and sync shared enums between `@sirena/common` and the backend                        |
-| `pnpm op:import:dematsocial`      | Import Demat Social data into the local database                                           |
-| `pnpm script:update-demat-social-mapper` | Internal utility to update the Demat Social mapping logic                         |
-| `pnpm generate:codegen`           | Generate GraphQL clients (codegen)                                                          |
-| `pnpm lint:staged`                | Run Biome lint checks on staged backend files via a Git diff filter                         |
-| `pnpm lint`                       | Run Biome lint checks across the entire backend codebase                                    |
-| `pnpm sentry:sourcemaps`          | Inject and upload Sentry sourcemaps for the compiled backend                                |
+| Command                                    | Description                                                                                  |
+| :----------------------------------------- | :------------------------------------------------------------------------------------------- |
+| `pnpm build`                               | Compile TypeScript sources and copy Prisma client to `dist/`                                 |
+| `pnpm build:ci`                            | Same as `build` then upload Sentry sourcemaps                                                |
+| `pnpm dev`                                 | Start the backend in development mode with `tsx` watching `src/index.ts`                     |
+| `pnpm start`                               | Start the compiled backend from `dist/index.js`                                               |
+| `pnpm gql`                                 | Run the GraphQL code generation helper script                                                |
+| `pnpm worker`                              | Start the background worker (BullMQ jobs)                                                     |
+| `pnpm test`                                | Run unit tests using Vitest                                                                  |
+| `pnpm coverage`                            | Run tests with coverage report                                                               |
+| `pnpm typecheck`                           | Type-check the project with TypeScript (no emit)                                             |
+| `pnpm db:generate`                         | Generate the Prisma client from the schema                                                   |
+| `pnpm db:migrate`                          | Apply pending migrations in development (`prisma migrate dev`)                               |
+| `pnpm db:migrate:resolve`                  | Mark a migration as rolled back (`prisma migrate resolve --rolled-back`)                     |
+| `pnpm op:import:geodata`                   | Import geographic reference data (communes / postal codes) into the database                 |
+| `pnpm op:diff:autorite-competente:analyze` | Analyze differences between CSV referentiel and database (AutoriteCompetenteReferentiel)     |
+| `pnpm op:diff:autorite-competente:up`      | Generate up migration SQL (INSERT) from CSV referentiel differences                            |
+| `pnpm op:diff:autorite-competente:down`    | Generate down migration SQL (DELETE) from CSV referentiel differences                         |
+| `pnpm op:diff:enums`                       | Diff and sync shared enums between `@sirena/common` and the backend                           |
+| `pnpm op:import:dematsocial`               | Import Demat Social data into the local database                                              |
+| `pnpm db:diff`                             | Create a SQL migration script comparing empty DB to current schema                            |
+| `pnpm db:deploy`                           | Deploy all pending migrations to the database (`prisma migrate deploy`)                      |
+| `pnpm db:diff-down`                       | Create a SQL rollback script comparing schema to current DB                                   |
+| `pnpm db:execute`                          | Execute a SQL script against the database                                                     |
+| `pnpm db:reset`                            | Reset the database by dropping and recreating it with migrations (`prisma migrate reset`)    |
+| `pnpm db:push`                             | Push the Prisma schema directly to the database without generating migrations                |
+| `pnpm db:studio`                           | Launch Prisma Studio UI for exploring and modifying the database                             |
+| `pnpm script:update-demat-social-mapper`   | Internal utility to update the Demat Social mapping logic                                     |
+| `pnpm generate:codegen`                    | Generate GraphQL clients (codegen)                                                            |
+| `pnpm lint:staged`                         | Run Biome lint checks on staged backend files via a Git diff filter                           |
+| `pnpm lint`                                | Run Biome lint checks across the entire backend codebase                                     |
+| `pnpm sentry:sourcemaps`                   | Inject and upload Sentry sourcemaps for the compiled backend                                  |
 
 ## 📦 Exports
 
