@@ -5,7 +5,6 @@ SDPSN-devops-charts:
   deployment:
     image: ghcr.io/dnum-socialgouv/sirena:latest-frontend
     imagePullSecretsName: registry-secret
-    replicas: 2
 
     readinessProbe:
       enable: false
@@ -32,7 +31,8 @@ SDPSN-devops-charts:
     ingressClassName: public
     host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
     appAnnotations:
-      nginx.ingress.kubernetes.io/proxy-body-size: 60m
+      nginx.ingress.kubernetes.io/proxy-body-size: 200m
+      nginx.ingress.kubernetes.io/proxy-hide-headers: Server
     paths:
       - path: /
         pathType: Prefix

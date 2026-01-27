@@ -18,7 +18,6 @@ SDPSN-devops-charts:
     additionnalPortsDefinition:
       - name: monitoring
         containerPort: 9090
-    replicas: 2
 
     need_database: true
     need_redis: true

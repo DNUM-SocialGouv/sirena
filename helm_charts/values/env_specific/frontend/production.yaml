@@ -2,6 +2,9 @@
 SDPSN-devops-charts:
   namespace: org-sdpsn-ws-sirena-production
 
+  deployment:
+    replicas: 2
+
   ingress:
     host: sirena-sante.social.gouv.fr
     tls:

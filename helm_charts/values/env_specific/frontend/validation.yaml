@@ -2,6 +2,9 @@
 SDPSN-devops-charts:
   namespace: org-sdpsn-ws-sirena-validation
 
+  deployment:
+    replicas: 1
+
   ingress:
     host: sirena.validation.dev.atlas.fabrique.social.gouv.fr
     tls:
