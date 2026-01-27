@@ -1,7 +1,30 @@
 import type { LieuType, Motif } from '@sirena/common/constants';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PrismaClient } from '../../../../generated/client/index.js';
 import { checkRequired, computeEntitesFromMotifs, leaf, rootNode, runDecisionTree } from './decisionTree.js';
 import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types.js';
+
+vi.mock('../../../../generated/client/index.js', async () => {
+  const actual = await vi.importActual('../../../../generated/client/index.js');
+  return {
+    ...actual,
+    PrismaClient: class MockPrismaClient {
+      constructor() {
+        const instance = (globalThis as { __mockPrismaInstance__?: PrismaClient }).__mockPrismaInstance__;
+        if (instance) {
+          Object.assign(this, instance);
+        } else {
+          Object.assign(this, {
+            autoriteCompetenteReferentiel: {
+              findUnique: vi.fn().mockResolvedValue(null),
+            },
+            $disconnect: vi.fn().mockResolvedValue(undefined),
+          });
+        }
+      }
+    },
+  };
+});
 
 describe('leaf helper', () => {
   it('should build a DecisionLeaf with given parameters', () => {
@@ -382,10 +405,10 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
     const modifyFinessNode = (node: DecisionNode): void => {
       if (node.kind === 'leaf' && node.id === 'finess_referentiel') {
         const originalAdd = node.add;
-        node.add = (ctx: SituationContext) => {
+        node.add = async (ctx: SituationContext) => {
           finessNodeCallCount += 1;
           if (typeof originalAdd === 'function') {
-            return originalAdd(ctx);
+            return await originalAdd(ctx);
           }
           return originalAdd;
         };
@@ -429,10 +452,10 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
     const modifyFinessNode = (node: DecisionNode): void => {
       if (node.kind === 'leaf' && node.id === 'finess_referentiel') {
         const originalAdd = node.add;
-        node.add = (ctx: SituationContext) => {
+        node.add = async (ctx: SituationContext) => {
           finessNodeCallCount += 1;
           if (typeof originalAdd === 'function') {
-            return originalAdd(ctx);
+            return await originalAdd(ctx);
           }
           return originalAdd;
         };
@@ -520,6 +543,375 @@ describe('runDecisionTree - required fields / validation', () => {
     };
 
     await expect(runDecisionTree(ctx)).rejects.toThrow(/isMaltraitance/);
+  });
+});
+
+describe('finessReferentielPlaceholderSubtree', () => {
+  let mockPrismaInstance: {
+    autoriteCompetenteReferentiel: {
+      findUnique: ReturnType<typeof vi.fn>;
+    };
+    $disconnect: ReturnType<typeof vi.fn>;
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPrismaInstance = {
+      autoriteCompetenteReferentiel: {
+        findUnique: vi.fn(),
+      },
+      $disconnect: vi.fn(),
+    };
+
+    (globalThis as { __mockPrismaInstance__?: unknown }).__mockPrismaInstance__ = mockPrismaInstance;
+  });
+
+  describe('mapping from tutelle', () => {
+    it('should map "ARS" to ARS', async () => {
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: 'ARS',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['ARS']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should map "CD" to CD', async () => {
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: 'CD',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['CD']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should map "ARS/CD" to ARS and CD', async () => {
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: 'ARS/CD',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['ARS', 'CD']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should map "CD ou ARS (si accueil d\'adultes handicapés psy)" to ARS and CD', async () => {
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: "CD ou ARS (si accueil d'adultes handicapés psy)",
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['ARS', 'CD']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should map "Ordre/ARS" to ARS', async () => {
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: 'Ordre/ARS',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['ARS']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should map "DDETS ?" to DD', async () => {
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: 'DDETS ?',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['DD']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should map "Préfet (DDETS)" to DD', async () => {
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: 'Préfet (DDETS)',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['DD']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should map "Préfet (DTPJJ)" to empty array and fallback to categCode', async () => {
+      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue(null);
+
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: 'Préfet (DTPJJ)',
+        categCode: '355',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual([]);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+        where: { categCode: '355' },
+      });
+    });
+
+    it('should map "Préfet" to DD', async () => {
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: 'Préfet',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['DD']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should handle case-insensitive tutelle values', async () => {
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: 'ars',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['ARS']);
+    });
+
+    it('should handle tutelle with extra whitespace', async () => {
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: '  ARS  ',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['ARS']);
+    });
+  });
+
+  describe('fallback to categCode', () => {
+    it('should fallback to categCode when tutelle is null', async () => {
+      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+        categCode: '355',
+        entiteTypeIds: ['ARS'],
+      });
+
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: null,
+        categCode: '355',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['ARS']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+        where: { categCode: '355' },
+      });
+    });
+
+    it('should fallback to categCode when tutelle is undefined', async () => {
+      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+        categCode: '355',
+        entiteTypeIds: ['CD'],
+      });
+
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: undefined,
+        categCode: '355',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['CD']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+        where: { categCode: '355' },
+      });
+    });
+
+    it('should fallback to categCode when tutelle is empty string', async () => {
+      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+        categCode: '355',
+        entiteTypeIds: ['DD'],
+      });
+
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: '',
+        categCode: '355',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['DD']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+        where: { categCode: '355' },
+      });
+    });
+
+    it('should fallback to categCode when tutelle is not mapped', async () => {
+      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+        categCode: '355',
+        entiteTypeIds: ['ARS', 'CD'],
+      });
+
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: 'Comm / EPCI',
+        categCode: '355',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['ARS', 'CD']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+        where: { categCode: '355' },
+      });
+    });
+
+    it('should parse entiteTypeIds from referentiel and filter to ARS/CD/DD only', async () => {
+      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+        categCode: '355',
+        entiteTypeIds: ['ARS', 'CD', 'INVALID_TYPE', 'DD'],
+      });
+
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: null,
+        categCode: '355',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['ARS', 'CD', 'DD']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+        where: { categCode: '355' },
+      });
+    });
+
+    it('should handle categCode with whitespace', async () => {
+      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+        categCode: '355',
+        entiteTypeIds: ['ARS'],
+      });
+
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: null,
+        categCode: '  355  ',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual(['ARS']);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+        where: { categCode: '355' },
+      });
+    });
+  });
+
+  describe('no assignment cases', () => {
+    it('should return empty array when tutelle is not mapped and categCode is null', async () => {
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: null,
+        categCode: null,
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual([]);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should return empty array when tutelle is not mapped and categCode is not found in referentiel', async () => {
+      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue(null);
+
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: null,
+        categCode: '999',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual([]);
+      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+        where: { categCode: '999' },
+      });
+    });
+
+    it('should return empty array when referentiel has empty entiteTypeIds', async () => {
+      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+        categCode: '355',
+        entiteTypeIds: [],
+      });
+
+      const ctx: SituationContext = {
+        lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
+        isMaltraitance: false,
+        tutelle: null,
+        categCode: '355',
+        motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
+      };
+
+      const result = await runDecisionTree(ctx);
+
+      expect(result.sort()).toEqual([]);
+    });
   });
 });
 
