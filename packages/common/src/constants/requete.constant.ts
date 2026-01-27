@@ -1171,9 +1171,18 @@ export const sousMotifPROBLEMES_LIES_AU_TRANSPORT_SANITAIRELabels: Record<
 
 export const REQUETE_CLOTURE_REASON = {
   MESURES_CORRECTIVES: 'MESURES_CORRECTIVES',
+  REPONSE_APPORTEE_PAR_MIS_EN_CAUSE: 'REPONSE_APPORTEE_PAR_MIS_EN_CAUSE',
+  DEMANDE_MISE_EN_PLACE_ACTIONS_CORRECTIVES: 'DEMANDE_MISE_EN_PLACE_ACTIONS_CORRECTIVES',
   ABSENCE_DE_RETOUR: 'ABSENCE_DE_RETOUR',
+  IMPOSSIBLE_EVALUER: 'IMPOSSIBLE_EVALUER',
+  REPONSE_APPORTEE_PAR_SERVICE_INSTRUCTEUR: 'REPONSE_APPORTEE_PAR_SERVICE_INSTRUCTEUR',
   HORS_COMPETENCE: 'HORS_COMPETENCE',
   MISSION_D_INSPECTION_ET_CONTROLE: 'MISSION_D_INSPECTION_ET_CONTROLE',
+  MISE_EN_PLACE_ACCOMPAGNEMENT: 'MISE_EN_PLACE_ACCOMPAGNEMENT',
+  MISE_EN_PLACE_RELAIS_FAMILIAL: 'MISE_EN_PLACE_RELAIS_FAMILIAL',
+  ACCES_REVISION_DROIT_PRESTATION: 'ACCES_REVISION_DROIT_PRESTATION',
+  SAISIE_JUSTICE: 'SAISIE_JUSTICE',
+  ADMISSION_STRUCTURE: 'ADMISSION_STRUCTURE',
   SANS_SUITE: 'SANS_SUITE',
   AUTRE: 'AUTRE',
 } as const;
@@ -1182,9 +1191,18 @@ export type RequeteClotureReason = keyof typeof REQUETE_CLOTURE_REASON;
 
 export const requeteClotureReasonLabels: Record<RequeteClotureReason, string> = {
   MESURES_CORRECTIVES: "Mesures correctives prises par l'établissement / le mis en cause",
+  REPONSE_APPORTEE_PAR_MIS_EN_CAUSE: 'Réponse apportée par le mis en cause',
+  DEMANDE_MISE_EN_PLACE_ACTIONS_CORRECTIVES: "Demande de mise en place d'actions correctives",
   ABSENCE_DE_RETOUR: 'Absence de retour/accord requérant',
+  IMPOSSIBLE_EVALUER: "Impossible d'évaluer",
+  REPONSE_APPORTEE_PAR_SERVICE_INSTRUCTEUR: 'Réponse apportée par le service instructeur/évaluateur au requérant',
   HORS_COMPETENCE: 'Hors compétence',
-  MISSION_D_INSPECTION_ET_CONTROLE: 'Mission d’inspection et contrôle',
-  SANS_SUITE: 'Sans suite',
+  MISSION_D_INSPECTION_ET_CONTROLE: "Mission d'inspection et contrôle",
+  MISE_EN_PLACE_ACCOMPAGNEMENT: "Mise en place d'un accompagnement social ou médico-social ou médical",
+  MISE_EN_PLACE_RELAIS_FAMILIAL: "Mise en place d'un relais familial",
+  ACCES_REVISION_DROIT_PRESTATION: 'Accès ou révision - droit et/ou prestation',
+  SAISIE_JUSTICE: 'Saisie de la justice (signalement et/ou mesure de protection)',
+  ADMISSION_STRUCTURE: 'Admission en structure',
+  SANS_SUITE: 'Sans suite après évaluation',
   AUTRE: 'Autre',
 } as const;

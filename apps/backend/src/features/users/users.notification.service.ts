@@ -118,7 +118,6 @@ export async function sendUserActivationEmail(userId: string, changedById?: stri
       logger.error({ userId, error: changelogError }, 'Failed to create changelog entry for activation email');
     }
   } catch (error) {
-    console.log(error);
     logger.error({ userId, error }, 'Failed to send activation email');
   }
 }

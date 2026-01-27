@@ -1,7 +1,8 @@
-import type { PrismaClient } from '../../generated/client/index.js';
-import { getLoggerStore } from '../../src/libs/asyncLocalStorage.js';
-import inseePostalRaw from '../documents/inseetocodepostal.json' with { type: 'json' };
-import listeEntitesRaw from '../documents/liste_entites.json' with { type: 'json' };
+import { type Prisma, PrismaClient } from '../../generated/client/index.js';
+import inseePostalRaw from '../../prisma/documents/inseetocodepostal.json' with { type: 'json' };
+import listeEntitesRaw from '../../prisma/documents/liste_entites.json' with { type: 'json' };
+import { createDefaultLogger } from '../helpers/pino.js';
+import { getLoggerStore, loggerStorage, prismaStorage } from '../libs/asyncLocalStorage.js';
 
 type InseePostalRow = {
   codeInsee: string;
@@ -26,7 +27,7 @@ type ListeEntiteRow = {
 const inseePostal = inseePostalRaw as InseePostalRow[];
 const listeEntites = listeEntitesRaw as ListeEntiteRow[];
 
-export async function importGeoData(prisma: PrismaClient) {
+async function importGeoData(prisma: PrismaClient | Prisma.TransactionClient) {
   const logger = getLoggerStore();
   logger.info('🌱 Début du seeding des données géographiques...');
 
@@ -94,3 +95,37 @@ export async function importGeoData(prisma: PrismaClient) {
 
   logger.info('🎉 Seeding des données géographiques terminé !');
 }
+
+async function main() {
+  const logger = createDefaultLogger();
+  const prisma = new PrismaClient({
+    log: ['info', 'warn', 'error'],
+    transactionOptions: {
+      timeout: 120000,
+      maxWait: 20000,
+    },
+  });
+
+  await loggerStorage.run(logger, async () => {
+    try {
+      logger.info('🌍 Starting import:geodata...');
+
+      await prisma.$connect();
+
+      await prismaStorage.run(prisma, async () => {
+        await prisma.$transaction(async (tx) => {
+          await importGeoData(tx);
+        });
+      });
+
+      logger.info('✅ import:geodata completed successfully.');
+    } catch (error) {
+      logger.error({ err: error }, '❌ Error during import:geodata');
+      process.exit(1);
+    } finally {
+      await prisma.$disconnect();
+    }
+  });
+}
+
+main();

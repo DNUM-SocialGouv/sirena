@@ -92,7 +92,9 @@ packages/
 | `pnpm db:migrate`                      | Run dev migrations (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:migrate:resolve`              | Run dev migrations (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:generate`                     | Generate Prisma client from schema (`@sirena/backend`) with `.env`                   |
-| `pnpm db:seed`                         | Apply seeds to the database (`@sirena/backend`) with `.env`                          |
+| `pnpm op:import:geodata`               | Import geodata (`@sirena/backend`) with `.env`                                       |
+| `pnpm op:diff:enums`                   | Check enum consistency (`@sirena/backend`) with `.env`. Use `--dump-migration` for clean SQL output (no logger timestamps), `--invert` for rollback SQL |
+| `pnpm op:import:dematsocial`           | Import requests from DematSocial (`@sirena/backend`) with `.env`                       |
 | `pnpm db:deploy`                       | Deploy pending migrations to DB (`@sirena/backend`) with `.env`                      |
 | `pnpm db:studio`                       | Open Prisma Studio (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:reset`                        | Reset the database (`@sirena/backend`) with `.env`                                   |
