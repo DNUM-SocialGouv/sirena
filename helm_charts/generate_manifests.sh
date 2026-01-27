@@ -23,6 +23,6 @@ mv ./generated_manifests/sirena/templates/* ./generated_manifests/external-secre
 rm -rf ./generated_manifests/sirena
 
 # WORKER
-helm template worker . -f values/worker.yaml --set SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-worker" --output-dir ./generated_manifests
+helm template worker . -f values/worker.yaml -f values/env_specific/worker/${ENVIRONNEMENT}.yaml --set SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-worker" --output-dir ./generated_manifests
 mv ./generated_manifests/sirena/charts/SDPSN-devops-charts/templates ./generated_manifests/worker
 rm -rf ./generated_manifests/sirena

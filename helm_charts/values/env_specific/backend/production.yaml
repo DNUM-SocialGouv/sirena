@@ -11,6 +11,10 @@ SDPSN-devops-charts:
     FRONTEND_URI: https://sirena-sante.social.gouv.fr
     REDIS_TLS: "true"
     SENTRY_ENVIRONMENT: production
+
+  deployment:
+    replicas: 2
+
   ingress:
     host: sirena-sante.social.gouv.fr
     tls:

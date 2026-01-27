@@ -2,6 +2,9 @@
 SDPSN-devops-charts:
   namespace: org-sdpsn-ws-sirena-formation
 
+  deployment:
+    replicas: 2
+
   ingress:
     host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
     tls:

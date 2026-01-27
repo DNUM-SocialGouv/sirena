@@ -12,6 +12,9 @@ SDPSN-devops-charts:
     REDIS_TLS: "true"
     SENTRY_ENVIRONMENT: preproduction
 
+  deployment:
+    replicas: 2
+
   ingress:
     host: sirena.formation.prod.atlas.fabrique.social.gouv.fr
     tls:

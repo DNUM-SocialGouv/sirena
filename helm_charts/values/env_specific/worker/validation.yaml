@@ -1,0 +1,4 @@
+---
+SDPSN-devops-charts:
+  deployment:
+    replicas: 1
