@@ -664,7 +664,7 @@ const app = factoryWithLogs
           res: c.res,
         });
       }
-      const { reasonId, precision, fileIds } = c.req.valid('json');
+      const { reasonIds, precision, fileIds } = c.req.valid('json');
 
       try {
         const hasAccessToReq = await hasAccessToRequete({ requeteId: id, entiteId: topEntiteId });
@@ -674,7 +674,7 @@ const app = factoryWithLogs
           });
         }
 
-        const result = await closeRequeteForEntite(id, topEntiteId, reasonId, userId, precision, fileIds);
+        const result = await closeRequeteForEntite(id, topEntiteId, reasonIds, userId, precision, fileIds);
 
         c.set('changelogId', result.etapeId);
 
@@ -689,7 +689,7 @@ const app = factoryWithLogs
             requeteId: id,
             entiteId: topEntiteId,
             userId,
-            reasonId,
+            reasonIds,
             fileCount: fileIds?.length || 0,
             hasPrecision: !!precision,
           },

@@ -29,7 +29,6 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
     estPartagee: false,
     createdAt: new Date(),
     updatedAt: new Date(),
-    clotureReasonId: null,
     createdById: 'user-1',
   };
 

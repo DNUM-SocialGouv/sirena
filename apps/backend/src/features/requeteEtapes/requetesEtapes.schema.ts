@@ -10,7 +10,7 @@ export const RequeteEtapeSchema = z.object({
   statutId: z.string(),
   requeteId: z.string(),
   entiteId: z.string(),
-  clotureReasonId: z.string().nullable(),
+  clotureReasonIds: z.array(z.string()).optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });

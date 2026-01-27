@@ -71,12 +71,12 @@ model Session {
 }
 
 model Entite {
-  id                 String @id @default(uuid())
+  id                 String  @id @default(uuid())
   nomComplet         String
   label              String
-  email              String @default("")
-  emailDomain        String @default("")
-  organizationalUnit String @default("")
+  email              String  @default("")
+  emailDomain        String  @default("")
+  organizationalUnit String  @default("")
   isActive           Boolean @default(false)
 
   services Entite[] @relation("EntiteMereToServices")
@@ -205,18 +205,18 @@ model DemarchesEngageesEnum {
 }
 
 model PersonneConcernee {
-  id                         String   @id @default(uuid())
-  estNonIdentifiee           Boolean?
-  estHandicapee              Boolean?
-  estIdentifie               Boolean?
-  estVictime                 Boolean?
-  estVictimeInformee         Boolean?
-  victimeInformeeCommentaire String   @default("")
-  veutGarderAnonymat         Boolean?
+  id                          String   @id @default(uuid())
+  estNonIdentifiee            Boolean?
+  estHandicapee               Boolean?
+  estIdentifie                Boolean?
+  estVictime                  Boolean?
+  estVictimeInformee          Boolean?
+  victimeInformeeCommentaire  String   @default("")
+  veutGarderAnonymat          Boolean?
   estSignalementProfessionnel Boolean?
-  commentaire                String   @default("")
-  autrePersonnes             String   @default("")
-  aAutrePersonnes            Boolean?
+  commentaire                 String   @default("")
+  autrePersonnes              String   @default("")
+  aAutrePersonnes             Boolean?
 
   identite Identite? @relation("PersonneIdentite")
 
@@ -367,7 +367,7 @@ model MisEnCause {
   misEnCauseType   MisEnCauseTypeEnum? @relation(fields: [misEnCauseTypeId], references: [id])
 
   misEnCauseTypePrecisionId String?
-  misEnCauseTypePrecision MisEnCauseTypePrecisionEnum? @relation(fields: [misEnCauseTypeId, misEnCauseTypePrecisionId], references: [misEnCauseTypeId, id])
+  misEnCauseTypePrecision   MisEnCauseTypePrecisionEnum? @relation(fields: [misEnCauseTypeId, misEnCauseTypePrecisionId], references: [misEnCauseTypeId, id])
 
   situation Situation[]
 }
@@ -494,8 +494,7 @@ model RequeteEtape {
 
   notes RequeteEtapeNote[]
 
-  clotureReasonId String?
-  clotureReason   RequeteClotureReasonEnum? @relation(fields: [clotureReasonId], references: [id])
+  clotureReason RequeteClotureReasonEnum[]
 
   createdById String?
   createdBy   User?   @relation(fields: [createdById], references: [id])

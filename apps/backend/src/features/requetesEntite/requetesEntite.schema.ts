@@ -163,9 +163,9 @@ export const UpdatePrioriteBodySchema = z.object({
 });
 
 export const CloseRequeteBodySchema = z.object({
-  reasonId: z.string().min(1, {
+  reasonIds: z.array(z.string().min(1)).min(1, {
     message:
-      'Vous devez renseigner la raison de la clôture pour clôturer la requête. Veuillez sélectionner une valeur dans la liste.',
+      'Vous devez renseigner au moins une raison de clôture pour clôturer la requête. Veuillez sélectionner une valeur dans la liste.',
   }),
   precision: z.string().trim().max(5000).optional(),
   fileIds: z.array(z.string()).optional(),

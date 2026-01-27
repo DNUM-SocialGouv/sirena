@@ -205,13 +205,11 @@ export const importSingleDossier = async (
       logger.error({ dossierNumber, errorType }, `Failed to fetch dossier data for ${dossierNumber}`);
       return { success: false };
     }
-
     step = 'mapDataForPrisma';
     const demandeur = getDemandeur(data.dossier.demandeur);
     const mandataire = getMandataire(data.dossier, data.dossier.usager.email);
     const requete = mapDataForPrisma(data.dossier.champs, dossierNumber, data.dossier.dateDepot, mandataire, demandeur);
     const ext = data.dossier.pdf?.filename?.split('.')?.pop() ?? '';
-
     const pdf = data.dossier.pdf
       ? {
           name: `Requete originale formulaire - ${dossierNumber}.${ext}`,
@@ -342,7 +340,6 @@ export const importRequetes = async (createdSince?: Date) => {
       skippedCount += 1;
       continue;
     }
-
     const result = await importSingleDossier(dossier.number);
 
     if (result.success && !result.alreadyImported) {
