@@ -350,6 +350,7 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
               entiteId,
             },
           },
+          createdById: changedById,
         },
         include: {
           requeteEntites: true,
