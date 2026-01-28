@@ -29,6 +29,7 @@ export async function sendUserActivationEmail(userId: string, changedById?: stri
   const getTemplateForRole = (roleId: Role): string | null => {
     switch (roleId) {
       case ROLES.SUPER_ADMIN:
+        return 'habilitation-super-admin';
       case ROLES.ENTITY_ADMIN:
         return 'habilitation-admin-local';
       case ROLES.WRITER:
