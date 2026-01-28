@@ -52,6 +52,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
     !!personne?.estHandicapee ||
     personne?.veutGarderAnonymat !== null ||
     !!personne?.estVictimeInformee ||
+    !!personne?.aAutrePersonnes ||
     !!personne?.autrePersonnes ||
     !!personne?.commentaire;
 
@@ -91,6 +92,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
       !!personne?.estHandicapee ||
       (personne?.veutGarderAnonymat !== null && personne?.veutGarderAnonymat !== undefined) ||
       !!personne?.estVictimeInformee ||
+      !!personne?.aAutrePersonnes ||
       !!personne?.autrePersonnes ||
       !!personne?.commentaire;
 

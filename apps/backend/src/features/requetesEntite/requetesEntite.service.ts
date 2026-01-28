@@ -636,7 +636,7 @@ export const updateRequeteParticipant = async (
                 : !participantData.consentCommuniquerIdentite,
             estVictimeInformee: participantData.estVictimeInformee || false,
             autrePersonnes: participantData.autrePersonnes || '',
-            aAutrePersonnes: participantData.aAutrePersonnes || false,
+            aAutrePersonnes: participantData.aAutrePersonnes ?? undefined,
             commentaire: participantData.commentaire || '',
             ageId: participantData.age || undefined,
             dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : undefined,
