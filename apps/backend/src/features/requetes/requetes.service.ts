@@ -197,6 +197,9 @@ export const createRequeteFromDematSocial = async ({
           commentaire: s.lieuDeSurvenue.commentaire ?? '',
           societeTransport: s.lieuDeSurvenue.societeTransport ?? '',
           finess: s.lieuDeSurvenue.finess ?? '',
+          tutelle: s.lieuDeSurvenue.tutelle ?? '',
+          categCode: s.lieuDeSurvenue.categCode ?? '',
+          categLib: s.lieuDeSurvenue.categLib ?? '',
           lieuType: s.lieuDeSurvenue.lieuTypeId ? { connect: { id: s.lieuDeSurvenue.lieuTypeId } } : undefined,
           transportType: s.lieuDeSurvenue.transportTypeId
             ? { connect: { id: s.lieuDeSurvenue.transportTypeId } }

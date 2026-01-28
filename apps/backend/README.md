@@ -52,6 +52,9 @@ src/
 | `pnpm generate:codegen` | Generate clients for graphql requests                                         |
 | `pnpm lint:staged`      | Run Biome lint checks on staged backend files via a Git diff filter           |
 | `pnpm lint`             | Run Biome lint checks across the entire backend codebase                      |
+| `pnpm op:diff:autorite-competente:analyze` | Analyze differences between CSV referentiel and database (AutoriteCompetenteReferentiel) |
+| `pnpm op:diff:autorite-competente:up` | Generate up migration SQL (INSERT statements) from CSV referentiel differences |
+| `pnpm op:diff:autorite-competente:down` | Generate down migration SQL (DELETE statements) from CSV referentiel differences |
 
 ## 📦 Exports
 

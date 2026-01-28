@@ -5,6 +5,7 @@ import {
   PROFESSION_DOMICILE_TYPE,
   PROFESSION_SANTE_PRECISION,
 } from '@sirena/common/constants';
+import { PrismaClient } from '../../../libs/prisma.js';
 import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types.js';
 
 /*********************
@@ -36,6 +37,68 @@ export function computeEntitesFromMotifs(ctx: SituationContext): EntiteAdminType
     }
   }
   return Array.from(acc);
+}
+
+/**
+ * Maps tutelle string to entity types (ARS, CD, DD)
+ */
+function mapTutelleToEntities(tutelle: string): EntiteAdminType[] {
+  const normalized = tutelle.trim();
+  const entities: EntiteAdminType[] = [];
+
+  // Contains both ARS and CD (in any order, with any separator)
+  if (/ARS.*CD|CD.*ARS/i.test(normalized)) {
+    entities.push('ARS', 'CD');
+    return entities;
+  }
+
+  // Contains "Ordre" and "ARS"
+  if (/Ordre.*ARS|ARS.*Ordre/i.test(normalized)) {
+    entities.push('ARS');
+    return entities;
+  }
+
+  // Contains "DDETS" or "Préfet" (for DD), but NOT "Préfet (DTPJJ)"
+  if (/DDETS/i.test(normalized)) {
+    entities.push('DD');
+    return entities;
+  }
+  // "Préfet" but not "Préfet (DTPJJ)"
+  if (/Préfet/i.test(normalized) && !/Préfet\s*\(DTPJJ\)/i.test(normalized)) {
+    entities.push('DD');
+    return entities;
+  }
+
+  // Exact match or standalone "ARS"
+  if (/^ARS$/i.test(normalized)) {
+    entities.push('ARS');
+    return entities;
+  }
+
+  // Exact match or standalone "CD"
+  if (/^CD$/i.test(normalized)) {
+    entities.push('CD');
+    return entities;
+  }
+
+  return entities;
+}
+
+/**
+ * Parses entiteTypeIds array from AutoriteCompetenteReferentiel and maps to EntiteAdminType
+ * Only includes ARS, CD, DD
+ */
+function parseEntiteTypeIds(entiteTypeIds: string[]): EntiteAdminType[] {
+  const validTypes: EntiteAdminType[] = ['ARS', 'CD', 'DD'];
+  const entities: EntiteAdminType[] = [];
+
+  for (const id of entiteTypeIds) {
+    if (validTypes.includes(id as EntiteAdminType)) {
+      entities.push(id as EntiteAdminType);
+    }
+  }
+
+  return entities;
 }
 
 /*********************
@@ -293,13 +356,43 @@ function motifReclamationSubtree(): DecisionNode {
 }
 
 // 6 - Referentiel FINESS
-// TODO: implémenter le référentiel via FINESS
+// Maps "tutelle" field to entity types, or falls back to categCode lookup in AutoriteCompetenteReferentiel
 export function finessReferentielPlaceholderSubtree(): DecisionNode {
   return {
     kind: 'leaf',
     id: 'finess_referentiel',
-    description: 'À implémenter : référentiel via FINESS',
-    add: [],
+    description: 'Référentiel via FINESS : tutelle ou categCode',
+    add: async (ctx: SituationContext): Promise<EntiteAdminType[]> => {
+      const prisma = new PrismaClient();
+
+      try {
+        const tutelle = ctx.tutelle;
+        if (tutelle && typeof tutelle === 'string' && tutelle.trim() !== '') {
+          const tutelleNormalized = tutelle.trim();
+          const entitiesFromTutelle = mapTutelleToEntities(tutelleNormalized);
+          if (entitiesFromTutelle.length > 0) {
+            return entitiesFromTutelle;
+          }
+        }
+
+        // Fallback to categCode lookup if tutelle is not mapped or is null/undefined
+        const categCode = ctx.categCode;
+        if (categCode && typeof categCode === 'string' && categCode.trim() !== '') {
+          const referentiel = await prisma.autoriteCompetenteReferentiel.findUnique({
+            where: { categCode: categCode.trim() },
+          });
+
+          if (referentiel?.entiteTypeIds && referentiel.entiteTypeIds.length > 0) {
+            return parseEntiteTypeIds(referentiel.entiteTypeIds);
+          }
+        }
+
+        // No assignment if nothing found
+        return [];
+      } finally {
+        await prisma.$disconnect();
+      }
+    },
   };
 }
 
@@ -322,7 +415,7 @@ async function evalNode(
 
   switch (node.kind) {
     case 'leaf': {
-      const added = typeof node.add === 'function' ? node.add(ctx) : node.add;
+      const added = typeof node.add === 'function' ? await node.add(ctx) : node.add;
       for (const t of added) found.add(t);
 
       if (node.next) {
@@ -335,13 +428,13 @@ async function evalNode(
 
       if (ok) {
         if (node.addIfTrue) {
-          const added = typeof node.addIfTrue === 'function' ? node.addIfTrue(ctx) : node.addIfTrue;
+          const added = typeof node.addIfTrue === 'function' ? await node.addIfTrue(ctx) : node.addIfTrue;
           for (const t of added) found.add(t);
         }
         await evalNode(node.ifTrue, ctx, found);
       } else {
         if (node.addIfFalse) {
-          const added = typeof node.addIfFalse === 'function' ? node.addIfFalse(ctx) : node.addIfFalse;
+          const added = typeof node.addIfFalse === 'function' ? await node.addIfFalse(ctx) : node.addIfFalse;
           for (const t of added) found.add(t);
         }
         await evalNode(node.ifFalse, ctx, found);

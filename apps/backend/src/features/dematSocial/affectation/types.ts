@@ -11,6 +11,8 @@ export type EntiteAdminType = keyof typeof entiteTypes;
 export type SituationContext = {
   lieuType?: LieuType;
   finessCode?: string | null;
+  categCode?: string | null;
+  tutelle?: string | null;
   postalCode?: string | null;
   misEnCauseType?: MisEnCauseType | null;
   misEnCauseTypePrecision?: MisEnCauseTypePrecisionUnion | null;
@@ -27,7 +29,10 @@ export type BaseNode = {
 export type DecisionLeaf = BaseNode & {
   kind: 'leaf';
   // What entities to add when we're here
-  add: EntiteAdminType[] | ((ctx: SituationContext) => EntiteAdminType[]);
+  add:
+    | EntiteAdminType[]
+    | ((ctx: SituationContext) => EntiteAdminType[])
+    | ((ctx: SituationContext) => Promise<EntiteAdminType[]>);
   // Optional: continue to another node
   next?: DecisionNode;
 };
@@ -40,8 +45,14 @@ export type DecisionBranch = BaseNode & {
   ifTrue: DecisionNode;
   ifFalse: DecisionNode;
   // Some branches add entities already (optional)
-  addIfTrue?: EntiteAdminType[] | ((ctx: SituationContext) => EntiteAdminType[]);
-  addIfFalse?: EntiteAdminType[] | ((ctx: SituationContext) => EntiteAdminType[]);
+  addIfTrue?:
+    | EntiteAdminType[]
+    | ((ctx: SituationContext) => EntiteAdminType[])
+    | ((ctx: SituationContext) => Promise<EntiteAdminType[]>);
+  addIfFalse?:
+    | EntiteAdminType[]
+    | ((ctx: SituationContext) => EntiteAdminType[])
+    | ((ctx: SituationContext) => Promise<EntiteAdminType[]>);
 };
 
 export type DecisionSwitch = BaseNode & {
