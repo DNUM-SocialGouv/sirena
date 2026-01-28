@@ -79,7 +79,7 @@ SDPSN-devops-charts:
     IS_LOGGED_TOKEN_NAME: is_logged_token
     AUTH_TOKEN_EXPIRATION: "600"
     REFRESH_TOKEN_EXPIRATION: "86400"
-    DEMAT_SOCIAL_API_URL: "https://demat.social.gouv.fr/api/v2/graphql"
+    DEMAT_SOCIAL_API_URL: "https://dgos-dds-pp.cegedim.cloud/api/v2/graphql"
     DEMAT_SOCIAL_API_DIRECTORY: "798"
     DEMAT_SOCIAL_INSTRUCTEUR_ID: "Instructeur-1166"
     SENTRY_ENABLED: "true"
