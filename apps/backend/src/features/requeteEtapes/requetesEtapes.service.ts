@@ -1,5 +1,6 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
+import { capitalizeFirst } from '../../helpers/string.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { deleteFileFromMinio } from '../../libs/minio.js';
 import type { Prisma } from '../../libs/prisma.js';
@@ -14,6 +15,7 @@ import type {
 } from './requetesEtapes.type.js';
 
 export const CREATION_STEP_NAME_PREFIX = 'Création de la requête le';
+export const AUTOMATIC_CREATION_STEP_NAME_PREFIX = 'Création automatique de la requête le';
 export const ACKNOWLEDGMENT_STEP_NAME = 'Envoyer un accusé de réception au déclarant';
 
 export const createDefaultRequeteEtapes = async (
@@ -31,6 +33,19 @@ export const createDefaultRequeteEtapes = async (
       requeteId_entiteId: {
         requeteId,
         entiteId,
+      },
+    },
+    include: {
+      requete: {
+        select: {
+          dematSocialId: true,
+          createdBy: {
+            select: {
+              prenom: true,
+              nom: true,
+            },
+          },
+        },
       },
     },
   });
@@ -63,12 +78,21 @@ export const createDefaultRequeteEtapes = async (
       year: 'numeric',
     });
 
+  const isAutomaticCreation = requeteEntite.requete?.dematSocialId != null;
+  const createdBy = requeteEntite.requete?.createdBy;
+
+  const creationStepName = isAutomaticCreation
+    ? `${AUTOMATIC_CREATION_STEP_NAME_PREFIX} ${formattedReceptionDate}`
+    : `${CREATION_STEP_NAME_PREFIX} ${formattedReceptionDate}${
+        createdBy ? ` par ${capitalizeFirst(createdBy.prenom)} ${capitalizeFirst(createdBy.nom)}` : ''
+      }`;
+
   const etape1 = await prismaClient.requeteEtape.create({
     data: {
       requeteId: requeteId,
       entiteId: entiteId,
       statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-      nom: `${CREATION_STEP_NAME_PREFIX} ${formattedReceptionDate}`,
+      nom: creationStepName,
     },
   });
 

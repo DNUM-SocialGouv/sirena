@@ -156,14 +156,16 @@ describe('RequeteEtapes.service.ts', () => {
       const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
 
       expect(result).toEqual({ etape1: mockEtape1, etape2: mockEtape2 });
-      expect(prisma.requeteEntite.findUnique).toHaveBeenCalledWith({
-        where: {
-          requeteId_entiteId: {
-            requeteId,
-            entiteId,
+      expect(prisma.requeteEntite.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            requeteId_entiteId: {
+              requeteId,
+              entiteId,
+            },
           },
-        },
-      });
+        }),
+      );
       expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
 
       expect(prisma.requeteEtape.create).toHaveBeenNthCalledWith(1, {
@@ -293,14 +295,16 @@ describe('RequeteEtapes.service.ts', () => {
       const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate, mockTx);
 
       expect(result).toEqual({ etape1: mockEtape1, etape2: mockEtape2 });
-      expect(mockFindUnique).toHaveBeenCalledWith({
-        where: {
-          requeteId_entiteId: {
-            requeteId,
-            entiteId,
+      expect(mockFindUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            requeteId_entiteId: {
+              requeteId,
+              entiteId,
+            },
           },
-        },
-      });
+        }),
+      );
       expect(mockCreate).toHaveBeenCalledTimes(2);
       expect(prisma.requeteEtape.create).not.toHaveBeenCalled();
 
