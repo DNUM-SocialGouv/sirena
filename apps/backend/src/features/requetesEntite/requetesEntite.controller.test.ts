@@ -422,7 +422,6 @@ describe('RequetesEntite endpoints: /', () => {
             statutId: 'FAIT',
             requeteId: 'r1',
             entiteId: 'e2',
-            clotureReasonId: null,
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -478,7 +477,6 @@ describe('RequetesEntite endpoints: /', () => {
         statutId: 'CLOTUREE',
         requeteId: 'requeteId',
         entiteId: 'e1',
-        clotureReasonId: 'reason123',
         createdById: 'id1',
         createdAt: new Date('2024-01-01T10:00:00.000Z'),
         updatedAt: new Date('2024-01-01T10:00:00.000Z'),
@@ -500,7 +498,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id'].close.$post({
         param: { id: 'requeteId' },
         json: {
-          reasonId: 'reason123',
+          reasonIds: ['reason123'],
           precision: 'Test precision',
           fileIds: ['file1', 'file2'],
         },
@@ -513,7 +511,7 @@ describe('RequetesEntite endpoints: /', () => {
       expect(closeRequeteForEntite).toHaveBeenCalledWith(
         'requeteId',
         'entiteId',
-        'reason123',
+        ['reason123'],
         'id1',
         'Test precision',
         ['file1', 'file2'],
@@ -532,7 +530,6 @@ describe('RequetesEntite endpoints: /', () => {
           statutId: 'CLOTUREE',
           requeteId: 'requeteId',
           entiteId: 'e1',
-          clotureReasonId: 'reason123',
           createdById: 'id1',
           createdAt: new Date('2024-01-01T10:00:00.000Z'),
           updatedAt: new Date('2024-01-01T10:00:00.000Z'),
@@ -553,7 +550,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id'].close.$post({
         param: { id: 'requeteId' },
         json: {
-          reasonId: 'reason123',
+          reasonIds: ['reason123'],
         },
       });
 
@@ -564,7 +561,7 @@ describe('RequetesEntite endpoints: /', () => {
       expect(closeRequeteForEntite).toHaveBeenCalledWith(
         'requeteId',
         'entiteId',
-        'reason123',
+        ['reason123'],
         'id1',
         undefined,
         undefined,
@@ -581,7 +578,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id'].close.$post({
         param: { id: 'requeteId' },
         json: {
-          reasonId: 'reason123',
+          reasonIds: ['reason123'],
         },
       });
 
@@ -599,7 +596,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id'].close.$post({
         param: { id: 'requeteId' },
         json: {
-          reasonId: 'reason123',
+          reasonIds: ['reason123'],
         },
       });
 
@@ -615,7 +612,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id'].close.$post({
         param: { id: 'requeteId' },
         json: {
-          reasonId: 'invalidReason',
+          reasonIds: ['invalidReason'],
         },
       });
 
@@ -631,7 +628,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id'].close.$post({
         param: { id: 'requeteId' },
         json: {
-          reasonId: 'reason123',
+          reasonIds: ['reason123'],
         },
       });
 
@@ -650,7 +647,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id'].close.$post({
         param: { id: 'requeteId' },
         json: {
-          reasonId: 'reason123',
+          reasonIds: ['reason123'],
           fileIds: ['invalidFile'],
         },
       });
@@ -667,7 +664,7 @@ describe('RequetesEntite endpoints: /', () => {
       const res = await client[':id'].close.$post({
         param: { id: 'requeteId' },
         json: {
-          reasonId: 'reason123',
+          reasonIds: ['reason123'],
         },
       });
 

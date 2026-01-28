@@ -108,6 +108,11 @@ const StepComponent = ({
     setEditError(null);
   };
 
+  const clotureReasonLabels =
+    statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE
+      ? rest.clotureReason.map((reason) => reason.label).filter(Boolean)
+      : [];
+
   const handleSaveEdit = () => {
     const validationResult = UpdateProcessingStepNameSchema.safeParse({
       stepName: editStepName,
@@ -245,9 +250,7 @@ const StepComponent = ({
               onEdit={(noteData) =>
                 openEditNote?.({ id, nom, statutId, notes, createdAt, createdBy, ...rest }, noteData)
               }
-              clotureReasonLabel={
-                statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ? rest.clotureReason?.label || 'Non spécifié' : null
-              }
+              clotureReasonLabels={clotureReasonLabels.length > 0 ? clotureReasonLabels : null}
             />
           ))}
         </div>

@@ -3,6 +3,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { requeteClotureReasonLabels } from '@sirena/common/constants';
+import { SelectWithChildren } from '@sirena/ui';
 import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useCloseRequete } from '@/hooks/mutations/closeRequete.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
@@ -48,13 +49,12 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     },
     ref,
   ) => {
-    const reasonSelectId = useId();
     const reasonErrorId = useId();
-    const [reasonId, setReasonId] = useState<string>('');
+    const [reasonIds, setReasonIds] = useState<string[]>([]);
     const [precision, setPrecision] = useState<string>('');
     const [files, setFiles] = useState<File[]>([]);
     const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
-    const [errors, setErrors] = useState<{ reasonId?: string }>({});
+    const [errors, setErrors] = useState<{ reasonIds?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const wasActionTakenRef = useRef(false);
 
@@ -78,7 +78,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       }, 0);
 
     const openModal = () => {
-      setReasonId('');
+      setReasonIds([]);
       setPrecision('');
       setFiles([]);
       setFileErrors({});
@@ -137,11 +137,11 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     };
 
     const validateForm = (): boolean => {
-      const newErrors: { reasonId?: string } = {};
+      const newErrors: { reasonIds?: string } = {};
 
-      if (!reasonId) {
-        newErrors.reasonId =
-          'Vous devez renseigner la raison de la clôture pour clôturer la requête. Veuillez sélectionner une valeur dans la liste.';
+      if (reasonIds.length === 0) {
+        newErrors.reasonIds =
+          'Vous devez renseigner au moins une raison de clôture pour clôturer la requête. Veuillez sélectionner une valeur dans la liste.';
       }
 
       if (precision.length > 5000) {
@@ -182,7 +182,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
         }
 
         await closeRequeteMutation.mutateAsync({
-          reasonId,
+          reasonIds,
           precision: precision.trim() || undefined,
           fileIds: fileIds.length > 0 ? fileIds : undefined,
         });
@@ -260,32 +260,17 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
         )}
 
         <div className="fr-mb-4w">
-          <div className="fr-select-group">
-            <label className="fr-label" htmlFor={reasonSelectId}>
-              Raison de la clôture (obligatoire)
-            </label>
-            <select
-              id={reasonSelectId}
-              className={`fr-select ${errors.reasonId ? 'fr-select--error' : ''}`}
-              value={reasonId}
-              onChange={(e) => setReasonId(e.target.value)}
-              required
-              aria-invalid={errors.reasonId ? 'true' : 'false'}
-              aria-describedby={errors.reasonId ? reasonErrorId : undefined}
-            >
-              <option value="">Sélectionner une raison</option>
-              {reasonOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {errors.reasonId && (
-              <p className="fr-message fr-message--error" id={reasonErrorId}>
-                {errors.reasonId}
-              </p>
-            )}
-          </div>
+          <SelectWithChildren
+            label="Raisons de la clôture (obligatoire)"
+            options={reasonOptions}
+            value={reasonIds}
+            onChange={(values) => setReasonIds(values)}
+          />
+          {errors.reasonIds && (
+            <p className="fr-message fr-message--error" id={reasonErrorId}>
+              {errors.reasonIds}
+            </p>
+          )}
         </div>
 
         <div className="fr-mb-4w">

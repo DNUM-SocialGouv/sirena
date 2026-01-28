@@ -63,7 +63,6 @@ const requeteEtape: RequeteEtape = {
   statutId: 'A_FAIRE',
   createdAt: new Date(),
   updatedAt: new Date(),
-  clotureReasonId: null,
   createdById: null,
 };
 
@@ -135,7 +134,6 @@ describe('RequeteEtapes.service.ts', () => {
         statutId: 'FAIT',
         createdAt: new Date(),
         updatedAt: new Date(),
-        clotureReasonId: null,
         createdById: null,
       };
 
@@ -148,7 +146,6 @@ describe('RequeteEtapes.service.ts', () => {
         statutId: 'A_FAIRE',
         createdAt: new Date(),
         updatedAt: new Date(),
-        clotureReasonId: null,
         createdById: null,
       };
 
@@ -213,7 +210,6 @@ describe('RequeteEtapes.service.ts', () => {
         statutId: 'FAIT',
         createdAt: currentDate,
         updatedAt: currentDate,
-        clotureReasonId: null,
         createdById: null,
       };
 
@@ -226,7 +222,6 @@ describe('RequeteEtapes.service.ts', () => {
         statutId: 'A_FAIRE',
         createdAt: currentDate,
         updatedAt: currentDate,
-        clotureReasonId: null,
         createdById: null,
       };
 
@@ -276,7 +271,6 @@ describe('RequeteEtapes.service.ts', () => {
         statutId: 'FAIT',
         createdAt: new Date(),
         updatedAt: new Date(),
-        clotureReasonId: null,
         createdById: null,
       };
 
@@ -289,7 +283,6 @@ describe('RequeteEtapes.service.ts', () => {
         statutId: 'A_FAIRE',
         createdAt: new Date(),
         updatedAt: new Date(),
-        clotureReasonId: null,
         createdById: null,
       };
 
@@ -351,7 +344,6 @@ describe('RequeteEtapes.service.ts', () => {
         statutId: 'FAIT',
         createdAt: new Date(),
         updatedAt: new Date(),
-        clotureReasonId: null,
         createdById: null,
       };
 
@@ -364,7 +356,6 @@ describe('RequeteEtapes.service.ts', () => {
         statutId: 'A_FAIRE',
         createdAt: new Date(),
         updatedAt: new Date(),
-        clotureReasonId: null,
         createdById: null,
       };
 
@@ -399,7 +390,6 @@ describe('RequeteEtapes.service.ts', () => {
         statutId: 'FAIT',
         createdAt: new Date(),
         updatedAt: new Date(),
-        clotureReasonId: null,
         createdById: null,
       };
 
@@ -412,7 +402,6 @@ describe('RequeteEtapes.service.ts', () => {
         statutId: 'A_FAIRE',
         createdAt: new Date(),
         updatedAt: new Date(),
-        clotureReasonId: null,
         createdById: null,
       };
 

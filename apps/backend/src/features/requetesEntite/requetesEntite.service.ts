@@ -1072,7 +1072,7 @@ export const updateRequeteSituation = async (
 export const closeRequeteForEntite = async (
   requeteId: string,
   entiteId: string,
-  reasonId: string,
+  reasonIds: string[],
   authorId: string,
   precision?: string,
   fileIds?: string[],
@@ -1129,11 +1129,13 @@ export const closeRequeteForEntite = async (
     throw new Error('REQUETE_NOT_FOUND');
   }
 
-  const reason = await prisma.requeteClotureReasonEnum.findUnique({
-    where: { id: reasonId },
+  const uniqueReasonIds = Array.from(new Set(reasonIds));
+  const reasons = await prisma.requeteClotureReasonEnum.findMany({
+    where: { id: { in: uniqueReasonIds } },
+    select: { id: true },
   });
 
-  if (!reason) {
+  if (reasons.length !== uniqueReasonIds.length) {
     throw new Error('REASON_INVALID');
   }
 
@@ -1169,7 +1171,9 @@ export const closeRequeteForEntite = async (
         requeteId,
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
-        clotureReasonId: reasonId,
+        clotureReason: {
+          connect: uniqueReasonIds.map((id) => ({ id })),
+        },
         nom: `Requête clôturée le ${new Date().toLocaleDateString('fr-FR', {
           day: '2-digit',
           month: '2-digit',
