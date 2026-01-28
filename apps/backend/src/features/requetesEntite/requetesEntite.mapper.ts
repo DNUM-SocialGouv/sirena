@@ -13,7 +13,22 @@ const hasIdentiteData = (data: {
   courrierElectronique?: string;
   numeroTelephone?: string;
   civilite?: string;
-}) => data.nom || data.prenom || data.courrierElectronique || data.numeroTelephone || data.civilite;
+  consentCommuniquerIdentite?: boolean;
+  estSignalementProfessionnel?: boolean;
+  autresPrecisions?: string;
+  lienAvecPersonneConcernee?: string;
+  lienAvecPersonneConcerneePrecision?: string;
+}) =>
+  data.nom ||
+  data.prenom ||
+  data.courrierElectronique ||
+  data.numeroTelephone ||
+  data.civilite ||
+  data.consentCommuniquerIdentite !== undefined ||
+  data.estSignalementProfessionnel !== undefined ||
+  data.autresPrecisions ||
+  data.lienAvecPersonneConcernee ||
+  data.lienAvecPersonneConcerneePrecision;
 
 export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
   estIdentifie: true,

@@ -46,7 +46,7 @@ export const DeclarantSection = ({ requestId, id, declarant, onEdit }: Declarant
     !!declarantIdentite?.email ||
     !!declarantIdentite?.telephone ||
     !!declarant?.commentaire ||
-    !!declarant?.veutGarderAnonymat ||
+    declarant?.veutGarderAnonymat !== null ||
     !!declarant?.estSignalementProfessionnel;
 
   const renderSummary = () => {
@@ -76,25 +76,41 @@ export const DeclarantSection = ({ requestId, id, declarant, onEdit }: Declarant
   const renderDetails = () => {
     if (!isFulfilled) return null;
 
+    const hasIdentitySection = !!fullName || !!declarant?.lienVictime || !!declarant?.lienAutrePrecision;
+    const hasAddressSection = !!address;
+    const hasContactSection = !!(declarantIdentite?.email || declarantIdentite?.telephone);
+    const hasComplementaryInfo =
+      !!declarant?.commentaire ||
+      (declarant?.veutGarderAnonymat !== null && declarant?.veutGarderAnonymat !== undefined) ||
+      !!declarant?.estSignalementProfessionnel;
+
+    if (!hasIdentitySection && !hasAddressSection && !hasContactSection && !hasComplementaryInfo) {
+      return null;
+    }
+
     return (
       <>
-        {fullName && (
+        {hasIdentitySection && (
           <>
-            <SectionTitle>Identité</SectionTitle>
-            <p className="fr-mb-2w">{fullName}</p>
+            {fullName && (
+              <>
+                <SectionTitle>Identité</SectionTitle>
+                <p className="fr-mb-2w">{fullName}</p>
+              </>
+            )}
             {declarant?.lienVictime && <p className="fr-mb-2w">{declarant.lienVictime.label}</p>}
             {declarant?.lienAutrePrecision && <p className="fr-mb-2w">{declarant.lienAutrePrecision}</p>}
           </>
         )}
 
-        {address && (
+        {hasAddressSection && (
           <>
             <SectionTitle>Adresse</SectionTitle>
             <p className="fr-mb-2w">{address}</p>
           </>
         )}
 
-        {(declarantIdentite?.email || declarantIdentite?.telephone) && (
+        {hasContactSection && (
           <>
             <SectionTitle>Contact</SectionTitle>
             {declarantIdentite?.email && (
@@ -106,33 +122,31 @@ export const DeclarantSection = ({ requestId, id, declarant, onEdit }: Declarant
           </>
         )}
 
-        {(declarant?.commentaire || declarant?.veutGarderAnonymat !== null || declarant?.estSignalementProfessionnel) &&
-          declarant && (
-            <>
-              <SectionTitle>Informations complémentaires</SectionTitle>
-              <ul className="fr-mb-2w">
-                {declarant.veutGarderAnonymat !== null && (
-                  <li>
-                    {declarant.veutGarderAnonymat ? (
-                      <>
-                        ⚠️ Il/elle <strong>ne</strong> consent <strong>pas</strong> à ce que son identitée soit
-                        communiquée
-                      </>
-                    ) : (
-                      'Il/elle consent à ce que son identitée soit communiquée'
-                    )}
-                  </li>
-                )}
-                {declarant.estSignalementProfessionnel && (
-                  <li>
-                    Le déclarant est un professionnel qui signale des dysfonctionnements et événements indésirables
-                    graves (EIG)
-                  </li>
-                )}
-              </ul>
-              {declarant.commentaire && <p className="fr-mb-2w">{declarant.commentaire}</p>}
-            </>
-          )}
+        {hasComplementaryInfo && declarant && (
+          <>
+            <SectionTitle>Informations complémentaires</SectionTitle>
+            <ul className="fr-mb-2w">
+              {declarant.veutGarderAnonymat !== null && declarant.veutGarderAnonymat !== undefined && (
+                <li>
+                  {declarant.veutGarderAnonymat ? (
+                    <>
+                      ⚠️ Il/elle <strong>ne</strong> consent <strong>pas</strong> à ce que son identitée soit communiquée
+                    </>
+                  ) : (
+                    'Il/elle consent à ce que son identitée soit communiquée'
+                  )}
+                </li>
+              )}
+              {declarant.estSignalementProfessionnel && (
+                <li>
+                  Le déclarant est un professionnel qui signale des dysfonctionnements et événements indésirables graves
+                  (EIG)
+                </li>
+              )}
+            </ul>
+            {declarant.commentaire && <p className="fr-mb-2w">{declarant.commentaire}</p>}
+          </>
+        )}
       </>
     );
   };

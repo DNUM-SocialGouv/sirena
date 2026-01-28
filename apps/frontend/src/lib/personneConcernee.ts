@@ -54,6 +54,7 @@ export function formatPersonneConcerneeFromServer(participant: unknown): Personn
         : !(p.veutGarderAnonymat as boolean),
     estVictimeInformee: (p.estVictimeInformee as boolean) || false,
     autrePersonnes: (p.autrePersonnes as string) || '',
+    aAutrePersonnes: p.aAutrePersonnes as boolean | undefined,
     commentaire: (p.commentaire as string) || '',
   };
 }
