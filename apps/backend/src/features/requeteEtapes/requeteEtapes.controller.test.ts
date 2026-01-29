@@ -123,6 +123,7 @@ const fakeRequeteEtape: RequeteEtape = {
   updatedAt: new Date(),
   estPartagee: false,
   createdById: null,
+  clotureReasonId: null,
 };
 
 const fakeUpdatedRequeteEtape: RequeteEtape = {
@@ -562,6 +563,7 @@ describe('requeteEtapes.controller.ts', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       createdById: null,
+      clotureReasonId: null,
     };
 
     const note: RequeteEtapeNote = {
@@ -644,6 +646,7 @@ describe('requeteEtapes.controller.ts', () => {
         entiteId: 'e1',
         estPartagee: false,
         createdById: null,
+        clotureReasonId: null,
       };
 
       vi.mocked(addProcessingEtape).mockResolvedValueOnce(fakeStep);
