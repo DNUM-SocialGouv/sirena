@@ -64,6 +64,7 @@ const requeteEtape: RequeteEtape = {
   createdAt: new Date(),
   updatedAt: new Date(),
   createdById: null,
+  clotureReasonId: null,
 };
 
 const uploadedFile: Pick<UploadedFile, 'id' | 'size' | 'metadata' | 'filePath'> = {
@@ -135,6 +136,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        clotureReasonId: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -147,6 +149,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        clotureReasonId: null,
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
@@ -213,6 +216,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: currentDate,
         updatedAt: currentDate,
         createdById: null,
+        clotureReasonId: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -225,6 +229,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: currentDate,
         updatedAt: currentDate,
         createdById: null,
+        clotureReasonId: null,
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
@@ -274,6 +279,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        clotureReasonId: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -286,6 +292,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        clotureReasonId: null,
       };
 
       mockFindUnique.mockResolvedValueOnce(mockRequeteEntite);
@@ -349,6 +356,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        clotureReasonId: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -361,6 +369,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        clotureReasonId: null,
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
@@ -395,6 +404,7 @@ describe('RequeteEtapes.service.ts', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        clotureReasonId: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -404,6 +414,7 @@ describe('RequeteEtapes.service.ts', () => {
         nom: 'Envoyer un accusé de réception au déclarant',
         estPartagee: false,
         statutId: 'A_FAIRE',
+        clotureReasonId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,

@@ -388,6 +388,12 @@ const app = factoryWithLogs
         });
       }
 
+      const requete = await getRequeteEntiteById(requeteEtape.requeteId, topEntiteId);
+
+      if (requete?.statutId === REQUETE_STATUT_TYPES.NOUVEAU) {
+        await updateStatusRequete(requeteEtape.requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+      }
+
       await deleteRequeteEtape(id, logger, userId);
 
       logger.info({ requeteEtapeId: id, userId }, 'RequeteEtape deleted successfully');
