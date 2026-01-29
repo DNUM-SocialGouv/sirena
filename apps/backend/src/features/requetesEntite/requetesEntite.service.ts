@@ -492,6 +492,26 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
     };
 
     if (requete.declarant) {
+      // Build identite upsert - use upsert instead of update to handle case where identite doesn't exist yet
+      const identiteUpsert = {
+        upsert: {
+          create: {
+            nom: declarantData.nom || '',
+            prenom: declarantData.prenom || '',
+            email: declarantData.courrierElectronique || '',
+            telephone: declarantData.numeroTelephone || '',
+            civiliteId: mappers.mapCiviliteToDatabase(declarantData.civilite),
+          },
+          update: {
+            nom: declarantData.nom || '',
+            prenom: declarantData.prenom || '',
+            email: declarantData.courrierElectronique || '',
+            telephone: declarantData.numeroTelephone || '',
+            civiliteId: mappers.mapCiviliteToDatabase(declarantData.civilite),
+          },
+        },
+      };
+
       return await prisma.requete.update({
         where: { id: requeteId },
         data: {
@@ -508,15 +528,7 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
               lienVictimeId: lienVictimeValue,
               lienAutrePrecision: lienAutrePrecisionValue,
               updatedAt: new Date(),
-              identite: {
-                update: {
-                  nom: declarantData.nom || '',
-                  prenom: declarantData.prenom || '',
-                  email: declarantData.courrierElectronique || '',
-                  telephone: declarantData.numeroTelephone || '',
-                  civiliteId: mappers.mapCiviliteToDatabase(declarantData.civilite),
-                },
-              },
+              identite: identiteUpsert,
               adresse: buildPersonneAdresseUpsert(declarantData),
             },
           },
@@ -594,6 +606,25 @@ export const updateRequeteParticipant = async (
   };
 
   if (requete.participant) {
+    const identiteUpsert = {
+      upsert: {
+        create: {
+          nom: participantData.nom || '',
+          prenom: participantData.prenom || '',
+          email: participantData.courrierElectronique || '',
+          telephone: participantData.numeroTelephone || '',
+          civiliteId: mappers.mapCiviliteToDatabase(participantData.civilite),
+        },
+        update: {
+          nom: participantData.nom || '',
+          prenom: participantData.prenom || '',
+          email: participantData.courrierElectronique || '',
+          telephone: participantData.numeroTelephone || '',
+          civiliteId: mappers.mapCiviliteToDatabase(participantData.civilite),
+        },
+      },
+    };
+
     return await prisma.requete.update({
       where: { id: requeteId },
       data: {
@@ -606,20 +637,12 @@ export const updateRequeteParticipant = async (
                 : !participantData.consentCommuniquerIdentite,
             estVictimeInformee: participantData.estVictimeInformee || false,
             autrePersonnes: participantData.autrePersonnes || '',
-            aAutrePersonnes: participantData.aAutrePersonnes || false,
+            aAutrePersonnes: participantData.aAutrePersonnes ?? undefined,
             commentaire: participantData.commentaire || '',
             ageId: participantData.age || undefined,
             dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : undefined,
             updatedAt: new Date(),
-            identite: {
-              update: {
-                nom: participantData.nom || '',
-                prenom: participantData.prenom || '',
-                email: participantData.courrierElectronique || '',
-                telephone: participantData.numeroTelephone || '',
-                civiliteId: mappers.mapCiviliteToDatabase(participantData.civilite),
-              },
-            },
+            identite: identiteUpsert,
             adresse: buildPersonneAdresseUpsert(participantData),
           },
         },
@@ -1073,7 +1096,7 @@ export const updateRequeteSituation = async (
 export const closeRequeteForEntite = async (
   requeteId: string,
   entiteId: string,
-  reasonId: string,
+  reasonIds: string[],
   authorId: string,
   precision?: string,
   fileIds?: string[],
@@ -1130,11 +1153,13 @@ export const closeRequeteForEntite = async (
     throw new Error('REQUETE_NOT_FOUND');
   }
 
-  const reason = await prisma.requeteClotureReasonEnum.findUnique({
-    where: { id: reasonId },
+  const uniqueReasonIds = Array.from(new Set(reasonIds));
+  const reasons = await prisma.requeteClotureReasonEnum.findMany({
+    where: { id: { in: uniqueReasonIds } },
+    select: { id: true },
   });
 
-  if (!reason) {
+  if (reasons.length !== uniqueReasonIds.length) {
     throw new Error('REASON_INVALID');
   }
 
@@ -1170,7 +1195,9 @@ export const closeRequeteForEntite = async (
         requeteId,
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
-        clotureReasonId: reasonId,
+        clotureReason: {
+          connect: uniqueReasonIds.map((id) => ({ id })),
+        },
         nom: `Requête clôturée le ${new Date().toLocaleDateString('fr-FR', {
           day: '2-digit',
           month: '2-digit',

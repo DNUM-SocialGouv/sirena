@@ -340,7 +340,6 @@ describe('requetes.service.ts', () => {
                   nom: args.data.nom,
                   statutId: args.data.statutId,
                   estPartagee: false,
-                  clotureReasonId: null,
                   createdAt: new Date(),
                   updatedAt: new Date(),
                 };
@@ -515,7 +514,6 @@ describe('requetes.service.ts', () => {
                 nom: args.data.nom,
                 statutId: args.data.statutId,
                 estPartagee: false,
-                clotureReasonId: null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
               };

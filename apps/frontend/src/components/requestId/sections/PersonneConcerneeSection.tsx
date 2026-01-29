@@ -50,8 +50,9 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
     !!personneIdentite?.email ||
     !!personneIdentite?.telephone ||
     !!personne?.estHandicapee ||
-    !!personne?.veutGarderAnonymat ||
+    personne?.veutGarderAnonymat !== null ||
     !!personne?.estVictimeInformee ||
+    !!personne?.aAutrePersonnes ||
     !!personne?.autrePersonnes ||
     !!personne?.commentaire;
 
@@ -84,9 +85,24 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
   const renderDetails = () => {
     if (!isFulfilled) return null;
 
+    const hasIdentitySection = !!(fullName || personne?.age?.label || dateNaissanceFormatted);
+    const hasAddressSection = !!address;
+    const hasContactSection = !!(personneIdentite?.email || personneIdentite?.telephone);
+    const hasComplementaryInfo =
+      !!personne?.estHandicapee ||
+      (personne?.veutGarderAnonymat !== null && personne?.veutGarderAnonymat !== undefined) ||
+      !!personne?.estVictimeInformee ||
+      !!personne?.aAutrePersonnes ||
+      !!personne?.autrePersonnes ||
+      !!personne?.commentaire;
+
+    if (!hasIdentitySection && !hasAddressSection && !hasContactSection && !hasComplementaryInfo) {
+      return null;
+    }
+
     return (
       <>
-        {(fullName || personne?.age?.label || dateNaissanceFormatted) && (
+        {hasIdentitySection && (
           <>
             <SectionTitle>Identité</SectionTitle>
             {fullName && <p className="fr-mb-1w">{fullName}</p>}
@@ -97,14 +113,14 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
           </>
         )}
 
-        {address && (
+        {hasAddressSection && (
           <>
             <SectionTitle>Adresse</SectionTitle>
             <p className="fr-mb-2w">{address}</p>
           </>
         )}
 
-        {(personneIdentite?.email || personneIdentite?.telephone) && (
+        {hasContactSection && (
           <>
             <SectionTitle>Contact</SectionTitle>
             {personneIdentite?.email && (
@@ -116,26 +132,24 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
           </>
         )}
 
-        {(personne?.estHandicapee ||
-          personne?.veutGarderAnonymat ||
-          personne?.estVictimeInformee ||
-          personne?.autrePersonnes ||
-          personne?.commentaire) && (
+        {hasComplementaryInfo && (
           <>
             <SectionTitle>Informations complémentaires</SectionTitle>
             <ul className="fr-mb-2w">
               {personne?.estHandicapee && <li>Il/elle est en situation d'handicap</li>}
-              {personne?.veutGarderAnonymat ? (
-                <li>Il/elle ne souhaite pas que son identité soit communiquée</li>
-              ) : (
-                <li>Il/elle consent à ce que son identitée soit communiquée</li>
+              {personne?.veutGarderAnonymat !== null && personne?.veutGarderAnonymat !== undefined && (
+                <li>
+                  {personne.veutGarderAnonymat
+                    ? 'Il/elle ne souhaite pas que son identité soit communiquée'
+                    : 'Il/elle consent à ce que son identitée soit communiquée'}
+                </li>
               )}
               {personne?.estVictimeInformee && <li>Il/elle a été informé(e) de la démarche par le déclarant</li>}
             </ul>
             {personne?.aAutrePersonnes && (
               <>
                 <p className="fr-mb-1w">Autres personnes concernées : {personne.aAutrePersonnes ? 'Oui' : 'Non'}</p>
-                <p className="fr-mb-1w">{personne.autrePersonnes}</p>
+                {personne.autrePersonnes && <p className="fr-mb-1w">{personne.autrePersonnes}</p>}
               </>
             )}
             {personne?.commentaire && <p className="fr-mb-2w">Précisions supplémentaires : {personne.commentaire}</p>}

@@ -75,7 +75,7 @@ vi.mock('../../libs/prisma.js', () => ({
       update: vi.fn(),
     },
     requeteClotureReasonEnum: {
-      findUnique: vi.fn(),
+      findMany: vi.fn(),
     },
     requeteEtape: {
       findFirst: vi.fn(),
@@ -113,7 +113,6 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
       estPartagee: false,
       nom: 'Etape 1',
       requeteId: 'req123',
-      clotureReasonId: null,
       createdById: 'user123',
     },
   ],
@@ -128,7 +127,6 @@ const fakeEtape = {
   entiteId: 'ent123',
   nom: 'Etape 1',
   estPartagee: false,
-  clotureReasonId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   createdById: 'user123',
@@ -864,35 +862,31 @@ describe('requetesEntite.service', () => {
   describe('closeRequeteForEntite', () => {
     it('should throw error if requeteEntite is not found', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(null);
-      await expect(closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123')).rejects.toThrow(
+      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123')).rejects.toThrow(
         'REQUETE_NOT_FOUND',
       );
     });
 
     it('should throw error if reason is not found', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce(null);
-      await expect(closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123')).rejects.toThrow('REASON_INVALID');
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([]);
+      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123')).rejects.toThrow(
+        'REASON_INVALID',
+      );
     });
 
     it('should throw error if last etape is closed', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
-        id: 'reason123',
-        label: 'Reason 123',
-      });
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(fakeEtape);
-      await expect(closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123')).rejects.toThrow(
+      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123')).rejects.toThrow(
         'READONLY_FOR_ENTITY',
       );
     });
 
     it('should throw error if files are invalid', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
-        id: 'reason123',
-        label: 'Reason 123',
-      });
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
       vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([
         {
           id: 'file123',
@@ -919,16 +913,13 @@ describe('requetesEntite.service', () => {
         },
       ]);
       await expect(
-        closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123', '', ['fileid1', 'fileid2']),
+        closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '', ['fileid1', 'fileid2']),
       ).rejects.toThrow('FILES_INVALID');
     });
 
     it('should successfully close requete with precision and files', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
-        id: 'reason123',
-        label: 'Reason 123',
-      });
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
       vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([
         {
@@ -988,7 +979,6 @@ describe('requetesEntite.service', () => {
         statutId: 'CLOTUREE',
         requeteId: 'req123',
         entiteId: 'ent123',
-        clotureReasonId: 'reason123',
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
       const mockNote = {
@@ -1017,7 +1007,7 @@ describe('requetesEntite.service', () => {
         return cb(mockTx);
       });
 
-      const result = await closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123', 'Test precision', [
+      const result = await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', 'Test precision', [
         'fileid1',
         'fileid2',
       ]);
@@ -1033,10 +1023,7 @@ describe('requetesEntite.service', () => {
 
     it('should successfully close requete without precision and files', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
-        id: 'reason123',
-        label: 'Reason 123',
-      });
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
 
       const transactionSpy = vi.mocked(prisma.$transaction);
@@ -1047,7 +1034,6 @@ describe('requetesEntite.service', () => {
         statutId: 'CLOTUREE',
         requeteId: 'req123',
         entiteId: 'ent123',
-        clotureReasonId: 'reason123',
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
 
@@ -1074,7 +1060,7 @@ describe('requetesEntite.service', () => {
         return cb(mockTx);
       });
 
-      const result = await closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123');
+      const result = await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123');
 
       expect(result).toEqual({
         etapeId: 'etape123',
@@ -1087,10 +1073,7 @@ describe('requetesEntite.service', () => {
 
     it('should successfully close requete with precision but no files', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
-        id: 'reason123',
-        label: 'Reason 123',
-      });
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
       vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([]);
 
@@ -1102,7 +1085,6 @@ describe('requetesEntite.service', () => {
         statutId: 'CLOTUREE',
         requeteId: 'req123',
         entiteId: 'ent123',
-        clotureReasonId: 'reason123',
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
       const mockNote = {
@@ -1127,7 +1109,7 @@ describe('requetesEntite.service', () => {
         return cb(mockTx);
       });
 
-      const result = await closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123', 'Test precision');
+      const result = await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', 'Test precision');
 
       expect(result).toEqual({
         etapeId: 'etape123',
@@ -1140,10 +1122,7 @@ describe('requetesEntite.service', () => {
 
     it('should successfully close requete with files but no precision', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findUnique).mockResolvedValueOnce({
-        id: 'reason123',
-        label: 'Reason 123',
-      });
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
       vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([
         {
@@ -1179,7 +1158,6 @@ describe('requetesEntite.service', () => {
         statutId: 'CLOTUREE',
         requeteId: 'req123',
         entiteId: 'ent123',
-        clotureReasonId: 'reason123',
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
       const mockNote = {
@@ -1208,7 +1186,7 @@ describe('requetesEntite.service', () => {
         return cb(mockTx);
       });
 
-      const result = await closeRequeteForEntite('req123', 'ent123', 'reason123', 'user123', undefined, ['fileid1']);
+      const result = await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', undefined, ['fileid1']);
 
       expect(result).toEqual({
         etapeId: 'etape123',
@@ -1251,7 +1229,6 @@ describe('requetesEntite.service', () => {
               nom: 'Création de la requête le 01/01/2024',
               statutId: 'FAIT',
               estPartagee: false,
-              clotureReasonId: null,
               createdAt: new Date(),
               updatedAt: new Date(),
             })
@@ -1262,7 +1239,6 @@ describe('requetesEntite.service', () => {
               nom: 'Envoyer un accusé de réception au déclarant',
               statutId: 'A_FAIRE',
               estPartagee: false,
-              clotureReasonId: null,
               createdAt: new Date(),
               updatedAt: new Date(),
             }),

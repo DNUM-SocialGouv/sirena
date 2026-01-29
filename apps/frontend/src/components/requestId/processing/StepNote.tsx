@@ -11,7 +11,7 @@ type StepNoteProps = {
   createdAt: string;
   requeteStateId: string;
   requestId: string;
-  clotureReasonLabel: string | null;
+  clotureReasonLabels: string[] | null;
   author?: {
     prenom: string;
     nom: string;
@@ -50,7 +50,7 @@ export const StepNote = ({
   requestId,
   files,
   onEdit,
-  clotureReasonLabel,
+  clotureReasonLabels,
 }: StepNoteProps) => {
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const isSystemNote = author === null;
@@ -103,15 +103,19 @@ export const StepNote = ({
           )}
         </div>
       </div>
-      {clotureReasonLabel && (
+      {clotureReasonLabels && (
         <div>
           <div className="fr-text--xs fr-mb-0">Raisons de la clôture</div>
-          <div className="fr-text--sm fr-text--grey">{clotureReasonLabel}</div>
+          <ul className="fr-text--sm fr-text--grey fr-mt-1v fr-mb-0">
+            {clotureReasonLabels.map((label) => (
+              <li key={label}>{label}</li>
+            ))}
+          </ul>
         </div>
       )}
       {content && (
         <div className="fr-mb-2w">
-          {clotureReasonLabel && <div className="fr-text--xs fr-mb-0">Précisions</div>}
+          {clotureReasonLabels && <div className="fr-text--xs fr-mb-0">Précisions</div>}
           <div className="fr-text--sm fr-text--grey">{content}</div>
         </div>
       )}

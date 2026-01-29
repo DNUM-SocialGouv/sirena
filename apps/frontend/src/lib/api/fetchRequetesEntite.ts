@@ -16,7 +16,7 @@ export async function fetchRequetesEntite(query: QueryParams = {}) {
 }
 
 export type CloseRequeteData = {
-  reasonId: string;
+  reasonIds: string[];
   precision?: string;
   fileIds?: string[];
 };

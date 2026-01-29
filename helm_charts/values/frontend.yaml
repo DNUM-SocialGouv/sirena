@@ -24,6 +24,16 @@ SDPSN-devops-charts:
         memory: 900Mi
 
   enableSecurityHeaders: true
+  securityHeaders:
+    Content-Security-Policy: >-
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://matomo.fabrique.social.gouv.fr;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self' data:;
+      connect-src 'self' https://matomo.fabrique.social.gouv.fr https://sentry2.fabrique.social.gouv.fr;
+      worker-src 'self' blob:;
+      frame-ancestors 'none'
 
   ingress:
     enable: true

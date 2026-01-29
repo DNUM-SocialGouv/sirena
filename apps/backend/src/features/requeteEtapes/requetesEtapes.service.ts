@@ -139,7 +139,7 @@ export const createDefaultRequeteEtapes = async (
       statutId: etape1.statutId,
       requeteId: etape1.requeteId,
       entiteId: etape1.entiteId,
-      clotureReasonId: etape1.clotureReasonId,
+      clotureReasonIds: [],
       createdAt: etape1.createdAt.toISOString(),
     } as Prisma.JsonObject),
     createEtapeChangelog(etape2, ChangeLogAction.CREATED, null, {
@@ -149,7 +149,7 @@ export const createDefaultRequeteEtapes = async (
       statutId: etape2.statutId,
       requeteId: etape2.requeteId,
       entiteId: etape2.entiteId,
-      clotureReasonId: etape2.clotureReasonId,
+      clotureReasonIds: [],
       createdAt: etape2.createdAt.toISOString(),
     } as Prisma.JsonObject),
   ]);

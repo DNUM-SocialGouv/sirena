@@ -4,7 +4,7 @@ SDPSN-devops-charts:
 
   appVariables:
     HOST: https://sirena.preproduction.prod.atlas.fabrique.social.gouv.fr
-    PC_DOMAIN: https://fca.integ01.dev-agentconnect.fr/api/v2
+    PC_DOMAIN: https://auth.agentconnect.gouv.fr/api/v2
     PC_REDIRECT_URI: https://sirena.preproduction.prod.atlas.fabrique.social.gouv.fr/api/auth/callback
     FRONTEND_REDIRECT_URI: https://sirena.preproduction.prod.atlas.fabrique.social.gouv.fr/home
     FRONTEND_REDIRECT_LOGIN_URI: https://sirena.preproduction.prod.atlas.fabrique.social.gouv.fr/login
