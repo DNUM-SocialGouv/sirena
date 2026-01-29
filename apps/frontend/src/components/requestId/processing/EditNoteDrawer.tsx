@@ -330,11 +330,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <FileDownloadLink
                                       href={`/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}`}
-                                      safeHref={
-                                        file.safeFilePath
-                                          ? `/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}/safe`
-                                          : undefined
-                                      }
+                                      safeHref={`/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}/safe`}
                                       fileName={file.originalName}
                                       fileId={file.id}
                                       fileSize={file.size}

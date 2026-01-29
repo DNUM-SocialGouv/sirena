@@ -4,7 +4,7 @@ import { FileDownloadLink } from './FileDownloadLink';
 interface FileListProps {
   files: FileInfo[];
   getFileUrl: (fileId: string) => string;
-  getSafeFileUrl?: (fileId: string, safeFilePath: string) => string;
+  getSafeFileUrl?: (fileId: string) => string;
   title?: string;
   emptyMessage?: string;
   className?: string;
@@ -30,7 +30,7 @@ export const FileList = ({
           <li key={file.id}>
             <FileDownloadLink
               href={getFileUrl(file.id)}
-              safeHref={file.safeFilePath && getSafeFileUrl ? getSafeFileUrl(file.id, file.safeFilePath) : undefined}
+              safeHref={getSafeFileUrl ? getSafeFileUrl(file.id) : undefined}
               fileName={file.fileName}
               fileId={file.id}
               fileSize={file.size}

@@ -274,9 +274,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
                   <div className={styles.fileCardHeader}>
                     <FileDownloadLink
                       href={`/api/requetes-entite/${requeteId}/file/${file.id}`}
-                      safeHref={
-                        file.safeFilePath ? `/api/requetes-entite/${requeteId}/file/${file.id}/safe` : undefined
-                      }
+                      safeHref={`/api/requetes-entite/${requeteId}/file/${file.id}/safe`}
                       fileName={originalName}
                       fileId={file.id}
                       fileSize={file.size}
