@@ -48,7 +48,7 @@
   background-color: var(--background-default-grey);
   border: 1px solid var(--border-default-grey);
   border-radius: 0.25rem;
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: auto;
   z-index: 1000;
   margin-top: 0.25rem;
