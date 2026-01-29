@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+      - fix/security-scan-frontend
   schedule:
     - cron: "0 6 * * 1"
   workflow_run:
@@ -62,7 +63,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [backend, frontend, worker]
+        image: [backend, worker]
+        include:
+          - image: frontend
+            suffix: -integration
+          - image: frontend
+            suffix: -test
+          - image: frontend
+            suffix: -formation
+          - image: frontend
+            suffix: -validation
+          - image: frontend
+            suffix: -preproduction
+          - image: frontend
+            suffix: -production
 
     steps:
       - name: Checkout code
@@ -83,7 +97,8 @@ jobs:
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           SHORT_SHA=${{ github.event.workflow_run.head_sha }}
           SHORT_SHA=${SHORT_SHA::7}
-          echo "IMAGE=ghcr.io/${REPO_LOWER}:${SHORT_SHA}-${{ matrix.image }}" >> $GITHUB_OUTPUT
+          SUFFIX="${{ matrix.suffix }}"
+          echo "IMAGE=ghcr.io/${REPO_LOWER}:${SHORT_SHA}-${{ matrix.image }}${SUFFIX}" >> $GITHUB_OUTPUT
 
       - name: Pull Docker image
         run: docker pull ${{ steps.image_tag.outputs.IMAGE }}
@@ -93,7 +108,7 @@ jobs:
         with:
           image-ref: "${{ steps.image_tag.outputs.IMAGE }}"
           format: "sarif"
-          output: "trivy-container-${{ matrix.image }}-results.sarif"
+          output: "trivy-container-${{ matrix.image }}${{ matrix.suffix }}-results.sarif"
           severity: "CRITICAL,HIGH,MEDIUM"
 
       - name: Determine ref type
@@ -110,7 +125,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@19b2f06db2b6f5108140aeb04014ef02b648f789 # v3
         if: always()
         with:
-          sarif_file: "trivy-container-${{ matrix.image }}-results.sarif"
-          category: "trivy-container-${{ matrix.image }}"
+          sarif_file: "trivy-container-${{ matrix.image }}${{ matrix.suffix }}-results.sarif"
+          category: "trivy-container-${{ matrix.image }}${{ matrix.suffix }}"
           ref: ${{ steps.ref_type.outputs.ref }}
           sha: ${{ github.event.workflow_run.head_sha }}
