@@ -127,9 +127,7 @@ export const StepNote = ({
               <li key={file.id} className={styles['request-note__file']}>
                 <FileDownloadLink
                   href={`/api/requete-etapes/${requeteStateId}/file/${file.id}`}
-                  safeHref={
-                    file.safeFilePath ? `/api/requete-etapes/${requeteStateId}/file/${file.id}/safe` : undefined
-                  }
+                  safeHref={`/api/requete-etapes/${requeteStateId}/file/${file.id}/safe`}
                   fileName={file.originalName}
                   fileId={file.id}
                   fileSize={file.size}

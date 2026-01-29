@@ -250,6 +250,10 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
                 id: true,
                 size: true,
                 metadata: true,
+                status: true,
+                scanStatus: true,
+                sanitizeStatus: true,
+                safeFilePath: true,
               },
             },
             author: {
