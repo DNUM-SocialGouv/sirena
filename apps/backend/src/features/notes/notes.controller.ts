@@ -3,7 +3,7 @@ import {
   throwHTTPException403Forbidden,
   throwHTTPException404NotFound,
 } from '@sirena/backend-utils/helpers';
-import { ROLES } from '@sirena/common/constants';
+import { REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
@@ -13,7 +13,11 @@ import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { getRequeteEtapeById } from '../requeteEtapes/requetesEtapes.service.js';
-import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
+import {
+  getRequeteEntiteById,
+  hasAccessToRequete,
+  updateStatusRequete,
+} from '../requetesEntite/requetesEntite.service.js';
 import { isUserOwner, setNoteFile } from '../uploadedFiles/uploadedFiles.service.js';
 import { addNoteRoute, deleteNoteRoute, updateNoteRoute } from './notes.route.js';
 import { addNoteBodySchema, updateNoteBodySchema } from './notes.schema.js';
@@ -64,6 +68,12 @@ const app = factoryWithLogs
         throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
           res: c.res,
         });
+      }
+
+      const requete = await getRequeteEntiteById(requeteEtape.requeteId, topEntiteId);
+
+      if (requete?.statutId === REQUETE_STATUT_TYPES.NOUVEAU) {
+        await updateStatusRequete(requeteEtape.requeteId, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
       }
 
       const fileIds = body.fileIds || [];

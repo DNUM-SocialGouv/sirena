@@ -7,7 +7,11 @@ import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import type { RequeteEtape, RequeteEtapeNote, UploadedFile } from '../../libs/prisma.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
 import { getRequeteEtapeById } from '../requeteEtapes/requetesEtapes.service.js';
-import { hasAccessToRequete } from '../requetesEntite/requetesEntite.service.js';
+import {
+  getRequeteEntiteById,
+  hasAccessToRequete,
+  updateStatusRequete,
+} from '../requetesEntite/requetesEntite.service.js';
 import { isUserOwner, setNoteFile } from '../uploadedFiles/uploadedFiles.service.js';
 import NotesController from './notes.controller.js';
 import { addNote, deleteNote, getNoteById, updateNote } from './notes.service.js';
@@ -30,6 +34,8 @@ vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
 
 vi.mock('../requetesEntite/requetesEntite.service.js', () => ({
   hasAccessToRequete: vi.fn(() => Promise.resolve(true)),
+  getRequeteEntiteById: vi.fn(() => Promise.resolve({ statutId: 'EN_COURS' })),
+  updateStatusRequete: vi.fn(() => Promise.resolve({})),
 }));
 
 vi.mock('../../middlewares/userStatus.middleware.js', () => {
@@ -101,6 +107,7 @@ const fakeRequeteEtape: RequeteEtape = {
   updatedAt: new Date(),
   estPartagee: false,
   createdById: 'user1',
+  clotureReasonId: null,
 };
 
 describe('notes.controller.ts', () => {
@@ -111,6 +118,8 @@ describe('notes.controller.ts', () => {
     vi.resetAllMocks();
     vi.mocked(getRequeteEtapeById).mockResolvedValue(fakeRequeteEtape);
     vi.mocked(hasAccessToRequete).mockResolvedValue(true);
+    vi.mocked(getRequeteEntiteById).mockResolvedValue({ statutId: 'EN_COURS' } as never);
+    vi.mocked(updateStatusRequete).mockResolvedValue({} as never);
   });
 
   it('should be defined', () => {
