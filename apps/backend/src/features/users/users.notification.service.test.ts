@@ -117,7 +117,7 @@ describe('users.notification.service.ts', () => {
 
       expect(mockedSendTipimailEmail).toHaveBeenCalledWith(
         expect.objectContaining({
-          template: 'habilitation-admin-local',
+          template: 'habilitation-super-admin',
           substitutions: [
             expect.objectContaining({
               values: expect.objectContaining({

@@ -491,6 +491,26 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
     };
 
     if (requete.declarant) {
+      // Build identite upsert - use upsert instead of update to handle case where identite doesn't exist yet
+      const identiteUpsert = {
+        upsert: {
+          create: {
+            nom: declarantData.nom || '',
+            prenom: declarantData.prenom || '',
+            email: declarantData.courrierElectronique || '',
+            telephone: declarantData.numeroTelephone || '',
+            civiliteId: mappers.mapCiviliteToDatabase(declarantData.civilite),
+          },
+          update: {
+            nom: declarantData.nom || '',
+            prenom: declarantData.prenom || '',
+            email: declarantData.courrierElectronique || '',
+            telephone: declarantData.numeroTelephone || '',
+            civiliteId: mappers.mapCiviliteToDatabase(declarantData.civilite),
+          },
+        },
+      };
+
       return await prisma.requete.update({
         where: { id: requeteId },
         data: {
@@ -507,15 +527,7 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
               lienVictimeId: lienVictimeValue,
               lienAutrePrecision: lienAutrePrecisionValue,
               updatedAt: new Date(),
-              identite: {
-                update: {
-                  nom: declarantData.nom || '',
-                  prenom: declarantData.prenom || '',
-                  email: declarantData.courrierElectronique || '',
-                  telephone: declarantData.numeroTelephone || '',
-                  civiliteId: mappers.mapCiviliteToDatabase(declarantData.civilite),
-                },
-              },
+              identite: identiteUpsert,
               adresse: buildPersonneAdresseUpsert(declarantData),
             },
           },
@@ -593,6 +605,25 @@ export const updateRequeteParticipant = async (
   };
 
   if (requete.participant) {
+    const identiteUpsert = {
+      upsert: {
+        create: {
+          nom: participantData.nom || '',
+          prenom: participantData.prenom || '',
+          email: participantData.courrierElectronique || '',
+          telephone: participantData.numeroTelephone || '',
+          civiliteId: mappers.mapCiviliteToDatabase(participantData.civilite),
+        },
+        update: {
+          nom: participantData.nom || '',
+          prenom: participantData.prenom || '',
+          email: participantData.courrierElectronique || '',
+          telephone: participantData.numeroTelephone || '',
+          civiliteId: mappers.mapCiviliteToDatabase(participantData.civilite),
+        },
+      },
+    };
+
     return await prisma.requete.update({
       where: { id: requeteId },
       data: {
@@ -605,20 +636,12 @@ export const updateRequeteParticipant = async (
                 : !participantData.consentCommuniquerIdentite,
             estVictimeInformee: participantData.estVictimeInformee || false,
             autrePersonnes: participantData.autrePersonnes || '',
-            aAutrePersonnes: participantData.aAutrePersonnes || false,
+            aAutrePersonnes: participantData.aAutrePersonnes ?? undefined,
             commentaire: participantData.commentaire || '',
             ageId: participantData.age || undefined,
             dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : undefined,
             updatedAt: new Date(),
-            identite: {
-              update: {
-                nom: participantData.nom || '',
-                prenom: participantData.prenom || '',
-                email: participantData.courrierElectronique || '',
-                telephone: participantData.numeroTelephone || '',
-                civiliteId: mappers.mapCiviliteToDatabase(participantData.civilite),
-              },
-            },
+            identite: identiteUpsert,
             adresse: buildPersonneAdresseUpsert(participantData),
           },
         },
