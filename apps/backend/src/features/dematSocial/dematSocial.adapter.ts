@@ -141,6 +141,7 @@ const getFiness = (champ: RootChampFragmentFragment | RepetitionChamp) => {
     logger.error(`FinessChamp data is null for champ id: ${champ.id}`);
     return null;
   }
+
   return {
     code: champ.data.et_finess ?? '',
     adresse: {
@@ -148,6 +149,9 @@ const getFiness = (champ: RootChampFragmentFragment | RepetitionChamp) => {
       codePostal: String(champ.data.adresse_code_postal) ?? '',
       ville: String(champ.data.adresse_lib_routage) ?? '',
     },
+    tutelle: champ.data.tutelle != null ? String(champ.data.tutelle) : '',
+    categ_code: champ.data.categ_code != null ? String(champ.data.categ_code) : '',
+    categ_lib: champ.data.categ_lib != null ? String(champ.data.categ_lib) : '',
   };
 };
 
@@ -242,6 +246,9 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
     transportTypeId: transportTypeId,
     societeTransport: champsById[mapping.transportSociete.id]?.stringValue ?? '',
     finess: finess?.code ?? '',
+    tutelle: finess?.tutelle ?? '',
+    categCode: finess?.categ_code ?? '',
+    categLib: finess?.categ_lib ?? '',
   };
   return lieux;
 };

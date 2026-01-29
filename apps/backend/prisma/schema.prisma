@@ -24,6 +24,22 @@ datasource db {
   url      = env("PG_URL")
 }
 
+model AutoriteCompetenteReferentiel {
+  id String @id @default(uuid())
+
+  categCode   String
+  categLib  String?
+  entiteTypeIds String[]
+
+  sourceFileVersion String? // csv hash
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([categCode])
+}
+
+
 model StatutEnum {
   id    String @id
   label String @unique
@@ -329,12 +345,15 @@ model SituationEntite {
 }
 
 model LieuDeSurvenue {
-  id               String @id @default(uuid())
-  codePostal       String @default("")
-  societeTransport String @default("")
-  finess           String @default("")
-  commentaire      String @default("")
-  lieuPrecision    String @default("")
+  id               String  @id @default(uuid())
+  codePostal       String  @default("")
+  societeTransport String  @default("")
+  finess           String  @default("")
+  tutelle          String @default("")
+  categCode        String @default("")
+  categLib         String @default("")
+  commentaire      String  @default("")
+  lieuPrecision    String  @default("")
 
   adresse Adresse? @relation("LieuAdresse")
 
