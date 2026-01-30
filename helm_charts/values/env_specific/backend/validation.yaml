@@ -9,6 +9,7 @@ SDPSN-devops-charts:
     FRONTEND_REDIRECT_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr/home
     FRONTEND_REDIRECT_LOGIN_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr/login
     FRONTEND_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr
+    CRON_DEMAT_SOCIAL: "300"
     REDIS_TLS: "false"
     SENTRY_ENVIRONMENT: validation
 
