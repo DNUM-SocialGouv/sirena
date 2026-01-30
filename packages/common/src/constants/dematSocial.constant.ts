@@ -165,7 +165,6 @@ export const DS_MOTIF = {
   NON_RESPECT_DROITS: 'NON_RESPECT_DROITS',
   PROBLEME_ORGANISATION: 'PROBLEME_ORGANISATION',
   PROBLEME_QUALITE_SOINS: 'PROBLEME_QUALITE_SOINS',
-  DIFFICULTES_ACCES_SOINS: 'DIFFICULTES_ACCES_SOINS',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -178,7 +177,6 @@ export const dsMotifLabels: Record<DsMotif, string> = {
   PROBLEME_FACTURATION: 'La facturation ou les honoraires',
   PROBLEME_LOCAUX: 'Les locaux ou la restauration',
   PROBLEME_ORGANISATION: "Un manque d'information sur l'organisation de l'établissement ou du service",
-  DIFFICULTES_ACCES_SOINS: "Un manque d'information sur les droits des usagers",
   AUTRE: 'Autre, par exemple : tatouage ou esthétique',
 };
 

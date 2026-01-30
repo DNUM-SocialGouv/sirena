@@ -158,36 +158,28 @@ export const MOTIF = {
   NON_RESPECT_DROITS: 'NON_RESPECT_DROITS',
   PROBLEME_ORGANISATION: 'PROBLEME_ORGANISATION',
   PROBLEME_QUALITE_SOINS: 'PROBLEME_QUALITE_SOINS',
-  DIFFICULTES_ACCES_SOINS: 'DIFFICULTES_ACCES_SOINS',
   AUTRE: 'AUTRE',
 } as const;
 
 export type Motif = keyof typeof MOTIF;
 
 export const motifLabels: Record<Motif, string> = {
-  PROBLEME_COMPORTEMENTAL: 'Problème comportemental, relationnel ou de communication avec une personne',
+  PROBLEME_COMPORTEMENTAL: "Problème lié au comportement d'une personne",
   PROBLEME_FACTURATION: 'Problème lié à la facturation ou aux honoraires',
   PROBLEME_LOCAUX: 'Problème lié aux locaux ou la restauration',
-  NON_RESPECT_DROITS:
-    "Non-respect des droits des usagers dont défaut d’information (ex : non prise en compte de l'expression de besoin de la personne accompagnée, travail illégal...)",
-
-  PROBLEME_ORGANISATION:
-    'Problème d’organisation ou de fonctionnement de l’établissement ou du service (ex : Management, plannings, condition de travail...)',
-  PROBLEME_QUALITE_SOINS:
-    'Problème de qualité des soins médicaux ou paramédicaux (ex: soins et/ou interventions inadaptés, absents ou abusifs...)',
-  DIFFICULTES_ACCES_SOINS:
-    "Difficultés d'accès aux soins (établissement ou professionnel) (ex: manque de moyen humain...)",
+  NON_RESPECT_DROITS: 'Le non-respect des droits ou du secret médical',
+  PROBLEME_ORGANISATION: "Un manque d'information sur l'organisation de l'établissement ou du service",
+  PROBLEME_QUALITE_SOINS: 'Problème de qualité des soins médicaux ou paramédicaux',
   AUTRE: 'Autre (ex: tatouage, chirurgie et/ou soins esthétiques...)',
 };
 
 export const motifShortLabels: Record<Motif, string> = {
-  PROBLEME_COMPORTEMENTAL: 'Problème comportemental',
+  PROBLEME_COMPORTEMENTAL: "Comportement d'une personne",
   PROBLEME_FACTURATION: 'Problème lié à la facturation',
   PROBLEME_LOCAUX: 'Problème lié aux locaux',
-  NON_RESPECT_DROITS: 'Non-respect des droits des usagers',
-  PROBLEME_ORGANISATION: 'Problème d’organisation',
+  NON_RESPECT_DROITS: 'Non-respect des droits ou du secret médical',
+  PROBLEME_ORGANISATION: "Manque d'information sur l'organisation",
   PROBLEME_QUALITE_SOINS: 'Problème de qualité des soins',
-  DIFFICULTES_ACCES_SOINS: "Difficultés d'accès aux soins",
   AUTRE: 'Autre',
 };
 

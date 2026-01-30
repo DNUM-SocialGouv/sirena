@@ -12,7 +12,6 @@ import {
   GetInstructeursDocument,
   graffle,
 } from '../../libs/graffle.js';
-import { prisma } from '../../libs/prisma.js';
 import { sendDeclarantAcknowledgmentEmail } from '../declarants/declarants.notification.service.js';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '../requetes/requetes.service.js';
 import { assignEntitesToRequeteTask } from './affectation/affectation.js';
@@ -249,10 +248,7 @@ export const importSingleDossier = async (
     }
 
     try {
-      // TODO remove this when dematSocial is mature enough
-      if (envVars.SENTRY_ENVIRONMENT !== 'integration') {
-        await sendDeclarantAcknowledgmentEmail(createdRequete.id);
-      }
+      await sendDeclarantAcknowledgmentEmail(createdRequete.id);
     } catch (err) {
       logger.error(
         { err, dossierNumber, requeteId: createdRequete.id },
@@ -321,26 +317,12 @@ export const importRequetes = async (createdSince?: Date) => {
   } else {
     logger.info('Importing all requetes');
   }
-  // TODO remove this when dematSocial is mature enough
-  let dossiers: Awaited<ReturnType<typeof getRequetes>> = [];
-  if (envVars.SENTRY_ENVIRONMENT === 'integration') {
-    dossiers = await getRequetes();
-  } else {
-    dossiers = await getRequetes(createdSince);
-  }
+
+  const dossiers = await getRequetes(createdSince);
   logger.info({ totalDossiers: dossiers.length }, 'Found dossiers to process');
   let i = 0;
   let errorCount = 0;
   let skippedCount = 0;
-
-  // TODO remove this when dematSocial is mature enough
-  if (envVars.SENTRY_ENVIRONMENT === 'integration') {
-    await prisma.requete.deleteMany({
-      where: {
-        dematSocialId: { not: null },
-      },
-    });
-  }
 
   for (const dossier of dossiers) {
     // legacy, we don't support
