@@ -1,4 +1,12 @@
 version: 2
+
+registries:
+  SDPSN-devops-charts:
+    type: helm-registry
+    url: https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable
+    username: oauth2
+    password: ${{ secrets.HELM_REPO_PAT }}
+
 updates:
   # Configuration optimisée pour monorepo pnpm
   # Une seule configuration pour toutes les dépendances npm/pnpm
@@ -101,3 +109,13 @@ updates:
       all-updates:
         patterns:
           - "*"
+
+  # Configuration pour les helm charts
+  - package-ecosystem: "helm"
+    directory: "/helm_charts"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    registries:
+      - SDPSN-devops-charts
