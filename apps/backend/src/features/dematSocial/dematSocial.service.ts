@@ -249,7 +249,10 @@ export const importSingleDossier = async (
     }
 
     try {
-      await sendDeclarantAcknowledgmentEmail(createdRequete.id);
+      // TODO remove this when dematSocial is mature enough
+      if (envVars.SENTRY_ENVIRONMENT !== 'integration') {
+        await sendDeclarantAcknowledgmentEmail(createdRequete.id);
+      }
     } catch (err) {
       logger.error(
         { err, dossierNumber, requeteId: createdRequete.id },
