@@ -318,7 +318,13 @@ export const importRequetes = async (createdSince?: Date) => {
   } else {
     logger.info('Importing all requetes');
   }
-  const dossiers = await getRequetes(createdSince);
+  // TODO remove this when dematSocial is mature enough
+  let dossiers: Awaited<ReturnType<typeof getRequetes>> = [];
+  if (envVars.SENTRY_ENVIRONMENT === 'integration') {
+    dossiers = await getRequetes();
+  } else {
+    dossiers = await getRequetes(createdSince);
+  }
   logger.info({ totalDossiers: dossiers.length }, 'Found dossiers to process');
   let i = 0;
   let errorCount = 0;
@@ -336,7 +342,7 @@ export const importRequetes = async (createdSince?: Date) => {
   for (const dossier of dossiers) {
     // legacy, we don't support
     // TODO: remove after some time
-    if (dossier.number < 282994) {
+    if (dossier.number < 285277) {
       skippedCount += 1;
       continue;
     }
