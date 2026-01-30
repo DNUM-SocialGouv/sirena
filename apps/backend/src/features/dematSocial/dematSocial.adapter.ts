@@ -417,7 +417,7 @@ const getVictime = (champsById: MappedChamp, mandataire: Mandataire, demandeur: 
       prenom: demandeur.prenom,
       nom: demandeur.nom,
       civiliteId: demandeur.civiliteId,
-      email: demandeur.email,
+      email: mandataire.email,
       telephone: champsById[rootMapping.telephone.id]?.stringValue ?? null,
       ageId: getEnumIdFromLabel(rootMapping.age.options, champsById[rootMapping.age.id]?.stringValue ?? null),
       estHandicapee: getBooleanOrNull(champsById[rootMapping.estHandicape.id], rootMapping.estHandicape.options),
