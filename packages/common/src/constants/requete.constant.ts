@@ -304,6 +304,7 @@ export const LIEU_ETABLISSEMENT_SANTE_PRECISION = {
   USLD: 'USLD',
   BAPU: 'BAPU',
   CMP: 'CMP',
+  CMPP: 'CMPP',
   AUTRE: 'AUTRE',
 } as const;
 
@@ -319,6 +320,7 @@ export const lieuEtablissementSantePrecisionLabels: Record<LieuEtablissementSant
   USLD: 'USLD',
   BAPU: "BAPU (Bureaux d'aide psychologique universitaires)",
   CMP: 'CMP (Centres médico-psychologiques)',
+  CMPP: 'CMPP (Centres médico-psycho-pédagogiques)',
   AUTRE: 'Autre',
 };
 

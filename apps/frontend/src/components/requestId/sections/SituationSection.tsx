@@ -329,7 +329,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
           </>
         )}
 
-        {fait?.maltraitanceTypes && fait.maltraitanceTypes.length > 0 && (
+        {motifsDeclares.length > 0 && (
           <>
             <SectionTitle>Motifs renseignés par le déclarant</SectionTitle>
             <ul className={fr.cx('fr-mb-3w')}>
