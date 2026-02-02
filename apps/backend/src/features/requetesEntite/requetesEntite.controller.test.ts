@@ -119,6 +119,7 @@ export const fakeRequeteEntite = {
     id: 'requeteId',
     createdAt: new Date(),
     updatedAt: new Date(),
+    createdById: null,
     commentaire: 'Commentaire',
     receptionDate: new Date(),
     dematSocialId: 123,
@@ -149,6 +150,7 @@ describe('RequetesEntite endpoints: /', () => {
         id: 'r1',
         createdAt: new Date(),
         updatedAt: new Date(),
+        createdById: null,
         commentaire: 'Commentaire',
         receptionDate: new Date(),
         dematSocialId: 123,
@@ -167,6 +169,7 @@ describe('RequetesEntite endpoints: /', () => {
           estVictimeInformee: null,
           victimeInformeeCommentaire: '',
           veutGarderAnonymat: false,
+          estSignalementProfessionnel: false,
           autrePersonnes: '',
           aAutrePersonnes: null,
           declarantDeId: 'd1',
@@ -174,6 +177,7 @@ describe('RequetesEntite endpoints: /', () => {
           lienVictimeId: '',
           participantDeId: '',
           ageId: null,
+          dateNaissance: null,
           identite: null,
           adresse: null,
         },
@@ -688,9 +692,9 @@ describe('RequetesEntite endpoints: /', () => {
       const newDate = '2025-05-01';
       const updatedRequete = {
         ...baseRequeteEntite.requete,
-        receptionDate: newDate,
+        receptionDate: new Date(newDate),
         receptionTypeId: RECEPTION_TYPE.COURRIER,
-        updatedAt: newDate,
+        updatedAt: new Date(newDate),
       };
 
       vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);

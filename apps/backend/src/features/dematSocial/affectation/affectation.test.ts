@@ -29,6 +29,10 @@ vi.mock('../../../libs/asyncLocalStorage.js', () => ({
   })),
 }));
 
+vi.mock('../../entites/entite.notification.service.js', () => ({
+  sendEntiteAssignedNotification: vi.fn(() => Promise.resolve()),
+}));
+
 vi.mock('../../../../generated/client/index.js', async () => {
   const actual = await vi.importActual('../../../../generated/client/index.js');
   return {
@@ -82,6 +86,9 @@ describe('assignEntitesToRequeteTask', () => {
       },
       entite: {
         findFirst: vi.fn(),
+      },
+      requeteEntite: {
+        findMany: vi.fn().mockResolvedValue([]),
       },
       $transaction: vi.fn((callback) => callback(mockTransaction)),
       $disconnect: vi.fn(),

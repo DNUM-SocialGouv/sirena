@@ -98,6 +98,7 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
     dematSocialId: 123,
     createdAt: new Date(),
     updatedAt: new Date(),
+    createdById: null,
     commentaire: 'Commentaire',
     receptionDate: new Date(),
     receptionTypeId: 'receptionTypeId',
@@ -651,6 +652,7 @@ describe('requetesEntite.service', () => {
         commentaire: '',
         autrePersonnes: '',
         ageId: null,
+        dateNaissance: null,
         lienVictimeId: null,
         lienAutrePrecision: null,
         declarantDeId: 'req123',
@@ -672,6 +674,7 @@ describe('requetesEntite.service', () => {
         dematSocialId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        createdById: null,
         commentaire: '',
         receptionDate: new Date(),
         receptionTypeId: 'EMAIL',
@@ -720,6 +723,7 @@ describe('requetesEntite.service', () => {
         commentaire: '',
         autrePersonnes: '',
         ageId: null,
+        dateNaissance: null,
         lienVictimeId: null,
         lienAutrePrecision: null,
         declarantDeId: 'req123',
@@ -741,6 +745,7 @@ describe('requetesEntite.service', () => {
         dematSocialId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        createdById: null,
         commentaire: '',
         receptionDate: new Date(),
         receptionTypeId: 'EMAIL',
@@ -794,6 +799,7 @@ describe('requetesEntite.service', () => {
         commentaire: '',
         autrePersonnes: '',
         ageId: null,
+        dateNaissance: null,
         lienVictimeId: null,
         lienAutrePrecision: null,
         declarantDeId: 'req123',
@@ -814,6 +820,7 @@ describe('requetesEntite.service', () => {
         dematSocialId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        createdById: null,
         commentaire: '',
         receptionDate: new Date(),
         receptionTypeId: 'EMAIL',
@@ -844,11 +851,12 @@ describe('requetesEntite.service', () => {
         dematSocialId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        createdById: null,
         commentaire: '',
         receptionDate: new Date(),
         receptionTypeId: 'EMAIL',
         declarant: null,
-      } as Requete;
+      } as unknown as Requete;
 
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequete);
 
@@ -877,7 +885,9 @@ describe('requetesEntite.service', () => {
 
     it('should throw error if last etape is closed', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(fakeEtape);
       await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123')).rejects.toThrow(
         'READONLY_FOR_ENTITY',
@@ -886,7 +896,9 @@ describe('requetesEntite.service', () => {
 
     it('should throw error if files are invalid', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
       vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([
         {
           id: 'file123',
@@ -919,7 +931,9 @@ describe('requetesEntite.service', () => {
 
     it('should successfully close requete with precision and files', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
       vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([
         {
@@ -1023,7 +1037,9 @@ describe('requetesEntite.service', () => {
 
     it('should successfully close requete without precision and files', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
 
       const transactionSpy = vi.mocked(prisma.$transaction);
@@ -1073,7 +1089,9 @@ describe('requetesEntite.service', () => {
 
     it('should successfully close requete with precision but no files', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
       vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([]);
 
@@ -1122,7 +1140,9 @@ describe('requetesEntite.service', () => {
 
     it('should successfully close requete with files but no precision', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([{ id: 'reason123' }]);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
       vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(null);
       vi.mocked(prisma.uploadedFile.findMany).mockResolvedValue([
         {
@@ -1215,6 +1235,7 @@ describe('requetesEntite.service', () => {
           upsert: vi.fn().mockResolvedValue({}),
         },
         requeteEntite: {
+          findMany: vi.fn().mockResolvedValue([]),
           findUnique: vi.fn().mockResolvedValue({ requeteId: 'req1', entiteId: 'root1', statutId: 'EN_COURS' }),
           upsert: vi.fn().mockResolvedValue({}),
         },
@@ -1292,15 +1313,12 @@ describe('requetesEntite.service', () => {
         return null;
       });
 
-      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+      const mockRequeteWithSituation = {
         id: requeteId,
-        situations: [
-          {
-            id: situationId,
-            faits: [],
-          },
-        ],
-      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithSituation);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithSituation);
 
       vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
         return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
@@ -1356,15 +1374,12 @@ describe('requetesEntite.service', () => {
 
       vi.mocked(getEntiteAscendanteId).mockResolvedValue(userTopEntiteId);
 
-      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+      const mockRequeteForUpdate = {
         id: requeteId,
-        situations: [
-          {
-            id: situationId,
-            faits: [],
-          },
-        ],
-      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
 
       vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
         return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
@@ -1437,15 +1452,12 @@ describe('requetesEntite.service', () => {
       // All entities belong to user's hierarchy
       vi.mocked(getEntiteAscendanteId).mockResolvedValue(userTopEntiteId);
 
-      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+      const mockRequeteForUpdate = {
         id: requeteId,
-        situations: [
-          {
-            id: situationId,
-            faits: [],
-          },
-        ],
-      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
 
       vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
         return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
@@ -1523,15 +1535,12 @@ describe('requetesEntite.service', () => {
 
       vi.mocked(getEntiteAscendanteId).mockResolvedValue(userTopEntiteId);
 
-      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+      const mockRequeteForUpdate = {
         id: requeteId,
-        situations: [
-          {
-            id: situationId,
-            faits: [],
-          },
-        ],
-      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
 
       vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
         return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
@@ -1649,15 +1658,12 @@ describe('requetesEntite.service', () => {
         return null;
       });
 
-      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+      const mockRequeteForUpdate = {
         id: requeteId,
-        situations: [
-          {
-            id: situationId,
-            faits: [],
-          },
-        ],
-      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
 
       vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
         return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
@@ -1733,15 +1739,12 @@ describe('requetesEntite.service', () => {
         return null;
       });
 
-      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+      const mockRequeteForUpdate = {
         id: requeteId,
-        situations: [
-          {
-            id: situationId,
-            faits: [],
-          },
-        ],
-      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
 
       vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
         return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
@@ -1881,15 +1884,12 @@ describe('requetesEntite.service', () => {
         return null;
       });
 
-      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+      const mockRequeteForUpdate = {
         id: requeteId,
-        situations: [
-          {
-            id: situationId,
-            faits: [],
-          },
-        ],
-      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
 
       vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
         return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
