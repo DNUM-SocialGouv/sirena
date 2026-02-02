@@ -332,8 +332,8 @@ export const FileDownloadLink = ({
     }
 
     // Case 2: Safe version available - open directly
-    if (isSafeFileAvailable(fileStatus?.sanitizeStatus) && (safeHref || fileStatus?.safeFilePath)) {
-      window.open(safeHref || fileStatus?.safeFilePath || href, target);
+    if (isSafeFileAvailable(fileStatus?.sanitizeStatus) && safeHref) {
+      window.open(safeHref, target);
       return;
     }
 
@@ -438,10 +438,12 @@ export const FileDownloadLink = ({
     </>
   );
 
+  const displayHref = isSafeFileAvailable(fileStatus?.sanitizeStatus) && safeHref ? safeHref : href;
+
   return (
     <>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-        <a href={href} target={target} rel={rel} className={className} onClick={handleClick}>
+        <a href={displayHref} target={target} rel={rel} className={className} onClick={handleClick}>
           {displayName}
         </a>
         {isFileInfected(fileStatus?.scanStatus) ? (
@@ -465,10 +467,7 @@ export const FileDownloadLink = ({
             doClosesModal: true,
             children: 'Télécharger',
             onClick: () => {
-              const downloadUrl =
-                isSafeFileAvailable(fileStatus?.sanitizeStatus) && (safeHref || fileStatus?.safeFilePath)
-                  ? safeHref || href
-                  : href;
+              const downloadUrl = isSafeFileAvailable(fileStatus?.sanitizeStatus) && safeHref ? safeHref : href;
               window.open(downloadUrl, '_blank');
             },
           },

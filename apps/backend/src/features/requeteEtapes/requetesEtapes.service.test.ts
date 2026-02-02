@@ -597,6 +597,10 @@ describe('RequeteEtapes.service.ts', () => {
                   id: true,
                   size: true,
                   metadata: true,
+                  status: true,
+                  scanStatus: true,
+                  sanitizeStatus: true,
+                  safeFilePath: true,
                 },
               },
               author: {
@@ -656,6 +660,10 @@ describe('RequeteEtapes.service.ts', () => {
                   id: true,
                   size: true,
                   metadata: true,
+                  status: true,
+                  scanStatus: true,
+                  sanitizeStatus: true,
+                  safeFilePath: true,
                 },
               },
               author: {

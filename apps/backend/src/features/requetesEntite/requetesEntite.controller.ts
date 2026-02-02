@@ -184,7 +184,12 @@ const app = factoryWithLogs
   .get('/:id/file/:fileId/safe', async (c) => {
     const logger = c.get('logger');
     const { id, fileId } = c.req.param();
-    const topEntiteId = c.get('topEntiteId') as string;
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
 
     const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
 
@@ -218,7 +223,12 @@ const app = factoryWithLogs
   .get('/:id/situation/:situationId/file/:fileId', async (c) => {
     const logger = c.get('logger');
     const { id, situationId, fileId } = c.req.param();
-    const topEntiteId = c.get('topEntiteId') as string;
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
 
     const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
 
@@ -248,6 +258,50 @@ const app = factoryWithLogs
     logger.info({ requeteId: id, situationId, fileId }, 'Retrieving file for situation');
 
     return streamFileResponse(c, file);
+  })
+  .get('/:id/situation/:situationId/file/:fileId/safe', async (c) => {
+    const logger = c.get('logger');
+    const { id, situationId, fileId } = c.req.param();
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
+
+    const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
+
+    if (!requeteEntite) {
+      throwHTTPException404NotFound('Requete entite not found', { res: c.res });
+    }
+
+    const situation = requeteEntite.requete?.situations?.find((s) => s.id === situationId);
+
+    if (!situation) {
+      logger.warn({ requeteId: id, situationId }, 'Situation not found in requete');
+      throwHTTPException404NotFound('Situation not found', { res: c.res });
+    }
+
+    const belongsToRequete = await isFileBelongsToRequete(fileId, id);
+
+    if (!belongsToRequete) {
+      logger.warn({ requeteId: id, situationId, fileId }, 'Attempt to access safe file not belonging to requete');
+      throwHTTPException404NotFound('File not found', { res: c.res });
+    }
+
+    const file = await getUploadedFileById(fileId);
+
+    if (!file) {
+      throwHTTPException404NotFound('File not found', { res: c.res });
+    }
+
+    if (!file.safeFilePath) {
+      throwHTTPException404NotFound('Safe file not available', { res: c.res });
+    }
+
+    logger.info({ requeteId: id, situationId, fileId }, 'Retrieving safe file for situation');
+
+    return streamSafeFileResponse(c, file);
   })
 
   .use(roleMiddleware([...ROLES_WRITE]))

@@ -8,7 +8,7 @@ interface FileUploadSectionProps {
   label: string;
   existingFiles?: FileInfo[];
   getFileUrl?: (fileId: string) => string;
-  getSafeFileUrl?: (fileId: string, safeFilePath: string) => string;
+  getSafeFileUrl?: (fileId: string) => string;
   selectedFiles: File[];
   onFilesChange: (files: File[]) => void;
   disabled?: boolean;

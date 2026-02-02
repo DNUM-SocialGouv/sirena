@@ -131,8 +131,8 @@ export function AttachedFiles({
                             : '#'
                         }
                         safeHref={
-                          file.safeFilePath && requestId
-                            ? `/api/requetes-entite/${requestId}/file/${file.id}/safe`
+                          requestId && situationId
+                            ? `/api/requetes-entite/${requestId}/situation/${situationId}/file/${file.id}/safe`
                             : undefined
                         }
                         fileName={file.fileName}

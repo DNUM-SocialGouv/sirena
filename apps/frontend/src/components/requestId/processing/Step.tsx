@@ -245,6 +245,10 @@ const StepComponent = ({
                 id: file.id,
                 size: file.size,
                 originalName: (file.metadata as { originalName?: string })?.originalName || 'Unknown',
+                status: file.status,
+                scanStatus: file.scanStatus,
+                sanitizeStatus: file.sanitizeStatus,
+                safeFilePath: file.safeFilePath,
               }))}
               requeteStateId={id}
               onEdit={(noteData) =>
