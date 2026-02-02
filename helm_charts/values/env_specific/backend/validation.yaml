@@ -3,12 +3,12 @@ SDPSN-devops-charts:
   namespace: org-sdpsn-ws-sirena-validation
 
   appVariables:
-    HOST: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr
+    HOST: https://sirena.validation.dev.atlas.fabrique.social.gouv.fr
     PC_DOMAIN: https://fca.integ01.dev-agentconnect.fr/api/v2
-    PC_REDIRECT_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr/api/auth/callback
-    FRONTEND_REDIRECT_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr/home
-    FRONTEND_REDIRECT_LOGIN_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr/login
-    FRONTEND_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr
+    PC_REDIRECT_URI: https://sirena.validation.dev.atlas.fabrique.social.gouv.fr/api/auth/callback
+    FRONTEND_REDIRECT_URI: https://sirena.validation.dev.atlas.fabrique.social.gouv.fr/home
+    FRONTEND_REDIRECT_LOGIN_URI: https://sirena.validation.dev.atlas.fabrique.social.gouv.fr/login
+    FRONTEND_URI: https://sirena.validation.dev.atlas.fabrique.social.gouv.fr
     CRON_DEMAT_SOCIAL: "300"
     REDIS_TLS: "false"
     SENTRY_ENVIRONMENT: validation
