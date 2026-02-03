@@ -1,103 +1,170 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Menu } from '@sirena/ui';
+import { ROLES, type Role } from '@sirena/common/constants';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useMatches } from '@tanstack/react-router';
+import clsx from 'clsx';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import './userMenu.css';
-import { ROLES, type Role } from '@sirena/common/constants';
-import { useMatches, useNavigate } from '@tanstack/react-router';
 
 export const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+
   const { data } = useQuery({ ...profileQueryOptions(), enabled: false });
-  const navigate = useNavigate();
   const matches = useMatches();
 
-  const label = useMemo(() => {
-    if (!data) {
-      return '';
-    }
-    return data?.prenom;
-  }, [data]);
-  const email = useMemo(() => data?.email ?? '', [data?.email]);
-  const role = useMemo(() => (data?.role?.id ?? '') as Role | '', [data?.role]);
+  const label = useMemo(() => data?.prenom ?? '', [data]);
+  const email = useMemo(() => data?.email ?? '', [data]);
+  const role = useMemo(() => (data?.role?.id ?? '') as Role | '', [data]);
 
-  const redirectToAdminUsers = () => {
-    navigate({
-      to: '/admin/users',
-    });
-  };
-
-  const redirectToHome = () => {
-    navigate({
-      to: '/home',
-    });
-  };
+  const menuId = useId();
 
   const isAdminRoute = matches.some((m) => m.routeId.startsWith('/_auth/admin/'));
 
+  const closeMenu = useCallback(() => {
+    setIsOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+
+  const handleClickOutside = useCallback(
+    (e: MouseEvent) => {
+      const target = e.target as Node;
+
+      if (!popupRef.current || !triggerRef.current) {
+        return;
+      }
+
+      if (!popupRef.current.contains(target) && !triggerRef.current.contains(target)) {
+        closeMenu();
+      }
+    },
+    [closeMenu],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenu();
+      }
+    },
+    [closeMenu],
+  );
+
+  const handleTabKey = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      if (!popupRef.current) return;
+
+      const focusables = popupRef.current.querySelectorAll<HTMLElement>(
+        'a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+
+      if (focusables.length === 0) return;
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+
+      const active = document.activeElement as HTMLElement | null;
+
+      if (e.shiftKey && active === first) {
+        closeMenu();
+        return;
+      }
+      if (!e.shiftKey && active === last) {
+        closeMenu();
+      }
+    },
+    [closeMenu],
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleTabKey);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleTabKey);
+    };
+  }, [isOpen, handleClickOutside, handleKeyDown, handleTabKey]);
+
   return (
-    <Menu.Root onOpenChange={setIsOpen}>
-      <Menu.Trigger isOpen={isOpen} className="fr-btn fr-btn--tertiary fr-icon-account-circle-fill fr-btn--icon-left">
+    <div className="user-menu__wrapper">
+      <button
+        ref={triggerRef}
+        type="button"
+        className={clsx(
+          'fr-btn fr-btn--tertiary fr-icon-account-circle-fill fr-btn--icon-left',
+          isOpen && 'user-menu-btn--open',
+        )}
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        aria-controls={menuId}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen((o) => !o);
+        }}
+      >
         Mon espace
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Positioner align="start">
-          <Menu.Popup>
-            <Menu.Header>
-              {label}
-              <span className="fr-hint-text">{email}</span>
-            </Menu.Header>
-            {role === ROLES.ENTITY_ADMIN &&
-              (isAdminRoute ? (
-                <>
-                  <Menu.Separator />
-                  <Menu.Item onClick={redirectToHome}>
-                    <div className="user-menu__item">
-                      <span className="fr-icon-user-line user-menu__item__icon" aria-hidden="true" />
-                      Traiter les requêtes
-                    </div>
-                  </Menu.Item>
-                </>
-              ) : (
-                <>
-                  <Menu.Separator />
-                  <Menu.Item onClick={redirectToAdminUsers}>
-                    <div className="user-menu__item">
-                      <span className="fr-icon-user-line user-menu__item__icon" aria-hidden="true" />
-                      Administrer
-                    </div>
-                  </Menu.Item>
-                </>
-              ))}
-            <Menu.Separator />
-            <Menu.Footer className="user-menu__footer">
-              <form action="/api/auth/logout" method="POST">
-                <Button
-                  type="submit"
-                  className="user-menu__disconnect-btn"
-                  iconId="fr-icon-logout-box-r-line"
-                  priority="tertiary"
-                  size="small"
-                >
-                  Se déconnecter
-                </Button>
-              </form>
-              <form action="/api/auth/logout-proconnect" method="POST">
-                <Button
-                  type="submit"
-                  className="user-menu__disconnect-btn"
-                  iconId="fr-icon-logout-box-r-line"
-                  priority="tertiary"
-                  size="small"
-                >
-                  Se déconnecter de ProConnect
-                </Button>
-              </form>
-            </Menu.Footer>
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
-    </Menu.Root>
+        <span
+          aria-hidden="true"
+          className={clsx('fr-icon-arrow-down-s-line menu__trigger__icon', isOpen && 'menu__trigger__icon--is-open')}
+        />
+      </button>
+
+      {isOpen && (
+        <div id={menuId} ref={popupRef} className="user-menu fr-card">
+          <div className="user-menu__header fr-p-2w">
+            <p className="fr-text--bold">{label}</p>
+            <p className="fr-hint-text">{email}</p>
+          </div>
+
+          <div className="user-menu__separator" />
+
+          {role === ROLES.ENTITY_ADMIN && (
+            <>
+              <a className="fr-btn--icon-left fr-icon-user-line fr-p-2w" href={isAdminRoute ? '/home' : '/admin/users'}>
+                {isAdminRoute ? 'Traiter les requêtes' : 'Administrer'}
+              </a>
+              <div className="user-menu__separator" />
+            </>
+          )}
+
+          <div className="user-menu__footer fr-p-2w">
+            <form action="/api/auth/logout" method="POST">
+              <Button
+                type="submit"
+                className="user-menu__btn"
+                iconId="fr-icon-logout-box-r-line"
+                priority="tertiary"
+                size="small"
+              >
+                Se déconnecter
+              </Button>
+            </form>
+
+            <form action="/api/auth/logout-proconnect" method="POST">
+              <Button
+                type="submit"
+                className="user-menu__btn"
+                iconId="fr-icon-logout-box-r-line"
+                priority="tertiary"
+                size="small"
+              >
+                Se déconnecter de ProConnect
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
