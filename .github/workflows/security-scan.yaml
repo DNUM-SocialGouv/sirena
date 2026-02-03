@@ -41,7 +41,7 @@ jobs:
           severity: "CRITICAL,HIGH,MEDIUM"
 
       - name: Upload Trivy filesystem scan results
-        uses: github/codeql-action/upload-sarif@19b2f06db2b6f5108140aeb04014ef02b648f789 # v3
+        uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v3
         if: always()
         with:
           sarif_file: "trivy-fs-results.sarif"
@@ -101,7 +101,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Log in to the Container registry
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -141,7 +141,7 @@ jobs:
           fi
 
       - name: Upload Trivy container scan results
-        uses: github/codeql-action/upload-sarif@19b2f06db2b6f5108140aeb04014ef02b648f789 # v3
+        uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v3
         if: always()
         with:
           sarif_file: "trivy-container-${{ matrix.image }}-results.sarif"

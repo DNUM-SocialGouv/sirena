@@ -329,7 +329,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
           </>
         )}
 
-        {fait?.maltraitanceTypes && fait.maltraitanceTypes.length > 0 && (
+        {motifsDeclares.length > 0 && (
           <>
             <SectionTitle>Motifs renseignés par le déclarant</SectionTitle>
             <ul className={fr.cx('fr-mb-3w')}>
@@ -407,7 +407,9 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
             <FileList
               files={fait.fichiers.map(formatFileFromServer)}
               getFileUrl={(fileId) => `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}`}
-              getSafeFileUrl={(fileId) => `/api/requetes-entite/${requestId}/file/${fileId}/safe`}
+              getSafeFileUrl={(fileId) =>
+                `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}/safe`
+              }
               title=""
             />
           </>
