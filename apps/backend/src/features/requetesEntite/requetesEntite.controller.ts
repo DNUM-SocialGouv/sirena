@@ -22,6 +22,7 @@ import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
+import { sendEntiteAssignedNotification } from '../entites/entite.notification.service.js';
 import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.service.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import {
@@ -638,7 +639,16 @@ const app = factoryWithLogs
       }
     }
 
-    const updatedRequete = await createRequeteSituation(id, situationData, topEntiteId, userId);
+    const { requete: updatedRequete, newAssignedEntiteIds } = await createRequeteSituation(
+      id,
+      situationData,
+      topEntiteId,
+      userId,
+    );
+
+    if (newAssignedEntiteIds.length > 0) {
+      await sendEntiteAssignedNotification(id, newAssignedEntiteIds);
+    }
 
     sseEventManager.emitRequeteUpdated({
       requeteId: id,
@@ -686,7 +696,17 @@ const app = factoryWithLogs
       }
     }
 
-    const updatedRequete = await updateRequeteSituation(id, situationId, situationData, topEntiteId, userId);
+    const { requete: updatedRequete, newAssignedEntiteIds } = await updateRequeteSituation(
+      id,
+      situationId,
+      situationData,
+      topEntiteId,
+      userId,
+    );
+
+    if (newAssignedEntiteIds.length > 0) {
+      await sendEntiteAssignedNotification(id, newAssignedEntiteIds);
+    }
 
     sseEventManager.emitRequeteUpdated({
       requeteId: id,

@@ -808,7 +808,7 @@ const updateSituationEntites = async (
   situationId: string,
   traitementDesFaits: SituationInput['traitementDesFaits'],
   topEntiteId: string,
-) => {
+): Promise<string[]> => {
   const situation = await tx.situation.findUnique({
     where: { id: situationId },
     select: { requeteId: true },
@@ -919,6 +919,13 @@ const updateSituationEntites = async (
     }),
   );
 
+  const existingRequeteEntites = await tx.requeteEntite.findMany({
+    where: { requeteId },
+    select: { entiteId: true },
+  });
+  const existingRootIds = new Set(existingRequeteEntites.map((re) => re.entiteId));
+  const newToRequeteRootIds = Array.from(entiteMereIdsToAdd).filter((id) => !existingRootIds.has(id));
+
   // Add parent entities for all added entities
   await Promise.all(
     Array.from(entiteMereIdsToAdd).map(async (rootId) => {
@@ -942,6 +949,8 @@ const updateSituationEntites = async (
       await createDefaultRequeteEtapes(requeteId, rootId, new Date(), tx, null);
     }),
   );
+
+  return newToRequeteRootIds;
 };
 
 const updateExistingSituation = async (
@@ -950,7 +959,7 @@ const updateExistingSituation = async (
   situationData: SituationInput,
   topEntiteId: string,
   changedById?: string,
-) => {
+): Promise<string[]> => {
   const before = changedById ? await captureSituationState(tx, existingSituation.id) : null;
 
   await tx.situation.update({
@@ -972,7 +981,12 @@ const updateExistingSituation = async (
     }
   }
 
-  await updateSituationEntites(tx, existingSituation.id, situationData.traitementDesFaits, topEntiteId);
+  const newAssignedEntiteIds = await updateSituationEntites(
+    tx,
+    existingSituation.id,
+    situationData.traitementDesFaits,
+    topEntiteId,
+  );
 
   if (changedById) {
     const after = await captureSituationState(tx, existingSituation.id);
@@ -985,6 +999,8 @@ const updateExistingSituation = async (
       changedById,
     });
   }
+
+  return newAssignedEntiteIds;
 };
 
 const createNewSituation = async (
@@ -993,7 +1009,7 @@ const createNewSituation = async (
   situationData: SituationInput,
   topEntiteId: string,
   changedById?: string,
-): Promise<{ id: string }> => {
+): Promise<{ id: string; newAssignedEntiteIds: string[] }> => {
   const situationCreateData = mapSituationToPrismaCreate(situationData);
   const createdSituation = await tx.situation.create({
     data: {
@@ -1009,7 +1025,12 @@ const createNewSituation = async (
     }
   }
 
-  await updateSituationEntites(tx, createdSituation.id, situationData.traitementDesFaits, topEntiteId);
+  const newAssignedEntiteIds = await updateSituationEntites(
+    tx,
+    createdSituation.id,
+    situationData.traitementDesFaits,
+    topEntiteId,
+  );
 
   if (changedById) {
     const after = await captureSituationState(tx, createdSituation.id);
@@ -1023,7 +1044,7 @@ const createNewSituation = async (
     });
   }
 
-  return { id: createdSituation.id };
+  return { id: createdSituation.id, newAssignedEntiteIds };
 };
 
 export const createRequeteSituation = async (
@@ -1031,7 +1052,10 @@ export const createRequeteSituation = async (
   situationData: SituationInput,
   entiteId: string,
   changedById?: string,
-) => {
+): Promise<{
+  requete: Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+  newAssignedEntiteIds: string[];
+}> => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
   });
@@ -1041,12 +1065,14 @@ export const createRequeteSituation = async (
   }
 
   let createdSituationId: string | null = null;
+  let newAssignedEntiteIds: string[] = [];
+  let updatedRequete: Awaited<ReturnType<typeof prisma.requete.findUnique>> = null;
 
-  const _result = await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     const newSituation = await createNewSituation(tx, requeteId, situationData, entiteId, changedById);
     createdSituationId = newSituation.id;
-
-    return tx.requete.findUnique({
+    newAssignedEntiteIds = newSituation.newAssignedEntiteIds;
+    updatedRequete = await tx.requete.findUnique({
       where: { id: requeteId },
       include: { situations: { include: SITUATION_INCLUDE_FULL } },
     });
@@ -1056,10 +1082,11 @@ export const createRequeteSituation = async (
     await setFaitFiles(createdSituationId, situationData.fait.fileIds, entiteId, changedById);
   }
 
-  return prisma.requete.findUnique({
-    where: { id: requeteId },
-    include: { situations: { include: SITUATION_INCLUDE_FULL } },
-  });
+  if (!updatedRequete) {
+    throw new Error('Requete not found after create situation');
+  }
+
+  return { requete: updatedRequete, newAssignedEntiteIds };
 };
 
 export const updateRequeteSituation = async (
@@ -1068,7 +1095,7 @@ export const updateRequeteSituation = async (
   situationData: SituationInput,
   entiteId: string,
   changedById?: string,
-) => {
+): Promise<{ requete: Awaited<ReturnType<typeof prisma.requete.findUnique>>; newAssignedEntiteIds: string[] }> => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
     include: { situations: { include: SITUATION_INCLUDE_BASE } },
@@ -1078,22 +1105,30 @@ export const updateRequeteSituation = async (
     throw new Error('Requete not found');
   }
 
+  let newAssignedEntiteIds: string[] = [];
+  let updatedRequete: Awaited<ReturnType<typeof prisma.requete.findUnique>> = null;
+
   await prisma.$transaction(async (tx) => {
     const existingSituation = requete.situations.find((s) => s.id === situationId);
     if (!existingSituation) {
       throw new Error('Situation not found');
     }
-    await updateExistingSituation(tx, existingSituation, situationData, entiteId, changedById);
+    newAssignedEntiteIds = await updateExistingSituation(tx, existingSituation, situationData, entiteId, changedById);
+    updatedRequete = await tx.requete.findUnique({
+      where: { id: requeteId },
+      include: { situations: { include: SITUATION_INCLUDE_FULL } },
+    });
   });
 
   if (situationData.fait?.fileIds?.length) {
     await setFaitFiles(situationId, situationData.fait.fileIds, entiteId, changedById);
   }
 
-  return prisma.requete.findUnique({
-    where: { id: requeteId },
-    include: { situations: { include: SITUATION_INCLUDE_FULL } },
-  });
+  if (!updatedRequete) {
+    throw new Error('Requete not found after update');
+  }
+
+  return { requete: updatedRequete, newAssignedEntiteIds };
 };
 
 export const closeRequeteForEntite = async (

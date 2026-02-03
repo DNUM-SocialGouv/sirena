@@ -1,6 +1,7 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
 import { type Prisma, PrismaClient } from '../../../libs/prisma.js';
+import { sendEntiteAssignedNotification } from '../../entites/entite.notification.service.js';
 import { createDefaultRequeteEtapes } from '../../requeteEtapes/requetesEtapes.service.js';
 import { buildSituationContextFromDemat } from './buildSituationContext.js';
 import { runDecisionTree } from './decisionTree.js';
@@ -179,6 +180,13 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
   }
 
   // 4) Upsert of RequeteEntite + SituationEntite + create default requete etapes for each entite
+  // Existing entities on the requete before this run → only newly assigned entities get a notification email
+  const existingRequeteEntites = await prisma.requeteEntite.findMany({
+    where: { requeteId },
+    select: { entiteId: true },
+  });
+  const existingEntiteIds = new Set(existingRequeteEntites.map((re) => re.entiteId));
+
   // TODO:  If no entity was assigned, fallback to ARS Normandie for now
   let isFallback = false;
   try {
@@ -244,6 +252,12 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
     });
 
     logger.info({ requeteId, entiteIds: Array.from(entiteIdsToLinkToRequete) }, 'Affectation OK');
+
+    // Notify only entities newly assigned to this requete (first assignment or new assignment)
+    const newEntiteIds = Array.from(entiteIdsToLinkToRequete).filter((id) => !existingEntiteIds.has(id));
+    if (newEntiteIds.length > 0) {
+      await sendEntiteAssignedNotification(requeteId, newEntiteIds);
+    }
   } finally {
     await prisma.$disconnect();
   }
