@@ -1,6 +1,7 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import {
+  MALTRAITANCE_PARENT_VALUE,
   MIS_EN_CAUSE_TYPE,
   type MisEnCauseType,
   MOTIFS_HIERARCHICAL_DATA,
@@ -9,6 +10,7 @@ import {
 import { valueToLabel } from '@sirena/common/utils';
 import type { ReactNode } from 'react';
 import type { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
+import { situationHasMaltraitanceTag } from '@/utils/maltraitanceHelpers';
 import styles from './requetesEntites.cells.module.css';
 
 type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number];
@@ -23,7 +25,6 @@ type LabeledItem = { label: string; title: string };
 type ServiceInfo = { id: string; name: string; nomComplet: string; parentName?: string; parentNomComplet?: string };
 
 const UNKNOWN_VALUE = 'Non renseigné';
-const MALTRAITANCE_PARENT_VALUE = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE';
 const NEGATIVE_MALTRAITANCE_ANSWERS = ['NON', 'NE_SAIS_PAS'];
 
 const getDisplayName = (e: EntiteInfo): string => e.label || e.nomComplet;
@@ -134,17 +135,16 @@ export function renderMotifsCell(row: RequeteEntiteRow): ReactNode {
     const extracted = faits.map(extractMotifsFromFait);
     const qualifies = flatMap(extracted, (e) => e.qualifies);
     const declaratifs = flatMap(extracted, (e) => e.declaratifs);
-    const hasMaltraitance = extracted.some((e) => e.hasMaltraitance);
+
+    if (situationHasMaltraitanceTag(situation)) {
+      showMaltraitanceBadge = true;
+    }
 
     if (qualifies.length > 0) {
       const processed = processQualifiedMotifs(qualifies);
       allLabels.push(...processed.labels);
-      if (processed.showMaltraitance) showMaltraitanceBadge = true;
     } else if (dematSocialId != null && declaratifs.length > 0) {
       allLabels.push(...processDeclarativeMotifs(declaratifs));
-      if (hasMaltraitance) showMaltraitanceBadge = true;
-    } else if (hasMaltraitance) {
-      showMaltraitanceBadge = true;
     }
   }
 
