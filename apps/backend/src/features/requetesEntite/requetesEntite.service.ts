@@ -17,7 +17,7 @@ import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { buildEntitesTraitement, getEntiteAscendanteId } from '../entites/entites.service.js';
+import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
 import { setFaitFiles } from '../uploadedFiles/uploadedFiles.service.js';
@@ -120,13 +120,31 @@ export const enrichSituationWithTraitementDesFaits = async (situation: Situation
 
 // TODO handle entiteIds
 export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
-  const { offset = 0, limit, sort = 'requete.createdAt', order = 'desc', search } = query;
+  const { offset = 0, limit, sort = 'requete.createdAt', order = 'desc', search, entiteId } = query;
 
   const searchConditions: Prisma.RequeteEntiteWhereInput = search ? createSearchConditionsForRequeteEntite(search) : {};
 
-  const where = {
+  const andFilters: Prisma.RequeteEntiteWhereInput[] = [];
+  if (Array.isArray(entiteIds) && entiteIds.length > 0) {
+    andFilters.push({ entiteId: { in: entiteIds } });
+  }
+  if (entiteId) {
+    andFilters.push({
+      requete: {
+        situations: {
+          some: {
+            situationEntites: {
+              some: { entiteId },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  const where: Prisma.RequeteEntiteWhereInput = {
     ...searchConditions,
-    ...(Array.isArray(entiteIds) && entiteIds.length > 0 ? { entiteId: { in: entiteIds } } : {}),
+    ...(andFilters.length > 0 ? { AND: andFilters } : {}),
   };
 
   const [data, total] = await Promise.all([
@@ -830,10 +848,10 @@ const updateSituationEntites = async (
 
   // Determine which existing entities belong to user's hierarchy vs other entities
   const existingEntitesWithRoots = await Promise.all(
-    Array.from(existingEntiteIds).map(async (entiteId) => ({
-      entiteId,
-      rootId: await getEntiteAscendanteId(entiteId),
-    })),
+    Array.from(existingEntiteIds).map(async (entiteId) => {
+      const { entiteId: rootId } = await getEntiteAscendanteInfo(entiteId);
+      return { entiteId, rootId };
+    }),
   );
 
   const existingUserEntiteIds = new Set(
@@ -849,7 +867,7 @@ const updateSituationEntites = async (
 
   if (traitementDesFaits?.entites) {
     for (const entite of traitementDesFaits.entites) {
-      const rootId = await getEntiteAscendanteId(entite.entiteId);
+      const { entiteId: rootId } = await getEntiteAscendanteInfo(entite.entiteId);
       if (rootId === topEntiteId) {
         // Entity belongs to user's hierarchy
         newUserEntiteIds.add(entite.entiteId);
@@ -914,7 +932,7 @@ const updateSituationEntites = async (
 
   await Promise.all(
     entitesToAdd.map(async (entiteToAdd) => {
-      const rootId = await getEntiteAscendanteId(entiteToAdd); // Get top entity (ARS/CD/DD)
+      const { entiteId: rootId } = await getEntiteAscendanteInfo(entiteToAdd); // Get top entity (ARS/CD/DD)
       if (rootId) entiteMereIdsToAdd.add(rootId);
     }),
   );

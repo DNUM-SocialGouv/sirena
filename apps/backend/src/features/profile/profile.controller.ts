@@ -13,6 +13,8 @@ const app = factoryWithLogs
     const logger = c.get('logger');
     const userId = c.get('userId');
     const topEntiteId = c.get('topEntiteId');
+    const entiteIds = c.get('entiteIds') || [];
+    const entiteIdLevel = c.get('entiteIdLevel');
 
     logger.info({ userId }, 'User profile requested');
     const user = await getUserById(userId, null, null);
@@ -23,7 +25,7 @@ const app = factoryWithLogs
     }
 
     logger.info({ userId }, 'User profile retrieved successfully');
-    return c.json({ data: { ...user, topEntiteId } }, 200);
+    return c.json({ data: { ...user, topEntiteId, entiteIds, entiteIdLevel } }, 200);
   });
 
 export default app;

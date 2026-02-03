@@ -6,4 +6,5 @@ export const QueryParamsSchema = z.object({
   offset: z.coerce.number().optional(),
   sort: z.string().optional(),
   order: z.enum(['asc', 'desc']).optional(),
+  entiteId: z.string().optional(),
 });

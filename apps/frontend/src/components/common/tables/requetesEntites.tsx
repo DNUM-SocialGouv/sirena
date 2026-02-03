@@ -1,4 +1,5 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
+import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
@@ -83,7 +84,18 @@ export function RequetesEntite() {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { data: profile } = useProfile();
   const userTopEntiteId = profile?.topEntiteId;
+  const userEntiteIdLevel = profile?.entiteIdLevel;
   const userEntiteId = profile?.entiteId;
+  const topProfileEntiteId = (() => {
+    if (profile?.topEntiteId === profile?.entiteId) {
+      return undefined;
+    }
+    return profile?.entiteId ?? undefined;
+  })();
+  const isAssignedToServiceOnly = useMemo(() => {
+    if (!topProfileEntiteId) return false;
+    return queries?.entiteId === topProfileEntiteId;
+  }, [queries.entiteId, topProfileEntiteId]);
 
   const handleUpdate = useCallback(() => {
     // Debounce multiple rapid SSE events to prevent excessive refreshes
@@ -117,6 +129,7 @@ export function RequetesEntite() {
     ...(queries.sort && { sort: queries.sort }),
     ...(queries.order && { order: queries.order as 'asc' | 'desc' }),
     ...(queries.search && { search: queries.search }),
+    ...(queries.entiteId ? { entiteId: queries.entiteId } : {}),
     offset,
     limit,
   });
@@ -324,6 +337,35 @@ export function RequetesEntite() {
         )}
       </div>
       <div className="requetesEntitesTable">
+        {(userEntiteIdLevel === 2 || userEntiteIdLevel === 3) && (
+          <div className="requetesEntitesTable__quick-filters fr-mb-2w">
+            <Checkbox
+              legend="Filtres rapides"
+              options={[
+                {
+                  label: userEntiteIdLevel === 2 ? 'Affectées à ma direction' : 'Affectées à mon service',
+                  nativeInputProps: {
+                    name: 'quick-filters',
+                    value: 'assigned-to-service',
+                    checked: isAssignedToServiceOnly,
+                    onChange: (e) => {
+                      const checked = e.target.checked;
+                      navigate({
+                        search: (prev) => ({
+                          ...prev,
+                          entiteId: checked ? topProfileEntiteId : undefined,
+                          offset: undefined,
+                        }),
+                      });
+                    },
+                  },
+                },
+              ]}
+              orientation="horizontal"
+              state="default"
+            />
+          </div>
+        )}
         <DataTable
           title={title}
           rowId="id"

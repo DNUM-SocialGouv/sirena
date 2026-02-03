@@ -46,7 +46,7 @@ vi.mock('../../helpers/sse.js', () => ({
 
 vi.mock('../entites/entites.service.js', () => ({
   buildEntitesTraitement: vi.fn(),
-  getEntiteAscendanteId: vi.fn(),
+  getEntiteAscendanteInfo: vi.fn(),
 }));
 
 vi.mock('../../libs/minio.js', () => ({
@@ -58,7 +58,7 @@ vi.mock('../../libs/minio.js', () => ({
 
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { createChangeLog } from '../changelog/changelog.service.js';
-import { buildEntitesTraitement, getEntiteAscendanteId } from '../entites/entites.service.js';
+import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -1307,10 +1307,10 @@ describe('requetesEntite.service', () => {
         },
       });
 
-      vi.mocked(getEntiteAscendanteId).mockImplementation(async (entiteId: string) => {
-        if (entiteId === 'ent1') return userTopEntiteId;
-        if (entiteId === 'ent2') return otherTopEntiteId;
-        return null;
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1') return { entiteId: userTopEntiteId, level: 1 };
+        if (entiteId === 'ent2') return { entiteId: otherTopEntiteId, level: 1 };
+        return { entiteId: null, level: 1 };
       });
 
       const mockRequeteWithSituation = {
@@ -1372,7 +1372,7 @@ describe('requetesEntite.service', () => {
         },
       });
 
-      vi.mocked(getEntiteAscendanteId).mockResolvedValue(userTopEntiteId);
+      vi.mocked(getEntiteAscendanteInfo).mockResolvedValue({ entiteId: userTopEntiteId, level: 1 });
 
       const mockRequeteForUpdate = {
         id: requeteId,
@@ -1406,7 +1406,7 @@ describe('requetesEntite.service', () => {
           entiteId: 'ent1',
         },
       });
-      expect(getEntiteAscendanteId).toHaveBeenCalledWith('ent1');
+      expect(getEntiteAscendanteInfo).toHaveBeenCalledWith('ent1');
       expect(mockTx.requeteEntite.upsert).toHaveBeenCalledWith({
         where: {
           requeteId_entiteId: { requeteId, entiteId: 'root1' },
@@ -1450,7 +1450,7 @@ describe('requetesEntite.service', () => {
       });
 
       // All entities belong to user's hierarchy
-      vi.mocked(getEntiteAscendanteId).mockResolvedValue(userTopEntiteId);
+      vi.mocked(getEntiteAscendanteInfo).mockResolvedValue({ entiteId: userTopEntiteId, level: 1 });
 
       const mockRequeteForUpdate = {
         id: requeteId,
@@ -1533,7 +1533,7 @@ describe('requetesEntite.service', () => {
         },
       });
 
-      vi.mocked(getEntiteAscendanteId).mockResolvedValue(userTopEntiteId);
+      vi.mocked(getEntiteAscendanteInfo).mockResolvedValue({ entiteId: userTopEntiteId, level: 1 });
 
       const mockRequeteForUpdate = {
         id: requeteId,
@@ -1651,11 +1651,15 @@ describe('requetesEntite.service', () => {
         },
       });
 
-      // Mock getEntiteAscendanteId to return different roots for different entities
-      vi.mocked(getEntiteAscendanteId).mockImplementation(async (entiteId: string) => {
-        if (entiteId === 'ent1' || entiteId === 'ent3') return userTopEntiteId;
-        if (entiteId === 'ent2') return otherTopEntiteId;
-        return null;
+      // Mock getEntiteAscendanteInfo to return different roots for different entities
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1' || entiteId === 'ent3') {
+          return { entiteId: userTopEntiteId, level: 1 };
+        }
+        if (entiteId === 'ent2') {
+          return { entiteId: otherTopEntiteId, level: 1 };
+        }
+        return { entiteId: null, level: 1 };
       });
 
       const mockRequeteForUpdate = {
@@ -1732,11 +1736,11 @@ describe('requetesEntite.service', () => {
         },
       });
 
-      // Mock getEntiteAscendanteId
-      vi.mocked(getEntiteAscendanteId).mockImplementation(async (entiteId: string) => {
-        if (entiteId === 'ent1') return userTopEntiteId;
-        if (entiteId === 'ent-from-other') return otherTopEntiteId;
-        return null;
+      // Mock getEntiteAscendanteInfo
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1') return { entiteId: userTopEntiteId, level: 1 };
+        if (entiteId === 'ent-from-other') return { entiteId: otherTopEntiteId, level: 1 };
+        return { entiteId: null, level: 1 };
       });
 
       const mockRequeteForUpdate = {
@@ -1816,7 +1820,7 @@ describe('requetesEntite.service', () => {
         },
       });
 
-      vi.mocked(getEntiteAscendanteId).mockResolvedValue(userTopEntiteId);
+      vi.mocked(getEntiteAscendanteInfo).mockResolvedValue({ entiteId: userTopEntiteId, level: 1 });
 
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
         id: requeteId,
@@ -1878,10 +1882,10 @@ describe('requetesEntite.service', () => {
         },
       });
 
-      vi.mocked(getEntiteAscendanteId).mockImplementation(async (entiteId: string) => {
-        if (entiteId === 'ent1') return userTopEntiteId;
-        if (entiteId === 'ent2') return otherTopEntiteId;
-        return null;
+      vi.mocked(getEntiteAscendanteInfo).mockImplementation(async (entiteId: string) => {
+        if (entiteId === 'ent1') return { entiteId: userTopEntiteId, level: 1 };
+        if (entiteId === 'ent2') return { entiteId: otherTopEntiteId, level: 1 };
+        return { entiteId: null, level: 1 };
       });
 
       const mockRequeteForUpdate = {
