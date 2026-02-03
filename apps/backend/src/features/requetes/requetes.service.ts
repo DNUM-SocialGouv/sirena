@@ -201,6 +201,7 @@ export const createRequeteFromDematSocial = async ({
           categCode: s.lieuDeSurvenue.categCode ?? '',
           categLib: s.lieuDeSurvenue.categLib ?? '',
           lieuType: s.lieuDeSurvenue.lieuTypeId ? { connect: { id: s.lieuDeSurvenue.lieuTypeId } } : undefined,
+          lieuPrecision: s.lieuDeSurvenue.lieuPrecision ?? '',
           transportType: s.lieuDeSurvenue.transportTypeId
             ? { connect: { id: s.lieuDeSurvenue.transportTypeId } }
             : undefined,

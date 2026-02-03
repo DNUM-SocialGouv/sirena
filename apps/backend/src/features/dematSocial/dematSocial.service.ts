@@ -217,7 +217,6 @@ export const importSingleDossier = async (
           mimeType: data.dossier.pdf.contentType || 'application/pdf',
         }
       : null;
-
     step = 'createRequeteFromDematSocial';
     const createdRequete = await retryWithBackoff(() => createRequeteFromDematSocial({ ...requete, pdf }), {
       shouldRetry: (err) => isPrismaUniqueConstraintError(err, 'id'),
