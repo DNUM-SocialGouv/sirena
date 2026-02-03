@@ -1,4 +1,5 @@
 import { MALTRAITANCE_PARENT_VALUE } from '@sirena/common/constants';
+import type { SituationData as SituationDataSchema } from '@sirena/common/schemas';
 
 const NEGATIVE_MALTRAITANCE_ANSWERS = ['NON', 'NE_SAIS_PAS'];
 
@@ -58,4 +59,32 @@ export function situationHasMaltraitanceTag(situation: SituationWithFaits | null
   }
 
   return hasDeclarantMaltraitance;
+}
+
+/**
+ * The form has at least one qualified motif
+ */
+export function hasQualifiedMotifsFromForm(formData: SituationDataSchema): boolean {
+  return (formData.fait?.motifs?.length ?? 0) > 0;
+}
+
+/**
+ * At least one qualified motif in the form is "Maltraitance professionnels ou entourage"
+ */
+export function hasMaltraitanceQualifiedFromForm(formData: SituationDataSchema): boolean {
+  return !!formData.fait?.motifs?.some((motifId) => motifId.startsWith(`${MALTRAITANCE_PARENT_VALUE}/`));
+}
+
+/**
+ * Should show the maltraitance warning modal: declarant had maltraitance, agent is saving motifs outside maltraitance
+ */
+export function shouldShowMaltraitanceWarning(
+  situation: SituationWithFaits | null | undefined,
+  formData: SituationDataSchema,
+): boolean {
+  return (
+    hasMaltraitanceDeclarant(situation) &&
+    hasQualifiedMotifsFromForm(formData) &&
+    !hasMaltraitanceQualifiedFromForm(formData)
+  );
 }
