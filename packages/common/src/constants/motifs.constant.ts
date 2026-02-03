@@ -1,3 +1,6 @@
+// Value used to identify the maltraitance motifs
+export const MALTRAITANCE_PARENT_VALUE = 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE';
+
 export const MOTIFS_HIERARCHICAL_DATA = [
   {
     label: "Activités d'esthétique non réglementées",
@@ -160,7 +163,7 @@ export const MOTIFS_HIERARCHICAL_DATA = [
   },
   {
     label: 'Maltraitance professionnels ou entourage',
-    value: 'MALTRAITANCE_PROFESSIONNELS_ENTOURAGE',
+    value: MALTRAITANCE_PARENT_VALUE,
     children: [
       {
         label: 'Discriminations',

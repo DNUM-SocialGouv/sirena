@@ -1,4 +1,5 @@
 import { fr } from '@codegouvfr/react-dsfr';
+import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import {
   demarcheEngageeLabels,
   MALTRAITANCEQUALIFIED_TYPE,
@@ -12,6 +13,7 @@ import { FileList } from '@/components/common/FileList';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { formatFileFromServer } from '@/utils/fileHelpers';
+import { situationHasMaltraitanceTag } from '@/utils/maltraitanceHelpers';
 import { hasSituationContent } from '@/utils/situationHelpers';
 import { SectionTitle } from './helpers';
 
@@ -473,6 +475,15 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
       title="Lieu, mis en cause et faits"
       onEdit={() => onEdit(situationId)}
       canEdit={canEdit}
+      badges={
+        situationHasMaltraitanceTag(situation)
+          ? [
+              <Badge key="maltraitance" noIcon className={fr.cx('fr-badge--purple-glycine')}>
+                Maltraitance
+              </Badge>,
+            ]
+          : undefined
+      }
       renderSummary={renderSummary}
       renderDetails={isFulfilled ? renderDetails : undefined}
       emptyLabel="Aucune information"
