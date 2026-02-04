@@ -766,11 +766,47 @@ const updateFaitRelations = async (
 ) => {
   if (!faitData) return;
 
-  await Promise.all([
-    tx.faitMotif.deleteMany({ where: { situationId } }),
-    tx.faitConsequence.deleteMany({ where: { situationId } }),
-    tx.faitMaltraitanceType.deleteMany({ where: { situationId } }),
-  ]);
+  // Handle motifs (qualifiés)
+  if (faitData.motifs !== undefined) {
+    await tx.faitMotif.deleteMany({ where: { situationId } });
+
+    if (faitData.motifs?.length) {
+      for (const motifId of faitData.motifs) {
+        const motif = await tx.motifEnum.findUnique({ where: { id: motifId } });
+        if (!motif) {
+          throw new Error(`Motif "${motifId}" not found in database. Please seed the database first.`);
+        }
+
+        await tx.faitMotif.create({
+          data: { situationId, motifId: motif.id },
+        });
+      }
+    }
+  }
+
+  // Handle consequences
+  if (faitData.consequences !== undefined) {
+    await tx.faitConsequence.deleteMany({ where: { situationId } });
+    if (faitData.consequences.length > 0) {
+      await tx.faitConsequence.createMany({
+        data: faitData.consequences.map((consequenceId) => ({ situationId, consequenceId })),
+      });
+    }
+  }
+
+  // Handle maltraitanceTypes
+  if (faitData.maltraitanceTypes !== undefined) {
+    await tx.faitMaltraitanceType.deleteMany({ where: { situationId } });
+    if (faitData.maltraitanceTypes.length > 0) {
+      await tx.faitMaltraitanceType.createMany({
+        data: faitData.maltraitanceTypes.map((maltraitanceTypeId) => ({
+          situationId,
+          maltraitanceTypeId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+  }
 
   await tx.fait.update({
     where: { situationId },
@@ -781,35 +817,6 @@ const updateFaitRelations = async (
       autresPrecisions: cleanNullOrEmpty(faitData.autresPrecisions),
     },
   });
-
-  if (faitData.motifs?.length) {
-    for (const motifId of faitData.motifs) {
-      const motif = await tx.motifEnum.findUnique({
-        where: { id: motifId },
-      });
-
-      if (!motif) {
-        throw new Error(`Motif "${motifId}" not found in database. Please seed the database first.`);
-      }
-
-      await tx.faitMotif.create({
-        data: { situationId, motifId: motif.id },
-      });
-    }
-  }
-
-  const relationCreates = [];
-  if (faitData.consequences?.length) {
-    relationCreates.push(
-      tx.faitConsequence.createMany({
-        data: faitData.consequences.map((consequenceId) => ({ situationId, consequenceId })),
-      }),
-    );
-  }
-
-  if (relationCreates.length > 0) {
-    await Promise.all(relationCreates);
-  }
 };
 
 const captureSituationState = async (tx: Prisma.TransactionClient, situationId: string) => {
