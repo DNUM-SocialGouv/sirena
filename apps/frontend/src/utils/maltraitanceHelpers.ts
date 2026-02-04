@@ -75,15 +75,17 @@ export function hasMaltraitanceQualifiedFromForm(formData: SituationDataSchema):
   return !!formData.fait?.motifs?.some((motifId) => motifId.startsWith(`${MALTRAITANCE_PARENT_VALUE}/`));
 }
 
-/**
- * Should show the maltraitance warning modal: declarant had maltraitance, agent is saving motifs outside maltraitance
- */
+function hasMaltraitanceDeclarantFromFormatted(initialData: SituationDataSchema | null | undefined): boolean {
+  const maltraitanceTypes = initialData?.fait?.maltraitanceTypes || [];
+  return maltraitanceTypes.some((id) => id && !NEGATIVE_MALTRAITANCE_ANSWERS.includes(id));
+}
+
 export function shouldShowMaltraitanceWarning(
-  situation: SituationWithFaits | null | undefined,
+  initialData: SituationDataSchema | null | undefined,
   formData: SituationDataSchema,
 ): boolean {
   return (
-    hasMaltraitanceDeclarant(situation) &&
+    hasMaltraitanceDeclarantFromFormatted(initialData) &&
     hasQualifiedMotifsFromForm(formData) &&
     !hasMaltraitanceQualifiedFromForm(formData)
   );

@@ -9,10 +9,6 @@ import {
   type CloseRequeteModalRef,
   type OtherEntityAffected,
 } from '@/components/requestId/processing/CloseRequeteModal';
-import {
-  MaltraitanceWarningModal,
-  type MaltraitanceWarningModalRef,
-} from '@/components/requestId/processing/MaltraitanceWarningModal';
 import { SituationForm } from '@/components/situation/SituationForm';
 import { useSituationSave } from '@/hooks/mutations/useSituationSave';
 import { useEntites } from '@/hooks/queries/entites.hook';
@@ -20,7 +16,6 @@ import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { formatSituationFromServer } from '@/lib/situation';
-import { shouldShowMaltraitanceWarning } from '@/utils/maltraitanceHelpers';
 
 export const Route = createFileRoute('/_auth/_user/request/$requestId/situation/$situationId')({
   beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER]),
@@ -59,10 +54,8 @@ function RouteComponent() {
   const { data: profile } = useProfile();
   const { data: entitesData } = useEntites(undefined);
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
-  const maltraitanceWarningModalRef = useRef<MaltraitanceWarningModalRef>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const [pendingSaveData, setPendingSaveData] = useState<PendingSaveData | null>(null);
-  const [pendingMaltraitanceSaveData, setPendingMaltraitanceSaveData] = useState<PendingSaveData | null>(null);
   const [computedOtherEntities, setComputedOtherEntities] = useState<OtherEntityAffected[]>([]);
   const [formResetKey] = useState(0);
 
@@ -163,13 +156,6 @@ function RouteComponent() {
     await performSave(data, shouldCreateRequest, faitFiles, initialFileIds, initialFiles);
   }, [pendingSaveData, performSave]);
 
-  const executePendingMaltraitanceSave = useCallback(async () => {
-    if (!pendingMaltraitanceSaveData) return;
-    const { data, shouldCreateRequest, faitFiles, initialFileIds, initialFiles } = pendingMaltraitanceSaveData;
-    setPendingMaltraitanceSaveData(null);
-    await performSave(data, shouldCreateRequest, faitFiles, initialFileIds, initialFiles);
-  }, [pendingMaltraitanceSaveData, performSave]);
-
   const handleCloseModalCancel = useCallback(async () => {
     await executePendingSave();
   }, [executePendingSave]);
@@ -186,22 +172,6 @@ function RouteComponent() {
   const handleModalDismiss = useCallback(() => {
     setPendingSaveData(null);
   }, []);
-
-  const handleMaltraitanceModalCancel = useCallback(() => {
-    setPendingMaltraitanceSaveData(null);
-    const motifsWrapper = document.querySelector('[data-focus-target="situation-fait-motifs-qualifies"]');
-    const focusable = motifsWrapper?.querySelector<HTMLElement>('button, [tabindex="0"]');
-    if (focusable) {
-      focusable.focus();
-    } else {
-      saveButtonRef.current?.focus();
-    }
-  }, []);
-
-  const handleMaltraitanceModalConfirm = useCallback(async () => {
-    await executePendingMaltraitanceSave();
-    navigate({ to: '/request/$requestId', params: { requestId } });
-  }, [executePendingMaltraitanceSave, navigate, requestId]);
 
   return (
     <QueryStateHandler query={requestQuery}>
@@ -228,15 +198,6 @@ function RouteComponent() {
             setComputedOtherEntities(otherEntities);
             setPendingSaveData({ data: formData, shouldCreateRequest, faitFiles, initialFileIds, initialFiles });
             closeRequeteModalRef.current?.openModal();
-          } else if (shouldShowMaltraitanceWarning(situation, formData)) {
-            setPendingMaltraitanceSaveData({
-              data: formData,
-              shouldCreateRequest,
-              faitFiles,
-              initialFileIds,
-              initialFiles,
-            });
-            maltraitanceWarningModalRef.current?.openModal();
           } else {
             await performSave(formData, shouldCreateRequest, faitFiles, initialFileIds, initialFiles);
           }
@@ -274,12 +235,6 @@ function RouteComponent() {
               onCancel={handleCloseModalCancel}
               onSuccess={handleCloseModalSuccess}
               onDismiss={handleModalDismiss}
-            />
-            <MaltraitanceWarningModal
-              ref={maltraitanceWarningModalRef}
-              triggerButtonRef={saveButtonRef}
-              onCancel={handleMaltraitanceModalCancel}
-              onConfirm={handleMaltraitanceModalConfirm}
             />
           </>
         );
