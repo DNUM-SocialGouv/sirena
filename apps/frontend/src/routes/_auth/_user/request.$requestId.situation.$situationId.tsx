@@ -1,7 +1,4 @@
-import {
-  type ReceptionType,
-  ROLES,
-} from '@sirena/common/constants';
+import { type ReceptionType, ROLES } from '@sirena/common/constants';
 import type { SituationData as SituationDataSchema } from '@sirena/common/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useRef, useState } from 'react';
