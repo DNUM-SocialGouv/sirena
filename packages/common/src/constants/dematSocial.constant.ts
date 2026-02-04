@@ -65,7 +65,7 @@ export const dsDeclarationTypeLabels: Record<DsDeclarationType, string> = {
 export const DS_DEMARCHE_ENGAGEE = {
   CONTACT_RESPONSABLES: 'CONTACT_RESPONSABLES',
   PLAINTE: 'PLAINTE',
-  AUTRE: 'AUTRE',
+  CONTACT_ORGANISME: 'CONTACT_ORGANISME',
   AUCUNE: 'AUCUNE',
 } as const;
 
@@ -74,7 +74,7 @@ export type DsDemarcheEngagee = keyof typeof DS_DEMARCHE_ENGAGEE;
 export const dsDemarcheEngageeLabels: Record<DsDemarcheEngagee, string> = {
   CONTACT_RESPONSABLES: "L'établissement ou le responsables des faits a été contacté",
   PLAINTE: 'Une plainte a été déposée auprès des autorités judiciaires',
-  AUTRE: "D'autres démarches ont été engagées",
+  CONTACT_ORGANISME: "D'autres démarches ont été engagées",
   AUCUNE: "Aucune démarche n'est en cours",
 };
 
@@ -164,6 +164,7 @@ export const DS_MOTIF = {
   PROBLEME_LOCAUX: 'PROBLEME_LOCAUX',
   NON_RESPECT_DROITS: 'NON_RESPECT_DROITS',
   PROBLEME_ORGANISATION: 'PROBLEME_ORGANISATION',
+  PROBLEME_INFORMATION: 'PROBLEME_INFORMATION',
   PROBLEME_QUALITE_SOINS: 'PROBLEME_QUALITE_SOINS',
   AUTRE: 'AUTRE',
 } as const;
@@ -177,6 +178,7 @@ export const dsMotifLabels: Record<DsMotif, string> = {
   PROBLEME_FACTURATION: 'La facturation ou les honoraires',
   PROBLEME_LOCAUX: 'Les locaux ou la restauration',
   PROBLEME_ORGANISATION: "Un manque d'information sur l'organisation de l'établissement ou du service",
+  PROBLEME_INFORMATION: 'Un manque d’information sur les droits des usagers',
   AUTRE: 'Autre, par exemple : tatouage ou esthétique',
 };
 

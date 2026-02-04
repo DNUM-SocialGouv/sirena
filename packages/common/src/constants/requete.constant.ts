@@ -157,6 +157,7 @@ export const MOTIF = {
   PROBLEME_LOCAUX: 'PROBLEME_LOCAUX',
   NON_RESPECT_DROITS: 'NON_RESPECT_DROITS',
   PROBLEME_ORGANISATION: 'PROBLEME_ORGANISATION',
+  PROBLEME_INFORMATION: 'PROBLEME_INFORMATION',
   PROBLEME_QUALITE_SOINS: 'PROBLEME_QUALITE_SOINS',
   AUTRE: 'AUTRE',
 } as const;
@@ -169,6 +170,7 @@ export const motifLabels: Record<Motif, string> = {
   PROBLEME_LOCAUX: 'Problème lié aux locaux ou la restauration',
   NON_RESPECT_DROITS: 'Le non-respect des droits ou du secret médical',
   PROBLEME_ORGANISATION: "Un manque d'information sur l'organisation de l'établissement ou du service",
+  PROBLEME_INFORMATION: 'Un manque d’information sur les droits des usagers',
   PROBLEME_QUALITE_SOINS: 'Problème de qualité des soins médicaux ou paramédicaux',
   AUTRE: 'Autre (ex: tatouage, chirurgie et/ou soins esthétiques...)',
 };
@@ -179,6 +181,7 @@ export const motifShortLabels: Record<Motif, string> = {
   PROBLEME_LOCAUX: 'Problème lié aux locaux',
   NON_RESPECT_DROITS: 'Non-respect des droits ou du secret médical',
   PROBLEME_ORGANISATION: "Manque d'information sur l'organisation",
+  PROBLEME_INFORMATION: 'Manque d’information sur les droits des usagers',
   PROBLEME_QUALITE_SOINS: 'Problème de qualité des soins',
   AUTRE: 'Autre',
 };

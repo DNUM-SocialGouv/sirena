@@ -165,6 +165,15 @@ const createAddress = (champ: RootChampFragmentFragment | RepetitionChamp) => {
       numero: champ.address.streetNumber ?? '',
     };
   }
+  if (champ.stringValue) {
+    return {
+      label: champ.stringValue,
+      codePostal: '',
+      ville: '',
+      rue: champ.stringValue,
+      numero: '',
+    };
+  }
   return null;
 };
 
