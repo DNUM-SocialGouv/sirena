@@ -1,3 +1,4 @@
+import Alert from '@codegouvfr/react-dsfr/Alert';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import {
   CONSEQUENCE,
@@ -13,14 +14,16 @@ import {
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
 import { SelectWithChildren } from '@sirena/ui';
+import { shouldShowMaltraitanceWarning } from '@/utils/maltraitanceHelpers';
 
 type DescriptionFaitsProps = {
   formData: SituationData;
   setFormData: React.Dispatch<React.SetStateAction<SituationData>>;
   receptionType?: ReceptionType;
+  initialData?: SituationData;
 };
 
-export function DescriptionFaits({ formData, setFormData, receptionType }: DescriptionFaitsProps) {
+export function DescriptionFaits({ formData, setFormData, receptionType, initialData }: DescriptionFaitsProps) {
   const ignoredMotifs: string[] = [MALTRAITANCEQUALIFIED_TYPE.NON];
   const motifs = [
     ...(formData.fait?.maltraitanceTypes || []).flatMap((maltraitance) => {
@@ -39,6 +42,8 @@ export function DescriptionFaits({ formData, setFormData, receptionType }: Descr
       return [];
     }),
   ];
+
+  const showMaltraitanceWarning = shouldShowMaltraitanceWarning(initialData, formData);
 
   const handleFaitInputChange =
     (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -90,6 +95,15 @@ export function DescriptionFaits({ formData, setFormData, receptionType }: Descr
               }))
             }
           />
+          {showMaltraitanceWarning && (
+            <div className="fr-mt-2w">
+              <Alert
+                severity="warning"
+                description="La situation ne sera plus considérée comme un cas de maltraitance. Pour conserver une qualification en maltraitance, sélectionnez un motif dans « Maltraitance professionnels ou entourage »."
+                small={true}
+              />
+            </div>
+          )}
         </div>
 
         <div className="fr-col-12">

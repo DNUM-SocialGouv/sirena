@@ -115,7 +115,12 @@ export function SituationForm({
 
         <LieuSurvenu formData={formData} isSaving={isSaving} setFormData={setFormData} />
 
-        <DescriptionFaits formData={formData} setFormData={setFormData} receptionType={receptionType} />
+        <DescriptionFaits
+          formData={formData}
+          setFormData={setFormData}
+          receptionType={receptionType}
+          initialData={initialData}
+        />
 
         <DemarchesEngagees formData={formData} setFormData={setFormData} />
 
