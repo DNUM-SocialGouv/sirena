@@ -14,6 +14,11 @@ export function AppFooter() {
       websiteMapLinkProps={{
         href: '#',
       }}
+      homeLinkProps={{
+        href: '/',
+        title:
+          'Retour à l’accueil du site - Sirena - Ministère du Tavail, de la Santé, des Solidarités et des Familles',
+      }}
     />
   );
 }
