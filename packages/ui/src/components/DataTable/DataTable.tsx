@@ -172,7 +172,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
             <table id={tableId}>
               <caption>
                 <div className="fr-table__caption-with-loader">
-                  <span>{title}</span>
+                  <span aria-live="polite">{title}</span>
                   {isLoading && <Loader size="sm" />}
                 </div>
               </caption>
