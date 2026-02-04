@@ -1,4 +1,4 @@
-import { getEntiteAscendanteId } from '../features/entites/entites.service.js';
+import { getEntiteAscendanteInfo } from '../features/entites/entites.service.js';
 import { getUserEntities } from '../features/users/users.service.js';
 import factoryWithRole from '../helpers/factories/appWithRole.js';
 
@@ -7,10 +7,11 @@ const app = factoryWithRole.createMiddleware(async (c, next) => {
 
   const entities = await getUserEntities(userId, null);
   const [firstEntity] = entities ?? [];
-  const topEntiteId = firstEntity ? await getEntiteAscendanteId(firstEntity) : null;
+  const ascendant = firstEntity ? await getEntiteAscendanteInfo(firstEntity) : null;
 
   c.set('entiteIds', entities);
-  c.set('topEntiteId', topEntiteId);
+  c.set('topEntiteId', ascendant?.entiteId ?? null);
+  c.set('entiteIdLevel', ascendant?.level ?? null);
 
   return next();
 });

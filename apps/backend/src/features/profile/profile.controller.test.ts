@@ -29,6 +29,7 @@ vi.mock('../../middlewares/entites.middleware.js', () => {
   return {
     default: async (c: Context, next: Next) => {
       c.set('topEntiteId', 'topEntiteId1');
+      c.set('entiteIds', ['entite-1', 'entite-2']);
       return next();
     },
   };
@@ -63,7 +64,13 @@ describe('Profile endpoints: /profile', () => {
       const json = await res.json();
 
       expect(res.status).toBe(200);
-      expect(json).toEqual({ data: convertDatesToStrings({ ...fakeUser, topEntiteId: 'topEntiteId1' }) });
+      expect(json).toEqual({
+        data: convertDatesToStrings({
+          ...fakeUser,
+          topEntiteId: 'topEntiteId1',
+          entiteIds: ['entite-1', 'entite-2'],
+        }),
+      });
       expect(getUserById).toHaveBeenCalledWith('id1', null, null);
     });
 

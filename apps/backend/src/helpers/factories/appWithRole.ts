@@ -9,6 +9,7 @@ export type AppBindings = {
     roleId: string;
     entiteIds: string[] | null;
     topEntiteId: string | null;
+    entiteIdLevel: number | null;
   };
 };
 

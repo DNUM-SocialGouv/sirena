@@ -151,7 +151,7 @@ export const getEntitesByIds = async (ids: string[]) =>
         where: { id: { in: ids } },
       });
 
-export async function getEntiteAscendanteId(entiteId: string) {
+export async function getEntiteAscendanteInfo(entiteId: string) {
   const CYCLE_LIMIT = 6;
   let currentEntiteId = entiteId;
   let n = 0;
@@ -168,11 +168,11 @@ export async function getEntiteAscendanteId(entiteId: string) {
     });
 
     if (lastEntiteId === null) {
-      return null;
+      return { entiteId: null, level: n };
     }
 
     if (!lastEntiteId.entiteMereId) {
-      return currentEntiteId;
+      return { entiteId: currentEntiteId, level: n };
     }
 
     if (lastEntiteId.entiteMereId) {
@@ -189,7 +189,7 @@ export async function getEntiteAscendanteIds(entiteId: string | null) {
     return null;
   }
 
-  const ascendanteId = await getEntiteAscendanteId(entiteId);
+  const { entiteId: ascendanteId } = await getEntiteAscendanteInfo(entiteId);
 
   // entiteId does not exists
   if (ascendanteId === null) {

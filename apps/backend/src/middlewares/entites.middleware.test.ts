@@ -1,6 +1,6 @@
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
-import { getEntiteAscendanteId } from '../features/entites/entites.service.js';
+import { getEntiteAscendanteInfo } from '../features/entites/entites.service.js';
 import { getUserEntities } from '../features/users/users.service.js';
 import { errorHandler } from '../helpers/errors.js';
 import appWithAuth from '../helpers/factories/appWithAuth.js';
@@ -12,7 +12,7 @@ vi.mock('../features/users/users.service.js', () => ({
 }));
 
 vi.mock('../features/entites/entites.service.js', () => ({
-  getEntiteAscendanteId: vi.fn(),
+  getEntiteAscendanteInfo: vi.fn(),
 }));
 
 describe('entite.middleware.ts', () => {
@@ -48,7 +48,7 @@ describe('entite.middleware.ts', () => {
     const mockTopEntiteId = 'e1';
 
     vi.mocked(getUserEntities).mockResolvedValueOnce(['e1']);
-    vi.mocked(getEntiteAscendanteId).mockResolvedValueOnce('e1');
+    vi.mocked(getEntiteAscendanteInfo).mockResolvedValueOnce({ entiteId: 'e1', level: 1 });
 
     const route = appWithAuth
       .createApp()
