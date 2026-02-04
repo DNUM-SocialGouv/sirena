@@ -60,6 +60,7 @@ type LieuDeSurvenue = {
     numero: string;
   } | null;
   lieuTypeId: string | null;
+  lieuPrecision: string | null;
   transportTypeId: string | null;
   societeTransport: string;
   finess: string;

@@ -143,9 +143,9 @@ const getFiness = (champ: RootChampFragmentFragment | RepetitionChamp) => {
   }
 
   return {
-    code: champ.data.et_finess ?? '',
+    code: champ.data.finess ?? '',
     adresse: {
-      label: String(champ.data.et_rs) ?? '',
+      label: String(champ.data.rs) ?? '',
       codePostal: String(champ.data.adresse_code_postal) ?? '',
       ville: String(champ.data.adresse_lib_routage) ?? '',
     },
@@ -163,6 +163,15 @@ const createAddress = (champ: RootChampFragmentFragment | RepetitionChamp) => {
       ville: champ.address.cityName ?? '',
       rue: champ.address.streetName ?? '',
       numero: champ.address.streetNumber ?? '',
+    };
+  }
+  if (champ.stringValue) {
+    return {
+      label: champ.stringValue,
+      codePostal: '',
+      ville: '',
+      rue: champ.stringValue,
+      numero: '',
     };
   }
   return null;

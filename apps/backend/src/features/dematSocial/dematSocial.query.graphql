@@ -47,6 +47,7 @@ fragment ChampFragment on Champ {
   id
   label
   stringValue
+  __typename
   ... on DateChamp {
     date
   }
@@ -106,7 +107,6 @@ query getDossiersMetadata($demarcheNumber: Int!) {
           dateDerniereModification
           dateDepot
           champs {
-            __typename
             ...RootChampFragment
           }
         }
