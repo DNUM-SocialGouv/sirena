@@ -1311,6 +1311,7 @@ export const closeRequeteForEntite = async (
       texte: result.note.texte,
       authorId: result.note.authorId,
       requeteEtapeId: result.note.requeteEtapeId,
+      clotureReasonIds: uniqueReasonIds,
       createdAt: result.note.createdAt.toISOString(),
     } as Prisma.JsonObject,
     authorId,
