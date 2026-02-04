@@ -38,7 +38,9 @@ const columns = [
   'priorite.sortOrder',
 ] as const;
 
-export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns);
+export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns).extend({
+  entiteId: z.string().optional(),
+});
 
 export const GetRequeteEntiteResponseSchema = RequeteSchema.extend({
   entite: EntiteSchema,
