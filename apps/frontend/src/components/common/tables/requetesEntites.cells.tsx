@@ -126,19 +126,29 @@ const processDeclarativeMotifs = (motifs: ReturnType<typeof collectMotifs>['decl
 
 export function renderMotifsCell(row: RequeteEntiteRow): ReactNode {
   const { situations, dematSocialId } = row.requete;
-  const { qualifies, declaratifs, hasMaltraitance } = collectMotifs(situations ?? []);
-
-  let labels: string[] = [];
+  const allLabels: string[] = [];
   let showMaltraitanceBadge = false;
 
-  if (qualifies.length > 0) {
-    const processed = processQualifiedMotifs(qualifies);
-    labels = processed.labels;
-    showMaltraitanceBadge = processed.showMaltraitance;
-  } else if (dematSocialId != null && declaratifs.length > 0) {
-    labels = processDeclarativeMotifs(declaratifs);
-    showMaltraitanceBadge = hasMaltraitance;
+  for (const situation of situations ?? []) {
+    const faits = situation?.faits ?? [];
+    const extracted = faits.map(extractMotifsFromFait);
+    const qualifies = flatMap(extracted, (e) => e.qualifies);
+    const declaratifs = flatMap(extracted, (e) => e.declaratifs);
+    const hasMaltraitance = extracted.some((e) => e.hasMaltraitance);
+
+    if (qualifies.length > 0) {
+      const processed = processQualifiedMotifs(qualifies);
+      allLabels.push(...processed.labels);
+      if (processed.showMaltraitance) showMaltraitanceBadge = true;
+    } else if (dematSocialId != null && declaratifs.length > 0) {
+      allLabels.push(...processDeclarativeMotifs(declaratifs));
+      if (hasMaltraitance) showMaltraitanceBadge = true;
+    } else if (hasMaltraitance) {
+      showMaltraitanceBadge = true;
+    }
   }
+
+  const labels = [...new Set(allLabels)];
 
   if (labels.length === 0 && !showMaltraitanceBadge) return UNKNOWN_VALUE;
 
