@@ -3,7 +3,10 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Toast } from '@sirena/ui';
 import { useNavigate } from '@tanstack/react-router';
+
+import { useId } from 'hono/jsx';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
 import { useSetRequeteFile } from '@/hooks/mutations/setRequeteFile.hook';
@@ -11,6 +14,7 @@ import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUp
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { formatFileSize, getOriginalFileName } from '@/utils/fileHelpers';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
+
 import styles from './RequeteFileUploadSection.module.css';
 
 // Toast messages
@@ -81,6 +85,8 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
   const [fileToDelete, setFileToDelete] = useState<UploadedFile | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const { canEdit } = useCanEdit({ requeteId: requeteId });
+
+  const fileUploadLabelId = useId();
 
   const navigate = useNavigate();
   const toastManager = Toast.useToastManager();
@@ -254,9 +260,9 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
 
   return (
     <div className={`${fr.cx('fr-mb-3w')} ${styles.requeteFileUploadSection}`}>
+      <h2 className={fr.cx('fr-text--lg')}>Fichiers uploadés</h2>
       {files.length > 0 && (
         <div className={fr.cx('fr-mt-3w')} style={{ width: '100%' }}>
-          <h4 className={fr.cx('fr-text--lg')}>Fichiers uploadés</h4>
           <ul className={styles.fileList}>
             {files.map((file) => {
               const fileWithMetadata = file as UploadedFile & { metadata?: { originalName?: string } };
@@ -306,7 +312,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
         <p className={fr.cx('fr-text--sm', 'fr-text--light')}>Aucun fichier sélectionné.</p>
       )}
       {canEdit && (
-        <label className={styles.dropZone}>
+        <label className={styles.dropZone} htmlFor={fileUploadLabelId}>
           <p className={styles.dropZoneTitle}>Sélectionner un fichier ou glisser-le ici</p>
           <Button priority="secondary" disabled={isUploading} className={styles.dropZoneButton}>
             Sélectionner un fichier
@@ -316,6 +322,7 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
             images (PNG, JPEG, HEIC, WEBP, TIFF)
           </p>
           <input
+            id={fileUploadLabelId}
             ref={uploadInputRef}
             type="file"
             multiple

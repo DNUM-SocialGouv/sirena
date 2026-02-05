@@ -44,6 +44,18 @@ export function InfoSection({
   const titleId = id ? `${id}-title` : 'title';
   const detailsId = id ? `${id}-details` : 'details';
 
+  const detailsLabel = isDetailsExpanded ? (
+    <>
+      Masquer le détail{`\u00A0`}
+      <span className="fr-sr-only">{title}</span>
+    </>
+  ) : (
+    <>
+      Voir le détail{`\u00A0`}
+      <span className="fr-sr-only">{title}</span>
+    </>
+  );
+
   return (
     <section aria-labelledby={titleId} className={styles.section}>
       <div className={isEmpty ? styles.headerContentEmpty : styles.headerContent}>
@@ -73,7 +85,7 @@ export function InfoSection({
           {hasDetails && (
             <div className={fr.cx('fr-mt-2w')}>
               <Accordion
-                label={isDetailsExpanded ? 'Masquer le détail' : 'Voir le détail'}
+                label={detailsLabel}
                 expanded={isDetailsExpanded}
                 onExpandedChange={toggleDetails}
                 id={detailsId}

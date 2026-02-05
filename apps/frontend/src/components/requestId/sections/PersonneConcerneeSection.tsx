@@ -104,7 +104,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
       <>
         {hasIdentitySection && (
           <>
-            <SectionTitle>Identité</SectionTitle>
+            <SectionTitle level={4}>Identité</SectionTitle>
             {fullName && <p className="fr-mb-1w">{fullName}</p>}
             {personne?.age?.label && <p className="fr-text--sm fr-text--grey fr-mb-1w">Âge : {personne.age.label}</p>}
             {dateNaissanceFormatted && (
@@ -115,14 +115,14 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
 
         {hasAddressSection && (
           <>
-            <SectionTitle>Adresse</SectionTitle>
+            <SectionTitle level={4}>Adresse</SectionTitle>
             <p className="fr-mb-2w">{address}</p>
           </>
         )}
 
         {hasContactSection && (
           <>
-            <SectionTitle>Contact</SectionTitle>
+            <SectionTitle level={4}>Contact</SectionTitle>
             {personneIdentite?.email && (
               <p className="fr-mb-1w">
                 Courrier électronique : <a href={`mailto:${personneIdentite.email}`}>{personneIdentite.email}</a>
@@ -134,7 +134,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
 
         {hasComplementaryInfo && (
           <>
-            <SectionTitle>Informations complémentaires</SectionTitle>
+            <SectionTitle level={4}>Informations complémentaires</SectionTitle>
             <ul className="fr-mb-2w">
               {personne?.estHandicapee && <li>Il/elle est en situation d'handicap</li>}
               {personne?.veutGarderAnonymat !== null && personne?.veutGarderAnonymat !== undefined && (

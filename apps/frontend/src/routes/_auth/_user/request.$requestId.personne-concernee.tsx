@@ -17,10 +17,10 @@ export const Route = createFileRoute('/_auth/_user/request/$requestId/personne-c
       requestId: z.string().parse(params.requestId),
     }),
   },
-  head: () => ({
+  head: ({ params }) => ({
     meta: [
       {
-        title: 'Personne concernée - Édition requête - SIRENA',
+        title: `Personne concernée - Édition requête ${params.requestId} - SIRENA`,
       },
     ],
   }),

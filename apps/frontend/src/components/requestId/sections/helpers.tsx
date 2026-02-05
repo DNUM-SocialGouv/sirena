@@ -1,4 +1,5 @@
 import { fr } from '@codegouvfr/react-dsfr';
+import type { JSX } from 'react/jsx-runtime';
 
 export const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
@@ -37,7 +38,13 @@ export const ContactInfo = ({
     </p>
   </div>
 );
+interface SectionTitleProps {
+  children: React.ReactNode;
+  level?: 2 | 3 | 4 | 5 | 6;
+}
 
-export const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-  <h3 className={fr.cx('fr-text--sm', 'fr-mb-1w', 'fr-mt-3w')}>{children}</h3>
-);
+export const SectionTitle = ({ children, level }: SectionTitleProps) => {
+  const TitleTag = `h${level}` as keyof JSX.IntrinsicElements;
+
+  return <TitleTag className={fr.cx('fr-text--sm', 'fr-mb-1w', 'fr-mt-3w')}>{children}</TitleTag>;
+};
