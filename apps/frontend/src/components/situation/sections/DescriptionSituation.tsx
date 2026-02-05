@@ -61,7 +61,7 @@ export function DescriptionFaits({ formData, setFormData, receptionType, initial
       className="fr-p-4w fr-mb-4w"
       style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
     >
-      <h2 className="fr-h6 fr-mb-3w">Description des faits</h2>
+      <h2 className="fr-h6 fr-mb-3w">Description de la situation</h2>
       <div className="fr-grid-row fr-grid-row--gutters">
         {receptionType === RECEPTION_TYPE.FORMULAIRE && (
           <div className="fr-col-12">
