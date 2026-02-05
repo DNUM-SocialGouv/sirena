@@ -1072,14 +1072,64 @@ const createNewSituation = async (
   return { id: createdSituation.id, newAssignedEntiteIds };
 };
 
+export type ShouldCloseRequeteStatus = {
+  willUserBeUnassignedAfterSave: boolean;
+  otherEntitiesAffected: Array<{
+    id: string;
+    nomComplet: string;
+    entiteTypeId: string;
+    statutId: string;
+  }>;
+};
+
+export const computeShouldCloseRequeteStatus = async (params: {
+  tx?: Prisma.TransactionClient;
+  requeteId: string;
+  userEntityIds: string[];
+  excludeTopEntiteId?: string;
+}): Promise<ShouldCloseRequeteStatus> => {
+  const { tx = prisma, requeteId, userEntityIds, excludeTopEntiteId } = params;
+
+  // Check if user is still assigned to at least one situation after save
+  const hasAnyAssignment = await tx.situationEntite.findFirst({
+    where: {
+      entiteId: { in: userEntityIds },
+      situation: { requeteId },
+    },
+    select: { entiteId: true },
+  });
+
+  const willUserBeUnassignedAfterSave = !hasAnyAssignment;
+
+  // Get other entities affected (using existing helper function)
+  let otherEntitiesAffected: ShouldCloseRequeteStatus['otherEntitiesAffected'] = [];
+  if (excludeTopEntiteId) {
+    const otherEntites = await getOtherEntitesAffected(requeteId, excludeTopEntiteId);
+    otherEntitiesAffected = otherEntites.map((entite) => ({
+      id: entite.id,
+      nomComplet: entite.nomComplet,
+      entiteTypeId: entite.entiteTypeId || '',
+      statutId: entite.statutId || '',
+    }));
+  }
+
+  return {
+    willUserBeUnassignedAfterSave,
+    otherEntitiesAffected,
+  };
+};
+
 export const createRequeteSituation = async (
   requeteId: string,
   situationData: SituationInput,
   entiteId: string,
   changedById?: string,
+  userEntityIds?: string[],
+  topEntiteId?: string,
 ): Promise<{
   requete: Awaited<ReturnType<typeof prisma.requete.findUnique>>;
   newAssignedEntiteIds: string[];
+  shouldCloseRequeteStatus?: ShouldCloseRequeteStatus;
 }> => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
@@ -1111,7 +1161,17 @@ export const createRequeteSituation = async (
     throw new Error('Requete not found after create situation');
   }
 
-  return { requete: updatedRequete, newAssignedEntiteIds };
+  // Compute should close requete status if userEntityIds provided
+  let shouldCloseRequeteStatus: ShouldCloseRequeteStatus | undefined;
+  if (userEntityIds && userEntityIds.length > 0) {
+    shouldCloseRequeteStatus = await computeShouldCloseRequeteStatus({
+      requeteId,
+      userEntityIds,
+      excludeTopEntiteId: topEntiteId,
+    });
+  }
+
+  return { requete: updatedRequete, newAssignedEntiteIds, shouldCloseRequeteStatus };
 };
 
 export const updateRequeteSituation = async (
@@ -1120,7 +1180,13 @@ export const updateRequeteSituation = async (
   situationData: SituationInput,
   entiteId: string,
   changedById?: string,
-): Promise<{ requete: Awaited<ReturnType<typeof prisma.requete.findUnique>>; newAssignedEntiteIds: string[] }> => {
+  userEntityIds?: string[],
+  topEntiteId?: string,
+): Promise<{
+  requete: Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+  newAssignedEntiteIds: string[];
+  shouldCloseRequeteStatus?: ShouldCloseRequeteStatus;
+}> => {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
     include: { situations: { include: SITUATION_INCLUDE_BASE } },
@@ -1153,7 +1219,17 @@ export const updateRequeteSituation = async (
     throw new Error('Requete not found after update');
   }
 
-  return { requete: updatedRequete, newAssignedEntiteIds };
+  // Compute should close requete status if userEntityIds provided
+  let shouldCloseRequeteStatus: ShouldCloseRequeteStatus | undefined;
+  if (userEntityIds && userEntityIds.length > 0) {
+    shouldCloseRequeteStatus = await computeShouldCloseRequeteStatus({
+      requeteId,
+      userEntityIds,
+      excludeTopEntiteId: topEntiteId,
+    });
+  }
+
+  return { requete: updatedRequete, newAssignedEntiteIds, shouldCloseRequeteStatus };
 };
 
 export const closeRequeteForEntite = async (

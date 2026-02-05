@@ -35,6 +35,13 @@ vi.mock('./requetesEntite.service.js', () => ({
 
 vi.mock('../entites/entites.service.js', () => ({
   getDirectionsServicesFromRequeteEntiteId: vi.fn(),
+  getEntiteDescendantIds: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('../entites/entites.cache.js', () => ({
+  entitesDescendantIdsCache: {
+    get: vi.fn().mockResolvedValue([]),
+  },
 }));
 
 vi.mock('../../libs/minio.js', () => ({
