@@ -30,7 +30,7 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
           href: props.homeHref,
           title: 'Accueil - Sirena',
         }}
-        serviceTagline="précisions sur l'organisation"
+        serviceTagline=""
         serviceTitle="Sirena"
         id={id}
         quickAccessItems={quickAccessItems}
