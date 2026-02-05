@@ -8,10 +8,19 @@ type NotAuthProps = {
 };
 
 export const NotAuth = ({ children }: NotAuthProps) => {
+  const mainId = 'main';
+
   return (
     <div className="layout">
       <HeaderMenu homeHref="/" />
-      <main className={'fr-container not-auth-main fr-my-15w'}>{children}</main>
+      <main
+        /* biome-ignore lint: RGAA exige role et ID explicites pour le lien d'évitement */
+        role="main"
+        id={mainId}
+        className={'fr-container not-auth-main fr-my-15w'}
+      >
+        {children}
+      </main>
       <AppFooter />
     </div>
   );
