@@ -445,6 +445,7 @@ export const FileDownloadLink = ({
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
         <a href={displayHref} target={target} rel={rel} className={className} onClick={handleClick}>
           {displayName}
+          <span className="fr-sr-only"> - nouvel onglet</span>
         </a>
         {isFileInfected(fileStatus?.scanStatus) ? (
           <Badge severity="error" small noIcon>
