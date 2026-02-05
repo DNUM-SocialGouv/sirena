@@ -94,7 +94,7 @@ export const DeclarantSection = ({ requestId, id, declarant, onEdit }: Declarant
           <>
             {fullName && (
               <>
-                <SectionTitle>Identité</SectionTitle>
+                <SectionTitle level={4}>Identité</SectionTitle>
                 <p className="fr-mb-2w">{fullName}</p>
               </>
             )}
@@ -105,14 +105,14 @@ export const DeclarantSection = ({ requestId, id, declarant, onEdit }: Declarant
 
         {hasAddressSection && (
           <>
-            <SectionTitle>Adresse</SectionTitle>
+            <SectionTitle level={4}>Adresse</SectionTitle>
             <p className="fr-mb-2w">{address}</p>
           </>
         )}
 
         {hasContactSection && (
           <>
-            <SectionTitle>Contact</SectionTitle>
+            <SectionTitle level={4}>Contact</SectionTitle>
             {declarantIdentite?.email && (
               <p className="fr-mb-1w">
                 Courrier électronique : <a href={`mailto:${declarantIdentite.email}`}>{declarantIdentite.email}</a>
@@ -124,7 +124,7 @@ export const DeclarantSection = ({ requestId, id, declarant, onEdit }: Declarant
 
         {hasComplementaryInfo && declarant && (
           <>
-            <SectionTitle>Informations complémentaires</SectionTitle>
+            <SectionTitle level={4}>Informations complémentaires</SectionTitle>
             <ul className="fr-mb-2w">
               {declarant.veutGarderAnonymat !== null && declarant.veutGarderAnonymat !== undefined && (
                 <li>

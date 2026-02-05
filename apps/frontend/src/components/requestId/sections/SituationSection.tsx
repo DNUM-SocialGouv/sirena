@@ -119,7 +119,11 @@ const TraitementDesFaits = ({ situation, details }: { situation?: SituationData 
   return (
     <div className="fr-col-12">
       <div className={fr.cx('fr-mb-0')}>
-        {details ? <SectionTitle>Traitement des faits</SectionTitle> : <span className="bold">Traitement :</span>}
+        {details ? (
+          <SectionTitle level={4}>Traitement des faits</SectionTitle>
+        ) : (
+          <span className="bold">Traitement :</span>
+        )}
       </div>
       <div className={fr.cx('fr-mt-1w')}>
         <Affectations situation={situation} />
@@ -251,7 +255,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
       <>
         {hasMisEnCause && (
           <>
-            <SectionTitle>Mis en cause</SectionTitle>
+            <SectionTitle level={4}>Mis en cause</SectionTitle>
             <p className={fr.cx('fr-mb-1w')}>
               <span>Type de mis en cause :</span> {situation?.misEnCause?.misEnCauseType?.label}
             </p>
@@ -287,7 +291,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
         )}
         {hasLieu && (
           <>
-            <SectionTitle>Lieu où se sont déroulés les faits</SectionTitle>
+            <SectionTitle level={4}>Lieu où se sont déroulés les faits</SectionTitle>
             <p className={fr.cx('fr-mb-1w')}>
               <span>Type de lieu :</span> {situation?.lieuDeSurvenue?.lieuType?.label}
             </p>
@@ -333,7 +337,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
 
         {motifsDeclares.length > 0 && (
           <>
-            <SectionTitle>Motifs renseignés par le déclarant</SectionTitle>
+            <SectionTitle level={4}>Motifs renseignés par le déclarant</SectionTitle>
             <ul className={fr.cx('fr-mb-3w')}>
               {motifsDeclares.map((type) => (
                 <li key={type}>{type}</li>
@@ -345,7 +349,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
         {((fait?.motifs && fait.motifs.length > 0) ||
           (fait?.motifs && receptionType === RECEPTION_TYPE.FORMULAIRE)) && (
           <>
-            <SectionTitle>Motifs qualifiés</SectionTitle>
+            <SectionTitle level={4}>Motifs qualifiés</SectionTitle>
             <ul className={fr.cx('fr-mb-3w')}>
               {fait.motifs.length ? (
                 Array.from(groupMotifsByParent(fait.motifs).entries()).map(
@@ -369,7 +373,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
 
         {fait?.consequences && fait.consequences.length > 0 && (
           <>
-            <SectionTitle>Conséquences sur la personne</SectionTitle>
+            <SectionTitle level={4}>Conséquences sur la personne</SectionTitle>
             <ul className={fr.cx('fr-mb-3w')}>
               {fait.consequences.map((consequence) => (
                 <li key={consequence.consequence.label}>{consequence.consequence.label}</li>
@@ -380,7 +384,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
 
         {(fait?.dateDebut || fait?.dateFin) && (
           <>
-            <SectionTitle>Période des faits</SectionTitle>
+            <SectionTitle level={4}>Période des faits</SectionTitle>
             <p className={fr.cx('fr-mb-3w')}>
               {fait.dateDebut && `Du ${new Date(fait.dateDebut).toLocaleDateString('fr-FR')}`}
               {fait.dateDebut && fait.dateFin && ' '}
@@ -391,21 +395,21 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
 
         {fait?.commentaire && (
           <>
-            <SectionTitle>Explication des faits</SectionTitle>
+            <SectionTitle level={4}>Explication des faits</SectionTitle>
             <p className={fr.cx('fr-mb-3w')}>{fait.commentaire}</p>
           </>
         )}
 
         {fait?.autresPrecisions && (
           <>
-            <SectionTitle>Autres précisions</SectionTitle>
+            <SectionTitle level={4}>Autres précisions</SectionTitle>
             <p className={fr.cx('fr-mb-3w')}>{fait.autresPrecisions}</p>
           </>
         )}
 
         {fait?.fichiers?.length > 0 && (
           <>
-            <SectionTitle>Pièces jointes</SectionTitle>
+            <SectionTitle level={4}>Pièces jointes</SectionTitle>
             <FileList
               files={fait.fichiers.map(formatFileFromServer)}
               getFileUrl={(fileId) => `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}`}
@@ -419,7 +423,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
 
         {situation?.demarchesEngagees?.demarches && situation.demarchesEngagees.demarches.length > 0 && (
           <>
-            <SectionTitle>Démarches engagées</SectionTitle>
+            <SectionTitle level={4}>Démarches engagées</SectionTitle>
             <ul className={fr.cx('fr-mb-3w')}>
               {situation.demarchesEngagees.demarches.map((demarche) => (
                 <li key={demarche.id}>

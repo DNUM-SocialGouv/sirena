@@ -14,7 +14,9 @@ import { useSituationSave } from '@/hooks/mutations/useSituationSave';
 import { useEntites } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
+
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+
 import { formatSituationFromServer } from '@/lib/situation';
 
 export const Route = createFileRoute('/_auth/_user/request/$requestId/situation/$situationId')({
@@ -25,10 +27,10 @@ export const Route = createFileRoute('/_auth/_user/request/$requestId/situation/
       situationId: z.string().parse(params.situationId),
     }),
   },
-  head: () => ({
+  head: ({ params }) => ({
     meta: [
       {
-        title: 'Lieu, mis en cause et faits - Édition requête - SIRENA',
+        title: `Lieu, mis en cause et faits - Édition requête ${params.requestId} - SIRENA`,
       },
     ],
   }),
