@@ -17,6 +17,7 @@
     "db:migrate:resolve": "prisma migrate resolve --rolled-back",
     "op:import:dematsocial": "tsx src/scripts/import_dematsocial.ts",
     "op:import:geodata": "tsx src/scripts/import_geodata.ts",
+    "op:manage-api-keys": "tsx src/scripts/manage-api-keys.ts",
     "op:diff:autorite-competente:analyze": "tsx src/scripts/diff-autorite-competente.ts --csv \"prisma/documents/referentiel_autorite_competentes.csv\"",
     "op:diff:autorite-competente:up": "tsx src/scripts/diff-autorite-competente.ts --csv \"prisma/documents/referentiel_autorite_competentes.csv\" --dump-migration > migration.sql",
     "op:diff:autorite-competente:down": "tsx src/scripts/diff-autorite-competente.ts --csv \"prisma/documents/referentiel_autorite_competentes.csv\" --dump-migration --invert > down.sql",

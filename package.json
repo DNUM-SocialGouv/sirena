@@ -22,6 +22,7 @@
     "op:import:geodata": "dotenv -e .env -- pnpm --filter @sirena/backend op:import:geodata",
     "op:diff:enums": "dotenv -e .env -- pnpm --filter @sirena/backend op:diff:enums",
     "op:import:dematsocial": "dotenv -e .env -- pnpm --filter @sirena/backend op:import:dematsocial",
+    "op:manage-api-keys": "dotenv -e .env -- pnpm --filter @sirena/backend op:manage-api-keys",
     "db:deploy": "dotenv -e .env -- pnpm --filter @sirena/backend db:deploy",
     "db:generate": "dotenv -e .env -- pnpm --filter @sirena/backend db:generate",
     "db:reset": "dotenv -e .env -- pnpm --filter @sirena/backend db:reset",

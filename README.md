@@ -95,6 +95,7 @@ packages/
 | `pnpm op:import:geodata`               | Import geodata (`@sirena/backend`) with `.env`                                       |
 | `pnpm op:diff:enums`                   | Check enum consistency (`@sirena/backend`) with `.env`. Use `--dump-migration` for clean SQL output (no logger timestamps), `--invert` for rollback SQL |
 | `pnpm op:import:dematsocial`           | Import requests from DematSocial (`@sirena/backend`) with `.env`                       |
+| `pnpm op:manage-api-keys`              | Manage third-party API keys (see [Third-Party API](#-third-party-api) section)       |
 | `pnpm db:deploy`                       | Deploy pending migrations to DB (`@sirena/backend`) with `.env`                      |
 | `pnpm db:studio`                       | Open Prisma Studio (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:reset`                        | Reset the database (`@sirena/backend`) with `.env`                                   |
@@ -155,6 +156,44 @@ packages/
 | [`@sirena/common`](./pacakges/common) | package sharing elements from backend end frontend |
 | [`@sirena/backend-utils`](./pacakges/backend-utils) | package for exporting element to other projects |
 | [`@sirena/frontend`](./apps/frontend) | Full React SPA using TanStack Router + Query |
+
+## 🔐 Third-Party API, Managing API Keys
+
+Use the CLI tool to manage third-party accounts and API keys:
+
+### Create a Third-Party Account
+```bash
+pnpm op:manage-api-keys account create "Partner Company Name"
+```
+Returns the account ID.
+
+### List All Accounts
+```bash
+pnpm op:manage-api-keys account list
+```
+Shows all accounts with their names and key counts.
+
+### Create an API Key
+```bash
+pnpm op:manage-api-keys key create <accountId>
+```
+
+### List API Keys
+```bash
+# List all keys
+pnpm op:manage-api-keys key list
+
+# List keys for specific account
+pnpm op:manage-api-keys key list <accountId>
+```
+
+### Revoke an API Key
+```bash
+pnpm op:manage-api-keys key revoke <keyId>
+```
+
+### API Key Format
+- Format: `sk_{hexadecimal characters}`
 
 ## Docker build
 
