@@ -1101,7 +1101,7 @@ export const computeShouldCloseRequeteStatus = async (params: {
 
   const willUserBeUnassignedAfterSave = !hasAnyAssignment;
 
-  // Get other entities affected (using existing helper function)
+  // Get other entities affected
   let otherEntitiesAffected: ShouldCloseRequeteStatus['otherEntitiesAffected'] = [];
   if (excludeTopEntiteId) {
     const otherEntites = await getOtherEntitesAffected(requeteId, excludeTopEntiteId);
@@ -1161,7 +1161,7 @@ export const createRequeteSituation = async (
     throw new Error('Requete not found after create situation');
   }
 
-  // Compute should close requete status if userEntityIds provided
+  // Compute should close requete status
   let shouldCloseRequeteStatus: ShouldCloseRequeteStatus | undefined;
   if (userEntityIds && userEntityIds.length > 0) {
     shouldCloseRequeteStatus = await computeShouldCloseRequeteStatus({
@@ -1219,7 +1219,7 @@ export const updateRequeteSituation = async (
     throw new Error('Requete not found after update');
   }
 
-  // Compute should close requete status if userEntityIds provided
+  // Compute should close requete status
   let shouldCloseRequeteStatus: ShouldCloseRequeteStatus | undefined;
   if (userEntityIds && userEntityIds.length > 0) {
     shouldCloseRequeteStatus = await computeShouldCloseRequeteStatus({

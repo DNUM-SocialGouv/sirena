@@ -9,7 +9,16 @@ type ErrorWithRequeteId = Error & {
   requeteId?: string;
 };
 
-export const useSituationCreate = () => {
+type SituationPostResponse = Awaited<
+  ReturnType<Awaited<ReturnType<(typeof client)['requetes-entite'][':id']['situation']['$post']>>['json']>
+>;
+
+export type SituationCreateResult = {
+  requete: SituationPostResponse['data'];
+  shouldCloseRequeteStatus: SituationPostResponse['shouldCloseRequeteStatus'];
+};
+
+export const useSituationCreate = (options?: { onSuccess?: (result: SituationCreateResult) => void }) => {
   const navigate = useNavigate();
 
   const saveMutation = useMutation({
@@ -47,7 +56,10 @@ export const useSituationCreate = () => {
 
         await handleRequestErrors(updateResponse);
         const updateResult = await updateResponse.json();
-        return updateResult.data;
+        return {
+          requete: updateResult.data,
+          shouldCloseRequeteStatus: updateResult.shouldCloseRequeteStatus,
+        };
       } catch (err) {
         if (requeteId) {
           (err as ErrorWithRequeteId).requeteId = requeteId;
@@ -56,8 +68,14 @@ export const useSituationCreate = () => {
       }
     },
     onSuccess: (result) => {
-      if (result?.id) {
-        navigate({ to: '/request/$requestId', params: { requestId: result.id } });
+      if (!result.requete?.id) return;
+
+      const requeteId = result.requete.id;
+
+      if (options?.onSuccess) {
+        options.onSuccess(result);
+      } else {
+        navigate({ to: '/request/$requestId', params: { requestId: requeteId } });
       }
     },
     onError: (error) => {
