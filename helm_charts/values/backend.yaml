@@ -95,6 +95,7 @@ SDPSN-devops-charts:
     TIPIMAIL_FROM_PERSONAL_NAME: "Sirena"
     MONITORING_PORT: "9090"
     CLAMAV_PORT: "3310"
+    TRUSTED_IP_HEADERS: "x-forwarded-for"
 
   ingress:
     enable: true
