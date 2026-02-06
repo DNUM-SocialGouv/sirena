@@ -29,6 +29,7 @@
     "backend:codegen": "dotenv -e .env -- pnpm --filter @sirena/backend generate:codegen",
     "backend:gql": "dotenv -e .env -- pnpm --filter @sirena/backend gql",
     "backend:start": "dotenv -e .env -- pnpm --filter @sirena/backend start",
+    "generate:openapi:thirdparty": "dotenv -e .env -- pnpm --filter @sirena/backend generate:openapi:thirdparty",
     "test:e2e": "pnpm --filter @sirena/frontend test:e2e",
     "test:e2e:ui": "pnpm --filter @sirena/frontend test:e2e:ui",
     "test:unit": "pnpm -r run test",
