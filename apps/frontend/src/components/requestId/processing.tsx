@@ -63,9 +63,11 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
         <QueryStateHandler query={queryProcessingSteps}>
           {({ data }) =>
             data.data.map((step, index: number) => {
-              // Check if step was automatically updated: created automatically (createdBy === null),
-              // status is FAIT, and it's the acknowledgment step
+              // Check if step was automatically updated: only for demat social requests,
+              // created automatically (createdBy === null), status is FAIT, and it's the acknowledgment step
+              const isDematSocialRequest = !!requestQuery.data?.requete?.dematSocialId;
               const isAutomaticallyUpdated =
+                isDematSocialRequest &&
                 step.createdBy === null &&
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT &&
                 step.nom === 'Envoyer un accusé de réception au déclarant';
