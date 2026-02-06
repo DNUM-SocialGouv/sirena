@@ -1,19 +1,22 @@
 import fs from 'node:fs';
 import { Scalar } from '@scalar/hono-api-reference';
 import type { Hono } from 'hono';
+import type { GenerateSpecOptions } from 'hono-openapi';
 import { generateSpecs, openAPIRouteHandler } from 'hono-openapi';
-import type { OpenAPIV3 } from 'openapi-types';
 import type { AppBindings } from './helpers/factories/appWithLogs.js';
+
+type Documentation = GenerateSpecOptions['documentation'];
 
 const getServerUrl = () => {
   const frontendUri = process.env.FRONTEND_URI || '<url>';
   return `${frontendUri}/api/third-party`;
 };
 
-const getThirdPartyDocumentation = (): OpenAPIV3.Document => ({
+const getThirdPartyDocumentation = (): Documentation => ({
   openapi: '3.1.0',
   info: {
     title: 'Sirena Third-Party API',
+    version: '1.0.0',
     description: 'Sirena third-party integration API - requires API key authentication',
   },
   servers: [
