@@ -1,0 +1,97 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sirena Third-Party API",
+    "description": "Sirena third-party integration API - requires API key authentication",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5173/api/third-party",
+      "description": "Third-party API server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for third-party authentication"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/v1": {
+      "get": {
+        "operationId": "getV1",
+        "description": "Test endpoint for third-party API authentication",
+        "tags": ["Third-Party"],
+        "responses": {
+          "200": {
+            "description": "Successful authentication",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "accountId": {
+                      "type": "string"
+                    },
+                    "keyPrefix": {
+                      "type": "string"
+                    },
+                    "traceId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message", "accountId", "keyPrefix", "traceId"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing API key",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["message"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

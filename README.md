@@ -100,6 +100,7 @@ packages/
 | `pnpm db:studio`                       | Open Prisma Studio (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:reset`                        | Reset the database (`@sirena/backend`) with `.env`                                   |
 | `pnpm backend:codegen`                 | Generate clients for graphql requests                                                |
+| `pnpm generate:openapi:thirdparty`     | Generate OpenAPI spec for third-party API (`@sirena/backend`)                        |
 | `pnpm test:e2e`                        | Run end-to-end tests for frontend (`@sirena/frontend`)                               |
 | `pnpm test:e2e:ui`                     | Run end-to-end tests with UI for frontend (`@sirena/frontend`)                       |
 | `pnpm test:unit`                       | Run unit tests across all packages                                                   |
@@ -194,6 +195,26 @@ pnpm op:manage-api-keys key revoke <keyId>
 
 ### API Key Format
 - Format: `sk_{hexadecimal characters}`
+
+### Using the API
+
+**Authentication:**
+Include your API key in the `X-API-Key` header:
+```bash
+curl -H "X-API-Key: <your API key>" \
+  https://your-domain.com/api/third-party/v1
+```
+
+**Response Tracing:**
+All API responses include an `x-trace-id` header for debugging and support purposes. Include this trace ID when reporting issues.
+
+Example response headers:
+```
+x-trace-id: 1b6e9a8d-c489-4916-bc83-ef49b3698837
+content-type: application/json
+```
+
+The `traceId` is also included in successful response bodies for convenience.
 
 ## Docker build
 
