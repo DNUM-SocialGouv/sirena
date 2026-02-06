@@ -8,6 +8,38 @@ export const createSearchConditionsForRequeteEntite = (raw: string): Prisma.Requ
   if (!search) return {};
 
   const numberSearch = Number.isFinite(Number(search)) ? Number(search) : null;
+  const nameParts = search.split(/\s+/).filter(Boolean);
+  const firstName = nameParts.length >= 2 ? nameParts[0] : null;
+  const lastName = nameParts.length >= 2 ? nameParts.slice(1).join(' ') : null;
+  const fullNameClauses: Prisma.RequeteEntiteWhereInput[] =
+    firstName && lastName
+      ? [
+          {
+            AND: [
+              { requete: { declarant: { identite: { prenom: ci(firstName) } } } },
+              { requete: { declarant: { identite: { nom: ci(lastName) } } } },
+            ],
+          },
+          {
+            AND: [
+              { requete: { participant: { identite: { prenom: ci(firstName) } } } },
+              { requete: { participant: { identite: { nom: ci(lastName) } } } },
+            ],
+          },
+          {
+            AND: [
+              { requete: { declarant: { identite: { prenom: ci(lastName) } } } },
+              { requete: { declarant: { identite: { nom: ci(firstName) } } } },
+            ],
+          },
+          {
+            AND: [
+              { requete: { participant: { identite: { prenom: ci(lastName) } } } },
+              { requete: { participant: { identite: { nom: ci(firstName) } } } },
+            ],
+          },
+        ]
+      : [];
 
   const where: Prisma.RequeteEntiteWhereInput = {
     OR: [
@@ -32,6 +64,7 @@ export const createSearchConditionsForRequeteEntite = (raw: string): Prisma.Requ
       { requete: { participant: { identite: { telephone: ci(search) } } } },
       { requete: { participant: { adresse: { ville: ci(search) } } } },
       { requete: { participant: { adresse: { codePostal: ci(search) } } } },
+      ...fullNameClauses,
 
       // ───────── Situations → Faits → Motifs/Conséquences/Maltraitance ─────────
       {
