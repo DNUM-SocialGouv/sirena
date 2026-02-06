@@ -26,5 +26,19 @@ export const getTestRoute = describeRoute({
         'application/json': { schema: resolver(TestErrorResponseSchema) },
       },
     },
+    403: {
+      description: 'API key revoked, suspended, or expired',
+      headers: traceIdHeader,
+      content: {
+        'application/json': { schema: resolver(TestErrorResponseSchema) },
+      },
+    },
+    429: {
+      description: 'Too many failed attempts',
+      headers: traceIdHeader,
+      content: {
+        'application/json': { schema: resolver(TestErrorResponseSchema) },
+      },
+    },
   },
 });
