@@ -3,11 +3,11 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import {
   CONSEQUENCE,
   consequenceLabels,
-  MALTRAITANCEQUALIFIED_TYPE,
-  type MaltraitanceQualifiedType,
+  MALTRAITANCE_TYPE,
+  type MaltraitanceType,
   MOTIFS_HIERARCHICAL_DATA,
   type Motif,
-  maltraitanceQualifiedLabels,
+  maltraitanceTypeLabels,
   motifLabels,
   RECEPTION_TYPE,
   type ReceptionType,
@@ -24,14 +24,15 @@ type DescriptionFaitsProps = {
 };
 
 export function DescriptionFaits({ formData, setFormData, receptionType, initialData }: DescriptionFaitsProps) {
-  const ignoredMotifs: string[] = [MALTRAITANCEQUALIFIED_TYPE.NON];
+  const ignoredMotifs: string[] = [MALTRAITANCE_TYPE.NON];
+
   const motifs = [
     ...(formData.fait?.maltraitanceTypes || []).flatMap((maltraitance) => {
       if (ignoredMotifs.includes(maltraitance)) {
         return [];
       }
-      if (maltraitance in maltraitanceQualifiedLabels) {
-        return [maltraitanceQualifiedLabels[maltraitance as MaltraitanceQualifiedType]];
+      if (maltraitance in MALTRAITANCE_TYPE) {
+        return [maltraitanceTypeLabels[maltraitance as MaltraitanceType]];
       }
       return [];
     }),
