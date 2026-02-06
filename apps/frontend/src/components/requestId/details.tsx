@@ -94,7 +94,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
             {canEdit && (
               <div className="fr-mb-4w">
                 <Button priority="secondary" iconId="fr-icon-add-line" onClick={() => handleEditSituation()}>
-                  Ajouter un lieu, mis en cause, faits
+                  Ajouter une autre situation
                 </Button>
               </div>
             )}
@@ -176,7 +176,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                 {canEdit && (
                   <div className="fr-mb-4w">
                     <Button priority="secondary" iconId="fr-icon-add-line" onClick={() => handleEditSituation()}>
-                      Ajouter un lieu, mis en cause, faits
+                      Ajouter une autre situation
                     </Button>
                   </div>
                 )}

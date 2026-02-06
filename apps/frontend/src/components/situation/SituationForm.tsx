@@ -9,7 +9,7 @@ import { useProfile } from '@/hooks/queries/profile.hook';
 import { hasSituationContent } from '@/utils/situationHelpers';
 import { AttachedFiles } from './sections/AttachedFiles';
 import { DemarchesEngagees } from './sections/DemarchesEngagees';
-import { DescriptionFaits } from './sections/DescriptionFaits';
+import { DescriptionFaits } from './sections/DescriptionSituation';
 import { LieuSurvenu } from './sections/LieuSurvenu';
 import TraitementDesFaitsSection from './TraitementDesFaits';
 

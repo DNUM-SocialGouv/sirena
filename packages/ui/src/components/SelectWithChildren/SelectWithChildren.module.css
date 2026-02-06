@@ -5,7 +5,7 @@
 .selectButton {
   width: 100%;
   text-align: left;
-  background-color: var(--background-default-grey);
+  background-color: var(--background-contrast-grey);
   cursor: pointer;
   border: none;
   padding: 0.5rem 1rem;
@@ -20,10 +20,6 @@
 
 .selectButton [class*="fr-icon-"]::before {
   margin-right: 0;
-}
-
-.selectButton:hover {
-  background-color: var(--background-default-grey-hover);
 }
 
 .selectButton:focus {
