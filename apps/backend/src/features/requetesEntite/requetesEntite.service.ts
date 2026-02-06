@@ -17,7 +17,7 @@ import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
+import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
 import { setFaitFiles } from '../uploadedFiles/uploadedFiles.service.js';
@@ -129,12 +129,14 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     andFilters.push({ entiteId: { in: entiteIds } });
   }
   if (entiteId) {
+    const descendantIds = (await getEntiteDescendantIds(entiteId)) ?? [];
+    const idsToInclude = [entiteId, ...descendantIds];
     andFilters.push({
       requete: {
         situations: {
           some: {
             situationEntites: {
-              some: { entiteId },
+              some: { entiteId: { in: idsToInclude } },
             },
           },
         },
