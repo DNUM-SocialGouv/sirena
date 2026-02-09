@@ -139,9 +139,13 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
               {personne?.estHandicapee && <li>Il/elle est en situation d'handicap</li>}
               {personne?.veutGarderAnonymat !== null && personne?.veutGarderAnonymat !== undefined && (
                 <li>
-                  {personne.veutGarderAnonymat
-                    ? 'Il/elle ne souhaite pas que son identité soit communiquée'
-                    : 'Il/elle consent à ce que son identitée soit communiquée'}
+                  {personne.veutGarderAnonymat ? (
+                    <>
+                      ⚠️ Il/elle <strong>ne</strong> consent <strong>pas</strong> à ce que son identitée soit communiquée
+                    </>
+                  ) : (
+                    'Il/elle consent à ce que son identitée soit communiquée'
+                  )}
                 </li>
               )}
               {personne?.estVictimeInformee && <li>Il/elle a été informé(e) de la démarche par le déclarant</li>}
