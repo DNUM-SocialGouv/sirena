@@ -17,6 +17,7 @@ import {
   PROFESSION_SOCIAL_PRECISION,
   professionSantePrecisionLabels,
   professionSocialPrecisionLabels,
+  type ReceptionType,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
 import { PractitionerSearchField } from '@/components/common/PractitionerSearchField';
@@ -26,6 +27,7 @@ type misEnCauseProps = {
   formData: SituationData;
   isSaving: boolean;
   setFormData: React.Dispatch<React.SetStateAction<SituationData>>;
+  receptionType?: ReceptionType;
 };
 
 type MisEnCauseTypeSansAutreEtNpjm = keyof Omit<typeof MIS_EN_CAUSE_TYPE, 'AUTRE' | 'NPJM'>;

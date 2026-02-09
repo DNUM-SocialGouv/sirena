@@ -17,6 +17,8 @@ import {
   lieuEtablissementSocialPrecisionLabels,
   lieuTrajetPrecisionLabels,
   lieuTypeLabels,
+  RECEPTION_TYPE,
+  type ReceptionType,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
@@ -26,21 +28,23 @@ type LieuSurvenuProps = {
   formData: SituationData;
   setFormData: React.Dispatch<React.SetStateAction<SituationData>>;
   isSaving: boolean;
+  receptionType?: ReceptionType;
 };
 
-export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProps) {
+export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: LieuSurvenuProps) {
   const lieuType = formData.lieuDeSurvenue?.lieuType;
   const lieuPrecision = formData.lieuDeSurvenue?.lieuPrecision;
   const shouldShowDomicileAddressFields =
     lieuType === LIEU_TYPE.DOMICILE &&
-    !!lieuPrecision &&
-    !(
-      [
-        LIEU_DOMICILE_PRECISION.PERSONNE_CONCERNEE,
-        LIEU_DOMICILE_PRECISION.REQUERANT,
-        LIEU_DOMICILE_PRECISION.EQUIPES_MOBILES,
-      ] as string[]
-    ).includes(lieuPrecision);
+    (receptionType === RECEPTION_TYPE.FORMULAIRE ||
+      (!!lieuPrecision &&
+        !(
+          [
+            LIEU_DOMICILE_PRECISION.PERSONNE_CONCERNEE,
+            LIEU_DOMICILE_PRECISION.REQUERANT,
+            LIEU_DOMICILE_PRECISION.EQUIPES_MOBILES,
+          ] as string[]
+        ).includes(lieuPrecision)));
 
   const lieuTypeOptions = Object.entries(LIEU_TYPE).map(([key, value]) => ({
     key,
