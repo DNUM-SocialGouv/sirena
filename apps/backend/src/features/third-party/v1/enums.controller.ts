@@ -1,7 +1,7 @@
 import factoryWithLogs from '../../../helpers/factories/appWithLogs.js';
 import { apiKeyAuth } from '../../../middlewares/apiKey.middleware.js';
-import { getAgeEnumsRoute, getCiviliteEnumsRoute } from './enums.route.js';
-import { getAgeEnums, getCiviliteEnums } from './enums.service.js';
+import { getAgeEnumsRoute, getCiviliteEnumsRoute, getLienVictimeEnumsRoute } from './enums.route.js';
+import { getAgeEnums, getCiviliteEnums, getLienVictimeEnums } from './enums.service.js';
 
 const app = factoryWithLogs
   .createApp()
@@ -21,6 +21,14 @@ const app = factoryWithLogs
     logger.info({ enumCount: civiliteEnums.length }, 'Civilite enums retrieved successfully');
 
     return c.json({ data: civiliteEnums }, 200);
+  })
+
+  .get('/lien-victime', getLienVictimeEnumsRoute, async (c) => {
+    const logger = c.get('logger');
+    const lienVictimeEnums = await getLienVictimeEnums();
+    logger.info({ enumCount: lienVictimeEnums.length }, 'Lien victime enums retrieved successfully');
+
+    return c.json({ data: lienVictimeEnums }, 200);
   });
 
 export default app;
