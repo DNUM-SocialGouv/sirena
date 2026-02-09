@@ -2,6 +2,7 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import {
   demarcheEngageeLabels,
+  LIEU_TYPE,
   MALTRAITANCEQUALIFIED_TYPE,
   MOTIFS_HIERARCHICAL_DATA,
   misEnCauseTypeLabels,
@@ -16,6 +17,12 @@ import { formatFileFromServer } from '@/utils/fileHelpers';
 import { situationHasMaltraitanceTag } from '@/utils/maltraitanceHelpers';
 import { hasSituationContent } from '@/utils/situationHelpers';
 import { SectionTitle } from './helpers';
+
+const ETABLISSEMENTS: string[] = [
+  LIEU_TYPE.ETABLISSEMENT_SANTE,
+  LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
+  LIEU_TYPE.ETABLISSEMENT_HANDICAP,
+];
 
 const groupMotifsByParent = (
   motifs: Array<{ motif?: { id?: string; label?: string } | null }>,
@@ -308,7 +315,12 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
             )}
             {situation?.lieuDeSurvenue?.adresse?.label && (
               <p className={fr.cx('fr-mb-1w')}>
-                <span>Nom de l'établissement :</span> {situation.lieuDeSurvenue.adresse.label}
+                <span>
+                  {ETABLISSEMENTS.includes(situation.lieuDeSurvenue.lieuTypeId || '')
+                    ? "Nom de l'établissement :"
+                    : 'Adresse :'}
+                </span>{' '}
+                {situation.lieuDeSurvenue.adresse.label}
               </p>
             )}
             {situation?.lieuDeSurvenue?.adresse?.numero && situation?.lieuDeSurvenue?.adresse?.rue && (
