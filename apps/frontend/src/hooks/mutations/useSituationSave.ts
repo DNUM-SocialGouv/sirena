@@ -6,11 +6,28 @@ import { client } from '@/lib/api/hc';
 import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
 import { toastManager } from '@/lib/toastManager';
 
+type SituationPostResponse = Awaited<
+  ReturnType<Awaited<ReturnType<(typeof client)['requetes-entite'][':id']['situation']['$post']>>['json']>
+>;
+
+type SituationPatchResponse = Awaited<
+  ReturnType<
+    Awaited<ReturnType<(typeof client)['requetes-entite'][':id']['situation'][':situationId']['$patch']>>['json']
+  >
+>;
+
+export type SituationSaveResult = {
+  requete: SituationPostResponse['data'] | SituationPatchResponse['data'];
+  shouldCloseRequeteStatus:
+    | SituationPostResponse['shouldCloseRequeteStatus']
+    | SituationPatchResponse['shouldCloseRequeteStatus'];
+};
+
 interface UseSituationSaveProps {
   requestId: string;
   situationId?: string;
   onRefetch: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (result: SituationSaveResult) => void;
 }
 
 export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess }: UseSituationSaveProps) => {
@@ -102,11 +119,14 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      return result.data;
+      return {
+        requete: result.data,
+        shouldCloseRequeteStatus: result.shouldCloseRequeteStatus,
+      };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       onRefetch();
-      onSuccess?.();
+      onSuccess?.(data);
     },
     onError: async (error: unknown) => {
       if (error instanceof HttpError) {
@@ -125,7 +145,7 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
     faitFiles: File[],
     initialFileIds?: string[],
     initialFiles?: Array<{ id: string; entiteId?: string | null }>,
-  ) => {
+  ): Promise<void> => {
     await saveMutation.mutateAsync({ data, faitFiles, initialFileIds, initialFiles });
   };
 

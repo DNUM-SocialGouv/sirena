@@ -31,6 +31,7 @@ import {
   isUserOwner,
   setRequeteFile,
 } from '../uploadedFiles/uploadedFiles.service.js';
+import { getUserById } from '../users/users.service.js';
 import {
   closeRequeteRoute,
   createRequeteRoute,
@@ -639,12 +640,14 @@ const app = factoryWithLogs
       }
     }
 
-    const { requete: updatedRequete, newAssignedEntiteIds } = await createRequeteSituation(
-      id,
-      situationData,
-      topEntiteId,
-      userId,
-    );
+    const user = await getUserById(userId, null, null);
+    const userEntityIds = [topEntiteId, user?.entiteId].filter((id): id is string => Boolean(id));
+
+    const {
+      requete: updatedRequete,
+      newAssignedEntiteIds,
+      shouldCloseRequeteStatus,
+    } = await createRequeteSituation(id, situationData, topEntiteId, userId, userEntityIds, topEntiteId);
 
     if (newAssignedEntiteIds.length > 0) {
       await sendEntiteAssignedNotification(id, newAssignedEntiteIds);
@@ -662,7 +665,7 @@ const app = factoryWithLogs
 
     logger.info({ requeteId: id, userId, fileCount: fileIds.length }, 'Situation created successfully');
 
-    return c.json({ data: updatedRequete });
+    return c.json({ data: updatedRequete, shouldCloseRequeteStatus });
   })
 
   .patch('/:id/situation/:situationId', zValidator('json', UpdateSituationBodySchema), async (c) => {
@@ -696,13 +699,14 @@ const app = factoryWithLogs
       }
     }
 
-    const { requete: updatedRequete, newAssignedEntiteIds } = await updateRequeteSituation(
-      id,
-      situationId,
-      situationData,
-      topEntiteId,
-      userId,
-    );
+    const user = await getUserById(userId, null, null);
+    const userEntityIds = [topEntiteId, user?.entiteId].filter((id): id is string => Boolean(id));
+
+    const {
+      requete: updatedRequete,
+      newAssignedEntiteIds,
+      shouldCloseRequeteStatus,
+    } = await updateRequeteSituation(id, situationId, situationData, topEntiteId, userId, userEntityIds, topEntiteId);
 
     if (newAssignedEntiteIds.length > 0) {
       await sendEntiteAssignedNotification(id, newAssignedEntiteIds);
@@ -720,7 +724,7 @@ const app = factoryWithLogs
 
     logger.info({ requeteId: id, situationId, userId, fileCount: fileIds.length }, 'Situation updated successfully');
 
-    return c.json({ data: updatedRequete });
+    return c.json({ data: updatedRequete, shouldCloseRequeteStatus });
   })
 
   .post(
