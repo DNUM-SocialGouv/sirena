@@ -13,7 +13,7 @@ export const Route = createFileRoute('/_auth/_user/request/create/situation')({
   head: () => ({
     meta: [
       {
-        title: 'Lieu, mis en cause et faits - Nouvelle requête - SIRENA',
+        title: 'Description de la situation - Nouvelle requête - SIRENA',
       },
     ],
   }),

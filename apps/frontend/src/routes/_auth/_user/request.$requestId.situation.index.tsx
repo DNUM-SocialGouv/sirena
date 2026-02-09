@@ -19,7 +19,7 @@ export const Route = createFileRoute('/_auth/_user/request/$requestId/situation/
   head: () => ({
     meta: [
       {
-        title: 'Lieu, mis en cause et faits - Nouvelle situation - SIRENA',
+        title: 'Description de la situation - Nouvelle situation - SIRENA',
       },
     ],
   }),

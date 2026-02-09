@@ -217,6 +217,15 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
 
     return (
       <div className="fr-grid-row fr-grid-row--gutters">
+        {hasLieu && (
+          <div className="fr-col-auto">
+            <p className={fr.cx('fr-mb-0')}>
+              <span className={fr.cx('fr-icon-map-pin-2-line', 'fr-icon--sm')} aria-hidden="true" />
+              <span className="fr-sr-only"> Lieu de survenue des faits :</span> {getLieuDeSurvenue(situation)}
+            </p>
+          </div>
+        )}
+
         {hasMisEnCause && (
           <div className="fr-col-auto">
             <p className={fr.cx('fr-mb-0')}>
@@ -224,15 +233,6 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
               <span className="fr-sr-only">Identité de la personne concernée :</span>{' '}
               {situation?.misEnCause?.commentaire && `${situation.misEnCause.commentaire} - `}
               {situation?.misEnCause?.misEnCauseType?.label}
-            </p>
-          </div>
-        )}
-
-        {hasLieu && (
-          <div className="fr-col-auto">
-            <p className={fr.cx('fr-mb-0')}>
-              <span className={fr.cx('fr-icon-map-pin-2-line', 'fr-icon--sm')} aria-hidden="true" />
-              <span className="fr-sr-only"> Lieu de survenue des faits :</span> {getLieuDeSurvenue(situation)}
             </p>
           </div>
         )}
@@ -476,7 +476,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
   return (
     <InfoSection
       id={id}
-      title="Lieu, mis en cause et faits"
+      title="Description de la situation"
       onEdit={() => onEdit(situationId)}
       canEdit={canEdit}
       badges={
