@@ -113,7 +113,7 @@ export function SituationForm({
 
         <MisEnCause formData={formData} isSaving={isSaving} setFormData={setFormData} />
 
-        <LieuSurvenu formData={formData} isSaving={isSaving} setFormData={setFormData} />
+        <LieuSurvenu formData={formData} isSaving={isSaving} receptionType={receptionType} setFormData={setFormData} />
 
         <DescriptionFaits
           formData={formData}
