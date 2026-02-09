@@ -4,6 +4,7 @@ import {
   GetAgeEnumsResponseSchema,
   GetCiviliteEnumsResponseSchema,
   GetLienVictimeEnumsResponseSchema,
+  GetMisEnCauseTypeEnumsResponseSchema,
 } from './enums.schema.js';
 
 export const getAgeEnumsRoute = describeRoute({
@@ -24,5 +25,11 @@ export const getLienVictimeEnumsRoute = describeRoute({
   description: 'Get all lien victime enums',
   responses: {
     ...openApiResponses(GetLienVictimeEnumsResponseSchema),
+  },
+});
+export const getMisEnCauseTypeEnumsRoute = describeRoute({
+  description: 'Get all mis en cause type enums with their precisions and field metadata',
+  responses: {
+    ...openApiResponses(GetMisEnCauseTypeEnumsResponseSchema),
   },
 });
