@@ -1,7 +1,7 @@
 import factoryWithLogs from '../../../helpers/factories/appWithLogs.js';
 import { apiKeyAuth } from '../../../middlewares/apiKey.middleware.js';
-import { getAgeEnumsRoute, getCiviliteEnumsRoute } from './enums.route.js';
-import { getAgeEnums, getCiviliteEnums } from './enums.service.js';
+import { getAgeEnumsRoute, getCiviliteEnumsRoute, getLieuDeSurvenueEnumsRoute } from './enums.route.js';
+import { getAgeEnums, getCiviliteEnums, getLieuDeSurvenueEnums } from './enums.service.js';
 
 const app = factoryWithLogs
   .createApp()
@@ -21,6 +21,14 @@ const app = factoryWithLogs
     logger.info({ enumCount: civiliteEnums.length }, 'Civilite enums retrieved successfully');
 
     return c.json({ data: civiliteEnums }, 200);
+  })
+
+  .get('/lieu-de-survenue', getLieuDeSurvenueEnumsRoute, async (c) => {
+    const logger = c.get('logger');
+    const lieuDeSurvenueEnums = await getLieuDeSurvenueEnums();
+    logger.info({ enumCount: lieuDeSurvenueEnums.length }, 'Lieu de survenue enums retrieved successfully');
+
+    return c.json({ data: lieuDeSurvenueEnums }, 200);
   });
 
 export default app;
