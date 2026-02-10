@@ -7,8 +7,7 @@ export function AppFooter() {
   const footerId = 'footer';
   return (
     <Footer
-      {/* biome-ignore lint: RGAA exige role et ID explicites pour le lien d'évitement */}
-      id={footerId} 
+      id={footerId}
       accessibility="non compliant"
       contentDescription={`frontend version: ${APP_VERSION} backend version: ${data?.version}`}
       termsLinkProps={{

@@ -35,21 +35,12 @@ export type TabsProps = {
   children: ReactNode;
 } & HTMLAttributes<HTMLDivElement>;
 
-const TabsComponent = ({
-  tabs,
-  activeTab,
-  onUpdateActiveTab,
-  children,
-  className,
-  ...props
-}: TabsProps) => {
+const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children, className, ...props }: TabsProps) => {
   const panelRef = useRef<HTMLDivElement>(null);
 
   const [direction, setDirection] = useState<'left' | 'right'>('right');
 
-  const computeDirection = (newIndex: number): 'left' | 'right' =>
-    newIndex < activeTab ? 'left' : 'right';
-
+  const computeDirection = (newIndex: number): 'left' | 'right' => (newIndex < activeTab ? 'left' : 'right');
   const changeTab = (newIndex: number) => {
     setDirection(computeDirection(newIndex));
     onUpdateActiveTab(newIndex);
@@ -104,12 +95,7 @@ const TabsComponent = ({
       </ul>
 
       <SwitchTransition mode="out-in">
-        <CSSTransition
-          key={activeTab}
-          classNames={`fade-${direction}`}
-          timeout={400}
-          nodeRef={panelRef}
-        >
+        <CSSTransition key={activeTab} classNames={`fade-${direction}`} timeout={400} nodeRef={panelRef}>
           <div
             ref={panelRef}
             id={tabs[activeTab]?.tabPanelId}

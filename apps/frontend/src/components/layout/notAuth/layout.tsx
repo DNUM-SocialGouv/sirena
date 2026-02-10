@@ -13,12 +13,8 @@ export const NotAuth = ({ children }: NotAuthProps) => {
   return (
     <div className="layout">
       <HeaderMenu homeHref="/" />
-      <main
-        /* biome-ignore lint: RGAA exige role et ID explicites pour le lien d'évitement */
-        role="main"
-        id={mainId}
-        className={'fr-container not-auth-main fr-my-15w'}
-      >
+      {/* biome-ignore lint/a11y/useSemanticElements: exigé par RGAA */}
+      <main role="main" id={mainId} className={'fr-container not-auth-main fr-my-15w'}>
         {children}
       </main>
       <AppFooter />
