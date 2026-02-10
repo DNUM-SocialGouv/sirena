@@ -4,8 +4,10 @@ import { useVersion } from '@/hooks/queries/version.hook';
 
 export function AppFooter() {
   const { data } = useVersion();
+  const footerId = 'footer';
   return (
     <Footer
+      id={footerId}
       accessibility="non compliant"
       contentDescription={`frontend version: ${APP_VERSION} backend version: ${data?.version}`}
       termsLinkProps={{

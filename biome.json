@@ -36,6 +36,9 @@
       "react": "all"
     },
     "rules": {
+      "a11y": {
+      "noRedundantRoles": "off"
+      },
       "recommended": true,
       "complexity": {
         "noForEach": "off",

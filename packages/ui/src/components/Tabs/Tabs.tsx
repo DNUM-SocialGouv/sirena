@@ -3,7 +3,6 @@ import {
   memo,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
-  useEffect,
   useRef,
   useState,
 } from 'react';
@@ -37,91 +36,43 @@ export type TabsProps = {
 } & HTMLAttributes<HTMLDivElement>;
 
 const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children, className, ...props }: TabsProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const tablistRef = useRef<HTMLUListElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const isFirstRenderRef = useRef(true);
 
-  const [direction, setDirection] = useState<'right' | 'left'>('right');
-  const pendingIndexRef = useRef<number | null>(null);
+  const [direction, setDirection] = useState<'left' | 'right'>('right');
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: needed to change the direction of the animation
-  useEffect(() => {
-    if (pendingIndexRef.current !== null) {
-      onUpdateActiveTab(pendingIndexRef.current);
-      pendingIndexRef.current = null;
-    }
-  }, [direction, onUpdateActiveTab]);
-
-  useEffect(() => {
-    if (isFirstRenderRef.current) {
-      isFirstRenderRef.current = false;
-      return;
-    }
-    const currentTabId = tabs[activeTab]?.tabId;
-    if (currentTabId && containerRef.current) {
-      const btn = containerRef.current.querySelector<HTMLButtonElement>(`#${currentTabId}`);
-      btn?.focus();
-    }
-  }, [activeTab, tabs]);
-
-  const computeDirection = (newIndex: number): 'left' | 'right' => {
-    return newIndex < activeTab ? 'left' : 'right';
-  };
-
+  const computeDirection = (newIndex: number): 'left' | 'right' => (newIndex < activeTab ? 'left' : 'right');
   const changeTab = (newIndex: number) => {
-    const newDir = computeDirection(newIndex);
-    if (newDir === direction) {
-      onUpdateActiveTab(newIndex);
-    } else {
-      setDirection(newDir);
-      pendingIndexRef.current = newIndex;
-    }
-  };
-
-  const selectTab = (newIndex: number) => {
-    changeTab(newIndex);
-  };
-
-  const selectPrevious = () => {
-    const newIndex = activeTab === 0 ? tabs.length - 1 : activeTab - 1;
-    changeTab(newIndex);
-  };
-
-  const selectNext = () => {
-    const newIndex = activeTab === tabs.length - 1 ? 0 : activeTab + 1;
-    changeTab(newIndex);
-  };
-
-  const selectFirst = () => {
-    changeTab(0);
-  };
-
-  const selectLast = () => {
-    changeTab(tabs.length - 1);
+    setDirection(computeDirection(newIndex));
+    onUpdateActiveTab(newIndex);
   };
 
   const onTabKeyDown = (action: TabActions) => {
-    const tabActions = {
-      next: selectNext,
-      previous: selectPrevious,
-      first: selectFirst,
-      last: selectLast,
-    };
-    tabActions[action]();
+    switch (action) {
+      case 'next':
+        changeTab(activeTab === tabs.length - 1 ? 0 : activeTab + 1);
+        break;
+      case 'previous':
+        changeTab(activeTab === 0 ? tabs.length - 1 : activeTab - 1);
+        break;
+      case 'first':
+        changeTab(0);
+        break;
+      case 'last':
+        changeTab(tabs.length - 1);
+        break;
+    }
   };
 
   const onKeyDownCapture = (event: ReactKeyboardEvent) => {
     if (event.key in keyToEventDict) {
-      const act = keyToEventDict[event.key as TabKey];
-      onTabKeyDown(act);
+      event.preventDefault();
+      onTabKeyDown(keyToEventDict[event.key as TabKey]);
     }
   };
 
   return (
-    <div ref={containerRef} className={`fr-tabs ${className || ''}`} {...props}>
+    <div className={`fr-tabs ${className || ''}`} {...props}>
       <ul
-        ref={tablistRef}
         className="fr-tabs__list"
         // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: needed by the dsfr
         role="tablist"
@@ -134,7 +85,7 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children, className
             panelId={tab.tabPanelId}
             selected={index === activeTab}
             tabId={tab.tabId}
-            onTabClick={() => selectTab(index)}
+            onTabClick={() => changeTab(index)}
             title={tab.title}
             disabled={tab.disabled}
           >
@@ -150,7 +101,7 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children, className
             id={tabs[activeTab]?.tabPanelId}
             className="fr-tabs__panel fr-tabs__panel--selected"
             role="tabpanel"
-            aria-labelledby={tabs[activeTab].tabId}
+            aria-labelledby={tabs[activeTab]?.tabId}
           >
             {children}
           </div>
