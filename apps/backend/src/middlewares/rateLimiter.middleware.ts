@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
-import { createFactory } from 'hono/factory';
 import { connection as redis } from '../config/redis.js';
 import type { AppBindings } from '../helpers/factories/appWithLogs.js';
+import factoryWithLogs from '../helpers/factories/appWithLogs.js';
 import { extractClientIp, UNKNOWN_VALUE } from '../helpers/middleware.js';
 
 interface RateLimiterOptions {
@@ -9,21 +9,24 @@ interface RateLimiterOptions {
   baseBanTimeMinutes?: number;
 }
 
-const factory = createFactory<AppBindings>();
+interface BanData {
+  bannedUntil: number;
+  banCount: number;
+}
 
 export function rateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler<AppBindings> {
   const maxAttempts = options.maxAttempts ?? 5;
   const baseBanTimeMinutes = options.baseBanTimeMinutes ?? 1;
 
-  return factory.createMiddleware(async (c, next) => {
+  return factoryWithLogs.createMiddleware(async (c, next) => {
     const logger = c.get('logger');
-    const loggerBindings = logger?.bindings?.() as { traceId?: string } | undefined;
-    const traceId = loggerBindings?.traceId ?? 'unknown';
+    const loggerBindings = logger.bindings() as { traceId?: string };
+    const traceId = loggerBindings.traceId ?? 'unknown';
 
     const clientIP = extractClientIp(c);
 
     if (clientIP === UNKNOWN_VALUE) {
-      logger?.warn({ traceId }, 'Unable to determine client IP for rate limiting');
+      logger.warn({ traceId }, 'Unable to determine client IP for rate limiting');
       await next();
       return;
     }
@@ -34,12 +37,12 @@ export function rateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler
     try {
       const banData = await redis.get(banKey);
       if (banData) {
-        const { bannedUntil, banCount } = JSON.parse(banData);
+        const { bannedUntil, banCount } = JSON.parse(banData) as BanData;
         const now = Date.now();
 
         if (now < bannedUntil) {
           const remainingSeconds = Math.ceil((bannedUntil - now) / 1000);
-          logger?.warn(
+          logger.warn(
             {
               clientIP,
               traceId,
@@ -66,7 +69,7 @@ export function rateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler
         await redis.del(banKey);
       }
     } catch (error) {
-      logger?.error({ err: error, clientIP, traceId }, 'Error checking ban status');
+      logger.error({ err: error, clientIP, traceId }, 'Error checking ban status');
     }
 
     await next();
@@ -74,7 +77,7 @@ export function rateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler
     try {
       const responseStatus = c.res.status;
 
-      logger?.debug(
+      logger.debug(
         {
           clientIP,
           traceId,
@@ -90,7 +93,7 @@ export function rateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler
           await redis.expire(attemptsKey, 900);
         }
 
-        logger?.warn(
+        logger.warn(
           {
             clientIP,
             traceId,
@@ -112,7 +115,7 @@ export function rateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler
           await redis.setex(`bancount:${clientIP}`, 86400, banCount.toString());
           await redis.del(attemptsKey);
 
-          logger?.warn(
+          logger.warn(
             {
               clientIP,
               traceId,
@@ -126,7 +129,7 @@ export function rateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler
         await redis.del(attemptsKey);
       }
     } catch (error) {
-      logger?.error({ err: error, clientIP, traceId }, 'Error tracking authentication attempts');
+      logger.error({ err: error, clientIP, traceId }, 'Error tracking authentication attempts');
     }
   });
 }

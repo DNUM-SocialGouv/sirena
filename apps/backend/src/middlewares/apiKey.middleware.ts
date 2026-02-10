@@ -1,122 +1,46 @@
-import type { MiddlewareHandler } from 'hono';
-import type { AppBindings } from '../helpers/factories/appWithLogs.js';
-import { hashApiKey } from '../libs/apiKey.js';
-import { prisma } from '../libs/prisma.js';
+import { throwHTTPException401Unauthorized, throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
+import { findApiKeyByHash, markApiKeyAsExpired, updateApiKeyLastUsedAt } from '../features/apiKeys/apiKeys.service.js';
+import factoryWithLogs from '../helpers/factories/appWithLogs.js';
+import { hashApiKey, isValidApiKeyFormat } from '../libs/apiKey.js';
 
-export function apiKeyAuth(): MiddlewareHandler<AppBindings> {
-  return async (c, next) => {
+export const apiKeyAuth = () =>
+  factoryWithLogs.createMiddleware(async (c, next) => {
     const logger = c.get('logger');
-    const loggerBindings = logger?.bindings?.() as { traceId?: string } | undefined;
-    const traceId = loggerBindings?.traceId ?? 'unknown';
 
     const apiKey = c.req.header('X-API-Key');
     if (!apiKey) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'API_KEY_MISSING',
-            message: 'API key is required. Include X-API-Key header.',
-            traceId,
-          },
-        },
-        401,
-      );
+      throwHTTPException401Unauthorized('API key is required. Include X-API-Key header.', { res: c.res });
     }
 
-    const apiKeyRegex = /^sk_[a-f0-9]{64}$/;
-    if (!apiKeyRegex.test(apiKey)) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'API_KEY_INVALID_FORMAT',
-            message: 'Invalid API key format.',
-            traceId,
-          },
-        },
-        401,
-      );
+    if (!isValidApiKeyFormat(apiKey)) {
+      throwHTTPException401Unauthorized('Invalid API key format.', { res: c.res });
     }
 
     const keyHash = hashApiKey(apiKey);
-    const apiKeyRecord = await prisma.apiKey.findUnique({
-      where: { keyHash },
-      include: { account: true },
-    });
+    const apiKeyRecord = await findApiKeyByHash(keyHash);
 
     if (!apiKeyRecord) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'API_KEY_NOT_FOUND',
-            message: 'Invalid API key.',
-            traceId,
-          },
-        },
-        401,
-      );
+      throwHTTPException401Unauthorized('Invalid API key.', { res: c.res });
     }
 
     if (apiKeyRecord.status === 'REVOKED') {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'API_KEY_REVOKED',
-            message: 'This API key has been revoked.',
-            traceId,
-          },
-        },
-        403,
-      );
+      throwHTTPException403Forbidden('This API key has been revoked.', { res: c.res });
     }
 
     if (apiKeyRecord.status === 'SUSPENDED') {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'API_KEY_SUSPENDED',
-            message: 'This API key has been suspended.',
-            traceId,
-          },
-        },
-        403,
-      );
+      throwHTTPException403Forbidden('This API key has been suspended.', { res: c.res });
     }
 
     if (apiKeyRecord.expiresAt && apiKeyRecord.expiresAt < new Date()) {
-      await prisma.apiKey.update({
-        where: { id: apiKeyRecord.id },
-        data: { status: 'EXPIRED' },
-      });
-
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: 'API_KEY_EXPIRED',
-            message: 'This API key has expired.',
-            traceId,
-          },
-        },
-        403,
-      );
+      await markApiKeyAsExpired(apiKeyRecord.id);
+      throwHTTPException403Forbidden('This API key has expired.', { res: c.res });
     }
 
-    prisma.apiKey
-      .update({
-        where: { id: apiKeyRecord.id },
-        data: { lastUsedAt: new Date() },
-      })
-      .catch((error) => {
-        console.error('Failed to update API key lastUsedAt:', error);
-      });
+    updateApiKeyLastUsedAt(apiKeyRecord.id).catch((error) => {
+      logger.error({ err: error }, 'Failed to update API key lastUsedAt');
+    });
 
     c.set('apiKey', apiKeyRecord);
 
     await next();
-  };
-}
+  });
