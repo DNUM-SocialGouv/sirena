@@ -1,5 +1,5 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
-import { RECEPTION_TYPE, REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
+import { RECEPTION_TYPE, REQUETE_PRIORITE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import { z } from 'zod';
 import { Prisma } from '../../libs/prisma.js';
@@ -169,6 +169,10 @@ export const UpdatePrioriteBodySchema = z.object({
   prioriteId: z
     .enum([REQUETE_PRIORITE_TYPES.BASSE, REQUETE_PRIORITE_TYPES.MOYENNE, REQUETE_PRIORITE_TYPES.HAUTE])
     .nullable(),
+});
+
+export const UpdateStatutBodySchema = z.object({
+  statutId: z.enum([REQUETE_STATUT_TYPES.NOUVEAU, REQUETE_STATUT_TYPES.TRAITEE]),
 });
 
 export const CloseRequeteBodySchema = z.object({

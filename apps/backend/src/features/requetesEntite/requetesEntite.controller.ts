@@ -8,6 +8,7 @@ import {
   RECEPTION_TYPE,
   REQUETE_STATUT_TYPES,
   REQUETE_UPDATE_FIELDS,
+  ROLES,
   ROLES_READ,
   ROLES_WRITE,
 } from '@sirena/common/constants';
@@ -15,6 +16,7 @@ import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import { streamFileResponse, streamSafeFileResponse } from '../../helpers/file.js';
 import { sseEventManager } from '../../helpers/sse.js';
+import { prisma } from '../../libs/prisma.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import requeteChangelogMiddleware from '../../middlewares/changelog/changelog.requete.middleware.js';
 import requeteStatesChangelogMiddleware from '../../middlewares/changelog/changelog.requeteEtape.middleware.js';
@@ -48,6 +50,7 @@ import {
   UpdatePrioriteBodySchema,
   UpdateRequeteFilesBodySchema,
   UpdateSituationBodySchema,
+  UpdateStatutBodySchema,
   UpdateTypeAndDateRequeteBodySchema,
 } from './requetesEntite.schema.js';
 import {
@@ -304,6 +307,46 @@ const app = factoryWithLogs
     logger.info({ requeteId: id, situationId, fileId }, 'Retrieving safe file for situation');
 
     return streamSafeFileResponse(c, file);
+  })
+
+  .patch('/:id/statut', zValidator('json', UpdateStatutBodySchema), async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
+    const { statutId } = c.req.valid('json');
+
+    const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
+    if (!requeteEntite) {
+      throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    const user = await getUserById(userId, null, null);
+    const roleId = user?.roleId ?? null;
+    const topEntite = await prisma.entite.findUnique({
+      where: { id: topEntiteId },
+      select: { isActive: true },
+    });
+    const topEntiteIsActive = topEntite?.isActive ?? false;
+
+    const isReadOnlyWithInactiveEntite = roleId === ROLES.READER && !topEntiteIsActive;
+    if (!isReadOnlyWithInactiveEntite) {
+      throwHTTPException403Forbidden('You are not allowed to update the status of a requete with an inactive entite.', {
+        res: c.res,
+      });
+    }
+
+    const updated = await updateStatusRequete(id, topEntiteId, statutId);
+
+    logger.info({ requeteId: id, userId, statutId }, 'Statut updated successfully');
+    return c.json({ data: updated });
   })
 
   .use(roleMiddleware([...ROLES_WRITE]))

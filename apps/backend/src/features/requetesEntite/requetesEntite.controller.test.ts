@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import { type EntiteType, RECEPTION_TYPE, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { type EntiteType, RECEPTION_TYPE, REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,6 +7,7 @@ import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import { getFileStream } from '../../libs/minio.js';
 import type { UploadedFile } from '../../libs/prisma.js';
+import { prisma } from '../../libs/prisma.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
@@ -14,6 +15,7 @@ import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.ser
 import type { EntiteTraitement } from '../entites/entites.type.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service.js';
+import { getUserById } from '../users/users.service.js';
 import RequetesEntiteController from './requetesEntite.controller.js';
 import {
   closeRequeteForEntite,
@@ -88,6 +90,24 @@ vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
   getUploadedFileById: vi.fn(),
   isFileBelongsToRequete: vi.fn(),
 }));
+
+vi.mock('../users/users.service.js', () => ({
+  getUserById: vi.fn(),
+}));
+
+vi.mock('../../libs/prisma.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../libs/prisma.js')>();
+  return {
+    ...actual,
+    prisma: {
+      ...actual.prisma,
+      entite: {
+        ...actual.prisma.entite,
+        findUnique: vi.fn(),
+      },
+    },
+  };
+});
 
 vi.mock('../../middlewares/changelog/changelog.requeteEtape.middleware.js', () => {
   return {
@@ -473,6 +493,71 @@ describe('RequetesEntite endpoints: /', () => {
       expect(res.status).toBe(404);
       const json = await res.json();
       expect(json).toEqual({ message: 'Requete not found' });
+    });
+  });
+
+  describe('PATCH /:id/statut', () => {
+    const updatedRequeteEntite = {
+      ...fakeRequeteEntite,
+      statutId: REQUETE_STATUT_TYPES.TRAITEE,
+    };
+
+    it('returns 200 and updates statut when user is READER and entite is inactive', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(getUserById).mockResolvedValueOnce({ id: 'u1', roleId: ROLES.READER } as never);
+      vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({ isActive: false } as never);
+      vi.mocked(updateStatusRequete).mockResolvedValueOnce(updatedRequeteEntite);
+
+      const res = await client[':id'].statut.$patch({
+        param: { id: 'requeteId' },
+        json: { statutId: REQUETE_STATUT_TYPES.TRAITEE },
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.data).toEqual(convertDatesToStrings(updatedRequeteEntite));
+      expect(updateStatusRequete).toHaveBeenCalledWith('requeteId', 'entiteId', REQUETE_STATUT_TYPES.TRAITEE);
+    });
+
+    it('returns 403 when user is not READER', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(getUserById).mockResolvedValueOnce({ id: 'u1', roleId: ROLES.WRITER } as never);
+      vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({ isActive: false } as never);
+
+      const res = await client[':id'].statut.$patch({
+        param: { id: 'requeteId' },
+        json: { statutId: REQUETE_STATUT_TYPES.TRAITEE },
+      });
+
+      expect(res.status).toBe(403);
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when entite is active', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(getUserById).mockResolvedValueOnce({ id: 'u1', roleId: ROLES.READER } as never);
+      vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({ isActive: true } as never);
+
+      const res = await client[':id'].statut.$patch({
+        param: { id: 'requeteId' },
+        json: { statutId: REQUETE_STATUT_TYPES.TRAITEE },
+      });
+
+      expect(res.status).toBe(403);
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when requete not found', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].statut.$patch({
+        param: { id: 'requeteId' },
+        json: { statutId: REQUETE_STATUT_TYPES.NOUVEAU },
+      });
+
+      expect(res.status).toBe(404);
+      expect(getUserById).not.toHaveBeenCalled();
+      expect(updateStatusRequete).not.toHaveBeenCalled();
     });
   });
 
