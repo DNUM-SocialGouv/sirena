@@ -4,9 +4,7 @@ import { determineSource, generateRequeteId } from './functionalId.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
-    requete: {
-      count: vi.fn(),
-    },
+    $queryRaw: vi.fn(),
   },
 }));
 
@@ -25,25 +23,19 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
-      vi.mocked(prisma.requete.count).mockResolvedValue(0);
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: null }]);
 
       const result = await generateRequeteId('SIRENA');
 
       expect(result).toBe('2025-09-RS1');
-      expect(prisma.requete.count).toHaveBeenCalledWith({
-        where: {
-          id: {
-            startsWith: '2025-09-RS',
-          },
-        },
-      });
+      expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
     });
 
     it('should generate ID with RD prefix for DEMAT_SOCIAL source', async () => {
       const mockDate = new Date('2024-11-20');
       vi.setSystemTime(mockDate);
 
-      vi.mocked(prisma.requete.count).mockResolvedValue(119);
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 119 }]);
 
       const result = await generateRequeteId('DEMAT_SOCIAL');
 
@@ -54,7 +46,7 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-01-05');
       vi.setSystemTime(mockDate);
 
-      vi.mocked(prisma.requete.count).mockResolvedValue(41);
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 41 }]);
 
       const result = await generateRequeteId('SIRENA');
 
@@ -65,7 +57,10 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
-      vi.mocked(prisma.requete.count).mockResolvedValueOnce(0).mockResolvedValueOnce(1).mockResolvedValueOnce(2);
+      vi.mocked(prisma.$queryRaw)
+        .mockResolvedValueOnce([{ maxNumber: 0 }])
+        .mockResolvedValueOnce([{ maxNumber: 1 }])
+        .mockResolvedValueOnce([{ maxNumber: 2 }]);
 
       const result1 = await generateRequeteId('SIRENA');
       const result2 = await generateRequeteId('SIRENA');
@@ -80,7 +75,9 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
-      vi.mocked(prisma.requete.count).mockResolvedValueOnce(5).mockResolvedValueOnce(3);
+      vi.mocked(prisma.$queryRaw)
+        .mockResolvedValueOnce([{ maxNumber: 5 }])
+        .mockResolvedValueOnce([{ maxNumber: 3 }]);
 
       const result1 = await generateRequeteId('SIRENA');
       const result2 = await generateRequeteId('DEMAT_SOCIAL');
@@ -90,7 +87,9 @@ describe('functionalId.service', () => {
     });
 
     it('should reset counter on new month', async () => {
-      vi.mocked(prisma.requete.count).mockResolvedValueOnce(10).mockResolvedValueOnce(0);
+      vi.mocked(prisma.$queryRaw)
+        .mockResolvedValueOnce([{ maxNumber: 10 }])
+        .mockResolvedValueOnce([{ maxNumber: null }]);
 
       // Month 1
       vi.setSystemTime(new Date('2025-09-15'));
@@ -107,11 +106,22 @@ describe('functionalId.service', () => {
       const mockDate = new Date('2025-09-15');
       vi.setSystemTime(mockDate);
 
-      vi.mocked(prisma.requete.count).mockResolvedValue(0);
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: null }]);
 
       const result = await generateRequeteId('SIRENA');
 
       expect(result).toBe('2025-09-RS1');
+    });
+
+    it('should fill numeric gaps by using max suffix instead of count', async () => {
+      const mockDate = new Date('2025-09-15');
+      vi.setSystemTime(mockDate);
+
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 11 }]);
+
+      const result = await generateRequeteId('DEMAT_SOCIAL');
+
+      expect(result).toBe('2025-09-RD12');
     });
   });
 
