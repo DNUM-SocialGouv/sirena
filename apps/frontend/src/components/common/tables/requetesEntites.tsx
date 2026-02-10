@@ -85,7 +85,6 @@ export function RequetesEntite() {
   const { data: profile } = useProfile();
   const userTopEntiteId = profile?.topEntiteId;
   const userEntiteIdLevel = profile?.entiteIdLevel;
-  const userEntiteId = profile?.entiteId;
   const topProfileEntiteId = (() => {
     if (profile?.topEntiteId === profile?.entiteId) {
       return undefined;
@@ -241,8 +240,7 @@ export function RequetesEntite() {
       }
       return '-';
     },
-    'custom:affectation': (row) =>
-      userTopEntiteId ? renderAffectationCell(row, userTopEntiteId, userEntiteId ?? undefined) : '-',
+    'custom:affectation': (row) => (userTopEntiteId ? renderAffectationCell(row, userTopEntiteId) : '-'),
     'custom:motifs': (row) => <div className="requetesEntitesTable__motifs-cell">{renderMotifsCell(row)}</div>,
     'custom:misEnCause': (row) => (
       <div className="requetesEntitesTable__misEnCause-cell">{renderMisEnCauseCell(row)}</div>

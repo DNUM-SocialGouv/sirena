@@ -149,7 +149,7 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     ...(andFilters.length > 0 ? { AND: andFilters } : {}),
   };
 
-  const [data, total] = await Promise.all([
+  const [rawData, total] = await Promise.all([
     prisma.requeteEntite.findMany({
       where,
       skip: offset,
@@ -171,47 +171,7 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
               },
             },
             situations: {
-              include: {
-                faits: {
-                  include: {
-                    consequences: true,
-                    maltraitanceTypes: true,
-                    motifs: {
-                      include: {
-                        motif: true,
-                      },
-                    },
-                    motifsDeclaratifs: {
-                      include: {
-                        motifDeclaratif: true,
-                      },
-                    },
-                    fichiers: true,
-                  },
-                },
-                misEnCause: {
-                  include: {
-                    misEnCauseType: true,
-                    misEnCauseTypePrecision: {
-                      include: {
-                        misEnCauseType: true,
-                      },
-                    },
-                  },
-                },
-                lieuDeSurvenue: {
-                  include: {
-                    adresse: true,
-                    lieuType: true,
-                    transportType: true,
-                  },
-                },
-                situationEntites: {
-                  include: {
-                    entite: true,
-                  },
-                },
-              },
+              include: SITUATION_INCLUDE_FULL,
             },
           },
         },
@@ -222,6 +182,23 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
       where,
     }),
   ]);
+
+  // Enrich each situation with traitementDesFaits
+  const data = await Promise.all(
+    rawData.map(async (requeteEntite) => {
+      const enrichedSituations = await Promise.all(
+        requeteEntite.requete?.situations?.map((situation) => enrichSituationWithTraitementDesFaits(situation)) ?? [],
+      );
+
+      return {
+        ...requeteEntite,
+        requete: {
+          ...requeteEntite.requete,
+          situations: enrichedSituations,
+        },
+      };
+    }),
+  );
 
   return {
     data,

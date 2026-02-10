@@ -1,6 +1,10 @@
+.requetesEntitesTable {
+  --table-column-min-width: 320px;
+}
+
 .requetesEntitesTable .fr-cell:has(.requetesEntitesTable__statut-cell) {
   white-space: nowrap;
-  width: auto;
+  min-width: var(--table-column-min-width);
 }
 
 .requetesEntitesTable__statut-cell {
@@ -13,9 +17,9 @@
 }
 
 .requetesEntitesTable .fr-cell:has(.requetesEntitesTable__motifs-cell) {
-  width: 320px;
+  min-width: var(--table-column-min-width);
 }
 
 .requetesEntitesTable .fr-cell:has(.requetesEntitesTable__misEnCause-cell) {
-  width: 320px;
+  min-width: var(--table-column-min-width);
 }
