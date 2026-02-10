@@ -34,3 +34,17 @@
   display: flex;
   align-items: center;
 }
+
+.toggle-line {
+  margin-top: 0.5rem;
+}
+
+.toggle-line :global(.fr-toggle label::before) {
+  margin-right: 0.5rem;
+}
+
+.toggle-line :global(.fr-toggle label) {
+  width: calc(100% - 0.5rem);
+  font-weight: normal;
+  white-space: nowrap;
+}
