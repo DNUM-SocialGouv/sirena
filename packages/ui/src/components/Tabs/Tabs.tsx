@@ -125,7 +125,7 @@ const TabsComponent = ({ tabs, activeTab, onUpdateActiveTab, children, className
         className="fr-tabs__list"
         // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: needed by the dsfr
         role="tablist"
-        aria-label="[A modifier | nom du système d’onglet]"
+        aria-label="Informations et suivi de la requête"
         onKeyDownCapture={onKeyDownCapture}
       >
         {tabs.map((tab, index) => (
