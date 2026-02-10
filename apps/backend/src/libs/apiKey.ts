@@ -1,9 +1,8 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes, scryptSync } from 'node:crypto';
+import { envVars } from '../config/env.js';
 
-/**
- * Generate a new API key
- * Format: sk_{64-character-hex}
- */
+const SCRYPT_KEY_LENGTH = 32;
+
 export function generateApiKey(): {
   key: string;
   hash: string;
@@ -17,11 +16,8 @@ export function generateApiKey(): {
   return { key, hash, prefix };
 }
 
-/**
- * Hash an API key using SHA-256
- */
 export function hashApiKey(key: string): string {
-  return createHash('sha256').update(key).digest('hex');
+  return scryptSync(key, envVars.API_KEY_HASH_SALT, SCRYPT_KEY_LENGTH).toString('hex');
 }
 
 /**

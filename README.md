@@ -193,6 +193,16 @@ pnpm op:manage-api-keys key list <accountId>
 pnpm op:manage-api-keys key revoke <keyId>
 ```
 
+### Generating the API Key Hash Salt
+
+API keys are hashed using `scrypt` with a salt provided via the `API_KEY_HASH_SALT` environment variable. Each environment must have its own unique salt. Generate one with:
+
+```bash
+openssl rand -hex 32
+```
+
+Store the generated value in the secret store for the target environment. Changing the salt will invalidate all existing API keys.
+
 ### API Key Format
 - Format: `sk_{hexadecimal characters}`
 
