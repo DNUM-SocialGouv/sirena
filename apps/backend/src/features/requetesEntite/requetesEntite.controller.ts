@@ -688,9 +688,19 @@ const app = factoryWithLogs
       });
     }
 
+    const situation = requeteEntite.requete?.situations?.find((s) => s.id === situationId);
+    const existingFileIds: string[] = [];
+    if (situation?.faits) {
+      for (const fait of situation.faits) {
+        if (fait.fichiers) {
+          existingFileIds.push(...fait.fichiers.map((f) => f.id));
+        }
+      }
+    }
     const fileIds = situationData.fait?.fileIds || [];
-    if (fileIds.length > 0) {
-      const isAllowed = await isUserOwner(userId, fileIds);
+    const newFileIds = fileIds.filter((fileId) => !existingFileIds.includes(fileId));
+    if (newFileIds.length > 0) {
+      const isAllowed = await isUserOwner(userId, newFileIds);
 
       if (!isAllowed) {
         throwHTTPException403Forbidden('You are not allowed to add these files to the situation', {
