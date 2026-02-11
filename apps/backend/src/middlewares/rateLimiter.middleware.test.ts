@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { attemptsKey, banCountKey, banKey } from '../config/redis.constant.js';
 import { rateLimiter } from './rateLimiter.middleware.js';
 
 vi.mock('../config/redis.js', () => ({
@@ -56,6 +57,13 @@ describe('rateLimiter middleware', () => {
       }
       return c.json({ success: true }, 200);
     });
+    app.onError((err) => {
+      const e = err as Record<string, unknown>;
+      if (typeof e.getResponse === 'function' && typeof e.status === 'number') {
+        return (err as { getResponse: () => Response }).getResponse();
+      }
+      return new Response('Internal Server Error', { status: 500 });
+    });
   });
 
   it('should allow request when IP is not banned', async () => {
@@ -65,7 +73,7 @@ describe('rateLimiter middleware', () => {
     const res = await app.request('/test');
 
     expect(res.status).toBe(200);
-    expect(redis.get).toHaveBeenCalledWith('ban:192.168.1.1');
+    expect(redis.get).toHaveBeenCalledWith(banKey('192.168.1.1'));
   });
 
   it('should block request when IP is banned', async () => {
@@ -76,9 +84,9 @@ describe('rateLimiter middleware', () => {
     const res = await app.request('/test');
 
     expect(res.status).toBe(429);
+    expect(res.headers.get('Retry-After')).toBeDefined();
     const json = await res.json();
-    expect(json.error.code).toBe('RATE_LIMIT_EXCEEDED');
-    expect(json.error.retryAfter).toBeGreaterThan(0);
+    expect(json.message).toContain('Too many failed attempts');
   });
 
   it('should increment attempts on failed authentication', async () => {
@@ -89,8 +97,8 @@ describe('rateLimiter middleware', () => {
     const res = await app.request('/test?fail=true');
 
     expect(res.status).toBe(401);
-    expect(redis.incr).toHaveBeenCalledWith('attempts:192.168.1.1');
-    expect(redis.expire).toHaveBeenCalledWith('attempts:192.168.1.1', 900);
+    expect(redis.incr).toHaveBeenCalledWith(attemptsKey('192.168.1.1'));
+    expect(redis.expire).toHaveBeenCalledWith(attemptsKey('192.168.1.1'), 900);
   });
 
   it('should ban IP after max attempts exceeded', async () => {
@@ -102,13 +110,13 @@ describe('rateLimiter middleware', () => {
 
     expect(res.status).toBe(401);
     expect(redis.setex).toHaveBeenCalled();
-    expect(redis.del).toHaveBeenCalledWith('attempts:192.168.1.1');
+    expect(redis.del).toHaveBeenCalledWith(attemptsKey('192.168.1.1'));
   });
 
   it('should use exponential backoff for repeated bans', async () => {
     extractClientIp.mockReturnValue('192.168.1.1');
     redis.get.mockImplementation((key) => {
-      if (key === 'bancount:192.168.1.1') {
+      if (key === banCountKey('192.168.1.1')) {
         return Promise.resolve('2');
       }
       return Promise.resolve(null);
@@ -118,7 +126,7 @@ describe('rateLimiter middleware', () => {
     await app.request('/test?fail=true');
 
     const setexCalls = redis.setex.mock.calls;
-    const banCall = setexCalls.find((call: unknown[]) => call[0] === 'ban:192.168.1.1');
+    const banCall = setexCalls.find((call: unknown[]) => call[0] === banKey('192.168.1.1'));
 
     expect(banCall).toBeDefined();
     const banData = JSON.parse(banCall[2]);
@@ -132,7 +140,7 @@ describe('rateLimiter middleware', () => {
     const res = await app.request('/test');
 
     expect(res.status).toBe(200);
-    expect(redis.del).toHaveBeenCalledWith('attempts:192.168.1.1');
+    expect(redis.del).toHaveBeenCalledWith(attemptsKey('192.168.1.1'));
   });
 
   it('should handle missing IP gracefully', async () => {

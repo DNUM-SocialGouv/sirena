@@ -7,6 +7,7 @@ import { ErrorSchema, ZodSafeParseErrorSchema } from '../schemas/apiErrors.schem
 type ErrorOptions = {
   cause?: Cause;
   res?: Response;
+  headers?: Record<string, string>;
 };
 
 const MESSAGES = {
@@ -15,6 +16,7 @@ const MESSAGES = {
   FORBIDDEN: 'Forbidden',
   NOT_FOUND: 'Not found',
   CONFLICT: 'Conflict',
+  TOO_MANY_REQUESTS: 'Too many requests',
   ZOD_ERROR: 'Zod error',
   SERVICE_NOT_AVAILABLE: 'Service not available',
 };
@@ -25,12 +27,14 @@ const getParamsOptions = (status: number, message: string, options?: ErrorOption
     params.cause = options.cause;
   }
 
+  const extraHeaders = options?.headers ?? {};
   let res: Response;
   if (options?.res) {
     res = new Response(JSON.stringify({ ...params }), {
       status,
       headers: {
         ...Object.fromEntries(options.res.headers),
+        ...extraHeaders,
         'Content-Type': 'application/json',
       },
     });
@@ -38,6 +42,7 @@ const getParamsOptions = (status: number, message: string, options?: ErrorOption
     res = new Response(JSON.stringify({ ...params }), {
       status: status,
       headers: {
+        ...extraHeaders,
         'Content-Type': 'application/json',
       },
     });
@@ -72,6 +77,15 @@ export const throwHTTPException404NotFound = (msg = MESSAGES.NOT_FOUND, options?
 
 export const throwHTTPException409Conflict = (msg = MESSAGES.CONFLICT, options?: ErrorOptions) => {
   const status = 409;
+  const params = getParamsOptions(status, msg, options);
+  throw new HTTPException(status, params);
+};
+
+export const throwHTTPException429TooManyRequests = (
+  msg = MESSAGES.TOO_MANY_REQUESTS,
+  options?: ErrorOptions,
+): never => {
+  const status = 429;
   const params = getParamsOptions(status, msg, options);
   throw new HTTPException(status, params);
 };
