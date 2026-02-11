@@ -12,6 +12,8 @@ type UpdateReceptionType = Exclude<ReceptionType, 'FORMULAIRE'>;
 type RequeteDateTypeData = {
   receptionDate?: string | null;
   receptionTypeId?: UpdateReceptionType | null;
+  provenanceId?: string | null;
+  provenancePrecision?: string | null;
 };
 
 type UseRequeteDateTypeSaveProps = {
