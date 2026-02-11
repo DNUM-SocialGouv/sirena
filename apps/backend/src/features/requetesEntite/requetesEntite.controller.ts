@@ -481,7 +481,7 @@ const app = factoryWithLogs
         res: c.res,
       });
     }
-    const { receptionDate, receptionTypeId, controls } = c.req.valid('json');
+    const { receptionDate, receptionTypeId, provenanceId, provenancePrecision, controls } = c.req.valid('json');
 
     const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
 
@@ -497,7 +497,12 @@ const app = factoryWithLogs
       });
     }
 
-    const payload: { receptionDate?: Date | null; receptionTypeId?: string | null } = {};
+    const payload: {
+      receptionDate?: Date | null;
+      receptionTypeId?: string | null;
+      provenanceId?: string | null;
+      provenancePrecision?: string | null;
+    } = {};
 
     if (receptionDate !== undefined) {
       payload.receptionDate = receptionDate ? new Date(receptionDate) : null;
@@ -505,6 +510,14 @@ const app = factoryWithLogs
 
     if (receptionTypeId !== undefined) {
       payload.receptionTypeId = receptionTypeId;
+    }
+
+    if (provenanceId !== undefined) {
+      payload.provenanceId = provenanceId;
+    }
+
+    if (provenancePrecision !== undefined) {
+      payload.provenancePrecision = provenancePrecision;
     }
 
     try {

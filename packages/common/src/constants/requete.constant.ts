@@ -687,6 +687,54 @@ export const receptionTypeLabels: Record<ReceptionType, string> = {
   AUTRE: 'Autre',
 };
 
+export const REQUETE_PROVENANCE = {
+  AUTO_SAISINE_PARTICULIER: 'AUTO_SAISINE_PARTICULIER',
+  AUTO_SAISINE_PRO: 'AUTO_SAISINE_PRO',
+  PRESIDENCE_REPUBLIQUE: 'PRESIDENCE_REPUBLIQUE',
+  ELUS: 'ELUS',
+  PREFECTURE: 'PREFECTURE',
+  ARS: 'ARS',
+  CONSEIL_DEPARTEMENTAL: 'CONSEIL_DEPARTEMENTAL',
+  DDETS_DREETS: 'DDETS_DREETS',
+  PREMIER_MINISTRE: 'PREMIER_MINISTRE',
+  MINISTERES: 'MINISTERES',
+  PRESIDENCE_AN_SENAT: 'PRESIDENCE_AN_SENAT',
+  IGAS: 'IGAS',
+  PARQUET: 'PARQUET',
+  DEFENSEUR_DROITS: 'DEFENSEUR_DROITS',
+  CONSEILS_ORDRE: 'CONSEILS_ORDRE',
+  ASSOCIATIONS_USAGERS: 'ASSOCIATIONS_USAGERS',
+  ASSURANCE_MALADIE: 'ASSURANCE_MALADIE',
+  DEMANDE_SDIS: 'DEMANDE_SDIS',
+  AUTRE: 'AUTRE',
+} as const;
+
+export type RequeteProvenance = keyof typeof REQUETE_PROVENANCE;
+
+export const requeteProvenanceLabels: Record<RequeteProvenance, string> = {
+  AUTO_SAISINE_PARTICULIER: "Auto-saisine du service suite à la sollicitation d'un particulier",
+  AUTO_SAISINE_PRO: "Auto-saisine du service suite à la sollicitation d'un professionnel interne ou externe",
+  PRESIDENCE_REPUBLIQUE: 'Présidence de la République',
+  ELUS: 'Élus',
+  PREFECTURE: 'Préfecture',
+  ARS: 'ARS',
+  CONSEIL_DEPARTEMENTAL: 'Conseil départemental',
+  DDETS_DREETS: 'DDETS, DREETS',
+  PREMIER_MINISTRE: 'Premier Ministre',
+  MINISTERES: 'Ministères',
+  PRESIDENCE_AN_SENAT: "Présidence de l'Assemblée Nationale ou du Sénat",
+  IGAS: 'Inspection Générale des Affaires Sociales',
+  PARQUET: 'Parquet',
+  DEFENSEUR_DROITS: 'Défenseur des droits',
+  CONSEILS_ORDRE: "Conseils de l'Ordre",
+  ASSOCIATIONS_USAGERS: "Associations / Représentants / Collectifs d'usagers",
+  ASSURANCE_MALADIE: 'Assurance Maladie',
+  DEMANDE_SDIS: 'Demande du SDIS',
+  AUTRE: 'Autre',
+};
+
+export const REQUETE_PROVENANCE_NEEDS_PRECISION: RequeteProvenance[] = ['MINISTERES', 'AUTRE'];
+
 export const AUTORITE_TYPE = {
   GENDARMERIE: 'GENDARMERIE',
   COMMISSARIAT: 'COMMISSARIAT',

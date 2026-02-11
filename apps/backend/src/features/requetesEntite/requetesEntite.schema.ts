@@ -116,11 +116,16 @@ export const GetRequeteEntiteSchema = RequeteEntiteSchema.extend({
 
 export const GetRequetesEntiteResponseSchema = z.array(GetRequeteEntiteSchema);
 
+const provenanceIdOptional = z.string().nullable().optional();
+const provenancePrecisionOptional = z.string().trim().max(2000).nullable().optional();
+
 export const CreateRequeteBodySchema = z.object({
   declarant: DeclarantDataSchema.optional(),
   participant: PersonneConcerneeDataSchema.optional(),
   receptionDate,
   receptionTypeId,
+  provenanceId: provenanceIdOptional,
+  provenancePrecision: provenancePrecisionOptional,
   fileIds: z.array(z.string()).optional(),
 });
 
@@ -155,6 +160,8 @@ export const UpdateSituationBodySchema = z.object({
 export const UpdateTypeAndDateRequeteBodySchema = z.object({
   receptionDate,
   receptionTypeId,
+  provenanceId: provenanceIdOptional,
+  provenancePrecision: provenancePrecisionOptional,
   controls: requeteControl.optional(),
 });
 

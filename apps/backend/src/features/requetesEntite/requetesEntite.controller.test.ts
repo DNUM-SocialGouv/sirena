@@ -818,5 +818,45 @@ describe('RequetesEntite endpoints: /', () => {
         undefined,
       );
     });
+
+    it('updates provenance and provenancePrecision when provided', async () => {
+      const updatedRequete = {
+        ...baseRequeteEntite.requete,
+        receptionDate: baseRequeteEntite.requete.receptionDate,
+        receptionTypeId: RECEPTION_TYPE.COURRIER,
+        provenanceId: 'MINISTERES',
+        provenancePrecision: 'Ministère de la Santé',
+        updatedAt: new Date('2025-05-04'),
+      };
+
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
+      vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
+
+      const res = await client[':id']['date-type'].$patch({
+        param: { id: 'requeteId' },
+        json: {
+          receptionDate: '2025-05-01',
+          receptionTypeId: RECEPTION_TYPE.COURRIER,
+          provenanceId: 'MINISTERES',
+          provenancePrecision: 'Ministère de la Santé',
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.data.provenanceId).toBe('MINISTERES');
+      expect(body.data.provenancePrecision).toBe('Ministère de la Santé');
+
+      expect(updateDateAndTypeRequete).toHaveBeenCalledWith(
+        'requeteId',
+        {
+          receptionDate: new Date('2025-05-01'),
+          receptionTypeId: RECEPTION_TYPE.COURRIER,
+          provenanceId: 'MINISTERES',
+          provenancePrecision: 'Ministère de la Santé',
+        },
+        undefined,
+      );
+    });
   });
 });
