@@ -17,6 +17,7 @@
     "db:migrate:resolve": "prisma migrate resolve --rolled-back",
     "op:import:dematsocial": "tsx src/scripts/import_dematsocial.ts",
     "op:import:geodata": "tsx src/scripts/import_geodata.ts",
+    "op:manage-api-keys": "tsx src/scripts/manage-api-keys.ts",
     "op:diff:autorite-competente:analyze": "tsx src/scripts/diff-autorite-competente.ts --csv \"prisma/documents/referentiel_autorite_competentes.csv\"",
     "op:diff:autorite-competente:up": "tsx src/scripts/diff-autorite-competente.ts --csv \"prisma/documents/referentiel_autorite_competentes.csv\" --dump-migration > migration.sql",
     "op:diff:autorite-competente:down": "tsx src/scripts/diff-autorite-competente.ts --csv \"prisma/documents/referentiel_autorite_competentes.csv\" --dump-migration --invert > down.sql",
@@ -30,6 +31,7 @@
     "db:studio": "prisma studio",
     "script:update-demat-social-mapper": "tsx scripts/updateDematSocial-mapper.ts",
     "generate:codegen": "graphql-codegen --config codegen.ts",
+    "generate:openapi:thirdparty": "tsx src/swagger/genOpenAPISwagger.thirdparty.ts",
     "lint:staged": "git diff --cached --name-only --diff-filter=ACM | grep '^packages/backend/' | sed 's|^packages/backend/||' | grep -E '\\.(js|ts|tsx|jsx|json|md)$' | xargs -r pnpm biome check",
     "lint": "biome check",
     "sentry:sourcemaps": "sh -c 'SHORT=$(echo \"$APP_VERSION\" | cut -c1-7) && sentry-cli sourcemaps inject --release \"$SHORT\" --org incubateur --project psn-sirena-backend ./dist && sentry-cli --url https://sentry2.fabrique.social.gouv.fr/ sourcemaps upload --release \"$SHORT\" --org incubateur --project psn-sirena-backend ./dist'"

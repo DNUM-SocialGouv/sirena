@@ -682,3 +682,39 @@ model InseePostal {
   @@index([codeInsee])
   @@index([codePostal])
 }
+
+// Third-Party API Models
+enum ApiKeyStatus {
+  ACTIVE
+  SUSPENDED
+  REVOKED
+  EXPIRED
+}
+
+model ThirdPartyAccount {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  apiKeys ApiKey[]
+}
+
+model ApiKey {
+  id         String       @id @default(cuid())
+  accountId  String
+  keyHash    String       @unique
+  keyPrefix  String
+  status     ApiKeyStatus @default(ACTIVE)
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  account ThirdPartyAccount @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+  @@index([status])
+  @@index([keyHash])
+}
