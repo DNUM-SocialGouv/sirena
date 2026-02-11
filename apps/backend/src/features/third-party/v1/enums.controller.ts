@@ -1,6 +1,11 @@
 import factoryWithLogs from '../../../helpers/factories/appWithLogs.js';
 import { apiKeyAuth } from '../../../middlewares/apiKey.middleware.js';
-import { getAgeEnumsRoute, getCiviliteEnumsRoute, getLienVictimeEnumsRoute, getMisEnCauseTypeEnumsRoute } from './enums.route.js';
+import {
+  getAgeEnumsRoute,
+  getCiviliteEnumsRoute,
+  getLienVictimeEnumsRoute,
+  getMisEnCauseTypeEnumsRoute,
+} from './enums.route.js';
 import { getAgeEnums, getCiviliteEnums, getLienVictimeEnums, getMisEnCauseTypeEnums } from './enums.service.js';
 
 const app = factoryWithLogs

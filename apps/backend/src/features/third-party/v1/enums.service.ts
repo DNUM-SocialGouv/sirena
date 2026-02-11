@@ -1,9 +1,9 @@
 import {
   type AgeEnum,
   type CiviliteEnum,
+  type LienVictimeEnum,
   type MisEnCauseTypeEnum,
   type MisEnCauseTypePrecisionEnum,
-  type LienVictimeEnum,
   prisma,
 } from '../../../libs/prisma.js';
 
