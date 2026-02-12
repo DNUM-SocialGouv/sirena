@@ -108,7 +108,7 @@ export function SituationForm({
           </Link>
         </div>
 
-        <h1 className="fr-mb-2w">Mis en cause et détails des faits</h1>
+        <h1 className="fr-mb-2w">Description de la situation</h1>
         <p className="fr-text--sm fr-mb-5w">Tous les champs sont facultatifs</p>
 
         <MisEnCause formData={formData} isSaving={isSaving} setFormData={setFormData} />
