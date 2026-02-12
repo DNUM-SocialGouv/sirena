@@ -16,7 +16,6 @@ import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service.js';
 import RequetesEntiteController from './requetesEntite.controller.js';
 import {
-  closeRequeteForEntite,
   getOtherEntitesAffected,
   getRequeteEntiteById,
   getRequetesEntite,
