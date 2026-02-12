@@ -182,6 +182,8 @@ Object.assign(process.env, {
   CRON_RETRY_AFFECTATION: '3600',
   CRON_RETRY_IMPORT_REQUETES: '3600',
   CRON_QUEUE_UNPROCESSED_FILES: '3600',
+  // API Key
+  API_KEY_HASH_SALT: 'test-salt',
   // Redis
   REDIS_HOST: 'localhost',
   REDIS_PORT: '6379',

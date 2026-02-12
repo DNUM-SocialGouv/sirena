@@ -88,33 +88,112 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
       className="fr-p-4w fr-mb-4w"
       style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
     >
-      <h2 className="fr-h6 fr-mb-3w">Lieu de survenue</h2>
-      <div className="fr-grid-row fr-grid-row--gutters">
-        <div className="fr-col-12 fr-col-md-6">
-          <Select
-            label="Type de lieu"
-            nativeSelectProps={{
-              value: lieuType || '',
-              onChange: (e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  lieuDeSurvenue: {
-                    lieuType: e.target.value || undefined,
-                  },
-                })),
-            }}
-          >
-            <option value="">Sélectionner une option</option>
-            {lieuTypeOptions.map(({ key, value }) => (
-              <option key={key} value={key}>
-                {value}
-              </option>
-            ))}
-          </Select>
-        </div>
+      <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+        <legend>
+          <h2 className="fr-h6 fr-mb-3w">Lieu de survenue</h2>
+        </legend>
+        <div className="fr-grid-row fr-grid-row--gutters">
+          <div className="fr-col-12 fr-col-md-6">
+            <Select
+              label="Type de lieu"
+              nativeSelectProps={{
+                value: lieuType || '',
+                onChange: (e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    lieuDeSurvenue: {
+                      lieuType: e.target.value || undefined,
+                    },
+                  })),
+              }}
+            >
+              <option value="">Sélectionner une option</option>
+              {lieuTypeOptions.map(({ key, value }) => (
+                <option key={key} value={key}>
+                  {value}
+                </option>
+              ))}
+            </Select>
+          </div>
 
-        {lieuType === LIEU_TYPE.DOMICILE && (
-          <>
+          {lieuType === LIEU_TYPE.DOMICILE && (
+            <>
+              <div className="fr-col-12 fr-col-md-6">
+                <Select
+                  label="Précision du lieu"
+                  nativeSelectProps={{
+                    value: formData.lieuDeSurvenue?.lieuPrecision || '',
+                    onChange: (e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        lieuDeSurvenue: { ...prev.lieuDeSurvenue, lieuPrecision: e.target.value || undefined },
+                      })),
+                  }}
+                >
+                  <option value="">Sélectionner une option</option>
+                  {lieuDomicileOptions.map(({ key, value }) => (
+                    <option key={key} value={key}>
+                      {value}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              {shouldShowDomicileAddressFields && (
+                <>
+                  <div className="fr-col-12">
+                    <Input
+                      label="Adresse"
+                      nativeInputProps={{
+                        value: formData.lieuDeSurvenue?.adresse?.label || '',
+                        onChange: (e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            lieuDeSurvenue: {
+                              ...prev.lieuDeSurvenue,
+                              adresse: { ...prev.lieuDeSurvenue?.adresse, label: e.target.value },
+                            },
+                          })),
+                      }}
+                    />
+                  </div>
+                  <div className="fr-col-12 fr-col-md-6">
+                    <Input
+                      label="Code postal"
+                      nativeInputProps={{
+                        value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
+                        onChange: (e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            lieuDeSurvenue: {
+                              ...prev.lieuDeSurvenue,
+                              adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
+                            },
+                          })),
+                      }}
+                    />
+                  </div>
+                  <div className="fr-col-12 fr-col-md-6">
+                    <Input
+                      label="Ville"
+                      nativeInputProps={{
+                        value: formData.lieuDeSurvenue?.adresse?.ville || '',
+                        onChange: (e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            lieuDeSurvenue: {
+                              ...prev.lieuDeSurvenue,
+                              adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
+                            },
+                          })),
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {lieuType === LIEU_TYPE.ETABLISSEMENT_SANTE && (
             <div className="fr-col-12 fr-col-md-6">
               <Select
                 label="Précision du lieu"
@@ -128,185 +207,16 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                 }}
               >
                 <option value="">Sélectionner une option</option>
-                {lieuDomicileOptions.map(({ key, value }) => (
+                {lieuEtablissementSanteOptions.map(({ key, value }) => (
                   <option key={key} value={key}>
                     {value}
                   </option>
                 ))}
               </Select>
             </div>
-            {shouldShowDomicileAddressFields && (
-              <>
-                <div className="fr-col-12">
-                  <Input
-                    label="Adresse"
-                    nativeInputProps={{
-                      value: formData.lieuDeSurvenue?.adresse?.label || '',
-                      onChange: (e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          lieuDeSurvenue: {
-                            ...prev.lieuDeSurvenue,
-                            adresse: { ...prev.lieuDeSurvenue?.adresse, label: e.target.value },
-                          },
-                        })),
-                    }}
-                  />
-                </div>
-                <div className="fr-col-12 fr-col-md-6">
-                  <Input
-                    label="Code postal"
-                    nativeInputProps={{
-                      value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
-                      onChange: (e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          lieuDeSurvenue: {
-                            ...prev.lieuDeSurvenue,
-                            adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
-                          },
-                        })),
-                    }}
-                  />
-                </div>
-                <div className="fr-col-12 fr-col-md-6">
-                  <Input
-                    label="Ville"
-                    nativeInputProps={{
-                      value: formData.lieuDeSurvenue?.adresse?.ville || '',
-                      onChange: (e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          lieuDeSurvenue: {
-                            ...prev.lieuDeSurvenue,
-                            adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
-                          },
-                        })),
-                    }}
-                  />
-                </div>
-              </>
-            )}
-          </>
-        )}
+          )}
 
-        {lieuType === LIEU_TYPE.ETABLISSEMENT_SANTE && (
-          <div className="fr-col-12 fr-col-md-6">
-            <Select
-              label="Précision du lieu"
-              nativeSelectProps={{
-                value: formData.lieuDeSurvenue?.lieuPrecision || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    lieuDeSurvenue: { ...prev.lieuDeSurvenue, lieuPrecision: e.target.value || undefined },
-                  })),
-              }}
-            >
-              <option value="">Sélectionner une option</option>
-              {lieuEtablissementSanteOptions.map(({ key, value }) => (
-                <option key={key} value={key}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-
-        {lieuType === LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES && (
-          <div className="fr-col-12 fr-col-md-6">
-            <Select
-              label="Précision du lieu"
-              nativeSelectProps={{
-                value: formData.lieuDeSurvenue?.lieuPrecision || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    lieuDeSurvenue: { ...prev.lieuDeSurvenue, lieuPrecision: e.target.value || undefined },
-                  })),
-              }}
-            >
-              <option value="">Sélectionner une option</option>
-              {lieuEtablissementPersonnesAgeesOptions.map(({ key, value }) => (
-                <option key={key} value={key}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-
-        {lieuType === LIEU_TYPE.ETABLISSEMENT_HANDICAP && (
-          <div className="fr-col-12 fr-col-md-6">
-            <Select
-              label="Précision du lieu"
-              nativeSelectProps={{
-                value: formData.lieuDeSurvenue?.lieuPrecision || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    lieuDeSurvenue: { ...prev.lieuDeSurvenue, lieuPrecision: e.target.value || undefined },
-                  })),
-              }}
-            >
-              <option value="">Sélectionner une option</option>
-              {lieuEtablissementHandicapOptions.map(({ key, value }) => (
-                <option key={key} value={key}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-
-        {lieuType === LIEU_TYPE.ETABLISSEMENT_SOCIAL && (
-          <div className="fr-col-12 fr-col-md-6">
-            <Select
-              label="Précision du lieu"
-              nativeSelectProps={{
-                value: formData.lieuDeSurvenue?.lieuPrecision || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    lieuDeSurvenue: { ...prev.lieuDeSurvenue, lieuPrecision: e.target.value || undefined },
-                  })),
-              }}
-            >
-              <option value="">Sélectionner une option</option>
-              {lieuEtablissementSocialOptions.map(({ key, value }) => (
-                <option key={key} value={key}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-
-        {lieuType === LIEU_TYPE.AUTRES_ETABLISSEMENTS && (
-          <div className="fr-col-12 fr-col-md-6">
-            <Select
-              label="Précision du lieu"
-              nativeSelectProps={{
-                value: formData.lieuDeSurvenue?.lieuPrecision || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    lieuDeSurvenue: { ...prev.lieuDeSurvenue, lieuPrecision: e.target.value || undefined },
-                  })),
-              }}
-            >
-              <option value="">Sélectionner une option</option>
-              {lieuAutresEtablissementsOptions.map(({ key, value }) => (
-                <option key={key} value={key}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-
-        {lieuType === LIEU_TYPE.TRAJET && (
-          <>
+          {lieuType === LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES && (
             <div className="fr-col-12 fr-col-md-6">
               <Select
                 label="Précision du lieu"
@@ -320,150 +230,136 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                 }}
               >
                 <option value="">Sélectionner une option</option>
-                {lieuTrajetPrecisionOptions.map(({ key, value }) => (
+                {lieuEtablissementPersonnesAgeesOptions.map(({ key, value }) => (
                   <option key={key} value={key}>
                     {value}
                   </option>
                 ))}
               </Select>
             </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label="Société de transport concernée"
-                nativeInputProps={{
-                  value: formData.lieuDeSurvenue?.societeTransport || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: { ...prev.lieuDeSurvenue, societeTransport: e.target.value },
-                    })),
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label="Code postal"
-                nativeInputProps={{
-                  value: formData.lieuDeSurvenue?.codePostal || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: { ...prev.lieuDeSurvenue, codePostal: e.target.value },
-                    })),
-                }}
-              />
-            </div>
-          </>
-        )}
+          )}
 
-        {lieuType === LIEU_TYPE.ETABLISSEMENT_SANTE && (
-          <>
+          {lieuType === LIEU_TYPE.ETABLISSEMENT_HANDICAP && (
             <div className="fr-col-12 fr-col-md-6">
-              <OrganizationSearchField
-                value={formData.lieuDeSurvenue?.finess || ''}
-                onChange={(value, organization) => {
-                  if (organization) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: {
-                        ...prev.lieuDeSurvenue,
-                        finess: value,
-                        adresse: buildOrganizationAddress(
-                          organization.name,
-                          organization.addressPostalcode,
-                          organization.addressCity,
-                        ),
-                      },
-                    }));
-                  } else {
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: value },
-                    }));
-                  }
-                }}
-                label="Numéro FINESS"
-                disabled={isSaving}
-                searchMode="finess"
-                minSearchLength={6}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <OrganizationSearchField
-                value={extractOrganizationName(formData.lieuDeSurvenue?.adresse)}
-                onChange={(value, organization) => {
-                  if (organization) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: {
-                        ...prev.lieuDeSurvenue,
-                        finess: organization.identifier,
-                        adresse: buildOrganizationAddress(
-                          organization.name,
-                          organization.addressPostalcode,
-                          organization.addressCity,
-                        ),
-                      },
-                    }));
-                  } else {
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: {
-                        ...prev.lieuDeSurvenue,
-                        adresse: value === '' ? undefined : updateOrganizationName(prev.lieuDeSurvenue?.adresse, value),
-                      },
-                    }));
-                  }
-                }}
-                label="Nom de l'établissement"
-                disabled={isSaving}
-                searchMode="name"
-                minSearchLength={2}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label="Code postal"
-                nativeInputProps={{
-                  value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
+              <Select
+                label="Précision du lieu"
+                nativeSelectProps={{
+                  value: formData.lieuDeSurvenue?.lieuPrecision || '',
                   onChange: (e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      lieuDeSurvenue: {
-                        ...prev.lieuDeSurvenue,
-                        adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
-                      },
+                      lieuDeSurvenue: { ...prev.lieuDeSurvenue, lieuPrecision: e.target.value || undefined },
                     })),
                 }}
-              />
+              >
+                <option value="">Sélectionner une option</option>
+                {lieuEtablissementHandicapOptions.map(({ key, value }) => (
+                  <option key={key} value={key}>
+                    {value}
+                  </option>
+                ))}
+              </Select>
             </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label="Ville"
-                nativeInputProps={{
-                  value: formData.lieuDeSurvenue?.adresse?.ville || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: {
-                        ...prev.lieuDeSurvenue,
-                        adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
-                      },
-                    })),
-                }}
-              />
-            </div>
-          </>
-        )}
+          )}
 
-        {lieuType &&
-          (
-            [
-              LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
-              LIEU_TYPE.ETABLISSEMENT_HANDICAP,
-              LIEU_TYPE.ETABLISSEMENT_SOCIAL,
-            ] as string[]
-          ).includes(lieuType) && (
+          {lieuType === LIEU_TYPE.ETABLISSEMENT_SOCIAL && (
+            <div className="fr-col-12 fr-col-md-6">
+              <Select
+                label="Précision du lieu"
+                nativeSelectProps={{
+                  value: formData.lieuDeSurvenue?.lieuPrecision || '',
+                  onChange: (e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      lieuDeSurvenue: { ...prev.lieuDeSurvenue, lieuPrecision: e.target.value || undefined },
+                    })),
+                }}
+              >
+                <option value="">Sélectionner une option</option>
+                {lieuEtablissementSocialOptions.map(({ key, value }) => (
+                  <option key={key} value={key}>
+                    {value}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
+          {lieuType === LIEU_TYPE.AUTRES_ETABLISSEMENTS && (
+            <div className="fr-col-12 fr-col-md-6">
+              <Select
+                label="Précision du lieu"
+                nativeSelectProps={{
+                  value: formData.lieuDeSurvenue?.lieuPrecision || '',
+                  onChange: (e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      lieuDeSurvenue: { ...prev.lieuDeSurvenue, lieuPrecision: e.target.value || undefined },
+                    })),
+                }}
+              >
+                <option value="">Sélectionner une option</option>
+                {lieuAutresEtablissementsOptions.map(({ key, value }) => (
+                  <option key={key} value={key}>
+                    {value}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
+          {lieuType === LIEU_TYPE.TRAJET && (
+            <>
+              <div className="fr-col-12 fr-col-md-6">
+                <Select
+                  label="Précision du lieu"
+                  nativeSelectProps={{
+                    value: formData.lieuDeSurvenue?.lieuPrecision || '',
+                    onChange: (e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        lieuDeSurvenue: { ...prev.lieuDeSurvenue, lieuPrecision: e.target.value || undefined },
+                      })),
+                  }}
+                >
+                  <option value="">Sélectionner une option</option>
+                  {lieuTrajetPrecisionOptions.map(({ key, value }) => (
+                    <option key={key} value={key}>
+                      {value}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label="Société de transport concernée"
+                  nativeInputProps={{
+                    value: formData.lieuDeSurvenue?.societeTransport || '',
+                    onChange: (e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        lieuDeSurvenue: { ...prev.lieuDeSurvenue, societeTransport: e.target.value },
+                      })),
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label="Code postal"
+                  nativeInputProps={{
+                    value: formData.lieuDeSurvenue?.codePostal || '',
+                    onChange: (e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        lieuDeSurvenue: { ...prev.lieuDeSurvenue, codePostal: e.target.value },
+                      })),
+                  }}
+                />
+              </div>
+            </>
+          )}
+
+          {lieuType === LIEU_TYPE.ETABLISSEMENT_SANTE && (
             <>
               <div className="fr-col-12 fr-col-md-6">
                 <OrganizationSearchField
@@ -564,59 +460,168 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
             </>
           )}
 
-        {lieuType === LIEU_TYPE.AUTRES_ETABLISSEMENTS && (
-          <>
-            <div className="fr-col-12">
-              <Input
-                label="Nom de l'établissement"
-                nativeInputProps={{
-                  value: formData.lieuDeSurvenue?.adresse?.label || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: {
-                        ...prev.lieuDeSurvenue,
-                        adresse: { ...prev.lieuDeSurvenue?.adresse, label: e.target.value },
-                      },
-                    })),
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label="Code postal"
-                nativeInputProps={{
-                  value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: {
-                        ...prev.lieuDeSurvenue,
-                        adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
-                      },
-                    })),
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label="Ville"
-                nativeInputProps={{
-                  value: formData.lieuDeSurvenue?.adresse?.ville || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lieuDeSurvenue: {
-                        ...prev.lieuDeSurvenue,
-                        adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
-                      },
-                    })),
-                }}
-              />
-            </div>
-          </>
-        )}
-      </div>
+          {lieuType &&
+            (
+              [
+                LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
+                LIEU_TYPE.ETABLISSEMENT_HANDICAP,
+                LIEU_TYPE.ETABLISSEMENT_SOCIAL,
+              ] as string[]
+            ).includes(lieuType) && (
+              <>
+                <div className="fr-col-12 fr-col-md-6">
+                  <OrganizationSearchField
+                    value={formData.lieuDeSurvenue?.finess || ''}
+                    onChange={(value, organization) => {
+                      if (organization) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            finess: value,
+                            adresse: buildOrganizationAddress(
+                              organization.name,
+                              organization.addressPostalcode,
+                              organization.addressCity,
+                            ),
+                          },
+                        }));
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: value },
+                        }));
+                      }
+                    }}
+                    label="Numéro FINESS"
+                    disabled={isSaving}
+                    searchMode="finess"
+                    minSearchLength={6}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <OrganizationSearchField
+                    value={extractOrganizationName(formData.lieuDeSurvenue?.adresse)}
+                    onChange={(value, organization) => {
+                      if (organization) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            finess: organization.identifier,
+                            adresse: buildOrganizationAddress(
+                              organization.name,
+                              organization.addressPostalcode,
+                              organization.addressCity,
+                            ),
+                          },
+                        }));
+                      } else {
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse:
+                              value === '' ? undefined : updateOrganizationName(prev.lieuDeSurvenue?.adresse, value),
+                          },
+                        }));
+                      }
+                    }}
+                    label="Nom de l'établissement"
+                    disabled={isSaving}
+                    searchMode="name"
+                    minSearchLength={2}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label="Code postal"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label="Ville"
+                    nativeInputProps={{
+                      value: formData.lieuDeSurvenue?.adresse?.ville || '',
+                      onChange: (e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lieuDeSurvenue: {
+                            ...prev.lieuDeSurvenue,
+                            adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
+                          },
+                        })),
+                    }}
+                  />
+                </div>
+              </>
+            )}
+
+          {lieuType === LIEU_TYPE.AUTRES_ETABLISSEMENTS && (
+            <>
+              <div className="fr-col-12">
+                <Input
+                  label="Nom de l'établissement"
+                  nativeInputProps={{
+                    value: formData.lieuDeSurvenue?.adresse?.label || '',
+                    onChange: (e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        lieuDeSurvenue: {
+                          ...prev.lieuDeSurvenue,
+                          adresse: { ...prev.lieuDeSurvenue?.adresse, label: e.target.value },
+                        },
+                      })),
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label="Code postal"
+                  nativeInputProps={{
+                    value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
+                    onChange: (e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        lieuDeSurvenue: {
+                          ...prev.lieuDeSurvenue,
+                          adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
+                        },
+                      })),
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label="Ville"
+                  nativeInputProps={{
+                    value: formData.lieuDeSurvenue?.adresse?.ville || '',
+                    onChange: (e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        lieuDeSurvenue: {
+                          ...prev.lieuDeSurvenue,
+                          adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
+                        },
+                      })),
+                  }}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </fieldset>
     </div>
   );
 }

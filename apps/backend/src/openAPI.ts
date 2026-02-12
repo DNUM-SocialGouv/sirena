@@ -21,6 +21,16 @@ export function setupOpenAPI(app: Hono<AppBindings>, prefix = '/openapi') {
             description: 'API server',
           },
         ],
+        components: {
+          securitySchemes: {
+            apiKey: {
+              type: 'apiKey',
+              in: 'header',
+              name: 'X-API-Key',
+              description: 'API key for third-party authentication (format: sk_[64 hex characters])',
+            },
+          },
+        },
       },
     }),
   );

@@ -47,6 +47,7 @@ process.env = {
   REDIS_USERNAME: 'redis-username',
   REDIS_PASSWORD: 'redis-password',
 
+  API_KEY_HASH_SALT: 'test-salt',
   S3_ENCRYPTION_KEY: 'a'.repeat(64),
 };
 
@@ -88,6 +89,7 @@ describe('env.ts', () => {
       REDIS_HOST: 'localhost',
       REDIS_PORT: '6379',
       REDIS_PASSWORD: 'redis-password',
+      API_KEY_HASH_SALT: 'test-salt',
       S3_ENCRYPTION_KEY: 'a'.repeat(64),
     };
 
@@ -122,6 +124,7 @@ describe('env.ts', () => {
       LOG_FORMAT: 'json',
       REDIS_HOST: 'localhost',
       REDIS_PORT: '6379',
+      API_KEY_HASH_SALT: 'test-salt',
       S3_ENCRYPTION_KEY: 'a'.repeat(64),
     };
 
