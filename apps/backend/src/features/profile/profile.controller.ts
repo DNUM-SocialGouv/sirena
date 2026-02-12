@@ -2,6 +2,7 @@ import { throwHTTPException401Unauthorized } from '@sirena/backend-utils/helpers
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import { getEntitesByIds } from '../entites/entites.service.js';
 import { getUserById } from '../users/users.service.js';
 import { getProfileRoute } from './profile.route.js';
 
@@ -24,8 +25,22 @@ const app = factoryWithLogs
       throwHTTPException401Unauthorized('Unauthorized, User not found', { res: c.res });
     }
 
+    const [topEntite] = topEntiteId ? await getEntitesByIds([topEntiteId]) : [];
+    const topEntiteIsActive = topEntite?.isActive ?? null;
+
     logger.info({ userId }, 'User profile retrieved successfully');
-    return c.json({ data: { ...user, topEntiteId, entiteIds, entiteIdLevel } }, 200);
+    return c.json(
+      {
+        data: {
+          ...user,
+          topEntiteId,
+          topEntiteIsActive,
+          entiteIds,
+          entiteIdLevel,
+        },
+      },
+      200,
+    );
   });
 
 export default app;

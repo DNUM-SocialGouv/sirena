@@ -5,6 +5,7 @@ import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
+import { getEntitesByIds } from '../entites/entites.service.js';
 import { getUserById } from '../users/users.service.js';
 import ProfileController from './profile.controller.js';
 
@@ -14,6 +15,10 @@ vi.mock('../../config/env.js', () => ({
 
 vi.mock('../users/users.service.js', () => ({
   getUserById: vi.fn(),
+}));
+
+vi.mock('../entites/entites.service.js', () => ({
+  getEntitesByIds: vi.fn(),
 }));
 
 vi.mock('../../middlewares/auth.middleware.js', () => {
@@ -59,6 +64,7 @@ describe('Profile endpoints: /profile', () => {
   describe('GET /', () => {
     it('should return user profile if found', async () => {
       vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
+      vi.mocked(getEntitesByIds).mockResolvedValueOnce([{ isActive: true }]);
 
       const res = await client.profile.$get('/');
       const json = await res.json();
@@ -68,10 +74,12 @@ describe('Profile endpoints: /profile', () => {
         data: convertDatesToStrings({
           ...fakeUser,
           topEntiteId: 'topEntiteId1',
+          topEntiteIsActive: true,
           entiteIds: ['entite-1', 'entite-2'],
         }),
       });
       expect(getUserById).toHaveBeenCalledWith('id1', null, null);
+      expect(getEntitesByIds).toHaveBeenCalledWith(['topEntiteId1']);
     });
 
     it('should return 401 if user not found', async () => {

@@ -18,6 +18,7 @@ export const REQUETE_STATUT_TYPES = {
   NOUVEAU: 'NOUVEAU',
   EN_COURS: 'EN_COURS',
   CLOTUREE: 'CLOTUREE',
+  TRAITEE: 'TRAITEE',
 } as const;
 
 export type RequeteStatutType = keyof typeof REQUETE_STATUT_TYPES;
@@ -26,6 +27,7 @@ export const requeteStatutType: Record<RequeteStatutType, string> = {
   [REQUETE_STATUT_TYPES.NOUVEAU]: 'Nouveau',
   [REQUETE_STATUT_TYPES.EN_COURS]: 'En cours',
   [REQUETE_STATUT_TYPES.CLOTUREE]: 'Clôturée',
+  [REQUETE_STATUT_TYPES.TRAITEE]: 'Pris en compte',
 } as const;
 
 export const REQUETE_PRIORITE_TYPES = {

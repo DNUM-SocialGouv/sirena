@@ -29,6 +29,11 @@ export const requeteStatutBadges: StatutBadge[] = [
     text: requeteStatutType.CLOTUREE,
     value: REQUETE_STATUT_TYPES.CLOTUREE,
   },
+  {
+    type: 'success',
+    text: requeteStatutType.TRAITEE,
+    value: REQUETE_STATUT_TYPES.TRAITEE,
+  },
 ] as const;
 
 export const requeteEtapeStatutBadges: StatutBadge[] = [

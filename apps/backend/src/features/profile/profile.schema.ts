@@ -5,6 +5,7 @@ import { UserSchema } from '../users/users.schema.js';
 export const ProfileSchema = UserSchema.extend({
   role: RoleEnumSchema.nullable(),
   topEntiteId: z.string().nullable(),
+  topEntiteIsActive: z.boolean().nullable(),
   entiteIds: z.array(z.string()),
 }).omit({
   pcData: true,
