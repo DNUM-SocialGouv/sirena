@@ -4,7 +4,7 @@
 
 .requetesEntitesTable .fr-cell:has(.requetesEntitesTable__statut-cell) {
   white-space: nowrap;
-  min-width: var(--table-column-min-width);
+  min-width: 10ch;
 }
 
 .requetesEntitesTable__statut-cell {
