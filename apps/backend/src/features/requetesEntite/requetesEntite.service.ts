@@ -1065,6 +1065,26 @@ export type ShouldCloseRequeteStatus = {
   }>;
 };
 
+const getRootEntiteIdsFromTraitementDesFaits = async (traitementDesFaits: SituationInput['traitementDesFaits']) => {
+  const assignedEntiteIds = new Set<string>();
+
+  for (const entite of traitementDesFaits?.entites ?? []) {
+    assignedEntiteIds.add(entite.entiteId);
+  }
+
+  const topEntiteIds = new Set<string>();
+  await Promise.all(
+    Array.from(assignedEntiteIds).map(async (assignedEntiteId) => {
+      const { entiteId: topEntiteId } = await getEntiteAscendanteInfo(assignedEntiteId);
+      if (topEntiteId) {
+        topEntiteIds.add(topEntiteId);
+      }
+    }),
+  );
+
+  return Array.from(topEntiteIds);
+};
+
 export const computeShouldCloseRequeteStatus = async (params: {
   tx?: Prisma.TransactionClient;
   requeteId: string;
@@ -1126,10 +1146,37 @@ export const createRequeteSituation = async (
   let newAssignedEntiteIds: string[] = [];
   let updatedRequete: Awaited<ReturnType<typeof prisma.requete.findUnique>> = null;
 
+  const entiteIdsToUpdate: string[] = [];
+
+  if (situationData.traitementDesFaits?.entites?.length) {
+    const topEntiteIds = await getRootEntiteIdsFromTraitementDesFaits(situationData.traitementDesFaits);
+
+    if (topEntiteIds.length > 0) {
+      const requeteEntite = await prisma.requeteEntite.findMany({
+        where: {
+          requeteId,
+          entiteId: { in: topEntiteIds },
+          statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+        },
+        select: { entiteId: true },
+      });
+      entiteIdsToUpdate.push(...requeteEntite.map((re) => re.entiteId));
+    }
+  }
+
   await prisma.$transaction(async (tx) => {
     const newSituation = await createNewSituation(tx, requeteId, situationData, entiteId, changedById);
     createdSituationId = newSituation.id;
     newAssignedEntiteIds = newSituation.newAssignedEntiteIds;
+    await tx.requeteEntite.updateMany({
+      where: {
+        requeteId,
+        entiteId: { in: entiteIdsToUpdate },
+      },
+      data: {
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      },
+    });
     updatedRequete = await tx.requete.findUnique({
       where: { id: requeteId },
       include: { situations: { include: SITUATION_INCLUDE_FULL } },
@@ -1174,13 +1221,28 @@ export const updateRequeteSituation = async (
     where: { id: requeteId },
     include: { situations: { include: SITUATION_INCLUDE_BASE } },
   });
-
   if (!requete) {
     throw new Error('Requete not found');
   }
 
   let newAssignedEntiteIds: string[] = [];
   let updatedRequete: Awaited<ReturnType<typeof prisma.requete.findUnique>> = null;
+  const entiteIdsToUpdate: string[] = [];
+
+  if (situationData.traitementDesFaits?.entites?.length) {
+    const topEntiteIds = await getRootEntiteIdsFromTraitementDesFaits(situationData.traitementDesFaits);
+    if (topEntiteIds.length > 0) {
+      const requeteEntites = await prisma.requeteEntite.findMany({
+        where: {
+          requeteId,
+          entiteId: { in: topEntiteIds },
+          statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+        },
+        select: { entiteId: true },
+      });
+      entiteIdsToUpdate.push(...requeteEntites.map((re) => re.entiteId));
+    }
+  }
 
   await prisma.$transaction(async (tx) => {
     const existingSituation = requete.situations.find((s) => s.id === situationId);
@@ -1188,6 +1250,15 @@ export const updateRequeteSituation = async (
       throw new Error('Situation not found');
     }
     newAssignedEntiteIds = await updateExistingSituation(tx, existingSituation, situationData, entiteId, changedById);
+    await tx.requeteEntite.updateMany({
+      where: {
+        requeteId,
+        entiteId: { in: entiteIdsToUpdate },
+      },
+      data: {
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      },
+    });
     updatedRequete = await tx.requete.findUnique({
       where: { id: requeteId },
       include: { situations: { include: SITUATION_INCLUDE_FULL } },
@@ -1275,6 +1346,10 @@ export const closeRequeteForEntite = async (
     throw new Error('REQUETE_NOT_FOUND');
   }
 
+  if (requeteEntite.statutId === REQUETE_STATUT_TYPES.CLOTUREE) {
+    throw new Error('READONLY_FOR_ENTITY');
+  }
+
   const uniqueReasonIds = Array.from(new Set(reasonIds));
   const reasons = await prisma.requeteClotureReasonEnum.findMany({
     where: { id: { in: uniqueReasonIds } },
@@ -1283,20 +1358,6 @@ export const closeRequeteForEntite = async (
 
   if (reasons.length !== uniqueReasonIds.length) {
     throw new Error('REASON_INVALID');
-  }
-
-  const lastEtape = await prisma.requeteEtape.findFirst({
-    where: {
-      requeteId,
-      entiteId,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
-
-  if (lastEtape?.statutId === 'CLOTUREE') {
-    throw new Error('READONLY_FOR_ENTITY');
   }
 
   if (fileIds && fileIds.length > 0) {

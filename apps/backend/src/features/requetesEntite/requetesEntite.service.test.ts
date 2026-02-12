@@ -121,16 +121,10 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
 
 const mockedRequeteEntite = vi.mocked(prisma.requeteEntite);
 
-const fakeEtape = {
-  id: 'etape1',
-  statutId: 'CLOTUREE',
-  requeteId: 'req123',
-  entiteId: 'ent123',
-  nom: 'Etape 1',
-  estPartagee: false,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  createdById: 'user123',
+const mockClosedRequeteEntite: RequeteEntite & { requete: Requete } = {
+  ...mockRequeteEntite,
+  statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+  requete: mockRequeteEntite.requete,
 };
 
 describe('requetesEntite.service', () => {
@@ -928,12 +922,8 @@ describe('requetesEntite.service', () => {
       );
     });
 
-    it('should throw error if last etape is closed', async () => {
-      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
-        { id: 'reason123', label: 'Reason 123' },
-      ]);
-      vi.mocked(prisma.requeteEtape.findFirst).mockResolvedValueOnce(fakeEtape);
+    it('should throw error if requete is already closed for entity', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockClosedRequeteEntite);
       await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123')).rejects.toThrow(
         'READONLY_FOR_ENTITY',
       );
@@ -1266,6 +1256,7 @@ describe('requetesEntite.service', () => {
   describe('updateSituationEntites', () => {
     beforeEach(() => {
       vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findMany).mockResolvedValue([]);
     });
 
     const createMockTx = (overrides: Partial<Record<string, Record<string, unknown>>> = {}) => {
@@ -1283,6 +1274,7 @@ describe('requetesEntite.service', () => {
           findMany: vi.fn().mockResolvedValue([]),
           findUnique: vi.fn().mockResolvedValue({ requeteId: 'req1', entiteId: 'root1', statutId: 'EN_COURS' }),
           upsert: vi.fn().mockResolvedValue({}),
+          updateMany: vi.fn().mockResolvedValue({ count: 0 }),
         },
         requeteEtape: {
           findMany: vi.fn().mockResolvedValue([]),
