@@ -141,236 +141,248 @@ export function PersonneConcerneeForm({
           className="fr-p-4w fr-mb-4w"
           style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
         >
-          <h2 className="fr-h6 fr-mb-3w">Identité</h2>
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col-12 fr-col-md-3">
-              <Select
-                label={personneConcerneeFieldMetadata.civilite.label}
-                nativeSelectProps={{
-                  value: formData.civilite ?? '',
-                  onChange: (e) => {
-                    const value = e.target.value;
-                    setFormData((prev: PersonneConcerneeData) => ({ ...prev, civilite: value || undefined }));
-                  },
-                }}
-              >
-                <option value="">Sélectionner</option>
-                {mappers.civiliteOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="fr-col-12 fr-col-md-4">
-              <Input
-                label={personneConcerneeFieldMetadata.nom.label}
-                nativeInputProps={{
-                  value: formData.nom || '',
-                  onChange: handleInputChange('nom'),
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-5">
-              <Input
-                label={personneConcerneeFieldMetadata.prenom.label}
-                nativeInputProps={{
-                  value: formData.prenom || '',
-                  onChange: handleInputChange('prenom'),
-                }}
-              />
-            </div>
-          </div>
+          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+            <legend>
+              <h2 className="fr-h6 fr-mb-3w">Identité</h2>
+            </legend>
 
-          <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--top">
-            {isDematSocial && (
-              <div className="fr-col-12 fr-col-md-6">
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12 fr-col-md-3">
                 <Select
-                  label={personneConcerneeFieldMetadata.age.label}
+                  label={personneConcerneeFieldMetadata.civilite.label}
                   nativeSelectProps={{
-                    value: formData.age ?? '',
+                    value: formData.civilite ?? '',
                     onChange: (e) => {
                       const value = e.target.value;
-                      setFormData((prev: PersonneConcerneeData) => ({ ...prev, age: value || undefined }));
+                      setFormData((prev: PersonneConcerneeData) => ({ ...prev, civilite: value || undefined }));
                     },
                   }}
                 >
-                  <option value="">Sélectionner une tranche d'âge</option>
-                  {mappers.ageOptions.map((option) => (
+                  <option value="">Sélectionner</option>
+                  {mappers.civiliteOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </Select>
               </div>
+              <div className="fr-col-12 fr-col-md-4">
+                <Input
+                  label={personneConcerneeFieldMetadata.nom.label}
+                  nativeInputProps={{
+                    value: formData.nom || '',
+                    onChange: handleInputChange('nom'),
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-5">
+                <Input
+                  label={personneConcerneeFieldMetadata.prenom.label}
+                  nativeInputProps={{
+                    value: formData.prenom || '',
+                    onChange: handleInputChange('prenom'),
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--top">
+              {isDematSocial && (
+                <div className="fr-col-12 fr-col-md-6">
+                  <Select
+                    label={personneConcerneeFieldMetadata.age.label}
+                    nativeSelectProps={{
+                      value: formData.age ?? '',
+                      onChange: (e) => {
+                        const value = e.target.value;
+                        setFormData((prev: PersonneConcerneeData) => ({ ...prev, age: value || undefined }));
+                      },
+                    }}
+                  >
+                    <option value="">Sélectionner une tranche d'âge</option>
+                    {mappers.ageOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
+              <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label={personneConcerneeFieldMetadata.dateNaissance.label}
+                  nativeInputProps={{
+                    type: 'date',
+                    max: new Date().toISOString().split('T')[0],
+                    value: formData.dateNaissance || '',
+                    onChange: (e) => {
+                      const value = e.target.value;
+                      setFormData((prev: PersonneConcerneeData) => ({ ...prev, dateNaissance: value || undefined }));
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <div
+          className="fr-p-4w fr-mb-4w"
+          style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
+        >
+          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+            <legend>
+              <h2 className="fr-h6 fr-mb-3w">Informations de contact</h2>
+            </legend>
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label={personneConcerneeFieldMetadata.adresseDomicile.label}
+                  nativeInputProps={{
+                    value: formData.adresseDomicile || '',
+                    onChange: handleInputChange('adresseDomicile'),
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-2">
+                <Input
+                  label={personneConcerneeFieldMetadata.codePostal.label}
+                  nativeInputProps={{
+                    value: formData.codePostal || '',
+                    onChange: handleInputChange('codePostal'),
+                    maxLength: 5,
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-4">
+                <Input
+                  label={personneConcerneeFieldMetadata.ville.label}
+                  nativeInputProps={{
+                    value: formData.ville || '',
+                    onChange: handleInputChange('ville'),
+                  }}
+                />
+              </div>
+            </div>
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label={personneConcerneeFieldMetadata.numeroTelephone.label}
+                  hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
+                  state={phoneError ? 'error' : undefined}
+                  stateRelatedMessage={phoneError}
+                  nativeInputProps={{
+                    value: formData.numeroTelephone || '',
+                    onChange: handleInputChange('numeroTelephone'),
+                    type: 'tel',
+                    maxLength: 15,
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label={personneConcerneeFieldMetadata.courrierElectronique.label}
+                  hintText="Exemple : prenom.nom@exemple.com"
+                  state={emailError ? 'error' : undefined}
+                  stateRelatedMessage={emailError}
+                  nativeInputProps={{
+                    value: formData.courrierElectronique || '',
+                    onChange: handleInputChange('courrierElectronique'),
+                    type: 'email',
+                  }}
+                />
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <div
+          className="fr-p-4w fr-mb-4w"
+          style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
+        >
+          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+            <legend>
+              <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
+            </legend>
+            <div className="fr-mb-3w">
+              <Checkbox
+                options={[
+                  {
+                    label: personneConcerneeFieldMetadata.estHandicapee.label,
+                    nativeInputProps: {
+                      checked: formData.estHandicapee || false,
+                      onChange: handleCheckboxChange('estHandicapee'),
+                    },
+                  },
+                ]}
+              />
+            </div>
+
+            <div className="fr-mb-3w">
+              <Checkbox
+                options={[
+                  {
+                    label: personneConcerneeFieldMetadata.consentCommuniquerIdentite.label,
+                    nativeInputProps: {
+                      checked: formData.consentCommuniquerIdentite || false,
+                      onChange: handleCheckboxChange('consentCommuniquerIdentite'),
+                    },
+                  },
+                ]}
+              />
+            </div>
+
+            <div className="fr-mb-3w">
+              <Checkbox
+                options={[
+                  {
+                    label: personneConcerneeFieldMetadata.estVictimeInformee.label,
+                    nativeInputProps: {
+                      checked: formData.estVictimeInformee || false,
+                      onChange: handleCheckboxChange('estVictimeInformee'),
+                    },
+                  },
+                ]}
+              />
+            </div>
+
+            <div className="fr-mb-3w">
+              <Checkbox
+                options={[
+                  {
+                    label: personneConcerneeFieldMetadata.aAutrePersonnes.label,
+                    nativeInputProps: {
+                      checked: formData.aAutrePersonnes || false,
+                      onChange: handleCheckboxChange('aAutrePersonnes'),
+                    },
+                  },
+                ]}
+              />
+            </div>
+
+            {formData.aAutrePersonnes && (
+              <Input
+                label={personneConcerneeFieldMetadata.autrePersonnes.label}
+                hintText="Nom, prénom, lien avec la personne concernée, etc."
+                textArea
+                nativeTextAreaProps={{
+                  value: formData.autrePersonnes || '',
+                  onChange: handleInputChange('autrePersonnes'),
+                  rows: 3,
+                }}
+              />
             )}
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label={personneConcerneeFieldMetadata.dateNaissance.label}
-                nativeInputProps={{
-                  type: 'date',
-                  max: new Date().toISOString().split('T')[0],
-                  value: formData.dateNaissance || '',
-                  onChange: (e) => {
-                    const value = e.target.value;
-                    setFormData((prev: PersonneConcerneeData) => ({ ...prev, dateNaissance: value || undefined }));
-                  },
-                }}
-              />
-            </div>
-          </div>
-        </div>
 
-        <div
-          className="fr-p-4w fr-mb-4w"
-          style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
-        >
-          <h2 className="fr-h6 fr-mb-3w">Informations de contact</h2>
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label={personneConcerneeFieldMetadata.adresseDomicile.label}
-                nativeInputProps={{
-                  value: formData.adresseDomicile || '',
-                  onChange: handleInputChange('adresseDomicile'),
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-2">
-              <Input
-                label={personneConcerneeFieldMetadata.codePostal.label}
-                nativeInputProps={{
-                  value: formData.codePostal || '',
-                  onChange: handleInputChange('codePostal'),
-                  maxLength: 5,
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-4">
-              <Input
-                label={personneConcerneeFieldMetadata.ville.label}
-                nativeInputProps={{
-                  value: formData.ville || '',
-                  onChange: handleInputChange('ville'),
-                }}
-              />
-            </div>
-          </div>
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label={personneConcerneeFieldMetadata.numeroTelephone.label}
-                hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
-                state={phoneError ? 'error' : undefined}
-                stateRelatedMessage={phoneError}
-                nativeInputProps={{
-                  value: formData.numeroTelephone || '',
-                  onChange: handleInputChange('numeroTelephone'),
-                  type: 'tel',
-                  maxLength: 15,
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label={personneConcerneeFieldMetadata.courrierElectronique.label}
-                hintText="Exemple : prenom.nom@exemple.com"
-                state={emailError ? 'error' : undefined}
-                stateRelatedMessage={emailError}
-                nativeInputProps={{
-                  value: formData.courrierElectronique || '',
-                  onChange: handleInputChange('courrierElectronique'),
-                  type: 'email',
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="fr-p-4w fr-mb-4w"
-          style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
-        >
-          <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
-
-          <div className="fr-mb-3w">
-            <Checkbox
-              options={[
-                {
-                  label: personneConcerneeFieldMetadata.estHandicapee.label,
-                  nativeInputProps: {
-                    checked: formData.estHandicapee || false,
-                    onChange: handleCheckboxChange('estHandicapee'),
-                  },
-                },
-              ]}
-            />
-          </div>
-
-          <div className="fr-mb-3w">
-            <Checkbox
-              options={[
-                {
-                  label: personneConcerneeFieldMetadata.consentCommuniquerIdentite.label,
-                  nativeInputProps: {
-                    checked: formData.consentCommuniquerIdentite || false,
-                    onChange: handleCheckboxChange('consentCommuniquerIdentite'),
-                  },
-                },
-              ]}
-            />
-          </div>
-
-          <div className="fr-mb-3w">
-            <Checkbox
-              options={[
-                {
-                  label: personneConcerneeFieldMetadata.estVictimeInformee.label,
-                  nativeInputProps: {
-                    checked: formData.estVictimeInformee || false,
-                    onChange: handleCheckboxChange('estVictimeInformee'),
-                  },
-                },
-              ]}
-            />
-          </div>
-
-          <div className="fr-mb-3w">
-            <Checkbox
-              options={[
-                {
-                  label: personneConcerneeFieldMetadata.aAutrePersonnes.label,
-                  nativeInputProps: {
-                    checked: formData.aAutrePersonnes || false,
-                    onChange: handleCheckboxChange('aAutrePersonnes'),
-                  },
-                },
-              ]}
-            />
-          </div>
-
-          {formData.aAutrePersonnes && (
             <Input
-              label={personneConcerneeFieldMetadata.autrePersonnes.label}
-              hintText="Nom, prénom, lien avec la personne concernée, etc."
+              label={personneConcerneeFieldMetadata.commentaire.label}
               textArea
               nativeTextAreaProps={{
-                value: formData.autrePersonnes || '',
-                onChange: handleInputChange('autrePersonnes'),
-                rows: 3,
+                value: formData.commentaire || '',
+                onChange: handleInputChange('commentaire'),
+                rows: 4,
               }}
             />
-          )}
-
-          <Input
-            label={personneConcerneeFieldMetadata.commentaire.label}
-            textArea
-            nativeTextAreaProps={{
-              value: formData.commentaire || '',
-              onChange: handleInputChange('commentaire'),
-              rows: 4,
-            }}
-          />
+          </fieldset>
         </div>
 
         <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
