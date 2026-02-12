@@ -329,8 +329,7 @@ const app = factoryWithLogs
       });
     }
 
-    const user = await getUserById(userId, null, null);
-    const roleId = user?.roleId ?? null;
+    const roleId = c.get('roleId');
     const topEntite = await prisma.entite.findUnique({
       where: { id: topEntiteId },
       select: { isActive: true },
