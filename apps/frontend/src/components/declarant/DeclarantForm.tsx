@@ -134,186 +134,195 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
           className="fr-p-4w fr-mb-4w"
           style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
         >
-          <h2 className="fr-h6 fr-mb-3w">Identité</h2>
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col-12 fr-col-md-3">
-              <Select
-                label={declarantFieldMetadata.civilite.label}
-                nativeSelectProps={{
-                  value: formData.civilite ?? '',
-                  onChange: (e) => {
-                    const value = e.target.value;
-                    setFormData((prev: DeclarantData) => ({ ...prev, civilite: value || undefined }));
-                  },
-                }}
-              >
-                <option value="">Sélectionner</option>
-                {mappers.civiliteOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="fr-col-12 fr-col-md-4">
-              <Input
-                label={declarantFieldMetadata.nom.label}
-                nativeInputProps={{
-                  value: formData.nom || '',
-                  onChange: handleInputChange('nom'),
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-5">
-              <Input
-                label={declarantFieldMetadata.prenom.label}
-                nativeInputProps={{
-                  value: formData.prenom || '',
-                  onChange: handleInputChange('prenom'),
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col-12 fr-col-md-6">
-              <Select
-                label={declarantFieldMetadata.lienAvecPersonneConcernee.label}
-                nativeSelectProps={{
-                  value: formData.lienAvecPersonneConcernee ?? '',
-                  onChange: (e) => {
-                    const value = e.target.value;
-                    setFormData((prev: DeclarantData) => ({
-                      ...prev,
-                      lienAvecPersonneConcernee: value || undefined,
-                    }));
-                  },
-                }}
-              >
-                <option value="">Sélectionner une option</option>
-                {mappers.lienAvecPersonneConcerneeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            {formData.lienAvecPersonneConcernee === 'AUTRE' && (
-              <div className="fr-col-12 fr-col-md-6">
+          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+            <legend>
+              <h2 className="fr-h6 fr-mb-3w">Identité</h2>
+            </legend>
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12 fr-col-md-3">
+                <Select
+                  label={declarantFieldMetadata.civilite.label}
+                  nativeSelectProps={{
+                    value: formData.civilite ?? '',
+                    onChange: (e) => {
+                      const value = e.target.value;
+                      setFormData((prev: DeclarantData) => ({ ...prev, civilite: value || undefined }));
+                    },
+                  }}
+                >
+                  <option value="">Sélectionner</option>
+                  {mappers.civiliteOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="fr-col-12 fr-col-md-4">
                 <Input
-                  label={declarantFieldMetadata.lienAvecPersonneConcerneePrecision.label}
+                  label={declarantFieldMetadata.nom.label}
                   nativeInputProps={{
-                    value: formData.lienAvecPersonneConcerneePrecision || '',
-                    onChange: handleInputChange('lienAvecPersonneConcerneePrecision'),
-                    placeholder: 'Précisez votre lien avec la personne concernée',
+                    value: formData.nom || '',
+                    onChange: handleInputChange('nom'),
                   }}
                 />
               </div>
-            )}
-          </div>
+              <div className="fr-col-12 fr-col-md-5">
+                <Input
+                  label={declarantFieldMetadata.prenom.label}
+                  nativeInputProps={{
+                    value: formData.prenom || '',
+                    onChange: handleInputChange('prenom'),
+                  }}
+                />
+              </div>
+
+              <div className="fr-col-12 fr-col-md-6">
+                <Select
+                  label={declarantFieldMetadata.lienAvecPersonneConcernee.label}
+                  nativeSelectProps={{
+                    value: formData.lienAvecPersonneConcernee ?? '',
+                    onChange: (e) => {
+                      const value = e.target.value;
+                      setFormData((prev: DeclarantData) => ({
+                        ...prev,
+                        lienAvecPersonneConcernee: value || undefined,
+                      }));
+                    },
+                  }}
+                >
+                  <option value="">Sélectionner une option</option>
+                  {mappers.lienAvecPersonneConcerneeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              {formData.lienAvecPersonneConcernee === 'AUTRE' && (
+                <div className="fr-col-12 fr-col-md-6">
+                  <Input
+                    label={declarantFieldMetadata.lienAvecPersonneConcerneePrecision.label}
+                    nativeInputProps={{
+                      value: formData.lienAvecPersonneConcerneePrecision || '',
+                      onChange: handleInputChange('lienAvecPersonneConcerneePrecision'),
+                      placeholder: 'Précisez votre lien avec la personne concernée',
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </fieldset>
         </div>
 
         <div
           className="fr-p-4w fr-mb-4w"
           style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
         >
-          <h2 className="fr-h6 fr-mb-3w">Informations de contact</h2>
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label={declarantFieldMetadata.adresseDomicile.label}
-                nativeInputProps={{
-                  value: formData.adresseDomicile || '',
-                  onChange: handleInputChange('adresseDomicile'),
-                }}
-              />
+          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+            <legend>
+              <h2 className="fr-h6 fr-mb-3w">Informations de contact</h2>
+            </legend>
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label={declarantFieldMetadata.adresseDomicile.label}
+                  nativeInputProps={{
+                    value: formData.adresseDomicile || '',
+                    onChange: handleInputChange('adresseDomicile'),
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-2">
+                <Input
+                  label={declarantFieldMetadata.codePostal.label}
+                  nativeInputProps={{
+                    value: formData.codePostal || '',
+                    onChange: handleInputChange('codePostal'),
+                    maxLength: 5,
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-4">
+                <Input
+                  label={declarantFieldMetadata.ville.label}
+                  nativeInputProps={{
+                    value: formData.ville || '',
+                    onChange: handleInputChange('ville'),
+                  }}
+                />
+              </div>
             </div>
-            <div className="fr-col-12 fr-col-md-2">
-              <Input
-                label={declarantFieldMetadata.codePostal.label}
-                nativeInputProps={{
-                  value: formData.codePostal || '',
-                  onChange: handleInputChange('codePostal'),
-                  maxLength: 5,
-                }}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-4">
-              <Input
-                label={declarantFieldMetadata.ville.label}
-                nativeInputProps={{
-                  value: formData.ville || '',
-                  onChange: handleInputChange('ville'),
-                }}
-              />
-            </div>
-          </div>
 
-          <div className="fr-grid-row fr-grid-row--gutters">
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label={declarantFieldMetadata.numeroTelephone.label}
-                hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
-                state={phoneError ? 'error' : undefined}
-                stateRelatedMessage={phoneError}
-                nativeInputProps={{
-                  value: formData.numeroTelephone || '',
-                  onChange: handleInputChange('numeroTelephone'),
-                  type: 'tel',
-                  maxLength: 15,
-                }}
-              />
+            <div className="fr-grid-row fr-grid-row--gutters">
+              <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label={declarantFieldMetadata.numeroTelephone.label}
+                  hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
+                  state={phoneError ? 'error' : undefined}
+                  stateRelatedMessage={phoneError}
+                  nativeInputProps={{
+                    value: formData.numeroTelephone || '',
+                    onChange: handleInputChange('numeroTelephone'),
+                    type: 'tel',
+                    maxLength: 15,
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label={declarantFieldMetadata.courrierElectronique.label}
+                  hintText="Exemple : prenom.nom@exemple.com"
+                  state={emailError ? 'error' : undefined}
+                  stateRelatedMessage={emailError}
+                  nativeInputProps={{
+                    value: formData.courrierElectronique || '',
+                    onChange: handleInputChange('courrierElectronique'),
+                    type: 'email',
+                  }}
+                />
+              </div>
             </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <Input
-                label={declarantFieldMetadata.courrierElectronique.label}
-                hintText="Exemple : prenom.nom@exemple.com"
-                state={emailError ? 'error' : undefined}
-                stateRelatedMessage={emailError}
-                nativeInputProps={{
-                  value: formData.courrierElectronique || '',
-                  onChange: handleInputChange('courrierElectronique'),
-                  type: 'email',
-                }}
-              />
-            </div>
-          </div>
+          </fieldset>
         </div>
 
         <div
           className="fr-p-4w fr-mb-4w"
           style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
         >
-          <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
-
-          <Checkbox
-            options={[
-              {
-                label: declarantFieldMetadata.consentCommuniquerIdentite.label,
-                nativeInputProps: {
-                  checked: formData.consentCommuniquerIdentite || false,
-                  onChange: handleCheckboxChange('consentCommuniquerIdentite'),
+          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+            <legend>
+              <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
+            </legend>
+            <Checkbox
+              options={[
+                {
+                  label: declarantFieldMetadata.consentCommuniquerIdentite.label,
+                  nativeInputProps: {
+                    checked: formData.consentCommuniquerIdentite || false,
+                    onChange: handleCheckboxChange('consentCommuniquerIdentite'),
+                  },
                 },
-              },
-              {
-                label: declarantFieldMetadata.estSignalementProfessionnel.label,
-                nativeInputProps: {
-                  checked: formData.estSignalementProfessionnel || false,
-                  onChange: handleCheckboxChange('estSignalementProfessionnel'),
+                {
+                  label: declarantFieldMetadata.estSignalementProfessionnel.label,
+                  nativeInputProps: {
+                    checked: formData.estSignalementProfessionnel || false,
+                    onChange: handleCheckboxChange('estSignalementProfessionnel'),
+                  },
                 },
-              },
-            ]}
-          />
+              ]}
+            />
 
-          <Input
-            label={declarantFieldMetadata.autresPrecisions.label}
-            textArea
-            nativeTextAreaProps={{
-              value: formData.autresPrecisions || '',
-              onChange: handleInputChange('autresPrecisions'),
-              rows: 4,
-            }}
-          />
+            <Input
+              label={declarantFieldMetadata.autresPrecisions.label}
+              textArea
+              nativeTextAreaProps={{
+                value: formData.autresPrecisions || '',
+                onChange: handleInputChange('autresPrecisions'),
+                rows: 4,
+              }}
+            />
+          </fieldset>
         </div>
 
         <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">

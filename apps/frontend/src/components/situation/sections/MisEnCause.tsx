@@ -90,152 +90,156 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
       className="fr-p-4w fr-mb-4w"
       style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
     >
-      <h2 className="fr-h6 fr-mb-3w">Mis en cause</h2>
-      <div className="fr-grid-row fr-grid-row--gutters">
-        <div className="fr-col-12 fr-col-md-6">
-          <Select
-            label="Type de mis en cause"
-            nativeSelectProps={{
-              value: misEnCauseType || '',
-              onChange: (e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  misEnCause: {
-                    misEnCauseType: e.target.value || undefined,
-                    misEnCauseTypePrecision: undefined,
-                  },
-                })),
-            }}
-          >
-            <option value="">Sélectionner une option</option>
-            {misEncauses.map(({ key, value }) => (
-              <option key={key} value={key}>
-                {value}
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        {misEnCauseType && (
+      <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+        <legend>
+          <h2 className="fr-h6 fr-mb-3w">Mis en cause</h2>
+        </legend>
+        <div className="fr-grid-row fr-grid-row--gutters">
           <div className="fr-col-12 fr-col-md-6">
             <Select
-              label="Précision"
+              label="Type de mis en cause"
               nativeSelectProps={{
-                value: formData.misEnCause?.misEnCauseTypePrecision || '',
+                value: misEnCauseType || '',
                 onChange: (e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    misEnCause: { ...prev.misEnCause, misEnCauseTypePrecision: e.target.value || undefined },
+                    misEnCause: {
+                      misEnCauseType: e.target.value || undefined,
+                      misEnCauseTypePrecision: undefined,
+                    },
                   })),
               }}
             >
               <option value="">Sélectionner une option</option>
-              {precisions[misEnCauseType as MisEnCauseTypeSansAutreEtNpjm]?.map(({ key, value }) => (
+              {misEncauses.map(({ key, value }) => (
                 <option key={key} value={key}>
                   {value}
                 </option>
               ))}
             </Select>
           </div>
-        )}
 
-        <div className="fr-col-12">
+          {misEnCauseType && (
+            <div className="fr-col-12 fr-col-md-6">
+              <Select
+                label="Précision"
+                nativeSelectProps={{
+                  value: formData.misEnCause?.misEnCauseTypePrecision || '',
+                  onChange: (e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      misEnCause: { ...prev.misEnCause, misEnCauseTypePrecision: e.target.value || undefined },
+                    })),
+                }}
+              >
+                <option value="">Sélectionner une option</option>
+                {precisions[misEnCauseType as MisEnCauseTypeSansAutreEtNpjm]?.map(({ key, value }) => (
+                  <option key={key} value={key}>
+                    {value}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
           <div className="fr-col-12">
-            <Input
-              label="Précisions supplémentaires"
-              textArea
-              nativeTextAreaProps={{
-                value: formData.misEnCause?.autrePrecision || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    misEnCause: { ...prev.misEnCause, autrePrecision: e.target.value },
-                  })),
-                rows: 3,
-              }}
-            />
+            <div className="fr-col-12">
+              <Input
+                label="Précisions supplémentaires"
+                textArea
+                nativeTextAreaProps={{
+                  value: formData.misEnCause?.autrePrecision || '',
+                  onChange: (e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      misEnCause: { ...prev.misEnCause, autrePrecision: e.target.value },
+                    })),
+                  rows: 3,
+                }}
+              />
+            </div>
           </div>
+
+          {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE && (
+            <>
+              <div className="fr-col-12 fr-col-md-6">
+                <PractitionerSearchField
+                  value={formData.misEnCause?.rpps || ''}
+                  onChange={(value, practitioner) => {
+                    if (practitioner) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        misEnCause: {
+                          ...prev.misEnCause,
+                          rpps: value,
+                          commentaire: formatPractitionerName(practitioner),
+                        },
+                      }));
+                    } else {
+                      setFormData((prev) => ({
+                        ...prev,
+                        misEnCause: {
+                          ...prev.misEnCause,
+                          rpps: value,
+                        },
+                      }));
+                    }
+                  }}
+                  label="Numéro RPPS"
+                  disabled={isSaving}
+                  searchMode="rpps"
+                  hintText="Seul le numéro exact peut être trouvé"
+                  minSearchLength={6}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-6">
+                <PractitionerSearchField
+                  value={formData.misEnCause?.commentaire || ''}
+                  onChange={(value, practitioner) => {
+                    if (practitioner) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        misEnCause: {
+                          ...prev.misEnCause,
+                          rpps: practitioner.rpps,
+                          commentaire: value,
+                        },
+                      }));
+                    } else {
+                      setFormData((prev) => ({
+                        ...prev,
+                        misEnCause: { ...prev.misEnCause, commentaire: value },
+                      }));
+                    }
+                  }}
+                  label="Identité du professionnel"
+                  disabled={isSaving}
+                  searchMode="name"
+                  minSearchLength={2}
+                />
+              </div>
+            </>
+          )}
+
+          {misEnCauseType === MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE && (
+            <div className="fr-col-12">
+              <Input
+                label="Identité du mis en cause"
+                textArea
+                nativeTextAreaProps={{
+                  value: formData.misEnCause?.commentaire || '',
+                  onChange: (e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      misEnCause: { ...prev.misEnCause, commentaire: e.target.value },
+                    })),
+                  rows: 3,
+                }}
+              />
+            </div>
+          )}
         </div>
-
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE && (
-          <>
-            <div className="fr-col-12 fr-col-md-6">
-              <PractitionerSearchField
-                value={formData.misEnCause?.rpps || ''}
-                onChange={(value, practitioner) => {
-                  if (practitioner) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      misEnCause: {
-                        ...prev.misEnCause,
-                        rpps: value,
-                        commentaire: formatPractitionerName(practitioner),
-                      },
-                    }));
-                  } else {
-                    setFormData((prev) => ({
-                      ...prev,
-                      misEnCause: {
-                        ...prev.misEnCause,
-                        rpps: value,
-                      },
-                    }));
-                  }
-                }}
-                label="Numéro RPPS"
-                disabled={isSaving}
-                searchMode="rpps"
-                hintText="Seul le numéro exact peut être trouvé"
-                minSearchLength={6}
-              />
-            </div>
-            <div className="fr-col-12 fr-col-md-6">
-              <PractitionerSearchField
-                value={formData.misEnCause?.commentaire || ''}
-                onChange={(value, practitioner) => {
-                  if (practitioner) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      misEnCause: {
-                        ...prev.misEnCause,
-                        rpps: practitioner.rpps,
-                        commentaire: value,
-                      },
-                    }));
-                  } else {
-                    setFormData((prev) => ({
-                      ...prev,
-                      misEnCause: { ...prev.misEnCause, commentaire: value },
-                    }));
-                  }
-                }}
-                label="Identité du professionnel"
-                disabled={isSaving}
-                searchMode="name"
-                minSearchLength={2}
-              />
-            </div>
-          </>
-        )}
-
-        {misEnCauseType === MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE && (
-          <div className="fr-col-12">
-            <Input
-              label="Identité du mis en cause"
-              textArea
-              nativeTextAreaProps={{
-                value: formData.misEnCause?.commentaire || '',
-                onChange: (e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    misEnCause: { ...prev.misEnCause, commentaire: e.target.value },
-                  })),
-                rows: 3,
-              }}
-            />
-          </div>
-        )}
-      </div>
+      </fieldset>
     </div>
   );
 }
