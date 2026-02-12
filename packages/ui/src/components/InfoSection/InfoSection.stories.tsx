@@ -22,7 +22,7 @@ export const EmptyState: Story = {
   args: {
     id: 'info-section-empty',
     title: 'Déclarant',
-    onEdit: () => {
+    editHref: () => {
       console.log('onEdit');
     },
     emptyLabel: 'Aucune information',
@@ -41,7 +41,7 @@ export const FullState: Story = {
   args: {
     id: 'info-section-full',
     title: 'Déclarant',
-    onEdit: () => {
+    editHref: () => {
       console.log('onEdit');
     },
     renderSummary: () => <div>Summary DIV</div>,
@@ -59,7 +59,7 @@ export const OnlySummaryState: Story = {
   args: {
     id: 'info-section-only-summary',
     title: 'Déclarant',
-    onEdit: () => {
+    editHref: () => {
       console.log('onEdit');
     },
     renderSummary: () => <div>Summary DIV</div>,
@@ -76,7 +76,7 @@ export const OnlyDetailsState: Story = {
   args: {
     id: 'info-section-only-details',
     title: 'Déclarant',
-    onEdit: () => {
+    editHref: () => {
       console.log('onEdit');
     },
     renderDetails: () => <div>Details DIV</div>,
@@ -93,7 +93,7 @@ export const ReplaceSummaryWithDetails: Story = {
   args: {
     id: 'info-section-replace-summary-with-details',
     title: 'Déclarant',
-    onEdit: () => {
+    editHref: () => {
       console.log('onEdit');
     },
     renderSummary: () => <div>Summary DIV - sera remplacé par les détails</div>,
@@ -112,7 +112,7 @@ export const NoEdit: Story = {
   args: {
     id: 'info-section-no-edit',
     title: 'Déclarant',
-    onEdit: undefined,
+    editHref: undefined,
     renderSummary: () => <div>Summary DIV</div>,
     renderDetails: () => <div>Details DIV</div>,
     emptyLabel: 'Aucune information',
@@ -128,7 +128,7 @@ export const DarkThemeExample: Story = {
   args: {
     id: 'info-section-dark',
     title: 'Dark Theme Example',
-    onEdit: () => {
+    editHref: () => {
       console.log('onEdit in dark theme');
     },
     renderSummary: () => (

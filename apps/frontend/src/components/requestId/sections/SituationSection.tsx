@@ -211,10 +211,10 @@ interface SituationSectionProps {
   requestId?: string;
   receptionType: string | null;
   situation?: SituationData | null;
-  onEdit: (situationId?: string) => void;
+  editHref?: string;
 }
 
-export const SituationSection = ({ id, requestId, situation, receptionType, onEdit }: SituationSectionProps) => {
+export const SituationSection = ({ id, requestId, situation, receptionType, editHref }: SituationSectionProps) => {
   const situationId = situation?.id;
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const [fait] = situation?.faits ?? [];
@@ -499,7 +499,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
     <InfoSection
       id={id}
       title="Description de la situation"
-      onEdit={() => onEdit(situationId)}
+      editHref={canEdit ? editHref : undefined}
       canEdit={canEdit}
       badges={
         situationHasMaltraitanceTag(situation)
