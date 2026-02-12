@@ -7,8 +7,6 @@ import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import { getFileStream } from '../../libs/minio.js';
 import type { UploadedFile } from '../../libs/prisma.js';
-import { prisma } from '../../libs/prisma.js';
-import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
 import { getDirectionsServicesFromRequeteEntiteId, getEntitesByIds } from '../entites/entites.service.js';
@@ -16,9 +14,7 @@ import type { EntiteTraitement } from '../entites/entites.type.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service.js';
 import { getUserById } from '../users/users.service.js';
-import RequetesEntiteController from './requetesEntite.controller.js';
 import {
-  closeRequeteForEntite,
   getOtherEntitesAffected,
   getRequeteEntiteById,
   getRequetesEntite,

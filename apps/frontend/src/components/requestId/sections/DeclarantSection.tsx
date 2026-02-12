@@ -9,10 +9,10 @@ interface DeclarantSectionProps {
   id: string;
   requestId?: string;
   declarant?: DeclarantData | null;
-  onEdit: () => void;
+  editHref?: string;
 }
 
-export const DeclarantSection = ({ requestId, id, declarant, onEdit }: DeclarantSectionProps) => {
+export const DeclarantSection = ({ requestId, id, declarant, editHref }: DeclarantSectionProps) => {
   const declarantIdentite = declarant?.identite;
   const declarantAdresse = declarant?.adresse;
   const { canEdit } = useCanEdit({ requeteId: requestId });
@@ -155,7 +155,7 @@ export const DeclarantSection = ({ requestId, id, declarant, onEdit }: Declarant
     <InfoSection
       id={id}
       title="Déclarant"
-      onEdit={onEdit}
+      editHref={editHref}
       canEdit={canEdit}
       renderSummary={renderSummary}
       renderDetails={isFulfilled ? renderDetails : undefined}
