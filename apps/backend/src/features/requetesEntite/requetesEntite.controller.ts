@@ -40,6 +40,7 @@ import {
   getOtherEntitesAffectedRoute,
   getRequeteEntiteRoute,
   getRequetesEntiteRoute,
+  updateStatutRoute,
 } from './requetesEntite.route.js';
 import {
   CloseRequeteBodySchema,
@@ -309,7 +310,7 @@ const app = factoryWithLogs
     return streamSafeFileResponse(c, file);
   })
 
-  .patch('/:id/statut', zValidator('json', UpdateStatutBodySchema), async (c) => {
+  .patch('/:id/statut', updateStatutRoute, zValidator('json', UpdateStatutBodySchema), async (c) => {
     const logger = c.get('logger');
     const { id } = c.req.param();
     const userId = c.get('userId');

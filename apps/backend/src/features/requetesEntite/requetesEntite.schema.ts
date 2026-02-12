@@ -7,7 +7,7 @@ import { EntiteSchema } from '../entites/entites.schema.js';
 import { RequeteEtapeSchema } from '../requeteEtapes/requetesEtapes.schema.js';
 import { RequeteSchema } from '../requetes/requetes.schema.js';
 
-const RequeteEntiteSchema = z.object({
+export const RequeteEntiteSchema = z.object({
   requeteId: z.string(),
   statutId: z.string(),
   prioriteId: z.string().nullable(),
@@ -173,6 +173,10 @@ export const UpdatePrioriteBodySchema = z.object({
 
 export const UpdateStatutBodySchema = z.object({
   statutId: z.enum([REQUETE_STATUT_TYPES.NOUVEAU, REQUETE_STATUT_TYPES.TRAITEE]),
+});
+
+export const UpdateStatutResponseSchema = z.object({
+  data: RequeteEntiteSchema,
 });
 
 export const CloseRequeteBodySchema = z.object({
