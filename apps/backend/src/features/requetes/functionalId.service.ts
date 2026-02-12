@@ -14,18 +14,18 @@ export async function generateRequeteId(source: FunctionalIdSource, tx?: Prisma.
 
   const sourcePrefix = source === 'SIRENA' ? 'RS' : 'RD';
   const monthPrefix = `${year}-${month}-${sourcePrefix}`;
+  const regexPattern = `^${monthPrefix}[0-9]+$`;
 
   const prismaClient = tx || prisma;
 
-  const count = await prismaClient.requete.count({
-    where: {
-      id: {
-        startsWith: monthPrefix,
-      },
-    },
-  });
+  const [result] = await prismaClient.$queryRaw<{ maxNumber: number | null }[]>`
+    SELECT MAX(CAST(SUBSTRING(id FROM ${monthPrefix.length + 1}::int) AS INTEGER)) AS "maxNumber"
+    FROM "Requete"
+    WHERE id LIKE ${`${monthPrefix}%`}
+      AND id ~ ${regexPattern}
+  `;
 
-  const nextNumber = count + 1;
+  const nextNumber = (result?.maxNumber ?? 0) + 1;
 
   return `${year}-${month}-${sourcePrefix}${nextNumber}`;
 }

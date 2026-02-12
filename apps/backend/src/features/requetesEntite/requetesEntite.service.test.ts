@@ -170,10 +170,26 @@ describe('requetesEntite.service', () => {
               },
               situations: {
                 include: {
+                  demarchesEngagees: {
+                    include: {
+                      autoriteType: true,
+                      demarches: true,
+                      etablissementReponse: true,
+                    },
+                  },
                   faits: {
                     include: {
-                      consequences: true,
-                      maltraitanceTypes: true,
+                      consequences: {
+                        include: {
+                          consequence: true,
+                        },
+                      },
+                      fichiers: true,
+                      maltraitanceTypes: {
+                        include: {
+                          maltraitanceType: true,
+                        },
+                      },
                       motifs: {
                         include: {
                           motif: true,
@@ -184,7 +200,6 @@ describe('requetesEntite.service', () => {
                           motifDeclaratif: true,
                         },
                       },
-                      fichiers: true,
                     },
                   },
                   lieuDeSurvenue: {
@@ -259,10 +274,26 @@ describe('requetesEntite.service', () => {
               },
               situations: {
                 include: {
+                  demarchesEngagees: {
+                    include: {
+                      autoriteType: true,
+                      demarches: true,
+                      etablissementReponse: true,
+                    },
+                  },
                   faits: {
                     include: {
-                      consequences: true,
-                      maltraitanceTypes: true,
+                      consequences: {
+                        include: {
+                          consequence: true,
+                        },
+                      },
+                      fichiers: true,
+                      maltraitanceTypes: {
+                        include: {
+                          maltraitanceType: true,
+                        },
+                      },
                       motifs: {
                         include: {
                           motif: true,
@@ -273,7 +304,6 @@ describe('requetesEntite.service', () => {
                           motifDeclaratif: true,
                         },
                       },
-                      fichiers: true,
                     },
                   },
                   lieuDeSurvenue: {
@@ -348,10 +378,26 @@ describe('requetesEntite.service', () => {
               },
               situations: {
                 include: {
+                  demarchesEngagees: {
+                    include: {
+                      autoriteType: true,
+                      demarches: true,
+                      etablissementReponse: true,
+                    },
+                  },
                   faits: {
                     include: {
-                      consequences: true,
-                      maltraitanceTypes: true,
+                      consequences: {
+                        include: {
+                          consequence: true,
+                        },
+                      },
+                      fichiers: true,
+                      maltraitanceTypes: {
+                        include: {
+                          maltraitanceType: true,
+                        },
+                      },
                       motifs: {
                         include: {
                           motif: true,
@@ -362,7 +408,6 @@ describe('requetesEntite.service', () => {
                           motifDeclaratif: true,
                         },
                       },
-                      fichiers: true,
                     },
                   },
                   lieuDeSurvenue: {
