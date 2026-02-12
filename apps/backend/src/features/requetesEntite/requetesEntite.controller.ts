@@ -16,7 +16,6 @@ import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import { streamFileResponse, streamSafeFileResponse } from '../../helpers/file.js';
 import { sseEventManager } from '../../helpers/sse.js';
-import { prisma } from '../../libs/prisma.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import requeteChangelogMiddleware from '../../middlewares/changelog/changelog.requete.middleware.js';
 import requeteStatesChangelogMiddleware from '../../middlewares/changelog/changelog.requeteEtape.middleware.js';
@@ -25,7 +24,7 @@ import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { sendEntiteAssignedNotification } from '../entites/entite.notification.service.js';
-import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.service.js';
+import { getDirectionsServicesFromRequeteEntiteId, getEntitesByIds } from '../entites/entites.service.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import {
   getUploadedFileById,
@@ -330,10 +329,7 @@ const app = factoryWithLogs
     }
 
     const roleId = c.get('roleId');
-    const topEntite = await prisma.entite.findUnique({
-      where: { id: topEntiteId },
-      select: { isActive: true },
-    });
+    const [topEntite] = await getEntitesByIds([topEntiteId]);
     const topEntiteIsActive = topEntite?.isActive ?? false;
 
     const isReadOnlyWithInactiveEntite = roleId === ROLES.READER && !topEntiteIsActive;

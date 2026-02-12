@@ -3,9 +3,9 @@ import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
-import { prisma } from '../../libs/prisma.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
+import { getEntitesByIds } from '../entites/entites.service.js';
 import { getUserById } from '../users/users.service.js';
 import ProfileController from './profile.controller.js';
 
@@ -15,6 +15,10 @@ vi.mock('../../config/env.js', () => ({
 
 vi.mock('../users/users.service.js', () => ({
   getUserById: vi.fn(),
+}));
+
+vi.mock('../entites/entites.service.js', () => ({
+  getEntitesByIds: vi.fn(),
 }));
 
 vi.mock('../../middlewares/auth.middleware.js', () => {
@@ -32,20 +36,6 @@ vi.mock('../../middlewares/entites.middleware.js', () => {
       c.set('topEntiteId', 'topEntiteId1');
       c.set('entiteIds', ['entite-1', 'entite-2']);
       return next();
-    },
-  };
-});
-
-vi.mock('../../libs/prisma.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../libs/prisma.js')>();
-  return {
-    ...actual,
-    prisma: {
-      ...actual.prisma,
-      entite: {
-        ...actual.prisma.entite,
-        findUnique: vi.fn(),
-      },
     },
   };
 });
@@ -74,7 +64,7 @@ describe('Profile endpoints: /profile', () => {
   describe('GET /', () => {
     it('should return user profile if found', async () => {
       vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
-      vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({ isActive: true });
+      vi.mocked(getEntitesByIds).mockResolvedValueOnce([{ isActive: true }]);
 
       const res = await client.profile.$get('/');
       const json = await res.json();
@@ -89,10 +79,7 @@ describe('Profile endpoints: /profile', () => {
         }),
       });
       expect(getUserById).toHaveBeenCalledWith('id1', null, null);
-      expect(prisma.entite.findUnique).toHaveBeenCalledWith({
-        where: { id: 'topEntiteId1' },
-        select: { isActive: true },
-      });
+      expect(getEntitesByIds).toHaveBeenCalledWith(['topEntiteId1']);
     });
 
     it('should return 401 if user not found', async () => {

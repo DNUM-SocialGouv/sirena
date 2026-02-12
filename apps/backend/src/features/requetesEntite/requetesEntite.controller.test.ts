@@ -11,7 +11,7 @@ import { prisma } from '../../libs/prisma.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
-import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.service.js';
+import { getDirectionsServicesFromRequeteEntiteId, getEntitesByIds } from '../entites/entites.service.js';
 import type { EntiteTraitement } from '../entites/entites.type.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service.js';
@@ -38,6 +38,7 @@ vi.mock('./requetesEntite.service.js', () => ({
 vi.mock('../entites/entites.service.js', () => ({
   getDirectionsServicesFromRequeteEntiteId: vi.fn(),
   getEntiteDescendantIds: vi.fn().mockResolvedValue([]),
+  getEntitesByIds: vi.fn(),
 }));
 
 vi.mock('../entites/entites.cache.js', () => ({
@@ -497,7 +498,7 @@ describe('RequetesEntite endpoints: /', () => {
   describe('PATCH /:id/statut', () => {
     it('returns 403 when user cannot update statut', async () => {
       vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
-      vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({ isActive: false } as never);
+      vi.mocked(getEntitesByIds).mockResolvedValueOnce([{ isActive: false }]);
 
       const res = await client[':id'].statut.$patch({
         param: { id: 'requeteId' },
