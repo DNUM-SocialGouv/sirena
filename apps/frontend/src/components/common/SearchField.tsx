@@ -158,13 +158,13 @@ export function SearchField<T>({
       <Input
         label={label}
         hintText={displayHintText}
+        disabled={disabled}
         nativeInputProps={{
           ref: inputRef,
           value: searchTerm,
           onChange: handleInputChange,
           onFocus: () => searchTerm.length >= minSearchLength && setShowSuggestions(true),
           onKeyDown: handleKeyDown,
-          disabled,
           autoComplete: 'off',
         }}
       />

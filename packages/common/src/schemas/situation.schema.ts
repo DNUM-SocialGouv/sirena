@@ -28,6 +28,9 @@ export const SituationDataSchema = z.object({
       autrePrecision: z.string().optional(),
       rpps: z.string().optional(),
       commentaire: z.string().optional(),
+      nom: z.string().optional(),
+      prenom: z.string().optional(),
+      civilite: z.string().optional(),
     })
     .optional(),
 

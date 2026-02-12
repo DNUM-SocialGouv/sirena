@@ -73,6 +73,13 @@ const getLieuDeSurvenue = (situation: SituationData) => {
   return text;
 };
 
+const getMisEnCauseIdentity = (misEnCause: SituationData['misEnCause'] | undefined | null): string => {
+  if (!misEnCause) return '';
+  const identity = [misEnCause.civilite, misEnCause.prenom, misEnCause.nom].filter(Boolean).join(' ').trim();
+  if (identity) return identity;
+  return misEnCause.commentaire || '';
+};
+
 const Affectations = ({ situation }: { situation?: SituationData | null }) => {
   if (!situation?.traitementDesFaits?.entites || situation.traitementDesFaits.entites.length === 0) {
     return null;
@@ -238,7 +245,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
             <p className={fr.cx('fr-mb-0')}>
               <span className={fr.cx('fr-icon-error-warning-line', 'fr-icon--sm')} aria-hidden="true" />
               <span className="fr-sr-only">Identité de la personne concernée :</span>{' '}
-              {situation?.misEnCause?.commentaire && `${situation.misEnCause.commentaire} - `}
+              {getMisEnCauseIdentity(situation?.misEnCause) && `${getMisEnCauseIdentity(situation?.misEnCause)} - `}
               {situation?.misEnCause?.misEnCauseType?.label}
             </p>
           </div>
@@ -281,17 +288,17 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
                 <span>Numéro RPPS :</span> {situation.misEnCause.rpps}
               </p>
             )}
-            {situation?.misEnCause?.commentaire &&
+            {getMisEnCauseIdentity(situation?.misEnCause) &&
               situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.PROFESSIONNEL_SANTE && (
                 <p className={fr.cx('fr-mb-2w')}>
-                  <span>Identité du professionnel :</span> {situation.misEnCause.commentaire}
+                  <span>Identité du professionnel :</span> {getMisEnCauseIdentity(situation.misEnCause)}
                 </p>
               )}
-            {situation?.misEnCause?.commentaire &&
+            {getMisEnCauseIdentity(situation?.misEnCause) &&
               situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.MEMBRE_FAMILLE && (
                 <>
                   <p className={fr.cx('fr-text--bold', 'fr-mb-1w')}>Identité du mis en cause</p>
-                  <p className={fr.cx('fr-mb-3w')}>{situation.misEnCause.commentaire}</p>
+                  <p className={fr.cx('fr-mb-3w')}>{getMisEnCauseIdentity(situation.misEnCause)}</p>
                 </>
               )}
           </>
