@@ -415,7 +415,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Répertoire FINESS
+                  Répertoire FINESS <span className="fr-sr-only"> - nouvel onglet </span>
                 </a>
               </div>
               <div className="fr-col-12 fr-col-md-6">

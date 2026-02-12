@@ -271,7 +271,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Répertoire RPPS
+                  Répertoire RPPS <span className="fr-sr-only"> - nouvel onglet </span>
                 </a>
               </div>
               <div className="fr-col-12 fr-col-md-6">
