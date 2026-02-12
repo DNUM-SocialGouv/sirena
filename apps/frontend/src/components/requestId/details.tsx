@@ -131,7 +131,13 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
               <div className={fr.cx('fr-col-md-12', 'fr-col-lg-4')}>
                 <OriginalRequestSection
                   requestId={requestId}
-                  data={{ receptionDate, receptionTypeId, dematSocialId: data?.requete.dematSocialId }}
+                  data={{
+                    receptionDate,
+                    receptionTypeId,
+                    dematSocialId: data?.requete.dematSocialId,
+                    provenanceId: data?.requete.provenanceId ?? null,
+                    provenancePrecision: data?.requete.provenancePrecision ?? null,
+                  }}
                   updatedAt={data?.requete.updatedAt || null}
                   onEdit={() => refetchRequest()}
                 />

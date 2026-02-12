@@ -313,6 +313,8 @@ export const getRequeteEntiteById = async (requeteId: string, entiteId: string |
 interface CreateRequeteInput {
   receptionTypeId?: string | null;
   receptionDate?: string | null;
+  provenanceId?: string | null;
+  provenancePrecision?: string | null;
   declarant?: DeclarantInput;
   participant?: PersonneConcerneeInput;
 }
@@ -331,6 +333,8 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
           id: requeteId,
           receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
           receptionTypeId: data?.receptionTypeId ?? null,
+          provenanceId: data?.provenanceId ?? null,
+          provenancePrecision: data?.provenancePrecision ?? null,
           ...(data?.declarant && {
             declarant: {
               create: mapDeclarantToPrismaCreate(data.declarant),

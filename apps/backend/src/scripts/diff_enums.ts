@@ -24,6 +24,7 @@ import {
   requeteClotureReasonLabels,
   requeteEtapeStatutType,
   requetePrioriteType,
+  requeteProvenanceLabels,
   roles,
   statutTypes,
   transportTypeLabels,
@@ -277,6 +278,7 @@ async function main() {
     await checkEnum('MisEnCauseTypeEnum', prisma.misEnCauseTypeEnum, mapToDefinitions(misEnCauseTypeLabels));
     await checkEnum('MotifDeclaratifEnum', prisma.motifDeclaratifEnum, mapToDefinitions(motifLabels));
     await checkEnum('ReceptionTypeEnum', prisma.receptionTypeEnum, mapToDefinitions(receptionTypeLabels));
+    await checkEnum('RequeteProvenanceEnum', prisma.requeteProvenanceEnum, mapToDefinitions(requeteProvenanceLabels));
     await checkEnum('RequeteEtapeStatutEnum', prisma.requeteEtapeStatutEnum, mapToDefinitions(requeteEtapeStatutType));
     await checkEnum('RoleEnum', prisma.roleEnum, mapToDefinitions(roles));
     await checkEnum('StatutEnum', prisma.statutEnum, mapToDefinitions(statutTypes));

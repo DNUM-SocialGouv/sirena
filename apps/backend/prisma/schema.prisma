@@ -138,6 +138,10 @@ model Requete {
   receptionTypeId String?
   receptionType   ReceptionTypeEnum? @relation(fields: [receptionTypeId], references: [id])
 
+  provenanceId        String?
+  provenance          RequeteProvenanceEnum? @relation(fields: [provenanceId], references: [id])
+  provenancePrecision String?
+
   declarant PersonneConcernee? @relation("DeclarantRequete")
 
   participant PersonneConcernee? @relation("ParticipantRequete")
@@ -188,6 +192,13 @@ model RequetePrioriteEnum {
 }
 
 model ReceptionTypeEnum {
+  id    String @id
+  label String @unique
+
+  requete Requete[]
+}
+
+model RequeteProvenanceEnum {
   id    String @id
   label String @unique
 

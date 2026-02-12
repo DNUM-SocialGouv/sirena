@@ -2,7 +2,14 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
-import { RECEPTION_TYPE, type ReceptionType, receptionTypeLabels } from '@sirena/common/constants';
+import {
+  RECEPTION_TYPE,
+  REQUETE_PROVENANCE_NEEDS_PRECISION,
+  type ReceptionType,
+  type RequeteProvenance,
+  receptionTypeLabels,
+  requeteProvenanceLabels,
+} from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { clsx } from 'clsx';
 import { useEffect, useMemo, useState } from 'react';
@@ -17,6 +24,8 @@ type OriginalRequestSectionProps = {
     receptionDate?: string | null;
     receptionTypeId?: ReceptionType | null;
     dematSocialId?: number | null;
+    provenanceId?: string | null;
+    provenancePrecision?: string | null;
   };
   updatedAt?: string | null;
   onEdit?: () => void;
@@ -26,10 +35,14 @@ const RenderCompleted = ({
   date,
   receptionType,
   dematSocialId,
+  provenanceId,
+  provenancePrecision,
 }: {
   date?: string;
   receptionType?: ReceptionType;
   dematSocialId?: number | null;
+  provenanceId?: RequeteProvenance | null;
+  provenancePrecision?: string | null;
 }) => {
   if (date && receptionType) {
     return (
@@ -38,16 +51,48 @@ const RenderCompleted = ({
         {receptionType === RECEPTION_TYPE.FORMULAIRE && (
           <div className={fr.cx('fr-text--xs')}>Dossier Demat.Social n° {dematSocialId}</div>
         )}
+        {provenanceId && (
+          <div className={fr.cx('fr-text--xs', 'fr-mt-1v')}>
+            Provenance : {requeteProvenanceLabels[provenanceId]}
+            {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
+              provenancePrecision &&
+              ` – ${provenancePrecision}`}
+          </div>
+        )}
       </div>
     );
   }
 
   if (date) {
-    return <div className="text-vertical-align">Reçue le {new Date(date).toLocaleDateString('fr-FR')}</div>;
+    return (
+      <div className="text-vertical-align">
+        Reçue le {new Date(date).toLocaleDateString('fr-FR')}
+        {provenanceId && (
+          <div className={fr.cx('fr-text--xs', 'fr-mt-1v')}>
+            Provenance : {requeteProvenanceLabels[provenanceId]}
+            {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
+              provenancePrecision &&
+              ` – ${provenancePrecision}`}
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (receptionType) {
-    return <div className="text-vertical-align">Reçue par {receptionTypeLabels[receptionType]}</div>;
+    return (
+      <div className="text-vertical-align">
+        Reçue par {receptionTypeLabels[receptionType]}
+        {provenanceId && (
+          <div className={fr.cx('fr-text--xs', 'fr-mt-1v')}>
+            Provenance : {requeteProvenanceLabels[provenanceId]}
+            {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
+              provenancePrecision &&
+              ` – ${provenancePrecision}`}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return null;
@@ -64,17 +109,31 @@ const formatDateForInput = (value?: string | null) => {
   return date.toISOString().split('T')[0];
 };
 
+const provenanceOptions = Object.entries(requeteProvenanceLabels).map(([value, label]) => ({ value, label }));
+
 export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: OriginalRequestSectionProps) => {
   const [dateValue, setDateValue] = useState<string>(formatDateForInput(data?.receptionDate));
   const [typeValue, setTypeValue] = useState<ReceptionType | ''>(data?.receptionTypeId ?? '');
+  const [provenanceValue, setProvenanceValue] = useState<RequeteProvenance | ''>(
+    (data?.provenanceId as RequeteProvenance | null | undefined) ?? '',
+  );
+  const [provenancePrecisionValue, setProvenancePrecisionValue] = useState<string>(data?.provenancePrecision ?? '');
   const [isSaving, setIsSaving] = useState(false);
   const [isEdit, setIsEdit] = useState<boolean>(false);
   const navigate = useNavigate();
 
+  const showProvenance = data?.receptionTypeId !== RECEPTION_TYPE.FORMULAIRE;
+  const showProvenancePrecision =
+    showProvenance &&
+    provenanceValue !== '' &&
+    REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceValue as RequeteProvenance);
+
   useEffect(() => {
     setDateValue(formatDateForInput(data?.receptionDate));
     setTypeValue(data?.receptionTypeId ?? '');
-  }, [data?.receptionDate, data?.receptionTypeId]);
+    setProvenanceValue((data?.provenanceId as RequeteProvenance | null | undefined) ?? '');
+    setProvenancePrecisionValue(data?.provenancePrecision ?? '');
+  }, [data?.receptionDate, data?.receptionTypeId, data?.provenanceId, data?.provenancePrecision]);
 
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const isNotEditable = data?.receptionTypeId === RECEPTION_TYPE.FORMULAIRE;
@@ -104,12 +163,18 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
   const handleSubmit = async () => {
     setIsSaving(true);
 
+    const payload = {
+      receptionDate: dateValue || null,
+      receptionTypeId: normalizeReceptionType(typeValue),
+      ...(showProvenance && {
+        provenanceId: provenanceValue || null,
+        provenancePrecision: provenancePrecisionValue.trim() || null,
+      }),
+    };
+
     try {
       if (!requestId) {
-        const createdRequete = await createRequeteMutation.mutateAsync({
-          receptionDate: dateValue || null,
-          receptionTypeId: normalizeReceptionType(typeValue),
-        });
+        const createdRequete = await createRequeteMutation.mutateAsync(payload);
         navigate({ to: '/request/$requestId', params: { requestId: createdRequete.id } });
         setIsEdit(false);
         onEdit?.();
@@ -117,10 +182,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
         return;
       }
 
-      await handleSave({
-        receptionDate: dateValue || null,
-        receptionTypeId: normalizeReceptionType(typeValue),
-      });
+      await handleSave(payload);
       setIsEdit(false);
     } finally {
       setIsSaving(false);
@@ -173,6 +235,44 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                   ))}
                 </Select>
               </div>
+              {showProvenance && (
+                <>
+                  <div className={fr.cx('fr-col-12', 'fr-mb-2w')}>
+                    <Select
+                      label="Provenance"
+                      nativeSelectProps={{
+                        value: provenanceValue,
+                        onChange: (event) => {
+                          const next = (event.target.value as RequeteProvenance) || '';
+                          setProvenanceValue(next);
+                          if (next && !REQUETE_PROVENANCE_NEEDS_PRECISION.includes(next)) {
+                            setProvenancePrecisionValue('');
+                          }
+                        },
+                      }}
+                    >
+                      <option value="">Sélectionnez une option</option>
+                      {provenanceOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  {showProvenancePrecision && (
+                    <div className={fr.cx('fr-col-12', 'fr-mb-2w')}>
+                      <Input
+                        label="Précision (optionnel)"
+                        nativeInputProps={{
+                          type: 'text',
+                          value: provenancePrecisionValue,
+                          onChange: (event) => setProvenancePrecisionValue(event.target.value),
+                        }}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
               <div className={clsx(fr.cx('fr-col-12'), 'display-end')}>
                 <Button disabled={isSaving} type="submit">
                   Valider
@@ -189,6 +289,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                 date={dateValue || undefined}
                 receptionType={typeValue || undefined}
                 dematSocialId={data?.dematSocialId}
+                provenanceId={provenanceValue || undefined}
+                provenancePrecision={provenancePrecisionValue || undefined}
               />
             )}
             {canEdit && !isNotEditable && (
