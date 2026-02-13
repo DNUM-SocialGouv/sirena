@@ -146,10 +146,15 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
 
     // 3.2) Find the entities in the database for each type
     for (const t of a.types) {
+      // CD/DD: accept both INSEE ctcdCode (e.g. "76D") and convention departement+type (e.g. "76DD")
+      const ctcdCodesForCdDd = ['CD', 'DD'].includes(t)
+        ? [geo.ctcdCode, `${geo.departementCode}${t}`].filter((c, i, arr) => arr.indexOf(c) === i)
+        : null;
+
       const whereClause = {
         entiteTypeId: t,
         entiteMereId: null,
-        ...(['CD', 'DD'].includes(t) ? { ctcdCode: geo.ctcdCode, departementCode: geo.departementCode } : {}),
+        ...(ctcdCodesForCdDd ? { ctcdCode: { in: ctcdCodesForCdDd }, departementCode: geo.departementCode } : {}),
         ...(['ARS'].includes(t) ? { regionCode: geo.regionCode } : {}),
       };
       logger.debug(
