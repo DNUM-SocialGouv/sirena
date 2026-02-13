@@ -509,85 +509,92 @@ const app = factoryWithLogs
     },
   )
 
-  .patch('/:id/date-type', zValidator('json', UpdateTypeAndDateRequeteBodySchema), async (c) => {
-    const logger = c.get('logger');
-    const { id } = c.req.param();
-    const userId = c.get('userId');
-    const topEntiteId = c.get('topEntiteId');
+  .patch(
+    '/:id/date-type',
+    requeteChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    zValidator('json', UpdateTypeAndDateRequeteBodySchema),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const userId = c.get('userId');
+      const topEntiteId = c.get('topEntiteId');
 
-    if (!topEntiteId) {
-      throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
-        res: c.res,
-      });
-    }
-    const { receptionDate, receptionTypeId, provenanceId, provenancePrecision, controls } = c.req.valid('json');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
+          res: c.res,
+        });
+      }
+      const { receptionDate, receptionTypeId, provenanceId, provenancePrecision, controls } = c.req.valid('json');
 
-    const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
+      const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
 
-    if (!requeteEntite) {
-      throwHTTPException404NotFound('Requete not found', {
-        res: c.res,
-      });
-    }
-
-    if (requeteEntite.requete.receptionTypeId === RECEPTION_TYPE.FORMULAIRE) {
-      throwHTTPException400BadRequest('You are not allowed to update requetes from formulaire.', {
-        res: c.res,
-      });
-    }
-
-    const payload: {
-      receptionDate?: Date | null;
-      receptionTypeId?: string | null;
-      provenanceId?: string | null;
-      provenancePrecision?: string | null;
-    } = {};
-
-    if (receptionDate !== undefined) {
-      payload.receptionDate = receptionDate ? new Date(receptionDate) : null;
-    }
-
-    if (receptionTypeId !== undefined) {
-      payload.receptionTypeId = receptionTypeId;
-    }
-
-    if (provenanceId !== undefined) {
-      payload.provenanceId = provenanceId;
-    }
-
-    if (provenancePrecision !== undefined) {
-      payload.provenancePrecision = provenancePrecision;
-    }
-
-    try {
-      const updatedRequete = await updateDateAndTypeRequete(id, payload, controls);
-
-      sseEventManager.emitRequeteUpdated({
-        requeteId: id,
-        entiteId: topEntiteId,
-        field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
-      });
-
-      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
-        await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+      if (!requeteEntite) {
+        throwHTTPException404NotFound('Requete not found', {
+          res: c.res,
+        });
       }
 
-      logger.info({ requeteId: id, userId }, 'Reception date and type updated successfully');
-
-      return c.json({ data: updatedRequete });
-    } catch (error: unknown) {
-      if (error instanceof Error && error.message.startsWith('CONFLICT')) {
-        const conflictResponse = {
-          message: 'The requete has been modified by another user.',
-          conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
-        };
-
-        return c.json(conflictResponse, 409);
+      if (requeteEntite.requete.receptionTypeId === RECEPTION_TYPE.FORMULAIRE) {
+        throwHTTPException400BadRequest('You are not allowed to update requetes from formulaire.', {
+          res: c.res,
+        });
       }
 
-      throw error;
-    }
-  })
+      const payload: {
+        receptionDate?: Date | null;
+        receptionTypeId?: string | null;
+        provenanceId?: string | null;
+        provenancePrecision?: string | null;
+      } = {};
+
+      if (receptionDate !== undefined) {
+        payload.receptionDate = receptionDate ? new Date(receptionDate) : null;
+      }
+
+      if (receptionTypeId !== undefined) {
+        payload.receptionTypeId = receptionTypeId;
+      }
+
+      if (provenanceId !== undefined) {
+        payload.provenanceId = provenanceId;
+      }
+
+      if (provenancePrecision !== undefined) {
+        payload.provenancePrecision = provenancePrecision;
+      }
+
+      try {
+        const updatedRequete = await updateDateAndTypeRequete(id, payload, controls);
+
+        c.set('changelogId', id);
+
+        sseEventManager.emitRequeteUpdated({
+          requeteId: id,
+          entiteId: topEntiteId,
+          field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
+        });
+
+        if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+          await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+        }
+
+        logger.info({ requeteId: id, userId }, 'Reception date and type updated successfully');
+
+        return c.json({ data: updatedRequete });
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.startsWith('CONFLICT')) {
+          const conflictResponse = {
+            message: 'The requete has been modified by another user.',
+            conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
+          };
+
+          return c.json(conflictResponse, 409);
+        }
+
+        throw error;
+      }
+    },
+  )
 
   .patch('/:id/files', zValidator('json', UpdateRequeteFilesBodySchema), async (c) => {
     const logger = c.get('logger');

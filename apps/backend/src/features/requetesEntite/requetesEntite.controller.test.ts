@@ -7,7 +7,6 @@ import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import { getFileStream } from '../../libs/minio.js';
 import type { UploadedFile } from '../../libs/prisma.js';
-import { prisma } from '../../libs/prisma.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
@@ -15,7 +14,6 @@ import { getDirectionsServicesFromRequeteEntiteId, getEntitesByIds } from '../en
 import type { EntiteTraitement } from '../entites/entites.type.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service.js';
-import { getUserById } from '../users/users.service.js';
 import RequetesEntiteController from './requetesEntite.controller.js';
 import {
   closeRequeteForEntite,
@@ -741,6 +739,10 @@ describe('RequetesEntite endpoints: /', () => {
       },
     };
 
+    beforeEach(() => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValue(baseRequeteEntite);
+    });
+
     it('updates reception date and type and returns updated requete', async () => {
       const newDate = '2025-05-01';
       const updatedRequete = {
@@ -750,7 +752,6 @@ describe('RequetesEntite endpoints: /', () => {
         updatedAt: new Date(newDate),
       };
 
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
       vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
 
       const res = await client[':id']['date-type'].$patch({
@@ -778,7 +779,6 @@ describe('RequetesEntite endpoints: /', () => {
       const conflictError = new Error('CONFLICT: test');
       (conflictError as Error & { conflictData?: unknown }).conflictData = { serverData: { id: 'requeteId' } };
 
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
       vi.mocked(updateDateAndTypeRequete).mockRejectedValueOnce(conflictError);
 
       const res = await client[':id']['date-type'].$patch({
@@ -807,7 +807,6 @@ describe('RequetesEntite endpoints: /', () => {
         updatedAt: new Date('2025-05-03T00:00:00.000Z'),
       };
 
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
       vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
 
       const res = await client[':id']['date-type'].$patch({
@@ -840,7 +839,6 @@ describe('RequetesEntite endpoints: /', () => {
         updatedAt: new Date('2025-05-03T00:00:00.000Z'),
       };
 
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
       vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
 
       const res = await client[':id']['date-type'].$patch({
@@ -875,7 +873,6 @@ describe('RequetesEntite endpoints: /', () => {
         updatedAt: new Date('2025-05-04'),
       };
 
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
       vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
 
       const res = await client[':id']['date-type'].$patch({
