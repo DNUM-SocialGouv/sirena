@@ -394,6 +394,9 @@ model TransportTypeEnum {
 model MisEnCause {
   id             String  @id @default(uuid())
   rpps           String?
+  civilite       String  @default("")
+  nom            String  @default("")
+  prenom         String  @default("")
   commentaire    String  @default("")
   autrePrecision String  @default("")
 

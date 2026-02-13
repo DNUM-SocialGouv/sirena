@@ -8,8 +8,8 @@ import {
 } from '../../../libs/prisma.js';
 
 const FIELD_MAPPINGS: Record<string, string[]> = {
-  PROFESSIONNEL_SANTE: ['rpps', 'commentaire'],
-  MEMBRE_FAMILLE: ['commentaire'],
+  PROFESSIONNEL_SANTE: ['rpps', 'civilite', 'nom', 'prenom'],
+  MEMBRE_FAMILLE: ['civilite', 'nom', 'prenom'],
 };
 
 export const getAgeEnums = async (): Promise<AgeEnum[]> => await prisma.ageEnum.findMany();
