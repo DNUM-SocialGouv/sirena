@@ -405,6 +405,12 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                   }}
                   label="Rechercher l'établissement par numéro FINESS"
                   hintText="Saisir le numéro FINESS et sélectionner l'établissement"
+                  state={isNoFinessChecked ? 'info' : 'default'}
+                  stateRelatedMessage={
+                    isNoFinessChecked
+                      ? 'Si vous souhaitez rechercher par numéro FINESS, décochez la case “L’établissement n’a pas de numéro FINESS”'
+                      : undefined
+                  }
                   disabled={isSaving || isNoFinessChecked}
                   searchMode="finess"
                   minSearchLength={6}

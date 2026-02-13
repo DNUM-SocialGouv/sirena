@@ -8,6 +8,8 @@ interface SearchFieldProps<T> {
   onChange: (value: string, item?: T) => void;
   label: string;
   hintText?: string;
+  state?: 'default' | 'success' | 'info' | 'error';
+  stateRelatedMessage?: React.ReactNode;
   disabled?: boolean;
   queryKey: string;
   fetchFn: (searchTerm: string) => Promise<T[]>;
@@ -25,6 +27,8 @@ export function SearchField<T>({
   onChange,
   label,
   hintText,
+  state = 'default',
+  stateRelatedMessage,
   disabled,
   queryKey,
   fetchFn,
@@ -158,6 +162,8 @@ export function SearchField<T>({
       <Input
         label={label}
         hintText={displayHintText}
+        state={state}
+        stateRelatedMessage={stateRelatedMessage}
         disabled={disabled}
         nativeInputProps={{
           ref: inputRef,

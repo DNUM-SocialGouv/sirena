@@ -21,7 +21,7 @@ import {
   type ReceptionType,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { PractitionerSearchField } from '@/components/common/PractitionerSearchField';
 
 type misEnCauseProps = {
@@ -150,12 +150,6 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
       Boolean(formData.misEnCause?.civilite || formData.misEnCause?.nom || formData.misEnCause?.prenom),
   );
 
-  useEffect(() => {
-    if (misEnCauseType !== MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE) {
-      setIsNoRppsChecked(false);
-    }
-  }, [misEnCauseType]);
-
   return (
     <div
       className="fr-p-4w fr-mb-4w"
@@ -171,14 +165,19 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
               label="Type de mis en cause"
               nativeSelectProps={{
                 value: misEnCauseType || '',
-                onChange: (e) =>
+                onChange: (e) => {
+                  const nextMisEnCauseType = e.target.value || undefined;
+                  if (nextMisEnCauseType !== MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE) {
+                    setIsNoRppsChecked(false);
+                  }
                   setFormData((prev) => ({
                     ...prev,
                     misEnCause: {
-                      misEnCauseType: e.target.value || undefined,
+                      misEnCauseType: nextMisEnCauseType,
                       misEnCauseTypePrecision: undefined,
                     },
-                  })),
+                  }));
+                },
               }}
             >
               <option value="">Sélectionner une option</option>
@@ -260,6 +259,12 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                     }
                   }}
                   label="Rechercher le professionnel par numéro RPPS"
+                  state={isNoRppsChecked ? 'info' : 'default'}
+                  stateRelatedMessage={
+                    isNoRppsChecked
+                      ? 'Si vous souhaitez rechercher par numéro RPPS, décochez la case “Le professionnel n’a pas de numéro RPPS”'
+                      : undefined
+                  }
                   disabled={isSaving || isNoRppsChecked}
                   searchMode="rpps"
                   hintText="Saisir le numéro RPPS et sélectionner le professionnel"
