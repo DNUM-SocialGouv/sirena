@@ -22,9 +22,7 @@ export const EmptyState: Story = {
   args: {
     id: 'info-section-empty',
     title: 'Déclarant',
-    editHref: () => {
-      console.log('onEdit');
-    },
+    editHref: 'url-editer-declarant',
     emptyLabel: 'Aucune information',
     badges: [
       <Badge key="badge-1" severity="error">
@@ -41,9 +39,7 @@ export const FullState: Story = {
   args: {
     id: 'info-section-full',
     title: 'Déclarant',
-    editHref: () => {
-      console.log('onEdit');
-    },
+    editHref: 'url-editer-declarant',
     renderSummary: () => <div>Summary DIV</div>,
     renderDetails: () => <div>Details DIV</div>,
     emptyLabel: 'Aucune information',
@@ -59,9 +55,7 @@ export const OnlySummaryState: Story = {
   args: {
     id: 'info-section-only-summary',
     title: 'Déclarant',
-    editHref: () => {
-      console.log('onEdit');
-    },
+    editHref: 'url-editer-declarant',
     renderSummary: () => <div>Summary DIV</div>,
     emptyLabel: 'Aucune information',
     badges: [
@@ -76,9 +70,7 @@ export const OnlyDetailsState: Story = {
   args: {
     id: 'info-section-only-details',
     title: 'Déclarant',
-    editHref: () => {
-      console.log('onEdit');
-    },
+    editHref: 'url-editer-declarant',
     renderDetails: () => <div>Details DIV</div>,
     emptyLabel: 'Aucune information',
     badges: [
@@ -93,9 +85,7 @@ export const ReplaceSummaryWithDetails: Story = {
   args: {
     id: 'info-section-replace-summary-with-details',
     title: 'Déclarant',
-    editHref: () => {
-      console.log('onEdit');
-    },
+    editHref: 'url-editer-declarant',
     renderSummary: () => <div>Summary DIV - sera remplacé par les détails</div>,
     renderDetails: () => <div>Details DIV - remplace le summary quand ouvert</div>,
     replaceSummaryWithDetails: true,
@@ -128,9 +118,7 @@ export const DarkThemeExample: Story = {
   args: {
     id: 'info-section-dark',
     title: 'Dark Theme Example',
-    editHref: () => {
-      console.log('onEdit in dark theme');
-    },
+    editHref: 'url-editer-declarant',
     renderSummary: () => (
       <div>
         <p>This InfoSection automatically adapts to dark theme.</p>
