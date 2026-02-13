@@ -32,7 +32,7 @@ export function DescriptionFaits({ formData, setFormData, receptionType, initial
         return [];
       }
       if (maltraitance in MALTRAITANCE_TYPE) {
-        return [maltraitanceTypeLabels[maltraitance as MaltraitanceType]];
+        return `${[maltraitanceTypeLabels[maltraitance as MaltraitanceType]]} (maltraitance)`;
       }
       return [];
     }),
