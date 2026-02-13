@@ -1,3 +1,4 @@
+import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import {
@@ -21,6 +22,7 @@ import {
   type ReceptionType,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
+import { useEffect, useState } from 'react';
 import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
 import { buildOrganizationAddress, extractOrganizationName, updateOrganizationName } from '@/utils/organizationHelpers';
 
@@ -34,6 +36,15 @@ type LieuSurvenuProps = {
 export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: LieuSurvenuProps) {
   const lieuType = formData.lieuDeSurvenue?.lieuType;
   const lieuPrecision = formData.lieuDeSurvenue?.lieuPrecision;
+  const [isNoFinessChecked, setIsNoFinessChecked] = useState(
+    () =>
+      !formData.lieuDeSurvenue?.finess &&
+      Boolean(
+        formData.lieuDeSurvenue?.adresse?.label ||
+          formData.lieuDeSurvenue?.adresse?.codePostal ||
+          formData.lieuDeSurvenue?.adresse?.ville,
+      ),
+  );
   const shouldShowDomicileAddressFields =
     lieuType === LIEU_TYPE.DOMICILE &&
     (receptionType === RECEPTION_TYPE.FORMULAIRE ||
@@ -45,6 +56,12 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
             LIEU_DOMICILE_PRECISION.EQUIPES_MOBILES,
           ] as string[]
         ).includes(lieuPrecision)));
+
+  useEffect(() => {
+    if (lieuType !== LIEU_TYPE.ETABLISSEMENT_SANTE) {
+      setIsNoFinessChecked(false);
+    }
+  }, [lieuType]);
 
   const lieuTypeOptions = Object.entries(LIEU_TYPE).map(([key, value]) => ({
     key,
@@ -366,6 +383,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                   value={formData.lieuDeSurvenue?.finess || ''}
                   onChange={(value, organization) => {
                     if (organization) {
+                      setIsNoFinessChecked(false);
                       setFormData((prev) => ({
                         ...prev,
                         lieuDeSurvenue: {
@@ -385,78 +403,115 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                       }));
                     }
                   }}
-                  label="Numéro FINESS"
-                  disabled={isSaving}
+                  label="Rechercher l'établissement par numéro FINESS"
+                  hintText="Saisir le numéro FINESS et sélectionner l'établissement"
+                  state={isNoFinessChecked ? 'info' : 'default'}
+                  stateRelatedMessage={
+                    isNoFinessChecked
+                      ? 'Si vous souhaitez rechercher par numéro FINESS, décochez la case “L’établissement n’a pas de numéro FINESS”'
+                      : undefined
+                  }
+                  disabled={isSaving || isNoFinessChecked}
                   searchMode="finess"
                   minSearchLength={6}
                 />
+                <a
+                  className="fr-link fr-mt-1w"
+                  href="https://annuaire.esante.gouv.fr/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Répertoire FINESS <span className="fr-sr-only"> - nouvel onglet </span>
+                </a>
               </div>
               <div className="fr-col-12 fr-col-md-6">
-                <OrganizationSearchField
-                  value={extractOrganizationName(formData.lieuDeSurvenue?.adresse)}
-                  onChange={(value, organization) => {
-                    if (organization) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        lieuDeSurvenue: {
-                          ...prev.lieuDeSurvenue,
-                          finess: organization.identifier,
-                          adresse: buildOrganizationAddress(
-                            organization.name,
-                            organization.addressPostalcode,
-                            organization.addressCity,
-                          ),
+                <div className="fr-mt-8w">
+                  <Checkbox
+                    options={[
+                      {
+                        label: "L'établissement n'a pas de numéro FINESS",
+                        nativeInputProps: {
+                          checked: isNoFinessChecked,
+                          onChange: (e) => {
+                            const checked = e.target.checked;
+                            setIsNoFinessChecked(checked);
+                            if (checked) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                lieuDeSurvenue: {
+                                  ...prev.lieuDeSurvenue,
+                                  finess: '',
+                                },
+                              }));
+                            }
+                          },
+                          disabled: isSaving,
                         },
-                      }));
-                    } else {
-                      setFormData((prev) => ({
-                        ...prev,
-                        lieuDeSurvenue: {
-                          ...prev.lieuDeSurvenue,
-                          adresse:
-                            value === '' ? undefined : updateOrganizationName(prev.lieuDeSurvenue?.adresse, value),
-                        },
-                      }));
-                    }
-                  }}
-                  label="Nom de l'établissement"
-                  disabled={isSaving}
-                  searchMode="name"
-                  minSearchLength={2}
-                />
+                      },
+                    ]}
+                  />
+                </div>
               </div>
-              <div className="fr-col-12 fr-col-md-6">
-                <Input
-                  label="Code postal"
-                  nativeInputProps={{
-                    value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
-                    onChange: (e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        lieuDeSurvenue: {
-                          ...prev.lieuDeSurvenue,
-                          adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
-                        },
-                      })),
-                  }}
-                />
-              </div>
-              <div className="fr-col-12 fr-col-md-6">
-                <Input
-                  label="Ville"
-                  nativeInputProps={{
-                    value: formData.lieuDeSurvenue?.adresse?.ville || '',
-                    onChange: (e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        lieuDeSurvenue: {
-                          ...prev.lieuDeSurvenue,
-                          adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
-                        },
-                      })),
-                  }}
-                />
-              </div>
+
+              {isNoFinessChecked && (
+                <>
+                  <div className="fr-col-12 fr-col-md-6">
+                    <Input
+                      label="Nom de l'établissement"
+                      nativeInputProps={{
+                        value: extractOrganizationName(formData.lieuDeSurvenue?.adresse),
+                        onChange: (e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            lieuDeSurvenue: {
+                              ...prev.lieuDeSurvenue,
+                              adresse:
+                                e.target.value === ''
+                                  ? undefined
+                                  : updateOrganizationName(prev.lieuDeSurvenue?.adresse, e.target.value),
+                            },
+                          })),
+                      }}
+                    />
+                  </div>
+                  <div className="fr-col-12 fr-col-md-6">
+                    <div className="fr-grid-row fr-grid-row--gutters">
+                      <div className="fr-col-12 fr-col-md-4">
+                        <Input
+                          label="Code postal"
+                          nativeInputProps={{
+                            value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
+                            onChange: (e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                lieuDeSurvenue: {
+                                  ...prev.lieuDeSurvenue,
+                                  adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
+                                },
+                              })),
+                          }}
+                        />
+                      </div>
+                      <div className="fr-col-12 fr-col-md-8">
+                        <Input
+                          label="Ville"
+                          nativeInputProps={{
+                            value: formData.lieuDeSurvenue?.adresse?.ville || '',
+                            onChange: (e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                lieuDeSurvenue: {
+                                  ...prev.lieuDeSurvenue,
+                                  adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
+                                },
+                              })),
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 

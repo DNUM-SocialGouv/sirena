@@ -153,6 +153,9 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
             ? misEnCauseData.misEnCauseTypePrecision
             : null,
         rpps: misEnCauseData?.rpps || null,
+        nom: misEnCauseData?.nom || '',
+        prenom: misEnCauseData?.prenom || '',
+        civilite: misEnCauseData?.civilite || '',
         commentaire: misEnCauseData?.commentaire || '',
       },
     },

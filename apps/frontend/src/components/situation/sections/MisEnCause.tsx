@@ -1,3 +1,4 @@
+import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import {
@@ -20,8 +21,8 @@ import {
   type ReceptionType,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
+import { useState } from 'react';
 import { PractitionerSearchField } from '@/components/common/PractitionerSearchField';
-import { formatPractitionerName } from '@/utils/practitionerHelpers';
 
 type misEnCauseProps = {
   formData: SituationData;
@@ -82,8 +83,72 @@ const precisions: Record<MisEnCauseTypeSansAutreEtNpjm, { key: string; value: st
   [MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL]: autreProfessionnelPrecision,
 };
 
+type IdentityFieldsProps = {
+  formData: SituationData;
+  isSaving: boolean;
+  setFormData: React.Dispatch<React.SetStateAction<SituationData>>;
+};
+
+function MisEnCauseIdentityFields({ formData, isSaving, setFormData }: IdentityFieldsProps) {
+  return (
+    <>
+      <div className="fr-col-12 fr-col-md-2">
+        <Select
+          label="Civilité"
+          nativeSelectProps={{
+            value: formData.misEnCause?.civilite || '',
+            onChange: (e) =>
+              setFormData((prev) => ({
+                ...prev,
+                misEnCause: { ...prev.misEnCause, civilite: e.target.value || undefined },
+              })),
+            disabled: isSaving,
+          }}
+        >
+          <option value="">Sélectionner</option>
+          <option value="M">M</option>
+          <option value="MME">Mme</option>
+        </Select>
+      </div>
+      <div className="fr-col-12 fr-col-md-5">
+        <Input
+          label="Nom"
+          nativeInputProps={{
+            value: formData.misEnCause?.nom || '',
+            onChange: (e) =>
+              setFormData((prev) => ({
+                ...prev,
+                misEnCause: { ...prev.misEnCause, nom: e.target.value },
+              })),
+            disabled: isSaving,
+          }}
+        />
+      </div>
+      <div className="fr-col-12 fr-col-md-5">
+        <Input
+          label="Prénom"
+          nativeInputProps={{
+            value: formData.misEnCause?.prenom || '',
+            onChange: (e) =>
+              setFormData((prev) => ({
+                ...prev,
+                misEnCause: { ...prev.misEnCause, prenom: e.target.value },
+              })),
+            disabled: isSaving,
+          }}
+        />
+      </div>
+    </>
+  );
+}
+
 export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps) {
   const misEnCauseType = formData.misEnCause?.misEnCauseType;
+  const [isNoRppsChecked, setIsNoRppsChecked] = useState(
+    () =>
+      !formData.misEnCause?.rpps &&
+      Boolean(formData.misEnCause?.civilite || formData.misEnCause?.nom || formData.misEnCause?.prenom),
+  );
 
   return (
     <div
@@ -100,14 +165,19 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
               label="Type de mis en cause"
               nativeSelectProps={{
                 value: misEnCauseType || '',
-                onChange: (e) =>
+                onChange: (e) => {
+                  const nextMisEnCauseType = e.target.value || undefined;
+                  if (nextMisEnCauseType !== MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE) {
+                    setIsNoRppsChecked(false);
+                  }
                   setFormData((prev) => ({
                     ...prev,
                     misEnCause: {
-                      misEnCauseType: e.target.value || undefined,
+                      misEnCauseType: nextMisEnCauseType,
                       misEnCauseTypePrecision: undefined,
                     },
-                  })),
+                  }));
+                },
               }}
             >
               <option value="">Sélectionner une option</option>
@@ -167,12 +237,15 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                   value={formData.misEnCause?.rpps || ''}
                   onChange={(value, practitioner) => {
                     if (practitioner) {
+                      setIsNoRppsChecked(false);
                       setFormData((prev) => ({
                         ...prev,
                         misEnCause: {
                           ...prev.misEnCause,
                           rpps: value,
-                          commentaire: formatPractitionerName(practitioner),
+                          civilite: practitioner.prefix,
+                          nom: practitioner.lastName || '',
+                          prenom: practitioner.firstName || '',
                         },
                       }));
                     } else {
@@ -185,58 +258,64 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                       }));
                     }
                   }}
-                  label="Numéro RPPS"
-                  disabled={isSaving}
+                  label="Rechercher le professionnel par numéro RPPS"
+                  state={isNoRppsChecked ? 'info' : 'default'}
+                  stateRelatedMessage={
+                    isNoRppsChecked
+                      ? 'Si vous souhaitez rechercher par numéro RPPS, décochez la case “Le professionnel n’a pas de numéro RPPS”'
+                      : undefined
+                  }
+                  disabled={isSaving || isNoRppsChecked}
                   searchMode="rpps"
-                  hintText="Seul le numéro exact peut être trouvé"
+                  hintText="Saisir le numéro RPPS et sélectionner le professionnel"
                   minSearchLength={6}
                 />
+                <a
+                  className="fr-link fr-mt-1w"
+                  href="https://annuaire.esante.gouv.fr/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Répertoire RPPS <span className="fr-sr-only"> - nouvel onglet </span>
+                </a>
               </div>
               <div className="fr-col-12 fr-col-md-6">
-                <PractitionerSearchField
-                  value={formData.misEnCause?.commentaire || ''}
-                  onChange={(value, practitioner) => {
-                    if (practitioner) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        misEnCause: {
-                          ...prev.misEnCause,
-                          rpps: practitioner.rpps,
-                          commentaire: value,
+                <div className="fr-mt-8w">
+                  <Checkbox
+                    options={[
+                      {
+                        label: "Le professionnel n'a pas de numéro RPPS",
+                        nativeInputProps: {
+                          checked: isNoRppsChecked,
+                          onChange: (e) => {
+                            const checked = e.target.checked;
+                            setIsNoRppsChecked(checked);
+                            if (checked) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                misEnCause: {
+                                  ...prev.misEnCause,
+                                  rpps: '',
+                                },
+                              }));
+                            }
+                          },
+                          disabled: isSaving,
                         },
-                      }));
-                    } else {
-                      setFormData((prev) => ({
-                        ...prev,
-                        misEnCause: { ...prev.misEnCause, commentaire: value },
-                      }));
-                    }
-                  }}
-                  label="Identité du professionnel"
-                  disabled={isSaving}
-                  searchMode="name"
-                  minSearchLength={2}
-                />
+                      },
+                    ]}
+                  />
+                </div>
               </div>
+
+              {isNoRppsChecked && (
+                <MisEnCauseIdentityFields formData={formData} isSaving={isSaving} setFormData={setFormData} />
+              )}
             </>
           )}
 
           {misEnCauseType === MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE && (
-            <div className="fr-col-12">
-              <Input
-                label="Identité du mis en cause"
-                textArea
-                nativeTextAreaProps={{
-                  value: formData.misEnCause?.commentaire || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      misEnCause: { ...prev.misEnCause, commentaire: e.target.value },
-                    })),
-                  rows: 3,
-                }}
-              />
-            </div>
+            <MisEnCauseIdentityFields formData={formData} isSaving={isSaving} setFormData={setFormData} />
           )}
         </div>
       </fieldset>
