@@ -602,7 +602,7 @@ describe('assignEntitesToRequeteTask', () => {
       where: {
         entiteTypeId: 'CD',
         entiteMereId: null,
-        ctcdCode: '75C',
+        ctcdCode: { in: ['75C', '75CD'] },
         departementCode: '75',
       },
     });
