@@ -95,6 +95,19 @@ const RenderCompleted = ({
     );
   }
 
+  if (provenanceId) {
+    return (
+      <div className="text-vertical-align">
+        <div className={fr.cx('fr-text--xs')}>
+          Provenance : {requeteProvenanceLabels[provenanceId]}
+          {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
+            provenancePrecision &&
+            ` – ${provenancePrecision}`}
+        </div>
+      </div>
+    );
+  }
+
   return null;
 };
 
@@ -282,7 +295,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
           </form>
         ) : (
           <div className={style.wrapper}>
-            {!dateValue && !typeValue ? (
+            {!dateValue && !typeValue && !provenanceValue ? (
               <RenderEmpty />
             ) : (
               <RenderCompleted
