@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
 
       - name: Run Trivy vulnerability scanner (filesystem)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.0
         with:
           scan-type: "fs"
           scan-ref: "."
@@ -41,7 +41,7 @@ jobs:
           severity: "CRITICAL,HIGH,MEDIUM"
 
       - name: Upload Trivy filesystem scan results
-        uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v3
+        uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6 # v3
         if: always()
         with:
           sarif_file: "trivy-fs-results.sarif"
@@ -123,7 +123,7 @@ jobs:
         run: docker pull ${{ steps.image_tag.outputs.IMAGE }}
 
       - name: Run Trivy vulnerability scanner (container)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.0
         with:
           image-ref: "${{ steps.image_tag.outputs.IMAGE }}"
           format: "sarif"
@@ -141,7 +141,7 @@ jobs:
           fi
 
       - name: Upload Trivy container scan results
-        uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 # v3
+        uses: github/codeql-action/upload-sarif@9e907b5e64f6b83e7804b09294d44122997950d6 # v3
         if: always()
         with:
           sarif_file: "trivy-container-${{ matrix.image }}-results.sarif"
