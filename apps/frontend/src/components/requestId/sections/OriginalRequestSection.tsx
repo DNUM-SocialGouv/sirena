@@ -294,7 +294,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
             </div>
           </form>
         ) : (
-          <div className={style.wrapper}>
+          <div className={clsx(style.wrapper, (dateValue || typeValue || provenanceValue) && style.wrapperFilled)}>
             {!dateValue && !typeValue && !provenanceValue ? (
               <RenderEmpty />
             ) : (
@@ -308,13 +308,15 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
             )}
             {canEdit && !isNotEditable && (
               <Button
-                iconPosition="right"
+                className={style.editButton}
                 iconId="fr-icon-pencil-line"
                 priority="tertiary no outline"
+                title={dateValue && typeValue ? 'Éditer' : 'Compléter'}
+                nativeButtonProps={{
+                  'aria-label': dateValue && typeValue ? 'Éditer' : 'Compléter',
+                }}
                 onClick={() => setIsEdit(true)}
-              >
-                {dateValue && typeValue ? 'Éditer' : 'Compléter'}
-              </Button>
+              />
             )}
           </div>
         )}
