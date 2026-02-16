@@ -723,6 +723,9 @@ const buildMisEnCauseUpdate = (misEnCauseData: SituationInput['misEnCause']) => 
     misEnCauseTypePrecisionId: resolvedPrecisionId,
     autrePrecision: cleanNullOrEmpty(misEnCauseData.autrePrecision),
     rpps: misEnCauseData.rpps || null,
+    nom: cleanNullOrEmpty(misEnCauseData.nom),
+    prenom: cleanNullOrEmpty(misEnCauseData.prenom),
+    civilite: cleanNullOrEmpty(misEnCauseData.civilite),
     commentaire: cleanNullOrEmpty(misEnCauseData.commentaire),
   };
 };

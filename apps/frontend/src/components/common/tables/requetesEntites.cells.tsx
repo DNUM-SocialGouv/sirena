@@ -177,9 +177,13 @@ const getMisEnCauseDisplayValue = (
   misEnCause: MisEnCause,
   lieuDeSurvenue: LieuDeSurvenue,
 ): string => {
+  const identity =
+    [misEnCause?.civilite, misEnCause?.prenom, misEnCause?.nom].filter(Boolean).join(' ').trim() ||
+    misEnCause?.commentaire?.trim();
+
   switch (typeId) {
     case MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE:
-      return misEnCause?.commentaire?.trim() || precisionLabel || typeLabel;
+      return identity || precisionLabel || typeLabel;
 
     case MIS_EN_CAUSE_TYPE.ETABLISSEMENT:
       return lieuDeSurvenue?.adresse?.label || precisionLabel || typeLabel;

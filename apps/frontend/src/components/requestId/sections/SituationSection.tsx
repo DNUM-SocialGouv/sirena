@@ -3,9 +3,13 @@ import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import {
   demarcheEngageeLabels,
   LIEU_TYPE,
-  MALTRAITANCEQUALIFIED_TYPE,
+  MALTRAITANCE_TYPE,
+  type MaltraitanceType,
   MOTIFS_HIERARCHICAL_DATA,
+  type Motif,
+  maltraitanceTypeLabels,
   misEnCauseTypeLabels,
+  motifLabels,
   RECEPTION_TYPE,
 } from '@sirena/common/constants';
 import { getLieuPrecisionLabel } from '@sirena/common/utils';
@@ -71,6 +75,13 @@ const getLieuDeSurvenue = (situation: SituationData) => {
     }
   }
   return text;
+};
+
+const getMisEnCauseIdentity = (misEnCause: SituationData['misEnCause'] | undefined | null): string => {
+  if (!misEnCause) return '';
+  const identity = [misEnCause.civilite, misEnCause.prenom, misEnCause.nom].filter(Boolean).join(' ').trim();
+  if (identity) return identity;
+  return misEnCause.commentaire || '';
 };
 
 const Affectations = ({ situation }: { situation?: SituationData | null }) => {
@@ -167,17 +178,32 @@ const MotifsQualified = ({ situation }: { situation?: SituationData | null }) =>
 };
 
 const MotifsDeclared = ({ situation }: { situation?: SituationData | null }) => {
-  if (!situation) return null;
+  const motifs = getDeclaredMotifs(situation);
+  return motifs.length > 0 ? <Motifs motifs={motifs} isQualified={false} /> : null;
+};
 
-  const motifs = new Set<string>();
-  situation.faits.forEach((fait) => {
-    fait.motifsDeclaratifs?.forEach((motif) => {
-      if (motif.motifDeclaratif.label) {
-        motifs.add(motif.motifDeclaratif.label);
+const getDeclaredMotifs = (situation?: SituationData | null): string[] => {
+  if (!situation) return [];
+
+  const ignoredMotifs: string[] = [MALTRAITANCE_TYPE.NON];
+
+  return [
+    ...(situation.faits?.flatMap((fait) => fait.maltraitanceTypes) || []).flatMap((maltraitance) => {
+      if (ignoredMotifs.includes(maltraitance.maltraitanceTypeId)) {
+        return [];
       }
-    });
-  });
-  return motifs.size > 0 ? <Motifs motifs={Array.from(motifs)} isQualified={false} /> : null;
+      if (maltraitance.maltraitanceTypeId in MALTRAITANCE_TYPE) {
+        return `${[maltraitanceTypeLabels[maltraitance.maltraitanceTypeId as MaltraitanceType]]} (maltraitance)`;
+      }
+      return [];
+    }),
+    ...(situation.faits?.flatMap((fait) => fait.motifsDeclaratifs) || []).flatMap((motif) => {
+      if (motif.motifDeclaratifId in motifLabels) {
+        return motifLabels[motif.motifDeclaratifId as Motif];
+      }
+      return [];
+    }),
+  ];
 };
 
 interface SituationSectionProps {
@@ -196,23 +222,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
   const hasMisEnCause = situation?.misEnCause?.misEnCauseType?.label;
   const hasMotifs = fait?.motifs?.length > 0;
 
-  const motifsDeclares: string[] = [];
-
-  situation?.faits.forEach((fait) => {
-    fait.maltraitanceTypes?.forEach((maltraitance) => {
-      if (maltraitance.maltraitanceType.id === MALTRAITANCEQUALIFIED_TYPE.NON) {
-        return;
-      }
-      if (motifsDeclares.indexOf(maltraitance.maltraitanceType.label) === -1) {
-        motifsDeclares.push(maltraitance.maltraitanceType.label);
-      }
-    });
-    fait.motifsDeclaratifs?.forEach((motif) => {
-      if (motifsDeclares.indexOf(motif.motifDeclaratif.label) === -1) {
-        motifsDeclares.push(motif.motifDeclaratif.label);
-      }
-    });
-  });
+  const motifsDeclares = getDeclaredMotifs(situation);
 
   const isFulfilled = hasSituationContent(situation);
 
@@ -238,7 +248,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
             <p className={fr.cx('fr-mb-0')}>
               <span className={fr.cx('fr-icon-error-warning-line', 'fr-icon--sm')} aria-hidden="true" />
               <span className="fr-sr-only">Identité de la personne concernée :</span>{' '}
-              {situation?.misEnCause?.commentaire && `${situation.misEnCause.commentaire} - `}
+              {getMisEnCauseIdentity(situation?.misEnCause) && `${getMisEnCauseIdentity(situation?.misEnCause)} - `}
               {situation?.misEnCause?.misEnCauseType?.label}
             </p>
           </div>
@@ -281,17 +291,17 @@ export const SituationSection = ({ id, requestId, situation, receptionType, onEd
                 <span>Numéro RPPS :</span> {situation.misEnCause.rpps}
               </p>
             )}
-            {situation?.misEnCause?.commentaire &&
+            {getMisEnCauseIdentity(situation?.misEnCause) &&
               situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.PROFESSIONNEL_SANTE && (
                 <p className={fr.cx('fr-mb-2w')}>
-                  <span>Identité du professionnel :</span> {situation.misEnCause.commentaire}
+                  <span>Identité du professionnel :</span> {getMisEnCauseIdentity(situation.misEnCause)}
                 </p>
               )}
-            {situation?.misEnCause?.commentaire &&
+            {getMisEnCauseIdentity(situation?.misEnCause) &&
               situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.MEMBRE_FAMILLE && (
                 <>
                   <p className={fr.cx('fr-text--bold', 'fr-mb-1w')}>Identité du mis en cause</p>
-                  <p className={fr.cx('fr-mb-3w')}>{situation.misEnCause.commentaire}</p>
+                  <p className={fr.cx('fr-mb-3w')}>{getMisEnCauseIdentity(situation.misEnCause)}</p>
                 </>
               )}
           </>
