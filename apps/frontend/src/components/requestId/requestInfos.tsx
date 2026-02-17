@@ -64,7 +64,6 @@ export const RequestInfos = ({ requestId, fullName, motifs, statutId, prioriteId
                               checked: statutId === REQUETE_STATUT_TYPES.TRAITEE,
                               onChange: (e) => handlePriseEnCompteChange(e.target.checked),
                               disabled: updateStatutMutation.isPending,
-                              'aria-label': 'Cette requête a été prise en compte',
                             },
                           },
                         ]}
