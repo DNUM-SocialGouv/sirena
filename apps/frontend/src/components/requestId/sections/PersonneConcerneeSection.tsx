@@ -9,10 +9,10 @@ interface PersonneConcerneeSectionProps {
   id: string;
   requestId?: string;
   personne?: PersonneData | null;
-  onEdit: () => void;
+  editHref?: string;
 }
 
-export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: PersonneConcerneeSectionProps) => {
+export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: PersonneConcerneeSectionProps) => {
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const personneIdentite = personne?.identite;
   const personneAdresse = personne?.adresse;
@@ -167,7 +167,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, onEdit }: Pe
     <InfoSection
       id={id}
       title="Personne concernée"
-      onEdit={onEdit}
+      editHref={editHref}
       canEdit={canEdit}
       renderSummary={renderSummary}
       renderDetails={isFulfilled ? renderDetails : undefined}

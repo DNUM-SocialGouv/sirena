@@ -1,13 +1,13 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Accordion } from '@codegouvfr/react-dsfr/Accordion';
-import { Button } from '@codegouvfr/react-dsfr/Button';
+import { Link } from '@tanstack/react-router';
 import React from 'react';
 import styles from './InfoSection.module.css';
 
 type InfoSectionProps = {
   id: string;
   title: string;
-  onEdit?: () => void;
+  editHref?: string;
   renderSummary?: () => React.ReactNode;
   renderDetails?: () => React.ReactNode;
   emptyLabel?: string;
@@ -22,7 +22,7 @@ export function InfoSection({
   renderSummary,
   renderDetails,
   emptyLabel = 'Aucune information',
-  onEdit,
+  editHref,
   badges,
   replaceSummaryWithDetails = false,
   canEdit = false,
@@ -70,10 +70,20 @@ export function InfoSection({
             </output>
           ))}
         </div>
-        {canEdit && onEdit && (
-          <Button iconPosition="right" iconId="fr-icon-pencil-line" priority="tertiary no outline" onClick={onEdit}>
+        {canEdit && editHref ? (
+          <Link to={editHref} className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-right fr-icon-pencil-line">
             {editLabel}
-          </Button>
+            <span className="fr-sr-only">{title}</span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-right fr-icon-pencil-line fr-btn--disabled"
+          >
+            {editLabel}
+            <span className="fr-sr-only">{title}</span>
+          </button>
         )}
       </div>
 
