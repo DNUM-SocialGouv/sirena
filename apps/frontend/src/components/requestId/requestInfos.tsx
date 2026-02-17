@@ -1,4 +1,4 @@
-import { ToggleSwitch } from '@codegouvfr/react-dsfr/ToggleSwitch';
+import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import type { RequetePrioriteType } from '@sirena/common/constants';
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useUpdatePriorite } from '@/hooks/mutations/updatePriorite.hook';
@@ -56,12 +56,17 @@ export const RequestInfos = ({ requestId, fullName, motifs, statutId, prioriteId
                   </div>
                   {showPriseEnCompteToggle && (
                     <div className={`${style['toggle-line']} fr-text--md`}>
-                      <ToggleSwitch
-                        label="Cette requête a été prise en compte"
-                        checked={statutId === REQUETE_STATUT_TYPES.TRAITEE}
-                        onChange={handlePriseEnCompteChange}
-                        disabled={updateStatutMutation.isPending}
-                        showCheckedHint={false}
+                      <Checkbox
+                        options={[
+                          {
+                            label: 'Cette requête a été prise en compte',
+                            nativeInputProps: {
+                              checked: statutId === REQUETE_STATUT_TYPES.TRAITEE,
+                              onChange: (e) => handlePriseEnCompteChange(e.target.checked),
+                              disabled: updateStatutMutation.isPending,
+                            },
+                          },
+                        ]}
                       />
                     </div>
                   )}
