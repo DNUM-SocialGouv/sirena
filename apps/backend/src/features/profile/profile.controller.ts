@@ -2,7 +2,7 @@ import { throwHTTPException401Unauthorized } from '@sirena/backend-utils/helpers
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
-import { getEntitesByIds } from '../entites/entites.service.js';
+import { getEntiteChain, getEntitesByIds } from '../entites/entites.service.js';
 import { getUserById } from '../users/users.service.js';
 import { getProfileRoute } from './profile.route.js';
 
@@ -28,6 +28,11 @@ const app = factoryWithLogs
     const [topEntite] = topEntiteId ? await getEntitesByIds([topEntiteId]) : [];
     const topEntiteIsActive = topEntite?.isActive ?? null;
 
+    const affectationChain =
+      user.entiteId != null
+        ? (await getEntiteChain(user.entiteId)).map((e) => ({ id: e.id, nomComplet: e.nomComplet }))
+        : [];
+
     logger.info({ userId }, 'User profile retrieved successfully');
     return c.json(
       {
@@ -37,6 +42,7 @@ const app = factoryWithLogs
           topEntiteIsActive,
           entiteIds,
           entiteIdLevel,
+          affectationChain,
         },
       },
       200,

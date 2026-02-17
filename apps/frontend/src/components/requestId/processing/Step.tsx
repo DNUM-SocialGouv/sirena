@@ -276,7 +276,7 @@ const StepComponent = ({
             iconId="fr-icon-add-line"
             onClick={() => openEdit?.({ id, nom, statutId, notes, createdAt, createdBy, ...rest })}
           >
-            Note ou fichier
+            Ajouter une note ou un fichier
           </Button>
         )}
       </div>

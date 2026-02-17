@@ -1,10 +1,9 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ROLES, type Role } from '@sirena/common/constants';
-import { useQuery } from '@tanstack/react-query';
 import { useMatches } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { profileQueryOptions } from '@/hooks/queries/profile.hook';
+import { useProfile } from '@/hooks/queries/profile.hook';
 import './userMenu.css';
 
 export const UserMenu = () => {
@@ -12,12 +11,19 @@ export const UserMenu = () => {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
-  const { data } = useQuery({ ...profileQueryOptions(), enabled: false });
+  const { data } = useProfile();
   const matches = useMatches();
 
-  const label = useMemo(() => data?.prenom ?? '', [data]);
+  const displayName = useMemo(
+    () => [data?.nom, data?.prenom].filter(Boolean).join(' ').trim() || '',
+    [data?.nom, data?.prenom],
+  );
   const email = useMemo(() => data?.email ?? '', [data]);
   const role = useMemo(() => (data?.role?.id ?? '') as Role | '', [data]);
+  const affectationChain = useMemo(
+    () => (data as { affectationChain?: Array<{ nomComplet: string }> })?.affectationChain ?? [],
+    [data],
+  );
 
   const menuId = useId();
 
@@ -123,8 +129,21 @@ export const UserMenu = () => {
       {isOpen && (
         <div id={menuId} ref={popupRef} className="user-menu fr-card">
           <div className="user-menu__header fr-p-2w">
-            <p className="fr-text--bold">{label}</p>
-            <p className="fr-hint-text">{email}</p>
+            <p className="fr-text--bold">{displayName || 'Mon espace'}</p>
+            {email && <p className="fr-hint-text">{email}</p>}
+            {affectationChain.length > 0 && (
+              <div className={clsx('fr-hint-text', 'fr-mt-1v')} data-testid="user-menu-affectation">
+                <p className={clsx('fr-hint-text', 'fr-mb-0')}>
+                  <strong>{affectationChain[0].nomComplet}</strong>
+                </p>
+                {affectationChain.length > 1 && (
+                  <p className={clsx('fr-hint-text', 'fr-mb-0', 'fr-mt-1v')}>
+                    {affectationChain[1].nomComplet}
+                    {affectationChain[2] ? ` (${affectationChain[2].nomComplet})` : ''}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="user-menu__separator" />
