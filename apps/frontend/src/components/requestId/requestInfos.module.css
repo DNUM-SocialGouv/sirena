@@ -37,14 +37,9 @@
 
 .toggle-line {
   margin-top: 0.5rem;
+  width: fit-content;
 }
 
-.toggle-line :global(.fr-toggle label::before) {
-  margin-right: 0.5rem;
-}
-
-.toggle-line :global(.fr-toggle label) {
-  width: calc(100% - 0.5rem);
-  font-weight: normal;
-  white-space: nowrap;
+.toggle-line :global(.fr-checkbox-group) {
+  width: fit-content;
 }
