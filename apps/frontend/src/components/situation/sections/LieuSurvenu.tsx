@@ -36,6 +36,12 @@ type LieuSurvenuProps = {
 export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: LieuSurvenuProps) {
   const lieuType = formData.lieuDeSurvenue?.lieuType;
   const lieuPrecision = formData.lieuDeSurvenue?.lieuPrecision;
+  const hasCompleteOrganizationFromFiness = Boolean(
+    formData.lieuDeSurvenue?.finess &&
+      formData.lieuDeSurvenue?.adresse?.label &&
+      formData.lieuDeSurvenue?.adresse?.codePostal &&
+      formData.lieuDeSurvenue?.adresse?.ville,
+  );
   const [isNoFinessChecked, setIsNoFinessChecked] = useState(
     () =>
       !formData.lieuDeSurvenue?.finess &&
@@ -453,7 +459,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                 </div>
               </div>
 
-              {isNoFinessChecked && (
+              {(isNoFinessChecked || hasCompleteOrganizationFromFiness) && (
                 <>
                   <div className="fr-col-12 fr-col-md-6">
                     <Input
