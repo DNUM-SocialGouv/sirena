@@ -144,6 +144,12 @@ function MisEnCauseIdentityFields({ formData, isSaving, setFormData }: IdentityF
 
 export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps) {
   const misEnCauseType = formData.misEnCause?.misEnCauseType;
+  const hasCompleteIdentityFromRpps = Boolean(
+    formData.misEnCause?.rpps &&
+      formData.misEnCause?.civilite &&
+      formData.misEnCause?.nom &&
+      formData.misEnCause?.prenom,
+  );
   const [isNoRppsChecked, setIsNoRppsChecked] = useState(
     () =>
       !formData.misEnCause?.rpps &&
@@ -308,7 +314,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                 </div>
               </div>
 
-              {isNoRppsChecked && (
+              {(isNoRppsChecked || hasCompleteIdentityFromRpps) && (
                 <MisEnCauseIdentityFields formData={formData} isSaving={isSaving} setFormData={setFormData} />
               )}
             </>
