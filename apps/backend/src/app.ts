@@ -42,7 +42,6 @@ export const app = baseApp
   .route('/notes', NotesController)
   .route('/profile', ProfileController)
   .route('/sse', SSEController)
-  .route('/third-party', ThirdPartyController)
   .route('/health', HealthController)
   .route('/version', VersionController)
   .get('/sentry', () => {
