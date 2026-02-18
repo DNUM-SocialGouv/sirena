@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sanitizeFilename, urlToStream } from './file.js';
+import { createInlineContentDisposition, sanitizeFilename, urlToStream } from './file.js';
 
 vi.mock('../config/files.constant.js', () => ({ MAX_FILE_SIZE: 5 }));
 vi.mock('../libs/minio.js', () => ({
@@ -144,6 +144,24 @@ describe('file.ts', () => {
       expect(out.extSniffed).toBe('txt');
       const buf = await collect(out.stream);
       expect(buf.toString()).toBe('ok');
+    });
+  });
+
+  describe('createInlineContentDisposition', () => {
+    it('returns a simple inline header for latin1-safe filenames', () => {
+      expect(createInlineContentDisposition('report.pdf')).toBe('inline; filename="report.pdf"');
+    });
+
+    it('escapes header-breaking characters in quoted filename', () => {
+      expect(createInlineContentDisposition('my "report"\\final.pdf')).toBe('inline; filename="my _report__final.pdf"');
+    });
+
+    it('adds filename* for unicode filenames that are not ByteString-safe', () => {
+      const decomposed = 'resume\u0300.pdf';
+
+      expect(createInlineContentDisposition(decomposed)).toBe(
+        'inline; filename="resume.pdf"; filename*=UTF-8\'\'resume%CC%80.pdf',
+      );
     });
   });
 });
