@@ -25,6 +25,7 @@ const baseApp = appFactory.createApp();
 export const app = baseApp
   .use(enhancedPinoMiddleware())
   .use(sentryContextMiddleware())
+  .route('/third-party', ThirdPartyController)
   .use(
     csrf({
       origin: [envVars.FRONTEND_URI],
@@ -41,7 +42,6 @@ export const app = baseApp
   .route('/notes', NotesController)
   .route('/profile', ProfileController)
   .route('/sse', SSEController)
-  .route('/third-party', ThirdPartyController)
   .route('/health', HealthController)
   .route('/version', VersionController)
   .get('/sentry', () => {
