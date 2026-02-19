@@ -487,6 +487,19 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 </li>
               ))}
             </ul>
+            {situation.demarchesEngagees?.etablissementReponse?.length > 0 && (
+              <>
+                <SectionTitle level={4}>Pièces jointes de la réponse de l'établissement</SectionTitle>
+                <FileList
+                  files={situation.demarchesEngagees.etablissementReponse.map(formatFileFromServer)}
+                  getFileUrl={(fileId) => `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}`}
+                  getSafeFileUrl={(fileId) =>
+                    `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}/safe`
+                  }
+                  title=""
+                />
+              </>
+            )}
             <p className={fr.cx('fr-mb-3w')}>{situation.demarchesEngagees.commentaire}</p>
           </>
         )}
