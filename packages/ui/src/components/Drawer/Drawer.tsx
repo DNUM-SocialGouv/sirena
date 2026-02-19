@@ -33,9 +33,9 @@ export type RootProps = {
   onOpenChange?: (open: boolean) => void;
   children?: React.ReactNode;
   onClickOutside?: () => void;
-  closable?: boolean;
-  mask?: boolean;
-  maskClosable?: boolean;
+  withCloseButton?: boolean;
+  variant?: 'modal' | 'nonModal';
+  overlay?: boolean;
   width?: string | number;
   position?: 'left' | 'right';
 };
@@ -56,13 +56,15 @@ export type BackdropProps = ComponentProps<'div'> & {
 };
 
 export type PanelProps = ComponentProps<'aside'> & {
+  titleId?: string;
   width?: string | number;
 };
 
 type DrawerContextValue = {
   open: boolean;
   setOpen: (next: boolean) => void;
-  props: Required<Pick<RootProps, 'closable' | 'mask' | 'maskClosable' | 'position' | 'width'>> & {
+  variant: 'modal' | 'nonModal';
+  props: Required<Pick<RootProps, 'withCloseButton' | 'overlay' | 'position' | 'width'>> & {
     onClickOutside?: RootProps['onClickOutside'];
   };
 };
@@ -80,9 +82,9 @@ const Root = ({
   onOpenChange,
   children,
   onClickOutside,
-  closable = true,
-  mask = true,
-  maskClosable = true,
+  withCloseButton = true,
+  variant = 'nonModal',
+  overlay = true,
   width = 360,
   position = 'right',
 }: RootProps) => {
@@ -100,22 +102,24 @@ const Root = ({
   );
 
   useEffect(() => {
-    if (!isOpen || !closable) return;
+    if (!isOpen) return;
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
+
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [isOpen, closable, setOpen]);
+  }, [isOpen, setOpen]);
 
   useEffect(() => {
-    if (!isOpen || !mask) return;
+    if (!isOpen || variant !== 'modal') return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [isOpen, mask]);
+  }, [isOpen, variant]);
 
   const prevFocused = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -132,9 +136,10 @@ const Root = ({
     () => ({
       open: isOpen,
       setOpen,
-      props: { closable, mask, maskClosable, position, width: widthCss, onClickOutside },
+      variant,
+      props: { withCloseButton, overlay, position, width: widthCss, onClickOutside },
     }),
-    [isOpen, setOpen, closable, mask, maskClosable, position, widthCss, onClickOutside],
+    [isOpen, setOpen, variant, withCloseButton, overlay, position, widthCss, onClickOutside],
   );
 
   return <DrawerCtx.Provider value={ctxValue}>{children}</DrawerCtx.Provider>;
@@ -201,23 +206,46 @@ const Portal = ({ children, container }: PortalProps) => {
   );
 };
 
+// This is a backdrop overlay for Drawer.
+// It has onMouseDown for closing the drawer, but it is intentionally NOT focusable.
+// RGAA-compliant; Biome reports a false positive lint warning here.
 const Backdrop = ({ onInteract, className, ...rest }: BackdropProps) => {
   const {
-    props: { mask },
+    props: { overlay },
   } = useDrawerCtx('Drawer.Backdrop');
   const visual = useVisualState();
 
-  if (!mask) return null;
+  if (!overlay) return null;
 
-  return <div data-state={visual} className={clsx(s.backdrop, className)} {...rest} />;
+  const handleMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    if (useDrawerCtx('Drawer.Backdrop').variant !== 'nonModal') {
+      onInteract?.(e);
+    }
+  };
+
+  return (
+    <div
+      data-state={visual}
+      className={clsx(s.backdrop, className)}
+      onMouseDown={handleMouseDown}
+      {...rest}
+      style={{
+        pointerEvents: useDrawerCtx('Drawer.Backdrop').variant === 'nonModal' ? 'none' : undefined,
+      }}
+    />
+  );
 };
 
-const Panel = ({ className, style, width, children, ...rest }: PanelProps) => {
+const Panel = ({ className, style, width, titleId, children, ...rest }: PanelProps) => {
   const {
+    open,
     setOpen,
-    props: { closable, position, width: rootWidth, onClickOutside, mask, maskClosable },
+    props: { withCloseButton, position, width: rootWidth, onClickOutside, overlay },
+    variant,
   } = useDrawerCtx('Drawer.Panel');
   const visual = useVisualState();
+  const isModal = variant === 'modal';
+  const shouldTrapFocus = isModal;
 
   const computedWidth = typeof width === 'number' ? `${width}px` : (width ?? rootWidth);
   const fromRight = position === 'right';
@@ -226,37 +254,83 @@ const Panel = ({ className, style, width, children, ...rest }: PanelProps) => {
   const panelRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const onDocDown = (e: MouseEvent) => {
-      if (!closable) return;
-      const panel = panelRef.current;
-      if (!panel) return;
-      const target = e.target as Node | null;
-      const isInside = !!(target && panel.contains(target));
-      if (isInside) return;
-      if (!mask) return;
-      onClickOutside?.();
-      if (maskClosable) setOpen(false);
-    };
-    document.addEventListener('mousedown', onDocDown, true);
-    return () => document.removeEventListener('mousedown', onDocDown, true);
-  }, [closable, mask, maskClosable, setOpen, onClickOutside]);
-
-  useEffect(() => {
-    if (visual !== 'open') return;
+    if (!open || visual !== 'open') return;
     const el = panelRef.current;
+
     if (!el) return;
     const focusables = getFocusable(el);
-    focusables[0]?.focus?.();
-  }, [visual]);
+    if (focusables.length > 0) {
+      focusables[0]?.focus?.();
+    } else {
+      el.focus();
+    }
+  }, [visual, open]);
+
+  useEffect(() => {
+    if (!open || !shouldTrapFocus) return;
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const panel = panelRef.current;
+      if (!panel) return;
+
+      if (!panel.contains(e.target as Node)) {
+        const focusables = getFocusable(panel);
+        focusables[0]?.focus();
+      }
+    };
+    document.addEventListener('focusin', handleFocusIn);
+    return () => document.removeEventListener('focusin', handleFocusIn);
+  }, [open, shouldTrapFocus]);
+
+  useEffect(() => {
+    if (!open || !isModal) return;
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const siblings = Array.from(document.body.children).filter((el) => el !== container) as HTMLElement[];
+    siblings.forEach((el) => {
+      el.inert = true;
+      el.setAttribute('aria-hidden', 'true');
+    });
+
+    return () => {
+      siblings.forEach((el) => {
+        el.inert = false;
+        el.removeAttribute('aria-hidden');
+      });
+    };
+  }, [open, isModal]);
+
+  useEffect(() => {
+    if (!open || isModal || !onClickOutside) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const panel = panelRef.current;
+      if (!panel) return;
+
+      if (!panel.contains(e.target as Node)) {
+        onClickOutside?.();
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside, true);
+    return () => document.removeEventListener('mousedown', handleClickOutside, true);
+  }, [open, onClickOutside, setOpen, isModal]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-    if (e.key !== 'Tab') return;
+    if (!shouldTrapFocus || e.key !== 'Tab') return;
+
     const el = panelRef.current;
     if (!el) return;
-    const f = getFocusable(el);
-    if (f.length === 0) return;
-    const first = f[0];
-    const last = f[f.length - 1];
+
+    const focusables = getFocusable(el);
+    if (focusables.length === 0) return;
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
     if (e.shiftKey && document.activeElement === first) {
       last.focus();
       e.preventDefault();
@@ -267,11 +341,16 @@ const Panel = ({ className, style, width, children, ...rest }: PanelProps) => {
   };
 
   return (
-    <div ref={containerRef} className={clsx(s.container, !mask && s.containerNoMask)} aria-hidden={false}>
+    <div
+      ref={containerRef}
+      className={clsx(s.container, !overlay && s.containerNoOverlay, !isModal && s.containerNonModal)}
+    >
       <aside
         ref={panelRef}
+        tabIndex={-1}
         role="dialog"
-        aria-modal="true"
+        aria-modal={isModal ? true : undefined}
+        aria-labelledby={titleId}
         data-state={visual}
         data-side={fromRight ? 'right' : 'left'}
         className={clsx(s.panel, className)}
@@ -280,11 +359,11 @@ const Panel = ({ className, style, width, children, ...rest }: PanelProps) => {
         {...rest}
       >
         {children}
-        {closable && (
+        {withCloseButton && (
           <Button
             iconId="fr-icon-close-line"
             priority="tertiary no outline"
-            aria-label="Close drawer"
+            aria-label="Annuler et fermer le panneau"
             className={s.close}
             onClick={() => setOpen(false)}
           >

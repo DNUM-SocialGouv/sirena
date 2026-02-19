@@ -5,7 +5,7 @@ import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Drawer, Toast } from '@sirena/ui';
 import { useParams } from '@tanstack/react-router';
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { useDeleteProcessingStepNote, useUpdateProcessingStepNote } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
@@ -42,6 +42,9 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
   const { requestId } = useParams({
     from: '/_auth/_user/request/$requestId',
   });
+
+  const generatedId = useId();
+  const titleId = `${generatedId}-drawer`;
 
   const [isOpen, setIsOpen] = useState(false);
   const [noteData, setNoteData] = useState<{
@@ -294,13 +297,15 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
 
   return (
     <>
-      <Drawer.Root mask={false} open={isOpen} onOpenChange={handleOpenChange}>
+      <Drawer.Root variant="nonModal" open={isOpen} onOpenChange={handleOpenChange}>
         <Drawer.Portal>
-          <Drawer.Panel style={{ width: 'min(90vw, 600px)', maxWidth: '100%' }}>
+          <Drawer.Panel style={{ width: 'min(90vw, 600px)', maxWidth: '100%' }} titleId={titleId}>
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
               <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px 16px' }}>
                 <div className="fr-container fr-mt-8w">
-                  <h3 className="fr-h6">Modifier la note de l'étape "{noteData.step?.nom ?? ''}"</h3>
+                  <h3 id={titleId} className="fr-h6">
+                    Modifier la note de l'étape "{noteData.step?.nom ?? ''}"
+                  </h3>
                   {(modifications.content || modifications.filesAdded || modifications.filesDeleted) && (
                     <p className={fr.cx('fr-text--sm', 'fr-mb-2w')} style={{ color: 'var(--text-default-error)' }}>
                       ⚠️ Attention : Vous devez enregistrer la note pour que les modifications soient prises en compte.

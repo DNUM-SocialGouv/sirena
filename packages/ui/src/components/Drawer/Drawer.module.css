@@ -60,9 +60,14 @@
   transform: translateX(-100%);
 }
 
-.containerNoMask {
+.containerNoOverlay {
   pointer-events: none;
 }
+
+.containerNonModal {
+  pointer-events: none;
+}
+
 .panel {
   pointer-events: auto;
 }

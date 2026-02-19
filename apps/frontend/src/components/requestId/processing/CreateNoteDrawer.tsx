@@ -5,7 +5,7 @@ import { API_ERROR_MESSAGES, type ApiErrorCodes } from '@sirena/common/constants
 import { Drawer } from '@sirena/ui';
 import { useParams } from '@tanstack/react-router';
 
-import { forwardRef, useImperativeHandle, useState } from 'react';
+import { forwardRef, useId, useImperativeHandle, useState } from 'react';
 import { useAddProcessingStepNote } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
@@ -35,6 +35,9 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
 
   const addStepNoteMutation = useAddProcessingStepNote(requestId);
   const uploadFileMutation = useUploadFile({ silentToastError: true });
+
+  const generatedId = useId();
+  const titleId = `${generatedId}-drawer`;
 
   const openDrawer = (step: StepType) => {
     setStep(step);
@@ -119,13 +122,15 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
   };
 
   return (
-    <Drawer.Root mask={false} open={isOpen} onOpenChange={handleOpenChange}>
+    <Drawer.Root variant="nonModal" open={isOpen} onOpenChange={handleOpenChange}>
       <Drawer.Portal>
-        <Drawer.Panel style={{ width: 'min(90vw, 600px)', maxWidth: '100%' }}>
+        <Drawer.Panel style={{ width: 'min(90vw, 600px)', maxWidth: '100%' }} titleId={titleId}>
           <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px 16px' }}>
               <div className="fr-container fr-mt-8w">
-                <h3 className="fr-h6">Ajouter une note ou un fichier à l'étape "{step?.nom ?? ''}"</h3>
+                <h3 id={titleId} className="fr-h6">
+                  Ajouter une note ou un fichier à l'étape "{step?.nom ?? ''}"
+                </h3>
                 <form>
                   <Input
                     hintText="Informations à ajouter"
