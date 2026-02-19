@@ -316,7 +316,9 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                   'aria-label': dateValue && typeValue ? 'Éditer' : 'Compléter',
                 }}
                 onClick={() => setIsEdit(true)}
-              />
+              >
+                <span className="fr-sr-only">{dateValue && typeValue ? 'Éditer' : 'Compléter'}</span>
+              </Button>
             )}
           </div>
         )}
