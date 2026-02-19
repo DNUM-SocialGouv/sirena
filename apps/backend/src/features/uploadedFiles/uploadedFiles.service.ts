@@ -1,3 +1,4 @@
+import { pick } from '../../helpers/object.js';
 import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
@@ -100,9 +101,11 @@ const updateFilesWithRelation = async (
   relationData: Record<string, string>,
   entiteId: string | null = null,
   changedById?: string,
+  tx?: Prisma.TransactionClient,
 ) => {
+  const client = tx ?? prisma;
   const filesBefore = changedById
-    ? await prisma.uploadedFile.findMany({
+    ? await client.uploadedFile.findMany({
         where: { id: { in: uploadedFileIds } },
         select: {
           id: true,
@@ -116,12 +119,12 @@ const updateFilesWithRelation = async (
       })
     : [];
 
-  await prisma.uploadedFile.updateMany({
+  await client.uploadedFile.updateMany({
     where: { id: { in: uploadedFileIds } },
     data: { ...relationData, status: 'COMPLETED', entiteId } as Prisma.UploadedFileUpdateManyMutationInput,
   });
 
-  const filesAfter = await prisma.uploadedFile.findMany({ where: { id: { in: uploadedFileIds } } });
+  const filesAfter = await client.uploadedFile.findMany({ where: { id: { in: uploadedFileIds } } });
 
   if (changedById) {
     for (const fileAfter of filesAfter) {
@@ -179,8 +182,90 @@ export const setFaitFiles = async (
   uploadedFileId: UploadedFile['id'][],
   entiteId: string,
   changedById?: string,
+  tx?: Prisma.TransactionClient,
 ) => {
-  return updateFilesWithRelation(uploadedFileId, { faitSituationId }, entiteId, changedById);
+  return updateFilesWithRelation(uploadedFileId, { faitSituationId }, entiteId, changedById, tx);
+};
+
+const uploadedFileChangelogTrackedFields: (keyof UploadedFile)[] = [
+  'id',
+  'fileName',
+  'filePath',
+  'mimeType',
+  'size',
+  'status',
+  'metadata',
+  'entiteId',
+  'uploadedById',
+  'requeteEtapeNoteId',
+  'requeteId',
+  'faitSituationId',
+  'demarchesEngageesId',
+];
+
+/**
+ * Deletes uploaded files that were removed from a situation (not in keepFileIds).
+ */
+export const deleteFaitFilesRemovedFromSituation = async (
+  situationId: string,
+  keepFileIds: string[],
+  userTopEntiteId: string,
+  changedById: string | undefined,
+  tx: Prisma.TransactionClient,
+): Promise<{ filePaths: string[] }> => {
+  const toRemove = await tx.uploadedFile.findMany({
+    where:
+      keepFileIds.length > 0
+        ? {
+            faitSituationId: situationId,
+            entiteId: userTopEntiteId,
+            canDelete: true,
+            id: { notIn: keepFileIds },
+          }
+        : { faitSituationId: situationId, entiteId: userTopEntiteId, canDelete: true },
+    select: {
+      id: true,
+      filePath: true,
+      fileName: true,
+      mimeType: true,
+      size: true,
+      status: true,
+      metadata: true,
+      entiteId: true,
+      uploadedById: true,
+      requeteEtapeNoteId: true,
+      requeteId: true,
+      faitSituationId: true,
+      demarchesEngageesId: true,
+    },
+  });
+
+  const filePaths = toRemove.map((f) => f.filePath);
+
+  for (const file of toRemove) {
+    if (changedById) {
+      const beforePicked = pick(
+        file as Pick<UploadedFile, (typeof uploadedFileChangelogTrackedFields)[number]>,
+        uploadedFileChangelogTrackedFields,
+      );
+      await createChangeLog({
+        entity: 'UploadedFile',
+        entityId: file.id,
+        action: ChangeLogAction.DELETED,
+        before: beforePicked as unknown as Prisma.JsonObject,
+        after: null,
+        changedById,
+      });
+    }
+  }
+
+  if (toRemove.length > 0) {
+    await tx.uploadedFile.deleteMany({
+      where: { id: { in: toRemove.map((f) => f.id) } },
+    });
+  }
+
+  return { filePaths };
 };
 
 export const setDemarchesEngageesFiles = async (
