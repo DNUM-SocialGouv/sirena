@@ -55,6 +55,7 @@ overrides:
   hono@<4.11.7: '>=4.11.7'
   fast-xml-parser@>=4.3.6 <=5.3.3: '>=5.3.4'
   '@isaacs/brace-expansion@<=5.0.0': '>=5.0.1'
+  minimatch@<10.2.1: '>=10.2.1'
 
 importers:
 
@@ -2680,9 +2681,6 @@ packages:
   babel-dead-code-elimination@1.0.12:
     resolution: {integrity: sha512-GERT7L2TiYcYDtYk1IpD+ASAYXjKbLTDPhBtYj7X1NuRMDTMtAx9kyBenub1Ev41lo91OHCKdmP+egTDmfQ7Ig==}
 
-  balanced-match@1.0.2:
-    resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
-
   balanced-match@4.0.2:
     resolution: {integrity: sha512-x0K50QvKQ97fdEz2kPehIerj+YTeptKF9hyYkKf6egnwmMWAkADiO0QCzSp0R5xN8FTZgYaBfSaue46Ej62nMg==}
     engines: {node: 20 || >=22}
@@ -2704,9 +2702,6 @@ packages:
 
   block-stream2@2.1.0:
     resolution: {integrity: sha512-suhjmLI57Ewpmq00qaygS8UgEq2ly2PCItenIyhMqVjo4t4pGzqMvfgJuX8iWTeSDdfSSqS6j38fL4ToNL7Pfg==}
-
-  brace-expansion@2.0.2:
-    resolution: {integrity: sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==}
 
   brace-expansion@5.0.2:
     resolution: {integrity: sha512-Pdk8c9poy+YhOgVWw1JNN22/HcivgKWwpxKq04M/jTmHyCZn12WPJebZxdjSa5TmBqISrUSgNYU3eRORljfCCw==}
@@ -3950,18 +3945,6 @@ packages:
   minimatch@10.2.1:
     resolution: {integrity: sha512-MClCe8IL5nRRmawL6ib/eT4oLyeKMGCghibcDWK+J0hh0Q8kqSdia6BvbRMVk6mPa6WqUa5uR2oxt6C5jd533A==}
     engines: {node: 20 || >=22}
-
-  minimatch@5.1.6:
-    resolution: {integrity: sha512-lKwV/1brpG6mBUFHtb7NUmtABCb2WZZmm2wNiOA5hAb8VdCS4B3dtMWyvcoViccwAW/COERjXLt0zP1zXUN26g==}
-    engines: {node: '>=10'}
-
-  minimatch@8.0.4:
-    resolution: {integrity: sha512-W0Wvr9HyFXZRGIDgCicunpQ299OKXs9RgZfaukz4qAW/pJhcpUfupc9c+OObPOFueNy8VSrZgEmDtk6Kh4WzDA==}
-    engines: {node: '>=16 || 14 >=14.17'}
-
-  minimatch@9.0.5:
-    resolution: {integrity: sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow==}
-    engines: {node: '>=16 || 14 >=14.17'}
 
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
@@ -6810,7 +6793,7 @@ snapshots:
       https-proxy-agent: 7.0.6(supports-color@10.2.2)
       js-levenshtein: 1.1.6
       js-yaml: 4.1.1
-      minimatch: 5.1.6
+      minimatch: 10.2.1
       pluralize: 8.0.0
       yaml-ast-parser: 0.0.43
     transitivePeerDependencies:
@@ -7065,7 +7048,7 @@ snapshots:
       '@sentry/node-core': 9.47.1(@opentelemetry/api@1.9.0)(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.0))(@opentelemetry/resources@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.39.0)
       '@sentry/opentelemetry': 9.47.1(@opentelemetry/api@1.9.0)(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.39.0)
       import-in-the-middle: 1.15.0
-      minimatch: 9.0.5
+      minimatch: 10.2.1
     transitivePeerDependencies:
       - supports-color
 
@@ -7684,8 +7667,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  balanced-match@1.0.2: {}
-
   balanced-match@4.0.2:
     dependencies:
       jackspeak: 4.2.3
@@ -7703,10 +7684,6 @@ snapshots:
   block-stream2@2.1.0:
     dependencies:
       readable-stream: 3.6.2
-
-  brace-expansion@2.0.2:
-    dependencies:
-      balanced-match: 1.0.2
 
   brace-expansion@5.0.2:
     dependencies:
@@ -8400,7 +8377,7 @@ snapshots:
   glob@9.3.5:
     dependencies:
       fs.realpath: 1.0.0
-      minimatch: 8.0.4
+      minimatch: 10.2.1
       minipass: 4.2.8
       path-scurry: 1.11.1
 
@@ -8449,7 +8426,7 @@ snapshots:
       cosmiconfig: 8.3.6(typescript@5.9.3)
       graphql: 16.12.0
       jiti: 2.6.1
-      minimatch: 9.0.5
+      minimatch: 10.2.1
       string-env-interpolation: 1.0.1
       tslib: 2.8.1
     transitivePeerDependencies:
@@ -8969,18 +8946,6 @@ snapshots:
   minimatch@10.2.1:
     dependencies:
       brace-expansion: 5.0.2
-
-  minimatch@5.1.6:
-    dependencies:
-      brace-expansion: 2.0.2
-
-  minimatch@8.0.4:
-    dependencies:
-      brace-expansion: 2.0.2
-
-  minimatch@9.0.5:
-    dependencies:
-      brace-expansion: 2.0.2
 
   minimist@1.2.8: {}
 
