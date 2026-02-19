@@ -304,6 +304,16 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                                   rpps: '',
                                 },
                               }));
+                            } else {
+                              setFormData((prev) => ({
+                                ...prev,
+                                misEnCause: {
+                                  ...prev.misEnCause,
+                                  civilite: '',
+                                  nom: '',
+                                  prenom: '',
+                                },
+                              }));
                             }
                           },
                           disabled: isSaving,
