@@ -70,20 +70,11 @@ export function InfoSection({
             </output>
           ))}
         </div>
-        {canEdit && editHref ? (
+        {canEdit && editHref && (
           <Link to={editHref} className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-right fr-icon-pencil-line">
             {editLabel}
             <span className="fr-sr-only">{title}</span>
           </Link>
-        ) : (
-          <button
-            type="button"
-            disabled
-            className="fr-btn fr-btn--tertiary-no-outline fr-btn--icon-right fr-icon-pencil-line fr-btn--disabled"
-          >
-            {editLabel}
-            <span className="fr-sr-only">{title}</span>
-          </button>
         )}
       </div>
 
