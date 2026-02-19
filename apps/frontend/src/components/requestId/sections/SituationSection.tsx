@@ -24,6 +24,7 @@ import { SectionTitle } from './helpers';
 
 const ETABLISSEMENTS: string[] = [
   LIEU_TYPE.ETABLISSEMENT_SANTE,
+  LIEU_TYPE.ETABLISSEMENT_SOCIAL,
   LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
   LIEU_TYPE.ETABLISSEMENT_HANDICAP,
 ];
@@ -331,11 +332,6 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                     : 'Adresse :'}
                 </span>{' '}
                 {situation.lieuDeSurvenue.adresse.label}
-              </p>
-            )}
-            {situation?.lieuDeSurvenue?.adresse?.numero && situation?.lieuDeSurvenue?.adresse?.rue && (
-              <p className={fr.cx('fr-mb-1w')}>
-                <span>Adresse :</span> {situation.lieuDeSurvenue.adresse.numero} {situation.lieuDeSurvenue.adresse.rue}
               </p>
             )}
             {situation?.lieuDeSurvenue?.adresse?.codePostal && situation?.lieuDeSurvenue?.adresse?.ville && (
