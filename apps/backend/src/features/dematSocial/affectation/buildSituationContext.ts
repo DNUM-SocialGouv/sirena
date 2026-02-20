@@ -48,7 +48,7 @@ type RequeteWithSituations = Prisma.RequeteGetPayload<{
 
 type SituationWithLieu = RequeteWithSituations['situations'][number];
 
-export function buildSituationContextFromDemat(situation: SituationWithLieu): SituationContext {
+export function buildSituationContext(situation: SituationWithLieu): SituationContext {
   const ctx: SituationContext = {};
   const lds = situation?.lieuDeSurvenue;
 
