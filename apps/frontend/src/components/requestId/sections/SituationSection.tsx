@@ -24,6 +24,7 @@ import { SectionTitle } from './helpers';
 
 const ETABLISSEMENTS: string[] = [
   LIEU_TYPE.ETABLISSEMENT_SANTE,
+  LIEU_TYPE.ETABLISSEMENT_SOCIAL,
   LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
   LIEU_TYPE.ETABLISSEMENT_HANDICAP,
 ];
@@ -333,11 +334,6 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 {situation.lieuDeSurvenue.adresse.label}
               </p>
             )}
-            {situation?.lieuDeSurvenue?.adresse?.numero && situation?.lieuDeSurvenue?.adresse?.rue && (
-              <p className={fr.cx('fr-mb-1w')}>
-                <span>Adresse :</span> {situation.lieuDeSurvenue.adresse.numero} {situation.lieuDeSurvenue.adresse.rue}
-              </p>
-            )}
             {situation?.lieuDeSurvenue?.adresse?.codePostal && situation?.lieuDeSurvenue?.adresse?.ville && (
               <p className={fr.cx('fr-mb-2w')}>
                 <span>Code postal :</span> {situation.lieuDeSurvenue.adresse.codePostal}{' '}
@@ -487,6 +483,19 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 </li>
               ))}
             </ul>
+            {situation.demarchesEngagees?.etablissementReponse?.length > 0 && (
+              <>
+                <SectionTitle level={4}>Pièces jointes de la réponse de l'établissement</SectionTitle>
+                <FileList
+                  files={situation.demarchesEngagees.etablissementReponse.map(formatFileFromServer)}
+                  getFileUrl={(fileId) => `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}`}
+                  getSafeFileUrl={(fileId) =>
+                    `/api/requetes-entite/${requestId}/situation/${situationId}/file/${fileId}/safe`
+                  }
+                  title=""
+                />
+              </>
+            )}
             <p className={fr.cx('fr-mb-3w')}>{situation.demarchesEngagees.commentaire}</p>
           </>
         )}

@@ -28,6 +28,21 @@ export const MisEnCauseTypeEnumSchema = z.object({
   precisions: z.array(MisEnCauseTypePrecisionEnumSchema),
 });
 
+export const MotifDeclaratifEnumSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+});
+
+export const ConsequenceEnumSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+});
+
+export const MaltraitanceTypeEnumSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+});
+
 export const GetAgeEnumsResponseSchema = z.object({
   data: z.array(AgeEnumSchema),
 });
@@ -41,4 +56,16 @@ export const GetLienVictimeEnumsResponseSchema = z.object({
 });
 export const GetMisEnCauseTypeEnumsResponseSchema = z.object({
   data: z.array(MisEnCauseTypeEnumSchema),
+});
+
+export const GetMotifDeclaratifEnumsResponseSchema = z.object({
+  data: z.array(MotifDeclaratifEnumSchema),
+});
+
+export const GetConsequenceEnumsResponseSchema = z.object({
+  data: z.array(ConsequenceEnumSchema),
+});
+
+export const GetMaltraitanceTypeEnumsResponseSchema = z.object({
+  data: z.array(MaltraitanceTypeEnumSchema),
 });

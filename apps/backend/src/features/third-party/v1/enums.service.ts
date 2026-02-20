@@ -1,9 +1,12 @@
 import {
   type AgeEnum,
   type CiviliteEnum,
+  type ConsequenceEnum,
   type LienVictimeEnum,
+  type MaltraitanceTypeEnum,
   type MisEnCauseTypeEnum,
   type MisEnCauseTypePrecisionEnum,
+  type MotifDeclaratifEnum,
   prisma,
 } from '../../../libs/prisma.js';
 
@@ -32,3 +35,11 @@ export const getMisEnCauseTypeEnums = async (): Promise<
     fields: FIELD_MAPPINGS[enumItem.id],
   }));
 };
+
+export const getMotifDeclaratifEnums = async (): Promise<MotifDeclaratifEnum[]> =>
+  await prisma.motifDeclaratifEnum.findMany();
+
+export const getConsequenceEnums = async (): Promise<ConsequenceEnum[]> => await prisma.consequenceEnum.findMany();
+
+export const getMaltraitanceTypeEnums = async (): Promise<MaltraitanceTypeEnum[]> =>
+  await prisma.maltraitanceTypeEnum.findMany();
