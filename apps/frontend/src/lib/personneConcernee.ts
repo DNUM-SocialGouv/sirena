@@ -65,7 +65,7 @@ export function formatPersonneConcerneeToServer(data: PersonneConcerneeData) {
     nom: data.nom,
     prenom: data.prenom,
     age: data.age,
-    dateNaissance: data.dateNaissance,
+    dateNaissance: data.dateNaissance || null,
     adresseDomicile: data.adresseDomicile,
     codePostal: data.codePostal,
     ville: data.ville,
