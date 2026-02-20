@@ -18,7 +18,6 @@ import {
   lieuEtablissementSocialPrecisionLabels,
   lieuTrajetPrecisionLabels,
   lieuTypeLabels,
-  RECEPTION_TYPE,
   type ReceptionType,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
@@ -33,7 +32,7 @@ type LieuSurvenuProps = {
   receptionType?: ReceptionType;
 };
 
-export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: LieuSurvenuProps) {
+export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProps) {
   const lieuType = formData.lieuDeSurvenue?.lieuType;
   const lieuPrecision = formData.lieuDeSurvenue?.lieuPrecision;
   const hasCompleteOrganizationFromFiness = Boolean(
@@ -53,15 +52,13 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
   );
   const shouldShowDomicileAddressFields =
     lieuType === LIEU_TYPE.DOMICILE &&
-    (receptionType === RECEPTION_TYPE.FORMULAIRE ||
-      (!!lieuPrecision &&
-        !(
-          [
-            LIEU_DOMICILE_PRECISION.PERSONNE_CONCERNEE,
-            LIEU_DOMICILE_PRECISION.REQUERANT,
-            LIEU_DOMICILE_PRECISION.EQUIPES_MOBILES,
-          ] as string[]
-        ).includes(lieuPrecision)));
+    !(
+      [
+        LIEU_DOMICILE_PRECISION.PERSONNE_CONCERNEE,
+        LIEU_DOMICILE_PRECISION.REQUERANT,
+        LIEU_DOMICILE_PRECISION.EQUIPES_MOBILES,
+      ] as string[]
+    ).includes(lieuPrecision || '');
 
   useEffect(() => {
     if (lieuType !== LIEU_TYPE.ETABLISSEMENT_SANTE) {
