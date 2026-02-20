@@ -1,18 +1,25 @@
 import { type Prisma, prisma } from '../../libs/prisma.js';
 
-export type FunctionalIdSource = 'SIRENA' | 'DEMAT_SOCIAL';
+export type FunctionalIdSource = 'SIRENA' | 'TELEPHONIQUE' | 'FORMULAIRE';
+
+const SOURCE_PREFIX: Record<FunctionalIdSource, string> = {
+  SIRENA: 'RS',
+  TELEPHONIQUE: 'RT',
+  FORMULAIRE: 'RF',
+};
 
 /**
- * Format: AAAA-MM-R[S ou D]N
+ * Format: AAAA-MM-R[X]N
  * RS = created via SIRENA
- * RD = created via DematSocial
+ * RT = created via Telephonique
+ * RF = created via Formulaire
  */
 export async function generateRequeteId(source: FunctionalIdSource, tx?: Prisma.TransactionClient): Promise<string> {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
 
-  const sourcePrefix = source === 'SIRENA' ? 'RS' : 'RD';
+  const sourcePrefix = SOURCE_PREFIX[source];
   const monthPrefix = `${year}-${month}-${sourcePrefix}`;
   const regexPattern = `^${monthPrefix}[0-9]+$`;
 
@@ -31,5 +38,5 @@ export async function generateRequeteId(source: FunctionalIdSource, tx?: Prisma.
 }
 
 export function determineSource(dematSocialId: number | null | undefined): FunctionalIdSource {
-  return dematSocialId ? 'DEMAT_SOCIAL' : 'SIRENA';
+  return dematSocialId ? 'FORMULAIRE' : 'SIRENA';
 }
