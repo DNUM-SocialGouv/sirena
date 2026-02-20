@@ -31,15 +31,15 @@ describe('functionalId.service', () => {
       expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
     });
 
-    it('should generate ID with RD prefix for DEMAT_SOCIAL source', async () => {
+    it('should generate ID with RF prefix for FORMULAIRE source', async () => {
       const mockDate = new Date('2024-11-20');
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 119 }]);
 
-      const result = await generateRequeteId('DEMAT_SOCIAL');
+      const result = await generateRequeteId('FORMULAIRE');
 
-      expect(result).toBe('2024-11-RD120');
+      expect(result).toBe('2024-11-RF120');
     });
 
     it('should handle month with leading zero', async () => {
@@ -80,10 +80,10 @@ describe('functionalId.service', () => {
         .mockResolvedValueOnce([{ maxNumber: 3 }]);
 
       const result1 = await generateRequeteId('SIRENA');
-      const result2 = await generateRequeteId('DEMAT_SOCIAL');
+      const result2 = await generateRequeteId('FORMULAIRE');
 
       expect(result1).toBe('2025-09-RS6');
-      expect(result2).toBe('2025-09-RD4');
+      expect(result2).toBe('2025-09-RF4');
     });
 
     it('should reset counter on new month', async () => {
@@ -119,16 +119,27 @@ describe('functionalId.service', () => {
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 11 }]);
 
-      const result = await generateRequeteId('DEMAT_SOCIAL');
+      const result = await generateRequeteId('FORMULAIRE');
 
-      expect(result).toBe('2025-09-RD12');
+      expect(result).toBe('2025-09-RF12');
+    });
+
+    it('should generate ID with RT prefix for TELEPHONIQUE source', async () => {
+      const mockDate = new Date('2025-09-15');
+      vi.setSystemTime(mockDate);
+
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 4 }]);
+
+      const result = await generateRequeteId('TELEPHONIQUE');
+
+      expect(result).toBe('2025-09-RT5');
     });
   });
 
   describe('determineSource', () => {
-    it('should return DEMAT_SOCIAL when dematSocialId is present', () => {
-      expect(determineSource(123)).toBe('DEMAT_SOCIAL');
-      expect(determineSource(1)).toBe('DEMAT_SOCIAL');
+    it('should return FORMULAIRE when dematSocialId is present', () => {
+      expect(determineSource(123)).toBe('FORMULAIRE');
+      expect(determineSource(1)).toBe('FORMULAIRE');
     });
 
     it('should return SIRENA when dematSocialId is null or undefined', () => {

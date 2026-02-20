@@ -5,12 +5,6 @@
     "description": "Sirena third-party integration API - requires API key authentication",
     "version": "1.0.0"
   },
-  "servers": [
-    {
-      "url": "http://localhost:5173/api/third-party",
-      "description": "Third-party API server"
-    }
-  ],
   "components": {
     "securitySchemes": {
       "ApiKeyAuth": {
@@ -56,12 +50,9 @@
                     },
                     "keyPrefix": {
                       "type": "string"
-                    },
-                    "traceId": {
-                      "type": "string"
                     }
                   },
-                  "required": ["message", "accountId", "keyPrefix", "traceId"]
+                  "required": ["message", "accountId", "keyPrefix"]
                 }
               }
             }
@@ -81,16 +72,1513 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "message": {
-                      "type": "string"
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
                     }
                   },
-                  "required": ["message"]
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key revoked, suspended, or expired",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
                 }
               }
             }
           }
         }
+      }
+    },
+    "/v1/enums/age": {
+      "get": {
+        "operationId": "getV1EnumsAge",
+        "description": "Get all age enums",
+        "tags": ["Third-Party", "Enums"],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "label"]
+                          }
+                        }
+                      },
+                      "required": ["data"]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/enums/civilite": {
+      "get": {
+        "operationId": "getV1EnumsCivilite",
+        "description": "Get all civilite enums",
+        "tags": ["Third-Party", "Enums"],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "label"]
+                          }
+                        }
+                      },
+                      "required": ["data"]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/enums/lien-victime": {
+      "get": {
+        "operationId": "getV1EnumsLienVictime",
+        "description": "Get all lien victime enums",
+        "tags": ["Third-Party", "Enums"],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "label"]
+                          }
+                        }
+                      },
+                      "required": ["data"]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/enums/mis-en-cause-type": {
+      "get": {
+        "operationId": "getV1EnumsMisEnCauseType",
+        "description": "Get all mis en cause type enums with their precisions and field metadata",
+        "tags": ["Third-Party", "Enums"],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "fields": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "precisions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "misEnCauseTypeId": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": ["id", "label", "misEnCauseTypeId"]
+                                }
+                              }
+                            },
+                            "required": ["id", "label", "precisions"]
+                          }
+                        }
+                      },
+                      "required": ["data"]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/enums/motif-declaratif": {
+      "get": {
+        "operationId": "getV1EnumsMotifDeclaratif",
+        "description": "Get all motif declaratif enums (motifs as used in DematSocial declarations)",
+        "tags": ["Third-Party", "Enums"],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "label"]
+                          }
+                        }
+                      },
+                      "required": ["data"]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/enums/consequence": {
+      "get": {
+        "operationId": "getV1EnumsConsequence",
+        "description": "Get all consequence enums",
+        "tags": ["Third-Party", "Enums"],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "label"]
+                          }
+                        }
+                      },
+                      "required": ["data"]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/enums/maltraitance-type": {
+      "get": {
+        "operationId": "getV1EnumsMaltraitanceType",
+        "description": "Get all maltraitance type enums",
+        "tags": ["Third-Party", "Enums"],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["id", "label"]
+                          }
+                        }
+                      },
+                      "required": ["data"]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/requetes": {
+      "post": {
+        "operationId": "postV1Requetes",
+        "description": "Create a new request (Requete) with all related elements and relations",
+        "tags": ["Third-Party", "Requetes"],
+        "responses": {
+          "200": {
+            "description": "Request created successfully",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requeteId": {
+                      "type": "string"
+                    },
+                    "receptionDate": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "receptionTypeId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                    }
+                  },
+                  "required": ["requeteId", "receptionDate", "receptionTypeId", "createdAt"],
+                  "title": "CreateRequeteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request payload - validation error",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing API key",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key revoked, suspended, or expired",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "receptionDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                  },
+                  "declarant": {
+                    "type": "object",
+                    "properties": {
+                      "nom": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "prenom": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "civiliteId": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string",
+                        "format": "email",
+                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                        "description": "Email address",
+                        "examples": ["user@example.com"]
+                      },
+                      "ageId": {
+                        "type": "string"
+                      },
+                      "telephone": {
+                        "type": "string"
+                      },
+                      "estHandicapee": {
+                        "type": "boolean"
+                      },
+                      "lienVictimeId": {
+                        "type": "string"
+                      },
+                      "estVictime": {
+                        "type": "boolean"
+                      },
+                      "veutGarderAnonymat": {
+                        "type": "boolean"
+                      },
+                      "adresse": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "numero": {
+                            "type": "string"
+                          },
+                          "rue": {
+                            "type": "string"
+                          },
+                          "codePostal": {
+                            "type": "string"
+                          },
+                          "ville": {
+                            "type": "string"
+                          }
+                        },
+                        "title": "Adresse"
+                      }
+                    },
+                    "required": ["nom", "prenom"],
+                    "title": "Declarant"
+                  },
+                  "victime": {
+                    "type": "object",
+                    "properties": {
+                      "nom": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "prenom": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "civiliteId": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string",
+                        "format": "email",
+                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                        "description": "Email address",
+                        "examples": ["user@example.com"]
+                      },
+                      "telephone": {
+                        "type": "string"
+                      },
+                      "ageId": {
+                        "type": "string"
+                      },
+                      "adresse": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "numero": {
+                            "type": "string"
+                          },
+                          "rue": {
+                            "type": "string"
+                          },
+                          "codePostal": {
+                            "type": "string"
+                          },
+                          "ville": {
+                            "type": "string"
+                          }
+                        },
+                        "title": "Adresse"
+                      },
+                      "estHandicapee": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["nom", "prenom"],
+                    "title": "Victime"
+                  },
+                  "situations": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "lieuDeSurvenue": {
+                          "type": "object",
+                          "properties": {
+                            "codePostal": {
+                              "type": "string"
+                            },
+                            "commentaire": {
+                              "type": "string"
+                            },
+                            "adresse": {
+                              "type": "object",
+                              "properties": {
+                                "label": {
+                                  "type": "string"
+                                },
+                                "numero": {
+                                  "type": "string"
+                                },
+                                "rue": {
+                                  "type": "string"
+                                },
+                                "codePostal": {
+                                  "type": "string"
+                                },
+                                "ville": {
+                                  "type": "string"
+                                }
+                              },
+                              "title": "Adresse"
+                            },
+                            "lieuTypeId": {
+                              "type": "string"
+                            },
+                            "lieuPrecision": {
+                              "type": "string"
+                            },
+                            "transportTypeId": {
+                              "type": "string"
+                            },
+                            "societeTransport": {
+                              "type": "string"
+                            },
+                            "finess": {
+                              "type": "string"
+                            },
+                            "tutelle": {
+                              "type": "string"
+                            },
+                            "categCode": {
+                              "type": "string"
+                            },
+                            "categLib": {
+                              "type": "string"
+                            }
+                          },
+                          "title": "LieuDeSurvenue"
+                        },
+                        "misEnCause": {
+                          "type": "object",
+                          "properties": {
+                            "misEnCauseTypeId": {
+                              "type": "string"
+                            },
+                            "misEnCauseTypePrecisionId": {
+                              "type": "string"
+                            },
+                            "rpps": {
+                              "type": "string"
+                            },
+                            "commentaire": {
+                              "type": "string"
+                            }
+                          },
+                          "title": "MisEnCause"
+                        },
+                        "demarchesEngagees": {
+                          "type": "object",
+                          "properties": {
+                            "demarches": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "dateContactEtablissement": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            "etablissementARepondu": {
+                              "type": "boolean"
+                            },
+                            "commentaire": {
+                              "type": "string"
+                            },
+                            "datePlainte": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                            },
+                            "autoriteTypeId": {
+                              "type": "string"
+                            }
+                          },
+                          "title": "DemarchesEngagees"
+                        },
+                        "faits": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "motifsDeclaratifs": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "consequences": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "maltraitanceTypes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "dateDebut": {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                              },
+                              "dateFin": {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                              },
+                              "commentaire": {
+                                "type": "string"
+                              }
+                            },
+                            "title": "Fait"
+                          }
+                        }
+                      },
+                      "title": "Situation"
+                    }
+                  }
+                },
+                "required": ["declarant", "victime", "situations"],
+                "title": "CreateRequeteRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/requetes/{requeteId}/attachments": {
+      "post": {
+        "operationId": "postV1RequetesByRequeteIdAttachments",
+        "description": "Add an attachment to a previously created requete owned by the calling third-party account",
+        "tags": ["Third-Party", "Requetes"],
+        "responses": {
+          "200": {
+            "description": "Attachment uploaded successfully",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fileId": {
+                      "type": "string"
+                    },
+                    "fileName": {
+                      "type": "string"
+                    },
+                    "mimeType": {
+                      "type": "string"
+                    },
+                    "size": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["fileId", "fileName", "mimeType", "size"],
+                  "title": "AddAttachmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid file or missing file",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing API key",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "API key revoked, suspended, or expired",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requete not found or not owned by this account",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "headers": {
+              "x-trace-id": {
+                "description": "Request trace ID for debugging and support",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "traceId": {
+                          "type": "string"
+                        },
+                        "details": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        "retryAfter": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["code", "message", "traceId"]
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "requeteId",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true
+          }
+        ]
       }
     }
   }

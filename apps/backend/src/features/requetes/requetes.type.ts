@@ -105,9 +105,9 @@ type Situation = {
 };
 
 export type CreateRequeteFromDematSocialDto = {
+  dematSocialId: number;
   receptionDate: Date;
   receptionTypeId: string;
-  dematSocialId: number;
   declarant: Declarant;
   participant: Participant;
   situations: Situation[];

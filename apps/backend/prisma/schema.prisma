@@ -155,6 +155,9 @@ model Requete {
   createdById String?
   createdBy   User?   @relation(fields: [createdById], references: [id])
 
+  thirdPartyAccountId String?
+  thirdPartyAccount   ThirdPartyAccount? @relation(fields: [thirdPartyAccountId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -711,7 +714,8 @@ model ThirdPartyAccount {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  apiKeys ApiKey[]
+  apiKeys  ApiKey[]
+  requetes Requete[]
 }
 
 model ApiKey {

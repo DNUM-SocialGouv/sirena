@@ -66,9 +66,8 @@ export function setupThirdPartyOpenAPI(
 }
 
 export async function generateThirdPartySwaggerDocs(thirdPartyApp: Hono<AppBindings>) {
-  const spec = await generateSpecs(thirdPartyApp, {
-    documentation: getThirdPartyDocumentation(),
-  });
+  const { servers: _, ...documentation } = getThirdPartyDocumentation();
+  const spec = await generateSpecs(thirdPartyApp, { documentation });
   const pathToSpec = './src/swagger/openAPI-thirdparty.json';
   fs.writeFileSync(pathToSpec, JSON.stringify(spec, null, 2));
 }
