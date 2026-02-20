@@ -1,5 +1,6 @@
 import {
   type DsMotif,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   type MisEnCauseType,
   type Motif,
   PROFESSION_DOMICILE_TYPE,
@@ -37,51 +38,6 @@ export function computeEntitesFromMotifs(ctx: SituationContext): EntiteAdminType
     }
   }
   return Array.from(acc);
-}
-
-/**
- * Maps tutelle string to entity types (ARS, CD, DD)
- */
-function mapTutelleToEntities(tutelle: string): EntiteAdminType[] {
-  const normalized = tutelle.trim();
-  const entities: EntiteAdminType[] = [];
-
-  // Contains both ARS and CD (in any order, with any separator)
-  if (/ARS.*CD|CD.*ARS/i.test(normalized)) {
-    entities.push('ARS', 'CD');
-    return entities;
-  }
-
-  // Contains "Ordre" and "ARS"
-  if (/Ordre.*ARS|ARS.*Ordre/i.test(normalized)) {
-    entities.push('ARS');
-    return entities;
-  }
-
-  // Contains "DDETS" or "Préfet" (for DD), but NOT "Préfet (DTPJJ)"
-  if (/DDETS/i.test(normalized)) {
-    entities.push('DD');
-    return entities;
-  }
-  // "Préfet" but not "Préfet (DTPJJ)"
-  if (/Préfet/i.test(normalized) && !/Préfet\s*\(DTPJJ\)/i.test(normalized)) {
-    entities.push('DD');
-    return entities;
-  }
-
-  // Exact match or standalone "ARS"
-  if (/^ARS$/i.test(normalized)) {
-    entities.push('ARS');
-    return entities;
-  }
-
-  // Exact match or standalone "CD"
-  if (/^CD$/i.test(normalized)) {
-    entities.push('CD');
-    return entities;
-  }
-
-  return entities;
 }
 
 /**
@@ -123,33 +79,26 @@ const DOMICILE_PROFESSIONNEL_MAPPING: Record<DomicileProfessionnelCategory, Enti
 function getDomicileProfessionnelCategory(ctx: SituationContext): DomicileProfessionnelCategory | null {
   const { misEnCauseType, misEnCauseTypePrecision } = ctx;
 
-  // 4. Tuteur/MJPM
   if (misEnCauseTypePrecision === 'MJPM') {
     return 'TUTEUR_MJPM';
   }
 
-  // Special case : PROFESSIONNEL_SANTE
-  if (misEnCauseType === 'PROFESSIONNEL_SANTE') {
-    // 3. SESSAD
-    if (misEnCauseTypePrecision === 'SESSAD') {
-      return 'SESSAD';
-    }
+  if (misEnCauseTypePrecision === 'SESSAD') {
+    return 'SESSAD';
+  }
 
-    // 2. Service d'aide à domicile (ProfessionDomicileType but not SESSAD)
-    if (misEnCauseTypePrecision && Object.keys(PROFESSION_DOMICILE_TYPE).includes(misEnCauseTypePrecision)) {
-      return 'SERVICE_AIDE_DOMICILE';
-    }
+  if ((misEnCauseTypePrecision as string | undefined) === MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SERVICE) {
+    return 'SERVICE_AIDE_DOMICILE';
+  }
 
-    // 1. Professionnel de santé (ProfessionSantePrecision)
-    if (misEnCauseTypePrecision && Object.keys(PROFESSION_SANTE_PRECISION).includes(misEnCauseTypePrecision)) {
-      return 'PROFESSIONNEL_SANTE';
-    }
-
-    // Default case : PROFESSIONNEL_SANTE
+  if (misEnCauseTypePrecision && Object.keys(PROFESSION_DOMICILE_TYPE).includes(misEnCauseTypePrecision)) {
+    return 'SERVICE_AIDE_DOMICILE';
+  } else if (misEnCauseTypePrecision && Object.keys(PROFESSION_SANTE_PRECISION).includes(misEnCauseTypePrecision)) {
+    return 'PROFESSIONNEL_SANTE';
+  } else if (misEnCauseType === 'PROFESSIONNEL_SANTE') {
     return 'PROFESSIONNEL_SANTE';
   }
 
-  // 5. Autre (PROFESSIONNEL_SOCIAL, AUTRE_PROFESSIONNEL, ...)
   return 'AUTRE';
 }
 
@@ -355,39 +304,29 @@ function motifReclamationSubtree(): DecisionNode {
   };
 }
 
-// 6 - Referentiel FINESS
-// Maps "tutelle" field to entity types, or falls back to categCode lookup in AutoriteCompetenteReferentiel
+// 6 - Referentiel FINESS (AutoriteCompetenteReferentiel)
 export function finessReferentielPlaceholderSubtree(): DecisionNode {
   return {
     kind: 'leaf',
     id: 'finess_referentiel',
-    description: 'Référentiel via FINESS : tutelle ou categCode',
+    description: 'Référentiel FINESS : categCode → AutoriteCompetenteReferentiel',
     add: async (ctx: SituationContext): Promise<EntiteAdminType[]> => {
       const prisma = new PrismaClient();
 
       try {
-        const tutelle = ctx.tutelle;
-        if (tutelle && typeof tutelle === 'string' && tutelle.trim() !== '') {
-          const tutelleNormalized = tutelle.trim();
-          const entitiesFromTutelle = mapTutelleToEntities(tutelleNormalized);
-          if (entitiesFromTutelle.length > 0) {
-            return entitiesFromTutelle;
-          }
-        }
-
-        // Fallback to categCode lookup if tutelle is not mapped or is null/undefined
         const categCode = ctx.categCode;
-        if (categCode && typeof categCode === 'string' && categCode.trim() !== '') {
-          const referentiel = await prisma.autoriteCompetenteReferentiel.findUnique({
-            where: { categCode: categCode.trim() },
-          });
-
-          if (referentiel?.entiteTypeIds && referentiel.entiteTypeIds.length > 0) {
-            return parseEntiteTypeIds(referentiel.entiteTypeIds);
-          }
+        if (!categCode || typeof categCode !== 'string' || categCode.trim() === '') {
+          return [];
         }
 
-        // No assignment if nothing found
+        const referentiel = await prisma.autoriteCompetenteReferentiel.findUnique({
+          where: { categCode: categCode.trim() },
+        });
+
+        if (referentiel?.entiteTypeIds && referentiel.entiteTypeIds.length > 0) {
+          return parseEntiteTypeIds(referentiel.entiteTypeIds);
+        }
+
         return [];
       } finally {
         await prisma.$disconnect();
