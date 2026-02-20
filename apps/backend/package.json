@@ -10,6 +10,7 @@
     "gql": "tsx src/gql.ts",
     "worker": "tsx src/start-worker.ts",
     "test": "vitest",
+    "test:smoke": "vitest run --config vitest.smoke.config.ts",
     "coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
