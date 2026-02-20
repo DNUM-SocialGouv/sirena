@@ -33,9 +33,17 @@ type LieuSurvenuProps = {
   receptionType?: ReceptionType;
 };
 
+const finessEtablissementTypes = [
+  LIEU_TYPE.ETABLISSEMENT_SANTE,
+  LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
+  LIEU_TYPE.ETABLISSEMENT_HANDICAP,
+  LIEU_TYPE.ETABLISSEMENT_SOCIAL,
+] as string[];
+
 export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: LieuSurvenuProps) {
   const lieuType = formData.lieuDeSurvenue?.lieuType;
   const lieuPrecision = formData.lieuDeSurvenue?.lieuPrecision;
+  const isFinessEtablissementType = Boolean(lieuType && finessEtablissementTypes.includes(lieuType));
   const hasCompleteOrganizationFromFiness = Boolean(
     formData.lieuDeSurvenue?.finess &&
       formData.lieuDeSurvenue?.adresse?.label &&
@@ -64,10 +72,10 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
         ).includes(lieuPrecision)));
 
   useEffect(() => {
-    if (lieuType !== LIEU_TYPE.ETABLISSEMENT_SANTE) {
+    if (!isFinessEtablissementType) {
       setIsNoFinessChecked(false);
     }
-  }, [lieuType]);
+  }, [isFinessEtablissementType]);
 
   const lieuTypeOptions = Object.entries(LIEU_TYPE).map(([key, value]) => ({
     key,
@@ -382,7 +390,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
             </>
           )}
 
-          {lieuType === LIEU_TYPE.ETABLISSEMENT_SANTE && (
+          {isFinessEtablissementType && (
             <>
               <div className="fr-col-12 fr-col-md-6">
                 <OrganizationSearchField
@@ -447,6 +455,19 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                                 lieuDeSurvenue: {
                                   ...prev.lieuDeSurvenue,
                                   finess: '',
+                                },
+                              }));
+                            } else {
+                              setFormData((prev) => ({
+                                ...prev,
+                                lieuDeSurvenue: {
+                                  ...prev.lieuDeSurvenue,
+                                  adresse: {
+                                    ...prev.lieuDeSurvenue?.adresse,
+                                    label: '',
+                                    codePostal: '',
+                                    ville: '',
+                                  },
                                 },
                               }));
                             }
@@ -520,114 +541,6 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
               )}
             </>
           )}
-
-          {lieuType &&
-            (
-              [
-                LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
-                LIEU_TYPE.ETABLISSEMENT_HANDICAP,
-                LIEU_TYPE.ETABLISSEMENT_SOCIAL,
-              ] as string[]
-            ).includes(lieuType) && (
-              <>
-                <div className="fr-col-12 fr-col-md-6">
-                  <OrganizationSearchField
-                    value={formData.lieuDeSurvenue?.finess || ''}
-                    onChange={(value, organization) => {
-                      if (organization) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          lieuDeSurvenue: {
-                            ...prev.lieuDeSurvenue,
-                            finess: value,
-                            adresse: buildOrganizationAddress(
-                              organization.name,
-                              organization.addressPostalcode,
-                              organization.addressCity,
-                            ),
-                          },
-                        }));
-                      } else {
-                        setFormData((prev) => ({
-                          ...prev,
-                          lieuDeSurvenue: { ...prev.lieuDeSurvenue, finess: value },
-                        }));
-                      }
-                    }}
-                    label="Numéro FINESS"
-                    disabled={isSaving}
-                    searchMode="finess"
-                    minSearchLength={6}
-                  />
-                </div>
-                <div className="fr-col-12 fr-col-md-6">
-                  <OrganizationSearchField
-                    value={extractOrganizationName(formData.lieuDeSurvenue?.adresse)}
-                    onChange={(value, organization) => {
-                      if (organization) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          lieuDeSurvenue: {
-                            ...prev.lieuDeSurvenue,
-                            finess: organization.identifier,
-                            adresse: buildOrganizationAddress(
-                              organization.name,
-                              organization.addressPostalcode,
-                              organization.addressCity,
-                            ),
-                          },
-                        }));
-                      } else {
-                        setFormData((prev) => ({
-                          ...prev,
-                          lieuDeSurvenue: {
-                            ...prev.lieuDeSurvenue,
-                            adresse:
-                              value === '' ? undefined : updateOrganizationName(prev.lieuDeSurvenue?.adresse, value),
-                          },
-                        }));
-                      }
-                    }}
-                    label="Nom de l'établissement"
-                    disabled={isSaving}
-                    searchMode="name"
-                    minSearchLength={2}
-                  />
-                </div>
-                <div className="fr-col-12 fr-col-md-6">
-                  <Input
-                    label="Code postal"
-                    nativeInputProps={{
-                      value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
-                      onChange: (e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          lieuDeSurvenue: {
-                            ...prev.lieuDeSurvenue,
-                            adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
-                          },
-                        })),
-                    }}
-                  />
-                </div>
-                <div className="fr-col-12 fr-col-md-6">
-                  <Input
-                    label="Ville"
-                    nativeInputProps={{
-                      value: formData.lieuDeSurvenue?.adresse?.ville || '',
-                      onChange: (e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          lieuDeSurvenue: {
-                            ...prev.lieuDeSurvenue,
-                            adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
-                          },
-                        })),
-                    }}
-                  />
-                </div>
-              </>
-            )}
 
           {lieuType === LIEU_TYPE.AUTRES_ETABLISSEMENTS && (
             <>
