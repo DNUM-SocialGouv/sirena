@@ -1304,6 +1304,11 @@ describe('requetesEntite.service', () => {
         requete: {
           findUnique: vi.fn().mockResolvedValue(null),
         },
+        uploadedFile: {
+          findMany: vi.fn().mockResolvedValue([]),
+          deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+          updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        },
       };
 
       return {
