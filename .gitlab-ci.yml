@@ -23,7 +23,7 @@ stages:
 .rules-with-env-vars:
   rules:
     # Automatic builds/deploys
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "feat/gitlab-ci"
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "chore/deploy"
       variables:
         FRONTEND_ENV: "dev"
         DEPLOYMENT_ENV: "dev"
@@ -33,7 +33,7 @@ stages:
         FRONTEND_ENV: "integration"
         DEPLOYMENT_ENV: "integration"
         MATOMO_SITE_ID: "155"
-    - if: $CI_COMMIT_BRANCH == "feat/gitlab-ci"
+    - if: $CI_COMMIT_BRANCH == "chore/deploy"
       variables:
         FRONTEND_ENV: "test"
         DEPLOYMENT_ENV: "test"
