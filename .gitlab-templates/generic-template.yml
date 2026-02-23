@@ -12,7 +12,6 @@ stages:
       entrypoint: [ "/bin/sh", "-c", "dockerd-entrypoint.sh --tls=false --host=tcp://0.0.0.0:2375 --dns=$(sed -n 's/^# ExtServers: \\[\\([0-9]*\\.[0-9]*\\.[0-9]*\\.[0-9]*\\)\\]/\\1/p' /etc/resolv.conf) --dns=10.200.2.31 --dns=10.200.4.33 --dns=192.168.96.198 --dns=192.168.92.204" ]
       variables:
         DOCKER_TLS_CERTDIR: ""
-  # filter_docker_warning, docker_login_filtered from https://gitlab.com/gitlab-org/cluster-integration/auto-build-image/-/blob/master/src/build.sh?ref_type=heads
   before_script:
     - mkdir -p ~/.docker
     - | 
