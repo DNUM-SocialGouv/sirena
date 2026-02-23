@@ -1,0 +1,110 @@
+## Include PIC templates for docker-image-utils (proxy configuration for docker builds)
+#include:
+#  - project: "socialgouv/commun/cicd_components/docker-image"
+#    file: "templates/docker-image-build.yml"
+#    inputs:
+#      stage: lint-test-build-sast
+#      project_root: "."
+#      modules: []
+#
+#
+## Récupération de la CI faite par Adrien qui surcouche la surcouche de DO
+#.docker-prerequis:
+#  extends: .docker_image_utils
+#  image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:28.5.2"
+#  before_script:
+#    - !reference [.docker_image_utils, script]
+#    - apk add --no-cache bash git openssh-client sed tar gzip
+#    # Create symlink for sed (scripts expect /usr/bin/sed but Alpine installs in /bin/sed)
+#    - ln -sf /bin/sed /usr/bin/sed
+#    # Create a docker wrapper that injects proxy build-args
+#    - |
+#      if [ -n "${HTTP_PROXY:-}" ]; then
+#        # Find real docker location
+#        REAL_DOCKER=$(which docker)
+#        echo "Real docker found at: $REAL_DOCKER"
+#        mkdir -p /usr/local/bin-wrapped
+#        cat > /usr/local/bin-wrapped/docker <<DOCKERWRAPPER
+#      #!/bin/sh
+#      # Wrapper to inject proxy build-args into docker build commands
+#      if [ "\$1" = "build" ]; then
+#        # Add proxy build args for docker build
+#        set -- "\$@" \\
+#          --build-arg HTTP_PROXY="${HTTP_PROXY:-}" \\
+#          --build-arg HTTPS_PROXY="${HTTPS_PROXY:-}" \\
+#          --build-arg NO_PROXY="${NO_PROXY:-}" \\
+#          --build-arg http_proxy="${http_proxy:-}" \\
+#          --build-arg https_proxy="${https_proxy:-}" \\
+#          --build-arg no_proxy="${no_proxy:-}"
+#      fi
+#      # Call real docker
+#      exec $REAL_DOCKER "\$@"
+#      DOCKERWRAPPER
+#        chmod +x /usr/local/bin-wrapped/docker
+#        export PATH="/usr/local/bin-wrapped:$PATH"
+#        echo "Docker wrapper with proxy build-args installed"
+#      fi
+#
+#.docker_avec_node_prerequis:
+#  extends: .docker-prerequis
+#  before_script:
+#    - !reference [.docker-prerequis, before_script]
+#    - apk add --no-cache nodejs npm
+#    - npm install -g pnpm
+#    - pnpm --version
+#    - node --version
+#    - apk add icu-data-full
+#    - export NODE_ICU_DATA=/usr/share/icu/76.1
+#
+#
+#.node_template:
+#  image: node:${NODE_VERSION}
+#  before_script:
+#    - pnpm --version
+#    - node --version
+#
+#.node_avec_ssh_client:
+#  extends: .node_template
+#  before_script:
+#    - !reference [.node_template, before_script]
+#    - apk add --no-cache bash openssh-client
+#    - eval $(ssh-agent -s)
+#    - echo "$SSH_PRIVATE_KEY" | base64 -d | ssh-add -
+#    - mkdir -p ~/.ssh
+#    - chmod 700 ~/.ssh
+#
+#.docker_avec_ssh_client:
+#  extends: .docker-prerequis
+#  before_script:
+#    - !reference [.docker-prerequis, before_script]
+#    # Set up SSH key
+#    - apk add --no-cache bash openssh-client
+#    - eval $(ssh-agent -s)
+#    - echo "$SSH_PRIVATE_KEY" | base64 -d | ssh-add -
+#    - mkdir -p ~/.ssh
+#    - chmod 700 ~/.ssh
+#
+#.node_cache:
+#  cache:
+#    - key:
+#        files:
+#          - pnpm-lock.yaml
+#      paths:
+#        - node_modules/
+#        - shared/node_modules/
+#        - shared-bridge/node_modules/
+#        - phd-client/node_modules/
+#        - phd-server/node_modules/
+#        - phr-server/node_modules/
+#        - phr-client/node_modules/
+#        - pp-server/node_modules/
+#        - pp-client/node_modules/
+#      policy: pull
+#
+#.only-main-branches:
+#  rules: # TODO voir s'il n'est pas plutot possible de protéger les branches concernées
+#    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "develop"
+#    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "integration"
+#    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "recette"
+#    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "production"
+#    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
