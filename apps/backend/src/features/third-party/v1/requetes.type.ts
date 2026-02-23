@@ -18,6 +18,7 @@ type ThirdPartyDeclarant = {
   estVictime?: boolean;
   veutGarderAnonymat?: boolean;
   adresse?: Adresse;
+  commentaire?: string;
 };
 
 type ThirdPartyVictime = {
@@ -29,6 +30,10 @@ type ThirdPartyVictime = {
   ageId?: string;
   adresse?: Adresse;
   estHandicapee?: boolean;
+  commentaire?: string;
+  veutGarderAnonymat?: boolean;
+  estVictimeInformee?: boolean;
+  autrePersonnes?: string;
 };
 
 type ThirdPartyLieuDeSurvenue = {
