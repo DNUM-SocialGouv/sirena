@@ -1,5 +1,5 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
-import { RECEPTION_TYPE, REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
+import { RECEPTION_TYPE, REQUETE_PRIORITE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import { z } from 'zod';
 import { Prisma } from '../../libs/prisma.js';
@@ -7,7 +7,7 @@ import { EntiteSchema } from '../entites/entites.schema.js';
 import { RequeteEtapeSchema } from '../requeteEtapes/requetesEtapes.schema.js';
 import { RequeteSchema } from '../requetes/requetes.schema.js';
 
-const RequeteEntiteSchema = z.object({
+export const RequeteEntiteSchema = z.object({
   requeteId: z.string(),
   statutId: z.string(),
   prioriteId: z.string().nullable(),
@@ -116,11 +116,16 @@ export const GetRequeteEntiteSchema = RequeteEntiteSchema.extend({
 
 export const GetRequetesEntiteResponseSchema = z.array(GetRequeteEntiteSchema);
 
+const provenanceIdOptional = z.string().nullable().optional();
+const provenancePrecisionOptional = z.string().trim().max(2000).nullable().optional();
+
 export const CreateRequeteBodySchema = z.object({
   declarant: DeclarantDataSchema.optional(),
   participant: PersonneConcerneeDataSchema.optional(),
   receptionDate,
   receptionTypeId,
+  provenanceId: provenanceIdOptional,
+  provenancePrecision: provenancePrecisionOptional,
   fileIds: z.array(z.string()).optional(),
 });
 
@@ -155,6 +160,8 @@ export const UpdateSituationBodySchema = z.object({
 export const UpdateTypeAndDateRequeteBodySchema = z.object({
   receptionDate,
   receptionTypeId,
+  provenanceId: provenanceIdOptional,
+  provenancePrecision: provenancePrecisionOptional,
   controls: requeteControl.optional(),
 });
 
@@ -162,6 +169,14 @@ export const UpdatePrioriteBodySchema = z.object({
   prioriteId: z
     .enum([REQUETE_PRIORITE_TYPES.BASSE, REQUETE_PRIORITE_TYPES.MOYENNE, REQUETE_PRIORITE_TYPES.HAUTE])
     .nullable(),
+});
+
+export const UpdateStatutBodySchema = z.object({
+  statutId: z.enum([REQUETE_STATUT_TYPES.NOUVEAU, REQUETE_STATUT_TYPES.TRAITEE]),
+});
+
+export const UpdateStatutResponseSchema = z.object({
+  data: RequeteEntiteSchema,
 });
 
 export const CloseRequeteBodySchema = z.object({

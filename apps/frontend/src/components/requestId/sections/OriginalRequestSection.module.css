@@ -3,3 +3,16 @@
   align-items: center;
   justify-content: space-between;
 }
+
+.wrapperFilled {
+  align-items: flex-start;
+}
+
+.editButton {
+  flex-shrink: 0;
+  padding: 0.25rem;
+}
+
+.editButton :global(.fr-icon) {
+  font-size: 1rem;
+}

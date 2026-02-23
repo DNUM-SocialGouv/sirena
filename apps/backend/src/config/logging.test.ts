@@ -91,6 +91,7 @@ describe('logging configuration', () => {
 
       CRON_DEMAT_SOCIAL: '10000',
       CRON_RETRY_AFFECTATION: '10000',
+      API_KEY_HASH_SALT: 'test-salt',
     };
   }
 });

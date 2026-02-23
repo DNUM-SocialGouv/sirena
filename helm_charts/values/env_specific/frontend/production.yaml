@@ -2,11 +2,16 @@
 SDPSN-devops-charts:
   namespace: org-sdpsn-ws-sirena-production
 
+  certificateIssuer:
+    enable: true
+
   deployment:
     replicas: 2
 
   ingress:
     host: sirena-sante.social.gouv.fr
+    appAnnotations:
+      external-dns.alpha.kubernetes.io/hostname: sirena-sante.social.prod.atlas.fabrique.social.gouv.fr
     tls:
       hosts:
         - sirena-sante.social.gouv.fr

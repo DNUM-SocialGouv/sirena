@@ -83,7 +83,7 @@ export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConc
   aAutrePersonnes: participantData.aAutrePersonnes,
   commentaire: participantData.commentaire || '',
   ageId: participantData.age || undefined,
-  dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : undefined,
+  dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : null,
   identite: hasIdentiteData(participantData)
     ? {
         create: {
@@ -153,6 +153,9 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
             ? misEnCauseData.misEnCauseTypePrecision
             : null,
         rpps: misEnCauseData?.rpps || null,
+        nom: misEnCauseData?.nom || '',
+        prenom: misEnCauseData?.prenom || '',
+        civilite: misEnCauseData?.civilite || '',
         commentaire: misEnCauseData?.commentaire || '',
       },
     },

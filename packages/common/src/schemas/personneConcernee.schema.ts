@@ -8,9 +8,10 @@ export const PersonneConcerneeDataSchema = z.object({
   dateNaissance: z
     .string()
     .optional()
+    .nullable()
     .refine(
       (value) => {
-        if (!value) return true;
+        if (value == null || value === '') return true;
         const date = new Date(value);
         const today = new Date();
         today.setHours(23, 59, 59, 999);

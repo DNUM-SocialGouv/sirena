@@ -63,12 +63,63 @@ interface StreamFileOptions {
   fileId: string;
 }
 
+const removeControlChars = (value: string) =>
+  Array.from(value)
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code >= 0x20 && code !== 0x7f;
+    })
+    .join('');
+
+const escapeQuotedString = (value: string) => value.replaceAll('\\', '_').replaceAll('"', '_');
+
+const isLatin1 = (value: string) => {
+  for (let i = 0; i < value.length; i += 1) {
+    if (value.charCodeAt(i) > 0xff) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const toAsciiFallbackFilename = (value: string) => {
+  const withoutDiacritics = value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+  const asciiSafe = withoutDiacritics
+    .replace(/[^\x20-\x7e]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return asciiSafe || 'file';
+};
+
+const encodeRFC5987Value = (value: string) =>
+  encodeURIComponent(value)
+    .replace(/['()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)
+    .replace(/%(7C|60|5E)/g, (sequence) => sequence.toLowerCase());
+
+export const createInlineContentDisposition = (rawFileName: string) => {
+  const cleaned =
+    removeControlChars(rawFileName)
+      .replace(/[\r\n]+/g, ' ')
+      .trim() || 'file';
+  const quoted = escapeQuotedString(cleaned);
+
+  if (isLatin1(quoted)) {
+    return `inline; filename="${quoted}"`;
+  }
+
+  const asciiFallback = escapeQuotedString(toAsciiFallbackFilename(cleaned));
+  const encodedUtf8Filename = encodeRFC5987Value(cleaned);
+
+  return `inline; filename="${asciiFallback}"; filename*=UTF-8''${encodedUtf8Filename}`;
+};
+
 const createFileStreamResponse = async (c: Context, options: StreamFileOptions) => {
   const logger = c.get('logger');
   const { filePath, fileName, contentType, fileId } = options;
 
   c.header('Content-Type', contentType);
-  c.header('Content-Disposition', `inline; filename="${fileName}"`);
+  c.header('Content-Disposition', createInlineContentDisposition(fileName));
 
   return honoStream(c, async (s) => {
     try {
@@ -92,7 +143,7 @@ const createFileStreamResponse = async (c: Context, options: StreamFileOptions) 
 export const streamFileResponse = async (c: Context, file: UploadedFile) => {
   if (file.size === 0) {
     c.header('Content-Type', file.mimeType || 'application/octet-stream');
-    c.header('Content-Disposition', `inline; filename="${getOriginalFileName(file)}"`);
+    c.header('Content-Disposition', createInlineContentDisposition(getOriginalFileName(file)));
     return c.body(null, 200);
   }
 

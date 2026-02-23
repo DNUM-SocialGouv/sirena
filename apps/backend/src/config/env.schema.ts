@@ -257,6 +257,10 @@ export const AppEnvSchema = z.object({
         ? "La variable d'environnement TIPIMAIL_FROM_PERSONAL_NAME est requise"
         : 'Not a string',
   }),
+  API_KEY_HASH_SALT: z.string({
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement API_KEY_HASH_SALT est requise" : 'Not a string',
+  }),
   REDIS_HOST: z.string({
     error: (issue) =>
       issue.input === undefined ? "La variable d'environnement REDIS_HOST est requise" : 'Not a string',

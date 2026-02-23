@@ -18,18 +18,10 @@ type Situation = RequeteEntiteRow['requete']['situations'][number];
 type Fait = NonNullable<Situation['faits']>[number];
 type MisEnCause = Situation['misEnCause'];
 type LieuDeSurvenue = Situation['lieuDeSurvenue'];
-type SituationEntite = NonNullable<Situation['situationEntites']>[number];
-type EntiteInfo = NonNullable<SituationEntite['entite']>;
-
 type LabeledItem = { label: string; title: string };
-type ServiceInfo = { id: string; name: string; nomComplet: string; parentName?: string; parentNomComplet?: string };
 
 const UNKNOWN_VALUE = 'Non renseigné';
 const NEGATIVE_MALTRAITANCE_ANSWERS = ['NON', 'NE_SAIS_PAS'];
-
-const getDisplayName = (e: EntiteInfo): string => e.label || e.nomComplet;
-const getFullName = (e: EntiteInfo): string => e.nomComplet || e.label;
-const isRootEntite = (e: EntiteInfo): boolean => e.entiteMereId === null;
 
 const uniqueBy = <T, K>(items: T[], keyFn: (item: T) => K): T[] => {
   const seen = new Set<K>();
@@ -185,9 +177,13 @@ const getMisEnCauseDisplayValue = (
   misEnCause: MisEnCause,
   lieuDeSurvenue: LieuDeSurvenue,
 ): string => {
+  const identity =
+    [misEnCause?.civilite, misEnCause?.prenom, misEnCause?.nom].filter(Boolean).join(' ').trim() ||
+    misEnCause?.commentaire?.trim();
+
   switch (typeId) {
     case MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE:
-      return misEnCause?.commentaire?.trim() || precisionLabel || typeLabel;
+      return identity || precisionLabel || typeLabel;
 
     case MIS_EN_CAUSE_TYPE.ETABLISSEMENT:
       return lieuDeSurvenue?.adresse?.label || precisionLabel || typeLabel;
@@ -220,84 +216,90 @@ export function renderMisEnCauseCell(row: RequeteEntiteRow): ReactNode {
   return uniqueItems.length === 0 ? UNKNOWN_VALUE : renderInlineList(uniqueItems);
 }
 
-const buildEntitesMap = (situations: Situation[]): Map<string, EntiteInfo> =>
-  new Map(
-    flatMap(situations, (s) => s?.situationEntites ?? [])
-      .filter((se) => se?.entite)
-      .map((se) => [se.entite.id, se.entite]),
-  );
-
-const createServiceInfo = (entite: EntiteInfo, parent: EntiteInfo | undefined): ServiceInfo => ({
-  id: entite.id,
-  name: getDisplayName(entite),
-  nomComplet: getFullName(entite),
-  parentName: parent && !isRootEntite(parent) ? getDisplayName(parent) : undefined,
-  parentNomComplet: parent && !isRootEntite(parent) ? getFullName(parent) : undefined,
-});
-
-const extractServicesFromSituations = (situations: Situation[], entitesMap: Map<string, EntiteInfo>): ServiceInfo[] => {
-  const allEntites = flatMap(situations, (s) => s?.situationEntites ?? [])
-    .map((se) => se?.entite)
-    .filter((e): e is EntiteInfo => e != null && !isRootEntite(e));
-
-  const uniqueEntites = uniqueBy(allEntites, (e) => e.id);
-
-  return uniqueEntites.map((entite) => {
-    const parent = entitesMap.get(entite.entiteMereId ?? '');
-    return createServiceInfo(entite, parent);
-  });
-};
-
-const extractRootEntites = (entitesMap: Map<string, EntiteInfo>): EntiteInfo[] =>
-  [...entitesMap.values()].filter(isRootEntite);
-
-const sortServices = (services: ServiceInfo[], userEntiteId?: string): ServiceInfo[] =>
-  [...services].sort((a, b) => {
-    if (userEntiteId) {
-      if (a.id === userEntiteId) return -1;
-      if (b.id === userEntiteId) return 1;
-    }
-    return a.name.localeCompare(b.name, 'fr');
-  });
-
-const serviceToLabeledItem = (service: ServiceInfo): LabeledItem => ({
-  label: service.parentName ? `${service.name} (${service.parentName})` : service.name,
-  title: service.parentNomComplet ? `${service.nomComplet} (${service.parentNomComplet})` : service.nomComplet,
-});
-
-const entiteToLabeledItem = (entite: EntiteInfo): LabeledItem => ({
-  label: getDisplayName(entite),
-  title: getFullName(entite),
-});
-
-export function renderAffectationCell(
-  row: RequeteEntiteRow,
-  userTopEntiteId: string,
-  userEntiteId?: string,
-): ReactNode {
+export function renderAffectationCell(row: RequeteEntiteRow, userTopEntiteId: string): ReactNode {
   const situations = row.requete.situations ?? [];
-  const entitesMap = buildEntitesMap(situations);
-  const userEntityPresent = entitesMap.has(userTopEntiteId);
 
-  // If user's entity not present, show other root entities
-  if (!userEntityPresent) {
-    const rootEntites = extractRootEntites(entitesMap);
-    if (rootEntites.length === 0) return UNKNOWN_VALUE;
+  const allEntitesTraitement = flatMap(situations, (s) => s.traitementDesFaits?.entites ?? []);
 
-    const items = uniqueBy(rootEntites.map(entiteToLabeledItem), (i) => i.label);
-    return renderLabeledItems(items, true);
+  if (allEntitesTraitement.length === 0) {
+    return UNKNOWN_VALUE;
   }
 
-  const services = extractServicesFromSituations(situations, entitesMap);
+  const userEntitesTraitement = allEntitesTraitement.filter((curr) => curr.entiteId === userTopEntiteId);
+  const otherEntitesTraitement = allEntitesTraitement.filter((curr) => curr.entiteId !== userTopEntiteId);
 
-  if (services.length > 0) {
-    const sortedServices = sortServices(services, userEntiteId);
-    const items = uniqueBy(sortedServices.map(serviceToLabeledItem), (i) => i.label);
-    return renderLabeledItems(items, true);
+  const labelOrNomComplet = (label: string | undefined, nomComplet: string | undefined) =>
+    (label?.trim() ? label : nomComplet) ?? '';
+
+  const getEntiteLabel = (e: (typeof allEntitesTraitement)[number]) =>
+    labelOrNomComplet(e.chain?.[0]?.label, e.entiteName ?? undefined);
+
+  const getDirectionServiceLabel = (curr: (typeof allEntitesTraitement)[number]) => {
+    if (!curr.chain?.length) return curr.directionServiceName ?? null;
+    const last = curr.chain[curr.chain.length - 1];
+    const name = labelOrNomComplet(last?.label, last?.nomComplet ?? curr.directionServiceName ?? undefined);
+    if (!name) return null;
+    if (curr.chain.length > 2) {
+      const parent = curr.chain[curr.chain.length - 2];
+      const parentLabel = parent ? labelOrNomComplet(parent.label, parent.nomComplet) : '';
+      return parentLabel ? `${name} (${parentLabel})` : name;
+    }
+    return name;
+  };
+
+  let monEntiteContent: ReactNode = null;
+  if (userEntitesTraitement.length > 0) {
+    const traitements = userEntitesTraitement.reduce(
+      (acc, curr) => {
+        const groupKey = (getEntiteLabel(curr) || curr.entiteName) ?? '';
+        if (!groupKey) return acc;
+        if (!acc[groupKey]) acc[groupKey] = [];
+        const name = getDirectionServiceLabel(curr);
+        if (name) acc[groupKey].push(name);
+        return acc;
+      },
+      {} as Record<string, string[]>,
+    );
+    const entries = Object.entries(traitements);
+    const allServices = flatMap(entries, ([, services]) => services);
+    const uniqueServices = [...new Set(allServices)];
+
+    if (uniqueServices.length > 0) {
+      monEntiteContent = renderLabeledItems(
+        uniqueServices.map((service) => ({ label: service, title: service })),
+        true,
+      );
+    } else {
+      const entiteLabels = entries.map(([name]) => name);
+      if (entiteLabels.length > 0) {
+        monEntiteContent = renderLabeledItems(
+          uniqueBy(
+            entiteLabels.map((name) => ({ label: name, title: name })),
+            (i) => i.label,
+          ),
+          true,
+        );
+      }
+    }
   }
 
-  const rootEntite = entitesMap.get(userTopEntiteId);
-  if (!rootEntite) return UNKNOWN_VALUE;
+  let autresEntitesContent: ReactNode = null;
+  if (otherEntitesTraitement.length > 0) {
+    const otherNames = [...new Set(otherEntitesTraitement.map(getEntiteLabel).filter(Boolean))];
+    if (otherNames.length > 0) {
+      autresEntitesContent = renderInlineList(otherNames);
+    }
+  }
 
-  return renderLabeledItems([entiteToLabeledItem(rootEntite)], true);
+  if (!monEntiteContent && !autresEntitesContent) {
+    return UNKNOWN_VALUE;
+  }
+
+  return (
+    <>
+      {monEntiteContent}
+      {monEntiteContent && autresEntitesContent && <div className="fr-mt-1w">{autresEntitesContent}</div>}
+      {!monEntiteContent && autresEntitesContent}
+    </>
+  );
 }

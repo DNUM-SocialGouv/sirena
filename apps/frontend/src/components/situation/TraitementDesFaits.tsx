@@ -325,68 +325,72 @@ function TraitementDesFaitsSection({
 
   return (
     <div className={`fr-p-4w fr-mb-4w ${styles.container}`}>
-      <h2 className="fr-h6 fr-mb-3w">Traitement des faits</h2>
-      {globalError && (
-        <p className="fr-message fr-message--error fr-text--md fr-mb-3w" role="alert">
-          {globalError}
-        </p>
-      )}
-
-      {rows.editableRows.length > 0 && <hr className="fr-mt-4w" />}
-
-      <div>
-        {rows.editableRows.map((row, idx) => {
-          const selectedEntiteIds = rows.editableRows
-            .filter((r) => r.id !== row.id && r.entiteId)
-            .map((r) => r.entiteId);
-
-          const isFirstRow = idx === 0;
-          const shouldShowAsReadOnly = isFirstRow && !isFirstRowEditable && row.existing;
-          const totalEntitesCount = rows.editableRows.length + rows.readOnlyRows.length;
-          const canRemove = totalEntitesCount > 1;
-
-          return (
-            <div key={row.id}>
-              <TraitementDesFaitsRowComponent
-                row={row}
-                onChange={handleRowChange}
-                entites={entites}
-                onRemove={canRemove ? handleRemoveRow : undefined}
-                selectedEntiteIds={selectedEntiteIds}
-                isEntiteReadOnly={shouldShowAsReadOnly}
-                onEntiteEditClick={shouldShowAsReadOnly ? () => setIsFirstRowEditable(true) : undefined}
-              />
-            </div>
-          );
-        })}
-        <p className="fr-text--md fr-mb-2w">
-          Ajoutez une autre entité si le traitement de la situation concerne plusieurs entités.
-        </p>
-
-        <Button
-          iconId="fr-icon-add-line"
-          iconPosition="right"
-          priority="secondary"
-          onClick={handleAddRow}
-          disabled={disabled}
-        >
-          Ajouter une autre entité
-        </Button>
-        <hr className="fr-mt-4w" />
-        {rows.readOnlyRows.length > 0 && (
-          <p className="fr-text--md fr-mb-2w fr-text--bold">Autres entités affectées au traitement</p>
+      <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+        <legend>
+          <h2 className="fr-h6">Traitement des faits</h2>
+        </legend>
+        {globalError && (
+          <p className="fr-message fr-message--error fr-text--md fr-mb-3w" role="alert">
+            {globalError}
+          </p>
         )}
-        {rows.readOnlyRows.map((row) => (
-          <TraitementDesFaitsRowComponent
-            key={row.id}
-            row={row}
-            entites={entites}
-            onChange={handleRowChange}
-            isEntiteReadOnly
-            disabled
-          />
-        ))}
-      </div>
+
+        {rows.editableRows.length > 0 && <hr />}
+
+        <div>
+          {rows.editableRows.map((row, idx) => {
+            const selectedEntiteIds = rows.editableRows
+              .filter((r) => r.id !== row.id && r.entiteId)
+              .map((r) => r.entiteId);
+
+            const isFirstRow = idx === 0;
+            const shouldShowAsReadOnly = isFirstRow && !isFirstRowEditable && row.existing;
+            const totalEntitesCount = rows.editableRows.length + rows.readOnlyRows.length;
+            const canRemove = totalEntitesCount > 1;
+
+            return (
+              <div key={row.id}>
+                <TraitementDesFaitsRowComponent
+                  row={row}
+                  onChange={handleRowChange}
+                  entites={entites}
+                  onRemove={canRemove ? handleRemoveRow : undefined}
+                  selectedEntiteIds={selectedEntiteIds}
+                  isEntiteReadOnly={shouldShowAsReadOnly}
+                  onEntiteEditClick={shouldShowAsReadOnly ? () => setIsFirstRowEditable(true) : undefined}
+                />
+              </div>
+            );
+          })}
+          <p className="fr-text--md fr-mb-2w">
+            Ajoutez une autre entité si le traitement de la situation concerne plusieurs entités.
+          </p>
+
+          <Button
+            iconId="fr-icon-add-line"
+            iconPosition="right"
+            priority="secondary"
+            onClick={handleAddRow}
+            disabled={disabled}
+          >
+            Ajouter une autre entité
+          </Button>
+          <hr className="fr-mt-4w" />
+          {rows.readOnlyRows.length > 0 && (
+            <p className="fr-text--md fr-mb-2w fr-text--bold">Autres entités affectées au traitement</p>
+          )}
+          {rows.readOnlyRows.map((row) => (
+            <TraitementDesFaitsRowComponent
+              key={row.id}
+              row={row}
+              entites={entites}
+              onChange={handleRowChange}
+              isEntiteReadOnly
+              disabled
+            />
+          ))}
+        </div>
+      </fieldset>
     </div>
   );
 }

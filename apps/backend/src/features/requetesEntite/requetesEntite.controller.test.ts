@@ -10,7 +10,7 @@ import type { UploadedFile } from '../../libs/prisma.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
-import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.service.js';
+import { getDirectionsServicesFromRequeteEntiteId, getEntitesByIds } from '../entites/entites.service.js';
 import type { EntiteTraitement } from '../entites/entites.type.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import { getUploadedFileById, isFileBelongsToRequete } from '../uploadedFiles/uploadedFiles.service.js';
@@ -36,6 +36,7 @@ vi.mock('./requetesEntite.service.js', () => ({
 vi.mock('../entites/entites.service.js', () => ({
   getDirectionsServicesFromRequeteEntiteId: vi.fn(),
   getEntiteDescendantIds: vi.fn().mockResolvedValue([]),
+  getEntitesByIds: vi.fn(),
 }));
 
 vi.mock('../entites/entites.cache.js', () => ({
@@ -67,11 +68,9 @@ vi.mock('../../middlewares/userStatus.middleware.js', () => {
 
 vi.mock('../../middlewares/role.middleware.js', () => {
   return {
-    default: () => {
-      return (c: Context, next: Next) => {
-        c.set('roleId', 'ENTITY_ADMIN');
-        return next();
-      };
+    default: () => (c: Context, next: Next) => {
+      c.set('roleId', 'ENTITY_ADMIN');
+      return next();
     },
   };
 });
@@ -88,6 +87,24 @@ vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
   getUploadedFileById: vi.fn(),
   isFileBelongsToRequete: vi.fn(),
 }));
+
+vi.mock('../users/users.service.js', () => ({
+  getUserById: vi.fn(),
+}));
+
+vi.mock('../../libs/prisma.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../libs/prisma.js')>();
+  return {
+    ...actual,
+    prisma: {
+      ...actual.prisma,
+      entite: {
+        ...actual.prisma.entite,
+        findUnique: vi.fn(),
+      },
+    },
+  };
+});
 
 vi.mock('../../middlewares/changelog/changelog.requeteEtape.middleware.js', () => {
   return {
@@ -476,6 +493,33 @@ describe('RequetesEntite endpoints: /', () => {
     });
   });
 
+  describe('PATCH /:id/statut', () => {
+    it('returns 403 when user cannot update statut', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(getEntitesByIds).mockResolvedValueOnce([{ isActive: false }]);
+
+      const res = await client[':id'].statut.$patch({
+        param: { id: 'requeteId' },
+        json: { statutId: REQUETE_STATUT_TYPES.TRAITEE },
+      });
+
+      expect(res.status).toBe(403);
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when requete not found', async () => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].statut.$patch({
+        param: { id: 'requeteId' },
+        json: { statutId: REQUETE_STATUT_TYPES.NOUVEAU },
+      });
+
+      expect(res.status).toBe(404);
+      expect(updateStatusRequete).not.toHaveBeenCalled();
+    });
+  });
+
   describe('POST /:id/close', () => {
     const mockCloseResult = {
       etapeId: 'etape123',
@@ -695,6 +739,10 @@ describe('RequetesEntite endpoints: /', () => {
       },
     };
 
+    beforeEach(() => {
+      vi.mocked(getRequeteEntiteById).mockResolvedValue(baseRequeteEntite);
+    });
+
     it('updates reception date and type and returns updated requete', async () => {
       const newDate = '2025-05-01';
       const updatedRequete = {
@@ -704,7 +752,6 @@ describe('RequetesEntite endpoints: /', () => {
         updatedAt: new Date(newDate),
       };
 
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
       vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
 
       const res = await client[':id']['date-type'].$patch({
@@ -732,7 +779,6 @@ describe('RequetesEntite endpoints: /', () => {
       const conflictError = new Error('CONFLICT: test');
       (conflictError as Error & { conflictData?: unknown }).conflictData = { serverData: { id: 'requeteId' } };
 
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
       vi.mocked(updateDateAndTypeRequete).mockRejectedValueOnce(conflictError);
 
       const res = await client[':id']['date-type'].$patch({
@@ -761,7 +807,6 @@ describe('RequetesEntite endpoints: /', () => {
         updatedAt: new Date('2025-05-03T00:00:00.000Z'),
       };
 
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
       vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
 
       const res = await client[':id']['date-type'].$patch({
@@ -794,7 +839,6 @@ describe('RequetesEntite endpoints: /', () => {
         updatedAt: new Date('2025-05-03T00:00:00.000Z'),
       };
 
-      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(baseRequeteEntite);
       vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
 
       const res = await client[':id']['date-type'].$patch({
@@ -814,6 +858,45 @@ describe('RequetesEntite endpoints: /', () => {
         {
           receptionDate: null,
           receptionTypeId: RECEPTION_TYPE.EMAIL,
+        },
+        undefined,
+      );
+    });
+
+    it('updates provenance and provenancePrecision when provided', async () => {
+      const updatedRequete = {
+        ...baseRequeteEntite.requete,
+        receptionDate: baseRequeteEntite.requete.receptionDate,
+        receptionTypeId: RECEPTION_TYPE.COURRIER,
+        provenanceId: 'MINISTERES',
+        provenancePrecision: 'Ministère de la Santé',
+        updatedAt: new Date('2025-05-04'),
+      };
+
+      vi.mocked(updateDateAndTypeRequete).mockResolvedValueOnce(updatedRequete);
+
+      const res = await client[':id']['date-type'].$patch({
+        param: { id: 'requeteId' },
+        json: {
+          receptionDate: '2025-05-01',
+          receptionTypeId: RECEPTION_TYPE.COURRIER,
+          provenanceId: 'MINISTERES',
+          provenancePrecision: 'Ministère de la Santé',
+        },
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.data.provenanceId).toBe('MINISTERES');
+      expect(body.data.provenancePrecision).toBe('Ministère de la Santé');
+
+      expect(updateDateAndTypeRequete).toHaveBeenCalledWith(
+        'requeteId',
+        {
+          receptionDate: new Date('2025-05-01'),
+          receptionTypeId: RECEPTION_TYPE.COURRIER,
+          provenanceId: 'MINISTERES',
+          provenancePrecision: 'Ministère de la Santé',
         },
         undefined,
       );

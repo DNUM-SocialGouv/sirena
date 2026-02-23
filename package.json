@@ -22,14 +22,17 @@
     "op:import:geodata": "dotenv -e .env -- pnpm --filter @sirena/backend op:import:geodata",
     "op:diff:enums": "dotenv -e .env -- pnpm --filter @sirena/backend op:diff:enums",
     "op:import:dematsocial": "dotenv -e .env -- pnpm --filter @sirena/backend op:import:dematsocial",
+    "op:manage-api-keys": "dotenv -e .env -- pnpm --filter @sirena/backend op:manage-api-keys",
     "db:deploy": "dotenv -e .env -- pnpm --filter @sirena/backend db:deploy",
     "db:generate": "dotenv -e .env -- pnpm --filter @sirena/backend db:generate",
     "db:reset": "dotenv -e .env -- pnpm --filter @sirena/backend db:reset",
     "backend:codegen": "dotenv -e .env -- pnpm --filter @sirena/backend generate:codegen",
     "backend:gql": "dotenv -e .env -- pnpm --filter @sirena/backend gql",
     "backend:start": "dotenv -e .env -- pnpm --filter @sirena/backend start",
+    "generate:openapi:thirdparty": "dotenv -e .env -- pnpm --filter @sirena/backend generate:openapi:thirdparty",
     "test:e2e": "pnpm --filter @sirena/frontend test:e2e",
     "test:e2e:ui": "pnpm --filter @sirena/frontend test:e2e:ui",
+    "test:smoke": "dotenv -e .env -- pnpm --filter @sirena/backend test:smoke",
     "test:unit": "pnpm -r run test",
     "typecheck": "pnpm build:common && pnpm -r run typecheck",
     "gitleaks:detect-secrets": ".husky/gitleaks-detect-secrets.sh",
@@ -47,8 +50,8 @@
     "dotenv-cli": "^10.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.4.0",
-    "@commitlint/config-conventional": "^20.4.0",
+    "@commitlint/cli": "^20.4.1",
+    "@commitlint/config-conventional": "^20.4.1",
     "husky": "^9.1.7"
   },
   "pnpm": {
@@ -65,7 +68,8 @@
       "lodash": ">=4.17.23",
       "hono@<4.11.7": ">=4.11.7",
       "fast-xml-parser@>=4.3.6 <=5.3.3": ">=5.3.4",
-      "@isaacs/brace-expansion@<=5.0.0": ">=5.0.1"
+      "@isaacs/brace-expansion@<=5.0.0": ">=5.0.1",
+      "minimatch@<10.2.1": ">=10.2.1"
     }
   }
 }

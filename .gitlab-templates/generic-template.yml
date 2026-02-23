@@ -2,9 +2,6 @@ stages:
   - configure
 
 .configure_docker_service:
-  variables:
-    DOCKER_IMAGE_DOCKER_IMAGE: "docker:28.5.2"
-    DOCKER_IMAGE_DOCKER_DIND_IMAGE: "docker:28.5.2-dind"
   image: docker:28.5.2
   services:
     - name: "docker:28.5.2-dind"
@@ -31,10 +28,6 @@ stages:
         export NO_PROXY="docker,${NO_PROXY}"
         export no_proxy="docker,${no_proxy}"
       fi
-      export HTTP_PROXY
-      export http_proxy
-      export HTTPS_PROXY
-      export https_proxy
       export DOCKER_HOST="tcp://docker:2375/"
 
 .login_docker:
@@ -48,7 +41,18 @@ stages:
 .configure_npm:
   stage: test
   extends: .configure_docker_service
-  image: node:latest
+  image: node:$NODE_VERSION
   before_script:
     - !reference [.configure_docker_service, before_script]
+    - npm install -g pnpm
+
+.configure_docker_with_node:
+  stage: test
+  image: node:$NODE_VERSION
+  services:
+    - !reference [.configure_docker_service, services]
+  before_script:
+    - !reference [.configure_docker_service, before_script]
+    - apt-get update
+    - apt-get install -y docker.io
     - npm install -g pnpm

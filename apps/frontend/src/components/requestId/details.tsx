@@ -1,8 +1,7 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
-import { Button } from '@codegouvfr/react-dsfr/Button';
-import { REQUETE_ETAPE_STATUT_TYPES, type ReceptionType } from '@sirena/common/constants';
-import { useNavigate } from '@tanstack/react-router';
+import { REQUETE_STATUT_TYPES, type ReceptionType } from '@sirena/common/constants';
+import { Link } from '@tanstack/react-router';
 import { clsx } from 'clsx';
 import { useId, useMemo } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -21,7 +20,6 @@ interface DetailsProps {
 }
 
 export const Details = ({ requestId, requestQuery }: DetailsProps) => {
-  const navigate = useNavigate();
   const declarantSectionId = useId();
   const personneSectionId = useId();
   const situationSectionId = useId();
@@ -31,44 +29,32 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
     requestQuery.refetch();
   };
 
-  const handleEditDeclarant = () => {
-    if (!canEdit) return;
-    if (requestId) {
-      navigate({ to: '/request/$requestId/declarant', params: { requestId } });
-    } else {
-      navigate({ to: '/request/create/declarant' });
-    }
-  };
+  const editDeclarantHref = canEdit
+    ? requestId
+      ? `/request/${requestId}/declarant`
+      : `/request/create/declarant`
+    : undefined;
 
-  const handleEditPersonneConcernee = () => {
-    if (requestId) {
-      navigate({ to: '/request/$requestId/personne-concernee', params: { requestId } });
-    } else {
-      navigate({ to: '/request/create/personne-concernee' });
-    }
-  };
+  const editPersonneHref = canEdit
+    ? requestId
+      ? `/request/${requestId}/personne-concernee`
+      : `/request/create/personne-concernee`
+    : undefined;
 
-  const handleEditSituation = (situationId?: string) => {
+  const getEditSituationHref = (situationId?: string): string => {
     if (requestId) {
       if (situationId) {
-        navigate({
-          to: '/request/$requestId/situation/$situationId',
-          params: { requestId, situationId },
-        });
-      } else {
-        navigate({
-          to: '/request/$requestId/situation',
-          params: { requestId },
-        });
+        return `/request/${requestId}/situation/${situationId}`;
       }
-    } else {
-      navigate({ to: '/request/create/situation' });
+      return `/request/${requestId}/situation`;
     }
+
+    return '/request/create/situation';
   };
 
   const isRequestClosed = useMemo(() => {
-    return requestQuery.data?.requeteEtape?.some((etape) => etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE);
-  }, [requestQuery.data?.requeteEtape]);
+    return requestQuery.data?.statutId === REQUETE_STATUT_TYPES.CLOTUREE;
+  }, [requestQuery.data?.statutId]);
 
   if (!requestId) {
     return (
@@ -79,23 +65,19 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
             <RequeteFileUploadSection requeteId={requestId} mode="create" />
           </div>
           <div className={fr.cx('fr-col-md-12', 'fr-col-lg-8')}>
-            <DeclarantSection requestId={requestId} id={declarantSectionId} onEdit={handleEditDeclarant} />
-            <PersonneConcerneeSection
-              requestId={requestId}
-              id={personneSectionId}
-              onEdit={handleEditPersonneConcernee}
-            />
+            <DeclarantSection requestId={requestId} id={declarantSectionId} editHref={editDeclarantHref} />
+            <PersonneConcerneeSection requestId={requestId} id={personneSectionId} editHref={editPersonneHref} />
             <SituationSection
               id={situationSectionId}
               receptionType={null}
               requestId={requestId}
-              onEdit={handleEditSituation}
+              editHref={getEditSituationHref()}
             />
             {canEdit && (
               <div className="fr-mb-4w">
-                <Button priority="secondary" iconId="fr-icon-add-line" onClick={() => handleEditSituation()}>
+                <Link to={getEditSituationHref()} className="fr-btn--secondary fr-icon-add-line">
                   Ajouter une autre situation
-                </Button>
+                </Link>
               </div>
             )}
           </div>
@@ -131,7 +113,13 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
               <div className={fr.cx('fr-col-md-12', 'fr-col-lg-4')}>
                 <OriginalRequestSection
                   requestId={requestId}
-                  data={{ receptionDate, receptionTypeId, dematSocialId: data?.requete.dematSocialId }}
+                  data={{
+                    receptionDate,
+                    receptionTypeId,
+                    dematSocialId: data?.requete.dematSocialId,
+                    provenanceId: data?.requete.provenanceId ?? null,
+                    provenancePrecision: data?.requete.provenancePrecision ?? null,
+                  }}
                   updatedAt={data?.requete.updatedAt || null}
                   onEdit={() => refetchRequest()}
                 />
@@ -146,13 +134,13 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                   requestId={requestId}
                   id={declarantSectionId}
                   declarant={declarant}
-                  onEdit={handleEditDeclarant}
+                  editHref={editDeclarantHref}
                 />
                 <PersonneConcerneeSection
                   requestId={requestId}
                   id={personneSectionId}
                   personne={personne}
-                  onEdit={handleEditPersonneConcernee}
+                  editHref={editPersonneHref}
                 />
                 {situations.length > 0 ? (
                   situations.map((situation) => (
@@ -162,7 +150,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                       receptionType={data?.requete.receptionTypeId || null}
                       requestId={requestId}
                       situation={situation}
-                      onEdit={handleEditSituation}
+                      editHref={getEditSituationHref(situation.id)}
                     />
                   ))
                 ) : (
@@ -170,14 +158,17 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                     receptionType={data?.requete.receptionTypeId || null}
                     id={situationSectionId}
                     requestId={requestId}
-                    onEdit={handleEditSituation}
+                    editHref={getEditSituationHref()}
                   />
                 )}
                 {canEdit && (
                   <div className="fr-mb-4w">
-                    <Button priority="secondary" iconId="fr-icon-add-line" onClick={() => handleEditSituation()}>
+                    <Link
+                      to={getEditSituationHref()}
+                      className="fr-btn fr-btn--secondary fr-btn--icon-left fr-icon-add-line"
+                    >
                       Ajouter une autre situation
-                    </Button>
+                    </Link>
                   </div>
                 )}
               </div>

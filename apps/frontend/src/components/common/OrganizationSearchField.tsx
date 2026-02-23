@@ -7,6 +7,8 @@ interface OrganizationSearchFieldProps {
   onChange: (value: string, organization?: Organization) => void;
   label?: string;
   hintText?: string;
+  state?: 'default' | 'success' | 'info' | 'error';
+  stateRelatedMessage?: React.ReactNode;
   disabled?: boolean;
   searchMode: 'finess' | 'name';
   minSearchLength?: number;
@@ -22,6 +24,8 @@ export function OrganizationSearchField({
   onChange,
   label,
   hintText,
+  state = 'default',
+  stateRelatedMessage,
   disabled,
   searchMode,
   minSearchLength = 3,
@@ -75,6 +79,8 @@ export function OrganizationSearchField({
       onChange={onChange}
       label={label || "Nom de l'établissement ou numéro FINESS"}
       hintText={hintText}
+      state={state}
+      stateRelatedMessage={stateRelatedMessage}
       disabled={disabled}
       queryKey="organizations"
       fetchFn={fetchFn}

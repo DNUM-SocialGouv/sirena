@@ -35,6 +35,7 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
     REDIS_HOST: 'localhost',
     REDIS_PORT: '6379',
     REDIS_TLS: 'false',
+    API_KEY_HASH_SALT: 'test-salt',
   };
 
   const createConfig = (logExtraContext?: string) => ({

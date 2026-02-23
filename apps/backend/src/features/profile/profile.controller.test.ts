@@ -5,6 +5,7 @@ import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import { convertDatesToStrings } from '../../tests/formatter.js';
+import { getEntiteChain, getEntitesByIds } from '../entites/entites.service.js';
 import { getUserById } from '../users/users.service.js';
 import ProfileController from './profile.controller.js';
 
@@ -14,6 +15,11 @@ vi.mock('../../config/env.js', () => ({
 
 vi.mock('../users/users.service.js', () => ({
   getUserById: vi.fn(),
+}));
+
+vi.mock('../entites/entites.service.js', () => ({
+  getEntiteChain: vi.fn(),
+  getEntitesByIds: vi.fn(),
 }));
 
 vi.mock('../../middlewares/auth.middleware.js', () => {
@@ -59,6 +65,9 @@ describe('Profile endpoints: /profile', () => {
   describe('GET /', () => {
     it('should return user profile if found', async () => {
       vi.mocked(getUserById).mockResolvedValueOnce(fakeUser);
+      vi.mocked(getEntitesByIds).mockResolvedValueOnce([
+        { isActive: true } as Awaited<ReturnType<typeof getEntitesByIds>>[number],
+      ]);
 
       const res = await client.profile.$get('/');
       const json = await res.json();
@@ -68,10 +77,36 @@ describe('Profile endpoints: /profile', () => {
         data: convertDatesToStrings({
           ...fakeUser,
           topEntiteId: 'topEntiteId1',
+          topEntiteIsActive: true,
           entiteIds: ['entite-1', 'entite-2'],
+          affectationChain: [],
         }),
       });
       expect(getUserById).toHaveBeenCalledWith('id1', null, null);
+      expect(getEntitesByIds).toHaveBeenCalledWith(['topEntiteId1']);
+      expect(getEntiteChain).not.toHaveBeenCalled();
+    });
+
+    it('should return affectationChain when user has entiteId', async () => {
+      const userWithEntite = { ...fakeUser, entiteId: 'entite-service-1' };
+      vi.mocked(getUserById).mockResolvedValueOnce(userWithEntite);
+      vi.mocked(getEntitesByIds).mockResolvedValueOnce([
+        { isActive: true } as Awaited<ReturnType<typeof getEntitesByIds>>[number],
+      ]);
+      vi.mocked(getEntiteChain).mockResolvedValueOnce([
+        { id: 'root-id', nomComplet: 'ARS Normandie', entiteMereId: null, label: 'ARS NOR' },
+        { id: 'entite-service-1', nomComplet: 'UA 76', entiteMereId: 'root-id', label: 'UA 76' },
+      ]);
+
+      const res = await client.profile.$get('/');
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json.data.affectationChain).toEqual([
+        { id: 'root-id', nomComplet: 'ARS Normandie' },
+        { id: 'entite-service-1', nomComplet: 'UA 76' },
+      ]);
+      expect(getEntiteChain).toHaveBeenCalledWith('entite-service-1');
     });
 
     it('should return 401 if user not found', async () => {

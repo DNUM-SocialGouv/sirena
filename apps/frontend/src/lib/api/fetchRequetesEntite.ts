@@ -66,3 +66,19 @@ export async function updatePriorite(requestId: string, json: UpdatePrioriteData
   const response = await res.json();
   return response;
 }
+
+export type UpdateStatutData = {
+  statutId: 'NOUVEAU' | 'TRAITEE';
+};
+
+export async function updateStatut(requestId: string, json: UpdateStatutData) {
+  const res = await client['requetes-entite'][':id'].statut.$patch({
+    param: { id: requestId },
+    json,
+  });
+
+  await handleRequestErrors(res);
+
+  const response = await res.json();
+  return response;
+}

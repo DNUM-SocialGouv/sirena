@@ -138,6 +138,10 @@ model Requete {
   receptionTypeId String?
   receptionType   ReceptionTypeEnum? @relation(fields: [receptionTypeId], references: [id])
 
+  provenanceId        String?
+  provenance          RequeteProvenanceEnum? @relation(fields: [provenanceId], references: [id])
+  provenancePrecision String?
+
   declarant PersonneConcernee? @relation("DeclarantRequete")
 
   participant PersonneConcernee? @relation("ParticipantRequete")
@@ -150,6 +154,9 @@ model Requete {
 
   createdById String?
   createdBy   User?   @relation(fields: [createdById], references: [id])
+
+  thirdPartyAccountId String?
+  thirdPartyAccount   ThirdPartyAccount? @relation(fields: [thirdPartyAccountId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -188,6 +195,13 @@ model RequetePrioriteEnum {
 }
 
 model ReceptionTypeEnum {
+  id    String @id
+  label String @unique
+
+  requete Requete[]
+}
+
+model RequeteProvenanceEnum {
   id    String @id
   label String @unique
 
@@ -383,6 +397,9 @@ model TransportTypeEnum {
 model MisEnCause {
   id             String  @id @default(uuid())
   rpps           String?
+  civilite       String  @default("")
+  nom            String  @default("")
+  prenom         String  @default("")
   commentaire    String  @default("")
   autrePrecision String  @default("")
 
@@ -681,4 +698,41 @@ model InseePostal {
   @@unique([codeInsee, codePostal])
   @@index([codeInsee])
   @@index([codePostal])
+}
+
+// Third-Party API Models
+enum ApiKeyStatus {
+  ACTIVE
+  SUSPENDED
+  REVOKED
+  EXPIRED
+}
+
+model ThirdPartyAccount {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  apiKeys  ApiKey[]
+  requetes Requete[]
+}
+
+model ApiKey {
+  id         String       @id @default(cuid())
+  accountId  String
+  keyHash    String       @unique
+  keyPrefix  String
+  status     ApiKeyStatus @default(ACTIVE)
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  account ThirdPartyAccount @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+  @@index([status])
+  @@index([keyHash])
 }

@@ -8,6 +8,7 @@ import {
   RECEPTION_TYPE,
   REQUETE_STATUT_TYPES,
   REQUETE_UPDATE_FIELDS,
+  ROLES,
   ROLES_READ,
   ROLES_WRITE,
 } from '@sirena/common/constants';
@@ -23,7 +24,7 @@ import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { sendEntiteAssignedNotification } from '../entites/entite.notification.service.js';
-import { getDirectionsServicesFromRequeteEntiteId } from '../entites/entites.service.js';
+import { getDirectionsServicesFromRequeteEntiteId, getEntitesByIds } from '../entites/entites.service.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import {
   getUploadedFileById,
@@ -38,6 +39,7 @@ import {
   getOtherEntitesAffectedRoute,
   getRequeteEntiteRoute,
   getRequetesEntiteRoute,
+  updateStatutRoute,
 } from './requetesEntite.route.js';
 import {
   CloseRequeteBodySchema,
@@ -48,6 +50,7 @@ import {
   UpdatePrioriteBodySchema,
   UpdateRequeteFilesBodySchema,
   UpdateSituationBodySchema,
+  UpdateStatutBodySchema,
   UpdateTypeAndDateRequeteBodySchema,
 } from './requetesEntite.schema.js';
 import {
@@ -306,6 +309,42 @@ const app = factoryWithLogs
     return streamSafeFileResponse(c, file);
   })
 
+  .patch('/:id/statut', updateStatutRoute, zValidator('json', UpdateStatutBodySchema), async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const userId = c.get('userId');
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
+    const { statutId } = c.req.valid('json');
+
+    const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
+    if (!requeteEntite) {
+      throwHTTPException404NotFound('Requete not found', {
+        res: c.res,
+      });
+    }
+
+    const roleId = c.get('roleId');
+    const [topEntite] = await getEntitesByIds([topEntiteId]);
+    const topEntiteIsActive = topEntite?.isActive ?? false;
+
+    const isReadOnlyWithInactiveEntite = roleId === ROLES.READER && !topEntiteIsActive;
+    if (!isReadOnlyWithInactiveEntite) {
+      throwHTTPException403Forbidden('You are not allowed to update the status of a requete with an inactive entite.', {
+        res: c.res,
+      });
+    }
+
+    const updated = await updateStatusRequete(id, topEntiteId, statutId);
+
+    logger.info({ requeteId: id, userId, statutId }, 'Statut updated successfully');
+    return c.json({ data: updated });
+  })
+
   .use(roleMiddleware([...ROLES_WRITE]))
 
   .post(
@@ -470,72 +509,92 @@ const app = factoryWithLogs
     },
   )
 
-  .patch('/:id/date-type', zValidator('json', UpdateTypeAndDateRequeteBodySchema), async (c) => {
-    const logger = c.get('logger');
-    const { id } = c.req.param();
-    const userId = c.get('userId');
-    const topEntiteId = c.get('topEntiteId');
+  .patch(
+    '/:id/date-type',
+    requeteChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    zValidator('json', UpdateTypeAndDateRequeteBodySchema),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const userId = c.get('userId');
+      const topEntiteId = c.get('topEntiteId');
 
-    if (!topEntiteId) {
-      throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
-        res: c.res,
-      });
-    }
-    const { receptionDate, receptionTypeId, controls } = c.req.valid('json');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
+          res: c.res,
+        });
+      }
+      const { receptionDate, receptionTypeId, provenanceId, provenancePrecision, controls } = c.req.valid('json');
 
-    const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
+      const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
 
-    if (!requeteEntite) {
-      throwHTTPException404NotFound('Requete not found', {
-        res: c.res,
-      });
-    }
-
-    if (requeteEntite.requete.receptionTypeId === RECEPTION_TYPE.FORMULAIRE) {
-      throwHTTPException400BadRequest('You are not allowed to update requetes from formulaire.', {
-        res: c.res,
-      });
-    }
-
-    const payload: { receptionDate?: Date | null; receptionTypeId?: string | null } = {};
-
-    if (receptionDate !== undefined) {
-      payload.receptionDate = receptionDate ? new Date(receptionDate) : null;
-    }
-
-    if (receptionTypeId !== undefined) {
-      payload.receptionTypeId = receptionTypeId;
-    }
-
-    try {
-      const updatedRequete = await updateDateAndTypeRequete(id, payload, controls);
-
-      sseEventManager.emitRequeteUpdated({
-        requeteId: id,
-        entiteId: topEntiteId,
-        field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
-      });
-
-      if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
-        await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+      if (!requeteEntite) {
+        throwHTTPException404NotFound('Requete not found', {
+          res: c.res,
+        });
       }
 
-      logger.info({ requeteId: id, userId }, 'Reception date and type updated successfully');
-
-      return c.json({ data: updatedRequete });
-    } catch (error: unknown) {
-      if (error instanceof Error && error.message.startsWith('CONFLICT')) {
-        const conflictResponse = {
-          message: 'The requete has been modified by another user.',
-          conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
-        };
-
-        return c.json(conflictResponse, 409);
+      if (requeteEntite.requete.receptionTypeId === RECEPTION_TYPE.FORMULAIRE) {
+        throwHTTPException400BadRequest('You are not allowed to update requetes from formulaire.', {
+          res: c.res,
+        });
       }
 
-      throw error;
-    }
-  })
+      const payload: {
+        receptionDate?: Date | null;
+        receptionTypeId?: string | null;
+        provenanceId?: string | null;
+        provenancePrecision?: string | null;
+      } = {};
+
+      if (receptionDate !== undefined) {
+        payload.receptionDate = receptionDate ? new Date(receptionDate) : null;
+      }
+
+      if (receptionTypeId !== undefined) {
+        payload.receptionTypeId = receptionTypeId;
+      }
+
+      if (provenanceId !== undefined) {
+        payload.provenanceId = provenanceId;
+      }
+
+      if (provenancePrecision !== undefined) {
+        payload.provenancePrecision = provenancePrecision;
+      }
+
+      try {
+        const updatedRequete = await updateDateAndTypeRequete(id, payload, controls);
+
+        c.set('changelogId', id);
+
+        sseEventManager.emitRequeteUpdated({
+          requeteId: id,
+          entiteId: topEntiteId,
+          field: REQUETE_UPDATE_FIELDS.DATE_TYPE,
+        });
+
+        if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.EN_COURS) {
+          await updateStatusRequete(id, topEntiteId, REQUETE_STATUT_TYPES.EN_COURS);
+        }
+
+        logger.info({ requeteId: id, userId }, 'Reception date and type updated successfully');
+
+        return c.json({ data: updatedRequete });
+      } catch (error: unknown) {
+        if (error instanceof Error && error.message.startsWith('CONFLICT')) {
+          const conflictResponse = {
+            message: 'The requete has been modified by another user.',
+            conflictData: (error as Error & { conflictData?: unknown }).conflictData || null,
+          };
+
+          return c.json(conflictResponse, 409);
+        }
+
+        throw error;
+      }
+    },
+  )
 
   .patch('/:id/files', zValidator('json', UpdateRequeteFilesBodySchema), async (c) => {
     const logger = c.get('logger');
@@ -688,9 +747,19 @@ const app = factoryWithLogs
       });
     }
 
+    const situation = requeteEntite.requete?.situations?.find((s) => s.id === situationId);
+    const existingFileIds: string[] = [];
+    if (situation?.faits) {
+      for (const fait of situation.faits) {
+        if (fait.fichiers) {
+          existingFileIds.push(...fait.fichiers.map((f) => f.id));
+        }
+      }
+    }
     const fileIds = situationData.fait?.fileIds || [];
-    if (fileIds.length > 0) {
-      const isAllowed = await isUserOwner(userId, fileIds);
+    const newFileIds = fileIds.filter((fileId) => !existingFileIds.includes(fileId));
+    if (newFileIds.length > 0) {
+      const isAllowed = await isUserOwner(userId, newFileIds);
 
       if (!isAllowed) {
         throwHTTPException403Forbidden('You are not allowed to add these files to the situation', {

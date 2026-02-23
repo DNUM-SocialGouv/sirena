@@ -6,6 +6,8 @@ export const RequeteSchema = z.object({
   receptionDate: z.coerce.date().nullable(),
   dematSocialId: z.number().int().nullable(),
   receptionTypeId: z.string().nullable(),
+  provenanceId: z.string().nullable(),
+  provenancePrecision: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });

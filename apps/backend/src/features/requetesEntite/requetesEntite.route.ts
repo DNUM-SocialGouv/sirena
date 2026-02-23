@@ -5,6 +5,7 @@ import {
   GetOtherEntitesAffectedResponseSchema,
   GetRequeteEntiteResponseSchema,
   GetRequetesEntiteResponseSchema,
+  UpdateStatutResponseSchema,
 } from './requetesEntite.schema.js';
 
 export const getRequetesEntiteRoute = openApiProtectedRoute({
@@ -39,5 +40,12 @@ export const closeRequeteRoute = openApiProtectedRoute({
   description: 'Close a Requete for a specific entity',
   responses: {
     ...openApiResponse(CloseRequeteResponseSchema),
+  },
+});
+
+export const updateStatutRoute = openApiProtectedRoute({
+  description: 'Update the status of a requete for the current entity',
+  responses: {
+    ...openApiResponse(UpdateStatutResponseSchema),
   },
 });

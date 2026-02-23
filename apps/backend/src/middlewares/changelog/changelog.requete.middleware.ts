@@ -18,6 +18,7 @@ const personneTrackedFields: (keyof PersonneConcernee)[] = [
   'autrePersonnes',
   'aAutrePersonnes',
   'ageId',
+  'dateNaissance',
   'lienVictimeId',
   'lienAutrePrecision',
 ];
@@ -45,6 +46,8 @@ const requeteTrackedFields: (keyof Requete)[] = [
   'receptionDate',
   'dematSocialId',
   'receptionTypeId',
+  'provenanceId',
+  'provenancePrecision',
   'createdAt',
   'updatedAt',
 ];
@@ -90,9 +93,13 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
     let participantBefore: PersonneConcernee | null = null;
     let participantIdentiteBefore: Identite | null = null;
     let participantAdresseBefore: Adresse | null = null;
+    let requeteBefore: Requete | null = null;
 
     if (action === 'UPDATED' && requeteId) {
       const requeteEntite = await getRequeteEntiteById(requeteId, topEntiteId);
+      if (requeteEntite?.requete) {
+        requeteBefore = requeteEntite.requete;
+      }
 
       if (requeteEntite?.requete?.declarant) {
         declarantBefore = requeteEntite.requete.declarant;
@@ -376,6 +383,19 @@ const requeteChangelogMiddleware = ({ action }: RequeteChangelogMiddleware) => {
 
         if (participant.adresse) {
           await handleEntityCreation('Adresse', participant.adresse.id, participant.adresse, adresseTrackedFields);
+        }
+      }
+
+      if (changelogId === requeteId && requeteBefore) {
+        const requeteEntiteAfter = await getRequeteEntiteById(requeteId, topEntiteId);
+        if (requeteEntiteAfter?.requete) {
+          await handleEntityChanges(
+            'Requete',
+            requeteId,
+            requeteBefore,
+            requeteEntiteAfter.requete,
+            requeteTrackedFields as string[],
+          );
         }
       }
     }

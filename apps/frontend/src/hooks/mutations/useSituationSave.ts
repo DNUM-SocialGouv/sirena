@@ -1,7 +1,7 @@
 import type { SituationData } from '@sirena/common/schemas';
 import { useMutation } from '@tanstack/react-query';
 import { useProfile } from '@/hooks/queries/profile.hook';
-import { deleteUploadedFile, uploadFile } from '@/lib/api/fetchUploadedFiles';
+import { uploadFile } from '@/lib/api/fetchUploadedFiles';
 import { client } from '@/lib/api/hc';
 import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
 import { toastManager } from '@/lib/toastManager';
@@ -36,7 +36,6 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
     mutationFn: async ({
       data,
       faitFiles,
-      initialFileIds,
       initialFiles,
     }: {
       data: SituationData;
@@ -44,12 +43,6 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
       initialFileIds?: string[];
       initialFiles?: Array<{ id: string; entiteId?: string | null }>;
     }) => {
-      // Get existing files before update (for deletion)
-      let previousFileIds: string[] = [];
-      if (situationId && initialFileIds) {
-        previousFileIds = initialFileIds;
-      }
-
       const newFaitFileIds: string[] = [];
       if (faitFiles.length > 0) {
         const uploadedFaitFiles = await Promise.all(faitFiles.map((file) => uploadFile(file)));
@@ -75,21 +68,6 @@ export const useSituationSave = ({ requestId, situationId, onRefetch, onSuccess 
       });
 
       const allFileIds = [...authorizedExistingFileIds, ...newFaitFileIds];
-
-      // Delete files that were removed (only files the user has rights on)
-      if (situationId && previousFileIds.length > 0) {
-        const filesRemovedByUser = previousFileIds.filter((id) => !allFileIds.includes(id));
-
-        const filesToDelete = filesRemovedByUser.filter((fileId) => {
-          const fileEntiteId = fileEntiteMap.get(fileId);
-          return !userTopEntiteId || fileEntiteId === userTopEntiteId;
-        });
-
-        if (filesToDelete.length > 0) {
-          // Wait for all deletions to complete before continuing
-          await Promise.all(filesToDelete.map((fileId) => deleteUploadedFile(fileId)));
-        }
-      }
 
       const enrichedData: SituationData = {
         ...data,

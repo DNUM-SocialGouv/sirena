@@ -64,10 +64,10 @@ SDPSN-devops-charts:
       resources:
         limits:
           cpu: 250m
-          memory: 900Mi
+          memory: 1500Mi
         requests:
-          cpu: 100m
-          memory: 512Mi
+          cpu: 250m
+          memory: 1500Mi
       workingDir: /app
 
   appVariables:

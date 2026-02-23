@@ -2,6 +2,9 @@
 SDPSN-devops-charts:
   namespace: org-sdpsn-ws-sirena-production
 
+  certificateIssuer:
+    enable: true
+
   appVariables:
     HOST: https://sirena-sante.social.gouv.fr
     PC_DOMAIN: https://auth.agentconnect.gouv.fr/api/v2
@@ -17,6 +20,8 @@ SDPSN-devops-charts:
 
   ingress:
     host: sirena-sante.social.gouv.fr
+    appAnnotations:
+      external-dns.alpha.kubernetes.io/hostname: sirena-sante.social.prod.atlas.fabrique.social.gouv.fr
     tls:
       hosts:
         - sirena-sante.social.gouv.fr

@@ -23,6 +23,9 @@ const checkMisEnCause = (misEnCause: unknown): boolean => {
     hasValue(mc.misEnCauseTypePrecision) ||
     hasValue(mc.autrePrecision) ||
     hasValue(mc.rpps) ||
+    hasValue(mc.civilite) ||
+    hasValue(mc.nom) ||
+    hasValue(mc.prenom) ||
     hasValue(mc.commentaire)
   );
 };

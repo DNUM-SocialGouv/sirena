@@ -14,13 +14,14 @@ import { parseAdresseDomicile } from '../../helpers/address.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
+import { deleteFileFromMinio } from '../../libs/minio.js';
 import { type Prisma, prisma } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
+import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
-import { setFaitFiles } from '../uploadedFiles/uploadedFiles.service.js';
+import { deleteFaitFilesRemovedFromSituation, setFaitFiles } from '../uploadedFiles/uploadedFiles.service.js';
 import {
   mapDeclarantToPrismaCreate,
   mapPersonneConcerneeToPrismaCreate,
@@ -129,12 +130,14 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     andFilters.push({ entiteId: { in: entiteIds } });
   }
   if (entiteId) {
+    const descendantIds = (await getEntiteDescendantIds(entiteId)) ?? [];
+    const idsToInclude = [entiteId, ...descendantIds];
     andFilters.push({
       requete: {
         situations: {
           some: {
             situationEntites: {
-              some: { entiteId },
+              some: { entiteId: { in: idsToInclude } },
             },
           },
         },
@@ -147,7 +150,7 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     ...(andFilters.length > 0 ? { AND: andFilters } : {}),
   };
 
-  const [data, total] = await Promise.all([
+  const [rawData, total] = await Promise.all([
     prisma.requeteEntite.findMany({
       where,
       skip: offset,
@@ -169,47 +172,7 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
               },
             },
             situations: {
-              include: {
-                faits: {
-                  include: {
-                    consequences: true,
-                    maltraitanceTypes: true,
-                    motifs: {
-                      include: {
-                        motif: true,
-                      },
-                    },
-                    motifsDeclaratifs: {
-                      include: {
-                        motifDeclaratif: true,
-                      },
-                    },
-                    fichiers: true,
-                  },
-                },
-                misEnCause: {
-                  include: {
-                    misEnCauseType: true,
-                    misEnCauseTypePrecision: {
-                      include: {
-                        misEnCauseType: true,
-                      },
-                    },
-                  },
-                },
-                lieuDeSurvenue: {
-                  include: {
-                    adresse: true,
-                    lieuType: true,
-                    transportType: true,
-                  },
-                },
-                situationEntites: {
-                  include: {
-                    entite: true,
-                  },
-                },
-              },
+              include: SITUATION_INCLUDE_FULL,
             },
           },
         },
@@ -220,6 +183,23 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
       where,
     }),
   ]);
+
+  // Enrich each situation with traitementDesFaits
+  const data = await Promise.all(
+    rawData.map(async (requeteEntite) => {
+      const enrichedSituations = await Promise.all(
+        requeteEntite.requete?.situations?.map((situation) => enrichSituationWithTraitementDesFaits(situation)) ?? [],
+      );
+
+      return {
+        ...requeteEntite,
+        requete: {
+          ...requeteEntite.requete,
+          situations: enrichedSituations,
+        },
+      };
+    }),
+  );
 
   return {
     data,
@@ -334,6 +314,8 @@ export const getRequeteEntiteById = async (requeteId: string, entiteId: string |
 interface CreateRequeteInput {
   receptionTypeId?: string | null;
   receptionDate?: string | null;
+  provenanceId?: string | null;
+  provenancePrecision?: string | null;
   declarant?: DeclarantInput;
   participant?: PersonneConcerneeInput;
 }
@@ -352,6 +334,8 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
           id: requeteId,
           receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
           receptionTypeId: data?.receptionTypeId ?? null,
+          provenanceId: data?.provenanceId ?? null,
+          provenancePrecision: data?.provenancePrecision ?? null,
           ...(data?.declarant && {
             declarant: {
               create: mapDeclarantToPrismaCreate(data.declarant),
@@ -658,7 +642,7 @@ export const updateRequeteParticipant = async (
             aAutrePersonnes: participantData.aAutrePersonnes ?? undefined,
             commentaire: participantData.commentaire || '',
             ageId: participantData.age || undefined,
-            dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : undefined,
+            dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : null,
             updatedAt: new Date(),
             identite: identiteUpsert,
             adresse: buildPersonneAdresseUpsert(participantData),
@@ -740,6 +724,9 @@ const buildMisEnCauseUpdate = (misEnCauseData: SituationInput['misEnCause']) => 
     misEnCauseTypePrecisionId: resolvedPrecisionId,
     autrePrecision: cleanNullOrEmpty(misEnCauseData.autrePrecision),
     rpps: misEnCauseData.rpps || null,
+    nom: cleanNullOrEmpty(misEnCauseData.nom),
+    prenom: cleanNullOrEmpty(misEnCauseData.prenom),
+    civilite: cleanNullOrEmpty(misEnCauseData.civilite),
     commentaire: cleanNullOrEmpty(misEnCauseData.commentaire),
   };
 };
@@ -984,8 +971,16 @@ const updateExistingSituation = async (
   situationData: SituationInput,
   topEntiteId: string,
   changedById?: string,
-): Promise<string[]> => {
+): Promise<{ newAssignedEntiteIds: string[]; deletedFilePaths: string[] }> => {
   const before = changedById ? await captureSituationState(tx, existingSituation.id) : null;
+
+  const { filePaths: deletedFilePaths } = await deleteFaitFilesRemovedFromSituation(
+    existingSituation.id,
+    situationData.fait?.fileIds ?? [],
+    topEntiteId,
+    changedById ?? undefined,
+    tx,
+  );
 
   await tx.situation.update({
     where: { id: existingSituation.id },
@@ -1013,6 +1008,10 @@ const updateExistingSituation = async (
     topEntiteId,
   );
 
+  if (situationData.fait?.fileIds?.length) {
+    await setFaitFiles(existingSituation.id, situationData.fait.fileIds, topEntiteId, changedById ?? undefined, tx);
+  }
+
   if (changedById) {
     const after = await captureSituationState(tx, existingSituation.id);
     await createChangeLog({
@@ -1025,7 +1024,7 @@ const updateExistingSituation = async (
     });
   }
 
-  return newAssignedEntiteIds;
+  return { newAssignedEntiteIds, deletedFilePaths };
 };
 
 const createNewSituation = async (
@@ -1080,6 +1079,26 @@ export type ShouldCloseRequeteStatus = {
     entiteTypeId: string;
     statutId: string;
   }>;
+};
+
+const getRootEntiteIdsFromTraitementDesFaits = async (traitementDesFaits: SituationInput['traitementDesFaits']) => {
+  const assignedEntiteIds = new Set<string>();
+
+  for (const entite of traitementDesFaits?.entites ?? []) {
+    assignedEntiteIds.add(entite.entiteId);
+  }
+
+  const topEntiteIds = new Set<string>();
+  await Promise.all(
+    Array.from(assignedEntiteIds).map(async (assignedEntiteId) => {
+      const { entiteId: topEntiteId } = await getEntiteAscendanteInfo(assignedEntiteId);
+      if (topEntiteId) {
+        topEntiteIds.add(topEntiteId);
+      }
+    }),
+  );
+
+  return Array.from(topEntiteIds);
 };
 
 export const computeShouldCloseRequeteStatus = async (params: {
@@ -1143,10 +1162,37 @@ export const createRequeteSituation = async (
   let newAssignedEntiteIds: string[] = [];
   let updatedRequete: Awaited<ReturnType<typeof prisma.requete.findUnique>> = null;
 
+  const entiteIdsToUpdate: string[] = [];
+
+  if (situationData.traitementDesFaits?.entites?.length) {
+    const topEntiteIds = await getRootEntiteIdsFromTraitementDesFaits(situationData.traitementDesFaits);
+
+    if (topEntiteIds.length > 0) {
+      const requeteEntite = await prisma.requeteEntite.findMany({
+        where: {
+          requeteId,
+          entiteId: { in: topEntiteIds },
+          statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+        },
+        select: { entiteId: true },
+      });
+      entiteIdsToUpdate.push(...requeteEntite.map((re) => re.entiteId));
+    }
+  }
+
   await prisma.$transaction(async (tx) => {
     const newSituation = await createNewSituation(tx, requeteId, situationData, entiteId, changedById);
     createdSituationId = newSituation.id;
     newAssignedEntiteIds = newSituation.newAssignedEntiteIds;
+    await tx.requeteEntite.updateMany({
+      where: {
+        requeteId,
+        entiteId: { in: entiteIdsToUpdate },
+      },
+      data: {
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      },
+    });
     updatedRequete = await tx.requete.findUnique({
       where: { id: requeteId },
       include: { situations: { include: SITUATION_INCLUDE_FULL } },
@@ -1191,28 +1237,55 @@ export const updateRequeteSituation = async (
     where: { id: requeteId },
     include: { situations: { include: SITUATION_INCLUDE_BASE } },
   });
-
   if (!requete) {
     throw new Error('Requete not found');
   }
 
   let newAssignedEntiteIds: string[] = [];
   let updatedRequete: Awaited<ReturnType<typeof prisma.requete.findUnique>> = null;
+  const entiteIdsToUpdate: string[] = [];
 
+  if (situationData.traitementDesFaits?.entites?.length) {
+    const topEntiteIds = await getRootEntiteIdsFromTraitementDesFaits(situationData.traitementDesFaits);
+    if (topEntiteIds.length > 0) {
+      const requeteEntites = await prisma.requeteEntite.findMany({
+        where: {
+          requeteId,
+          entiteId: { in: topEntiteIds },
+          statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+        },
+        select: { entiteId: true },
+      });
+      entiteIdsToUpdate.push(...requeteEntites.map((re) => re.entiteId));
+    }
+  }
+
+  let deletedFilePaths: string[] = [];
   await prisma.$transaction(async (tx) => {
     const existingSituation = requete.situations.find((s) => s.id === situationId);
     if (!existingSituation) {
       throw new Error('Situation not found');
     }
-    newAssignedEntiteIds = await updateExistingSituation(tx, existingSituation, situationData, entiteId, changedById);
+    const result = await updateExistingSituation(tx, existingSituation, situationData, entiteId, changedById);
+    newAssignedEntiteIds = result.newAssignedEntiteIds;
+    deletedFilePaths = result.deletedFilePaths;
+    await tx.requeteEntite.updateMany({
+      where: {
+        requeteId,
+        entiteId: { in: entiteIdsToUpdate },
+      },
+      data: {
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      },
+    });
     updatedRequete = await tx.requete.findUnique({
       where: { id: requeteId },
       include: { situations: { include: SITUATION_INCLUDE_FULL } },
     });
   });
 
-  if (situationData.fait?.fileIds?.length) {
-    await setFaitFiles(situationId, situationData.fait.fileIds, entiteId, changedById);
+  for (const filePath of deletedFilePaths) {
+    await deleteFileFromMinio(filePath);
   }
 
   if (!updatedRequete) {
@@ -1292,6 +1365,10 @@ export const closeRequeteForEntite = async (
     throw new Error('REQUETE_NOT_FOUND');
   }
 
+  if (requeteEntite.statutId === REQUETE_STATUT_TYPES.CLOTUREE) {
+    throw new Error('READONLY_FOR_ENTITY');
+  }
+
   const uniqueReasonIds = Array.from(new Set(reasonIds));
   const reasons = await prisma.requeteClotureReasonEnum.findMany({
     where: { id: { in: uniqueReasonIds } },
@@ -1300,20 +1377,6 @@ export const closeRequeteForEntite = async (
 
   if (reasons.length !== uniqueReasonIds.length) {
     throw new Error('REASON_INVALID');
-  }
-
-  const lastEtape = await prisma.requeteEtape.findFirst({
-    where: {
-      requeteId,
-      entiteId,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
-
-  if (lastEtape?.statutId === 'CLOTUREE') {
-    throw new Error('READONLY_FOR_ENTITY');
   }
 
   if (fileIds && fileIds.length > 0) {

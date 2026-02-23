@@ -397,7 +397,12 @@ export const createRequeteFromDematSocial = async ({
 
 export const updateDateAndTypeRequete = async (
   requeteId: string,
-  data: { receptionDate?: Date | null; receptionTypeId?: string | null },
+  data: {
+    receptionDate?: Date | null;
+    receptionTypeId?: string | null;
+    provenanceId?: string | null;
+    provenancePrecision?: string | null;
+  },
   controls?: { updatedAt: string },
 ) => {
   const requete = await prisma.requete.findUnique({
@@ -427,6 +432,8 @@ export const updateDateAndTypeRequete = async (
     data: {
       ...(data.receptionDate !== undefined && { receptionDate: data.receptionDate }),
       ...(data.receptionTypeId !== undefined && { receptionTypeId: data.receptionTypeId }),
+      ...(data.provenanceId !== undefined && { provenanceId: data.provenanceId }),
+      ...(data.provenancePrecision !== undefined && { provenancePrecision: data.provenancePrecision }),
     },
   });
 };

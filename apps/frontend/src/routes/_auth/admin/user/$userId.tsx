@@ -153,7 +153,11 @@ function RouteComponent() {
     }
   };
 
-  const filteredRoles = useMemo(() => getAssignableRoles(userRole), [userRole]);
+  // TODO: remove this once we want to allow national steering (Pilotage national) role
+  const filteredRoles = useMemo(
+    () => getAssignableRoles(userRole).filter((r) => r.key !== ROLES.NATIONAL_STEERING),
+    [userRole],
+  );
 
   return (
     <div className="fr-container">

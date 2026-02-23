@@ -1,5 +1,5 @@
 variables:
-  NODE_VERSION: "22"
+  NODE_VERSION: "22.22.0"
   DOCKER_DRIVER: overlay2
   ENVIRONMENT: 'production'
   NODE_OPTIONS: "--max_old_space_size=6144"
@@ -67,7 +67,7 @@ stages:
 lint-and-build:
   stage: lint-test
   extends:
-    - .configure_npm
+    - .configure_docker_with_node
   script:
     - pnpm audit --audit-level=moderate
     - pnpm install
@@ -201,28 +201,36 @@ build-docker-images:
       . && docker push ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
       )
 
+helm_template:
+  stage: deploy
+  extends:
+    - .rules-with-env-vars
+  needs:
+    - build-docker-images
+  image:
+    name: alpine/helm:latest
+    entrypoint: ['']
+  script:
+    # Install helm
+    - apk add --no-cache curl openssl
+    - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh
+    - helm version
+    - cd helm_charts
+    - helm repo add SDPSN-devops-charts https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable --username oauth2 --password ${HELM_REPO_PAT}
+    - helm dependency update
+    - helm dependency build
+    - sh generate_manifests.sh ${DEPLOYMENT_ENV} ${CI_COMMIT_SHORT_SHA}
+  artifacts:
+    paths:
+      - helm_charts/generated_manifests/
+
 deploy-gitops:
   stage: deploy
   extends:
     - .login_docker
     - .rules-with-env-vars
   script:
-    # Install helm
-    - apk add --no-cache curl
-    - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh
-    - helm version
-
-    # Render manifests using helm chart
-    - cd helm_charts
-    - helm repo add SDPSN-devops-charts https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable --username oauth2 --password ${HELM_REPO_PAT}
-    - helm dependency update
-    - helm dependency build
-    - sh generate_manifests.sh ${DEPLOYMENT_ENV} ${CI_COMMIT_SHORT_SHA}
-
-    # Clone GitOps repository
-    - cd ..
     - git clone https://oauth2:${GITOPS_TOKEN}@github.com/fabrique-atlas/org-sdpsn-ws-sirena.git gitops-repo
-
     # Deploy manifests
     - |
       rm -rf \
@@ -239,15 +247,16 @@ deploy-gitops:
     - git add .
     - git diff --staged --quiet && echo "No changes to commit" || (git commit -m "[${DEPLOYMENT_ENV}] new version ${CI_COMMIT_SHORT_SHA}" && git push)
   needs:
-    - build-docker-images
+    - helm_template
 
 
 e2e-integration:
   stage: e2e
-  image: node:22
+  image: node:$NODE_VERSION
   needs:
     - build-docker-images
     - deploy-gitops
+  extends: .configure_npm
   variables:
     EXPECTED_VERSION: ${CI_COMMIT_SHORT_SHA}
     BACKEND_URL: "https://sirena.integration.dev.atlas.fabrique.social.gouv.fr/api"
@@ -255,7 +264,6 @@ e2e-integration:
     FRONTEND_URI: "https://sirena.integration.dev.atlas.fabrique.social.gouv.fr"
     E2E_CI: "true"
   before_script:
-    - npm install -g pnpm
     - cd apps/frontend
     - pnpm audit --audit-level=moderate || true
     - pnpm install

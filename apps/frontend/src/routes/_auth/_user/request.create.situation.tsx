@@ -1,7 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useRef, useState } from 'react';
-import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
+import { useEffect, useRef, useState } from 'react';
 import { CloseRequeteModal, type CloseRequeteModalRef } from '@/components/requestId/processing/CloseRequeteModal';
 import { SituationForm } from '@/components/situation/SituationForm';
 import { useSituationCreate } from '@/hooks/mutations/useSituationCreate';
@@ -34,7 +33,8 @@ function RouteComponent() {
       statutId: string;
     }>;
   } | null>(null);
-  const requestQuery = useRequeteDetails(createdRequeteId || '');
+
+  const requestQuery = useRequeteDetails(createdRequeteId ?? '');
 
   const { handleSave } = useSituationCreate({
     onSuccess: (result) => {
@@ -44,14 +44,20 @@ function RouteComponent() {
 
       if (result.shouldCloseRequeteStatus?.willUserBeUnassignedAfterSave) {
         setShouldCloseRequeteStatus(result.shouldCloseRequeteStatus);
-        setTimeout(() => {
-          closeRequeteModalRef.current?.openModal();
-        }, 100);
       } else {
         navigate({ to: '/request/$requestId', params: { requestId: requeteId } });
       }
     },
   });
+
+  // Open close requete modal once it is mounted
+  useEffect(() => {
+    if (!createdRequeteId || !shouldCloseRequeteStatus) return;
+    const t = setTimeout(() => {
+      closeRequeteModalRef.current?.openModal();
+    }, 150);
+    return () => clearTimeout(t);
+  }, [createdRequeteId, shouldCloseRequeteStatus]);
 
   const handleCloseModalCancel = async () => {
     if (createdRequeteId) {
@@ -77,35 +83,34 @@ function RouteComponent() {
     setShouldCloseRequeteStatus(null);
   };
 
+  const showModal = createdRequeteId && shouldCloseRequeteStatus;
+  const requeteForModal = requestQuery.data?.requete;
+
   return (
     <>
       <SituationForm mode="create" onSave={handleSave} saveButtonRef={saveButtonRef} />
-      {createdRequeteId && (
-        <QueryStateHandler query={requestQuery}>
-          {({ data: request }) => (
-            <CloseRequeteModal
-              ref={closeRequeteModalRef}
-              requestId={createdRequeteId}
-              date={
-                request?.requete?.createdAt
-                  ? new Date(request.requete.createdAt).toLocaleDateString('fr-FR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                    })
-                  : ''
-              }
-              misEnCause={request?.requete?.situations?.[0]?.misEnCause?.misEnCauseType?.label || 'Non spécifié'}
-              otherEntitiesAffected={shouldCloseRequeteStatus?.otherEntitiesAffected || []}
-              customDescription={`Attention : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${createdRequeteId}.`}
-              triggerButtonRef={saveButtonRef}
-              onBeforeClose={handleBeforeClose}
-              onCancel={handleCloseModalCancel}
-              onSuccess={handleCloseModalSuccess}
-              onDismiss={handleModalDismiss}
-            />
-          )}
-        </QueryStateHandler>
+      {showModal && (
+        <CloseRequeteModal
+          ref={closeRequeteModalRef}
+          requestId={createdRequeteId}
+          date={
+            requeteForModal?.createdAt
+              ? new Date(requeteForModal.createdAt).toLocaleDateString('fr-FR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                })
+              : ''
+          }
+          misEnCause={requeteForModal?.situations?.[0]?.misEnCause?.misEnCauseType?.label ?? 'Non spécifié'}
+          otherEntitiesAffected={shouldCloseRequeteStatus.otherEntitiesAffected ?? []}
+          customDescription={`Attention : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${createdRequeteId}.`}
+          triggerButtonRef={saveButtonRef}
+          onBeforeClose={handleBeforeClose}
+          onCancel={handleCloseModalCancel}
+          onSuccess={handleCloseModalSuccess}
+          onDismiss={handleModalDismiss}
+        />
       )}
     </>
   );

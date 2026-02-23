@@ -7,6 +7,8 @@ interface PractitionerSearchFieldProps {
   onChange: (value: string, practitioner?: Practitioner) => void;
   label?: string;
   hintText?: string;
+  state?: 'default' | 'success' | 'info' | 'error';
+  stateRelatedMessage?: React.ReactNode;
   disabled?: boolean;
   searchMode: 'rpps' | 'name';
   minSearchLength?: number;
@@ -22,6 +24,8 @@ export function PractitionerSearchField({
   onChange,
   label,
   hintText,
+  state = 'default',
+  stateRelatedMessage,
   disabled,
   searchMode,
   minSearchLength = 3,
@@ -68,6 +72,8 @@ export function PractitionerSearchField({
       onChange={onChange}
       label={label || 'Identité du professionnel ou numéro RPPS'}
       hintText={hintText}
+      state={state}
+      stateRelatedMessage={stateRelatedMessage}
       disabled={disabled}
       queryKey="practitioners"
       fetchFn={fetchFn}

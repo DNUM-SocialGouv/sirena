@@ -11,6 +11,7 @@ import RequeteEtapesController from './features/requeteEtapes/requetesEtapes.con
 import RequetesEntiteController from './features/requetesEntite/requetesEntite.controller.js';
 import RolesController from './features/roles/roles.controller.js';
 import SSEController from './features/sse/sse.controller.js';
+import ThirdPartyController from './features/third-party/third-party.controller.js';
 import UploadedFilesController from './features/uploadedFiles/uploadedFiles.controller.js';
 import UsersController from './features/users/users.controller.js';
 import VersionController from './features/version/version.controller.js';
@@ -24,6 +25,7 @@ const baseApp = appFactory.createApp();
 export const app = baseApp
   .use(enhancedPinoMiddleware())
   .use(sentryContextMiddleware())
+  .route('/third-party', ThirdPartyController)
   .use(
     csrf({
       origin: [envVars.FRONTEND_URI],
