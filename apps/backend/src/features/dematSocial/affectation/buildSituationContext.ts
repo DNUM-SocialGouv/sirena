@@ -56,7 +56,6 @@ export function buildSituationContext(situation: SituationWithLieu): SituationCo
 
   ctx.finessCode = extractFinessFromRawText(lds?.finess) ?? null;
   ctx.categCode = lds?.categCode ?? null;
-  ctx.tutelle = lds?.tutelle ?? null;
 
   ctx.postalCode =
     lds.codePostal ??
