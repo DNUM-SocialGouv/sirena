@@ -255,45 +255,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "label": {
-                                "type": "string"
-                              }
-                            },
-                            "required": ["id", "label"]
-                          }
-                        }
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
                       },
-                      "required": ["data"]
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "number"
-                        },
-                        "offset": {
-                          "type": "number"
-                        },
-                        "limit": {
-                          "type": "number"
-                        }
+                      "label": {
+                        "type": "string"
                       }
-                    }
-                  },
-                  "required": ["data"]
+                    },
+                    "required": ["id", "label"]
+                  }
                 }
               }
             }
@@ -312,45 +286,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "label": {
-                                "type": "string"
-                              }
-                            },
-                            "required": ["id", "label"]
-                          }
-                        }
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
                       },
-                      "required": ["data"]
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "number"
-                        },
-                        "offset": {
-                          "type": "number"
-                        },
-                        "limit": {
-                          "type": "number"
-                        }
+                      "label": {
+                        "type": "string"
                       }
-                    }
-                  },
-                  "required": ["data"]
+                    },
+                    "required": ["id", "label"]
+                  }
                 }
               }
             }
@@ -369,45 +317,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "label": {
-                                "type": "string"
-                              }
-                            },
-                            "required": ["id", "label"]
-                          }
-                        }
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
                       },
-                      "required": ["data"]
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "number"
-                        },
-                        "offset": {
-                          "type": "number"
-                        },
-                        "limit": {
-                          "type": "number"
-                        }
+                      "label": {
+                        "type": "string"
                       }
-                    }
-                  },
-                  "required": ["data"]
+                    },
+                    "required": ["id", "label"]
+                  }
                 }
               }
             }
@@ -426,69 +348,43 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "label": {
-                                "type": "string"
-                              },
-                              "fields": {
-                                "type": "array",
-                                "items": {
-                                  "type": "string"
-                                }
-                              },
-                              "precisions": {
-                                "type": "array",
-                                "items": {
-                                  "type": "object",
-                                  "properties": {
-                                    "id": {
-                                      "type": "string"
-                                    },
-                                    "label": {
-                                      "type": "string"
-                                    },
-                                    "misEnCauseTypeId": {
-                                      "type": "string"
-                                    }
-                                  },
-                                  "required": ["id", "label", "misEnCauseTypeId"]
-                                }
-                              }
-                            },
-                            "required": ["id", "label", "precisions"]
-                          }
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "label": {
+                        "type": "string"
+                      },
+                      "fields": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
                         }
                       },
-                      "required": ["data"]
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "number"
-                        },
-                        "offset": {
-                          "type": "number"
-                        },
-                        "limit": {
-                          "type": "number"
+                      "precisions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "misEnCauseTypeId": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["id", "label", "misEnCauseTypeId"]
                         }
                       }
-                    }
-                  },
-                  "required": ["data"]
+                    },
+                    "required": ["id", "label", "precisions"]
+                  }
                 }
               }
             }
@@ -507,45 +403,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "label": {
-                                "type": "string"
-                              }
-                            },
-                            "required": ["id", "label"]
-                          }
-                        }
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
                       },
-                      "required": ["data"]
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "number"
-                        },
-                        "offset": {
-                          "type": "number"
-                        },
-                        "limit": {
-                          "type": "number"
-                        }
+                      "label": {
+                        "type": "string"
                       }
-                    }
-                  },
-                  "required": ["data"]
+                    },
+                    "required": ["id", "label"]
+                  }
                 }
               }
             }
@@ -564,45 +434,112 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "label": {
-                                "type": "string"
-                              }
-                            },
-                            "required": ["id", "label"]
-                          }
-                        }
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
                       },
-                      "required": ["data"]
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "number"
-                        },
-                        "offset": {
-                          "type": "number"
-                        },
-                        "limit": {
-                          "type": "number"
-                        }
+                      "label": {
+                        "type": "string"
                       }
-                    }
-                  },
-                  "required": ["data"]
+                    },
+                    "required": ["id", "label"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/enums/autorite-type": {
+      "get": {
+        "operationId": "getV1EnumsAutoriteType",
+        "description": "Get all autorite type enums",
+        "tags": ["Third-Party", "Enums"],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "label": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["id", "label"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/enums/demarche": {
+      "get": {
+        "operationId": "getV1EnumsDemarche",
+        "description": "Get all demarche enums",
+        "tags": ["Third-Party", "Enums"],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "label": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["id", "label"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/enums/lieu-type": {
+      "get": {
+        "operationId": "getV1EnumsLieuType",
+        "description": "Get all lieu type enums",
+        "tags": ["Third-Party", "Enums"],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "label": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["id", "label"]
+                  }
                 }
               }
             }
@@ -621,45 +558,19 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "label": {
-                                "type": "string"
-                              }
-                            },
-                            "required": ["id", "label"]
-                          }
-                        }
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
                       },
-                      "required": ["data"]
-                    },
-                    "meta": {
-                      "type": "object",
-                      "properties": {
-                        "total": {
-                          "type": "number"
-                        },
-                        "offset": {
-                          "type": "number"
-                        },
-                        "limit": {
-                          "type": "number"
-                        }
+                      "label": {
+                        "type": "string"
                       }
-                    }
-                  },
-                  "required": ["data"]
+                    },
+                    "required": ["id", "label"]
+                  }
                 }
               }
             }
@@ -1026,6 +937,9 @@
                           }
                         },
                         "title": "Adresse"
+                      },
+                      "commentaire": {
+                        "type": "string"
                       }
                     },
                     "required": ["nom", "prenom"],
@@ -1081,6 +995,18 @@
                       },
                       "estHandicapee": {
                         "type": "boolean"
+                      },
+                      "commentaire": {
+                        "type": "string"
+                      },
+                      "veutGarderAnonymat": {
+                        "type": "boolean"
+                      },
+                      "estVictimeInformee": {
+                        "type": "boolean"
+                      },
+                      "autrePersonnes": {
+                        "type": "string"
                       }
                     },
                     "required": ["nom", "prenom"],

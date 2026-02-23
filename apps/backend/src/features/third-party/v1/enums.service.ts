@@ -1,8 +1,11 @@
 import {
   type AgeEnum,
+  type AutoriteTypeEnum,
   type CiviliteEnum,
   type ConsequenceEnum,
+  type DemarchesEngageesEnum,
   type LienVictimeEnum,
+  type LieuTypeEnum,
   type MaltraitanceTypeEnum,
   type MisEnCauseTypeEnum,
   type MisEnCauseTypePrecisionEnum,
@@ -16,6 +19,13 @@ const FIELD_MAPPINGS: Record<string, string[]> = {
 };
 
 export const getAgeEnums = async (): Promise<AgeEnum[]> => await prisma.ageEnum.findMany();
+
+export const getLieuTypeEnums = async (): Promise<LieuTypeEnum[]> => await prisma.lieuTypeEnum.findMany();
+
+export const getDemarcheEnums = async (): Promise<DemarchesEngageesEnum[]> =>
+  await prisma.demarchesEngageesEnum.findMany();
+
+export const getAutoriteTypeEnums = async (): Promise<AutoriteTypeEnum[]> => await prisma.autoriteTypeEnum.findMany();
 
 export const getCiviliteEnums = async (): Promise<CiviliteEnum[]> => await prisma.civiliteEnum.findMany();
 

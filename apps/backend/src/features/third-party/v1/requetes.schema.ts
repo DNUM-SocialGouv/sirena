@@ -36,6 +36,7 @@ const DeclarantSchema = z
     estVictime: z.boolean().optional(),
     veutGarderAnonymat: z.boolean().optional(),
     adresse: AdresseSchema.optional(),
+    commentaire: z.string().optional(),
   })
   .meta({ title: 'Declarant' });
 
@@ -50,6 +51,10 @@ const VictimeSchema = z
     ageId: z.string().optional(),
     adresse: AdresseSchema.optional(),
     estHandicapee: z.boolean().optional(),
+    commentaire: z.string().optional(),
+    veutGarderAnonymat: z.boolean().optional(),
+    estVictimeInformee: z.boolean().optional(),
+    autrePersonnes: z.string().optional(),
   })
   .meta({ title: 'Victime' });
 

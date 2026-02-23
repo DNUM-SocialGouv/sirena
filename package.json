@@ -32,6 +32,7 @@
     "generate:openapi:thirdparty": "dotenv -e .env -- pnpm --filter @sirena/backend generate:openapi:thirdparty",
     "test:e2e": "pnpm --filter @sirena/frontend test:e2e",
     "test:e2e:ui": "pnpm --filter @sirena/frontend test:e2e:ui",
+    "test:smoke": "dotenv -e .env -- pnpm --filter @sirena/backend test:smoke",
     "test:unit": "pnpm -r run test",
     "typecheck": "pnpm build:common && pnpm -r run typecheck",
     "gitleaks:detect-secrets": ".husky/gitleaks-detect-secrets.sh",
