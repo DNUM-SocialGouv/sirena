@@ -1,0 +1,58 @@
+stages:
+  - configure
+
+.configure_docker_service:
+  image: docker:28.5.2
+  services:
+    - name: "docker:28.5.2-dind"
+      alias: "docker"
+      entrypoint: [ "/bin/sh", "-c", "dockerd-entrypoint.sh --tls=false --host=tcp://0.0.0.0:2375 --dns=$(sed -n 's/^# ExtServers: \\[\\([0-9]*\\.[0-9]*\\.[0-9]*\\.[0-9]*\\)\\]/\\1/p' /etc/resolv.conf) --dns=10.200.2.31 --dns=10.200.4.33 --dns=192.168.96.198 --dns=192.168.92.204" ]
+      variables:
+        DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - mkdir -p ~/.docker
+    - | 
+        cat << 'EOF' > ~/.docker/config.json
+        {
+          "proxies": {
+            "default": {
+              "httpProxy": "http://proxyweb.intranet.social.gouv.fr:8002",
+              "httpsProxy": "http://proxyweb.intranet.social.gouv.fr:8002",
+              "noProxy": "*.test.example.com,.example.org,127.0.0.0/8,docker"
+            }
+          }
+        }
+        EOF
+    - |
+      if [ -n "${NO_PROXY}${no_proxy}" ]; then
+        export NO_PROXY="docker,${NO_PROXY}"
+        export no_proxy="docker,${no_proxy}"
+      fi
+      export DOCKER_HOST="tcp://docker:2375/"
+
+.login_docker:
+  stage: configure
+  extends: .configure_docker_service
+  image: docker:latest
+  before_script:
+    - !reference [.configure_docker_service, before_script]
+    - echo "${CONTAINER_REGISTRY_PASSWORD}" | docker login -u "${CONTAINER_REGISTRY_USER}" --password-stdin "${CONTAINER_REGISTRY}"
+
+.configure_npm:
+  stage: test
+  extends: .configure_docker_service
+  image: node:$NODE_VERSION
+  before_script:
+    - !reference [.configure_docker_service, before_script]
+    - npm install -g pnpm
+
+.configure_docker_with_node:
+  stage: test
+  image: node:$NODE_VERSION
+  services:
+    - !reference [.configure_docker_service, services]
+  before_script:
+    - !reference [.configure_docker_service, before_script]
+    - apt-get update
+    - apt-get install -y docker.io
+    - npm install -g pnpm
