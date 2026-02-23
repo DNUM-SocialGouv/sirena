@@ -24,7 +24,9 @@ test.describe('Requete Feature', () => {
     page = await context.newPage();
 
     await page.goto(`${baseUrl}/home`);
-    await expect(page.getByText(/Bienvenue/)).toBeVisible();
+    await page.waitForURL((url) => url.pathname === '/home', { timeout: 15000 });
+
+    await expect(page.getByText(/Bienvenue/)).toBeVisible({ timeout: 15000 });
   });
 
   test.afterEach(async () => {

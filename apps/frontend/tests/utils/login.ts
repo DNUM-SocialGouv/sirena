@@ -25,40 +25,31 @@ const waitForRateLimit = async () => {
 
 export const loginWithProconnect = async (
   page: Page,
-  { password, user, organisation = 'Ville de paris - Mairie' }: LoginWithProconnectParams,
+  { password, user, organisation = 'Commune de clamart - Mairie' }: LoginWithProconnectParams,
 ) => {
   await waitForRateLimit();
 
   await page.goto(loginUrl);
-  await page.waitForLoadState('networkidle');
 
-  const loginLink = page.getByRole('button', { name: 'S’identifier avec ProConnect' });
-  await loginLink.waitFor({ state: 'visible' });
+  const loginLink = page.locator('button.pro-connect');
+  await loginLink.waitFor({ state: 'visible', timeout: 15000 });
   await loginLink.click();
 
-  await page.waitForLoadState('networkidle');
   const userInput = page.getByRole('textbox', { name: 'Email professionnel Format' });
+  await userInput.waitFor({ state: 'visible', timeout: 15000 });
   await userInput.fill(user);
   const loginButton = page.getByRole('button', { name: 'Continuer', exact: true });
-  loginButton.click();
+  await loginButton.click();
 
-  await page.waitForLoadState('networkidle');
   const passwordInput = page.getByRole('textbox', { name: 'Renseignez votre mot de passe' });
+  await passwordInput.waitFor({ state: 'visible', timeout: 15000 });
   await passwordInput.fill(password);
-  const logButton = page.getByRole('button', { name: 'S’identifier' });
-  logButton.click();
+  const logButton = page.getByRole('button', { name: /S.identifier/i });
+  await logButton.click();
 
-  await page.waitForLoadState('networkidle');
+  const locationSelector = page.locator(`[role="button"][aria-label*="${organisation}"]`).first();
+  await locationSelector.waitFor({ state: 'visible', timeout: 15000 });
+  await locationSelector.click();
 
-  let locationSelector = page.locator(`[role="button"][aria-label*="${organisation}"]`).first();
-
-  const count = await locationSelector.count();
-  if (count === 0) {
-    locationSelector = page.locator('[role="button"][aria-label*="(choisir cette organisation)"]').first();
-  }
-
-  locationSelector.click();
-
-  await page.waitForLoadState('networkidle');
-  await expect(page).toHaveURL(`${baseUrl}/home`);
+  await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
 };

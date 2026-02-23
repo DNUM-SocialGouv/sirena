@@ -14,7 +14,7 @@ export const AUTH_CONFIGS = {
   ENTITY_ADMIN_USER_1: {
     user: ENTITY_ADMIN_USER.user,
     password: ENTITY_ADMIN_USER.password,
-    organisation: 'ville de paris',
+    organisation: 'Commune de clamart - Mairie',
     fileName: `${ENTITY_ADMIN_USER.user}.json`,
   },
 } as const;
@@ -65,11 +65,11 @@ export async function ensureAuthenticationFileExists(browser: Browser, config: A
       await loginWithProconnect(page, {
         user: config.user,
         password: config.password,
-        organisation: config.organisation || 'ville de paris',
+        organisation: config.organisation || 'Commune de clamart - Mairie',
       });
 
-      await page.waitForLoadState('networkidle');
-      await expect(page).toHaveURL(`${baseUrl}/home`);
+      await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
+      await expect(page.getByText(/Bienvenue/)).toBeVisible({ timeout: 10000 });
 
       await context.storageState({ path: authFile });
     } finally {
