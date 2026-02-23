@@ -1,6 +1,6 @@
 import type { Motif } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildSituationContextFromDemat } from './buildSituationContext.js';
+import { buildSituationContext } from './buildSituationContext.js';
 import type { SituationContext } from './types.js';
 
 vi.mock('./utils.js', () => ({
@@ -8,7 +8,7 @@ vi.mock('./utils.js', () => ({
   extractFinessFromRawText: vi.fn((v) => (v ? '123456789' : null)),
 }));
 
-describe('buildSituationContextFromDemat', () => {
+describe('buildSituationContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -42,7 +42,7 @@ describe('buildSituationContextFromDemat', () => {
 
   it('should extract basic context fields correctly', () => {
     const situation = makeSituation();
-    const ctx: SituationContext = buildSituationContextFromDemat(situation);
+    const ctx: SituationContext = buildSituationContext(situation);
 
     expect(ctx.lieuType).toBe('ETABLISSEMENT_SANTE');
     expect(ctx.finessCode).toBe('123456789');
@@ -61,7 +61,7 @@ describe('buildSituationContextFromDemat', () => {
         },
       ],
     });
-    const ctx = buildSituationContextFromDemat(situation);
+    const ctx = buildSituationContext(situation);
     expect(ctx.isMaltraitance).toBe(true);
   });
 
@@ -74,7 +74,7 @@ describe('buildSituationContextFromDemat', () => {
       ],
     });
 
-    const ctx = buildSituationContextFromDemat(situation);
+    const ctx = buildSituationContext(situation);
     expect(ctx.isMaltraitance).toBe(false);
   });
 
@@ -87,7 +87,7 @@ describe('buildSituationContextFromDemat', () => {
       ],
     });
 
-    const ctx = buildSituationContextFromDemat(situation);
+    const ctx = buildSituationContext(situation);
     expect(ctx.isMaltraitance).toBe(false);
   });
 
@@ -103,19 +103,19 @@ describe('buildSituationContextFromDemat', () => {
         ],
       });
 
-      const ctx = buildSituationContextFromDemat(situation);
+      const ctx = buildSituationContext(situation);
       expect(ctx.isMaltraitance).toBe(true);
     }
   });
 
   it('should extract motifsDeclaratifs', () => {
-    const ctx = buildSituationContextFromDemat(makeSituation());
+    const ctx = buildSituationContext(makeSituation());
 
     expect(ctx.motifsDeclaratifs).toEqual(['PROBLEME_QUALITE_SOINS']);
   });
 
   it('should handle empty or missing faits gracefully', () => {
-    const ctx = buildSituationContextFromDemat(makeSituation({ faits: [] }));
+    const ctx = buildSituationContext(makeSituation({ faits: [] }));
 
     expect(ctx.isMaltraitance).toBe(false);
     expect(ctx.motifsDeclaratifs).toEqual([]);
@@ -127,7 +127,7 @@ describe('buildSituationContextFromDemat', () => {
       misEnCause: { misEnCauseType: null, misEnCauseTypePrecision: null },
     });
 
-    const ctx = buildSituationContextFromDemat(situation);
+    const ctx = buildSituationContext(situation);
 
     expect(ctx.finessCode).toBe(null);
     expect(ctx.postalCode).toBe(null);

@@ -5,7 +5,7 @@ import { assignEntitesToRequeteTask } from './affectation.js';
 import type { EntiteAdminType } from './types.js';
 
 vi.mock('./buildSituationContext.js', () => ({
-  buildSituationContextFromDemat: vi.fn(),
+  buildSituationContext: vi.fn(),
 }));
 
 vi.mock('./decisionTree.js', () => ({
@@ -49,7 +49,7 @@ vi.mock('../../../../generated/client/index.js', async () => {
 });
 
 import { createDefaultRequeteEtapes } from '../../requeteEtapes/requetesEtapes.service.js';
-import { buildSituationContextFromDemat } from './buildSituationContext.js';
+import { buildSituationContext } from './buildSituationContext.js';
 import { runDecisionTree } from './decisionTree.js';
 import { findGeoByPostalCode } from './geo/geoIndex.js';
 
@@ -166,7 +166,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -232,7 +232,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -276,7 +276,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockImplementation(() => {
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockImplementation(() => {
       throw new Error('Unexpected error during assignment');
     });
     (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
@@ -321,7 +321,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: null,
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS']);
@@ -359,7 +359,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS']);
@@ -398,7 +398,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS']);
@@ -443,7 +443,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS'] as EntiteAdminType[]);
@@ -507,7 +507,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['CD', 'DD'] as EntiteAdminType[]);
@@ -548,7 +548,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockImplementation(() => {
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockImplementation(() => {
       throw new Error('Context build error');
     });
     (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
@@ -585,7 +585,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['CD'] as EntiteAdminType[]);
@@ -630,7 +630,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS'] as EntiteAdminType[]);
@@ -674,7 +674,7 @@ describe('assignEntitesToRequeteTask', () => {
     };
 
     (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (buildSituationContextFromDemat as ReturnType<typeof vi.fn>).mockReturnValue({
+    (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS'] as EntiteAdminType[]);
