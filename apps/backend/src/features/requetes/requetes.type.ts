@@ -43,6 +43,7 @@ type Participant = {
   } | null;
   estHandicapee: boolean | null;
   estVictimeInformee: boolean | null;
+  commentaire: string | null;
   victimeInformeeCommentaire: string | null;
   veutGarderAnonymat: boolean | null;
   autrePersonnes: string | null;
@@ -80,7 +81,8 @@ type DemarchesEngagees = {
   demarches: string[];
   dateContactEtablissement: Date | null;
   etablissementARepondu: boolean;
-  commentaire: string;
+  commentaire: string | null;
+  organisme: string;
   datePlainte: Date | null;
   files: File[];
   autoriteTypeId: string | null;

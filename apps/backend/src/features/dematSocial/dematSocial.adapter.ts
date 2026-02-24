@@ -10,6 +10,7 @@ import {
   MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION,
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   MIS_EN_CAUSE_TYPE,
+  PROFESSION_SOCIAL_PRECISION,
   PROFESSION_TYPE,
   RECEPTION_TYPE,
 } from '@sirena/common/constants';
@@ -205,7 +206,8 @@ const getDemarchesEngagees = (
     demarches: demarches.filter((d) => d !== DS_DEMARCHE_ENGAGEE.AUCUNE),
     dateContactEtablissement: getDateByChamps(champsById[mapping.demarchesEngageesDateContactEtablissement.id]),
     etablissementARepondu: getBooleanOrNull(champsById[mapping.demarchesEngageesEtablissementARepondu.id]) || false,
-    commentaire: champsById[mapping.demarchesEngageesAutre.id]?.stringValue ?? '',
+    organisme: champsById[mapping.demarchesEngageesAutre.id]?.stringValue ?? '',
+    commentaire: '',
     datePlainte: getDateByChamps(champsById[mapping.demarcheEngageDatePlainte.id]),
     files: getFilesByChamps(champsById[mapping.demarchesEngageesReponseFile.id]),
     autoriteTypeId: getEnumIdFromLabel(
@@ -237,6 +239,9 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
   const nomEtablissementValue =
     'nomEtablissement' in mapping ? (champsById[mapping.nomEtablissement.id]?.stringValue ?? '') : '';
   const adresse = address ?? { label: nomEtablissementValue ?? '', codePostal, ville: '', rue: '', numero: '' };
+  if (nomEtablissementValue) {
+    adresse.label = nomEtablissementValue;
+  }
   const finess = getFiness(champsById[mapping.finess.id]);
   if (finess) {
     adresse.label = finess.adresse.label;
@@ -296,7 +301,7 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
     if (professionDomicileType === DS_PROFESSION_DOMICILE_TYPE.NPJM) {
       return {
         misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SOCIAL,
-        misEnCauseTypePrecisionId: PROFESSION_TYPE.MJPM,
+        misEnCauseTypePrecisionId: PROFESSION_SOCIAL_PRECISION.MANDATAIRE,
       };
     }
     if (professionDomicileType === DS_PROFESSION_DOMICILE_TYPE.AUTRE_PROFESSIONNEL) {
@@ -433,6 +438,7 @@ const getVictime = (champsById: MappedChamp, mandataire: Mandataire, demandeur: 
       lienVictimeId: null, // No link as it's the "Personne concernée"
       estVictime: true,
       estVictimeInformee: null,
+      commentaire: null,
       victimeInformeeCommentaire: null,
       veutGarderAnonymat,
       adresse: champsById[rootMapping.adresse.id] ? createAddress(champsById[rootMapping.adresse.id]) : null,
@@ -499,7 +505,9 @@ const getVictime = (champsById: MappedChamp, mandataire: Mandataire, demandeur: 
         champsById[rootMapping.estVictimeInformee.id],
         rootMapping.estVictimeInformee.options,
       ),
-      victimeInformeeCommentaire: champsById[rootMapping.raisons.id]?.stringValue ?? null,
+      commentaire: champsById[rootMapping.raisons.id]?.stringValue ?? null,
+      // victimeInformeeCommentaire: champsById[rootMapping.raisons.id]?.stringValue ?? null,
+      victimeInformeeCommentaire: null,
       veutGarderAnonymat: victimeVeutGarderAnonymat,
       adresse: champsById[rootMapping.victimeAdressePostale.id]
         ? createAddress(champsById[rootMapping.victimeAdressePostale.id])

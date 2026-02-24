@@ -162,6 +162,7 @@ export const createRequeteFromDematSocial = async ({
           },
           estHandicapee: participant.estHandicapee ?? null,
           estVictimeInformee: participant.estVictimeInformee ?? null,
+          commentaire: participant.commentaire ?? '',
           victimeInformeeCommentaire: participant.victimeInformeeCommentaire ?? '',
           veutGarderAnonymat: participant.veutGarderAnonymat ?? null,
           autrePersonnes: participant.autrePersonnes ?? '',
