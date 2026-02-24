@@ -263,7 +263,7 @@ e2e-integration:
   needs:
     - build-backend
     - build-worker
-    - build-
+    - build-frontend
     - deploy-gitops
   extends: .configure_npm
   variables:
