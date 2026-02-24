@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo } from 'react';
 import { AuthLayout } from '@/components/layout/auth/layout';
-import { GlobalLayout } from '@/components/layout/globalLayout';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { useUserStatusSSE } from '@/hooks/useUserStatusSSE';
 import { requireNotPendingOrActif } from '@/lib/auth-guards';
@@ -71,15 +70,13 @@ function RouteComponent() {
   }, [profileQuery.data, userStore.role]);
 
   return (
-    <GlobalLayout>
-      <AuthLayout>
-        <h1>Bienvenue {label}</h1>
-        <Alert
-          severity="info"
-          title="Contactez votre administrateur"
-          description={`Votre compte SIRENA est ${reason}. Veuillez contacter votre administrateur pour qu’il vous attribue les droits nécessaires à l’utilisation de l’application.`}
-        />
-      </AuthLayout>
-    </GlobalLayout>
+    <AuthLayout>
+      <h1>Bienvenue {label}</h1>
+      <Alert
+        severity="info"
+        title="Contactez votre administrateur"
+        description={`Votre compte SIRENA est ${reason}. Veuillez contacter votre administrateur pour qu’il vous attribue les droits nécessaires à l’utilisation de l’application.`}
+      />
+    </AuthLayout>
   );
 }
