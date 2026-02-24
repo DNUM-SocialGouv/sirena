@@ -271,42 +271,6 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
 
     return (
       <>
-        {hasMisEnCause && (
-          <>
-            <SectionTitle level={4}>Mis en cause</SectionTitle>
-            <p className={fr.cx('fr-mb-1w')}>
-              <span>Type de mis en cause :</span> {situation?.misEnCause?.misEnCauseType?.label}
-            </p>
-            {situation?.misEnCause?.misEnCauseTypePrecision && (
-              <p className={fr.cx('fr-mb-1w')}>
-                <span>Précision :</span> {situation.misEnCause.misEnCauseTypePrecision.label}
-              </p>
-            )}
-            {situation?.misEnCause?.autrePrecision && (
-              <p className={fr.cx('fr-mb-1w')}>
-                <span>Précision supplémentaire :</span> {situation.misEnCause.autrePrecision}
-              </p>
-            )}
-            {situation?.misEnCause?.rpps && (
-              <p className={fr.cx('fr-mb-1w')}>
-                <span>Numéro RPPS :</span> {situation.misEnCause.rpps}
-              </p>
-            )}
-            {getMisEnCauseIdentity(situation?.misEnCause) &&
-              situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.PROFESSIONNEL_SANTE && (
-                <p className={fr.cx('fr-mb-2w')}>
-                  <span>Identité du professionnel :</span> {getMisEnCauseIdentity(situation.misEnCause)}
-                </p>
-              )}
-            {getMisEnCauseIdentity(situation?.misEnCause) &&
-              situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.MEMBRE_FAMILLE && (
-                <>
-                  <p className={fr.cx('fr-text--bold', 'fr-mb-1w')}>Identité du mis en cause</p>
-                  <p className={fr.cx('fr-mb-3w')}>{getMisEnCauseIdentity(situation.misEnCause)}</p>
-                </>
-              )}
-          </>
-        )}
         {hasLieu && (
           <>
             <SectionTitle level={4}>Lieu où se sont déroulés les faits</SectionTitle>
@@ -350,6 +314,43 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 <span>Numéro FINESS :</span> {situation.lieuDeSurvenue.finess}
               </p>
             )}
+          </>
+        )}
+
+        {hasMisEnCause && (
+          <>
+            <SectionTitle level={4}>Mis en cause</SectionTitle>
+            <p className={fr.cx('fr-mb-1w')}>
+              <span>Type de mis en cause :</span> {situation?.misEnCause?.misEnCauseType?.label}
+            </p>
+            {situation?.misEnCause?.misEnCauseTypePrecision && (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Précision :</span> {situation.misEnCause.misEnCauseTypePrecision.label}
+              </p>
+            )}
+            {situation?.misEnCause?.autrePrecision && (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Précision supplémentaire :</span> {situation.misEnCause.autrePrecision}
+              </p>
+            )}
+            {situation?.misEnCause?.rpps && (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Numéro RPPS :</span> {situation.misEnCause.rpps}
+              </p>
+            )}
+            {getMisEnCauseIdentity(situation?.misEnCause) &&
+              situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.PROFESSIONNEL_SANTE && (
+                <p className={fr.cx('fr-mb-2w')}>
+                  <span>Identité du professionnel :</span> {getMisEnCauseIdentity(situation.misEnCause)}
+                </p>
+              )}
+            {getMisEnCauseIdentity(situation?.misEnCause) &&
+              situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.MEMBRE_FAMILLE && (
+                <>
+                  <p className={fr.cx('fr-text--bold', 'fr-mb-1w')}>Identité du mis en cause</p>
+                  <p className={fr.cx('fr-mb-3w')}>{getMisEnCauseIdentity(situation.misEnCause)}</p>
+                </>
+              )}
           </>
         )}
 
