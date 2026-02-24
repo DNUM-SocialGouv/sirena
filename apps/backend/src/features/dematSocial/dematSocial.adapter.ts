@@ -144,15 +144,46 @@ const getFiness = (champ: RootChampFragmentFragment | RepetitionChamp) => {
   }
 
   return {
-    code: champ.data.finess ?? '',
+    code: champ.data.finess ? String(champ.data.finess) : '',
     adresse: {
-      label: String(champ.data.rs) ?? '',
-      codePostal: String(champ.data.adresse_code_postal) ?? '',
-      ville: String(champ.data.adresse_lib_routage) ?? '',
+      label: champ.data.rs ? String(champ.data.rs) : '',
+      codePostal: champ.data.adresse_code_postal ? String(champ.data.adresse_code_postal) : '',
+      ville: champ.data.adresse_lib_routage ? String(champ.data.adresse_lib_routage) : '',
     },
     tutelle: champ.data.tutelle != null ? String(champ.data.tutelle) : '',
     categ_code: champ.data.categ_code != null ? String(champ.data.categ_code) : '',
     categ_lib: champ.data.categ_lib != null ? String(champ.data.categ_lib) : '',
+  };
+};
+
+const getRpps = (champ: RootChampFragmentFragment | RepetitionChamp) => {
+  if (!champ || champ?.stringValue === '') {
+    return null;
+  }
+  if (champ.__typename !== 'RppsanteChamp') {
+    throw new ChampMappingError(champ, 'RppsanteChamp', 'Invalid mapping value');
+  } else if (!champ.data) {
+    const logger = getLoggerStore();
+    logger.error(`RppsanteChamp data is null for champ id: ${champ.id}`);
+    return null;
+  }
+
+  const rpps = champ.data.identifiant_pp ? String(champ.data.identifiant_pp) : '';
+  const civilite = champ.data.code_civilite ? String(champ.data.code_civilite) : '';
+  const nom = champ.data.nom_d_exercice ? String(champ.data.nom_d_exercice) : '';
+  const prenom = champ.data.prenom_d_exercice ? String(champ.data.prenom_d_exercice) : '';
+  const libelleProfession = champ.data.libelle_profession ? String(champ.data.libelle_profession) : '';
+  const codePostal = champ.data.code_postal_coord_structure ? String(champ.data.code_postal_coord_structure) : '';
+  const commune = champ.data.libelle_commune_coord_structure ? String(champ.data.libelle_commune_coord_structure) : '';
+
+  return {
+    rpps: rpps,
+    civilite: civilite,
+    nom: nom,
+    prenom: prenom,
+    libelleProfession: libelleProfession,
+    codePostal,
+    commune,
   };
 };
 
@@ -375,10 +406,17 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
 
 const getMisEnCause = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
   const { misEnCauseTypeId, misEnCauseTypePrecisionId } = getResponsable(champsById, mapping);
+  const rppsChamp = getRpps(champsById[mapping.professionnelResponsableIdentite.id]);
   const misEnCause = {
     misEnCauseTypeId,
     misEnCauseTypePrecisionId,
-    rpps: champsById[mapping.professionnelResponsableIdentite.id]?.stringValue ?? null,
+    rpps: '',
+    civilite: '',
+    nom: '',
+    prenom: '',
+    ...(rppsChamp
+      ? { rpps: rppsChamp.rpps, civilite: rppsChamp.civilite, nom: rppsChamp.nom, prenom: rppsChamp.prenom }
+      : {}),
     commentaire: champsById[mapping.responsableCommentaire.id]?.stringValue ?? '',
   };
   return misEnCause;
