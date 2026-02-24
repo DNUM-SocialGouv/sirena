@@ -1,10 +1,12 @@
+variables:
+  DOCKER_VERSION: 28.5.2
 stages:
   - configure
 
 .configure_docker_service:
-  image: docker:28.5.2
+  image: docker:$DOCKER_VERSION
   services:
-    - name: "docker:28.5.2-dind"
+    - name: "docker:${DOCKER_VERSION}-dind"
       alias: "docker"
       entrypoint: [ "/bin/sh", "-c", "dockerd-entrypoint.sh --tls=false --host=tcp://0.0.0.0:2375 --dns=$(sed -n 's/^# ExtServers: \\[\\([0-9]*\\.[0-9]*\\.[0-9]*\\.[0-9]*\\)\\]/\\1/p' /etc/resolv.conf) --dns=10.200.2.31 --dns=10.200.4.33 --dns=192.168.96.198 --dns=192.168.92.204" ]
       variables:
@@ -30,10 +32,10 @@ stages:
       fi
       export DOCKER_HOST="tcp://docker:2375/"
 
-.login_docker:
+.configure_and_login_docker:
   stage: configure
   extends: .configure_docker_service
-  image: docker:latest
+  image: docker:$DOCKER_VERSION
   before_script:
     - !reference [.configure_docker_service, before_script]
     - echo "${CONTAINER_REGISTRY_PASSWORD}" | docker login -u "${CONTAINER_REGISTRY_USER}" --password-stdin "${CONTAINER_REGISTRY}"

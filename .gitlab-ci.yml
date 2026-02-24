@@ -69,7 +69,7 @@ lint-and-build:
   extends:
     - .configure_docker_with_node
   script:
-    #- pnpm audit --audit-level=moderate
+    - pnpm audit --audit-level=moderate
     - pnpm install
     - pnpm add -D typescript -w
     - pnpm lint
@@ -90,6 +90,63 @@ lint-and-build:
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+.build-docker-images:
+  stage: build
+  extends:
+    - .rules-with-env-vars
+    - .configure_and_login_docker
+  before_script:
+    - export IMAGE_TAG="${CONTAINER_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}"
+
+build-worker:
+  extends: .build-docker-images
+  script:
+    # Build and push worker image
+    - docker manifest inspect ${CONTAINER_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}-worker > /dev/null 2>&1 && echo "Worker image exists, skipping" || (
+      docker build
+      --file apps/backend/Dockerfile.worker
+      --tag ${IMAGE_TAG}-worker
+      --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN
+      --cache-from ${IMAGE_TAG}-worker
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      . && docker images && docker push ${IMAGE_TAG}-worker
+      )
+
+build-backend:
+  extends: .build-docker-images
+  script:
+    # Build and push backend image
+    - docker manifest inspect ${IMAGE_TAG}-backend > /dev/null 2>&1 && echo "Backend image exists, skipping" || (
+      docker build
+      --file apps/backend/Dockerfile
+      --tag ${IMAGE_TAG}-backend
+      --build-arg APP_VERSION=${CI_COMMIT_SHORT_SHA}
+      --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN
+      --cache-from ${IMAGE_TAG}-backend
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      . && docker push ${IMAGE_TAG}-backend
+      )
+
+build-frontend:
+  extends: .build-docker-images
+  script:
+    - docker manifest inspect ${IMAGE_TAG}-frontend-${FRONTEND_ENV} > /dev/null 2>&1 && echo "Frontend image exists, skipping" || (
+      docker build
+      --file apps/frontend/Dockerfile
+      --tag ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
+      --build-arg VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
+      --build-arg SENTRY_ENABLED=true
+      --build-arg SENTRY_ENVIRONEMENT=${FRONTEND_ENV}
+      --build-arg APP_VERSION=${CI_COMMIT_SHORT_SHA}
+      --build-arg SENTRY_DSN_FRONTEND=https://343eb82fc1395b23dc747ac7d2fac3d6@sentry2.fabrique.social.gouv.fr/49
+      --build-arg VITE_MATOMO_URL=https://matomo.fabrique.social.gouv.fr
+      --build-arg VITE_MATOMO_SITE_ID=${MATOMO_SITE_ID}
+      --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN
+      --cache-from ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      . && docker push ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
+      )
 
 trivy-filesystem-scan:
   stage: security
@@ -115,11 +172,8 @@ trivy-filesystem-scan:
 trivy-container-scan:
   extends:
     - .rules-with-env-vars
-    - .login_docker
+    - .configure_and_login_docker
   stage: security
-  image:
-    name: docker:latest
-    entrypoint: [""]
   parallel:
     matrix:
       - IMAGE_TYPE: backend
@@ -129,7 +183,7 @@ trivy-container-scan:
       - IMAGE_TYPE: worker
         IMAGE_SUFFIX: ""
   before_script:
-    - !reference [ .login_docker, before_script]
+    - !reference [ .configure_and_login_docker, before_script]
     - apk add --no-cache wget ca-certificates tar curl
     - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh |  sh -s -- -b /usr/local/bin v0.69.1
   script:
@@ -148,65 +202,18 @@ trivy-container-scan:
     expire_in: 1 week
     when: always
   needs:
-    - build-docker-images
-
-build-docker-images:
-  stage: build
-  image:
-    name: docker:latest
-    entrypoint: ['']
-  extends:
-    - .rules-with-env-vars
-    - .login_docker
-  script:
-    - export IMAGE_TAG="${CONTAINER_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}"
-
-    # Build and push worker image
-    - docker manifest inspect ${CONTAINER_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}-worker > /dev/null 2>&1 && echo "Worker image exists, skipping" || (
-      docker build
-      --file apps/backend/Dockerfile.worker
-      --tag ${IMAGE_TAG}-worker
-      --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN
-      --cache-from ${IMAGE_TAG}-worker
-      --build-arg BUILDKIT_INLINE_CACHE=1
-      . && docker images && docker push ${IMAGE_TAG}-worker
-      )
-
-    # Build and push backend image
-    - docker manifest inspect ${IMAGE_TAG}-backend > /dev/null 2>&1 && echo "Backend image exists, skipping" || (
-      docker build
-      --file apps/backend/Dockerfile
-      --tag ${IMAGE_TAG}-backend
-      --build-arg APP_VERSION=${CI_COMMIT_SHORT_SHA}
-      --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN
-      --cache-from ${IMAGE_TAG}-backend
-      --build-arg BUILDKIT_INLINE_CACHE=1
-      . && docker push ${IMAGE_TAG}-backend
-      )
-
-    - docker manifest inspect ${IMAGE_TAG}-frontend-${FRONTEND_ENV} > /dev/null 2>&1 && echo "Frontend image exists, skipping" || (
-      docker build
-      --file apps/frontend/Dockerfile
-      --tag ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
-      --build-arg VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
-      --build-arg SENTRY_ENABLED=true
-      --build-arg SENTRY_ENVIRONEMENT=${FRONTEND_ENV}
-      --build-arg APP_VERSION=${CI_COMMIT_SHORT_SHA}
-      --build-arg SENTRY_DSN_FRONTEND=https://343eb82fc1395b23dc747ac7d2fac3d6@sentry2.fabrique.social.gouv.fr/49
-      --build-arg VITE_MATOMO_URL=https://matomo.fabrique.social.gouv.fr
-      --build-arg VITE_MATOMO_SITE_ID=${MATOMO_SITE_ID}
-      --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN
-      --cache-from ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
-      --build-arg BUILDKIT_INLINE_CACHE=1
-      . && docker push ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
-      )
+    - build-backend
+    - build-worker
+    - build-frontend
 
 helm_template:
   stage: deploy
   extends:
     - .rules-with-env-vars
   needs:
-    - build-docker-images
+    - build-backend
+    - build-worker
+    - build-frontend
   image:
     name: alpine/helm:latest
     entrypoint: ['']
@@ -227,7 +234,7 @@ helm_template:
 deploy-gitops:
   stage: deploy
   extends:
-    - .login_docker
+    - .configure_and_login_docker
     - .rules-with-env-vars
   script:
     - git clone https://oauth2:${GITOPS_TOKEN}@github.com/fabrique-atlas/org-sdpsn-ws-sirena.git gitops-repo
