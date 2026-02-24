@@ -261,7 +261,9 @@ e2e-integration:
   stage: e2e
   image: node:$NODE_VERSION
   needs:
-    - build-docker-images
+    - build-backend
+    - build-worker
+    - build-frontend
     - deploy-gitops
   extends: .configure_npm
   variables:
