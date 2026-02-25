@@ -3,9 +3,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Toast } from '@sirena/ui';
 import { useNavigate } from '@tanstack/react-router';
-
-import { useId } from 'hono/jsx';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';

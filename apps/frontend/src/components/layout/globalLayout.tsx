@@ -1,4 +1,3 @@
-// biome-ignore-all lint: lint/a11y/noNoninteractiveTabindex + lint/a11y/useSemanticElements exigé par RGAA
 import { useLocation } from '@tanstack/react-router';
 import { type ReactNode, useEffect, useRef } from 'react';
 import { AppFooter } from './footer';
@@ -14,12 +13,13 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
   const { pathname } = useLocation();
 
   useEffect(() => {
+    if (!pathname) return;
+
     const handleFirstTab = (e: KeyboardEvent) => {
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        skipLinkRef.current?.focus();
-        document.removeEventListener('keydown', handleFirstTab);
-      }
+      if (e.key !== 'Tab') return;
+      e.preventDefault();
+      skipLinkRef.current?.focus();
+      document.removeEventListener('keydown', handleFirstTab);
     };
 
     document.addEventListener('keydown', handleFirstTab);
@@ -32,6 +32,7 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
   return (
     <div className="layout">
       <div className="fr-skiplinks">
+        {/** biome-ignore lint/a11y/useSemanticElements: keep explicit landmark role for alignment with DSFR audit rules */}
         <nav role="navigation" aria-label="Accès rapide" className="fr-container" lang="fr">
           <ul className="fr-skiplinks__list">
             <li>
@@ -48,6 +49,7 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
         </nav>
       </div>
       <HeaderMenu homeHref="/" />
+      {/** biome-ignore lint/a11y/useSemanticElements: keep explicit landmark role for alignment with DSFR audit rules */}
       <main id={mainId} role="main" className="fr-container main-content">
         {children}
       </main>

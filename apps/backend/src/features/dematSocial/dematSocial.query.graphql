@@ -82,6 +82,10 @@ fragment ChampFragment on Champ {
     data
     stringValue
   }
+  ... on RppsanteChamp {
+    stringValue
+    data
+  }
   ... on AddressChamp {
     address {
       ...AddressFragment

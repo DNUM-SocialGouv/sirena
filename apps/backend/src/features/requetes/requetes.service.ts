@@ -162,6 +162,7 @@ export const createRequeteFromDematSocial = async ({
           },
           estHandicapee: participant.estHandicapee ?? null,
           estVictimeInformee: participant.estVictimeInformee ?? null,
+          commentaire: participant.commentaire ?? '',
           victimeInformeeCommentaire: participant.victimeInformeeCommentaire ?? '',
           veutGarderAnonymat: participant.veutGarderAnonymat ?? null,
           autrePersonnes: participant.autrePersonnes ?? '',
@@ -226,6 +227,9 @@ export const createRequeteFromDematSocial = async ({
       const misEnCauseData = {
         rpps: s.misEnCause.rpps ?? null,
         autrePrecision: s.misEnCause.commentaire ?? '',
+        civilite: s.misEnCause.civilite ?? '',
+        nom: s.misEnCause.nom ?? '',
+        prenom: s.misEnCause.prenom ?? '',
         ...(s.misEnCause.misEnCauseTypeId && { misEnCauseTypeId: s.misEnCause.misEnCauseTypeId }),
         ...(s.misEnCause.misEnCauseTypePrecisionId && {
           misEnCauseTypePrecisionId: s.misEnCause.misEnCauseTypePrecisionId,

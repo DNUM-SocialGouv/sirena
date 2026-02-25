@@ -1,7 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { AuthLayout } from '@/components/layout/auth/layout';
-import { GlobalLayout } from '@/components/layout/globalLayout';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/_user')({
@@ -11,10 +10,8 @@ export const Route = createFileRoute('/_auth/_user')({
 
 function RouteComponent() {
   return (
-    <GlobalLayout>
-      <AuthLayout>
-        <Outlet />
-      </AuthLayout>
-    </GlobalLayout>
+    <AuthLayout>
+      <Outlet />
+    </AuthLayout>
   );
 }

@@ -10,6 +10,7 @@ import {
   MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION,
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   MIS_EN_CAUSE_TYPE,
+  PROFESSION_SOCIAL_PRECISION,
   PROFESSION_TYPE,
   RECEPTION_TYPE,
 } from '@sirena/common/constants';
@@ -143,15 +144,46 @@ const getFiness = (champ: RootChampFragmentFragment | RepetitionChamp) => {
   }
 
   return {
-    code: champ.data.finess ?? '',
+    code: champ.data.finess ? String(champ.data.finess) : '',
     adresse: {
-      label: String(champ.data.rs) ?? '',
-      codePostal: String(champ.data.adresse_code_postal) ?? '',
-      ville: String(champ.data.adresse_lib_routage) ?? '',
+      label: champ.data.rs ? String(champ.data.rs) : '',
+      codePostal: champ.data.adresse_code_postal ? String(champ.data.adresse_code_postal) : '',
+      ville: champ.data.adresse_lib_routage ? String(champ.data.adresse_lib_routage) : '',
     },
     tutelle: champ.data.tutelle != null ? String(champ.data.tutelle) : '',
     categ_code: champ.data.categ_code != null ? String(champ.data.categ_code) : '',
     categ_lib: champ.data.categ_lib != null ? String(champ.data.categ_lib) : '',
+  };
+};
+
+const getRpps = (champ: RootChampFragmentFragment | RepetitionChamp) => {
+  if (!champ || champ?.stringValue === '') {
+    return null;
+  }
+  if (champ.__typename !== 'RppsanteChamp') {
+    throw new ChampMappingError(champ, 'RppsanteChamp', 'Invalid mapping value');
+  } else if (!champ.data) {
+    const logger = getLoggerStore();
+    logger.error(`RppsanteChamp data is null for champ id: ${champ.id}`);
+    return null;
+  }
+
+  const rpps = champ.data.identifiant_pp ? String(champ.data.identifiant_pp) : '';
+  const civilite = champ.data.code_civilite ? String(champ.data.code_civilite) : '';
+  const nom = champ.data.nom_d_exercice ? String(champ.data.nom_d_exercice) : '';
+  const prenom = champ.data.prenom_d_exercice ? String(champ.data.prenom_d_exercice) : '';
+  const libelleProfession = champ.data.libelle_profession ? String(champ.data.libelle_profession) : '';
+  const codePostal = champ.data.code_postal_coord_structure ? String(champ.data.code_postal_coord_structure) : '';
+  const commune = champ.data.libelle_commune_coord_structure ? String(champ.data.libelle_commune_coord_structure) : '';
+
+  return {
+    rpps: rpps,
+    civilite: civilite,
+    nom: nom,
+    prenom: prenom,
+    libelleProfession: libelleProfession,
+    codePostal,
+    commune,
   };
 };
 
@@ -205,7 +237,8 @@ const getDemarchesEngagees = (
     demarches: demarches.filter((d) => d !== DS_DEMARCHE_ENGAGEE.AUCUNE),
     dateContactEtablissement: getDateByChamps(champsById[mapping.demarchesEngageesDateContactEtablissement.id]),
     etablissementARepondu: getBooleanOrNull(champsById[mapping.demarchesEngageesEtablissementARepondu.id]) || false,
-    commentaire: champsById[mapping.demarchesEngageesAutre.id]?.stringValue ?? '',
+    organisme: champsById[mapping.demarchesEngageesAutre.id]?.stringValue ?? '',
+    commentaire: '',
     datePlainte: getDateByChamps(champsById[mapping.demarcheEngageDatePlainte.id]),
     files: getFilesByChamps(champsById[mapping.demarchesEngageesReponseFile.id]),
     autoriteTypeId: getEnumIdFromLabel(
@@ -237,6 +270,9 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
   const nomEtablissementValue =
     'nomEtablissement' in mapping ? (champsById[mapping.nomEtablissement.id]?.stringValue ?? '') : '';
   const adresse = address ?? { label: nomEtablissementValue ?? '', codePostal, ville: '', rue: '', numero: '' };
+  if (nomEtablissementValue) {
+    adresse.label = nomEtablissementValue;
+  }
   const finess = getFiness(champsById[mapping.finess.id]);
   if (finess) {
     adresse.label = finess.adresse.label;
@@ -296,7 +332,7 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
     if (professionDomicileType === DS_PROFESSION_DOMICILE_TYPE.NPJM) {
       return {
         misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SOCIAL,
-        misEnCauseTypePrecisionId: PROFESSION_TYPE.MJPM,
+        misEnCauseTypePrecisionId: PROFESSION_SOCIAL_PRECISION.MANDATAIRE,
       };
     }
     if (professionDomicileType === DS_PROFESSION_DOMICILE_TYPE.AUTRE_PROFESSIONNEL) {
@@ -370,10 +406,17 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
 
 const getMisEnCause = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
   const { misEnCauseTypeId, misEnCauseTypePrecisionId } = getResponsable(champsById, mapping);
+  const rppsChamp = getRpps(champsById[mapping.professionnelResponsableIdentite.id]);
   const misEnCause = {
     misEnCauseTypeId,
     misEnCauseTypePrecisionId,
-    rpps: champsById[mapping.professionnelResponsableIdentite.id]?.stringValue ?? null,
+    rpps: '',
+    civilite: '',
+    nom: '',
+    prenom: '',
+    ...(rppsChamp
+      ? { rpps: rppsChamp.rpps, civilite: rppsChamp.civilite, nom: rppsChamp.nom, prenom: rppsChamp.prenom }
+      : {}),
     commentaire: champsById[mapping.responsableCommentaire.id]?.stringValue ?? '',
   };
   return misEnCause;
@@ -433,6 +476,7 @@ const getVictime = (champsById: MappedChamp, mandataire: Mandataire, demandeur: 
       lienVictimeId: null, // No link as it's the "Personne concernée"
       estVictime: true,
       estVictimeInformee: null,
+      commentaire: null,
       victimeInformeeCommentaire: null,
       veutGarderAnonymat,
       adresse: champsById[rootMapping.adresse.id] ? createAddress(champsById[rootMapping.adresse.id]) : null,
@@ -499,7 +543,9 @@ const getVictime = (champsById: MappedChamp, mandataire: Mandataire, demandeur: 
         champsById[rootMapping.estVictimeInformee.id],
         rootMapping.estVictimeInformee.options,
       ),
-      victimeInformeeCommentaire: champsById[rootMapping.raisons.id]?.stringValue ?? null,
+      commentaire: champsById[rootMapping.raisons.id]?.stringValue ?? null,
+      // victimeInformeeCommentaire: champsById[rootMapping.raisons.id]?.stringValue ?? null,
+      victimeInformeeCommentaire: null,
       veutGarderAnonymat: victimeVeutGarderAnonymat,
       adresse: champsById[rootMapping.victimeAdressePostale.id]
         ? createAddress(champsById[rootMapping.victimeAdressePostale.id])
