@@ -7,6 +7,7 @@ SDPSN-devops-charts:
 
   appVariables:
     DEMAT_SOCIAL_API_DIRECTORY: "923"
+    DEMAT_SOCIAL_API_URL: "https://demat.social.gouv.fr/api/v2/graphql"
     HOST: https://sirena-sante.social.gouv.fr
     PC_DOMAIN: https://auth.agentconnect.gouv.fr/api/v2
     PC_REDIRECT_URI: https://sirena-sante.social.gouv.fr/api/auth/callback
