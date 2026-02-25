@@ -45,7 +45,13 @@ function formatEntiteAdminString(entites: Array<{ nomComplet: string; entiteMere
  * Adresse postale : Bâtiment, Voie, Code postal, Ville
  */
 function formatEntiteCompleteString(
-  entites: Array<{ nomComplet: string; emailContactUsager: string; entiteMereId: string | null }>,
+  entites: Array<{
+    nomComplet: string;
+    emailContactUsager: string;
+    telContactUsager: string;
+    adresseContactUsager: string;
+    entiteMereId: string | null;
+  }>,
 ): string {
   // Filter only administrative entities
   const entitesAdmin = entites.filter((e) => e.entiteMereId === null);
@@ -56,13 +62,12 @@ function formatEntiteCompleteString(
       if (entite.emailContactUsager) {
         parts.push(`Adresse e-mail : ${entite.emailContactUsager}`);
       }
-      // TODO: Add "téléphone" and "adresse postale" when these fields are added to the Entite model
-      // if (entite.telephone) {
-      //   parts.push(`Téléphone : ${entite.telephone}`);
-      // }
-      // if (entite.adressePostale) {
-      //   parts.push(`Adresse postale : ${entite.adressePostale}`);
-      // }
+      if (entite.telContactUsager) {
+        parts.push(`Téléphone : ${entite.telContactUsager}`);
+      }
+      if (entite.adresseContactUsager) {
+        parts.push(`Adresse postale : ${entite.adresseContactUsager}`);
+      }
       return parts.join('\n');
     })
     .join('\n\n');
@@ -295,6 +300,8 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
         id: true,
         nomComplet: true,
         emailContactUsager: true,
+        telContactUsager: true,
+        adresseContactUsager: true,
         entiteMereId: true,
       },
     });

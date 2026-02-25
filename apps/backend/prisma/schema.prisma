@@ -88,14 +88,16 @@ model Session {
 }
 
 model Entite {
-  id                 String  @id @default(uuid())
-  nomComplet         String
-  label              String
-  email              String  @default("")
-  emailContactUsager String  @default("")
-  emailDomain        String  @default("")
-  organizationalUnit String  @default("")
-  isActive           Boolean @default(false)
+  id                    String  @id @default(uuid())
+  nomComplet            String
+  label                 String
+  email                 String  @default("")
+  emailContactUsager    String  @default("")
+  telContactUsager      String  @default("")
+  adresseContactUsager  String @default("")
+  emailDomain           String  @default("")
+  organizationalUnit    String  @default("")
+  isActive              Boolean @default(false)
 
   services Entite[] @relation("EntiteMereToServices")
 

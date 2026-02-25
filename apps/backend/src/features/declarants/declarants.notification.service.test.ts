@@ -139,7 +139,14 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     expect(mockedPrismaEntite.findMany).toHaveBeenCalledWith({
       where: { id: { in: ['e1', 'e2'] }, isActive: true },
-      select: { id: true, nomComplet: true, emailContactUsager: true, entiteMereId: true },
+      select: {
+        id: true,
+        nomComplet: true,
+        emailContactUsager: true,
+        telContactUsager: true,
+        adresseContactUsager: true,
+        entiteMereId: true,
+      },
     });
     expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
   });
@@ -155,9 +162,30 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     } as any);
 
     mockedPrismaEntite.findMany.mockResolvedValueOnce([
-      { id: 'e1', nomComplet: 'ARS Normandie', emailContactUsager: 'contact-ars@ex.com', entiteMereId: null },
-      { id: 'e2', nomComplet: 'CD Calvados', emailContactUsager: 'contact-cd@ex.com', entiteMereId: null },
-      { id: 'child1', nomComplet: 'UA 14', emailContactUsager: 'contact-ua@ex.com', entiteMereId: 'e1' },
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        emailContactUsager: 'contact-ars@ex.com',
+        telContactUsager: '02 31 00 00 00',
+        adresseContactUsager: '1 rue Example, 76000 Rouen',
+        entiteMereId: null,
+      },
+      {
+        id: 'e2',
+        nomComplet: 'CD Calvados',
+        emailContactUsager: 'contact-cd@ex.com',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+      {
+        id: 'child1',
+        nomComplet: 'UA 14',
+        emailContactUsager: 'contact-ua@ex.com',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: 'e1',
+      },
     ] as any);
 
     mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
@@ -179,6 +207,8 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
             entitecomplete: [
               'ARS Normandie',
               'Adresse e-mail : contact-ars@ex.com',
+              'Téléphone : 02 31 00 00 00',
+              'Adresse postale : 1 rue Example, 76000 Rouen',
               '',
               'CD Calvados',
               'Adresse e-mail : contact-cd@ex.com',
@@ -251,7 +281,14 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     } as any);
 
     mockedPrismaEntite.findMany.mockResolvedValueOnce([
-      { id: 'e1', nomComplet: 'ARS Normandie', emailContactUsager: 'contact-ars@ex.com', entiteMereId: null },
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        emailContactUsager: 'contact-ars@ex.com',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
     ] as any);
 
     mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
