@@ -14,13 +14,14 @@ import { parseAdresseDomicile } from '../../helpers/address.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
+import { deleteFileFromMinio } from '../../libs/minio.js';
 import { type Prisma, prisma } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
-import { setFaitFiles } from '../uploadedFiles/uploadedFiles.service.js';
+import { deleteFaitFilesRemovedFromSituation, setFaitFiles } from '../uploadedFiles/uploadedFiles.service.js';
 import {
   mapDeclarantToPrismaCreate,
   mapPersonneConcerneeToPrismaCreate,
@@ -970,8 +971,16 @@ const updateExistingSituation = async (
   situationData: SituationInput,
   topEntiteId: string,
   changedById?: string,
-): Promise<string[]> => {
+): Promise<{ newAssignedEntiteIds: string[]; deletedFilePaths: string[] }> => {
   const before = changedById ? await captureSituationState(tx, existingSituation.id) : null;
+
+  const { filePaths: deletedFilePaths } = await deleteFaitFilesRemovedFromSituation(
+    existingSituation.id,
+    situationData.fait?.fileIds ?? [],
+    topEntiteId,
+    changedById ?? undefined,
+    tx,
+  );
 
   await tx.situation.update({
     where: { id: existingSituation.id },
@@ -999,6 +1008,10 @@ const updateExistingSituation = async (
     topEntiteId,
   );
 
+  if (situationData.fait?.fileIds?.length) {
+    await setFaitFiles(existingSituation.id, situationData.fait.fileIds, topEntiteId, changedById ?? undefined, tx);
+  }
+
   if (changedById) {
     const after = await captureSituationState(tx, existingSituation.id);
     await createChangeLog({
@@ -1011,7 +1024,7 @@ const updateExistingSituation = async (
     });
   }
 
-  return newAssignedEntiteIds;
+  return { newAssignedEntiteIds, deletedFilePaths };
 };
 
 const createNewSituation = async (
@@ -1247,12 +1260,15 @@ export const updateRequeteSituation = async (
     }
   }
 
+  let deletedFilePaths: string[] = [];
   await prisma.$transaction(async (tx) => {
     const existingSituation = requete.situations.find((s) => s.id === situationId);
     if (!existingSituation) {
       throw new Error('Situation not found');
     }
-    newAssignedEntiteIds = await updateExistingSituation(tx, existingSituation, situationData, entiteId, changedById);
+    const result = await updateExistingSituation(tx, existingSituation, situationData, entiteId, changedById);
+    newAssignedEntiteIds = result.newAssignedEntiteIds;
+    deletedFilePaths = result.deletedFilePaths;
     await tx.requeteEntite.updateMany({
       where: {
         requeteId,
@@ -1268,8 +1284,8 @@ export const updateRequeteSituation = async (
     });
   });
 
-  if (situationData.fait?.fileIds?.length) {
-    await setFaitFiles(situationId, situationData.fait.fileIds, entiteId, changedById);
+  for (const filePath of deletedFilePaths) {
+    await deleteFileFromMinio(filePath);
   }
 
   if (!updatedRequete) {

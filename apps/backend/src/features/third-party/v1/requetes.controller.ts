@@ -3,6 +3,7 @@ import { fileTypeFromBuffer } from 'file-type';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../../../config/files.constant.js';
 import factoryWithLogs from '../../../helpers/factories/appWithLogs.js';
 import { sanitizeFilename } from '../../../helpers/file.js';
+import { assignEntitesToRequeteTask } from '../../dematSocial/affectation/affectation.js';
 import { getRequiredApiKey } from '../thirdPartyFactory.js';
 import {
   postAttachmentParamsValidator,
@@ -32,6 +33,17 @@ const app = factoryWithLogs
     logger.info({ requeteId: requete.id }, 'Requete created successfully via third-party API');
 
     c.header('x-trace-id', traceId);
+
+    // Run affectation asynchronously
+    assignEntitesToRequeteTask(requete.id)
+      .then(() => logger.info({ requeteId: requete.id }, 'Requete auto-assigned to entities (phone platform)'))
+      .catch((err) =>
+        logger.error(
+          { requeteId: requete.id, err },
+          'Automatic affectation failed (phone platform) (requete created, retry affectation if needed)',
+        ),
+      );
+
     return c.json(
       {
         requeteId: requete.id,

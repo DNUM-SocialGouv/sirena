@@ -3,7 +3,7 @@ import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
 import { type Prisma, PrismaClient } from '../../../libs/prisma.js';
 import { sendEntiteAssignedNotification } from '../../entites/entite.notification.service.js';
 import { createDefaultRequeteEtapes } from '../../requeteEtapes/requetesEtapes.service.js';
-import { buildSituationContextFromDemat } from './buildSituationContext.js';
+import { buildSituationContext } from './buildSituationContext.js';
 import { runDecisionTree } from './decisionTree.js';
 import { findGeoByPostalCode } from './geo/geoIndex.js';
 import type { EntiteAdminType, SituationContext } from './types.js';
@@ -106,7 +106,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
 
   for (const situation of requete.situations) {
     try {
-      const context = buildSituationContextFromDemat(situation);
+      const context = buildSituationContext(situation);
       logger.debug({ context }, `Request context for ${requeteId} - situation ${situation.id}`);
       const types = await runDecisionTree(context); // -> ['ARS', 'CD'] for example
       logger.debug({ types }, `Entity types determined for request ${requeteId} - situation ${situation.id}`);
