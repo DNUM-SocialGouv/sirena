@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SendTipimailOptions, TipimailSendResponse, TipimailSubstitution } from './tipimail.js';
 
 global.fetch = vi.fn();
@@ -10,6 +10,8 @@ vi.mock('../../config/env.js', () => ({
     TIPIMAIL_API_KEY: 'test-api-key',
     TIPIMAIL_FROM_ADDRESS: 'default@example.com',
     TIPIMAIL_FROM_PERSONAL_NAME: 'Default Sender',
+    TIPIMAIL_REDIRECT_ALL_TO: undefined as string | undefined,
+    SENTRY_ENVIRONMENT: undefined as string | undefined,
   },
 }));
 
@@ -107,7 +109,7 @@ describe('tipimail', () => {
       expect(body.headers['X-TM-SUB']).toEqual([
         {
           email: 'recipient@example.com',
-          values: { name: 'John', code: 'ABC123' },
+          values: { name: 'John', code: 'ABC123', __testRealRecipients: '' },
         },
       ]);
       expect(body.msg.images).toEqual([
@@ -455,7 +457,10 @@ describe('tipimail', () => {
       const callArgs = vi.mocked(fetch).mock.calls[0];
       const body = JSON.parse(callArgs[1]?.body as string);
 
-      expect(body.headers['X-TM-SUB']).toEqual(substitutions);
+      expect(body.headers['X-TM-SUB']).toEqual([
+        { email: 'recipient1@example.com', values: { name: 'John', code: 'ABC', __testRealRecipients: '' } },
+        { email: 'recipient2@example.com', values: { name: 'Jane', code: 'XYZ', __testRealRecipients: '' } },
+      ]);
     });
 
     it('should include html when provided', async () => {
@@ -496,6 +501,47 @@ describe('tipimail', () => {
       const body = JSON.parse(callArgs[1]?.body as string);
 
       expect(body.msg.html).toBeUndefined();
+    });
+
+    describe('when TIPIMAIL_REDIRECT_ALL_TO is set and not production', () => {
+      const redirectTo = 'redirect@test.com';
+
+      beforeEach(async () => {
+        const { envVars } = await import('../../config/env.js');
+        envVars.TIPIMAIL_REDIRECT_ALL_TO = redirectTo;
+        envVars.SENTRY_ENVIRONMENT = 'integration';
+      });
+
+      afterEach(async () => {
+        const { envVars } = await import('../../config/env.js');
+        envVars.TIPIMAIL_REDIRECT_ALL_TO = undefined;
+        envVars.SENTRY_ENVIRONMENT = undefined;
+      });
+
+      it('should send to single redirect address and set subject and __testRealRecipients', async () => {
+        const mockResponse: TipimailSendResponse = { status: 'success' };
+        vi.mocked(fetch).mockResolvedValueOnce({
+          status: 200,
+          json: async () => mockResponse,
+        } as Response);
+
+        await sendTipimailEmail({
+          to: ['a@example.com', 'b@example.com'],
+          subject: 'Original subject',
+          text: 'Body',
+        });
+
+        const callArgs = vi.mocked(fetch).mock.calls[0];
+        const body = JSON.parse(callArgs[1]?.body as string);
+
+        expect(body.to).toEqual([{ address: redirectTo }]);
+        expect(body.msg.subject).toContain('[TEST - Destinataire(s) réel(s):');
+        expect(body.msg.subject).toContain('Original subject');
+        expect(body.headers['X-TM-SUB']).toHaveLength(1);
+        expect(body.headers['X-TM-SUB'][0].email).toBe(redirectTo);
+        expect(body.headers['X-TM-SUB'][0].values.__testRealRecipients).toContain('a@example.com');
+        expect(body.headers['X-TM-SUB'][0].values.__testRealRecipients).toContain('b@example.com');
+      });
     });
   });
 });

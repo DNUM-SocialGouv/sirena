@@ -255,20 +255,82 @@ function assertSubstitutionsMatchRecipients(recipients: Recipient[], subs?: Tipi
     });
  */
 
+/**
+ * When TIPIMAIL_REDIRECT_ALL_TO is set: redirect all emails to that address and set __testRealRecipients to plain text encart.
+ * When not set: __testRealRecipients is set to '' so template {{__testRealRecipients}} renders nothing.
+ */
+function applyRedirectAllTo(
+  recipients: Recipient[],
+  subject: string,
+  substitutions: TipimailSubstitution[] | undefined,
+): {
+  recipients: Recipient[];
+  subject: string;
+  substitutions: TipimailSubstitution[] | undefined;
+} {
+  const redirectTo = envVars.TIPIMAIL_REDIRECT_ALL_TO?.trim();
+  const isProduction = envVars.SENTRY_ENVIRONMENT === 'production';
+  if (!redirectTo || isProduction) return { recipients, subject, substitutions };
+
+  const realRecipientsLabel = recipients.map((r) => r.address).join(', ');
+  const encartSubject = `[TEST - Destinataire(s) réel(s): ${realRecipientsLabel}] ${subject}`;
+
+  const redirectRecipients: Recipient[] = [{ address: redirectTo }];
+
+  const mergedValues: Record<string, unknown> = {};
+  if (substitutions?.length) {
+    for (const sub of substitutions) {
+      Object.assign(mergedValues, sub.values);
+    }
+  }
+  mergedValues.__testRealRecipients = `[TEST] Destinataire(s) réel(s) : ${realRecipientsLabel}`;
+  const redirectSubstitutions: TipimailSubstitution[] = [{ email: redirectTo, values: mergedValues }];
+
+  return {
+    recipients: redirectRecipients,
+    subject: encartSubject,
+    substitutions: redirectSubstitutions,
+  };
+}
+
+/** Ensures every substitution has __testRealRecipients: when not redirecting, set to '' so template shows nothing. */
+function ensureTestRealRecipientsInSubstitutions(
+  substitutions: TipimailSubstitution[] | undefined,
+  encartValue: string,
+): TipimailSubstitution[] | undefined {
+  if (!substitutions?.length) return substitutions;
+  return substitutions.map((sub) => ({
+    ...sub,
+    values: { ...sub.values, __testRealRecipients: encartValue },
+  }));
+}
+
 function createTipimailRequest(options: SendTipimailOptions): TipimailSendRequest {
-  const recipients = normalizeRecipients(options.to);
+  let recipients = normalizeRecipients(options.to);
   const from = normalizeFrom(options.from);
   const replyTo = normalizeReplyTo(options.replyTo);
+  let subject = options.subject;
+  let substitutions = options.substitutions;
 
-  assertSubstitutionsMatchRecipients(recipients, options.substitutions);
+  const redirected = applyRedirectAllTo(recipients, subject, substitutions);
+  recipients = redirected.recipients;
+  subject = redirected.subject;
+  substitutions = redirected.substitutions ?? options.substitutions;
+
+  const redirectIsOn = Boolean(envVars.TIPIMAIL_REDIRECT_ALL_TO?.trim()) && envVars.SENTRY_ENVIRONMENT !== 'production';
+  if (!redirectIsOn) {
+    substitutions = ensureTestRealRecipientsInSubstitutions(substitutions, '');
+  }
+
+  assertSubstitutionsMatchRecipients(recipients, substitutions);
 
   const usingTemplate = !!options.template;
 
   const msg: TipimailEmailMessage = {
     from,
     ...(usingTemplate ? {} : replyTo ? { replyTo } : {}),
-    subject: options.subject, // it will be ignored if using a template
-    text: options.text, // it will be ignored if using a template
+    subject,
+    text: options.text,
     ...(options.html ? { html: options.html } : {}),
     ...(options.attachments?.length
       ? {
@@ -297,7 +359,7 @@ function createTipimailRequest(options: SendTipimailOptions): TipimailSendReques
     headers: {
       ...(options.template ? { 'X-TM-TEMPLATE': options.template } : {}),
       ...(options.meta ? { 'X-TM-META': options.meta } : {}),
-      ...(options.substitutions?.length ? { 'X-TM-SUB': options.substitutions } : {}),
+      ...(substitutions?.length ? { 'X-TM-SUB': substitutions } : {}),
       ...(options.tags?.length ? { 'X-TM-TAGS': options.tags } : {}),
     },
   };
