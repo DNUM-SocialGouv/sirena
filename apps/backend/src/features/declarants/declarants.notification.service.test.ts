@@ -139,7 +139,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     expect(mockedPrismaEntite.findMany).toHaveBeenCalledWith({
       where: { id: { in: ['e1', 'e2'] }, isActive: true },
-      select: { id: true, nomComplet: true, email: true, entiteMereId: true },
+      select: { id: true, nomComplet: true, emailContactUsager: true, entiteMereId: true },
     });
     expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
   });
@@ -155,9 +155,9 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     } as any);
 
     mockedPrismaEntite.findMany.mockResolvedValueOnce([
-      { id: 'e1', nomComplet: 'ARS Normandie', email: 'ars@ex.com', entiteMereId: null },
-      { id: 'e2', nomComplet: 'CD Calvados', email: 'cd@ex.com', entiteMereId: null },
-      { id: 'child1', nomComplet: 'UA 14', email: 'ua@ex.com', entiteMereId: 'e1' },
+      { id: 'e1', nomComplet: 'ARS Normandie', emailContactUsager: 'contact-ars@ex.com', entiteMereId: null },
+      { id: 'e2', nomComplet: 'CD Calvados', emailContactUsager: 'contact-cd@ex.com', entiteMereId: null },
+      { id: 'child1', nomComplet: 'UA 14', emailContactUsager: 'contact-ua@ex.com', entiteMereId: 'e1' },
     ] as any);
 
     mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
@@ -178,10 +178,10 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
             entiteadmin: 'ARS Normandie et CD Calvados',
             entitecomplete: [
               'ARS Normandie',
-              'Adresse e-mail : ars@ex.com',
+              'Adresse e-mail : contact-ars@ex.com',
               '',
               'CD Calvados',
-              'Adresse e-mail : cd@ex.com',
+              'Adresse e-mail : contact-cd@ex.com',
             ].join('\n'),
             signature: '',
           },
@@ -251,7 +251,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     } as any);
 
     mockedPrismaEntite.findMany.mockResolvedValueOnce([
-      { id: 'e1', nomComplet: 'ARS Normandie', email: 'ars@ex.com', entiteMereId: null },
+      { id: 'e1', nomComplet: 'ARS Normandie', emailContactUsager: 'contact-ars@ex.com', entiteMereId: null },
     ] as any);
 
     mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);

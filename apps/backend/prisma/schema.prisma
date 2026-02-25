@@ -92,6 +92,7 @@ model Entite {
   nomComplet         String
   label              String
   email              String  @default("")
+  emailContactUsager String  @default("")
   emailDomain        String  @default("")
   organizationalUnit String  @default("")
   isActive           Boolean @default(false)
