@@ -3,34 +3,35 @@ import { type Entite, prisma } from '../../libs/prisma.js';
 import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type.js';
 
 export const getEntiteForUser = async (organizationalUnit: string | null, email: string) => {
-  if (organizationalUnit) {
-    const entites = await prisma.entite.findMany({
+  if (organizationalUnit?.trim()) {
+    const organizationalUnitTrimmed = organizationalUnit.trim();
+    const entitesByOrganizationalUnit = await prisma.entite.findMany({
       where: {
         OR: [
-          { organizationalUnit },
-          { organizationalUnit: { startsWith: `${organizationalUnit},` } },
-          { organizationalUnit: { endsWith: `,${organizationalUnit}` } },
-          { organizationalUnit: { contains: `,${organizationalUnit},` } },
+          { organizationalUnit: organizationalUnitTrimmed },
+          { organizationalUnit: { startsWith: `${organizationalUnitTrimmed},` } },
+          { organizationalUnit: { endsWith: `,${organizationalUnitTrimmed}` } },
+          { organizationalUnit: { contains: `,${organizationalUnitTrimmed},` } },
         ],
       },
     });
-
-    if (entites.length === 1) {
-      return entites[0];
+    if (entitesByOrganizationalUnit.length === 1) {
+      return entitesByOrganizationalUnit[0];
     }
-    return null;
   }
 
   const trimmedEmail = email.trim();
-
-  const entite = await prisma.entite.findMany({
-    where: {
-      emailDomain: trimmedEmail.split('@')[1],
-    },
-  });
-  if (entite.length === 1) {
-    return entite[0];
+  const domain = trimmedEmail.includes('@') ? trimmedEmail.split('@')[1]?.trim() : null;
+  if (domain) {
+    const emailDomainValue = `@${domain}`;
+    const entitesByEmailDomain = await prisma.entite.findMany({
+      where: { emailDomain: emailDomainValue },
+    });
+    if (entitesByEmailDomain.length === 1) {
+      return entitesByEmailDomain[0];
+    }
   }
+
   return null;
 };
 
