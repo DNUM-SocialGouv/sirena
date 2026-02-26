@@ -1,3 +1,4 @@
+import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { envVars } from '../../config/env.js';
 import {
   ACKNOWLEDGMENT_EMAIL_TEMPLATE_ID,
@@ -14,6 +15,8 @@ import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { ACKNOWLEDGMENT_STEP_NAME, updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
 import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
+
+const ELIGIBLE_RECEPTION_TYPES_FOR_ACKNOWLEDGMENT = [RECEPTION_TYPE.FORMULAIRE, RECEPTION_TYPE.TELEPHONE] as const;
 
 /**
  * Formats the list of administrative entity names (entities without a parent entity)
@@ -227,7 +230,7 @@ async function attachEmailPdfToStep(
 }
 
 /**
- * Sends an acknowledgment email to the declarant when a request from demat.social is created
+ * Sends an acknowledgment email to the declarant when a request from demat.social or phone platform is created
  * @param requeteId - The ID of the requete that was just created
  */
 export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promise<void> {
@@ -256,9 +259,18 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
       return;
     }
 
-    // Only send for requests from demat.social
-    if (!requete.dematSocialId) {
-      logger.debug({ requeteId }, 'Requete is not from demat.social, skipping acknowledgment email');
+    // Only send for requests from demat.social (FORMULAIRE) or phone platform (TELEPHONE)
+    const isEligibleReceptionType =
+      requete.receptionTypeId &&
+      ELIGIBLE_RECEPTION_TYPES_FOR_ACKNOWLEDGMENT.includes(
+        requete.receptionTypeId as (typeof ELIGIBLE_RECEPTION_TYPES_FOR_ACKNOWLEDGMENT)[number],
+      );
+
+    if (!isEligibleReceptionType) {
+      logger.debug(
+        { requeteId, receptionTypeId: requete.receptionTypeId },
+        'Requete reception type is not eligible for automatic acknowledgment email',
+      );
       return;
     }
 
