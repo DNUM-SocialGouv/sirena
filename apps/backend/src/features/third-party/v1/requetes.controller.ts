@@ -1,4 +1,5 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
+import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { fileTypeFromBuffer } from 'file-type';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../../../config/files.constant.js';
 import factoryWithLogs from '../../../helpers/factories/appWithLogs.js';
@@ -25,7 +26,7 @@ const app = factoryWithLogs
     const requete = await createRequeteFromThirdParty({
       thirdPartyAccountId: apiKey.account.id,
       receptionDate: payload.receptionDate || new Date(),
-      receptionTypeId: 'TELEPHONE',
+      receptionTypeId: RECEPTION_TYPE.TELEPHONE,
       declarant: payload.declarant,
       victime: payload.victime,
       situations: payload.situations,

@@ -1,92 +1,15 @@
-type Adresse = {
-  label?: string;
-  codePostal?: string;
-  ville?: string;
-  rue?: string;
-  numero?: string;
-};
+import type { z } from 'zod';
+import type { DeclarantSchema, SituationSchema, VictimeSchema } from './requetes.schema.js';
 
-type ThirdPartyDeclarant = {
-  nom: string;
-  prenom: string;
-  civiliteId?: string;
-  email?: string;
-  ageId?: string;
-  telephone?: string;
-  estHandicapee?: boolean;
-  lienVictimeId?: string;
-  estVictime?: boolean;
-  veutGarderAnonymat?: boolean;
-  adresse?: Adresse;
-  commentaire?: string;
-};
-
-type ThirdPartyVictime = {
-  nom: string;
-  prenom: string;
-  civiliteId?: string;
-  email?: string;
-  telephone?: string;
-  ageId?: string;
-  adresse?: Adresse;
-  estHandicapee?: boolean;
-  commentaire?: string;
-  veutGarderAnonymat?: boolean;
-  estVictimeInformee?: boolean;
-  autrePersonnes?: string;
-};
-
-type ThirdPartyLieuDeSurvenue = {
-  codePostal?: string;
-  commentaire?: string;
-  adresse?: Adresse;
-  lieuTypeId?: string;
-  lieuPrecision?: string;
-  transportTypeId?: string;
-  societeTransport?: string;
-  finess?: string;
-  tutelle?: string;
-  categCode?: string;
-  categLib?: string;
-};
-
-type ThirdPartyMisEnCause = {
-  misEnCauseTypeId?: string;
-  misEnCauseTypePrecisionId?: string;
-  rpps?: string;
-  commentaire?: string;
-};
-
-type ThirdPartyDemarchesEngagees = {
-  demarches?: string[];
-  dateContactEtablissement?: Date;
-  etablissementARepondu?: boolean;
-  commentaire?: string;
-  datePlainte?: Date;
-  autoriteTypeId?: string;
-};
-
-type ThirdPartyFait = {
-  motifsDeclaratifs?: string[];
-  consequences?: string[];
-  maltraitanceTypes?: string[];
-  dateDebut?: Date;
-  dateFin?: Date;
-  commentaire?: string;
-};
-
-type ThirdPartySituation = {
-  lieuDeSurvenue?: ThirdPartyLieuDeSurvenue;
-  misEnCause?: ThirdPartyMisEnCause;
-  demarchesEngagees?: ThirdPartyDemarchesEngagees;
-  faits?: ThirdPartyFait[];
-};
+type ThirdPPartyDeclarant = z.infer<typeof DeclarantSchema>;
+type ThirdPPartyVictime = z.infer<typeof VictimeSchema>;
+type ThirdPartySituation = z.infer<typeof SituationSchema>;
 
 export type CreateRequeteFromThirdPartyDto = {
   thirdPartyAccountId: string;
   receptionDate: Date;
   receptionTypeId: string;
-  declarant: ThirdPartyDeclarant;
-  victime: ThirdPartyVictime;
+  declarant: ThirdPPartyDeclarant;
+  victime: ThirdPPartyVictime;
   situations: ThirdPartySituation[];
 };

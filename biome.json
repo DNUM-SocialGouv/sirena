@@ -13,6 +13,7 @@
       "./apps/backend/src/**/*",
       "!apps/backend/src/features/dematSocial/affectation/geo/inseetocodepostal.json",
       "!apps/backend/src/features/dematSocial/affectation/geo/liste_entites.json",
+      "!apps/backend/src/swagger/**/*.json",
       "!apps/backend/src/graphql/*",
       "./apps/backend/prisma/**/*.ts",
       "./apps/backend/scripts/**/*",
@@ -37,7 +38,7 @@
     },
     "rules": {
       "a11y": {
-      "noRedundantRoles": "off"
+        "noRedundantRoles": "off"
       },
       "recommended": true,
       "complexity": {

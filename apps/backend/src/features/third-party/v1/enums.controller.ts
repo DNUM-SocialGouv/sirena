@@ -8,6 +8,7 @@ import {
   getLienVictimeEnumsRoute,
   getLieuTypeEnumsRoute,
   getMaltraitanceTypeEnumsRoute,
+  getMisEnCausePrecisionsTypeEnumsRoute,
   getMisEnCauseTypeEnumsRoute,
   getMotifDeclaratifEnumsRoute,
 } from './enums.route.js';
@@ -20,6 +21,7 @@ import {
   getLienVictimeEnums,
   getLieuTypeEnums,
   getMaltraitanceTypeEnums,
+  getMisEnCausePrecisionsTypeEnums,
   getMisEnCauseTypeEnums,
   getMotifDeclaratifEnums,
 } from './enums.service.js';
@@ -52,10 +54,20 @@ const app = factoryWithLogs
   })
   .get('/mis-en-cause-type', getMisEnCauseTypeEnumsRoute, async (c) => {
     const logger = c.get('logger');
-    const misEnCauseTypeEnums = await getMisEnCauseTypeEnums();
+    const misEnCauseTypeEnums = getMisEnCauseTypeEnums();
     logger.info({ enumCount: misEnCauseTypeEnums.length }, 'MisEnCauseType enums retrieved successfully');
 
     return c.json(misEnCauseTypeEnums, 200);
+  })
+  .get('/mis-en-cause-precisions', getMisEnCausePrecisionsTypeEnumsRoute, async (c) => {
+    const logger = c.get('logger');
+    const misEnCausePrecisionsTypeEnums = getMisEnCausePrecisionsTypeEnums();
+    logger.info(
+      { enumCount: Object.keys(misEnCausePrecisionsTypeEnums).length },
+      'MisEnCausePrecisionsType enums retrieved successfully',
+    );
+
+    return c.json(misEnCausePrecisionsTypeEnums, 200);
   })
 
   .get('/motif-declaratif', getMotifDeclaratifEnumsRoute, async (c) => {
@@ -92,7 +104,7 @@ const app = factoryWithLogs
 
   .get('/lieu-type', getLieuTypeEnumsRoute, async (c) => {
     const logger = c.get('logger');
-    const lieuTypeEnums = await getLieuTypeEnums();
+    const lieuTypeEnums = getLieuTypeEnums();
     logger.info({ enumCount: lieuTypeEnums.length }, 'LieuType enums retrieved successfully');
 
     return c.json(lieuTypeEnums, 200);

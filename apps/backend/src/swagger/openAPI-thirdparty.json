@@ -25,7 +25,9 @@
       "get": {
         "operationId": "getV1",
         "description": "Test endpoint for third-party API authentication",
-        "tags": ["Third-Party"],
+        "tags": [
+          "Third-Party"
+        ],
         "responses": {
           "200": {
             "description": "Successful authentication",
@@ -52,7 +54,11 @@
                       "type": "string"
                     }
                   },
-                  "required": ["message", "accountId", "keyPrefix"]
+                  "required": [
+                    "message",
+                    "accountId",
+                    "keyPrefix"
+                  ]
                 }
               }
             }
@@ -95,10 +101,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -141,10 +153,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -187,10 +205,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -233,10 +257,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -248,7 +278,10 @@
       "get": {
         "operationId": "getV1EnumsAge",
         "description": "Get all age enums",
-        "tags": ["Third-Party", "Enums"],
+        "tags": [
+          "Third-Party",
+          "Enums"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -266,7 +299,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["id", "label"]
+                    "required": [
+                      "id",
+                      "label"
+                    ]
                   }
                 }
               }
@@ -279,7 +315,10 @@
       "get": {
         "operationId": "getV1EnumsCivilite",
         "description": "Get all civilite enums",
-        "tags": ["Third-Party", "Enums"],
+        "tags": [
+          "Third-Party",
+          "Enums"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -297,7 +336,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["id", "label"]
+                    "required": [
+                      "id",
+                      "label"
+                    ]
                   }
                 }
               }
@@ -310,7 +352,10 @@
       "get": {
         "operationId": "getV1EnumsLienVictime",
         "description": "Get all lien victime enums",
-        "tags": ["Third-Party", "Enums"],
+        "tags": [
+          "Third-Party",
+          "Enums"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -328,7 +373,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["id", "label"]
+                    "required": [
+                      "id",
+                      "label"
+                    ]
                   }
                 }
               }
@@ -341,7 +389,74 @@
       "get": {
         "operationId": "getV1EnumsMisEnCauseType",
         "description": "Get all mis en cause type enums with their precisions and field metadata",
-        "tags": ["Third-Party", "Enums"],
+        "tags": [
+          "Third-Party",
+          "Enums"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "profession": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label"
+                        ]
+                      }
+                    },
+                    "professionDomicile": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "label"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "profession",
+                    "professionDomicile"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/enums/mis-en-cause-precisions": {
+      "get": {
+        "operationId": "getV1EnumsMisEnCausePrecisions",
+        "description": "Get all mis en cause precisions type enums with their field metadata",
+        "tags": [
+          "Third-Party",
+          "Enums"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -357,33 +472,12 @@
                       },
                       "label": {
                         "type": "string"
-                      },
-                      "fields": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "precisions": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "label": {
-                              "type": "string"
-                            },
-                            "misEnCauseTypeId": {
-                              "type": "string"
-                            }
-                          },
-                          "required": ["id", "label", "misEnCauseTypeId"]
-                        }
                       }
                     },
-                    "required": ["id", "label", "precisions"]
+                    "required": [
+                      "id",
+                      "label"
+                    ]
                   }
                 }
               }
@@ -396,7 +490,10 @@
       "get": {
         "operationId": "getV1EnumsMotifDeclaratif",
         "description": "Get all motif declaratif enums (motifs as used in DematSocial declarations)",
-        "tags": ["Third-Party", "Enums"],
+        "tags": [
+          "Third-Party",
+          "Enums"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -414,7 +511,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["id", "label"]
+                    "required": [
+                      "id",
+                      "label"
+                    ]
                   }
                 }
               }
@@ -427,7 +527,10 @@
       "get": {
         "operationId": "getV1EnumsConsequence",
         "description": "Get all consequence enums",
-        "tags": ["Third-Party", "Enums"],
+        "tags": [
+          "Third-Party",
+          "Enums"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -445,7 +548,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["id", "label"]
+                    "required": [
+                      "id",
+                      "label"
+                    ]
                   }
                 }
               }
@@ -458,7 +564,10 @@
       "get": {
         "operationId": "getV1EnumsAutoriteType",
         "description": "Get all autorite type enums",
-        "tags": ["Third-Party", "Enums"],
+        "tags": [
+          "Third-Party",
+          "Enums"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -476,7 +585,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["id", "label"]
+                    "required": [
+                      "id",
+                      "label"
+                    ]
                   }
                 }
               }
@@ -489,7 +601,10 @@
       "get": {
         "operationId": "getV1EnumsDemarche",
         "description": "Get all demarche enums",
-        "tags": ["Third-Party", "Enums"],
+        "tags": [
+          "Third-Party",
+          "Enums"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -507,7 +622,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["id", "label"]
+                    "required": [
+                      "id",
+                      "label"
+                    ]
                   }
                 }
               }
@@ -520,7 +638,10 @@
       "get": {
         "operationId": "getV1EnumsLieuType",
         "description": "Get all lieu type enums",
-        "tags": ["Third-Party", "Enums"],
+        "tags": [
+          "Third-Party",
+          "Enums"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -538,7 +659,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["id", "label"]
+                    "required": [
+                      "id",
+                      "label"
+                    ]
                   }
                 }
               }
@@ -551,7 +675,10 @@
       "get": {
         "operationId": "getV1EnumsMaltraitanceType",
         "description": "Get all maltraitance type enums",
-        "tags": ["Third-Party", "Enums"],
+        "tags": [
+          "Third-Party",
+          "Enums"
+        ],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -569,7 +696,10 @@
                         "type": "string"
                       }
                     },
-                    "required": ["id", "label"]
+                    "required": [
+                      "id",
+                      "label"
+                    ]
                   }
                 }
               }
@@ -582,7 +712,10 @@
       "post": {
         "operationId": "postV1Requetes",
         "description": "Create a new request (Requete) with all related elements and relations",
-        "tags": ["Third-Party", "Requetes"],
+        "tags": [
+          "Third-Party",
+          "Requetes"
+        ],
         "responses": {
           "200": {
             "description": "Request created successfully",
@@ -613,24 +746,12 @@
                           "type": "null"
                         }
                       ]
-                    },
-                    "receptionTypeId": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time",
-                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
                     }
                   },
-                  "required": ["requeteId", "receptionDate", "receptionTypeId", "createdAt"],
+                  "required": [
+                    "requeteId",
+                    "receptionDate"
+                  ],
                   "title": "CreateRequeteResponse"
                 }
               }
@@ -674,10 +795,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -720,10 +847,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -766,10 +899,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -812,10 +951,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -858,10 +1003,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -882,34 +1033,50 @@
                     "type": "object",
                     "properties": {
                       "nom": {
-                        "type": "string",
-                        "minLength": 1
+                        "type": "string"
                       },
                       "prenom": {
-                        "type": "string",
-                        "minLength": 1
+                        "type": "string"
                       },
                       "civiliteId": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                          "M",
+                          "MME",
+                          "MX",
+                          "NSP"
+                        ]
                       },
                       "email": {
                         "type": "string",
                         "format": "email",
                         "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
                         "description": "Email address",
-                        "examples": ["user@example.com"]
+                        "examples": [
+                          "user@example.com"
+                        ]
                       },
                       "ageId": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                          "-18",
+                          "18-29",
+                          "30-59",
+                          "60-79",
+                          ">= 80"
+                        ]
                       },
                       "telephone": {
                         "type": "string"
                       },
-                      "estHandicapee": {
-                        "type": "boolean"
-                      },
                       "lienVictimeId": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                          "MEMBRE_FAMILLE",
+                          "PROCHE",
+                          "PROFESSIONNEL",
+                          "AUTRE"
+                        ]
                       },
                       "estVictime": {
                         "type": "boolean"
@@ -936,41 +1103,65 @@
                             "type": "string"
                           }
                         },
+                        "required": [
+                          "label",
+                          "numero",
+                          "rue",
+                          "codePostal",
+                          "ville"
+                        ],
                         "title": "Adresse"
                       },
                       "commentaire": {
                         "type": "string"
                       }
                     },
-                    "required": ["nom", "prenom"],
+                    "required": [
+                      "telephone",
+                      "estVictime",
+                      "veutGarderAnonymat"
+                    ],
                     "title": "Declarant"
                   },
                   "victime": {
                     "type": "object",
                     "properties": {
                       "nom": {
-                        "type": "string",
-                        "minLength": 1
+                        "type": "string"
                       },
                       "prenom": {
-                        "type": "string",
-                        "minLength": 1
+                        "type": "string"
                       },
                       "civiliteId": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                          "M",
+                          "MME",
+                          "MX",
+                          "NSP"
+                        ]
                       },
                       "email": {
                         "type": "string",
                         "format": "email",
                         "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
                         "description": "Email address",
-                        "examples": ["user@example.com"]
+                        "examples": [
+                          "user@example.com"
+                        ]
                       },
                       "telephone": {
                         "type": "string"
                       },
                       "ageId": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                          "-18",
+                          "18-29",
+                          "30-59",
+                          "60-79",
+                          ">= 80"
+                        ]
                       },
                       "adresse": {
                         "type": "object",
@@ -991,6 +1182,13 @@
                             "type": "string"
                           }
                         },
+                        "required": [
+                          "label",
+                          "numero",
+                          "rue",
+                          "codePostal",
+                          "ville"
+                        ],
                         "title": "Adresse"
                       },
                       "estHandicapee": {
@@ -1009,7 +1207,9 @@
                         "type": "string"
                       }
                     },
-                    "required": ["nom", "prenom"],
+                    "required": [
+                      "estHandicapee"
+                    ],
                     "title": "Victime"
                   },
                   "situations": {
@@ -1022,7 +1222,8 @@
                           "type": "object",
                           "properties": {
                             "codePostal": {
-                              "type": "string"
+                              "type": "string",
+                              "minLength": 5
                             },
                             "commentaire": {
                               "type": "string"
@@ -1046,16 +1247,39 @@
                                   "type": "string"
                                 }
                               },
+                              "required": [
+                                "label",
+                                "numero",
+                                "rue",
+                                "codePostal",
+                                "ville"
+                              ],
                               "title": "Adresse"
                             },
                             "lieuTypeId": {
-                              "type": "string"
-                            },
-                            "lieuPrecision": {
-                              "type": "string"
+                              "type": "string",
+                              "enum": [
+                                "AUTRES_ETABLISSEMENTS",
+                                "CABINET",
+                                "DOMICILE",
+                                "ETABLISSEMENT_HANDICAP",
+                                "ETABLISSEMENT_PERSONNES_AGEES",
+                                "ETABLISSEMENT_SANTE",
+                                "ETABLISSEMENT_SOCIAL",
+                                "TRAJET"
+                              ]
                             },
                             "transportTypeId": {
-                              "type": "string"
+                              "type": "string",
+                              "enum": [
+                                "POMPIER",
+                                "ASSU",
+                                "VSAV",
+                                "AMBULANCE",
+                                "VSL",
+                                "TAXI",
+                                "AUTRE"
+                              ]
                             },
                             "societeTransport": {
                               "type": "string"
@@ -1063,16 +1287,14 @@
                             "finess": {
                               "type": "string"
                             },
-                            "tutelle": {
-                              "type": "string"
-                            },
                             "categCode": {
-                              "type": "string"
-                            },
-                            "categLib": {
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "codePostal",
+                            "lieuTypeId"
+                          ],
                           "title": "LieuDeSurvenue"
                         },
                         "misEnCause": {
@@ -1087,10 +1309,32 @@
                             "rpps": {
                               "type": "string"
                             },
+                            "professionTypeId": {
+                              "type": "string",
+                              "enum": [
+                                "PROFESSIONNEL_SANTE",
+                                "PROFESSIONNEL_SOCIAL",
+                                "NPJM",
+                                "AUTRE"
+                              ]
+                            },
+                            "professionDomicileTypeId": {
+                              "type": "string",
+                              "enum": [
+                                "PROFESSIONNEL_SANTE",
+                                "AUTRE_PROFESSIONNEL",
+                                "SERVICE_EDUCATION",
+                                "NPJM",
+                                "AUTRE"
+                              ]
+                            },
                             "commentaire": {
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "misEnCauseTypeId"
+                          ],
                           "title": "MisEnCause"
                         },
                         "demarchesEngagees": {
@@ -1125,11 +1369,13 @@
                           "title": "DemarchesEngagees"
                         },
                         "faits": {
+                          "minItems": 1,
                           "type": "array",
                           "items": {
                             "type": "object",
                             "properties": {
                               "motifsDeclaratifs": {
+                                "minItems": 1,
                                 "type": "array",
                                 "items": {
                                   "type": "string"
@@ -1142,6 +1388,7 @@
                                 }
                               },
                               "maltraitanceTypes": {
+                                "minItems": 1,
                                 "type": "array",
                                 "items": {
                                   "type": "string"
@@ -1161,15 +1408,28 @@
                                 "type": "string"
                               }
                             },
+                            "required": [
+                              "motifsDeclaratifs",
+                              "maltraitanceTypes"
+                            ],
                             "title": "Fait"
                           }
                         }
                       },
+                      "required": [
+                        "lieuDeSurvenue",
+                        "misEnCause",
+                        "faits"
+                      ],
                       "title": "Situation"
                     }
                   }
                 },
-                "required": ["declarant", "victime", "situations"],
+                "required": [
+                  "declarant",
+                  "victime",
+                  "situations"
+                ],
                 "title": "CreateRequeteRequest"
               }
             }
@@ -1181,7 +1441,10 @@
       "post": {
         "operationId": "postV1RequetesByRequeteIdAttachments",
         "description": "Add an attachment to a previously created requete owned by the calling third-party account",
-        "tags": ["Third-Party", "Requetes"],
+        "tags": [
+          "Third-Party",
+          "Requetes"
+        ],
         "responses": {
           "200": {
             "description": "Attachment uploaded successfully",
@@ -1211,7 +1474,12 @@
                       "type": "number"
                     }
                   },
-                  "required": ["fileId", "fileName", "mimeType", "size"],
+                  "required": [
+                    "fileId",
+                    "fileName",
+                    "mimeType",
+                    "size"
+                  ],
                   "title": "AddAttachmentResponse"
                 }
               }
@@ -1255,10 +1523,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -1301,10 +1575,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -1347,10 +1627,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -1393,10 +1679,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -1439,10 +1731,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -1485,10 +1783,16 @@
                           "type": "number"
                         }
                       },
-                      "required": ["code", "message", "traceId"]
+                      "required": [
+                        "code",
+                        "message",
+                        "traceId"
+                      ]
                     }
                   },
-                  "required": ["error"]
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }

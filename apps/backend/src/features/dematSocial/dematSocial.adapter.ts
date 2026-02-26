@@ -249,22 +249,27 @@ const getDemarchesEngagees = (
   return demarchesEngagees;
 };
 
-const getLieuxType = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
-  const lieuxType = getEnumIdFromLabel(mapping.lieuType.options, champsById[mapping.lieuType.id]?.stringValue ?? null);
-  if (lieuxType === DS_LIEU_TYPE.CABINET) {
+export const getLieuxType = ({ lieuTypeId }: { lieuTypeId: string | null }) => {
+  if (lieuTypeId === DS_LIEU_TYPE.CABINET) {
     return {
       lieuTypeId: LIEU_TYPE.ETABLISSEMENT_SANTE,
       lieuPrecision: LIEU_ETABLISSEMENT_SANTE_PRECISION.CABINET_MEDICAL,
     };
   }
   return {
-    lieuTypeId: lieuxType,
+    lieuTypeId,
     lieuPrecision: '',
   };
 };
 
 const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
-  const { lieuTypeId, lieuPrecision } = getLieuxType(champsById, mapping);
+  const rawLieuTypeId = getEnumIdFromLabel(
+    mapping.lieuType.options,
+    champsById[mapping.lieuType.id]?.stringValue ?? null,
+  );
+  const { lieuTypeId, lieuPrecision } = getLieuxType({
+    lieuTypeId: rawLieuTypeId,
+  });
   const address = champsById[mapping.lieuAdresse.id] ? createAddress(champsById[mapping.lieuAdresse.id]) : null;
   const codePostal = getCodePostalByCommuneChamp(champsById[mapping.lieuCodePostal.id]);
   const nomEtablissementValue =
@@ -298,14 +303,17 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
   return lieux;
 };
 
-const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
-  const { lieuTypeId } = getLieuxType(champsById, mapping);
+export const getResponsable = ({
+  lieuTypeId,
+  responsableTypeId,
+  professionnelResponsableTypeId,
+}: {
+  lieuTypeId: string | null;
+  responsableTypeId: string | null;
+  professionnelResponsableTypeId: string | null;
+}) => {
   const isDomicile = lieuTypeId === DS_LIEU_TYPE.DOMICILE;
-
-  const responsable = getEnumIdFromLabel(
-    isDomicile ? mapping.responsableType2.options : mapping.responsableType.options,
-    champsById[isDomicile ? mapping.responsableType2.id : mapping.responsableType.id]?.stringValue ?? null,
-  );
+  const responsable = responsableTypeId;
 
   if (responsable === DS_MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE) {
     return { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE, misEnCauseTypePrecisionId: null };
@@ -321,10 +329,7 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
   }
 
   const mapProfessionDomicile = () => {
-    const professionDomicileType = getEnumIdFromLabel(
-      mapping.professionnelResponsableDomicile.options,
-      champsById[mapping.professionnelResponsableDomicile.id]?.stringValue ?? null,
-    );
+    const professionDomicileType = professionnelResponsableTypeId;
 
     if (professionDomicileType === DS_PROFESSION_DOMICILE_TYPE.PROFESSIONNEL_SANTE) {
       return { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE, misEnCauseTypePrecisionId: null };
@@ -353,10 +358,6 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
         misEnCauseTypePrecisionId: AUTRE_PROFESSIONNEL_PRECISION.AUTRE,
       };
     }
-    const logger = getLoggerStore();
-    logger.error(
-      `Could not map misEnCauseTypeId for responsable: ${responsable}, isDomicile: ${isDomicile}, lieuTypeId: ${lieuTypeId}`,
-    );
     return { misEnCauseTypeId: null, misEnCauseTypePrecisionId: null };
   };
 
@@ -370,10 +371,7 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
     }
   } else {
     if (responsable === DS_MIS_EN_CAUSE_TYPE.PROFESSIONNEL) {
-      const professionType = getEnumIdFromLabel(
-        mapping.professionnelResponsable.options,
-        champsById[mapping.professionnelResponsable.id]?.stringValue ?? null,
-      );
+      const professionType = professionnelResponsableTypeId;
       if (professionType === DS_PROFESSION_TYPE.PROFESSIONNEL_SANTE) {
         return { misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE, misEnCauseTypePrecisionId: null };
       }
@@ -397,15 +395,33 @@ const getResponsable = (champsById: MappedChamp | MappedRepetitionChamp, mapping
       };
     }
   }
-  const logger = getLoggerStore();
-  logger.error(
-    `Could not map misEnCauseTypeId for responsable: ${responsable}, isDomicile: ${isDomicile}, lieuTypeId: ${lieuTypeId}`,
-  );
   return { misEnCauseTypeId: null, misEnCauseTypePrecisionId: null };
 };
 
 const getMisEnCause = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mapping | AutreFaitsMapping) => {
-  const { misEnCauseTypeId, misEnCauseTypePrecisionId } = getResponsable(champsById, mapping);
+  const rawLieuTypeId = getEnumIdFromLabel(
+    mapping.lieuType.options,
+    champsById[mapping.lieuType.id]?.stringValue ?? null,
+  );
+  const { lieuTypeId } = getLieuxType({
+    lieuTypeId: rawLieuTypeId,
+  });
+  const isDomicile = lieuTypeId === DS_LIEU_TYPE.DOMICILE;
+  const responsableTypeId = getEnumIdFromLabel(
+    isDomicile ? mapping.responsableType2.options : mapping.responsableType.options,
+    champsById[isDomicile ? mapping.responsableType2.id : mapping.responsableType.id]?.stringValue ?? null,
+  );
+  const professionnelResponsableTypeId = getEnumIdFromLabel(
+    isDomicile ? mapping.professionnelResponsableDomicile.options : mapping.professionnelResponsable.options,
+    champsById[isDomicile ? mapping.professionnelResponsableDomicile.id : mapping.professionnelResponsable.id]
+      ?.stringValue ?? null,
+  );
+
+  const { misEnCauseTypeId, misEnCauseTypePrecisionId } = getResponsable({
+    lieuTypeId,
+    responsableTypeId,
+    professionnelResponsableTypeId,
+  });
   const rppsChamp = getRpps(champsById[mapping.professionnelResponsableIdentite.id]);
   const misEnCause = {
     misEnCauseTypeId,
