@@ -702,6 +702,7 @@ const buildLieuDeSurvenueUpdate = (lieuData: SituationInput['lieuDeSurvenue']) =
   return {
     lieuTypeId: toNullableId(lieuData.lieuType),
     lieuPrecision: cleanNullOrEmpty(lieuData.lieuPrecision),
+    transportTypeId: toNullableId(lieuData.transportType),
     codePostal: cleanNullOrEmpty(lieuData.codePostal),
     societeTransport: cleanNullOrEmpty(lieuData.societeTransport),
     finess: cleanNullOrEmpty(lieuData.finess),

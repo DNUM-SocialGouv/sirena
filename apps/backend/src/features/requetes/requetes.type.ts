@@ -43,6 +43,7 @@ type Participant = {
   } | null;
   estHandicapee: boolean | null;
   estVictimeInformee: boolean | null;
+  commentaire: string | null;
   victimeInformeeCommentaire: string | null;
   veutGarderAnonymat: boolean | null;
   autrePersonnes: string | null;
@@ -72,7 +73,10 @@ type LieuDeSurvenue = {
 type MisEnCause = {
   misEnCauseTypeId: string | null;
   misEnCauseTypePrecisionId: string | null;
-  rpps: string | null;
+  nom: string;
+  prenom: string;
+  civilite: string;
+  rpps: string;
   commentaire: string | null;
 };
 
@@ -80,7 +84,8 @@ type DemarchesEngagees = {
   demarches: string[];
   dateContactEtablissement: Date | null;
   etablissementARepondu: boolean;
-  commentaire: string;
+  commentaire: string | null;
+  organisme: string;
   datePlainte: Date | null;
   files: File[];
   autoriteTypeId: string | null;

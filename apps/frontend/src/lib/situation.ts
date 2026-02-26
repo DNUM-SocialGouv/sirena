@@ -24,6 +24,7 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
       ? {
           lieuType: lieuDeSurvenue.lieuType?.id || undefined,
           lieuPrecision: lieuDeSurvenue.lieuPrecision || undefined,
+          transportType: lieuDeSurvenue.transportType?.id || undefined,
           codePostal: lieuDeSurvenue.codePostal || undefined,
           societeTransport: lieuDeSurvenue.societeTransport || undefined,
           finess: lieuDeSurvenue.finess || undefined,

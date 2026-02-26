@@ -27,6 +27,7 @@ const ETABLISSEMENTS: string[] = [
   LIEU_TYPE.ETABLISSEMENT_SOCIAL,
   LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
   LIEU_TYPE.ETABLISSEMENT_HANDICAP,
+  LIEU_TYPE.AUTRES_ETABLISSEMENTS,
 ];
 
 const groupMotifsByParent = (
@@ -288,16 +289,26 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 {getLieuPrecisionLabel(situation.lieuDeSurvenue.lieuType?.id, situation.lieuDeSurvenue.lieuPrecision)}
               </p>
             )}
-            {situation?.lieuDeSurvenue?.adresse?.label && (
-              <p className={fr.cx('fr-mb-1w')}>
-                <span>
-                  {ETABLISSEMENTS.includes(situation.lieuDeSurvenue.lieuTypeId || '')
-                    ? "Nom de l'établissement :"
-                    : 'Adresse :'}
-                </span>{' '}
-                {situation.lieuDeSurvenue.adresse.label}
-              </p>
-            )}
+            {situation?.lieuDeSurvenue?.adresse?.label &&
+              (ETABLISSEMENTS.includes(situation.lieuDeSurvenue.lieuTypeId || '') ? (
+                <>
+                  <p className={fr.cx('fr-mb-1w')}>
+                    <span>Nom de l'établissement :</span> {situation.lieuDeSurvenue.adresse.label}
+                  </p>
+                  {(situation?.lieuDeSurvenue?.adresse?.numero || situation?.lieuDeSurvenue?.adresse?.rue) && (
+                    <p className={fr.cx('fr-mb-1w')}>
+                      <span>Adresse :</span>{' '}
+                      {[situation.lieuDeSurvenue.adresse.numero, situation.lieuDeSurvenue.adresse.rue]
+                        .filter(Boolean)
+                        .join(' ')}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className={fr.cx('fr-mb-1w')}>
+                  <span>Adresse :</span> {situation.lieuDeSurvenue.adresse.label}
+                </p>
+              ))}
             {situation?.lieuDeSurvenue?.adresse?.codePostal && situation?.lieuDeSurvenue?.adresse?.ville && (
               <p className={fr.cx('fr-mb-2w')}>
                 <span>Code postal :</span> {situation.lieuDeSurvenue.adresse.codePostal}{' '}
