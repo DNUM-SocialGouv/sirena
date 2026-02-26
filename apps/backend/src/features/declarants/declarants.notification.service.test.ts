@@ -245,7 +245,14 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     } as any);
 
     mockedPrismaEntite.findMany.mockResolvedValueOnce([
-      { id: 'e1', nomComplet: 'ARS Normandie', email: 'ars@ex.com', entiteMereId: null },
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        emailContactUsager: 'ars@ex.com',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
     ] as any);
 
     mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
