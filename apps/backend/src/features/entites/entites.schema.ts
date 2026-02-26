@@ -7,6 +7,9 @@ export const EntiteSchema = z.object({
   nomComplet: z.string(),
   label: z.string(),
   email: z.string(),
+  emailContactUsager: z.string(),
+  telContactUsager: z.string(),
+  adresseContactUsager: z.string(),
   emailDomain: z.string(),
   organizationalUnit: z.string(),
   entiteTypeId: z.string(),
@@ -22,6 +25,9 @@ const columns = [
   Prisma.EntiteScalarFieldEnum.nomComplet,
   Prisma.EntiteScalarFieldEnum.label,
   Prisma.EntiteScalarFieldEnum.email,
+  Prisma.EntiteScalarFieldEnum.emailContactUsager,
+  Prisma.EntiteScalarFieldEnum.telContactUsager,
+  Prisma.EntiteScalarFieldEnum.adresseContactUsager,
 ] as const;
 
 export const GetEntitiesQuerySchema = paginationQueryParamsSchema(columns);

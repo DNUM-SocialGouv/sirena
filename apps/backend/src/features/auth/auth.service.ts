@@ -103,8 +103,7 @@ export const getOrCreateUser = async (userInfo: UserInfo) => {
     return user;
   }
 
-  const organization = userInfo.organizationUnit?.split('/')?.[0]?.trim() || null;
-  const entite = await getEntiteForUser(organization, userInfo.email);
+  const entite = await getEntiteForUser(userInfo.organizationUnit, userInfo.email);
 
   return await createUser({
     sub: userInfo.sub,

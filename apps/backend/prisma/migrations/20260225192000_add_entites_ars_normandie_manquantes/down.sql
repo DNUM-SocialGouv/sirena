@@ -1,0 +1,19 @@
+DELETE FROM "Entite" WHERE "id" IN (
+  '2c9f4b7e-1a8d-4e63-b0c5-9d2f6a3e8b71',
+  '5d1e8a3f-9b6c-4f27-a2e0-7c4d1b9f3e85',
+  'e4b7c2a9-3f8d-4a1e-6b0c-5d9e2f7a8b3c',
+  '1f6a9d4e-8c2b-4e53-a7f0-2b5c8e1d9a4f',
+  '9b3e7c1a-5f4d-4b82-e6a0-3c8f2d1b7e59',
+  'a8e5c912-6b4f-4d2a-9c7e-1f3b0d8a5e62',
+  '7f2a9b1c-4d3e-4a8f-b6c5-8e1d0f2a3b4c',
+  'c6d2f8a4-1e9b-4c73-b5a0-8d2f6e1c9b4a',
+  '3a8f2d6b-7e1c-4a94-f0b5-2e8c9d1a6f3b',
+  'f7e2a9c5-4b8d-4e16-9f0a-3d6c2b8e1f7a',
+  '8d4b1e6f-a3c9-4f72-b5d0-1e9a7c4f2b8d',
+  '2e5c9a7f-1b4d-4e83-a6f0-9c2d8b5e1a3f',
+  'b1f8d3e6-9a2c-4f75-8b0d-4e7a1c9f3b62',
+  '4c7a2e9b-6d1f-4a58-c0e3-2b9f5d8a1c7e',
+  'd9e3b6a1-8f4c-4e27-9d0b-5a2f7c1e8d4b',
+  '6a1f4c8e-2b9d-4f53-a7e0-8c3b6d2f9a1e',
+  'e2b9d7f4-1a6c-4b83-9e0d-7f5a2c8b3e61'
+);

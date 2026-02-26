@@ -37,7 +37,7 @@ function formatEntiteAdminString(entites: Array<{ nomComplet: string; entiteMere
 }
 
 /**
- * Formats the complete entity information with contact details
+ * Formats the complete entity information with contact details for usagers
  * Example:
  * NOM COMPLET ENTITE 1
  * Adresse e-mail : adresse@boite-mail.com
@@ -45,7 +45,13 @@ function formatEntiteAdminString(entites: Array<{ nomComplet: string; entiteMere
  * Adresse postale : Bâtiment, Voie, Code postal, Ville
  */
 function formatEntiteCompleteString(
-  entites: Array<{ nomComplet: string; email: string; entiteMereId: string | null }>,
+  entites: Array<{
+    nomComplet: string;
+    emailContactUsager: string;
+    telContactUsager: string;
+    adresseContactUsager: string;
+    entiteMereId: string | null;
+  }>,
 ): string {
   // Filter only administrative entities
   const entitesAdmin = entites.filter((e) => e.entiteMereId === null);
@@ -53,16 +59,15 @@ function formatEntiteCompleteString(
   return entitesAdmin
     .map((entite) => {
       const parts: string[] = [entite.nomComplet];
-      if (entite.email) {
-        parts.push(`Adresse e-mail : ${entite.email}`);
+      if (entite.emailContactUsager) {
+        parts.push(`Adresse e-mail : ${entite.emailContactUsager}`);
       }
-      // TODO: Add "téléphone" and "adresse postale" when these fields are added to the Entite model
-      // if (entite.telephone) {
-      //   parts.push(`Téléphone : ${entite.telephone}`);
-      // }
-      // if (entite.adressePostale) {
-      //   parts.push(`Adresse postale : ${entite.adressePostale}`);
-      // }
+      if (entite.telContactUsager) {
+        parts.push(`Téléphone : ${entite.telContactUsager}`);
+      }
+      if (entite.adresseContactUsager) {
+        parts.push(`Adresse postale : ${entite.adresseContactUsager}`);
+      }
       return parts.join('\n');
     })
     .join('\n\n');
@@ -294,7 +299,9 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
       select: {
         id: true,
         nomComplet: true,
-        email: true,
+        emailContactUsager: true,
+        telContactUsager: true,
+        adresseContactUsager: true,
         entiteMereId: true,
       },
     });

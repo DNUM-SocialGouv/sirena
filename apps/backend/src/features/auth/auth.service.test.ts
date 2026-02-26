@@ -367,7 +367,7 @@ describe('auth.service', () => {
 
       expect(result).toBe(newUser);
       expect(getUserByEmail).toHaveBeenCalledWith('test@example.com');
-      expect(getEntiteForUser).toHaveBeenCalledWith('Test Org', 'test@example.com');
+      expect(getEntiteForUser).toHaveBeenCalledWith(mockUserInfo.organizationUnit, 'test@example.com');
       expect(createUser).toHaveBeenCalledWith({
         sub: 'user123',
         uid: 'uid123',
@@ -379,7 +379,7 @@ describe('auth.service', () => {
       });
     });
 
-    it('should handle null/empty/complex organization unit', async () => {
+    it('should call getEntiteForUser with user email only (matching by emailDomain)', async () => {
       const {
         auth: { getOrCreateUser },
       } = await loadAuthWithOpenIdMock();
@@ -388,40 +388,19 @@ describe('auth.service', () => {
 
       vi.mocked(getUserByEmail).mockResolvedValue(null);
       vi.mocked(getEntiteForUser).mockResolvedValue(null);
-      vi.mocked(createUser).mockResolvedValue({ id: 'userX', email: 't@example.com' } as User);
+      vi.mocked(createUser).mockResolvedValue({ id: 'userX', email: 'agent@manche.gouv.fr' } as User);
 
       await getOrCreateUser({
         sub: 's',
         uid: 'u',
-        email: 't@example.com',
+        email: 'agent@manche.gouv.fr',
         prenom: 'F',
         nom: 'L',
         organizationUnit: null,
-        pcData: { email: 't@example.com', sub: 's' } as UserInfoResponse,
+        pcData: { email: 'agent@manche.gouv.fr', sub: 's' } as UserInfoResponse,
       } as UserInfo);
-      expect(getEntiteForUser).toHaveBeenCalledWith(null, 't@example.com');
 
-      await getOrCreateUser({
-        sub: 's',
-        uid: 'u',
-        email: 't@example.com',
-        prenom: 'F',
-        nom: 'L',
-        organizationUnit: '',
-        pcData: { email: 't@example.com', sub: 's' } as UserInfoResponse,
-      } as UserInfo);
-      expect(getEntiteForUser).toHaveBeenCalledWith(null, 't@example.com');
-
-      await getOrCreateUser({
-        sub: 's',
-        uid: 'u',
-        email: 't@example.com',
-        prenom: 'F',
-        nom: 'L',
-        organizationUnit: 'Org1/Dept/Team',
-        pcData: { email: 't@example.com', sub: 's' } as UserInfoResponse,
-      } as UserInfo);
-      expect(getEntiteForUser).toHaveBeenCalledWith('Org1', 't@example.com');
+      expect(getEntiteForUser).toHaveBeenCalledWith(null, 'agent@manche.gouv.fr');
     });
   });
 });
