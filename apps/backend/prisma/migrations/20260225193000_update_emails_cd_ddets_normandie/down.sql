@@ -1,0 +1,9 @@
+-- Rollback: restore CD/DDETS Normandie emails to initial state (empty)
+UPDATE "Entite" SET email = '' WHERE id = 'bde95c33-c554-41fa-b87c-0d1e38ef8be5';
+UPDATE "Entite" SET email = '' WHERE id = '6df55d9f-f8d0-4d9b-990d-afc4f91c25c1';
+UPDATE "Entite" SET email = '' WHERE id = 'dff5c7eb-5833-4333-b3ca-84cedc3b5e16';
+UPDATE "Entite" SET email = '' WHERE id = '8cee127d-f97e-418c-b68d-0212f0b71a1a';
+UPDATE "Entite" SET email = '' WHERE id = '0f596edf-0321-4f06-84b9-4d3183a0ab8f';
+UPDATE "Entite" SET email = '' WHERE id = 'bab7fae9-7f92-47c4-b46c-8cca8d4a82f0';
+UPDATE "Entite" SET email = '' WHERE id = 'bbfd267d-77c9-4a62-9c9b-33a1200a065e';
+UPDATE "Entite" SET email = '' WHERE id = '955aef76-d2ca-43d5-84ed-a3518abda9a3';
