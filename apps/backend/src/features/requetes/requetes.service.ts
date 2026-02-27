@@ -226,10 +226,11 @@ export const createRequeteFromDematSocial = async ({
 
       const misEnCauseData = {
         rpps: s.misEnCause.rpps ?? null,
-        autrePrecision: s.misEnCause.commentaire ?? '',
+        autrePrecision: s.misEnCause.autrePrecision ?? '',
         civilite: s.misEnCause.civilite ?? '',
         nom: s.misEnCause.nom ?? '',
         prenom: s.misEnCause.prenom ?? '',
+        commentaire: s.misEnCause.commentaire ?? '',
         ...(s.misEnCause.misEnCauseTypeId && { misEnCauseTypeId: s.misEnCause.misEnCauseTypeId }),
         ...(s.misEnCause.misEnCauseTypePrecisionId && {
           misEnCauseTypePrecisionId: s.misEnCause.misEnCauseTypePrecisionId,
@@ -255,6 +256,7 @@ export const createRequeteFromDematSocial = async ({
           commentaire: s.demarchesEngagees.commentaire ?? '',
           datePlainte: s.demarchesEngagees.datePlainte ?? null,
           autoriteType: autorite ? { connect: { id: autorite.id } } : undefined,
+          organisme: s.demarchesEngagees.organisme ?? '',
           demarches: demIds.length ? { connect: demIds } : undefined,
         },
       });
