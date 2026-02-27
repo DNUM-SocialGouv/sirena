@@ -139,6 +139,10 @@ async function makeRequest<T>(endpoint: string, options: RequestInit = {}): Prom
 
 // Send an email using Tipimail API
 export async function sendTipimailEmail(options: SendTipimailOptions): Promise<TipimailSendResponse> {
+  if (envVars.TIPIMAIL_DISABLE_SENDING) {
+    return { status: 'disabled' };
+  }
+
   const request = createTipimailRequest(options);
 
   return makeRequest<TipimailSendResponse>('/messages/send', {
