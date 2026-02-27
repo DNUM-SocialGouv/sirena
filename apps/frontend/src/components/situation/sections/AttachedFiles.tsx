@@ -120,7 +120,7 @@ export function AttachedFiles({
         {/* Existing files */}
         {existingFiles.length > 0 && (
           <div className={fr.cx('fr-mb-3w')} style={{ width: '100%' }}>
-            <h4 className={fr.cx('fr-text--lg')}>Fichiers uploadés</h4>
+            <h4 className={fr.cx('fr-text--lg')}>Fichiers importés</h4>
             <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
               <ul>
                 {existingFiles.map((file) => (

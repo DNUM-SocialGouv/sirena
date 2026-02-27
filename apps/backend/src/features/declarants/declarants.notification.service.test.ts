@@ -271,7 +271,6 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     await sendDeclarantAcknowledgmentEmail('req1');
 
-    const linesTelephone = ['ARS Normandie', 'Adresse e-mail : ars@ex.com'];
     const expectedEntiteCompleteTel: Record<string, string | number> = {
       entitecomplete_nb: 2,
       entitecomplete_1: 'ARS Normandie',
