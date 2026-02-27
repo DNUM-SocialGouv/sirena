@@ -2,6 +2,7 @@ import { addFileProcessingJob } from '../../../jobs/queues/fileProcessing.queue.
 import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
 import { uploadFileToMinio } from '../../../libs/minio.js';
 import { prisma } from '../../../libs/prisma.js';
+import { getLieuxType, getResponsable } from '../../dematSocial/dematSocial.adapter.js';
 import { generateRequeteId } from '../../requetes/functionalId.service.js';
 import type { CreateRequeteFromThirdPartyDto } from './requetes.type.js';
 
@@ -36,7 +37,7 @@ export const createRequeteFromThirdParty = async ({
           },
         },
         commentaire: declarant.commentaire ?? '',
-        estHandicapee: declarant.estHandicapee ?? null,
+        estHandicapee: null,
         estVictime: declarant.estVictime ?? null,
         veutGarderAnonymat: declarant.veutGarderAnonymat ?? null,
         lienVictime: declarant.lienVictimeId ? { connect: { id: declarant.lienVictimeId } } : undefined,
@@ -99,6 +100,8 @@ export const createRequeteFromThirdParty = async ({
     }
 
     for (const s of situations) {
+      const lieuType = getLieuxType({ lieuTypeId: s.lieuDeSurvenue.lieuTypeId });
+
       const lieuDeSurvenue = s.lieuDeSurvenue;
       const lieu = await tx.lieuDeSurvenue.create({
         data: {
@@ -106,11 +109,11 @@ export const createRequeteFromThirdParty = async ({
           commentaire: lieuDeSurvenue?.commentaire ?? '',
           societeTransport: lieuDeSurvenue?.societeTransport ?? '',
           finess: lieuDeSurvenue?.finess ?? '',
-          tutelle: lieuDeSurvenue?.tutelle ?? '',
+          tutelle: '',
           categCode: lieuDeSurvenue?.categCode ?? '',
-          categLib: lieuDeSurvenue?.categLib ?? '',
-          lieuType: lieuDeSurvenue?.lieuTypeId ? { connect: { id: lieuDeSurvenue.lieuTypeId } } : undefined,
-          lieuPrecision: lieuDeSurvenue?.lieuPrecision ?? '',
+          categLib: '',
+          lieuType: lieuType.lieuTypeId ? { connect: { id: lieuDeSurvenue.lieuTypeId } } : undefined,
+          lieuPrecision: lieuType?.lieuPrecision ?? '',
           transportType: lieuDeSurvenue?.transportTypeId
             ? { connect: { id: lieuDeSurvenue.transportTypeId } }
             : undefined,
@@ -133,12 +136,17 @@ export const createRequeteFromThirdParty = async ({
       }
 
       const misEnCause = s.misEnCause;
+      const responsable = getResponsable({
+        lieuTypeId: lieuDeSurvenue?.lieuTypeId,
+        responsableTypeId: misEnCause.misEnCauseTypeId,
+        professionnelResponsableTypeId: misEnCause.misEnCauseTypePrecisionId ?? null,
+      });
       const misEnCauseData = {
         rpps: misEnCause?.rpps ?? null,
         autrePrecision: misEnCause?.commentaire ?? '',
-        ...(misEnCause?.misEnCauseTypeId && { misEnCauseTypeId: misEnCause.misEnCauseTypeId }),
-        ...(misEnCause?.misEnCauseTypePrecisionId && {
-          misEnCauseTypePrecisionId: misEnCause.misEnCauseTypePrecisionId,
+        ...(responsable?.misEnCauseTypeId && { misEnCauseTypeId: responsable.misEnCauseTypeId }),
+        ...(responsable?.misEnCauseTypePrecisionId && {
+          misEnCauseTypePrecisionId: responsable.misEnCauseTypePrecisionId,
         }),
       };
 

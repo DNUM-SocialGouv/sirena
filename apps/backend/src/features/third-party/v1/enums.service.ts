@@ -1,55 +1,33 @@
 import {
-  type AgeEnum,
-  type AutoriteTypeEnum,
-  type CiviliteEnum,
-  type ConsequenceEnum,
-  type DemarchesEngageesEnum,
-  type LienVictimeEnum,
-  type LieuTypeEnum,
-  type MaltraitanceTypeEnum,
-  type MisEnCauseTypeEnum,
-  type MisEnCauseTypePrecisionEnum,
-  type MotifDeclaratifEnum,
-  prisma,
-} from '../../../libs/prisma.js';
+  dsLieuTypeLabels,
+  dsMisEnCauseTypeLabels,
+  dsProfessionDomicileTypeLabels,
+  dsProfessionTypeLabels,
+} from '@sirena/common/constants';
+import { prisma } from '../../../libs/prisma.js';
 
-const FIELD_MAPPINGS: Record<string, string[]> = {
-  PROFESSIONNEL_SANTE: ['rpps', 'civilite', 'nom', 'prenom'],
-  MEMBRE_FAMILLE: ['civilite', 'nom', 'prenom'],
-};
+export const getAgeEnums = async () => await prisma.ageEnum.findMany();
 
-export const getAgeEnums = async (): Promise<AgeEnum[]> => await prisma.ageEnum.findMany();
+export const getLieuTypeEnums = () => Object.entries(dsLieuTypeLabels).map(([key, value]) => ({ key, value }));
 
-export const getLieuTypeEnums = async (): Promise<LieuTypeEnum[]> => await prisma.lieuTypeEnum.findMany();
+export const getDemarcheEnums = async () => await prisma.demarchesEngageesEnum.findMany();
 
-export const getDemarcheEnums = async (): Promise<DemarchesEngageesEnum[]> =>
-  await prisma.demarchesEngageesEnum.findMany();
+export const getAutoriteTypeEnums = async () => await prisma.autoriteTypeEnum.findMany();
 
-export const getAutoriteTypeEnums = async (): Promise<AutoriteTypeEnum[]> => await prisma.autoriteTypeEnum.findMany();
+export const getCiviliteEnums = async () => await prisma.civiliteEnum.findMany();
 
-export const getCiviliteEnums = async (): Promise<CiviliteEnum[]> => await prisma.civiliteEnum.findMany();
+export const getLienVictimeEnums = async () => await prisma.lienVictimeEnum.findMany();
 
-export const getLienVictimeEnums = async (): Promise<LienVictimeEnum[]> => await prisma.lienVictimeEnum.findMany();
+export const getMisEnCauseTypeEnums = () =>
+  Object.entries(dsMisEnCauseTypeLabels).map(([key, value]) => ({ key, value }));
 
-export const getMisEnCauseTypeEnums = async (): Promise<
-  (MisEnCauseTypeEnum & { precisions: MisEnCauseTypePrecisionEnum[]; fields?: string[] })[]
-> => {
-  const enums = await prisma.misEnCauseTypeEnum.findMany({
-    include: {
-      precisions: true,
-    },
-  });
+export const getMisEnCausePrecisionsTypeEnums = async () => ({
+  profession: Object.entries(dsProfessionTypeLabels).map(([key, value]) => ({ key, value })),
+  professionDomicile: Object.entries(dsProfessionDomicileTypeLabels).map(([key, value]) => ({ key, value })),
+});
 
-  return enums.map((enumItem) => ({
-    ...enumItem,
-    fields: FIELD_MAPPINGS[enumItem.id],
-  }));
-};
+export const getMotifDeclaratifEnums = async () => await prisma.motifDeclaratifEnum.findMany();
 
-export const getMotifDeclaratifEnums = async (): Promise<MotifDeclaratifEnum[]> =>
-  await prisma.motifDeclaratifEnum.findMany();
+export const getConsequenceEnums = async () => await prisma.consequenceEnum.findMany();
 
-export const getConsequenceEnums = async (): Promise<ConsequenceEnum[]> => await prisma.consequenceEnum.findMany();
-
-export const getMaltraitanceTypeEnums = async (): Promise<MaltraitanceTypeEnum[]> =>
-  await prisma.maltraitanceTypeEnum.findMany();
+export const getMaltraitanceTypeEnums = async () => await prisma.maltraitanceTypeEnum.findMany();

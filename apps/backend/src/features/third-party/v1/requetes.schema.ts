@@ -1,3 +1,12 @@
+import {
+  AGE,
+  CIVILITE,
+  DS_LIEU_TYPE,
+  DS_PROFESSION_DOMICILE_TYPE,
+  DS_PROFESSION_TYPE,
+  LIEN_VICTIME,
+  TRANSPORT_TYPE,
+} from '@sirena/common/constants';
 import { z } from 'zod';
 
 const optionalDatetime = z.iso
@@ -14,43 +23,44 @@ const EmailSchema = z
 // Adresse Schema
 export const AdresseSchema = z
   .object({
-    label: z.string().optional(),
-    numero: z.string().optional(),
-    rue: z.string().optional(),
-    codePostal: z.string().optional(),
-    ville: z.string().optional(),
+    label: z.string(),
+    numero: z.string(),
+    rue: z.string(),
+    codePostal: z.string(),
+    ville: z.string(),
   })
   .meta({ title: 'Adresse' });
 
 // Declarant Schema
-const DeclarantSchema = z
+export const DeclarantSchema = z
   .object({
-    nom: z.string().min(1, 'Declarant nom is required'),
-    prenom: z.string().min(1, 'Declarant prenom is required'),
-    civiliteId: z.string().optional(),
+    nom: z.string().optional(),
+    prenom: z.string().optional(),
+    civiliteId: z.enum([CIVILITE.M, CIVILITE.MME, CIVILITE.MX, CIVILITE.NSP]).optional(),
     email: EmailSchema,
-    ageId: z.string().optional(),
-    telephone: z.string().optional(),
-    estHandicapee: z.boolean().optional(),
-    lienVictimeId: z.string().optional(),
-    estVictime: z.boolean().optional(),
-    veutGarderAnonymat: z.boolean().optional(),
+    ageId: z.enum([AGE['-18'], AGE['18-29'], AGE['30-59'], AGE['60-79'], AGE['>= 80']]).optional(),
+    telephone: z.string(),
+    lienVictimeId: z
+      .enum([LIEN_VICTIME.MEMBRE_FAMILLE, LIEN_VICTIME.PROCHE, LIEN_VICTIME.PROFESSIONNEL, LIEN_VICTIME.AUTRE])
+      .optional(),
+    estVictime: z.boolean(),
+    veutGarderAnonymat: z.boolean(),
     adresse: AdresseSchema.optional(),
     commentaire: z.string().optional(),
   })
   .meta({ title: 'Declarant' });
 
 // Victime Schema (maps to participant internally)
-const VictimeSchema = z
+export const VictimeSchema = z
   .object({
-    nom: z.string().min(1, 'Victime nom is required'),
-    prenom: z.string().min(1, 'Victime prenom is required'),
-    civiliteId: z.string().optional(),
+    nom: z.string().optional(),
+    prenom: z.string().optional(),
+    civiliteId: z.enum([CIVILITE.M, CIVILITE.MME, CIVILITE.MX, CIVILITE.NSP]).optional(),
     email: EmailSchema,
     telephone: z.string().optional(),
-    ageId: z.string().optional(),
+    ageId: z.enum([AGE['-18'], AGE['18-29'], AGE['30-59'], AGE['60-79'], AGE['>= 80']]).optional(),
     adresse: AdresseSchema.optional(),
-    estHandicapee: z.boolean().optional(),
+    estHandicapee: z.boolean(),
     commentaire: z.string().optional(),
     veutGarderAnonymat: z.boolean().optional(),
     estVictimeInformee: z.boolean().optional(),
@@ -61,26 +71,59 @@ const VictimeSchema = z
 // Lieu de Survenue Schema
 const LieuDeSurvenueSchema = z
   .object({
-    codePostal: z.string().optional(),
+    codePostal: z.string().min(5, 'codePostal must be at least 5 characters'),
     commentaire: z.string().optional(),
     adresse: AdresseSchema.optional(),
-    lieuTypeId: z.string().optional(),
-    lieuPrecision: z.string().optional(),
-    transportTypeId: z.string().optional(),
+    lieuTypeId: z.enum([
+      DS_LIEU_TYPE.AUTRES_ETABLISSEMENTS,
+      DS_LIEU_TYPE.CABINET,
+      DS_LIEU_TYPE.DOMICILE,
+      DS_LIEU_TYPE.ETABLISSEMENT_HANDICAP,
+      DS_LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
+      DS_LIEU_TYPE.ETABLISSEMENT_SANTE,
+      DS_LIEU_TYPE.ETABLISSEMENT_SOCIAL,
+      DS_LIEU_TYPE.TRAJET,
+    ]),
+    transportTypeId: z
+      .enum([
+        TRANSPORT_TYPE.POMPIER,
+        TRANSPORT_TYPE.ASSU,
+        TRANSPORT_TYPE.VSAV,
+        TRANSPORT_TYPE.AMBULANCE,
+        TRANSPORT_TYPE.VSL,
+        TRANSPORT_TYPE.TAXI,
+        TRANSPORT_TYPE.AUTRE,
+      ])
+      .optional(),
     societeTransport: z.string().optional(),
     finess: z.string().optional(),
-    tutelle: z.string().optional(),
     categCode: z.string().optional(),
-    categLib: z.string().optional(),
   })
   .meta({ title: 'LieuDeSurvenue' });
 
 // Mis en Cause Schema
 const MisEnCauseSchema = z
   .object({
-    misEnCauseTypeId: z.string().optional(),
+    misEnCauseTypeId: z.string(),
     misEnCauseTypePrecisionId: z.string().optional(),
     rpps: z.string().optional(),
+    professionTypeId: z
+      .enum([
+        DS_PROFESSION_TYPE.PROFESSIONNEL_SANTE,
+        DS_PROFESSION_TYPE.PROFESSIONNEL_SOCIAL,
+        DS_PROFESSION_TYPE.NPJM,
+        DS_PROFESSION_TYPE.AUTRE,
+      ])
+      .optional(),
+    professionDomicileTypeId: z
+      .enum([
+        DS_PROFESSION_DOMICILE_TYPE.PROFESSIONNEL_SANTE,
+        DS_PROFESSION_DOMICILE_TYPE.AUTRE_PROFESSIONNEL,
+        DS_PROFESSION_DOMICILE_TYPE.SERVICE_EDUCATION,
+        DS_PROFESSION_DOMICILE_TYPE.NPJM,
+        DS_PROFESSION_DOMICILE_TYPE.AUTRE,
+      ])
+      .optional(),
     commentaire: z.string().optional(),
   })
   .meta({ title: 'MisEnCause' });
@@ -100,9 +143,9 @@ const DemarchesEngageesSchema = z
 // Fait Schema
 const FaitSchema = z
   .object({
-    motifsDeclaratifs: z.array(z.string()).optional(),
+    motifsDeclaratifs: z.array(z.string()).min(1, 'At least one motif declaratif is required'),
     consequences: z.array(z.string()).optional(),
-    maltraitanceTypes: z.array(z.string()).optional(),
+    maltraitanceTypes: z.array(z.string()).min(1, 'At least one maltraitance type is required'),
     dateDebut: optionalDatetime,
     dateFin: optionalDatetime,
     commentaire: z.string().optional(),
@@ -110,12 +153,12 @@ const FaitSchema = z
   .meta({ title: 'Fait' });
 
 // Situation Schema
-const SituationSchema = z
+export const SituationSchema = z
   .object({
-    lieuDeSurvenue: LieuDeSurvenueSchema.optional(),
-    misEnCause: MisEnCauseSchema.optional(),
+    lieuDeSurvenue: LieuDeSurvenueSchema,
+    misEnCause: MisEnCauseSchema,
     demarchesEngagees: DemarchesEngageesSchema.optional(),
-    faits: z.array(FaitSchema).optional(),
+    faits: z.array(FaitSchema).min(1, 'At least one fait is required'),
   })
   .meta({ title: 'Situation' });
 
@@ -134,8 +177,6 @@ export const CreateRequeteResponseSchema = z
   .object({
     requeteId: z.string(),
     receptionDate: z.iso.datetime().nullable(),
-    receptionTypeId: z.string().nullable(),
-    createdAt: z.iso.datetime(),
   })
   .meta({ title: 'CreateRequeteResponse' });
 

@@ -52,7 +52,7 @@ const getfakeRequeteDto = () => {
     numero: '12',
   };
 
-  const fakeParticipant = {
+  const fakeParticipant: NonNullable<CreateRequeteFromDematSocialDto['participant']> = {
     ageId: AGE['18-29'],
     prenom: '',
     nom: '',
@@ -64,11 +64,14 @@ const getfakeRequeteDto = () => {
     victimeInformeeCommentaire: null,
     commentaire: '1234567890',
     veutGarderAnonymat: null,
+    lienVictimeId: null,
+    estVictime: true,
+    aAutrePersonnes: false,
     autrePersonnes: null,
     adresse,
   };
 
-  const fakeDeclarant = {
+  const fakeDeclarant: CreateRequeteFromDematSocialDto['declarant'] = {
     ageId: AGE['-18'],
     nom: 'test',
     prenom: 'test',
@@ -82,7 +85,7 @@ const getfakeRequeteDto = () => {
     adresse,
   };
 
-  const fakeSituations = [
+  const fakeSituations: CreateRequeteFromDematSocialDto['situations'] = [
     {
       lieuDeSurvenue: {
         codePostal: '75001',
@@ -101,6 +104,9 @@ const getfakeRequeteDto = () => {
         misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE,
         misEnCauseTypePrecisionId: null,
         rpps: '1010101010',
+        civilite: '',
+        nom: '',
+        prenom: '',
         commentaire: 'Comportement inadapté signalé.',
       },
 
@@ -111,9 +117,7 @@ const getfakeRequeteDto = () => {
         commentaire: '',
         organisme: 'ARS Île-de-France',
         datePlainte: null,
-        files: [
-          { name: 'test', url: 'https://example.com/file.pdf', size: 1n, mimeType: 'application/pdf', canDelete: true },
-        ],
+        files: [{ name: 'test', url: 'https://example.com/file.pdf', size: 1n, mimeType: 'application/pdf' }],
         autoriteTypeId: AUTORITE_TYPE.GENDARMERIE,
       },
       faits: [
@@ -142,7 +146,7 @@ const getfakeRequeteDto = () => {
 };
 
 const getMinimalRequeteDto = () => {
-  const dto = {
+  const dto: CreateRequeteFromDematSocialDto = {
     receptionDate: new Date(),
     receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
     dematSocialId: 42,
@@ -172,6 +176,9 @@ const getMinimalRequeteDto = () => {
       commentaire: null,
       victimeInformeeCommentaire: null,
       veutGarderAnonymat: null,
+      lienVictimeId: null,
+      estVictime: true,
+      aAutrePersonnes: false,
       autrePersonnes: null,
     },
     situations: [
@@ -192,8 +199,11 @@ const getMinimalRequeteDto = () => {
         misEnCause: {
           misEnCauseTypeId: null,
           misEnCauseTypePrecisionId: null,
-          rpps: null,
-          commentaire: null,
+          rpps: '',
+          civilite: '',
+          nom: '',
+          prenom: '',
+          commentaire: '',
         },
         demarchesEngagees: {
           demarches: [],
@@ -220,7 +230,7 @@ const getMinimalRequeteDto = () => {
       },
     ],
   };
-  return dto satisfies CreateRequeteFromDematSocialDto;
+  return dto;
 };
 
 describe('requetes.service.ts', () => {
@@ -410,6 +420,9 @@ describe('requetes.service.ts', () => {
             commentaire: '1234567890',
             victimeInformeeCommentaire: '1234567890',
             veutGarderAnonymat: null,
+            lienVictimeId: null,
+            estVictime: true,
+            aAutrePersonnes: false,
             autrePersonnes: '1234567890',
           },
           situations: [],
@@ -772,7 +785,7 @@ describe('requetes.service.ts', () => {
           age: { connect: { id: fakeRequeteDto.participant.ageId } },
           participantDe: { connect: { id: '1' } },
           autrePersonnes: '',
-          aAutrePersonnes: null,
+          aAutrePersonnes: fakeRequeteDto.participant.aAutrePersonnes,
           commentaire: fakeRequeteDto.participant.commentaire,
           estHandicapee: fakeRequeteDto.participant.estHandicapee,
           estVictimeInformee: fakeRequeteDto.participant.estVictimeInformee,
