@@ -32,7 +32,7 @@ stages:
       fi
       export DOCKER_HOST="tcp://docker:2375/"
 
-.configure_and_login_docker:
+.configure_and_login_docker :
   stage: configure
   extends: .configure_docker_service
   image: docker:$DOCKER_VERSION
