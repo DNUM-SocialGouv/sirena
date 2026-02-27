@@ -5,6 +5,7 @@ import {
   DS_MIS_EN_CAUSE_TYPE,
   DS_PROFESSION_DOMICILE_TYPE,
   DS_PROFESSION_TYPE,
+  dsTransportTypeLabels,
   LIEU_ETABLISSEMENT_SANTE_PRECISION,
   LIEU_TYPE,
   MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION,
@@ -294,6 +295,11 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
   const transportTypeId =
     getEnumIdFromLabel(mapping.transportType.options, champsById[mapping.transportType.id]?.stringValue ?? null) ??
     null;
+  const transportTypeLabel = transportTypeId
+    ? dsTransportTypeLabels[transportTypeId as keyof typeof dsTransportTypeLabels]
+    : undefined;
+  const transportSocieteValue = champsById[mapping.transportSociete.id]?.stringValue;
+  const societeTransport = [transportTypeLabel, transportSocieteValue].filter(Boolean).join(' - ');
   const lieux = {
     codePostal,
     commentaire: '',
@@ -301,7 +307,7 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
     lieuTypeId,
     lieuPrecision,
     transportTypeId: transportTypeId,
-    societeTransport: champsById[mapping.transportSociete.id]?.stringValue ?? '',
+    societeTransport,
     finess: '',
     tutelle: '',
     categCode: '',
