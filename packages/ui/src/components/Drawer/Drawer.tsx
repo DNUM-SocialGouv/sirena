@@ -206,32 +206,30 @@ const Portal = ({ children, container }: PortalProps) => {
   );
 };
 
-// This is a backdrop overlay for Drawer.
-// It has onMouseDown for closing the drawer, but it is intentionally NOT focusable.
-// RGAA-compliant; Biome reports a false positive lint warning here.
 const Backdrop = ({ onInteract, className, ...rest }: BackdropProps) => {
   const {
+    variant,
     props: { overlay },
   } = useDrawerCtx('Drawer.Backdrop');
   const visual = useVisualState();
 
-  if (!overlay) return null;
+  if (!overlay || variant !== 'modal') return null;
 
   const handleMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    if (useDrawerCtx('Drawer.Backdrop').variant !== 'nonModal') {
-      onInteract?.(e);
-    }
+    onInteract?.(e);
   };
 
   return (
+    // This is a backdrop overlay for Drawer.
+    // It has onMouseDown for closing the drawer, but it is intentionally NOT focusable.
+    // RGAA-compliant; Biome reports a false positive lint warning here.
+    // biome-ignore lint: a11y/noStaticElementInteractions
     <div
       data-state={visual}
+      aria-hidden={true}
       className={clsx(s.backdrop, className)}
       onMouseDown={handleMouseDown}
       {...rest}
-      style={{
-        pointerEvents: useDrawerCtx('Drawer.Backdrop').variant === 'nonModal' ? 'none' : undefined,
-      }}
     />
   );
 };
@@ -255,14 +253,14 @@ const Panel = ({ className, style, width, titleId, children, ...rest }: PanelPro
 
   useEffect(() => {
     if (!open || visual !== 'open') return;
-    const el = panelRef.current;
 
-    if (!el) return;
-    const focusables = getFocusable(el);
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const focusables = Array.from(getFocusable(panel)).filter((el) => !el.classList.contains(s.close));
+
     if (focusables.length > 0) {
-      focusables[0]?.focus?.();
-    } else {
-      el.focus();
+      requestAnimationFrame(() => focusables[0].focus());
     }
   }, [visual, open]);
 
@@ -347,7 +345,6 @@ const Panel = ({ className, style, width, titleId, children, ...rest }: PanelPro
     >
       <aside
         ref={panelRef}
-        tabIndex={-1}
         role="dialog"
         aria-modal={isModal ? true : undefined}
         aria-labelledby={titleId}
@@ -358,7 +355,6 @@ const Panel = ({ className, style, width, titleId, children, ...rest }: PanelPro
         onKeyDown={onKeyDown}
         {...rest}
       >
-        {children}
         {withCloseButton && (
           <Button
             iconId="fr-icon-close-line"
@@ -367,9 +363,10 @@ const Panel = ({ className, style, width, titleId, children, ...rest }: PanelPro
             className={s.close}
             onClick={() => setOpen(false)}
           >
-            Annuler
+            Annuler <span className="fr-sr-only">et fermer le panneau</span>
           </Button>
         )}
+        {children}
       </aside>
     </div>
   );
