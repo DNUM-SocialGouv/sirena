@@ -10,9 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as AccessibiliteRouteImport } from './routes/accessibilite'
+import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PublicMentionsLegalesRouteImport } from './routes/_public/mentions-legales'
+import { Route as PublicGestionCookiesRouteImport } from './routes/_public/gestion-cookies'
+import { Route as PublicDonneesPersonnellesRouteImport } from './routes/_public/donnees-personnelles'
+import { Route as PublicAccessibiliteRouteImport } from './routes/_public/accessibilite'
 import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/route'
 import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
 import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
@@ -41,9 +45,8 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AccessibiliteRoute = AccessibiliteRouteImport.update({
-  id: '/accessibilite',
-  path: '/accessibilite',
+const PublicRouteRoute = PublicRouteRouteImport.update({
+  id: '/_public',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRouteRoute = AuthRouteRouteImport.update({
@@ -54,6 +57,27 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PublicMentionsLegalesRoute = PublicMentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicGestionCookiesRoute = PublicGestionCookiesRouteImport.update({
+  id: '/gestion-cookies',
+  path: '/gestion-cookies',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicDonneesPersonnellesRoute =
+  PublicDonneesPersonnellesRouteImport.update({
+    id: '/donnees-personnelles',
+    path: '/donnees-personnelles',
+    getParentRoute: () => PublicRouteRoute,
+  } as any)
+const PublicAccessibiliteRoute = PublicAccessibiliteRouteImport.update({
+  id: '/accessibilite',
+  path: '/accessibilite',
+  getParentRoute: () => PublicRouteRoute,
 } as any)
 const AuthInactiveRouteRoute = AuthInactiveRouteRouteImport.update({
   id: '/inactive',
@@ -179,10 +203,13 @@ const AuthUserRequestRequestIdSituationSituationIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/accessibilite': typeof AccessibiliteRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/inactive': typeof AuthInactiveRouteRoute
+  '/accessibilite': typeof PublicAccessibiliteRoute
+  '/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
+  '/gestion-cookies': typeof PublicGestionCookiesRoute
+  '/mentions-legales': typeof PublicMentionsLegalesRoute
   '/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/home': typeof AuthUserHomeRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
@@ -205,10 +232,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/accessibilite': typeof AccessibiliteRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/inactive': typeof AuthInactiveRouteRoute
+  '/accessibilite': typeof PublicAccessibiliteRoute
+  '/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
+  '/gestion-cookies': typeof PublicGestionCookiesRoute
+  '/mentions-legales': typeof PublicMentionsLegalesRoute
   '/home': typeof AuthUserHomeRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
@@ -229,11 +259,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteRouteWithChildren
-  '/accessibilite': typeof AccessibiliteRoute
+  '/_public': typeof PublicRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/_auth/_user': typeof AuthUserRouteRouteWithChildren
   '/_auth/admin': typeof AuthAdminRouteRouteWithChildren
   '/_auth/inactive': typeof AuthInactiveRouteRoute
+  '/_public/accessibilite': typeof PublicAccessibiliteRoute
+  '/_public/donnees-personnelles': typeof PublicDonneesPersonnellesRoute
+  '/_public/gestion-cookies': typeof PublicGestionCookiesRoute
+  '/_public/mentions-legales': typeof PublicMentionsLegalesRoute
   '/_auth/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/_auth/_user/home': typeof AuthUserHomeRoute
   '/_auth/admin/entities': typeof AuthAdminEntitiesRoute
@@ -258,10 +292,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/accessibilite'
     | '/login'
     | '/admin'
     | '/inactive'
+    | '/accessibilite'
+    | '/donnees-personnelles'
+    | '/gestion-cookies'
+    | '/mentions-legales'
     | '/admin/users'
     | '/home'
     | '/admin/entities'
@@ -284,10 +321,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/accessibilite'
     | '/login'
     | '/admin'
     | '/inactive'
+    | '/accessibilite'
+    | '/donnees-personnelles'
+    | '/gestion-cookies'
+    | '/mentions-legales'
     | '/home'
     | '/admin/entities'
     | '/admin/user/$userId'
@@ -307,11 +347,15 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_auth'
-    | '/accessibilite'
+    | '/_public'
     | '/login'
     | '/_auth/_user'
     | '/_auth/admin'
     | '/_auth/inactive'
+    | '/_public/accessibilite'
+    | '/_public/donnees-personnelles'
+    | '/_public/gestion-cookies'
+    | '/_public/mentions-legales'
     | '/_auth/admin/users'
     | '/_auth/_user/home'
     | '/_auth/admin/entities'
@@ -336,7 +380,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
-  AccessibiliteRoute: typeof AccessibiliteRoute
+  PublicRouteRoute: typeof PublicRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
 }
 
@@ -349,11 +393,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/accessibilite': {
-      id: '/accessibilite'
-      path: '/accessibilite'
-      fullPath: '/accessibilite'
-      preLoaderRoute: typeof AccessibiliteRouteImport
+    '/_public': {
+      id: '/_public'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PublicRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth': {
@@ -369,6 +413,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_public/mentions-legales': {
+      id: '/_public/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof PublicMentionsLegalesRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/gestion-cookies': {
+      id: '/_public/gestion-cookies'
+      path: '/gestion-cookies'
+      fullPath: '/gestion-cookies'
+      preLoaderRoute: typeof PublicGestionCookiesRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/donnees-personnelles': {
+      id: '/_public/donnees-personnelles'
+      path: '/donnees-personnelles'
+      fullPath: '/donnees-personnelles'
+      preLoaderRoute: typeof PublicDonneesPersonnellesRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/accessibilite': {
+      id: '/_public/accessibilite'
+      path: '/accessibilite'
+      fullPath: '/accessibilite'
+      preLoaderRoute: typeof PublicAccessibiliteRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
     '/_auth/inactive': {
       id: '/_auth/inactive'
@@ -652,10 +724,28 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
   AuthRouteRouteChildren,
 )
 
+interface PublicRouteRouteChildren {
+  PublicAccessibiliteRoute: typeof PublicAccessibiliteRoute
+  PublicDonneesPersonnellesRoute: typeof PublicDonneesPersonnellesRoute
+  PublicGestionCookiesRoute: typeof PublicGestionCookiesRoute
+  PublicMentionsLegalesRoute: typeof PublicMentionsLegalesRoute
+}
+
+const PublicRouteRouteChildren: PublicRouteRouteChildren = {
+  PublicAccessibiliteRoute: PublicAccessibiliteRoute,
+  PublicDonneesPersonnellesRoute: PublicDonneesPersonnellesRoute,
+  PublicGestionCookiesRoute: PublicGestionCookiesRoute,
+  PublicMentionsLegalesRoute: PublicMentionsLegalesRoute,
+}
+
+const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
+  PublicRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRouteRoute: AuthRouteRouteWithChildren,
-  AccessibiliteRoute: AccessibiliteRoute,
+  PublicRouteRoute: PublicRouteRouteWithChildren,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
