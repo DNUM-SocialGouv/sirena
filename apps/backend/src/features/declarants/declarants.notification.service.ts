@@ -345,6 +345,7 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
         prenomdeclarant: declarantPrenom,
         nomdeclarant: declarantNom,
         entiteadmin: entiteAdmin,
+        requeteid: requeteId,
         ...entiteCompleteValues,
         signature,
       },
