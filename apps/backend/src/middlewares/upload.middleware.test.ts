@@ -162,18 +162,16 @@ describe('upload.middleware.ts', () => {
       expect(next).not.toHaveBeenCalled();
     });
 
-    it('should throw an error when detected mime is not defined', async () => {
+    it('should throw an error when detected mime is not defined and file.type is missing or not allowed', async () => {
       mockFileTypeFromBuffer.mockResolvedValue(undefined);
-      mockThrowHTTPException400BadRequest.mockImplementation(() => {
-        throw new HTTPException(400, { message: 'File type "undefined" is not allowed' });
+      mockThrowHTTPException400BadRequest.mockImplementation((msg: string) => {
+        throw new HTTPException(400, { message: msg });
       });
 
       const mockContext = createUploadMockContext({
         req: {
           parseBody: vi.fn().mockResolvedValue({
-            file: new File([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x25, 0x50, 0x44, 0x46])], 'test-document.pdf', {
-              type: 'application/pdf',
-            }),
+            file: new File([new Uint8Array(100)], 'document.bin', { type: '' }),
           }),
         },
         get: vi.fn().mockReturnValue({
@@ -183,14 +181,42 @@ describe('upload.middleware.ts', () => {
       const next = vi.fn();
 
       await expect(extractUploadedFileMiddleware(mockContext as unknown as Context<AppBindings>, next)).rejects.toThrow(
-        'File type "undefined" is not allowed',
+        'File type "unknown" is not allowed',
       );
-      expect(mockThrowHTTPException400BadRequest).toHaveBeenCalledWith('File type "undefined" is not allowed', {
+      expect(mockThrowHTTPException400BadRequest).toHaveBeenCalledWith('File type "unknown" is not allowed', {
         res: mockContext.res,
         cause: { name: 'FILE_TYPE' },
       });
       expect(mockContext.set).not.toHaveBeenCalled();
       expect(next).not.toHaveBeenCalled();
+    });
+
+    it('should accept file when file-type returns undefined but file.type is allowed (browser fallback)', async () => {
+      mockFileTypeFromBuffer.mockResolvedValue(undefined);
+
+      const mockContext = createUploadMockContext({
+        req: {
+          parseBody: vi.fn().mockResolvedValue({
+            file: new File([new Uint8Array(100)], 'document.pdf', { type: 'application/pdf' }),
+          }),
+        },
+        get: vi.fn().mockReturnValue({
+          logger: createMockPinoLogger(),
+        }),
+      });
+      const next = vi.fn();
+
+      await extractUploadedFileMiddleware(mockContext as unknown as Context<AppBindings>, next);
+
+      expect(mockContext.set).toHaveBeenCalledWith(
+        'uploadedFile',
+        expect.objectContaining({
+          contentType: 'application/pdf',
+          fileName: expect.any(String),
+          size: 100,
+        }),
+      );
+      expect(next).toHaveBeenCalled();
     });
 
     it('should throw an error when detected mime is not allowed', async () => {
