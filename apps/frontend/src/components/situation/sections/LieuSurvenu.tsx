@@ -20,8 +20,8 @@ import {
   lieuTypeLabels,
   RECEPTION_TYPE,
   type ReceptionType,
-  TRANSPORT_TYPE,
-  transportTypeLabels,
+  // TRANSPORT_TYPE,
+  // transportTypeLabels,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
 import { useEffect, useState } from 'react';
@@ -117,10 +117,10 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
     key,
     value: lieuTrajetPrecisionLabels[value],
   }));
-  const transportTypeOptions = Object.entries(TRANSPORT_TYPE).map(([key, value]) => ({
-    key,
-    value: transportTypeLabels[value],
-  }));
+  // const transportTypeOptions = Object.entries(TRANSPORT_TYPE).map(([key, value]) => ({
+  //   key,
+  //   value: transportTypeLabels[value],
+  // }));
 
   return (
     <div
@@ -369,7 +369,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                   ))}
                 </Select>
               </div>
-              <div className="fr-col-12 fr-col-md-6">
+              {/* <div className="fr-col-12 fr-col-md-6">
                 <Select
                   label="Type de transport"
                   nativeSelectProps={{
@@ -388,7 +388,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
                     </option>
                   ))}
                 </Select>
-              </div>
+              </div> */}
               <div className="fr-col-12 fr-col-md-6">
                 <Input
                   label="Société de transport concernée"
