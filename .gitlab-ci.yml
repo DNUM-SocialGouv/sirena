@@ -96,6 +96,7 @@ lint-and-build:
     - .rules-with-env-vars
     - .configure_and_login_docker
   before_script:
+    - !reference [ .configure_and_login_docker, before_script ]
     - export IMAGE_TAG="${CONTAINER_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}"
 
 build-worker:
