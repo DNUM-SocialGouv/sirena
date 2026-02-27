@@ -14,7 +14,6 @@ import {
   PROFESSION_TYPE,
   RECEPTION_TYPE,
 } from '@sirena/common/constants';
-import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import type { RootChampFragmentFragment } from '../../libs/graffle.js';
 import type { CreateRequeteFromDematSocialDto } from '../requetes/requetes.type.js';
 import { ChampMappingError, EnumNotFound } from './dematSocial.error.js';
@@ -138,9 +137,11 @@ const getFiness = (champ: RootChampFragmentFragment | RepetitionChamp) => {
   if (champ.__typename !== 'FinessChamp') {
     throw new ChampMappingError(champ, 'FinessChamp', 'Invalid mapping value');
   } else if (!champ.data) {
-    const logger = getLoggerStore();
-    logger.error(`FinessChamp data is null for champ id: ${champ.id}`);
-    return null;
+    return {
+      adresse: {
+        label: champ.stringValue || '',
+      },
+    };
   }
 
   return {
@@ -163,9 +164,9 @@ const getRpps = (champ: RootChampFragmentFragment | RepetitionChamp) => {
   if (champ.__typename !== 'RppsanteChamp') {
     throw new ChampMappingError(champ, 'RppsanteChamp', 'Invalid mapping value');
   } else if (!champ.data) {
-    const logger = getLoggerStore();
-    logger.error(`RppsanteChamp data is null for champ id: ${champ.id}`);
-    return null;
+    return {
+      nom: champ.stringValue || '',
+    };
   }
 
   const rpps = champ.data.identifiant_pp ? String(champ.data.identifiant_pp) : '';
@@ -280,9 +281,15 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
   }
   const finess = getFiness(champsById[mapping.finess.id]);
   if (finess) {
-    adresse.label = finess.adresse.label;
-    adresse.codePostal = finess.adresse.codePostal;
-    adresse.ville = finess.adresse.ville;
+    if (finess.adresse.label) {
+      adresse.label = finess.adresse.label;
+    }
+    if (finess.adresse.codePostal) {
+      adresse.codePostal = finess.adresse.codePostal;
+    }
+    if (finess.adresse.ville) {
+      adresse.ville = finess.adresse.ville;
+    }
   }
   const transportTypeId =
     getEnumIdFromLabel(mapping.transportType.options, champsById[mapping.transportType.id]?.stringValue ?? null) ??
@@ -295,10 +302,14 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
     lieuPrecision,
     transportTypeId: transportTypeId,
     societeTransport: champsById[mapping.transportSociete.id]?.stringValue ?? '',
-    finess: finess?.code ?? '',
-    tutelle: finess?.tutelle ?? '',
-    categCode: finess?.categ_code ?? '',
-    categLib: finess?.categ_lib ?? '',
+    finess: '',
+    tutelle: '',
+    categCode: '',
+    categLib: '',
+    ...(finess?.code ? { finess: finess.code } : {}),
+    ...(finess?.tutelle ? { tutelle: finess.tutelle } : {}),
+    ...(finess?.categ_code ? { categCode: finess.categ_code } : {}),
+    ...(finess?.categ_lib ? { categLib: finess.categ_lib } : {}),
   };
   return lieux;
 };
@@ -430,10 +441,12 @@ const getMisEnCause = (champsById: MappedChamp | MappedRepetitionChamp, mapping:
     civilite: '',
     nom: '',
     prenom: '',
-    ...(rppsChamp
-      ? { rpps: rppsChamp.rpps, civilite: rppsChamp.civilite, nom: rppsChamp.nom, prenom: rppsChamp.prenom }
-      : {}),
-    commentaire: champsById[mapping.responsableCommentaire.id]?.stringValue ?? '',
+    ...(rppsChamp?.rpps ? { rpps: rppsChamp.rpps } : {}),
+    ...(rppsChamp?.civilite ? { civilite: rppsChamp.civilite } : {}),
+    ...(rppsChamp?.nom ? { nom: rppsChamp.nom } : {}),
+    ...(rppsChamp?.prenom ? { prenom: rppsChamp.prenom } : {}),
+    autrePrecision: champsById[mapping.responsableCommentaire.id]?.stringValue ?? '',
+    commentaire: '',
   };
   return misEnCause;
 };
