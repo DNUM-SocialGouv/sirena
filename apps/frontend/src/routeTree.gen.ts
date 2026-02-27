@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AccessibiliteRouteImport } from './routes/accessibilite'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/route'
@@ -38,6 +39,11 @@ import { Route as AuthUserRequestRequestIdSituationSituationIdRouteImport } from
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccessibiliteRoute = AccessibiliteRouteImport.update({
+  id: '/accessibilite',
+  path: '/accessibilite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRouteRoute = AuthRouteRouteImport.update({
@@ -173,6 +179,7 @@ const AuthUserRequestRequestIdSituationSituationIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accessibilite': typeof AccessibiliteRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/inactive': typeof AuthInactiveRouteRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accessibilite': typeof AccessibiliteRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthAdminRouteRouteWithChildren
   '/inactive': typeof AuthInactiveRouteRoute
@@ -221,6 +229,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteRouteWithChildren
+  '/accessibilite': typeof AccessibiliteRoute
   '/login': typeof LoginRoute
   '/_auth/_user': typeof AuthUserRouteRouteWithChildren
   '/_auth/admin': typeof AuthAdminRouteRouteWithChildren
@@ -249,6 +258,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accessibilite'
     | '/login'
     | '/admin'
     | '/inactive'
@@ -274,6 +284,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accessibilite'
     | '/login'
     | '/admin'
     | '/inactive'
@@ -296,6 +307,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_auth'
+    | '/accessibilite'
     | '/login'
     | '/_auth/_user'
     | '/_auth/admin'
@@ -324,6 +336,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
+  AccessibiliteRoute: typeof AccessibiliteRoute
   LoginRoute: typeof LoginRoute
 }
 
@@ -334,6 +347,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accessibilite': {
+      id: '/accessibilite'
+      path: '/accessibilite'
+      fullPath: '/accessibilite'
+      preLoaderRoute: typeof AccessibiliteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth': {
@@ -635,6 +655,7 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRouteRoute: AuthRouteRouteWithChildren,
+  AccessibiliteRoute: AccessibiliteRoute,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport

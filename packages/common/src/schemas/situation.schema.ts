@@ -5,6 +5,7 @@ export const SituationDataSchema = z.object({
     .object({
       lieuType: z.string().optional(),
       lieuPrecision: z.string().optional(),
+      transportType: z.string().optional(),
       codePostal: z.string().optional(),
       societeTransport: z.string().optional(),
       finess: z.string().optional(),

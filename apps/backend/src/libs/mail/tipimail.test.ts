@@ -1,19 +1,25 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SendTipimailOptions, TipimailSendResponse, TipimailSubstitution } from './tipimail.js';
 
 global.fetch = vi.fn();
 
-vi.mock('../../config/env.js', () => ({
-  envVars: {
+vi.mock('../../config/env.js', () => {
+  const envVars = {
     TIPIMAIL_API_URL: 'https://api.tipimail.com',
     TIPIMAIL_USER_ID: 'test-user-id',
     TIPIMAIL_API_KEY: 'test-api-key',
     TIPIMAIL_FROM_ADDRESS: 'default@example.com',
     TIPIMAIL_FROM_PERSONAL_NAME: 'Default Sender',
-  },
-}));
+    TIPIMAIL_REDIRECT_ALL_TO: undefined as string | undefined,
+    TIPIMAIL_DISABLE_SENDING: false,
+    SENTRY_ENVIRONMENT: undefined as string | undefined,
+  };
+
+  return { envVars };
+});
 
 const { sendTipimailEmail } = await import('./tipimail.js');
+const { envVars } = await import('../../config/env.js');
 
 describe('tipimail', () => {
   beforeEach(() => {
@@ -107,7 +113,7 @@ describe('tipimail', () => {
       expect(body.headers['X-TM-SUB']).toEqual([
         {
           email: 'recipient@example.com',
-          values: { name: 'John', code: 'ABC123' },
+          values: { name: 'John', code: 'ABC123', __testRealRecipients: '' },
         },
       ]);
       expect(body.msg.images).toEqual([
@@ -268,6 +274,21 @@ describe('tipimail', () => {
       const body = JSON.parse(callArgs[1]?.body as string);
 
       expect(body.msg.replyTo).toEqual({ address: 'reply@example.com' });
+    });
+
+    it('should not call Tipimail API when TIPIMAIL_DISABLE_SENDING is true', async () => {
+      envVars.TIPIMAIL_DISABLE_SENDING = true;
+
+      const result = await sendTipimailEmail({
+        to: 'recipient@example.com',
+        subject: 'Disabled',
+        text: 'Disabled',
+      });
+
+      expect(fetch).not.toHaveBeenCalled();
+      expect(result).toEqual({ status: 'disabled' });
+
+      envVars.TIPIMAIL_DISABLE_SENDING = false;
     });
 
     it('should validate that substitutions match recipients', async () => {
@@ -455,7 +476,10 @@ describe('tipimail', () => {
       const callArgs = vi.mocked(fetch).mock.calls[0];
       const body = JSON.parse(callArgs[1]?.body as string);
 
-      expect(body.headers['X-TM-SUB']).toEqual(substitutions);
+      expect(body.headers['X-TM-SUB']).toEqual([
+        { email: 'recipient1@example.com', values: { name: 'John', code: 'ABC', __testRealRecipients: '' } },
+        { email: 'recipient2@example.com', values: { name: 'Jane', code: 'XYZ', __testRealRecipients: '' } },
+      ]);
     });
 
     it('should include html when provided', async () => {
@@ -496,6 +520,47 @@ describe('tipimail', () => {
       const body = JSON.parse(callArgs[1]?.body as string);
 
       expect(body.msg.html).toBeUndefined();
+    });
+
+    describe('when TIPIMAIL_REDIRECT_ALL_TO is set and not production', () => {
+      const redirectTo = 'redirect@test.com';
+
+      beforeEach(async () => {
+        const { envVars } = await import('../../config/env.js');
+        envVars.TIPIMAIL_REDIRECT_ALL_TO = redirectTo;
+        envVars.SENTRY_ENVIRONMENT = 'integration';
+      });
+
+      afterEach(async () => {
+        const { envVars } = await import('../../config/env.js');
+        envVars.TIPIMAIL_REDIRECT_ALL_TO = undefined;
+        envVars.SENTRY_ENVIRONMENT = undefined;
+      });
+
+      it('should send to single redirect address and set subject and __testRealRecipients', async () => {
+        const mockResponse: TipimailSendResponse = { status: 'success' };
+        vi.mocked(fetch).mockResolvedValueOnce({
+          status: 200,
+          json: async () => mockResponse,
+        } as Response);
+
+        await sendTipimailEmail({
+          to: ['a@example.com', 'b@example.com'],
+          subject: 'Original subject',
+          text: 'Body',
+        });
+
+        const callArgs = vi.mocked(fetch).mock.calls[0];
+        const body = JSON.parse(callArgs[1]?.body as string);
+
+        expect(body.to).toEqual([{ address: redirectTo }]);
+        expect(body.msg.subject).toContain('[TEST - Destinataire(s) réel(s):');
+        expect(body.msg.subject).toContain('Original subject');
+        expect(body.headers['X-TM-SUB']).toHaveLength(1);
+        expect(body.headers['X-TM-SUB'][0].email).toBe(redirectTo);
+        expect(body.headers['X-TM-SUB'][0].values.__testRealRecipients).toContain('a@example.com');
+        expect(body.headers['X-TM-SUB'][0].values.__testRealRecipients).toContain('b@example.com');
+      });
     });
   });
 });

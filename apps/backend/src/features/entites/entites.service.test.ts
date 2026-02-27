@@ -32,7 +32,7 @@ const fakeEntiteBase: Omit<Entite, 'id'> = {
   entiteMereId: null,
   nomComplet: 'Entite A',
   organizationalUnit: '',
-  emailDomain: 'domain.fr',
+  emailDomain: '@domain.fr',
   departementCode: '1',
   regionCode: '1',
   ctcdCode: '1',
@@ -190,7 +190,7 @@ describe('entites.service', () => {
       entiteMereId: null,
       nomComplet: 'Entite A',
       organizationalUnit: '',
-      emailDomain: 'domain.fr',
+      emailDomain: '@domain.fr',
       departementCode: '1',
       regionCode: '1',
       ctcdCode: '1',
@@ -203,41 +203,68 @@ describe('entites.service', () => {
       vi.clearAllMocks();
     });
 
-    it('should return entite if organizationUnit matches a single entite', async () => {
+    it('should return entite if organizationalUnit matches a single entite', async () => {
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite1]);
 
-      const result = await getEntiteForUser('ARS-CORSE', '');
-      expect(prisma.entite.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            OR: expect.arrayContaining([
-              expect.objectContaining({
-                organizationalUnit: expect.stringContaining('ARS-CORSE'),
-              }),
-            ]),
-          }),
-        }),
-      );
+      const result = await getEntiteForUser('ARS-CORSE', 'john@domain.fr');
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(1);
+      expect(prisma.entite.findMany).toHaveBeenCalledWith({
+        where: {
+          OR: [
+            { organizationalUnit: 'ARS-CORSE' },
+            { organizationalUnit: { startsWith: 'ARS-CORSE,' } },
+            { organizationalUnit: { endsWith: ',ARS-CORSE' } },
+            { organizationalUnit: { contains: ',ARS-CORSE,' } },
+          ],
+        },
+      });
       expect(result).toEqual(mockEntite1);
+    });
+
+    it('should fallback to email domain when organizationalUnit matches 0 or 2+ entites', async () => {
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([]).mockResolvedValueOnce([mockEntite2]);
+
+      const result = await getEntiteForUser('ARS-CORSE', 'john@domain.fr');
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(2);
+      expect(prisma.entite.findMany).toHaveBeenNthCalledWith(1, {
+        where: {
+          OR: [
+            { organizationalUnit: 'ARS-CORSE' },
+            { organizationalUnit: { startsWith: 'ARS-CORSE,' } },
+            { organizationalUnit: { endsWith: ',ARS-CORSE' } },
+            { organizationalUnit: { contains: ',ARS-CORSE,' } },
+          ],
+        },
+      });
+      expect(prisma.entite.findMany).toHaveBeenNthCalledWith(2, { where: { emailDomain: '@domain.fr' } });
+      expect(result).toEqual(mockEntite2);
     });
 
     it('should return entite if email domain matches a single entite', async () => {
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite2]);
 
       const result = await getEntiteForUser(null, 'john@domain.fr');
-      expect(prisma.entite.findMany).toHaveBeenLastCalledWith({ where: { emailDomain: 'domain.fr' } });
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(1);
+      expect(prisma.entite.findMany).toHaveBeenCalledWith({ where: { emailDomain: '@domain.fr' } });
       expect(result).toEqual(mockEntite2);
     });
 
-    it('should return null if multiple entites match orgUnit', async () => {
-      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite1, mockEntite2]);
-      const result = await getEntiteForUser('DUPLICATE', '');
+    it('should return null if multiple entites share the same email domain', async () => {
+      const entiteSameDomain = { ...mockEntite2, id: '3', label: 'C' };
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite2, entiteSameDomain]);
+      const result = await getEntiteForUser(null, 'user@domain.fr');
       expect(result).toBeNull();
     });
 
-    it('should return null if no matches found', async () => {
+    it('should return null if no entite matches the email domain', async () => {
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([]);
       const result = await getEntiteForUser(null, 'nobody@nothing.com');
+      expect(result).toBeNull();
+    });
+
+    it('should return null when email has no domain (no @)', async () => {
+      const result = await getEntiteForUser(null, 'invalid-email');
+      expect(prisma.entite.findMany).not.toHaveBeenCalled();
       expect(result).toBeNull();
     });
   });
@@ -356,7 +383,7 @@ describe('entites.service', () => {
         entiteMereId: '2',
         nomComplet: 'Entite A',
         organizationalUnit: '',
-        emailDomain: 'domain.fr',
+        emailDomain: '@domain.fr',
         departementCode: '1',
         regionCode: '1',
         ctcdCode: '1',
@@ -400,7 +427,7 @@ describe('entites.service', () => {
         entiteMereId: '1',
         nomComplet: 'Entite A',
         organizationalUnit: '',
-        emailDomain: 'domain.fr',
+        emailDomain: '@domain.fr',
         departementCode: '1',
         regionCode: '1',
         ctcdCode: '1',
@@ -416,7 +443,7 @@ describe('entites.service', () => {
         entiteMereId: '2',
         nomComplet: 'Entite A',
         organizationalUnit: '',
-        emailDomain: 'domain.fr',
+        emailDomain: '@domain.fr',
         departementCode: '1',
         regionCode: '1',
         ctcdCode: '1',
@@ -620,7 +647,7 @@ describe('entites.service', () => {
         entiteMereId: '2',
         nomComplet: 'Entite A',
         organizationalUnit: '',
-        emailDomain: 'domain.fr',
+        emailDomain: '@domain.fr',
         departementCode: '1',
         regionCode: '1',
         ctcdCode: '1',

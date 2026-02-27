@@ -1,0 +1,294 @@
+variables:
+  NODE_VERSION: "22.22.0"
+  DOCKER_DRIVER: overlay2
+  ENVIRONMENT: 'production'
+  NODE_OPTIONS: "--max_old_space_size=6144"
+
+default:
+  tags:
+    - socialgouv-linux-small-amd64
+
+include:
+  - local: ".gitlab-templates/generic-template.yml"
+
+stages:
+  - lint-test
+  - build
+  - integration
+  - security
+  - deploy
+  - e2e
+
+# Shared rules with environment variables for builds/deploys
+.rules-with-env-vars:
+  rules:
+    # Automatic builds/deploys
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH != "main" && $CI_COMMIT_BRANCH != "chore/deploy"
+      variables:
+        FRONTEND_ENV: "dev"
+        DEPLOYMENT_ENV: "dev"
+        MATOMO_SITE_ID: "155"
+    - if: $CI_COMMIT_BRANCH == "main"
+      variables:
+        FRONTEND_ENV: "integration"
+        DEPLOYMENT_ENV: "integration"
+        MATOMO_SITE_ID: "155"
+    - if: $CI_COMMIT_BRANCH == "chore/deploy"
+      variables:
+        FRONTEND_ENV: "test"
+        DEPLOYMENT_ENV: "test"
+        MATOMO_SITE_ID: "155"
+    # Manual deployments
+    - if: $CI_PIPELINE_SOURCE == "web" && $DEPLOY_ENVIRONMENT == "formation"
+      when: manual
+      variables:
+        FRONTEND_ENV: "formation"
+        DEPLOYMENT_ENV: "formation"
+        MATOMO_SITE_ID: "155"
+    - if: $CI_PIPELINE_SOURCE == "web" && $DEPLOY_ENVIRONMENT == "validation"
+      when: manual
+      variables:
+        FRONTEND_ENV: "validation"
+        DEPLOYMENT_ENV: "validation"
+        MATOMO_SITE_ID: "155"
+    - if: $CI_PIPELINE_SOURCE == "web" && $DEPLOY_ENVIRONMENT == "preproduction"
+      when: manual
+      variables:
+        FRONTEND_ENV: "preproduction"
+        DEPLOYMENT_ENV: "preproduction"
+        MATOMO_SITE_ID: "155"
+    - if: $CI_PIPELINE_SOURCE == "web" && $DEPLOY_ENVIRONMENT == "production"
+      when: manual
+      variables:
+        FRONTEND_ENV: "production"
+        DEPLOYMENT_ENV: "production"
+        MATOMO_SITE_ID: "154"
+
+lint-and-build:
+  stage: lint-test
+  extends:
+    - .configure_docker_with_node
+  script:
+    - pnpm audit --audit-level=moderate
+    - pnpm install
+    - pnpm add -D typescript -w
+    - pnpm lint
+    - pnpm gitleaks:ci
+    - pnpm build:common
+    - pnpm build:backend-utils
+    - pnpm db:generate
+    - pnpm build:backend
+    - pnpm test:unit
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - node_modules/
+      - .pnpm-store/
+    policy: pull-push
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+.build-docker-images:
+  stage: build
+  extends:
+    - .rules-with-env-vars
+    - .configure_and_login_docker
+  before_script:
+    - export IMAGE_TAG="${CONTAINER_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}"
+
+build-worker:
+  extends: .build-docker-images
+  script:
+    # Build and push worker image
+    - docker manifest inspect ${CONTAINER_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}-worker > /dev/null 2>&1 && echo "Worker image exists, skipping" || (
+      docker build
+      --file apps/backend/Dockerfile.worker
+      --tag ${IMAGE_TAG}-worker
+      --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN
+      --cache-from ${IMAGE_TAG}-worker
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      . && docker images && docker push ${IMAGE_TAG}-worker
+      )
+
+build-backend:
+  extends: .build-docker-images
+  script:
+    # Build and push backend image
+    - docker manifest inspect ${IMAGE_TAG}-backend > /dev/null 2>&1 && echo "Backend image exists, skipping" || (
+      docker build
+      --file apps/backend/Dockerfile
+      --tag ${IMAGE_TAG}-backend
+      --build-arg APP_VERSION=${CI_COMMIT_SHORT_SHA}
+      --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN
+      --cache-from ${IMAGE_TAG}-backend
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      . && docker push ${IMAGE_TAG}-backend
+      )
+
+build-frontend:
+  extends: .build-docker-images
+  script:
+    - docker manifest inspect ${IMAGE_TAG}-frontend-${FRONTEND_ENV} > /dev/null 2>&1 && echo "Frontend image exists, skipping" || (
+      docker build
+      --file apps/frontend/Dockerfile
+      --tag ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
+      --build-arg VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
+      --build-arg SENTRY_ENABLED=true
+      --build-arg SENTRY_ENVIRONEMENT=${FRONTEND_ENV}
+      --build-arg APP_VERSION=${CI_COMMIT_SHORT_SHA}
+      --build-arg SENTRY_DSN_FRONTEND=https://343eb82fc1395b23dc747ac7d2fac3d6@sentry2.fabrique.social.gouv.fr/49
+      --build-arg VITE_MATOMO_URL=https://matomo.fabrique.social.gouv.fr
+      --build-arg VITE_MATOMO_SITE_ID=${MATOMO_SITE_ID}
+      --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN
+      --cache-from ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      . && docker push ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
+      )
+
+trivy-filesystem-scan:
+  stage: security
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy fs --format json --severity CRITICAL,HIGH,MEDIUM --output trivy-fs-results.json .
+    - trivy fs --format gitlab --severity CRITICAL,HIGH,MEDIUM --output gl-sast-report.json .
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
+    paths:
+      - trivy-fs-results.json
+    expire_in: 1 week
+    when: always
+  rules:
+    # Scan filesystem on main branch, MRs, and schedules (no Docker images needed)
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+trivy-container-scan:
+  extends:
+    - .rules-with-env-vars
+    - .configure_and_login_docker
+  stage: security
+  parallel:
+    matrix:
+      - IMAGE_TYPE: backend
+        IMAGE_SUFFIX: ""
+      - IMAGE_TYPE: frontend
+        IMAGE_SUFFIX: "-${FRONTEND_ENV}"
+      - IMAGE_TYPE: worker
+        IMAGE_SUFFIX: ""
+  before_script:
+    - !reference [ .configure_and_login_docker, before_script]
+    - apk add --no-cache wget ca-certificates tar curl
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh |  sh -s -- -b /usr/local/bin v0.69.1
+  script:
+    - export IMAGE_TAG="${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}-${IMAGE_TYPE}${IMAGE_SUFFIX}"
+    - export IMAGE_NAME="${CONTAINER_REGISTRY}/${IMAGE_TAG}"
+    - echo $IMAGE_NAME
+    - docker pull $IMAGE_NAME
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/gitlab.tpl -o gitlab.tpl
+    - trivy image --format json --severity CRITICAL,HIGH,MEDIUM --output trivy-container-${IMAGE_TYPE}-results.json $IMAGE_NAME
+    - trivy image --format template --template "@gitlab.tpl" --severity CRITICAL,HIGH,MEDIUM --output gl-container-${IMAGE_TYPE}-report.json $IMAGE_NAME
+  artifacts:
+    reports:
+      container_scanning: gl-container-${IMAGE_TYPE}-report.json
+    paths:
+      - trivy-container-${IMAGE_TYPE}-results.json
+    expire_in: 1 week
+    when: always
+  needs:
+    - build-backend
+    - build-worker
+    - build-frontend
+
+helm_template:
+  stage: deploy
+  extends:
+    - .rules-with-env-vars
+  needs:
+    - build-backend
+    - build-worker
+    - build-frontend
+  image:
+    name: alpine/helm:latest
+    entrypoint: ['']
+  script:
+    # Install helm
+    - apk add --no-cache curl openssl
+    - curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh
+    - helm version
+    - cd helm_charts
+    - helm repo add SDPSN-devops-charts https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable --username oauth2 --password ${HELM_REPO_PAT}
+    - helm dependency update
+    - helm dependency build
+    - sh generate_manifests.sh ${DEPLOYMENT_ENV} ${CI_COMMIT_SHORT_SHA}
+  artifacts:
+    paths:
+      - helm_charts/generated_manifests/
+
+deploy-gitops:
+  stage: deploy
+  extends:
+    - .configure_and_login_docker
+    - .rules-with-env-vars
+  script:
+    - git clone https://oauth2:${GITOPS_TOKEN}@github.com/fabrique-atlas/org-sdpsn-ws-sirena.git gitops-repo
+    # Deploy manifests
+    - |
+      rm -rf \
+        gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/backend \
+        gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/frontend \
+        gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/external-secrets \
+        gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/worker
+    - mv helm_charts/generated_manifests/* gitops-repo/deployment-targets/${DEPLOYMENT_ENV}/
+
+    # Commit and push changes
+    - cd gitops-repo
+    - git config user.name "GitLab CI"
+    - git config user.email "gitlab-ci@gitlab.com"
+    - git add .
+    - git diff --staged --quiet && echo "No changes to commit" || (git commit -m "[${DEPLOYMENT_ENV}] new version ${CI_COMMIT_SHORT_SHA}" && git push)
+  needs:
+    - helm_template
+
+
+e2e-integration:
+  stage: e2e
+  image: node:$NODE_VERSION
+  needs:
+    - build-backend
+    - build-worker
+    - build-frontend
+    - deploy-gitops
+  extends: .configure_npm
+  variables:
+    EXPECTED_VERSION: ${CI_COMMIT_SHORT_SHA}
+    BACKEND_URL: "https://sirena.integration.dev.atlas.fabrique.social.gouv.fr/api"
+    FRONTEND_URL: "https://sirena.integration.dev.atlas.fabrique.social.gouv.fr"
+    FRONTEND_URI: "https://sirena.integration.dev.atlas.fabrique.social.gouv.fr"
+    E2E_CI: "true"
+  before_script:
+    - cd apps/frontend
+    - pnpm audit --audit-level=moderate || true
+    - pnpm install
+    - npx playwright install --with-deps chromium
+    - pnpm add -g tsx
+  script:
+    # Wait for deployment
+    - npx tsx tests/ci/wait-for-deployment.ts
+    # Run E2E tests
+    - pnpm run test:e2e
+  artifacts:
+    paths:
+      - apps/frontend/playwright-report/
+    expire_in: 1 day
+    when: always
+  environment:
+    name: integration
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"

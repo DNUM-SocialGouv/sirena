@@ -1,8 +1,10 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
+import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { fileTypeFromBuffer } from 'file-type';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../../../config/files.constant.js';
 import factoryWithLogs from '../../../helpers/factories/appWithLogs.js';
 import { sanitizeFilename } from '../../../helpers/file.js';
+import { sendDeclarantAcknowledgmentEmail } from '../../declarants/declarants.notification.service.js';
 import { assignEntitesToRequeteTask } from '../../dematSocial/affectation/affectation.js';
 import { getRequiredApiKey } from '../thirdPartyFactory.js';
 import {
@@ -24,7 +26,7 @@ const app = factoryWithLogs
     const requete = await createRequeteFromThirdParty({
       thirdPartyAccountId: apiKey.account.id,
       receptionDate: payload.receptionDate || new Date(),
-      receptionTypeId: 'TELEPHONE',
+      receptionTypeId: RECEPTION_TYPE.TELEPHONE,
       declarant: payload.declarant,
       victime: payload.victime,
       situations: payload.situations,
@@ -36,13 +38,26 @@ const app = factoryWithLogs
 
     // Run affectation asynchronously
     assignEntitesToRequeteTask(requete.id)
-      .then(() => logger.info({ requeteId: requete.id }, 'Requete auto-assigned to entities (phone platform)'))
-      .catch((err) =>
+      .then(() => {
+        logger.info({ requeteId: requete.id }, 'Requete auto-assigned to entities (phone platform)');
+      })
+      .catch((err) => {
         logger.error(
           { requeteId: requete.id, err },
           'Automatic affectation failed (phone platform) (requete created, retry affectation if needed)',
-        ),
-      );
+        );
+      })
+      .finally(async () => {
+        // Send acknowledgment email after affectation attempt
+        try {
+          await sendDeclarantAcknowledgmentEmail(requete.id);
+        } catch (emailErr) {
+          logger.error(
+            { requeteId: requete.id, err: emailErr },
+            'Failed to send acknowledgment email (phone platform)',
+          );
+        }
+      });
 
     return c.json(
       {

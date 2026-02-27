@@ -1,5 +1,5 @@
-import { describeRoute, resolver } from 'hono-openapi';
-import type { ZodSchema } from 'zod';
+import { openApiRawResponse } from '@sirena/backend-utils/helpers';
+import { describeRoute } from 'hono-openapi';
 import {
   GetAgeEnumsResponseSchema,
   GetAutoriteTypeEnumsResponseSchema,
@@ -9,18 +9,10 @@ import {
   GetLienVictimeEnumsResponseSchema,
   GetLieuTypeEnumsResponseSchema,
   GetMaltraitanceTypeEnumsResponseSchema,
+  GetMisEnCausePrecisionsTypeEnumsResponseSchema,
   GetMisEnCauseTypeEnumsResponseSchema,
   GetMotifDeclaratifEnumsResponseSchema,
 } from './enums.schema.js';
-
-const openApiRawResponse = <T extends ZodSchema>(schema: T, code = 200, description = 'Successful response') => ({
-  [code]: {
-    description,
-    content: {
-      'application/json': { schema: resolver(schema) },
-    },
-  },
-});
 
 export const getAgeEnumsRoute = describeRoute({
   description: 'Get all age enums',
@@ -51,6 +43,14 @@ export const getMisEnCauseTypeEnumsRoute = describeRoute({
   tags: ['Third-Party', 'Enums'],
   responses: {
     ...openApiRawResponse(GetMisEnCauseTypeEnumsResponseSchema),
+  },
+});
+
+export const getMisEnCausePrecisionsTypeEnumsRoute = describeRoute({
+  description: 'Get all mis en cause precisions type enums with their field metadata',
+  tags: ['Third-Party', 'Enums'],
+  responses: {
+    ...openApiRawResponse(GetMisEnCausePrecisionsTypeEnumsResponseSchema),
   },
 });
 

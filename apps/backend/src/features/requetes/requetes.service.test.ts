@@ -6,6 +6,7 @@ import {
   CONSEQUENCE,
   DEMARCHES_ENGAGEES,
   LIEN_VICTIME,
+  LIEU_ETABLISSEMENT_SANTE_PRECISION,
   LIEU_TYPE,
   MALTRAITANCE_TYPE,
   MIS_EN_CAUSE_TYPE,
@@ -51,7 +52,7 @@ const getfakeRequeteDto = () => {
     numero: '12',
   };
 
-  const fakeParticipant = {
+  const fakeParticipant: NonNullable<CreateRequeteFromDematSocialDto['participant']> = {
     ageId: AGE['18-29'],
     prenom: '',
     nom: '',
@@ -61,12 +62,16 @@ const getfakeRequeteDto = () => {
     estHandicapee: false,
     estVictimeInformee: true,
     victimeInformeeCommentaire: null,
+    commentaire: '1234567890',
     veutGarderAnonymat: null,
+    lienVictimeId: null,
+    estVictime: true,
+    aAutrePersonnes: false,
     autrePersonnes: null,
     adresse,
   };
 
-  const fakeDeclarant = {
+  const fakeDeclarant: CreateRequeteFromDematSocialDto['declarant'] = {
     ageId: AGE['-18'],
     nom: 'test',
     prenom: 'test',
@@ -80,12 +85,16 @@ const getfakeRequeteDto = () => {
     adresse,
   };
 
-  const fakeSituations = [
+  const fakeSituations: CreateRequeteFromDematSocialDto['situations'] = [
     {
       lieuDeSurvenue: {
         codePostal: '75001',
         commentaire: 'Couloir du service.',
         adresse,
+        tutelle: '',
+        categCode: '',
+        categLib: '',
+        lieuPrecision: LIEU_ETABLISSEMENT_SANTE_PRECISION.CABINET_MEDICAL,
         lieuTypeId: LIEU_TYPE.ETABLISSEMENT_SANTE,
         transportTypeId: TRANSPORT_TYPE.AMBULANCE,
         societeTransport: 'TransMed',
@@ -95,6 +104,9 @@ const getfakeRequeteDto = () => {
         misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE,
         misEnCauseTypePrecisionId: null,
         rpps: '1010101010',
+        civilite: '',
+        nom: '',
+        prenom: '',
         commentaire: 'Comportement inadapté signalé.',
       },
 
@@ -105,9 +117,7 @@ const getfakeRequeteDto = () => {
         commentaire: '',
         organisme: 'ARS Île-de-France',
         datePlainte: null,
-        files: [
-          { name: 'test', url: 'https://example.com/file.pdf', size: 1n, mimeType: 'application/pdf', canDelete: true },
-        ],
+        files: [{ name: 'test', url: 'https://example.com/file.pdf', size: 1n, mimeType: 'application/pdf' }],
         autoriteTypeId: AUTORITE_TYPE.GENDARMERIE,
       },
       faits: [
@@ -136,7 +146,7 @@ const getfakeRequeteDto = () => {
 };
 
 const getMinimalRequeteDto = () => {
-  const dto = {
+  const dto: CreateRequeteFromDematSocialDto = {
     receptionDate: new Date(),
     receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
     dematSocialId: 42,
@@ -163,8 +173,12 @@ const getMinimalRequeteDto = () => {
       adresse: null,
       estHandicapee: null,
       estVictimeInformee: null,
+      commentaire: null,
       victimeInformeeCommentaire: null,
       veutGarderAnonymat: null,
+      lienVictimeId: null,
+      estVictime: true,
+      aAutrePersonnes: false,
       autrePersonnes: null,
     },
     situations: [
@@ -174,15 +188,22 @@ const getMinimalRequeteDto = () => {
           commentaire: '',
           adresse: null,
           lieuTypeId: null,
+          lieuPrecision: null,
           transportTypeId: null,
           societeTransport: '',
           finess: '',
+          tutelle: '',
+          categCode: '',
+          categLib: '',
         },
         misEnCause: {
           misEnCauseTypeId: null,
           misEnCauseTypePrecisionId: null,
-          rpps: null,
-          commentaire: null,
+          rpps: '',
+          civilite: '',
+          nom: '',
+          prenom: '',
+          commentaire: '',
         },
         demarchesEngagees: {
           demarches: [],
@@ -209,7 +230,7 @@ const getMinimalRequeteDto = () => {
       },
     ],
   };
-  return dto satisfies CreateRequeteFromDematSocialDto;
+  return dto;
 };
 
 describe('requetes.service.ts', () => {
@@ -396,8 +417,12 @@ describe('requetes.service.ts', () => {
             telephone: '1234567890',
             estHandicapee: false,
             estVictimeInformee: false,
+            commentaire: '1234567890',
             victimeInformeeCommentaire: '1234567890',
             veutGarderAnonymat: null,
+            lienVictimeId: null,
+            estVictime: true,
+            aAutrePersonnes: false,
             autrePersonnes: '1234567890',
           },
           situations: [],
@@ -420,7 +445,11 @@ describe('requetes.service.ts', () => {
         updatedAt: new Date(),
         commentaire: 'Requête créée automatiquement',
         receptionDate: new Date(),
+        provenanceId: 'SIRENA',
         receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+        createdById: '',
+        thirdPartyAccountId: '',
+        provenancePrecision: '',
       };
       mockedFindFirst.mockResolvedValueOnce(mockRequete);
 
@@ -539,6 +568,10 @@ describe('requetes.service.ts', () => {
         commentaire: 'Requête créée automatiquement',
         receptionDate: new Date(),
         receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+        provenanceId: '',
+        provenancePrecision: '',
+        createdById: '',
+        thirdPartyAccountId: '',
       });
 
       vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({
@@ -552,6 +585,7 @@ describe('requetes.service.ts', () => {
         commentaire: '',
         autrePersonnes: '',
         declarantDeId: '1',
+        dateNaissance: null,
         participantDeId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -581,6 +615,7 @@ describe('requetes.service.ts', () => {
         commentaire: '',
         autrePersonnes: '',
         declarantDeId: '1',
+        dateNaissance: new Date(),
         participantDeId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -598,9 +633,17 @@ describe('requetes.service.ts', () => {
 
       fakeRequeteDto.situations.forEach((situation) => {
         vi.mocked(prisma.lieuDeSurvenue.create).mockResolvedValueOnce({
-          ...situation.lieuDeSurvenue,
           id: '1',
-          lieuPrecision: '',
+          codePostal: situation.lieuDeSurvenue.codePostal ?? '',
+          categCode: situation.lieuDeSurvenue.categCode ?? null,
+          categLib: situation.lieuDeSurvenue.categLib ?? null,
+          tutelle: situation.lieuDeSurvenue.tutelle ?? null,
+          societeTransport: situation.lieuDeSurvenue.societeTransport ?? '',
+          finess: situation.lieuDeSurvenue.finess ?? '',
+          commentaire: situation.lieuDeSurvenue.commentaire ?? '',
+          lieuPrecision: situation.lieuDeSurvenue.lieuPrecision ?? '',
+          lieuTypeId: situation.lieuDeSurvenue.lieuTypeId ?? null,
+          transportTypeId: situation.lieuDeSurvenue.transportTypeId ?? null,
         });
 
         if (situation.lieuDeSurvenue.adresse) {
@@ -609,7 +652,6 @@ describe('requetes.service.ts', () => {
             id: '1',
             personneConcerneeId: null,
             lieuDeSurvenueId: '1',
-            adressePrecision: null,
             codePostal: '',
             ville: '',
             rue: '',
@@ -623,6 +665,9 @@ describe('requetes.service.ts', () => {
           id: '1',
           misEnCauseTypePrecisionId: null,
           autrePrecision: '',
+          prenom: '',
+          nom: '',
+          civilite: '',
         });
 
         vi.mocked(prisma.demarchesEngagees.create).mockResolvedValueOnce({
@@ -740,7 +785,8 @@ describe('requetes.service.ts', () => {
           age: { connect: { id: fakeRequeteDto.participant.ageId } },
           participantDe: { connect: { id: '1' } },
           autrePersonnes: '',
-          aAutrePersonnes: null,
+          aAutrePersonnes: fakeRequeteDto.participant.aAutrePersonnes,
+          commentaire: fakeRequeteDto.participant.commentaire,
           estHandicapee: fakeRequeteDto.participant.estHandicapee,
           estVictimeInformee: fakeRequeteDto.participant.estVictimeInformee,
           veutGarderAnonymat: null,
@@ -775,6 +821,10 @@ describe('requetes.service.ts', () => {
         commentaire: 'Requête créée automatiquement',
         receptionDate: new Date(),
         receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+        createdById: null,
+        provenanceId: null,
+        provenancePrecision: null,
+        thirdPartyAccountId: null,
       });
 
       vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({
@@ -791,6 +841,7 @@ describe('requetes.service.ts', () => {
         participantDeId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        dateNaissance: new Date(),
         lienAutrePrecision: null,
         estSignalementProfessionnel: null,
         aAutrePersonnes: null,
@@ -814,6 +865,7 @@ describe('requetes.service.ts', () => {
         participantDeId: '1',
         createdAt: new Date(),
         updatedAt: new Date(),
+        dateNaissance: new Date(),
         lienAutrePrecision: null,
         estSignalementProfessionnel: null,
         aAutrePersonnes: null,
@@ -821,9 +873,17 @@ describe('requetes.service.ts', () => {
 
       dto.situations.forEach((situation) => {
         vi.mocked(prisma.lieuDeSurvenue.create).mockResolvedValueOnce({
-          ...situation.lieuDeSurvenue,
           id: '1',
-          lieuPrecision: '',
+          codePostal: situation.lieuDeSurvenue.codePostal ?? '',
+          societeTransport: situation.lieuDeSurvenue.societeTransport ?? '',
+          finess: situation.lieuDeSurvenue.finess ?? '',
+          tutelle: situation.lieuDeSurvenue.tutelle ?? '',
+          categCode: situation.lieuDeSurvenue.categCode ?? '',
+          categLib: situation.lieuDeSurvenue.categLib ?? '',
+          commentaire: situation.lieuDeSurvenue.commentaire ?? '',
+          lieuPrecision: situation.lieuDeSurvenue.lieuPrecision ?? '',
+          lieuTypeId: situation.lieuDeSurvenue.lieuTypeId ?? null,
+          transportTypeId: situation.lieuDeSurvenue.transportTypeId ?? null,
         });
 
         vi.mocked(prisma.misEnCause.create).mockResolvedValueOnce({
@@ -832,6 +892,9 @@ describe('requetes.service.ts', () => {
           id: '1',
           misEnCauseTypePrecisionId: null,
           autrePrecision: '',
+          prenom: '',
+          nom: '',
+          civilite: '',
         });
 
         vi.mocked(prisma.demarchesEngagees.create).mockResolvedValueOnce({
@@ -878,6 +941,10 @@ describe('requetes.service.ts', () => {
           receptionTypeId: dto.receptionTypeId,
           createdAt: new Date(),
           updatedAt: new Date(),
+          provenanceId: '',
+          provenancePrecision: '',
+          createdById: '',
+          thirdPartyAccountId: '',
         });
       });
     });
@@ -895,6 +962,10 @@ describe('requetes.service.ts', () => {
         receptionTypeId: RECEPTION_TYPE.EMAIL,
         createdAt: new Date('2024-12-31T00:00:00.000Z'),
         updatedAt: existingUpdatedAt,
+        createdById: null,
+        provenanceId: null,
+        provenancePrecision: null,
+        thirdPartyAccountId: null,
       };
 
       const newDate = new Date('2025-02-01T12:00:00.000Z');
@@ -935,6 +1006,10 @@ describe('requetes.service.ts', () => {
         receptionTypeId: RECEPTION_TYPE.EMAIL,
         createdAt: new Date('2025-02-01T00:00:00.000Z'),
         updatedAt: serverUpdatedAt,
+        createdById: null,
+        provenanceId: null,
+        provenancePrecision: null,
+        thirdPartyAccountId: null,
       };
 
       vi.mocked(prisma.requete.findUnique).mockResolvedValue(existing);
@@ -967,6 +1042,10 @@ describe('requetes.service.ts', () => {
         receptionTypeId: RECEPTION_TYPE.EMAIL,
         createdAt: new Date('2024-12-31T00:00:00.000Z'),
         updatedAt: existingUpdatedAt,
+        createdById: null,
+        provenanceId: null,
+        provenancePrecision: null,
+        thirdPartyAccountId: null,
       };
 
       const updatedDate = new Date('2025-02-01T12:00:00.000Z');
@@ -1006,6 +1085,10 @@ describe('requetes.service.ts', () => {
         receptionTypeId: RECEPTION_TYPE.EMAIL,
         createdAt: new Date('2024-12-31T00:00:00.000Z'),
         updatedAt: existingUpdatedAt,
+        createdById: null,
+        provenanceId: null,
+        provenancePrecision: null,
+        thirdPartyAccountId: null,
       };
 
       const updatedDate = new Date('2025-02-01T12:00:00.000Z');

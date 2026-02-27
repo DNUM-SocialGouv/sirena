@@ -37,7 +37,7 @@ const assignDefaultRequeteEtapes = async (
 };
 
 /**
- * Algorithm to automatically assign entities to a requete based on the situation context
+ * Algorithm to automatically assign entities to a requete based on the situation context (demat.social or phone "PLATEFORME")
  * @param unknownId - The requete.id (RD-****-***) or the dematSocialId
  */
 export async function assignEntitesToRequeteTask(unknownId: string) {
@@ -261,7 +261,14 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
     // Notify only entities newly assigned to this requete (first assignment or new assignment)
     const newEntiteIds = Array.from(entiteIdsToLinkToRequete).filter((id) => !existingEntiteIds.has(id));
     if (newEntiteIds.length > 0) {
-      await sendEntiteAssignedNotification(requeteId, newEntiteIds);
+      try {
+        await sendEntiteAssignedNotification(requeteId, newEntiteIds);
+      } catch (notificationErr) {
+        logger.error(
+          { requeteId, newEntiteIds, err: notificationErr },
+          'Failed to send entity assigned notification, but affectation succeeded',
+        );
+      }
     }
   } finally {
     await prisma.$disconnect();

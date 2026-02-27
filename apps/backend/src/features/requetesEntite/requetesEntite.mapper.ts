@@ -126,6 +126,7 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
       create: {
         lieuTypeId: lieuData?.lieuType || null,
         lieuPrecision: lieuData?.lieuPrecision || '',
+        transportTypeId: lieuData?.transportType || null,
         codePostal: lieuData?.codePostal || '',
         societeTransport: lieuData?.societeTransport || '',
         finess: lieuData?.finess || '',

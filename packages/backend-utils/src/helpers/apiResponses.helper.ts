@@ -1,7 +1,7 @@
 import type { ResolverReturnType } from 'hono-openapi';
 import { describeRoute, resolver } from 'hono-openapi';
 import type { OpenAPIV3 } from 'openapi-types';
-import { type ZodSchema, z } from 'zod';
+import { type ZodType, z } from 'zod';
 import { MetaSchema } from '../schemas/apiResponses.schema.js';
 import { openApi401Unauthorized } from './apiErrors.helper.js';
 
@@ -16,7 +16,9 @@ type OpenApiResponse = {
   };
 };
 
-export const apiResponsesResolver = <T extends ZodSchema>(schema: T): ResolverReturnType =>
+export const apiResponseRawResolver = <T extends ZodType>(schema: T): ResolverReturnType => resolver(schema);
+
+export const apiResponsesResolver = <T extends ZodType>(schema: T): ResolverReturnType =>
   resolver(
     z.object({
       data: schema,
@@ -24,14 +26,14 @@ export const apiResponsesResolver = <T extends ZodSchema>(schema: T): ResolverRe
     }),
   );
 
-export const apiResponseResolver = <T extends ZodSchema>(schema: T): ResolverReturnType =>
+export const apiResponseResolver = <T extends ZodType>(schema: T): ResolverReturnType =>
   resolver(
     z.object({
       data: schema,
     }),
   );
 
-export const apiDeleteResponseResolver = <T extends ZodSchema>(id: T): ResolverReturnType =>
+export const apiDeleteResponseResolver = <T extends ZodType>(id: T): ResolverReturnType =>
   resolver(
     z.object({
       data: z.object({
@@ -41,7 +43,16 @@ export const apiDeleteResponseResolver = <T extends ZodSchema>(id: T): ResolverR
     }),
   );
 
-export const openApiResponses = <T extends ZodSchema>(schema: T, code = 200, description = 'Successful response') => ({
+export const openApiRawResponse = <T extends ZodType>(schema: T, code = 200, description = 'Successful response') => ({
+  [code]: {
+    description,
+    content: {
+      'application/json': { schema: apiResponseRawResolver(schema) },
+    },
+  },
+});
+
+export const openApiResponses = <T extends ZodType>(schema: T, code = 200, description = 'Successful response') => ({
   [code]: {
     description,
     content: {
@@ -50,7 +61,7 @@ export const openApiResponses = <T extends ZodSchema>(schema: T, code = 200, des
   },
 });
 
-export const openApiResponse = <T extends ZodSchema>(schema: T, code = 200, description = 'Successful response') => ({
+export const openApiResponse = <T extends ZodType>(schema: T, code = 200, description = 'Successful response') => ({
   [code]: {
     description,
     content: {
@@ -70,7 +81,7 @@ export const openApiRedirect = (code = 302, description = 'Redirect') => ({
   },
 });
 
-export const openApiDeleteResponse = <T extends ZodSchema>(id: T, code = 200, description = 'Successful response') => ({
+export const openApiDeleteResponse = <T extends ZodType>(id: T, code = 200, description = 'Successful response') => ({
   [code]: {
     description,
     content: {

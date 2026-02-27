@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test purposes> */
+import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME } from '../../config/tipimail.constant.js';
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
@@ -71,10 +72,23 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     expect(mockedCreateChangeLog).not.toHaveBeenCalled();
   });
 
-  it('should return early if requete is not from demat.social (no dematSocialId)', async () => {
+  it('should return early if requete reception type is not eligible (e.g., EMAIL)', async () => {
     mockedPrismaRequete.findUnique.mockResolvedValueOnce({
       id: 'req1',
-      dematSocialId: null,
+      receptionTypeId: RECEPTION_TYPE.EMAIL,
+      declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
+      requeteEntites: [{ entiteId: 'e1' }],
+    } as any);
+
+    await sendDeclarantAcknowledgmentEmail('req1');
+
+    expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
+  });
+
+  it('should return early if requete reception type is null', async () => {
+    mockedPrismaRequete.findUnique.mockResolvedValueOnce({
+      id: 'req1',
+      receptionTypeId: null,
       declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
       requeteEntites: [{ entiteId: 'e1' }],
     } as any);
@@ -87,7 +101,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
   it('should return early if declarant has no email', async () => {
     mockedPrismaRequete.findUnique.mockResolvedValueOnce({
       id: 'req1',
-      dematSocialId: 123,
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
       declarant: { identite: { email: '', prenom: 'John', nom: 'Doe' } },
       requeteEntites: [{ entiteId: 'e1' }],
     } as any);
@@ -100,7 +114,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
   it('should return early if no entities assigned to requete', async () => {
     mockedPrismaRequete.findUnique.mockResolvedValueOnce({
       id: 'req1',
-      dematSocialId: 123,
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
       declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
       requeteEntites: [],
     } as any);
@@ -114,7 +128,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
   it('should return early if no active entities found', async () => {
     mockedPrismaRequete.findUnique.mockResolvedValueOnce({
       id: 'req1',
-      dematSocialId: 123,
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
       declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
       requeteEntites: [{ entiteId: 'e1' }, { entiteId: 'e2' }],
     } as any);
@@ -125,15 +139,22 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     expect(mockedPrismaEntite.findMany).toHaveBeenCalledWith({
       where: { id: { in: ['e1', 'e2'] }, isActive: true },
-      select: { id: true, nomComplet: true, email: true, entiteMereId: true },
+      select: {
+        id: true,
+        nomComplet: true,
+        emailContactUsager: true,
+        telContactUsager: true,
+        adresseContactUsager: true,
+        entiteMereId: true,
+      },
     });
     expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
   });
 
-  it('should send acknowledgment email with formatted entiteadmin and entitecomplete', async () => {
+  it('should send acknowledgment email with formatted entiteadmin and entitecomplete for FORMULAIRE', async () => {
     mockedPrismaRequete.findUnique.mockResolvedValueOnce({
       id: 'req1',
-      dematSocialId: 123,
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
       declarant: {
         identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' },
       },
@@ -141,9 +162,30 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     } as any);
 
     mockedPrismaEntite.findMany.mockResolvedValueOnce([
-      { id: 'e1', nomComplet: 'ARS Normandie', email: 'ars@ex.com', entiteMereId: null },
-      { id: 'e2', nomComplet: 'CD Calvados', email: 'cd@ex.com', entiteMereId: null },
-      { id: 'child1', nomComplet: 'UA 14', email: 'ua@ex.com', entiteMereId: 'e1' },
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        emailContactUsager: 'contact-ars@ex.com',
+        telContactUsager: '02 31 00 00 00',
+        adresseContactUsager: '1 rue Example, 76000 Rouen',
+        entiteMereId: null,
+      },
+      {
+        id: 'e2',
+        nomComplet: 'CD Calvados',
+        emailContactUsager: 'contact-cd@ex.com',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+      {
+        id: 'child1',
+        nomComplet: 'UA 14',
+        emailContactUsager: 'contact-ua@ex.com',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: 'e1',
+      },
     ] as any);
 
     mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
@@ -164,10 +206,12 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
             entiteadmin: 'ARS Normandie et CD Calvados',
             entitecomplete: [
               'ARS Normandie',
-              'Adresse e-mail : ars@ex.com',
+              'Adresse e-mail : contact-ars@ex.com',
+              'Téléphone : 02 31 00 00 00',
+              'Adresse postale : 1 rue Example, 76000 Rouen',
               '',
               'CD Calvados',
-              'Adresse e-mail : cd@ex.com',
+              'Adresse e-mail : contact-cd@ex.com',
             ].join('\n'),
             signature: '',
           },
@@ -190,16 +234,68 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     );
   });
 
+  it('should send acknowledgment email for TELEPHONE reception type', async () => {
+    mockedPrismaRequete.findUnique.mockResolvedValueOnce({
+      id: 'req1',
+      receptionTypeId: RECEPTION_TYPE.TELEPHONE,
+      declarant: {
+        identite: { email: 'jane@example.com', prenom: 'Jane', nom: 'Smith' },
+      },
+      requeteEntites: [{ entiteId: 'e1' }],
+    } as any);
+
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        emailContactUsager: 'ars@ex.com',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+    ] as any);
+
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
+
+    await sendDeclarantAcknowledgmentEmail('req1');
+
+    expect(mockedSendTipimailEmail).toHaveBeenCalledWith({
+      to: 'jane@example.com',
+      subject: '',
+      text: '',
+      template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
+      substitutions: [
+        {
+          email: 'jane@example.com',
+          values: {
+            prenomdeclarant: 'Jane',
+            nomdeclarant: 'Smith',
+            entiteadmin: 'ARS Normandie',
+            entitecomplete: ['ARS Normandie', 'Adresse e-mail : ars@ex.com'].join('\n'),
+            signature: '',
+          },
+        },
+      ],
+    });
+  });
+
   it('should not fail if changelog creation fails', async () => {
     mockedPrismaRequete.findUnique.mockResolvedValueOnce({
       id: 'req1',
-      dematSocialId: 123,
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
       declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
       requeteEntites: [{ entiteId: 'e1' }],
     } as any);
 
     mockedPrismaEntite.findMany.mockResolvedValueOnce([
-      { id: 'e1', nomComplet: 'ARS Normandie', email: 'ars@ex.com', entiteMereId: null },
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        emailContactUsager: 'contact-ars@ex.com',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
     ] as any);
 
     mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);

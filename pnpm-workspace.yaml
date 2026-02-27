@@ -11,7 +11,7 @@ catalog:
   "@types/node": ^24.10.1
   react-dom: ^19.2.4
   "@codegouvfr/react-dsfr": ^1.31.1
-  hono: ^4.11.9
+  hono: ^4.12.2
   hono-openapi: ^1.2.0
   "@biomejs/biome": ^2.4.2
   vitest: ^4.0.18

@@ -1,3 +1,4 @@
+import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { envVars } from '../../config/env.js';
 import {
   ACKNOWLEDGMENT_EMAIL_TEMPLATE_ID,
@@ -14,6 +15,8 @@ import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { ACKNOWLEDGMENT_STEP_NAME, updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
 import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
+
+const ELIGIBLE_RECEPTION_TYPES_FOR_ACKNOWLEDGMENT = [RECEPTION_TYPE.FORMULAIRE, RECEPTION_TYPE.TELEPHONE] as const;
 
 /**
  * Formats the list of administrative entity names (entities without a parent entity)
@@ -34,7 +37,7 @@ function formatEntiteAdminString(entites: Array<{ nomComplet: string; entiteMere
 }
 
 /**
- * Formats the complete entity information with contact details
+ * Formats the complete entity information with contact details for usagers
  * Example:
  * NOM COMPLET ENTITE 1
  * Adresse e-mail : adresse@boite-mail.com
@@ -42,7 +45,13 @@ function formatEntiteAdminString(entites: Array<{ nomComplet: string; entiteMere
  * Adresse postale : Bâtiment, Voie, Code postal, Ville
  */
 function formatEntiteCompleteString(
-  entites: Array<{ nomComplet: string; email: string; entiteMereId: string | null }>,
+  entites: Array<{
+    nomComplet: string;
+    emailContactUsager: string;
+    telContactUsager: string;
+    adresseContactUsager: string;
+    entiteMereId: string | null;
+  }>,
 ): string {
   // Filter only administrative entities
   const entitesAdmin = entites.filter((e) => e.entiteMereId === null);
@@ -50,16 +59,15 @@ function formatEntiteCompleteString(
   return entitesAdmin
     .map((entite) => {
       const parts: string[] = [entite.nomComplet];
-      if (entite.email) {
-        parts.push(`Adresse e-mail : ${entite.email}`);
+      if (entite.emailContactUsager) {
+        parts.push(`Adresse e-mail : ${entite.emailContactUsager}`);
       }
-      // TODO: Add "téléphone" and "adresse postale" when these fields are added to the Entite model
-      // if (entite.telephone) {
-      //   parts.push(`Téléphone : ${entite.telephone}`);
-      // }
-      // if (entite.adressePostale) {
-      //   parts.push(`Adresse postale : ${entite.adressePostale}`);
-      // }
+      if (entite.telContactUsager) {
+        parts.push(`Téléphone : ${entite.telContactUsager}`);
+      }
+      if (entite.adresseContactUsager) {
+        parts.push(`Adresse postale : ${entite.adresseContactUsager}`);
+      }
       return parts.join('\n');
     })
     .join('\n\n');
@@ -227,7 +235,7 @@ async function attachEmailPdfToStep(
 }
 
 /**
- * Sends an acknowledgment email to the declarant when a request from demat.social is created
+ * Sends an acknowledgment email to the declarant when a request from demat.social or phone platform is created
  * @param requeteId - The ID of the requete that was just created
  */
 export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promise<void> {
@@ -256,9 +264,18 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
       return;
     }
 
-    // Only send for requests from demat.social
-    if (!requete.dematSocialId) {
-      logger.debug({ requeteId }, 'Requete is not from demat.social, skipping acknowledgment email');
+    // Only send for requests from demat.social (FORMULAIRE) or phone platform (TELEPHONE)
+    const isEligibleReceptionType =
+      requete.receptionTypeId &&
+      ELIGIBLE_RECEPTION_TYPES_FOR_ACKNOWLEDGMENT.includes(
+        requete.receptionTypeId as (typeof ELIGIBLE_RECEPTION_TYPES_FOR_ACKNOWLEDGMENT)[number],
+      );
+
+    if (!isEligibleReceptionType) {
+      logger.debug(
+        { requeteId, receptionTypeId: requete.receptionTypeId },
+        'Requete reception type is not eligible for automatic acknowledgment email',
+      );
       return;
     }
 
@@ -282,7 +299,9 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
       select: {
         id: true,
         nomComplet: true,
-        email: true,
+        emailContactUsager: true,
+        telContactUsager: true,
+        adresseContactUsager: true,
         entiteMereId: true,
       },
     });

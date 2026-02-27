@@ -6,6 +6,8 @@ SDPSN-devops-charts:
     enable: true
 
   appVariables:
+    DEMAT_SOCIAL_API_DIRECTORY: "923"
+    DEMAT_SOCIAL_API_URL: "https://demat.social.gouv.fr/api/v2/graphql"
     HOST: https://sirena-sante.social.gouv.fr
     PC_DOMAIN: https://auth.agentconnect.gouv.fr/api/v2
     PC_REDIRECT_URI: https://sirena-sante.social.gouv.fr/api/auth/callback
@@ -14,6 +16,7 @@ SDPSN-devops-charts:
     FRONTEND_URI: https://sirena-sante.social.gouv.fr
     REDIS_TLS: "true"
     SENTRY_ENVIRONMENT: production
+    TIPIMAIL_DISABLE_SENDING: "false"
 
   deployment:
     replicas: 2

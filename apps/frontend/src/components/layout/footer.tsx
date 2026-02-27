@@ -13,6 +13,7 @@ export function AppFooter() {
       termsLinkProps={{
         href: '#',
       }}
+      accessibilityLinkProps={{ href: '/accessibilite' }}
       websiteMapLinkProps={{
         href: '#',
       }}

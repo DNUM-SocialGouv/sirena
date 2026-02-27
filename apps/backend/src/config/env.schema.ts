@@ -257,6 +257,14 @@ export const AppEnvSchema = z.object({
         ? "La variable d'environnement TIPIMAIL_FROM_PERSONAL_NAME est requise"
         : 'Not a string',
   }),
+  /** When set, all emails are sent only to this address. Real recipients are not used; subject and body get a test banner with real recipient(s). Use in integration / test envs. */
+  TIPIMAIL_REDIRECT_ALL_TO: z.string().optional(),
+  /** When true, Tipimail sending is completely disabled. No HTTP calls are made, even if TIPIMAIL_REDIRECT_ALL_TO is set. */
+  TIPIMAIL_DISABLE_SENDING: z
+    .string()
+    .optional()
+    .default('false')
+    .transform((val) => val === 'true'),
   API_KEY_HASH_SALT: z.string({
     error: (issue) =>
       issue.input === undefined ? "La variable d'environnement API_KEY_HASH_SALT est requise" : 'Not a string',

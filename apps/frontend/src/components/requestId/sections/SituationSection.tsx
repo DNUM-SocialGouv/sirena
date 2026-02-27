@@ -27,6 +27,7 @@ const ETABLISSEMENTS: string[] = [
   LIEU_TYPE.ETABLISSEMENT_SOCIAL,
   LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
   LIEU_TYPE.ETABLISSEMENT_HANDICAP,
+  LIEU_TYPE.AUTRES_ETABLISSEMENTS,
 ];
 
 const groupMotifsByParent = (
@@ -271,6 +272,62 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
 
     return (
       <>
+        {hasLieu && (
+          <>
+            <SectionTitle level={4}>Lieu où se sont déroulés les faits</SectionTitle>
+            <p className={fr.cx('fr-mb-1w')}>
+              <span>Type de lieu :</span> {situation?.lieuDeSurvenue?.lieuType?.label}
+            </p>
+            {situation?.lieuDeSurvenue.codePostal && (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Code postal :</span> {situation.lieuDeSurvenue.codePostal}
+              </p>
+            )}
+            {situation?.lieuDeSurvenue?.lieuPrecision && (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Précision du lieu :</span>{' '}
+                {getLieuPrecisionLabel(situation.lieuDeSurvenue.lieuType?.id, situation.lieuDeSurvenue.lieuPrecision)}
+              </p>
+            )}
+            {situation?.lieuDeSurvenue?.adresse?.label &&
+              (ETABLISSEMENTS.includes(situation.lieuDeSurvenue.lieuTypeId || '') ? (
+                <>
+                  <p className={fr.cx('fr-mb-1w')}>
+                    <span>Nom de l'établissement :</span> {situation.lieuDeSurvenue.adresse.label}
+                  </p>
+                  {(situation?.lieuDeSurvenue?.adresse?.numero || situation?.lieuDeSurvenue?.adresse?.rue) && (
+                    <p className={fr.cx('fr-mb-1w')}>
+                      <span>Adresse :</span>{' '}
+                      {[situation.lieuDeSurvenue.adresse.numero, situation.lieuDeSurvenue.adresse.rue]
+                        .filter(Boolean)
+                        .join(' ')}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className={fr.cx('fr-mb-1w')}>
+                  <span>Adresse :</span> {situation.lieuDeSurvenue.adresse.label}
+                </p>
+              ))}
+            {situation?.lieuDeSurvenue?.adresse?.codePostal && situation?.lieuDeSurvenue?.adresse?.ville && (
+              <p className={fr.cx('fr-mb-2w')}>
+                <span>Code postal :</span> {situation.lieuDeSurvenue.adresse.codePostal}{' '}
+                {situation.lieuDeSurvenue.adresse.ville}
+              </p>
+            )}
+            {situation?.lieuDeSurvenue?.societeTransport && (
+              <p className={fr.cx('fr-mb-2w')}>
+                <span>Société de transport concernée :</span> {situation.lieuDeSurvenue.societeTransport}
+              </p>
+            )}
+            {situation?.lieuDeSurvenue?.finess && (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Numéro FINESS :</span> {situation.lieuDeSurvenue.finess}
+              </p>
+            )}
+          </>
+        )}
+
         {hasMisEnCause && (
           <>
             <SectionTitle level={4}>Mis en cause</SectionTitle>
@@ -305,51 +362,6 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                   <p className={fr.cx('fr-mb-3w')}>{getMisEnCauseIdentity(situation.misEnCause)}</p>
                 </>
               )}
-          </>
-        )}
-        {hasLieu && (
-          <>
-            <SectionTitle level={4}>Lieu où se sont déroulés les faits</SectionTitle>
-            <p className={fr.cx('fr-mb-1w')}>
-              <span>Type de lieu :</span> {situation?.lieuDeSurvenue?.lieuType?.label}
-            </p>
-            {situation?.lieuDeSurvenue.codePostal && (
-              <p className={fr.cx('fr-mb-1w')}>
-                <span>Code postal :</span> {situation.lieuDeSurvenue.codePostal}
-              </p>
-            )}
-            {situation?.lieuDeSurvenue?.lieuPrecision && (
-              <p className={fr.cx('fr-mb-1w')}>
-                <span>Précision du lieu :</span>{' '}
-                {getLieuPrecisionLabel(situation.lieuDeSurvenue.lieuType?.id, situation.lieuDeSurvenue.lieuPrecision)}
-              </p>
-            )}
-            {situation?.lieuDeSurvenue?.adresse?.label && (
-              <p className={fr.cx('fr-mb-1w')}>
-                <span>
-                  {ETABLISSEMENTS.includes(situation.lieuDeSurvenue.lieuTypeId || '')
-                    ? "Nom de l'établissement :"
-                    : 'Adresse :'}
-                </span>{' '}
-                {situation.lieuDeSurvenue.adresse.label}
-              </p>
-            )}
-            {situation?.lieuDeSurvenue?.adresse?.codePostal && situation?.lieuDeSurvenue?.adresse?.ville && (
-              <p className={fr.cx('fr-mb-2w')}>
-                <span>Code postal :</span> {situation.lieuDeSurvenue.adresse.codePostal}{' '}
-                {situation.lieuDeSurvenue.adresse.ville}
-              </p>
-            )}
-            {situation?.lieuDeSurvenue?.societeTransport && (
-              <p className={fr.cx('fr-mb-2w')}>
-                <span>Société de transport concernée :</span> {situation.lieuDeSurvenue.societeTransport}
-              </p>
-            )}
-            {situation?.lieuDeSurvenue?.finess && (
-              <p className={fr.cx('fr-mb-1w')}>
-                <span>Numéro FINESS :</span> {situation.lieuDeSurvenue.finess}
-              </p>
-            )}
           </>
         )}
 

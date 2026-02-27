@@ -324,10 +324,12 @@ export const importRequetes = async (createdSince?: Date) => {
   let errorCount = 0;
   let skippedCount = 0;
 
+  const isProduction = envVars.SENTRY_ENVIRONMENT === 'production';
+
   for (const dossier of dossiers) {
-    // legacy, we don't support
+    // legacy, we don't support - skip only in non-prod (prod imports all)
     // TODO: remove after some time
-    if (dossier.number < 285277) {
+    if (!isProduction && dossier.number < 285277) {
       skippedCount += 1;
       continue;
     }

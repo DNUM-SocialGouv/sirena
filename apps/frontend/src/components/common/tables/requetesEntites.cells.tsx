@@ -1,6 +1,7 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Badge } from '@codegouvfr/react-dsfr/Badge';
 import {
+  LIEU_TYPE,
   MALTRAITANCE_PARENT_VALUE,
   MIS_EN_CAUSE_TYPE,
   type MisEnCauseType,
@@ -22,6 +23,14 @@ type LabeledItem = { label: string; title: string };
 
 const UNKNOWN_VALUE = 'Non renseigné';
 const NEGATIVE_MALTRAITANCE_ANSWERS = ['NON', 'NE_SAIS_PAS'];
+
+const ETABLISSEMENT_LIEU_TYPES: string[] = [
+  LIEU_TYPE.ETABLISSEMENT_SANTE,
+  LIEU_TYPE.ETABLISSEMENT_SOCIAL,
+  LIEU_TYPE.ETABLISSEMENT_PERSONNES_AGEES,
+  LIEU_TYPE.ETABLISSEMENT_HANDICAP,
+  LIEU_TYPE.AUTRES_ETABLISSEMENTS,
+];
 
 const uniqueBy = <T, K>(items: T[], keyFn: (item: T) => K): T[] => {
   const seen = new Set<K>();
@@ -185,8 +194,11 @@ const getMisEnCauseDisplayValue = (
     case MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE:
       return identity || precisionLabel || typeLabel;
 
-    case MIS_EN_CAUSE_TYPE.ETABLISSEMENT:
-      return lieuDeSurvenue?.adresse?.label || precisionLabel || typeLabel;
+    case MIS_EN_CAUSE_TYPE.ETABLISSEMENT: {
+      const isEtablissementLieu = ETABLISSEMENT_LIEU_TYPES.includes(lieuDeSurvenue?.lieuTypeId || '');
+      const establishmentName = isEtablissementLieu ? lieuDeSurvenue?.adresse?.label : undefined;
+      return establishmentName || precisionLabel || typeLabel;
+    }
 
     default:
       return precisionLabel || typeLabel;

@@ -43,10 +43,11 @@ type Participant = {
   } | null;
   estHandicapee: boolean | null;
   estVictimeInformee: boolean | null;
+  commentaire: string | null;
   victimeInformeeCommentaire: string | null;
   veutGarderAnonymat: boolean | null;
   autrePersonnes: string | null;
-  aAutrePersonnes?: boolean;
+  aAutrePersonnes: boolean;
 } | null;
 
 type LieuDeSurvenue = {
@@ -64,16 +65,19 @@ type LieuDeSurvenue = {
   transportTypeId: string | null;
   societeTransport: string;
   finess: string;
-  tutelle?: string;
-  categCode?: string;
-  categLib?: string;
+  tutelle: string;
+  categCode: string;
+  categLib: string;
 };
 
 type MisEnCause = {
   misEnCauseTypeId: string | null;
   misEnCauseTypePrecisionId: string | null;
-  rpps: string | null;
-  commentaire: string | null;
+  nom: string;
+  prenom: string;
+  civilite: string;
+  rpps: string;
+  commentaire: string;
 };
 
 type DemarchesEngagees = {
@@ -81,6 +85,7 @@ type DemarchesEngagees = {
   dateContactEtablissement: Date | null;
   etablissementARepondu: boolean;
   commentaire: string;
+  organisme: string;
   datePlainte: Date | null;
   files: File[];
   autoriteTypeId: string | null;
