@@ -46,8 +46,14 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
     }
   }
 
+  // Fallback when file-type cannot detect (e.g. some Office, CSV, or text files): use browser-provided type if allowed
+  if (!detectedType?.mime && file.type && ALLOWED_MIME_TYPES.includes(file.type)) {
+    const ext = file.name.includes('.') ? (file.name.split('.').pop()?.toLowerCase() ?? 'bin') : 'bin';
+    detectedType = { mime: file.type, ext };
+  }
+
   if (!detectedType?.mime || !ALLOWED_MIME_TYPES.includes(detectedType.mime)) {
-    throwHTTPException400BadRequest(`File type "${detectedType?.mime}" is not allowed`, {
+    throwHTTPException400BadRequest(`File type "${detectedType?.mime ?? 'unknown'}" is not allowed`, {
       cause: { name: API_ERROR_CODES.FILE_TYPE },
       res: c.res,
     });

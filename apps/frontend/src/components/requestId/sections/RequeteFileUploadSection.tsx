@@ -23,18 +23,18 @@ const TOAST_MESSAGES = {
     icon: 'fr-alert--success' as const,
   },
   FILES_UPLOADED: {
-    title: 'Fichiers uploadés',
-    description: 'Les fichiers ont été uploadés avec succès.',
+    title: 'Fichiers importés',
+    description: 'Les fichiers ont été importés avec succès.',
     icon: 'fr-alert--success' as const,
   },
   REQUEST_CREATED_WITH_UPLOAD_ERROR: {
     title: 'Requête créée',
-    description: "La requête a été créée mais une erreur est survenue lors de l'upload des fichiers.",
+    description: "La requête a été créée mais une erreur est survenue lors de l'import des fichiers.",
     icon: 'fr-alert--warning' as const,
   },
   UPLOAD_ERROR: {
     title: 'Erreur',
-    description: "Une erreur est survenue lors de l'upload des fichiers.",
+    description: "Une erreur est survenue lors de l'import des fichiers.",
     icon: 'fr-alert--error' as const,
   },
   CREATE_ERROR: {
@@ -258,7 +258,6 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
 
   return (
     <div className={`${fr.cx('fr-mb-3w')} ${styles.requeteFileUploadSection}`}>
-      <h2 className={fr.cx('fr-text--lg')}>Fichiers uploadés</h2>
       {files.length > 0 && (
         <div className={fr.cx('fr-mt-3w')} style={{ width: '100%' }}>
           <ul className={styles.fileList}>

@@ -73,6 +73,23 @@ function formatEntiteCompleteString(
     .join('\n\n');
 }
 
+/** Max number of lines sent as entitecomplete_1 … entitecomplete_N (template must have N placeholders). */
+const ENTITE_COMPLETE_MAX_LINES = 25;
+
+/**
+ * Builds values for entitecomplete_1, entitecomplete_2
+ */
+function buildEntiteCompleteSubstitutions(entiteComplete: string): Record<string, string | number> {
+  const lines = entiteComplete.split('\n');
+  const result: Record<string, string | number> = {
+    entitecomplete_nb: Math.min(lines.length, ENTITE_COMPLETE_MAX_LINES),
+  };
+  for (let i = 0; i < ENTITE_COMPLETE_MAX_LINES; i++) {
+    result[`entitecomplete_${i + 1}`] = lines[i] ?? '';
+  }
+  return result;
+}
+
 /**
  * Attaches an email PDF to the acknowledgment step via RequeteEtapeNote
  */
@@ -317,6 +334,7 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
 
     const entiteAdmin = formatEntiteAdminString(entites);
     const entiteComplete = formatEntiteCompleteString(entites);
+    const entiteCompleteValues = buildEntiteCompleteSubstitutions(entiteComplete);
 
     // TODO: Get signature/logo
     const signature = '';
@@ -327,7 +345,8 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
         prenomdeclarant: declarantPrenom,
         nomdeclarant: declarantNom,
         entiteadmin: entiteAdmin,
-        entitecomplete: entiteComplete,
+        requeteid: requeteId,
+        ...entiteCompleteValues,
         signature,
       },
     };

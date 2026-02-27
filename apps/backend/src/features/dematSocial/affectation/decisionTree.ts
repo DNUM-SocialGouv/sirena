@@ -76,10 +76,14 @@ const DOMICILE_PROFESSIONNEL_MAPPING: Record<DomicileProfessionnelCategory, Enti
   AUTRE: ['CD'],
 };
 
+function isTuteurMandatairePrecision(precision: string | undefined | null): boolean {
+  return precision === 'MJPM' || precision === 'MANDATAIRE';
+}
+
 function getDomicileProfessionnelCategory(ctx: SituationContext): DomicileProfessionnelCategory | null {
   const { misEnCauseType, misEnCauseTypePrecision } = ctx;
 
-  if (misEnCauseTypePrecision === 'MJPM') {
+  if (isTuteurMandatairePrecision(misEnCauseTypePrecision)) {
     return 'TUTEUR_MJPM';
   }
 
@@ -188,8 +192,7 @@ function nonDomicileMaltraitanceSubtree(): DecisionNode {
     id: 'maltraitance_mis_en_cause',
     description: 'Mis en cause : famille, proche, professionnel, établissement, tuteur, autre',
     select: (ctx): MisEnCauseType | 'TUTEUR_MJPM' | null => {
-      // Tuteur/curateur/mandataire judiciaire : MJPM via precision
-      if (ctx.misEnCauseTypePrecision === 'MJPM') {
+      if (isTuteurMandatairePrecision(ctx.misEnCauseTypePrecision)) {
         return 'TUTEUR_MJPM';
       }
 

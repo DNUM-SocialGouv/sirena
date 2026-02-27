@@ -192,6 +192,25 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     await sendDeclarantAcknowledgmentEmail('req1');
 
+    const linesFormulaire = [
+      'ARS Normandie',
+      'Adresse e-mail : contact-ars@ex.com',
+      'Téléphone : 02 31 00 00 00',
+      'Adresse postale : 1 rue Example, 76000 Rouen',
+      '',
+      'CD Calvados',
+      'Adresse e-mail : contact-cd@ex.com',
+    ];
+    const expectedEntiteComplete: Record<string, string | number> = {
+      entitecomplete_nb: 7,
+    };
+    linesFormulaire.forEach((line, i) => {
+      expectedEntiteComplete[`entitecomplete_${i + 1}`] = line;
+    });
+    for (let i = linesFormulaire.length; i < 25; i++) {
+      expectedEntiteComplete[`entitecomplete_${i + 1}`] = '';
+    }
+
     expect(mockedSendTipimailEmail).toHaveBeenCalledWith({
       to: 'john@example.com',
       subject: '',
@@ -204,15 +223,8 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
             prenomdeclarant: 'John',
             nomdeclarant: 'Doe',
             entiteadmin: 'ARS Normandie et CD Calvados',
-            entitecomplete: [
-              'ARS Normandie',
-              'Adresse e-mail : contact-ars@ex.com',
-              'Téléphone : 02 31 00 00 00',
-              'Adresse postale : 1 rue Example, 76000 Rouen',
-              '',
-              'CD Calvados',
-              'Adresse e-mail : contact-cd@ex.com',
-            ].join('\n'),
+            requeteid: 'req1',
+            ...expectedEntiteComplete,
             signature: '',
           },
         },
@@ -259,6 +271,15 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     await sendDeclarantAcknowledgmentEmail('req1');
 
+    const expectedEntiteCompleteTel: Record<string, string | number> = {
+      entitecomplete_nb: 2,
+      entitecomplete_1: 'ARS Normandie',
+      entitecomplete_2: 'Adresse e-mail : ars@ex.com',
+    };
+    for (let i = 2; i < 25; i++) {
+      expectedEntiteCompleteTel[`entitecomplete_${i + 1}`] = '';
+    }
+
     expect(mockedSendTipimailEmail).toHaveBeenCalledWith({
       to: 'jane@example.com',
       subject: '',
@@ -271,7 +292,8 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
             prenomdeclarant: 'Jane',
             nomdeclarant: 'Smith',
             entiteadmin: 'ARS Normandie',
-            entitecomplete: ['ARS Normandie', 'Adresse e-mail : ars@ex.com'].join('\n'),
+            requeteid: 'req1',
+            ...expectedEntiteCompleteTel,
             signature: '',
           },
         },
