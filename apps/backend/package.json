@@ -57,7 +57,7 @@
     "@prisma/client": "^6.19.2",
     "@scalar/hono-api-reference": "^0.9.44",
     "@sentry/cli": "^2.58.4",
-    "@sentry/node": "^9.47.1",
+    "@sentry/node": "^10.40.0",
     "@sirena/backend-utils": "workspace:*",
     "@sirena/common": "workspace:*",
     "bullmq": "^5.70.1",
