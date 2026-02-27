@@ -34,6 +34,8 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
           adresse: adresse
             ? {
                 label: adresse.label || undefined,
+                numero: adresse.numero || undefined,
+                rue: adresse.rue || undefined,
                 codePostal: adresse.codePostal || undefined,
                 ville: adresse.ville || undefined,
               }
