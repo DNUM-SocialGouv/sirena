@@ -8,15 +8,30 @@ export function AppFooter() {
   return (
     <Footer
       id={footerId}
+      domains={[]}
       accessibility="non compliant"
       contentDescription={`frontend version: ${APP_VERSION} backend version: ${data?.version}`}
-      termsLinkProps={{
-        href: '#',
-      }}
       accessibilityLinkProps={{ href: '/accessibilite' }}
-      websiteMapLinkProps={{
-        href: '#',
-      }}
+      bottomItems={[
+        {
+          text: 'Mentions légales',
+          linkProps: {
+            href: '/mentions-legales',
+          },
+        },
+        {
+          text: 'Données personnelles',
+          linkProps: {
+            href: '/donnees-personnelles',
+          },
+        },
+        {
+          text: 'Gestion des cookies',
+          linkProps: {
+            href: '/gestion-cookies',
+          },
+        },
+      ]}
       homeLinkProps={{
         href: '/',
         title:
