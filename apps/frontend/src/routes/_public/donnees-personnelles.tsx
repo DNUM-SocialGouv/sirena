@@ -8,24 +8,6 @@ export function DonneesPersonnellesPage() {
   return (
     <>
       <h1>Données personnelles</h1>
-
-      <h2>Mentions ministères - SIRENA</h2>
-      <p>
-        Ces mentions d’informations seront mises à disposition du grand public sur{' '}
-        <a href="https://www.service-public.fr/" target="_blank" rel="noopener noreferrer">
-          https://www.service-public.fr/<span className="fr-sr-only">nouvelle fenêtre</span>
-        </a>{' '}
-        et demat social.
-      </p>
-      <p>
-        Renvoi vers ces mentions sur{' '}
-        <a href="https://www.service-public.fr/" target="_blank" rel="noopener noreferrer">
-          https://www.service-public.fr/<span className="fr-sr-only">nouvelle fenêtre</span>
-        </a>{' '}
-        depuis la page «servicielle».
-      </p>
-
-      <h3>Quid de la phase transitoire d’experimentation ?</h3>
       <p>
         L’État met en œuvre un système d’information pour assurer la gestion des réclamations émanant des usagers du
         système de santé, social et médico-social, y compris lorsque ces réclamations constituent des signalements de

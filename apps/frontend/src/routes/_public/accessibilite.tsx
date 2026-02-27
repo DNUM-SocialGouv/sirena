@@ -96,7 +96,7 @@ export function AccessibilitePage() {
           Par téléphone : <a href="tel:0969390000">09 69 39 00 00</a>
         </li>
         <li>
-          <p>Par courrier :</p>
+          <p>Par courrier (gratuit, ne pas mettre de timbre) :</p>
           <address>
             <p>Défenseur des droits</p>
             <p>Libre réponse 71120</p>
