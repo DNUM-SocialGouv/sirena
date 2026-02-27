@@ -16,6 +16,7 @@ SDPSN-devops-charts:
     FRONTEND_URI: https://sirena-sante.social.gouv.fr
     REDIS_TLS: "true"
     SENTRY_ENVIRONMENT: production
+    TIPIMAIL_DISABLE_SENDING: "false"
 
   deployment:
     replicas: 2

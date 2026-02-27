@@ -3,19 +3,23 @@ import type { SendTipimailOptions, TipimailSendResponse, TipimailSubstitution } 
 
 global.fetch = vi.fn();
 
-vi.mock('../../config/env.js', () => ({
-  envVars: {
+vi.mock('../../config/env.js', () => {
+  const envVars = {
     TIPIMAIL_API_URL: 'https://api.tipimail.com',
     TIPIMAIL_USER_ID: 'test-user-id',
     TIPIMAIL_API_KEY: 'test-api-key',
     TIPIMAIL_FROM_ADDRESS: 'default@example.com',
     TIPIMAIL_FROM_PERSONAL_NAME: 'Default Sender',
     TIPIMAIL_REDIRECT_ALL_TO: undefined as string | undefined,
+    TIPIMAIL_DISABLE_SENDING: false,
     SENTRY_ENVIRONMENT: undefined as string | undefined,
-  },
-}));
+  };
+
+  return { envVars };
+});
 
 const { sendTipimailEmail } = await import('./tipimail.js');
+const { envVars } = await import('../../config/env.js');
 
 describe('tipimail', () => {
   beforeEach(() => {
@@ -270,6 +274,21 @@ describe('tipimail', () => {
       const body = JSON.parse(callArgs[1]?.body as string);
 
       expect(body.msg.replyTo).toEqual({ address: 'reply@example.com' });
+    });
+
+    it('should not call Tipimail API when TIPIMAIL_DISABLE_SENDING is true', async () => {
+      envVars.TIPIMAIL_DISABLE_SENDING = true;
+
+      const result = await sendTipimailEmail({
+        to: 'recipient@example.com',
+        subject: 'Disabled',
+        text: 'Disabled',
+      });
+
+      expect(fetch).not.toHaveBeenCalled();
+      expect(result).toEqual({ status: 'disabled' });
+
+      envVars.TIPIMAIL_DISABLE_SENDING = false;
     });
 
     it('should validate that substitutions match recipients', async () => {
