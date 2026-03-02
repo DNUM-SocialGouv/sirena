@@ -7,7 +7,7 @@ const basePrisma =
   globalForPrisma.prisma ||
   new PrismaClient({
     transactionOptions: {
-      timeout: 60000,
+      timeout: 300000,
       maxWait: 10000,
     },
   });
