@@ -69,7 +69,7 @@ jobs:
               echo "frontend_env=test" >> $GITHUB_OUTPUT
               ;;
             "Manual Deploy")
-              echo "frontend_env=prod" >> $GITHUB_OUTPUT
+              echo "frontend_env=production" >> $GITHUB_OUTPUT
               ;;
             *)
               echo "frontend_env=dev" >> $GITHUB_OUTPUT
