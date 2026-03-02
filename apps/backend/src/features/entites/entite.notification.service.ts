@@ -23,7 +23,12 @@ async function getRegionCodeForEntite(entiteId: string): Promise<string | null> 
   return null;
 }
 
-/** Resolves notification email for an entity: its email, or fallback CD→ARS, DD→DGCS. */
+/**
+ * Resolves notification email for an entity: its email, or fallback when no email / not yet active.
+ * - CD without email → ARS of the region (if ARS has email), else DGCS
+ * - ARS without email (including when used as fallback for a CD) → DGCS
+ * - DD without email → DGCS
+ */
 async function resolveNotificationEmail(entite: {
   id: string;
   nomComplet: string;
@@ -43,6 +48,7 @@ async function resolveNotificationEmail(entite: {
           entiteMereId: null,
           regionCode,
           isActive: true,
+          email: { not: '' },
         },
         select: { email: true },
       });
@@ -51,6 +57,9 @@ async function resolveNotificationEmail(entite: {
     return { email: DGCS_FALLBACK_EMAIL, fallback: 'DGCS' };
   }
   if (entite.entiteTypeId === 'DD') {
+    return { email: DGCS_FALLBACK_EMAIL, fallback: 'DGCS' };
+  }
+  if (entite.entiteTypeId === 'ARS') {
     return { email: DGCS_FALLBACK_EMAIL, fallback: 'DGCS' };
   }
   return null;
@@ -82,8 +91,8 @@ export async function sendEntiteAssignedNotification(requeteId: string, entiteId
     const resolved = await resolveNotificationEmail(entite);
     if (!resolved) {
       logger.warn(
-        { requeteId, entiteId: entite.id, nomEntite: entite.nomComplet },
-        'Entity has no generic email and no fallback (CD without ARS email, or non-CD/DD), skipping assignment notification',
+        { requeteId, entiteId: entite.id, nomEntite: entite.nomComplet, entiteTypeId: entite.entiteTypeId },
+        'Entity has no email and no fallback (type not CD/DD/ARS), skipping assignment notification',
       );
       continue;
     }

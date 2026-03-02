@@ -84,10 +84,10 @@ describe('sendEntiteAssignedNotification()', () => {
     expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
   });
 
-  it('should return early if all entities have no email and no fallback', async () => {
+  it('should return early if all entities have no email and no fallback (type not CD/DD/ARS)', async () => {
     mockedPrismaEntite.findMany.mockResolvedValueOnce([
-      { id: 'e1', nomComplet: 'ARS Normandie', email: null, entiteTypeId: 'ARS', regionCode: '28' },
-      { id: 'e2', nomComplet: 'ARS Bretagne', email: '', entiteTypeId: 'ARS', regionCode: '53' },
+      { id: 'e1', nomComplet: 'Entité autre', email: null, entiteTypeId: 'OTHER', regionCode: null },
+      { id: 'e2', nomComplet: 'Autre entité', email: '', entiteTypeId: 'OTHER', regionCode: null },
     ] as any);
 
     await sendEntiteAssignedNotification('RD-123-456', ['e1', 'e2']);
@@ -95,9 +95,9 @@ describe('sendEntiteAssignedNotification()', () => {
     expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
   });
 
-  it('should log warn for entity without email and no fallback', async () => {
+  it('should log warn for entity without email and no fallback (type not CD/DD/ARS)', async () => {
     mockedPrismaEntite.findMany.mockResolvedValueOnce([
-      { id: 'e1', nomComplet: 'ARS Normandie', email: null, entiteTypeId: 'ARS', regionCode: '28' },
+      { id: 'e1', nomComplet: 'Entité autre', email: null, entiteTypeId: 'OTHER', regionCode: null },
       { id: 'e2', nomComplet: 'CD Calvados', email: 'cd@ex.com', entiteTypeId: 'CD', regionCode: '28' },
     ] as any);
     mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
@@ -106,8 +106,8 @@ describe('sendEntiteAssignedNotification()', () => {
 
     expect(mockLogger.warn).toHaveBeenCalledTimes(1);
     expect(mockLogger.warn).toHaveBeenCalledWith(
-      { requeteId: 'RD-123-456', entiteId: 'e1', nomEntite: 'ARS Normandie' },
-      expect.stringContaining('no generic email and no fallback'),
+      { requeteId: 'RD-123-456', entiteId: 'e1', nomEntite: 'Entité autre', entiteTypeId: 'OTHER' },
+      expect.stringContaining('no fallback'),
     );
   });
 
@@ -160,17 +160,33 @@ describe('sendEntiteAssignedNotification()', () => {
     });
   });
 
-  it('should skip entities with whitespace-only email', async () => {
+  it('should send to DGCS for entity with whitespace-only email (ARS) and to entity email for CD', async () => {
     mockedPrismaEntite.findMany.mockResolvedValueOnce([
       { id: 'e1', nomComplet: 'ARS Normandie', email: '   ', entiteTypeId: 'ARS', regionCode: '28' },
       { id: 'e2', nomComplet: 'CD Calvados', email: 'cd@ex.com', entiteTypeId: 'CD', regionCode: '28' },
     ] as any);
     mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
 
     await sendEntiteAssignedNotification('RD-123-456', ['e1', 'e2']);
 
-    expect(mockedSendTipimailEmail).toHaveBeenCalledTimes(1);
-    expect(mockedSendTipimailEmail).toHaveBeenCalledWith(
+    expect(mockedSendTipimailEmail).toHaveBeenCalledTimes(2);
+    expect(mockedSendTipimailEmail).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        to: DGCS_FALLBACK_EMAIL,
+        substitutions: [
+          expect.objectContaining({
+            email: DGCS_FALLBACK_EMAIL,
+            values: expect.objectContaining({
+              entite: 'ARS Normandie',
+            }),
+          }),
+        ],
+      }),
+    );
+    expect(mockedSendTipimailEmail).toHaveBeenNthCalledWith(
+      2,
       expect.objectContaining({
         to: 'cd@ex.com',
         substitutions: [
@@ -276,6 +292,30 @@ describe('sendEntiteAssignedNotification()', () => {
             email: DGCS_FALLBACK_EMAIL,
             values: expect.objectContaining({
               entite: 'DDETS 76',
+            }),
+          }),
+        ],
+      }),
+    );
+  });
+
+  it('should send to DGCS when ARS has no email (fallback ARS → DGCS)', async () => {
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      { id: 'e-ars', nomComplet: 'ARS Guyane', email: '', entiteTypeId: 'ARS', regionCode: '3' },
+    ] as any);
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
+
+    await sendEntiteAssignedNotification('RD-123-456', ['e-ars']);
+
+    expect(mockedSendTipimailEmail).toHaveBeenCalledTimes(1);
+    expect(mockedSendTipimailEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: DGCS_FALLBACK_EMAIL,
+        substitutions: [
+          expect.objectContaining({
+            email: DGCS_FALLBACK_EMAIL,
+            values: expect.objectContaining({
+              entite: 'ARS Guyane',
             }),
           }),
         ],
