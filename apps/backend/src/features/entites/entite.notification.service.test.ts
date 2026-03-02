@@ -70,7 +70,6 @@ describe('sendEntiteAssignedNotification()', () => {
     expect(mockedPrismaEntite.findMany).toHaveBeenCalledWith({
       where: {
         id: { in: ['e1', 'e2'] },
-        isActive: true,
       },
       select: defaultSelect,
     });
