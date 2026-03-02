@@ -295,12 +295,9 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                   <p className={fr.cx('fr-mb-1w')}>
                     <span>Nom de l'établissement :</span> {situation.lieuDeSurvenue.adresse.label}
                   </p>
-                  {(situation?.lieuDeSurvenue?.adresse?.numero || situation?.lieuDeSurvenue?.adresse?.rue) && (
+                  {situation?.lieuDeSurvenue?.adresse?.rue && (
                     <p className={fr.cx('fr-mb-1w')}>
-                      <span>Adresse :</span>{' '}
-                      {[situation.lieuDeSurvenue.adresse.numero, situation.lieuDeSurvenue.adresse.rue]
-                        .filter(Boolean)
-                        .join(' ')}
+                      <span>Adresse :</span> {situation.lieuDeSurvenue.adresse.rue}
                     </p>
                   )}
                 </>
