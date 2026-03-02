@@ -8,6 +8,9 @@ type HeaderMenuProps = {
   homeHref: string;
 };
 
+const DOCUMENTATION_LINK = 'https://docs.numerique.gouv.fr/docs/541c745d-7a82-4cbf-b792-c15f69ccf2c7/';
+const FAQ_LINK = 'https://docs.numerique.gouv.fr/docs/558cb802-d140-4189-9d61-c2dfd7abca35/';
+
 export const HeaderMenu = (props: HeaderMenuProps) => {
   const id = useId();
   const userStore = useUserStore();
@@ -16,7 +19,7 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
     <a
       key={'faq'}
       className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-btn--icon-left fr-icon-arrow-right-line"
-      href="https://docs.numerique.gouv.fr/docs/0221f89c-5118-42b2-8aa1-238e32231c8c/"
+      href={FAQ_LINK}
       target="_blank"
       rel="noopener noreferrer"
     >
@@ -26,7 +29,7 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
     <a
       key={'doc'}
       className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-btn--icon-left fr-icon-arrow-right-line"
-      href="https://docs.numerique.gouv.fr/docs/541c745d-7a82-4cbf-b792-c15f69ccf2c7/"
+      href={DOCUMENTATION_LINK}
       target="_blank"
       rel="noopener noreferrer"
     >
