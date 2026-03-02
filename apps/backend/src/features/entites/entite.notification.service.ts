@@ -36,18 +36,19 @@ async function resolveNotificationEmail(entite: {
   }
   if (entite.entiteTypeId === 'CD') {
     const regionCode = entite.regionCode ?? (await getRegionCodeForEntite(entite.id));
-    if (!regionCode) return null;
-    const ars = await prisma.entite.findFirst({
-      where: {
-        entiteTypeId: 'ARS',
-        entiteMereId: null,
-        regionCode,
-        isActive: true,
-      },
-      select: { email: true },
-    });
-    if (ars?.email?.trim()) return { email: ars.email.trim(), fallback: 'ARS' };
-    return null;
+    if (regionCode) {
+      const ars = await prisma.entite.findFirst({
+        where: {
+          entiteTypeId: 'ARS',
+          entiteMereId: null,
+          regionCode,
+          isActive: true,
+        },
+        select: { email: true },
+      });
+      if (ars?.email?.trim()) return { email: ars.email.trim(), fallback: 'ARS' };
+    }
+    return { email: DGCS_FALLBACK_EMAIL, fallback: 'DGCS' };
   }
   if (entite.entiteTypeId === 'DD') {
     return { email: DGCS_FALLBACK_EMAIL, fallback: 'DGCS' };
@@ -65,7 +66,6 @@ export async function sendEntiteAssignedNotification(requeteId: string, entiteId
   const entites = await prisma.entite.findMany({
     where: {
       id: { in: entiteIds },
-      isActive: true,
     },
     select: {
       id: true,

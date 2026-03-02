@@ -30,6 +30,21 @@ export const createRequeteFromDematSocial = async ({
   );
   const primaryEntiteId = entiteIds[0] ?? null;
 
+  // TODO: This transaction includes S3 uploads (urlToStream + uploadFileToMinio) inside it,
+  // which are slow network I/O operations (download from URL, encrypt, upload to MinIO).
+  // With multiple files across situations/faits/PDF, the cumulative upload time can exceed
+  // the transaction timeout — this already caused a timeout at 60s (77s elapsed).
+  //
+  // The timeout has been increased to 300s as a short-term fix (that we will probably want to rollback later), but the proper solution is
+  // to move S3 uploads BEFORE the transaction:
+  //   1. Pre-upload all files to S3 in parallel (outside the transaction)
+  //   2. Collect upload results (objectPath, encryptionMetadata, rollback functions)
+  //   3. Open the transaction and only do fast DB inserts using the pre-uploaded data
+  //   4. If the transaction fails, rollback all S3 uploads
+  //   5. Queue file processing jobs after the transaction commits
+  //
+  // This would keep the transaction duration to a few seconds max (DB operations only)
+  // instead of being bottlenecked by network I/O.
   return await prisma.$transaction(async (tx) => {
     const createFileForRequete = async (
       file: File,

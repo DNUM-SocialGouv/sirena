@@ -70,7 +70,6 @@ describe('sendEntiteAssignedNotification()', () => {
     expect(mockedPrismaEntite.findMany).toHaveBeenCalledWith({
       where: {
         id: { in: ['e1', 'e2'] },
-        isActive: true,
       },
       select: defaultSelect,
     });
@@ -88,10 +87,8 @@ describe('sendEntiteAssignedNotification()', () => {
   it('should return early if all entities have no email and no fallback', async () => {
     mockedPrismaEntite.findMany.mockResolvedValueOnce([
       { id: 'e1', nomComplet: 'ARS Normandie', email: null, entiteTypeId: 'ARS', regionCode: '28' },
-      { id: 'e2', nomComplet: 'CD Calvados', email: '', entiteTypeId: 'CD', regionCode: '28' },
+      { id: 'e2', nomComplet: 'ARS Bretagne', email: '', entiteTypeId: 'ARS', regionCode: '53' },
     ] as any);
-    mockedPrismaEntite.findUnique.mockResolvedValue({ regionCode: '28', entiteMereId: null } as any);
-    mockedPrismaEntite.findFirst.mockResolvedValue(null);
 
     await sendEntiteAssignedNotification('RD-123-456', ['e1', 'e2']);
 
@@ -228,6 +225,31 @@ describe('sendEntiteAssignedNotification()', () => {
         substitutions: [
           expect.objectContaining({
             email: 'ars-normandie@ars.sante.fr',
+            values: expect.objectContaining({
+              entite: 'CD Calvados',
+            }),
+          }),
+        ],
+      }),
+    );
+  });
+
+  it('should send to DGCS when CD has no email and ARS has no email (fallback CD → DGCS)', async () => {
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      { id: 'e-cd', nomComplet: 'CD Calvados', email: '', entiteTypeId: 'CD', regionCode: '28' },
+    ] as any);
+    mockedPrismaEntite.findUnique.mockResolvedValue({ regionCode: '28', entiteMereId: null } as any);
+    mockedPrismaEntite.findFirst.mockResolvedValue(null);
+
+    await sendEntiteAssignedNotification('RD-123-456', ['e-cd']);
+
+    expect(mockedSendTipimailEmail).toHaveBeenCalledTimes(1);
+    expect(mockedSendTipimailEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: DGCS_FALLBACK_EMAIL,
+        substitutions: [
+          expect.objectContaining({
+            email: DGCS_FALLBACK_EMAIL,
             values: expect.objectContaining({
               entite: 'CD Calvados',
             }),
