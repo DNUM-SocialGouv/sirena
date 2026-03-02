@@ -194,7 +194,7 @@ const createAddress = (champ: RootChampFragmentFragment | RepetitionChamp) => {
       label: champ.address.label,
       codePostal: champ.address.postalCode ?? '',
       ville: champ.address.cityName ?? '',
-      rue: champ.address.streetName ?? '',
+      rue: `${champ.address.streetNumber ?? ''} ${(champ.address.streetName ?? '').trim()}`,
       numero: champ.address.streetNumber ?? '',
     };
   }
