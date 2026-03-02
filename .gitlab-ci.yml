@@ -4,6 +4,9 @@ variables:
   ENVIRONMENT: 'production'
   NODE_OPTIONS: "--max_old_space_size=6144"
 
+default:
+  tags:
+    - socialgouv-linux-large-amd64
 
 include:
   - local: ".gitlab-templates/generic-template.yml"
@@ -87,8 +90,7 @@ lint-and-build:
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-  tags:
-    - socialgouv-linux-small-amd64
+
 
 .build-docker-images:
   stage: build
