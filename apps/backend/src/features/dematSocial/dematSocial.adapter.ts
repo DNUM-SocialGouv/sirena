@@ -12,7 +12,6 @@ import {
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   MIS_EN_CAUSE_TYPE,
   PROFESSION_SOCIAL_PRECISION,
-  PROFESSION_TYPE,
   RECEPTION_TYPE,
 } from '@sirena/common/constants';
 import type { RootChampFragmentFragment } from '../../libs/graffle.js';
@@ -398,7 +397,7 @@ export const getResponsable = ({
       if (professionType === DS_PROFESSION_TYPE.NPJM) {
         return {
           misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SOCIAL,
-          misEnCauseTypePrecisionId: PROFESSION_TYPE.MJPM,
+          misEnCauseTypePrecisionId: PROFESSION_SOCIAL_PRECISION.MANDATAIRE,
         };
       }
       if (professionType === DS_PROFESSION_TYPE.AUTRE) {
