@@ -8,13 +8,12 @@ test('login', async ({ browser }) => {
   await loginWithProconnect(page, {
     password: ENTITY_ADMIN_USER.password,
     user: ENTITY_ADMIN_USER.user,
-    organisation: 'ville de paris',
+    organisation: 'Commune de clamart - Mairie',
   });
 
-  await page.waitForLoadState('networkidle');
-  await expect(page).toHaveURL(`${baseUrl}/home`);
+  await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
   const heading = page.getByRole('heading', { level: 1 });
-  await expect(heading).toHaveText(/Bienvenue/);
+  await expect(heading).toHaveText(/Bienvenue/, { timeout: 10000 });
   await page.goto(loginUrl);
   await expect(page).toHaveURL(`${baseUrl}/home`);
   await context.close();

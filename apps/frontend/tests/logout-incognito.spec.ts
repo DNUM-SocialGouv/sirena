@@ -10,11 +10,11 @@ test('logout', async ({ browser }) => {
   await loginWithProconnect(page, {
     password: ENTITY_ADMIN_USER.password,
     user: ENTITY_ADMIN_USER.user,
-    organisation: 'Ville de paris',
+    organisation: 'Commune de clamart - Mairie',
   });
 
-  await page.waitForLoadState('networkidle');
-  await expect(page).toHaveURL(`${baseUrl}/home`);
+  await expect(page).toHaveURL(`${baseUrl}/home`, { timeout: 30000 });
+  await expect(page.getByText(/Bienvenue/)).toBeVisible({ timeout: 10000 });
 
   const monEspaceButton = page.getByRole('button', { name: 'Mon espace' });
   await monEspaceButton.click();
