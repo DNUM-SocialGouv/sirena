@@ -47,7 +47,6 @@ async function resolveNotificationEmail(entite: {
           entiteTypeId: 'ARS',
           entiteMereId: null,
           regionCode,
-          isActive: true,
           email: { not: '' },
         },
         select: { email: true },
