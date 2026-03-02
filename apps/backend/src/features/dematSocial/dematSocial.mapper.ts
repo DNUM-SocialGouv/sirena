@@ -598,7 +598,7 @@ const autreFaits = {
     /* lieuType = Autre || Au domicile... || Dans un cabinet... || Domicile start */
     lieuAdresse: {
       ...lieuAdresse,
-      id: 'Champ-42818',
+      id: 'Champ-37354',
     },
     /* lieuType = Autre || Au domicile... || Dans un cabinet... || Domicile end */
     /* lieuType = transport start */
@@ -610,7 +610,7 @@ const autreFaits = {
     /* lieuType = 'Durant le trajet... start */
     transportSociete: {
       ...transportSociete,
-      id: 'Champ-37260',
+      id: 'Champ-42651',
     },
     /* lieuType = 'Dans un établissement... end */
     /* lieuType = 'Domicile start */
