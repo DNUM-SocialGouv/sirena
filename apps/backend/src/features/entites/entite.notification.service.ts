@@ -1,8 +1,59 @@
 import { envVars } from '../../config/env.js';
-import { NOTIFICATION_ENTITE_AFFECTATION_TEMPLATE_NAME } from '../../config/tipimail.constant.js';
+import { DGCS_FALLBACK_EMAIL, NOTIFICATION_ENTITE_AFFECTATION_TEMPLATE_NAME } from '../../config/tipimail.constant.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
 import { prisma } from '../../libs/prisma.js';
+
+async function fetchEntiteRegionParent(id: string) {
+  return prisma.entite.findUnique({
+    where: { id },
+    select: { regionCode: true, entiteMereId: true },
+  });
+}
+
+/** Returns the region code of the root entity (walks up entiteMereId). */
+async function getRegionCodeForEntite(entiteId: string): Promise<string | null> {
+  let currentId: string | null = entiteId;
+  while (currentId) {
+    const entite = await fetchEntiteRegionParent(currentId);
+    if (!entite) return null;
+    if (entite.entiteMereId === null) return entite.regionCode;
+    currentId = entite.entiteMereId;
+  }
+  return null;
+}
+
+/** Resolves notification email for an entity: its email, or fallback CD→ARS, DD→DGCS. */
+async function resolveNotificationEmail(entite: {
+  id: string;
+  nomComplet: string;
+  email: string | null;
+  entiteTypeId: string;
+  regionCode: string | null;
+}): Promise<{ email: string; fallback?: string } | null> {
+  if (entite.email?.trim()) {
+    return { email: entite.email.trim() };
+  }
+  if (entite.entiteTypeId === 'CD') {
+    const regionCode = entite.regionCode ?? (await getRegionCodeForEntite(entite.id));
+    if (!regionCode) return null;
+    const ars = await prisma.entite.findFirst({
+      where: {
+        entiteTypeId: 'ARS',
+        entiteMereId: null,
+        regionCode,
+        isActive: true,
+      },
+      select: { email: true },
+    });
+    if (ars?.email?.trim()) return { email: ars.email.trim(), fallback: 'ARS' };
+    return null;
+  }
+  if (entite.entiteTypeId === 'DD') {
+    return { email: DGCS_FALLBACK_EMAIL, fallback: 'DGCS' };
+  }
+  return null;
+}
 
 export async function sendEntiteAssignedNotification(requeteId: string, entiteIds: string[]): Promise<void> {
   const logger = getLoggerStore();
@@ -20,30 +71,26 @@ export async function sendEntiteAssignedNotification(requeteId: string, entiteId
       id: true,
       nomComplet: true,
       email: true,
+      entiteTypeId: true,
+      regionCode: true,
     },
   });
 
-  const entitesWithEmail = entites.filter((e) => Boolean(e.email?.trim()));
-
-  for (const entite of entites) {
-    if (!entite.email?.trim()) {
-      logger.warn(
-        { requeteId, entiteId: entite.id, nomEntite: entite.nomComplet },
-        'Entity has no generic email, skipping assignment notification',
-      );
-    }
-  }
-
-  if (entitesWithEmail.length === 0) {
-    return;
-  }
-
   const lienDetailsRequeteSirena = `${envVars.FRONTEND_URI}/request/${requeteId}`;
 
-  for (const entite of entitesWithEmail) {
+  for (const entite of entites) {
+    const resolved = await resolveNotificationEmail(entite);
+    if (!resolved) {
+      logger.warn(
+        { requeteId, entiteId: entite.id, nomEntite: entite.nomComplet },
+        'Entity has no generic email and no fallback (CD without ARS email, or non-CD/DD), skipping assignment notification',
+      );
+      continue;
+    }
+
     try {
       const substitutions = {
-        email: entite.email,
+        email: resolved.email,
         values: {
           numeroRequete: requeteId,
           entite: entite.nomComplet,
@@ -53,7 +100,7 @@ export async function sendEntiteAssignedNotification(requeteId: string, entiteId
       };
 
       await sendTipimailEmail({
-        to: entite.email,
+        to: resolved.email,
         subject: '',
         text: '',
         template: NOTIFICATION_ENTITE_AFFECTATION_TEMPLATE_NAME,
@@ -61,7 +108,12 @@ export async function sendEntiteAssignedNotification(requeteId: string, entiteId
       });
 
       logger.info(
-        { requeteId, entiteId: entite.id, entiteEmail: entite.email },
+        {
+          requeteId,
+          entiteId: entite.id,
+          recipientEmail: resolved.email,
+          ...(resolved.fallback && { fallback: resolved.fallback }),
+        },
         'Entity assignment notification email sent',
       );
     } catch (err) {

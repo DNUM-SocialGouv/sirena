@@ -19,11 +19,9 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
           <>
             Ministère
             <br />
-            du Travail, de la Santé,
-            <br />
             des Solidarités
             <br />
-            et des Familles
+            et de la Santé
           </>
         }
         homeLinkProps={{

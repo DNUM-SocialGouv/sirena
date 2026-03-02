@@ -17,6 +17,8 @@ export const SituationDataSchema = z.object({
           label: z.string().optional(),
           ville: z.string().optional(),
           codePostal: z.string().optional(),
+          rue: z.string().optional(),
+          numero: z.string().optional(),
         })
         .optional(),
     })

@@ -181,6 +181,17 @@ describe('runDecisionTree - domicile', () => {
     expect(result.sort()).toEqual(['DD']);
   });
 
+  it('should assign DD for domicile with MANDATAIRE precision (mapping démat domicile)', async () => {
+    const ctx: SituationContext = {
+      lieuType: 'DOMICILE',
+      misEnCauseType: 'PROFESSIONNEL_SOCIAL',
+      misEnCauseTypePrecision: 'MANDATAIRE',
+    };
+
+    const result = await runDecisionTree(ctx);
+    expect(result.sort()).toEqual(['DD']);
+  });
+
   it('should assign CD for domicile with PROFESSIONNEL_SOCIAL', async () => {
     const ctx: SituationContext = {
       lieuType: 'DOMICILE',
