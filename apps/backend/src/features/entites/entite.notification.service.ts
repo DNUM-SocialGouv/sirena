@@ -47,7 +47,6 @@ async function resolveNotificationEmail(entite: {
           entiteTypeId: 'ARS',
           entiteMereId: null,
           regionCode,
-          isActive: true,
           email: { not: '' },
         },
         select: { email: true },
@@ -75,7 +74,6 @@ export async function sendEntiteAssignedNotification(requeteId: string, entiteId
   const entites = await prisma.entite.findMany({
     where: {
       id: { in: entiteIds },
-      isActive: true,
     },
     select: {
       id: true,
