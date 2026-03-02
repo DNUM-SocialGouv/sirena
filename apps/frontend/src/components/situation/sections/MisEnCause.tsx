@@ -90,11 +90,15 @@ type IdentityFieldsProps = {
 };
 
 function MisEnCauseIdentityFields({ formData, isSaving, setFormData }: IdentityFieldsProps) {
+  const isIdentityReadOnly = isSaving || Boolean(formData.misEnCause?.rpps);
+  console.log(isIdentityReadOnly);
+
   return (
     <>
       <div className="fr-col-12 fr-col-md-2">
         <Select
           label="Civilité"
+          disabled={isIdentityReadOnly}
           nativeSelectProps={{
             value: formData.misEnCause?.civilite || '',
             onChange: (e) =>
@@ -102,7 +106,6 @@ function MisEnCauseIdentityFields({ formData, isSaving, setFormData }: IdentityF
                 ...prev,
                 misEnCause: { ...prev.misEnCause, civilite: e.target.value || undefined },
               })),
-            disabled: isSaving,
           }}
         >
           <option value="">Sélectionner</option>
@@ -113,6 +116,7 @@ function MisEnCauseIdentityFields({ formData, isSaving, setFormData }: IdentityF
       <div className="fr-col-12 fr-col-md-5">
         <Input
           label="Nom"
+          disabled={isIdentityReadOnly}
           nativeInputProps={{
             value: formData.misEnCause?.nom || '',
             onChange: (e) =>
@@ -120,13 +124,13 @@ function MisEnCauseIdentityFields({ formData, isSaving, setFormData }: IdentityF
                 ...prev,
                 misEnCause: { ...prev.misEnCause, nom: e.target.value },
               })),
-            disabled: isSaving,
           }}
         />
       </div>
       <div className="fr-col-12 fr-col-md-5">
         <Input
           label="Prénom"
+          disabled={isIdentityReadOnly}
           nativeInputProps={{
             value: formData.misEnCause?.prenom || '',
             onChange: (e) =>
@@ -134,13 +138,18 @@ function MisEnCauseIdentityFields({ formData, isSaving, setFormData }: IdentityF
                 ...prev,
                 misEnCause: { ...prev.misEnCause, prenom: e.target.value },
               })),
-            disabled: isSaving,
           }}
         />
       </div>
     </>
   );
 }
+
+const MIS_EN_CAUSE_RPPS: string[] = [
+  MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE,
+  MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SOCIAL,
+  MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
+];
 
 export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps) {
   const misEnCauseType = formData.misEnCause?.misEnCauseType;
@@ -236,7 +245,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
             </div>
           </div>
 
-          {misEnCauseType === MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE && (
+          {MIS_EN_CAUSE_RPPS.includes(misEnCauseType || '') && (
             <>
               <div className="fr-col-12 fr-col-md-6">
                 <PractitionerSearchField
@@ -296,25 +305,20 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                           onChange: (e) => {
                             const checked = e.target.checked;
                             setIsNoRppsChecked(checked);
-                            if (checked) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                misEnCause: {
-                                  ...prev.misEnCause,
-                                  rpps: '',
-                                },
-                              }));
-                            } else {
-                              setFormData((prev) => ({
-                                ...prev,
-                                misEnCause: {
-                                  ...prev.misEnCause,
-                                  civilite: '',
-                                  nom: '',
-                                  prenom: '',
-                                },
-                              }));
-                            }
+                            setFormData((prev) => ({
+                              ...prev,
+                              misEnCause: {
+                                ...prev.misEnCause,
+                                rpps: checked ? '' : prev.misEnCause?.rpps || '',
+                                ...(checked
+                                  ? {}
+                                  : {
+                                      civilite: '',
+                                      nom: '',
+                                      prenom: '',
+                                    }),
+                              },
+                            }));
                           },
                           disabled: isSaving,
                         },

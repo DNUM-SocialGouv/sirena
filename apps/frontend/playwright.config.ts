@@ -19,7 +19,7 @@ export default defineConfig({
   testDir: './tests',
   forbidOnly: !!CI,
   retries: CI ? 2 : 0,
-  workers: CI ? 1 : undefined,
+  workers: 1,
   reporter: 'html',
   globalSetup: './tests/globalSetup.ts',
   use: {

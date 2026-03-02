@@ -8,10 +8,37 @@ type HeaderMenuProps = {
   homeHref: string;
 };
 
+const DOCUMENTATION_LINK = 'https://docs.numerique.gouv.fr/docs/541c745d-7a82-4cbf-b792-c15f69ccf2c7/';
+const FAQ_LINK = 'https://docs.numerique.gouv.fr/docs/558cb802-d140-4189-9d61-c2dfd7abca35/';
+
 export const HeaderMenu = (props: HeaderMenuProps) => {
-  const userStore = useUserStore();
-  const quickAccessItems = userStore.isLogged ? [<UserMenu key="menu" />] : [];
   const id = useId();
+  const userStore = useUserStore();
+
+  const quickAccessItems = [
+    <a
+      key={'faq'}
+      className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-btn--icon-left fr-icon-arrow-right-line"
+      href={FAQ_LINK}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <abbr title="Foire Aux Questions">FAQ</abbr>
+      <span className="fr-sr-only"> - nouvel onglet</span>
+    </a>,
+    <a
+      key={'doc'}
+      className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-btn--icon-left fr-icon-arrow-right-line"
+      href={DOCUMENTATION_LINK}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Documentation
+      <span className="fr-sr-only"> - nouvel onglet</span>
+    </a>,
+
+    ...(userStore.isLogged ? [<UserMenu key="menu" />] : []),
+  ];
   return (
     <>
       <Header
@@ -19,11 +46,9 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
           <>
             Ministère
             <br />
-            du Travail, de la Santé,
-            <br />
             des Solidarités
             <br />
-            et des Familles
+            et de la Santé
           </>
         }
         homeLinkProps={{

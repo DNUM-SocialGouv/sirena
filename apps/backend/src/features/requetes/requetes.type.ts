@@ -78,6 +78,7 @@ type MisEnCause = {
   civilite: string;
   rpps: string;
   commentaire: string;
+  autrePrecision: string;
 };
 
 type DemarchesEngagees = {

@@ -58,7 +58,7 @@ test.describe('Request Details Feature', () => {
   });
 
   test('should add a processing step and see it after reload', async () => {
-    const randomStepName = `test-${randomUUID()}}`;
+    const randomStepName = `test-${randomUUID()}`;
     await page.getByRole('tab', { name: 'Traitement' }).click();
 
     await page.getByRole('button', { name: 'Ajouter une étape' }).click();
@@ -69,10 +69,12 @@ test.describe('Request Details Feature', () => {
 
     await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
 
+    await expect(page.getByRole('heading', { name: randomStepName, level: 3 })).toBeVisible({ timeout: 10000 });
+
     await page.reload();
 
     await page.getByRole('tab', { name: 'Traitement' }).click();
 
-    await expect(page.getByRole('heading', { name: randomStepName, level: 3 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: randomStepName, level: 3 })).toBeVisible({ timeout: 10000 });
   });
 });

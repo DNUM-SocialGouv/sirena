@@ -18,9 +18,10 @@ import {
   lieuEtablissementSocialPrecisionLabels,
   lieuTrajetPrecisionLabels,
   lieuTypeLabels,
+  RECEPTION_TYPE,
   type ReceptionType,
-  TRANSPORT_TYPE,
-  transportTypeLabels,
+  // TRANSPORT_TYPE,
+  // transportTypeLabels,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
 import { useEffect, useState } from 'react';
@@ -41,9 +42,10 @@ const finessEtablissementTypes = [
   LIEU_TYPE.ETABLISSEMENT_SOCIAL,
 ] as string[];
 
-export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProps) {
+export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: LieuSurvenuProps) {
   const lieuType = formData.lieuDeSurvenue?.lieuType;
   const lieuPrecision = formData.lieuDeSurvenue?.lieuPrecision;
+  const isOrganizationReadOnly = isSaving || Boolean(formData.lieuDeSurvenue?.finess);
   const isFinessEtablissementType = Boolean(lieuType && finessEtablissementTypes.includes(lieuType));
   const hasCompleteOrganizationFromFiness = Boolean(
     formData.lieuDeSurvenue?.finess &&
@@ -56,10 +58,13 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
       !formData.lieuDeSurvenue?.finess &&
       Boolean(
         formData.lieuDeSurvenue?.adresse?.label ||
+          formData.lieuDeSurvenue?.adresse?.rue ||
           formData.lieuDeSurvenue?.adresse?.codePostal ||
           formData.lieuDeSurvenue?.adresse?.ville,
       ),
   );
+  const shouldShowCabinetMedicalStreetField =
+    lieuPrecision === LIEU_ETABLISSEMENT_SANTE_PRECISION.CABINET_MEDICAL && receptionType === RECEPTION_TYPE.FORMULAIRE;
   const shouldShowDomicileAddressFields =
     lieuType === LIEU_TYPE.DOMICILE &&
     !(
@@ -112,10 +117,10 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
     key,
     value: lieuTrajetPrecisionLabels[value],
   }));
-  const transportTypeOptions = Object.entries(TRANSPORT_TYPE).map(([key, value]) => ({
-    key,
-    value: transportTypeLabels[value],
-  }));
+  // const transportTypeOptions = Object.entries(TRANSPORT_TYPE).map(([key, value]) => ({
+  //   key,
+  //   value: transportTypeLabels[value],
+  // }));
 
   return (
     <div
@@ -178,13 +183,13 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
                     <Input
                       label="Adresse"
                       nativeInputProps={{
-                        value: formData.lieuDeSurvenue?.adresse?.label || '',
+                        value: formData.lieuDeSurvenue?.adresse?.rue || '',
                         onChange: (e) =>
                           setFormData((prev) => ({
                             ...prev,
                             lieuDeSurvenue: {
                               ...prev.lieuDeSurvenue,
-                              adresse: { ...prev.lieuDeSurvenue?.adresse, label: e.target.value },
+                              adresse: { ...prev.lieuDeSurvenue?.adresse, rue: e.target.value },
                             },
                           })),
                       }}
@@ -364,7 +369,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
                   ))}
                 </Select>
               </div>
-              <div className="fr-col-12 fr-col-md-6">
+              {/* <div className="fr-col-12 fr-col-md-6">
                 <Select
                   label="Type de transport"
                   nativeSelectProps={{
@@ -383,7 +388,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
                     </option>
                   ))}
                 </Select>
-              </div>
+              </div> */}
               <div className="fr-col-12 fr-col-md-6">
                 <Input
                   label="Société de transport concernée"
@@ -398,6 +403,22 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
                 />
               </div>
               <div className="fr-col-12 fr-col-md-6">
+                <Input
+                  label="Rue"
+                  nativeInputProps={{
+                    value: formData.lieuDeSurvenue?.adresse?.rue || '',
+                    onChange: (e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        lieuDeSurvenue: {
+                          ...prev.lieuDeSurvenue,
+                          adresse: { ...prev.lieuDeSurvenue?.adresse, rue: e.target.value },
+                        },
+                      })),
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-3">
                 <Input
                   label="Code postal"
                   nativeInputProps={{
@@ -472,28 +493,24 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
                           onChange: (e) => {
                             const checked = e.target.checked;
                             setIsNoFinessChecked(checked);
-                            if (checked) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                lieuDeSurvenue: {
-                                  ...prev.lieuDeSurvenue,
-                                  finess: '',
-                                },
-                              }));
-                            } else {
-                              setFormData((prev) => ({
-                                ...prev,
-                                lieuDeSurvenue: {
-                                  ...prev.lieuDeSurvenue,
-                                  adresse: {
-                                    ...prev.lieuDeSurvenue?.adresse,
-                                    label: '',
-                                    codePostal: '',
-                                    ville: '',
-                                  },
-                                },
-                              }));
-                            }
+                            setFormData((prev) => ({
+                              ...prev,
+                              lieuDeSurvenue: {
+                                ...prev.lieuDeSurvenue,
+                                finess: checked ? '' : prev.lieuDeSurvenue?.finess || '',
+                                ...(checked
+                                  ? {}
+                                  : {
+                                      adresse: {
+                                        ...prev.lieuDeSurvenue?.adresse,
+                                        label: '',
+                                        rue: '',
+                                        codePostal: '',
+                                        ville: '',
+                                      },
+                                    }),
+                              },
+                            }));
                           },
                           disabled: isSaving,
                         },
@@ -505,9 +522,12 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
 
               {(isNoFinessChecked || hasCompleteOrganizationFromFiness) && (
                 <>
-                  <div className="fr-col-12 fr-col-md-6">
+                  <div
+                    className={shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-4' : 'fr-col-12 fr-col-md-6'}
+                  >
                     <Input
                       label="Nom de l'établissement"
+                      disabled={isOrganizationReadOnly}
                       nativeInputProps={{
                         value: extractOrganizationName(formData.lieuDeSurvenue?.adresse),
                         onChange: (e) =>
@@ -524,41 +544,62 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
                       }}
                     />
                   </div>
-                  <div className="fr-col-12 fr-col-md-6">
-                    <div className="fr-grid-row fr-grid-row--gutters">
-                      <div className="fr-col-12 fr-col-md-4">
-                        <Input
-                          label="Code postal"
-                          nativeInputProps={{
-                            value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
-                            onChange: (e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                lieuDeSurvenue: {
-                                  ...prev.lieuDeSurvenue,
-                                  adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
-                                },
-                              })),
-                          }}
-                        />
-                      </div>
-                      <div className="fr-col-12 fr-col-md-8">
-                        <Input
-                          label="Ville"
-                          nativeInputProps={{
-                            value: formData.lieuDeSurvenue?.adresse?.ville || '',
-                            onChange: (e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                lieuDeSurvenue: {
-                                  ...prev.lieuDeSurvenue,
-                                  adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
-                                },
-                              })),
-                          }}
-                        />
-                      </div>
+                  {shouldShowCabinetMedicalStreetField && (
+                    <div className="fr-col-12 fr-col-md-4">
+                      <Input
+                        label="Rue"
+                        disabled={isOrganizationReadOnly}
+                        nativeInputProps={{
+                          value: formData.lieuDeSurvenue?.adresse?.rue || '',
+                          onChange: (e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              lieuDeSurvenue: {
+                                ...prev.lieuDeSurvenue,
+                                adresse: { ...prev.lieuDeSurvenue?.adresse, rue: e.target.value },
+                              },
+                            })),
+                        }}
+                      />
                     </div>
+                  )}
+                  <div
+                    className={shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-2' : 'fr-col-12 fr-col-md-3'}
+                  >
+                    <Input
+                      label="Code postal"
+                      disabled={isOrganizationReadOnly}
+                      nativeInputProps={{
+                        value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
+                        onChange: (e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            lieuDeSurvenue: {
+                              ...prev.lieuDeSurvenue,
+                              adresse: { ...prev.lieuDeSurvenue?.adresse, codePostal: e.target.value },
+                            },
+                          })),
+                      }}
+                    />
+                  </div>
+                  <div
+                    className={shouldShowCabinetMedicalStreetField ? 'fr-col-12 fr-col-md-2' : 'fr-col-12 fr-col-md-3'}
+                  >
+                    <Input
+                      label="Ville"
+                      disabled={isOrganizationReadOnly}
+                      nativeInputProps={{
+                        value: formData.lieuDeSurvenue?.adresse?.ville || '',
+                        onChange: (e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            lieuDeSurvenue: {
+                              ...prev.lieuDeSurvenue,
+                              adresse: { ...prev.lieuDeSurvenue?.adresse, ville: e.target.value },
+                            },
+                          })),
+                      }}
+                    />
                   </div>
                 </>
               )}
@@ -585,6 +626,22 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
               </div>
               <div className="fr-col-12 fr-col-md-6">
                 <Input
+                  label="Rue"
+                  nativeInputProps={{
+                    value: formData.lieuDeSurvenue?.adresse?.rue || '',
+                    onChange: (e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        lieuDeSurvenue: {
+                          ...prev.lieuDeSurvenue,
+                          adresse: { ...prev.lieuDeSurvenue?.adresse, rue: e.target.value },
+                        },
+                      })),
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-3">
+                <Input
                   label="Code postal"
                   nativeInputProps={{
                     value: formData.lieuDeSurvenue?.adresse?.codePostal || '',
@@ -599,7 +656,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving }: LieuSurvenuProp
                   }}
                 />
               </div>
-              <div className="fr-col-12 fr-col-md-6">
+              <div className="fr-col-12 fr-col-md-3">
                 <Input
                   label="Ville"
                   nativeInputProps={{

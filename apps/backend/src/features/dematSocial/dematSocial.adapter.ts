@@ -5,16 +5,15 @@ import {
   DS_MIS_EN_CAUSE_TYPE,
   DS_PROFESSION_DOMICILE_TYPE,
   DS_PROFESSION_TYPE,
+  dsTransportTypeLabels,
   LIEU_ETABLISSEMENT_SANTE_PRECISION,
   LIEU_TYPE,
   MIS_EN_CAUSE_AUTRE_NON_PRO_PRECISION,
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   MIS_EN_CAUSE_TYPE,
   PROFESSION_SOCIAL_PRECISION,
-  PROFESSION_TYPE,
   RECEPTION_TYPE,
 } from '@sirena/common/constants';
-import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import type { RootChampFragmentFragment } from '../../libs/graffle.js';
 import type { CreateRequeteFromDematSocialDto } from '../requetes/requetes.type.js';
 import { ChampMappingError, EnumNotFound } from './dematSocial.error.js';
@@ -138,9 +137,11 @@ const getFiness = (champ: RootChampFragmentFragment | RepetitionChamp) => {
   if (champ.__typename !== 'FinessChamp') {
     throw new ChampMappingError(champ, 'FinessChamp', 'Invalid mapping value');
   } else if (!champ.data) {
-    const logger = getLoggerStore();
-    logger.error(`FinessChamp data is null for champ id: ${champ.id}`);
-    return null;
+    return {
+      adresse: {
+        label: champ.stringValue || '',
+      },
+    };
   }
 
   return {
@@ -163,9 +164,9 @@ const getRpps = (champ: RootChampFragmentFragment | RepetitionChamp) => {
   if (champ.__typename !== 'RppsanteChamp') {
     throw new ChampMappingError(champ, 'RppsanteChamp', 'Invalid mapping value');
   } else if (!champ.data) {
-    const logger = getLoggerStore();
-    logger.error(`RppsanteChamp data is null for champ id: ${champ.id}`);
-    return null;
+    return {
+      nom: champ.stringValue || '',
+    };
   }
 
   const rpps = champ.data.identifiant_pp ? String(champ.data.identifiant_pp) : '';
@@ -280,13 +281,24 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
   }
   const finess = getFiness(champsById[mapping.finess.id]);
   if (finess) {
-    adresse.label = finess.adresse.label;
-    adresse.codePostal = finess.adresse.codePostal;
-    adresse.ville = finess.adresse.ville;
+    if (finess.adresse.label) {
+      adresse.label = finess.adresse.label;
+    }
+    if (finess.adresse.codePostal) {
+      adresse.codePostal = finess.adresse.codePostal;
+    }
+    if (finess.adresse.ville) {
+      adresse.ville = finess.adresse.ville;
+    }
   }
   const transportTypeId =
     getEnumIdFromLabel(mapping.transportType.options, champsById[mapping.transportType.id]?.stringValue ?? null) ??
     null;
+  const transportTypeLabel = transportTypeId
+    ? dsTransportTypeLabels[transportTypeId as keyof typeof dsTransportTypeLabels]
+    : undefined;
+  const transportSocieteValue = champsById[mapping.transportSociete.id]?.stringValue;
+  const societeTransport = [transportTypeLabel, transportSocieteValue].filter(Boolean).join(' - ');
   const lieux = {
     codePostal,
     commentaire: '',
@@ -294,11 +306,15 @@ const getLieuDeSurvenue = (champsById: MappedChamp | MappedRepetitionChamp, mapp
     lieuTypeId,
     lieuPrecision,
     transportTypeId: transportTypeId,
-    societeTransport: champsById[mapping.transportSociete.id]?.stringValue ?? '',
-    finess: finess?.code ?? '',
-    tutelle: finess?.tutelle ?? '',
-    categCode: finess?.categ_code ?? '',
-    categLib: finess?.categ_lib ?? '',
+    societeTransport,
+    finess: '',
+    tutelle: '',
+    categCode: '',
+    categLib: '',
+    ...(finess?.code ? { finess: finess.code } : {}),
+    ...(finess?.tutelle ? { tutelle: finess.tutelle } : {}),
+    ...(finess?.categ_code ? { categCode: finess.categ_code } : {}),
+    ...(finess?.categ_lib ? { categLib: finess.categ_lib } : {}),
   };
   return lieux;
 };
@@ -381,7 +397,7 @@ export const getResponsable = ({
       if (professionType === DS_PROFESSION_TYPE.NPJM) {
         return {
           misEnCauseTypeId: MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SOCIAL,
-          misEnCauseTypePrecisionId: PROFESSION_TYPE.MJPM,
+          misEnCauseTypePrecisionId: PROFESSION_SOCIAL_PRECISION.MANDATAIRE,
         };
       }
       if (professionType === DS_PROFESSION_TYPE.AUTRE) {
@@ -430,10 +446,12 @@ const getMisEnCause = (champsById: MappedChamp | MappedRepetitionChamp, mapping:
     civilite: '',
     nom: '',
     prenom: '',
-    ...(rppsChamp
-      ? { rpps: rppsChamp.rpps, civilite: rppsChamp.civilite, nom: rppsChamp.nom, prenom: rppsChamp.prenom }
-      : {}),
-    commentaire: champsById[mapping.responsableCommentaire.id]?.stringValue ?? '',
+    ...(rppsChamp?.rpps ? { rpps: rppsChamp.rpps } : {}),
+    ...(rppsChamp?.civilite ? { civilite: rppsChamp.civilite } : {}),
+    ...(rppsChamp?.nom ? { nom: rppsChamp.nom } : {}),
+    ...(rppsChamp?.prenom ? { prenom: rppsChamp.prenom } : {}),
+    autrePrecision: champsById[mapping.responsableCommentaire.id]?.stringValue ?? '',
+    commentaire: '',
   };
   return misEnCause;
 };
