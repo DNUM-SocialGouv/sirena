@@ -1504,6 +1504,24 @@ export const updateStatusRequete = async (requeteId: string, entiteId: string, s
   return requeteEntite;
 };
 
+export const createChangeLogForRequeteEntite = async (params: {
+  requeteId: string;
+  entiteId: string;
+  action: ChangeLogAction;
+  before: Prisma.JsonObject | null;
+  after: Prisma.JsonObject | null;
+  changedById: string;
+}) => {
+  await createChangeLog({
+    entity: 'RequeteEntite',
+    entityId: `${params.requeteId}:${params.entiteId}`,
+    action: params.action,
+    before: params.before,
+    after: params.after,
+    changedById: params.changedById,
+  });
+};
+
 export const updatePrioriteRequete = async (
   requeteId: string,
   entiteId: string,
@@ -1521,9 +1539,9 @@ export const updatePrioriteRequete = async (
   });
 
   if (changedById && before?.prioriteId !== requeteEntite.prioriteId) {
-    await createChangeLog({
-      entity: 'RequeteEntite',
-      entityId: `${requeteId}:${entiteId}`,
+    await createChangeLogForRequeteEntite({
+      requeteId,
+      entiteId,
       action: ChangeLogAction.UPDATED,
       before: { prioriteId: before?.prioriteId ?? null } as Prisma.JsonObject,
       after: { prioriteId: requeteEntite.prioriteId } as Prisma.JsonObject,
