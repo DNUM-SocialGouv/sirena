@@ -3592,6 +3592,7 @@ export type GetDossiersByDateQueryVariables = Exact<{
     demarcheNumber: Scalars['Int']['input'];
     createdSince?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
     after?: InputMaybe<Scalars['String']['input']>;
+    state?: InputMaybe<DossierState>;
 }>;
 export type GetDossiersByDateQuery = {
     __typename?: 'Query';

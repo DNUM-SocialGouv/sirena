@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DossierState } from '../../graphql/graphql.js';
 import { graffle } from '../../libs/graffle.js';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '../requetes/requetes.service.js';
 import { getRequetes, importRequetes } from './dematSocial.service.js';
@@ -105,6 +106,7 @@ describe('dematSocial.service.ts', () => {
         demarcheNumber: 9999,
         createdSince: '2024-01-01T00:00:00.000Z',
         after: undefined,
+        state: undefined,
       });
 
       expect(result).toEqual([{ number: 1 }, { number: 2 }]);
@@ -122,6 +124,27 @@ describe('dematSocial.service.ts', () => {
 
       const result = await getRequetes();
       expect(result).toEqual([]);
+    });
+
+    it('should pass dossier state filter when provided', async () => {
+      sendMock.mockResolvedValueOnce({
+        demarche: {
+          dossiers: {
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: [{ number: 3 }],
+          },
+        },
+      });
+
+      const result = await getRequetes(undefined, DossierState.EnInstruction);
+
+      expect(sendMock).toHaveBeenCalledWith({
+        demarcheNumber: 9999,
+        createdSince: undefined,
+        after: undefined,
+        state: DossierState.EnInstruction,
+      });
+      expect(result).toEqual([{ number: 3 }]);
     });
   });
 
@@ -229,18 +252,26 @@ describe('dematSocial.service.ts', () => {
           dematSocialId: 300000,
           createdAt: dateDepot,
           updatedAt: dateDepot,
+          createdById: null,
           commentaire: '',
           receptionDate: dateDepot,
           receptionTypeId: '1',
+          provenanceId: null,
+          provenancePrecision: null,
+          thirdPartyAccountId: null,
         })
         .mockResolvedValueOnce({
           id: '2',
           dematSocialId: 300001,
           createdAt: dateDepot,
           updatedAt: dateDepot,
+          createdById: null,
           commentaire: '',
           receptionDate: dateDepot,
           receptionTypeId: '1',
+          provenanceId: null,
+          provenancePrecision: null,
+          thirdPartyAccountId: null,
         });
 
       const result = await importRequetes(new Date('2024-01-01'));

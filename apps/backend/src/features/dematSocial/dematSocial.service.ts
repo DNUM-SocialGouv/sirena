@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import * as Sentry from '@sentry/node';
 import { envVars } from '../../config/env.js';
+import { DossierState } from '../../graphql/graphql.js';
 import { serializeError } from '../../helpers/errors.js';
 import { isPrismaUniqueConstraintError, retryWithBackoff } from '../../helpers/retry.js';
 import { abortControllerStorage, getLoggerStore, getSentryStore } from '../../libs/asyncLocalStorage.js';
@@ -33,7 +34,7 @@ export const updateInstruction = async (id: string) => {
   return await graffle.gql(ChangerInstructionDocument).send({ dossierId, instructeurId, disableNotification: true });
 };
 
-export const getRequetes = async (createdSince?: Date) => {
+export const getRequetes = async (createdSince?: Date, state?: DossierState) => {
   const abortController = abortControllerStorage.getStore();
   const allDossiers = [];
   let hasNextPage = true;
@@ -47,6 +48,7 @@ export const getRequetes = async (createdSince?: Date) => {
         demarcheNumber: envVars.DEMAT_SOCIAL_API_DIRECTORY,
         createdSince: createdSince?.toISOString(),
         after: cursor,
+        state,
       });
 
     const nodes = data?.demarche.dossiers?.nodes?.filter((node) => !!node) || [];
@@ -318,7 +320,8 @@ export const importRequetes = async (createdSince?: Date) => {
     logger.info('Importing all requetes');
   }
 
-  const dossiers = await getRequetes(createdSince);
+  const dossiers = await getRequetes(createdSince, DossierState.EnConstruction);
+  console.log(dossiers);
   logger.info({ totalDossiers: dossiers.length }, 'Found dossiers to process');
   let i = 0;
   let errorCount = 0;
