@@ -10,6 +10,7 @@ import {
 } from '../../libs/prisma.js';
 import {
   closeRequeteForEntite,
+  createChangeLogForRequeteEntite,
   enrichSituationWithTraitementDesFaits,
   getOtherEntitesAffected,
   getRequeteEntiteById,
@@ -58,6 +59,7 @@ vi.mock('../../libs/minio.js', () => ({
 
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { createChangeLog } from '../changelog/changelog.service.js';
+import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
@@ -102,6 +104,9 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
     commentaire: 'Commentaire',
     receptionDate: new Date(),
     receptionTypeId: 'receptionTypeId',
+    provenanceId: null,
+    provenancePrecision: null,
+    thirdPartyAccountId: null,
     situations: [],
   },
   requeteEtape: [
@@ -717,6 +722,9 @@ describe('requetesEntite.service', () => {
         commentaire: '',
         receptionDate: new Date(),
         receptionTypeId: 'EMAIL',
+        provenanceId: null,
+        provenancePrecision: null,
+        thirdPartyAccountId: null,
         declarant: {
           ...mockDeclarant,
           identite: mockIdentite,
@@ -788,6 +796,9 @@ describe('requetesEntite.service', () => {
         commentaire: '',
         receptionDate: new Date(),
         receptionTypeId: 'EMAIL',
+        provenanceId: null,
+        provenancePrecision: null,
+        thirdPartyAccountId: null,
         declarant: {
           ...mockDeclarant,
           identite: mockIdentite,
@@ -863,6 +874,9 @@ describe('requetesEntite.service', () => {
         commentaire: '',
         receptionDate: new Date(),
         receptionTypeId: 'EMAIL',
+        provenanceId: null,
+        provenancePrecision: null,
+        thirdPartyAccountId: null,
         declarant: {
           ...mockDeclarant,
           identite: mockIdentite,
@@ -894,6 +908,9 @@ describe('requetesEntite.service', () => {
         commentaire: '',
         receptionDate: new Date(),
         receptionTypeId: 'EMAIL',
+        provenanceId: null,
+        provenancePrecision: null,
+        thirdPartyAccountId: null,
         declarant: null,
       } as unknown as Requete;
 
@@ -1318,6 +1335,76 @@ describe('requetesEntite.service', () => {
         ),
       };
     };
+
+    it('should persist adresse.rue and adresse.numero when updating a situation', async () => {
+      const situationId = 'sit1';
+      const requeteId = 'req1';
+      const userTopEntiteId = 'root1';
+      const mockSituation = { id: situationId, requeteId };
+
+      const mockTx = createMockTx({
+        situation: {
+          findUnique: vi.fn().mockResolvedValue(mockSituation),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        situationEntite: {
+          findMany: vi.fn().mockResolvedValue([]),
+        },
+        requete: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: requeteId,
+            situations: [],
+          }),
+        },
+      });
+
+      vi.mocked(getEntiteAscendanteInfo).mockResolvedValue({ entiteId: userTopEntiteId, level: 1 });
+
+      const mockRequeteForUpdate = {
+        id: requeteId,
+        situations: [{ id: situationId, faits: [] }],
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>;
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteForUpdate);
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        return cb(mockTx as unknown as Parameters<Parameters<typeof prisma.$transaction>[0]>[0]);
+      });
+
+      await updateRequeteSituation(
+        requeteId,
+        situationId,
+        {
+          lieuDeSurvenue: {
+            lieuType: 'DOMICILE',
+            adresse: {
+              numero: '12',
+              rue: 'Rue du Test',
+            },
+          },
+          traitementDesFaits: {
+            entites: [{ entiteId: 'ent1' }],
+          },
+        } as Parameters<typeof updateRequeteSituation>[2],
+        userTopEntiteId,
+      );
+
+      expect(mockTx.situation.update).toHaveBeenCalledWith({
+        where: { id: situationId },
+        data: expect.objectContaining({
+          lieuDeSurvenue: {
+            update: expect.objectContaining({
+              adresse: {
+                upsert: {
+                  create: expect.objectContaining({ numero: '12', rue: 'Rue du Test' }),
+                  update: expect.objectContaining({ numero: '12', rue: 'Rue du Test' }),
+                },
+              },
+            }),
+          },
+        }),
+      });
+    });
 
     it('should delete user situationEntites when no entities are provided but other entities exist', async () => {
       const situationId = 'sit1';
@@ -2411,6 +2498,30 @@ describe('requetesEntite.service', () => {
       await updatePrioriteRequete('req123', 'ent123', 'HAUTE');
 
       expect(vi.mocked(createChangeLog)).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createChangeLogForRequeteEntite', () => {
+    it('should create changelog with requete/entite composite entityId', async () => {
+      vi.mocked(createChangeLog).mockReset();
+
+      await createChangeLogForRequeteEntite({
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        action: ChangeLogAction.UPDATED,
+        before: { statutId: 'EN_COURS' },
+        after: { statutId: 'CLOTUREE' },
+        changedById: 'user123',
+      });
+
+      expect(vi.mocked(createChangeLog)).toHaveBeenCalledWith({
+        entity: 'RequeteEntite',
+        entityId: 'req123:ent123',
+        action: 'UPDATED',
+        before: { statutId: 'EN_COURS' },
+        after: { statutId: 'CLOTUREE' },
+        changedById: 'user123',
+      });
     });
   });
 });

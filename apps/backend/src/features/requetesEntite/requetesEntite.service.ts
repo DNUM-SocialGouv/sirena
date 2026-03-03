@@ -28,7 +28,7 @@ import {
   mapSituationFaitToPrismaCreate,
   mapSituationToPrismaCreate,
 } from './requetesEntite.mapper.js';
-import type { GetRequetesEntiteQuery } from './requetesEntite.type.js';
+import type { CreateChangeLogForRequeteEntiteDto, GetRequetesEntiteQuery } from './requetesEntite.type.js';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
 type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
@@ -669,18 +669,22 @@ export const updateRequeteParticipant = async (
 };
 
 const buildAdresseUpdate = (adresse: NonNullable<SituationInput['lieuDeSurvenue']>['adresse']) => {
-  const hasAdresseData = adresse?.label || adresse?.codePostal || adresse?.ville;
+  const hasAdresseData = adresse?.label || adresse?.numero || adresse?.rue || adresse?.codePostal || adresse?.ville;
 
   if (hasAdresseData) {
     return {
       upsert: {
         create: {
           label: cleanNullOrEmpty(adresse?.label),
+          numero: cleanNullOrEmpty(adresse?.numero),
+          rue: cleanNullOrEmpty(adresse?.rue),
           codePostal: cleanNullOrEmpty(adresse?.codePostal),
           ville: cleanNullOrEmpty(adresse?.ville),
         },
         update: {
           label: cleanNullOrEmpty(adresse?.label),
+          numero: cleanNullOrEmpty(adresse?.numero),
+          rue: cleanNullOrEmpty(adresse?.rue),
           codePostal: cleanNullOrEmpty(adresse?.codePostal),
           ville: cleanNullOrEmpty(adresse?.ville),
         },
@@ -690,8 +694,8 @@ const buildAdresseUpdate = (adresse: NonNullable<SituationInput['lieuDeSurvenue'
 
   return {
     upsert: {
-      create: { label: '', codePostal: '', ville: '' },
-      update: { label: '', codePostal: '', ville: '' },
+      create: { label: '', numero: '', rue: '', codePostal: '', ville: '' },
+      update: { label: '', numero: '', rue: '', codePostal: '', ville: '' },
     },
   };
 };
