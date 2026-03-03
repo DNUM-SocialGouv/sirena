@@ -289,7 +289,9 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 {getLieuPrecisionLabel(situation.lieuDeSurvenue.lieuType?.id, situation.lieuDeSurvenue.lieuPrecision)}
               </p>
             )}
-            {situation?.lieuDeSurvenue?.adresse?.label &&
+            {(situation?.lieuDeSurvenue?.adresse?.label ||
+              (situation?.lieuDeSurvenue?.lieuTypeId === LIEU_TYPE.DOMICILE &&
+                situation?.lieuDeSurvenue?.adresse?.rue)) &&
               (ETABLISSEMENTS.includes(situation.lieuDeSurvenue.lieuTypeId || '') ? (
                 <>
                   <p className={fr.cx('fr-mb-1w')}>
@@ -303,7 +305,8 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 </>
               ) : (
                 <p className={fr.cx('fr-mb-1w')}>
-                  <span>Adresse :</span> {situation.lieuDeSurvenue.adresse.label}
+                  <span>Adresse :</span>{' '}
+                  {situation.lieuDeSurvenue.adresse.rue || situation.lieuDeSurvenue.adresse.label}
                 </p>
               ))}
             {situation?.lieuDeSurvenue?.adresse?.codePostal && situation?.lieuDeSurvenue?.adresse?.ville && (
