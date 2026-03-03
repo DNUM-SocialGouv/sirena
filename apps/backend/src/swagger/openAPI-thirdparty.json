@@ -1378,20 +1378,44 @@
                                 "minItems": 1,
                                 "type": "array",
                                 "items": {
-                                  "type": "string"
+                                  "type": "string",
+                                  "enum": [
+                                    "PROBLEME_COMPORTEMENTAL",
+                                    "PROBLEME_FACTURATION",
+                                    "PROBLEME_LOCAUX",
+                                    "NON_RESPECT_DROITS",
+                                    "PROBLEME_ORGANISATION",
+                                    "PROBLEME_INFORMATION",
+                                    "PROBLEME_QUALITE_SOINS",
+                                    "AUTRE"
+                                  ]
                                 }
                               },
                               "consequences": {
                                 "type": "array",
                                 "items": {
-                                  "type": "string"
+                                  "type": "string",
+                                  "enum": [
+                                    "SANTE",
+                                    "DROITS",
+                                    "BESOINS",
+                                    "SOCIAL",
+                                    "AUCUNE"
+                                  ]
                                 }
                               },
                               "maltraitanceTypes": {
                                 "minItems": 1,
                                 "type": "array",
                                 "items": {
-                                  "type": "string"
+                                  "type": "string",
+                                  "enum": [
+                                    "NEGLIGENCES",
+                                    "VIOLENCES",
+                                    "MATERIELLE_FINANCIERE",
+                                    "SEXUELLE",
+                                    "NON"
+                                  ]
                                 }
                               },
                               "dateDebut": {

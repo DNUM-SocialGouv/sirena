@@ -1,10 +1,13 @@
 import {
   AGE,
   CIVILITE,
+  CONSEQUENCE,
   DS_LIEU_TYPE,
   DS_PROFESSION_DOMICILE_TYPE,
   DS_PROFESSION_TYPE,
   LIEN_VICTIME,
+  MALTRAITANCE_TYPE,
+  MOTIF,
   TRANSPORT_TYPE,
 } from '@sirena/common/constants';
 import { z } from 'zod';
@@ -145,9 +148,36 @@ const DemarchesEngageesSchema = z
 // Fait Schema
 const FaitSchema = z
   .object({
-    motifsDeclaratifs: z.array(z.string()).min(1, 'At least one motif declaratif is required'),
-    consequences: z.array(z.string()).optional(),
-    maltraitanceTypes: z.array(z.string()).min(1, 'At least one maltraitance type is required'),
+    motifsDeclaratifs: z
+      .array(
+        z.enum([
+          MOTIF.PROBLEME_COMPORTEMENTAL,
+          MOTIF.PROBLEME_FACTURATION,
+          MOTIF.PROBLEME_LOCAUX,
+          MOTIF.NON_RESPECT_DROITS,
+          MOTIF.PROBLEME_ORGANISATION,
+          MOTIF.PROBLEME_INFORMATION,
+          MOTIF.PROBLEME_QUALITE_SOINS,
+          MOTIF.AUTRE,
+        ]),
+      )
+      .min(1, 'At least one motif declaratif is required'),
+    consequences: z
+      .array(
+        z.enum([CONSEQUENCE.SANTE, CONSEQUENCE.DROITS, CONSEQUENCE.BESOINS, CONSEQUENCE.SOCIAL, CONSEQUENCE.AUCUNE]),
+      )
+      .optional(),
+    maltraitanceTypes: z
+      .array(
+        z.enum([
+          MALTRAITANCE_TYPE.NEGLIGENCES,
+          MALTRAITANCE_TYPE.VIOLENCES,
+          MALTRAITANCE_TYPE.MATERIELLE_FINANCIERE,
+          MALTRAITANCE_TYPE.SEXUELLE,
+          MALTRAITANCE_TYPE.NON,
+        ]),
+      )
+      .min(1, 'At least one maltraitance type is required'),
     dateDebut: optionalDatetime,
     dateFin: optionalDatetime,
     commentaire: z.string().optional(),
