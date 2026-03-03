@@ -28,7 +28,7 @@ import {
   mapSituationFaitToPrismaCreate,
   mapSituationToPrismaCreate,
 } from './requetesEntite.mapper.js';
-import type { CreateChangeLogForRequeteEntiteDto, GetRequetesEntiteQuery } from './requetesEntite.type.js';
+import type { GetRequetesEntiteQuery } from './requetesEntite.type.js';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
 type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
