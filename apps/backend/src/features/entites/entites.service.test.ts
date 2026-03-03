@@ -157,8 +157,16 @@ describe('entites.service', () => {
           directionServiceId: 'dir1',
           directionServiceName: 'Direction 1',
           chain: [
-            expect.objectContaining({ id: 'root1', nomComplet: 'Root 1', label: 'ROOT' }),
-            expect.objectContaining({ id: 'dir1', nomComplet: 'Direction 1', label: 'DIR1' }),
+            expect.objectContaining({
+              id: 'root1',
+              nomComplet: 'Root 1',
+              label: 'ROOT',
+            }),
+            expect.objectContaining({
+              id: 'dir1',
+              nomComplet: 'Direction 1',
+              label: 'DIR1',
+            }),
           ],
         },
       ]);
@@ -236,7 +244,9 @@ describe('entites.service', () => {
           ],
         },
       });
-      expect(prisma.entite.findMany).toHaveBeenNthCalledWith(2, { where: { emailDomain: '@domain.fr' } });
+      expect(prisma.entite.findMany).toHaveBeenNthCalledWith(2, {
+        where: { emailDomain: '@domain.fr' },
+      });
       expect(result).toEqual(mockEntite2);
     });
 
@@ -245,7 +255,9 @@ describe('entites.service', () => {
 
       const result = await getEntiteForUser(null, 'john@domain.fr');
       expect(prisma.entite.findMany).toHaveBeenCalledTimes(1);
-      expect(prisma.entite.findMany).toHaveBeenCalledWith({ where: { emailDomain: '@domain.fr' } });
+      expect(prisma.entite.findMany).toHaveBeenCalledWith({
+        where: { emailDomain: '@domain.fr' },
+      });
       expect(result).toEqual(mockEntite2);
     });
 
@@ -266,6 +278,58 @@ describe('entites.service', () => {
       const result = await getEntiteForUser(null, 'invalid-email');
       expect(prisma.entite.findMany).not.toHaveBeenCalled();
       expect(result).toBeNull();
+    });
+
+    it('should match entite via slash-segment when full OU does not match but a segment does', async () => {
+      vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([]).mockResolvedValueOnce([mockEntite1]);
+
+      const result = await getEntiteForUser('ARS-NORMANDIE/SG/PAJ', 'john@domain.fr');
+
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(2);
+      expect(prisma.entite.findMany).toHaveBeenNthCalledWith(2, {
+        where: {
+          OR: [
+            { organizationalUnit: 'ARS-NORMANDIE' },
+            { organizationalUnit: { startsWith: 'ARS-NORMANDIE,' } },
+            { organizationalUnit: { endsWith: ',ARS-NORMANDIE' } },
+            { organizationalUnit: { contains: ',ARS-NORMANDIE,' } },
+            { organizationalUnit: 'SG' },
+            { organizationalUnit: { startsWith: 'SG,' } },
+            { organizationalUnit: { endsWith: ',SG' } },
+            { organizationalUnit: { contains: ',SG,' } },
+            { organizationalUnit: 'PAJ' },
+            { organizationalUnit: { startsWith: 'PAJ,' } },
+            { organizationalUnit: { endsWith: ',PAJ' } },
+            { organizationalUnit: { contains: ',PAJ,' } },
+          ],
+        },
+      });
+      expect(result).toEqual(mockEntite1);
+    });
+
+    it('should fallback to email when slash-segment matches multiple entites', async () => {
+      const anotherEntite = { ...mockEntite1, id: '3', label: 'C' };
+      vi.mocked(prisma.entite.findMany)
+        .mockResolvedValueOnce([]) // full OU: no match
+        .mockResolvedValueOnce([mockEntite1, anotherEntite]) // segment query: multiple matches
+        .mockResolvedValueOnce([mockEntite2]); // email domain: 1 match
+
+      const result = await getEntiteForUser('ARS-NORMANDIE/SG/PAJ', 'john@domain.fr');
+
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(3);
+      expect(result).toEqual(mockEntite2);
+    });
+
+    it('should fallback to email when slash-segment matches no entite', async () => {
+      vi.mocked(prisma.entite.findMany)
+        .mockResolvedValueOnce([]) // full OU: no match
+        .mockResolvedValueOnce([]) // segment query: no match
+        .mockResolvedValueOnce([mockEntite2]); // email domain: 1 match
+
+      const result = await getEntiteForUser('ARS-NORMANDIE/SG/PAJ', 'john@domain.fr');
+
+      expect(prisma.entite.findMany).toHaveBeenCalledTimes(3);
+      expect(result).toEqual(mockEntite2);
     });
   });
 
@@ -290,7 +354,12 @@ describe('entites.service', () => {
       vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([mockEntite]);
       vi.mocked(prisma.entite.count).mockResolvedValueOnce(1);
 
-      const result = await getEntites(null, { sort: 'nomComplet', order: 'asc', offset: 0, search: '' });
+      const result = await getEntites(null, {
+        sort: 'nomComplet',
+        order: 'asc',
+        offset: 0,
+        search: '',
+      });
 
       expect(prisma.entite.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -400,8 +469,14 @@ describe('entites.service', () => {
       expect(chain[1].id).toBe('1');
 
       expect(prisma.entite.findUnique).toHaveBeenCalledTimes(2);
-      expect(prisma.entite.findUnique).toHaveBeenCalledWith({ where: { id: '1' }, select: expect.anything() });
-      expect(prisma.entite.findUnique).toHaveBeenCalledWith({ where: { id: '2' }, select: expect.anything() });
+      expect(prisma.entite.findUnique).toHaveBeenCalledWith({
+        where: { id: '1' },
+        select: expect.anything(),
+      });
+      expect(prisma.entite.findUnique).toHaveBeenCalledWith({
+        where: { id: '2' },
+        select: expect.anything(),
+      });
     });
 
     it('should return empty array if nothing found', async () => {
