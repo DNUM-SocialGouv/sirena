@@ -18,6 +18,26 @@ export const getEntiteForUser = async (organizationalUnit: string | null, email:
     if (entitesByOrganizationalUnit.length === 1) {
       return entitesByOrganizationalUnit[0];
     }
+
+    const segments = organizationalUnitTrimmed
+      .split('/')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (segments.length > 1) {
+      const candidates = await prisma.entite.findMany({
+        where: {
+          OR: segments.flatMap((segment) => [
+            { organizationalUnit: segment },
+            { organizationalUnit: { startsWith: `${segment},` } },
+            { organizationalUnit: { endsWith: `,${segment}` } },
+            { organizationalUnit: { contains: `,${segment},` } },
+          ]),
+        },
+      });
+      if (candidates.length === 1) {
+        return candidates[0];
+      }
+    }
   }
 
   const trimmedEmail = email.trim();
