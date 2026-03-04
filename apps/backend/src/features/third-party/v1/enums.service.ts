@@ -21,7 +21,7 @@ export const getLienVictimeEnums = async () => await prisma.lienVictimeEnum.find
 export const getMisEnCauseTypeEnums = () =>
   Object.entries(dsMisEnCauseTypeLabels).map(([key, value]) => ({ key, value }));
 
-export const getMisEnCausePrecisionsTypeEnums = async () => ({
+export const getMisEnCausePrecisionsTypeEnums = () => ({
   profession: Object.entries(dsProfessionTypeLabels).map(([key, value]) => ({ key, value })),
   professionDomicile: Object.entries(dsProfessionDomicileTypeLabels).map(([key, value]) => ({ key, value })),
 });
