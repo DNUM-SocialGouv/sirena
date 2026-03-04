@@ -1445,6 +1445,19 @@ export const closeRequeteForEntite = async (
     };
   });
 
+  await createChangeLogForRequeteEntite({
+    requeteId,
+    entiteId,
+    action: ChangeLogAction.UPDATED,
+    before: { statutId: requeteEntite.statutId } as Prisma.JsonObject,
+    after: {
+      statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+      clotureReasonIds: uniqueReasonIds,
+      precision: precision?.trim() || null,
+    } as Prisma.JsonObject,
+    changedById: authorId,
+  });
+
   // Create changelogs for the created step and note
   await createRequeteEtapeNoteChangelog(
     result.noteId,

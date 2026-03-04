@@ -924,6 +924,10 @@ describe('requetesEntite.service', () => {
   });
 
   describe('closeRequeteForEntite', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
     it('should throw error if requeteEntite is not found', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(null);
       await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123')).rejects.toThrow(
@@ -1085,6 +1089,19 @@ describe('requetesEntite.service', () => {
         etape: mockEtape,
         note: mockNote,
       });
+
+      expect(createChangeLog).toHaveBeenCalledWith({
+        entity: 'RequeteEntite',
+        entityId: 'req123:ent123',
+        action: ChangeLogAction.UPDATED,
+        before: { statutId: 'EN_COURS' },
+        after: {
+          statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+          clotureReasonIds: ['reason123'],
+          precision: 'Test precision',
+        },
+        changedById: 'user123',
+      });
     });
 
     it('should successfully close requete without precision and files', async () => {
@@ -1137,6 +1154,15 @@ describe('requetesEntite.service', () => {
         etape: mockEtape,
         note: mockNote,
       });
+
+      expect(createChangeLog).toHaveBeenCalledWith({
+        entity: 'RequeteEntite',
+        entityId: 'req123:ent123',
+        action: ChangeLogAction.UPDATED,
+        before: { statutId: 'EN_COURS' },
+        after: { statutId: REQUETE_STATUT_TYPES.CLOTUREE, clotureReasonIds: ['reason123'], precision: null },
+        changedById: 'user123',
+      });
     });
 
     it('should successfully close requete with precision but no files', async () => {
@@ -1187,6 +1213,19 @@ describe('requetesEntite.service', () => {
         noteId: 'note123',
         etape: mockEtape,
         note: mockNote,
+      });
+
+      expect(createChangeLog).toHaveBeenCalledWith({
+        entity: 'RequeteEntite',
+        entityId: 'req123:ent123',
+        action: ChangeLogAction.UPDATED,
+        before: { statutId: 'EN_COURS' },
+        after: {
+          statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+          clotureReasonIds: ['reason123'],
+          precision: 'Test precision',
+        },
+        changedById: 'user123',
       });
     });
 
