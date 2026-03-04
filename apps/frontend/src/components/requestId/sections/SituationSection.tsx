@@ -120,7 +120,7 @@ const Affectation = ({ entiteName, services }: { entiteName: string; services: s
   return (
     <ul className="fr-tags-group">
       <li>
-        <p className="fr-tag fr-tag--sm color-purple-glycine">{entiteName}</p>
+        <p className="fr-tag fr-tag--sm color-pink-tuile">{entiteName}</p>
       </li>
       {services.length !== 0 && (
         <li>
