@@ -55,7 +55,7 @@
     }
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.9",
+    "@hono/node-server": "^1.19.11",
     "@hono/standard-validator": "^0.2.2",
     "@prisma/client": "^6.19.2",
     "@scalar/hono-api-reference": "^0.9.44",
