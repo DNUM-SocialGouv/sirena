@@ -28,7 +28,7 @@ import {
   mapSituationFaitToPrismaCreate,
   mapSituationToPrismaCreate,
 } from './requetesEntite.mapper.js';
-import type { GetRequetesEntiteQuery } from './requetesEntite.type.js';
+import type { CreateChangeLogForRequeteEntiteDto, GetRequetesEntiteQuery } from './requetesEntite.type.js';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
 type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
@@ -1517,21 +1517,21 @@ export const updateStatusRequete = async (requeteId: string, entiteId: string, s
   return requeteEntite;
 };
 
-export const createChangeLogForRequeteEntite = async (params: {
-  requeteId: string;
-  entiteId: string;
-  action: ChangeLogAction;
-  before: Prisma.JsonObject | null;
-  after: Prisma.JsonObject | null;
-  changedById: string;
-}) => {
+export const createChangeLogForRequeteEntite = async ({
+  requeteId,
+  entiteId,
+  action,
+  before,
+  after,
+  changedById,
+}: CreateChangeLogForRequeteEntiteDto) => {
   await createChangeLog({
     entity: 'RequeteEntite',
-    entityId: `${params.requeteId}:${params.entiteId}`,
-    action: params.action,
-    before: params.before,
-    after: params.after,
-    changedById: params.changedById,
+    entityId: `${requeteId}:${entiteId}`,
+    action,
+    before,
+    after,
+    changedById,
   });
 };
 

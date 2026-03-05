@@ -55,6 +55,7 @@ import {
 } from './requetesEntite.schema.js';
 import {
   closeRequeteForEntite,
+  createChangeLogForRequeteEntite,
   createRequeteEntite,
   createRequeteSituation,
   getOtherEntitesAffected,
@@ -340,6 +341,15 @@ const app = factoryWithLogs
     }
 
     const updated = await updateStatusRequete(id, topEntiteId, statutId);
+
+    await createChangeLogForRequeteEntite({
+      requeteId: id,
+      entiteId: topEntiteId,
+      action: ChangeLogAction.UPDATED,
+      before: { statutId: requeteEntite.statutId },
+      after: { statutId },
+      changedById: userId,
+    });
 
     logger.info({ requeteId: id, userId, statutId }, 'Statut updated successfully');
     return c.json({ data: updated });
