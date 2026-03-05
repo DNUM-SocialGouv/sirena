@@ -153,6 +153,8 @@ const MIS_EN_CAUSE_RPPS: string[] = [
 
 export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps) {
   const misEnCauseType = formData.misEnCause?.misEnCauseType;
+  const misEnCausePrecisions =
+    misEnCauseType && misEnCauseType in precisions ? precisions[misEnCauseType as MisEnCauseTypeSansAutreEtNpjm] : [];
   const hasCompleteIdentityFromRpps = Boolean(
     formData.misEnCause?.rpps &&
       formData.misEnCause?.civilite &&
@@ -204,7 +206,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
             </Select>
           </div>
 
-          {misEnCauseType && (
+          {misEnCauseType && misEnCausePrecisions.length > 0 && (
             <div className="fr-col-12 fr-col-md-6">
               <Select
                 label="Précision"
@@ -218,7 +220,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                 }}
               >
                 <option value="">Sélectionner une option</option>
-                {precisions[misEnCauseType as MisEnCauseTypeSansAutreEtNpjm]?.map(({ key, value }) => (
+                {misEnCausePrecisions.map(({ key, value }) => (
                   <option key={key} value={key}>
                     {value}
                   </option>
@@ -226,24 +228,6 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
               </Select>
             </div>
           )}
-
-          <div className="fr-col-12">
-            <div className="fr-col-12">
-              <Input
-                label="Précisions supplémentaires"
-                textArea
-                nativeTextAreaProps={{
-                  value: formData.misEnCause?.autrePrecision || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      misEnCause: { ...prev.misEnCause, autrePrecision: e.target.value },
-                    })),
-                  rows: 3,
-                }}
-              />
-            </div>
-          </div>
 
           {MIS_EN_CAUSE_RPPS.includes(misEnCauseType || '') && (
             <>
@@ -337,6 +321,24 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
           {misEnCauseType === MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE && (
             <MisEnCauseIdentityFields formData={formData} isSaving={isSaving} setFormData={setFormData} />
           )}
+        </div>
+
+        <div className="fr-col-12">
+          <div className="fr-col-12">
+            <Input
+              label="Précisons supplémentaires concernant le mis en cause"
+              textArea
+              nativeTextAreaProps={{
+                value: formData.misEnCause?.autrePrecision || '',
+                onChange: (e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    misEnCause: { ...prev.misEnCause, autrePrecision: e.target.value },
+                  })),
+                rows: 1,
+              }}
+            />
+          </div>
         </div>
       </fieldset>
     </div>

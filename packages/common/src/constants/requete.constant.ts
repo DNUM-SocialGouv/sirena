@@ -55,7 +55,7 @@ export const misEnCauseTypeLabels: Record<MisEnCauseType, string> = {
   PROFESSIONNEL_SANTE:
     'Professionnel de santé (médecin généraliste, spécialiste, dentiste, kinésithérapeute, orthophoniste, infirmier, aide-soignant...)',
   PROFESSIONNEL_SOCIAL: 'Professionnel social (éducateur, assistant social...)',
-  ETABLISSEMENT: 'Un établissement ou un service',
+  ETABLISSEMENT: 'Établissement ou un service',
   AUTRE_PROFESSIONNEL: 'Autre professionnel',
 };
 
