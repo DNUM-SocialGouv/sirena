@@ -11,11 +11,14 @@ const userChangelogMiddleware = ({ action }: UserChangelogMiddleware) =>
   createChangelogMiddleware<User>({
     entity: 'User',
     action,
-    getEntityById: (c) => {
-      const id = c.req.param('id');
-      return getUserById(id, null, null);
+    getEntityById: async (c) => {
+      const id = c.req.param('id') ?? null;
+      if (!id) {
+        return null;
+      }
+      return await getUserById(id, null, null);
     },
-    getEntityId: (c) => c.req.param('id'),
+    getEntityId: (c) => c.req.param('id') ?? null,
     trackedFields: ['roleId', 'entiteId', 'statutId'],
   });
 

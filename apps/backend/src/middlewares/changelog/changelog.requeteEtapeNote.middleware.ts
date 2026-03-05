@@ -15,8 +15,8 @@ const requeteEtapesNotesChangelogMiddleware = ({ action }: requeteEtapesNotesCha
       let id: string | null = null;
       if (c.get('changelogId')) {
         id = c.get('changelogId');
-      } else if (c.req.param('id')) {
-        id = c.req.param('id');
+      } else {
+        id = c.req.param('id') ?? null;
       }
       if (id) {
         return await getNoteById(id);
@@ -27,7 +27,7 @@ const requeteEtapesNotesChangelogMiddleware = ({ action }: requeteEtapesNotesCha
       if (c.get('changelogId')) {
         return c.get('changelogId');
       }
-      return c.req.param('id');
+      return c.req.param('id') ?? null;
     },
     trackedFields: ['texte', 'authorId'],
   });
