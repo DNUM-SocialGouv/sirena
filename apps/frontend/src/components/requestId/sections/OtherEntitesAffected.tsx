@@ -20,8 +20,8 @@ export const OtherEntitiesAffected = () => {
 
   return (
     <div>
-      <span>{hasOtherEntitiesAffected ? 'Autres entités affectées' : 'Aucune autre entité affectée'}</span>
-      {hasOtherEntitiesAffected && (
+      <h2 className="fr-text--lg fr-mb-2w fr-text--bold">Autres entités affectées</h2>
+      {hasOtherEntitiesAffected ? (
         <div className={styles['other-entities-affected-container']}>
           {otherEntites.map((entity) => (
             <div className={styles['other-entities-affected']} key={entity.id}>
@@ -31,6 +31,8 @@ export const OtherEntitiesAffected = () => {
             </div>
           ))}
         </div>
+      ) : (
+        <span className="fr-text--sm">Aucune autre entité affectée</span>
       )}
     </div>
   );
