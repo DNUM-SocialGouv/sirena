@@ -78,6 +78,11 @@ body {
   background: var(--light-options-illustration-color-925-default-purple-glycine-925, #fddbfa);
 }
 
+.color-pink-tuile {
+  color: var(--light-options-illustration-color-sun-default-pink-tuile-sun-425, #a94645);
+  background: var(--light-options-illustration-color-950-default-pink-tuile-950, #fee9e7);
+}
+
 .bold {
   font-weight: 700;
 }
