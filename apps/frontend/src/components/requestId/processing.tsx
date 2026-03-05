@@ -1,6 +1,6 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { type EntiteType, REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -10,7 +10,6 @@ import { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { type useRequeteDetails, useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
-import { EntiteTag } from '../common/EntiteTag';
 import { CloseRequeteModal, type CloseRequeteModalRef } from './processing/CloseRequeteModal';
 import { CreateNoteDrawer, type CreateNoteDrawerRef } from './processing/CreateNoteDrawer';
 import { EditNoteDrawer, type EditNoteDrawerRef } from './processing/EditNoteDrawer';
@@ -136,22 +135,22 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 />
               )}
               <div className="fr-grid-row fr-grid-row--middle fr-mb-3w">
-                <div className="fr-col">
+                <div
+                  className="fr-col"
+                  style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <h6 className="fr-mb-0">Traitement</h6>
                   {requestQuery.data && (
-                    <EntiteTag
-                      entiteTypeId={requestQuery.data?.entite.entiteTypeId as EntiteType}
-                      label={requestQuery.data?.entite.nomComplet}
-                    >
-                      {subAdministrativeEntites.length > 0 && (
-                        <div className={`${styles['entite-sub-list']} fr-text--xs fr-text--grey`}>
-                          {subAdministrativeEntites.map((entite) => (
-                            <span className={styles['entite-sub-item']} key={entite.directionServiceId}>
-                              {entite.directionServiceName}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </EntiteTag>
+                    <>
+                      <p className="fr-tag fr-tag--sm color-pink-tuile fr-mb-0">
+                        {requestQuery.data.entite.nomComplet}
+                      </p>
+                      {subAdministrativeEntites.map((entite) => (
+                        <span key={entite.directionServiceId} className="fr-tag fr-tag--sm fr-tag-default">
+                          {entite.directionServiceName}
+                        </span>
+                      ))}
+                    </>
                   )}
                 </div>
                 {requestId && canEdit && !requestQuery.error && (
