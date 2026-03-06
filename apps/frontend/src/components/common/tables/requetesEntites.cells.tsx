@@ -195,6 +195,9 @@ const getMisEnCauseDisplayValue = (
       return identity || precisionLabel || typeLabel;
 
     case MIS_EN_CAUSE_TYPE.ETABLISSEMENT: {
+      if (misEnCause?.nomService) {
+        return misEnCause.nomService;
+      }
       const isEtablissementLieu = ETABLISSEMENT_LIEU_TYPES.includes(lieuDeSurvenue?.lieuTypeId || '');
       const establishmentName = isEtablissementLieu ? lieuDeSurvenue?.adresse?.label : undefined;
       return establishmentName || precisionLabel || typeLabel;
