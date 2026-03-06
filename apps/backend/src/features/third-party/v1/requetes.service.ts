@@ -45,6 +45,7 @@ export const createRequeteFromThirdParty = async ({
             },
             commentaire: declarant.commentaire ?? '',
             estHandicapee: null,
+            isTuteur: declarant.isTuteur ?? null,
             estVictime: declarant.estVictime ?? null,
             veutGarderAnonymat: declarant.veutGarderAnonymat ?? null,
             lienVictime: declarant.lienVictimeId ? { connect: { id: declarant.lienVictimeId } } : undefined,

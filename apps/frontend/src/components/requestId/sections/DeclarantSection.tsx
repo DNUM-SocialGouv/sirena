@@ -47,6 +47,7 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
     !!declarantIdentite?.telephone ||
     !!declarant?.commentaire ||
     declarant?.veutGarderAnonymat !== null ||
+    !!declarant?.isTuteur ||
     !!declarant?.estSignalementProfessionnel;
 
   const renderSummary = () => {
@@ -82,6 +83,7 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
     const hasComplementaryInfo =
       !!declarant?.commentaire ||
       (declarant?.veutGarderAnonymat !== null && declarant?.veutGarderAnonymat !== undefined) ||
+      !!declarant?.isTuteur ||
       !!declarant?.estSignalementProfessionnel;
 
     if (!hasIdentitySection && !hasAddressSection && !hasContactSection && !hasComplementaryInfo) {
@@ -143,6 +145,7 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
                   (EIG)
                 </li>
               )}
+              {declarant.isTuteur && <li>Le déclarant est curateur ou tuteur de la personne concernée</li>}
             </ul>
             {declarant.commentaire && <p className="fr-mb-2w">{declarant.commentaire}</p>}
           </>
