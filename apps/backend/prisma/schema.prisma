@@ -405,6 +405,10 @@ model MisEnCause {
   prenom         String  @default("")
   commentaire    String  @default("")
   autrePrecision String  @default("")
+  finess         String?
+  nomService     String?
+  codePostal     String?
+  ville          String?
 
   misEnCauseTypeId String?
   misEnCauseType   MisEnCauseTypeEnum? @relation(fields: [misEnCauseTypeId], references: [id])

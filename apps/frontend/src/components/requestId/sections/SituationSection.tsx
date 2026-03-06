@@ -81,6 +81,7 @@ const getLieuDeSurvenue = (situation: SituationData) => {
 
 const getMisEnCauseIdentity = (misEnCause: SituationData['misEnCause'] | undefined | null): string => {
   if (!misEnCause) return '';
+  if (misEnCause.nomService) return misEnCause.nomService;
   const identity = [misEnCause.civilite, misEnCause.prenom, misEnCause.nom].filter(Boolean).join(' ').trim();
   if (identity) return identity;
   return misEnCause.commentaire || '';
@@ -347,6 +348,21 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
             {situation?.misEnCause?.rpps && (
               <p className={fr.cx('fr-mb-1w')}>
                 <span>Numéro RPPS :</span> {situation.misEnCause.rpps}
+              </p>
+            )}
+            {situation?.misEnCause?.nomService && (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Nom du service :</span> {situation.misEnCause.nomService}
+              </p>
+            )}
+            {situation?.misEnCause?.finess && (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Numéro FINESS :</span> {situation.misEnCause.finess}
+              </p>
+            )}
+            {situation?.misEnCause?.codePostal && (
+              <p className={fr.cx('fr-mb-1w')}>
+                <span>Code postal :</span> {situation.misEnCause.codePostal} {situation.misEnCause.ville}
               </p>
             )}
             {getMisEnCauseIdentity(situation?.misEnCause) &&

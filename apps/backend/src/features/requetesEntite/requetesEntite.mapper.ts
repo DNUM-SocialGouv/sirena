@@ -167,6 +167,10 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
         prenom: misEnCauseData?.prenom || '',
         civilite: misEnCauseData?.civilite || '',
         commentaire: misEnCauseData?.commentaire || '',
+        finess: misEnCauseData?.finess || null,
+        nomService: misEnCauseData?.nomService || null,
+        codePostal: misEnCauseData?.codePostal || null,
+        ville: misEnCauseData?.ville || null,
       },
     },
     demarchesEngagees: {
