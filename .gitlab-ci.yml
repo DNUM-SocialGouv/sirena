@@ -9,7 +9,7 @@ default:
     - socialgouv-linux-large-amd64
 
 include:
-  - project: 'socialgouv/produits-dnum/citoyens/sirena/sirena-v2'
+  - project: 'socialgouv/produits-dnum/studio-tech/devops/sdpsn-devops-ci-utils'
     file: 'main.yml'
 
 stages:
