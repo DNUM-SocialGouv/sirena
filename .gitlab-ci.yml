@@ -9,7 +9,8 @@ default:
     - socialgouv-linux-large-amd64
 
 include:
-  - local: ".gitlab-templates/generic-template.yml"
+  - project: 'socialgouv/produits-dnum/citoyens/sirena/sirena-v2'
+    file: 'main.yml'
 
 stages:
   - lint-test
