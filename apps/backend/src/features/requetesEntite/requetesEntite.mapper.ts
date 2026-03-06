@@ -34,6 +34,7 @@ export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
   estIdentifie: true,
   veutGarderAnonymat:
     declarantData.consentCommuniquerIdentite === undefined ? undefined : !declarantData.consentCommuniquerIdentite,
+  isTuteur: declarantData.isTuteur ?? undefined,
   estSignalementProfessionnel: declarantData.estSignalementProfessionnel || false,
   estVictime: declarantData.estPersonneConcernee || false,
   commentaire: declarantData.autresPrecisions || '',
