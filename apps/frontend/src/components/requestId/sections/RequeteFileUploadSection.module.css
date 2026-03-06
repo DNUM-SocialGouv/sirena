@@ -46,10 +46,16 @@
   align-self: flex-start;
 }
 
+.dropZoneNoFile {
+  margin: 0;
+  color: var(--text-mention-grey);
+  font-size: 0.75rem;
+}
+
 .dropZoneHint {
   margin: 0;
   color: var(--text-mention-grey);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .dropZoneInput {
