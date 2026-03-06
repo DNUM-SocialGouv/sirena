@@ -52,6 +52,10 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
           nom: misEnCause.nom || undefined,
           prenom: misEnCause.prenom || undefined,
           commentaire: misEnCause.commentaire || undefined,
+          finess: misEnCause.finess || undefined,
+          nomService: misEnCause.nomService || undefined,
+          codePostal: misEnCause.codePostal || undefined,
+          ville: misEnCause.ville || undefined,
         }
       : undefined,
     fait: fait

@@ -21,7 +21,8 @@ import {
   type ReceptionType,
 } from '@sirena/common/constants';
 import type { SituationData } from '@sirena/common/schemas';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { OrganizationSearchField } from '@/components/common/OrganizationSearchField';
 import { PractitionerSearchField } from '@/components/common/PractitionerSearchField';
 
 type misEnCauseProps = {
@@ -151,8 +152,20 @@ const MIS_EN_CAUSE_RPPS: string[] = [
   MIS_EN_CAUSE_TYPE.AUTRE_PROFESSIONNEL,
 ];
 
+const MIS_EN_CAUSE_SERVICE_PRECISIONS: string[] = [
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SERVICE,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAMSAH,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAVS,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SESSAD,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SPST,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAEMO,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAED,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.AUTRE,
+];
+
 export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps) {
   const misEnCauseType = formData.misEnCause?.misEnCauseType;
+  const misEnCausePrecision = formData.misEnCause?.misEnCauseTypePrecision;
   const hasCompleteIdentityFromRpps = Boolean(
     formData.misEnCause?.rpps &&
       formData.misEnCause?.civilite &&
@@ -164,6 +177,21 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
       !formData.misEnCause?.rpps &&
       Boolean(formData.misEnCause?.civilite || formData.misEnCause?.nom || formData.misEnCause?.prenom),
   );
+
+  const isServiceType =
+    misEnCauseType === MIS_EN_CAUSE_TYPE.ETABLISSEMENT &&
+    MIS_EN_CAUSE_SERVICE_PRECISIONS.includes(misEnCausePrecision || '');
+  const isServiceReadOnly = isSaving || Boolean(formData.misEnCause?.finess);
+  const hasCompleteServiceFromFiness = Boolean(formData.misEnCause?.finess && formData.misEnCause?.nomService);
+  const [isNoFinessChecked, setIsNoFinessChecked] = useState(
+    () => !formData.misEnCause?.finess && Boolean(formData.misEnCause?.nomService),
+  );
+
+  useEffect(() => {
+    if (!isServiceType) {
+      setIsNoFinessChecked(false);
+    }
+  }, [isServiceType]);
 
   return (
     <div
@@ -190,6 +218,10 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                     misEnCause: {
                       misEnCauseType: nextMisEnCauseType,
                       misEnCauseTypePrecision: undefined,
+                      finess: undefined,
+                      nomService: undefined,
+                      codePostal: undefined,
+                      ville: undefined,
                     },
                   }));
                 },
@@ -213,7 +245,14 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                   onChange: (e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      misEnCause: { ...prev.misEnCause, misEnCauseTypePrecision: e.target.value || undefined },
+                      misEnCause: {
+                        ...prev.misEnCause,
+                        misEnCauseTypePrecision: e.target.value || undefined,
+                        finess: undefined,
+                        nomService: undefined,
+                        codePostal: undefined,
+                        ville: undefined,
+                      },
                     })),
                 }}
               >
@@ -227,23 +266,128 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
             </div>
           )}
 
-          <div className="fr-col-12">
-            <div className="fr-col-12">
-              <Input
-                label="Précisions supplémentaires"
-                textArea
-                nativeTextAreaProps={{
-                  value: formData.misEnCause?.autrePrecision || '',
-                  onChange: (e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      misEnCause: { ...prev.misEnCause, autrePrecision: e.target.value },
-                    })),
-                  rows: 3,
-                }}
-              />
-            </div>
-          </div>
+          {isServiceType && (
+            <>
+              <div className="fr-col-12 fr-col-md-6">
+                <OrganizationSearchField
+                  value={formData.misEnCause?.finess || ''}
+                  onChange={(value, organization) => {
+                    if (organization) {
+                      setIsNoFinessChecked(false);
+                      setFormData((prev) => ({
+                        ...prev,
+                        misEnCause: {
+                          ...prev.misEnCause,
+                          finess: value,
+                          nomService: organization.name,
+                          codePostal: organization.addressPostalcode,
+                          ville: organization.addressCity,
+                        },
+                      }));
+                    } else {
+                      setFormData((prev) => ({
+                        ...prev,
+                        misEnCause: { ...prev.misEnCause, finess: value },
+                      }));
+                    }
+                  }}
+                  label="Rechercher le service par numéro FINESS"
+                  hintText="Saisir le numéro FINESS et sélectionner le service"
+                  state={isNoFinessChecked ? 'info' : 'default'}
+                  stateRelatedMessage={
+                    isNoFinessChecked
+                      ? 'Si vous souhaitez rechercher par numéro FINESS, décochez la case "Renseigner manuellement le nom du service"'
+                      : undefined
+                  }
+                  disabled={isSaving || isNoFinessChecked}
+                  searchMode="finess"
+                  minSearchLength={6}
+                />
+                <a
+                  className="fr-link fr-mt-1w"
+                  href="https://annuaire.esante.gouv.fr/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Répertoire FINESS <span className="fr-sr-only"> - nouvel onglet </span>
+                </a>
+              </div>
+              <div className="fr-col-12 fr-col-md-6">
+                <div className="fr-mt-8w">
+                  <Checkbox
+                    options={[
+                      {
+                        label: 'Renseigner manuellement le nom du service',
+                        nativeInputProps: {
+                          checked: isNoFinessChecked,
+                          onChange: (e) => {
+                            const checked = e.target.checked;
+                            setIsNoFinessChecked(checked);
+                            setFormData((prev) => ({
+                              ...prev,
+                              misEnCause: {
+                                ...prev.misEnCause,
+                                finess: checked ? '' : prev.misEnCause?.finess || '',
+                                ...(checked ? {} : { nomService: '', codePostal: '', ville: '' }),
+                              },
+                            }));
+                          },
+                          disabled: isSaving,
+                        },
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {(isNoFinessChecked || hasCompleteServiceFromFiness) && (
+                <>
+                  <div className="fr-col-12 fr-col-md-6">
+                    <Input
+                      label="Nom du service"
+                      disabled={isServiceReadOnly}
+                      nativeInputProps={{
+                        value: formData.misEnCause?.nomService || '',
+                        onChange: (e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            misEnCause: { ...prev.misEnCause, nomService: e.target.value },
+                          })),
+                      }}
+                    />
+                  </div>
+                  <div className="fr-col-12 fr-col-md-3">
+                    <Input
+                      label="Code postal"
+                      disabled={isServiceReadOnly}
+                      nativeInputProps={{
+                        value: formData.misEnCause?.codePostal || '',
+                        onChange: (e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            misEnCause: { ...prev.misEnCause, codePostal: e.target.value },
+                          })),
+                      }}
+                    />
+                  </div>
+                  <div className="fr-col-12 fr-col-md-3">
+                    <Input
+                      label="Ville"
+                      disabled={isServiceReadOnly}
+                      nativeInputProps={{
+                        value: formData.misEnCause?.ville || '',
+                        onChange: (e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            misEnCause: { ...prev.misEnCause, ville: e.target.value },
+                          })),
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+            </>
+          )}
 
           {MIS_EN_CAUSE_RPPS.includes(misEnCauseType || '') && (
             <>
@@ -368,6 +512,24 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
               </div>
             </>
           )}
+        </div>
+
+        <div className="fr-col-12">
+          <div className="fr-col-12">
+            <Input
+              label="Précisons supplémentaires concernant le mis en cause"
+              textArea
+              nativeTextAreaProps={{
+                value: formData.misEnCause?.autrePrecision || '',
+                onChange: (e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    misEnCause: { ...prev.misEnCause, autrePrecision: e.target.value },
+                  })),
+                rows: 1,
+              }}
+            />
+          </div>
         </div>
       </fieldset>
     </div>
