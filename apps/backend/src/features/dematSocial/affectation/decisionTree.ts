@@ -1,3 +1,4 @@
+import { mkdir, writeFile } from 'node:fs/promises';
 import {
   type DsMotif,
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
@@ -6,8 +7,9 @@ import {
   PROFESSION_DOMICILE_TYPE,
   PROFESSION_SANTE_PRECISION,
 } from '@sirena/common/constants';
+import { envVars } from '../../../config/env.js';
 import { PrismaClient } from '../../../libs/prisma.js';
-import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types.js';
+import type { DecisionLeaf, DecisionNode, DecisionTraceEntry, EntiteAdminType, SituationContext } from './types.js';
 
 /*********************
  *  UTILITIES
@@ -346,6 +348,7 @@ async function evalNode(
   ctx: SituationContext,
   found: Set<EntiteAdminType>,
   depth: number = 0,
+  trace?: DecisionTraceEntry[],
 ): Promise<void> {
   const MAX_DEPTH = 1000;
 
@@ -360,26 +363,48 @@ async function evalNode(
       const added = typeof node.add === 'function' ? await node.add(ctx) : node.add;
       for (const t of added) found.add(t);
 
+      trace?.push({
+        nodeId: node.id,
+        kind: 'leaf',
+        description: node.description,
+        depth,
+        context: ctx,
+        decision: { kind: 'leaf', added },
+      });
+
       if (node.next) {
-        await evalNode(node.next, ctx, found);
+        await evalNode(node.next, ctx, found, depth + 1, trace);
       }
       return;
     }
     case 'branch': {
       const ok = node.predicate(ctx);
 
+      trace?.push({
+        nodeId: node.id,
+        kind: 'branch',
+        description: node.description,
+        depth,
+        context: ctx,
+        decision: {
+          kind: 'branch',
+          predicateResult: ok,
+          branch: ok ? 'true' : 'false',
+        },
+      });
+
       if (ok) {
         if (node.addIfTrue) {
           const added = typeof node.addIfTrue === 'function' ? await node.addIfTrue(ctx) : node.addIfTrue;
           for (const t of added) found.add(t);
         }
-        await evalNode(node.ifTrue, ctx, found);
+        await evalNode(node.ifTrue, ctx, found, depth + 1, trace);
       } else {
         if (node.addIfFalse) {
           const added = typeof node.addIfFalse === 'function' ? await node.addIfFalse(ctx) : node.addIfFalse;
           for (const t of added) found.add(t);
         }
-        await evalNode(node.ifFalse, ctx, found);
+        await evalNode(node.ifFalse, ctx, found, depth + 1, trace);
       }
       return;
     }
@@ -387,10 +412,19 @@ async function evalNode(
       const key = node.select(ctx);
       const next = key && node.cases[key];
 
+      trace?.push({
+        nodeId: node.id,
+        kind: 'switch',
+        description: node.description,
+        depth,
+        context: ctx,
+        decision: { kind: 'switch', key, matched: !!next },
+      });
+
       if (!next) {
         // If default exists, use it (intentional fallback for unhandled cases)
         if (node.default) {
-          await evalNode(node.default, ctx, found);
+          await evalNode(node.default, ctx, found, depth + 1, trace);
           return;
         }
         // If no default and key exists but is not in cases, and field is required, throw error
@@ -404,7 +438,7 @@ async function evalNode(
         return;
       }
 
-      await evalNode(next, ctx, found);
+      await evalNode(next, ctx, found, depth + 1, trace);
       return;
     }
     case 'forEach': {
@@ -415,13 +449,28 @@ async function evalNode(
         const item = items[i];
         // Create a modified context for this item
         const itemContext = node.mapContext ? node.mapContext(ctx, item, i) : ctx;
+
+        trace?.push({
+          nodeId: node.id,
+          kind: 'forEach',
+          description: node.description,
+          depth,
+          context: itemContext,
+          decision: {
+            kind: 'forEach',
+            itemCount: items.length,
+            itemIndex: i,
+            item,
+          },
+        });
+
         // Apply the subtree for this item
-        await evalNode(node.forEach, itemContext, found, depth + 1);
+        await evalNode(node.forEach, itemContext, found, depth + 1, trace);
       }
 
       // If an "after" node is defined, apply it after all iterations
       if (node.after) {
-        await evalNode(node.after, ctx, found, depth + 1);
+        await evalNode(node.after, ctx, found, depth + 1, trace);
       }
       return;
     }
@@ -433,8 +482,16 @@ async function evalNode(
 
 export async function runDecisionTree(ctx: SituationContext): Promise<EntiteAdminType[]> {
   const found = new Set<EntiteAdminType>();
+  const trace = envVars.AFFECTATION_DEBUG ? ([] as DecisionTraceEntry[]) : undefined;
 
-  await evalNode(rootNode, ctx, found);
+  await evalNode(rootNode, ctx, found, 0, trace);
+
+  if (trace) {
+    const debugDir = new URL('../../../../debug', import.meta.url).pathname;
+    await mkdir(debugDir, { recursive: true });
+    const filename = `${debugDir}/affectation-debug-${Date.now()}.json`;
+    await writeFile(filename, JSON.stringify({ context: ctx, trace }, null, 2));
+  }
 
   return Array.from(found);
 }
