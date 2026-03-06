@@ -5,6 +5,7 @@ export const DeclarantDataSchema = z.object({
   nom: z.string().optional(),
   prenom: z.string().optional(),
   lienAvecPersonneConcernee: z.string().optional(),
+  isTuteur: z.boolean().optional(),
   lienAvecPersonneConcerneePrecision: z.string().optional(),
   adresseDomicile: z.string().optional(),
   codePostal: z.string().optional(),

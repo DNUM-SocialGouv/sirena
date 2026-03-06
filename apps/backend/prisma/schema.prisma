@@ -27,8 +27,8 @@ datasource db {
 model AutoriteCompetenteReferentiel {
   id String @id @default(uuid())
 
-  categCode   String
-  categLib  String?
+  categCode     String
+  categLib      String?
   entiteTypeIds String[]
 
   sourceFileVersion String? // csv hash
@@ -38,7 +38,6 @@ model AutoriteCompetenteReferentiel {
 
   @@unique([categCode])
 }
-
 
 model StatutEnum {
   id    String @id
@@ -65,11 +64,11 @@ model User {
   entiteId String?
   entite   Entite? @relation(fields: [entiteId], references: [id])
 
-  sessions      Session[]
-  changeLogs    ChangeLog[]
-  uploads       UploadedFile[]
-  notes         RequeteEtapeNote[]
-  createdEtapes RequeteEtape[]
+  sessions        Session[]
+  changeLogs      ChangeLog[]
+  uploads         UploadedFile[]
+  notes           RequeteEtapeNote[]
+  createdEtapes   RequeteEtape[]
   createdRequetes Requete[]
 
   createdAt DateTime @default(now())
@@ -88,16 +87,16 @@ model Session {
 }
 
 model Entite {
-  id                    String  @id @default(uuid())
-  nomComplet            String
-  label                 String
-  email                 String  @default("")
-  emailContactUsager    String  @default("")
-  telContactUsager      String  @default("")
-  adresseContactUsager  String @default("")
-  emailDomain           String  @default("")
-  organizationalUnit    String  @default("")
-  isActive              Boolean @default(false)
+  id                   String  @id @default(uuid())
+  nomComplet           String
+  label                String
+  email                String  @default("")
+  emailContactUsager   String  @default("")
+  telContactUsager     String  @default("")
+  adresseContactUsager String  @default("")
+  emailDomain          String  @default("")
+  organizationalUnit   String  @default("")
+  isActive             Boolean @default(false)
 
   services Entite[] @relation("EntiteMereToServices")
 
@@ -249,6 +248,7 @@ model PersonneConcernee {
   estVictime                  Boolean?
   estVictimeInformee          Boolean?
   victimeInformeeCommentaire  String   @default("")
+  isTuteur                    Boolean?
   veutGarderAnonymat          Boolean?
   estSignalementProfessionnel Boolean?
   commentaire                 String   @default("")
@@ -257,8 +257,8 @@ model PersonneConcernee {
 
   identite Identite? @relation("PersonneIdentite")
 
-  ageId String?
-  age   AgeEnum? @relation(fields: [ageId], references: [id])
+  ageId         String?
+  age           AgeEnum?  @relation(fields: [ageId], references: [id])
   dateNaissance DateTime?
 
   adresse Adresse? @relation("PersonneAdresse")
@@ -362,15 +362,15 @@ model SituationEntite {
 }
 
 model LieuDeSurvenue {
-  id               String  @id @default(uuid())
-  codePostal       String  @default("")
-  societeTransport String  @default("")
-  finess           String  @default("")
+  id               String @id @default(uuid())
+  codePostal       String @default("")
+  societeTransport String @default("")
+  finess           String @default("")
   tutelle          String @default("")
   categCode        String @default("")
   categLib         String @default("")
-  commentaire      String  @default("")
-  lieuPrecision    String  @default("")
+  commentaire      String @default("")
+  lieuPrecision    String @default("")
 
   adresse Adresse? @relation("LieuAdresse")
 
