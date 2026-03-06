@@ -70,7 +70,7 @@ lint-and-build:
   extends:
     - .configure_docker_with_node
   script:
-    #- pnpm audit --audit-level=moderate
+    - pnpm audit --audit-level=moderate
     - pnpm install
     - pnpm add -D typescript -w
     - pnpm lint
@@ -172,7 +172,7 @@ trivy-filesystem-scan:
     - .trivy-template
   script:
     - trivy fs --format json --severity CRITICAL,HIGH,MEDIUM --output trivy-fs-results.json .
-    - trivy fs -format template --template "@gitlab.tpl"  --severity CRITICAL,HIGH,MEDIUM --output gl-sast-report.json .
+    - trivy fs --format template --template "@gitlab.tpl"  --severity CRITICAL,HIGH,MEDIUM --output gl-sast-report.json .
   artifacts:
     reports:
       sast: gl-sast-report.json
