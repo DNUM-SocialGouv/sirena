@@ -211,6 +211,19 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
                   />
                 </div>
               )}
+              <div className="fr-col-12">
+                <Checkbox
+                  options={[
+                    {
+                      label: declarantFieldMetadata.isTuteur.label,
+                      nativeInputProps: {
+                        checked: formData.isTuteur || false,
+                        onChange: handleCheckboxChange('isTuteur'),
+                      },
+                    },
+                  ]}
+                />
+              </div>
             </div>
           </fieldset>
         </div>
