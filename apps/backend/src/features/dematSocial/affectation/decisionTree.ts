@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import {
   type DsMotif,
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
@@ -487,7 +487,9 @@ export async function runDecisionTree(ctx: SituationContext): Promise<EntiteAdmi
   await evalNode(rootNode, ctx, found, 0, trace);
 
   if (trace) {
-    const filename = `/tmp/affectation-debug-${Date.now()}.json`;
+    const debugDir = new URL('../../../../debug', import.meta.url).pathname;
+    await mkdir(debugDir, { recursive: true });
+    const filename = `${debugDir}/affectation-debug-${Date.now()}.json`;
     await writeFile(filename, JSON.stringify({ context: ctx, trace }, null, 2));
   }
 
