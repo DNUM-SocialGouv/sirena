@@ -137,6 +137,7 @@ const DemarchesEngageesSchema = z
     demarches: z.array(z.string()).optional(),
     dateContactEtablissement: optionalDatetime,
     etablissementARepondu: z.boolean().optional(),
+    organisme: z.string().optional(),
     commentaire: z.string().optional(),
     datePlainte: optionalDatetime,
     autoriteTypeId: z.string().optional(),
