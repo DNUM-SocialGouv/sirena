@@ -3,6 +3,7 @@ export type EntiteChain = {
   nomComplet: string;
   entiteMereId: string | null;
   label: string;
+  entiteTypeId: string;
 };
 
 export type EntiteTraitementInput = {
@@ -13,6 +14,7 @@ export type EntiteTraitementInput = {
 
 export type EntiteTraitement = {
   entiteId: string;
+  entiteTypeId: string;
   directionServiceId?: string;
   entiteName: string;
   directionServiceName?: string;
