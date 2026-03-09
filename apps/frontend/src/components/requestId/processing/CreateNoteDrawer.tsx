@@ -12,6 +12,7 @@ import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { ACCEPTED_FILE_TYPES, FILE_UPLOAD_HINT } from '@/utils/fileHelpers';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
+import styles from './CreateNoteDrawer.module.css';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 export type CreateNoteDrawerRef = {
@@ -19,6 +20,8 @@ export type CreateNoteDrawerRef = {
 };
 // biome-ignore lint/complexity/noBannedTypes: react doesn't handle well Record<string, never>
 export type CreateNoteDrawerProps = {};
+
+const REQUIRED_FIELDS_ERROR = 'Vous devez renseigner "Détails de la note" ou ajouter un fichier pour créer la note.';
 
 export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawerProps>((_props, ref) => {
   const { requestId } = useParams({
@@ -32,6 +35,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
   const [files, setFiles] = useState<File[]>([]);
   const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [contentError, setContentError] = useState<string | null>(null);
 
   const addStepNoteMutation = useAddProcessingStepNote(requestId);
   const uploadFileMutation = useUploadFile({ silentToastError: true });
@@ -51,6 +55,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
     setStep(null);
     setIsLoading(false);
     setErrorMessage(null);
+    setContentError(null);
   };
 
   useImperativeHandle(ref, () => ({
@@ -70,10 +75,12 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
     }
 
     if (!content.trim().length && files.length === 0) {
-      setErrorMessage('Vous devez renseigner le champs "Détails de la note" ou ajouter un fichier pour créer la note.');
+      setContentError(REQUIRED_FIELDS_ERROR);
+      setErrorMessage(REQUIRED_FIELDS_ERROR);
       return;
     }
 
+    setContentError(null);
     setErrorMessage(null);
 
     const newFileErrors = validateFiles(files);
@@ -122,25 +129,47 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
   };
 
   return (
-    <Drawer.Root variant="nonModal" open={isOpen} onOpenChange={handleOpenChange}>
+    <Drawer.Root variant="nonModal" withCloseButton={false} open={isOpen} onOpenChange={handleOpenChange}>
       <Drawer.Portal>
         <Drawer.Panel style={{ width: 'min(90vw, 600px)', maxWidth: '100%' }} titleId={titleId}>
           <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px 16px' }}>
               <div className="fr-container fr-mt-8w">
+                <div className={styles.topActions}>
+                  <Button
+                    type="button"
+                    priority="tertiary no outline"
+                    iconId="fr-icon-close-line"
+                    onClick={() => setIsOpen(false)}
+                    disabled={isLoading}
+                  >
+                    Fermer
+                  </Button>
+                </div>
                 <h3 id={titleId} className="fr-h6">
-                  Ajouter une note ou un fichier à l'étape "{step?.nom ?? ''}"
+                  {step?.nom ?? ''}
                 </h3>
+                <p className="fr-text--sm fr-text--mention-grey fr-mb-2w">
+                  Au moins un champ est obligatoire: "Détails de la note" ou un fichier.
+                </p>
                 <form>
                   <Input
                     hintText="Informations à ajouter"
                     label="Détails de la note"
                     textArea={true}
                     disabled={isLoading}
+                    state={contentError ? 'error' : undefined}
+                    stateRelatedMessage={contentError ?? undefined}
                     nativeTextAreaProps={{
                       rows: 8,
                       value: content,
-                      onChange: (e) => setContent(e.target.value),
+                      onChange: (e) => {
+                        setContent(e.target.value);
+                        if (contentError && e.target.value.trim().length > 0) {
+                          setContentError(null);
+                          setErrorMessage((prev) => (prev === REQUIRED_FIELDS_ERROR ? null : prev));
+                        }
+                      },
                     }}
                   />
                   <Upload
@@ -159,6 +188,10 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                           const fileArray = Array.from(files);
                           setFiles(fileArray.map((file) => new File([file], file.name, { type: file.type })));
                           setFileErrors({});
+                          if (contentError && fileArray.length > 0) {
+                            setContentError(null);
+                            setErrorMessage((prev) => (prev === REQUIRED_FIELDS_ERROR ? null : prev));
+                          }
                         }
                       },
                     }}
@@ -189,7 +222,16 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                       </div>
                     </div>
                   )}
-                  <div className="display-end fr-mt-2w">
+                  <div className={`fr-mt-2w ${styles.footerActions}`}>
+                    <Button
+                      type="button"
+                      priority="secondary"
+                      size="small"
+                      onClick={() => setIsOpen(false)}
+                      disabled={isLoading}
+                    >
+                      Annuler
+                    </Button>
                     <Button type="button" priority="primary" size="small" onClick={handleSubmit} disabled={isLoading}>
                       {isLoading ? 'En cours...' : 'Ajouter la note'}
                     </Button>
