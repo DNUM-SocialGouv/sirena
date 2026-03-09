@@ -112,7 +112,7 @@ export const createRequeteFromThirdParty = async ({
           tutelle: '',
           categCode: lieuDeSurvenue?.categCode ?? '',
           categLib: '',
-          lieuType: lieuType.lieuTypeId ? { connect: { id: lieuDeSurvenue.lieuTypeId } } : undefined,
+          lieuType: lieuType.lieuTypeId ? { connect: { id: lieuType.lieuTypeId } } : undefined,
           lieuPrecision: lieuType?.lieuPrecision ?? '',
           transportType: lieuDeSurvenue?.transportTypeId
             ? { connect: { id: lieuDeSurvenue.transportTypeId } }
