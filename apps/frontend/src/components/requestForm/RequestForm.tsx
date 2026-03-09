@@ -60,6 +60,13 @@ export function RequestForm({ requestId }: RequestFormProps) {
   const statutId = requestQuery.data?.statutId || '';
   const prioriteId = requestQuery.data?.prioriteId || null;
 
+  const hasAttachments =
+    (requestQuery.data?.requete.fichiersRequeteOriginale?.some((f) => f.size > 0) ||
+      requestQuery.data?.requete.situations?.some((s) =>
+        s.faits.some((f) => f.fichiers?.some((file) => file.size > 0)),
+      )) ??
+    false;
+
   const tabs: TabDescriptor[] = [
     { label: 'Détails de la requête', tabPanelId: 'panel-details', tabId: 'tab-details' },
     {
@@ -90,6 +97,7 @@ export function RequestForm({ requestId }: RequestFormProps) {
             motifs={motifs}
             statutId={statutId}
             prioriteId={prioriteId}
+            hasAttachments={hasAttachments}
           />{' '}
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useUpdatePriorite } from '@/hooks/mutations/updatePriorite.hook';
 import { useUpdateStatut } from '@/hooks/mutations/updateStatut.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
+import { DownloadMenu } from '../common/DownloadMenu';
 import { PrioriteMenu } from '../common/PrioriteMenu';
 import { RequeteStatutTag } from '../common/RequeteStatutTag';
 import style from './requestInfos.module.css';
@@ -16,9 +17,17 @@ interface RequestInfosProps {
   motifs: string[];
   statutId: string;
   prioriteId?: string | null;
+  hasAttachments?: boolean;
 }
 
-export const RequestInfos = ({ requestId, fullName, motifs, statutId, prioriteId }: RequestInfosProps) => {
+export const RequestInfos = ({
+  requestId,
+  fullName,
+  motifs,
+  statutId,
+  prioriteId,
+  hasAttachments,
+}: RequestInfosProps) => {
   const updatePrioriteMutation = useUpdatePriorite(requestId || '');
   const updateStatutMutation = useUpdateStatut(requestId || '');
   const { canEdit } = useCanEdit({ requeteId: requestId });
@@ -53,6 +62,12 @@ export const RequestInfos = ({ requestId, fullName, motifs, statutId, prioriteId
                   <div className={style['request-title']}>
                     <span>Requête {requestId}</span>
                     <RequeteStatutTag className={style['requete-statut-tag']} statut={statutId} noIcon />
+                    <PrioriteMenu
+                      value={prioriteId || null}
+                      onPrioriteClick={handlePrioriteChange}
+                      isLoading={updatePrioriteMutation.isPending}
+                      disabled={!requestId || updatePrioriteMutation.isPending}
+                    />
                   </div>
                   {showPriseEnCompteToggle && (
                     <div className={`${style['toggle-line']} fr-text--md`}>
@@ -77,13 +92,8 @@ export const RequestInfos = ({ requestId, fullName, motifs, statutId, prioriteId
             </h1>
           </div>
           {requestId && (
-            <div className={`fr-col-auto ${style['priorite-menu-wrapper']}`}>
-              <PrioriteMenu
-                value={prioriteId || null}
-                onPrioriteClick={handlePrioriteChange}
-                isLoading={updatePrioriteMutation.isPending}
-                disabled={!requestId || updatePrioriteMutation.isPending}
-              />
+            <div className={`fr-col-auto ${style['download-menu-wrapper']}`}>
+              <DownloadMenu requestId={requestId} disabled={!hasAttachments} />
             </div>
           )}
         </div>
