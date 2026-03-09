@@ -1080,7 +1080,7 @@ export const sousMotifQUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICELabels: Record<
   PROBLEMATIQUE_DE_FONCTIONNEMENT_DE_L_ESSMS_REGLEMENT_INTERIEUR:
     "Problématique de fonctionnement de l'ESSMS (règlement intérieur, …)",
   VIOLENCES_ENTRE_USAGERS: 'Violences entre usagers',
-  VILOLENCES_D_UN_USAGER_ENVERS_SON_ENTOURAGE: "Vilolences d'un usager envers son entourage",
+  VILOLENCES_D_UN_USAGER_ENVERS_SON_ENTOURAGE: "Violences d'un usager envers son entourage",
   VIOLENCES_D_UN_USAGER_ENVERS_UN_PROFESSIONNEL: "Violences d'un usager envers un professionnel",
   DEFAUT_DE_SURVEILLANCE_FUGUE_DISPARITION_INQUIETANTE: 'Défaut de surveillance (fugue / disparition inquiétante)',
 };
