@@ -305,15 +305,13 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
           </ul>
         </div>
       )}
-      {selectedFiles.length === 0 && mode === 'create' && (
-        <p className={fr.cx('fr-text--sm', 'fr-text--light')}>Aucun fichier sélectionné.</p>
-      )}
       {canEdit && (
         <label className={styles.dropZone} htmlFor={fileUploadLabelId}>
           <p className={styles.dropZoneTitle}>Sélectionner un fichier ou glisser-le ici</p>
           <Button priority="secondary" disabled={isUploading} className={styles.dropZoneButton}>
             Sélectionner un fichier
           </Button>
+          {selectedFiles.length === 0 && <p className={styles.dropZoneNoFile}>Aucun fichier sélectionné</p>}
           <p className={styles.dropZoneHint}>
             Taille maximale: 200 Mo. Formats supportés : PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT,
             images (PNG, JPEG, HEIC, WEBP, TIFF)

@@ -6,10 +6,11 @@ variables:
 
 default:
   tags:
-    - socialgouv-linux-small-amd64
+    - socialgouv-linux-large-amd64
 
 include:
-  - local: ".gitlab-templates/generic-template.yml"
+  - project: 'socialgouv/produits-dnum/studio-tech/devops/sdpsn-devops-ci-utils'
+    file: 'main.yml'
 
 stages:
   - lint-test
@@ -91,12 +92,14 @@ lint-and-build:
     - if: $CI_PIPELINE_SOURCE == "push"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
+
 .build-docker-images:
   stage: build
   extends:
     - .rules-with-env-vars
     - .configure_and_login_docker
   before_script:
+    - !reference [ .configure_and_login_docker, before_script ]
     - export IMAGE_TAG="${CONTAINER_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}"
 
 build-worker:
@@ -148,14 +151,28 @@ build-frontend:
       . && docker push ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
       )
 
+.trivy-template:
+  extends:
+    - .configure_and_login_docker
+  before_script:
+    - !reference [ .configure_and_login_docker, before_script ]
+    - apk add --no-cache wget ca-certificates tar curl
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh |  sh -s -- -b /usr/local/bin v0.69.2
+
 trivy-filesystem-scan:
   stage: security
   image:
     name: aquasec/trivy:latest
     entrypoint: [""]
+  needs:
+    - build-frontend
+    - build-backend
+    - build-worker
+  extends:
+    - .trivy-template
   script:
     - trivy fs --format json --severity CRITICAL,HIGH,MEDIUM --output trivy-fs-results.json .
-    - trivy fs --format gitlab --severity CRITICAL,HIGH,MEDIUM --output gl-sast-report.json .
+    - trivy fs --format template --template "@gitlab.tpl"  --severity CRITICAL,HIGH,MEDIUM --output gl-sast-report.json .
   artifacts:
     reports:
       sast: gl-sast-report.json
@@ -172,7 +189,7 @@ trivy-filesystem-scan:
 trivy-container-scan:
   extends:
     - .rules-with-env-vars
-    - .configure_and_login_docker
+    - .trivy-template
   stage: security
   parallel:
     matrix:
@@ -182,14 +199,9 @@ trivy-container-scan:
         IMAGE_SUFFIX: "-${FRONTEND_ENV}"
       - IMAGE_TYPE: worker
         IMAGE_SUFFIX: ""
-  before_script:
-    - !reference [ .configure_and_login_docker, before_script]
-    - apk add --no-cache wget ca-certificates tar curl
-    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh |  sh -s -- -b /usr/local/bin v0.69.1
   script:
     - export IMAGE_TAG="${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}-${IMAGE_TYPE}${IMAGE_SUFFIX}"
     - export IMAGE_NAME="${CONTAINER_REGISTRY}/${IMAGE_TAG}"
-    - echo $IMAGE_NAME
     - docker pull $IMAGE_NAME
     - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/gitlab.tpl -o gitlab.tpl
     - trivy image --format json --severity CRITICAL,HIGH,MEDIUM --output trivy-container-${IMAGE_TYPE}-results.json $IMAGE_NAME
