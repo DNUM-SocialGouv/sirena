@@ -14,6 +14,7 @@ import {
 } from '@sirena/common/constants';
 import { getLieuPrecisionLabel } from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
+import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
 import { FileList } from '@/components/common/FileList';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
@@ -91,37 +92,46 @@ const Affectations = ({ situation }: { situation?: SituationData | null }) => {
   if (!situation?.traitementDesFaits?.entites || situation.traitementDesFaits.entites.length === 0) {
     return null;
   }
+  type TraitementGroup = { entiteTypeId: string; services: string[] };
   const traitements = situation.traitementDesFaits.entites.reduce(
     (acc, curr) => {
       if (!acc[curr.entiteName]) {
-        acc[curr.entiteName] = [];
+        acc[curr.entiteName] = { entiteTypeId: curr.entiteTypeId ?? '', services: [] };
       }
       if (curr.directionServiceName) {
         let name = curr.directionServiceName;
         if (curr.chain.length > 2) {
           name += ` (${curr.chain[curr.chain.length - 2].label})`;
         }
-        acc[curr.entiteName].push(name);
+        acc[curr.entiteName].services.push(name);
       }
       return acc;
     },
-    {} as Record<string, string[]>,
+    {} as Record<string, TraitementGroup>,
   );
-  const entries = Object.entries(traitements).sort(([_, a], [__, b]) => b.length - a.length);
+  const entries = Object.entries(traitements).sort(([_, a], [__, b]) => b.services.length - a.services.length);
   return (
     <div>
-      {entries.map(([entiteName, services]) => (
-        <Affectation key={entiteName} entiteName={entiteName} services={services} />
+      {entries.map(([entiteName, { entiteTypeId, services }]) => (
+        <Affectation key={entiteName} entiteName={entiteName} entiteTypeId={entiteTypeId} services={services} />
       ))}
     </div>
   );
 };
 
-const Affectation = ({ entiteName, services }: { entiteName: string; services: string[] }) => {
+const Affectation = ({
+  entiteName,
+  entiteTypeId,
+  services,
+}: {
+  entiteName: string;
+  entiteTypeId: string;
+  services: string[];
+}) => {
   return (
     <ul className="fr-tags-group">
       <li>
-        <p className="fr-tag fr-tag--sm color-pink-tuile">{entiteName}</p>
+        <EntiteTypeBadge entiteTypeId={entiteTypeId} label={entiteName} />
       </li>
       {services.length !== 0 && (
         <li>
