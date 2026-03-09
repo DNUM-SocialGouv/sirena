@@ -287,6 +287,11 @@ export const AppEnvSchema = z.object({
   REDIS_TLS: z.string().optional().default('false'),
   REDIS_USERNAME: z.string().optional(),
   REDIS_PASSWORD: z.string().optional(),
+  AFFECTATION_DEBUG: z
+    .string()
+    .optional()
+    .default('false')
+    .transform((val) => val === 'true'),
 });
 
 export const CronEnvSchema = z.object({
