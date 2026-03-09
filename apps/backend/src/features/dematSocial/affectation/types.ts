@@ -74,3 +74,16 @@ export type DecisionForEach = BaseNode & {
 };
 
 export type DecisionNode = DecisionLeaf | DecisionBranch | DecisionSwitch | DecisionForEach;
+
+export type DecisionTraceEntry = {
+  nodeId: string;
+  kind: DecisionNode['kind'];
+  description?: string;
+  depth: number;
+  context: SituationContext;
+  decision:
+    | { kind: 'branch'; predicateResult: boolean; branch: 'true' | 'false' }
+    | { kind: 'switch'; key: string | null; matched: boolean }
+    | { kind: 'leaf'; added: EntiteAdminType[] }
+    | { kind: 'forEach'; itemCount: number; itemIndex: number; item: unknown };
+};

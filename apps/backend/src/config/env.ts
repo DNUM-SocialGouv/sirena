@@ -74,6 +74,8 @@ const processEnv = {
   // Monitoring
   MONITORING_PORT: process.env.MONITORING_PORT,
   WORKER_MONITORING_PORT: process.env.WORKER_MONITORING_PORT,
+  // Affectation
+  AFFECTATION_DEBUG: process.env.AFFECTATION_DEBUG,
 };
 
 const validateEnvVars = () => EnvSchema.parse(processEnv);
