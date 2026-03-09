@@ -733,6 +733,10 @@ const buildMisEnCauseUpdate = (misEnCauseData: SituationInput['misEnCause']) => 
     prenom: cleanNullOrEmpty(misEnCauseData.prenom),
     civilite: cleanNullOrEmpty(misEnCauseData.civilite),
     commentaire: cleanNullOrEmpty(misEnCauseData.commentaire),
+    finess: misEnCauseData.finess || null,
+    nomService: misEnCauseData.nomService || null,
+    codePostal: misEnCauseData.codePostal || null,
+    ville: misEnCauseData.ville || null,
   };
 };
 
