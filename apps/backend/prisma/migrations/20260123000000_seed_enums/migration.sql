@@ -234,7 +234,7 @@ INSERT INTO "public"."MotifEnum" ("id", "label") VALUES
 ('QUALITE_ACCOMPAGNEMENT_SERVICE/QUALITE_ANIMATIONS_LIEU_INTERVENTIONS', 'Qualité des animations au lieu d''interventions'),
 ('QUALITE_ACCOMPAGNEMENT_SERVICE/PROBLEMATIQUE_FONCTIONNEMENT_ESSMS', 'Problématique de fonctionnement de l''ESSMS (règlement intérieur, …)'),
 ('QUALITE_ACCOMPAGNEMENT_SERVICE/VIOLENCES_ENTRE_USAGERS', 'Violences entre usagers'),
-('QUALITE_ACCOMPAGNEMENT_SERVICE/VIOLENCES_USAGER_ENTOURAGE', 'Vilolences d''un usager envers son entourage'),
+('QUALITE_ACCOMPAGNEMENT_SERVICE/VIOLENCES_USAGER_ENTOURAGE', 'Violences d''un usager envers son entourage'),
 ('QUALITE_ACCOMPAGNEMENT_SERVICE/VIOLENCES_USAGER_PROFESSIONNEL', 'Violences d''un usager envers un professionnel'),
 ('QUALITE_ACCOMPAGNEMENT_SERVICE/DEFAUT_SURVEILLANCE', 'Défaut de surveillance (fugue / disparition inquiétante)'),
 ('QUALITE_SOINS/ABSENCE_INSUFFISANCE_SOINS_MEDICAUX', 'Absence ou insuffisance de soins médicaux'),
