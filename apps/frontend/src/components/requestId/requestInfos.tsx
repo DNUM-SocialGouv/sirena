@@ -18,6 +18,7 @@ interface RequestInfosProps {
   statutId: string;
   prioriteId?: string | null;
   hasAttachments?: boolean;
+  hasUnsafeFiles?: boolean;
 }
 
 export const RequestInfos = ({
@@ -27,6 +28,7 @@ export const RequestInfos = ({
   statutId,
   prioriteId,
   hasAttachments,
+  hasUnsafeFiles,
 }: RequestInfosProps) => {
   const updatePrioriteMutation = useUpdatePriorite(requestId || '');
   const updateStatutMutation = useUpdateStatut(requestId || '');
@@ -93,7 +95,7 @@ export const RequestInfos = ({
           </div>
           {requestId && (
             <div className={`fr-col-auto ${style['download-menu-wrapper']}`}>
-              <DownloadMenu requestId={requestId} disabled={!hasAttachments} />
+              <DownloadMenu requestId={requestId} disabled={!hasAttachments} hasUnsafeFiles={hasUnsafeFiles} />
             </div>
           )}
         </div>
