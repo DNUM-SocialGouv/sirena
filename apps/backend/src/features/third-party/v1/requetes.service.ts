@@ -167,6 +167,7 @@ export const createRequeteFromThirdParty = async ({
         data: {
           dateContactEtablissement: demarchesEngagees?.dateContactEtablissement ?? null,
           etablissementARepondu: demarchesEngagees?.etablissementARepondu ?? null,
+          organisme: demarchesEngagees?.organisme ?? '',
           commentaire: demarchesEngagees?.commentaire ?? '',
           datePlainte: demarchesEngagees?.datePlainte ?? null,
           autoriteType: autorite ? { connect: { id: autorite.id } } : undefined,
