@@ -1,4 +1,11 @@
-import { openApiProtectedRoute, openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
+import {
+  openApi401Unauthorized,
+  openApi404NotFound,
+  openApiProtectedRoute,
+  openApiResponse,
+  openApiResponses,
+} from '@sirena/backend-utils/helpers';
+import { describeRoute } from 'hono-openapi';
 import { RequeteSchema } from '../requetes/requetes.schema.js';
 import {
   CloseRequeteResponseSchema,
@@ -47,5 +54,21 @@ export const updateStatutRoute = openApiProtectedRoute({
   description: 'Update the status of a requete for the current entity',
   responses: {
     ...openApiResponse(UpdateStatutResponseSchema),
+  },
+});
+
+export const downloadAllFilesRoute = describeRoute({
+  description: 'Download all attachments for a requete as a ZIP archive',
+  responses: {
+    ...openApi401Unauthorized(),
+    ...openApi404NotFound(),
+    200: {
+      description: 'ZIP archive of all attachments for the requete',
+      content: {
+        'application/zip': {
+          schema: { type: 'string', format: 'binary' },
+        },
+      },
+    },
   },
 });

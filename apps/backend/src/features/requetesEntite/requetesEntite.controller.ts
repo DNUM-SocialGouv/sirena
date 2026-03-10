@@ -38,6 +38,7 @@ import { getUserById } from '../users/users.service.js';
 import {
   closeRequeteRoute,
   createRequeteRoute,
+  downloadAllFilesRoute,
   getOtherEntitesAffectedRoute,
   getRequeteEntiteRoute,
   getRequetesEntiteRoute,
@@ -313,7 +314,7 @@ const app = factoryWithLogs
     return streamSafeFileResponse(c, file);
   })
 
-  .get('/:id/files/download-all', async (c) => {
+  .get('/:id/files/download-all', downloadAllFilesRoute, async (c) => {
     const logger = c.get('logger');
     const { id } = c.req.param();
     const topEntiteId = c.get('topEntiteId');
@@ -346,6 +347,7 @@ const app = factoryWithLogs
 
       archive.on('error', (err) => {
         logger.error({ requeteId: id, err }, 'Archive stream error');
+        s.close();
       });
 
       s.onAbort(() => {
