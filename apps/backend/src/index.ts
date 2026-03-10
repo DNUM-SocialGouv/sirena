@@ -1,3 +1,4 @@
+import './libs/instrument.js';
 import { serve } from '@hono/node-server';
 import { app } from './app.js';
 import { prisma } from './libs/prisma.js';
