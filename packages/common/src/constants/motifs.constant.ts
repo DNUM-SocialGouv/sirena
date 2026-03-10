@@ -327,7 +327,7 @@ export const MOTIFS_HIERARCHICAL_DATA = [
         value: 'VIOLENCES_ENTRE_USAGERS',
       },
       {
-        label: "Vilolences d'un usager envers son entourage",
+        label: "Violences d'un usager envers son entourage",
         value: 'VIOLENCES_USAGER_ENTOURAGE',
       },
       {
