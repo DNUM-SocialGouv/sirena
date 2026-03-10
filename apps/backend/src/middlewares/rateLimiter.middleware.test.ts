@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { attemptsKey, banCountKey, banKey } from '../config/redis.constant.js';
-import { rateLimiter } from './rateLimiter.middleware.js';
 
 vi.mock('../config/redis.js', () => ({
   connection: {
@@ -21,6 +20,7 @@ vi.mock('../helpers/middleware.js', () => ({
 
 describe('rateLimiter middleware', () => {
   let app: Hono;
+  let rateLimiter: typeof import('./rateLimiter.middleware.js').rateLimiter;
   let redis: {
     get: ReturnType<typeof vi.fn>;
     set: ReturnType<typeof vi.fn>;
@@ -34,8 +34,10 @@ describe('rateLimiter middleware', () => {
   beforeEach(async () => {
     const { connection } = await import('../config/redis.js');
     const middlewareHelper = await import('../helpers/middleware.js');
+    const rateLimiterModule = await import('./rateLimiter.middleware.js');
     redis = connection;
     extractClientIp = middlewareHelper.extractClientIp as ReturnType<typeof vi.fn>;
+    rateLimiter = rateLimiterModule.rateLimiter;
 
     vi.clearAllMocks();
 
