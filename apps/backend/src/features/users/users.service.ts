@@ -46,7 +46,23 @@ export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery 
       skip: offset,
       ...(typeof limit === 'number' ? { take: limit } : {}),
       orderBy: { [sort]: order },
-      include: { role: true },
+      include: {
+        role: true,
+        entite: {
+          select: {
+            nomComplet: true,
+            label: true,
+            entiteMereId: true,
+            entiteMere: {
+              select: {
+                label: true,
+                entiteMereId: true,
+                entiteMere: { select: { label: true } },
+              },
+            },
+          },
+        },
+      },
     }),
     prisma.user.count({ where }),
   ]);
