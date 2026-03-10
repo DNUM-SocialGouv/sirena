@@ -9,7 +9,7 @@ SDPSN-devops-charts:
         targetLabel: pod
       - sourceLabels: [__meta_kubernetes_namespace]
         targetLabel: namespace
-      - targetLabel: app_type
+      - targetLabel: backend
         replacement: appName
 
   deployment:
