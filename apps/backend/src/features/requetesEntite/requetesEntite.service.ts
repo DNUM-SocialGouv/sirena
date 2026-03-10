@@ -9,13 +9,15 @@ import {
   type RequeteStatutType,
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
+import archiver from 'archiver';
 import type { z } from 'zod';
 import { parseAdresseDomicile } from '../../helpers/address.js';
+import { getOriginalFileName } from '../../helpers/file.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
-import { deleteFileFromMinio } from '../../libs/minio.js';
-import { type Prisma, prisma } from '../../libs/prisma.js';
+import { deleteFileFromMinio, getFileStream } from '../../libs/minio.js';
+import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
@@ -1573,4 +1575,107 @@ export const updatePrioriteRequete = async (
   });
 
   return requeteEntite;
+};
+
+const isPdf = (file: UploadedFile): boolean => file.mimeType === 'application/pdf';
+
+const needsAttentionPrefix = (file: UploadedFile): boolean => {
+  if (file.scanStatus !== 'CLEAN' && file.scanStatus !== 'INFECTED') return true;
+  if (isPdf(file) && !file.safeFilePath) return true;
+  return false;
+};
+
+export const getPrefixedFileName = (file: UploadedFile): string => {
+  const originalName = getOriginalFileName(file).replace(/[/\\]/g, '_');
+  if (file.scanStatus === 'INFECTED') return `[DANGER] ${originalName}`;
+  if (needsAttentionPrefix(file)) return `[ATTENTION] ${originalName}`;
+  return originalName;
+};
+
+export const deduplicateFileName = (name: string, usedNames: Set<string>): string => {
+  if (!usedNames.has(name)) {
+    usedNames.add(name);
+    return name;
+  }
+
+  const dotIndex = name.lastIndexOf('.');
+  const baseName = dotIndex === -1 ? name : name.slice(0, dotIndex);
+  const ext = dotIndex === -1 ? '' : name.slice(dotIndex);
+
+  let counter = 1;
+  let candidate = `${baseName} (${counter})${ext}`;
+  while (usedNames.has(candidate)) {
+    counter++;
+    candidate = `${baseName} (${counter})${ext}`;
+  }
+
+  usedNames.add(candidate);
+  return candidate;
+};
+
+export const collectRequeteFiles = (requeteEntite: NonNullable<Awaited<ReturnType<typeof getRequeteEntiteById>>>) => {
+  const rootFiles = (requeteEntite.requete?.fichiersRequeteOriginale ?? []).filter((f) => f.size > 0);
+
+  const situationFiles: { folderName: string; file: UploadedFile }[] = [];
+  const situations = requeteEntite.requete?.situations ?? [];
+  for (const [index, situation] of situations.entries()) {
+    const folderName = `Situation ${index + 1}`;
+    const faits = situation.faits ?? [];
+    for (const fait of faits) {
+      for (const file of fait.fichiers ?? []) {
+        if (file.size > 0) {
+          situationFiles.push({ folderName, file });
+        }
+      }
+    }
+  }
+
+  return { rootFiles, situationFiles };
+};
+
+export const createRequeteFilesArchive = async (requeteId: string, entiteId: string) => {
+  const requeteEntite = await getRequeteEntiteById(requeteId, entiteId);
+  if (!requeteEntite) {
+    return null;
+  }
+
+  const { rootFiles, situationFiles } = collectRequeteFiles(requeteEntite);
+
+  if (rootFiles.length === 0 && situationFiles.length === 0) {
+    return 'NO_FILES' as const;
+  }
+
+  const archive = archiver('zip', { store: true });
+  const usedNames = new Set<string>();
+
+  const appendFileToArchive = async (file: UploadedFile, entryName: string) => {
+    const filePath = isPdf(file) && file.safeFilePath ? file.safeFilePath : file.filePath;
+    try {
+      const { stream } = await getFileStream(filePath);
+      archive.append(stream, { name: entryName });
+    } catch {
+      archive.append(Buffer.from('Fichier indisponible'), { name: `${entryName}.erreur.txt` });
+    }
+  };
+
+  for (const file of rootFiles) {
+    const prefixedName = getPrefixedFileName(file);
+    const uniqueName = deduplicateFileName(prefixedName, usedNames);
+    await appendFileToArchive(file, uniqueName);
+  }
+
+  const folderUsedNamesMap = new Map<string, Set<string>>();
+  for (const { folderName, file } of situationFiles) {
+    if (!folderUsedNamesMap.has(folderName)) {
+      folderUsedNamesMap.set(folderName, new Set<string>());
+    }
+    const folderUsedNames = folderUsedNamesMap.get(folderName) ?? new Set<string>();
+    const prefixedName = getPrefixedFileName(file);
+    const uniqueName = deduplicateFileName(prefixedName, folderUsedNames);
+    await appendFileToArchive(file, `${folderName}/${uniqueName}`);
+  }
+
+  archive.finalize();
+
+  return { archive, requeteId: requeteEntite.requeteId };
 };

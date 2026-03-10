@@ -1,0 +1,24 @@
+.trigger {
+  padding: 0.25rem 0.5rem;
+  background-color: transparent;
+  color: var(--text-action-high-blue-france);
+  border: 1px solid var(--border-action-high-blue-france);
+}
+
+.popup {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background-default-grey);
+}
+
+.item {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  white-space: nowrap;
+}
+
+.item[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

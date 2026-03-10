@@ -10,9 +10,13 @@ import {
 } from '../../libs/prisma.js';
 import {
   closeRequeteForEntite,
+  collectRequeteFiles,
   createChangeLogForRequeteEntite,
+  createRequeteFilesArchive,
+  deduplicateFileName,
   enrichSituationWithTraitementDesFaits,
   getOtherEntitesAffected,
+  getPrefixedFileName,
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
@@ -57,7 +61,19 @@ vi.mock('../../libs/minio.js', () => ({
   uploadFileToMinio: vi.fn(),
 }));
 
+vi.mock('archiver', () => {
+  const mockArchive = {
+    append: vi.fn(),
+    finalize: vi.fn(),
+    on: vi.fn(),
+    abort: vi.fn(),
+  };
+  return { default: vi.fn(() => mockArchive) };
+});
+
+import type { Readable } from 'node:stream';
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { getFileStream } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
@@ -2561,6 +2577,246 @@ describe('requetesEntite.service', () => {
         after: { statutId: 'CLOTUREE' },
         changedById: 'user123',
       });
+    });
+  });
+
+  describe('getPrefixedFileName', () => {
+    const makeFile = (overrides: Partial<UploadedFile> = {}): UploadedFile =>
+      ({
+        id: 'file-1',
+        fileName: 'test.pdf',
+        filePath: '/files/test.pdf',
+        mimeType: 'application/pdf',
+        size: 1024,
+        status: 'COMPLETED',
+        scanStatus: 'CLEAN',
+        sanitizeStatus: 'COMPLETED',
+        safeFilePath: '/files/test-safe.pdf',
+        scanResult: null,
+        processingError: null,
+        metadata: { originalName: 'document.pdf' },
+        canDelete: true,
+        entiteId: null,
+        uploadedById: null,
+        requeteEtapeNoteId: null,
+        requeteId: 'req123',
+        faitSituationId: null,
+        demarchesEngageesId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...overrides,
+      }) as UploadedFile;
+
+    it('should return original name for clean non-PDF file', () => {
+      const file = makeFile({ mimeType: 'image/png', scanStatus: 'CLEAN', metadata: { originalName: 'photo.png' } });
+      expect(getPrefixedFileName(file)).toBe('photo.png');
+    });
+
+    it('should return original name for clean PDF with safe file', () => {
+      const file = makeFile({ scanStatus: 'CLEAN', safeFilePath: '/safe/test.pdf' });
+      expect(getPrefixedFileName(file)).toBe('document.pdf');
+    });
+
+    it('should prefix [DANGER] for infected files', () => {
+      const file = makeFile({ scanStatus: 'INFECTED' });
+      expect(getPrefixedFileName(file)).toBe('[DANGER] document.pdf');
+    });
+
+    it('should prefix [ATTENTION] for pending scan', () => {
+      const file = makeFile({ scanStatus: 'PENDING', mimeType: 'image/png' });
+      expect(getPrefixedFileName(file)).toBe('[ATTENTION] document.pdf');
+    });
+
+    it('should prefix [ATTENTION] for scanning status', () => {
+      const file = makeFile({ scanStatus: 'SCANNING', mimeType: 'image/png' });
+      expect(getPrefixedFileName(file)).toBe('[ATTENTION] document.pdf');
+    });
+
+    it('should prefix [ATTENTION] for clean PDF without safe file', () => {
+      const file = makeFile({ scanStatus: 'CLEAN', safeFilePath: null });
+      expect(getPrefixedFileName(file)).toBe('[ATTENTION] document.pdf');
+    });
+
+    it('should sanitize path separators in file names', () => {
+      const file = makeFile({
+        scanStatus: 'CLEAN',
+        mimeType: 'image/png',
+        metadata: { originalName: 'path/to\\file.png' },
+      });
+      expect(getPrefixedFileName(file)).toBe('path_to_file.png');
+    });
+
+    it('should fall back to fileName when metadata has no originalName', () => {
+      const file = makeFile({ scanStatus: 'CLEAN', mimeType: 'image/png', metadata: null });
+      expect(getPrefixedFileName(file)).toBe('test.pdf');
+    });
+  });
+
+  describe('deduplicateFileName', () => {
+    it('should return the name as-is if not used', () => {
+      const usedNames = new Set<string>();
+      expect(deduplicateFileName('file.pdf', usedNames)).toBe('file.pdf');
+      expect(usedNames.has('file.pdf')).toBe(true);
+    });
+
+    it('should add (1) suffix on first collision', () => {
+      const usedNames = new Set(['file.pdf']);
+      expect(deduplicateFileName('file.pdf', usedNames)).toBe('file (1).pdf');
+    });
+
+    it('should increment suffix on multiple collisions', () => {
+      const usedNames = new Set(['file.pdf', 'file (1).pdf']);
+      expect(deduplicateFileName('file.pdf', usedNames)).toBe('file (2).pdf');
+    });
+
+    it('should handle files without extension', () => {
+      const usedNames = new Set(['README']);
+      expect(deduplicateFileName('README', usedNames)).toBe('README (1)');
+    });
+
+    it('should handle files with multiple dots', () => {
+      const usedNames = new Set(['archive.tar.gz']);
+      expect(deduplicateFileName('archive.tar.gz', usedNames)).toBe('archive.tar (1).gz');
+    });
+  });
+
+  describe('collectRequeteFiles', () => {
+    it('should collect root files and situation files', () => {
+      const requeteEntite = {
+        ...mockRequeteEntite,
+        requete: {
+          ...mockRequeteEntite.requete,
+          fichiersRequeteOriginale: [
+            { id: 'f1', size: 100 },
+            { id: 'f2', size: 0 },
+          ],
+          situations: [
+            {
+              faits: [
+                {
+                  fichiers: [
+                    { id: 'f3', size: 200 },
+                    { id: 'f4', size: 50 },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      } as unknown as Parameters<typeof collectRequeteFiles>[0];
+
+      const result = collectRequeteFiles(requeteEntite);
+      expect(result.rootFiles).toHaveLength(1);
+      expect(result.rootFiles[0].id).toBe('f1');
+      expect(result.situationFiles).toHaveLength(2);
+      expect(result.situationFiles[0].folderName).toBe('Situation 1');
+    });
+
+    it('should filter out zero-size files from situations', () => {
+      const requeteEntite = {
+        ...mockRequeteEntite,
+        requete: {
+          ...mockRequeteEntite.requete,
+          fichiersRequeteOriginale: [],
+          situations: [
+            {
+              faits: [{ fichiers: [{ id: 'f1', size: 0 }] }],
+            },
+          ],
+        },
+      } as unknown as Parameters<typeof collectRequeteFiles>[0];
+
+      const result = collectRequeteFiles(requeteEntite);
+      expect(result.rootFiles).toHaveLength(0);
+      expect(result.situationFiles).toHaveLength(0);
+    });
+
+    it('should handle empty requete', () => {
+      const requeteEntite = {
+        ...mockRequeteEntite,
+        requete: {
+          ...mockRequeteEntite.requete,
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+      } as unknown as Parameters<typeof collectRequeteFiles>[0];
+
+      const result = collectRequeteFiles(requeteEntite);
+      expect(result.rootFiles).toHaveLength(0);
+      expect(result.situationFiles).toHaveLength(0);
+    });
+  });
+
+  describe('createRequeteFilesArchive', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should return null when requete is not found', async () => {
+      mockedRequeteEntite.findFirst.mockResolvedValueOnce(null);
+      const result = await createRequeteFilesArchive('req-unknown', 'ent123');
+      expect(result).toBeNull();
+    });
+
+    it('should return NO_FILES when there are no attachments', async () => {
+      mockedRequeteEntite.findFirst.mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        requete: {
+          ...mockRequeteEntite.requete,
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+      } as never);
+
+      const result = await createRequeteFilesArchive('req123', 'ent123');
+      expect(result).toBe('NO_FILES');
+    });
+
+    it('should return NO_FILES when all files have size 0', async () => {
+      mockedRequeteEntite.findFirst.mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        requete: {
+          ...mockRequeteEntite.requete,
+          fichiersRequeteOriginale: [{ id: 'f1', size: 0 }],
+          situations: [],
+        },
+      } as never);
+
+      const result = await createRequeteFilesArchive('req123', 'ent123');
+      expect(result).toBe('NO_FILES');
+    });
+
+    it('should return an archive when files exist', async () => {
+      const mockStream = { pipe: vi.fn() } as unknown as Readable;
+      vi.mocked(getFileStream).mockResolvedValue({ stream: mockStream, metadata: {} } as never);
+
+      mockedRequeteEntite.findFirst.mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        requeteId: 'req123',
+        requete: {
+          ...mockRequeteEntite.requete,
+          fichiersRequeteOriginale: [
+            {
+              id: 'f1',
+              fileName: 'test.png',
+              filePath: '/files/test.png',
+              mimeType: 'image/png',
+              size: 1024,
+              scanStatus: 'CLEAN',
+              sanitizeStatus: 'COMPLETED',
+              safeFilePath: null,
+              metadata: { originalName: 'photo.png' },
+            },
+          ],
+          situations: [],
+        },
+      } as never);
+
+      const result = await createRequeteFilesArchive('req123', 'ent123');
+      expect(result).not.toBeNull();
+      expect(result).not.toBe('NO_FILES');
+      expect(result).toHaveProperty('archive');
+      expect(result).toHaveProperty('requeteId', 'req123');
     });
   });
 });
