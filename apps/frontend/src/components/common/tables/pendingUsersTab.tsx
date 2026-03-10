@@ -41,10 +41,31 @@ export function PendingUsersTab() {
     { key: 'nom', label: 'Nom' },
     { key: 'prenom', label: 'Prénom' },
     { key: 'createdAt', label: 'Date de création' },
+    { key: 'custom:affectation', label: 'Affectation' },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 
   const cells: Cells<User> = {
+    'custom:affectation': (row: User) => {
+      const { entite } = row;
+      if (!entite) return null;
+      if (!entite.entiteMereId) return <span>{entite.nomComplet}</span>;
+      const direction = entite.entiteMere;
+      if (!direction?.entiteMereId) {
+        return (
+          <span>
+            {entite.nomComplet}
+            {direction ? ` (${direction.label})` : ''}
+          </span>
+        );
+      }
+      return (
+        <span>
+          {entite.nomComplet}
+          {` (${direction.label}${direction.entiteMere ? ` - ${direction.entiteMere.label}` : ''})`}
+        </span>
+      );
+    },
     createdAt: (row: User) => (
       <div>
         {new Date(row.createdAt).toLocaleDateString('fr-FR', {
