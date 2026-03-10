@@ -28,7 +28,7 @@ export async function retryWithBackoff<T>(operation: () => Promise<T>, options: 
 
       const delay = backoffMs * (maxRetries - retriesLeft + 1);
       const logger = getLoggerStore();
-      logger?.warn?.({ ...context, retriesLeft: retriesLeft - 1, delayMs: delay }, 'Operation failed, retrying...');
+      logger.warn({ ...context, retriesLeft: retriesLeft - 1, delayMs: delay }, 'Operation failed, retrying...');
 
       await new Promise((resolve) => setTimeout(resolve, delay));
       retriesLeft--;
