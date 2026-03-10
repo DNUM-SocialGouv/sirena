@@ -22,6 +22,10 @@ inputs:
   sentry-auth-token:
     description: 'Sentry auth token'
     required: true
+  trivy-enabled:
+    description: "Enable Trivy security scanning on built images"
+    required: false
+    default: "true"
 
 runs:
   using: 'composite'
@@ -79,6 +83,25 @@ runs:
           type=gha,mode=max,scope=worker
         platforms: linux/amd64
 
+    - name: Trivy scan worker image
+      if: inputs.trivy-enabled == 'true' && steps.check-image-worker.outputs.worker-exists == 'false'
+      uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # v0.34.1
+      continue-on-error: true
+      with:
+        image-ref: ${{ env.IMAGE_TAG }}-worker
+        format: "sarif"
+        output: "trivy-container-worker-results.sarif"
+        severity: "CRITICAL,HIGH,MEDIUM"
+        exit-code: "0"
+
+    - name: Upload Trivy worker scan results
+      if: inputs.trivy-enabled == 'true' && steps.check-image-worker.outputs.worker-exists == 'false'
+      uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v3
+      continue-on-error: true
+      with:
+        sarif_file: "trivy-container-worker-results.sarif"
+        category: "trivy-container-worker"
+
     - name: Check backend version is not already created
       shell: bash
       id: check-image-backend
@@ -107,6 +130,24 @@ runs:
         cache-to: |
           type=gha,mode=max,scope=backend
         platforms: linux/amd64
+
+    - name: Trivy scan backend image
+      if: inputs.trivy-enabled == 'true' && steps.check-image-backend.outputs.backend-exists == 'false'
+      uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # v0.34.1
+      continue-on-error: true
+      with:
+        image-ref: ${{ env.IMAGE_TAG }}-backend
+        format: "sarif"
+        output: "trivy-container-backend-results.sarif"
+        severity: "CRITICAL,HIGH,MEDIUM"
+
+    - name: Upload Trivy backend scan results
+      if: inputs.trivy-enabled == 'true' && steps.check-image-backend.outputs.backend-exists == 'false'
+      uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v3
+      continue-on-error: true
+      with:
+        sarif_file: "trivy-container-backend-results.sarif"
+        category: "trivy-container-backend"
 
     - name: Check frontend version is not already created
       shell: bash
@@ -142,3 +183,21 @@ runs:
         cache-to: |
           type=gha,mode=max,scope=frontend
         platforms: linux/amd64
+
+    - name: Trivy scan frontend image
+      if: inputs.trivy-enabled == 'true' && steps.check-image-frontend.outputs.frontend-exists == 'false'
+      uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # v0.34.1
+      continue-on-error: true
+      with:
+        image-ref: ${{ env.IMAGE_TAG }}-frontend-${{ inputs.environment }}
+        format: "sarif"
+        output: "trivy-container-frontend-results.sarif"
+        severity: "CRITICAL,HIGH,MEDIUM"
+
+    - name: Upload Trivy frontend scan results
+      if: inputs.trivy-enabled == 'true' && steps.check-image-frontend.outputs.frontend-exists == 'false'
+      uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v3
+      continue-on-error: true
+      with:
+        sarif_file: "trivy-container-frontend-results.sarif"
+        category: "trivy-container-frontend"
