@@ -8,6 +8,7 @@ import {
   PROFESSION_SANTE_PRECISION,
 } from '@sirena/common/constants';
 import { envVars } from '../../../config/env.js';
+import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
 import { PrismaClient } from '../../../libs/prisma.js';
 import type { DecisionLeaf, DecisionNode, DecisionTraceEntry, EntiteAdminType, SituationContext } from './types.js';
 
@@ -317,21 +318,27 @@ export function finessReferentielPlaceholderSubtree(): DecisionNode {
     description: 'Référentiel FINESS : categCode → AutoriteCompetenteReferentiel',
     add: async (ctx: SituationContext): Promise<EntiteAdminType[]> => {
       const prisma = new PrismaClient();
+      const logger = getLoggerStore();
 
       try {
         const categCode = ctx.categCode;
         if (!categCode || typeof categCode !== 'string' || categCode.trim() === '') {
+          logger.info({ categCode }, 'FINESS referentiel: no categCode, returning []');
           return [];
         }
 
+        logger.info({ categCode }, 'FINESS referentiel: looking up categCode');
         const referentiel = await prisma.autoriteCompetenteReferentiel.findUnique({
           where: { categCode: categCode.trim() },
         });
 
         if (referentiel?.entiteTypeIds && referentiel.entiteTypeIds.length > 0) {
-          return parseEntiteTypeIds(referentiel.entiteTypeIds);
+          const parsed = parseEntiteTypeIds(referentiel.entiteTypeIds);
+          logger.info({ categCode, entiteTypeIds: referentiel.entiteTypeIds, parsed }, 'FINESS referentiel: found');
+          return parsed;
         }
 
+        logger.info({ categCode }, 'FINESS referentiel: not found, returning []');
         return [];
       } finally {
         await prisma.$disconnect();
@@ -343,10 +350,13 @@ export function finessReferentielPlaceholderSubtree(): DecisionNode {
 /*********************
  *  RUN DECISION TREE
  *********************/
+type LogCtx = { requeteId: string; situationId: string };
+
 async function evalNode(
   node: DecisionNode,
   ctx: SituationContext,
   found: Set<EntiteAdminType>,
+  logCtx: LogCtx,
   depth: number = 0,
   trace?: DecisionTraceEntry[],
 ): Promise<void> {
@@ -358,10 +368,14 @@ async function evalNode(
 
   checkRequired(node, ctx);
 
+  const logger = getLoggerStore();
+
   switch (node.kind) {
     case 'leaf': {
       const added = typeof node.add === 'function' ? await node.add(ctx) : node.add;
       for (const t of added) found.add(t);
+
+      logger.info({ ...logCtx, nodeId: node.id, added }, `Decision tree: leaf`);
 
       trace?.push({
         nodeId: node.id,
@@ -373,12 +387,17 @@ async function evalNode(
       });
 
       if (node.next) {
-        await evalNode(node.next, ctx, found, depth + 1, trace);
+        await evalNode(node.next, ctx, found, logCtx, depth + 1, trace);
       }
       return;
     }
     case 'branch': {
       const ok = node.predicate(ctx);
+
+      logger.info(
+        { ...logCtx, nodeId: node.id, predicateResult: ok },
+        `Decision tree: branch → ${ok ? 'true' : 'false'}`,
+      );
 
       trace?.push({
         nodeId: node.id,
@@ -398,19 +417,21 @@ async function evalNode(
           const added = typeof node.addIfTrue === 'function' ? await node.addIfTrue(ctx) : node.addIfTrue;
           for (const t of added) found.add(t);
         }
-        await evalNode(node.ifTrue, ctx, found, depth + 1, trace);
+        await evalNode(node.ifTrue, ctx, found, logCtx, depth + 1, trace);
       } else {
         if (node.addIfFalse) {
           const added = typeof node.addIfFalse === 'function' ? await node.addIfFalse(ctx) : node.addIfFalse;
           for (const t of added) found.add(t);
         }
-        await evalNode(node.ifFalse, ctx, found, depth + 1, trace);
+        await evalNode(node.ifFalse, ctx, found, logCtx, depth + 1, trace);
       }
       return;
     }
     case 'switch': {
       const key = node.select(ctx);
       const next = key && node.cases[key];
+
+      logger.info({ ...logCtx, nodeId: node.id, key, matched: !!next }, 'Decision tree: switch');
 
       trace?.push({
         nodeId: node.id,
@@ -424,7 +445,7 @@ async function evalNode(
       if (!next) {
         // If default exists, use it (intentional fallback for unhandled cases)
         if (node.default) {
-          await evalNode(node.default, ctx, found, depth + 1, trace);
+          await evalNode(node.default, ctx, found, logCtx, depth + 1, trace);
           return;
         }
         // If no default and key exists but is not in cases, and field is required, throw error
@@ -438,11 +459,13 @@ async function evalNode(
         return;
       }
 
-      await evalNode(next, ctx, found, depth + 1, trace);
+      await evalNode(next, ctx, found, logCtx, depth + 1, trace);
       return;
     }
     case 'forEach': {
       const items = node.iterate(ctx);
+
+      logger.info({ ...logCtx, nodeId: node.id, itemCount: items.length, items }, 'Decision tree: forEach');
 
       // For each item, create a modified context and apply the subtree
       for (let i = 0; i < items.length; i++) {
@@ -465,12 +488,12 @@ async function evalNode(
         });
 
         // Apply the subtree for this item
-        await evalNode(node.forEach, itemContext, found, depth + 1, trace);
+        await evalNode(node.forEach, itemContext, found, logCtx, depth + 1, trace);
       }
 
       // If an "after" node is defined, apply it after all iterations
       if (node.after) {
-        await evalNode(node.after, ctx, found, depth + 1, trace);
+        await evalNode(node.after, ctx, found, logCtx, depth + 1, trace);
       }
       return;
     }
@@ -480,11 +503,14 @@ async function evalNode(
   }
 }
 
-export async function runDecisionTree(ctx: SituationContext): Promise<EntiteAdminType[]> {
+export async function runDecisionTree(ctx: SituationContext, logCtx: LogCtx): Promise<EntiteAdminType[]> {
+  const logger = getLoggerStore();
+  logger.info({ ...logCtx, ctx }, 'Decision tree: starting evaluation');
+
   const found = new Set<EntiteAdminType>();
   const trace = envVars.AFFECTATION_DEBUG ? ([] as DecisionTraceEntry[]) : undefined;
 
-  await evalNode(rootNode, ctx, found, 0, trace);
+  await evalNode(rootNode, ctx, found, logCtx, 0, trace);
 
   if (trace) {
     const debugDir = new URL('../../../../debug', import.meta.url).pathname;
@@ -493,5 +519,7 @@ export async function runDecisionTree(ctx: SituationContext): Promise<EntiteAdmi
     await writeFile(filename, JSON.stringify({ context: ctx, trace }, null, 2));
   }
 
-  return Array.from(found);
+  const result = Array.from(found);
+  logger.info({ ...logCtx, result }, 'Decision tree: result');
+  return result;
 }
