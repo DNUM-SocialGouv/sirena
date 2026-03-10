@@ -81,7 +81,23 @@ describe('user.service.ts', () => {
         },
         skip: 0,
         orderBy: { nom: 'asc' },
-        include: { role: true },
+        include: {
+          role: true,
+          entite: {
+            select: {
+              nomComplet: true,
+              label: true,
+              entiteMereId: true,
+              entiteMere: {
+                select: {
+                  label: true,
+                  entiteMereId: true,
+                  entiteMere: { select: { label: true } },
+                },
+              },
+            },
+          },
+        },
       });
       expect(result).toEqual({ data: [mockUser], total: 1 });
     });
@@ -94,7 +110,23 @@ describe('user.service.ts', () => {
         where: { roleId: { in: ['PENDING', 'SUPER_ADMIN'] }, statutId: { in: ['ACTIF'] }, entiteId: { in: ['e1'] } },
         skip: 0,
         orderBy: { nom: 'asc' },
-        include: { role: true },
+        include: {
+          role: true,
+          entite: {
+            select: {
+              nomComplet: true,
+              label: true,
+              entiteMereId: true,
+              entiteMere: {
+                select: {
+                  label: true,
+                  entiteMereId: true,
+                  entiteMere: { select: { label: true } },
+                },
+              },
+            },
+          },
+        },
       });
       expect(result).toEqual({ data: [mockUser], total: 1 });
     });
@@ -107,7 +139,23 @@ describe('user.service.ts', () => {
         where: { entiteId: { in: ['e1'] } },
         skip: 0,
         orderBy: { nom: 'asc' },
-        include: { role: true },
+        include: {
+          role: true,
+          entite: {
+            select: {
+              nomComplet: true,
+              label: true,
+              entiteMereId: true,
+              entiteMere: {
+                select: {
+                  label: true,
+                  entiteMereId: true,
+                  entiteMere: { select: { label: true } },
+                },
+              },
+            },
+          },
+        },
       });
       expect(result).toEqual({ data: [mockUser], total: 1 });
     });
@@ -129,7 +177,23 @@ describe('user.service.ts', () => {
         skip: 0,
         take: 10,
         orderBy: { nom: 'asc' },
-        include: { role: true },
+        include: {
+          role: true,
+          entite: {
+            select: {
+              nomComplet: true,
+              label: true,
+              entiteMereId: true,
+              entiteMere: {
+                select: {
+                  label: true,
+                  entiteMereId: true,
+                  entiteMere: { select: { label: true } },
+                },
+              },
+            },
+          },
+        },
       });
 
       expect(result).toEqual({ data: [mockUser], total: 1 });

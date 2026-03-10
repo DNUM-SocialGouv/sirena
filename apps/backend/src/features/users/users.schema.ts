@@ -18,8 +18,24 @@ export const UserSchema = z.object({
   updatedAt: z.coerce.date(),
 });
 
+const EntiteForUserSchema = z
+  .object({
+    nomComplet: z.string(),
+    label: z.string(),
+    entiteMereId: z.string().nullable(),
+    entiteMere: z
+      .object({
+        label: z.string(),
+        entiteMereId: z.string().nullable(),
+        entiteMere: z.object({ label: z.string() }).nullable(),
+      })
+      .nullable(),
+  })
+  .nullable();
+
 export const UserWithRoleSchema = UserSchema.extend({
   role: RoleEnumSchema,
+  entite: EntiteForUserSchema,
 });
 export const GetUserResponseSchema = UserWithRoleSchema.omit({
   pcData: true,
