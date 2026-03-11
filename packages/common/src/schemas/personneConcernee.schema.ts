@@ -29,6 +29,7 @@ export const PersonneConcerneeDataSchema = z.object({
   estHandicapee: z.boolean().optional(),
   consentCommuniquerIdentite: z.boolean().optional(),
   estVictimeInformee: z.boolean().optional(),
+  victimeInformeeCommentaire: z.string().optional(),
   autrePersonnes: z.string().optional(),
   aAutrePersonnes: z.boolean().optional().nullable(),
   commentaire: z.string().optional(),

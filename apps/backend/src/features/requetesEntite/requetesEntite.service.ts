@@ -633,6 +633,8 @@ export const updateRequeteParticipant = async (
                 ? undefined
                 : !participantData.consentCommuniquerIdentite,
             estVictimeInformee: participantData.estVictimeInformee || false,
+            victimeInformeeCommentaire:
+              participantData.estVictimeInformee === false ? participantData.victimeInformeeCommentaire || '' : '',
             autrePersonnes: participantData.autrePersonnes || '',
             aAutrePersonnes: participantData.aAutrePersonnes ?? undefined,
             commentaire: participantData.commentaire || '',
