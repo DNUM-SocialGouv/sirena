@@ -303,10 +303,6 @@ function buildSetClause(db: DbRow, csv: CsvRow): string {
     .join(', ');
 }
 
-function buildSetClauseForInsert(row: CsvRow): string {
-  return EDITABLE_FIELDS.map((f) => `"${f}" = ${escapeSql(row[f] ?? '')}`).join(', ');
-}
-
 function buildSetClauseFromDb(row: DbRow): string {
   return EDITABLE_FIELDS.map((f) => `"${f}" = ${escapeSql(row[f as EditableField])}`).join(', ');
 }

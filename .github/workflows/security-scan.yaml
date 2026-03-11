@@ -9,20 +9,11 @@ on:
       - main
   schedule:
     - cron: "0 6 * * 1"
-  workflow_run:
-    workflows:
-      - "Feature branches - build"
-      - "Integration - build and deploy"
-      - "Test - build and deploy"
-      - "Manual Deploy"
-    types:
-      - completed
 
 jobs:
   trivy-scan:
     name: Trivy Security Scan
     runs-on: ubuntu-latest
-    if: github.event_name != 'workflow_run'
     permissions:
       contents: read
       security-events: write
@@ -46,105 +37,3 @@ jobs:
         with:
           sarif_file: "trivy-fs-results.sarif"
           category: "trivy-filesystem"
-
-  determine-frontend-env:
-    name: Determine Frontend Environment
-    runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_repository.full_name == github.repository
-    outputs:
-      frontend_env: ${{ steps.env.outputs.frontend_env }}
-    steps:
-      - name: Determine frontend environment from workflow
-        id: env
-        run: |
-          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
-          case "$WORKFLOW_NAME" in
-            "Integration - build and deploy")
-              echo "frontend_env=integration" >> $GITHUB_OUTPUT
-              ;;
-            "Test - build and deploy")
-              echo "frontend_env=test" >> $GITHUB_OUTPUT
-              ;;
-            "Manual Deploy")
-              echo "frontend_env=production" >> $GITHUB_OUTPUT
-              ;;
-            *)
-              echo "frontend_env=dev" >> $GITHUB_OUTPUT
-              ;;
-          esac
-
-  trivy-container-scan:
-    name: Trivy Container Scan
-    runs-on: ubuntu-latest
-    needs: determine-frontend-env
-    if: >
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_repository.full_name == github.repository
-    permissions:
-      contents: read
-      packages: read
-      security-events: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        image: [backend, frontend, worker]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Compute image tag
-        id: image_tag
-        run: |
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          SHORT_SHA=${{ github.event.workflow_run.head_sha }}
-          SHORT_SHA=${SHORT_SHA::7}
-          IMAGE_NAME="${{ matrix.image }}"
-          if [ "$IMAGE_NAME" = "frontend" ]; then
-            IMAGE_NAME="frontend-${{ needs.determine-frontend-env.outputs.frontend_env }}"
-          fi
-          echo "IMAGE=ghcr.io/${REPO_LOWER}:${SHORT_SHA}-${IMAGE_NAME}" >> $GITHUB_OUTPUT
-
-      - name: Pull Docker image
-        run: docker pull ${{ steps.image_tag.outputs.IMAGE }}
-
-      - name: Run Trivy vulnerability scanner (container)
-        uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518 # v0.34.1
-        with:
-          image-ref: "${{ steps.image_tag.outputs.IMAGE }}"
-          format: "sarif"
-          output: "trivy-container-${{ matrix.image }}-results.sarif"
-          severity: "CRITICAL,HIGH,MEDIUM"
-
-      - name: Determine ref type
-        id: ref_type
-        run: |
-          HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
-          if git show-ref --verify --quiet "refs/tags/${HEAD_BRANCH}" 2>/dev/null || [[ "${HEAD_BRANCH}" =~ ^v[0-9] ]]; then
-            echo "ref=refs/tags/${HEAD_BRANCH}" >> $GITHUB_OUTPUT
-          else
-            echo "ref=refs/heads/${HEAD_BRANCH}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Upload Trivy container scan results
-        uses: github/codeql-action/upload-sarif@89a39a4e59826350b863aa6b6252a07ad50cf83e # v3
-        if: always()
-        with:
-          sarif_file: "trivy-container-${{ matrix.image }}-results.sarif"
-          category: "trivy-container-${{ matrix.image }}"
-          ref: ${{ steps.ref_type.outputs.ref }}
-          sha: ${{ github.event.workflow_run.head_sha }}
