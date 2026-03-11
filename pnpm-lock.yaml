@@ -117,7 +117,7 @@ importers:
         version: 4.12.0
       file-type:
         specifier: ^21.3.0
-        version: 21.3.0
+        version: 21.3.1
       graffle:
         specifier: 8.0.0-next.173
         version: 8.0.0-next.173(@opentelemetry/api@1.9.0)(graphql@16.13.0)(prettier@3.8.1)
@@ -3180,14 +3180,15 @@ packages:
 
   fhir@4.12.0:
     resolution: {integrity: sha512-N+eLuUbYjvjX5NlZPhE08OVrsJJhulQKkVWnW1M3HpNvreWC1yVvoF8ptmGzlvtDZRCrNrBArfLklphFO2L0oA==}
+    deprecated: This package has been renamed to fhir-tool. Please install and use fhir-tool instead.
     bundledDependencies:
       - lodash
       - path
       - q
       - xml-js
 
-  file-type@21.3.0:
-    resolution: {integrity: sha512-8kPJMIGz1Yt/aPEwOsrR97ZyZaD1Iqm8PClb1nYFclUCkBi0Ma5IsYNQzvSFS9ib51lWyIw5mIT9rWzI/xjpzA==}
+  file-type@21.3.1:
+    resolution: {integrity: sha512-SrzXX46I/zsRDjTb82eucsGg0ODq2NpGDp4HcsFKApPy8P8vACjpJRDoGGMfEzhFC0ry61ajd7f72J3603anBA==}
     engines: {node: '>=20'}
 
   fill-range@7.1.1:
@@ -8081,7 +8082,7 @@ snapshots:
     dependencies:
       randomatic: 3.1.1
 
-  file-type@21.3.0:
+  file-type@21.3.1:
     dependencies:
       '@tokenizer/inflate': 0.4.1
       strtok3: 10.3.4
