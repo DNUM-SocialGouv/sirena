@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { connection } from '../../config/redis.js';
 import { prisma } from '../../libs/prisma.js';
 import { determineSource, generateRequeteId } from './functionalId.service.js';
+
+vi.mock('../../config/redis.js', () => ({
+  connection: {
+    set: vi.fn(),
+  },
+}));
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -24,11 +31,13 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: null }]);
+      vi.mocked(connection.set).mockResolvedValue('OK');
 
       const result = await generateRequeteId('SIRENA');
 
       expect(result).toBe('2025-09-RS1');
       expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+      expect(connection.set).toHaveBeenCalledWith('requete:id-lock:2025-09-RS1', '1', 'EX', 10, 'NX');
     });
 
     it('should generate ID with RF prefix for FORMULAIRE source', async () => {
@@ -36,6 +45,7 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 119 }]);
+      vi.mocked(connection.set).mockResolvedValue('OK');
 
       const result = await generateRequeteId('FORMULAIRE');
 
@@ -47,6 +57,7 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 41 }]);
+      vi.mocked(connection.set).mockResolvedValue('OK');
 
       const result = await generateRequeteId('SIRENA');
 
@@ -61,6 +72,7 @@ describe('functionalId.service', () => {
         .mockResolvedValueOnce([{ maxNumber: 0 }])
         .mockResolvedValueOnce([{ maxNumber: 1 }])
         .mockResolvedValueOnce([{ maxNumber: 2 }]);
+      vi.mocked(connection.set).mockResolvedValue('OK');
 
       const result1 = await generateRequeteId('SIRENA');
       const result2 = await generateRequeteId('SIRENA');
@@ -78,6 +90,7 @@ describe('functionalId.service', () => {
       vi.mocked(prisma.$queryRaw)
         .mockResolvedValueOnce([{ maxNumber: 5 }])
         .mockResolvedValueOnce([{ maxNumber: 3 }]);
+      vi.mocked(connection.set).mockResolvedValue('OK');
 
       const result1 = await generateRequeteId('SIRENA');
       const result2 = await generateRequeteId('FORMULAIRE');
@@ -90,6 +103,7 @@ describe('functionalId.service', () => {
       vi.mocked(prisma.$queryRaw)
         .mockResolvedValueOnce([{ maxNumber: 10 }])
         .mockResolvedValueOnce([{ maxNumber: null }]);
+      vi.mocked(connection.set).mockResolvedValue('OK');
 
       // Month 1
       vi.setSystemTime(new Date('2025-09-15'));
@@ -107,6 +121,7 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: null }]);
+      vi.mocked(connection.set).mockResolvedValue('OK');
 
       const result = await generateRequeteId('SIRENA');
 
@@ -118,6 +133,7 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 11 }]);
+      vi.mocked(connection.set).mockResolvedValue('OK');
 
       const result = await generateRequeteId('FORMULAIRE');
 
@@ -129,10 +145,25 @@ describe('functionalId.service', () => {
       vi.setSystemTime(mockDate);
 
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 4 }]);
+      vi.mocked(connection.set).mockResolvedValue('OK');
 
       const result = await generateRequeteId('TELEPHONIQUE');
 
       expect(result).toBe('2025-09-RT5');
+    });
+
+    it('should skip locked id and reserve the next available one', async () => {
+      const mockDate = new Date('2025-09-15');
+      vi.setSystemTime(mockDate);
+
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([{ maxNumber: 0 }]);
+      vi.mocked(connection.set).mockResolvedValueOnce(null).mockResolvedValueOnce('OK');
+
+      const result = await generateRequeteId('SIRENA');
+
+      expect(result).toBe('2025-09-RS2');
+      expect(connection.set).toHaveBeenNthCalledWith(1, 'requete:id-lock:2025-09-RS1', '1', 'EX', 10, 'NX');
+      expect(connection.set).toHaveBeenNthCalledWith(2, 'requete:id-lock:2025-09-RS2', '1', 'EX', 10, 'NX');
     });
   });
 
