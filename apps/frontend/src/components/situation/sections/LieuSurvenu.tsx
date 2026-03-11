@@ -47,12 +47,7 @@ export function LieuSurvenu({ formData, setFormData, isSaving, receptionType }: 
   const lieuPrecision = formData.lieuDeSurvenue?.lieuPrecision;
   const isOrganizationReadOnly = isSaving || Boolean(formData.lieuDeSurvenue?.finess);
   const isFinessEtablissementType = Boolean(lieuType && finessEtablissementTypes.includes(lieuType));
-  const hasCompleteOrganizationFromFiness = Boolean(
-    formData.lieuDeSurvenue?.finess &&
-      formData.lieuDeSurvenue?.adresse?.label &&
-      formData.lieuDeSurvenue?.adresse?.codePostal &&
-      formData.lieuDeSurvenue?.adresse?.ville,
-  );
+  const hasCompleteOrganizationFromFiness = Boolean(formData.lieuDeSurvenue?.finess);
   const [isNoFinessChecked, setIsNoFinessChecked] = useState(
     () =>
       !formData.lieuDeSurvenue?.finess &&

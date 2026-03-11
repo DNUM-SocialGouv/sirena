@@ -483,6 +483,37 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
           {misEnCauseType === MIS_EN_CAUSE_TYPE.MEMBRE_FAMILLE && (
             <MisEnCauseIdentityFields formData={formData} isSaving={isSaving} setFormData={setFormData} />
           )}
+
+          {MIS_EN_CAUSE_RPPS.includes(misEnCauseType || '') && (
+            <>
+              <div className="fr-col-12 fr-col-md-3">
+                <Input
+                  label="Code postal"
+                  nativeInputProps={{
+                    value: formData.misEnCause?.codePostal || '',
+                    onChange: (e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        misEnCause: { ...prev.misEnCause, codePostal: e.target.value },
+                      })),
+                  }}
+                />
+              </div>
+              <div className="fr-col-12 fr-col-md-3">
+                <Input
+                  label="Ville"
+                  nativeInputProps={{
+                    value: formData.misEnCause?.ville || '',
+                    onChange: (e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        misEnCause: { ...prev.misEnCause, ville: e.target.value },
+                      })),
+                  }}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="fr-col-12">

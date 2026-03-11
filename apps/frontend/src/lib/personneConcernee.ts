@@ -41,7 +41,9 @@ export function formatPersonneConcerneeFromServer(participant: unknown): Personn
           : p.dateNaissance instanceof Date
             ? p.dateNaissance.toISOString().split('T')[0]
             : undefined,
-    adresseDomicile: `${adresse.numero || ''} ${adresse.rue || ''}`,
+    adresseDomicile: (adresse.rue as string)
+      ? `${adresse.numero || ''} ${adresse.rue}`.trim()
+      : (adresse.label as string) || '',
     codePostal: (adresse.codePostal as string) || '',
     ville: (adresse.ville as string) || '',
     numeroTelephone: (identite.telephone as string) || '',
