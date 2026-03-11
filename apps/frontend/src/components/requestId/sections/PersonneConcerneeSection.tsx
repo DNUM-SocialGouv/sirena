@@ -1,7 +1,7 @@
 import { InfoSection } from '@sirena/ui';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
-import { ContactInfo, formatAddress, formatFullName, SectionTitle } from './helpers';
+import { ContactInfo, formatAddress, formatFullName, renderConsentIdentite, SectionTitle } from './helpers';
 
 type PersonneData = NonNullable<ReturnType<typeof useRequeteDetails>['data']>['requete']['participant'];
 
@@ -49,10 +49,11 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
     !!address ||
     !!personneIdentite?.email ||
     !!personneIdentite?.telephone ||
-    !!personne?.estHandicapee ||
-    personne?.veutGarderAnonymat !== null ||
-    !!personne?.estVictimeInformee ||
-    !!personne?.aAutrePersonnes ||
+    (personne?.estHandicapee !== null && personne?.estHandicapee !== undefined) ||
+    (personne?.veutGarderAnonymat !== null && personne?.veutGarderAnonymat !== undefined) ||
+    (personne?.estVictimeInformee !== null && personne?.estVictimeInformee !== undefined) ||
+    !!personne?.victimeInformeeCommentaire ||
+    (personne?.aAutrePersonnes !== null && personne?.aAutrePersonnes !== undefined) ||
     !!personne?.autrePersonnes ||
     !!personne?.commentaire;
 
@@ -89,10 +90,11 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
     const hasAddressSection = !!address;
     const hasContactSection = !!(personneIdentite?.email || personneIdentite?.telephone);
     const hasComplementaryInfo =
-      !!personne?.estHandicapee ||
+      (personne?.estHandicapee !== null && personne?.estHandicapee !== undefined) ||
       (personne?.veutGarderAnonymat !== null && personne?.veutGarderAnonymat !== undefined) ||
-      !!personne?.estVictimeInformee ||
-      !!personne?.aAutrePersonnes ||
+      (personne?.estVictimeInformee !== null && personne?.estVictimeInformee !== undefined) ||
+      !!personne?.victimeInformeeCommentaire ||
+      (personne?.aAutrePersonnes !== null && personne?.aAutrePersonnes !== undefined) ||
       !!personne?.autrePersonnes ||
       !!personne?.commentaire;
 
@@ -136,20 +138,19 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
           <>
             <SectionTitle level={4}>Informations complémentaires</SectionTitle>
             <ul className="fr-mb-2w">
-              {personne?.estHandicapee && <li>Il/elle est en situation d'handicap</li>}
+              {personne?.estHandicapee === true && <li>Il/elle est en situation d&apos;handicap</li>}
+              {personne?.estHandicapee === false && <li>Il/elle n&apos;est pas en situation d&apos;handicap</li>}
               {personne?.veutGarderAnonymat !== null && personne?.veutGarderAnonymat !== undefined && (
-                <li>
-                  {personne.veutGarderAnonymat ? (
-                    <>
-                      ⚠️ Il/elle <strong>ne</strong> consent <strong>pas</strong> à ce que son identitée soit communiquée
-                    </>
-                  ) : (
-                    'Il/elle consent à ce que son identitée soit communiquée'
-                  )}
-                </li>
+                <li>{renderConsentIdentite(personne.veutGarderAnonymat)}</li>
               )}
-              {personne?.estVictimeInformee && <li>Il/elle a été informé(e) de la démarche par le déclarant</li>}
+              {personne?.estVictimeInformee === true && <li>Il/elle a été informé(e) de la démarche</li>}
+              {personne?.estVictimeInformee === false && <li>Il/elle n&apos;a pas été informé(e) de la démarche</li>}
             </ul>
+            {personne?.estVictimeInformee === false && personne?.victimeInformeeCommentaire && (
+              <p className="fr-mb-2w">
+                Raison pour laquelle il/elle n&apos;est pas informé(e) : {personne.victimeInformeeCommentaire}
+              </p>
+            )}
             {personne?.aAutrePersonnes && (
               <>
                 <p className="fr-mb-1w">Autres personnes concernées : {personne.aAutrePersonnes ? 'Oui' : 'Non'}</p>

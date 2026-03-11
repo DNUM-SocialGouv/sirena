@@ -14,6 +14,7 @@ export interface PersonneConcerneeData {
   estHandicapee?: boolean;
   consentCommuniquerIdentite?: boolean;
   estVictimeInformee?: boolean;
+  victimeInformeeCommentaire?: string;
   autrePersonnes?: string;
   aAutrePersonnes?: boolean;
   commentaire?: string;
@@ -53,6 +54,7 @@ export function formatPersonneConcerneeFromServer(participant: unknown): Personn
         ? undefined
         : !(p.veutGarderAnonymat as boolean),
     estVictimeInformee: (p.estVictimeInformee as boolean) || false,
+    victimeInformeeCommentaire: (p.victimeInformeeCommentaire as string) || '',
     autrePersonnes: (p.autrePersonnes as string) || '',
     aAutrePersonnes: p.aAutrePersonnes as boolean | undefined,
     commentaire: (p.commentaire as string) || '',
@@ -74,6 +76,7 @@ export function formatPersonneConcerneeToServer(data: PersonneConcerneeData) {
     estHandicapee: data.estHandicapee,
     consentCommuniquerIdentite: data.consentCommuniquerIdentite,
     estVictimeInformee: data.estVictimeInformee,
+    victimeInformeeCommentaire: data.victimeInformeeCommentaire,
     autrePersonnes: data.autrePersonnes,
     aAutrePersonnes: data.aAutrePersonnes,
     commentaire: data.commentaire,

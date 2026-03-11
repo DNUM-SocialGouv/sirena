@@ -1,6 +1,6 @@
 export interface FieldMetadata {
   label: string;
-  type?: 'text' | 'email' | 'tel' | 'select' | 'checkbox' | 'textarea';
+  type?: 'text' | 'email' | 'tel' | 'select' | 'checkbox' | 'textarea' | 'radio';
 }
 
 export const declarantFieldMetadata: Record<string, FieldMetadata> = {
@@ -17,12 +17,12 @@ export const declarantFieldMetadata: Record<string, FieldMetadata> = {
   courrierElectronique: { label: 'Courrier électronique', type: 'email' },
   consentCommuniquerIdentite: {
     label: 'Le déclarant consent à ce que son identité soit communiquée',
-    type: 'checkbox',
+    type: 'radio',
   },
   estSignalementProfessionnel: {
     label:
       'Le déclarant est un professionnel qui signale des dysfonctionnements et événements indésirables graves (EIG)',
-    type: 'checkbox',
+    type: 'radio',
   },
   autresPrecisions: { label: 'Autres précisions concernant le déclarant', type: 'textarea' },
 };
@@ -38,11 +38,12 @@ export const personneConcerneeFieldMetadata: Record<string, FieldMetadata> = {
   ville: { label: 'Ville', type: 'text' },
   numeroTelephone: { label: 'Numéro de téléphone', type: 'tel' },
   courrierElectronique: { label: 'Courrier électronique', type: 'email' },
-  estHandicapee: { label: "La personne concernée est en situation d'handicap", type: 'checkbox' },
-  consentCommuniquerIdentite: { label: 'Elle consent à ce que son identité soit communiquée', type: 'checkbox' },
-  estVictimeInformee: { label: 'Elle a été informée de la démarche par le déclarant', type: 'checkbox' },
+  estHandicapee: { label: "La personne concernée est en situation d'handicap", type: 'radio' },
+  consentCommuniquerIdentite: { label: 'Elle consent à ce que son identité soit communiquée', type: 'radio' },
+  estVictimeInformee: { label: 'Elle a été informée de la démarche par le déclarant', type: 'radio' },
+  victimeInformeeCommentaire: { label: "Raison pour laquelle elle n'est pas informée", type: 'text' },
   autrePersonnes: { label: 'Précisions sur les autres personnes concernées', type: 'textarea' },
-  aAutrePersonnes: { label: "Il y a d'autres personnes concernées par la requête", type: 'checkbox' },
+  aAutrePersonnes: { label: "Il y a d'autres personnes concernées par la requête", type: 'radio' },
   commentaire: { label: 'Autres précisions sur la personne concernée', type: 'textarea' },
 };
 

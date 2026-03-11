@@ -1,6 +1,6 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Input } from '@codegouvfr/react-dsfr/Input';
+import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
 import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
@@ -55,8 +55,8 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
       }
     };
 
-  const handleCheckboxChange = (field: keyof DeclarantData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev: DeclarantData) => ({ ...prev, [field]: e.target.checked }));
+  const handleBooleanChange = (field: keyof DeclarantData, value: boolean) => {
+    setFormData((prev: DeclarantData) => ({ ...prev, [field]: value }));
   };
 
   const handleCheckboxChange = (field: keyof DeclarantData) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -312,20 +312,48 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
             <legend>
               <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
             </legend>
-            <Checkbox
+            <RadioButtons
+              legend={declarantFieldMetadata.consentCommuniquerIdentite.label}
+              name="declarant-consent-identite"
+              orientation="horizontal"
               options={[
                 {
-                  label: declarantFieldMetadata.consentCommuniquerIdentite.label,
+                  label: 'Oui',
                   nativeInputProps: {
-                    checked: formData.consentCommuniquerIdentite || false,
-                    onChange: handleCheckboxChange('consentCommuniquerIdentite'),
+                    value: 'true',
+                    checked: formData.consentCommuniquerIdentite === true,
+                    onChange: () => handleBooleanChange('consentCommuniquerIdentite', true),
                   },
                 },
                 {
-                  label: declarantFieldMetadata.estSignalementProfessionnel.label,
+                  label: 'Non',
                   nativeInputProps: {
-                    checked: formData.estSignalementProfessionnel || false,
-                    onChange: handleCheckboxChange('estSignalementProfessionnel'),
+                    value: 'false',
+                    checked: formData.consentCommuniquerIdentite === false,
+                    onChange: () => handleBooleanChange('consentCommuniquerIdentite', false),
+                  },
+                },
+              ]}
+            />
+            <RadioButtons
+              legend={declarantFieldMetadata.estSignalementProfessionnel.label}
+              name="declarant-signalement-pro"
+              orientation="horizontal"
+              options={[
+                {
+                  label: 'Oui',
+                  nativeInputProps: {
+                    value: 'true',
+                    checked: formData.estSignalementProfessionnel === true,
+                    onChange: () => handleBooleanChange('estSignalementProfessionnel', true),
+                  },
+                },
+                {
+                  label: 'Non',
+                  nativeInputProps: {
+                    value: 'false',
+                    checked: formData.estSignalementProfessionnel === false,
+                    onChange: () => handleBooleanChange('estSignalementProfessionnel', false),
                   },
                 },
               ]}

@@ -1,7 +1,7 @@
 import { InfoSection } from '@sirena/ui';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
-import { ContactInfo, formatAddress, formatFullName, SectionTitle } from './helpers';
+import { ContactInfo, formatAddress, formatFullName, renderConsentIdentite, SectionTitle } from './helpers';
 
 type DeclarantData = NonNullable<ReturnType<typeof useRequeteDetails>['data']>['requete']['declarant'];
 
@@ -129,20 +129,18 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
             <SectionTitle level={4}>Informations complémentaires</SectionTitle>
             <ul className="fr-mb-2w">
               {declarant.veutGarderAnonymat !== null && declarant.veutGarderAnonymat !== undefined && (
+                <li>{renderConsentIdentite(declarant.veutGarderAnonymat)}</li>
+              )}
+              {declarant.estSignalementProfessionnel === true && (
                 <li>
-                  {declarant.veutGarderAnonymat ? (
-                    <>
-                      ⚠️ Il/elle <strong>ne</strong> consent <strong>pas</strong> à ce que son identitée soit communiquée
-                    </>
-                  ) : (
-                    'Il/elle consent à ce que son identitée soit communiquée'
-                  )}
+                  Il/elle est un professionnel qui signale des dysfonctionnements et événements indésirables graves
+                  (EIG)
                 </li>
               )}
-              {declarant.estSignalementProfessionnel && (
+              {declarant.estSignalementProfessionnel === false && (
                 <li>
-                  Le déclarant est un professionnel qui signale des dysfonctionnements et événements indésirables graves
-                  (EIG)
+                  Il/elle n&apos;est pas un professionnel qui signale des dysfonctionnements et événements indésirables
+                  graves (EIG)
                 </li>
               )}
               {declarant.isTuteur && <li>Le déclarant est curateur ou tuteur de la personne concernée</li>}

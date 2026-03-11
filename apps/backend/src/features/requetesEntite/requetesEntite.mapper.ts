@@ -80,6 +80,7 @@ export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConc
   veutGarderAnonymat:
     participantData.consentCommuniquerIdentite === undefined ? undefined : !participantData.consentCommuniquerIdentite,
   estVictimeInformee: participantData.estVictimeInformee || false,
+  victimeInformeeCommentaire: participantData.victimeInformeeCommentaire || '',
   autrePersonnes: participantData.autrePersonnes || '',
   aAutrePersonnes: participantData.aAutrePersonnes,
   commentaire: participantData.commentaire || '',
