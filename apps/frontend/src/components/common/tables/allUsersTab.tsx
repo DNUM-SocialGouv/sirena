@@ -48,11 +48,32 @@ export function AllUsersTab() {
     { key: 'prenom', label: 'Prénom' },
     { key: 'role.label', label: 'Rôle' },
     { key: 'statutId', label: 'Statut' },
+    { key: 'custom:affectation', label: 'Affectation' },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 
   const cells: Cells<User> = {
     statutId: (row: User) => statutTypes[row.statutId as StatutType],
+    'custom:affectation': (row: User) => {
+      const { entite } = row;
+      if (!entite) return null;
+      if (!entite.entiteMereId) return <span>{entite.nomComplet}</span>;
+      const direction = entite.entiteMere;
+      if (!direction?.entiteMereId) {
+        return (
+          <span>
+            {entite.nomComplet}
+            {direction ? ` (${direction.label})` : ''}
+          </span>
+        );
+      }
+      return (
+        <span>
+          {entite.nomComplet}
+          {` (${direction.label}${direction.entiteMere ? ` - ${direction.entiteMere.label}` : ''})`}
+        </span>
+      );
+    },
     'custom:editionLabel': (row: User) => (
       <Link to="/admin/user/$userId" className="fr-link" params={{ userId: row.id }}>
         Gérer l'utilisateur

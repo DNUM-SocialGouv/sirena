@@ -8,7 +8,11 @@ import { runDecisionTree } from './decisionTree.js';
 import { findGeoByPostalCode } from './geo/geoIndex.js';
 import type { EntiteAdminType, SituationContext } from './types.js';
 
-type Assignment = { situationId: string; types: EntiteAdminType[]; context: SituationContext };
+type Assignment = {
+  situationId: string;
+  types: EntiteAdminType[];
+  context: SituationContext;
+};
 
 const assignDefaultRequeteEtapes = async (
   requeteId: string,
@@ -102,14 +106,20 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
   // 2) For each situation, determine the authority types to assign (ARS, CD, DD)
   const allAssignments: Array<Assignment> = [];
   const entiteIdsToLinkToRequete = new Set<string>();
-  const situationEntitesToLink: Array<{ situationId: string; entiteId: string }> = [];
+  const situationEntitesToLink: Array<{
+    situationId: string;
+    entiteId: string;
+  }> = [];
 
   for (const situation of requete.situations) {
     try {
       const context = buildSituationContext(situation);
-      logger.debug({ context }, `Request context for ${requeteId} - situation ${situation.id}`);
-      const types = await runDecisionTree(context); // -> ['ARS', 'CD'] for example
-      logger.debug({ types }, `Entity types determined for request ${requeteId} - situation ${situation.id}`);
+      logger.info({ context }, `Request context for ${requeteId} - situation ${situation.id}`);
+      const types = await runDecisionTree(context, {
+        requeteId,
+        situationId: situation.id,
+      });
+      logger.info({ types }, `Entity types determined for request ${requeteId} - situation ${situation.id}`);
 
       allAssignments.push({ situationId: situation.id, types, context });
     } catch (err) {
@@ -141,8 +151,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
       continue;
     }
 
-    logger.debug({ geo }, `Geolocation found for request ${requeteId} - situation ${s.id}`);
-    logger.debug({ types: a.types }, `Searching for entities for request ${requeteId} - situation ${s.id}`);
+    logger.info({ geo }, `Geolocation found for request ${requeteId} - situation ${s.id}`);
 
     // 3.2) Find the entities in the database for each type
     for (const t of a.types) {
@@ -154,10 +163,15 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
       const whereClause = {
         entiteTypeId: t,
         entiteMereId: null,
-        ...(ctcdCodesForCdDd ? { ctcdCode: { in: ctcdCodesForCdDd }, departementCode: geo.departementCode } : {}),
+        ...(ctcdCodesForCdDd
+          ? {
+              ctcdCode: { in: ctcdCodesForCdDd },
+              departementCode: geo.departementCode,
+            }
+          : {}),
         ...(['ARS'].includes(t) ? { regionCode: geo.regionCode } : {}),
       };
-      logger.debug(
+      logger.info(
         { type: t, whereClause },
         `Searching for entity of type ${t} for request ${requeteId} - situation ${s.id}`,
       );
@@ -174,7 +188,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
         continue;
       }
 
-      logger.debug(
+      logger.info(
         { entiteId: entite.id, entiteNom: entite.nomComplet },
         `Entity found for request ${requeteId} - situation ${s.id} - type ${t}`,
       );
@@ -218,7 +232,10 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
       // Assign ARS Normandie to all situations
       entiteIdsToLinkToRequete.add(arsNormandie.id);
       for (const situation of requete.situations) {
-        situationEntitesToLink.push({ situationId: situation.id, entiteId: arsNormandie.id });
+        situationEntitesToLink.push({
+          situationId: situation.id,
+          entiteId: arsNormandie.id,
+        });
       }
     }
 
@@ -226,7 +243,11 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
       for (const entiteId of entiteIdsToLinkToRequete) {
         await tx.requeteEntite.upsert({
           where: { requeteId_entiteId: { requeteId, entiteId } },
-          create: { requeteId, entiteId, statutId: REQUETE_STATUT_TYPES.NOUVEAU },
+          create: {
+            requeteId,
+            entiteId,
+            statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+          },
           update: {},
         });
 
