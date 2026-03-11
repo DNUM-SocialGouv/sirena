@@ -4,6 +4,15 @@ import type { PrismaClient } from '../../../../generated/client/index.js';
 import { checkRequired, computeEntitesFromMotifs, leaf, rootNode, runDecisionTree } from './decisionTree.js';
 import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types.js';
 
+vi.mock('../../../libs/asyncLocalStorage.js', () => ({
+  getLoggerStore: vi.fn(() => ({
+    error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+  })),
+}));
+
 vi.mock('../../../../generated/client/index.js', async () => {
   const actual = await vi.importActual('../../../../generated/client/index.js');
   return {
@@ -111,7 +120,7 @@ describe('runDecisionTree - domicile', () => {
       misEnCauseType: 'MEMBRE_FAMILLE',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['CD']);
   });
 
@@ -122,7 +131,7 @@ describe('runDecisionTree - domicile', () => {
       misEnCauseTypePrecision: 'INFIRMIER',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['ARS']);
   });
 
@@ -133,7 +142,7 @@ describe('runDecisionTree - domicile', () => {
       misEnCauseTypePrecision: null,
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['ARS']);
   });
 
@@ -144,7 +153,7 @@ describe('runDecisionTree - domicile', () => {
       misEnCauseTypePrecision: 'SAAD',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['CD']);
   });
 
@@ -155,7 +164,7 @@ describe('runDecisionTree - domicile', () => {
       misEnCauseTypePrecision: 'SESSAD',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['ARS']);
   });
 
@@ -166,7 +175,7 @@ describe('runDecisionTree - domicile', () => {
       misEnCauseTypePrecision: 'MJPM',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['DD']);
   });
 
@@ -177,7 +186,7 @@ describe('runDecisionTree - domicile', () => {
       misEnCauseTypePrecision: 'MJPM',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['DD']);
   });
 
@@ -188,7 +197,7 @@ describe('runDecisionTree - domicile', () => {
       misEnCauseTypePrecision: 'MANDATAIRE',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['DD']);
   });
 
@@ -199,7 +208,7 @@ describe('runDecisionTree - domicile', () => {
       misEnCauseTypePrecision: null,
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['CD']);
   });
 
@@ -210,7 +219,7 @@ describe('runDecisionTree - domicile', () => {
       misEnCauseTypePrecision: null,
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['CD']);
   });
 });
@@ -223,7 +232,7 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
       misEnCauseType: 'MEMBRE_FAMILLE',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual(['ARS', 'CD']);
   });
@@ -235,7 +244,7 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
       misEnCauseType: 'PROCHE',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual(['ARS', 'CD']);
   });
@@ -247,7 +256,7 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
       misEnCauseType: 'PROFESSIONNEL_SANTE',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual(['ARS']);
   });
@@ -260,7 +269,7 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
       misEnCauseTypePrecision: 'MJPM',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual(['ARS', 'DD']);
   });
@@ -273,7 +282,7 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
       misEnCauseTypePrecision: 'MJPM',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual(['ARS', 'DD']);
   });
@@ -285,7 +294,7 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
       misEnCauseType: 'ETABLISSEMENT',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual(['ARS']);
   });
@@ -297,7 +306,7 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
       misEnCauseType: 'PROFESSIONNEL_SOCIAL',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual(['ARS']);
   });
@@ -309,7 +318,7 @@ describe('runDecisionTree - non domicile + maltraitance', () => {
       misEnCauseType: 'AUTRE_PROFESSIONNEL',
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual(['ARS']);
   });
@@ -322,7 +331,7 @@ describe('runDecisionTree - non domicile sans maltraitance (lieu de survenue)', 
       isMaltraitance: false,
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['ARS']);
   });
 
@@ -332,7 +341,7 @@ describe('runDecisionTree - non domicile sans maltraitance (lieu de survenue)', 
       isMaltraitance: false,
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['ARS']);
   });
 });
@@ -345,7 +354,7 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
       motifsDeclaratifs: ['PROBLEME_QUALITE_SOINS'],
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual(['ARS']);
   });
@@ -357,7 +366,7 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
       motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual([]);
   });
@@ -369,7 +378,7 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
       motifsDeclaratifs: ['PROBLEME_QUALITE_SOINS', 'PROBLEME_QUALITE_SOINS'],
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual(['ARS']);
   });
@@ -381,7 +390,7 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
       motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL', 'PROBLEME_QUALITE_SOINS'],
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual(['ARS']);
   });
@@ -393,7 +402,7 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
       motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL', 'PROBLEME_FACTURATION'],
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual([]);
   });
@@ -405,7 +414,7 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
       motifsDeclaratifs: [],
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(result.sort()).toEqual([]);
   });
@@ -452,7 +461,7 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
       motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL', 'PROBLEME_FACTURATION', 'PROBLEME_LOCAUX'],
     };
 
-    await runDecisionTree(ctx);
+    await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(finessNodeCallCount).toBe(3);
   });
@@ -504,7 +513,7 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
       ],
     };
 
-    await runDecisionTree(ctx);
+    await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
     expect(finessNodeCallCount).toBe(2);
   });
@@ -516,7 +525,7 @@ describe('runDecisionTree - motifs / FINESS branch', () => {
       motifsDeclaratifs: [],
     };
 
-    await expect(runDecisionTree(ctx)).rejects.toThrow(
+    await expect(runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' })).rejects.toThrow(
       'Node non_domicile_lieu_de_survenue: Unsupported value "AUTRE_LIEU_NON_GERE" for required field "lieuType". Supported values: ETABLISSEMENT_SANTE, ETABLISSEMENT_PERSONNES_AGEES, ETABLISSEMENT_HANDICAP, ETABLISSEMENT_SOCIAL, TRAJET, AUTRES_ETABLISSEMENTS',
     );
   });
@@ -526,7 +535,9 @@ describe('runDecisionTree - required fields / validation', () => {
   it('should throw if required root field (lieuType) is missing', async () => {
     const ctx = {};
 
-    await expect(runDecisionTree(ctx)).rejects.toThrow(/lieuType/);
+    await expect(runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' })).rejects.toThrow(
+      /lieuType/,
+    );
   });
 
   it('should throw if required misEnCauseType is missing in domicile subtree', async () => {
@@ -534,7 +545,9 @@ describe('runDecisionTree - required fields / validation', () => {
       lieuType: 'DOMICILE' as LieuType,
     };
 
-    await expect(runDecisionTree(ctx)).rejects.toThrow(/misEnCauseType/);
+    await expect(runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' })).rejects.toThrow(
+      /misEnCauseType/,
+    );
   });
 
   it('should handle missing misEnCauseTypePrecision in domicile professionnel subtree (defaults to PROFESSIONNEL_SANTE)', async () => {
@@ -544,7 +557,7 @@ describe('runDecisionTree - required fields / validation', () => {
       misEnCauseTypePrecision: null,
     };
 
-    const result = await runDecisionTree(ctx);
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
     expect(result.sort()).toEqual(['ARS']);
   });
 
@@ -553,7 +566,9 @@ describe('runDecisionTree - required fields / validation', () => {
       lieuType: 'ETABLISSEMENT_SANTE' as LieuType,
     };
 
-    await expect(runDecisionTree(ctx)).rejects.toThrow(/isMaltraitance/);
+    await expect(runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' })).rejects.toThrow(
+      /isMaltraitance/,
+    );
   });
 });
 
@@ -591,7 +606,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
         motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
       };
 
-      const result = await runDecisionTree(ctx);
+      const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual(['ARS']);
       expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
@@ -612,7 +627,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
         motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
       };
 
-      const result = await runDecisionTree(ctx);
+      const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual(['CD']);
     });
@@ -630,7 +645,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
         motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
       };
 
-      const result = await runDecisionTree(ctx);
+      const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual(['DD']);
     });
@@ -648,7 +663,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
         motifsDeclaratifs: ['PROBLEME_LOCAUX'],
       };
 
-      const result = await runDecisionTree(ctx);
+      const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual(['ARS']);
       expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
@@ -669,7 +684,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
         motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
       };
 
-      const result = await runDecisionTree(ctx);
+      const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual(['ARS', 'CD']);
     });
@@ -687,7 +702,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
         motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
       };
 
-      const result = await runDecisionTree(ctx);
+      const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual(['ARS', 'CD', 'DD']);
     });
@@ -705,7 +720,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
         motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
       };
 
-      const result = await runDecisionTree(ctx);
+      const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual(['ARS']);
       expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
@@ -721,7 +736,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
         motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
       };
 
-      const result = await runDecisionTree(ctx);
+      const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual([]);
       expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
@@ -737,7 +752,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
         motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
       };
 
-      const result = await runDecisionTree(ctx);
+      const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual([]);
       expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
@@ -758,7 +773,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
         motifsDeclaratifs: ['PROBLEME_COMPORTEMENTAL'],
       };
 
-      const result = await runDecisionTree(ctx);
+      const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual([]);
     });

@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream';
 import * as Sentry from '@sentry/node';
 import {
   throwHTTPException400BadRequest,
@@ -12,6 +13,7 @@ import {
   ROLES_READ,
   ROLES_WRITE,
 } from '@sirena/common/constants';
+import { stream as honoStream } from 'hono/streaming';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import { streamFileResponse, streamSafeFileResponse } from '../../helpers/file.js';
@@ -36,6 +38,7 @@ import { getUserById } from '../users/users.service.js';
 import {
   closeRequeteRoute,
   createRequeteRoute,
+  downloadAllFilesRoute,
   getOtherEntitesAffectedRoute,
   getRequeteEntiteRoute,
   getRequetesEntiteRoute,
@@ -57,6 +60,7 @@ import {
   closeRequeteForEntite,
   createChangeLogForRequeteEntite,
   createRequeteEntite,
+  createRequeteFilesArchive,
   createRequeteSituation,
   getOtherEntitesAffected,
   getRequeteEntiteById,
@@ -308,6 +312,50 @@ const app = factoryWithLogs
     logger.info({ requeteId: id, situationId, fileId }, 'Retrieving safe file for situation');
 
     return streamSafeFileResponse(c, file);
+  })
+
+  .get('/:id/files/download-all', downloadAllFilesRoute, async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
+
+    const result = await createRequeteFilesArchive(id, topEntiteId);
+
+    if (!result) {
+      throwHTTPException404NotFound('Requete not found', { res: c.res });
+    }
+
+    if (result === 'NO_FILES') {
+      throwHTTPException404NotFound('No attachments found for this requete', { res: c.res });
+    }
+
+    const { archive, requeteId } = result;
+    const zipFileName = `requete-${requeteId}-pieces-jointes.zip`;
+
+    c.header('Content-Type', 'application/zip');
+    c.header('Content-Disposition', `attachment; filename="${zipFileName}"`);
+
+    logger.info({ requeteId: id }, 'Downloading all files as ZIP');
+
+    return honoStream(c, async (s) => {
+      const webStream = Readable.toWeb(archive) as unknown as ReadableStream<Uint8Array>;
+
+      archive.on('error', (err) => {
+        logger.error({ requeteId: id, err }, 'Archive stream error');
+        s.close();
+      });
+
+      s.onAbort(() => {
+        archive.abort();
+      });
+
+      await s.pipe(webStream);
+    });
   })
 
   .patch('/:id/statut', updateStatutRoute, zValidator('json', UpdateStatutBodySchema), async (c) => {

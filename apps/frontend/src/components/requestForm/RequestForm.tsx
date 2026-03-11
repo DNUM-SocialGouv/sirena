@@ -60,6 +60,20 @@ export function RequestForm({ requestId }: RequestFormProps) {
   const statutId = requestQuery.data?.statutId || '';
   const prioriteId = requestQuery.data?.prioriteId || null;
 
+  const allFiles = [
+    ...(requestQuery.data?.requete.fichiersRequeteOriginale ?? []),
+    ...(requestQuery.data?.requete.situations?.flatMap((s) => s.faits.flatMap((f) => f.fichiers ?? [])) ?? []),
+  ].filter((f) => f.size > 0);
+
+  const hasAttachments = allFiles.length > 0;
+
+  const hasUnsafeFiles = allFiles.some(
+    (f) =>
+      f.scanStatus === 'INFECTED' ||
+      (f.scanStatus !== 'CLEAN' && f.scanStatus !== 'INFECTED') ||
+      (f.mimeType === 'application/pdf' && !f.safeFilePath),
+  );
+
   const tabs: TabDescriptor[] = [
     { label: 'Détails de la requête', tabPanelId: 'panel-details', tabId: 'tab-details' },
     {
@@ -90,6 +104,8 @@ export function RequestForm({ requestId }: RequestFormProps) {
             motifs={motifs}
             statutId={statutId}
             prioriteId={prioriteId}
+            hasAttachments={hasAttachments}
+            hasUnsafeFiles={hasUnsafeFiles}
           />{' '}
         </div>
       </div>

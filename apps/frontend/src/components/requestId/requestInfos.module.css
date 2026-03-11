@@ -30,9 +30,10 @@
   vertical-align: middle;
 }
 
-.priorite-menu-wrapper {
+.download-menu-wrapper {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .toggle-line {
