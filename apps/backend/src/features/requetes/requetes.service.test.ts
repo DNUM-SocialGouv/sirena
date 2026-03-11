@@ -27,10 +27,16 @@ import {
 import type { CreateRequeteFromDematSocialDto } from './requetes.type.js';
 
 vi.mock('../../libs/prisma.js');
-vi.mock('./functionalId.service.js');
+vi.mock('./functionalId.service.js', () => ({
+  generateRequeteId: vi.fn(),
+  determineSource: vi.fn(),
+}));
 vi.mock('../../helpers/file.js', () => ({
   sanitizeFilename: vi.fn(),
   urlToStream: vi.fn(),
+}));
+vi.mock('../../jobs/queues/fileProcessing.queue.js', () => ({
+  addFileProcessingJob: vi.fn(),
 }));
 vi.mock('../../libs/minio.js', () => ({
   uploadFileToMinio: vi.fn(),

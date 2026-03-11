@@ -22,6 +22,10 @@ vi.mock('../../libs/mail/tipimail.js', () => ({
   sendTipimailEmail: vi.fn(),
 }));
 
+vi.mock('../../jobs/queues/fileProcessing.queue.js', () => ({
+  addFileProcessingJob: vi.fn(),
+}));
+
 vi.mock('../changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn(),
 }));
