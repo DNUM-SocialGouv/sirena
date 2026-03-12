@@ -83,6 +83,16 @@ body {
   background: var(--light-options-illustration-color-950-default-pink-tuile-950, #fee9e7);
 }
 
+.color-green-archipel {
+  color: var(--light-options-illustration-color-sun-default-green-archipel-sun-391, #006a6f);
+  background: var(--light-options-illustration-color-950-default-green-archipel-950, #c7f6fc);
+}
+
+.color-yellow-moutarde {
+  color: var(--light-options-illustration-color-sun-default-yellow-moutarde-sun-348, #695240);
+  background: var(--light-options-illustration-color-950-default-yellow-moutarde-950, #feecc2);
+}
+
 .bold {
   font-weight: 700;
 }

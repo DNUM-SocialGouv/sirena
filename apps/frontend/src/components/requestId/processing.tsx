@@ -3,6 +3,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { CreateStep } from '@/components/requestId/processing/createStep';
 import { Step } from '@/components/requestId/processing/Step';
@@ -142,9 +143,11 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                   <h6 className="fr-mb-0">Traitement</h6>
                   {requestQuery.data && (
                     <>
-                      <p className="fr-tag fr-tag--sm color-pink-tuile fr-mb-0">
-                        {requestQuery.data.entite.nomComplet}
-                      </p>
+                      <EntiteTypeBadge
+                        entiteTypeId={requestQuery.data.entite.entiteTypeId}
+                        label={requestQuery.data.entite.nomComplet}
+                        className="fr-mb-0"
+                      />
                       {subAdministrativeEntites.map((entite) => (
                         <span key={entite.directionServiceId} className="fr-tag fr-tag--sm fr-tag-default">
                           {entite.directionServiceName}

@@ -153,6 +153,7 @@ describe('entites.service', () => {
       expect(result).toEqual([
         {
           entiteId: 'root1',
+          entiteTypeId: '',
           entiteName: 'Root 1',
           directionServiceId: 'dir1',
           directionServiceName: 'Direction 1',

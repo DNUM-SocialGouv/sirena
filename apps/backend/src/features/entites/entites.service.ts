@@ -98,6 +98,7 @@ export async function* getEntiteChainGenerator(entiteId: string) {
         nomComplet: true,
         entiteMereId: true,
         label: true,
+        entiteTypeId: true,
       },
     });
 
@@ -293,6 +294,7 @@ export const buildEntitesTraitement = async (entites: EntiteTraitementInput[]): 
 
     entitesTraitement.push({
       entiteId,
+      entiteTypeId: root.entiteTypeId,
       entiteName: root.nomComplet,
       directionServiceId,
       directionServiceName: directionName,
