@@ -1,5 +1,6 @@
 import { envVars } from '../../config/env.js';
 import { fetchRequetes } from '../tasks/fetchRequetes.task.js';
+import { fileIntegrityCheck } from '../tasks/fileIntegrityCheck.task.js';
 import { queueUnprocessedFiles } from '../tasks/queueUnprocessedFiles.task.js';
 import { retryAffectation } from '../tasks/retryAffectation.task.js';
 import { retryImportRequetes } from '../tasks/retryImportRequetes.task.js';
@@ -38,5 +39,12 @@ export const jobHandlers = [
     repeatEveryMs: parseInt(envVars.CRON_QUEUE_UNPROCESSED_FILES, 10) * 1000,
     data: {},
     runOnStart: true,
+  },
+  {
+    name: 'file-integrity-check',
+    task: fileIntegrityCheck,
+    repeatEveryMs: parseInt(envVars.CRON_FILE_INTEGRITY_CHECK, 10) * 1000,
+    data: {},
+    runOnStart: false,
   },
 ] as const;

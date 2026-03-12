@@ -11,6 +11,7 @@ export type JobDataMap = {
     batchSize: number;
   };
   'queue-unprocessed-files': Record<string, never>;
+  'file-integrity-check': Record<string, never>;
 };
 
 export type JobName = keyof JobDataMap;

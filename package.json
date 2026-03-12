@@ -26,6 +26,7 @@
     "op:diff:entites:down": "dotenv -e .env -- pnpm --filter @sirena/backend op:diff:entites:down",
     "op:import:dematsocial": "dotenv -e .env -- pnpm --filter @sirena/backend op:import:dematsocial",
     "op:manage-api-keys": "dotenv -e .env -- pnpm --filter @sirena/backend op:manage-api-keys",
+    "op:file-integrity": "dotenv -e .env -- pnpm --filter @sirena/backend op:file-integrity",
     "db:deploy": "dotenv -e .env -- pnpm --filter @sirena/backend db:deploy",
     "db:generate": "dotenv -e .env -- pnpm --filter @sirena/backend db:generate",
     "db:reset": "dotenv -e .env -- pnpm --filter @sirena/backend db:reset",

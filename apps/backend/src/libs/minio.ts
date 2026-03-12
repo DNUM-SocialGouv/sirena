@@ -153,6 +153,39 @@ export const getFileStream = async (
   };
 };
 
+export interface MinioObjectInfo {
+  name: string;
+  size: number;
+  lastModified: Date;
+}
+
+export const listMinioObjects = async (prefix?: string): Promise<MinioObjectInfo[]> => {
+  if (!minioClient) {
+    throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
+  }
+
+  const effectivePrefix = prefix ?? S3_BUCKET_ROOT_DIR;
+  const stream = minioClient.listObjectsV2(S3_BUCKET_NAME, effectivePrefix, true);
+
+  return new Promise((resolve, reject) => {
+    const objects: MinioObjectInfo[] = [];
+    stream.on('data', (obj) => {
+      if (obj.name) {
+        objects.push({ name: obj.name, size: obj.size, lastModified: obj.lastModified });
+      }
+    });
+    stream.on('error', reject);
+    stream.on('end', () => resolve(objects));
+  });
+};
+
+export const statMinioObject = async (filePath: string) => {
+  if (!minioClient) {
+    throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
+  }
+  return minioClient.statObject(S3_BUCKET_NAME, filePath);
+};
+
 export const getFileBuffer = async (filePath: string, decryptionParams?: DecryptionParams): Promise<Buffer> => {
   const { stream } = await getFileStream(filePath, decryptionParams);
 
