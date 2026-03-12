@@ -94,7 +94,7 @@ importers:
         version: 6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
       '@scalar/hono-api-reference':
         specifier: ^0.10.1
-        version: 0.10.1(hono@4.12.7)
+        version: 0.10.2(hono@4.12.7)
       '@sentry/cli':
         specifier: ^2.58.4
         version: 2.58.5
@@ -112,7 +112,7 @@ importers:
         version: 7.0.1
       bullmq:
         specifier: ^5.70.1
-        version: 5.70.4
+        version: 5.71.0
       fhir:
         specifier: ^4.12.0
         version: 4.12.0
@@ -1812,22 +1812,22 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@scalar/core@0.4.1':
-    resolution: {integrity: sha512-I8bhVhqAyX5ddhBbzwEs0llfPOzwlvwBwNKFFdyUhcJFxnu7joQGMDqA54o8cdoYv95W4TX48i9zw5GUq8/XMg==}
+  '@scalar/core@0.4.2':
+    resolution: {integrity: sha512-Ff+/Oad4eRsqqAxswLGhdgxBWluQYCqp8y7jLl20+U7Y7BDSRq+pE1LVwFW5AIRK5i3/uSWXtLZEVm7N0aszPA==}
     engines: {node: '>=22'}
 
-  '@scalar/helpers@0.3.0':
-    resolution: {integrity: sha512-lhQdehgighJC+PiSTJbbggM/SM3UydcRQil6Cfp/M4l539qklIh35pt4eh1+H+5Esa03gHnJwhTHF3TwglSOJw==}
+  '@scalar/helpers@0.4.0':
+    resolution: {integrity: sha512-1XOdy0jZp0Yu+lOmvDlPfG8+oLJK9MUhx7Q7OFggSS+zKG3n01xJKnTpgm9uhETgJrGy2yxG9y0cz4KPexXHng==}
     engines: {node: '>=22'}
 
-  '@scalar/hono-api-reference@0.10.1':
-    resolution: {integrity: sha512-3ZNhywVvIfD9ICem1z1eQQKCEAOYFZQOwL/mthGxEaukC2t0PnTwG8bhsgJ7BsXXYlVnX8oNY1rK6rXg41+gHg==}
+  '@scalar/hono-api-reference@0.10.2':
+    resolution: {integrity: sha512-Z22BBUjFvq3JQdE5fNA4wF+d9SZ2+iKBO2YSnbVg+GRZzshAI2ODMR+8u/rhhHkXxIhkg6Vj33ftEm9VWGN+rw==}
     engines: {node: '>=22'}
     peerDependencies:
       hono: ^4.12.5
 
-  '@scalar/types@0.7.1':
-    resolution: {integrity: sha512-yJ6FebyOQ+VCftXTUpJDrvJWMoMPaP1HSdBD2L3SsoQvmhXnJ6zbCd2IT7XNrfBIwsYvIYVUBVl9umPjKTNdMw==}
+  '@scalar/types@0.7.2':
+    resolution: {integrity: sha512-y2qesMS43aVA2QdhLP/r6/sD2LlTeGjryoF0s6q11jU/UQV22vXD4dNGoCynF3qIFp4VuLE3d04wcsyZ5BD6HA==}
     engines: {node: '>=22'}
 
   '@selderee/plugin-htmlparser2@0.11.0':
@@ -2605,8 +2605,8 @@ packages:
   buffer@6.0.3:
     resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
 
-  bullmq@5.70.4:
-    resolution: {integrity: sha512-S58YT/tGdhc4pEPcIahtZRBR1TcTLpss1UKiXimF+Vy4yZwF38pW2IvhHqs4j4dEbZqDt8oi0jGGN/WYQHbPDg==}
+  bullmq@5.71.0:
+    resolution: {integrity: sha512-aeNWh4drsafSKnAJeiNH/nZP/5O8ZdtdMbnOPZmpjXj7NZUP5YC901U3bIH41iZValm7d1i3c34ojv7q31m30w==}
 
   bundle-name@4.1.0:
     resolution: {integrity: sha512-tjwM5exMg6BGRI+kNmTntNsvdZS1X8BFYS6tnJ2hdH0kVxM6/eVZ2xy+FqStSWvYmtfFMDLIxurorHwDKfDz5Q==}
@@ -6417,20 +6417,20 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.59.0':
     optional: true
 
-  '@scalar/core@0.4.1':
+  '@scalar/core@0.4.2':
     dependencies:
-      '@scalar/types': 0.7.1
+      '@scalar/types': 0.7.2
 
-  '@scalar/helpers@0.3.0': {}
+  '@scalar/helpers@0.4.0': {}
 
-  '@scalar/hono-api-reference@0.10.1(hono@4.12.7)':
+  '@scalar/hono-api-reference@0.10.2(hono@4.12.7)':
     dependencies:
-      '@scalar/core': 0.4.1
+      '@scalar/core': 0.4.2
       hono: 4.12.7
 
-  '@scalar/types@0.7.1':
+  '@scalar/types@0.7.2':
     dependencies:
-      '@scalar/helpers': 0.3.0
+      '@scalar/helpers': 0.4.0
       nanoid: 5.1.6
       type-fest: 5.4.4
       zod: 4.3.6
@@ -7308,7 +7308,7 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
 
-  bullmq@5.70.4:
+  bullmq@5.71.0:
     dependencies:
       cron-parser: 4.9.0
       ioredis: 5.10.0
@@ -7344,14 +7344,14 @@ snapshots:
   camel-case@4.1.2:
     dependencies:
       pascal-case: 3.1.2
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   caniuse-lite@1.0.30001777: {}
 
   capital-case@1.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
       upper-case-first: 2.0.2
 
   chai@5.3.3:
@@ -7397,7 +7397,7 @@ snapshots:
       path-case: 3.0.4
       sentence-case: 3.0.4
       snake-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   chardet@2.1.1: {}
 
@@ -7478,7 +7478,7 @@ snapshots:
   constant-case@3.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
       upper-case: 2.0.2
 
   conventional-changelog-angular@8.3.0:
@@ -7648,7 +7648,7 @@ snapshots:
   dot-case@3.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   dot-prop@5.3.0:
     dependencies:
@@ -7956,7 +7956,7 @@ snapshots:
   header-case@2.0.4:
     dependencies:
       capital-case: 1.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   help-me@5.0.0: {}
 
@@ -8117,7 +8117,7 @@ snapshots:
 
   is-lower-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   is-number@4.0.0: {}
 
@@ -8143,7 +8143,7 @@ snapshots:
 
   is-upper-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   is-windows@1.0.2: {}
 
@@ -8336,11 +8336,11 @@ snapshots:
 
   lower-case-first@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   lower-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   lru-cache@10.4.3: {}
 
@@ -8452,7 +8452,7 @@ snapshots:
   no-case@3.0.4:
     dependencies:
       lower-case: 2.0.2
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   node-abort-controller@3.1.1: {}
 
@@ -8536,7 +8536,7 @@ snapshots:
   param-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   parent-module@1.0.1:
     dependencies:
@@ -8567,12 +8567,12 @@ snapshots:
   pascal-case@3.1.2:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   path-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   path-exists@4.0.0: {}
 
@@ -8983,7 +8983,7 @@ snapshots:
   sentence-case@3.0.4:
     dependencies:
       no-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
       upper-case-first: 2.0.2
 
   seroval-plugins@1.5.1(seroval@1.5.1):
@@ -9025,7 +9025,7 @@ snapshots:
   snake-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   sonic-boom@4.2.1:
     dependencies:
@@ -9043,7 +9043,7 @@ snapshots:
 
   sponge-case@1.0.1:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   stackback@0.0.2: {}
 
@@ -9158,7 +9158,7 @@ snapshots:
 
   swap-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   symbol-tree@3.2.4: {}
 
@@ -9231,7 +9231,7 @@ snapshots:
 
   title-case@3.0.3:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   tldts-core@6.1.86: {}
 
@@ -9331,11 +9331,11 @@ snapshots:
 
   upper-case-first@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   upper-case@2.0.2:
     dependencies:
-      tslib: 2.6.3
+      tslib: 2.8.1
 
   urlpattern-polyfill@10.1.0: {}
 
