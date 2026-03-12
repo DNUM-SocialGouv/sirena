@@ -1,7 +1,6 @@
 import { mappers } from '@sirena/common';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
-import { parseAdresseDomicile } from '../../helpers/address.js';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
 type PersonneConcerneeInput = z.infer<typeof PersonneConcerneeDataSchema>;
@@ -59,18 +58,11 @@ export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
   adresse:
     declarantData.adresseDomicile || declarantData.codePostal || declarantData.ville
       ? {
-          create: (() => {
-            const { numero, rue } = parseAdresseDomicile(declarantData.adresseDomicile || '');
-            return {
-              label:
-                `${declarantData.adresseDomicile || ''} ${declarantData.codePostal || ''} ${declarantData.ville || ''}` ||
-                '',
-              numero,
-              rue,
-              codePostal: declarantData.codePostal || '',
-              ville: declarantData.ville || '',
-            };
-          })(),
+          create: {
+            rue: declarantData.adresseDomicile || '',
+            codePostal: declarantData.codePostal || '',
+            ville: declarantData.ville || '',
+          },
         }
       : undefined,
 });
@@ -100,18 +92,11 @@ export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConc
   adresse:
     participantData.adresseDomicile || participantData.codePostal || participantData.ville
       ? {
-          create: (() => {
-            const { numero, rue } = parseAdresseDomicile(participantData.adresseDomicile || '');
-            return {
-              label:
-                `${participantData.adresseDomicile || ''} ${participantData.codePostal || ''} ${participantData.ville || ''}` ||
-                '',
-              numero,
-              rue,
-              codePostal: participantData.codePostal || '',
-              ville: participantData.ville || '',
-            };
-          })(),
+          create: {
+            rue: participantData.adresseDomicile || '',
+            codePostal: participantData.codePostal || '',
+            ville: participantData.ville || '',
+          },
         }
       : undefined,
 });

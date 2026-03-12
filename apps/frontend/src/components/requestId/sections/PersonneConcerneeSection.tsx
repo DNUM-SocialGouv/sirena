@@ -29,8 +29,6 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
   const address = formatAddress(
     personneAdresse
       ? {
-          label: personneAdresse.label,
-          numero: personneAdresse.numero,
           rue: personneAdresse.rue,
           codePostal: personneAdresse.codePostal,
           ville: personneAdresse.ville,

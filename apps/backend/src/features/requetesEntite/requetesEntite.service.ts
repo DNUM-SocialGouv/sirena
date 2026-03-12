@@ -10,7 +10,6 @@ import {
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import type { z } from 'zod';
-import { parseAdresseDomicile } from '../../helpers/address.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
@@ -422,18 +421,11 @@ const buildPersonneAdresseUpsert = (data: {
     return undefined;
   }
 
-  const createUpdateData = () => {
-    const { numero, rue } = parseAdresseDomicile(data.adresseDomicile || '');
-    return {
-      label: `${data.adresseDomicile || ''} ${data.codePostal || ''} ${data.ville || ''}` || '',
-      numero,
-      rue,
-      codePostal: data.codePostal || '',
-      ville: data.ville || '',
-    };
+  const payload = {
+    rue: data.adresseDomicile || '',
+    codePostal: data.codePostal || '',
+    ville: data.ville || '',
   };
-
-  const payload = createUpdateData();
 
   return {
     upsert: {

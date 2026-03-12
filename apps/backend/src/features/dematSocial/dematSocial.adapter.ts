@@ -191,16 +191,16 @@ const getRpps = (champ: RootChampFragmentFragment | RepetitionChamp) => {
 const createAddress = (champ: RootChampFragmentFragment | RepetitionChamp) => {
   if (champ.__typename === 'AddressChamp' && champ.address?.label) {
     return {
-      label: champ.address.label,
+      label: '',
       codePostal: champ.address.postalCode ?? '',
       ville: champ.address.cityName ?? '',
-      rue: `${champ.address.streetNumber ?? ''} ${(champ.address.streetName ?? '').trim()}`,
-      numero: champ.address.streetNumber ?? '',
+      rue: `${champ.address.streetNumber ?? ''} ${(champ.address.streetName ?? '').trim()}`.trim(),
+      numero: '',
     };
   }
   if (champ.stringValue) {
     return {
-      label: champ.stringValue,
+      label: '',
       codePostal: '',
       ville: '',
       rue: champ.stringValue,
