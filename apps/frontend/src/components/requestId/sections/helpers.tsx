@@ -11,17 +11,11 @@ export const formatFullName = (identite?: { civilite?: { label?: string }; preno
 };
 
 export const formatAddress = (
-  adresse?: { label?: string; numero?: string; rue?: string; codePostal?: string; ville?: string } | null,
+  adresse?: { label?: string; rue?: string; codePostal?: string; ville?: string } | null,
 ) => {
   if (!adresse) return '';
 
-  const postalCity = [adresse.codePostal, adresse.ville].filter(Boolean).join(' ');
-
-  if (adresse.label?.trim()) {
-    return [adresse.label, postalCity].filter(Boolean).join(' ');
-  }
-
-  return [adresse.numero, adresse.rue, postalCity].filter(Boolean).join(' ');
+  return [adresse.label, adresse.rue, adresse.codePostal, adresse.ville].filter(Boolean).join(' ');
 };
 
 export const ContactInfo = ({
