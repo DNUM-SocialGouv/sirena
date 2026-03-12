@@ -83,6 +83,10 @@ vi.mock('../../features/dematSocial/affectation/affectation.js', () => ({
   assignEntitesToRequeteTask: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../declarants/declarants.notification.service.js', () => ({
+  sendDeclarantAcknowledgmentEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe('dematSocial.service.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();

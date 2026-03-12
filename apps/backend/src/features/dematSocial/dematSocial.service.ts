@@ -321,7 +321,6 @@ export const importRequetes = async (createdSince?: Date) => {
   }
 
   const dossiers = await getRequetes(createdSince, DossierState.EnConstruction);
-  console.log(dossiers);
   logger.info({ totalDossiers: dossiers.length }, 'Found dossiers to process');
   let i = 0;
   let errorCount = 0;
