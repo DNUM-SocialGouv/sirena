@@ -46,6 +46,7 @@ export const DeclarantSchema = z
     lienVictimeId: z
       .enum([LIEN_VICTIME.MEMBRE_FAMILLE, LIEN_VICTIME.PROCHE, LIEN_VICTIME.PROFESSIONNEL, LIEN_VICTIME.AUTRE])
       .optional(),
+    isTuteur: z.boolean().optional(),
     estVictime: z.boolean(),
     veutGarderAnonymat: z.boolean(),
     adresse: AdresseSchema.optional(),
