@@ -106,8 +106,8 @@ export const getPractionners = async (params: GetPractionnersParams) => {
 
     return {
       fullName: resourceName.text || '',
-      firstName: resourceName.family || '',
-      lastName: resourceName.given?.[0] || '',
+      lastName: resourceName.family || '',
+      firstName: resourceName.given?.[0] || '',
       prefix: resourceName.prefix?.[0] || '',
       rpps: identifier.value || '',
     };
