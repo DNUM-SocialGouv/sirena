@@ -67,7 +67,7 @@ export function DescriptionFaits({ formData, setFormData, receptionType, initial
           <h2 className="fr-h6 fr-mb-3w">Description de la situation</h2>
         </legend>
         <div className="fr-grid-row fr-grid-row--gutters">
-          {receptionType === RECEPTION_TYPE.FORMULAIRE && (
+          {(receptionType === RECEPTION_TYPE.FORMULAIRE || motifs.length > 0) && (
             <div className="fr-col-12">
               <label className="fr-label" htmlFor="situation-fait-motifs">
                 Motifs renseignés par le déclarant
