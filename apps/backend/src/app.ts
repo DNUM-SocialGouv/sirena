@@ -1,5 +1,4 @@
 import { csrf } from 'hono/csrf';
-import './libs/instrument.js';
 import { envVars } from './config/env.js';
 import AuthController from './features/auth/auth.controller.js';
 import EntitesController from './features/entites/entites.controller.js';
