@@ -59,6 +59,11 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
     setFormData((prev: DeclarantData) => ({ ...prev, [field]: e.target.checked }));
   };
 
+  const handleCheckboxChange = (field: keyof DeclarantData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setFormData((prev: DeclarantData) => ({ ...prev, [field]: checked }));
+  };
+
   const handleSave = async () => {
     setHasAttemptedSave(true);
 
