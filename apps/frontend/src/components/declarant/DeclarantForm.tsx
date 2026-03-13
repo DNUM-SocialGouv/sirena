@@ -1,4 +1,5 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
+import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Select } from '@codegouvfr/react-dsfr/Select';
@@ -57,6 +58,11 @@ export function DeclarantForm({ mode, requestId, initialData, onSave }: Declaran
 
   const handleBooleanChange = (field: keyof DeclarantData, value: boolean) => {
     setFormData((prev: DeclarantData) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCheckboxChange = (field: keyof DeclarantData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setFormData((prev: DeclarantData) => ({ ...prev, [field]: checked }));
   };
 
   const handleSave = async () => {
