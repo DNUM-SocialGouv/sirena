@@ -82,6 +82,58 @@ export function recordCronJobRun(jobName: string, status: 'success' | 'error', d
   cronJobLastRunSuccess.set({ job_name: jobName }, status === 'success' ? 1 : 0);
 }
 
+export const fileIntegrityOrphanDbGauge = new Gauge({
+  name: 'sirena_file_integrity_orphan_db_total',
+  help: 'Number of DB files not linked to any entity',
+  registers: [register],
+});
+
+export const fileIntegrityOrphanDbSizeGauge = new Gauge({
+  name: 'sirena_file_integrity_orphan_db_bytes',
+  help: 'Total size of orphan DB files in bytes',
+  registers: [register],
+});
+
+export const fileIntegrityDanglingDbGauge = new Gauge({
+  name: 'sirena_file_integrity_dangling_db_total',
+  help: 'Number of DB files missing from S3',
+  registers: [register],
+});
+
+export const fileIntegrityDanglingDbSizeGauge = new Gauge({
+  name: 'sirena_file_integrity_dangling_db_bytes',
+  help: 'Total size of dangling DB files in bytes',
+  registers: [register],
+});
+
+export const fileIntegrityOrphanS3Gauge = new Gauge({
+  name: 'sirena_file_integrity_orphan_s3_total',
+  help: 'Number of S3 files without DB entry',
+  registers: [register],
+});
+
+export const fileIntegrityOrphanS3SizeGauge = new Gauge({
+  name: 'sirena_file_integrity_orphan_s3_bytes',
+  help: 'Total size of orphan S3 files in bytes',
+  registers: [register],
+});
+
+export function recordFileIntegrity(result: {
+  orphanDbFiles: number;
+  orphanDbFilesSize: number;
+  dbFilesWithoutS3: number;
+  dbFilesWithoutS3Size: number;
+  s3FilesWithoutDb: number;
+  s3FilesWithoutDbSize: number;
+}): void {
+  fileIntegrityOrphanDbGauge.set(result.orphanDbFiles);
+  fileIntegrityOrphanDbSizeGauge.set(result.orphanDbFilesSize);
+  fileIntegrityDanglingDbGauge.set(result.dbFilesWithoutS3);
+  fileIntegrityDanglingDbSizeGauge.set(result.dbFilesWithoutS3Size);
+  fileIntegrityOrphanS3Gauge.set(result.s3FilesWithoutDb);
+  fileIntegrityOrphanS3SizeGauge.set(result.s3FilesWithoutDbSize);
+}
+
 export async function getPrometheusMetrics(): Promise<string> {
   return await register.metrics();
 }
