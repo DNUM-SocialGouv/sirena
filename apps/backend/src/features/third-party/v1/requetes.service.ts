@@ -85,6 +85,7 @@ export const createRequeteFromThirdParty = async ({
               veutGarderAnonymat: victime.veutGarderAnonymat ?? null,
               estVictimeInformee: victime.estVictimeInformee ?? null,
               autrePersonnes: victime.autrePersonnes ?? '',
+              dateNaissance: victime.dateNaissance ?? null,
               aAutrePersonnes: victime.autrePersonnes != null ? true : null,
               age: victime.ageId ? { connect: { id: victime.ageId } } : undefined,
               participantDe: { connect: { id: requete.id } },
