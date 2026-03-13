@@ -34,6 +34,18 @@ export const ContactInfo = ({
     </p>
   </div>
 );
+
+export const renderConsentIdentite = (veutGarderAnonymat: boolean) => {
+  if (veutGarderAnonymat) {
+    return (
+      <>
+        Il/elle <strong>ne</strong> consent <strong>pas</strong> à ce que son identité soit communiquée
+      </>
+    );
+  }
+
+  return 'Il/elle consent à ce que son identité soit communiquée';
+};
 interface SectionTitleProps {
   children: React.ReactNode;
   level?: 2 | 3 | 4 | 5 | 6;

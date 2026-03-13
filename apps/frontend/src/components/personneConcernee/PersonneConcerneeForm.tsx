@@ -1,6 +1,6 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Input } from '@codegouvfr/react-dsfr/Input';
+import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
 import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
@@ -62,8 +62,13 @@ export function PersonneConcerneeForm({
       }
     };
 
-  const handleCheckboxChange = (field: keyof PersonneConcerneeData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev: PersonneConcerneeData) => ({ ...prev, [field]: e.target.checked }));
+  const handleBooleanChange = (field: keyof PersonneConcerneeData, value: boolean) => {
+    setFormData((prev: PersonneConcerneeData) => {
+      if (field === 'estVictimeInformee' && value) {
+        return { ...prev, [field]: value, victimeInformeeCommentaire: '' };
+      }
+      return { ...prev, [field]: value };
+    });
   };
 
   const handleSave = async () => {
@@ -305,13 +310,25 @@ export function PersonneConcerneeForm({
               <h2 className="fr-h6 fr-mb-3w">Informations complémentaires</h2>
             </legend>
             <div className="fr-mb-3w">
-              <Checkbox
+              <RadioButtons
+                legend={personneConcerneeFieldMetadata.consentCommuniquerIdentite.label}
+                name="personne-concernee-consent-identite"
+                orientation="horizontal"
                 options={[
                   {
-                    label: personneConcerneeFieldMetadata.estHandicapee.label,
+                    label: 'Oui',
                     nativeInputProps: {
-                      checked: formData.estHandicapee || false,
-                      onChange: handleCheckboxChange('estHandicapee'),
+                      value: 'true',
+                      checked: formData.consentCommuniquerIdentite === true,
+                      onChange: () => handleBooleanChange('consentCommuniquerIdentite', true),
+                    },
+                  },
+                  {
+                    label: 'Non',
+                    nativeInputProps: {
+                      value: 'false',
+                      checked: formData.consentCommuniquerIdentite === false,
+                      onChange: () => handleBooleanChange('consentCommuniquerIdentite', false),
                     },
                   },
                 ]}
@@ -319,41 +336,62 @@ export function PersonneConcerneeForm({
             </div>
 
             <div className="fr-mb-3w">
-              <Checkbox
+              <RadioButtons
+                legend={personneConcerneeFieldMetadata.estVictimeInformee.label}
+                name="personne-concernee-est-victime-informee"
+                orientation="horizontal"
                 options={[
                   {
-                    label: personneConcerneeFieldMetadata.consentCommuniquerIdentite.label,
+                    label: 'Oui',
                     nativeInputProps: {
-                      checked: formData.consentCommuniquerIdentite || false,
-                      onChange: handleCheckboxChange('consentCommuniquerIdentite'),
+                      value: 'true',
+                      checked: formData.estVictimeInformee === true,
+                      onChange: () => handleBooleanChange('estVictimeInformee', true),
+                    },
+                  },
+                  {
+                    label: 'Non',
+                    nativeInputProps: {
+                      value: 'false',
+                      checked: formData.estVictimeInformee === false,
+                      onChange: () => handleBooleanChange('estVictimeInformee', false),
                     },
                   },
                 ]}
               />
             </div>
+            {formData.estVictimeInformee === false && (
+              <div className="fr-mb-3w">
+                <Input
+                  label={personneConcerneeFieldMetadata.victimeInformeeCommentaire.label}
+                  nativeInputProps={{
+                    value: formData.victimeInformeeCommentaire || '',
+                    onChange: handleInputChange('victimeInformeeCommentaire'),
+                  }}
+                />
+              </div>
+            )}
 
             <div className="fr-mb-3w">
-              <Checkbox
+              <RadioButtons
+                legend={personneConcerneeFieldMetadata.aAutrePersonnes.label}
+                name="personne-concernee-a-autre-personnes"
+                orientation="horizontal"
                 options={[
                   {
-                    label: personneConcerneeFieldMetadata.estVictimeInformee.label,
+                    label: 'Oui',
                     nativeInputProps: {
-                      checked: formData.estVictimeInformee || false,
-                      onChange: handleCheckboxChange('estVictimeInformee'),
+                      value: 'true',
+                      checked: formData.aAutrePersonnes === true,
+                      onChange: () => handleBooleanChange('aAutrePersonnes', true),
                     },
                   },
-                ]}
-              />
-            </div>
-
-            <div className="fr-mb-3w">
-              <Checkbox
-                options={[
                   {
-                    label: personneConcerneeFieldMetadata.aAutrePersonnes.label,
+                    label: 'Non',
                     nativeInputProps: {
-                      checked: formData.aAutrePersonnes || false,
-                      onChange: handleCheckboxChange('aAutrePersonnes'),
+                      value: 'false',
+                      checked: formData.aAutrePersonnes === false,
+                      onChange: () => handleBooleanChange('aAutrePersonnes', false),
                     },
                   },
                 ]}
@@ -372,6 +410,32 @@ export function PersonneConcerneeForm({
                 }}
               />
             )}
+
+            <div className="fr-mb-3w">
+              <RadioButtons
+                legend={personneConcerneeFieldMetadata.estHandicapee.label}
+                name="personne-concernee-est-handicapee"
+                orientation="horizontal"
+                options={[
+                  {
+                    label: 'Oui',
+                    nativeInputProps: {
+                      value: 'true',
+                      checked: formData.estHandicapee === true,
+                      onChange: () => handleBooleanChange('estHandicapee', true),
+                    },
+                  },
+                  {
+                    label: 'Non',
+                    nativeInputProps: {
+                      value: 'false',
+                      checked: formData.estHandicapee === false,
+                      onChange: () => handleBooleanChange('estHandicapee', false),
+                    },
+                  },
+                ]}
+              />
+            </div>
 
             <Input
               label={personneConcerneeFieldMetadata.commentaire.label}
