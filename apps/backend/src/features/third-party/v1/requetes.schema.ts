@@ -63,6 +63,7 @@ export const VictimeSchema = z
     email: EmailSchema,
     telephone: z.string().optional(),
     ageId: z.enum([AGE['-18'], AGE['18-29'], AGE['30-59'], AGE['60-79'], AGE['>= 80']]).optional(),
+    dateNaissance: optionalDatetime,
     adresse: AdresseSchema.optional(),
     estHandicapee: z.boolean(),
     commentaire: z.string().optional(),
