@@ -118,7 +118,7 @@ importers:
         version: 4.12.0
       file-type:
         specifier: ^21.3.1
-        version: 21.3.1
+        version: 21.3.2
       graffle:
         specifier: 8.0.0-next.173
         version: 8.0.0-next.173(@opentelemetry/api@1.9.0)(graphql@16.13.1)(prettier@3.8.1)
@@ -641,8 +641,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@borewit/text-codec@0.2.1':
-    resolution: {integrity: sha512-k7vvKPbf7J2fZ5klGRD9AeKfUvojuZIQ3BT5u7Jfv+puwXkUBUT5PVyMDfJZpy30CBDXGMgw7fguK/lpOMBvgw==}
+  '@borewit/text-codec@0.2.2':
+    resolution: {integrity: sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==}
 
   '@codegouvfr/react-dsfr@1.31.1':
     resolution: {integrity: sha512-cahE2WAo+S4mYh4FFL+VWIknWjy41SuwnlcPgcBO+sNNNeMOhNe99R85Tw9BBza5aWbZ2eCc0hFsEGfmkbNQSg==}
@@ -3105,8 +3105,8 @@ packages:
       - q
       - xml-js
 
-  file-type@21.3.1:
-    resolution: {integrity: sha512-SrzXX46I/zsRDjTb82eucsGg0ODq2NpGDp4HcsFKApPy8P8vACjpJRDoGGMfEzhFC0ry61ajd7f72J3603anBA==}
+  file-type@21.3.2:
+    resolution: {integrity: sha512-DLkUvGwep3poOV2wpzbHCOnSKGk1LzyXTv+aHFgN2VFl96wnp8YA9YjO2qPzg5PuL8q/SW9Pdi6WTkYOIh995w==}
     engines: {node: '>=20'}
 
   fill-range@7.1.1:
@@ -5129,7 +5129,7 @@ snapshots:
   '@biomejs/cli-win32-x64@2.4.4':
     optional: true
 
-  '@borewit/text-codec@0.2.1': {}
+  '@borewit/text-codec@0.2.2': {}
 
   '@codegouvfr/react-dsfr@1.31.1':
     dependencies:
@@ -7809,7 +7809,7 @@ snapshots:
     dependencies:
       randomatic: 3.1.1
 
-  file-type@21.3.1:
+  file-type@21.3.2:
     dependencies:
       '@tokenizer/inflate': 0.4.1
       strtok3: 10.3.4
@@ -9251,7 +9251,7 @@ snapshots:
 
   token-types@6.1.2:
     dependencies:
-      '@borewit/text-codec': 0.2.1
+      '@borewit/text-codec': 0.2.2
       '@tokenizer/token': 0.3.0
       ieee754: 1.2.1
 
