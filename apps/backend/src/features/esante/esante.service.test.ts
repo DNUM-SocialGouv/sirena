@@ -77,15 +77,15 @@ describe('esante.service.ts', () => {
       expect(res).toEqual([
         {
           fullName: 'Dr Alice A',
-          firstName: 'A',
-          lastName: 'Alice',
+          firstName: 'Alice',
+          lastName: 'A',
           prefix: 'Dr',
           rpps: '123',
         },
         {
           fullName: 'Dr Bob B',
-          firstName: 'B',
-          lastName: 'Bob',
+          firstName: 'Bob',
+          lastName: 'B',
           prefix: '',
           rpps: '456',
         },
