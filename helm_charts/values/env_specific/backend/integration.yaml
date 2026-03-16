@@ -13,6 +13,7 @@ SDPSN-devops-charts:
     REDIS_TLS: "false"
     SENTRY_ENVIRONMENT: integration
     TIPIMAIL_DISABLE_SENDING: "false"
+    APP_ENV: integration
 
   deployment:
     replicas: 1
