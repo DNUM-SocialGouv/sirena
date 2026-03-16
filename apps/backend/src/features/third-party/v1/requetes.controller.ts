@@ -26,7 +26,7 @@ const app = factoryWithLogs
     const payload = c.req.valid('json');
 
     if (isPayloadDebugEnabled()) {
-      logger.debug({ payload }, 'Third-party incoming payload (POST /requetes)');
+      logger.info({ payload }, 'Third-party incoming payload (POST /requetes)');
     }
 
     const requete = await createRequeteFromThirdParty({
@@ -73,7 +73,7 @@ const app = factoryWithLogs
     };
 
     if (isPayloadDebugEnabled()) {
-      logger.debug({ response }, 'Third-party outgoing response (POST /requetes)');
+      logger.info({ response }, 'Third-party outgoing response (POST /requetes)');
     }
 
     return c.json(response, 200);
@@ -109,7 +109,7 @@ const app = factoryWithLogs
     const fileName = sanitizeFilename(file.name, ext);
 
     if (isPayloadDebugEnabled()) {
-      logger.debug(
+      logger.info(
         { requeteId, fileName, mimeType, size: buffer.length },
         'Third-party incoming payload (POST /requetes/:id/attachments)',
       );
@@ -129,7 +129,7 @@ const app = factoryWithLogs
     logger.info({ requeteId, fileId: result.fileId }, 'Attachment added via third-party API');
 
     if (isPayloadDebugEnabled()) {
-      logger.debug({ response: result }, 'Third-party outgoing response (POST /requetes/:id/attachments)');
+      logger.info({ response: result }, 'Third-party outgoing response (POST /requetes/:id/attachments)');
     }
 
     c.header('x-trace-id', traceId);
