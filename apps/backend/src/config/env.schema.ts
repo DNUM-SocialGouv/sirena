@@ -292,6 +292,12 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('false')
     .transform((val) => val === 'true'),
+  APP_ENV: z
+    .enum(['integration', 'validation', 'production'] as const) // There is more environments, but only these 3 should enable specific debug features in the code (e.g. payload logging in non-prod envs)
+    .optional()
+    .describe(
+      'Deployment environment name. Used to enable debug features (e.g. payload logging) in non-production envs.',
+    ),
 });
 
 export const CronEnvSchema = z.object({
