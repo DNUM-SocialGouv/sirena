@@ -32,8 +32,6 @@ runs:
       run: |
         cd helm_charts
         helm repo add SDPSN-devops-charts https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable --username oauth2 --password ${{ inputs.helm-repo-pat }}
-        helm dependency update
-        helm dependency build
         echo "${{ inputs.environment }} ${{ inputs.version }}"
         ./generate_manifests.sh ${{ inputs.environment }} ${{ inputs.version }}
 
