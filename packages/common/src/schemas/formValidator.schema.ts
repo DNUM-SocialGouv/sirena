@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-export const emailSchema = z.email('Adresse email invalide');
+export const emailSchema = z.email(
+  'L’adresse e-mail est invalide. Merci de saisir une adresse au format prenom.nom@exemple.com.',
+);
 
 export const phoneSchema = z.string().refine(
   (value) => {
