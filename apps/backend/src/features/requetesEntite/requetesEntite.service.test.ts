@@ -101,6 +101,12 @@ vi.mock('../../libs/prisma.js', () => ({
     uploadedFile: {
       findMany: vi.fn(),
     },
+    personneConcernee: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      deleteMany: vi.fn(),
+      update: vi.fn(),
+    },
   },
 }));
 
@@ -721,6 +727,7 @@ describe('requetesEntite.service', () => {
         updatedAt: oldTimestamp,
         estSignalementProfessionnel: null,
         aAutrePersonnes: null,
+        isTuteur: null,
       };
 
       type RequeteWithDeclarant = Requete & {
@@ -795,6 +802,7 @@ describe('requetesEntite.service', () => {
         updatedAt: timestamp,
         estSignalementProfessionnel: null,
         aAutrePersonnes: null,
+        isTuteur: null,
       };
 
       type RequeteWithDeclarant = Requete & {
@@ -822,6 +830,7 @@ describe('requetesEntite.service', () => {
       } satisfies RequeteWithDeclarant as RequeteWithDeclarant);
 
       vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+      vi.mocked(prisma.personneConcernee.findFirst).mockResolvedValueOnce(mockDeclarant);
 
       await updateRequeteDeclarant(
         'req123',
@@ -832,6 +841,250 @@ describe('requetesEntite.service', () => {
       );
 
       expect(prisma.requete.update).toHaveBeenCalled();
+    });
+  });
+
+  describe('updateRequeteDeclarant - estPersonneConcernee', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    const baseDeclarant = {
+      id: 'declarant123',
+      estNonIdentifiee: null,
+      estHandicapee: null,
+      estIdentifie: true,
+      estSignalementProfessionnel: null,
+      estVictime: false,
+      estVictimeInformee: null,
+      victimeInformeeCommentaire: '',
+      veutGarderAnonymat: false,
+      commentaire: '',
+      autrePersonnes: '',
+      ageId: null,
+      dateNaissance: null,
+      lienVictimeId: null,
+      lienAutrePrecision: null,
+      declarantDeId: 'req123',
+      participantDeId: null,
+      aAutrePersonnes: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      identite: null,
+      adresse: null,
+    } as unknown as PersonneConcernee & { identite: Identite | null; adresse: null };
+
+    const mockIdentite = {
+      id: 'identite123',
+      nom: 'Dupont',
+      prenom: 'Jean',
+      email: 'jean@example.com',
+      telephone: '0600000000',
+      civiliteId: 'M',
+      commentaire: '',
+      personneConcerneeId: 'declarant123',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } satisfies Identite;
+
+    const mockAdresse = {
+      id: 'adresse123',
+      label: '',
+      numero: '',
+      rue: '1 rue de la Paix',
+      codePostal: '75001',
+      ville: 'Paris',
+      personneConcerneeId: 'declarant123',
+      lieuDeSurvenueId: null,
+    };
+
+    const mockRequeteWithoutDeclarant = {
+      id: 'req123',
+      dematSocialId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdById: null,
+      commentaire: '',
+      receptionDate: new Date(),
+      receptionTypeId: 'EMAIL',
+      provenanceId: null,
+      provenancePrecision: null,
+      thirdPartyAccountId: null,
+      declarant: null,
+    } as unknown as Requete;
+
+    it('check: connects participantDeId when no separate PC exists', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithoutDeclarant);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+      vi.mocked(prisma.personneConcernee.findFirst).mockResolvedValueOnce(baseDeclarant).mockResolvedValueOnce(null);
+      vi.mocked(prisma.personneConcernee.update).mockResolvedValueOnce({} as PersonneConcernee);
+
+      await updateRequeteDeclarant('req123', { estPersonneConcernee: true });
+
+      expect(prisma.personneConcernee.update).toHaveBeenCalledWith({
+        where: { id: 'declarant123' },
+        data: { participantDeId: 'req123' },
+      });
+      expect(prisma.personneConcernee.create).not.toHaveBeenCalled();
+      expect(prisma.personneConcernee.deleteMany).not.toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: expect.any(String) } }),
+      );
+    });
+
+    it('check: does not reconnect if participantDeId is already set', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithoutDeclarant);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+      vi.mocked(prisma.personneConcernee.findFirst)
+        .mockResolvedValueOnce({ ...baseDeclarant, participantDeId: 'req123' })
+        .mockResolvedValueOnce(null);
+
+      await updateRequeteDeclarant('req123', { estPersonneConcernee: true });
+
+      expect(prisma.personneConcernee.update).not.toHaveBeenCalled();
+      expect(prisma.personneConcernee.create).not.toHaveBeenCalled();
+    });
+
+    it('check: when a separate PC exists, keeps PC data and deletes the declarant', async () => {
+      const existingParticipant = {
+        ...baseDeclarant,
+        id: 'participant456',
+        declarantDeId: null,
+        participantDeId: 'req123',
+        identite: mockIdentite,
+        adresse: mockAdresse,
+      } as unknown as PersonneConcernee;
+
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithoutDeclarant);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+      vi.mocked(prisma.personneConcernee.findFirst)
+        .mockResolvedValueOnce(baseDeclarant)
+        .mockResolvedValueOnce(existingParticipant);
+      vi.mocked(prisma.personneConcernee.update).mockResolvedValue({} as PersonneConcernee);
+      vi.mocked(prisma.personneConcernee.deleteMany).mockResolvedValueOnce({ count: 1 });
+
+      await updateRequeteDeclarant('req123', { estPersonneConcernee: true });
+
+      expect(prisma.personneConcernee.update).toHaveBeenCalledWith({
+        where: { id: 'declarant123' },
+        data: { declarantDeId: null },
+      });
+      expect(prisma.personneConcernee.update).toHaveBeenCalledWith({
+        where: { id: 'participant456' },
+        data: { declarantDeId: 'req123', estVictime: true },
+      });
+      expect(prisma.personneConcernee.deleteMany).toHaveBeenCalledWith({
+        where: { id: 'declarant123' },
+      });
+      expect(prisma.personneConcernee.create).not.toHaveBeenCalled();
+    });
+
+    it('uncheck: disconnects and creates an empty PC when declarant has no identite or adresse', async () => {
+      const declarantAsPC = { ...baseDeclarant, participantDeId: 'req123', identite: null, adresse: null };
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithoutDeclarant);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+      vi.mocked(prisma.personneConcernee.findFirst)
+        .mockResolvedValueOnce(declarantAsPC)
+        .mockResolvedValueOnce(declarantAsPC);
+      vi.mocked(prisma.personneConcernee.update).mockResolvedValueOnce({} as PersonneConcernee);
+      vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({} as PersonneConcernee);
+
+      await updateRequeteDeclarant('req123', { estPersonneConcernee: false });
+
+      expect(prisma.personneConcernee.update).toHaveBeenCalledWith({
+        where: { id: 'declarant123' },
+        data: { participantDeId: null },
+      });
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: { participantDeId: 'req123' },
+      });
+    });
+
+    it('uncheck: creates PC with original identite even if declarant was edited before saving', async () => {
+      const declarantAsPC = { ...baseDeclarant, participantDeId: 'req123', identite: mockIdentite, adresse: null };
+      const declarantAfterUpdate = { ...baseDeclarant, participantDeId: 'req123', identite: null, adresse: null };
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithoutDeclarant);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+      vi.mocked(prisma.personneConcernee.findFirst)
+        .mockResolvedValueOnce(declarantAsPC)
+        .mockResolvedValueOnce(declarantAfterUpdate);
+      vi.mocked(prisma.personneConcernee.update).mockResolvedValueOnce({} as PersonneConcernee);
+      vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({} as PersonneConcernee);
+
+      await updateRequeteDeclarant('req123', { estPersonneConcernee: false });
+
+      expect(prisma.personneConcernee.update).toHaveBeenCalledWith({
+        where: { id: 'declarant123' },
+        data: { participantDeId: null },
+      });
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: {
+          participantDeId: 'req123',
+          identite: {
+            create: {
+              nom: 'Dupont',
+              prenom: 'Jean',
+              email: 'jean@example.com',
+              telephone: '0600000000',
+              civiliteId: 'M',
+            },
+          },
+        },
+      });
+    });
+
+    it('uncheck: creates PC with both original identite and adresse', async () => {
+      const declarantAsPC = {
+        ...baseDeclarant,
+        participantDeId: 'req123',
+        identite: mockIdentite,
+        adresse: mockAdresse,
+      };
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithoutDeclarant);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+      vi.mocked(prisma.personneConcernee.findFirst)
+        .mockResolvedValueOnce(declarantAsPC)
+        .mockResolvedValueOnce(declarantAsPC);
+      vi.mocked(prisma.personneConcernee.update).mockResolvedValueOnce({} as PersonneConcernee);
+      vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({} as PersonneConcernee);
+
+      await updateRequeteDeclarant('req123', { estPersonneConcernee: false });
+
+      expect(prisma.personneConcernee.update).toHaveBeenCalledWith({
+        where: { id: 'declarant123' },
+        data: { participantDeId: null },
+      });
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: {
+          participantDeId: 'req123',
+          identite: {
+            create: {
+              nom: 'Dupont',
+              prenom: 'Jean',
+              email: 'jean@example.com',
+              telephone: '0600000000',
+              civiliteId: 'M',
+            },
+          },
+          adresse: {
+            create: {
+              rue: '1 rue de la Paix',
+              codePostal: '75001',
+              ville: 'Paris',
+            },
+          },
+        },
+      });
+    });
+
+    it('uncheck: does nothing if participantDeId is already null', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithoutDeclarant);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+      vi.mocked(prisma.personneConcernee.findFirst).mockResolvedValueOnce(null).mockResolvedValueOnce(baseDeclarant);
+
+      await updateRequeteDeclarant('req123', { estPersonneConcernee: false });
+
+      expect(prisma.personneConcernee.update).not.toHaveBeenCalled();
+      expect(prisma.personneConcernee.create).not.toHaveBeenCalled();
     });
   });
 
@@ -873,6 +1126,7 @@ describe('requetesEntite.service', () => {
         aAutrePersonnes: false,
         createdAt: timestamp,
         updatedAt: timestamp,
+        isTuteur: null,
       };
 
       type RequeteWithDeclarant = Requete & {
