@@ -206,36 +206,53 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
   });
   const existingEntiteIds = new Set(existingRequeteEntites.map((re) => re.entiteId));
 
-  // TODO:  If no entity was assigned, fallback to ARS Normandie for now
   let isFallback = false;
   try {
     if (entiteIdsToLinkToRequete.size === 0) {
-      logger.warn({ requeteId }, 'No entity assigned, falling back to ARS Normandie');
       isFallback = true;
 
-      // Find ARS Normandie (regionCode: '28')
-      const arsNormandie = await prisma.entite.findFirst({
-        where: {
-          entiteTypeId: 'ARS',
-          entiteMereId: null,
-          regionCode: '28',
-        },
-      });
+      // Try to deduce the region from any available postal code
+      const postalCodeCandidates = [
+        ...allAssignments.map((a) => a.context.postalCode).filter(Boolean),
+        ...requete.situations.map((s) => s.lieuDeSurvenue.codePostal).filter(Boolean),
+      ];
 
-      if (!arsNormandie) {
+      let fallbackArs: { id: string; nomComplet: string | null } | null = null;
+
+      for (const postalCode of postalCodeCandidates) {
+        if (!postalCode) continue;
+        const geo = await findGeoByPostalCode(postalCode);
+        if (!geo?.regionCode) continue;
+
+        fallbackArs = await prisma.entite.findFirst({
+          where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: geo.regionCode },
+        });
+
+        if (fallbackArs) {
+          logger.warn(
+            { requeteId, postalCode, regionCode: geo.regionCode, arsId: fallbackArs.id },
+            'No entity assigned, falling back to regional ARS',
+          );
+          break;
+        }
+      }
+
+      // Ultimate fallback: ARS Normandie if region could not be determined
+      if (!fallbackArs) {
+        logger.warn({ requeteId }, 'Region not deducible, falling back to ARS Normandie');
+        fallbackArs = await prisma.entite.findFirst({
+          where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: '28' },
+        });
+      }
+
+      if (!fallbackArs) {
         logger.error({ requeteId }, 'ARS Normandie not found in database, cannot assign fallback');
         throw new Error('ARS Normandie not found in database');
       }
 
-      logger.info({ requeteId, arsNormandieId: arsNormandie.id }, 'Assigning ARS Normandie as fallback');
-
-      // Assign ARS Normandie to all situations
-      entiteIdsToLinkToRequete.add(arsNormandie.id);
+      entiteIdsToLinkToRequete.add(fallbackArs.id);
       for (const situation of requete.situations) {
-        situationEntitesToLink.push({
-          situationId: situation.id,
-          entiteId: arsNormandie.id,
-        });
+        situationEntitesToLink.push({ situationId: situation.id, entiteId: fallbackArs.id });
       }
     }
 
