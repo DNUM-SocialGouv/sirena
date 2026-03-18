@@ -1,5 +1,6 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { sanitizeFilename, urlToStream } from '../../helpers/file.js';
+import type { FileProcessingJobData } from '../../jobs/queues/fileProcessing.queue.js';
 import { addFileProcessingJob } from '../../jobs/queues/fileProcessing.queue.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { uploadFileToMinio } from '../../libs/minio.js';
@@ -14,6 +15,25 @@ export const getRequeteByDematSocialId = async (id: number) =>
       dematSocialId: id,
     },
   });
+
+interface PreUploadedFile {
+  objectPath: string;
+  rollback: () => Promise<void>;
+  encryptionMetadata?: { iv: string; authTag: string };
+  mimeType: string;
+  size: number | undefined;
+  originalName: string;
+  entiteId: string | null;
+}
+
+const preUploadFile = async (file: File, entiteId: string | null): Promise<PreUploadedFile> => {
+  const { stream, mimeFromHeader, mimeSniffed, size, extSniffed } = await urlToStream(file.url);
+  const mimeType = mimeSniffed ?? mimeFromHeader ?? 'application/octet-stream';
+  const ext = extSniffed ?? file.name.split('.').pop() ?? '';
+  const filename = sanitizeFilename(file.name, ext);
+  const { objectPath, rollback, encryptionMetadata } = await uploadFileToMinio(stream, filename, mimeType);
+  return { objectPath, rollback, encryptionMetadata, mimeType, size, originalName: file.name, entiteId };
+};
 
 export const createRequeteFromDematSocial = async ({
   dematSocialId,
@@ -30,87 +50,106 @@ export const createRequeteFromDematSocial = async ({
   );
   const primaryEntiteId = entiteIds[0] ?? null;
 
-  // TODO: This transaction includes S3 uploads (urlToStream + uploadFileToMinio) inside it,
-  // which are slow network I/O operations (download from URL, encrypt, upload to MinIO).
-  // With multiple files across situations/faits/PDF, the cumulative upload time can exceed
-  // the transaction timeout — this already caused a timeout at 60s (77s elapsed).
-  //
-  // The timeout has been increased to 300s as a short-term fix (that we will probably want to rollback later), but the proper solution is
-  // to move S3 uploads BEFORE the transaction:
-  //   1. Pre-upload all files to S3 in parallel (outside the transaction)
-  //   2. Collect upload results (objectPath, encryptionMetadata, rollback functions)
-  //   3. Open the transaction and only do fast DB inserts using the pre-uploaded data
-  //   4. If the transaction fails, rollback all S3 uploads
-  //   5. Queue file processing jobs after the transaction commits
-  //
-  // This would keep the transaction duration to a few seconds max (DB operations only)
-  // instead of being bottlenecked by network I/O.
-  const rollbackFunctions: Array<() => Promise<void>> = [];
+  // Phase 1: Pre-upload all files to S3 in parallel, outside the transaction.
+  // Keeping the transaction to DB-only operations avoids timeouts caused by the
+  // cumulative network I/O of downloading from demat.social + encrypting + uploading to MinIO.
+  type FileKey = string; // 'pdf' | `dem:${si}:${fi}` | `fait:${si}:${fai}:${fi}`
+
+  const pending: { key: FileKey; file: File; entiteId: string | null; critical: boolean }[] = [];
+
+  situations.forEach((s, si) => {
+    const sitEntiteIds = Array.from(new Set(s.entiteIds.filter((id): id is string => Boolean(id))));
+    const sitPrimaryEntiteId = sitEntiteIds[0] ?? primaryEntiteId;
+    s.demarchesEngagees.files.forEach((file, fi) => {
+      pending.push({ key: `dem:${si}:${fi}`, file, entiteId: sitPrimaryEntiteId, critical: false });
+    });
+    s.faits.forEach((f, fai) => {
+      f.files.forEach((file, fi) => {
+        pending.push({ key: `fait:${si}:${fai}:${fi}`, file, entiteId: sitPrimaryEntiteId, critical: false });
+      });
+    });
+  });
+  if (pdf) {
+    pending.push({ key: 'pdf', file: pdf, entiteId: primaryEntiteId, critical: true });
+  }
+
+  const uploaded = new Map<FileKey, PreUploadedFile>();
+  const settled = await Promise.allSettled(
+    pending.map(async ({ key, file, entiteId }) => {
+      const result = await preUploadFile(file, entiteId);
+      uploaded.set(key, result);
+    }),
+  );
+
+  for (let i = 0; i < settled.length; i++) {
+    const settledResult = settled[i];
+    const { key, critical } = pending[i];
+    if (settledResult.status === 'rejected') {
+      if (critical) {
+        for (const info of uploaded.values()) {
+          await info.rollback().catch(() => {});
+        }
+        throw settledResult.reason;
+      }
+      logger.error(
+        { err: settledResult.reason },
+        `Failed to pre-upload file ${key} for dematSocialId: ${dematSocialId}`,
+      );
+    }
+  }
+
+  // Phase 2: DB-only transaction — no network I/O, runs in seconds.
+  const fileJobs: FileProcessingJobData[] = [];
+
+  const insertFileRecord = async (
+    tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+    key: FileKey,
+    element: ElementLinked,
+    canDelete = true,
+  ) => {
+    const info = uploaded.get(key);
+    if (!info) return null;
+
+    const pathParts = info.objectPath.split('/');
+    const fileName = pathParts[pathParts.length - 1] || '';
+    const id = fileName.split('.')[0] || '';
+
+    const record = await tx.uploadedFile.create({
+      data: {
+        id,
+        fileName,
+        filePath: info.objectPath,
+        mimeType: info.mimeType,
+        size: info.size ?? 0,
+        metadata: {
+          originalName: info.originalName,
+          ...(info.encryptionMetadata && { encryption: info.encryptionMetadata }),
+        },
+        entiteId: info.entiteId,
+        uploadedById: null,
+        requeteEtapeNoteId: null,
+        requeteId: element.requeteId ?? null,
+        demarchesEngageesId: element.demarchesEngageesId ?? null,
+        faitSituationId: element.faitSituationId ?? null,
+        status: 'PENDING',
+        canDelete,
+      },
+    });
+
+    fileJobs.push({
+      fileId: record.id,
+      fileName: record.fileName,
+      filePath: record.filePath,
+      mimeType: record.mimeType,
+    });
+
+    return record;
+  };
+
+  let result: Awaited<ReturnType<typeof prisma.requete.findUniqueOrThrow>>;
 
   try {
-    return await prisma.$transaction(async (tx) => {
-      const createFileForRequete = async (
-        file: File,
-        element: ElementLinked,
-        entiteId: string | null,
-        canDelete: boolean = true,
-      ) => {
-        const { stream, mimeFromHeader, mimeSniffed, size, extSniffed } = await urlToStream(file.url);
-
-        const mimeType = mimeSniffed ?? mimeFromHeader ?? 'application/octet-stream';
-        const ext = extSniffed ?? file.name.split('.').pop() ?? '';
-
-        const filename = sanitizeFilename(file.name, ext);
-
-        const {
-          objectPath,
-          rollback: rollbackMinio,
-          encryptionMetadata,
-        } = await uploadFileToMinio(stream, filename, mimeType);
-
-        rollbackFunctions.push(rollbackMinio);
-
-        const pathParts = objectPath.split('/');
-        const fileName = pathParts[pathParts.length - 1] || '';
-        const id = fileName.split('.')[0] || '';
-
-        const uploadedFile = await tx.uploadedFile
-          .create({
-            data: {
-              id,
-              fileName,
-              filePath: objectPath,
-              mimeType,
-              size: size ?? 0,
-              metadata: {
-                originalName: file.name,
-                ...(encryptionMetadata && { encryption: encryptionMetadata }),
-              },
-              entiteId,
-              uploadedById: null,
-              requeteEtapeNoteId: null,
-              requeteId: element.requeteId ?? null,
-              demarchesEngageesId: element.demarchesEngageesId ?? null,
-              faitSituationId: element.faitSituationId ?? null,
-              status: 'PENDING',
-              canDelete,
-            },
-          })
-          .catch(async (err) => {
-            await rollbackMinio();
-            throw err;
-          });
-
-        await addFileProcessingJob({
-          fileId: uploadedFile.id,
-          fileName: uploadedFile.fileName,
-          filePath: uploadedFile.filePath,
-          mimeType: uploadedFile.mimeType,
-        });
-
-        return uploadedFile;
-      };
-
+    result = await prisma.$transaction(async (tx) => {
       const source = determineSource(dematSocialId);
       const id = await generateRequeteId(source, tx);
       const requete = await tx.requete.create({
@@ -211,9 +250,8 @@ export const createRequeteFromDematSocial = async ({
         }
       }
 
-      for (const s of situations) {
+      for (const [si, s] of situations.entries()) {
         const situationEntiteIds = Array.from(new Set(s.entiteIds.filter((id): id is string => Boolean(id))));
-        const situationPrimaryEntiteId = situationEntiteIds[0] ?? primaryEntiteId;
 
         const lieu = await tx.lieuDeSurvenue.create({
           data: {
@@ -284,16 +322,16 @@ export const createRequeteFromDematSocial = async ({
           },
         });
 
-        const files = s.demarchesEngagees.files.map(
-          async (file) => await createFileForRequete(file, { demarchesEngageesId: dem.id }, situationPrimaryEntiteId),
+        const demFileResults = await Promise.allSettled(
+          s.demarchesEngagees.files.map((_, fi) =>
+            insertFileRecord(tx, `dem:${si}:${fi}`, { demarchesEngageesId: dem.id }),
+          ),
         );
-
-        const results = await Promise.allSettled(files);
-        results.forEach((result) => {
-          if (result.status === 'rejected') {
+        demFileResults.forEach((r) => {
+          if (r.status === 'rejected') {
             logger.error(
-              { err: result.reason },
-              `Uploaded files to s3 encountred an error on requete: ${requete.id}, dematSocialId: ${dematSocialId}`,
+              { err: r.reason },
+              `Failed to insert file record for requete: ${requete.id}, dematSocialId: ${dematSocialId}`,
             );
           }
         });
@@ -319,7 +357,7 @@ export const createRequeteFromDematSocial = async ({
           },
         });
 
-        const faits = s.faits.map(async (f) => {
+        const faits = s.faits.map(async (f, fai) => {
           await tx.fait.create({
             data: {
               situation: { connect: { id: situation.id } },
@@ -329,17 +367,14 @@ export const createRequeteFromDematSocial = async ({
             },
           });
 
-          const files = f.files.map(
-            async (file) =>
-              await createFileForRequete(file, { faitSituationId: situation.id }, situationPrimaryEntiteId),
+          const faitFileResults = await Promise.allSettled(
+            f.files.map((_, fi) => insertFileRecord(tx, `fait:${si}:${fai}:${fi}`, { faitSituationId: situation.id })),
           );
-
-          const results = await Promise.allSettled(files);
-          results.forEach((result) => {
-            if (result.status === 'rejected') {
+          faitFileResults.forEach((r) => {
+            if (r.status === 'rejected') {
               logger.error(
-                { err: result.reason },
-                `Uploaded files to s3 encountred an error on requete: ${requete.id}, dematSocialId: ${dematSocialId}`,
+                { err: r.reason },
+                `Failed to insert file record for requete: ${requete.id}, dematSocialId: ${dematSocialId}`,
               );
             }
           });
@@ -378,9 +413,7 @@ export const createRequeteFromDematSocial = async ({
         await Promise.all(faits);
       }
 
-      if (pdf) {
-        await createFileForRequete(pdf, { requeteId: requete.id }, primaryEntiteId, false);
-      }
+      await insertFileRecord(tx, 'pdf', { requeteId: requete.id }, false);
 
       const requeteWithEntites = await tx.requete.findUniqueOrThrow({
         where: { id: requete.id },
@@ -424,21 +457,20 @@ export const createRequeteFromDematSocial = async ({
       });
     });
   } catch (err) {
-    logger.error(
-      { err, dematSocialId, fileCount: rollbackFunctions.length },
-      'Transaction failed, rolling back uploaded files from MinIO',
-    );
-
-    const rollbackResults = await Promise.allSettled(rollbackFunctions.map((rollback) => rollback()));
-
-    for (const [index, result] of rollbackResults.entries()) {
-      if (result.status === 'rejected') {
-        logger.error({ err: result.reason, index }, 'Failed to rollback MinIO file during transaction cleanup');
-      }
+    for (const info of uploaded.values()) {
+      await info.rollback().catch(() => {});
     }
-
     throw err;
   }
+
+  // Phase 3: Queue file processing jobs after the transaction has committed.
+  for (const job of fileJobs) {
+    await addFileProcessingJob(job).catch((jobErr) => {
+      logger.error({ err: jobErr, ...job }, 'Failed to queue file processing job');
+    });
+  }
+
+  return result;
 };
 
 export const updateDateAndTypeRequete = async (
