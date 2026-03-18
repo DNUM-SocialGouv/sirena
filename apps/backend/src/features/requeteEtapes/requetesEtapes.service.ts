@@ -1,6 +1,6 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
-import { capitalizeFirst } from '../../helpers/string.js';
+import { capitalizeFirst, formatDateFr } from '../../helpers/string.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { deleteFileFromMinio } from '../../libs/minio.js';
 import type { Prisma } from '../../libs/prisma.js';
@@ -66,17 +66,7 @@ export const createDefaultRequeteEtapes = async (
     return null;
   }
 
-  const formattedReceptionDate =
-    receptionDate?.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    }) ||
-    new Date().toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+  const formattedReceptionDate = formatDateFr(receptionDate ?? new Date());
 
   const isAutomaticCreation = requeteEntite.requete?.dematSocialId != null;
   const createdBy = requeteEntite.requete?.createdBy;
