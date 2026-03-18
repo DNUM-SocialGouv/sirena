@@ -129,6 +129,8 @@ export const createRequeteFromDematSocial = async ({
       },
     });
 
+    const isSamePerson = declarant.estVictime === true;
+
     const decl = await tx.personneConcernee.create({
       data: {
         identite: {
@@ -146,6 +148,7 @@ export const createRequeteFromDematSocial = async ({
         lienVictime: declarant.lienVictimeId ? { connect: { id: declarant.lienVictimeId } } : undefined,
         age: declarant.ageId ? { connect: { id: declarant.ageId } } : undefined,
         declarantDe: { connect: { id: requete.id } },
+        ...(isSamePerson ? { participantDe: { connect: { id: requete.id } } } : {}),
       },
     });
 
@@ -163,7 +166,7 @@ export const createRequeteFromDematSocial = async ({
       });
     }
 
-    if (participant) {
+    if (participant && !isSamePerson) {
       const part = await tx.personneConcernee.create({
         data: {
           identite: {
