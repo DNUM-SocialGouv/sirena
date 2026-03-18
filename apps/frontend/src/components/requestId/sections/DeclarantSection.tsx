@@ -38,7 +38,10 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
       : null,
   );
 
+  const isDeclarantPC = declarant?.estVictime === true;
+
   const isFulfilled =
+    isDeclarantPC ||
     !!fullName ||
     !!declarant?.lienVictime ||
     !!declarant?.lienAutrePrecision ||
@@ -51,6 +54,10 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
     !!declarant?.estSignalementProfessionnel;
 
   const renderSummary = () => {
+    if (isDeclarantPC) {
+      return <p className="fr-mb-0">Le déclarant est la personne concernée par la requête.</p>;
+    }
+
     if (!fullName && !declarantIdentite?.email && !declarantIdentite?.telephone) return null;
 
     return (
@@ -75,6 +82,7 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
   };
 
   const renderDetails = () => {
+    if (isDeclarantPC) return null;
     if (!isFulfilled) return null;
 
     const hasIdentitySection = !!fullName || !!declarant?.lienVictime || !!declarant?.lienAutrePrecision;

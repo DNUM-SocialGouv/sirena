@@ -386,6 +386,13 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
         );
       }
 
+      if (data?.declarant?.estPersonneConcernee && requete.declarant) {
+        await prisma.personneConcernee.update({
+          where: { id: requete.declarant.id },
+          data: { participantDeId: requete.id },
+        });
+      }
+
       return requete;
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'code' in error) {
@@ -563,7 +570,84 @@ export const updateRequeteDeclarant = async (
   declarantData: DeclarantInput,
   controls?: UpdateRequeteControls,
 ) => {
-  return updateRequete(requeteId, { declarant: declarantData }, controls);
+  // capture the current PC data BEFORE the update so the new PC record keeps the original data
+  const previousPcData = !declarantData.estPersonneConcernee
+    ? await prisma.personneConcernee.findFirst({
+        where: { declarantDeId: requeteId, participantDeId: requeteId },
+        include: { identite: true, adresse: true },
+      })
+    : null;
+
+  const result = await updateRequete(requeteId, { declarant: declarantData }, controls);
+
+  const declarant = await prisma.personneConcernee.findFirst({
+    where: { declarantDeId: requeteId },
+  });
+
+  if (!declarant) return result;
+
+  if (declarantData.estPersonneConcernee) {
+    // Check if a separate PC record already exists
+    const existingParticipant = await prisma.personneConcernee.findFirst({
+      where: { participantDeId: requeteId, NOT: { id: declarant.id } },
+    });
+
+    if (existingParticipant) {
+      // Keep the PC's data: transfer declarantDeId to the existing PC record
+      await prisma.personneConcernee.update({
+        where: { id: declarant.id },
+        data: { declarantDeId: null },
+      });
+      await prisma.personneConcernee.update({
+        where: { id: existingParticipant.id },
+        data: { declarantDeId: requeteId, estVictime: true },
+      });
+      // Delete the old declarant record
+      await prisma.personneConcernee.deleteMany({
+        where: { id: declarant.id },
+      });
+    } else if (declarant.participantDeId !== requeteId) {
+      await prisma.personneConcernee.update({
+        where: { id: declarant.id },
+        data: { participantDeId: requeteId },
+      });
+    }
+  } else {
+    // separate PC record with the ORIGINAL data
+    if (declarant.participantDeId === requeteId) {
+      await prisma.personneConcernee.update({
+        where: { id: declarant.id },
+        data: { participantDeId: null },
+      });
+      await prisma.personneConcernee.create({
+        data: {
+          participantDeId: requeteId,
+          ...(previousPcData?.identite && {
+            identite: {
+              create: {
+                nom: previousPcData.identite.nom,
+                prenom: previousPcData.identite.prenom,
+                email: previousPcData.identite.email,
+                telephone: previousPcData.identite.telephone,
+                civiliteId: previousPcData.identite.civiliteId,
+              },
+            },
+          }),
+          ...(previousPcData?.adresse && {
+            adresse: {
+              create: {
+                rue: previousPcData.adresse.rue,
+                codePostal: previousPcData.adresse.codePostal,
+                ville: previousPcData.adresse.ville,
+              },
+            },
+          }),
+        },
+      });
+    }
+  }
+
+  return result;
 };
 
 export const updateRequeteParticipant = async (
