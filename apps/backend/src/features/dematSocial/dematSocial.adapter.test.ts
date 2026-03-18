@@ -1,7 +1,14 @@
-import { RECEPTION_TYPE } from '@sirena/common/constants';
+import {
+  DS_LIEU_TYPE,
+  DS_MIS_EN_CAUSE_TYPE,
+  DS_PROFESSION_DOMICILE_TYPE,
+  MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
+  MIS_EN_CAUSE_TYPE,
+  RECEPTION_TYPE,
+} from '@sirena/common/constants';
 import { describe, expect, it, vi } from 'vitest';
 import { AddressType, type RootChampFragmentFragment } from '../../libs/graffle.js';
-import { mapDataForPrisma } from './dematSocial.adapter.js';
+import { getResponsable, mapDataForPrisma } from './dematSocial.adapter.js';
 import rootMapping from './dematSocial.mapper.js';
 
 const logger = { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() };
@@ -240,5 +247,30 @@ describe('dematSocial.mapper mapDataForPrisma', () => {
     expect(s0.demarchesEngagees.demarches).toContain(demarchesKey);
 
     expect(dto.situations.slice(1)).toHaveLength(1);
+  });
+});
+
+describe('getResponsable', () => {
+  describe('PROFESSIONNEL_DOMICILE + AUTRE_PROFESSIONNEL', () => {
+    const params = {
+      responsableTypeId: DS_MIS_EN_CAUSE_TYPE.PROFESSIONNEL_DOMICILE,
+      professionnelResponsableTypeId: DS_PROFESSION_DOMICILE_TYPE.AUTRE_PROFESSIONNEL,
+    };
+
+    it('maps to ETABLISSEMENT / SERVICE when lieu is domicile', () => {
+      const result = getResponsable({ lieuTypeId: DS_LIEU_TYPE.DOMICILE, ...params });
+      expect(result).toEqual({
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+        misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SERVICE,
+      });
+    });
+
+    it('returns null when lieu is not domicile (PROFESSIONNEL_DOMICILE not handled outside domicile)', () => {
+      const result = getResponsable({ lieuTypeId: null, ...params });
+      expect(result).toEqual({
+        misEnCauseTypeId: null,
+        misEnCauseTypePrecisionId: null,
+      });
+    });
   });
 });

@@ -229,6 +229,59 @@ Cet endpoint retourne des informations supplémentaires :
 
 ---
 
+## Combinaisons valides `lieuTypeId` / `misEnCause`
+
+Le champ `misEnCause` dans la situation accepte les champs suivants :
+
+```jsonc
+"misEnCause": {
+  "misEnCauseTypeId": "string",          // obligatoire
+  "misEnCauseTypePrecisionId": "string", // précision du type (voir tableaux ci-dessous)
+  "rpps": "string",                      // optionnel
+  "commentaire": "string"                // optionnel
+}
+```
+
+`misEnCauseTypePrecisionId` est utilisé comme qualificatif du professionnel ou de l'établissement. Sa valeur attendue dépend du `lieuTypeId` (voir ci-dessous).
+
+### Cas indépendants du lieu
+
+| `misEnCauseTypeId` | `misEnCauseTypePrecisionId` | Résultat enregistré |
+|--------------------|-----------------------------|---------------------|
+| `MEMBRE_FAMILLE` | — | `MEMBRE_FAMILLE` |
+| `PROCHE` | — | `PROCHE` |
+| `AUTRE` | — | `AUTRE_PERSONNE_NON_PRO` |
+
+### Lieu ≠ `DOMICILE` (établissement, cabinet, trajet…)
+
+`misEnCauseTypePrecisionId` doit contenir une valeur de `DS_PROFESSION_TYPE`.
+
+| `misEnCauseTypeId` | `misEnCauseTypePrecisionId` | Résultat enregistré |
+|--------------------|-----------------------------|---------------------|
+| `PROFESSIONNEL` | `PROFESSIONNEL_SANTE` | `PROFESSIONNEL_SANTE` |
+| `PROFESSIONNEL` | `PROFESSIONNEL_SOCIAL` | `PROFESSIONNEL_SOCIAL` |
+| `PROFESSIONNEL` | `NPJM` | `PROFESSIONNEL_SOCIAL` / précision `MANDATAIRE` |
+| `PROFESSIONNEL` | `AUTRE` | `AUTRE_PROFESSIONNEL` |
+| `ETABLISSEMENT` | — | `ETABLISSEMENT` / précision `ETABLISSEMENT` *(hors `TRAJET`)* |
+
+> ⚠️ **Limitation connue :** `PROFESSIONNEL_DOMICILE` n'est pas pris en charge hors domicile — aucun mis en cause n'est enregistré. Utiliser `lieuTypeId: DOMICILE` pour que ce type soit correctement mappé.
+
+### Lieu = `DOMICILE`
+
+Quand `lieuTypeId` vaut `DOMICILE`, `misEnCauseTypePrecisionId` doit contenir une valeur de `DS_PROFESSION_DOMICILE_TYPE`. Les trois valeurs de `misEnCauseTypeId` (`PROFESSIONNEL`, `PROFESSIONNEL_DOMICILE`, `ETABLISSEMENT`) déclenchent le même mapping.
+
+| `misEnCauseTypeId` | `misEnCauseTypePrecisionId` | Résultat enregistré |
+|--------------------|-----------------------------|---------------------|
+| `PROFESSIONNEL` / `PROFESSIONNEL_DOMICILE` / `ETABLISSEMENT` | `PROFESSIONNEL_SANTE` | `PROFESSIONNEL_SANTE` |
+| `PROFESSIONNEL` / `PROFESSIONNEL_DOMICILE` / `ETABLISSEMENT` | `NPJM` | `PROFESSIONNEL_SOCIAL` / précision `MANDATAIRE` |
+| `PROFESSIONNEL` / `PROFESSIONNEL_DOMICILE` / `ETABLISSEMENT` | `AUTRE_PROFESSIONNEL` | `ETABLISSEMENT` / précision `SERVICE` |
+| `PROFESSIONNEL` / `PROFESSIONNEL_DOMICILE` / `ETABLISSEMENT` | `SERVICE_EDUCATION` | `ETABLISSEMENT` / précision `SESSAD` |
+| `PROFESSIONNEL` / `PROFESSIONNEL_DOMICILE` / `ETABLISSEMENT` | `AUTRE` | `AUTRE_PROFESSIONNEL` / précision `AUTRE` |
+
+> **Combinaison non reconnue :** si `misEnCauseTypeId` ne correspond à aucun cas ci-dessus, aucun mis en cause n'est enregistré.
+
+---
+
 ## Exemple complet
 
 ```bash
