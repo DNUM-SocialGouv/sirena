@@ -21,7 +21,8 @@ export type CreateNoteDrawerRef = {
 // biome-ignore lint/complexity/noBannedTypes: react doesn't handle well Record<string, never>
 export type CreateNoteDrawerProps = {};
 
-const REQUIRED_FIELDS_ERROR = 'Vous devez renseigner "Détails de la note" ou ajouter un fichier pour créer la note.';
+const REQUIRED_FIELDS_ERROR =
+  'Vous devez renseigner au moins un champ : "Détails de la note" ou "Ajouter un ou plusieurs fichiers".';
 
 export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawerProps>((_props, ref) => {
   const { requestId } = useParams({
