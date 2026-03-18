@@ -20,6 +20,12 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
   const [accepted, setAccepted] = useState(false);
 
   const downloadUrl = useMemo(() => `/api/requetes-entite/${requestId}/files/download-all`, [requestId]);
+  const pdfUrl = useMemo(() => `/api/requetes-entite/${requestId}/export-pdf`, [requestId]);
+
+  const handleDownloadPdf = () => {
+    setIsOpen(false);
+    window.open(pdfUrl, '_blank');
+  };
 
   const handleDownloadAttachments = () => {
     setIsOpen(false);
@@ -47,6 +53,10 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
         <Menu.Portal>
           <Menu.Positioner align="end">
             <Menu.Popup className={styles.popup}>
+              <Menu.Item className={styles.item} onClick={handleDownloadPdf}>
+                <span className="fr-icon-file-pdf-line fr-icon--sm" aria-hidden="true" />
+                Télécharger le PDF de la requête
+              </Menu.Item>
               <Menu.Item className={styles.item} onClick={handleDownloadAttachments} disabled={disabled}>
                 <span className="fr-icon-attachment-line fr-icon--sm" aria-hidden="true" />
                 Télécharger les pièces jointes

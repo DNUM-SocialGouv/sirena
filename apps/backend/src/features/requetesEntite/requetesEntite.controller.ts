@@ -39,6 +39,7 @@ import {
   closeRequeteRoute,
   createRequeteRoute,
   downloadAllFilesRoute,
+  exportPdfRoute,
   getOtherEntitesAffectedRoute,
   getRequeteEntiteRoute,
   getRequetesEntiteRoute,
@@ -62,6 +63,7 @@ import {
   createRequeteEntite,
   createRequeteFilesArchive,
   createRequeteSituation,
+  generateRequetePdfBuffer,
   getOtherEntitesAffected,
   getRequeteEntiteById,
   getRequetesEntite,
@@ -312,6 +314,31 @@ const app = factoryWithLogs
     logger.info({ requeteId: id, situationId, fileId }, 'Retrieving safe file for situation');
 
     return streamSafeFileResponse(c, file);
+  })
+
+  .get('/:id/export-pdf', exportPdfRoute, async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        res: c.res,
+      });
+    }
+
+    const pdfBuffer = await generateRequetePdfBuffer(id, topEntiteId);
+
+    if (!pdfBuffer) {
+      throwHTTPException404NotFound('Requete not found', { res: c.res });
+    }
+
+    const pdfFileName = `requete-${id}.pdf`;
+    c.header('Content-Type', 'application/pdf');
+    c.header('Content-Disposition', `attachment; filename="${pdfFileName}"`);
+
+    logger.info({ requeteId: id }, 'Exporting requete as PDF');
+
+    return c.body(new Uint8Array(pdfBuffer));
   })
 
   .get('/:id/files/download-all', downloadAllFilesRoute, async (c) => {
