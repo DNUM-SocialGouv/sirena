@@ -15,16 +15,9 @@ interface PersonneConcerneeFormProps {
   requestId?: string;
   initialData?: PersonneConcerneeData;
   onSave: (data: PersonneConcerneeData, shouldCreateRequest: boolean) => Promise<void>;
-  isDematSocial?: boolean;
 }
 
-export function PersonneConcerneeForm({
-  mode,
-  requestId,
-  initialData,
-  onSave,
-  isDematSocial = false,
-}: PersonneConcerneeFormProps) {
+export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: PersonneConcerneeFormProps) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<PersonneConcerneeData>(initialData || {});
   const [emailError, setEmailError] = useState<string | undefined>();
@@ -192,27 +185,25 @@ export function PersonneConcerneeForm({
             </div>
 
             <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--top">
-              {isDematSocial && (
-                <div className="fr-col-12 fr-col-md-6">
-                  <Select
-                    label={personneConcerneeFieldMetadata.age.label}
-                    nativeSelectProps={{
-                      value: formData.age ?? '',
-                      onChange: (e) => {
-                        const value = e.target.value;
-                        setFormData((prev: PersonneConcerneeData) => ({ ...prev, age: value || undefined }));
-                      },
-                    }}
-                  >
-                    <option value="">Sélectionner une tranche d'âge</option>
-                    {mappers.ageOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-              )}
+              <div className="fr-col-12 fr-col-md-6">
+                <Select
+                  label={personneConcerneeFieldMetadata.age.label}
+                  nativeSelectProps={{
+                    value: formData.age ?? '',
+                    onChange: (e) => {
+                      const value = e.target.value;
+                      setFormData((prev: PersonneConcerneeData) => ({ ...prev, age: value || undefined }));
+                    },
+                  }}
+                >
+                  <option value="">Sélectionner une tranche d'âge</option>
+                  {mappers.ageOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
               <div className="fr-col-12 fr-col-md-6">
                 <Input
                   label={personneConcerneeFieldMetadata.dateNaissance.label}
