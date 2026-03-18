@@ -4,6 +4,7 @@ import { fileTypeFromBuffer } from 'file-type';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../../../config/files.constant.js';
 import factoryWithLogs from '../../../helpers/factories/appWithLogs.js';
 import { sanitizeFilename } from '../../../helpers/file.js';
+import { isPayloadDebugEnabled } from '../../../helpers/logs.js';
 import { sendDeclarantAcknowledgmentEmail } from '../../declarants/declarants.notification.service.js';
 import { assignEntitesToRequeteTask } from '../../dematSocial/affectation/affectation.js';
 import { getRequiredApiKey } from '../thirdPartyFactory.js';
@@ -23,6 +24,11 @@ const app = factoryWithLogs
     const apiKey = getRequiredApiKey(c);
 
     const payload = c.req.valid('json');
+
+    if (isPayloadDebugEnabled()) {
+      logger.info({ payload }, 'Third-party incoming payload (POST /requetes)');
+    }
+
     const requete = await createRequeteFromThirdParty({
       thirdPartyAccountId: apiKey.account.id,
       receptionDate: payload.receptionDate || new Date(),
@@ -59,15 +65,18 @@ const app = factoryWithLogs
         }
       });
 
-    return c.json(
-      {
-        requeteId: requete.id,
-        receptionDate: requete.receptionDate,
-        receptionTypeId: requete.receptionTypeId,
-        createdAt: requete.createdAt,
-      },
-      200,
-    );
+    const response = {
+      requeteId: requete.id,
+      receptionDate: requete.receptionDate,
+      receptionTypeId: requete.receptionTypeId,
+      createdAt: requete.createdAt,
+    };
+
+    if (isPayloadDebugEnabled()) {
+      logger.info({ response }, 'Third-party outgoing response (POST /requetes)');
+    }
+
+    return c.json(response, 200);
   })
   .post('/:requeteId/attachments', postAttachmentRoute, postAttachmentParamsValidator, async (c) => {
     const logger = c.get('logger');
@@ -99,6 +108,13 @@ const app = factoryWithLogs
     const ext = detectedType?.ext ?? file.name.split('.').pop() ?? '';
     const fileName = sanitizeFilename(file.name, ext);
 
+    if (isPayloadDebugEnabled()) {
+      logger.info(
+        { requeteId, fileName, mimeType, size: buffer.length },
+        'Third-party incoming payload (POST /requetes/:id/attachments)',
+      );
+    }
+
     const result = await addAttachmentToRequete(requeteId, apiKey.account.id, {
       buffer,
       fileName,
@@ -111,6 +127,10 @@ const app = factoryWithLogs
     }
 
     logger.info({ requeteId, fileId: result.fileId }, 'Attachment added via third-party API');
+
+    if (isPayloadDebugEnabled()) {
+      logger.info({ response: result }, 'Third-party outgoing response (POST /requetes/:id/attachments)');
+    }
 
     c.header('x-trace-id', traceId);
     return c.json(result, 200);
