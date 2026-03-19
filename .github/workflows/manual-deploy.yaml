@@ -9,10 +9,9 @@ on:
         type: choice
         options:
           - formation
-          - validation
           - preproduction
           - production
-        default: "validation"
+        default: "preproduction"
 
 jobs:
   build-docker:
