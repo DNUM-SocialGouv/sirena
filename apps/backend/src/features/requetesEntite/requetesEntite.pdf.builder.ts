@@ -1,4 +1,10 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import PDFDocument from 'pdfkit';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROBOTO_REGULAR = path.join(__dirname, '../../assets/fonts/Roboto-Regular.ttf');
+const ROBOTO_BOLD = path.join(__dirname, '../../assets/fonts/Roboto-Bold.ttf');
 
 type PDFPage = { dictionary: { data: Record<string, unknown> } };
 
@@ -6,6 +12,9 @@ type TaggedPDFDocument = Omit<InstanceType<typeof PDFDocument>, 'struct' | 'addS
   page: PDFPage;
   struct: (type: string, children?: PDFStructureElementChild[]) => PDFStructureElement;
   addStructure: (el: PDFStructureElement) => void;
+  markContent: (tag: string, options?: Record<string, unknown>) => void;
+  endMarkedContent: () => void;
+  registerFont: (name: string, src: string) => TaggedPDFDocument;
 };
 
 type PDFStructureElementChild = PDFStructureElement | (() => void);
@@ -15,6 +24,11 @@ type PDFStructureElement = {
   setParent: (el: PDFStructureElement) => void;
   setAttached: () => void;
   end: () => void;
+};
+
+type DocWithRef = {
+  ref: (data: Record<string, unknown>) => unknown;
+  _root: { data: Record<string, unknown> };
 };
 
 /**
@@ -35,13 +49,32 @@ export class RequetePdfBuilder {
       tagged: true,
       lang: 'fr-FR',
       displayTitle: true,
-      info: { Title: title, Creator: 'Sirena' },
+      info: { Title: title, Creator: 'Sirena', Author: 'Sirena' },
       margin: 40,
       size: 'A4',
     }) as unknown as TaggedPDFDocument;
 
+    this.doc.registerFont('Roboto', ROBOTO_REGULAR);
+    this.doc.registerFont('Roboto-Bold', ROBOTO_BOLD);
+
     this.docElement = this.doc.struct('Document');
     this.doc.addStructure(this.docElement);
+
+    const roleMapRef = (this.doc as unknown as DocWithRef).ref({
+      Type: 'RoleMap',
+      Sect: 'Sect',
+      H1: 'H1',
+      H2: 'H2',
+      H3: 'H3',
+      P: 'P',
+      L: 'L',
+      LI: 'LI',
+      Lbl: 'Lbl',
+      LBody: 'LBody',
+      Artifact: 'Artifact',
+    });
+    (roleMapRef as unknown as { end: () => void }).end();
+    (this.doc as unknown as DocWithRef)._root.data.RoleMap = roleMapRef;
 
     // Fix tab order: /Tabs /S ensures tab order follows the structure tree (PDF/UA requirement).
     const setTabOrder = () => {
@@ -66,6 +99,8 @@ export class RequetePdfBuilder {
           <rdf:li xml:lang="x-default">${title}</rdf:li>
         </rdf:Alt>
       </dc:title>
+      <dc:language><rdf:Seq><rdf:li>fr-FR</rdf:li></rdf:Seq></dc:language>
+      <dc:creator><rdf:Seq><rdf:li>Sirena</rdf:li></rdf:Seq></dc:creator>
       <pdfuaid:part>1</pdfuaid:part>
     </rdf:Description>
   </rdf:RDF>
@@ -107,7 +142,7 @@ export class RequetePdfBuilder {
     this.docElement.add(
       this.doc.struct('H1', [
         () => {
-          this.doc.fontSize(16).font('Helvetica-Bold').text(text, { align: 'center' });
+          this.doc.fontSize(16).font('Roboto-Bold').text(text, { align: 'center' });
           this.doc.moveDown(0.4);
         },
       ]),
@@ -124,11 +159,13 @@ export class RequetePdfBuilder {
     sect.add(
       this.doc.struct('H2', [
         () => {
-          this.doc.moveDown(0.5).fontSize(13).font('Helvetica-Bold').text(title);
+          this.doc.moveDown(0.5).fontSize(13).font('Roboto-Bold').text(title);
+          this.doc.markContent('Artifact', { type: 'Layout' });
           this.doc
             .moveTo(this.doc.page.margins.left, this.doc.y)
             .lineTo(this.doc.page.width - this.doc.page.margins.right, this.doc.y)
             .stroke();
+          this.doc.endMarkedContent();
           this.doc.moveDown(0.3);
         },
       ]),
@@ -140,7 +177,7 @@ export class RequetePdfBuilder {
     this.current.add(
       this.doc.struct('H3', [
         () => {
-          this.doc.moveDown(0.3).fontSize(11).font('Helvetica-Bold').text(title);
+          this.doc.moveDown(0.3).fontSize(11).font('Roboto-Bold').text(title);
           this.doc.moveDown(0.2);
         },
       ]),
@@ -153,8 +190,8 @@ export class RequetePdfBuilder {
     this.current.add(
       this.doc.struct('P', [
         () => {
-          this.doc.fontSize(10).font('Helvetica-Bold').text(`${label} : `, { continued: true });
-          this.doc.font('Helvetica').text(value);
+          this.doc.fontSize(12).font('Roboto-Bold').text(`${label} : `, { continued: true });
+          this.doc.font('Roboto').text(value);
         },
       ]),
     );
@@ -171,9 +208,16 @@ export class RequetePdfBuilder {
       const li = this.doc.struct('LI');
       list.add(li);
       li.add(
+        this.doc.struct('Lbl', [
+          () => {
+            this.doc.fontSize(12).font('Roboto').text('• ', { continued: true });
+          },
+        ]),
+      );
+      li.add(
         this.doc.struct('LBody', [
           () => {
-            this.doc.fontSize(10).font('Helvetica').text(`• ${item}`);
+            this.doc.fontSize(12).font('Roboto').text(item);
           },
         ]),
       );

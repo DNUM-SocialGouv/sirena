@@ -56,6 +56,8 @@ export const DownloadMenu = ({ requestId, disabled, hasUnsafeFiles }: DownloadMe
               <Menu.Item className={styles.item} onClick={handleDownloadPdf}>
                 <span className="fr-icon-file-pdf-line fr-icon--sm" aria-hidden="true" />
                 Télécharger le PDF de la requête
+                <span className="fr-icon-external-link-line fr-icon--sm" aria-hidden="true" />
+                <span className="fr-sr-only"> - nouvel onglet</span>
               </Menu.Item>
               <Menu.Item className={styles.item} onClick={handleDownloadAttachments} disabled={disabled}>
                 <span className="fr-icon-attachment-line fr-icon--sm" aria-hidden="true" />

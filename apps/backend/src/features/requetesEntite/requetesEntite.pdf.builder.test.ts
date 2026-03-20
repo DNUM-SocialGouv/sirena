@@ -114,6 +114,12 @@ describe('RequetePdfBuilder', () => {
       const buffer = await buildPdf((b) => b.list(['item 1', 'item 2', 'item 3']));
       expect(buffer.length).toBeGreaterThan(0);
     });
+
+    it('renders list items into the PDF (buffer grows with items)', async () => {
+      const bufferWithItems = await buildPdf((b) => b.list(['pièce-jointe-1.pdf', 'pièce-jointe-2.png']));
+      const bufferEmpty = await buildPdf((b) => b.list([]));
+      expect(bufferWithItems.length).toBeGreaterThan(bufferEmpty.length);
+    });
   });
 
   describe('full chaining', () => {
