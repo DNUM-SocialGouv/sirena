@@ -41,7 +41,7 @@ export const DeclarantSchema = z
     prenom: z.string().optional(),
     civiliteId: z.enum([CIVILITE.M, CIVILITE.MME, CIVILITE.MX, CIVILITE.NSP]).optional(),
     email: EmailSchema,
-    ageId: z.enum([AGE['-18'], AGE['18-29'], AGE['30-59'], AGE['60-79'], AGE['>= 80']]).optional(),
+    ageId: z.enum([AGE['-18'], AGE['18-29'], AGE['30-59'], AGE['60-79'], AGE['>= 80'], AGE.Inconnu]).optional(),
     telephone: z.string(),
     lienVictimeId: z
       .enum([LIEN_VICTIME.MEMBRE_FAMILLE, LIEN_VICTIME.PROCHE, LIEN_VICTIME.PROFESSIONNEL, LIEN_VICTIME.AUTRE])
@@ -62,7 +62,7 @@ export const VictimeSchema = z
     civiliteId: z.enum([CIVILITE.M, CIVILITE.MME, CIVILITE.MX, CIVILITE.NSP]).optional(),
     email: EmailSchema,
     telephone: z.string().optional(),
-    ageId: z.enum([AGE['-18'], AGE['18-29'], AGE['30-59'], AGE['60-79'], AGE['>= 80']]).optional(),
+    ageId: z.enum([AGE['-18'], AGE['18-29'], AGE['30-59'], AGE['60-79'], AGE['>= 80'], AGE.Inconnu]).optional(),
     dateNaissance: optionalDatetime,
     adresse: AdresseSchema.optional(),
     estHandicapee: z.boolean(),
