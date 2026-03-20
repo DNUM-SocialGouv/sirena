@@ -1,13 +1,13 @@
-name: Integration - build and deploy
+name: Build and deploy
 
 on:
   push:
     branches:
       - main
+      - validation
 
 env:
-  INTEGRATION_BACKEND_URL: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr/api
-  INTEGRATION_FRONTEND_URL: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr
+  ENVIRONMENT: ${{ github.ref_name == 'main' && 'integration' || 'validation' }}
 
 jobs:
   build-docker:
@@ -23,25 +23,23 @@ jobs:
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
 
-      - name: Compute short sha
-        id: compute_short_sha
-        run: |
-          SHORT_SHA=${GITHUB_SHA::7}
-          echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_OUTPUT
+      - name: Compute version
+        id: version
+        run: echo "value=${{ env.ENVIRONMENT }}-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker images
         uses: ./.github/actions/build-docker
         with:
-          version: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
+          version: ${{ steps.version.outputs.value }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          environment: integration
+          environment: ${{ env.ENVIRONMENT }}
 
     outputs:
-      SHORT_SHA: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
+      version: ${{ steps.version.outputs.value }}
 
   deploy:
-    name: Deploy to GitOps
+    name: Deploy to ${{ needs.build-docker.outputs.version }}
     needs: build-docker
     runs-on: ubuntu-latest
     permissions:
@@ -53,8 +51,8 @@ jobs:
       - name: Deploy to GitOps
         uses: ./.github/actions/deploy-gitops
         with:
-          environment: integration
-          version: ${{ needs.build-docker.outputs.SHORT_SHA }}
+          environment: ${{ env.ENVIRONMENT }}
+          version: ${{ needs.build-docker.outputs.version }}
           gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }}
           helm-repo-pat: ${{ secrets.HELM_REPO_PAT }}
 
@@ -64,6 +62,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+
+    env:
+      BASE_URL: https://sirena.${{ github.ref_name == 'main' && 'integration' || 'validation' }}.dev.atlas.fabrique.social.gouv.fr
 
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
@@ -99,16 +100,16 @@ jobs:
           cd apps/frontend
           npx tsx tests/ci/wait-for-deployment.ts
         env:
-          EXPECTED_VERSION: ${{ needs.build-docker.outputs.SHORT_SHA }}
-          BACKEND_URL: ${{ env.INTEGRATION_BACKEND_URL }}
-          FRONTEND_URL: ${{ env.INTEGRATION_FRONTEND_URL }}
+          EXPECTED_VERSION: ${{ needs.build-docker.outputs.version }}
+          BACKEND_URL: ${{ env.BASE_URL }}/api
+          FRONTEND_URL: ${{ env.BASE_URL }}
 
       - name: Run Playwright tests
         run: |
           cd apps/frontend
           pnpm run test:e2e
         env:
-          FRONTEND_URI: ${{ env.INTEGRATION_FRONTEND_URL }}
+          FRONTEND_URI: ${{ env.BASE_URL }}
           E2E_CI: true
           E2E_ENTITY_ADMIN_USER_1_EMAIL: ${{ vars.TEST_USER_EMAIL }}
           E2E_ENTITY_ADMIN_USER_1_PASSWORD: ${{ vars.TEST_USER_PASSWORD }}
