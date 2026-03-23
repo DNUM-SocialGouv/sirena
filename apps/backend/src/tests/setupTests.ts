@@ -80,6 +80,10 @@ vi.mock('../helpers/middleware.js', () => ({
   SOURCE_BACKEND: 'backend',
 }));
 
+vi.mock('@prisma/adapter-pg', () => ({
+  PrismaPg: vi.fn(),
+}));
+
 vi.mock('../middlewares/sentry.middleware.js', () => ({
   createSentryRequestContext: vi.fn(() => ({})),
   createSentryUserFromContext: vi.fn(() => ({})),

@@ -297,9 +297,9 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
                 <p className="fr-text--sm fr-text--bold" style={{ color: 'var(--text-default-error)' }}>
                   {fileName}
                 </p>
-                {errors.map((error, index) => (
+                {errors.map((error) => (
                   <p
-                    key={`${fileName}-error-${error.type}-${error.message}-${index}`}
+                    key={`${fileName}-error-${error.type}-${error.message}`}
                     className="fr-text--xs"
                     style={{ color: 'var(--text-default-error)' }}
                   >

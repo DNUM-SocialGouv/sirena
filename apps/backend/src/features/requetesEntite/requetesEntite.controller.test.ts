@@ -92,17 +92,16 @@ vi.mock('../users/users.service.js', () => ({
   getUserById: vi.fn(),
 }));
 
-vi.mock('../../libs/prisma.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../libs/prisma.js')>();
+vi.mock('../../libs/prisma.js', async () => {
+  const generated = await vi.importActual('../../../generated/client/index.js');
   return {
-    ...actual,
+    ...generated,
     prisma: {
-      ...actual.prisma,
       entite: {
-        ...actual.prisma.entite,
         findUnique: vi.fn(),
       },
     },
+    createPrismaAdapter: vi.fn(),
   };
 });
 

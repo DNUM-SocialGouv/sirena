@@ -1,9 +1,8 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { RECEPTION_TYPE } from '@sirena/common/constants';
-import { fileTypeFromBuffer } from 'file-type';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../../../config/files.constant.js';
 import factoryWithLogs from '../../../helpers/factories/appWithLogs.js';
-import { sanitizeFilename } from '../../../helpers/file.js';
+import { fileTypeParser, sanitizeFilename } from '../../../helpers/file.js';
 import { isPayloadDebugEnabled } from '../../../helpers/logs.js';
 import { sendDeclarantAcknowledgmentEmail } from '../../declarants/declarants.notification.service.js';
 import { assignEntitesToRequeteTask } from '../../dematSocial/affectation/affectation.js';
@@ -98,7 +97,7 @@ const app = factoryWithLogs
       throwHTTPException400BadRequest('File size exceeds the maximum allowed', { res: c.res });
     }
 
-    const detectedType = await fileTypeFromBuffer(buffer);
+    const detectedType = await fileTypeParser.fromBuffer(buffer);
     const mimeType = detectedType?.mime ?? file.type ?? 'application/octet-stream';
 
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {

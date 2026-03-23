@@ -9,8 +9,13 @@ vi.mock('../libs/minio.js', () => ({
 
 const fileTypeFromBufferMock = vi.fn();
 
+vi.mock('@file-type/cfbf', () => ({ detectCfbf: {} }));
+vi.mock('@file-type/pdf', () => ({ detectPdf: {} }));
+
 vi.mock('file-type', () => ({
-  fileTypeFromBuffer: () => fileTypeFromBufferMock(),
+  FileTypeParser: class {
+    fromBuffer = () => fileTypeFromBufferMock();
+  },
 }));
 
 function webStreamFromString(s: string) {

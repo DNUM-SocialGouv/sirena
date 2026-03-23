@@ -21,7 +21,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("PG_URL")
 }
 
 model AutoriteCompetenteReferentiel {

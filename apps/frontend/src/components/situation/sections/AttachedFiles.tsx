@@ -172,9 +172,9 @@ export function AttachedFiles({
             <h4 className={fr.cx('fr-text--lg')}>Nouveaux fichiers sélectionnés</h4>
             <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
               <ul>
-                {faitFiles.map((file, index) => (
+                {faitFiles.map((file) => (
                   <li
-                    key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
+                    key={`${file.name}-${file.size}-${file.lastModified}`}
                     className={noteStyles['request-note__file']}
                   >
                     <div className={styles.fileItem}>
@@ -230,9 +230,9 @@ export function AttachedFiles({
             {Object.entries(fileErrors).map(([fileName, errors]) => (
               <div key={fileName} className={fr.cx('fr-mb-1w')}>
                 <p className={`${fr.cx('fr-text--sm', 'fr-text--bold')} ${styles.errorText}`}>{fileName}</p>
-                {errors.map((error, index) => (
+                {errors.map((error) => (
                   <p
-                    key={`${fileName}-error-${error.message}-${index}`}
+                    key={`${fileName}-error-${error.message}`}
                     className={`${fr.cx('fr-text--xs')} ${styles.errorText}`}
                   >
                     {error.message}
