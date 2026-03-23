@@ -57,6 +57,22 @@ export const updateStatutRoute = openApiProtectedRoute({
   },
 });
 
+export const exportPdfRoute = describeRoute({
+  description: 'Export the details of a requete as a PDF document',
+  responses: {
+    ...openApi401Unauthorized(),
+    ...openApi404NotFound(),
+    200: {
+      description: 'PDF document of the requete details',
+      content: {
+        'application/pdf': {
+          schema: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  },
+});
+
 export const downloadAllFilesRoute = describeRoute({
   description: 'Download all attachments for a requete as a ZIP archive',
   responses: {

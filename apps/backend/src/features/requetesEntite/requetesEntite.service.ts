@@ -15,6 +15,7 @@ import { getOriginalFileName } from '../../helpers/file.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
+import { formatDateFr } from '../../helpers/string.js';
 import { deleteFileFromMinio, getFileStream } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
@@ -29,6 +30,7 @@ import {
   mapSituationFaitToPrismaCreate,
   mapSituationToPrismaCreate,
 } from './requetesEntite.mapper.js';
+import { RequetePdfBuilder } from './requetesEntite.pdf.builder.js';
 import type { CreateChangeLogForRequeteEntiteDto, GetRequetesEntiteQuery } from './requetesEntite.type.js';
 
 type DeclarantInput = z.infer<typeof DeclarantDataSchema>;
@@ -1757,4 +1759,230 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
   archive.finalize();
 
   return { archive, requeteId: requeteEntite.requeteId };
+};
+
+const booleanLabel = (value: boolean | null | undefined): string | null => {
+  if (value === null || value === undefined) return null;
+  return value ? 'Oui' : 'Non';
+};
+
+const formatRue = (adresse: { numero: string | null; rue: string | null } | null) =>
+  adresse ? [adresse.numero, adresse.rue].filter(Boolean).join(' ') || null : null;
+
+export const generateRequetePdfBuffer = async (requeteId: string, entiteId: string | null): Promise<Buffer | null> => {
+  if (!entiteId) return null;
+
+  const result = await prisma.requeteEntite.findFirst({
+    where: { requeteId, entiteId },
+    include: {
+      statut: true,
+      priorite: true,
+      requete: {
+        include: {
+          receptionType: true,
+          provenance: true,
+          declarant: {
+            include: {
+              identite: { include: { civilite: true } },
+              adresse: true,
+              lienVictime: true,
+            },
+          },
+          participant: {
+            include: {
+              identite: { include: { civilite: true } },
+              adresse: true,
+              age: true,
+              lienVictime: true,
+            },
+          },
+          fichiersRequeteOriginale: true,
+          situations: { include: SITUATION_INCLUDE_FULL },
+        },
+      },
+    },
+  });
+
+  if (!result) return null;
+
+  const enrichedSituations = await Promise.all(
+    result.requete?.situations?.map((s) => enrichSituationWithTraitementDesFaits(s)) ?? [],
+  );
+
+  const requeteEntite = { ...result, requete: { ...result.requete, situations: enrichedSituations } };
+  const { requete } = requeteEntite;
+
+  const pdf = new RequetePdfBuilder(`Requête ${requete.id}`);
+
+  // ===== 1. HEADERS =====
+  const allMotifs = (requete.situations ?? [])
+    .flatMap((s) => {
+      const faits = s.faits?.[0];
+      return [
+        ...(faits?.motifsDeclaratifs?.map((m) => m.motifDeclaratif.label) ?? []),
+        ...(faits?.motifs?.map((m) => m.motif.label) ?? []),
+      ];
+    })
+    .filter((v, i, arr) => arr.indexOf(v) === i);
+
+  pdf
+    .h1(`Requête ${requete.id}`)
+    .field('Statut', requeteEntite.statut?.label || requeteEntite.statutId)
+    .field('Priorité', requeteEntite.priorite?.label || null)
+    .field('Motifs', allMotifs.length > 0 ? allMotifs.join(', ') : null)
+    .field('Date de génération', formatDateFr(new Date()));
+
+  // ===== 2. REQUÊTE ORIGINALE =====
+  pdf
+    .section('Requête originale')
+    .field('Date de réception', formatDateFr(requete.receptionDate))
+    .field('Mode de réception', requete.receptionType?.label || null)
+    .field('Provenance', requete.provenance?.label || null)
+    .field('Précision provenance', requete.provenancePrecision || null)
+    .field('N° Demat.Social', requete.dematSocialId ? String(requete.dematSocialId) : null);
+
+  // ===== 3. DÉCLARANT =====
+  if (requete.declarant) {
+    const d = requete.declarant;
+    pdf
+      .section('Déclarant')
+      .field('Civilité', d.identite?.civilite?.label || null)
+      .field('Prénom', d.identite?.prenom || null)
+      .field('Nom', d.identite?.nom || null)
+      .field('Lien avec la victime', d.lienVictime?.label || null)
+      .field('Précision lien', d.lienAutrePrecision || null)
+      .field('Tuteur/Curateur', booleanLabel(d.isTuteur))
+      .field('Adresse', formatRue(d.adresse))
+      .field('Code postal', d.adresse?.codePostal || null)
+      .field('Ville', d.adresse?.ville || null)
+      .field('Email', d.identite?.email || null)
+      .field('Téléphone', d.identite?.telephone || null)
+      .field("Souhaite garder l'anonymat", booleanLabel(d.veutGarderAnonymat))
+      .field('Signalement professionnel (EIG)', booleanLabel(d.estSignalementProfessionnel))
+      .field('Autres précisions', d.commentaire || null);
+  }
+
+  // ===== 4. PERSONNE CONCERNÉE =====
+  if (requete.participant) {
+    const p = requete.participant;
+    pdf
+      .section('Personne concernée')
+      .field('Civilité', p.identite?.civilite?.label || null)
+      .field('Prénom', p.identite?.prenom || null)
+      .field('Nom', p.identite?.nom || null)
+      .field('Date de naissance', p.dateNaissance ? formatDateFr(p.dateNaissance) : null)
+      .field("Tranche d'âge", !p.dateNaissance && p.age ? p.age.label : null)
+      .field('En situation de handicap', booleanLabel(p.estHandicapee))
+      .field('Adresse', formatRue(p.adresse))
+      .field('Code postal', p.adresse?.codePostal || null)
+      .field('Ville', p.adresse?.ville || null)
+      .field('Email', p.identite?.email || null)
+      .field('Téléphone', p.identite?.telephone || null)
+      .field('A été informée des démarches', booleanLabel(p.estVictimeInformee))
+      .field('Raison si non informée', p.victimeInformeeCommentaire || null)
+      .field("Souhaite garder l'anonymat", booleanLabel(p.veutGarderAnonymat))
+      .field("A d'autres personnes concernées", booleanLabel(p.aAutrePersonnes))
+      .field('Description', p.autrePersonnes || null)
+      .field('Autres précisions', p.commentaire || null);
+  }
+
+  // ===== 5. SITUATIONS =====
+  for (const [index, situation] of (requete.situations ?? []).entries()) {
+    pdf.section(`Situation ${index + 1}`);
+
+    const lieu = situation.lieuDeSurvenue;
+    if (lieu) {
+      pdf
+        .subsection('Lieu de survenue')
+        .field('Type de lieu', lieu.lieuType?.label || null)
+        .field('Précision du lieu', lieu.lieuPrecision || null)
+        .field('Rue', formatRue(lieu.adresse))
+        .field('Code postal', lieu.adresse?.codePostal || lieu.codePostal || null)
+        .field('Ville', lieu.adresse?.ville || null)
+        .field("Nom de l'établissement", lieu.categLib || null)
+        .field('Numéro FINESS', lieu.finess || null)
+        .field('Société de transport', lieu.societeTransport || null);
+    }
+
+    const mec = situation.misEnCause;
+    if (mec) {
+      pdf
+        .subsection('Mis en cause')
+        .field('Type', mec.misEnCauseType?.label || null)
+        .field('Précision type', mec.misEnCauseTypePrecision?.label || null)
+        .field('Civilité', mec.civilite || null)
+        .field('Prénom', mec.prenom || null)
+        .field('Nom', mec.nom || null)
+        .field('N° RPPS', mec.rpps || null)
+        .field('Nom du service', mec.nomService || null)
+        .field('N° FINESS', mec.finess || null)
+        .field('Code postal', mec.codePostal || null)
+        .field('Ville', mec.ville || null)
+        .field('Précisions supplémentaires', mec.autrePrecision || null)
+        .field('Commentaire', mec.commentaire || null);
+    }
+
+    const faits = situation.faits?.[0];
+    if (faits) {
+      const motifsDeclaratifs = faits.motifsDeclaratifs?.map((m) => m.motifDeclaratif.label) ?? [];
+      const motifsQualifies = [
+        ...(faits.maltraitanceTypes
+          ?.filter((mt) => mt.maltraitanceType.id !== 'NON')
+          .map((mt) => `${mt.maltraitanceType.label} (maltraitance)`) ?? []),
+        ...(faits.motifs?.map((m) => m.motif.label) ?? []),
+      ];
+      const consequences = faits.consequences?.map((c) => c.consequence.label) ?? [];
+
+      pdf
+        .subsection('Motifs')
+        .field('Motifs déclaratifs', motifsDeclaratifs.length > 0 ? motifsDeclaratifs.join(', ') : null)
+        .field('Motifs qualifiés', motifsQualifies.length > 0 ? motifsQualifies.join(', ') : null)
+        .field('Conséquences', consequences.length > 0 ? consequences.join(', ') : null);
+
+      pdf
+        .subsection('Période et description des faits')
+        .field('Date de début', formatDateFr(faits.dateDebut))
+        .field('Date de fin', formatDateFr(faits.dateFin))
+        .field('Explication des faits', faits.commentaire || null)
+        .field('Autres précisions', faits.autresPrecisions || null);
+
+      const fichiersSituation = faits.fichiers ?? [];
+      if (fichiersSituation.length > 0) {
+        pdf.subsection('Pièces jointes de la situation').list(fichiersSituation.map(getOriginalFileName));
+      }
+    }
+
+    const demarches = situation.demarchesEngagees;
+    if (demarches) {
+      const typesDemarches = demarches.demarches?.map((d) => d.label) ?? [];
+      pdf
+        .subsection('Démarches engagées')
+        .field('Types de démarches', typesDemarches.length > 0 ? typesDemarches.join(', ') : null)
+        .field('Date contact établissement', formatDateFr(demarches.dateContactEtablissement))
+        .field('Réponse reçue', booleanLabel(demarches.etablissementARepondu))
+        .field("Type d'autorité", demarches.autoriteType?.label || null)
+        .field('Organisme', demarches.organisme || null)
+        .field('Date de plainte', formatDateFr(demarches.datePlainte))
+        .field('Commentaire', demarches.commentaire || null);
+    }
+
+    const entitesTraitement = situation.traitementDesFaits?.entites ?? [];
+    if (entitesTraitement.length > 0) {
+      pdf
+        .subsection('Traitement')
+        .list(
+          entitesTraitement.map((e) =>
+            e.directionServiceName ? `${e.entiteName} — ${e.directionServiceName}` : e.entiteName,
+          ),
+        );
+    }
+  }
+
+  // ===== 6. PIÈCES JOINTES REQUÊTE ORIGINALE =====
+  const fichiersRequete = requete.fichiersRequeteOriginale ?? [];
+  if (fichiersRequete.length > 0) {
+    pdf.section('Pièces jointes de la requête originale').list(fichiersRequete.map(getOriginalFileName));
+  }
+
+  return pdf.toBuffer();
 };
