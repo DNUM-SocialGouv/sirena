@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
+    "migration:start": "dotenv -e .env -- pnpm --filter @sirena/migration start",
+    "migration:enqueue": "dotenv -e .env -- pnpm --filter @sirena/migration enqueue",
     "build:backend": "pnpm --filter @sirena/backend build",
     "build:frontend": "pnpm --filter @sirena/frontend build",
     "build:backend-utils": "pnpm --filter @sirena/backend-utils build",

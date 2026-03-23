@@ -1,0 +1,22 @@
+{
+  "name": "@sirena/migration",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/scripts/migrate.ts",
+    "enqueue": "tsx src/scripts/enqueue.ts"
+  },
+  "dependencies": {
+    "@sirena/backend": "workspace:*",
+    "@sirena/common": "workspace:*",
+    "bullmq": "^5.70.1",
+    "ioredis": "^5.10.0",
+    "mysql2": "^3.11.0",
+    "@prisma/client": "^6.19.2"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "~5.9.3"
+  }
+}
