@@ -1450,6 +1450,7 @@ describe('requetesEntite.service', () => {
           statutId: REQUETE_STATUT_TYPES.CLOTUREE,
           clotureReasonIds: ['reason123'],
           precision: 'Test precision',
+          fileIds: ['fileid1', 'fileid2'],
         },
         changedById: 'user123',
       });
@@ -1656,6 +1657,20 @@ describe('requetesEntite.service', () => {
         noteId: 'note123',
         etape: mockEtape,
         note: mockNote,
+      });
+
+      expect(createChangeLog).toHaveBeenCalledWith({
+        entity: 'RequeteEntite',
+        entityId: 'req123:ent123',
+        action: ChangeLogAction.UPDATED,
+        before: { statutId: 'EN_COURS' },
+        after: {
+          statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+          clotureReasonIds: ['reason123'],
+          precision: null,
+          fileIds: ['fileid1'],
+        },
+        changedById: 'user123',
       });
     });
   });

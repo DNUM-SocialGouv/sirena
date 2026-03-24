@@ -1550,6 +1550,7 @@ export const closeRequeteForEntite = async (
       statutId: REQUETE_STATUT_TYPES.CLOTUREE,
       clotureReasonIds: uniqueReasonIds,
       precision: precision?.trim() || null,
+      ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
     } as Prisma.JsonObject,
     changedById: authorId,
   });
