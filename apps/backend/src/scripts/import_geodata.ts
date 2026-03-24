@@ -1,8 +1,8 @@
-import { type Prisma, PrismaClient } from '../../generated/client/index.js';
 import inseePostalRaw from '../../prisma/documents/inseetocodepostal.json' with { type: 'json' };
 import listeEntitesRaw from '../../prisma/documents/liste_entites.json' with { type: 'json' };
 import { createDefaultLogger } from '../helpers/pino.js';
 import { getLoggerStore, loggerStorage, prismaStorage } from '../libs/asyncLocalStorage.js';
+import { createPrismaAdapter, type Prisma, PrismaClient } from '../libs/prisma.js';
 
 type InseePostalRow = {
   codeInsee: string;
@@ -99,6 +99,7 @@ async function importGeoData(prisma: PrismaClient | Prisma.TransactionClient) {
 async function main() {
   const logger = createDefaultLogger();
   const prisma = new PrismaClient({
+    adapter: createPrismaAdapter(),
     log: ['info', 'warn', 'error'],
     transactionOptions: {
       timeout: 120000,

@@ -17,7 +17,7 @@ function ToastListComponent() {
       key={toast.id}
       toast={toast}
       swipeDirection="up"
-      className={`toast fr-alert ${isCustomToast(toast) && toast.data && toast.data.icon}`}
+      className={`toast fr-alert ${isCustomToast(toast) && toast.data?.icon}`}
     >
       <Toast.Title className="fr-alert__title" />
       <Toast.Description />

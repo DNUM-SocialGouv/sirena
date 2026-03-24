@@ -9,7 +9,7 @@ import {
 } from '@sirena/common/constants';
 import { envVars } from '../../../config/env.js';
 import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
-import { PrismaClient } from '../../../libs/prisma.js';
+import { createPrismaAdapter, PrismaClient } from '../../../libs/prisma.js';
 import type { DecisionLeaf, DecisionNode, DecisionTraceEntry, EntiteAdminType, SituationContext } from './types.js';
 
 /*********************
@@ -317,7 +317,7 @@ export function finessReferentielPlaceholderSubtree(): DecisionNode {
     id: 'finess_referentiel',
     description: 'Référentiel FINESS : categCode → AutoriteCompetenteReferentiel',
     add: async (ctx: SituationContext): Promise<EntiteAdminType[]> => {
-      const prisma = new PrismaClient();
+      const prisma = new PrismaClient({ adapter: createPrismaAdapter() });
       const logger = getLoggerStore();
 
       try {

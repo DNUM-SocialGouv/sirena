@@ -36,7 +36,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { PrismaClient } from '../../generated/client/index.js';
+import { createPrismaAdapter, PrismaClient } from '../libs/prisma.js';
 
 type CsvRow = {
   id: string; // empty = INSERT, non-empty = UPDATE candidate
@@ -311,7 +311,7 @@ function buildSetClauseFromDb(row: DbRow): string {
 // Main
 // -------------------------
 async function main() {
-  const prisma = new PrismaClient();
+  const prisma = new PrismaClient({ adapter: createPrismaAdapter() });
 
   const csvAbs = path.isAbsolute(csvPath) ? csvPath : path.join(process.cwd(), csvPath);
   const csvContent = fs.readFileSync(csvAbs, 'utf-8');

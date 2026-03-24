@@ -1,9 +1,8 @@
 import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
 import { API_ERROR_CODES } from '@sirena/common/constants';
-import { fileTypeFromBuffer } from 'file-type';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../config/files.constant.js';
 import factoryWithUploadedFile from '../helpers/factories/appWithUploadedFile.js';
-import { sanitizeFilename } from '../helpers/file.js';
+import { fileTypeParser, sanitizeFilename } from '../helpers/file.js';
 
 /**
  * @description Extracts the uploaded file from the request body and sets it in the context.
@@ -29,7 +28,7 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
     });
   }
 
-  let detectedType = await fileTypeFromBuffer(buffer);
+  let detectedType = await fileTypeParser.fromBuffer(buffer);
 
   // Handle text-based files that fileTypeFromBuffer can't detect
   if (!detectedType && file.name.toLowerCase().endsWith('.eml')) {
@@ -43,6 +42,23 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
       detectedType = { mime: 'application/x-cfb', ext: 'msg' };
     } else if (!detectedType) {
       detectedType = { mime: 'application/vnd.ms-outlook', ext: 'msg' };
+    }
+  }
+
+  // Office Open XML files (.docx, .xlsx, .pptx) are ZIP-based and file-type may misdetect them as application/zip
+  // Issue to track : https://github.com/sindresorhus/file-type/issues/785
+  if (detectedType?.mime === 'application/zip') {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const zipBasedMimeTypes: Record<string, string> = {
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      odt: 'application/vnd.oasis.opendocument.text',
+      ods: 'application/vnd.oasis.opendocument.spreadsheet',
+      odp: 'application/vnd.oasis.opendocument.presentation',
+    };
+    if (ext && ext in zipBasedMimeTypes) {
+      detectedType = { mime: zipBasedMimeTypes[ext], ext };
     }
   }
 
