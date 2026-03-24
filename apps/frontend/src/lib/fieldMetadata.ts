@@ -8,7 +8,7 @@ export const declarantFieldMetadata: Record<string, FieldMetadata> = {
   nom: { label: 'Nom', type: 'text' },
   prenom: { label: 'Prénom', type: 'text' },
   lienAvecPersonneConcernee: { label: 'Lien avec la personne concernée', type: 'select' },
-  isTuteur: { label: 'Le déclarant est curateur ou tuteur de la personne concernée ?', type: 'checkbox' },
+  isTuteur: { label: 'Le déclarant est curateur ou tuteur de la personne concernée', type: 'checkbox' },
   lienAvecPersonneConcerneePrecision: { label: 'Précision sur le lien', type: 'text' },
   adresseDomicile: { label: 'Adresse du domicile', type: 'text' },
   codePostal: { label: 'Code postal', type: 'text' },
