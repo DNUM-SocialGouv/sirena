@@ -14,3 +14,4 @@ UPDATE "public"."Entite" SET "email" = 'etablissement@landes.fr', "emailDomain" 
 UPDATE "public"."Entite" SET "email" = 'maltraitance-paph@haute-vienne.fr', "emailDomain" = 'haute-vienne.fr' WHERE "id" = 'e1a9da78-245b-44df-9109-c7043ae79121';
 UPDATE "public"."Entite" SET "email" = 'dtap-sct@cd31.fr', "emailDomain" = 'cd31.fr' WHERE "id" = '0d77f1d0-8405-4b0b-a836-800be01ee0e0';
 UPDATE "public"."Entite" SET "email" = 'mrice-pspi@guyane.gouv.fr', "emailDomain" = 'guyane.gouv.fr' WHERE "id" = '939b6c5e-8a17-49a8-b5ce-d6e7c5aacc05';
+UPDATE "public"."Entite" SET "email" = 'adulte-vulnerable@loire.fr', "emailDomain" = 'loire.fr' WHERE "id" = 'fd550bbd-3faf-4554-bd09-124f392e3581';
