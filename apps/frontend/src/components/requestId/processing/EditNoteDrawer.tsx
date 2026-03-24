@@ -392,9 +392,9 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                                   >
                                     {file.name}
                                   </p>
-                                  {fileErrors[file.name].map((error, index) => (
+                                  {fileErrors[file.name].map((error) => (
                                     <p
-                                      key={`${file.name}-error-${index}`}
+                                      key={`${file.name}-error-${error.message}`}
                                       className="fr-text--xs"
                                       style={{ color: 'var(--text-default-error)' }}
                                     >

@@ -18,7 +18,7 @@ import { createDefaultLogger } from '../helpers/pino.js';
 
 export type SSEContext = Context<AppBindings>;
 
-export type { FileStatusEvent, RequeteUpdateField, RequeteUpdatedEvent, SSEEventType, UserListEvent, UserStatusEvent };
+export type { FileStatusEvent, RequeteUpdatedEvent, RequeteUpdateField, SSEEventType, UserListEvent, UserStatusEvent };
 
 const SSE_REDIS_CHANNEL = 'sse:events';
 

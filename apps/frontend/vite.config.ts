@@ -35,7 +35,13 @@ export default defineConfig({
     },
   },
 
+  css: {
+    lightningcss: {
+      errorRecovery: true,
+    },
+  },
+
   build: {
-    sourcemap: true
+    sourcemap: true,
   }
 });

@@ -4,7 +4,6 @@ export type BreadCrumbItem = { text: string; to: string; current?: boolean };
 
 export function BreadCrumb({ items }: { items: BreadCrumbItem[] }) {
   return (
-    // biome-ignore lint/a11y/useSemanticElements: exigé par RGAA
     <nav role="navigation" className="fr-container fr-breadcrumb" aria-label="Vous êtes ici :">
       <ol className="fr-breadcrumb__list">
         {items.map((item) => (

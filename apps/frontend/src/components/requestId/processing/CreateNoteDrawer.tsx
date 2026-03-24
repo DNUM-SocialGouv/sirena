@@ -207,9 +207,9 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                                 <p className="fr-text--sm fr-text--bold" style={{ color: 'var(--text-default-error)' }}>
                                   {file.name}
                                 </p>
-                                {fileErrors[file.name].map((error, index) => (
+                                {fileErrors[file.name].map((error) => (
                                   <p
-                                    key={`${file.name}-error-${index}`}
+                                    key={`${file.name}-error-${error.message}`}
                                     className="fr-text--xs"
                                     style={{ color: 'var(--text-default-error)' }}
                                   >
