@@ -47,13 +47,13 @@ export function formatPersonneConcerneeFromServer(participant: unknown): Personn
     ville: (adresse.ville as string) || '',
     numeroTelephone: (identite.telephone as string) || '',
     courrierElectronique: (identite.email as string) || '',
-    estHandicapee: (p.estHandicapee as boolean) || false,
+    estHandicapee: p.estHandicapee as boolean,
     consentCommuniquerIdentite:
       (p.veutGarderAnonymat as boolean | null | undefined) === null ||
       (p.veutGarderAnonymat as boolean | null | undefined) === undefined
         ? undefined
         : !(p.veutGarderAnonymat as boolean),
-    estVictimeInformee: (p.estVictimeInformee as boolean) || false,
+    estVictimeInformee: p.estVictimeInformee as boolean,
     victimeInformeeCommentaire: (p.victimeInformeeCommentaire as string) || '',
     autrePersonnes: (p.autrePersonnes as string) || '',
     aAutrePersonnes: p.aAutrePersonnes as boolean | undefined,
