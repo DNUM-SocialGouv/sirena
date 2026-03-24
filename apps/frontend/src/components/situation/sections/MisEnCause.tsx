@@ -514,9 +514,6 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
               </div>
             </>
           )}
-        </div>
-
-        <div className="fr-col-12">
           <div className="fr-col-12">
             <Input
               label="Précisons supplémentaires concernant le mis en cause"
