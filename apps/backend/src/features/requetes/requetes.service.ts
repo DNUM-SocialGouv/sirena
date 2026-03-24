@@ -191,6 +191,10 @@ export const createRequeteFromDematSocial = async ({
           veutGarderAnonymat: declarant.veutGarderAnonymat ?? null,
           lienVictime: declarant.lienVictimeId ? { connect: { id: declarant.lienVictimeId } } : undefined,
           age: declarant.ageId ? { connect: { id: declarant.ageId } } : undefined,
+          ...(isSamePerson && {
+            aAutrePersonnes: participant?.aAutrePersonnes ?? null,
+            autrePersonnes: participant?.autrePersonnes ?? '',
+          }),
           declarantDe: { connect: { id: requete.id } },
           ...(isSamePerson ? { participantDe: { connect: { id: requete.id } } } : {}),
         },
