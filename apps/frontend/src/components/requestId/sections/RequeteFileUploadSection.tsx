@@ -340,11 +340,8 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
           {Object.entries(fileErrors).map(([fileName, errors]) => (
             <div key={fileName} className={fr.cx('fr-mb-1w')}>
               <p className={`${fr.cx('fr-text--sm', 'fr-text--bold')} ${styles.errorText}`}>{fileName}</p>
-              {errors.map((error, index) => (
-                <p
-                  key={`${fileName}-error-${error.message}-${index}`}
-                  className={`${fr.cx('fr-text--xs')} ${styles.errorText}`}
-                >
+              {errors.map((error) => (
+                <p key={`${fileName}-error-${error.message}`} className={`${fr.cx('fr-text--xs')} ${styles.errorText}`}>
                   {error.message}
                 </p>
               ))}

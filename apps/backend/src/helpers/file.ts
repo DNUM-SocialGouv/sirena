@@ -1,10 +1,14 @@
 import { Readable } from 'node:stream';
-import { fileTypeFromBuffer } from 'file-type';
+import { detectCfbf } from '@file-type/cfbf';
+import { detectPdf } from '@file-type/pdf';
+import { FileTypeParser } from 'file-type';
 import type { Context } from 'hono';
 import { stream as honoStream } from 'hono/streaming';
 import { MAX_FILE_SIZE } from '../config/files.constant.js';
 import { getFileStream } from '../libs/minio.js';
 import type { Prisma, UploadedFile } from '../libs/prisma.js';
+
+export const fileTypeParser = new FileTypeParser({ customDetectors: [detectCfbf, detectPdf] });
 
 export const sanitizeFilename = (originalName: string, detectedExtension: string): string => {
   const nameWithoutExt = originalName.replace(/\.[^/.]+$/, '');
@@ -34,7 +38,7 @@ export const urlToStream = async (url: string, maxSize = MAX_FILE_SIZE) => {
 
   const buffer = Buffer.from(await res.arrayBuffer());
 
-  const sniff = await fileTypeFromBuffer(buffer);
+  const sniff = await fileTypeParser.fromBuffer(buffer);
 
   const mimeSniffed = sniff?.mime;
 

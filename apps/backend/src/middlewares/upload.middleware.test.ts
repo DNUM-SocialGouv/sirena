@@ -36,11 +36,11 @@ const createUploadMockContext = (overrides: UploadMockContextOverrides = {}) => 
   };
 };
 
-const { mockFileTypeFromBuffer, mockThrowHTTPException400BadRequest } = vi.hoisted(() => {
-  const mockFileTypeFromBuffer = vi.fn();
+const { mockFromBuffer, mockThrowHTTPException400BadRequest } = vi.hoisted(() => {
+  const mockFromBuffer = vi.fn();
   const mockThrowHTTPException400BadRequest = vi.fn();
 
-  return { mockFileTypeFromBuffer, mockThrowHTTPException400BadRequest };
+  return { mockFromBuffer, mockThrowHTTPException400BadRequest };
 });
 
 vi.mock('@sirena/backend-utils/helpers', () => ({
@@ -51,9 +51,13 @@ vi.mock('../libs/minio.js', () => ({
   getFileStream: vi.fn(),
 }));
 
-vi.mock('file-type', () => ({
-  fileTypeFromBuffer: mockFileTypeFromBuffer,
-}));
+vi.mock('../helpers/file.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../helpers/file.js')>();
+  return {
+    ...actual,
+    fileTypeParser: { fromBuffer: mockFromBuffer },
+  };
+});
 
 describe('upload.middleware.ts', () => {
   beforeEach(() => {
@@ -61,7 +65,7 @@ describe('upload.middleware.ts', () => {
     vi.setSystemTime(FIXED_DATE);
     vi.clearAllMocks();
 
-    mockFileTypeFromBuffer.mockResolvedValue({
+    mockFromBuffer.mockResolvedValue({
       mime: 'application/pdf',
       ext: 'pdf',
     });
@@ -77,7 +81,7 @@ describe('upload.middleware.ts', () => {
     });
 
     it('should successfully extract and process a valid file', async () => {
-      mockFileTypeFromBuffer.mockResolvedValue({
+      mockFromBuffer.mockResolvedValue({
         mime: 'image/png',
         ext: 'png',
       });
@@ -163,7 +167,7 @@ describe('upload.middleware.ts', () => {
     });
 
     it('should throw an error when detected mime is not defined and file.type is missing or not allowed', async () => {
-      mockFileTypeFromBuffer.mockResolvedValue(undefined);
+      mockFromBuffer.mockResolvedValue(undefined);
       mockThrowHTTPException400BadRequest.mockImplementation((msg: string) => {
         throw new HTTPException(400, { message: msg });
       });
@@ -192,7 +196,7 @@ describe('upload.middleware.ts', () => {
     });
 
     it('should accept file when file-type returns undefined but file.type is allowed (browser fallback)', async () => {
-      mockFileTypeFromBuffer.mockResolvedValue(undefined);
+      mockFromBuffer.mockResolvedValue(undefined);
 
       const mockContext = createUploadMockContext({
         req: {
@@ -219,8 +223,72 @@ describe('upload.middleware.ts', () => {
       expect(next).toHaveBeenCalled();
     });
 
+    it('should remap application/zip to correct Office MIME type for .pptx files', async () => {
+      mockFromBuffer.mockResolvedValue({
+        mime: 'application/zip',
+        ext: 'zip',
+      });
+
+      const mockContext = createUploadMockContext({
+        req: {
+          parseBody: vi.fn().mockResolvedValue({
+            file: new File([new Uint8Array(100)], 'presentation.pptx', {
+              type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            }),
+          }),
+        },
+        get: vi.fn().mockReturnValue({
+          logger: createMockPinoLogger(),
+        }),
+      });
+      const next = vi.fn();
+
+      await extractUploadedFileMiddleware(mockContext as unknown as Context<AppBindings>, next);
+
+      expect(mockContext.set).toHaveBeenCalledWith(
+        'uploadedFile',
+        expect.objectContaining({
+          contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          fileName: 'presentation.pptx',
+        }),
+      );
+      expect(next).toHaveBeenCalled();
+    });
+
+    it('should remap application/zip to correct Office MIME type for .docx files', async () => {
+      mockFromBuffer.mockResolvedValue({
+        mime: 'application/zip',
+        ext: 'zip',
+      });
+
+      const mockContext = createUploadMockContext({
+        req: {
+          parseBody: vi.fn().mockResolvedValue({
+            file: new File([new Uint8Array(100)], 'document.docx', {
+              type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            }),
+          }),
+        },
+        get: vi.fn().mockReturnValue({
+          logger: createMockPinoLogger(),
+        }),
+      });
+      const next = vi.fn();
+
+      await extractUploadedFileMiddleware(mockContext as unknown as Context<AppBindings>, next);
+
+      expect(mockContext.set).toHaveBeenCalledWith(
+        'uploadedFile',
+        expect.objectContaining({
+          contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          fileName: 'document.docx',
+        }),
+      );
+      expect(next).toHaveBeenCalled();
+    });
+
     it('should throw an error when detected mime is not allowed', async () => {
-      mockFileTypeFromBuffer.mockResolvedValue({
+      mockFromBuffer.mockResolvedValue({
         mime: 'application/toto',
         ext: 'toto',
       });

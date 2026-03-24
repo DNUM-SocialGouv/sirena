@@ -38,7 +38,7 @@ runs:
         ./generate_manifests.sh ${{ inputs.environment }} ${{ inputs.version }}
 
     - name: Checkout GitOps repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         repository: ${{ inputs.gitops-repo }}
         path: gitops-repo

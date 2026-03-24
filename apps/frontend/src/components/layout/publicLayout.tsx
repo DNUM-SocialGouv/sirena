@@ -13,7 +13,6 @@ export function PublicLayout({ children }: { children?: React.ReactNode }) {
           <BreadCrumb items={items} />
         </div>
       </div>
-      {/** biome-ignore lint/a11y/useSemanticElements: keep explicit landmark role for alignment with RGAA/DSFR audit rules */}
       <main role="main">{children || <Outlet />}</main>
     </div>
   );
