@@ -19,7 +19,7 @@ async function enqueueAll() {
 
   try {
     logMessage("Récupération des IDs depuis SIREC");
-    const rows = [{id: 1}, {id: 2}, {id: 3}]; // TODO voir comment on récupèrera les ids à migrer
+    const rows = [{id: 1}, {id: 2}, {id: 3}, {id: 4}]; // TODO voir comment on récupèrera les ids à migrer
 
     logMessage(`${rows.length} IDs à migrer. Ajout dans la file d'attente...`);
 
