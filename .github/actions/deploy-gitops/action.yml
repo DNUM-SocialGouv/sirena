@@ -32,8 +32,6 @@ runs:
       run: |
         cd helm_charts
         helm repo add SDPSN-devops-charts https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable --username oauth2 --password ${{ inputs.helm-repo-pat }}
-        helm dependency update
-        helm dependency build
         echo "${{ inputs.environment }} ${{ inputs.version }}"
         ./generate_manifests.sh ${{ inputs.environment }} ${{ inputs.version }}
 
@@ -52,7 +50,7 @@ runs:
         gitops-repo/deployment-targets/${{ inputs.environment }}/frontend \
         gitops-repo/deployment-targets/${{ inputs.environment }}/external-secrets \
         gitops-repo/deployment-targets/${{ inputs.environment }}/worker
-        mv helm_charts/generated_manifests/* gitops-repo/deployment-targets/${{ inputs.environment }}/
+        mv helm_charts/generated_manifests/charts/* gitops-repo/deployment-targets/${{ inputs.environment }}/
 
         git config --global user.name "github-actions[bot]"
         # mail standard bot github Actions
