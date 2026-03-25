@@ -50,7 +50,7 @@ runs:
         gitops-repo/deployment-targets/${{ inputs.environment }}/frontend \
         gitops-repo/deployment-targets/${{ inputs.environment }}/external-secrets \
         gitops-repo/deployment-targets/${{ inputs.environment }}/worker
-        mv helm_charts/generated_manifests/charts/* gitops-repo/deployment-targets/${{ inputs.environment }}/
+        mv helm_charts/generated_manifests/sirena/charts/* gitops-repo/deployment-targets/${{ inputs.environment }}/
 
         git config --global user.name "github-actions[bot]"
         # mail standard bot github Actions
