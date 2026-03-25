@@ -51,13 +51,13 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
-  "packageManager": "pnpm@10.11.1+sha512.e519b9f7639869dc8d5c3c5dfef73b3f091094b0a006d7317353c72b124e80e1afd429732e28705ad6bfa1ee879c1fce46c128ccebd3192101f43dd67c667912",
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
   "dependencies": {
-    "dotenv-cli": "^10.0.0"
+    "dotenv-cli": "^11.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.4.3",
-    "@commitlint/config-conventional": "^20.4.3",
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "husky": "^9.1.7"
   },
   "pnpm": {
@@ -70,20 +70,12 @@
       "prisma"
     ],
     "overrides": {
-      "glob@>=10.2.0 <10.5.0": ">=10.5.0",
-      "lodash": ">=4.17.23",
-      "fast-xml-parser@>=4.3.6 <=5.3.3": ">=5.3.4",
-      "@isaacs/brace-expansion@<=5.0.0": ">=5.0.1",
-      "minimatch@<10.2.1": ">=10.2.1",
-      "graphql-config>minimatch": ">=10.2.3",
-      "hono@<4.11.10": ">=4.11.10",
-      "rollup@>=4.0.0 <4.59.0": ">=4.59.0",
-      "minimatch@>=10.0.0 <10.2.3": ">=10.2.3",
-      "fast-xml-parser@<5.3.8": ">=5.3.8",
-      "immutable@<4.3.8": ">=4.3.8",
-      "ioredis": ">=5.10.0",
-      "file-type@>=20.0.0 <=21.3.1": ">=21.3.2",
-      "fast-xml-parser@>=4.0.0-beta.3 <=5.5.6": ">=5.5.7"
+      "bullmq>ioredis": "^5.10.0",
+      "hono@<4.12.8": ">=4.12.8",
+      "@hono/node-server@<1.19.10": ">=1.19.10",
+      "effect@<3.20.0": ">=3.20.0",
+      "lodash@<=4.17.22": ">=4.17.23",
+      "cross-spawn@<7.0.5": ">=7.0.5"
     }
   }
 }

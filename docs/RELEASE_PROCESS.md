@@ -19,7 +19,6 @@ graph LR
         tag -->|manual dispatch| formation["formation"]
         tag -->|manual dispatch| preproduction["preproduction"]
         tag -->|manual dispatch| production["production"]
-        tag -->|manual dispatch| test["test"]
     end
 ```
 
@@ -86,7 +85,7 @@ sequenceDiagram
 |-----------------|------------------------------------------------------|------------------|
 | `main`          | integration                                          | Automatique      |
 | `validation`    | validation                                           | Automatique      |
-| Tag `vX.Y.Z`   | formation, preproduction, production, test            | Manual dispatch  |
+| Tag `vX.Y.Z`    | formation, preproduction, production                 | Manual dispatch  |
 
 ## Release standard
 

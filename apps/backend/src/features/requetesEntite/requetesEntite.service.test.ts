@@ -995,7 +995,16 @@ describe('requetesEntite.service', () => {
         data: { participantDeId: null },
       });
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
-        data: { participantDeId: 'req123' },
+        data: {
+          participantDeId: 'req123',
+          veutGarderAnonymat: false,
+          estHandicapee: null,
+          estVictimeInformee: null,
+          victimeInformeeCommentaire: '',
+          commentaire: '',
+          aAutrePersonnes: null,
+          autrePersonnes: '',
+        },
       });
     });
 
@@ -1019,6 +1028,13 @@ describe('requetesEntite.service', () => {
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
           participantDeId: 'req123',
+          veutGarderAnonymat: false,
+          estHandicapee: null,
+          estVictimeInformee: null,
+          victimeInformeeCommentaire: '',
+          commentaire: '',
+          aAutrePersonnes: null,
+          autrePersonnes: '',
           identite: {
             create: {
               nom: 'Dupont',
@@ -1056,6 +1072,71 @@ describe('requetesEntite.service', () => {
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
           participantDeId: 'req123',
+          veutGarderAnonymat: false,
+          estHandicapee: null,
+          estVictimeInformee: null,
+          victimeInformeeCommentaire: '',
+          commentaire: '',
+          aAutrePersonnes: null,
+          autrePersonnes: '',
+          identite: {
+            create: {
+              nom: 'Dupont',
+              prenom: 'Jean',
+              email: 'jean@example.com',
+              telephone: '0600000000',
+              civiliteId: 'M',
+            },
+          },
+          adresse: {
+            create: {
+              rue: '1 rue de la Paix',
+              codePostal: '75001',
+              ville: 'Paris',
+            },
+          },
+        },
+      });
+    });
+
+    it('uncheck: creates PC preserving all participant fields (ageId, veutGarderAnonymat, etc.)', async () => {
+      const declarantAsPC = {
+        ...baseDeclarant,
+        participantDeId: 'req123',
+        identite: mockIdentite,
+        adresse: mockAdresse,
+        ageId: 'age-adulte',
+        dateNaissance: new Date('1940-06-15'),
+        veutGarderAnonymat: true,
+        estHandicapee: false,
+        estVictimeInformee: true,
+        victimeInformeeCommentaire: 'commentaire informee',
+        commentaire: 'autres précisions',
+        aAutrePersonnes: true,
+        autrePersonnes: 'un enfant',
+      };
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequeteWithoutDeclarant);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+      vi.mocked(prisma.personneConcernee.findFirst)
+        .mockResolvedValueOnce(declarantAsPC)
+        .mockResolvedValueOnce(declarantAsPC);
+      vi.mocked(prisma.personneConcernee.update).mockResolvedValueOnce({} as PersonneConcernee);
+      vi.mocked(prisma.personneConcernee.create).mockResolvedValueOnce({} as PersonneConcernee);
+
+      await updateRequeteDeclarant('req123', { estPersonneConcernee: false });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: {
+          participantDeId: 'req123',
+          ageId: 'age-adulte',
+          dateNaissance: new Date('1940-06-15'),
+          veutGarderAnonymat: true,
+          estHandicapee: false,
+          estVictimeInformee: true,
+          victimeInformeeCommentaire: 'commentaire informee',
+          commentaire: 'autres précisions',
+          aAutrePersonnes: true,
+          autrePersonnes: 'un enfant',
           identite: {
             create: {
               nom: 'Dupont',
@@ -1369,6 +1450,7 @@ describe('requetesEntite.service', () => {
           statutId: REQUETE_STATUT_TYPES.CLOTUREE,
           clotureReasonIds: ['reason123'],
           precision: 'Test precision',
+          fileIds: ['fileid1', 'fileid2'],
         },
         changedById: 'user123',
       });
@@ -1575,6 +1657,20 @@ describe('requetesEntite.service', () => {
         noteId: 'note123',
         etape: mockEtape,
         note: mockNote,
+      });
+
+      expect(createChangeLog).toHaveBeenCalledWith({
+        entity: 'RequeteEntite',
+        entityId: 'req123:ent123',
+        action: ChangeLogAction.UPDATED,
+        before: { statutId: 'EN_COURS' },
+        after: {
+          statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+          clotureReasonIds: ['reason123'],
+          precision: null,
+          fileIds: ['fileid1'],
+        },
+        changedById: 'user123',
       });
     });
   });

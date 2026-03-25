@@ -32,7 +32,6 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
   return (
     <div className="layout">
       <div className="fr-skiplinks">
-        {/** biome-ignore lint/a11y/useSemanticElements: keep explicit landmark role for alignment with DSFR audit rules */}
         <nav role="navigation" aria-label="Accès rapide" className="fr-container" lang="fr">
           <ul className="fr-skiplinks__list">
             <li>
@@ -49,7 +48,6 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
         </nav>
       </div>
       <HeaderMenu homeHref="/" />
-      {/** biome-ignore lint/a11y/useSemanticElements: keep explicit landmark role for alignment with DSFR audit rules */}
       <main id={mainId} role="main" className="fr-container main-content">
         {children}
       </main>

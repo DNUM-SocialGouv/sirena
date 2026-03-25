@@ -1,6 +1,6 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
-import { type Prisma, PrismaClient } from '../../../libs/prisma.js';
+import { createPrismaAdapter, type Prisma, PrismaClient } from '../../../libs/prisma.js';
 import { sendEntiteAssignedNotification } from '../../entites/entite.notification.service.js';
 import { createDefaultRequeteEtapes } from '../../requeteEtapes/requetesEtapes.service.js';
 import { buildSituationContext } from './buildSituationContext.js';
@@ -47,6 +47,7 @@ const assignDefaultRequeteEtapes = async (
 export async function assignEntitesToRequeteTask(unknownId: string) {
   const logger = getLoggerStore();
   const prisma = new PrismaClient({
+    adapter: createPrismaAdapter(),
     transactionOptions: {
       timeout: 120000,
       maxWait: 20000,

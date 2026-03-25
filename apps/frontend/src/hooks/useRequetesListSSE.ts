@@ -25,4 +25,4 @@ export function useRequetesListSSE(options: UseRequetesListSSEOptions = {}) {
   });
 }
 
-export type { RequeteUpdateField, RequeteUpdatedEvent };
+export type { RequeteUpdatedEvent, RequeteUpdateField };

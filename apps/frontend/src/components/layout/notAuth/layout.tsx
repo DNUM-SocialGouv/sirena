@@ -10,7 +10,6 @@ export const NotAuth = ({ children }: NotAuthProps) => {
 
   return (
     <div className="layout">
-      {/* biome-ignore lint/a11y/useSemanticElements: exigé par RGAA */}
       <main role="main" id={mainId} className={'fr-container not-auth-main fr-my-15w'}>
         {children}
       </main>

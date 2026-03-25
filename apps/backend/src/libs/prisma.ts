@@ -1,21 +1,29 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { type Prisma, PrismaClient } from '../../generated/client/index.js';
 import { prismaStorage } from './asyncLocalStorage.js';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-const basePrisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    transactionOptions: {
-      timeout: 30000,
-      maxWait: 10000,
-    },
-  });
+export function createPrismaAdapter() {
+  return new PrismaPg({ connectionString: process.env.PG_URL });
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = basePrisma;
+function getBasePrisma(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = new PrismaClient({
+      adapter: createPrismaAdapter(),
+      transactionOptions: {
+        timeout: 30000,
+        maxWait: 10000,
+      },
+    });
+  }
+  return globalForPrisma.prisma;
+}
 
-export const prisma = new Proxy(basePrisma, {
-  get(target, prop) {
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const base = getBasePrisma();
     const transaction = prismaStorage.getStore();
 
     if (transaction && prop === '$transaction') {
@@ -32,7 +40,7 @@ export const prisma = new Proxy(basePrisma, {
     if (transaction && prop in transaction) {
       return transaction[prop as keyof typeof transaction];
     }
-    return target[prop as keyof typeof target];
+    return base[prop as keyof typeof base];
   },
 });
 

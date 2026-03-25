@@ -618,6 +618,15 @@ export const updateRequeteDeclarant = async (
       await prisma.personneConcernee.create({
         data: {
           participantDeId: requeteId,
+          ...(previousPcData?.ageId && { ageId: previousPcData.ageId }),
+          ...(previousPcData?.dateNaissance && { dateNaissance: previousPcData.dateNaissance }),
+          veutGarderAnonymat: previousPcData?.veutGarderAnonymat ?? null,
+          estHandicapee: previousPcData?.estHandicapee ?? null,
+          estVictimeInformee: previousPcData?.estVictimeInformee ?? null,
+          victimeInformeeCommentaire: previousPcData?.victimeInformeeCommentaire ?? '',
+          commentaire: previousPcData?.commentaire ?? '',
+          aAutrePersonnes: previousPcData?.aAutrePersonnes ?? null,
+          autrePersonnes: previousPcData?.autrePersonnes ?? '',
           ...(previousPcData?.identite && {
             identite: {
               create: {
@@ -1541,6 +1550,7 @@ export const closeRequeteForEntite = async (
       statutId: REQUETE_STATUT_TYPES.CLOTUREE,
       clotureReasonIds: uniqueReasonIds,
       precision: precision?.trim() || null,
+      ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
     } as Prisma.JsonObject,
     changedById: authorId,
   });
