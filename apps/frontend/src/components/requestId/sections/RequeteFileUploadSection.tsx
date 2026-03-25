@@ -3,9 +3,9 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Toast } from '@sirena/ui';
 import { useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
+import { FileDropZone } from '@/components/common/FileDropZone';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
 import { useSetRequeteFile } from '@/hooks/mutations/setRequeteFile.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
@@ -84,8 +84,6 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
   const [fileToDelete, setFileToDelete] = useState<UploadedFile | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const { canEdit } = useCanEdit({ requeteId: requeteId });
-
-  const fileUploadLabelId = useId();
 
   const navigate = useNavigate();
   const toastManager = Toast.useToastManager();
@@ -289,50 +287,15 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
           </ul>
         </div>
       )}
-      {canEdit && (
-        <label className={styles.dropZone} htmlFor={fileUploadLabelId}>
-          <p className={styles.dropZoneTitle}>Sélectionner un fichier ou glisser-le ici</p>
-          <Button priority="secondary" disabled={isUploading} className={styles.dropZoneButton}>
-            Sélectionner un fichier
-          </Button>
-          {selectedFiles.length === 0 && <p className={styles.dropZoneNoFile}>Aucun fichier sélectionné</p>}
-          <p className={styles.dropZoneHint}>
-            Taille maximale: 200 Mo. Formats supportés : PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT,
-            images (PNG, JPEG, HEIC, WEBP, TIFF)
-          </p>
-          <input
-            id={fileUploadLabelId}
-            ref={uploadInputRef}
-            type="file"
-            multiple
-            className={styles.dropZoneInput}
-            accept=".pdf,.eml,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.msg,.csv,.txt,.png,.jpeg,.jpg,.heic,.heif,.webp,.tiff"
-            onChange={(e) => {
-              const files = e.target.files;
-              if (files) {
-                const fileArray = Array.from(files);
-                handleFileSelect(fileArray);
-              }
-            }}
-          />
-        </label>
-      )}
-
-      {Object.keys(fileErrors).length > 0 && (
-        <div className={fr.cx('fr-mt-2w')}>
-          <h4 className={`${fr.cx('fr-text--sm', 'fr-text--bold')} ${styles.errorText}`}>Erreurs de validation</h4>
-          {Object.entries(fileErrors).map(([fileName, errors]) => (
-            <div key={fileName} className={fr.cx('fr-mb-1w')}>
-              <p className={`${fr.cx('fr-text--sm', 'fr-text--bold')} ${styles.errorText}`}>{fileName}</p>
-              {errors.map((error) => (
-                <p key={`${fileName}-error-${error.message}`} className={`${fr.cx('fr-text--xs')} ${styles.errorText}`}>
-                  {error.message}
-                </p>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
+      <FileDropZone
+        canEdit={canEdit}
+        selectedFiles={selectedFiles}
+        fileErrors={fileErrors}
+        isUploading={isUploading}
+        onFilesSelect={handleFileSelect}
+        inputRef={uploadInputRef}
+        errorTextClassName={styles.errorText}
+      />
 
       <deleteFileModal.Component
         concealingBackdrop={false}

@@ -50,9 +50,14 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
     }
   }, [queryProcessingSteps.error, navigate, requestId]);
 
-  const handleOpenEdit = (step: StepType) => createNoteDrawerRef.current?.openDrawer(step);
-  const handleOpenEditNote = (step: StepType, noteData: NoteData) =>
+  const handleOpenEdit = (step: StepType) => {
+    editNoteDrawerRef.current?.closeDrawer();
+    createNoteDrawerRef.current?.openDrawer(step);
+  };
+  const handleOpenEditNote = (step: StepType, noteData: NoteData) => {
+    createNoteDrawerRef.current?.closeDrawer();
     editNoteDrawerRef.current?.openDrawer(step, noteData);
+  };
   const handleCloseRequete = () => closeRequeteModalRef.current?.openModal();
 
   const content = requestId ? (
