@@ -1,0 +1,7 @@
+apiVersion: v2
+name: frontend
+version: 0.1.0
+dependencies:
+  - name: SDPSN-devops-charts
+    version: 3.3.0
+    repository: "https://pic.sg.social.gouv.fr/api/v4/projects/94/packages/helm/stable"
