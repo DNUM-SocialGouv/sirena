@@ -13,7 +13,7 @@ const hasIdentiteData = (data: {
   numeroTelephone?: string;
   civilite?: string;
   consentCommuniquerIdentite?: boolean;
-  estSignalementProfessionnel?: boolean;
+  estSignalementProfessionnel?: boolean | null;
   autresPrecisions?: string;
   lienAvecPersonneConcernee?: string;
   lienAvecPersonneConcerneePrecision?: string;
