@@ -1,6 +1,6 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PrismaClient } from '../../../../generated/client/index.js';
+import { prisma } from '../../../libs/__mocks__/prisma.js';
 import { assignEntitesToRequeteTask } from './affectation.js';
 import type { EntiteAdminType } from './types.js';
 
@@ -33,20 +33,7 @@ vi.mock('../../entites/entite.notification.service.js', () => ({
   sendEntiteAssignedNotification: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('../../../../generated/client/index.js', async () => {
-  const actual = await vi.importActual('../../../../generated/client/index.js');
-  return {
-    ...actual,
-    PrismaClient: class MockPrismaClient {
-      constructor() {
-        const instance = (globalThis as { __mockPrismaInstance__?: PrismaClient }).__mockPrismaInstance__;
-        if (instance) {
-          Object.assign(this, instance);
-        }
-      }
-    },
-  };
-});
+vi.mock('../../../libs/prisma.js');
 
 import { createDefaultRequeteEtapes } from '../../requeteEtapes/requetesEtapes.service.js';
 import { buildSituationContext } from './buildSituationContext.js';
@@ -54,7 +41,6 @@ import { runDecisionTree } from './decisionTree.js';
 import { findGeoByPostalCode } from './geo/geoIndex.js';
 
 describe('assignEntitesToRequeteTask', () => {
-  let mockPrisma: PrismaClient;
   let mockTransaction: {
     requeteEntite: { upsert: ReturnType<typeof vi.fn> };
     situationEntite: { upsert: ReturnType<typeof vi.fn> };
@@ -80,25 +66,18 @@ describe('assignEntitesToRequeteTask', () => {
       },
     };
 
-    mockPrisma = {
-      requete: {
-        findFirst: vi.fn(),
-      },
-      entite: {
-        findFirst: vi.fn(),
-      },
-      requeteEntite: {
-        findMany: vi.fn().mockResolvedValue([]),
-      },
-      $transaction: vi.fn((callback) => callback(mockTransaction)),
-      $disconnect: vi.fn(),
-    } as unknown as PrismaClient;
+    vi.mocked(prisma.requete.findFirst).mockReset();
+    vi.mocked(prisma.entite.findFirst).mockReset();
+    vi.mocked(prisma.requeteEntite.findMany).mockReset();
+    vi.mocked(prisma.$transaction).mockReset();
+    vi.mocked(prisma.$disconnect).mockReset();
 
-    (globalThis as { __mockPrismaInstance__?: PrismaClient }).__mockPrismaInstance__ = mockPrisma;
+    vi.mocked(prisma.requeteEntite.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback) => callback(mockTransaction as never));
   });
 
   it('should throw error when requete is not found by id', async () => {
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(null);
 
     await expect(assignEntitesToRequeteTask('requete-1')).rejects.toThrow('Requete requete-1 not found');
   });
@@ -116,18 +95,18 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'ARS Normandie',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockArsNormandie as never);
 
     await assignEntitesToRequeteTask('12345');
 
-    expect(mockPrisma.requete.findFirst).toHaveBeenCalledWith({
+    expect(prisma.requete.findFirst).toHaveBeenCalledWith({
       where: {
         OR: [{ id: '12345' }, { dematSocialId: 12345 }],
       },
       include: expect.any(Object),
     });
-    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
       where: {
         entiteTypeId: 'ARS',
         entiteMereId: null,
@@ -161,7 +140,6 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'ARS Île-de-France',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({ postalCode: '75001' });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -169,15 +147,16 @@ describe('assignEntitesToRequeteTask', () => {
       ctcdCode: '75C',
       regionCode: '11',
     });
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsIdf);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockArsIdf as never);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
       where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: '11' },
     });
 
-    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(prisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-idf-1' } },
       create: { requeteId: 'requete-1', entiteId: 'ars-idf-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
@@ -228,15 +207,15 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'ARS Normandie',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({ postalCode: '75001' });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue(null);
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockArsNormandie as never);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
       where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: '28' },
     });
 
@@ -263,17 +242,17 @@ describe('assignEntitesToRequeteTask', () => {
       ],
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue(null);
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(null);
 
     await expect(assignEntitesToRequeteTask('requete-1')).rejects.toThrow('ARS Normandie not found in database');
 
-    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
       where: {
         entiteTypeId: 'ARS',
         entiteMereId: null,
@@ -281,9 +260,9 @@ describe('assignEntitesToRequeteTask', () => {
       },
     });
 
-    expect(mockPrisma.$disconnect).toHaveBeenCalled();
+    expect(prisma.$disconnect).toHaveBeenCalled();
 
-    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it('should fallback to ARS Normandie when buildSituationContext throws and situation has no postal code', async () => {
@@ -305,18 +284,18 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'ARS Normandie',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockImplementation(() => {
       throw new Error('Unexpected error during assignment');
     });
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockArsNormandie as never);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
       where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: '28' },
     });
-    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(prisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
       create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
@@ -343,7 +322,7 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'ARS Île-de-France',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockImplementation(() => {
       throw new Error('Unexpected error during assignment');
     });
@@ -352,11 +331,11 @@ describe('assignEntitesToRequeteTask', () => {
       ctcdCode: '75C',
       regionCode: '11',
     });
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsIdf);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockArsIdf as never);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
       where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: '11' },
     });
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
@@ -385,17 +364,17 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'ARS Normandie',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({ postalCode: null });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS']);
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockArsNormandie as never);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
       where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: '28' },
     });
-    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(prisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
       create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
@@ -422,18 +401,18 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'ARS Normandie',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({ postalCode: '75001' });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS']);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue(null);
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockArsNormandie);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockArsNormandie as never);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
       where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: '28' },
     });
-    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(prisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-normandie-1' } },
       create: { requeteId: 'requete-1', entiteId: 'ars-normandie-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
@@ -460,7 +439,7 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'ARS Île-de-France',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({ postalCode: '75001' });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS']);
     (findGeoByPostalCode as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -469,16 +448,14 @@ describe('assignEntitesToRequeteTask', () => {
       regionCode: '11',
     });
     // 1st call: main loop ARS lookup → not found; 2nd call: fallback ARS lookup → found
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(mockArsIdf);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValueOnce(null).mockResolvedValueOnce(mockArsIdf);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
       where: { entiteTypeId: 'ARS', entiteMereId: null, regionCode: '11' },
     });
-    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(prisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'ars-idf-1' } },
       create: { requeteId: 'requete-1', entiteId: 'ars-idf-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
@@ -507,7 +484,7 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'ARS - Île-de-France',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
@@ -517,11 +494,11 @@ describe('assignEntitesToRequeteTask', () => {
       ctcdCode: '75C',
       regionCode: '11',
     });
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockEntite);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockEntite as never);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(prisma.$transaction).toHaveBeenCalled();
     expect(mockTransaction.requeteEntite.upsert).toHaveBeenCalledWith({
       where: { requeteId_entiteId: { requeteId: 'requete-1', entiteId: 'entite-1' } },
       create: { requeteId: 'requete-1', entiteId: 'entite-1', statutId: REQUETE_STATUT_TYPES.NOUVEAU },
@@ -571,7 +548,7 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'DDETS - Paris',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
@@ -581,9 +558,7 @@ describe('assignEntitesToRequeteTask', () => {
       ctcdCode: '75C',
       regionCode: '11',
     });
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(mockEntiteCD)
-      .mockResolvedValueOnce(mockEntiteDD);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValueOnce(mockEntiteCD).mockResolvedValueOnce(mockEntiteDD);
 
     await assignEntitesToRequeteTask('requete-1');
 
@@ -612,7 +587,7 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'CD - Paris',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
@@ -622,11 +597,11 @@ describe('assignEntitesToRequeteTask', () => {
       ctcdCode: '75C',
       regionCode: '11',
     });
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockEntite);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockEntite as never);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
       where: {
         entiteTypeId: 'CD',
         entiteMereId: null,
@@ -657,7 +632,7 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'ARS - Île-de-France',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
@@ -667,11 +642,11 @@ describe('assignEntitesToRequeteTask', () => {
       ctcdCode: '75C',
       regionCode: '11',
     });
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockEntite);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockEntite as never);
 
     await assignEntitesToRequeteTask('requete-1');
 
-    expect(mockPrisma.entite.findFirst).toHaveBeenCalledWith({
+    expect(prisma.entite.findFirst).toHaveBeenCalledWith({
       where: {
         entiteTypeId: 'ARS',
         entiteMereId: null,
@@ -701,7 +676,7 @@ describe('assignEntitesToRequeteTask', () => {
       nomComplet: 'ARS - Île-de-France',
     };
 
-    (mockPrisma.requete.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockRequete);
+    vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({
       postalCode: '75001',
     });
@@ -711,7 +686,7 @@ describe('assignEntitesToRequeteTask', () => {
       ctcdCode: '75C',
       regionCode: '11',
     });
-    (mockPrisma.entite.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(mockEntite);
+    vi.mocked(prisma.entite.findFirst).mockResolvedValue(mockEntite as never);
     (mockTransaction.requeteEtape.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([{ id: 'etape-1' }]);
 
     await assignEntitesToRequeteTask('requete-1');

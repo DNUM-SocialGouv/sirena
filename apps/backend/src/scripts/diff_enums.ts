@@ -30,10 +30,9 @@ import {
   transportTypeLabels,
 } from '@sirena/common/constants';
 import { createDefaultLogger } from '../helpers/pino.js';
-import { createPrismaAdapter, PrismaClient } from '../libs/prisma.js';
+import { prisma } from '../libs/prisma.js';
 
 const logger = createDefaultLogger();
-const prisma = new PrismaClient({ adapter: createPrismaAdapter() });
 
 const args = process.argv.slice(2);
 const isDumpMigration = args.includes('--dump-migration');

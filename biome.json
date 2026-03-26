@@ -15,7 +15,7 @@
       "!apps/backend/src/features/dematSocial/affectation/geo/liste_entites.json",
       "!apps/backend/src/swagger/**/*.json",
       "!apps/backend/src/graphql/*",
-      "./apps/backend/prisma/**/*.ts",
+      "./packages/db/src/**/*.ts",
       "./apps/backend/scripts/**/*",
       "./apps/frontend/src/**/*",
       "./apps/frontend/tests/**/*",

@@ -9,7 +9,7 @@ import {
 } from '@sirena/common/constants';
 import { envVars } from '../../../config/env.js';
 import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
-import { createPrismaAdapter, PrismaClient } from '../../../libs/prisma.js';
+import { prisma } from '../../../libs/prisma.js';
 import type { DecisionLeaf, DecisionNode, DecisionTraceEntry, EntiteAdminType, SituationContext } from './types.js';
 
 /*********************
@@ -317,32 +317,27 @@ export function finessReferentielPlaceholderSubtree(): DecisionNode {
     id: 'finess_referentiel',
     description: 'Référentiel FINESS : categCode → AutoriteCompetenteReferentiel',
     add: async (ctx: SituationContext): Promise<EntiteAdminType[]> => {
-      const prisma = new PrismaClient({ adapter: createPrismaAdapter() });
       const logger = getLoggerStore();
 
-      try {
-        const categCode = ctx.categCode;
-        if (!categCode || typeof categCode !== 'string' || categCode.trim() === '') {
-          logger.info({ categCode }, 'FINESS referentiel: no categCode, returning []');
-          return [];
-        }
-
-        logger.info({ categCode }, 'FINESS referentiel: looking up categCode');
-        const referentiel = await prisma.autoriteCompetenteReferentiel.findUnique({
-          where: { categCode: categCode.trim() },
-        });
-
-        if (referentiel?.entiteTypeIds && referentiel.entiteTypeIds.length > 0) {
-          const parsed = parseEntiteTypeIds(referentiel.entiteTypeIds);
-          logger.info({ categCode, entiteTypeIds: referentiel.entiteTypeIds, parsed }, 'FINESS referentiel: found');
-          return parsed;
-        }
-
-        logger.info({ categCode }, 'FINESS referentiel: not found, returning []');
+      const categCode = ctx.categCode;
+      if (!categCode || typeof categCode !== 'string' || categCode.trim() === '') {
+        logger.info({ categCode }, 'FINESS referentiel: no categCode, returning []');
         return [];
-      } finally {
-        await prisma.$disconnect();
       }
+
+      logger.info({ categCode }, 'FINESS referentiel: looking up categCode');
+      const referentiel = await prisma.autoriteCompetenteReferentiel.findUnique({
+        where: { categCode: categCode.trim() },
+      });
+
+      if (referentiel?.entiteTypeIds && referentiel.entiteTypeIds.length > 0) {
+        const parsed = parseEntiteTypeIds(referentiel.entiteTypeIds);
+        logger.info({ categCode, entiteTypeIds: referentiel.entiteTypeIds, parsed }, 'FINESS referentiel: found');
+        return parsed;
+      }
+
+      logger.info({ categCode }, 'FINESS referentiel: not found, returning []');
+      return [];
     },
   };
 }

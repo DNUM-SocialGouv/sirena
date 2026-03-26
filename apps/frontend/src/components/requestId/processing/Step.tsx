@@ -13,6 +13,7 @@ import { useDeleteProcessingStep, useUpdateProcessingStepStatus } from '@/hooks/
 import { useUpdateProcessingStepName } from '@/hooks/mutations/updateProcessingStepName.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
+import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { UpdateProcessingStepNameSchema } from '@/schemas/processingSteps.schema';
 import { requeteEtapeStatutBadges } from '@/utils/requeteStatutBadge.constant';
@@ -73,6 +74,7 @@ const StepComponent = ({
   const updateStepNameMutation = useUpdateProcessingStepName(requestId);
   const deleteStepMutation = useDeleteProcessingStep(requestId);
   const toastManager = Toast.useToastManager();
+  const { registerTrigger } = useModalFocusRestore([deleteStepModal.id]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editStepName, setEditStepName] = useState(nom ?? '');
@@ -152,6 +154,11 @@ const StepComponent = ({
     }
   };
 
+  const handleDeleteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    registerTrigger(e.currentTarget);
+    deleteStepModal.open();
+  };
+
   return (
     <div className={`fr-mb-4w ${styles['timeline-step']}`}>
       <div className={styles['timeline-dot']} />
@@ -173,7 +180,7 @@ const StepComponent = ({
             />
             <div className="fr-grid-row fr-grid-row--middle fr-mt-2w">
               <div className="fr-col">
-                <ButtonLink icon="fr-icon-delete-line" onClick={() => deleteStepModal.open()}>
+                <ButtonLink icon="fr-icon-delete-line" onClick={handleDeleteClick}>
                   Supprimer l'étape
                 </ButtonLink>
               </div>

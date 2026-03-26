@@ -2,6 +2,10 @@
 externalSecret:
   database:
     enable: true
+    databaseType: databases
+    targetSecretName: db-secret
+
+redis_unmanaged: false
 
 SDPSN-devops-charts:
   name: sirena

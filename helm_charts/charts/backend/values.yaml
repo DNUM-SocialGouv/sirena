@@ -57,8 +57,9 @@ SDPSN-devops-charts:
       command:
         - pnpm
         - --filter
-        - "@sirena/backend"
-        - db:deploy
+        - "@sirena/db"
+        - run
+        - deploy
       envFrom_secret_names:
         - db-secret
       resources:

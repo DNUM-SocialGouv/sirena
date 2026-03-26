@@ -1,6 +1,6 @@
 import type { LieuType, Motif } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PrismaClient } from '../../../../generated/client/index.js';
+import { prisma } from '../../../libs/__mocks__/prisma.js';
 import { checkRequired, computeEntitesFromMotifs, leaf, rootNode, runDecisionTree } from './decisionTree.js';
 import type { DecisionLeaf, DecisionNode, EntiteAdminType, SituationContext } from './types.js';
 
@@ -13,27 +13,7 @@ vi.mock('../../../libs/asyncLocalStorage.js', () => ({
   })),
 }));
 
-vi.mock('../../../../generated/client/index.js', async () => {
-  const actual = await vi.importActual('../../../../generated/client/index.js');
-  return {
-    ...actual,
-    PrismaClient: class MockPrismaClient {
-      constructor() {
-        const instance = (globalThis as { __mockPrismaInstance__?: PrismaClient }).__mockPrismaInstance__;
-        if (instance) {
-          Object.assign(this, instance);
-        } else {
-          Object.assign(this, {
-            autoriteCompetenteReferentiel: {
-              findUnique: vi.fn().mockResolvedValue(null),
-            },
-            $disconnect: vi.fn().mockResolvedValue(undefined),
-          });
-        }
-      }
-    },
-  };
-});
+vi.mock('../../../libs/prisma.js');
 
 describe('leaf helper', () => {
   it('should build a DecisionLeaf with given parameters', () => {
@@ -573,31 +553,18 @@ describe('runDecisionTree - required fields / validation', () => {
 });
 
 describe('finessReferentielPlaceholderSubtree', () => {
-  let mockPrismaInstance: {
-    autoriteCompetenteReferentiel: {
-      findUnique: ReturnType<typeof vi.fn>;
-    };
-    $disconnect: ReturnType<typeof vi.fn>;
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPrismaInstance = {
-      autoriteCompetenteReferentiel: {
-        findUnique: vi.fn(),
-      },
-      $disconnect: vi.fn(),
-    };
-
-    (globalThis as { __mockPrismaInstance__?: unknown }).__mockPrismaInstance__ = mockPrismaInstance;
+    vi.mocked(prisma.autoriteCompetenteReferentiel.findUnique).mockReset();
+    vi.mocked(prisma.$disconnect).mockReset();
   });
 
   describe('AutoriteCompetenteReferentiel by categCode', () => {
     it('should return ARS when categCode 355 is in referentiel', async () => {
-      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+      vi.mocked(prisma.autoriteCompetenteReferentiel.findUnique).mockResolvedValue({
         categCode: '355',
         entiteTypeIds: ['ARS'],
-      });
+      } as never);
 
       const ctx: SituationContext = {
         lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
@@ -609,16 +576,16 @@ describe('finessReferentielPlaceholderSubtree', () => {
       const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual(['ARS']);
-      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+      expect(prisma.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
         where: { categCode: '355' },
       });
     });
 
     it('should return CD when categCode 355 maps to CD in referentiel', async () => {
-      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+      vi.mocked(prisma.autoriteCompetenteReferentiel.findUnique).mockResolvedValue({
         categCode: '355',
         entiteTypeIds: ['CD'],
-      });
+      } as never);
 
       const ctx: SituationContext = {
         lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
@@ -633,10 +600,10 @@ describe('finessReferentielPlaceholderSubtree', () => {
     });
 
     it('should return DD when categCode maps to DD in referentiel', async () => {
-      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+      vi.mocked(prisma.autoriteCompetenteReferentiel.findUnique).mockResolvedValue({
         categCode: '355',
         entiteTypeIds: ['DD'],
-      });
+      } as never);
 
       const ctx: SituationContext = {
         lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
@@ -651,10 +618,10 @@ describe('finessReferentielPlaceholderSubtree', () => {
     });
 
     it('should return ARS for S.A.A categCode 460 (referentiel)', async () => {
-      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+      vi.mocked(prisma.autoriteCompetenteReferentiel.findUnique).mockResolvedValue({
         categCode: '460',
         entiteTypeIds: ['ARS'],
-      });
+      } as never);
 
       const ctx: SituationContext = {
         lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
@@ -666,16 +633,16 @@ describe('finessReferentielPlaceholderSubtree', () => {
       const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual(['ARS']);
-      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+      expect(prisma.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
         where: { categCode: '460' },
       });
     });
 
     it('should return multiple entities when referentiel has ARS and CD', async () => {
-      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+      vi.mocked(prisma.autoriteCompetenteReferentiel.findUnique).mockResolvedValue({
         categCode: '355',
         entiteTypeIds: ['ARS', 'CD'],
-      });
+      } as never);
 
       const ctx: SituationContext = {
         lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
@@ -690,10 +657,10 @@ describe('finessReferentielPlaceholderSubtree', () => {
     });
 
     it('should parse entiteTypeIds and filter to ARS/CD/DD only', async () => {
-      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+      vi.mocked(prisma.autoriteCompetenteReferentiel.findUnique).mockResolvedValue({
         categCode: '355',
         entiteTypeIds: ['ARS', 'CD', 'INVALID_TYPE', 'DD'],
-      });
+      } as never);
 
       const ctx: SituationContext = {
         lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
@@ -708,10 +675,10 @@ describe('finessReferentielPlaceholderSubtree', () => {
     });
 
     it('should trim categCode before lookup', async () => {
-      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+      vi.mocked(prisma.autoriteCompetenteReferentiel.findUnique).mockResolvedValue({
         categCode: '355',
         entiteTypeIds: ['ARS'],
-      });
+      } as never);
 
       const ctx: SituationContext = {
         lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
@@ -723,7 +690,7 @@ describe('finessReferentielPlaceholderSubtree', () => {
       const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual(['ARS']);
-      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+      expect(prisma.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
         where: { categCode: '355' },
       });
     });
@@ -739,11 +706,11 @@ describe('finessReferentielPlaceholderSubtree', () => {
       const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual([]);
-      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
+      expect(prisma.autoriteCompetenteReferentiel.findUnique).not.toHaveBeenCalled();
     });
 
     it('should return empty array when categCode is not found in referentiel', async () => {
-      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue(null);
+      vi.mocked(prisma.autoriteCompetenteReferentiel.findUnique).mockResolvedValue(null);
 
       const ctx: SituationContext = {
         lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
@@ -755,16 +722,16 @@ describe('finessReferentielPlaceholderSubtree', () => {
       const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
 
       expect(result.sort()).toEqual([]);
-      expect(mockPrismaInstance.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
+      expect(prisma.autoriteCompetenteReferentiel.findUnique).toHaveBeenCalledWith({
         where: { categCode: '999' },
       });
     });
 
     it('should return empty array when referentiel has empty entiteTypeIds', async () => {
-      mockPrismaInstance.autoriteCompetenteReferentiel.findUnique.mockResolvedValue({
+      vi.mocked(prisma.autoriteCompetenteReferentiel.findUnique).mockResolvedValue({
         categCode: '355',
         entiteTypeIds: [],
-      });
+      } as never);
 
       const ctx: SituationContext = {
         lieuType: 'ETABLISSEMENT_PERSONNES_AGEES',
