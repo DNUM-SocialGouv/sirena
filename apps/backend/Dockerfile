@@ -5,7 +5,6 @@ ARG APP_VERSION
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-ENV NODE_ENV=production
 ENV APP_VERSION=$APP_VERSION
 
 RUN npm install --global corepack@latest && \
@@ -20,19 +19,26 @@ COPY --chown=node:node package*.json pnpm* ./
 COPY --chown=node:node ./apps/backend/package.json apps/backend/
 COPY --chown=node:node ./packages/backend-utils/package.json packages/backend-utils/
 COPY --chown=node:node ./packages/common/package.json packages/common/
+COPY --chown=node:node ./packages/db/package.json packages/db/
 
 RUN pnpm install --frozen-lockfile
 
 # Stage de build
 FROM deps AS builder
 
+ARG BUILD_PG_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
+ENV PG_URL=$BUILD_PG_URL
+
 COPY --chown=node:node ./apps/backend apps/backend
 COPY --chown=node:node ./packages/backend-utils packages/backend-utils
 COPY --chown=node:node ./packages/common packages/common
+COPY --chown=node:node ./packages/db packages/db
+
+RUN pnpm db:generate
 
 RUN pnpm --filter @sirena/common build
+RUN pnpm --filter @sirena/db build
 RUN pnpm --filter @sirena/backend-utils build
-RUN pnpm --filter @sirena/backend db:generate
 RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
     export SENTRY_AUTH_TOKEN=$(cat /run/secrets/SENTRY_AUTH_TOKEN) \
     export APP_VERSION=$APP_VERSION \
@@ -43,6 +49,7 @@ FROM base AS server
 
 USER node
 WORKDIR /app
+ENV NODE_ENV=production
 
 # Copier seulement les dépendances de production
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
@@ -53,6 +60,7 @@ COPY --from=deps --chown=node:node /app/pnpm* ./
 COPY --from=builder --chown=node:node /app/apps/backend apps/backend
 COPY --from=builder --chown=node:node /app/packages/backend-utils packages/backend-utils
 COPY --from=builder --chown=node:node /app/packages/common packages/common
+COPY --from=builder --chown=node:node /app/packages/db packages/db
 
 COPY --chown=node:node ./scripts/backend.entrypoint.sh scripts/
 

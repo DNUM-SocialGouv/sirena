@@ -19,7 +19,6 @@ biome.json
 commitlint.config.ts
 .eslintrc*
 .prettierrc*
-tsconfig*.json
 jest.config*
 vitest.config*
 

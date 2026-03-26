@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { createPrismaAdapter, PrismaClient } from '../libs/prisma.js';
+import { prisma } from '../libs/prisma.js';
 
 type CsvRow = {
   categCode: string;
@@ -232,8 +232,6 @@ function mapCsvToRows(csvFileContent: string): { rows: CsvRow[]; fileHash: strin
 // Main: diff + dump SQL
 // -------------------------
 async function main() {
-  const prisma = new PrismaClient({ adapter: createPrismaAdapter() });
-
   const csvAbs = path.isAbsolute(csvPath) ? csvPath : path.join(process.cwd(), csvPath);
   const csvContent = fs.readFileSync(csvAbs, 'utf-8');
 

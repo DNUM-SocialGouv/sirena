@@ -93,7 +93,7 @@ vi.mock('../users/users.service.js', () => ({
 }));
 
 vi.mock('../../libs/prisma.js', async () => {
-  const generated = await vi.importActual('../../../generated/client/index.js');
+  const generated = await vi.importActual<typeof import('@sirena/db/generated-client')>('@sirena/db/generated-client');
   return {
     ...generated,
     prisma: {
