@@ -1,5 +1,16 @@
+import type { PrismaClient } from '@sirena/db';
 import type { Context } from 'hono';
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
+import { mockDeep, mockReset } from 'vitest-mock-extended';
+
+const prisma = mockDeep<PrismaClient>();
+
+const prismaStorage = {
+  getStore: vi.fn(),
+  run: vi.fn(async (_store: PrismaClient, callback: () => Promise<unknown>) => callback()),
+  disable: vi.fn(),
+  enterWith: vi.fn(),
+};
 
 const fakeLogger = {
   info: vi.fn(),
@@ -84,6 +95,23 @@ vi.mock('@prisma/adapter-pg', () => ({
   PrismaPg: vi.fn(),
 }));
 
+vi.mock('@sirena/db', async () => {
+  const actual = await vi.importActual<typeof import('@sirena/db/generated-client')>('@sirena/db/generated-client');
+
+  return {
+    ...actual,
+    prisma,
+    prismaStorage,
+    getPrismaStore: vi.fn(() => {
+      const store = prismaStorage.getStore();
+      if (!store) {
+        throw new Error('Prisma not found in AsyncLocalStorage');
+      }
+      return store;
+    }),
+  };
+});
+
 vi.mock('../middlewares/sentry.middleware.js', () => ({
   createSentryRequestContext: vi.fn(() => ({})),
   createSentryUserFromContext: vi.fn(() => ({})),
@@ -125,6 +153,15 @@ vi.mock('pino', () => {
 vi.mock('pino-pretty', () => ({
   default: vi.fn(),
 }));
+
+beforeEach(() => {
+  mockReset(prisma);
+  prismaStorage.getStore.mockReset();
+  prismaStorage.run.mockReset();
+  prismaStorage.run.mockImplementation(async (_store: PrismaClient, callback: () => Promise<unknown>) => callback());
+  prismaStorage.disable.mockReset();
+  prismaStorage.enterWith.mockReset();
+});
 
 Object.assign(process.env, {
   // PC

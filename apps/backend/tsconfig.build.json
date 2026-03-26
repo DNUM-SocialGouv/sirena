@@ -10,5 +10,5 @@
     "sourceMap": true
   },
   "include": ["src"],
-  "exclude": ["./**/*.test.ts", "generated"]
+  "exclude": ["./**/*.test.ts", "generated", "src/scripts"]
 }

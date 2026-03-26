@@ -10,6 +10,8 @@ jobs:
   lint-and-build:
     name: Lint and Unit Tests
     runs-on: ubuntu-latest
+    env:
+      PG_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
       - name: Install pnpm
@@ -33,6 +35,8 @@ jobs:
         run: pnpm build:backend-utils
       - name: Generate types
         run: pnpm db:generate
+      - name: build db
+        run: pnpm build:db
       - name: Build backend
         run: pnpm build:backend
       - name: Run tests

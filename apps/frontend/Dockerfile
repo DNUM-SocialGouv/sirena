@@ -24,6 +24,9 @@ RUN npm install --global corepack@latest && \
 
 FROM base AS builder
 
+ARG BUILD_PG_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
+ENV PG_URL=$BUILD_PG_URL
+
 WORKDIR /app
 
 COPY --chown=node:node package*.json pnpm* ./
@@ -33,6 +36,7 @@ COPY --chown=node:node ./apps/backend/package.json apps/backend/
 COPY --chown=node:node ./packages/backend-utils/package.json packages/backend-utils/
 COPY --chown=node:node ./apps/frontend/package.json apps/frontend/
 COPY --chown=node:node ./packages/common/package.json packages/common/
+COPY --chown=node:node ./packages/db/package.json packages/db/
 
 RUN pnpm install --frozen-lockfile 
 
@@ -40,15 +44,18 @@ COPY --chown=node:node ./packages/ui packages/ui
 COPY --chown=node:node ./apps/backend apps/backend
 COPY --chown=node:node ./packages/backend-utils packages/backend-utils
 COPY --chown=node:node ./packages/common packages/common
+COPY --chown=node:node ./packages/db packages/db
 COPY --chown=node:node ./apps/frontend apps/frontend
 
+RUN pnpm db:generate
+
 RUN pnpm --filter @sirena/common build
+RUN pnpm --filter @sirena/db build
 RUN pnpm --filter @sirena/backend-utils build
-RUN pnpm --filter @sirena/backend db:generate
 RUN pnpm --filter @sirena/backend build
 RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
     export SENTRY_AUTH_TOKEN=$(cat /run/secrets/SENTRY_AUTH_TOKEN) \
-    && pnpm --filter pnpm --filter @sirena/frontend build
+    && pnpm --filter @sirena/frontend build
 
 FROM nginxinc/nginx-unprivileged:stable-alpine AS frontend
 

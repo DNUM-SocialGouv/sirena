@@ -1,0 +1,46 @@
+{
+  "name": "@sirena/db",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev",
+    "studio": "prisma studio",
+    "deploy": "prisma db push",
+    "reset": "prisma migrate reset",
+    "lint": "biome check",
+    "build": "tsc"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/src/index.d.ts",
+        "default": "./dist/src/index.js"
+      }
+    },
+    "./generated-client": {
+      "import": {
+        "types": "./dist/generated/prisma/client.d.ts",
+        "default": "./dist/generated/prisma/client.js"
+      }
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.11.0",
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@types/node": "catalog:",
+    "@types/pg": "^8.16.0",
+    "prisma": "^7.3.0",
+    "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.3.0",
+    "dotenv": "^17.2.3",
+    "pg": "^8.17.2"
+  }
+}
