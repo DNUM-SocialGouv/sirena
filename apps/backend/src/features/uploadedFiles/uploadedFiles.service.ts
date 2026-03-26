@@ -341,7 +341,7 @@ export const getUnprocessedFiles = async (): Promise<UploadedFile[]> => {
         { status: 'PROCESSING', updatedAt: { lt: stuckThreshold } },
         {
           status: { in: ['COMPLETED', 'FAILED'] },
-          scanStatus: 'PENDING',
+          scanStatus: { in: ['PENDING', 'ERROR'] },
         },
       ],
     },
@@ -359,7 +359,7 @@ export const tryAcquireProcessingLock = async (fileId: string): Promise<boolean>
         { status: 'PROCESSING', updatedAt: { lt: stuckThreshold } },
         {
           status: { in: ['COMPLETED', 'FAILED'] },
-          scanStatus: 'PENDING',
+          scanStatus: { in: ['PENDING', 'ERROR'] },
         },
       ],
     },
@@ -370,4 +370,22 @@ export const tryAcquireProcessingLock = async (fileId: string): Promise<boolean>
   });
 
   return result.count > 0;
+};
+
+export const getFileQueueDepth = async (): Promise<{ pending: number; stuck: number }> => {
+  const stuckThreshold = new Date(Date.now() - PROCESSING_TIMEOUT_MS);
+
+  const [pending, stuck] = await Promise.all([
+    prisma.uploadedFile.count({
+      where: { status: 'PENDING' },
+    }),
+    prisma.uploadedFile.count({
+      where: {
+        status: 'PROCESSING',
+        updatedAt: { lt: stuckThreshold },
+      },
+    }),
+  ]);
+
+  return { pending, stuck };
 };

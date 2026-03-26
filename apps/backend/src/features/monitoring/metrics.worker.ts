@@ -44,6 +44,75 @@ export function recordFileProcessing(
   fileSanitizeCounter.inc({ status: sanitizeStatus });
 }
 
+export const clamavScanDuration = new Histogram({
+  name: 'sirena_clamav_scan_duration_seconds',
+  help: 'Duration of ClamAV scan only (excluding sanitization)',
+  labelNames: ['file_type', 'scan_status'],
+  buckets: [0.5, 1, 2, 5, 10, 30, 60, 120],
+  registers: [register],
+});
+
+export const clamavUpGauge = new Gauge({
+  name: 'sirena_clamav_up',
+  help: 'Whether ClamAV is reachable (1 = up, 0 = down)',
+  registers: [register],
+});
+
+export const clamavLatencyGauge = new Gauge({
+  name: 'sirena_clamav_latency_seconds',
+  help: 'Latency of the last ClamAV health check in seconds',
+  registers: [register],
+});
+
+export const fileScanSizeHistogram = new Histogram({
+  name: 'sirena_file_scan_bytes',
+  help: 'Size of scanned files in bytes',
+  labelNames: ['scan_status'],
+  buckets: [1024, 10240, 102400, 1048576, 10485760, 52428800, 104857600, 209715200],
+  registers: [register],
+});
+
+export const fileQueuePendingGauge = new Gauge({
+  name: 'sirena_file_queue_pending_total',
+  help: 'Number of files pending processing',
+  registers: [register],
+});
+
+export const fileQueueStuckGauge = new Gauge({
+  name: 'sirena_file_queue_stuck_total',
+  help: 'Number of files stuck in processing (exceeded timeout)',
+  registers: [register],
+});
+
+export const clamavErrorsCounter = new Counter({
+  name: 'sirena_clamav_errors_total',
+  help: 'Total ClamAV errors by reason',
+  labelNames: ['reason'],
+  registers: [register],
+});
+
+export function recordClamavScanDuration(fileType: 'pdf' | 'other', scanStatus: string, durationSeconds: number): void {
+  clamavScanDuration.observe({ file_type: fileType, scan_status: scanStatus }, durationSeconds);
+}
+
+export function recordClamavHealth(up: boolean, latencyMs: number): void {
+  clamavUpGauge.set(up ? 1 : 0);
+  clamavLatencyGauge.set(latencyMs / 1000);
+}
+
+export function recordFileScanSize(scanStatus: string, sizeBytes: number): void {
+  fileScanSizeHistogram.observe({ scan_status: scanStatus }, sizeBytes);
+}
+
+export function recordFileQueueDepth(pending: number, stuck: number): void {
+  fileQueuePendingGauge.set(pending);
+  fileQueueStuckGauge.set(stuck);
+}
+
+export function recordClamavError(reason: 'timeout' | 'connection_refused' | 'unknown'): void {
+  clamavErrorsCounter.inc({ reason });
+}
+
 export const cronJobRunsCounter = new Counter({
   name: 'sirena_cron_job_runs_total',
   help: 'Total number of cron job runs',

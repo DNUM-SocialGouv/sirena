@@ -1,5 +1,6 @@
 import type { Job } from 'bullmq';
-import { getUnprocessedFiles } from '../../features/uploadedFiles/uploadedFiles.service.js';
+import { recordFileQueueDepth } from '../../features/monitoring/metrics.worker.js';
+import { getFileQueueDepth, getUnprocessedFiles } from '../../features/uploadedFiles/uploadedFiles.service.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import type { JobDataMap, JobResult } from '../config/job.types.js';
 import { withCronLifecycle } from '../config/job.utils.js';
@@ -9,7 +10,8 @@ export async function queueUnprocessedFiles(job: Job<JobDataMap['queue-unprocess
   const logger = getLoggerStore();
 
   await withCronLifecycle(job, {}, async () => {
-    const unprocessedFiles = await getUnprocessedFiles();
+    const [unprocessedFiles, queueDepth] = await Promise.all([getUnprocessedFiles(), getFileQueueDepth()]);
+    recordFileQueueDepth(queueDepth.pending, queueDepth.stuck);
 
     if (unprocessedFiles.length === 0) {
       logger.debug('No unprocessed files found');

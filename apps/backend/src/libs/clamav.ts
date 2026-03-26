@@ -5,8 +5,31 @@ import { getLoggerStore } from './asyncLocalStorage.js';
 
 const { CLAMAV_HOST, CLAMAV_PORT } = envVars;
 const CLAMD_PORT = Number.parseInt(CLAMAV_PORT || '3310', 10);
-const SCAN_TIMEOUT = 60000;
+const BASE_SCAN_TIMEOUT = 30000;
+const SCAN_TIMEOUT_PER_MB = 1500;
+const MAX_SCAN_TIMEOUT = 300000;
 const PING_TIMEOUT = 5000;
+
+const computeScanTimeout = (sizeBytes?: number): number => {
+  if (!sizeBytes) return BASE_SCAN_TIMEOUT;
+  const sizeMb = sizeBytes / (1024 * 1024);
+  return Math.min(BASE_SCAN_TIMEOUT + Math.ceil(sizeMb) * SCAN_TIMEOUT_PER_MB, MAX_SCAN_TIMEOUT);
+};
+
+export type ClamAvErrorReason = 'timeout' | 'connection_refused' | 'unknown';
+
+export const categorizeClamAvError = (error: unknown): ClamAvErrorReason => {
+  if (!(error instanceof Error)) return 'unknown';
+  const message = error.message.toLowerCase();
+  if (message.includes('timeout')) return 'timeout';
+  if (message.includes('econnrefused') || message.includes('connection refused')) return 'connection_refused';
+  return 'unknown';
+};
+
+export const isTransientError = (error: unknown): boolean => {
+  const reason = categorizeClamAvError(error);
+  return reason === 'timeout' || reason === 'connection_refused';
+};
 
 export interface ClamAvScanResult {
   success: boolean;
@@ -18,6 +41,7 @@ export interface ClamAvScanResult {
     }>;
   };
   error?: string;
+  errorReason?: ClamAvErrorReason;
 }
 
 export interface ClamAvHealthResult {
@@ -104,94 +128,115 @@ export const checkClamAvHealth = async (): Promise<ClamAvHealthResult> => {
 
 const CHUNK_SIZE = 8192;
 
-const scanBufferWithInstream = (buffer: Buffer): Promise<string> => {
+const writeChunkToSocket = (socket: net.Socket, chunk: Buffer): Promise<void> => {
+  const sizeBuffer = Buffer.alloc(4);
+  sizeBuffer.writeUInt32BE(chunk.length, 0);
+  socket.write(sizeBuffer);
+  const canContinue = socket.write(chunk);
+  if (canContinue) return Promise.resolve();
+  return new Promise((resolve) => socket.once('drain', resolve));
+};
+
+const scanBufferWithInstream = (buffer: Buffer, timeout: number): Promise<string> => {
   return new Promise((resolve, reject) => {
     const socket = new net.Socket();
     let response = '';
+    let settled = false;
 
-    socket.setTimeout(SCAN_TIMEOUT);
+    const settle = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      fn();
+    };
+
+    socket.setTimeout(timeout);
 
     socket.on('data', (data) => {
       response += data.toString();
     });
 
-    socket.on('end', () => {
-      resolve(response.trim());
-    });
-
-    socket.on('error', (err) => {
-      reject(err);
-    });
+    socket.on('end', () => settle(() => resolve(response.trim())));
+    socket.on('error', (err) => settle(() => reject(err)));
 
     socket.on('timeout', () => {
       socket.destroy();
-      reject(new Error('Scan timeout'));
+      settle(() => reject(new Error('Scan timeout')));
     });
 
-    socket.connect(CLAMD_PORT, CLAMAV_HOST, () => {
-      socket.write('zINSTREAM\0');
+    socket.connect(CLAMD_PORT, CLAMAV_HOST, async () => {
+      try {
+        socket.write('zINSTREAM\0');
 
-      let offset = 0;
-      while (offset < buffer.length) {
-        const chunk = buffer.subarray(offset, offset + CHUNK_SIZE);
-        const sizeBuffer = Buffer.alloc(4);
-        sizeBuffer.writeUInt32BE(chunk.length, 0);
-        socket.write(sizeBuffer);
-        socket.write(chunk);
-        offset += CHUNK_SIZE;
+        let offset = 0;
+        while (offset < buffer.length) {
+          const chunk = buffer.subarray(offset, offset + CHUNK_SIZE);
+          await writeChunkToSocket(socket, chunk);
+          offset += CHUNK_SIZE;
+        }
+
+        const endBuffer = Buffer.alloc(4);
+        endBuffer.writeUInt32BE(0, 0);
+        socket.write(endBuffer);
+      } catch (err) {
+        settle(() => reject(err));
       }
-
-      const endBuffer = Buffer.alloc(4);
-      endBuffer.writeUInt32BE(0, 0);
-      socket.write(endBuffer);
     });
   });
 };
 
-const scanStreamWithInstream = (inputStream: Readable): Promise<string> => {
+const scanStreamWithInstream = (inputStream: Readable, timeout: number): Promise<string> => {
   return new Promise((resolve, reject) => {
     const socket = new net.Socket();
     let response = '';
+    let settled = false;
 
-    socket.setTimeout(SCAN_TIMEOUT);
+    const settle = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      fn();
+    };
+
+    socket.setTimeout(timeout);
 
     socket.on('data', (data) => {
       response += data.toString();
     });
 
-    socket.on('end', () => {
-      resolve(response.trim());
-    });
+    socket.on('end', () => settle(() => resolve(response.trim())));
 
     socket.on('error', (err) => {
       inputStream.destroy();
-      reject(err);
+      settle(() => reject(err));
     });
 
     socket.on('timeout', () => {
       inputStream.destroy();
       socket.destroy();
-      reject(new Error('Scan timeout'));
+      settle(() => reject(new Error('Scan timeout')));
     });
 
     socket.connect(CLAMD_PORT, CLAMAV_HOST, () => {
       socket.write('zINSTREAM\0');
 
-      inputStream.on('data', (chunk: Buffer) => {
-        // Send chunks in CHUNK_SIZE pieces
-        let offset = 0;
-        while (offset < chunk.length) {
-          const piece = chunk.subarray(offset, offset + CHUNK_SIZE);
-          const sizeBuffer = Buffer.alloc(4);
-          sizeBuffer.writeUInt32BE(piece.length, 0);
-          socket.write(sizeBuffer);
-          socket.write(piece);
-          offset += CHUNK_SIZE;
+      inputStream.on('data', async (chunk: Buffer) => {
+        inputStream.pause();
+        try {
+          let offset = 0;
+          while (offset < chunk.length) {
+            const piece = chunk.subarray(offset, offset + CHUNK_SIZE);
+            await writeChunkToSocket(socket, piece);
+            offset += CHUNK_SIZE;
+          }
+        } catch (err) {
+          inputStream.destroy();
+          socket.destroy();
+          settle(() => reject(err instanceof Error ? err : new Error(String(err))));
+          return;
         }
+        inputStream.resume();
       });
 
       inputStream.on('end', () => {
-        // Send zero-length chunk to signal end
         const endBuffer = Buffer.alloc(4);
         endBuffer.writeUInt32BE(0, 0);
         socket.write(endBuffer);
@@ -199,18 +244,33 @@ const scanStreamWithInstream = (inputStream: Readable): Promise<string> => {
 
       inputStream.on('error', (err) => {
         socket.destroy();
-        reject(err);
+        settle(() => reject(err));
       });
     });
   });
 };
 
 const parseClamscanResponse = (response: string, fileName: string): ClamAvScanResult => {
+  if (response.includes('INSTREAM size limit exceeded')) {
+    return {
+      success: false,
+      error: 'INSTREAM size limit exceeded - file too large for ClamAV',
+      errorReason: 'unknown',
+    };
+  }
+
+  if (response.includes('ERROR')) {
+    return {
+      success: false,
+      error: `ClamAV error: ${response}`,
+      errorReason: 'unknown',
+    };
+  }
+
   const isInfected = response.includes('FOUND');
 
   let viruses: string[] = [];
   if (isInfected) {
-    // Extract virus name from "stream: Eicar-Signature FOUND"
     const match = response.match(/stream:\s*(.+)\s+FOUND/);
     if (match?.[1]) {
       viruses = [match[1].trim()];
@@ -241,9 +301,10 @@ export const scanBuffer = async (buffer: Buffer, fileName: string): Promise<Clam
 
   const logger = getLoggerStore();
   const startTime = Date.now();
+  const timeout = computeScanTimeout(buffer.length);
 
   try {
-    const response = await scanBufferWithInstream(buffer);
+    const response = await scanBufferWithInstream(buffer, timeout);
     const latencyMs = Date.now() - startTime;
 
     const result = parseClamscanResponse(response, fileName);
@@ -266,11 +327,12 @@ export const scanBuffer = async (buffer: Buffer, fileName: string): Promise<Clam
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error during scan',
+      errorReason: categorizeClamAvError(error),
     };
   }
 };
 
-export const scanStream = async (stream: Readable, fileName: string): Promise<ClamAvScanResult> => {
+export const scanStream = async (stream: Readable, fileName: string, sizeBytes?: number): Promise<ClamAvScanResult> => {
   if (!isClamAvEnabled()) {
     return {
       success: false,
@@ -280,9 +342,10 @@ export const scanStream = async (stream: Readable, fileName: string): Promise<Cl
 
   const logger = getLoggerStore();
   const startTime = Date.now();
+  const timeout = computeScanTimeout(sizeBytes);
 
   try {
-    const response = await scanStreamWithInstream(stream);
+    const response = await scanStreamWithInstream(stream, timeout);
     const latencyMs = Date.now() - startTime;
 
     const result = parseClamscanResponse(response, fileName);
@@ -304,6 +367,7 @@ export const scanStream = async (stream: Readable, fileName: string): Promise<Cl
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error during scan',
+      errorReason: categorizeClamAvError(error),
     };
   }
 };
