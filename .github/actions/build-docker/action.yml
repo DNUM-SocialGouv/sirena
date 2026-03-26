@@ -102,6 +102,52 @@ runs:
         sarif_file: "trivy-container-worker-results.sarif"
         category: "trivy-container-worker"
 
+    - name: Check analytics version is not already created
+      shell: bash
+      id: check-image-analytics
+      run: |
+        if docker manifest inspect ${{ env.IMAGE_TAG }}-analytics > /dev/null 2>&1; then
+          echo "analytics-exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "analytics-exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Build and push Docker analytics image
+      if: steps.check-image-analytics.outputs.analytics-exists == 'false'
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: apps/analytics/Dockerfile
+        push: true
+        tags: ${{ env.IMAGE_TAG }}-analytics
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          APP_VERSION=${{ inputs.version }}
+        cache-from: |
+          type=gha,scope=analytics
+        cache-to: |
+          type=gha,mode=max,scope=analytics
+        platforms: linux/amd64
+
+    - name: Trivy scan analytics image
+      if: inputs.trivy-enabled == 'true' && steps.check-image-analytics.outputs.analytics-exists == 'false'
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+      continue-on-error: true
+      with:
+        image-ref: ${{ env.IMAGE_TAG }}-analytics
+        format: "sarif"
+        output: "trivy-container-analytics-results.sarif"
+        severity: "CRITICAL,HIGH,MEDIUM"
+        exit-code: "0"
+
+    - name: Upload Trivy analytics scan results
+      if: inputs.trivy-enabled == 'true' && steps.check-image-analytics.outputs.analytics-exists == 'false'
+      uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v3
+      continue-on-error: true
+      with:
+        sarif_file: "trivy-container-analytics-results.sarif"
+        category: "trivy-container-analytics"
+
     - name: Check backend version is not already created
       shell: bash
       id: check-image-backend

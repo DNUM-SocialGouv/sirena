@@ -57,3 +57,10 @@ worker:
 
     deployment:
       replicas: 1
+
+analytics:
+  SDPSN-devops-charts:
+    namespace: org-sdpsn-ws-sirena-integration
+
+    deployment:
+      replicas: 1

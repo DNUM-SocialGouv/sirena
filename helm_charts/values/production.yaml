@@ -66,3 +66,8 @@ worker:
   SDPSN-devops-charts:
     deployment:
       replicas: 2
+
+analytics:
+  SDPSN-devops-charts:
+    deployment:
+      replicas: 1

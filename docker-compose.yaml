@@ -18,6 +18,25 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres-analytics:
+    image: postgres:17-alpine
+    container_name: sirena-postgres-analytics-dev
+    environment:
+      POSTGRES_DB: ${PG_ANALYTICS_DB:-sirena_analytics}
+      POSTGRES_USER: ${PG_ANALYTICS_USER:-analytics}
+      POSTGRES_PASSWORD: ${PG_ANALYTICS_PASSWORD:-analytics}
+    ports:
+      - "127.0.0.1:5433:5432"
+    networks:
+      - sirena-postgres-network
+    volumes:
+      - pgdata-analytics:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_ANALYTICS_USER:-analytics}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   studio:
     container_name: sirena-studio-dev
     build:
@@ -99,6 +118,7 @@ services:
 
 volumes:
   pgdata:
+  pgdata-analytics:
   miniodata:
   clamav-db:
 

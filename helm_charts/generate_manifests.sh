@@ -6,7 +6,7 @@ export IMAGE_TAG=${2}
 
 rm -rf ./generated_manifests || true
 
-for subchart in backend frontend worker external-secrets; do
+for subchart in backend frontend worker analytics external-secrets; do
   cd charts/${subchart}
   helm dependency update
   cd -
@@ -18,4 +18,5 @@ helm template . -f values/${ENVIRONNEMENT}.yaml \
    --set backend.SDPSN-devops-charts.deployment.initContainer.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-backend"\
    --set frontend.SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-frontend-${ENVIRONNEMENT}"\
    --set worker.SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-worker"\
+   --set analytics.SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-analytics"\
    --output-dir ./generated_manifests
