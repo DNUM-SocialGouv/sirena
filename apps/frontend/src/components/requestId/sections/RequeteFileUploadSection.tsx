@@ -10,6 +10,7 @@ import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.ho
 import { useSetRequeteFile } from '@/hooks/mutations/setRequeteFile.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
+import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import { formatFileSize, getOriginalFileName } from '@/utils/fileHelpers';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 
@@ -102,6 +103,8 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
       }),
     [],
   );
+
+  const { registerTrigger } = useModalFocusRestore([deleteFileModal.id]);
 
   const cleanupRef = useRef<(() => void) | null>(null);
 
@@ -198,29 +201,6 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
     [requeteId, mode, uploadFileMutation, setRequeteFileMutation, createRequeteMutation, navigate, toastManager],
   );
 
-  const addModalEventListener = useCallback(() => {
-    const checkForModal = () => {
-      const modalElement = document.querySelector(`#${deleteFileModal.id}`);
-
-      if (modalElement) {
-        return true;
-      }
-      return false;
-    };
-
-    if (!checkForModal()) {
-      setTimeout(checkForModal, 100);
-    }
-  }, [deleteFileModal.id]);
-
-  const handleDeleteFile = (file: UploadedFile, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setFileToDelete(file);
-    deleteFileModal.open();
-    setTimeout(addModalEventListener, 50);
-  };
-
   const handleConfirmDeleteFile = useCallback(async () => {
     if (!fileToDelete) return;
 
@@ -292,7 +272,11 @@ export function RequeteFileUploadSection({ requeteId, mode = 'edit', existingFil
                         title="Supprimer le fichier"
                         type="button"
                         className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
-                        onClick={(event) => handleDeleteFile(file, event)}
+                        onClick={(e) => {
+                          registerTrigger(e.currentTarget);
+                          setFileToDelete(file);
+                          deleteFileModal.open();
+                        }}
                       >
                         <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
                       </Button>

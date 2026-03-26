@@ -3,6 +3,7 @@ import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useFileStatusSSE } from '@/hooks/useFileStatusSSE';
+import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import { type FileProcessingStatus, getFileProcessingStatus } from '@/lib/api/fetchUploadedFiles';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import { formatFileSize } from '@/utils/fileHelpers';
@@ -267,6 +268,8 @@ export const FileDownloadLink = ({
     [modalId],
   );
 
+  const { registerTrigger } = useModalFocusRestore([downloadModal.id, riskModal.id, warningModal.id]);
+
   // Refs to reset checkbox state when modals open (avoids re-render issues)
   const resetRiskModalRef = useRef<(() => void) | null>(null);
   const resetWarningModalRef = useRef<(() => void) | null>(null);
@@ -322,6 +325,7 @@ export const FileDownloadLink = ({
   }, [fileId, fileStatus, pollStatus, initialStatus, sseConnected]);
 
   const handleClick = (e: React.MouseEvent) => {
+    registerTrigger(e.currentTarget as HTMLElement);
     e.preventDefault();
 
     // Case 1: File is infected - show dedicated risk modal

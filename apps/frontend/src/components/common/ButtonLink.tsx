@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import styles from './ButtonLink.module.css';
 
 interface ButtonLinkProps {
   children: ReactNode;
-  onClick?: () => void;
+  onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
   icon?: string;
   className?: string;
   disabled?: boolean;
