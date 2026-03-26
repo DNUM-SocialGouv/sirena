@@ -35,7 +35,7 @@ scan_file() {
       --baseline-path "${ROOT_DIR}/${BASELINE_FILE}" \
       --redact
   else
-    docker run --rm \
+    MSYS_NO_PATHCONV=1 docker run --rm \
       -v "${ROOT_DIR}:/src" \
       zricethezav/gitleaks:latest detect \
         --no-git \

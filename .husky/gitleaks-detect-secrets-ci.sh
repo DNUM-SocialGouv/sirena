@@ -21,7 +21,7 @@ if command -v gitleaks &> /dev/null; then
     --redact \
     --no-git
 else
-  docker run --rm \
+  MSYS_NO_PATHCONV=1 docker run --rm \
     -v "${ROOT_DIR}:/src" \
     zricethezav/gitleaks:latest detect \
       --source "/src" \
