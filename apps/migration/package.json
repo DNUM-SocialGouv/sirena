@@ -9,6 +9,7 @@
   "dependencies": {
     "@sirena/backend": "workspace:*",
     "@sirena/common": "workspace:*",
+    "@sirena/db": "workspace:*",
     "bullmq": "^5.70.1",
     "ioredis": "^5.10.0",
     "mysql2": "^3.11.0",

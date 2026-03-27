@@ -1,8 +1,8 @@
-import type { SirecReclamationData } from "../model/sirec/sirec-reclamation-data.js";
+import type {SirecReclamation, SirenaRequete} from "../model/type.js";
+import {generateSirenaId} from "../model/sirena/generateSirenaId.js";
 
-export function transformData(sirecReclamationData: SirecReclamationData): any {
+export function transformData(sirecReclamation: SirecReclamation): SirenaRequete {
   return {
-    ...sirecReclamationData,
-    _migratedAt: new Date(),
+    id: generateSirenaId(sirecReclamation)
   };
 }

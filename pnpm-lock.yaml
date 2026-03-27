@@ -357,6 +357,9 @@ importers:
       '@sirena/common':
         specifier: workspace:*
         version: link:../../packages/common
+      '@sirena/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       bullmq:
         specifier: ^5.70.1
         version: 5.71.0
