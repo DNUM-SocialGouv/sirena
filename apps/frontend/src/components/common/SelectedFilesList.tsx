@@ -24,9 +24,8 @@ export const SelectedFilesList = ({
             border: '1px solid var(--border-default-grey)',
             borderRadius: '0.5rem',
             background: 'var(--background-alt-grey)',
-            listStyle: 'none',
             margin: 0,
-            padding: 0,
+            padding: '0.5rem 0.75rem 0.5rem 2rem',
           }}
         >
           {files.map((file) => (
@@ -34,7 +33,7 @@ export const SelectedFilesList = ({
               key={file.name}
               className="fr-text--sm"
               style={{
-                padding: '0.375rem 0.75rem',
+                padding: '0.375rem 0',
                 marginBottom: 0,
               }}
             >
