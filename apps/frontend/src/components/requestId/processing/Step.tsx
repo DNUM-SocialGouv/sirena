@@ -88,6 +88,9 @@ const StepComponent = ({
     statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT &&
     nom === 'Envoyer un accusé de réception au déclarant';
 
+  const isReopenStep = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT && nom?.startsWith('Requête rouverte le');
+  const isSystemStep = isAutomaticallyUpdated || isReopenStep || statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE;
+
   const badges = requeteEtapeStatutBadges.filter((badge) => {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
       return true;
@@ -216,7 +219,7 @@ const StepComponent = ({
                 />
               </div>
               <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-                {canEdit && !isAutomaticallyUpdated && (
+                {canEdit && !isSystemStep && (
                   <Button
                     priority="tertiary no outline"
                     size="small"
@@ -275,7 +278,7 @@ const StepComponent = ({
             </button>
           )}
         </div>
-        {canEdit && (
+        {canEdit && !isSystemStep && (
           <Button
             className={styles['request-step__add-note']}
             type="button"

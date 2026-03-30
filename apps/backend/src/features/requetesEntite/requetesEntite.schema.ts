@@ -193,3 +193,8 @@ export const CloseRequeteResponseSchema = z.object({
   closedAt: z.iso.datetime(),
   noteId: z.string().nullable(),
 });
+
+export const ReopenRequeteResponseSchema = z.object({
+  etapeId: z.string(),
+  reopenedAt: z.iso.datetime(),
+});
