@@ -27,7 +27,7 @@ function formatDeclarantFromServerImpl(declarant: DeclarantFromAPI) {
     estPersonneConcernee: declarant.estVictime || false,
     isTuteur: declarant.isTuteur || false,
     consentCommuniquerIdentite: declarant.veutGarderAnonymat === null ? undefined : !declarant.veutGarderAnonymat,
-    estSignalementProfessionnel: declarant.estSignalementProfessionnel || false,
+    estSignalementProfessionnel: declarant.estSignalementProfessionnel ?? undefined,
     autresPrecisions: declarant.commentaire || '',
   };
 }
