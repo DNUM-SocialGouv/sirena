@@ -2,17 +2,17 @@ import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
-import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { Drawer, Toast } from '@sirena/ui';
 import { useParams } from '@tanstack/react-router';
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
+import { FileDropZone } from '@/components/common/FileDropZone';
+import { SelectedFilesList } from '@/components/common/SelectedFilesList';
 import { useDeleteProcessingStepNote, useUpdateProcessingStepNote } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useDeleteUploadedFile, useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
-import styles from '@/routes/_auth/_user/request.$requestId.module.css';
-import { ACCEPTED_FILE_TYPES, FILE_UPLOAD_HINT } from '@/utils/fileHelpers';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
+import styles from './EditNoteDrawer.module.css';
 
 type NoteFiles = {
   id: string;
@@ -25,6 +25,10 @@ type NoteFiles = {
 };
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
+const NOTE_MAX_LENGTH = 1000;
+const NOTE_MAX_LENGTH_ERROR =
+  'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 1000 caractères. Supprimer les caractères excédentaires.';
+const NOTE_ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 
 export type EditNoteDrawerRef = {
   openDrawer: (
@@ -36,6 +40,7 @@ export type EditNoteDrawerRef = {
       files: NoteFiles[];
     },
   ) => void;
+  closeDrawer: () => void;
 };
 
 export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
@@ -163,6 +168,11 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
     setContentError(null);
   };
 
+  const closeDrawer = () => {
+    handleCancel();
+    setIsOpen(false);
+  };
+
   const handleDeleteNote = () => {
     deleteNoteModal.open();
     setTimeout(() => {
@@ -201,6 +211,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
 
   useImperativeHandle(ref, () => ({
     openDrawer,
+    closeDrawer,
   }));
 
   const handleSubmit = async () => {
@@ -209,6 +220,11 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
     }
 
     if (!noteData.step || !noteData.id || !noteData.requeteStateId) {
+      return;
+    }
+
+    if (noteData.content.length > NOTE_MAX_LENGTH) {
+      setContentError(NOTE_MAX_LENGTH_ERROR);
       return;
     }
 
@@ -290,6 +306,11 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
     }));
     setModifications((prev) => ({ ...prev, content: true }));
 
+    if (value.length > NOTE_MAX_LENGTH) {
+      setContentError(NOTE_MAX_LENGTH_ERROR);
+      return;
+    }
+
     if (contentError && value.trim()) {
       setContentError(null);
     }
@@ -297,23 +318,36 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
 
   return (
     <>
-      <Drawer.Root variant="nonModal" open={isOpen} onOpenChange={handleOpenChange}>
+      <Drawer.Root variant="nonModal" withCloseButton={false} open={isOpen} onOpenChange={handleOpenChange}>
         <Drawer.Portal>
           <Drawer.Panel style={{ width: 'min(90vw, 600px)', maxWidth: '100%' }} titleId={titleId}>
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
               <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px 16px' }}>
                 <div className="fr-container fr-mt-8w">
+                  <div className={styles.topActions}>
+                    <Button
+                      type="button"
+                      priority="tertiary no outline"
+                      iconId="fr-icon-close-line"
+                      onClick={() => setIsOpen(false)}
+                      disabled={isLoading}
+                    >
+                      Fermer
+                    </Button>
+                  </div>
                   <h3 id={titleId} className="fr-h6">
-                    Modifier la note de l'étape "{noteData.step?.nom ?? ''}"
+                    {noteData.step?.nom ?? ''}
                   </h3>
                   {(modifications.content || modifications.filesAdded || modifications.filesDeleted) && (
-                    <p className={fr.cx('fr-text--sm', 'fr-mb-2w')} style={{ color: 'var(--text-default-error)' }}>
+                    <p className={`${fr.cx('fr-text--sm', 'fr-mb-2w')} ${styles.modificationWarning}`}>
                       ⚠️ Attention : Vous devez enregistrer la note pour que les modifications soient prises en compte.
                     </p>
                   )}
                   <form>
                     <Input
-                      label="Détails de la note"
+                      hintText="Maximum 1000 caractères"
+                      label="Ajouter une note à l’étape"
+                      disabled={isLoading}
                       textArea={true}
                       state={contentError ? 'error' : undefined}
                       stateRelatedMessage={contentError ?? undefined}
@@ -325,113 +359,102 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                     />
 
                     {noteData.existingFiles.length > 0 && (
-                      <div>
-                        <span className="fr-label">Fichiers ajoutés</span>
-                        <div className="fr-mt-1w" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                          {noteData.existingFiles.length > 0 && (
-                            <ul>
-                              {noteData.existingFiles.map((file) => (
-                                <li key={file.id} className={styles['request-note__file']}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <FileDownloadLink
-                                      href={`/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}`}
-                                      safeHref={`/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}/safe`}
-                                      fileName={file.originalName}
-                                      fileId={file.id}
-                                      fileSize={file.size}
-                                      status={file.status}
-                                      scanStatus={file.scanStatus}
-                                      sanitizeStatus={file.sanitizeStatus}
-                                      className="fr-link fr-text--sm"
-                                    />
-                                    <Button
-                                      aria-label="Supprimer le fichier"
-                                      title="Supprimer le fichier"
-                                      type="button"
-                                      className="fr-btn fr-btn--sm fr-btn--tertiary fr-icon-delete-line"
-                                      onClick={() => handleDeleteFile(file.id)}
-                                    >
-                                      <span className="fr-sr-only">Supprimer le fichier</span>
-                                    </Button>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <Upload
-                      label="Ajouter un ou plusieurs fichiers"
-                      hint={FILE_UPLOAD_HINT}
-                      multiple
-                      className="relative"
-                      nativeInputProps={{
-                        accept: ACCEPTED_FILE_TYPES,
-                        onChange: (e) => {
-                          const files = e.target.files;
-                          if (files) {
-                            const fileArray = Array.from(files);
-                            setFilesToUpload(fileArray.map((file) => new File([file], file.name, { type: file.type })));
-                            setModifications((prev) => ({ ...prev, filesAdded: fileArray.length > 0 }));
-                            setFileErrors({});
-                          }
-                        },
-                      }}
-                    />
-                    {filesToUpload.length > 0 && (
-                      <div className="fr-mt-2w">
-                        <div className="fr-mt-1w">
-                          {filesToUpload.map((file) => (
-                            <div key={file.name} className="fr-mb-1w">
-                              {fileErrors[file.name] && (
-                                <div className="fr-mt-1w">
-                                  <p
-                                    className="fr-text--sm fr-text--bold"
-                                    style={{ color: 'var(--text-default-error)' }}
+                      <section className={styles.attachmentSection}>
+                        <p className={`fr-label ${styles.attachmentTitle}`}>Fichiers déjà ajoutés</p>
+                        <div className={styles.attachmentCard}>
+                          <ul className={styles.existingFilesList}>
+                            {noteData.existingFiles.map((file) => (
+                              <li key={file.id} className={styles.existingFileItem}>
+                                <div className={styles.existingFileHeader}>
+                                  <FileDownloadLink
+                                    href={`/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}`}
+                                    safeHref={`/api/requete-etapes/${noteData.requeteStateId}/file/${file.id}/safe`}
+                                    fileName={file.originalName}
+                                    fileId={file.id}
+                                    fileSize={file.size}
+                                    status={file.status}
+                                    scanStatus={file.scanStatus}
+                                    sanitizeStatus={file.sanitizeStatus}
+                                    className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
+                                  />
+                                  <Button
+                                    aria-label="Supprimer le fichier"
+                                    title="Supprimer le fichier"
+                                    type="button"
+                                    className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
+                                    onClick={() => handleDeleteFile(file.id)}
                                   >
-                                    {file.name}
-                                  </p>
-                                  {fileErrors[file.name].map((error) => (
-                                    <p
-                                      key={`${file.name}-error-${error.message}`}
-                                      className="fr-text--xs"
-                                      style={{ color: 'var(--text-default-error)' }}
-                                    >
-                                      {error.message}
-                                    </p>
-                                  ))}
+                                    <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
+                                  </Button>
                                 </div>
-                              )}
-                            </div>
-                          ))}
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      </div>
+                      </section>
                     )}
-                    <div className="display-end fr-mt-4w">
+                    <section className={styles.attachmentSection}>
+                      <p className={`fr-label ${styles.attachmentTitle}`}>Ajouter des pièces jointes</p>
+                      <FileDropZone
+                        selectedFiles={filesToUpload}
+                        fileErrors={fileErrors}
+                        isUploading={isLoading}
+                        accept={NOTE_ACCEPTED_FILE_TYPES}
+                        maxSizeLabel="200 Mo"
+                        supportedFormatsLabel="jpg, png, pdf"
+                        onFilesSelect={(selectedFiles) => {
+                          setFilesToUpload(
+                            selectedFiles.map((file) => new File([file], file.name, { type: file.type })),
+                          );
+                          setModifications((prev) => ({ ...prev, filesAdded: selectedFiles.length > 0 }));
+                          setFileErrors({});
+                        }}
+                        title="Sélectionner un fichier ou glisser-le ici"
+                        buttonLabel="Sélectionner un fichier"
+                        className={styles.drawerDropZone}
+                        errorTextClassName={styles.errorText}
+                      />
+                      <SelectedFilesList
+                        files={filesToUpload}
+                        title="Fichiers sélectionnés"
+                        className={styles.selectedFilesList}
+                        variant="compact"
+                      />
+                    </section>
+                    <div className={styles.footerActions}>
                       <Button
                         ref={deleteButtonRef}
                         type="button"
                         priority="secondary"
                         size="small"
                         onClick={handleDeleteNote}
-                        className="fr-mr-2w fr-btn--icon-center center-icon-with-sr-only"
                         aria-label="Supprimer la note"
                         title="Supprimer la note"
                       >
                         Supprimer la note
                       </Button>
-                      <Button
-                        disabled={isLoading}
-                        onClick={handleSubmit}
-                        type="button"
-                        priority="primary"
-                        size="small"
-                        aria-label="Modifier la note"
-                        title="Modifier la note"
-                      >
-                        {isLoading ? 'Modification...' : 'Modifier la note'}
-                      </Button>
+                      <div className={styles.footerRightActions}>
+                        <Button
+                          type="button"
+                          priority="secondary"
+                          size="small"
+                          onClick={() => setIsOpen(false)}
+                          disabled={isLoading}
+                        >
+                          Annuler
+                        </Button>
+                        <Button
+                          disabled={isLoading}
+                          onClick={handleSubmit}
+                          type="button"
+                          priority="primary"
+                          size="small"
+                          aria-label="Modifier la note"
+                          title="Modifier la note"
+                        >
+                          {isLoading ? 'En cours...' : 'Modifier la note'}
+                        </Button>
+                      </div>
                     </div>
                   </form>
                 </div>

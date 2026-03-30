@@ -9,8 +9,8 @@ SDPSN-devops-charts:
         targetLabel: pod
       - sourceLabels: [__meta_kubernetes_namespace]
         targetLabel: namespace
-      - targetLabel: worker
-        replacement: appName
+      - targetLabel: app_type
+        replacement: worker
 
   deployment:
     image: ghcr.io/dnum-socialgouv/sirena:latest-worker
