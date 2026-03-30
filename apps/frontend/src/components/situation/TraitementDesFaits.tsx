@@ -2,7 +2,7 @@ import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { SelectWithChildren } from '@sirena/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useEntiteDescendants } from '@/hooks/queries/entites.hook';
 import styles from './TraitementDesFaits.module.css';
 
@@ -39,6 +39,9 @@ interface TraitementDesFaitsRowProps {
   selectedEntiteIds?: string[];
   isEntiteReadOnly?: boolean;
   onEntiteEditClick?: () => void;
+  hasError?: boolean;
+  errorMessage?: string;
+  errorId?: string;
 }
 
 function TraitementDesFaitsRowComponent({
@@ -50,7 +53,10 @@ function TraitementDesFaitsRowComponent({
   selectedEntiteIds = [],
   isEntiteReadOnly = false,
   onEntiteEditClick,
+  hasError,
+  errorMessage,
 }: TraitementDesFaitsRowProps) {
+  const showError = hasError && !row.entiteId;
   const { data: directionsServices = [] } = useEntiteDescendants(row.entiteId);
 
   const entiteLabel = entites.find((e) => e.id === row.entiteId)?.nomComplet || '';
@@ -79,11 +85,14 @@ function TraitementDesFaitsRowComponent({
             ) : (
               <Select
                 label={'Entité administrative (obligatoire) '}
+                state={showError ? 'error' : 'default'}
+                stateRelatedMessage={showError ? errorMessage : undefined}
                 nativeSelectProps={{
                   value: row.entiteId || '',
                   onChange: (e) => onChange(row.id, 'entiteId', e.target.value),
                   disabled,
                   required: true,
+                  'aria-invalid': showError ? 'true' : undefined,
                 }}
               >
                 <option value="">Sélectionner une option</option>
@@ -156,6 +165,8 @@ function TraitementDesFaitsSection({
   disabled,
   hasAttemptedSave = false,
 }: TraitementDesFaitsSectionProps) {
+  const inputId = useId();
+  const globalErrorId = `${inputId}-error`;
   const [rows, setRows] = useState<{ editableRows: TraitementDesFaitsRow[]; readOnlyRows: TraitementDesFaitsRow[] }>({
     editableRows: [],
     readOnlyRows: [],
@@ -166,6 +177,9 @@ function TraitementDesFaitsSection({
   const { data: topEntiteDescendants = [], isLoading: isLoadingDescendants } = useEntiteDescendants(
     topEntiteId ?? undefined,
   );
+
+  const hasGlobalError =
+    hasAttemptedSave && rows.readOnlyRows.length === 0 && !rows.editableRows.some((row) => Boolean(row.entiteId));
 
   useEffect(() => {
     if (initialEntites && initialEntites.length > 0) {
@@ -325,13 +339,17 @@ function TraitementDesFaitsSection({
 
   return (
     <div className={`fr-p-4w fr-mb-4w ${styles.container}`}>
-      <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+      <fieldset
+        aria-describedby={hasGlobalError ? globalErrorId : undefined}
+        style={{ border: 'none', padding: 0, margin: 0 }}
+      >
         <legend>
           <h2 className="fr-h6">Traitement des faits</h2>
         </legend>
-        {globalError && (
-          <p className="fr-message fr-message--error fr-text--md fr-mb-3w" role="alert">
-            {globalError}
+
+        {hasGlobalError && (
+          <p id={globalErrorId} className="fr-message fr-message--error fr-text--md fr-mb-3w">
+            Au moins une entité administrative doit être renseignée.
           </p>
         )}
 
@@ -348,9 +366,14 @@ function TraitementDesFaitsSection({
             const totalEntitesCount = rows.editableRows.length + rows.readOnlyRows.length;
             const canRemove = totalEntitesCount > 1;
 
+            const isFirstEmptyRow =
+              hasGlobalError && !row.entiteId && rows.editableRows.find((r) => !r.entiteId)?.id === row.id;
+
             return (
               <div key={row.id}>
                 <TraitementDesFaitsRowComponent
+                  hasError={isFirstEmptyRow}
+                  errorMessage="Veuillez sélectionner une entité administrative."
                   row={row}
                   onChange={handleRowChange}
                   entites={entites}
