@@ -41,6 +41,31 @@ Comparaison des counts et checksums entre la base source et la base analytics. L
 
 Si le drift depasse le seuil configurable (defaut 5%), un log warning est emis. Aucune correction automatique n'est effectuee afin d'eviter une re-synchronisation massive non supervisee. Une intervention manuelle est requise.
 
+## Monitoring
+
+Metriques Prometheus exposees sur le port `9090` (configurable via `MONITORING_PORT`) a l'endpoint `/metrics`.
+
+### Metriques de synchronisation
+
+| Metrique | Type | Description |
+|---|---|---|
+| `sirena_analytics_sync_runs_total` | Counter | Nombre total de syncs par type et statut |
+| `sirena_analytics_sync_duration_seconds` | Histogram | Duree des syncs en secondes |
+| `sirena_analytics_sync_records_processed_total` | Counter | Enregistrements traites par entite |
+| `sirena_analytics_sync_last_run_timestamp_seconds` | Gauge | Timestamp Unix de la derniere sync |
+| `sirena_analytics_sync_last_run_success` | Gauge | Succes de la derniere sync (1/0) |
+| `sirena_analytics_sync_errors_total` | Counter | Erreurs de sync par entite |
+
+### Metriques de reconciliation
+
+| Metrique | Type | Description |
+|---|---|---|
+| `sirena_analytics_drift_percent` | Gauge | Pourcentage de drift par table |
+| `sirena_analytics_orphans_deleted_total` | Counter | Orphelins supprimes par table |
+| `sirena_analytics_missing_resynced_total` | Counter | Enregistrements manquants re-synchronises |
+
+Les metriques Node.js par defaut (memoire, CPU, event loop) sont egalement collectees.
+
 ## Schema en etoile
 
 ### Tables de dimensions
@@ -83,6 +108,7 @@ Si le drift depasse le seuil configurable (defaut 5%), un log warning est emis. 
 | `INCREMENTAL_INTERVAL_MS` | Intervalle sync incrementale (ms) | `300000` (5 min) |
 | `RECONCILIATION_CRON` | Expression CRON reconciliation | `0 3 * * *` |
 | `DRIFT_THRESHOLD_PERCENT` | Seuil d'alerte de drift (%) | `5` |
+| `MONITORING_PORT` | Port du serveur de metriques Prometheus | `9090` |
 | `LOG_LEVEL` | Niveau de log | `info` |
 
 ## Commandes

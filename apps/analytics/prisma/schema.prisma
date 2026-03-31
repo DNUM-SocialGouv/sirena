@@ -1,0 +1,278 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Dimension Tables ───
+
+model DimEntite {
+  id              String  @id @default(uuid())
+  sourceId        String  @unique
+  nomComplet      String
+  label           String
+  entiteType      String
+  departementCode String?
+  regionCode      String?
+  regLib          String?
+  dptLib          String?
+  isActive        Boolean
+  entiteMereLabel String?
+
+  factRequetes FactRequete[]
+  factEtapes   FactEtape[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([departementCode])
+  @@index([entiteType])
+}
+
+model DimCommune {
+  id            String @id @default(uuid())
+  sourceId      String @unique
+  comLib        String
+  dptCodeActuel String
+  dptLibActuel  String
+  regCodeActuel String
+  regLibActuel  String
+
+  factRequetes FactRequete[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dptCodeActuel])
+  @@index([regCodeActuel])
+}
+
+model DimTemps {
+  id          String   @id // YYYY-MM-DD
+  date        DateTime
+  jour        Int
+  mois        Int
+  annee       Int
+  trimestre   Int
+  jourSemaine Int
+  semaine     Int
+
+  factRequetesReception FactRequete[] @relation("ReceptionTemps")
+  factRequetesCreation  FactRequete[] @relation("CreationTemps")
+  factEtapes            FactEtape[]
+
+  @@index([annee, mois])
+  @@index([annee, trimestre])
+}
+
+model DimMotif {
+  id       String @id @default(uuid())
+  sourceId String @unique
+  label    String
+
+  factFaitMotifs FactFaitMotif[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DimConsequence {
+  id       String @id @default(uuid())
+  sourceId String @unique
+  label    String
+
+  factFaitConsequences FactFaitConsequence[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DimMaltraitanceType {
+  id       String @id @default(uuid())
+  sourceId String @unique
+  label    String
+
+  factFaitMaltraitanceTypes FactFaitMaltraitanceType[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DimMisEnCauseType {
+  id       String @id @default(uuid())
+  sourceId String @unique
+  label    String
+
+  factRequetes FactRequete[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DimLieuType {
+  id       String @id @default(uuid())
+  sourceId String @unique
+  label    String
+
+  factRequetes FactRequete[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Fact Tables ───
+
+model FactRequete {
+  id                     String   @id @default(uuid())
+  sourceId               String   @unique
+  statut                 String
+  priorite               String?
+  receptionType          String?
+  provenance             String?
+  declarantAge           String?
+  declarantCivilite      String?
+  declarantEstVictime    Boolean?
+  declarantLienVictime   String?
+  declarantDepartement   String?
+  declarantEstHandicapee Boolean?
+  nombreFaits            Int      @default(0)
+  nombreConsequences     Int      @default(0)
+  nombreEtapes           Int      @default(0)
+  estCloturee            Boolean  @default(false)
+  raisonCloture          String?
+  sourceCreatedAt        DateTime
+  sourceUpdatedAt        DateTime
+
+  receptionTempsId String?
+  receptionTemps   DimTemps? @relation("ReceptionTemps", fields: [receptionTempsId], references: [id])
+
+  creationTempsId String
+  creationTemps   DimTemps @relation("CreationTemps", fields: [creationTempsId], references: [id])
+
+  entiteId String?
+  entite   DimEntite? @relation(fields: [entiteId], references: [id])
+
+  communeId String?
+  commune   DimCommune? @relation(fields: [communeId], references: [id])
+
+  misEnCauseTypeId String?
+  misEnCauseType   DimMisEnCauseType? @relation(fields: [misEnCauseTypeId], references: [id])
+
+  lieuTypeId String?
+  lieuType   DimLieuType? @relation(fields: [lieuTypeId], references: [id])
+
+  factEtapes                FactEtape[]
+  factFaitMotifs            FactFaitMotif[]
+  factFaitConsequences      FactFaitConsequence[]
+  factFaitMaltraitanceTypes FactFaitMaltraitanceType[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([statut])
+  @@index([sourceUpdatedAt])
+  @@index([entiteId])
+  @@index([receptionTempsId])
+  @@index([creationTempsId])
+}
+
+model FactEtape {
+  id              String   @id @default(uuid())
+  sourceId        String   @unique
+  requeteSourceId String
+  nom             String
+  statut          String
+  estPartagee     Boolean
+  nombreNotes     Int      @default(0)
+  sourceCreatedAt DateTime
+  sourceUpdatedAt DateTime
+
+  factRequeteId String?
+  factRequete   FactRequete? @relation(fields: [factRequeteId], references: [id])
+
+  entiteId String?
+  entite   DimEntite? @relation(fields: [entiteId], references: [id])
+
+  tempsId String?
+  temps   DimTemps? @relation(fields: [tempsId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requeteSourceId])
+  @@index([statut])
+  @@index([sourceUpdatedAt])
+}
+
+// ─── Bridge Tables ───
+
+model FactFaitMotif {
+  id              String @id @default(uuid())
+  situationId     String
+  requeteSourceId String
+
+  factRequeteId String?
+  factRequete   FactRequete? @relation(fields: [factRequeteId], references: [id], onDelete: Cascade)
+
+  dimMotifId String
+  dimMotif   DimMotif @relation(fields: [dimMotifId], references: [id])
+
+  @@unique([situationId, dimMotifId])
+  @@index([factRequeteId])
+}
+
+model FactFaitConsequence {
+  id              String @id @default(uuid())
+  situationId     String
+  requeteSourceId String
+
+  factRequeteId String?
+  factRequete   FactRequete? @relation(fields: [factRequeteId], references: [id], onDelete: Cascade)
+
+  dimConsequenceId String
+  dimConsequence   DimConsequence @relation(fields: [dimConsequenceId], references: [id])
+
+  @@unique([situationId, dimConsequenceId])
+  @@index([factRequeteId])
+}
+
+model FactFaitMaltraitanceType {
+  id              String @id @default(uuid())
+  situationId     String
+  requeteSourceId String
+
+  factRequeteId String?
+  factRequete   FactRequete? @relation(fields: [factRequeteId], references: [id], onDelete: Cascade)
+
+  dimMaltraitanceTypeId String
+  dimMaltraitanceType   DimMaltraitanceType @relation(fields: [dimMaltraitanceTypeId], references: [id])
+
+  @@unique([situationId, dimMaltraitanceTypeId])
+  @@index([factRequeteId])
+}
+
+// ─── Sync Tracking ───
+
+model SyncCursor {
+  id              String   @id
+  tableName       String   @unique
+  lastSyncAt      DateTime @default("1970-01-01T00:00:00Z")
+  lastChangeLogId String?
+  status          String   @default("OK")
+
+  updatedAt DateTime @updatedAt
+}
+
+model SyncLog {
+  id        String   @id @default(uuid())
+  syncType  String // INCREMENTAL, RECONCILIATION
+  status    String // SUCCESS, PARTIAL, FAILED, DRIFT_DETECTED
+  details   Json?
+  startedAt DateTime
+  endedAt   DateTime
+
+  createdAt DateTime @default(now())
+}

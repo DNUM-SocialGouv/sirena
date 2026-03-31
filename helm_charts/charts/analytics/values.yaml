@@ -1,0 +1,46 @@
+---
+SDPSN-devops-charts:
+  name: analytics
+
+  podMonitor:
+    enable: true
+    relabelings:
+      - sourceLabels: [__meta_kubernetes_pod_name]
+        targetLabel: pod
+      - sourceLabels: [__meta_kubernetes_namespace]
+        targetLabel: namespace
+      - targetLabel: analytics
+        replacement: appName
+
+  deployment:
+    image: ghcr.io/dnum-socialgouv/sirena:latest-analytics
+    imagePullSecretsName: registry-secret
+    additionnalPortsDefinition:
+      - name: monitoring
+        containerPort: 9090
+
+    need_database: true
+    need_redis: true
+    need_registry: true
+
+    additionalConfigMapRef:
+      - analytics-variables
+    additionalsecretRef:
+      - backend
+      - analytics
+
+    readinessProbe:
+      enable: false
+    livenessProbe:
+      enable: false
+
+    resources:
+      limits:
+        cpu: 250m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+  service:
+    enable: false

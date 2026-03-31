@@ -10,6 +10,7 @@
     "includes": [
       "./deploy/**/*",
       "!deploy/imports/**/*",
+      "./apps/analytics/src/**/*",
       "./apps/backend/src/**/*",
       "!apps/backend/src/features/dematSocial/affectation/geo/inseetocodepostal.json",
       "!apps/backend/src/features/dematSocial/affectation/geo/liste_entites.json",
