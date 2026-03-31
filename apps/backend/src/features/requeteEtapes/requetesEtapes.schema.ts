@@ -6,6 +6,7 @@ import { Prisma } from '../../libs/prisma.js';
 export const RequeteEtapeSchema = z.object({
   id: z.uuid(),
   nom: z.string(),
+  type: z.string(),
   estPartagee: z.boolean(),
   statutId: z.string(),
   requeteId: z.string(),

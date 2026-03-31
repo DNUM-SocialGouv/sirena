@@ -1,6 +1,6 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
@@ -72,21 +72,10 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
         <QueryStateHandler query={queryProcessingSteps}>
           {({ data }) =>
             data.data.map((step, index: number) => {
-              // Check if step was automatically updated: only for demat social requests,
-              // created automatically (createdBy === null), status is FAIT, and it's the acknowledgment step
-              const isDematSocialRequest = !!requestQuery.data?.requete?.dematSocialId;
-              const isAutomaticallyUpdated =
-                isDematSocialRequest &&
-                step.createdBy === null &&
-                step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT &&
-                step.nom === 'Envoyer un accusé de réception au déclarant';
-              const isReopenStep =
-                step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT && step.nom?.startsWith('Requête rouverte le');
               const isDisabled =
                 index === data.data.length - 1 ||
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ||
-                isAutomaticallyUpdated ||
-                isReopenStep;
+                step.type !== REQUETE_ETAPE_TYPES.MANUAL;
               return (
                 <Step
                   key={step.id}

@@ -30,6 +30,15 @@ export const requeteStatutType: Record<RequeteStatutType, string> = {
   [REQUETE_STATUT_TYPES.TRAITEE]: 'Pris en compte',
 } as const;
 
+export const REQUETE_ETAPE_TYPES = {
+  CREATION: 'CREATION',
+  ACKNOWLEDGMENT: 'ACKNOWLEDGMENT',
+  REOPEN: 'REOPEN',
+  MANUAL: 'MANUAL',
+} as const;
+
+export type RequeteEtapeType = keyof typeof REQUETE_ETAPE_TYPES;
+
 export const REQUETE_PRIORITE_TYPES = {
   BASSE: 'BASSE',
   MOYENNE: 'MOYENNE',
