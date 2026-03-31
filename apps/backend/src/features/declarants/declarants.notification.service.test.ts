@@ -54,7 +54,6 @@ vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
 
 vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
   updateAcknowledgmentStep: vi.fn(),
-  ACKNOWLEDGMENT_STEP_NAME: 'Envoyer un accusé de réception au déclarant',
 }));
 
 const mockedPrismaRequete = vi.mocked(prisma.requete);
