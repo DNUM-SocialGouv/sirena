@@ -15,9 +15,9 @@ const getServerUrl = () => {
 const getThirdPartyDocumentation = (): Documentation => ({
   openapi: '3.1.0',
   info: {
-    title: 'Sirena Third-Party API',
+    title: 'SIRENA Third-Party API',
     version: '1.0.0',
-    description: 'Sirena third-party integration API - requires API key authentication',
+    description: 'SIRENA third-party integration API - requires API key authentication',
   },
   servers: [
     {

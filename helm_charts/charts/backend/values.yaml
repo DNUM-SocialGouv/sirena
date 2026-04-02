@@ -93,7 +93,7 @@ SDPSN-devops-charts:
     ANNUAIRE_SANTE_API_URL: "https://gateway.api.esante.gouv.fr/fhir/v2"
     TIPIMAIL_API_URL: "https://api.tipimail.com/v1"
     TIPIMAIL_FROM_ADDRESS: "ne-pas-repondre@sirena-sante.social.gouv.fr"
-    TIPIMAIL_FROM_PERSONAL_NAME: "Sirena"
+    TIPIMAIL_FROM_PERSONAL_NAME: "SIRENA"
     TIPIMAIL_DISABLE_SENDING: "true"
     MONITORING_PORT: "9090"
     CLAMAV_PORT: "3310"
