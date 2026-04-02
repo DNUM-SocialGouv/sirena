@@ -68,10 +68,10 @@ export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
 });
 
 export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConcerneeInput) => ({
-  estHandicapee: participantData.estHandicapee || false,
+  estHandicapee: participantData.estHandicapee ?? undefined,
   veutGarderAnonymat:
     participantData.consentCommuniquerIdentite === undefined ? undefined : !participantData.consentCommuniquerIdentite,
-  estVictimeInformee: participantData.estVictimeInformee || false,
+  estVictimeInformee: participantData.estVictimeInformee ?? undefined,
   victimeInformeeCommentaire: participantData.victimeInformeeCommentaire || '',
   autrePersonnes: participantData.autrePersonnes || '',
   aAutrePersonnes: participantData.aAutrePersonnes,

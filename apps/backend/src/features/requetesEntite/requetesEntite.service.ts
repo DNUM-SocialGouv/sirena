@@ -722,12 +722,12 @@ export const updateRequeteParticipant = async (
       data: {
         participant: {
           update: {
-            estHandicapee: participantData.estHandicapee || false,
+            estHandicapee: participantData.estHandicapee ?? undefined,
             veutGarderAnonymat:
               participantData.consentCommuniquerIdentite === undefined
                 ? undefined
                 : !participantData.consentCommuniquerIdentite,
-            estVictimeInformee: participantData.estVictimeInformee || false,
+            estVictimeInformee: participantData.estVictimeInformee ?? undefined,
             victimeInformeeCommentaire:
               participantData.estVictimeInformee === false ? participantData.victimeInformeeCommentaire || '' : '',
             autrePersonnes: participantData.autrePersonnes || '',
@@ -1953,10 +1953,16 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         .field('Motifs qualifiés', motifsQualifies.length > 0 ? motifsQualifies.join(', ') : null)
         .field('Conséquences', consequences.length > 0 ? consequences.join(', ') : null);
 
+      const periodeLabel =
+        faits.dateDebut && !faits.dateFin
+          ? `Depuis le ${formatDateFr(faits.dateDebut)}`
+          : faits.dateDebut && faits.dateFin
+            ? `Du ${formatDateFr(faits.dateDebut)} au ${formatDateFr(faits.dateFin)}`
+            : null;
+
       pdf
         .subsection('Période et description des faits')
-        .field('Date de début', formatDateFr(faits.dateDebut))
-        .field('Date de fin', formatDateFr(faits.dateFin))
+        .field('Période', periodeLabel)
         .field('Explication des faits', faits.commentaire || null)
         .field('Autres précisions', faits.autresPrecisions || null);
 
