@@ -90,7 +90,7 @@ export const createDefaultRequeteEtapes = async (
     data: {
       requeteId: requeteId,
       entiteId: entiteId,
-      statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+      statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
       nom: ACKNOWLEDGMENT_STEP_NAME,
     },
   });
