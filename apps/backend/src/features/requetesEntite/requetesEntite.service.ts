@@ -1854,22 +1854,26 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
   // ===== 3. DÉCLARANT =====
   if (requete.declarant) {
     const d = requete.declarant;
-    pdf
-      .section('Déclarant')
-      .field('Civilité', d.identite?.civilite?.label || null)
-      .field('Prénom', d.identite?.prenom || null)
-      .field('Nom', d.identite?.nom || null)
-      .field('Lien avec la victime', d.lienVictime?.label || null)
-      .field('Précision lien', d.lienAutrePrecision || null)
-      .field('Tuteur/Curateur', booleanLabel(d.isTuteur))
-      .field('Adresse', formatRue(d.adresse))
-      .field('Code postal', d.adresse?.codePostal || null)
-      .field('Ville', d.adresse?.ville || null)
-      .field('Email', d.identite?.email || null)
-      .field('Téléphone', d.identite?.telephone || null)
-      .field("Souhaite garder l'anonymat", booleanLabel(d.veutGarderAnonymat))
-      .field('Signalement professionnel (EIG)', booleanLabel(d.estSignalementProfessionnel))
-      .field('Autres précisions', d.commentaire || null);
+    if (d.estVictime) {
+      pdf.section('Déclarant').paragraph('Le déclarant est la personne concernée par la requête.');
+    } else {
+      pdf
+        .section('Déclarant')
+        .field('Civilité', d.identite?.civilite?.label || null)
+        .field('Prénom', d.identite?.prenom || null)
+        .field('Nom', d.identite?.nom || null)
+        .field('Lien avec la victime', d.lienVictime?.label || null)
+        .field('Précision lien', d.lienAutrePrecision || null)
+        .field('Tuteur/Curateur', booleanLabel(d.isTuteur))
+        .field('Adresse', formatRue(d.adresse))
+        .field('Code postal', d.adresse?.codePostal || null)
+        .field('Ville', d.adresse?.ville || null)
+        .field('Email', d.identite?.email || null)
+        .field('Téléphone', d.identite?.telephone || null)
+        .field("Souhaite garder l'anonymat", booleanLabel(d.veutGarderAnonymat))
+        .field('Signalement professionnel (EIG)', booleanLabel(d.estSignalementProfessionnel))
+        .field('Autres précisions', d.commentaire || null);
+    }
   }
 
   // ===== 4. PERSONNE CONCERNÉE =====

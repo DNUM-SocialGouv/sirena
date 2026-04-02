@@ -185,6 +185,17 @@ export class RequetePdfBuilder {
     return this;
   }
 
+  paragraph(text: string): this {
+    this.current.add(
+      this.doc.struct('P', [
+        () => {
+          this.doc.fontSize(12).font('Roboto').text(text);
+        },
+      ]),
+    );
+    return this;
+  }
+
   field(label: string, value: string | null | undefined): this {
     if (!value?.trim()) return this;
     this.current.add(
