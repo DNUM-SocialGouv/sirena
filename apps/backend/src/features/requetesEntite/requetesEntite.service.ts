@@ -1539,7 +1539,7 @@ export const closeRequeteForEntite = async (
       });
     }
 
-    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE);
+    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE, tx);
 
     return {
       etapeId: etape.id,
@@ -1645,7 +1645,7 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
       },
     });
 
-    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.EN_COURS);
+    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.EN_COURS, tx);
 
     return {
       etapeId: etape.id,
@@ -1666,8 +1666,14 @@ export const reopenRequeteForEntite = async (requeteId: string, entiteId: string
   return result;
 };
 
-export const updateStatusRequete = async (requeteId: string, entiteId: string, statut: RequeteStatutType) => {
-  const requeteEntite = await prisma.requeteEntite.update({
+export const updateStatusRequete = async (
+  requeteId: string,
+  entiteId: string,
+  statut: RequeteStatutType,
+  tx?: Prisma.TransactionClient,
+) => {
+  const db = tx ?? prisma;
+  const requeteEntite = await db.requeteEntite.update({
     where: { requeteId_entiteId: { requeteId, entiteId } },
     data: { statutId: statut },
   });

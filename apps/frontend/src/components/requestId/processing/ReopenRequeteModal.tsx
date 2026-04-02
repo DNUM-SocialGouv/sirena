@@ -1,6 +1,7 @@
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useReopenRequete } from '@/hooks/mutations/reopenRequete.hook';
+import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 
 export type ReopenRequeteModalRef = {
   openModal: () => void;
@@ -16,72 +17,34 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const wasActionTakenRef = useRef(false);
-    const cleanupRef = useRef<(() => void) | null>(null);
     const reopenMutation = useReopenRequete(requestId);
 
     const reopenModal = useMemo(
       () =>
         createModal({
-          id: 'reopen-requete-modal',
+          id: `reopen-requete-modal-${requestId}`,
           isOpenedByDefault: false,
         }),
-      [],
+      [requestId],
     );
 
-    const focusTriggerButton = () =>
-      setTimeout(() => {
-        triggerButtonRef?.current?.focus();
-      }, 0);
+    const { registerTrigger } = useModalFocusRestore([reopenModal.id]);
 
     const openModal = () => {
       setIsSubmitting(false);
       setErrorMessage(null);
       wasActionTakenRef.current = false;
+
+      if (triggerButtonRef?.current) {
+        registerTrigger(triggerButtonRef.current);
+      }
+
       reopenModal.open();
-      setTimeout(() => {
-        addModalEventListener();
-      }, 50);
     };
 
     useImperativeHandle(ref, () => ({
       openModal,
     }));
-
-    useEffect(() => {
-      return () => {
-        if (cleanupRef.current) {
-          cleanupRef.current();
-          cleanupRef.current = null;
-        }
-      };
-    }, []);
-
-    const addModalEventListener = () => {
-      const handleModalClose = () => {
-        focusTriggerButton();
-      };
-
-      const checkForModal = () => {
-        const modalElement = document.querySelector(`#${reopenModal.id}`);
-
-        if (modalElement) {
-          modalElement.addEventListener('dsfr.conceal', handleModalClose);
-
-          cleanupRef.current = () => {
-            modalElement.removeEventListener('dsfr.conceal', handleModalClose);
-          };
-
-          return true;
-        }
-        return false;
-      };
-
-      if (!checkForModal()) {
-        setTimeout(() => {
-          checkForModal();
-        }, 100);
-      }
-    };
 
     const handleSubmit = async () => {
       setIsSubmitting(true);
@@ -90,7 +53,6 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
       try {
         await reopenMutation.mutateAsync();
         reopenModal.close();
-        focusTriggerButton();
       } catch {
         setIsSubmitting(false);
         wasActionTakenRef.current = false;
@@ -101,7 +63,6 @@ export const ReopenRequeteModal = forwardRef<ReopenRequeteModalRef, ReopenRequet
     const handleCancel = () => {
       wasActionTakenRef.current = true;
       reopenModal.close();
-      focusTriggerButton();
     };
 
     return (

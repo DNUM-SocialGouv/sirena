@@ -1,12 +1,17 @@
 import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
-import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import { z } from 'zod';
 import { Prisma } from '../../libs/prisma.js';
 
 export const RequeteEtapeSchema = z.object({
   id: z.uuid(),
   nom: z.string(),
-  type: z.string(),
+  type: z.enum([
+    REQUETE_ETAPE_TYPES.CREATION,
+    REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+    REQUETE_ETAPE_TYPES.REOPEN,
+    REQUETE_ETAPE_TYPES.MANUAL,
+  ]),
   estPartagee: z.boolean(),
   statutId: z.string(),
   requeteId: z.string(),

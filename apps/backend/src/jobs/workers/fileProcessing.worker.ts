@@ -72,6 +72,7 @@ const processNonPdfFile = async (
   await ensureClamAvReachable();
 
   const scanStartTime = Date.now();
+
   try {
     const { stream } = await getFileStream(filePath);
     const scanResult = await scanStream(stream, fileName, fileSize);
