@@ -298,7 +298,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                   state={isNoFinessChecked ? 'info' : 'default'}
                   stateRelatedMessage={
                     isNoFinessChecked
-                      ? 'Si vous souhaitez rechercher par numéro FINESS, décochez la case "Renseigner manuellement le nom du service"'
+                      ? 'Si vous souhaitez rechercher par numéro FINESS, décochez la case "Le service n’a pas de numéro FINESS"'
                       : undefined
                   }
                   disabled={isSaving || isNoFinessChecked}
@@ -319,7 +319,7 @@ export function MisEnCause({ formData, isSaving, setFormData }: misEnCauseProps)
                   <Checkbox
                     options={[
                       {
-                        label: 'Renseigner manuellement le nom du service',
+                        label: 'Le service n’a pas de numéro FINESS',
                         nativeInputProps: {
                           checked: isNoFinessChecked,
                           onChange: (e) => {
