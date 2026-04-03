@@ -1,0 +1,22 @@
+-- UPDATE
+UPDATE "public"."Entite" SET "emailDomain" = 'ars.sante.fr' WHERE "id" = '4988789e-9775-4958-861f-52f03cbc9257';
+UPDATE "public"."Entite" SET "emailDomain" = 'ars.sante.fr', "organizationalUnit" = 'ARS-IDF' WHERE "id" = 'ec8c1403-6edb-4b55-8f45-c3efcd139404';
+UPDATE "public"."Entite" SET "emailDomain" = 'ars.sante.fr', "organizationalUnit" = 'ARS-BFC' WHERE "id" = 'aaab82ff-ccda-4fc6-9edc-b8cce4a5c893';
+UPDATE "public"."Entite" SET "emailDomain" = 'ars.sante.fr', "organizationalUnit" = 'ARS-BRETAGNE' WHERE "id" = '255bb728-6545-49cc-ab70-b26f254f9938';
+UPDATE "public"."Entite" SET "emailDomain" = 'ars.sante.fr', "organizationalUnit" = 'ARS-CVL' WHERE "id" = '2df2b1f1-3c5d-43d6-b30c-a01062aa2edc';
+UPDATE "public"."Entite" SET "emailDomain" = 'ars.sante.fr' WHERE "id" = '0705838b-4a21-4e34-ab5d-a574879ae3aa';
+UPDATE "public"."Entite" SET "emailDomain" = 'ars.sante.fr', "organizationalUnit" = 'ARS-GRANDEST' WHERE "id" = '359e7f37-7344-4680-8b78-3101a01b073c';
+UPDATE "public"."Entite" SET "organizationalUnit" = 'ARS-GUYANE' WHERE "id" = '543fa06b-141f-4cfc-ace9-dbb334734652';
+UPDATE "public"."Entite" SET "emailDomain" = 'ars.sante.fr' WHERE "id" = '991e33cf-0935-4327-b52a-f38a9cb698b5';
+UPDATE "public"."Entite" SET "emailDomain" = 'ars.sante.fr', "organizationalUnit" = 'ARS-REUNION' WHERE "id" = 'e30f5f2d-de67-4e46-a0a0-db7fc1d54337';
+UPDATE "public"."Entite" SET "organizationalUnit" = 'ARS-OC' WHERE "id" = 'e9ed1e3a-3a32-4078-9109-2c83c12c4faf';
+UPDATE "public"."Entite" SET "emailDomain" = 'ars.sante.fr', "organizationalUnit" = 'ARS-PDL' WHERE "id" = '264e399d-81a0-416d-a8da-8d6f4465e632';
+UPDATE "public"."Entite" SET "emailDomain" = 'ars.sante.fr', "organizationalUnit" = 'ARS-PACA' WHERE "id" = 'acf617c0-892a-4af1-a757-125409ffccdd';
+UPDATE "public"."Entite" SET "email" = 'adultevulnerable@lozere.fr', "emailDomain" = 'lozere.fr' WHERE "id" = '3a0b3635-1e33-4dd2-9bb4-043a4dfdaa92';
+UPDATE "public"."Entite" SET "email" = 'uav@cd66.fr', "emailDomain" = 'cd66.fr' WHERE "id" = 'b0d8f308-f71e-403c-8356-d8d480c1abff';
+UPDATE "public"."Entite" SET "email" = 'signalements.paph@tarnetgaronne.fr', "emailDomain" = 'tarnetgaronne.fr' WHERE "id" = '5054c021-f5b8-406b-ae5a-252d3c42bbfa';
+UPDATE "public"."Entite" SET "emailDomain" = 'pyrenees-orientales.gouv.fr' WHERE "id" = '78f994ec-ea8b-48c0-9dbc-ec0799cdcfba';
+UPDATE "public"."Entite" SET "email" = 'ddets-signalementmaltraitance@maine-et-loire.gouv.fr', "emailDomain" = 'maine-et-loire.gouv.fr' WHERE "id" = '138080a3-6155-4e3b-91f9-16cba83a8204';
+UPDATE "public"."Entite" SET "email" = 'CRAV44@loire-atlantique.fr', "emailDomain" = 'loire-atlantique.fr' WHERE "id" = '4e9983ff-29bc-4b2c-a871-e706e0dfe214';
+UPDATE "public"."Entite" SET "email" = 'contact.da@maine-et-loire.fr', "emailDomain" = 'maine-et-loire.fr' WHERE "id" = '754a4301-2963-47f9-8f60-195d4d5ba8ed';
+UPDATE "public"."Entite" SET "email" = 'mva.signalement@vendee.fr', "emailDomain" = 'vendee.fr' WHERE "id" = '8870abf4-a35f-4e67-a678-e291f36107a5';
