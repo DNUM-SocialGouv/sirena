@@ -37,7 +37,7 @@ export function InfoSection({
   const hasDetails = !!detailsContent;
   const shouldShowSummary = replaceSummaryWithDetails ? !isDetailsExpanded && hasSummary : hasSummary;
 
-  const editLabel = isEmpty ? 'Compléter' : 'Éditer';
+  const editLabel = isEmpty ? 'Compléter' : 'Modifier';
 
   const toggleDetails = () => setIsDetailsExpanded(!isDetailsExpanded);
 
