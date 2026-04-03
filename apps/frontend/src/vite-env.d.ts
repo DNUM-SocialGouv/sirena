@@ -3,6 +3,7 @@
 interface ImportMetaEnv {
   readonly VITE_MATOMO_URL: string;
   readonly VITE_MATOMO_SITE_ID: string;
+  readonly VITE_SENTRY_ENVIRONMENT: string;
 }
 
 interface ImportMeta {
