@@ -27,6 +27,7 @@ const app = factoryWithLogs
 
     const [topEntite] = topEntiteId ? await getEntitesByIds([topEntiteId]) : [];
     const topEntiteIsActive = topEntite?.isActive ?? null;
+    const topEntiteTypeId = topEntite?.entiteTypeId ?? null;
 
     const affectationChain =
       user.entiteId != null
@@ -39,6 +40,7 @@ const app = factoryWithLogs
         data: {
           ...user,
           topEntiteId,
+          topEntiteTypeId,
           topEntiteIsActive,
           entiteIds,
           entiteIdLevel,
