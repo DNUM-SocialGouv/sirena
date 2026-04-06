@@ -190,22 +190,83 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     }),
   ]);
 
-  // Enrich each situation with traitementDesFaits
-  const data = await Promise.all(
-    rawData.map(async (requeteEntite) => {
-      const enrichedSituations = await Promise.all(
-        requeteEntite.requete?.situations?.map((situation) => enrichSituationWithTraitementDesFaits(situation)) ?? [],
-      );
+  // DOM (97x) → 3 digits, otherwise → 2 digits. Also works for cedex codes (e.g. 75674 → "75").
+  const extractDptCode = (cp: string): string =>
+    cp.length >= 3 && cp.startsWith('97') ? cp.slice(0, 3) : cp.slice(0, 2);
 
-      return {
-        ...requeteEntite,
-        requete: {
-          ...requeteEntite.requete,
-          situations: enrichedSituations,
-        },
-      };
-    }),
-  );
+  const getCpFromSituation = (s: (typeof rawData)[number]['requete']['situations'][number]) =>
+    s.lieuDeSurvenue?.codePostal || s.lieuDeSurvenue?.adresse?.codePostal || '';
+
+  const cpToDptCode = new Map<string, string>();
+  for (const re of rawData) {
+    for (const s of re.requete?.situations ?? []) {
+      const cp = getCpFromSituation(s);
+      if (cp && !cpToDptCode.has(cp)) cpToDptCode.set(cp, extractDptCode(cp));
+    }
+  }
+
+  // Corsican postal codes all start with "20" but their dept codes in DB are "2A" or "2B" —
+  // the split cannot be derived from the postal code alone, so we resolve via InseePostal.
+  const corseCPs = [...cpToDptCode.entries()].filter(([, dpt]) => dpt === '20').map(([cp]) => cp);
+  if (corseCPs.length > 0) {
+    const corseInsee = await prisma.inseePostal.findMany({
+      where: { codePostal: { in: corseCPs } },
+      select: { codePostal: true, commune: { select: { dptCodeActuel: true } } },
+      distinct: ['codePostal'],
+    });
+    for (const row of corseInsee) {
+      if (row.commune) cpToDptCode.set(row.codePostal, row.commune.dptCodeActuel);
+    }
+  }
+
+  const uniqueDptCodes = [...new Set(cpToDptCode.values())];
+
+  const communesQuery =
+    uniqueDptCodes.length > 0
+      ? prisma.commune.findMany({
+          where: { dptCodeActuel: { in: uniqueDptCodes } },
+          select: { dptCodeActuel: true, dptLibActuel: true },
+        })
+      : Promise.resolve([]);
+
+  const [communes, enrichedRows] = await Promise.all([
+    communesQuery,
+    Promise.all(
+      rawData.map(async (requeteEntite) => ({
+        requeteEntite,
+        enrichedSituations: await Promise.all(
+          requeteEntite.requete?.situations?.map((s) => enrichSituationWithTraitementDesFaits(s)) ?? [],
+        ),
+      })),
+    ),
+  ]);
+
+  const dptToDept: Record<string, { code: string; lib: string }> = {};
+  for (const c of communes) {
+    dptToDept[c.dptCodeActuel] = { code: c.dptCodeActuel, lib: c.dptLibActuel };
+  }
+
+  const data = enrichedRows.map(({ requeteEntite, enrichedSituations }) => {
+    const seenDptCodes = new Set<string>();
+    const departementsLieuSurvenue = (requeteEntite.requete?.situations ?? []).flatMap((s) => {
+      const cp = getCpFromSituation(s);
+      if (!cp) return [];
+      const dptCode = cpToDptCode.get(cp) ?? extractDptCode(cp);
+      if (seenDptCodes.has(dptCode)) return [];
+      seenDptCodes.add(dptCode);
+      // Fallback to code-only if geodata is not seeded.
+      return [dptToDept[dptCode] ?? { code: dptCode, lib: '' }];
+    });
+
+    return {
+      ...requeteEntite,
+      departementsLieuSurvenue,
+      requete: {
+        ...requeteEntite.requete,
+        situations: enrichedSituations,
+      },
+    };
+  });
 
   return {
     data,

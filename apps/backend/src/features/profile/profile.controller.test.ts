@@ -78,6 +78,7 @@ describe('Profile endpoints: /profile', () => {
           ...fakeUser,
           topEntiteId: 'topEntiteId1',
           topEntiteIsActive: true,
+          topEntiteTypeId: null,
           entiteIds: ['entite-1', 'entite-2'],
           affectationChain: [],
         }),

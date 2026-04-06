@@ -112,6 +112,7 @@ const RequeteWithSituationsSchema = RequeteSchema.extend({
 export const GetRequeteEntiteSchema = RequeteEntiteSchema.extend({
   requete: RequeteWithSituationsSchema,
   requeteEtape: z.array(RequeteEtapeSchema),
+  departementsLieuSurvenue: z.array(z.object({ code: z.string(), lib: z.string() })),
 });
 
 export const GetRequetesEntiteResponseSchema = z.array(GetRequeteEntiteSchema);

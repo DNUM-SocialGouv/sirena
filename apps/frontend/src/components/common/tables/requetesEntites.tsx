@@ -3,6 +3,7 @@ import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
+import { entiteTypes } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
@@ -85,6 +86,7 @@ export function RequetesEntite() {
   const { data: profile } = useProfile();
   const userTopEntiteId = profile?.topEntiteId;
   const userEntiteIdLevel = profile?.entiteIdLevel;
+  const isTopEntiteARS = profile?.topEntiteTypeId === entiteTypes.ARS;
   const topProfileEntiteId = (() => {
     if (profile?.topEntiteId === profile?.entiteId) {
       return undefined;
@@ -202,6 +204,9 @@ export function RequetesEntite() {
     { key: 'custom:affectation', label: 'Affectation' },
     { key: 'custom:motifs', label: 'Motifs' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },
+    ...(isTopEntiteARS
+      ? [{ key: 'custom:departement', label: 'Département lieu de survenue' } as Column<RequeteEntiteRow>]
+      : []),
     { key: 'custom:action', label: 'Action', isFixedRight: true },
   ];
 
@@ -245,6 +250,21 @@ export function RequetesEntite() {
     'custom:misEnCause': (row) => (
       <div className="requetesEntitesTable__misEnCause-cell">{renderMisEnCauseCell(row)}</div>
     ),
+    ...(isTopEntiteARS
+      ? {
+          'custom:departement': (row: RequeteEntiteRow) => {
+            const depts = row.departementsLieuSurvenue;
+            if (!depts?.length) return <span>-</span>;
+            return (
+              <div>
+                {depts.map((dept) => (
+                  <div key={dept.code}>{dept.lib ? `${dept.code} - ${dept.lib}` : dept.code}</div>
+                ))}
+              </div>
+            );
+          },
+        }
+      : {}),
     'custom:action': (row) => (
       <Link to="/request/$requestId" className="one-line" params={{ requestId: row.requeteId }}>
         Voir la requête
