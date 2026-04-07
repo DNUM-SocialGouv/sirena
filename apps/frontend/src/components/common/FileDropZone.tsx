@@ -1,5 +1,5 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import { ACCEPTED_FILE_TYPES, FILE_UPLOAD_HINT } from '@/utils/fileHelpers';
 import type { FileValidationError } from '@/utils/fileValidation';
@@ -57,7 +57,7 @@ export function FileDropZone({
       ? `Taille maximale : ${maxSizeLabel ?? '200 Mo'}. Formats supportés : ${supportedFormatsLabel ?? 'PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)'}.`
       : FILE_UPLOAD_HINT);
   const [isDragging, setIsDragging] = useState(false);
-  const dragCounterRef = { current: 0 };
+  const dragCounterRef = useRef(0);
 
   const openFileDialog = () => {
     if (!canEdit || isUploading) {
