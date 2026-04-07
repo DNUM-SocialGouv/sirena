@@ -7,6 +7,7 @@ import {
   type Requete,
   type RequeteEntite,
   type RequeteEtape,
+  type UploadedFile,
 } from '../../libs/prisma.js';
 import {
   closeRequeteForEntite,
@@ -134,6 +135,7 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
   requeteEtape: [
     {
       id: 'etape1',
+      type: 'standard',
       statutId: 'A_QUALIFIER',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -668,9 +670,9 @@ describe('requetesEntite.service', () => {
       };
 
       vi.mocked(buildEntitesTraitement)
-        .mockResolvedValueOnce([{ entiteId: 'root1', entiteName: 'Root 1', chain: [] }])
-        .mockResolvedValueOnce([{ entiteId: 'root2', entiteName: 'Root 2', chain: [] }])
-        .mockResolvedValueOnce([{ entiteId: 'root3', entiteName: 'Root 3', chain: [] }]);
+        .mockResolvedValueOnce([{ entiteId: 'root1', entiteTypeId: '', entiteName: 'Root 1', chain: [] }])
+        .mockResolvedValueOnce([{ entiteId: 'root2', entiteTypeId: '', entiteName: 'Root 2', chain: [] }])
+        .mockResolvedValueOnce([{ entiteId: 'root3', entiteTypeId: '', entiteName: 'Root 3', chain: [] }]);
 
       vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce(mockRequeteEntiteWithSituations);
 
@@ -2480,6 +2482,7 @@ describe('requetesEntite.service', () => {
       vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([
         {
           entiteId: 'root1',
+          entiteTypeId: '',
           entiteName: 'Root Entity',
           directionServiceId: undefined,
           directionServiceName: undefined,
@@ -2493,6 +2496,7 @@ describe('requetesEntite.service', () => {
       expect(result.traitementDesFaits?.entites).toHaveLength(1);
       expect(result.traitementDesFaits?.entites?.[0]).toEqual({
         entiteId: 'root1',
+        entiteTypeId: '',
         entiteName: 'Root Entity',
         directionServiceId: undefined,
         directionServiceName: undefined,
@@ -2524,6 +2528,7 @@ describe('requetesEntite.service', () => {
       vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([
         {
           entiteId: 'root1',
+          entiteTypeId: '',
           entiteName: 'Root Entity',
           directionServiceId: 'dir1',
           directionServiceName: 'Direction Service',
@@ -2540,6 +2545,7 @@ describe('requetesEntite.service', () => {
       expect(result.traitementDesFaits?.entites).toHaveLength(1);
       expect(result.traitementDesFaits?.entites?.[0]).toEqual({
         entiteId: 'root1',
+        entiteTypeId: '',
         entiteName: 'Root Entity',
         directionServiceId: 'dir1',
         directionServiceName: 'Direction Service',
@@ -2603,6 +2609,7 @@ describe('requetesEntite.service', () => {
       vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([
         {
           entiteId: 'root1',
+          entiteTypeId: '',
           entiteName: 'Root 1',
           directionServiceId: undefined,
           directionServiceName: undefined,
@@ -2610,6 +2617,7 @@ describe('requetesEntite.service', () => {
         },
         {
           entiteId: 'root1',
+          entiteTypeId: '',
           entiteName: 'Root 1',
           directionServiceId: 'dir1',
           directionServiceName: 'Direction 1',
@@ -2625,6 +2633,7 @@ describe('requetesEntite.service', () => {
       expect(result.traitementDesFaits?.entites).toHaveLength(2);
       expect(result.traitementDesFaits?.entites?.[0]).toEqual({
         entiteId: 'root1',
+        entiteTypeId: '',
         entiteName: 'Root 1',
         directionServiceId: undefined,
         directionServiceName: undefined,
@@ -2632,6 +2641,7 @@ describe('requetesEntite.service', () => {
       });
       expect(result.traitementDesFaits?.entites?.[1]).toEqual({
         entiteId: 'root1',
+        entiteTypeId: '',
         entiteName: 'Root 1',
         directionServiceId: 'dir1',
         directionServiceName: 'Direction 1',
@@ -2666,6 +2676,7 @@ describe('requetesEntite.service', () => {
       vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([
         {
           entiteId: 'root1',
+          entiteTypeId: '',
           entiteName: 'Root 1',
           directionServiceId: 'dir1',
           directionServiceName: 'Direction 1',
@@ -2681,6 +2692,7 @@ describe('requetesEntite.service', () => {
       expect(result.traitementDesFaits?.entites).toHaveLength(1);
       expect(result.traitementDesFaits?.entites?.[0]).toEqual({
         entiteId: 'root1',
+        entiteTypeId: '',
         entiteName: 'Root 1',
         directionServiceId: 'dir1',
         directionServiceName: 'Direction 1',
@@ -2712,6 +2724,7 @@ describe('requetesEntite.service', () => {
       vi.mocked(buildEntitesTraitement).mockResolvedValueOnce([
         {
           entiteId: 'root1',
+          entiteTypeId: '',
           entiteName: 'Root Entity',
           directionServiceId: undefined,
           directionServiceName: undefined,

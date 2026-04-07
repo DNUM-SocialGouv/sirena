@@ -25,7 +25,7 @@ export async function findGeoByPostalCode(cp: string): Promise<GeoEntite | null>
     },
   });
 
-  if (!inseePostal || !inseePostal.commune) {
+  if (!inseePostal?.commune) {
     return null;
   }
 

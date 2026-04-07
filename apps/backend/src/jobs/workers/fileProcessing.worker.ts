@@ -72,8 +72,6 @@ const processNonPdfFile = async (
   await ensureClamAvReachable();
 
   const scanStartTime = Date.now();
-  let scanStatus = 'ERROR';
-
   try {
     const { stream } = await getFileStream(filePath);
     const scanResult = await scanStream(stream, fileName, fileSize);
@@ -101,7 +99,6 @@ const processNonPdfFile = async (
     if (isFileInfected(scanResult)) {
       const viruses = getDetectedViruses(scanResult);
       logger.warn({ viruses }, 'File is infected');
-      scanStatus = 'INFECTED';
       recordClamavScanDuration('other', 'INFECTED', scanDurationSeconds);
       recordFileScanSize('INFECTED', fileSize);
       await updateFileProcessingStatus(fileId, {
@@ -115,7 +112,6 @@ const processNonPdfFile = async (
     }
 
     logger.info('File is clean');
-    scanStatus = 'CLEAN';
     recordClamavScanDuration('other', 'CLEAN', scanDurationSeconds);
     recordFileScanSize('CLEAN', fileSize);
     await updateFileProcessingStatus(fileId, {
@@ -200,7 +196,6 @@ const processPdfFile = async (
     if (isFileInfected(scanResult)) {
       const viruses = getDetectedViruses(scanResult);
       logger.warn({ viruses }, 'File is infected');
-      scanStatus = 'INFECTED';
       recordClamavScanDuration('pdf', 'INFECTED', scanDurationSeconds);
       recordFileScanSize('INFECTED', fileSize);
       await updateFileProcessingStatus(fileId, {

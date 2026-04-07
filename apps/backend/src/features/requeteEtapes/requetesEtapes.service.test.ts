@@ -59,12 +59,12 @@ const requeteEtape: RequeteEtape = {
   requeteId: 'requeteId',
   entiteId: 'entiteId',
   nom: 'Etape 1',
+  type: 'MANUAL',
   estPartagee: false,
   statutId: 'A_FAIRE',
   createdAt: new Date(),
   updatedAt: new Date(),
   createdById: null,
-  clotureReasonId: null,
 };
 
 const uploadedFile: Pick<UploadedFile, 'id' | 'size' | 'metadata' | 'filePath'> = {
@@ -102,6 +102,10 @@ const requeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: Requ
     receptionDate: new Date(),
     dematSocialId: 123,
     receptionTypeId: 'receptionTypeId',
+    provenanceId: null,
+    provenancePrecision: null,
+    createdById: null,
+    thirdPartyAccountId: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   },
@@ -131,12 +135,12 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         nom: 'Création de la requête le 15/01/2024',
+        type: 'MANUAL',
         estPartagee: false,
         statutId: 'FAIT',
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
-        clotureReasonId: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -144,12 +148,12 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         nom: 'Envoyer un accusé de réception au déclarant',
+        type: 'MANUAL',
         estPartagee: false,
         statutId: 'A_FAIRE',
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
-        clotureReasonId: null,
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
@@ -211,12 +215,12 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         nom: 'Création de la requête le 20/03/2024',
+        type: 'MANUAL',
         estPartagee: false,
         statutId: 'FAIT',
         createdAt: currentDate,
         updatedAt: currentDate,
         createdById: null,
-        clotureReasonId: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -224,12 +228,12 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         nom: 'Envoyer un accusé de réception au déclarant',
+        type: 'MANUAL',
         estPartagee: false,
         statutId: 'A_FAIRE',
         createdAt: currentDate,
         updatedAt: currentDate,
         createdById: null,
-        clotureReasonId: null,
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
@@ -274,12 +278,12 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         nom: 'Création de la requête le 10/02/2024',
+        type: 'MANUAL',
         estPartagee: false,
         statutId: 'FAIT',
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
-        clotureReasonId: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -287,12 +291,12 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         nom: 'Envoyer un accusé de réception au déclarant',
+        type: 'MANUAL',
         estPartagee: false,
         statutId: 'A_FAIRE',
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
-        clotureReasonId: null,
       };
 
       mockFindUnique.mockResolvedValueOnce(mockRequeteEntite);
@@ -351,12 +355,12 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         nom: 'Création de la requête le 25/12/2024',
+        type: 'MANUAL',
         estPartagee: false,
         statutId: 'FAIT',
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
-        clotureReasonId: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -364,12 +368,12 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         nom: 'Envoyer un accusé de réception au déclarant',
+        type: 'MANUAL',
         estPartagee: false,
         statutId: 'A_FAIRE',
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
-        clotureReasonId: null,
       };
 
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
@@ -399,12 +403,12 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         nom: 'Création de la requête le 01/06/2024',
+        type: 'MANUAL',
         estPartagee: false,
         statutId: 'FAIT',
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
-        clotureReasonId: null,
       };
 
       const mockEtape2: RequeteEtape = {
@@ -412,9 +416,9 @@ describe('RequeteEtapes.service.ts', () => {
         requeteId,
         entiteId,
         nom: 'Envoyer un accusé de réception au déclarant',
+        type: 'MANUAL',
         estPartagee: false,
         statutId: 'A_FAIRE',
-        clotureReasonId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
@@ -442,6 +446,10 @@ describe('RequeteEtapes.service.ts', () => {
         receptionDate: new Date('2024-01-15T10:00:00Z'),
         dematSocialId: 123,
         receptionTypeId: 'type',
+        provenanceId: null,
+        provenancePrecision: null,
+        createdById: null,
+        thirdPartyAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -505,6 +513,10 @@ describe('RequeteEtapes.service.ts', () => {
         receptionDate: new Date('2024-01-15T10:00:00Z'),
         dematSocialId: 123,
         receptionTypeId: 'type',
+        provenanceId: null,
+        provenancePrecision: null,
+        createdById: null,
+        thirdPartyAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

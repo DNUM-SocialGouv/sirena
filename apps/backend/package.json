@@ -51,19 +51,19 @@
   "dependencies": {
     "@file-type/cfbf": "^0.2.2",
     "@file-type/pdf": "^0.2.0",
-    "@hono/node-server": "^1.19.12",
+    "@hono/node-server": "^1.19.13",
     "@hono/standard-validator": "^0.2.2",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
     "@prisma/client-runtime-utils": "^7.6.0",
-    "@scalar/hono-api-reference": "^0.10.5",
+    "@scalar/hono-api-reference": "^0.10.6",
     "@sentry/cli": "^3.3.5",
     "@sentry/node": "^10.47.0",
     "@sirena/backend-utils": "workspace:*",
     "@sirena/common": "workspace:*",
     "@sirena/db": "workspace:*",
     "archiver": "^7.0.1",
-    "bullmq": "^5.72.1",
+    "bullmq": "^5.73.0",
     "fhir": "^4.12.0",
     "file-type": "^22.0.0",
     "graffle": "8.0.0-next.173",
@@ -98,8 +98,8 @@
     "@types/pdfkit": "^0.17.5",
     "@vitest/coverage-v8": "catalog:",
     "prisma": "^7.6.0",
-    "typescript": "~5.9.3",
+    "typescript": "~6.0.2",
     "vitest": "catalog:",
-    "vitest-mock-extended": "^3.1.0"
+    "vitest-mock-extended": "^4.0.0"
   }
 }
