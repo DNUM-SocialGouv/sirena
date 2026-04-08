@@ -144,7 +144,7 @@ describe('upload.middleware.ts', () => {
       const mockContext = createUploadMockContext({
         req: {
           parseBody: vi.fn().mockResolvedValue({
-            file: new File([new Uint8Array(1024 * 1024 * 1024)], 'test-document.pdf', {
+            file: new File([new Uint8Array(201 * 1024 * 1024)], 'test-document.pdf', {
               type: 'application/pdf',
             }),
           }),

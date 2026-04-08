@@ -70,8 +70,6 @@ const getfakeRequeteDto = () => {
     victimeInformeeCommentaire: null,
     commentaire: '1234567890',
     veutGarderAnonymat: null,
-    lienVictimeId: null,
-    estVictime: true,
     aAutrePersonnes: false,
     autrePersonnes: null,
     adresse,
@@ -114,6 +112,7 @@ const getfakeRequeteDto = () => {
         nom: '',
         prenom: '',
         commentaire: 'Comportement inadapté signalé.',
+        autrePrecision: '',
       },
 
       demarchesEngagees: {
@@ -182,8 +181,6 @@ const getMinimalRequeteDto = () => {
       commentaire: null,
       victimeInformeeCommentaire: null,
       veutGarderAnonymat: null,
-      lienVictimeId: null,
-      estVictime: true,
       aAutrePersonnes: false,
       autrePersonnes: null,
     },
@@ -210,6 +207,7 @@ const getMinimalRequeteDto = () => {
           nom: '',
           prenom: '',
           commentaire: '',
+          autrePrecision: '',
         },
         demarchesEngagees: {
           demarches: [],
@@ -426,8 +424,6 @@ describe('requetes.service.ts', () => {
             commentaire: '1234567890',
             victimeInformeeCommentaire: '1234567890',
             veutGarderAnonymat: null,
-            lienVictimeId: null,
-            estVictime: true,
             aAutrePersonnes: false,
             autrePersonnes: '1234567890',
           },
@@ -585,6 +581,7 @@ describe('requetes.service.ts', () => {
         id: '1',
         estNonIdentifiee: null,
         estIdentifie: null,
+        isTuteur: null,
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
         veutGarderAnonymat: null,
@@ -601,7 +598,7 @@ describe('requetes.service.ts', () => {
       });
 
       vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
-        ...fakeRequeteDto.declarant.adresse,
+        ...(fakeRequeteDto.declarant.adresse ?? {}),
         id: '1',
         personneConcerneeId: '1',
         lieuDeSurvenueId: null,
@@ -611,6 +608,7 @@ describe('requetes.service.ts', () => {
         ...fakeRequeteDto.participant,
         id: '2',
         estHandicapee: null,
+        isTuteur: null,
         lienVictimeId: LIEN_VICTIME.PROCHE,
         estNonIdentifiee: null,
         estIdentifie: null,
@@ -631,7 +629,7 @@ describe('requetes.service.ts', () => {
       });
 
       vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
-        ...fakeRequeteDto.declarant.adresse,
+        ...(fakeRequeteDto.declarant.adresse ?? {}),
         id: '2',
         personneConcerneeId: '2',
         lieuDeSurvenueId: null,
@@ -674,6 +672,10 @@ describe('requetes.service.ts', () => {
           prenom: '',
           nom: '',
           civilite: '',
+          finess: null,
+          nomService: null,
+          codePostal: null,
+          ville: null,
         });
 
         vi.mocked(prisma.demarchesEngagees.create).mockResolvedValueOnce({
@@ -694,6 +696,7 @@ describe('requetes.service.ts', () => {
           vi.mocked(prisma.fait.create).mockResolvedValueOnce({
             ...fait,
             situationId: '1',
+            commentaire: '',
             autresPrecisions: '',
           });
 
@@ -838,6 +841,7 @@ describe('requetes.service.ts', () => {
         id: '1',
         estNonIdentifiee: null,
         estIdentifie: null,
+        isTuteur: null,
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
         veutGarderAnonymat: null,
@@ -858,6 +862,7 @@ describe('requetes.service.ts', () => {
         ageId: dto.participant?.ageId ?? null,
         id: '2',
         estHandicapee: null,
+        isTuteur: null,
         lienVictimeId: LIEN_VICTIME.PROCHE,
         estNonIdentifiee: null,
         estIdentifie: null,
@@ -901,6 +906,10 @@ describe('requetes.service.ts', () => {
           prenom: '',
           nom: '',
           civilite: '',
+          finess: null,
+          nomService: null,
+          codePostal: null,
+          ville: null,
         });
 
         vi.mocked(prisma.demarchesEngagees.create).mockResolvedValueOnce({

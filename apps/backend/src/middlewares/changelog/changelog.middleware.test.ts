@@ -30,7 +30,7 @@ describe('changelog.middleware.ts', () => {
       action,
       entity: 'TestEntity',
       getEntityById: () => mockGetEntityById(),
-      getEntityId: (c) => c.req.param('id'),
+      getEntityId: (c) => c.req.param('id') ?? null,
       trackedFields,
     });
 
@@ -170,7 +170,7 @@ describe('changelog.middleware.ts', () => {
         action: ChangeLogAction.UPDATED,
         entity: 'TestEntity',
         getEntityById: () => mockGetEntityById(),
-        getEntityId: (c) => c.req.param('id'),
+        getEntityId: (c) => c.req.param('id') ?? null,
         trackedFields: ['name', 'value', 'active'],
       });
 

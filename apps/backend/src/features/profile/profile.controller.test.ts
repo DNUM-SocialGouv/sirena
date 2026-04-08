@@ -94,8 +94,14 @@ describe('Profile endpoints: /profile', () => {
         { isActive: true } as Awaited<ReturnType<typeof getEntitesByIds>>[number],
       ]);
       vi.mocked(getEntiteChain).mockResolvedValueOnce([
-        { id: 'root-id', nomComplet: 'ARS Normandie', entiteMereId: null, label: 'ARS NOR' },
-        { id: 'entite-service-1', nomComplet: 'UA 76', entiteMereId: 'root-id', label: 'UA 76' },
+        { id: 'root-id', nomComplet: 'ARS Normandie', entiteMereId: null, label: 'ARS NOR', entiteTypeId: 'ARS' },
+        {
+          id: 'entite-service-1',
+          nomComplet: 'UA 76',
+          entiteMereId: 'root-id',
+          label: 'UA 76',
+          entiteTypeId: 'SERVICE',
+        },
       ]);
 
       const res = await client.profile.$get('/');

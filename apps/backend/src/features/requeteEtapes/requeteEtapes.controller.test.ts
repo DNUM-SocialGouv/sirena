@@ -121,9 +121,9 @@ const fakeRequeteEtape: RequeteEtape = {
   statutId: 'A_FAIRE',
   createdAt: new Date(),
   updatedAt: new Date(),
+  type: 'MANUAL',
   estPartagee: false,
   createdById: null,
-  clotureReasonId: null,
 };
 
 const fakeUpdatedRequeteEtape: RequeteEtape = {
@@ -558,12 +558,12 @@ describe('requeteEtapes.controller.ts', () => {
       requeteId: 'requeteId',
       entiteId: 'entiteId',
       nom: 'Etape 1',
+      type: 'MANUAL',
       estPartagee: false,
       statutId: 'A_FAIRE',
       createdAt: new Date(),
       updatedAt: new Date(),
       createdById: null,
-      clotureReasonId: null,
     };
 
     const note: RequeteEtapeNote = {
@@ -585,19 +585,22 @@ describe('requeteEtapes.controller.ts', () => {
     const requeteEtapeWithNotesAndFiles: RequeteEtape & {
       notes: (RequeteEtapeNote & {
         author: { prenom: string; nom: string };
-        uploadedFiles: Pick<UploadedFile, 'id' | 'size' | 'metadata'>[];
+        uploadedFiles: Pick<
+          UploadedFile,
+          'id' | 'size' | 'metadata' | 'status' | 'scanStatus' | 'sanitizeStatus' | 'safeFilePath'
+        >[];
       })[];
-      clotureReason: { label: string } | null;
+      clotureReason: { label: string }[];
       createdBy: { prenom: string; nom: string } | null;
     } = {
       ...requeteEtape,
-      clotureReason: null,
+      clotureReason: [],
       createdBy: null,
       notes: [
         {
           ...note,
           author: { prenom: 'John', nom: 'Doe' },
-          uploadedFiles: [uploadedFile],
+          uploadedFiles: [{ ...uploadedFile, status: '', scanStatus: '', sanitizeStatus: '', safeFilePath: null }],
         },
       ],
     };
@@ -644,9 +647,9 @@ describe('requeteEtapes.controller.ts', () => {
         createdAt: new Date(0),
         updatedAt: new Date(0),
         entiteId: 'e1',
+        type: 'MANUAL',
         estPartagee: false,
         createdById: null,
-        clotureReasonId: null,
       };
 
       vi.mocked(addProcessingEtape).mockResolvedValueOnce(fakeStep);
