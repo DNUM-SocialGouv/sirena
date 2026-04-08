@@ -17,7 +17,8 @@
     border-color 0.3s ease;
 }
 
-.dropZone:hover {
+.dropZone:hover,
+.dropZoneDragging {
   border-color: var(--info-700-700);
 }
 

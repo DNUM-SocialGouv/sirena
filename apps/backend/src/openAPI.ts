@@ -11,9 +11,9 @@ export function setupOpenAPI(app: Hono<AppBindings>, prefix = '/openapi') {
     openAPIRouteHandler(app, {
       documentation: {
         info: {
-          title: 'Sirena backend',
+          title: 'SIRENA backend',
           version: '1.0.0',
-          description: 'Sirena backend API',
+          description: 'SIRENA backend API',
         },
         servers: [
           {

@@ -53,10 +53,10 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
         }
         homeLinkProps={{
           href: props.homeHref,
-          title: 'Accueil - Sirena',
+          title: 'Accueil - SIRENA',
         }}
         serviceTagline=""
-        serviceTitle="Sirena"
+        serviceTitle="SIRENA"
         id={id}
         quickAccessItems={quickAccessItems}
       />

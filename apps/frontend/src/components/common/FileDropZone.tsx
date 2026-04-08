@@ -1,5 +1,5 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { useId } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import { ACCEPTED_FILE_TYPES, FILE_UPLOAD_HINT } from '@/utils/fileHelpers';
 import type { FileValidationError } from '@/utils/fileValidation';
@@ -56,6 +56,9 @@ export function FileDropZone({
     (maxSizeLabel || supportedFormatsLabel
       ? `Taille maximale : ${maxSizeLabel ?? '200 Mo'}. Formats supportés : ${supportedFormatsLabel ?? 'PDF, EML, Word, Excel, PowerPoint, OpenOffice, MSG, CSV, TXT, images (PNG, JPEG, HEIC, WEBP, TIFF)'}.`
       : FILE_UPLOAD_HINT);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounterRef = useRef(0);
+
   const openFileDialog = () => {
     if (!canEdit || isUploading) {
       return;
@@ -67,17 +70,58 @@ export function FileDropZone({
     }
   };
 
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounterRef.current = 0;
+
+    if (isUploading) return;
+
+    const { files } = e.dataTransfer;
+    if (files.length > 0) {
+      onFilesSelect(Array.from(files));
+    }
+  };
+
   return (
     <>
       {canEdit && (
         <div className={className}>
           <button
             type="button"
-            className={styles.dropZone}
+            className={[styles.dropZone, isDragging && styles.dropZoneDragging].filter(Boolean).join(' ')}
             disabled={isUploading}
             aria-describedby={hasGlobalError ? errorMessageId : undefined}
             aria-invalid={hasGlobalError || hasErrors}
             onClick={openFileDialog}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
           >
             <p className={styles.dropZoneTitle}>{title}</p>
             <span className={[fr.cx('fr-btn', 'fr-btn--secondary'), styles.dropZoneButton].join(' ')}>

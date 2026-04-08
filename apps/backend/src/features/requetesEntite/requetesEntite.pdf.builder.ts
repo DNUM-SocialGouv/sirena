@@ -100,7 +100,7 @@ export class RequetePdfBuilder {
         </rdf:Alt>
       </dc:title>
       <dc:language><rdf:Seq><rdf:li>fr-FR</rdf:li></rdf:Seq></dc:language>
-      <dc:creator><rdf:Seq><rdf:li>Sirena</rdf:li></rdf:Seq></dc:creator>
+      <dc:creator><rdf:Seq><rdf:li>SIRENA</rdf:li></rdf:Seq></dc:creator>
       <pdfuaid:part>1</pdfuaid:part>
     </rdf:Description>
   </rdf:RDF>
