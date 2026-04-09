@@ -79,6 +79,8 @@ describe('Profile endpoints: /profile', () => {
           topEntiteId: 'topEntiteId1',
           topEntiteIsActive: true,
           topEntiteTypeId: null,
+          topEntiteRegionLabel: null,
+          topEntiteDepartements: null,
           entiteIds: ['entite-1', 'entite-2'],
           affectationChain: [],
         }),

@@ -2,7 +2,7 @@ import { throwHTTPException401Unauthorized } from '@sirena/backend-utils/helpers
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
-import { getEntiteChain, getEntitesByIds } from '../entites/entites.service.js';
+import { getDepartementsByRegionCode, getEntiteChain, getEntitesByIds } from '../entites/entites.service.js';
 import { getUserById } from '../users/users.service.js';
 import { getProfileRoute } from './profile.route.js';
 
@@ -28,6 +28,11 @@ const app = factoryWithLogs
     const [topEntite] = topEntiteId ? await getEntitesByIds([topEntiteId]) : [];
     const topEntiteIsActive = topEntite?.isActive ?? null;
     const topEntiteTypeId = topEntite?.entiteTypeId ?? null;
+    const topEntiteRegionLabel = topEntite?.regLib ?? null;
+    const topEntiteDepartements =
+      topEntite?.entiteTypeId === 'ARS' && topEntite.regionCode
+        ? await getDepartementsByRegionCode(topEntite.regionCode)
+        : null;
 
     const affectationChain =
       user.entiteId != null
@@ -42,6 +47,8 @@ const app = factoryWithLogs
           topEntiteId,
           topEntiteTypeId,
           topEntiteIsActive,
+          topEntiteRegionLabel,
+          topEntiteDepartements,
           entiteIds,
           entiteIdLevel,
           affectationChain,
