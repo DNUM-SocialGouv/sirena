@@ -14,7 +14,9 @@ import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { CloseRequeteModal, type CloseRequeteModalRef } from './processing/CloseRequeteModal';
 import { CreateNoteDrawer, type CreateNoteDrawerRef } from './processing/CreateNoteDrawer';
 import { EditNoteDrawer, type EditNoteDrawerRef } from './processing/EditNoteDrawer';
+// Les deux modales sont nécessaires : ReopenRequeteModal pour rouvrir, SendAcknowledgmentDrawer pour envoyer l'AR (ticket 343)
 import { ReopenRequeteModal, type ReopenRequeteModalRef } from './processing/ReopenRequeteModal';
+import { SendAcknowledgmentDrawer, type SendAcknowledgmentDrawerRef } from './processing/SendAcknowledgmentDrawer';
 import { OtherEntitiesAffected } from './sections/OtherEntitesAffected';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
@@ -30,6 +32,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const [isAddingStep, setIsAddingStep] = useState(false);
   const createNoteDrawerRef = useRef<CreateNoteDrawerRef>(null);
   const editNoteDrawerRef = useRef<EditNoteDrawerRef>(null);
+  const sendAcknowledgmentDrawerRef = useRef<SendAcknowledgmentDrawerRef>(null);
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
   const closeRequeteButtonRef = useRef<HTMLButtonElement>(null);
   const reopenRequeteModalRef = useRef<ReopenRequeteModalRef>(null);
@@ -70,28 +73,46 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
         <div className={styles['timeline-line']} />
         <CreateStep requestId={requestId} isAddingStep={isAddingStep} setIsAddingStep={setIsAddingStep} />
         <QueryStateHandler query={queryProcessingSteps}>
-          {({ data }) =>
-            data.data.map((step, index: number) => {
+          {({ data }) => {
+            // Détermine si c'est une requête demat.social (AR envoyé automatiquement)
+            const isDematSocialRequest = !!requestQuery.data?.requete?.dematSocialId;
+
+            return data.data.map((step, index: number) => {
+              const isAutomaticallyUpdated =
+                isDematSocialRequest &&
+                step.createdBy === null &&
+                step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT &&
+                step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
               const isDisabled =
                 index === data.data.length - 1 ||
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ||
-                step.type !== REQUETE_ETAPE_TYPES.MANUAL;
+                isAutomaticallyUpdated;
+              // L'AR est envoyable manuellement uniquement pour les requêtes non-demat, étape A_FAIRE (ticket 343)
+              const isAcknowledgmentSendable =
+                !isDematSocialRequest &&
+                step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
+                step.statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
               return (
                 <Step
                   key={step.id}
                   requestId={requestId}
                   {...step}
                   disabled={isDisabled}
+                  isAcknowledgmentSendable={isAcknowledgmentSendable}
+                  onSendAcknowledgment={
+                    isAcknowledgmentSendable ? () => sendAcknowledgmentDrawerRef.current?.openDrawer(step) : undefined
+                  }
                   openEdit={handleOpenEdit}
                   openEditNote={handleOpenEditNote}
                 />
               );
-            })
-          }
+            });
+          }}
         </QueryStateHandler>
       </div>
       <CreateNoteDrawer ref={createNoteDrawerRef} />
       <EditNoteDrawer ref={editNoteDrawerRef} />
+      <SendAcknowledgmentDrawer ref={sendAcknowledgmentDrawerRef} />
       <CloseRequeteModal
         ref={closeRequeteModalRef}
         requestId={requestId}
