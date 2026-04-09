@@ -1,0 +1,17 @@
+.departement-filter__button {
+  white-space: nowrap;
+}
+
+.departement-filter__dropdown {
+  min-width: 260px;
+  padding: 1rem;
+}
+
+.departement-filter__region-label {
+  margin-bottom: 0.25rem;
+}
+
+.departement-filter__hint {
+  color: var(--text-mention-grey);
+  margin-bottom: 0.5rem;
+}
