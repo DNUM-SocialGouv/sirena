@@ -125,13 +125,41 @@ export const enrichSituationWithTraitementDesFaits = async (situation: Situation
   };
 };
 
-// TODO handle entiteIds
-export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
-  const { offset = 0, limit, sort = 'requete.createdAt', order = 'desc', search, entiteId } = query;
+// Mirrors the extractDptCode logic from getRequetesEntite for consistency.
+// For Corsica (2A/2B), resolves via InseePostal since they can't be derived from postal code prefix.
+const buildDeptPostalFilter = async (deptCodes: string[]): Promise<Prisma.LieuDeSurvenueWhereInput | null> => {
+  const corseaCodes = deptCodes.filter((c) => c === '2A' || c === '2B');
+  const regularCodes = deptCodes.filter((c) => c !== '2A' && c !== '2B');
 
+  const orConditions: Prisma.LieuDeSurvenueWhereInput[] = regularCodes.map((code) => ({
+    OR: [{ codePostal: { startsWith: code } }, { adresse: { codePostal: { startsWith: code } } }],
+  }));
+
+  if (corseaCodes.length > 0) {
+    const rows = await prisma.inseePostal.findMany({
+      where: { commune: { dptCodeActuel: { in: corseaCodes } } },
+      select: { codePostal: true },
+      distinct: ['codePostal'],
+    });
+    const corseCPs = rows.map((r) => r.codePostal);
+    if (corseCPs.length > 0) {
+      orConditions.push({
+        OR: [{ codePostal: { in: corseCPs } }, { adresse: { codePostal: { in: corseCPs } } }],
+      });
+    }
+  }
+
+  return orConditions.length === 0 ? null : { OR: orConditions };
+};
+
+const buildRequetesEntiteWhere = async (
+  entiteIds: string[] | null,
+  query: { search?: string; entiteId?: string; departementCodes?: string },
+): Promise<Prisma.RequeteEntiteWhereInput> => {
+  const { search, entiteId, departementCodes } = query;
   const searchConditions: Prisma.RequeteEntiteWhereInput = search ? createSearchConditionsForRequeteEntite(search) : {};
-
   const andFilters: Prisma.RequeteEntiteWhereInput[] = [];
+
   if (Array.isArray(entiteIds) && entiteIds.length > 0) {
     andFilters.push({ entiteId: { in: entiteIds } });
   }
@@ -150,11 +178,30 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
       },
     });
   }
+  if (departementCodes) {
+    const codes = departementCodes
+      .split(',')
+      .map((c) => c.trim())
+      .filter(Boolean);
+    const lieuFilter = codes.length > 0 ? await buildDeptPostalFilter(codes) : null;
+    if (lieuFilter) {
+      andFilters.push({
+        requete: { situations: { some: { lieuDeSurvenue: lieuFilter } } },
+      });
+    }
+  }
 
-  const where: Prisma.RequeteEntiteWhereInput = {
+  return {
     ...searchConditions,
     ...(andFilters.length > 0 ? { AND: andFilters } : {}),
   };
+};
+
+// TODO handle entiteIds
+export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRequetesEntiteQuery = {}) => {
+  const { offset = 0, limit, sort = 'requete.createdAt', order = 'desc' } = query;
+
+  const where = await buildRequetesEntiteWhere(entiteIds, query);
 
   const [rawData, total] = await Promise.all([
     prisma.requeteEntite.findMany({
@@ -272,6 +319,21 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     data,
     total,
   };
+};
+
+export const getRequetesCountsByDepartement = async (
+  entiteIds: string[] | null,
+  departementCodes: string[],
+  baseQuery: { search?: string; entiteId?: string },
+) => {
+  const results = await Promise.all(
+    departementCodes.map(async (code) => {
+      const where = await buildRequetesEntiteWhere(entiteIds, { ...baseQuery, departementCodes: code });
+      const count = await prisma.requeteEntite.count({ where });
+      return { code, count };
+    }),
+  );
+  return results;
 };
 
 export const hasAccessToRequete = async ({ requeteId, entiteId }: RequeteEntiteKey) => {
