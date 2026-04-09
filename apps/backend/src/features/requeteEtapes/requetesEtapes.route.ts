@@ -48,3 +48,10 @@ export const deleteRequeteEtapeRoute = openApiProtectedRoute({
     ...openApiDeleteResponse(z.string(), 204, 'RequeteEtape deleted successfully'),
   },
 });
+
+export const sendAcknowledgmentRoute = openApiProtectedRoute({
+  description: 'Send an acknowledgment email to the declarant for a manual request',
+  responses: {
+    ...openApiResponse(RequeteEtapeSchema),
+  },
+});

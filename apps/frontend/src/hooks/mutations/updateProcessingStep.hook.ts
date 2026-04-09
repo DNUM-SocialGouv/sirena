@@ -7,6 +7,7 @@ import {
   addProcessingStepNote,
   deleteProcessingStep,
   deleteProcessingStepNote,
+  sendAcknowledgment,
   type UpdateProcessingStepNoteData,
   updateProcessingStepNote,
   updateProcessingStepStatus,
@@ -100,6 +101,22 @@ export const useDeleteProcessingStep = (requestId: string) => {
     mutationFn: async ({ id }: DeleteProcessingStepParams) => {
       return deleteProcessingStep(id);
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
+    },
+  });
+};
+
+type SendAcknowledgmentParams = {
+  id: string;
+  comment?: string;
+};
+
+export const useSendAcknowledgment = (requestId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, comment }: SendAcknowledgmentParams) => sendAcknowledgment(id, { comment }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
     },

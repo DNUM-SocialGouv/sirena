@@ -2,8 +2,9 @@ import {
   throwHTTPException400BadRequest,
   throwHTTPException403Forbidden,
   throwHTTPException404NotFound,
+  throwHTTPException409Conflict,
 } from '@sirena/backend-utils/helpers';
-import { REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import { streamFileResponse, streamSafeFileResponse } from '../../helpers/file.js';
@@ -14,6 +15,11 @@ import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import {
+  buildAcknowledgmentMessageText,
+  sendManualAcknowledgmentEmail,
+} from '../declarants/declarants.notification.service.js';
+import { getEntitesByRequeteId } from '../entites/entites.service.js';
+import {
   getRequeteEntiteById,
   hasAccessToRequete,
   updateStatusRequete,
@@ -22,11 +28,13 @@ import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
 import {
   addProcessingStepRoute,
   deleteRequeteEtapeRoute,
+  sendAcknowledgmentRoute,
   updateRequeteEtapeNomRoute,
   updateRequeteEtapeStatutRoute,
 } from './requetesEtapes.route.js';
 import {
   AddProcessingStepBodySchema,
+  SendAcknowledgmentBodySchema,
   UpdateRequeteEtapeNomSchema,
   UpdateRequeteEtapeStatutSchema,
 } from './requetesEtapes.schema.js';
@@ -172,7 +180,10 @@ const app = factoryWithLogs
         });
       }
 
-      const hasAccess = await hasAccessToRequete({ requeteId, entiteId: topEntiteId });
+      const hasAccess = await hasAccessToRequete({
+        requeteId,
+        entiteId: topEntiteId,
+      });
 
       if (!hasAccess) {
         throwHTTPException404NotFound('Requete entite not found', {
@@ -398,6 +409,118 @@ const app = factoryWithLogs
 
       logger.info({ requeteEtapeId: id, userId }, 'RequeteEtape deleted successfully');
       return c.body(null, 204);
+    },
+  )
+
+  .get('/:id/acknowledgment-message', async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const topEntiteId = c.get('topEntiteId');
+
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', { res: c.res });
+    }
+
+    const requeteEtape = await getRequeteEtapeById(id);
+    if (!requeteEtape) {
+      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+    }
+
+    if (topEntiteId !== requeteEtape.entiteId) {
+      throwHTTPException403Forbidden('You are not allowed to access this requete etape', { res: c.res });
+    }
+
+    const hasAccessToReq = await hasAccessToRequete({
+      requeteId: requeteEtape.requeteId,
+      entiteId: topEntiteId,
+    });
+    if (!hasAccessToReq) {
+      throwHTTPException403Forbidden('You are not allowed to access this requete', { res: c.res });
+    }
+
+    const entites = await getEntitesByRequeteId(requeteEtape.requeteId);
+    const message = buildAcknowledgmentMessageText(requeteEtape.requeteId, entites);
+
+    const requete = await getRequeteEntiteById(requeteEtape.requeteId, topEntiteId);
+    const declarantEmail = requete?.requete?.declarant?.identite?.email ?? null;
+
+    logger.info({ requeteEtapeId: id }, 'Acknowledgment message preview fetched');
+
+    return c.json({ data: { message, declarantEmail } });
+  })
+
+  .post(
+    '/:id/send-acknowledgment',
+    sendAcknowledgmentRoute,
+    zValidator('json', SendAcknowledgmentBodySchema),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const body = c.req.valid('json');
+      const userId = c.get('userId');
+      const topEntiteId = c.get('topEntiteId');
+
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to perform this action without topEntiteId.', {
+          res: c.res,
+        });
+      }
+
+      const requeteEtape = await getRequeteEtapeById(id);
+
+      if (!requeteEtape) {
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+      }
+
+      if (topEntiteId !== requeteEtape.entiteId) {
+        throwHTTPException403Forbidden('You are not allowed to act on this requete etape', { res: c.res });
+      }
+
+      const hasAccessToReq = await hasAccessToRequete({
+        requeteId: requeteEtape.requeteId,
+        entiteId: topEntiteId,
+      });
+
+      if (!hasAccessToReq) {
+        throwHTTPException403Forbidden('You are not allowed to access this requete', { res: c.res });
+      }
+
+      if (requeteEtape.type !== REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
+        throwHTTPException400BadRequest("Cette étape n'est pas une étape d'accusé de réception.", { res: c.res });
+      }
+
+      if (requeteEtape.statutId !== REQUETE_ETAPE_STATUT_TYPES.A_FAIRE) {
+        throwHTTPException409Conflict("L'accusé de réception a déjà été envoyé pour cette étape.", { res: c.res });
+      }
+
+      const requeteForEmail = await getRequeteEntiteById(requeteEtape.requeteId, topEntiteId);
+      if (!requeteForEmail?.requete?.declarant?.identite?.email) {
+        throwHTTPException400BadRequest(
+          "Le déclarant n'a pas d'adresse e-mail renseignée. Veuillez la renseigner avant d'envoyer l'accusé de réception.",
+          { res: c.res },
+        );
+      }
+
+      try {
+        await sendManualAcknowledgmentEmail({
+          etapeId: id,
+          requeteId: requeteEtape.requeteId,
+          entiteId: topEntiteId,
+          userId,
+          comment: body.comment,
+        });
+      } catch (error) {
+        if (error instanceof Error && (error as unknown as { code: string }).code === 'STEP_ALREADY_PROCESSED') {
+          throwHTTPException409Conflict("L'accusé de réception a déjà été envoyé pour cette étape.", { res: c.res });
+        }
+        throw error;
+      }
+
+      const updatedEtape = await getRequeteEtapeById(id);
+
+      logger.info({ requeteEtapeId: id, userId }, 'Manual acknowledgment email sent successfully');
+
+      return c.json({ data: updatedEtape });
     },
   );
 
