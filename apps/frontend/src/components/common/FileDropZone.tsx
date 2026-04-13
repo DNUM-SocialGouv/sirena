@@ -37,7 +37,7 @@ export function FileDropZone({
   inputRef,
   multiple = true,
   accept = ACCEPTED_FILE_TYPES,
-  title = 'Sélectionner un fichier ou glisser-le ici',
+  title = 'Sélectionner ou glisser un fichier à joindre',
   buttonLabel = 'Sélectionner un fichier',
   emptyMessage = 'Aucun fichier sélectionné',
   hint,

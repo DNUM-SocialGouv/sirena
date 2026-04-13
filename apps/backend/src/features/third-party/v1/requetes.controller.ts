@@ -31,7 +31,7 @@ const app = factoryWithLogs
     const requete = await createRequeteFromThirdParty({
       thirdPartyAccountId: apiKey.account.id,
       receptionDate: payload.receptionDate || new Date(),
-      receptionTypeId: RECEPTION_TYPE.TELEPHONE,
+      receptionTypeId: RECEPTION_TYPE.PLATEFORME,
       declarant: payload.declarant,
       victime: payload.victime,
       situations: payload.situations,

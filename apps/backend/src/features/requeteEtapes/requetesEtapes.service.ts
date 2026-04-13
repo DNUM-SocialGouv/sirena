@@ -21,7 +21,6 @@ export const ACKNOWLEDGMENT_STEP_NAME = 'Envoyer un accusé de réception au dé
 export const createDefaultRequeteEtapes = async (
   requeteId: string,
   entiteId: string,
-  receptionDate: Date,
   tx?: Prisma.TransactionClient,
   changedById?: string | null,
 ) => {
@@ -39,6 +38,7 @@ export const createDefaultRequeteEtapes = async (
       requete: {
         select: {
           dematSocialId: true,
+          createdAt: true,
           createdBy: {
             select: {
               prenom: true,
@@ -66,14 +66,15 @@ export const createDefaultRequeteEtapes = async (
     return null;
   }
 
-  const formattedReceptionDate = formatDateFr(receptionDate ?? new Date());
+  const creationDate = requeteEntite.requete?.createdAt ?? new Date();
+  const formattedCreationDate = formatDateFr(creationDate);
 
   const isAutomaticCreation = requeteEntite.requete?.dematSocialId != null;
   const createdBy = requeteEntite.requete?.createdBy;
 
   const creationStepName = isAutomaticCreation
-    ? `${AUTOMATIC_CREATION_STEP_NAME_PREFIX} ${formattedReceptionDate}`
-    : `${CREATION_STEP_NAME_PREFIX} ${formattedReceptionDate}${
+    ? `${AUTOMATIC_CREATION_STEP_NAME_PREFIX} ${formattedCreationDate}`
+    : `${CREATION_STEP_NAME_PREFIX} ${formattedCreationDate}${
         createdBy ? ` par ${capitalizeFirst(createdBy.prenom)} ${capitalizeFirst(createdBy.nom)}` : ''
       }`;
 

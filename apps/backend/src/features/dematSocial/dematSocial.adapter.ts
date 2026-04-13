@@ -237,7 +237,7 @@ const getDemarchesEngagees = (
   const demarchesEngagees = {
     demarches: demarches.filter((d) => d !== DS_DEMARCHE_ENGAGEE.AUCUNE),
     dateContactEtablissement: getDateByChamps(champsById[mapping.demarchesEngageesDateContactEtablissement.id]),
-    etablissementARepondu: getBooleanOrNull(champsById[mapping.demarchesEngageesEtablissementARepondu.id]) || false,
+    etablissementARepondu: getBooleanOrNull(champsById[mapping.demarchesEngageesEtablissementARepondu.id]),
     organisme: champsById[mapping.demarchesEngageesAutre.id]?.stringValue ?? '',
     commentaire: '',
     datePlainte: getDateByChamps(champsById[mapping.demarcheEngageDatePlainte.id]),
@@ -485,8 +485,10 @@ const getFait = (champsById: MappedChamp | MappedRepetitionChamp, mapping: Mappi
 const getVictime = (champsById: MappedChamp, mandataire: Mandataire, demandeur: Demandeur) => {
   const estVictimeChamp = champsById[rootMapping.estVictime.id];
   const estVictime = getBooleanOrNull(estVictimeChamp, rootMapping.estVictime.options);
-  const aAutrePersonnes =
-    getBooleanOrNull(champsById[rootMapping.aAutreVictimes.id], rootMapping.aAutreVictimes.options) ?? false;
+  const aAutrePersonnes = getBooleanOrNull(
+    champsById[rootMapping.aAutreVictimes.id],
+    rootMapping.aAutreVictimes.options,
+  );
   const autrePersonnes = champsById[rootMapping.autreVictimes.id]?.stringValue ?? '';
 
   if (estVictime === true) {

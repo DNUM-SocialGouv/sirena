@@ -250,10 +250,10 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     );
   });
 
-  it('should send acknowledgment email for TELEPHONE reception type', async () => {
+  it('should send acknowledgment email for PLATEFORME reception type', async () => {
     mockedPrismaRequete.findUnique.mockResolvedValueOnce({
       id: 'req1',
-      receptionTypeId: RECEPTION_TYPE.TELEPHONE,
+      receptionTypeId: RECEPTION_TYPE.PLATEFORME,
       declarant: {
         identite: { email: 'jane@example.com', prenom: 'Jane', nom: 'Smith' },
       },
