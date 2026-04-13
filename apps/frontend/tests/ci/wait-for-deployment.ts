@@ -121,7 +121,7 @@ async function waitForDeployment() {
   let frontendReady = false;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const delay = Math.min(INITIAL_DELAY_MS * Math.pow(1.5, Math.min(attempt - 1, 10)), MAX_DELAY_MS);
+    const delay = Math.min(INITIAL_DELAY_MS * 1.5 ** Math.min(attempt - 1, 10), MAX_DELAY_MS);
 
     console.log(`\n🔄 Attempt ${attempt}/${MAX_ATTEMPTS}`);
 
