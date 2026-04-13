@@ -34,7 +34,7 @@ export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
   veutGarderAnonymat:
     declarantData.consentCommuniquerIdentite === undefined ? undefined : !declarantData.consentCommuniquerIdentite,
   isTuteur: declarantData.isTuteur ?? undefined,
-  estSignalementProfessionnel: declarantData.estSignalementProfessionnel || false,
+  estSignalementProfessionnel: declarantData.estSignalementProfessionnel ?? null,
   estVictime: declarantData.estPersonneConcernee || false,
   commentaire: declarantData.autresPrecisions || '',
   lienVictimeId:
@@ -68,10 +68,10 @@ export const mapDeclarantToPrismaCreate = (declarantData: DeclarantInput) => ({
 });
 
 export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConcerneeInput) => ({
-  estHandicapee: participantData.estHandicapee || false,
+  estHandicapee: participantData.estHandicapee ?? undefined,
   veutGarderAnonymat:
     participantData.consentCommuniquerIdentite === undefined ? undefined : !participantData.consentCommuniquerIdentite,
-  estVictimeInformee: participantData.estVictimeInformee || false,
+  estVictimeInformee: participantData.estVictimeInformee ?? undefined,
   victimeInformeeCommentaire: participantData.victimeInformeeCommentaire || '',
   autrePersonnes: participantData.autrePersonnes || '',
   aAutrePersonnes: participantData.aAutrePersonnes,

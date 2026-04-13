@@ -6,6 +6,7 @@ import type { SituationData } from '@sirena/common/schemas';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { useProfile } from '@/hooks/queries/profile.hook';
+import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import noteStyles from '@/routes/_auth/_user/request.$requestId.module.css';
 import type { FileInfo } from '@/utils/fileHelpers';
 import { ACCEPTED_FILE_TYPES, FILE_UPLOAD_HINT, formatFileSize } from '@/utils/fileHelpers';
@@ -46,6 +47,8 @@ export function AttachedFiles({
       }),
     [],
   );
+
+  const { registerTrigger } = useModalFocusRestore([deleteFileModal.id]);
 
   const handleFileSelect = useCallback(
     (files: File[]) => {
@@ -153,7 +156,10 @@ export function AttachedFiles({
                           title="Supprimer le fichier"
                           type="button"
                           className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
-                          onClick={(event) => handleDeleteExistingFile(file, event)}
+                          onClick={(event) => {
+                            registerTrigger(event.currentTarget);
+                            handleDeleteExistingFile(file, event);
+                          }}
                         >
                           <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
                         </Button>

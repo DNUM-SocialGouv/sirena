@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom';
 
 // Configuration basique pour les tests sans dépendances externes
-global.ResizeObserver = class ResizeObserver {
+globalThis.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}

@@ -100,7 +100,7 @@ export class RequetePdfBuilder {
         </rdf:Alt>
       </dc:title>
       <dc:language><rdf:Seq><rdf:li>fr-FR</rdf:li></rdf:Seq></dc:language>
-      <dc:creator><rdf:Seq><rdf:li>Sirena</rdf:li></rdf:Seq></dc:creator>
+      <dc:creator><rdf:Seq><rdf:li>SIRENA</rdf:li></rdf:Seq></dc:creator>
       <pdfuaid:part>1</pdfuaid:part>
     </rdf:Description>
   </rdf:RDF>
@@ -179,6 +179,17 @@ export class RequetePdfBuilder {
         () => {
           this.doc.moveDown(0.3).fontSize(11).font('Roboto-Bold').text(title);
           this.doc.moveDown(0.2);
+        },
+      ]),
+    );
+    return this;
+  }
+
+  paragraph(text: string): this {
+    this.current.add(
+      this.doc.struct('P', [
+        () => {
+          this.doc.fontSize(12).font('Roboto').text(text);
         },
       ]),
     );

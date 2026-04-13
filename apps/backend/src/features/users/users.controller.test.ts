@@ -87,6 +87,7 @@ describe('Users endpoints: /users', () => {
       pcData: {},
       statutId: STATUT_TYPES.ACTIF,
       entiteId: null,
+      entite: null,
       role: { id: ROLES.NATIONAL_STEERING, label: 'Admin' },
     },
     {
@@ -102,6 +103,7 @@ describe('Users endpoints: /users', () => {
       pcData: {},
       statutId: STATUT_TYPES.INACTIF,
       entiteId: null,
+      entite: null,
       role: { id: ROLES.READER, label: 'Admin' },
     },
   ];

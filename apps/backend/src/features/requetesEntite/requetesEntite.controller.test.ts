@@ -128,6 +128,9 @@ export const fakeRequeteEntite = {
     email: 'entite@entite.fr',
     nomComplet: 'Entite Complete',
     emailDomain: 'entite.fr',
+    emailContactUsager: '',
+    telContactUsager: '',
+    adresseContactUsager: '',
     organizationalUnit: 'Unit 1',
     entiteTypeId: 'type1',
     entiteMereId: null,
@@ -147,6 +150,9 @@ export const fakeRequeteEntite = {
     receptionDate: new Date(),
     dematSocialId: 123,
     receptionTypeId: 'receptionTypeId',
+    provenanceId: null,
+    provenancePrecision: null,
+    thirdPartyAccountId: null,
     declarant: null,
     participant: null,
     situations: [],
@@ -174,6 +180,9 @@ describe('RequetesEntite endpoints: /', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
+        provenanceId: null,
+        provenancePrecision: null,
+        thirdPartyAccountId: null,
         commentaire: 'Commentaire',
         receptionDate: new Date(),
         dematSocialId: 123,
@@ -188,6 +197,7 @@ describe('RequetesEntite endpoints: /', () => {
           estNonIdentifiee: false,
           estHandicapee: false,
           estIdentifie: true,
+          isTuteur: null,
           estVictime: null,
           estVictimeInformee: null,
           victimeInformeeCommentaire: '',
@@ -495,7 +505,7 @@ describe('RequetesEntite endpoints: /', () => {
   describe('PATCH /:id/statut', () => {
     it('returns 403 when user cannot update statut', async () => {
       vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
-      vi.mocked(getEntitesByIds).mockResolvedValueOnce([{ isActive: false }]);
+      vi.mocked(getEntitesByIds).mockResolvedValueOnce([{ ...fakeRequeteEntite.entite, isActive: false }]);
 
       const res = await client[':id'].statut.$patch({
         param: { id: 'requeteId' },
@@ -526,6 +536,7 @@ describe('RequetesEntite endpoints: /', () => {
       noteId: 'note123',
       etape: {
         id: 'etape123',
+        type: 'standard',
         nom: 'Requête clôturée le 01/01/2024',
         estPartagee: false,
         statutId: 'CLOTUREE',
@@ -579,6 +590,7 @@ describe('RequetesEntite endpoints: /', () => {
         noteId: 'note123',
         etape: {
           id: 'etape123',
+          type: 'standard',
           nom: 'Requête clôturée le 01/01/2024',
           estPartagee: false,
           statutId: 'CLOTUREE',
@@ -886,8 +898,9 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(200);
       const body = await res.json();
-      expect(body.data.provenanceId).toBe('MINISTERES');
-      expect(body.data.provenancePrecision).toBe('Ministère de la Santé');
+      const data = (body as { data: Record<string, string | null> }).data;
+      expect(data.provenanceId).toBe('MINISTERES');
+      expect(data.provenancePrecision).toBe('Ministère de la Santé');
 
       expect(updateDateAndTypeRequete).toHaveBeenCalledWith(
         'requeteId',

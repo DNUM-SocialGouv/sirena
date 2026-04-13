@@ -60,6 +60,9 @@ describe('Entites endpoints: /entites', () => {
     id: '2',
     label: 'b',
     email: 'test2@domain.fr',
+    emailContactUsager: '',
+    telContactUsager: '',
+    adresseContactUsager: '',
     entiteTypeId: 'ENTITE_TYPE_A',
     entiteMereId: null,
     nomComplet: 'Entite B',
@@ -130,8 +133,22 @@ describe('Entites endpoints: /entites', () => {
 
     it('should return the entity chain for given ID', async () => {
       const mockData = [
-        { id: '1', nomComplet: 'Root', disabled: true, entiteMereId: null, label: 'Root' },
-        { id: '2', nomComplet: 'Child', disabled: false, entiteMereId: '1', label: 'Child' },
+        {
+          id: '1',
+          nomComplet: 'Root',
+          disabled: true,
+          entiteMereId: null,
+          label: 'Root',
+          entiteTypeId: 'ENTITE_TYPE_A',
+        },
+        {
+          id: '2',
+          nomComplet: 'Child',
+          disabled: false,
+          entiteMereId: '1',
+          label: 'Child',
+          entiteTypeId: 'ENTITE_TYPE_A',
+        },
       ];
 
       vi.mocked(getEditableEntitiesChain).mockResolvedValueOnce(mockData);

@@ -437,8 +437,22 @@ describe('assignEntitesToRequeteTask', () => {
     const mockArsIdf = {
       id: 'ars-idf-1',
       nomComplet: 'ARS Île-de-France',
+      label: 'ARS IDF',
+      email: '',
+      emailContactUsager: '',
+      telContactUsager: '',
+      adresseContactUsager: '',
+      emailDomain: '',
+      organizationalUnit: '',
+      isActive: true,
+      entiteTypeId: 'ARS',
+      entiteMereId: null,
+      departementCode: null,
+      ctcdCode: null,
+      regionCode: '11',
+      regLib: null,
+      dptLib: null,
     };
-
     vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);
     (buildSituationContext as ReturnType<typeof vi.fn>).mockReturnValue({ postalCode: '75001' });
     (runDecisionTree as ReturnType<typeof vi.fn>).mockResolvedValue(['ARS']);
@@ -541,11 +555,41 @@ describe('assignEntitesToRequeteTask', () => {
     const mockEntiteCD = {
       id: 'entite-cd-1',
       nomComplet: 'CD - Paris',
+      label: 'CD 75',
+      email: '',
+      emailContactUsager: '',
+      telContactUsager: '',
+      adresseContactUsager: '',
+      emailDomain: '',
+      organizationalUnit: '',
+      isActive: true,
+      entiteTypeId: 'CD',
+      entiteMereId: null,
+      departementCode: '75',
+      ctcdCode: null,
+      regionCode: null,
+      regLib: null,
+      dptLib: null,
     };
 
     const mockEntiteDD = {
       id: 'entite-dd-1',
       nomComplet: 'DDETS - Paris',
+      label: 'DDETS 75',
+      email: '',
+      emailContactUsager: '',
+      telContactUsager: '',
+      adresseContactUsager: '',
+      emailDomain: '',
+      organizationalUnit: '',
+      isActive: true,
+      entiteTypeId: 'DD',
+      entiteMereId: null,
+      departementCode: '75',
+      ctcdCode: null,
+      regionCode: null,
+      regLib: null,
+      dptLib: null,
     };
 
     vi.mocked(prisma.requete.findFirst).mockResolvedValue(mockRequete as never);

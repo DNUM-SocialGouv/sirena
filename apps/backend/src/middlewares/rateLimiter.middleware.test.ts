@@ -35,7 +35,7 @@ describe('rateLimiter middleware', () => {
     const { connection } = await import('../config/redis.js');
     const middlewareHelper = await import('../helpers/middleware.js');
     const rateLimiterModule = await import('./rateLimiter.middleware.js');
-    redis = connection;
+    redis = connection as unknown as typeof redis;
     extractClientIp = middlewareHelper.extractClientIp as ReturnType<typeof vi.fn>;
     rateLimiter = rateLimiterModule.rateLimiter;
 
@@ -43,7 +43,7 @@ describe('rateLimiter middleware', () => {
 
     app = new Hono();
     app.use('*', (c, next) => {
-      c.set('logger', {
+      (c as unknown as { set: (key: string, value: unknown) => void }).set('logger', {
         warn: vi.fn(),
         error: vi.fn(),
         debug: vi.fn(),
@@ -60,7 +60,7 @@ describe('rateLimiter middleware', () => {
       return c.json({ success: true }, 200);
     });
     app.onError((err) => {
-      const e = err as Record<string, unknown>;
+      const e = err as unknown as Record<string, unknown>;
       if (typeof e.getResponse === 'function' && typeof e.status === 'number') {
         return (err as { getResponse: () => Response }).getResponse();
       }
@@ -131,7 +131,7 @@ describe('rateLimiter middleware', () => {
     const banCall = setexCalls.find((call: unknown[]) => call[0] === banKey('192.168.1.1'));
 
     expect(banCall).toBeDefined();
-    const banData = JSON.parse(banCall[2]);
+    const banData = JSON.parse(banCall?.[2]);
     expect(banData.banCount).toBe(3);
   });
 

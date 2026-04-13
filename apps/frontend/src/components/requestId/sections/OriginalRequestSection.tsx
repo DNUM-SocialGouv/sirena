@@ -311,13 +311,13 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                 className={style.editButton}
                 iconId="fr-icon-pencil-line"
                 priority="tertiary no outline"
-                title={dateValue && typeValue ? 'Éditer' : 'Compléter'}
+                title={dateValue && typeValue ? 'Modifier' : 'Compléter'}
                 nativeButtonProps={{
-                  'aria-label': dateValue && typeValue ? 'Éditer' : 'Compléter',
+                  'aria-label': dateValue && typeValue ? 'Modifier' : 'Compléter',
                 }}
                 onClick={() => setIsEdit(true)}
               >
-                <span className="fr-sr-only">{dateValue && typeValue ? 'Éditer' : 'Compléter'}</span>
+                <span className="fr-sr-only">{dateValue && typeValue ? 'Modifier' : 'Compléter'}</span>
               </Button>
             )}
           </div>

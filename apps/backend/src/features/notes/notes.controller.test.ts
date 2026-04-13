@@ -105,9 +105,9 @@ const fakeRequeteEtape: RequeteEtape = {
   statutId: 'A_FAIRE',
   createdAt: new Date(),
   updatedAt: new Date(),
+  type: 'MANUAL',
   estPartagee: false,
   createdById: 'user1',
-  clotureReasonId: null,
 };
 
 describe('notes.controller.ts', () => {

@@ -34,7 +34,7 @@ export function AppFooter() {
       ]}
       homeLinkProps={{
         href: '/',
-        title: 'Retour à l’accueil du site - Sirena - Ministère des Solidarités et de la Santé',
+        title: 'Retour à l’accueil du site - SIRENA - Ministère des Solidarités et de la Santé',
       }}
     />
   );

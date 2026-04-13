@@ -12,8 +12,9 @@ if (!EXPECTED_VERSION) {
   process.exit(1);
 }
 
-const MAX_ATTEMPTS = 60; // 5 minutes
-const DELAY_MS = 5000; // 5 seconds
+const MAX_ATTEMPTS = 120; // 10 minutes
+const INITIAL_DELAY_MS = 2000;
+const MAX_DELAY_MS = 10000;
 
 async function checkBackendVersion(): Promise<boolean> {
   try {
@@ -116,24 +117,33 @@ async function waitForDeployment() {
   console.log('🚀 Waiting for deployment to be ready...');
   console.log(`Expected version: ${EXPECTED_VERSION}`);
 
+  let backendReady = false;
+  let frontendReady = false;
+
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const delay = Math.min(INITIAL_DELAY_MS * Math.pow(1.5, Math.min(attempt - 1, 10)), MAX_DELAY_MS);
+
     console.log(`\n🔄 Attempt ${attempt}/${MAX_ATTEMPTS}`);
 
-    const isReady = await checkBothVersions();
-    if (isReady) {
+    if (!backendReady) {
+      backendReady = await checkBackendVersion();
+    }
+    if (!frontendReady) {
+      frontendReady = await checkFrontendVersion();
+    }
+
+    if (backendReady && frontendReady) {
       console.log('🎉 Deployment is ready! Starting e2e tests...');
       process.exit(0);
     }
 
     if (attempt < MAX_ATTEMPTS) {
-      console.log(`⏸️  Waiting ${DELAY_MS / 1000}s before next attempt...`);
-      await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
+      console.log(`⏸️  Waiting ${(delay / 1000).toFixed(1)}s before next attempt...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
-  console.error(
-    `❌ Deployment not ready after ${MAX_ATTEMPTS} attempts (${(MAX_ATTEMPTS * DELAY_MS) / 60000} minutes)`,
-  );
+  console.error(`❌ Deployment not ready after ${MAX_ATTEMPTS} attempts (~10 minutes)`);
   console.error('This might indicate a deployment issue or the version endpoint is not working correctly.');
   process.exit(1);
 }

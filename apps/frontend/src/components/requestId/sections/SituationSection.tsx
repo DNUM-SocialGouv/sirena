@@ -442,9 +442,11 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
           <>
             <SectionTitle level={4}>Période des faits</SectionTitle>
             <p className={fr.cx('fr-mb-3w')}>
-              {fait.dateDebut && `Du ${new Date(fait.dateDebut).toLocaleDateString('fr-FR')}`}
-              {fait.dateDebut && fait.dateFin && ' '}
-              {fait.dateFin && `au ${new Date(fait.dateFin).toLocaleDateString('fr-FR')}`}
+              {fait.dateDebut && !fait.dateFin
+                ? `Depuis le ${new Date(fait.dateDebut).toLocaleDateString('fr-FR')}`
+                : fait.dateDebut && fait.dateFin
+                  ? `Du ${new Date(fait.dateDebut).toLocaleDateString('fr-FR')} au ${new Date(fait.dateFin).toLocaleDateString('fr-FR')}`
+                  : null}
             </p>
           </>
         )}

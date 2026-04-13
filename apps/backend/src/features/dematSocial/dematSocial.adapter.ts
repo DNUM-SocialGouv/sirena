@@ -486,7 +486,7 @@ const getVictime = (champsById: MappedChamp, mandataire: Mandataire, demandeur: 
   const estVictimeChamp = champsById[rootMapping.estVictime.id];
   const estVictime = getBooleanOrNull(estVictimeChamp, rootMapping.estVictime.options);
   const aAutrePersonnes =
-    getBooleanOrNull(champsById[rootMapping.aAutreVictimes.id], rootMapping.aAutreVictimes.options) || false;
+    getBooleanOrNull(champsById[rootMapping.aAutreVictimes.id], rootMapping.aAutreVictimes.options) ?? false;
   const autrePersonnes = champsById[rootMapping.autreVictimes.id]?.stringValue ?? '';
 
   if (estVictime === true) {

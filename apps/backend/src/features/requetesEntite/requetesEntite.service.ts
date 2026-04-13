@@ -528,7 +528,7 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
                   ? undefined
                   : !declarantData.consentCommuniquerIdentite,
               isTuteur: declarantData.isTuteur ?? undefined,
-              estSignalementProfessionnel: declarantData.estSignalementProfessionnel || false,
+              estSignalementProfessionnel: declarantData.estSignalementProfessionnel ?? null,
               estVictime: declarantData.estPersonneConcernee || false,
               commentaire: declarantData.autresPrecisions || '',
               lienVictimeId: lienVictimeValue,
@@ -722,12 +722,12 @@ export const updateRequeteParticipant = async (
       data: {
         participant: {
           update: {
-            estHandicapee: participantData.estHandicapee || false,
+            estHandicapee: participantData.estHandicapee ?? undefined,
             veutGarderAnonymat:
               participantData.consentCommuniquerIdentite === undefined
                 ? undefined
                 : !participantData.consentCommuniquerIdentite,
-            estVictimeInformee: participantData.estVictimeInformee || false,
+            estVictimeInformee: participantData.estVictimeInformee ?? undefined,
             victimeInformeeCommentaire:
               participantData.estVictimeInformee === false ? participantData.victimeInformeeCommentaire || '' : '',
             autrePersonnes: participantData.autrePersonnes || '',
@@ -1854,22 +1854,26 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
   // ===== 3. DÉCLARANT =====
   if (requete.declarant) {
     const d = requete.declarant;
-    pdf
-      .section('Déclarant')
-      .field('Civilité', d.identite?.civilite?.label || null)
-      .field('Prénom', d.identite?.prenom || null)
-      .field('Nom', d.identite?.nom || null)
-      .field('Lien avec la victime', d.lienVictime?.label || null)
-      .field('Précision lien', d.lienAutrePrecision || null)
-      .field('Tuteur/Curateur', booleanLabel(d.isTuteur))
-      .field('Adresse', formatRue(d.adresse))
-      .field('Code postal', d.adresse?.codePostal || null)
-      .field('Ville', d.adresse?.ville || null)
-      .field('Email', d.identite?.email || null)
-      .field('Téléphone', d.identite?.telephone || null)
-      .field("Souhaite garder l'anonymat", booleanLabel(d.veutGarderAnonymat))
-      .field('Signalement professionnel (EIG)', booleanLabel(d.estSignalementProfessionnel))
-      .field('Autres précisions', d.commentaire || null);
+    if (d.estVictime) {
+      pdf.section('Déclarant').paragraph('Le déclarant est la personne concernée par la requête.');
+    } else {
+      pdf
+        .section('Déclarant')
+        .field('Civilité', d.identite?.civilite?.label || null)
+        .field('Prénom', d.identite?.prenom || null)
+        .field('Nom', d.identite?.nom || null)
+        .field('Lien avec la victime', d.lienVictime?.label || null)
+        .field('Précision lien', d.lienAutrePrecision || null)
+        .field('Tuteur/Curateur', booleanLabel(d.isTuteur))
+        .field('Adresse', formatRue(d.adresse))
+        .field('Code postal', d.adresse?.codePostal || null)
+        .field('Ville', d.adresse?.ville || null)
+        .field('Email', d.identite?.email || null)
+        .field('Téléphone', d.identite?.telephone || null)
+        .field("Souhaite garder l'anonymat", booleanLabel(d.veutGarderAnonymat))
+        .field('Signalement professionnel (EIG)', booleanLabel(d.estSignalementProfessionnel))
+        .field('Autres précisions', d.commentaire || null);
+    }
   }
 
   // ===== 4. PERSONNE CONCERNÉE =====
@@ -1949,10 +1953,16 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         .field('Motifs qualifiés', motifsQualifies.length > 0 ? motifsQualifies.join(', ') : null)
         .field('Conséquences', consequences.length > 0 ? consequences.join(', ') : null);
 
+      const periodeLabel =
+        faits.dateDebut && !faits.dateFin
+          ? `Depuis le ${formatDateFr(faits.dateDebut)}`
+          : faits.dateDebut && faits.dateFin
+            ? `Du ${formatDateFr(faits.dateDebut)} au ${formatDateFr(faits.dateFin)}`
+            : null;
+
       pdf
         .subsection('Période et description des faits')
-        .field('Date de début', formatDateFr(faits.dateDebut))
-        .field('Date de fin', formatDateFr(faits.dateFin))
+        .field('Période', periodeLabel)
         .field('Explication des faits', faits.commentaire || null)
         .field('Autres précisions', faits.autresPrecisions || null);
 

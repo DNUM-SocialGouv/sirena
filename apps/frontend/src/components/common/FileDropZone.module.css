@@ -1,0 +1,63 @@
+.dropZone {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 20px 24px;
+  border: 2px dashed var(--border-action-high-blue-france, #000091);
+  border-radius: 6px;
+  background: var(--background-alt-blue-france, #f5f5fe);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  appearance: none;
+  text-align: left;
+  font: inherit;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.dropZone:hover,
+.dropZoneDragging {
+  border-color: var(--info-700-700);
+}
+
+.dropZoneTitle {
+  margin: 0;
+  color: var(--text-default-grey);
+  font-weight: 600;
+}
+
+.dropZoneButton {
+  align-self: flex-start;
+  pointer-events: none;
+}
+
+.dropZoneNoFile {
+  margin: 0;
+  color: var(--text-mention-grey);
+  font-size: 0.75rem;
+}
+
+.dropZoneHint {
+  margin: 0;
+  color: var(--text-mention-grey);
+  font-size: 0.8rem;
+}
+
+.dropZoneInput {
+  display: none;
+}
+
+[data-fr-theme="dark"] .dropZone,
+html[data-fr-theme="dark"] .dropZone {
+  border-color: var(--border-default-grey, #3a3a3a);
+  background: var(--background-default-grey, #1e1e1e);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-fr-theme="light"]) .dropZone {
+    border-color: var(--border-default-grey, #3a3a3a);
+    background: var(--background-default-grey, #1e1e1e);
+  }
+}

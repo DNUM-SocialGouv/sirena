@@ -1,28 +1,33 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
-import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { API_ERROR_MESSAGES, type ApiErrorCodes } from '@sirena/common/constants';
 import { Drawer } from '@sirena/ui';
 import { useParams } from '@tanstack/react-router';
 
 import { forwardRef, useId, useImperativeHandle, useState } from 'react';
+import { FileDropZone } from '@/components/common/FileDropZone';
+import { SelectedFilesList } from '@/components/common/SelectedFilesList';
 import { useAddProcessingStepNote } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { HttpError } from '@/lib/api/tanstackQuery';
-import { ACCEPTED_FILE_TYPES, FILE_UPLOAD_HINT } from '@/utils/fileHelpers';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 import styles from './CreateNoteDrawer.module.css';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 export type CreateNoteDrawerRef = {
   openDrawer: (step: StepType) => void;
+  closeDrawer: () => void;
 };
 // biome-ignore lint/complexity/noBannedTypes: react doesn't handle well Record<string, never>
 export type CreateNoteDrawerProps = {};
 
 const REQUIRED_FIELDS_ERROR =
-  'Vous devez renseigner au moins un champ : "Détails de la note" ou "Ajouter un ou plusieurs fichiers".';
+  'Vous devez renseigner au moins un champ : "Ajouter une note à l’étape" ou "Ajouter des pièces jointes".';
+const NOTE_MAX_LENGTH = 1000;
+const NOTE_MAX_LENGTH_ERROR =
+  'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 1000 caractères. Supprimer les caractères excédentaires.';
+const NOTE_ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 
 export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawerProps>((_props, ref) => {
   const { requestId } = useParams({
@@ -45,6 +50,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
   const titleId = `${generatedId}-drawer`;
 
   const openDrawer = (step: StepType) => {
+    handleCancel();
     setStep(step);
     setIsOpen(true);
   };
@@ -59,8 +65,14 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
     setContentError(null);
   };
 
+  const closeDrawer = () => {
+    handleCancel();
+    setIsOpen(false);
+  };
+
   useImperativeHandle(ref, () => ({
     openDrawer,
+    closeDrawer,
   }));
 
   const handleOpenChange = (open: boolean) => {
@@ -72,6 +84,12 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
 
   const handleSubmit = async () => {
     if (!step) {
+      return;
+    }
+
+    if (content.length > NOTE_MAX_LENGTH) {
+      setContentError(NOTE_MAX_LENGTH_ERROR);
+      setErrorMessage(null);
       return;
     }
 
@@ -151,12 +169,12 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                   {step?.nom ?? ''}
                 </h3>
                 <p className="fr-text--sm fr-text--mention-grey fr-mb-2w">
-                  Au moins un champ est obligatoire: "Détails de la note" ou un fichier.
+                  Au moins une des informations suivantes doit être complétée.
                 </p>
                 <form>
                   <Input
-                    hintText="Informations à ajouter"
-                    label="Détails de la note"
+                    hintText="Maximum 1000 caractères"
+                    label="Ajouter une note à l’étape"
                     textArea={true}
                     disabled={isLoading}
                     state={contentError ? 'error' : undefined}
@@ -165,65 +183,53 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                       rows: 8,
                       value: content,
                       onChange: (e) => {
-                        setContent(e.target.value);
-                        if (contentError && e.target.value.trim().length > 0) {
+                        const value = e.target.value;
+                        setContent(value);
+
+                        if (value.length > NOTE_MAX_LENGTH) {
+                          setContentError(NOTE_MAX_LENGTH_ERROR);
+                          setErrorMessage((prev) => (prev === REQUIRED_FIELDS_ERROR ? null : prev));
+                          return;
+                        }
+
+                        if (contentError && value.trim().length > 0) {
                           setContentError(null);
                           setErrorMessage((prev) => (prev === REQUIRED_FIELDS_ERROR ? null : prev));
                         }
                       },
                     }}
                   />
-                  <Upload
-                    label="Ajouter un ou plusieurs fichiers"
-                    hint={FILE_UPLOAD_HINT}
-                    multiple
-                    disabled={isLoading}
-                    state={errorMessage ? 'error' : undefined}
-                    stateRelatedMessage={errorMessage ?? undefined}
-                    className="relative"
-                    nativeInputProps={{
-                      accept: ACCEPTED_FILE_TYPES,
-                      onChange: (e) => {
-                        const files = e.target.files;
-                        if (files) {
-                          const fileArray = Array.from(files);
-                          setFiles(fileArray.map((file) => new File([file], file.name, { type: file.type })));
-                          setFileErrors({});
-                          if (contentError && fileArray.length > 0) {
-                            setContentError(null);
-                            setErrorMessage((prev) => (prev === REQUIRED_FIELDS_ERROR ? null : prev));
-                          }
+                  <section className={styles.attachmentSection}>
+                    <p className={`fr-label ${styles.attachmentTitle}`}>Ajouter des pièces jointes</p>
+                    <FileDropZone
+                      selectedFiles={files}
+                      fileErrors={fileErrors}
+                      errorMessage={errorMessage}
+                      isUploading={isLoading}
+                      accept={NOTE_ACCEPTED_FILE_TYPES}
+                      maxSizeLabel="200 Mo"
+                      supportedFormatsLabel="jpg, png, pdf"
+                      onFilesSelect={(selectedFiles) => {
+                        setFiles(selectedFiles.map((file) => new File([file], file.name, { type: file.type })));
+                        setFileErrors({});
+                        if (contentError && selectedFiles.length > 0) {
+                          setContentError(null);
+                          setErrorMessage((prev) => (prev === REQUIRED_FIELDS_ERROR ? null : prev));
                         }
-                      },
-                    }}
-                  />
-                  {files.length > 0 && (
-                    <div className="fr-mt-2w">
-                      <div className="fr-mt-1w">
-                        {files.map((file) => (
-                          <div key={file.name} className="fr-mb-1w">
-                            {fileErrors[file.name] && (
-                              <div className="fr-mt-1w">
-                                <p className="fr-text--sm fr-text--bold" style={{ color: 'var(--text-default-error)' }}>
-                                  {file.name}
-                                </p>
-                                {fileErrors[file.name].map((error) => (
-                                  <p
-                                    key={`${file.name}-error-${error.message}`}
-                                    className="fr-text--xs"
-                                    style={{ color: 'var(--text-default-error)' }}
-                                  >
-                                    {error.message}
-                                  </p>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div className={`fr-mt-2w ${styles.footerActions}`}>
+                      }}
+                      title="Sélectionner un fichier ou glisser-le ici"
+                      buttonLabel="Sélectionner un fichier"
+                      className={styles.drawerDropZone}
+                      errorTextClassName={styles.errorText}
+                    />
+                    <SelectedFilesList
+                      files={files}
+                      title="Fichiers sélectionnés"
+                      className={styles.selectedFilesList}
+                      variant="compact"
+                    />
+                  </section>
+                  <div className={styles.footerActions}>
                     <Button
                       type="button"
                       priority="secondary"
@@ -234,7 +240,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                       Annuler
                     </Button>
                     <Button type="button" priority="primary" size="small" onClick={handleSubmit} disabled={isLoading}>
-                      {isLoading ? 'En cours...' : 'Ajouter la note'}
+                      {isLoading ? 'En cours...' : 'Ajouter à l’étape'}
                     </Button>
                   </div>
                 </form>
