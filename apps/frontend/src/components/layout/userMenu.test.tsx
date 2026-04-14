@@ -57,4 +57,13 @@ describe('UserMenu', () => {
     expect(adminLink).toHaveAttribute('href', '/admin/users');
     expect(adminLink.className).toContain('fr-icon-settings');
   });
+
+  it('shows a "Liste des requêtes" entry for local admins inside the admin area', async () => {
+    await renderUserMenu({ isAdminRoute: true });
+
+    const adminLink = screen.getByRole('link', { name: 'Traiter les requêtes' });
+
+    expect(adminLink).toHaveAttribute('href', '/home');
+    expect(adminLink.className).toContain('fr-icon-arrow');
+  });
 });
