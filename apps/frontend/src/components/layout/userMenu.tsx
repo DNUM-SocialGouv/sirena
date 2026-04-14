@@ -148,7 +148,7 @@ export const UserMenu = () => {
 
           <div className="user-menu__separator" />
 
-          {role === ROLES.ENTITY_ADMIN && (
+          {(role === ROLES.ENTITY_ADMIN || role === ROLES.SUPER_ADMIN) && (
             <>
               {isAdminRoute ? (
                 <a className="fr-btn--icon-left fr-icon-arrow-left-line fr-p-2w" href="/home">
