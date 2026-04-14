@@ -1,6 +1,6 @@
 import { ROLES, type Role } from '@sirena/common/constants';
 import { Tabs } from '@sirena/ui';
-import { createFileRoute, Navigate, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
 import { AdminLayout } from '@/components/layout/admin/layout';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
@@ -15,12 +15,6 @@ export function RouteComponent() {
   const navigate = useNavigate();
   const matches = useMatches();
   const { data } = useProfile();
-
-  const hasChildRoute = matches.some((match) => match.routeId.startsWith('/_auth/admin/'));
-
-  if (!hasChildRoute) {
-    return <Navigate to="/admin/users" />;
-  }
 
   const role = (data?.role?.id ?? null) as Role | null;
   const pathname = matches.at(-1)?.pathname ?? '/admin/users';
