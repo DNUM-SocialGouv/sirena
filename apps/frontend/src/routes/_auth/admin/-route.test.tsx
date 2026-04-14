@@ -40,14 +40,6 @@ afterEach(() => {
 });
 
 describe('Admin route', () => {
-  it('redirects to /admin/users when no child admin route is matched', () => {
-    mockedUseMatches.mockReturnValue([{ routeId: '/_auth/admin', pathname: '/admin' }] as never);
-
-    render(<RouteComponent />);
-
-    expect(screen.getByText('redirect:/admin/users')).toBeInTheDocument();
-  });
-
   it('renders the admin shell with two tabs for entity admins', () => {
     mockedUseMatches.mockReturnValue([
       { routeId: '/_auth/admin', pathname: '/admin' },
