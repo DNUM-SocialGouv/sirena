@@ -152,7 +152,7 @@ export const UserMenu = () => {
             <>
               {isAdminRoute ? (
                 <a className="fr-btn--icon-left fr-icon-arrow-left-line fr-p-2w" href="/home">
-                  Traiter les requêtes
+                  Liste des requêtes
                 </a>
               ) : (
                 <a className="fr-btn--icon-left fr-icon-settings-5-line fr-p-2w" href="/admin/users">
