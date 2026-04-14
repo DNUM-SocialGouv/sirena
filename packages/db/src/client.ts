@@ -7,7 +7,7 @@ const pool = new pg.Pool({
   connectionString: process.env.PG_URL,
 });
 
-const adapter = new PrismaPg({ pool });
+const adapter = new PrismaPg(pool);
 
 // Use globalThis for broader environment compatibility
 const globalForPrisma = globalThis as typeof globalThis & {
