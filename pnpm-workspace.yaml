@@ -1,6 +1,13 @@
 packages:
   - packages/*
   - apps/*
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  "@sentry/cli": true
+  esbuild: true
+  msgpackr-extract: true
+  prisma: true
 catalog:
   "@biomejs/biome": ^2.4.10
   "@codegouvfr/react-dsfr": ^1.32.0
@@ -17,5 +24,7 @@ catalog:
   tsx: ^4.21.0
   vitest: ^4.1.2
   zod: ^4.3.6
-onlyBuiltDependencies:
-  - "@prisma/client"
+enablePrePostScripts: true
+minimumReleaseAge: 0
+overrides:
+  '@hono/node-server@<1.19.13': '>=1.19.13'
