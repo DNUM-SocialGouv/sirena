@@ -20,10 +20,10 @@ import { Route as PublicAccessibiliteRouteImport } from './routes/_public/access
 import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/route'
 import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
 import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
-import { Route as AuthAdminEntitiesRouteImport } from './routes/_auth/admin/entities'
 import { Route as AuthUserHomeRouteImport } from './routes/_auth/_user/home'
 import { Route as AuthAdminUsersRouteRouteImport } from './routes/_auth/admin/users/route'
 import { Route as AuthAdminUsersIndexRouteImport } from './routes/_auth/admin/users/index'
+import { Route as AuthAdminEntitiesIndexRouteImport } from './routes/_auth/admin/entities/index'
 import { Route as AuthAdminUsersAllRouteImport } from './routes/_auth/admin/users/all'
 import { Route as AuthAdminUserUserIdRouteImport } from './routes/_auth/admin/user/$userId'
 import { Route as AuthUserRequestCreateRouteImport } from './routes/_auth/_user/request.create'
@@ -93,11 +93,6 @@ const AuthUserRouteRoute = AuthUserRouteRouteImport.update({
   id: '/_user',
   getParentRoute: () => AuthRouteRoute,
 } as any)
-const AuthAdminEntitiesRoute = AuthAdminEntitiesRouteImport.update({
-  id: '/entities',
-  path: '/entities',
-  getParentRoute: () => AuthAdminRouteRoute,
-} as any)
 const AuthUserHomeRoute = AuthUserHomeRouteImport.update({
   id: '/home',
   path: '/home',
@@ -112,6 +107,11 @@ const AuthAdminUsersIndexRoute = AuthAdminUsersIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthAdminUsersRouteRoute,
+} as any)
+const AuthAdminEntitiesIndexRoute = AuthAdminEntitiesIndexRouteImport.update({
+  id: '/entities/',
+  path: '/entities/',
+  getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 const AuthAdminUsersAllRoute = AuthAdminUsersAllRouteImport.update({
   id: '/all',
@@ -212,11 +212,11 @@ export interface FileRoutesByFullPath {
   '/mentions-legales': typeof PublicMentionsLegalesRoute
   '/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/home': typeof AuthUserHomeRoute
-  '/admin/entities': typeof AuthAdminEntitiesRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/request/create': typeof AuthUserRequestCreateRouteWithChildren
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
+  '/admin/entities/': typeof AuthAdminEntitiesIndexRoute
   '/admin/users/': typeof AuthAdminUsersIndexRoute
   '/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
   '/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
@@ -240,9 +240,9 @@ export interface FileRoutesByTo {
   '/gestion-cookies': typeof PublicGestionCookiesRoute
   '/mentions-legales': typeof PublicMentionsLegalesRoute
   '/home': typeof AuthUserHomeRoute
-  '/admin/entities': typeof AuthAdminEntitiesRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
+  '/admin/entities': typeof AuthAdminEntitiesIndexRoute
   '/admin/users': typeof AuthAdminUsersIndexRoute
   '/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
   '/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
@@ -270,11 +270,11 @@ export interface FileRoutesById {
   '/_public/mentions-legales': typeof PublicMentionsLegalesRoute
   '/_auth/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/_auth/_user/home': typeof AuthUserHomeRoute
-  '/_auth/admin/entities': typeof AuthAdminEntitiesRoute
   '/_auth/_user/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/_auth/_user/request/create': typeof AuthUserRequestCreateRouteWithChildren
   '/_auth/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/_auth/admin/users/all': typeof AuthAdminUsersAllRoute
+  '/_auth/admin/entities/': typeof AuthAdminEntitiesIndexRoute
   '/_auth/admin/users/': typeof AuthAdminUsersIndexRoute
   '/_auth/_user/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
   '/_auth/_user/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
@@ -301,11 +301,11 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/admin/users'
     | '/home'
-    | '/admin/entities'
     | '/request/$requestId'
     | '/request/create'
     | '/admin/user/$userId'
     | '/admin/users/all'
+    | '/admin/entities/'
     | '/admin/users/'
     | '/request/$requestId/declarant'
     | '/request/$requestId/personne-concernee'
@@ -329,9 +329,9 @@ export interface FileRouteTypes {
     | '/gestion-cookies'
     | '/mentions-legales'
     | '/home'
-    | '/admin/entities'
     | '/admin/user/$userId'
     | '/admin/users/all'
+    | '/admin/entities'
     | '/admin/users'
     | '/request/$requestId/declarant'
     | '/request/$requestId/personne-concernee'
@@ -358,11 +358,11 @@ export interface FileRouteTypes {
     | '/_public/mentions-legales'
     | '/_auth/admin/users'
     | '/_auth/_user/home'
-    | '/_auth/admin/entities'
     | '/_auth/_user/request/$requestId'
     | '/_auth/_user/request/create'
     | '/_auth/admin/user/$userId'
     | '/_auth/admin/users/all'
+    | '/_auth/admin/entities/'
     | '/_auth/admin/users/'
     | '/_auth/_user/request/$requestId/declarant'
     | '/_auth/_user/request/$requestId/personne-concernee'
@@ -463,13 +463,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUserRouteRouteImport
       parentRoute: typeof AuthRouteRoute
     }
-    '/_auth/admin/entities': {
-      id: '/_auth/admin/entities'
-      path: '/entities'
-      fullPath: '/admin/entities'
-      preLoaderRoute: typeof AuthAdminEntitiesRouteImport
-      parentRoute: typeof AuthAdminRouteRoute
-    }
     '/_auth/_user/home': {
       id: '/_auth/_user/home'
       path: '/home'
@@ -490,6 +483,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/users/'
       preLoaderRoute: typeof AuthAdminUsersIndexRouteImport
       parentRoute: typeof AuthAdminUsersRouteRoute
+    }
+    '/_auth/admin/entities/': {
+      id: '/_auth/admin/entities/'
+      path: '/entities'
+      fullPath: '/admin/entities/'
+      preLoaderRoute: typeof AuthAdminEntitiesIndexRouteImport
+      parentRoute: typeof AuthAdminRouteRoute
     }
     '/_auth/admin/users/all': {
       id: '/_auth/admin/users/all'
@@ -694,14 +694,14 @@ const AuthAdminUsersRouteRouteWithChildren =
 
 interface AuthAdminRouteRouteChildren {
   AuthAdminUsersRouteRoute: typeof AuthAdminUsersRouteRouteWithChildren
-  AuthAdminEntitiesRoute: typeof AuthAdminEntitiesRoute
   AuthAdminUserUserIdRoute: typeof AuthAdminUserUserIdRoute
+  AuthAdminEntitiesIndexRoute: typeof AuthAdminEntitiesIndexRoute
 }
 
 const AuthAdminRouteRouteChildren: AuthAdminRouteRouteChildren = {
   AuthAdminUsersRouteRoute: AuthAdminUsersRouteRouteWithChildren,
-  AuthAdminEntitiesRoute: AuthAdminEntitiesRoute,
   AuthAdminUserUserIdRoute: AuthAdminUserUserIdRoute,
+  AuthAdminEntitiesIndexRoute: AuthAdminEntitiesIndexRoute,
 }
 
 const AuthAdminRouteRouteWithChildren = AuthAdminRouteRoute._addFileChildren(
