@@ -131,6 +131,8 @@ export const AppEnvSchema = z.object({
       return parsed;
     }),
   DEMAT_SOCIAL_INSTRUCTEUR_ID: z.string(),
+  DEMAT_SOCIAL_IGNORED_DOSSIERS: z.string().optional(),
+  DEMAT_SOCIAL_FETCH_ALL_STATES: z.enum(['true', 'false']).optional(),
   LOG_FORMAT: z
     .enum(['json', 'pretty'] as const, {
       error: () => "La variable d'environnement LOG_FORMAT doit être 'json' ou 'pretty'",
