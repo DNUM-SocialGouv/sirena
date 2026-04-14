@@ -360,13 +360,18 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
 
     const sentDate = new Date();
 
-    await sendTipimailEmail({
+    const sendResult = await sendTipimailEmail({
       to: declarantEmail,
       subject: '',
       text: '',
       template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
       substitutions: [substitutions],
     });
+
+    if (sendResult.status === 'disabled') {
+      logger.info({ requeteId }, 'Email sending is disabled, skipping acknowledgment email');
+      return;
+    }
 
     logger.info(
       { requeteId, declarantEmail, entiteCount: entites.length },
