@@ -32,7 +32,7 @@ export function RouteComponent() {
 
   return (
     <div className="home">
-      <h1>Gestion des utilisateurs et des habilitations</h1>
+      <h1>Espace administrateur</h1>
       <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
         {activeTab === 0 ? <PendingUsersTab /> : <AllUsersTab />}
       </Tabs>
