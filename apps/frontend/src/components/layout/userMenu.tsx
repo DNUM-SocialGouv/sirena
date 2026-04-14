@@ -150,9 +150,15 @@ export const UserMenu = () => {
 
           {role === ROLES.ENTITY_ADMIN && (
             <>
-              <a className="fr-btn--icon-left fr-icon-user-line fr-p-2w" href={isAdminRoute ? '/home' : '/admin/users'}>
-                {isAdminRoute ? 'Traiter les requêtes' : 'Administrer'}
-              </a>
+              {isAdminRoute ? (
+                <a className="fr-btn--icon-left fr-icon-arrow-left-line fr-p-2w" href="/home">
+                  Traiter les requêtes
+                </a>
+              ) : (
+                <a className="fr-btn--icon-left fr-icon-settings-5-line fr-p-2w" href="/admin/users">
+                  Espace administrateur
+                </a>
+              )}
               <div className="user-menu__separator" />
             </>
           )}
