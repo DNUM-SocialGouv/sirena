@@ -58,10 +58,10 @@ describe('UserMenu', () => {
     expect(link.className).toContain('fr-icon-settings');
   });
 
-  it('shows a "Traiter les requêtes" entry for local admins inside the admin area', async () => {
+  it('shows a "Liste des requêtes" entry for local admins inside the admin area', async () => {
     await renderUserMenu({ isAdminRoute: true });
 
-    const link = screen.getByRole('link', { name: 'Traiter les requêtes' });
+    const link = screen.getByRole('link', { name: 'Liste des requêtes' });
 
     expect(link).toHaveAttribute('href', '/home');
     expect(link.className).toContain('fr-icon-arrow');
@@ -71,7 +71,7 @@ describe('UserMenu', () => {
     await renderUserMenu({ roleId: ROLES.WRITER });
 
     expect(screen.queryByRole('link', { name: 'Espace administrateur' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Traiter les requêtes' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Liste des requêtes' })).not.toBeInTheDocument();
   });
 
   it('does show the admin entry for super admins', async () => {
@@ -81,10 +81,10 @@ describe('UserMenu', () => {
     expect(link).toBeInTheDocument();
   });
 
-  it('shows a "Traiter les requêtes" entry for super admins inside the admin area', async () => {
+  it('shows a "Liste des requêtes" entry for super admins inside the admin area', async () => {
     await renderUserMenu({ roleId: ROLES.SUPER_ADMIN, isAdminRoute: true });
 
-    const link = screen.getByRole('link', { name: 'Traiter les requêtes' });
+    const link = screen.getByRole('link', { name: 'Liste des requêtes' });
     expect(link).toHaveAttribute('href', '/home');
   });
 });
