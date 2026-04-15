@@ -60,23 +60,29 @@ const app = factoryWithLogs
     return c.json({ data: descendants });
   })
 
-  .get('/admin', getEntitesAdminRoute, zValidator('query', GetEntitiesQuerySchema), async (c) => {
-    const logger = c.get('logger');
-    const query = c.req.valid('query');
+  .get(
+    '/admin',
+    roleMiddleware([ROLES.SUPER_ADMIN]),
+    getEntitesAdminRoute,
+    zValidator('query', GetEntitiesQuerySchema),
+    async (c) => {
+      const logger = c.get('logger');
+      const query = c.req.valid('query');
 
-    logger.info({ query }, 'Admin entities list requested');
-    const { data, total } = await getEntitesAdmin(query);
-    logger.info({ entitiesCount: data.length, total }, 'Admin entities list retrieved successfully');
+      logger.info({ query }, 'Admin entities list requested');
+      const { data, total } = await getEntitesAdmin(query);
+      logger.info({ entitiesCount: data.length, total }, 'Admin entities list retrieved successfully');
 
-    return c.json({
-      data,
-      meta: {
-        ...(query.offset !== undefined && { offset: query.offset }),
-        ...(query.limit !== undefined && { limit: query.limit }),
-        total,
-      },
-    });
-  })
+      return c.json({
+        data,
+        meta: {
+          ...(query.offset !== undefined && { offset: query.offset }),
+          ...(query.limit !== undefined && { limit: query.limit }),
+          total,
+        },
+      });
+    },
+  )
 
   .get('/:id?', getEntitesRoute, zValidator('query', GetEntitiesQuerySchema), async (c) => {
     const logger = c.get('logger');
