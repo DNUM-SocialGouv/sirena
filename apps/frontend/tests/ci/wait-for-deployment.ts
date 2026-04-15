@@ -99,20 +99,6 @@ async function checkFrontendVersion(): Promise<boolean> {
   }
 }
 
-async function checkBothVersions(): Promise<boolean> {
-  const [backendReady, frontendReady] = await Promise.all([checkBackendVersion(), checkFrontendVersion()]);
-
-  if (backendReady && frontendReady) {
-    console.log('🎉 Both backend and frontend versions match!');
-    return true;
-  }
-
-  if (!backendReady) console.log('⏳ Backend not ready...');
-  if (!frontendReady) console.log('⏳ Frontend not ready...');
-
-  return false;
-}
-
 async function waitForDeployment() {
   console.log('🚀 Waiting for deployment to be ready...');
   console.log(`Expected version: ${EXPECTED_VERSION}`);
