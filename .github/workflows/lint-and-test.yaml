@@ -20,8 +20,9 @@ jobs:
         with:
           node-version: 22
           cache: "pnpm"
-      - name: Audit dependencies
-        run: pnpm audit --audit-level=moderate
+      # TODO: revert pnpm audit when fixed (https://github.com/pnpm/pnpm/issues/11265)
+      # - name: Audit dependencies
+      #   run: pnpm audit --audit-level=moderate
       - name: Install dependencies
         run: pnpm install
       - name: Run linter

@@ -141,8 +141,12 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
               {personne?.veutGarderAnonymat !== null && personne?.veutGarderAnonymat !== undefined && (
                 <li>{renderConsentIdentite(personne.veutGarderAnonymat)}</li>
               )}
-              {personne?.estVictimeInformee === true && <li>Il/elle a été informé(e) de la démarche</li>}
-              {personne?.estVictimeInformee === false && <li>Il/elle n&apos;a pas été informé(e) de la démarche</li>}
+              {personne?.estVictimeInformee === true && (
+                <li>Il/elle a été informé(e) de la démarche par le déclarant</li>
+              )}
+              {personne?.estVictimeInformee === false && (
+                <li>Il/elle n&apos;a pas été informé(e) de la démarche par le déclarant</li>
+              )}
             </ul>
             {personne?.estVictimeInformee === false && personne?.victimeInformeeCommentaire && (
               <p className="fr-mb-2w">
@@ -151,7 +155,9 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
             )}
             {personne?.aAutrePersonnes && (
               <>
-                <p className="fr-mb-1w">Autres personnes concernées : {personne.aAutrePersonnes ? 'Oui' : 'Non'}</p>
+                <p className="fr-mb-1w">
+                  D'autres personnes sont concernées par la requête : {personne.aAutrePersonnes ? 'Oui' : 'Non'}
+                </p>
                 {personne.autrePersonnes && <p className="fr-mb-1w">{personne.autrePersonnes}</p>}
               </>
             )}

@@ -39,8 +39,11 @@ export const personneConcerneeFieldMetadata: Record<string, FieldMetadata> = {
   numeroTelephone: { label: 'Numéro de téléphone', type: 'tel' },
   courrierElectronique: { label: 'Courrier électronique', type: 'email' },
   estHandicapee: { label: "La personne concernée est en situation d'handicap", type: 'radio' },
-  consentCommuniquerIdentite: { label: 'Elle consent à ce que son identité soit communiquée', type: 'radio' },
-  estVictimeInformee: { label: 'Elle a été informée de la démarche par le déclarant', type: 'radio' },
+  consentCommuniquerIdentite: {
+    label: 'La personne concernée consent à ce que son identité soit communiquée',
+    type: 'radio',
+  },
+  estVictimeInformee: { label: 'La personne concernée a été informée de la démarche par le déclarant', type: 'radio' },
   victimeInformeeCommentaire: { label: "Raison pour laquelle elle n'est pas informée", type: 'text' },
   autrePersonnes: { label: 'Précisions sur les autres personnes concernées', type: 'textarea' },
   aAutrePersonnes: { label: "Il y a d'autres personnes concernées par la requête", type: 'radio' },

@@ -58,6 +58,7 @@ jobs:
 
   e2e-tests:
     name: End-to-End Tests
+    if: github.ref_name == 'main'
     needs: [build-docker, deploy]
     runs-on: ubuntu-latest
     permissions:
@@ -77,10 +78,11 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
-      - name: Audit dependencies
-        run: |
-          cd apps/frontend
-          pnpm audit --audit-level=moderate
+      # TODO: revert pnpm audit when fixed (https://github.com/pnpm/pnpm/issues/11265)
+      # - name: Audit dependencies
+      #   run: |
+      #     cd apps/frontend
+      #     pnpm audit --audit-level=moderate
       - name: Install dependencies
         run: |
           cd apps/frontend
@@ -94,7 +96,7 @@ jobs:
       - name: Wait for deployment
         run: |
           cd apps/frontend
-          pnpm dlx tsx tests/ci/wait-for-deployment.ts
+          npx tsx tests/ci/wait-for-deployment.ts
         env:
           EXPECTED_VERSION: ${{ needs.build-docker.outputs.version }}
           BACKEND_URL: ${{ env.BASE_URL }}/api
