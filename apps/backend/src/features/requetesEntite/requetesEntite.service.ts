@@ -2,6 +2,7 @@ import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
 import {
   type EntiteType,
+  MOTIFS_HIERARCHICAL_DATA,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_STATUT_TYPES,
   REQUETE_UPDATE_FIELDS,
@@ -1773,6 +1774,14 @@ const booleanLabel = (value: boolean | null | undefined): string | null => {
 const formatRue = (adresse: { numero: string | null; rue: string | null } | null) =>
   adresse ? [adresse.numero, adresse.rue].filter(Boolean).join(' ') || null : null;
 
+const getMotifFullPath = (motifId: string): string => {
+  const [parentValue, childValue] = motifId.split('/');
+  const parent = MOTIFS_HIERARCHICAL_DATA.find((p) => p.value === parentValue);
+  if (!parent) return motifId;
+  const child = parent.children.find((c) => c.value === childValue);
+  return child ? `${parent.label} > ${child.label}` : parent.label;
+};
+
 export const generateRequetePdfBuffer = async (requeteId: string, entiteId: string | null): Promise<Buffer | null> => {
   if (!entiteId) return null;
 
@@ -1824,7 +1833,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       const faits = s.faits?.[0];
       return [
         ...(faits?.motifsDeclaratifs?.map((m) => m.motifDeclaratif.label) ?? []),
-        ...(faits?.motifs?.map((m) => m.motif.label) ?? []),
+        ...(faits?.motifs?.map((m) => getMotifFullPath(m.motifId)) ?? []),
       ];
     })
     .filter((v, i, arr) => arr.indexOf(v) === i);
@@ -1864,7 +1873,12 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         .field('Ville', d.adresse?.ville || null)
         .field('Email', d.identite?.email || null)
         .field('Téléphone', d.identite?.telephone || null)
-        .field("Souhaite garder l'anonymat", booleanLabel(d.veutGarderAnonymat))
+        .field(
+          'Consent à ce que son identité soit communiquée',
+          booleanLabel(
+            d.veutGarderAnonymat === null || d.veutGarderAnonymat === undefined ? null : !d.veutGarderAnonymat,
+          ),
+        )
         .field('Signalement professionnel (EIG)', booleanLabel(d.estSignalementProfessionnel))
         .field('Autres précisions', d.commentaire || null);
     }
@@ -1879,18 +1893,23 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       .field('Prénom', p.identite?.prenom || null)
       .field('Nom', p.identite?.nom || null)
       .field('Date de naissance', p.dateNaissance ? formatDateFr(p.dateNaissance) : null)
-      .field("Tranche d'âge", !p.dateNaissance && p.age ? p.age.label : null)
+      .field("Tranche d'âge", p.age ? p.age.label : null)
       .field('En situation de handicap', booleanLabel(p.estHandicapee))
       .field('Adresse', formatRue(p.adresse))
       .field('Code postal', p.adresse?.codePostal || null)
       .field('Ville', p.adresse?.ville || null)
       .field('Email', p.identite?.email || null)
       .field('Téléphone', p.identite?.telephone || null)
-      .field('A été informée des démarches', booleanLabel(p.estVictimeInformee))
-      .field('Raison si non informée', p.victimeInformeeCommentaire || null)
-      .field("Souhaite garder l'anonymat", booleanLabel(p.veutGarderAnonymat))
-      .field("A d'autres personnes concernées", booleanLabel(p.aAutrePersonnes))
-      .field('Description', p.autrePersonnes || null)
+      .field('A été informé(e) de la démarche par le déclarant', booleanLabel(p.estVictimeInformee))
+      .field("Raison pour laquelle elle n'a pas été informée", p.victimeInformeeCommentaire || null)
+      .field(
+        'Consent à ce que son identité soit communiquée',
+        booleanLabel(
+          p.veutGarderAnonymat === null || p.veutGarderAnonymat === undefined ? null : !p.veutGarderAnonymat,
+        ),
+      )
+      .field("D'autres personnes sont concernées par la requête", booleanLabel(p.aAutrePersonnes))
+      .field('Précisions sur les autres personnes concernées', p.autrePersonnes || null)
       .field('Autres précisions', p.commentaire || null);
   }
 
@@ -1907,7 +1926,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         .field('Rue', formatRue(lieu.adresse))
         .field('Code postal', lieu.adresse?.codePostal || lieu.codePostal || null)
         .field('Ville', lieu.adresse?.ville || null)
-        .field("Nom de l'établissement", lieu.categLib || null)
+        .field("Nom de l'établissement", lieu.adresse?.label || lieu.categLib || null)
         .field('Numéro FINESS', lieu.finess || null)
         .field('Société de transport', lieu.societeTransport || null);
     }
@@ -1918,14 +1937,14 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         .subsection('Mis en cause')
         .field('Type', mec.misEnCauseType?.label || null)
         .field('Précision type', mec.misEnCauseTypePrecision?.label || null)
-        .field('Civilité', mec.civilite || null)
-        .field('Prénom', mec.prenom || null)
-        .field('Nom', mec.nom || null)
+        .field('Civilité du mis en cause', mec.civilite || null)
+        .field('Prénom du mis en cause', mec.prenom || null)
+        .field('Nom du mis en cause', mec.nom || null)
         .field('N° RPPS', mec.rpps || null)
         .field('Nom du service', mec.nomService || null)
         .field('N° FINESS', mec.finess || null)
-        .field('Code postal', mec.codePostal || null)
-        .field('Ville', mec.ville || null)
+        .field('Code postal du mis en cause', mec.codePostal || null)
+        .field('Ville du mis en cause', mec.ville || null)
         .field('Précisions supplémentaires', mec.autrePrecision || null)
         .field('Commentaire', mec.commentaire || null);
     }
@@ -1937,7 +1956,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         ...(faits.maltraitanceTypes
           ?.filter((mt) => mt.maltraitanceType.id !== 'NON')
           .map((mt) => `${mt.maltraitanceType.label} (maltraitance)`) ?? []),
-        ...(faits.motifs?.map((m) => m.motif.label) ?? []),
+        ...(faits.motifs?.map((m) => getMotifFullPath(m.motifId)) ?? []),
       ];
       const consequences = faits.consequences?.map((c) => c.consequence.label) ?? [];
 
@@ -1974,9 +1993,9 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         .field('Types de démarches', typesDemarches.length > 0 ? typesDemarches.join(', ') : null)
         .field('Date contact établissement', formatDateFr(demarches.dateContactEtablissement))
         .field('Réponse reçue', booleanLabel(demarches.etablissementARepondu))
-        .field("Type d'autorité", demarches.autoriteType?.label || null)
-        .field('Organisme', demarches.organisme || null)
-        .field('Date de plainte', formatDateFr(demarches.datePlainte))
+        .field("Précisions sur l'organisme contacté", demarches.organisme || null)
+        .field('Date de dépôt de plainte', formatDateFr(demarches.datePlainte))
+        .field('Lieu de dépôt de la plainte', demarches.autoriteType?.label || null)
         .field('Commentaire', demarches.commentaire || null);
     }
 
