@@ -9,6 +9,7 @@ import {
   getEntiteDescendantIds,
   getEntiteForUser,
   getEntites,
+  getEntitesAdmin,
   getEntitesByIds,
 } from './entites.service.js';
 
@@ -840,5 +841,65 @@ describe('entites.service', () => {
 
     const result = await getEntitesByIds(['1', '2', '3']);
     expect(result).toEqual([fakeEntite('1'), fakeEntite('2'), fakeEntite('3')]);
+  });
+});
+
+describe('getAdminEntites()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('returns paginated admin rows built from all entites', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('svc-1'),
+        nomComplet: 'Service Z',
+        label: 'SZ',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'dir-1',
+      },
+      {
+        ...fakeEntite('root-cd'),
+        nomComplet: 'CD Calvados',
+        label: 'CD 14',
+        entiteTypeId: 'CD',
+      },
+      {
+        ...fakeEntite('dir-1'),
+        nomComplet: 'Direction A',
+        label: 'DIR A',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteTypeId: 'ARS',
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '01 02 03 04 05',
+      },
+    ]);
+    vi.mocked(prisma.entite.count).mockResolvedValueOnce(4);
+
+    const result = await getEntitesAdmin({
+      offset: 0,
+      limit: 20,
+    });
+
+    expect(prisma.entite.findMany).toHaveBeenCalledWith({
+      skip: 0,
+      take: 20,
+    });
+
+    expect(prisma.entite.count).toHaveBeenCalledWith();
+
+    expect(result.total).toBe(4);
+    expect(result.data.map((row) => row.id)).toEqual(['root-ars', 'dir-1', 'svc-1', 'root-cd']);
+    expect(result.data[0]).toMatchObject({
+      id: 'root-ars',
+      entiteNom: 'ARS Normandie',
+      entiteLabel: 'ARS NOR',
+    });
   });
 });

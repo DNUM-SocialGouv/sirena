@@ -1,5 +1,6 @@
 import type { Pagination } from '@sirena/backend-utils/types';
 import { type Entite, prisma } from '../../libs/prisma.js';
+import { buildEntitesListAdmin } from './entites.admin.read-model.js';
 import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type.js';
 
 export const getEntiteForUser = async (organizationalUnit: string | null, email: string) => {
@@ -83,6 +84,21 @@ export const getEntites = async (
 
   return {
     data,
+    total,
+  };
+};
+
+export const getEntitesAdmin = async ({ offset = 0, limit }: Pick<Pagination, 'offset' | 'limit'>) => {
+  const [entites, total] = await Promise.all([
+    prisma.entite.findMany({
+      skip: offset,
+      ...(typeof limit === 'number' ? { take: limit } : {}),
+    }),
+    prisma.entite.count(),
+  ]);
+
+  return {
+    data: buildEntitesListAdmin(entites),
     total,
   };
 };
