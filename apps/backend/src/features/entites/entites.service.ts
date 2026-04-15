@@ -89,16 +89,12 @@ export const getEntites = async (
 };
 
 export const getEntitesAdmin = async ({ offset = 0, limit }: Pick<Pagination, 'offset' | 'limit'>) => {
-  const [entites, total] = await Promise.all([
-    prisma.entite.findMany({
-      skip: offset,
-      ...(typeof limit === 'number' ? { take: limit } : {}),
-    }),
-    prisma.entite.count(),
-  ]);
+  const entites = await prisma.entite.findMany();
+  const total = entites.length;
+  const orderedRows = buildEntitesListAdmin(entites);
 
   return {
-    data: buildEntitesListAdmin(entites),
+    data: limit !== undefined ? orderedRows.slice(offset, offset + limit) : orderedRows.slice(offset),
     total,
   };
 };
