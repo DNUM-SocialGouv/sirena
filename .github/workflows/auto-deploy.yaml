@@ -58,6 +58,7 @@ jobs:
 
   e2e-tests:
     name: End-to-End Tests
+    if: github.ref_name == 'main'
     needs: [build-docker, deploy]
     runs-on: ubuntu-latest
     permissions:
