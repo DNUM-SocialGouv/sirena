@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildAdminEntitesList } from './entites.admin.read-model.js';
+import { buildEntitesListAdmin } from './entites.admin.read-model.js';
 
 const entite = (overrides: Record<string, unknown> = {}) => ({
   id: 'id',
@@ -24,7 +24,7 @@ const entite = (overrides: Record<string, unknown> = {}) => ({
 
 describe('buildAdminEntitesList', () => {
   it('orders entite roots by family, then descendants, and builds table-ready rows', () => {
-    const rows = buildAdminEntitesList([
+    const rows = buildEntitesListAdmin([
       entite({
         id: 'svc-1',
         nomComplet: 'Service Z',
@@ -109,7 +109,7 @@ describe('buildAdminEntitesList', () => {
   });
 
   it('orders siblings alphabetically under the same parent', () => {
-    const rows = buildAdminEntitesList([
+    const rows = buildEntitesListAdmin([
       entite({
         id: 'dir-b',
         nomComplet: 'Direction B',
@@ -143,7 +143,7 @@ describe('buildAdminEntitesList', () => {
   });
 
   it('builds contact usager with only non-empty values', () => {
-    const rows = buildAdminEntitesList([
+    const rows = buildEntitesListAdmin([
       entite({
         id: 'root-ars',
         nomComplet: 'ARS Normandie',
@@ -162,7 +162,7 @@ describe('buildAdminEntitesList', () => {
   });
 
   it('orders unknown root types after known root families', () => {
-    const rows = buildAdminEntitesList([
+    const rows = buildEntitesListAdmin([
       entite({
         id: 'root-unknown',
         nomComplet: 'ZZ Custom',

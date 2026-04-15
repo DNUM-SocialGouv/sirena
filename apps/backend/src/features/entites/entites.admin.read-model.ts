@@ -147,7 +147,7 @@ const toAdminEntiteRow = (entite: Entite, entitesById: Map<string, Entite>): Adm
   };
 };
 
-export const buildAdminEntitesList = (entites: Entite[]) => {
+export const buildEntitesListAdmin = (entites: Entite[]) => {
   const entitesById = new Map(entites.map((entite) => [entite.id, entite]));
   const orderedEntites = buildTreeOrder(entites);
 
