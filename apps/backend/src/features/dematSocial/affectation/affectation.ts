@@ -14,12 +14,7 @@ type Assignment = {
   context: SituationContext;
 };
 
-const assignDefaultRequeteEtapes = async (
-  requeteId: string,
-  entiteId: string,
-  receptionDate: Date,
-  tx: Prisma.TransactionClient,
-) => {
+const assignDefaultRequeteEtapes = async (requeteId: string, entiteId: string, tx: Prisma.TransactionClient) => {
   try {
     const etapes = await tx.requeteEtape.findMany({
       where: {
@@ -33,7 +28,7 @@ const assignDefaultRequeteEtapes = async (
       return;
     }
 
-    await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate, tx, null);
+    await createDefaultRequeteEtapes(requeteId, entiteId, tx, null);
   } catch (err) {
     const logger = getLoggerStore();
     logger.error({ requeteId, entiteId, err }, 'Error assigning default requete etapes');
@@ -262,7 +257,7 @@ export async function assignEntitesToRequeteTask(unknownId: string) {
           update: {},
         });
 
-        await assignDefaultRequeteEtapes(requeteId, entiteId, requete.receptionDate || new Date(), tx);
+        await assignDefaultRequeteEtapes(requeteId, entiteId, tx);
       }
 
       for (const { situationId, entiteId } of situationEntitesToLink) {

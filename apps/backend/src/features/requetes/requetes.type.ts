@@ -47,7 +47,7 @@ type Participant = {
   victimeInformeeCommentaire: string | null;
   veutGarderAnonymat: boolean | null;
   autrePersonnes: string | null;
-  aAutrePersonnes: boolean;
+  aAutrePersonnes: boolean | null;
 } | null;
 
 type LieuDeSurvenue = {
@@ -84,7 +84,7 @@ type MisEnCause = {
 type DemarchesEngagees = {
   demarches: string[];
   dateContactEtablissement: Date | null;
-  etablissementARepondu: boolean;
+  etablissementARepondu: boolean | null;
   commentaire: string;
   organisme: string;
   datePlainte: Date | null;

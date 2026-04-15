@@ -28,7 +28,6 @@ type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data
 const NOTE_MAX_LENGTH = 1000;
 const NOTE_MAX_LENGTH_ERROR =
   'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 1000 caractères. Supprimer les caractères excédentaires.';
-const NOTE_ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 
 export type EditNoteDrawerRef = {
   openDrawer: (
@@ -336,7 +335,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                     </Button>
                   </div>
                   <h3 id={titleId} className="fr-h6">
-                    {noteData.step?.nom ?? ''}
+                    Modifier la note pour {noteData.step?.nom ?? ''}
                   </h3>
                   {(modifications.content || modifications.filesAdded || modifications.filesDeleted) && (
                     <p className={`${fr.cx('fr-text--sm', 'fr-mb-2w')} ${styles.modificationWarning}`}>
@@ -399,9 +398,6 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                         selectedFiles={filesToUpload}
                         fileErrors={fileErrors}
                         isUploading={isLoading}
-                        accept={NOTE_ACCEPTED_FILE_TYPES}
-                        maxSizeLabel="200 Mo"
-                        supportedFormatsLabel="jpg, png, pdf"
                         onFilesSelect={(selectedFiles) => {
                           setFilesToUpload(
                             selectedFiles.map((file) => new File([file], file.name, { type: file.type })),
@@ -409,7 +405,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                           setModifications((prev) => ({ ...prev, filesAdded: selectedFiles.length > 0 }));
                           setFileErrors({});
                         }}
-                        title="Sélectionner un fichier ou glisser-le ici"
+                        title="Sélectionner ou glisser un fichier à joindre"
                         buttonLabel="Sélectionner un fichier"
                         className={styles.drawerDropZone}
                         errorTextClassName={styles.errorText}

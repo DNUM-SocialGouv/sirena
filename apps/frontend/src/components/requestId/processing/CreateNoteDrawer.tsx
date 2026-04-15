@@ -27,7 +27,6 @@ const REQUIRED_FIELDS_ERROR =
 const NOTE_MAX_LENGTH = 1000;
 const NOTE_MAX_LENGTH_ERROR =
   'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 1000 caractères. Supprimer les caractères excédentaires.';
-const NOTE_ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 
 export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawerProps>((_props, ref) => {
   const { requestId } = useParams({
@@ -166,7 +165,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                   </Button>
                 </div>
                 <h3 id={titleId} className="fr-h6">
-                  {step?.nom ?? ''}
+                  Ajouter une note ou un fichier pour {step?.nom ?? ''}
                 </h3>
                 <p className="fr-text--sm fr-text--mention-grey fr-mb-2w">
                   Au moins une des informations suivantes doit être complétée.
@@ -206,9 +205,6 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                       fileErrors={fileErrors}
                       errorMessage={errorMessage}
                       isUploading={isLoading}
-                      accept={NOTE_ACCEPTED_FILE_TYPES}
-                      maxSizeLabel="200 Mo"
-                      supportedFormatsLabel="jpg, png, pdf"
                       onFilesSelect={(selectedFiles) => {
                         setFiles(selectedFiles.map((file) => new File([file], file.name, { type: file.type })));
                         setFileErrors({});
@@ -217,7 +213,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                           setErrorMessage((prev) => (prev === REQUIRED_FIELDS_ERROR ? null : prev));
                         }
                       }}
-                      title="Sélectionner un fichier ou glisser-le ici"
+                      title="Sélectionner ou glisser un fichier à joindre"
                       buttonLabel="Sélectionner un fichier"
                       className={styles.drawerDropZone}
                       errorTextClassName={styles.errorText}

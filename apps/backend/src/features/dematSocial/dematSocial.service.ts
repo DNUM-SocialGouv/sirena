@@ -320,18 +320,20 @@ export const importRequetes = async (createdSince?: Date) => {
     logger.info('Importing all requetes');
   }
 
-  const dossiers = await getRequetes(createdSince, DossierState.EnConstruction);
+  const stateFilter = envVars.DEMAT_SOCIAL_FETCH_ALL_STATES === 'true' ? undefined : DossierState.EnConstruction;
+  const dossiers = await getRequetes(createdSince, stateFilter);
   logger.info({ totalDossiers: dossiers.length }, 'Found dossiers to process');
   let i = 0;
   let errorCount = 0;
   let skippedCount = 0;
 
   const isProduction = envVars.SENTRY_ENVIRONMENT === 'production';
+  const ignoredDossiers = new Set((envVars.DEMAT_SOCIAL_IGNORED_DOSSIERS || '').split(',').filter(Boolean).map(Number));
 
   for (const dossier of dossiers) {
     // legacy, we don't support - skip only in non-prod (prod imports all)
-    // TODO: remove after some time
-    if (!isProduction && dossier.number < 285277) {
+    // TODO: remove condition on 285277 after some time
+    if ((!isProduction && dossier.number < 285277) || ignoredDossiers.has(dossier.number)) {
       skippedCount += 1;
       continue;
     }

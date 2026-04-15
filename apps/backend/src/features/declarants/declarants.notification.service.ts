@@ -16,7 +16,7 @@ import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { ACKNOWLEDGMENT_STEP_NAME, updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
 import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
 
-const ELIGIBLE_RECEPTION_TYPES_FOR_ACKNOWLEDGMENT = [RECEPTION_TYPE.FORMULAIRE, RECEPTION_TYPE.TELEPHONE] as const;
+const ELIGIBLE_RECEPTION_TYPES_FOR_ACKNOWLEDGMENT = [RECEPTION_TYPE.FORMULAIRE, RECEPTION_TYPE.PLATEFORME] as const;
 
 /**
  * Formats the list of administrative entity names (entities without a parent entity)
@@ -360,13 +360,18 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
 
     const sentDate = new Date();
 
-    await sendTipimailEmail({
+    const sendResult = await sendTipimailEmail({
       to: declarantEmail,
       subject: '',
       text: '',
       template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
       substitutions: [substitutions],
     });
+
+    if (sendResult.status === 'disabled') {
+      logger.info({ requeteId }, 'Email sending is disabled, skipping acknowledgment email');
+      return;
+    }
 
     logger.info(
       { requeteId, declarantEmail, entiteCount: entites.length },

@@ -380,13 +380,7 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
 
       // Create default processing steps for each entity
       for (const entite of requete.requeteEntites) {
-        await createDefaultRequeteEtapes(
-          requete.id,
-          entite.entiteId,
-          requete.receptionDate || new Date(),
-          undefined,
-          changedById,
-        );
+        await createDefaultRequeteEtapes(requete.id, entite.entiteId, undefined, changedById);
       }
 
       if (data?.declarant?.estPersonneConcernee && requete.declarant) {
@@ -1059,7 +1053,7 @@ const updateSituationEntites = async (
   // Create default steps for all added top entities
   await Promise.all(
     Array.from(entiteMereIdsToAdd).map(async (rootId) => {
-      await createDefaultRequeteEtapes(requeteId, rootId, new Date(), tx, null);
+      await createDefaultRequeteEtapes(requeteId, rootId, tx, null);
     }),
   );
 

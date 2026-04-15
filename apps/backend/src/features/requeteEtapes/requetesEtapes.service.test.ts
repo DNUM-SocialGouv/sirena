@@ -121,13 +121,14 @@ describe('RequeteEtapes.service.ts', () => {
     it('should create two default etapes with correct statuts and names', async () => {
       const requeteId = 'requeteId';
       const entiteId = 'entiteId';
-      const receptionDate = new Date('2024-01-15T10:00:00Z');
+      const createdAt = new Date('2024-01-15T10:00:00Z');
 
-      const mockRequeteEntite: RequeteEntite = {
+      const mockRequeteEntite = {
         requeteId,
         entiteId,
         statutId: 'EN_COURS',
         prioriteId: null,
+        requete: { dematSocialId: null, createdAt, createdBy: null },
       };
 
       const mockEtape1: RequeteEtape = {
@@ -160,7 +161,7 @@ describe('RequeteEtapes.service.ts', () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
       vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
 
-      const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
+      const result = await createDefaultRequeteEtapes(requeteId, entiteId);
 
       expect(result).toEqual({ etape1: mockEtape1, etape2: mockEtape2 });
       expect(prisma.requeteEntite.findUnique).toHaveBeenCalledWith(
@@ -194,70 +195,17 @@ describe('RequeteEtapes.service.ts', () => {
       });
     });
 
-    it('should use current date when receptionDate is not provided', async () => {
-      const requeteId = 'requeteId';
-      const entiteId = 'entiteId';
-      const receptionDate = new Date('2024-03-20T14:30:00Z');
-      const currentDate = new Date();
-
-      const mockRequeteEntite: RequeteEntite = {
-        requeteId,
-        entiteId,
-        statutId: 'EN_COURS',
-        prioriteId: null,
-      };
-
-      const originalToLocaleDateString = Date.prototype.toLocaleDateString;
-      Date.prototype.toLocaleDateString = vi.fn().mockReturnValue('20/03/2024');
-
-      const mockEtape1: RequeteEtape = {
-        id: 'etape1Id',
-        requeteId,
-        entiteId,
-        nom: 'Création de la requête le 20/03/2024',
-        type: 'MANUAL',
-        estPartagee: false,
-        statutId: 'FAIT',
-        createdAt: currentDate,
-        updatedAt: currentDate,
-        createdById: null,
-      };
-
-      const mockEtape2: RequeteEtape = {
-        id: 'etape2Id',
-        requeteId,
-        entiteId,
-        nom: 'Envoyer un accusé de réception au déclarant',
-        type: 'MANUAL',
-        estPartagee: false,
-        statutId: 'FAIT',
-        createdAt: currentDate,
-        updatedAt: currentDate,
-        createdById: null,
-      };
-
-      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
-      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
-      vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
-
-      const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
-
-      expect(result).toEqual({ etape1: mockEtape1, etape2: mockEtape2 });
-      expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
-
-      Date.prototype.toLocaleDateString = originalToLocaleDateString;
-    });
-
     it('should use transaction client when provided', async () => {
       const requeteId = 'requeteId';
       const entiteId = 'entiteId';
-      const receptionDate = new Date('2024-02-10T09:00:00Z');
+      const createdAt = new Date('2024-02-10T09:00:00Z');
 
-      const mockRequeteEntite: RequeteEntite = {
+      const mockRequeteEntite = {
         requeteId,
         entiteId,
         statutId: 'EN_COURS',
         prioriteId: null,
+        requete: { dematSocialId: null, createdAt, createdBy: null },
       };
 
       const mockFindUnique = vi.fn();
@@ -271,7 +219,7 @@ describe('RequeteEtapes.service.ts', () => {
           findMany: mockFindMany,
           create: mockCreate,
         },
-      } as unknown as NonNullable<Parameters<typeof createDefaultRequeteEtapes>[3]>;
+      } as unknown as NonNullable<Parameters<typeof createDefaultRequeteEtapes>[2]>;
 
       const mockEtape1: RequeteEtape = {
         id: 'etape1Id',
@@ -303,7 +251,7 @@ describe('RequeteEtapes.service.ts', () => {
       mockFindMany.mockResolvedValueOnce([]);
       mockCreate.mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
 
-      const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate, mockTx);
+      const result = await createDefaultRequeteEtapes(requeteId, entiteId, mockTx);
 
       expect(result).toEqual({ etape1: mockEtape1, etape2: mockEtape2 });
       expect(mockFindUnique).toHaveBeenCalledWith(
@@ -341,13 +289,14 @@ describe('RequeteEtapes.service.ts', () => {
     it('should format date correctly in French locale', async () => {
       const requeteId = 'requeteId';
       const entiteId = 'entiteId';
-      const receptionDate = new Date('2024-12-25T00:00:00Z');
+      const createdAt = new Date('2024-12-25T00:00:00Z');
 
-      const mockRequeteEntite: RequeteEntite = {
+      const mockRequeteEntite = {
         requeteId,
         entiteId,
         statutId: 'EN_COURS',
         prioriteId: null,
+        requete: { dematSocialId: null, createdAt, createdBy: null },
       };
 
       const mockEtape1: RequeteEtape = {
@@ -380,7 +329,7 @@ describe('RequeteEtapes.service.ts', () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
       vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
 
-      await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
+      await createDefaultRequeteEtapes(requeteId, entiteId);
 
       const firstCall = vi.mocked(prisma.requeteEtape.create).mock.calls[0];
       expect(firstCall[0].data.nom).toMatch(/Création de la requête le \d{2}\/\d{2}\/\d{4}/);
@@ -389,13 +338,14 @@ describe('RequeteEtapes.service.ts', () => {
     it('should create etapes with correct order (both FAIT)', async () => {
       const requeteId = 'requeteId';
       const entiteId = 'entiteId';
-      const receptionDate = new Date('2024-06-01T12:00:00Z');
+      const createdAt = new Date('2024-06-01T12:00:00Z');
 
-      const mockRequeteEntite: RequeteEntite = {
+      const mockRequeteEntite = {
         requeteId,
         entiteId,
         statutId: 'EN_COURS',
         prioriteId: null,
+        requete: { dematSocialId: null, createdAt, createdBy: null },
       };
 
       const mockEtape1: RequeteEtape = {
@@ -429,7 +379,7 @@ describe('RequeteEtapes.service.ts', () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
       vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
 
-      const result = await createDefaultRequeteEtapes(requeteId, entiteId, receptionDate);
+      const result = await createDefaultRequeteEtapes(requeteId, entiteId);
 
       expect(result).not.toBeNull();
       expect(result?.etape1.statutId).toBe('FAIT');
