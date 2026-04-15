@@ -7,7 +7,7 @@
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
     "studio": "prisma studio",
-    "deploy": "prisma db push",
+    "deploy": "prisma migrate deploy",
     "reset": "prisma migrate reset",
     "lint": "biome check",
     "build": "tsc"
