@@ -5,6 +5,7 @@ import { prismaStorage } from './asyncLocalStorage.js';
 
 const pool = new pg.Pool({
   connectionString: process.env.PG_URL,
+  ssl: process.env.PG_SSL_ALLOW_SELF_SIGNED === 'true' ? { rejectUnauthorized: false } : undefined,
 });
 
 const adapter = new PrismaPg(pool);
