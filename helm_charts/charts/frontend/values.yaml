@@ -27,11 +27,11 @@ SDPSN-devops-charts:
   securityHeaders:
     Content-Security-Policy: >-
       default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://matomo.fabrique.social.gouv.fr;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://matomo.fabrique.social.gouv.fr https://jsd-widget.atlassian.com;
       style-src 'self' 'unsafe-inline';
       img-src 'self' data: https:;
       font-src 'self' data:;
-      connect-src 'self' https://matomo.fabrique.social.gouv.fr https://sentry2.fabrique.social.gouv.fr;
+      connect-src 'self' https://matomo.fabrique.social.gouv.fr https://sentry2.fabrique.social.gouv.fr https://*.atlassian.com https://*.ingest.sentry.io;
       worker-src 'self' blob:;
       frame-ancestors 'none'
 

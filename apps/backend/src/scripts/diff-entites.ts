@@ -34,6 +34,7 @@
  *   pnpm db:execute --file apps/backend/down.sql
  */
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { prisma } from '../libs/prisma.js';
@@ -51,6 +52,11 @@ type CsvRow = {
   organizationalUnit: string | undefined;
   entiteTypeId: string | undefined;
   entiteMereId: string | null | undefined; // undefined = not provided (skip), null = explicitly empty
+  departementCode: string | undefined;
+  regionCode: string | undefined;
+  ctcdCode: string | undefined;
+  dptLib: string | undefined;
+  regLib: string | undefined;
 };
 
 type DbRow = {
@@ -66,6 +72,11 @@ type DbRow = {
   organizationalUnit: string;
   entiteTypeId: string;
   entiteMereId: string | null;
+  departementCode: string;
+  regionCode: string;
+  ctcdCode: string;
+  dptLib: string;
+  regLib: string;
 };
 
 const args = process.argv.slice(2);
@@ -188,6 +199,11 @@ function mapCsvToRows(csvFileContent: string): { inserts: CsvRow[]; updates: Csv
   const idxOrganizationalUnit = findHeaderIndex(headers, 'organizationalUnit');
   const idxEntiteTypeId = findHeaderIndex(headers, 'entiteTypeId');
   const idxEntiteMereId = findHeaderIndex(headers, 'entiteMereId');
+  const idxDepartementCode = findHeaderIndex(headers, 'departementCode');
+  const idxRegionCode = findHeaderIndex(headers, 'regionCode');
+  const idxCtcdCode = findHeaderIndex(headers, 'ctcdCode');
+  const idxDptLib = findHeaderIndex(headers, 'dptLib');
+  const idxRegLib = findHeaderIndex(headers, 'regLib');
 
   const requiredCols = [
     ['id', idxId],
@@ -223,6 +239,12 @@ function mapCsvToRows(csvFileContent: string): { inserts: CsvRow[]; updates: Csv
     const entiteTypeId = (line[idxEntiteTypeId] ?? '').trim() || undefined;
     const entiteMereIdRaw = idxEntiteMereId !== -1 ? (line[idxEntiteMereId] ?? '').trim() : '';
     const entiteMereId = entiteMereIdRaw ? entiteMereIdRaw : undefined;
+    const departementCode =
+      idxDepartementCode !== -1 ? (line[idxDepartementCode] ?? '').trim() || undefined : undefined;
+    const regionCode = idxRegionCode !== -1 ? (line[idxRegionCode] ?? '').trim() || undefined : undefined;
+    const ctcdCode = idxCtcdCode !== -1 ? (line[idxCtcdCode] ?? '').trim() || undefined : undefined;
+    const dptLib = idxDptLib !== -1 ? (line[idxDptLib] ?? '').trim() || undefined : undefined;
+    const regLib = idxRegLib !== -1 ? (line[idxRegLib] ?? '').trim() || undefined : undefined;
 
     // skip fully empty lines
     if (!nomComplet && !label && !entiteTypeId && !id) continue;
@@ -256,6 +278,11 @@ function mapCsvToRows(csvFileContent: string): { inserts: CsvRow[]; updates: Csv
       organizationalUnit,
       entiteTypeId,
       entiteMereId,
+      departementCode,
+      regionCode,
+      ctcdCode,
+      dptLib,
+      regLib,
     };
 
     if (!id) {
@@ -283,6 +310,11 @@ const EDITABLE_FIELDS = [
   'organizationalUnit',
   'entiteTypeId',
   'entiteMereId',
+  'departementCode',
+  'regionCode',
+  'ctcdCode',
+  'dptLib',
+  'regLib',
 ] as const;
 
 type EditableField = (typeof EDITABLE_FIELDS)[number];
@@ -334,6 +366,11 @@ async function main() {
           organizationalUnit: true,
           entiteTypeId: true,
           entiteMereId: true,
+          departementCode: true,
+          regionCode: true,
+          ctcdCode: true,
+          dptLib: true,
+          regLib: true,
         },
       })) as DbRow[])
     : [];
@@ -414,12 +451,12 @@ async function main() {
   if (inserts.length) {
     console.log(`\n-- INSERT`);
     console.log(
-      `INSERT INTO "public"."Entite" ("id","nomComplet","label","isActive","email","emailContactUsager","telContactUsager","adresseContactUsager","emailDomain","organizationalUnit","entiteTypeId","entiteMereId") VALUES`,
+      `INSERT INTO "public"."Entite" ("id","nomComplet","label","isActive","email","emailContactUsager","telContactUsager","adresseContactUsager","emailDomain","organizationalUnit","entiteTypeId","entiteMereId","departementCode","regionCode","ctcdCode","dptLib","regLib") VALUES`,
     );
     const values = inserts
       .map(
         (r) =>
-          `(gen_random_uuid(), ${escapeSql(r.nomComplet ?? '')}, ${escapeSql(r.label ?? '')}, ${escapeSql(r.isActive ?? false)}, ${escapeSql(r.email ?? '')}, ${escapeSql(r.emailContactUsager ?? '')}, ${escapeSql(r.telContactUsager ?? '')}, ${escapeSql(r.adresseContactUsager ?? '')}, ${escapeSql(r.emailDomain ?? '')}, ${escapeSql(r.organizationalUnit ?? '')}, ${escapeSql(r.entiteTypeId ?? '')}, ${escapeSql(r.entiteMereId ?? null)})`,
+          `(${escapeSql(crypto.randomUUID())}, ${escapeSql(r.nomComplet ?? '')}, ${escapeSql(r.label ?? '')}, ${escapeSql(r.isActive ?? false)}, ${escapeSql(r.email ?? '')}, ${escapeSql(r.emailContactUsager ?? '')}, ${escapeSql(r.telContactUsager ?? '')}, ${escapeSql(r.adresseContactUsager ?? '')}, ${escapeSql(r.emailDomain ?? '')}, ${escapeSql(r.organizationalUnit ?? '')}, ${escapeSql(r.entiteTypeId ?? '')}, ${escapeSql(r.entiteMereId ?? null)}, ${escapeSql(r.departementCode ?? '')}, ${escapeSql(r.regionCode ?? '')}, ${escapeSql(r.ctcdCode ?? '')}, ${escapeSql(r.dptLib ?? '')}, ${escapeSql(r.regLib ?? '')})`,
       )
       .join(',\n');
     console.log(`${values};`);

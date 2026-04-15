@@ -15,7 +15,6 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "pnpm --filter @sirena/db generate",
     "db:migrate": "pnpm --filter @sirena/db migrate dev",
-    "db:migrate:resolve": "pnpm --filter @sirena/db migrate resolve --rolled-back",
     "op:import:dematsocial": "tsx src/scripts/import_dematsocial.ts",
     "op:import:geodata": "tsx src/scripts/import_geodata.ts",
     "op:manage-api-keys": "tsx src/scripts/manage-api-keys.ts",
