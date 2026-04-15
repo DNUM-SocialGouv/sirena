@@ -17,6 +17,7 @@ backend:
       FRONTEND_URI: https://sirena-sante.social.gouv.fr
       REDIS_TLS: "true"
       SENTRY_ENVIRONMENT: production
+      PG_SSL_ALLOW_SELF_SIGNED: "true"
       TIPIMAIL_DISABLE_SENDING: "false"
 
     deployment:
