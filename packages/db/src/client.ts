@@ -3,9 +3,12 @@ import pg from 'pg';
 import { type Prisma, PrismaClient } from '../generated/prisma/client.js';
 import { prismaStorage } from './asyncLocalStorage.js';
 
-const pool = new pg.Pool({
-  connectionString: process.env.PG_URL,
-});
+const connectionString =
+  process.env.PG_SSL_ALLOW_SELF_SIGNED === 'true'
+    ? process.env.PG_URL?.replace('sslmode=require', 'sslmode=no-verify')
+    : process.env.PG_URL;
+
+const pool = new pg.Pool({ connectionString });
 
 const adapter = new PrismaPg(pool);
 
