@@ -38,6 +38,7 @@ export const createDefaultRequeteEtapes = async (
       requete: {
         select: {
           dematSocialId: true,
+          thirdPartyAccountId: true,
           createdAt: true,
           createdBy: {
             select: {
@@ -69,7 +70,8 @@ export const createDefaultRequeteEtapes = async (
   const creationDate = requeteEntite.requete?.createdAt ?? new Date();
   const formattedCreationDate = formatDateFr(creationDate);
 
-  const isAutomaticCreation = requeteEntite.requete?.dematSocialId != null;
+  const isAutomaticCreation =
+    requeteEntite.requete?.dematSocialId != null || requeteEntite.requete?.thirdPartyAccountId != null;
   const createdBy = requeteEntite.requete?.createdBy;
 
   const creationStepName = isAutomaticCreation
@@ -91,7 +93,7 @@ export const createDefaultRequeteEtapes = async (
     data: {
       requeteId: requeteId,
       entiteId: entiteId,
-      statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+      statutId: isAutomaticCreation ? REQUETE_ETAPE_STATUT_TYPES.FAIT : REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
       nom: ACKNOWLEDGMENT_STEP_NAME,
     },
   });
