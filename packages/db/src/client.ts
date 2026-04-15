@@ -1,10 +1,13 @@
 import { PrismaPg } from '@prisma/adapter-pg';
+import pg from 'pg';
 import { type Prisma, PrismaClient } from '../generated/prisma/client.js';
 import { prismaStorage } from './asyncLocalStorage.js';
 
-const adapter = new PrismaPg({
+const pool = new pg.Pool({
   connectionString: process.env.PG_URL,
 });
+
+const adapter = new PrismaPg(pool);
 
 // Use globalThis for broader environment compatibility
 const globalForPrisma = globalThis as typeof globalThis & {

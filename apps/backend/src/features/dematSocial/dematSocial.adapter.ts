@@ -217,14 +217,15 @@ const getBooleanOrNull = (
   if (!champ) {
     return null;
   }
+  if (options) {
+    if (!champ.stringValue) {
+      return null;
+    }
+    const match = options.find((opt) => opt.label === champ.stringValue);
+    return match?.key ?? null;
+  }
   if ('checked' in champ) {
     return champ.checked;
-  }
-  if (options && champ.stringValue) {
-    const match = options.find((opt) => opt.label === champ.stringValue);
-    if (match) {
-      return match.key;
-    }
   }
   throw new ChampMappingError(champ, 'unknown', 'Invalid mapping value');
 };
