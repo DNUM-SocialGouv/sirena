@@ -16,6 +16,19 @@ export async function fetchEntites(id: string | undefined, query: QueryParams = 
   return { data, meta };
 }
 
+export async function fetchEntitesAdmin(query: QueryParams = {}) {
+  const res = await client.entites.admin.$get({
+    query: {
+      ...query,
+      limit: query.limit?.toString(),
+      offset: query.offset?.toString(),
+    },
+  });
+  await handleRequestErrors(res);
+  const { data, meta } = await res.json();
+  return { data, meta };
+}
+
 export async function fetchEntiteChain(id: string | undefined) {
   const res = await client.entites.chain[':id?'].$get({ param: { id } });
   await handleRequestErrors(res);
