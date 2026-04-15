@@ -10,6 +10,11 @@ To use the project locally, make sure the following tools are installed:
 - [**Docker**](https://www.docker.com/products/docker-desktop/) — for running PostgreSQL locally
 - [**Gitleaks**](https://github.com/gitleaks/gitleaks/releases) — for pre-commit secret detection
 
+> **Windows devs:** the pre-commit hook requires the environment variable `MSYS_NO_PATHCONV=1` to be set locally. Add it to your shell profile (e.g. `~/.bashrc` or `~/.zshrc`) or set it globally via System Properties:
+> ```bash
+> export MSYS_NO_PATHCONV=1
+> ```
+
 To run the project locally, you’ll need a .env file at the root of the repo.
 
 You can start by copying the example:
