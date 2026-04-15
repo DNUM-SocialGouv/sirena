@@ -96,7 +96,7 @@ export const RequestInfos = ({
           {/* TODO: réactiver quand la feature téléchargement sera prête */}
           {false && requestId && (
             <div className={`fr-col-auto ${style['download-menu-wrapper']}`}>
-              <DownloadMenu requestId={requestId} disabled={!hasAttachments} hasUnsafeFiles={hasUnsafeFiles} />
+              <DownloadMenu requestId={requestId ?? ''} disabled={!hasAttachments} hasUnsafeFiles={hasUnsafeFiles} />
             </div>
           )}
         </div>
