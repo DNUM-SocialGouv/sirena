@@ -2,7 +2,7 @@ import inseePostalRaw from '../../prisma/documents/inseetocodepostal.json' with 
 import listeEntitesRaw from '../../prisma/documents/liste_entites.json' with { type: 'json' };
 import { createDefaultLogger } from '../helpers/pino.js';
 import { getLoggerStore, loggerStorage } from '../libs/asyncLocalStorage.js';
-import { type Prisma, type PrismaClient, prisma, prismaStorage } from '../libs/prisma.js';
+import { type Prisma, type PrismaClient, prisma } from '../libs/prisma.js';
 
 type InseePostalRow = {
   codeInsee: string;
@@ -104,10 +104,8 @@ async function main() {
 
       await prisma.$connect();
 
-      await prismaStorage.run(prisma, async () => {
-        await prisma.$transaction(async (tx) => {
-          await importGeoData(tx);
-        });
+      await prisma.$transaction(async (tx) => {
+        await importGeoData(tx);
       });
 
       logger.info('✅ import:geodata completed successfully.');
