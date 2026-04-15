@@ -1,8 +1,8 @@
-import { Job } from "bullmq";
-import { transformData } from "../transformers/index.js";
-import { saveTransformedDataToSirena } from "../model/sirena/index.js";
-import { logError, logMessage } from "../utils/logs.js";
-import { getSirecReclamationDataById } from "../model/sirec/sirec-reclamation-data.js";
+import type { Job } from 'bullmq';
+import { getSirecReclamationDataById } from '../model/sirec/sirec-reclamation-data.js';
+import { saveTransformedDataToSirena } from '../model/sirena/index.js';
+import { transformData } from '../transformers/index.js';
+import { logError, logMessage } from '../utils/logs.js';
 
 export default async function processor(job: Job) {
   const { id } = job.data;
@@ -14,7 +14,7 @@ export default async function processor(job: Job) {
 
     if (!sirecReclamationData) {
       logError(`Aucun enregistrement SIREC pour l'ID : ${id}`);
-      return { success: false, reason: "NOT_FOUND" };
+      return { success: false, reason: 'NOT_FOUND' };
     }
 
     // 2. Transformation vers le modèle SIRENA

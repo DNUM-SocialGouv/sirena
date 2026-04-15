@@ -1,3 +1,4 @@
-import type {SirecReclamation} from "../type.js";
+import type { SirecReclamation } from '../type.js';
 
-export const generateSirenaId = (sirecReclamantion: SirecReclamation) => "SIREC-" + sirecReclamantion.id_data.toString();
+export const generateSirenaId = (sirecReclamantion: SirecReclamation) =>
+  'SIREC-' + sirecReclamantion.id_data.toString();
