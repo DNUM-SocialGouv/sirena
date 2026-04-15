@@ -1,3 +1,4 @@
+import { ROLES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -34,10 +35,20 @@ vi.mock('../../middlewares/userStatus.middleware.js', () => {
   };
 });
 
+const { roleMiddlewareSpy, currentRole } = vi.hoisted(() => ({
+  roleMiddlewareSpy: vi.fn(),
+  currentRole: { value: 'SUPER_ADMIN' },
+}));
+
 vi.mock('../../middlewares/role.middleware.js', () => {
   return {
-    default: () => {
-      return (_c: Context, next: Next) => {
+    default: (roles: string[]) => {
+      roleMiddlewareSpy(roles);
+      return async (c: Context, next: Next) => {
+        if (!roles.includes(currentRole.value)) {
+          return c.json({ message: 'Forbidden' }, 403);
+        }
+
         return next();
       };
     },
@@ -77,7 +88,55 @@ describe('Entites endpoints: /entites', () => {
     isActive: false,
   };
 
+  beforeEach(() => {
+    currentRole.value = ROLES.SUPER_ADMIN;
+    vi.clearAllMocks();
+  });
+
   describe('GET /admin', () => {
+    it('allows SUPER_ADMIN to get admin entities', async () => {
+      vi.mocked(getEntitesAdmin).mockResolvedValueOnce({
+        data: [
+          {
+            id: 'root-ars',
+            entiteNom: 'ARS Normandie',
+            entiteLabel: 'ARS NOR',
+            directionNom: '',
+            directionLabel: '',
+            serviceNom: '',
+            serviceLabel: '',
+            email: '',
+            contactUsager: '',
+            isActiveLabel: 'Oui',
+            editId: 'root-ars',
+          },
+        ],
+        total: 1,
+      });
+
+      const res = await client.admin.$get({
+        query: { offset: '0', limit: '10' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(getEntitesAdmin).toHaveBeenCalledWith({
+        offset: 0,
+        limit: 10,
+      });
+    });
+
+    it('rejects non SUPER_ADMIN users with 403', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+
+      const res = await client.admin.$get({
+        query: { offset: '0', limit: '10' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ message: 'Forbidden' });
+      expect(getEntitesAdmin).not.toHaveBeenCalled();
+    });
+
     it('should return admin entities list with pagination metadata', async () => {
       vi.mocked(getEntitesAdmin).mockResolvedValueOnce({
         data: [
