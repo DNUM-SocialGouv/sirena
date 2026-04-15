@@ -5,7 +5,7 @@ import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
-import { getEditableEntitiesChain, getEntites } from './entites.service.js';
+import { getEditableEntitiesChain, getEntites, getEntitesAdmin } from './entites.service.js';
 
 vi.mock('../../config/env.js', () => ({
   envVars: {},
@@ -13,6 +13,7 @@ vi.mock('../../config/env.js', () => ({
 
 vi.mock('./entites.service.js', () => ({
   getEntites: vi.fn(),
+  getEntitesAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
 }));
 
@@ -76,6 +77,62 @@ describe('Entites endpoints: /entites', () => {
     isActive: false,
   };
 
+  describe('GET /admin', () => {
+    it('should return admin entities list with pagination metadata', async () => {
+      vi.mocked(getEntitesAdmin).mockResolvedValueOnce({
+        data: [
+          {
+            id: 'root-ars',
+            entiteNom: 'ARS Normandie',
+            entiteLabel: 'ARS NOR',
+            directionNom: '',
+            directionLabel: '',
+            serviceNom: '',
+            serviceLabel: '',
+            email: '',
+            contactUsager: 'contact@ars.fr · 01 02 03 04 05',
+            isActiveLabel: 'Oui',
+            editId: 'root-ars',
+          },
+        ],
+        total: 1,
+      });
+
+      const res = await client.admin.$get({
+        query: { offset: '0', limit: '10' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: [
+          {
+            id: 'root-ars',
+            entiteNom: 'ARS Normandie',
+            entiteLabel: 'ARS NOR',
+            directionNom: '',
+            directionLabel: '',
+            serviceNom: '',
+            serviceLabel: '',
+            email: '',
+            contactUsager: 'contact@ars.fr · 01 02 03 04 05',
+            isActiveLabel: 'Oui',
+            editId: 'root-ars',
+          },
+        ],
+        meta: {
+          offset: 0,
+          limit: 10,
+          total: 1,
+        },
+      });
+
+      expect(getEntitesAdmin).toHaveBeenCalledWith({
+        offset: 0,
+        limit: 10,
+      });
+    });
+  });
+
   describe('GET /:id?', () => {
     it('should return entities from root when id is not provided', async () => {
       vi.mocked(getEntites).mockResolvedValueOnce({
@@ -83,7 +140,10 @@ describe('Entites endpoints: /entites', () => {
         total: 1,
       });
 
-      const res = await client[':id?'].$get({ param: { id: undefined }, query: { offset: '0', limit: '10' } });
+      const res = await client[':id?'].$get({
+        param: { id: undefined },
+        query: { offset: '0', limit: '10' },
+      });
 
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({
@@ -107,7 +167,10 @@ describe('Entites endpoints: /entites', () => {
         total: 1,
       });
 
-      const res = await client[':id?'].$get({ param: { id: '1' }, query: { offset: '0', limit: '5' } });
+      const res = await client[':id?'].$get({
+        param: { id: '1' },
+        query: { offset: '0', limit: '5' },
+      });
 
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({
