@@ -1,16 +1,58 @@
+import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { ROLES } from '@sirena/common/constants';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { useCallback, useMemo } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { useEntitesAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+import { QueryParamsSchema } from '@/schemas/pagination.schema';
 
 export const Route = createFileRoute('/_auth/admin/entities/')({
   beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
+  validateSearch: QueryParamsSchema,
   component: RouteComponent,
 });
 
-function RouteComponent() {
-  const entitesQuery = useEntitesAdmin({ offset: 0, limit: 20 });
+const DEFAULT_PAGE_SIZE = 10;
+
+export function RouteComponent() {
+  const search = useSearch({ from: '/_auth/admin/entities/' });
+  const navigate = useNavigate({ from: '/admin/entities/' });
+
+  const limit = search.limit ?? DEFAULT_PAGE_SIZE;
+  const offset = search.offset ?? 0;
+  const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
+
+  const entitesQuery = useEntitesAdmin({
+    offset,
+    limit,
+  });
+
+  const total = useMemo(() => entitesQuery.data?.meta?.total ?? 0, [entitesQuery.data?.meta?.total]);
+  const totalPages = useMemo(() => Math.ceil(total / limit), [total, limit]);
+  const shouldShowPagination = useMemo(() => total > limit, [total, limit]);
+
+  const getPageLinkProps = useCallback(
+    (pageNumber: number) => {
+      const newOffset = (pageNumber - 1) * limit;
+
+      return {
+        href: '#',
+        onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+          e.preventDefault();
+          navigate({
+            search: (prev) => ({
+              ...prev,
+              offset: newOffset === 0 ? undefined : newOffset,
+              limit: limit === DEFAULT_PAGE_SIZE ? undefined : limit,
+            }),
+          });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+      };
+    },
+    [navigate, limit],
+  );
 
   return (
     <div className="fr-container-fluid">
@@ -62,6 +104,12 @@ function RouteComponent() {
           </>
         )}
       </QueryStateHandler>
+
+      {shouldShowPagination && (
+        <div className="fr-mt-3w fr-grid-row fr-grid-row--center">
+          <Pagination count={totalPages} defaultPage={currentPage} getPageLinkProps={getPageLinkProps} />
+        </div>
+      )}
     </div>
   );
 }
