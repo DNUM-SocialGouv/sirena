@@ -94,37 +94,6 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('GET /admin', () => {
-    it('allows SUPER_ADMIN to get admin entities', async () => {
-      vi.mocked(getEntitesAdmin).mockResolvedValueOnce({
-        data: [
-          {
-            id: 'root-ars',
-            entiteNom: 'ARS Normandie',
-            entiteLabel: 'ARS NOR',
-            directionNom: '',
-            directionLabel: '',
-            serviceNom: '',
-            serviceLabel: '',
-            email: '',
-            contactUsager: '',
-            isActiveLabel: 'Oui',
-            editId: 'root-ars',
-          },
-        ],
-        total: 1,
-      });
-
-      const res = await client.admin.$get({
-        query: { offset: '0', limit: '10' },
-      });
-
-      expect(res.status).toBe(200);
-      expect(getEntitesAdmin).toHaveBeenCalledWith({
-        offset: 0,
-        limit: 10,
-      });
-    });
-
     it('rejects non SUPER_ADMIN users with 403', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
 
@@ -137,7 +106,7 @@ describe('Entites endpoints: /entites', () => {
       expect(getEntitesAdmin).not.toHaveBeenCalled();
     });
 
-    it('should return admin entities list with pagination metadata', async () => {
+    it('returns admin entities list with pagination metadata for SUPER_ADMIN', async () => {
       vi.mocked(getEntitesAdmin).mockResolvedValueOnce({
         data: [
           {
