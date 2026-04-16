@@ -15,7 +15,7 @@
   margin: 0;
 }
 
-.user-menu {
+.user-menu__wrapper .user-menu {
   position: static;
   width: 100%;
   margin: 0;
@@ -52,7 +52,7 @@
   border-top: 1px solid var(--border-default-grey);
 }
 
-.user-menu a:hover {
+.user-menu__wrapper .user-menu a:hover {
   color: var(--text-action-high-blue-france);
 }
 
@@ -88,7 +88,7 @@
     border-bottom: none;
   }
 
-  .user-menu {
+  .user-menu__wrapper .user-menu {
     position: absolute;
     top: calc(100% - 1px);
     right: 4px;

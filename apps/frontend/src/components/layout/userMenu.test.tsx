@@ -64,7 +64,7 @@ describe('UserMenu', () => {
     const link = screen.getByRole('link', { name: 'Liste des requêtes' });
 
     expect(link).toHaveAttribute('href', '/home');
-    expect(link.className).toContain('fr-icon-arrow');
+    expect(link.className).toContain('fr-icon-user-line');
   });
 
   it('does not show the admin entry for writers', async () => {
