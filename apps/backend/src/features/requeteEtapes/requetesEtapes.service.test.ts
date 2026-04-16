@@ -118,7 +118,7 @@ describe('RequeteEtapes.service.ts', () => {
   });
 
   describe('createDefaultRequeteEtapes()', () => {
-    it('should create two default etapes with correct statuts and names', async () => {
+    it('should create two default etapes with acknowledgment always as A_FAIRE', async () => {
       const requeteId = 'requeteId';
       const entiteId = 'entiteId';
       const createdAt = new Date('2024-01-15T10:00:00Z');
@@ -151,7 +151,7 @@ describe('RequeteEtapes.service.ts', () => {
         nom: 'Envoyer un accusé de réception au déclarant',
         type: 'MANUAL',
         estPartagee: false,
-        statutId: 'FAIT',
+        statutId: 'A_FAIRE',
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
@@ -164,16 +164,6 @@ describe('RequeteEtapes.service.ts', () => {
       const result = await createDefaultRequeteEtapes(requeteId, entiteId);
 
       expect(result).toEqual({ etape1: mockEtape1, etape2: mockEtape2 });
-      expect(prisma.requeteEntite.findUnique).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            requeteId_entiteId: {
-              requeteId,
-              entiteId,
-            },
-          },
-        }),
-      );
       expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
 
       expect(prisma.requeteEtape.create).toHaveBeenNthCalledWith(1, {
@@ -189,7 +179,7 @@ describe('RequeteEtapes.service.ts', () => {
         data: {
           requeteId,
           entiteId,
-          statutId: 'FAIT',
+          statutId: 'A_FAIRE',
           nom: 'Envoyer un accusé de réception au déclarant',
         },
       });
@@ -241,7 +231,7 @@ describe('RequeteEtapes.service.ts', () => {
         nom: 'Envoyer un accusé de réception au déclarant',
         type: 'MANUAL',
         estPartagee: false,
-        statutId: 'FAIT',
+        statutId: 'A_FAIRE',
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
@@ -280,7 +270,7 @@ describe('RequeteEtapes.service.ts', () => {
         data: {
           requeteId,
           entiteId,
-          statutId: 'FAIT',
+          statutId: 'A_FAIRE',
           nom: 'Envoyer un accusé de réception au déclarant',
         },
       });
@@ -335,7 +325,7 @@ describe('RequeteEtapes.service.ts', () => {
       expect(firstCall[0].data.nom).toMatch(/Création de la requête le \d{2}\/\d{2}\/\d{4}/);
     });
 
-    it('should create etapes with correct order (both FAIT)', async () => {
+    it('should create etapes with correct order (FAIT for creation, A_FAIRE for acknowledgment)', async () => {
       const requeteId = 'requeteId';
       const entiteId = 'entiteId';
       const createdAt = new Date('2024-06-01T12:00:00Z');
@@ -368,7 +358,7 @@ describe('RequeteEtapes.service.ts', () => {
         nom: 'Envoyer un accusé de réception au déclarant',
         type: 'MANUAL',
         estPartagee: false,
-        statutId: 'FAIT',
+        statutId: 'A_FAIRE',
         clotureReasonId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -383,7 +373,7 @@ describe('RequeteEtapes.service.ts', () => {
 
       expect(result).not.toBeNull();
       expect(result?.etape1.statutId).toBe('FAIT');
-      expect(result?.etape2.statutId).toBe('FAIT');
+      expect(result?.etape2.statutId).toBe('A_FAIRE');
       expect(result?.etape1.nom).toContain('Création de la requête');
       expect(result?.etape2.nom).toBe('Envoyer un accusé de réception au déclarant');
     });

@@ -7,7 +7,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 vi.mock('@/components/common/tables/pendingUsersTab', () => ({
-  PendingUsersTab: () => <div>Pending users tab</div>,
+  PendingUsersTab: () => <div>Gestion des demandes d'habilitations</div>,
 }));
 
 afterEach(() => {
@@ -19,6 +19,6 @@ describe('Admin users index route', () => {
   it('renders the pending users tab content', () => {
     render(<RouteComponent />);
 
-    expect(screen.getByText('Pending users tab')).toBeInTheDocument();
+    expect(screen.getByText("Gestion des demandes d'habilitations")).toBeInTheDocument();
   });
 });
