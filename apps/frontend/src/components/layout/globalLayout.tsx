@@ -49,8 +49,8 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
         </nav>
       </div>
       <HeaderMenu homeHref="/" />
-      <EnvironmentBanner />
       <main id={mainId} role="main" className="fr-container main-content">
+        <EnvironmentBanner />
         {children}
       </main>
       <AppFooter />
