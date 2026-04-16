@@ -21,7 +21,6 @@ export function EnvironmentBanner() {
       title={`Vous êtes sur l'environnement ${envLabel}. Ne saisissez pas de données réelles dans cet environnement.`}
       severity="info"
       isClosable={false}
-      className="fr-mb-3w"
     />
   );
 }
