@@ -38,7 +38,6 @@ export const createDefaultRequeteEtapes = async (
       requete: {
         select: {
           dematSocialId: true,
-          thirdPartyAccountId: true,
           createdAt: true,
           createdBy: {
             select: {
@@ -70,10 +69,11 @@ export const createDefaultRequeteEtapes = async (
   const creationDate = requeteEntite.requete?.createdAt ?? new Date();
   const formattedCreationDate = formatDateFr(creationDate);
 
-  const isAutomaticCreation =
-    requeteEntite.requete?.dematSocialId != null || requeteEntite.requete?.thirdPartyAccountId != null;
+  const isAutomaticCreation = requeteEntite.requete?.dematSocialId != null;
   const createdBy = requeteEntite.requete?.createdBy;
 
+  // Acknowledgment step is always created as A_FAIRE.
+  // It gets set to FAIT by updateAcknowledgmentStep() when the acknowledgment email is actually sent.
   const creationStepName = isAutomaticCreation
     ? `${AUTOMATIC_CREATION_STEP_NAME_PREFIX} ${formattedCreationDate}`
     : `${CREATION_STEP_NAME_PREFIX} ${formattedCreationDate}${
@@ -93,7 +93,7 @@ export const createDefaultRequeteEtapes = async (
     data: {
       requeteId: requeteId,
       entiteId: entiteId,
-      statutId: isAutomaticCreation ? REQUETE_ETAPE_STATUT_TYPES.FAIT : REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+      statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
       nom: ACKNOWLEDGMENT_STEP_NAME,
     },
   });
