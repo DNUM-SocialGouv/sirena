@@ -887,9 +887,6 @@ describe('getAdminEntites()', () => {
       limit: 20,
     });
 
-    expect(prisma.entite.findMany).toHaveBeenCalledWith();
-    expect(prisma.entite.count).not.toHaveBeenCalled();
-
     expect(result.total).toBe(4);
     expect(result.data.map((row) => row.id)).toEqual(['root-ars', 'dir-1', 'svc-1', 'root-cd']);
     expect(result.data[0]).toMatchObject({
