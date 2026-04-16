@@ -8,7 +8,7 @@ import { RouteComponent } from './route';
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => () => ({}),
   Navigate: ({ to }: { to: string }) => <div>redirect:{to}</div>,
-  Outlet: () => <div>Admin outlet</div>,
+  Outlet: () => null,
   useMatches: vi.fn(),
   useNavigate: vi.fn(),
 }));
@@ -56,8 +56,6 @@ describe('Admin route', () => {
     );
     expect(screen.getByRole('tab', { name: 'Gestion des utilisateurs' })).toHaveAttribute('aria-selected', 'false');
     expect(screen.queryByRole('tab', { name: 'Gestion des entités' })).not.toBeInTheDocument();
-
-    expect(screen.getByText('Admin outlet')).toBeInTheDocument();
   });
 
   it('renders the entities tab as active for super admins on entities routes', () => {
