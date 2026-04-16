@@ -5,7 +5,7 @@ export const Route = createFileRoute('/_auth/admin/users/')({
   head: () => ({
     meta: [
       {
-        title: 'Utilisateurs en attente de validation - SIRENA',
+        title: 'Espace administrateur - SIRENA',
       },
     ],
   }),
