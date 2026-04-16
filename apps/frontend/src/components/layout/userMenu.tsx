@@ -151,7 +151,7 @@ export const UserMenu = () => {
           {(role === ROLES.ENTITY_ADMIN || role === ROLES.SUPER_ADMIN) && (
             <>
               {isAdminRoute ? (
-                <a className="fr-btn--icon-left fr-icon-arrow-left-line fr-p-2w" href="/home">
+                <a className="fr-btn--icon-left fr-icon-user-line fr-p-2w" href="/home">
                   Liste des requêtes
                 </a>
               ) : (
