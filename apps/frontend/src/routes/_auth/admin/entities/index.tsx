@@ -11,6 +11,13 @@ import { QueryParamsSchema } from '@/schemas/pagination.schema';
 export const Route = createFileRoute('/_auth/admin/entities/')({
   beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
   validateSearch: QueryParamsSchema,
+  head: () => ({
+    meta: [
+      {
+        title: 'Gestion des entités - Espace administrateur -SIRENA',
+      },
+    ],
+  }),
   component: RouteComponent,
 });
 
