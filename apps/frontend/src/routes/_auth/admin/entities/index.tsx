@@ -82,19 +82,14 @@ export function RouteComponent() {
     <>
       <QueryStateHandler query={entitesListQuery} noDataComponent={<p>Aucune entité administrative à afficher.</p>}>
         {({ data }) => (
-          <>
-            <p>
-              {data.meta.total} entité{data.meta.total > 1 ? 's' : ''}
-            </p>
-            <DataTable
-              title="Liste des entités administratives"
-              rowId="id"
-              data={data.data}
-              columns={columns}
-              cells={cells}
-              isLoading={entitesListQuery.isFetching}
-            />
-          </>
+          <DataTable
+            title="Liste des entités administratives"
+            rowId="id"
+            data={data.data}
+            columns={columns}
+            cells={cells}
+            isLoading={entitesListQuery.isFetching}
+          />
         )}
       </QueryStateHandler>
 
