@@ -14,35 +14,8 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: vi.fn(),
 }));
 
-vi.mock('@codegouvfr/react-dsfr/Pagination', () => ({
-  Pagination: ({
-    count,
-    defaultPage,
-    getPageLinkProps,
-  }: {
-    count: number;
-    defaultPage: number;
-    getPageLinkProps: (pageNumber: number) => {
-      href: string;
-      onClick: (event: React.MouseEvent<HTMLAnchorElement>) => void;
-    };
-  }) => {
-    const page2Props = getPageLinkProps(2);
-
-    return (
-      <div>
-        <span>pagination-count:{count}</span>
-        <span>pagination-default-page:{defaultPage}</span>
-        <a href={page2Props.href} onClick={page2Props.onClick}>
-          Aller à la page 2
-        </a>
-      </div>
-    );
-  },
-}));
-
 vi.mock('@/hooks/queries/entites.hook', () => ({
-  useEntitesAdmin: vi.fn(),
+  useEntitesListAdmin: vi.fn(),
 }));
 
 const mockedUseEntitesAdmin = vi.mocked(useEntitesListAdmin);
@@ -108,7 +81,7 @@ describe('Admin entities index route', () => {
     expect(screen.getByText('1 entité')).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Entité' })).toBeInTheDocument();
     expect(screen.getByText('ARS Normandie')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Éditer' })).toHaveAttribute('href', '/admin/entities/root-ars');
+    expect(screen.getByRole('link', { name: 'Modifier' })).toHaveAttribute('href', '/admin/entities/root-ars');
   });
 
   it('renders an empty state when there are no admin entities', () => {
@@ -168,10 +141,10 @@ describe('Admin entities index route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByText('pagination-count:3')).toBeInTheDocument();
-    expect(screen.getByText('pagination-default-page:1')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Pagination' })).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('link', { name: 'Aller à la page 2' }));
+    const page2Button = screen.getByRole('button', { name: '2' });
+    await userEvent.click(page2Button);
 
     expect(navigate).toHaveBeenCalledWith({
       search: expect.any(Function),
