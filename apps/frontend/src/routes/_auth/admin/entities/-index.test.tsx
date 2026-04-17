@@ -2,7 +2,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useEntitesAdmin } from '@/hooks/queries/entites.hook';
+import { useEntitesListAdmin } from '@/hooks/queries/entites.hook';
 import { RouteComponent } from './index';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -45,7 +45,7 @@ vi.mock('@/hooks/queries/entites.hook', () => ({
   useEntitesAdmin: vi.fn(),
 }));
 
-const mockedUseEntitesAdmin = vi.mocked(useEntitesAdmin);
+const mockedUseEntitesAdmin = vi.mocked(useEntitesListAdmin);
 const mockedUseSearch = vi.mocked(useSearch);
 const mockedUseNavigate = vi.mocked(useNavigate);
 
