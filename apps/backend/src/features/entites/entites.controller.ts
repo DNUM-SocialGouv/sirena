@@ -5,14 +5,14 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
-import { getEntiteChainRoute, getEntitesAdminRoute, getEntitesRoute } from './entites.route.js';
+import { getEntiteChainRoute, getEntitesListAdminRoute, getEntitesRoute } from './entites.route.js';
 import { GetEntitiesQuerySchema } from './entites.schema.js';
 import {
   getEditableEntitiesChain,
   getEntiteDescendantIds,
   getEntites,
-  getEntitesAdmin,
   getEntitesByIds,
+  getEntitesListAdmin,
 } from './entites.service.js';
 
 const app = factoryWithLogs
@@ -63,14 +63,14 @@ const app = factoryWithLogs
   .get(
     '/admin',
     roleMiddleware([ROLES.SUPER_ADMIN]),
-    getEntitesAdminRoute,
+    getEntitesListAdminRoute,
     zValidator('query', GetEntitiesQuerySchema),
     async (c) => {
       const logger = c.get('logger');
       const query = c.req.valid('query');
 
       logger.info({ query }, 'Admin entities list requested');
-      const { data, total } = await getEntitesAdmin(query);
+      const { data, total } = await getEntitesListAdmin(query);
       logger.info({ entitiesCount: data.length, total }, 'Admin entities list retrieved successfully');
 
       return c.json({

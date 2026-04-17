@@ -32,22 +32,22 @@ const columns = [
 
 export const GetEntitiesQuerySchema = paginationQueryParamsSchema(columns);
 
-export const AdminEntiteRowSchema = z.object({
-  id: z.string(),
-  entiteNom: z.string(),
-  entiteLabel: z.string(),
-  directionNom: z.string(),
-  directionLabel: z.string(),
-  serviceNom: z.string(),
-  serviceLabel: z.string(),
-  email: z.string(),
-  contactUsager: z.string(),
-  isActiveLabel: z.enum(['Oui', 'Non']),
-  editId: z.string(),
-});
-
 export const GetEntitiesResponseSchema = z.array(EntiteSchema);
-export const GetAdminEntitesResponseSchema = z.array(AdminEntiteRowSchema);
+export const GetEntitesListAdminResponseSchema = z.array(
+  z.object({
+    id: z.string(),
+    entiteNom: z.string(),
+    entiteLabel: z.string(),
+    directionNom: z.string(),
+    directionLabel: z.string(),
+    serviceNom: z.string(),
+    serviceLabel: z.string(),
+    email: z.string(),
+    contactUsager: z.string(),
+    isActiveLabel: z.enum(['Oui', 'Non']),
+    editId: z.string(),
+  }),
+);
 
 export const GetEntitiesChainResponseSchema = z.array(
   EntiteSchema.pick({

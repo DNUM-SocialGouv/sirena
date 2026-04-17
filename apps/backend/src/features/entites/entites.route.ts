@@ -1,6 +1,6 @@
 import { openApiProtectedRoute, openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
 import {
-  GetAdminEntitesResponseSchema,
+  GetEntitesListAdminResponseSchema,
   GetEntitiesChainResponseSchema,
   GetEntitiesResponseSchema,
 } from './entites.schema.js';
@@ -12,10 +12,10 @@ export const getEntitesRoute = openApiProtectedRoute({
   },
 });
 
-export const getEntitesAdminRoute = openApiProtectedRoute({
-  description: 'Get admin entites',
+export const getEntitesListAdminRoute = openApiProtectedRoute({
+  description: 'Get entites list for super admins',
   responses: {
-    ...openApiResponses(GetAdminEntitesResponseSchema),
+    ...openApiResponses(GetEntitesListAdminResponseSchema),
   },
 });
 

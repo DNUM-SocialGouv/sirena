@@ -22,7 +22,7 @@ const entite = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-describe('buildAdminEntitesList', () => {
+describe('buildEntitesListAdmin', () => {
   it('orders entite roots by family, then descendants, and builds table-ready rows', () => {
     const rows = buildEntitesListAdmin([
       entite({
