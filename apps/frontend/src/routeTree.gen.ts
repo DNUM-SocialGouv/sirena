@@ -20,6 +20,7 @@ import { Route as PublicAccessibiliteRouteImport } from './routes/_public/access
 import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/route'
 import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
 import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
+import { Route as AuthAdminFeatureFlagsRouteImport } from './routes/_auth/admin/feature-flags'
 import { Route as AuthAdminEntitiesRouteImport } from './routes/_auth/admin/entities'
 import { Route as AuthUserHomeRouteImport } from './routes/_auth/_user/home'
 import { Route as AuthAdminUsersRouteRouteImport } from './routes/_auth/admin/users/route'
@@ -92,6 +93,11 @@ const AuthAdminRouteRoute = AuthAdminRouteRouteImport.update({
 const AuthUserRouteRoute = AuthUserRouteRouteImport.update({
   id: '/_user',
   getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthAdminFeatureFlagsRoute = AuthAdminFeatureFlagsRouteImport.update({
+  id: '/feature-flags',
+  path: '/feature-flags',
+  getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 const AuthAdminEntitiesRoute = AuthAdminEntitiesRouteImport.update({
   id: '/entities',
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/home': typeof AuthUserHomeRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
+  '/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/request/create': typeof AuthUserRequestCreateRouteWithChildren
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
@@ -241,6 +248,7 @@ export interface FileRoutesByTo {
   '/mentions-legales': typeof PublicMentionsLegalesRoute
   '/home': typeof AuthUserHomeRoute
   '/admin/entities': typeof AuthAdminEntitiesRoute
+  '/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
   '/admin/users': typeof AuthAdminUsersIndexRoute
@@ -271,6 +279,7 @@ export interface FileRoutesById {
   '/_auth/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/_auth/_user/home': typeof AuthUserHomeRoute
   '/_auth/admin/entities': typeof AuthAdminEntitiesRoute
+  '/_auth/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/_auth/_user/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/_auth/_user/request/create': typeof AuthUserRequestCreateRouteWithChildren
   '/_auth/admin/user/$userId': typeof AuthAdminUserUserIdRoute
@@ -302,6 +311,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/home'
     | '/admin/entities'
+    | '/admin/feature-flags'
     | '/request/$requestId'
     | '/request/create'
     | '/admin/user/$userId'
@@ -330,6 +340,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/home'
     | '/admin/entities'
+    | '/admin/feature-flags'
     | '/admin/user/$userId'
     | '/admin/users/all'
     | '/admin/users'
@@ -359,6 +370,7 @@ export interface FileRouteTypes {
     | '/_auth/admin/users'
     | '/_auth/_user/home'
     | '/_auth/admin/entities'
+    | '/_auth/admin/feature-flags'
     | '/_auth/_user/request/$requestId'
     | '/_auth/_user/request/create'
     | '/_auth/admin/user/$userId'
@@ -462,6 +474,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthUserRouteRouteImport
       parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/admin/feature-flags': {
+      id: '/_auth/admin/feature-flags'
+      path: '/feature-flags'
+      fullPath: '/admin/feature-flags'
+      preLoaderRoute: typeof AuthAdminFeatureFlagsRouteImport
+      parentRoute: typeof AuthAdminRouteRoute
     }
     '/_auth/admin/entities': {
       id: '/_auth/admin/entities'
@@ -695,12 +714,14 @@ const AuthAdminUsersRouteRouteWithChildren =
 interface AuthAdminRouteRouteChildren {
   AuthAdminUsersRouteRoute: typeof AuthAdminUsersRouteRouteWithChildren
   AuthAdminEntitiesRoute: typeof AuthAdminEntitiesRoute
+  AuthAdminFeatureFlagsRoute: typeof AuthAdminFeatureFlagsRoute
   AuthAdminUserUserIdRoute: typeof AuthAdminUserUserIdRoute
 }
 
 const AuthAdminRouteRouteChildren: AuthAdminRouteRouteChildren = {
   AuthAdminUsersRouteRoute: AuthAdminUsersRouteRouteWithChildren,
   AuthAdminEntitiesRoute: AuthAdminEntitiesRoute,
+  AuthAdminFeatureFlagsRoute: AuthAdminFeatureFlagsRoute,
   AuthAdminUserUserIdRoute: AuthAdminUserUserIdRoute,
 }
 
