@@ -10,6 +10,7 @@ const NON_PRODUCTION_ENVIRONMENTS: Record<string, string> = {
 };
 
 export function EnvironmentBanner() {
+  // TODO: utiliser APP_ENV quand il sera disponible côté frontend (SIRENA-563)
   const env = import.meta.env.VITE_SENTRY_ENVIRONMENT;
 
   if (!env || env === 'production') return null;
