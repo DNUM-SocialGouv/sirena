@@ -47,6 +47,7 @@ const buildSuccessQuery = (data: {
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   vi.clearAllMocks();
 });
 
@@ -77,8 +78,7 @@ describe('Admin entities index route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Liste des entités administratives' })).toBeInTheDocument();
-    expect(screen.getByText('1 entité')).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: 'Liste des entités administratives' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Entité' })).toBeInTheDocument();
     expect(screen.getByText('ARS Normandie')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Modifier' })).toHaveAttribute('href', '/admin/entities/root-ars');
@@ -115,6 +115,8 @@ describe('Admin entities index route', () => {
   });
 
   it('renders pagination and updates search params when changing page', async () => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+
     const navigate = vi.fn();
     mockedUseNavigate.mockReturnValue(navigate as never);
     mockedUseSearch.mockReturnValue({ offset: 0, limit: 10 } as never);
