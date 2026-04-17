@@ -16,7 +16,7 @@ export async function fetchEntites(id: string | undefined, query: QueryParams = 
   return { data, meta };
 }
 
-export async function fetchEntitesAdmin(query: QueryParams = {}) {
+export async function fetchEntitesListAdmin(query: QueryParams = {}) {
   const res = await client.entites.admin.$get({
     query: {
       ...query,
