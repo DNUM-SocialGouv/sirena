@@ -19,6 +19,7 @@
       "./apps/backend/scripts/**/*",
       "./apps/frontend/src/**/*",
       "./apps/frontend/tests/**/*",
+      "./apps/migration/src/**/*",
       "./packages/common/src/**/*",
       "./packages/backend-utils/src/**/*",
       "./packages/ui/src/**/*",
