@@ -79,8 +79,7 @@ export function RouteComponent() {
   );
 
   return (
-    <div className="fr-container-fluid">
-      <h1>Liste des entités administratives</h1>
+    <>
       <QueryStateHandler query={entitesListQuery} noDataComponent={<p>Aucune entité administrative à afficher.</p>}>
         {({ data }) => (
           <>
@@ -104,6 +103,6 @@ export function RouteComponent() {
           <Pagination count={totalPages} defaultPage={currentPage} getPageLinkProps={getPageLinkProps} />
         </div>
       )}
-    </div>
+    </>
   );
 }
