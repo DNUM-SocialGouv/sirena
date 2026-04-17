@@ -1,0 +1,21 @@
+---
+enabled: false
+
+image: ghcr.io/dnum-socialgouv/sirena:latest-anonymize
+imagePullSecretsName: registry-secret
+
+schedule: "0 3 * * *"
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+pushgatewayUrl: ""
+
+envFrom:
+  secretRef:
+    - anonymize-secret

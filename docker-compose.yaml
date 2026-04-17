@@ -97,6 +97,21 @@ services:
       retries: 5
       start_period: 120s
 
+  anonymize:
+    build:
+      context: ./apps/anonymize
+    container_name: sirena-anonymize
+    profiles:
+      - anonymize
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sirena-postgres-network
+    environment:
+      PG_URL_FROM: postgresql://${PG_SIRENA_USER}:${PG_SIRENA_PASSWORD}@postgres:5432/${PG_SIRENA_DB}
+      PG_URL_TO: postgresql://${PG_SIRENA_USER}:${PG_SIRENA_PASSWORD}@postgres:5432/${PG_SIRENA_DB}
+
 volumes:
   pgdata:
   miniodata:
