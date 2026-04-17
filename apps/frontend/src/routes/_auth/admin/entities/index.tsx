@@ -1,5 +1,6 @@
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { ROLES } from '@sirena/common/constants';
+import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
@@ -14,6 +15,8 @@ export const Route = createFileRoute('/_auth/admin/entities/')({
 });
 
 const DEFAULT_PAGE_SIZE = 10;
+
+type Entity = NonNullable<Awaited<ReturnType<typeof useEntitesListAdmin>>['data']>['data'][number];
 
 export function RouteComponent() {
   const search = useSearch({ from: '/_auth/admin/entities/' });
@@ -31,6 +34,27 @@ export function RouteComponent() {
   const total = useMemo(() => entitesListQuery.data?.meta?.total ?? 0, [entitesListQuery.data?.meta?.total]);
   const totalPages = useMemo(() => Math.ceil(total / limit), [total, limit]);
   const shouldShowPagination = useMemo(() => total > limit, [total, limit]);
+
+  const columns: Column<Entity>[] = [
+    { key: 'entiteNom', label: 'Entité' },
+    { key: 'entiteLabel', label: 'Ent.' },
+    { key: 'directionNom', label: 'Direction' },
+    { key: 'directionLabel', label: 'Dir.' },
+    { key: 'serviceNom', label: 'Service' },
+    { key: 'serviceLabel', label: 'Serv.' },
+    { key: 'email', label: 'Email' },
+    { key: 'contactUsager', label: 'Contact usager' },
+    { key: 'isActiveLabel', label: 'Actif' },
+    { key: 'custom:edit', label: 'Éditer' },
+  ];
+
+  const cells: Cells<Entity> = {
+    'custom:edit': (row) => (
+      <Link to="/admin/entities/$entityId" params={{ entityId: row.editId }}>
+        Modifier
+      </Link>
+    ),
+  };
 
   const getPageLinkProps = useCallback(
     (pageNumber: number) => {
@@ -63,44 +87,14 @@ export function RouteComponent() {
             <p>
               {data.meta.total} entité{data.meta.total > 1 ? 's' : ''}
             </p>
-            <div className="fr-table fr-table--layout-fixed fr-table--no-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Entité</th>
-                    <th>Ent.</th>
-                    <th>Direction</th>
-                    <th>Dir.</th>
-                    <th>Service</th>
-                    <th>Serv.</th>
-                    <th>Email</th>
-                    <th>Contact usager</th>
-                    <th>Actif</th>
-                    <th>Éditer</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.data.map((entite) => (
-                    <tr key={entite.id}>
-                      <td>{entite.entiteNom}</td>
-                      <td>{entite.entiteLabel}</td>
-                      <td>{entite.directionNom}</td>
-                      <td>{entite.directionLabel}</td>
-                      <td>{entite.serviceNom}</td>
-                      <td>{entite.serviceLabel}</td>
-                      <td>{entite.email}</td>
-                      <td>{entite.contactUsager}</td>
-                      <td>{entite.isActiveLabel}</td>
-                      <td>
-                        <Link to="/admin/entities/$entityId" params={{ entityId: entite.editId }}>
-                          Éditer
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              title="Liste des entités administratives"
+              rowId="id"
+              data={data.data}
+              columns={columns}
+              cells={cells}
+              isLoading={entitesListQuery.isFetching}
+            />
           </>
         )}
       </QueryStateHandler>
