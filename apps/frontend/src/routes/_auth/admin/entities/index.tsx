@@ -3,7 +3,7 @@ import { ROLES } from '@sirena/common/constants';
 import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
-import { useEntitesAdmin } from '@/hooks/queries/entites.hook';
+import { useEntitesListAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { QueryParamsSchema } from '@/schemas/pagination.schema';
 
@@ -23,12 +23,12 @@ export function RouteComponent() {
   const offset = search.offset ?? 0;
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
-  const entitesQuery = useEntitesAdmin({
+  const entitesListQuery = useEntitesListAdmin({
     offset,
     limit,
   });
 
-  const total = useMemo(() => entitesQuery.data?.meta?.total ?? 0, [entitesQuery.data?.meta?.total]);
+  const total = useMemo(() => entitesListQuery.data?.meta?.total ?? 0, [entitesListQuery.data?.meta?.total]);
   const totalPages = useMemo(() => Math.ceil(total / limit), [total, limit]);
   const shouldShowPagination = useMemo(() => total > limit, [total, limit]);
 
@@ -57,7 +57,7 @@ export function RouteComponent() {
   return (
     <div className="fr-container-fluid">
       <h1>Liste des entités administratives</h1>
-      <QueryStateHandler query={entitesQuery} noDataComponent={<p>Aucune entité administrative à afficher.</p>}>
+      <QueryStateHandler query={entitesListQuery} noDataComponent={<p>Aucune entité administrative à afficher.</p>}>
         {({ data }) => (
           <>
             <p>

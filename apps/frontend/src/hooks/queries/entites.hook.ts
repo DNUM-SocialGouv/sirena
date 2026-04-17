@@ -12,14 +12,14 @@ export const useEntitesQueryOptions = (id: string | undefined, query: QueryParam
 export const useEntites = (id: string | undefined, query: QueryParams = {}) =>
   useQuery(useEntitesQueryOptions(id, query));
 
-export const useEntitesAdminQueryOptions = (query: QueryParams = {}) => ({
+export const useEntitesListAdminQueryOptions = (query: QueryParams = {}) => ({
   queryKey: ['entites', 'admin', query],
   queryFn: () => fetchEntitesAdmin(query),
   retry: false,
   initialData: { data: [], meta: { total: 0 } },
 });
 
-export const useEntitesAdmin = (query: QueryParams = {}) => useQuery(useEntitesAdminQueryOptions(query));
+export const useEntitesListAdmin = (query: QueryParams = {}) => useQuery(useEntitesListAdminQueryOptions(query));
 
 export const useEntiteChainQueryOptions = (id: string | undefined) => ({
   queryKey: ['entiteChain', id],
