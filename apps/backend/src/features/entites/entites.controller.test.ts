@@ -6,7 +6,7 @@ import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
-import { getEditableEntitiesChain, getEntites, getEntitesAdmin } from './entites.service.js';
+import { getEditableEntitiesChain, getEntites, getEntitesListAdmin } from './entites.service.js';
 
 vi.mock('../../config/env.js', () => ({
   envVars: {},
@@ -14,7 +14,7 @@ vi.mock('../../config/env.js', () => ({
 
 vi.mock('./entites.service.js', () => ({
   getEntites: vi.fn(),
-  getEntitesAdmin: vi.fn(),
+  getEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
 }));
 
@@ -103,11 +103,11 @@ describe('Entites endpoints: /entites', () => {
 
       expect(res.status).toBe(403);
       expect(await res.json()).toEqual({ message: 'Forbidden' });
-      expect(getEntitesAdmin).not.toHaveBeenCalled();
+      expect(getEntitesListAdmin).not.toHaveBeenCalled();
     });
 
     it('returns admin entities list with pagination metadata for SUPER_ADMIN', async () => {
-      vi.mocked(getEntitesAdmin).mockResolvedValueOnce({
+      vi.mocked(getEntitesListAdmin).mockResolvedValueOnce({
         data: [
           {
             id: 'root-ars',
@@ -154,7 +154,7 @@ describe('Entites endpoints: /entites', () => {
         },
       });
 
-      expect(getEntitesAdmin).toHaveBeenCalledWith({
+      expect(getEntitesListAdmin).toHaveBeenCalledWith({
         offset: 0,
         limit: 10,
       });

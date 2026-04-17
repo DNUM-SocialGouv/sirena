@@ -9,8 +9,8 @@ import {
   getEntiteDescendantIds,
   getEntiteForUser,
   getEntites,
-  getEntitesAdmin,
   getEntitesByIds,
+  getEntitesListAdmin,
 } from './entites.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
@@ -882,7 +882,7 @@ describe('getAdminEntites()', () => {
     ]);
     vi.mocked(prisma.entite.count).mockResolvedValueOnce(4);
 
-    const result = await getEntitesAdmin({
+    const result = await getEntitesListAdmin({
       offset: 0,
       limit: 20,
     });
@@ -927,7 +927,7 @@ describe('getAdminEntites()', () => {
     ]);
     vi.mocked(prisma.entite.count).mockResolvedValueOnce(4);
 
-    const result = await getEntitesAdmin({
+    const result = await getEntitesListAdmin({
       offset: 1,
       limit: 2,
     });

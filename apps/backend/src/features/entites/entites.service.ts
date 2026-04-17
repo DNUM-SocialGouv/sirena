@@ -88,7 +88,7 @@ export const getEntites = async (
   };
 };
 
-export const getEntitesAdmin = async ({ offset = 0, limit }: Pick<Pagination, 'offset' | 'limit'>) => {
+export const getEntitesListAdmin = async ({ offset = 0, limit }: Pick<Pagination, 'offset' | 'limit'>) => {
   const entites = await prisma.entite.findMany();
   const total = entites.length;
   const orderedRows = buildEntitesListAdmin(entites);
