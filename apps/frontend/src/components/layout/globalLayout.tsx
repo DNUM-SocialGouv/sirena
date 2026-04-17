@@ -1,5 +1,6 @@
 import { useLocation } from '@tanstack/react-router';
 import { type ReactNode, useEffect, useRef } from 'react';
+import { EnvironmentBanner } from './EnvironmentBanner';
 import { AppFooter } from './footer';
 import { HeaderMenu } from './header';
 
@@ -49,6 +50,7 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
       </div>
       <HeaderMenu homeHref="/" />
       <main id={mainId} role="main" className="fr-container main-content">
+        <EnvironmentBanner />
         {children}
       </main>
       <AppFooter />
