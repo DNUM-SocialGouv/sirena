@@ -844,7 +844,7 @@ describe('entites.service', () => {
   });
 });
 
-describe('getAdminEntites()', () => {
+describe('getEntitesListAdmin()', () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
