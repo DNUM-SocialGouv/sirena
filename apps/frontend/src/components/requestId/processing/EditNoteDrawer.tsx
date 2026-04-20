@@ -25,9 +25,9 @@ type NoteFiles = {
 };
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
-const NOTE_MAX_LENGTH = 1000;
+const NOTE_MAX_LENGTH = 10000;
 const NOTE_MAX_LENGTH_ERROR =
-  'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 1000 caractères. Supprimer les caractères excédentaires.';
+  'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 10 000 caractères. Supprimer les caractères excédentaires.';
 
 export type EditNoteDrawerRef = {
   openDrawer: (
@@ -344,7 +344,7 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                   )}
                   <form>
                     <Input
-                      hintText="Maximum 1000 caractères"
+                      hintText="Maximum 10 000 caractères"
                       label="Ajouter une note à l’étape"
                       disabled={isLoading}
                       textArea={true}
