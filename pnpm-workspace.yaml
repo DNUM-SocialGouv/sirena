@@ -9,20 +9,20 @@ allowBuilds:
   msgpackr-extract: true
   prisma: true
 catalog:
-  "@biomejs/biome": ^2.4.10
+  "@biomejs/biome": ^2.4.12
   "@codegouvfr/react-dsfr": ^1.32.0
-  "@types/node": ^25.5.2
+  "@types/node": ^25.6.0
   "@types/react": ^19.2.14
   "@types/react-dom": ^19.2.3
-  "@vitest/browser": ^4.1.2
-  "@vitest/coverage-v8": ^4.1.2
-  hono: ^4.12.12
+  "@vitest/browser": ^4.1.4
+  "@vitest/coverage-v8": ^4.1.4
+  hono: ^4.12.14
   hono-openapi: ^1.3.0
-  prisma: ^7.5.0
-  react: ^19.2.4
-  react-dom: ^19.2.4
+  prisma: ^7.7.0
+  react: ^19.2.5
+  react-dom: ^19.2.5
   tsx: ^4.21.0
-  vitest: ^4.1.2
+  vitest: ^4.1.4
   zod: ^4.3.6
 enablePrePostScripts: true
 minimumReleaseAge: 0

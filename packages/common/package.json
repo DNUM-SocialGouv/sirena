@@ -41,7 +41,7 @@
   "packageManager": "pnpm@10.11.0",
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vitest": "catalog:"
   },
   "dependencies": {

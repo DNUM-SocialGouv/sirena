@@ -24,9 +24,9 @@ export type CreateNoteDrawerProps = {};
 
 const REQUIRED_FIELDS_ERROR =
   'Vous devez renseigner au moins un champ : "Ajouter une note à l’étape" ou "Ajouter des pièces jointes".';
-const NOTE_MAX_LENGTH = 1000;
+const NOTE_MAX_LENGTH = 10000;
 const NOTE_MAX_LENGTH_ERROR =
-  'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 1000 caractères. Supprimer les caractères excédentaires.';
+  'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 10 000 caractères. Supprimer les caractères excédentaires.';
 
 export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawerProps>((_props, ref) => {
   const { requestId } = useParams({
@@ -172,7 +172,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                 </p>
                 <form>
                   <Input
-                    hintText="Maximum 1000 caractères"
+                    hintText="Maximum 10 000 caractères"
                     label="Ajouter une note à l’étape"
                     textArea={true}
                     disabled={isLoading}
