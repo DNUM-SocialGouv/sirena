@@ -50,7 +50,7 @@
   "dependencies": {
     "@file-type/cfbf": "^0.2.2",
     "@file-type/pdf": "^0.2.0",
-    "@hono/node-server": "^1.19.13",
+    "@hono/node-server": "^1.19.14",
     "@hono/standard-validator": "^0.2.2",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
@@ -96,7 +96,7 @@
     "@types/node": "catalog:",
     "@types/pdfkit": "^0.17.5",
     "@vitest/coverage-v8": "catalog:",
-    "prisma": "^7.6.0",
+    "prisma": "catalog:",
     "typescript": "~6.0.2",
     "vitest": "catalog:",
     "vitest-mock-extended": "^4.0.0"

@@ -66,6 +66,9 @@
       "esbuild",
       "msgpackr-extract",
       "prisma"
-    ]
+    ],
+    "overrides": {
+      "@hono/node-server@<1.19.13": ">=1.19.13"
+    }
   }
 }
