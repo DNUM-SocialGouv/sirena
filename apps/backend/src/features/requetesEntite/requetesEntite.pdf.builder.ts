@@ -259,12 +259,16 @@ export class RequetePdfBuilder {
         ]),
       );
 
-      const body = this.doc.struct('LBody', [
-        () => {
-          this.doc.fontSize(12).font('Roboto').text(group.label);
-        },
-      ]);
+      const body = this.doc.struct('LBody');
       li.add(body);
+
+      body.add(
+        this.doc.struct('P', [
+          () => {
+            this.doc.fontSize(12).font('Roboto').text(group.label);
+          },
+        ]),
+      );
 
       if (group.children.length > 0) {
         const subList = this.doc.struct('L');
@@ -293,6 +297,7 @@ export class RequetePdfBuilder {
         subList.end();
       }
 
+      body.end();
       li.end();
     }
 
