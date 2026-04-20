@@ -56,11 +56,19 @@ export function RouteComponent() {
   ];
 
   const cells: Cells<Entity> = {
-    'custom:edit': (row) => (
-      <Link to="/admin/entities/$entityId" params={{ entityId: row.editId }}>
-        Modifier
-      </Link>
-    ),
+    'custom:edit': (row) => {
+      const srLabel = row.serviceNom
+        ? `le service ${row.serviceNom} de la direction ${row.directionNom} de l'entité ${row.entiteNom}`
+        : row.directionNom
+          ? `la direction ${row.directionNom} de l'entité ${row.entiteNom}`
+          : `l'entité ${row.entiteNom}`;
+
+      return (
+        <Link to="/admin/entities/$entityId" params={{ entityId: row.editId }}>
+          Modifier <span className="fr-sr-only">{srLabel}</span>
+        </Link>
+      );
+    },
   };
 
   const getPageLinkProps = useCallback(
