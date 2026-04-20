@@ -2,14 +2,16 @@ import { client } from '@/lib/api/hc.ts';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery.ts';
 import type { QueryParams } from '@/types/pagination.type.ts';
 
+const formatPaginationParams = (query: QueryParams) => ({
+  ...query,
+  limit: query.limit?.toString(),
+  offset: query.offset?.toString(),
+});
+
 export async function fetchEntites(id: string | undefined, query: QueryParams = {}) {
   const res = await client.entites[':id?'].$get({
     param: { id },
-    query: {
-      ...query,
-      limit: query.limit?.toString(),
-      offset: query.offset?.toString(),
-    },
+    query: formatPaginationParams(query),
   });
   await handleRequestErrors(res);
   const { data, meta } = await res.json();
@@ -18,11 +20,7 @@ export async function fetchEntites(id: string | undefined, query: QueryParams = 
 
 export async function fetchEntitesListAdmin(query: QueryParams = {}) {
   const res = await client.entites.admin.$get({
-    query: {
-      ...query,
-      limit: query.limit?.toString(),
-      offset: query.offset?.toString(),
-    },
+    query: formatPaginationParams(query),
   });
   await handleRequestErrors(res);
   const { data, meta } = await res.json();
