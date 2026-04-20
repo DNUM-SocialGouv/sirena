@@ -42,18 +42,12 @@ const compareRootEntiteType = (a: Entite, b: Entite) => {
 const buildTreeOrder = (entites: Entite[]) => {
   const childrenByParentId = new Map<string, Entite[]>();
 
-  for (const entite of entites) {
-    if (!entite.entiteMereId) {
-      continue;
-    }
+  const sortedChildren = entites.filter((entite) => entite.entiteMereId !== null).toSorted(compareByNomComplet);
 
-    const siblings = childrenByParentId.get(entite.entiteMereId) ?? [];
+  for (const entite of sortedChildren) {
+    const siblings = childrenByParentId.get(entite.entiteMereId!) ?? [];
     siblings.push(entite);
-    childrenByParentId.set(entite.entiteMereId, siblings);
-  }
-
-  for (const children of childrenByParentId.values()) {
-    children.sort(compareByNomComplet);
+    childrenByParentId.set(entite.entiteMereId!, siblings);
   }
 
   const roots = entites.filter((entite) => entite.entiteMereId === null).sort(compareRootEntiteType);
@@ -93,58 +87,58 @@ const getAncestors = (entite: Entite, entitesById: Map<string, Entite>) => {
   return ancestors;
 };
 
+const buildRow = (
+  entite: Entite,
+  values: Pick<
+    AdminEntiteRow,
+    'entiteNom' | 'entiteLabel' | 'directionNom' | 'directionLabel' | 'serviceNom' | 'serviceLabel'
+  >,
+): AdminEntiteRow => ({
+  id: entite.id,
+  email: entite.email,
+  contactUsager: computeContactUsager(entite),
+  isActiveLabel: entite.isActive ? 'Oui' : 'Non',
+  editId: entite.id,
+  ...values,
+});
+
 const toAdminEntiteRow = (entite: Entite, entitesById: Map<string, Entite>): AdminEntiteRow => {
   const ancestors = getAncestors(entite, entitesById);
 
   if (ancestors.length === 0) {
-    return {
-      id: entite.id,
+    return buildRow(entite, {
       entiteNom: entite.nomComplet,
       entiteLabel: entite.label,
       directionNom: '',
       directionLabel: '',
       serviceNom: '',
       serviceLabel: '',
-      email: entite.email,
-      contactUsager: computeContactUsager(entite),
-      isActiveLabel: entite.isActive ? 'Oui' : 'Non',
-      editId: entite.id,
-    };
+    });
   }
 
   if (ancestors.length === 1) {
     const root = ancestors[0];
 
-    return {
-      id: entite.id,
+    return buildRow(entite, {
       entiteNom: root.nomComplet,
       entiteLabel: root.label,
       directionNom: entite.nomComplet,
       directionLabel: entite.label,
       serviceNom: '',
       serviceLabel: '',
-      email: entite.email,
-      contactUsager: computeContactUsager(entite),
-      isActiveLabel: entite.isActive ? 'Oui' : 'Non',
-      editId: entite.id,
-    };
+    });
   }
 
   const [root, direction] = ancestors;
 
-  return {
-    id: entite.id,
+  return buildRow(entite, {
     entiteNom: root.nomComplet,
     entiteLabel: root.label,
     directionNom: direction.nomComplet,
     directionLabel: direction.label,
     serviceNom: entite.nomComplet,
     serviceLabel: entite.label,
-    email: entite.email,
-    contactUsager: computeContactUsager(entite),
-    isActiveLabel: entite.isActive ? 'Oui' : 'Non',
-    editId: entite.id,
-  };
+  });
 };
 
 export const buildEntitesListAdmin = (entites: Entite[]) => {
