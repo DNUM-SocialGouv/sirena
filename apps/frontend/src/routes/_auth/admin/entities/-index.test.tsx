@@ -79,7 +79,7 @@ describe('Admin entities index route', () => {
     render(<RouteComponent />);
 
     expect(screen.getByRole('table', { name: 'Liste des entités administratives' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Entité' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Nom de l’entité' })).toBeInTheDocument();
     expect(screen.getByText('ARS Normandie')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: "Modifier l'entité ARS Normandie" })).toHaveAttribute(
       'href',
