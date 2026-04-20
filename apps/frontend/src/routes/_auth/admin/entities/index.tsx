@@ -43,18 +43,17 @@ export function RouteComponent() {
   const shouldShowPagination = useMemo(() => total > limit, [total, limit]);
 
   const columns: Column<Entity>[] = [
-    { key: 'entiteNom', label: 'Entité' },
-    { key: 'entiteLabel', label: 'Ent.' },
-    { key: 'directionNom', label: 'Direction' },
-    { key: 'directionLabel', label: 'Dir.' },
-    { key: 'serviceNom', label: 'Service' },
-    { key: 'serviceLabel', label: 'Serv.' },
+    { key: 'entiteNom', label: 'Nom de l’entité' }, // Nom complet de l'entité
+    { key: 'entiteLabel', label: 'Libellé de l’entité' },
+    { key: 'directionNom', label: 'Nom de la direction' }, // Nom complet de la direction
+    { key: 'directionLabel', label: 'Libellé de la direction' },
+    { key: 'serviceNom', label: 'Nom du service' }, // Nom complet du service
+    { key: 'serviceLabel', label: 'Libellé du service' },
     { key: 'email', label: 'Email' },
     { key: 'contactUsager', label: 'Contact usager' },
-    { key: 'isActiveLabel', label: 'Actif' },
-    { key: 'custom:edit', label: 'Éditer' },
+    { key: 'isActiveLabel', label: 'Statut (Actif)' },
+    { key: 'custom:edit', label: 'Modifier' },
   ];
-
   const cells: Cells<Entity> = {
     'custom:edit': (row) => {
       const srLabel = row.serviceNom
