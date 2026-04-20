@@ -258,17 +258,17 @@ export class RequetePdfBuilder {
           },
         ]),
       );
-      li.add(
-        this.doc.struct('LBody', [
-          () => {
-            this.doc.fontSize(12).font('Roboto').text(group.label);
-          },
-        ]),
-      );
+
+      const body = this.doc.struct('LBody', [
+        () => {
+          this.doc.fontSize(12).font('Roboto').text(group.label);
+        },
+      ]);
+      li.add(body);
 
       if (group.children.length > 0) {
         const subList = this.doc.struct('L');
-        li.add(subList);
+        body.add(subList);
 
         for (const child of group.children) {
           const subLi = this.doc.struct('LI');
