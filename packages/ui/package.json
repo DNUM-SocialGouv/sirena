@@ -26,7 +26,7 @@
   "author": "",
   "packageManager": "pnpm@10.5.2",
   "dependencies": {
-    "@base-ui/react": "1.4.0",
+    "@base-ui/react": "1.4.1",
     "@codegouvfr/react-dsfr": "catalog:",
     "clsx": "^2.1.1",
     "react": "catalog:",
@@ -34,9 +34,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "@storybook/addon-docs": "^10.3.4",
-    "@storybook/react-vite": "^10.3.4",
-    "@tanstack/react-router": "^1.168.10",
+    "@storybook/addon-docs": "^10.3.5",
+    "@storybook/react-vite": "^10.3.5",
+    "@tanstack/react-router": "^1.168.23",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -47,8 +47,8 @@
     "@vitest/browser": "catalog:",
     "jsdom": "^29.0.2",
     "react-dom": "catalog:",
-    "storybook": "^10.3.4",
-    "vite": "^8.0.5",
+    "storybook": "^10.3.5",
+    "vite": "^8.0.9",
     "vitest": "catalog:",
     "vitest-browser-react": "^2.2.0"
   }

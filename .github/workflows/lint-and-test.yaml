@@ -14,9 +14,9 @@ jobs:
       PG_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
-      - uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb # v6
+      - uses: pnpm/action-setup@078e9d416474b29c0c387560859308974f7e9c53 # v6
       - name: Use Node.js 22
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 22
           cache: "pnpm"
