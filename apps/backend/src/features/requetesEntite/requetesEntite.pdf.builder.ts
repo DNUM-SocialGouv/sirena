@@ -185,11 +185,14 @@ export class RequetePdfBuilder {
     return this;
   }
 
-  paragraph(text: string): this {
+  paragraph(text: string, options?: { bold?: boolean }): this {
     this.current.add(
       this.doc.struct('P', [
         () => {
-          this.doc.fontSize(12).font('Roboto').text(text);
+          this.doc
+            .fontSize(12)
+            .font(options?.bold ? 'Roboto-Bold' : 'Roboto')
+            .text(text);
         },
       ]),
     );
@@ -232,6 +235,64 @@ export class RequetePdfBuilder {
           },
         ]),
       );
+      li.end();
+    }
+
+    list.end();
+    return this;
+  }
+
+  groupedList(groups: { label: string; children: string[] }[]): this {
+    if (groups.length === 0) return this;
+
+    const list = this.doc.struct('L');
+    this.current.add(list);
+
+    for (const group of groups) {
+      const li = this.doc.struct('LI');
+      list.add(li);
+      li.add(
+        this.doc.struct('Lbl', [
+          () => {
+            this.doc.fontSize(12).font('Roboto').text('• ', { continued: true });
+          },
+        ]),
+      );
+      li.add(
+        this.doc.struct('LBody', [
+          () => {
+            this.doc.fontSize(12).font('Roboto').text(group.label);
+          },
+        ]),
+      );
+
+      if (group.children.length > 0) {
+        const subList = this.doc.struct('L');
+        li.add(subList);
+
+        for (const child of group.children) {
+          const subLi = this.doc.struct('LI');
+          subList.add(subLi);
+          subLi.add(
+            this.doc.struct('Lbl', [
+              () => {
+                this.doc.fontSize(12).font('Roboto').text('  - ', { continued: true });
+              },
+            ]),
+          );
+          subLi.add(
+            this.doc.struct('LBody', [
+              () => {
+                this.doc.fontSize(12).font('Roboto').text(child);
+              },
+            ]),
+          );
+          subLi.end();
+        }
+
+        subList.end();
+      }
+
       li.end();
     }
 
