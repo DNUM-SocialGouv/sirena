@@ -81,7 +81,10 @@ describe('Admin entities index route', () => {
     expect(screen.getByRole('table', { name: 'Liste des entités administratives' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Entité' })).toBeInTheDocument();
     expect(screen.getByText('ARS Normandie')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Modifier' })).toHaveAttribute('href', '/admin/entities/root-ars');
+    expect(screen.getByRole('link', { name: "Modifier l'entité ARS Normandie" })).toHaveAttribute(
+      'href',
+      '/admin/entities/root-ars',
+    );
   });
 
   it('renders an empty state when there are no admin entities', () => {
