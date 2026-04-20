@@ -7,7 +7,8 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV APP_VERSION=$APP_VERSION
 
-RUN npm install --global corepack@latest && \
+RUN apk add --no-cache tzdata && \
+    npm install --global corepack@latest && \
     corepack enable pnpm
 
 # Stage pour les dépendances
@@ -50,6 +51,7 @@ FROM base AS server
 USER node
 WORKDIR /app
 ENV NODE_ENV=production
+ENV TZ=Europe/Paris
 
 # Copier seulement les dépendances de production
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules

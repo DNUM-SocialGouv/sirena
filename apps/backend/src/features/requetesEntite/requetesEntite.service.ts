@@ -1,6 +1,7 @@
 import { helpers } from '@sirena/backend-utils';
 import { mappers } from '@sirena/common';
 import {
+  demarcheEngageeLabels,
   type EntiteType,
   MOTIFS_HIERARCHICAL_DATA,
   REQUETE_ETAPE_STATUT_TYPES,
@@ -1738,7 +1739,7 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
     const filePath = isPdf(file) && file.safeFilePath ? file.safeFilePath : file.filePath;
     try {
       const { stream } = await getFileStream(filePath);
-      archive.append(stream, { name: entryName });
+      archive.append(stream, { name: entryName, date: file.createdAt });
     } catch {
       archive.append(Buffer.from('Fichier indisponible'), { name: `${entryName}.erreur.txt` });
     }
@@ -1774,12 +1775,27 @@ const booleanLabel = (value: boolean | null | undefined): string | null => {
 const formatRue = (adresse: { numero: string | null; rue: string | null } | null) =>
   adresse ? [adresse.numero, adresse.rue].filter(Boolean).join(' ') || null : null;
 
-const getMotifFullPath = (motifId: string): string => {
-  const [parentValue, childValue] = motifId.split('/');
-  const parent = MOTIFS_HIERARCHICAL_DATA.find((p) => p.value === parentValue);
-  if (!parent) return motifId;
-  const child = parent.children.find((c) => c.value === childValue);
-  return child ? `${parent.label} > ${child.label}` : parent.label;
+const groupMotifsByParent = (motifs: { motifId: string }[]): { label: string; children: string[] }[] => {
+  const grouped = new Map<string, { label: string; children: string[] }>();
+
+  for (const { motifId } of motifs) {
+    const [parentValue, childValue] = motifId.split('/');
+    if (!parentValue || !childValue) continue;
+
+    const parent = MOTIFS_HIERARCHICAL_DATA.find((p) => p.value === parentValue);
+    if (!parent) continue;
+
+    const child = parent.children.find((c) => c.value === childValue);
+    if (!child) continue;
+
+    if (!grouped.has(parentValue)) {
+      grouped.set(parentValue, { label: parent.label, children: [] });
+    }
+
+    grouped.get(parentValue)?.children.push(child.label);
+  }
+
+  return Array.from(grouped.values());
 };
 
 export const generateRequetePdfBuffer = async (requeteId: string, entiteId: string | null): Promise<Buffer | null> => {
@@ -1828,22 +1844,41 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
   const pdf = new RequetePdfBuilder(`Requête ${requete.id}`);
 
   // ===== 1. HEADERS =====
-  const allMotifs = (requete.situations ?? [])
-    .flatMap((s) => {
-      const faits = s.faits?.[0];
-      return [
-        ...(faits?.motifsDeclaratifs?.map((m) => m.motifDeclaratif.label) ?? []),
-        ...(faits?.motifs?.map((m) => getMotifFullPath(m.motifId)) ?? []),
-      ];
-    })
+  const allMaltraitanceTypes = (requete.situations ?? [])
+    .flatMap(
+      (s) =>
+        s.faits?.[0]?.maltraitanceTypes
+          ?.filter((mt) => mt.maltraitanceType.id !== 'NON')
+          .map((mt) => `${mt.maltraitanceType.label} (maltraitance)`) ?? [],
+    )
     .filter((v, i, arr) => arr.indexOf(v) === i);
+
+  const allMotifsDeclaratifs = [
+    ...allMaltraitanceTypes,
+    ...(requete.situations ?? [])
+      .flatMap((s) => s.faits?.[0]?.motifsDeclaratifs?.map((m) => m.motifDeclaratif.label) ?? [])
+      .filter((v, i, arr) => arr.indexOf(v) === i),
+  ];
+
+  const allMotifsQualifies = (requete.situations ?? []).flatMap((s) => s.faits?.[0]?.motifs ?? []);
+  const allMotifsGrouped = groupMotifsByParent(allMotifsQualifies);
 
   pdf
     .h1(`Requête ${requete.id}`)
     .field('Statut', requeteEntite.statut?.label || requeteEntite.statutId)
-    .field('Priorité', requeteEntite.priorite?.label || null)
-    .field('Motifs', allMotifs.length > 0 ? allMotifs.join(', ') : null)
-    .field('Date de génération', formatDateFr(new Date()));
+    .field('Priorité', requeteEntite.priorite?.label || null);
+
+  if (allMotifsDeclaratifs.length > 0) {
+    pdf.paragraph('Motifs renseignés par le déclarant :', { bold: true });
+    pdf.list(allMotifsDeclaratifs);
+  }
+
+  if (allMotifsGrouped.length > 0) {
+    pdf.paragraph('Motifs qualifiés :', { bold: true });
+    pdf.groupedList(allMotifsGrouped);
+  }
+
+  pdf.field('Date de génération', formatDateFr(new Date()));
 
   // ===== 2. REQUÊTE ORIGINALE =====
   pdf
@@ -1951,20 +1986,31 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
 
     const faits = situation.faits?.[0];
     if (faits) {
-      const motifsDeclaratifs = faits.motifsDeclaratifs?.map((m) => m.motifDeclaratif.label) ?? [];
-      const motifsQualifies = [
-        ...(faits.maltraitanceTypes
+      const maltraitanceTypes =
+        faits.maltraitanceTypes
           ?.filter((mt) => mt.maltraitanceType.id !== 'NON')
-          .map((mt) => `${mt.maltraitanceType.label} (maltraitance)`) ?? []),
-        ...(faits.motifs?.map((m) => getMotifFullPath(m.motifId)) ?? []),
+          .map((mt) => `${mt.maltraitanceType.label} (maltraitance)`) ?? [];
+      const motifsDeclaratifs = [
+        ...maltraitanceTypes,
+        ...(faits.motifsDeclaratifs?.map((m) => m.motifDeclaratif.label) ?? []),
       ];
+      const motifsGrouped = groupMotifsByParent(faits.motifs ?? []);
       const consequences = faits.consequences?.map((c) => c.consequence.label) ?? [];
 
-      pdf
-        .subsection('Motifs')
-        .field('Motifs déclaratifs', motifsDeclaratifs.length > 0 ? motifsDeclaratifs.join(', ') : null)
-        .field('Motifs qualifiés', motifsQualifies.length > 0 ? motifsQualifies.join(', ') : null)
-        .field('Conséquences', consequences.length > 0 ? consequences.join(', ') : null);
+      if (motifsDeclaratifs.length > 0) {
+        pdf.paragraph('Motifs renseignés par le déclarant :', { bold: true });
+        pdf.list(motifsDeclaratifs);
+      }
+
+      if (motifsGrouped.length > 0) {
+        pdf.paragraph('Motifs qualifiés :', { bold: true });
+        pdf.groupedList(motifsGrouped);
+      } else if (faits.motifs) {
+        pdf.paragraph('Motifs qualifiés :', { bold: true });
+        pdf.list(['Motif à renseigner']);
+      }
+
+      pdf.field('Conséquences', consequences.length > 0 ? consequences.join(', ') : null);
 
       const periodeLabel =
         faits.dateDebut && !faits.dateFin
@@ -1986,17 +2032,46 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
     }
 
     const demarches = situation.demarchesEngagees;
-    if (demarches) {
-      const typesDemarches = demarches.demarches?.map((d) => d.label) ?? [];
-      pdf
-        .subsection('Démarches engagées')
-        .field('Types de démarches', typesDemarches.length > 0 ? typesDemarches.join(', ') : null)
-        .field('Date contact établissement', formatDateFr(demarches.dateContactEtablissement))
-        .field('Réponse reçue', booleanLabel(demarches.etablissementARepondu))
-        .field("Précisions sur l'organisme contacté", demarches.organisme || null)
-        .field('Date de dépôt de plainte', formatDateFr(demarches.datePlainte))
-        .field('Lieu de dépôt de la plainte', demarches.autoriteType?.label || null)
-        .field('Commentaire', demarches.commentaire || null);
+    if (demarches?.demarches && demarches.demarches.length > 0) {
+      pdf.subsection('Démarches engagées');
+
+      const groups: { label: string; children: string[] }[] = [];
+
+      for (const demarche of demarches.demarches) {
+        const children: string[] = [];
+
+        if (demarche.label === demarcheEngageeLabels.CONTACT_RESPONSABLES) {
+          const dateContact = formatDateFr(demarches.dateContactEtablissement);
+          if (dateContact) {
+            children.push(`Date de prise de contact : ${dateContact}`);
+          }
+          if (demarches.etablissementARepondu) {
+            children.push('Le déclarant a reçu une réponse');
+          }
+        }
+
+        if (demarche.label === demarcheEngageeLabels.CONTACT_ORGANISME && demarches.organisme) {
+          children.push(`Précisions sur l'organisme contacté : ${demarches.organisme}`);
+        }
+
+        if (demarche.label === demarcheEngageeLabels.PLAINTE) {
+          const datePlainte = formatDateFr(demarches.datePlainte);
+          if (datePlainte) {
+            children.push(`Date du dépôt de plainte : ${datePlainte}`);
+          }
+          if (demarches.autoriteType?.label) {
+            children.push(`Lieu de dépôt de la plainte : ${demarches.autoriteType.label}`);
+          }
+        }
+
+        groups.push({ label: demarche.label, children });
+      }
+
+      pdf.groupedList(groups);
+
+      if (demarches.commentaire) {
+        pdf.field('Commentaire', demarches.commentaire);
+      }
     }
 
     const entitesTraitement = situation.traitementDesFaits?.entites ?? [];
