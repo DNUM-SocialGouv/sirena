@@ -8,7 +8,7 @@ import { useEntitesListAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { QueryParamsSchema } from '@/schemas/pagination.schema';
 
-export const Route = createFileRoute('/_auth/admin/entities/')({
+export const Route = createFileRoute('/_auth/admin/entites/')({
   beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
   validateSearch: QueryParamsSchema,
   head: () => ({
@@ -26,8 +26,8 @@ const DEFAULT_PAGE_SIZE = 10;
 type Entity = NonNullable<Awaited<ReturnType<typeof useEntitesListAdmin>>['data']>['data'][number];
 
 export function RouteComponent() {
-  const search = useSearch({ from: '/_auth/admin/entities/' });
-  const navigate = useNavigate({ from: '/admin/entities/' });
+  const search = useSearch({ from: '/_auth/admin/entites/' });
+  const navigate = useNavigate({ from: '/admin/entites/' });
 
   const limit = search.limit ?? DEFAULT_PAGE_SIZE;
   const offset = search.offset ?? 0;
@@ -63,7 +63,7 @@ export function RouteComponent() {
           : `l'entité ${row.entiteNom}`;
 
       return (
-        <Link to="/admin/entities/$entityId" params={{ entityId: row.editId }}>
+        <Link to="/admin/entites/$entiteId" params={{ entiteId: row.editId }}>
           Modifier <span className="fr-sr-only">{srLabel}</span>
         </Link>
       );

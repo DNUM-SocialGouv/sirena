@@ -17,6 +17,7 @@ vi.mock('./entites.service.js', () => ({
   getEntiteById: vi.fn(),
   getEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
+  editEntiteAdmin: editEntiteAdminSpy,
 }));
 
 vi.mock('../../middlewares/auth.middleware.js', () => {
@@ -36,9 +37,14 @@ vi.mock('../../middlewares/userStatus.middleware.js', () => {
   };
 });
 
-const { roleMiddlewareSpy, currentRole } = vi.hoisted(() => ({
+const {
+  roleMiddlewareSpy,
+  currentRole,
+  patchEntiteAdminByIdSpy: editEntiteAdminSpy,
+} = vi.hoisted(() => ({
   roleMiddlewareSpy: vi.fn(),
   currentRole: { value: 'SUPER_ADMIN' },
+  patchEntiteAdminByIdSpy: vi.fn(),
 }));
 
 vi.mock('../../middlewares/role.middleware.js', () => {
@@ -203,6 +209,44 @@ describe('Entites endpoints: /entites', () => {
       expect(getEntiteById).toHaveBeenCalledWith('unknown');
       expect(res.status).toBe(404);
       expect(await res.json()).toEqual({ message: 'Entite not found' });
+    });
+  });
+
+  describe('PATCH /admin/:id', () => {
+    it('updates the limited admin entity payload for SUPER_ADMIN', async () => {
+      editEntiteAdminSpy.mockResolvedValueOnce({
+        id: '2',
+        nomComplet: 'Entite B modifiée',
+        label: 'ENT B',
+        isActive: true,
+      });
+
+      const res = await app.request('/admin/2', {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          nomComplet: 'Entite B modifiée',
+          label: 'ENT B',
+          isActive: true,
+        }),
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: {
+          id: '2',
+          nomComplet: 'Entite B modifiée',
+          label: 'ENT B',
+          isActive: true,
+        },
+      });
+      expect(editEntiteAdminSpy).toHaveBeenCalledWith('2', {
+        nomComplet: 'Entite B modifiée',
+        label: 'ENT B',
+        isActive: true,
+      });
     });
   });
 

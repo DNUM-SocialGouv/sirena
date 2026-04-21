@@ -7,8 +7,8 @@ import { RouteComponent } from './index';
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => () => ({}),
-  Link: ({ to, params, children }: { to: string; params?: { entityId?: string }; children: React.ReactNode }) => (
-    <a href={to.replace('$entityId', params?.entityId ?? '')}>{children}</a>
+  Link: ({ to, params, children }: { to: string; params?: { entiteId?: string }; children: React.ReactNode }) => (
+    <a href={to.replace('$entiteId', params?.entiteId ?? '')}>{children}</a>
   ),
   useSearch: vi.fn(),
   useNavigate: vi.fn(),
@@ -51,8 +51,8 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('Admin entities index route', () => {
-  it('renders the admin entities list', () => {
+describe('Admin entites index route', () => {
+  it('renders the admin entites list', () => {
     mockedUseNavigate.mockReturnValue(vi.fn() as never);
     mockedUseSearch.mockReturnValue({} as never);
     mockedUseEntitesAdmin.mockReturnValue(
@@ -83,11 +83,11 @@ describe('Admin entities index route', () => {
     expect(screen.getByText('ARS Normandie')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: "Modifier l'entité ARS Normandie" })).toHaveAttribute(
       'href',
-      '/admin/entities/root-ars',
+      '/admin/entites/root-ars',
     );
   });
 
-  it('renders an empty state when there are no admin entities', () => {
+  it('renders an empty state when there are no admin entites', () => {
     mockedUseNavigate.mockReturnValue(vi.fn() as never);
     mockedUseSearch.mockReturnValue({} as never);
     mockedUseEntitesAdmin.mockReturnValue(
@@ -102,7 +102,7 @@ describe('Admin entities index route', () => {
     expect(screen.getByText('Aucune entité administrative à afficher.')).toBeInTheDocument();
   });
 
-  it('uses pagination search params to fetch the admin entities list', () => {
+  it('uses pagination search params to fetch the admin entites list', () => {
     mockedUseNavigate.mockReturnValue(vi.fn() as never);
     mockedUseSearch.mockReturnValue({ offset: 20, limit: 10 } as never);
     mockedUseEntitesAdmin.mockReturnValue(

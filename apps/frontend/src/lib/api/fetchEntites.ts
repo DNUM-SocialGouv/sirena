@@ -27,6 +27,13 @@ export async function fetchEntitesListAdmin(query: QueryParams = {}) {
   return { data, meta };
 }
 
+export async function fetchEntiteByIdAdmin(id: string) {
+  const res = await client.entites.admin[':id'].$get({ param: { id } });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
 export async function fetchEntiteChain(id: string | undefined) {
   const res = await client.entites.chain[':id?'].$get({ param: { id } });
   await handleRequestErrors(res);
