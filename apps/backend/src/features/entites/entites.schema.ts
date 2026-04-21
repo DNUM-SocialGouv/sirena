@@ -33,6 +33,7 @@ const columns = [
 export const GetEntitiesQuerySchema = paginationQueryParamsSchema(columns);
 
 export const GetEntitiesResponseSchema = z.array(EntiteSchema);
+
 export const GetEntitesListAdminResponseSchema = z.array(
   z.object({
     id: z.string(),
@@ -48,6 +49,13 @@ export const GetEntitesListAdminResponseSchema = z.array(
     editId: z.string(),
   }),
 );
+
+export const GetEntitesByIdAdminResponseSchema = z.object({
+  id: z.string(),
+  nomComplet: z.string(),
+  label: z.string(),
+  isActive: z.boolean(),
+});
 
 export const GetEntitiesChainResponseSchema = z.array(
   EntiteSchema.pick({

@@ -6,7 +6,7 @@ import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
-import { getEditableEntitiesChain, getEntites, getEntitesListAdmin } from './entites.service.js';
+import { getEditableEntitiesChain, getEntiteById, getEntites, getEntitesListAdmin } from './entites.service.js';
 
 vi.mock('../../config/env.js', () => ({
   envVars: {},
@@ -14,6 +14,7 @@ vi.mock('../../config/env.js', () => ({
 
 vi.mock('./entites.service.js', () => ({
   getEntites: vi.fn(),
+  getEntiteById: vi.fn(),
   getEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
 }));
@@ -158,6 +159,50 @@ describe('Entites endpoints: /entites', () => {
         offset: 0,
         limit: 10,
       });
+    });
+  });
+
+  describe('GET /admin/:id', () => {
+    it('returns the limited admin entity payload for SUPER_ADMIN', async () => {
+      vi.mocked(getEntiteById).mockResolvedValueOnce({
+        id: '2',
+        nomComplet: 'Entite B',
+        label: 'b',
+        isActive: false,
+      });
+
+      const res = await app.request('/admin/2');
+
+      expect(getEntiteById).toHaveBeenCalledWith('2');
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: {
+          id: '2',
+          nomComplet: 'Entite B',
+          label: 'b',
+          isActive: false,
+        },
+      });
+    });
+
+    it('rejects non SUPER_ADMIN users with 403', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+
+      const res = await app.request('/admin/2');
+
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ message: 'Forbidden' });
+      expect(getEntiteById).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when the admin entity is not found', async () => {
+      vi.mocked(getEntiteById).mockResolvedValueOnce(null);
+
+      const res = await app.request('/admin/unknown');
+
+      expect(getEntiteById).toHaveBeenCalledWith('unknown');
+      expect(res.status).toBe(404);
+      expect(await res.json()).toEqual({ message: 'Entite not found' });
     });
   });
 

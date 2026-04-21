@@ -1,3 +1,4 @@
+import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
@@ -5,10 +6,16 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
-import { getEntiteChainRoute, getEntitesListAdminRoute, getEntitesRoute } from './entites.route.js';
+import {
+  getEntiteChainRoute,
+  getEntitesByIdAdminRoute,
+  getEntitesListAdminRoute,
+  getEntitesRoute,
+} from './entites.route.js';
 import { GetEntitiesQuerySchema } from './entites.schema.js';
 import {
   getEditableEntitiesChain,
+  getEntiteById,
   getEntiteDescendantIds,
   getEntites,
   getEntitesByIds,
@@ -83,6 +90,22 @@ const app = factoryWithLogs
       });
     },
   )
+
+  .get('/admin/:id', roleMiddleware([ROLES.SUPER_ADMIN]), getEntitesByIdAdminRoute, async (c) => {
+    const id = c.req.param('id');
+    const logger = c.get('logger');
+
+    const entite = await getEntiteById(id);
+
+    if (!entite) {
+      logger.warn({ entiteId: id }, 'Entite not found');
+      throwHTTPException404NotFound('Entite not found', { res: c.res });
+    }
+
+    logger.info({ entite }, 'Entite retrieved successfully');
+
+    return c.json({ data: entite });
+  })
 
   .get('/:id?', getEntitesRoute, zValidator('query', GetEntitiesQuerySchema), async (c) => {
     const logger = c.get('logger');
