@@ -99,6 +99,20 @@ export const getEntitesListAdmin = async ({ offset = 0, limit }: Pick<Pagination
   };
 };
 
+export const getEntiteById = async (entiteId: string) => {
+  const entite = await prisma.entite.findUnique({
+    where: { id: entiteId },
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+      isActive: true,
+    },
+  });
+
+  return entite;
+};
+
 export async function* getEntiteChainGenerator(entiteId: string) {
   let currentId: string | null = entiteId;
 

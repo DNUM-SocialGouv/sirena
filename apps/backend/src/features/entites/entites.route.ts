@@ -1,5 +1,11 @@
-import { openApiProtectedRoute, openApiResponse, openApiResponses } from '@sirena/backend-utils/helpers';
 import {
+  openApi404NotFound,
+  openApiProtectedRoute,
+  openApiResponse,
+  openApiResponses,
+} from '@sirena/backend-utils/helpers';
+import {
+  GetEntitesByIdAdminResponseSchema,
   GetEntitesListAdminResponseSchema,
   GetEntitiesChainResponseSchema,
   GetEntitiesResponseSchema,
@@ -16,6 +22,14 @@ export const getEntitesListAdminRoute = openApiProtectedRoute({
   description: 'Get entites list for super admins',
   responses: {
     ...openApiResponses(GetEntitesListAdminResponseSchema),
+  },
+});
+
+export const getEntitesByIdAdminRoute = openApiProtectedRoute({
+  description: 'Get entites by id for super admins',
+  responses: {
+    ...openApiResponse(GetEntitesByIdAdminResponseSchema),
+    ...openApi404NotFound('Entite not found'),
   },
 });
 
