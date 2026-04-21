@@ -24,9 +24,10 @@ import { Route as AuthAdminIndexRouteImport } from './routes/_auth/admin/index'
 import { Route as AuthUserHomeRouteImport } from './routes/_auth/_user/home'
 import { Route as AuthAdminUsersRouteRouteImport } from './routes/_auth/admin/users/route'
 import { Route as AuthAdminUsersIndexRouteImport } from './routes/_auth/admin/users/index'
-import { Route as AuthAdminEntitiesIndexRouteImport } from './routes/_auth/admin/entities/index'
+import { Route as AuthAdminEntitesIndexRouteImport } from './routes/_auth/admin/entites/index'
 import { Route as AuthAdminUsersAllRouteImport } from './routes/_auth/admin/users/all'
 import { Route as AuthAdminUserUserIdRouteImport } from './routes/_auth/admin/user/$userId'
+import { Route as AuthAdminEntitesEntiteIdRouteImport } from './routes/_auth/admin/entites/$entiteId'
 import { Route as AuthUserRequestCreateRouteImport } from './routes/_auth/_user/request.create'
 import { Route as AuthUserRequestRequestIdRouteImport } from './routes/_auth/_user/request.$requestId'
 import { Route as AuthUserRequestCreateIndexRouteImport } from './routes/_auth/_user/request.create.index'
@@ -114,9 +115,9 @@ const AuthAdminUsersIndexRoute = AuthAdminUsersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthAdminUsersRouteRoute,
 } as any)
-const AuthAdminEntitiesIndexRoute = AuthAdminEntitiesIndexRouteImport.update({
-  id: '/entities/',
-  path: '/entities/',
+const AuthAdminEntitesIndexRoute = AuthAdminEntitesIndexRouteImport.update({
+  id: '/entites/',
+  path: '/entites/',
   getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 const AuthAdminUsersAllRoute = AuthAdminUsersAllRouteImport.update({
@@ -129,6 +130,12 @@ const AuthAdminUserUserIdRoute = AuthAdminUserUserIdRouteImport.update({
   path: '/user/$userId',
   getParentRoute: () => AuthAdminRouteRoute,
 } as any)
+const AuthAdminEntitesEntiteIdRoute =
+  AuthAdminEntitesEntiteIdRouteImport.update({
+    id: '/entites/$entiteId',
+    path: '/entites/$entiteId',
+    getParentRoute: () => AuthAdminRouteRoute,
+  } as any)
 const AuthUserRequestCreateRoute = AuthUserRequestCreateRouteImport.update({
   id: '/request/create',
   path: '/request/create',
@@ -221,9 +228,10 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthAdminIndexRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/request/create': typeof AuthUserRequestCreateRouteWithChildren
+  '/admin/entites/$entiteId': typeof AuthAdminEntitesEntiteIdRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
-  '/admin/entities/': typeof AuthAdminEntitiesIndexRoute
+  '/admin/entites/': typeof AuthAdminEntitesIndexRoute
   '/admin/users/': typeof AuthAdminUsersIndexRoute
   '/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
   '/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
@@ -247,9 +255,10 @@ export interface FileRoutesByTo {
   '/mentions-legales': typeof PublicMentionsLegalesRoute
   '/home': typeof AuthUserHomeRoute
   '/admin': typeof AuthAdminIndexRoute
+  '/admin/entites/$entiteId': typeof AuthAdminEntitesEntiteIdRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
-  '/admin/entities': typeof AuthAdminEntitiesIndexRoute
+  '/admin/entites': typeof AuthAdminEntitesIndexRoute
   '/admin/users': typeof AuthAdminUsersIndexRoute
   '/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
   '/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
@@ -280,9 +289,10 @@ export interface FileRoutesById {
   '/_auth/admin/': typeof AuthAdminIndexRoute
   '/_auth/_user/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/_auth/_user/request/create': typeof AuthUserRequestCreateRouteWithChildren
+  '/_auth/admin/entites/$entiteId': typeof AuthAdminEntitesEntiteIdRoute
   '/_auth/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/_auth/admin/users/all': typeof AuthAdminUsersAllRoute
-  '/_auth/admin/entities/': typeof AuthAdminEntitiesIndexRoute
+  '/_auth/admin/entites/': typeof AuthAdminEntitesIndexRoute
   '/_auth/admin/users/': typeof AuthAdminUsersIndexRoute
   '/_auth/_user/request/$requestId/declarant': typeof AuthUserRequestRequestIdDeclarantRoute
   '/_auth/_user/request/$requestId/personne-concernee': typeof AuthUserRequestRequestIdPersonneConcerneeRoute
@@ -312,9 +322,10 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/request/$requestId'
     | '/request/create'
+    | '/admin/entites/$entiteId'
     | '/admin/user/$userId'
     | '/admin/users/all'
-    | '/admin/entities/'
+    | '/admin/entites/'
     | '/admin/users/'
     | '/request/$requestId/declarant'
     | '/request/$requestId/personne-concernee'
@@ -338,9 +349,10 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/home'
     | '/admin'
+    | '/admin/entites/$entiteId'
     | '/admin/user/$userId'
     | '/admin/users/all'
-    | '/admin/entities'
+    | '/admin/entites'
     | '/admin/users'
     | '/request/$requestId/declarant'
     | '/request/$requestId/personne-concernee'
@@ -370,9 +382,10 @@ export interface FileRouteTypes {
     | '/_auth/admin/'
     | '/_auth/_user/request/$requestId'
     | '/_auth/_user/request/create'
+    | '/_auth/admin/entites/$entiteId'
     | '/_auth/admin/user/$userId'
     | '/_auth/admin/users/all'
-    | '/_auth/admin/entities/'
+    | '/_auth/admin/entites/'
     | '/_auth/admin/users/'
     | '/_auth/_user/request/$requestId/declarant'
     | '/_auth/_user/request/$requestId/personne-concernee'
@@ -501,11 +514,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAdminUsersIndexRouteImport
       parentRoute: typeof AuthAdminUsersRouteRoute
     }
-    '/_auth/admin/entities/': {
-      id: '/_auth/admin/entities/'
-      path: '/entities'
-      fullPath: '/admin/entities/'
-      preLoaderRoute: typeof AuthAdminEntitiesIndexRouteImport
+    '/_auth/admin/entites/': {
+      id: '/_auth/admin/entites/'
+      path: '/entites'
+      fullPath: '/admin/entites/'
+      preLoaderRoute: typeof AuthAdminEntitesIndexRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
     '/_auth/admin/users/all': {
@@ -520,6 +533,13 @@ declare module '@tanstack/react-router' {
       path: '/user/$userId'
       fullPath: '/admin/user/$userId'
       preLoaderRoute: typeof AuthAdminUserUserIdRouteImport
+      parentRoute: typeof AuthAdminRouteRoute
+    }
+    '/_auth/admin/entites/$entiteId': {
+      id: '/_auth/admin/entites/$entiteId'
+      path: '/entites/$entiteId'
+      fullPath: '/admin/entites/$entiteId'
+      preLoaderRoute: typeof AuthAdminEntitesEntiteIdRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
     '/_auth/_user/request/create': {
@@ -712,15 +732,17 @@ const AuthAdminUsersRouteRouteWithChildren =
 interface AuthAdminRouteRouteChildren {
   AuthAdminUsersRouteRoute: typeof AuthAdminUsersRouteRouteWithChildren
   AuthAdminIndexRoute: typeof AuthAdminIndexRoute
+  AuthAdminEntitesEntiteIdRoute: typeof AuthAdminEntitesEntiteIdRoute
   AuthAdminUserUserIdRoute: typeof AuthAdminUserUserIdRoute
-  AuthAdminEntitiesIndexRoute: typeof AuthAdminEntitiesIndexRoute
+  AuthAdminEntitesIndexRoute: typeof AuthAdminEntitesIndexRoute
 }
 
 const AuthAdminRouteRouteChildren: AuthAdminRouteRouteChildren = {
   AuthAdminUsersRouteRoute: AuthAdminUsersRouteRouteWithChildren,
   AuthAdminIndexRoute: AuthAdminIndexRoute,
+  AuthAdminEntitesEntiteIdRoute: AuthAdminEntitesEntiteIdRoute,
   AuthAdminUserUserIdRoute: AuthAdminUserUserIdRoute,
-  AuthAdminEntitiesIndexRoute: AuthAdminEntitiesIndexRoute,
+  AuthAdminEntitesIndexRoute: AuthAdminEntitesIndexRoute,
 }
 
 const AuthAdminRouteRouteWithChildren = AuthAdminRouteRoute._addFileChildren(

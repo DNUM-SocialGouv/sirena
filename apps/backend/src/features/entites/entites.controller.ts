@@ -2,18 +2,21 @@ import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import { isOperationDependsOnRecordNotFoundError } from '../../helpers/prisma.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import {
+  editEntiteAdminRoute,
+  getEntiteByIdAdminRoute,
   getEntiteChainRoute,
-  getEntitesByIdAdminRoute,
   getEntitesListAdminRoute,
   getEntitesRoute,
 } from './entites.route.js';
-import { GetEntitiesQuerySchema } from './entites.schema.js';
+import { EditEntiteInputSchema, GetEntitiesQuerySchema } from './entites.schema.js';
 import {
+  editEntiteAdmin,
   getEditableEntitiesChain,
   getEntiteById,
   getEntiteDescendantIds,
@@ -91,7 +94,7 @@ const app = factoryWithLogs
     },
   )
 
-  .get('/admin/:id', roleMiddleware([ROLES.SUPER_ADMIN]), getEntitesByIdAdminRoute, async (c) => {
+  .get('/admin/:id', roleMiddleware([ROLES.SUPER_ADMIN]), getEntiteByIdAdminRoute, async (c) => {
     const id = c.req.param('id');
     const logger = c.get('logger');
 
@@ -106,6 +109,33 @@ const app = factoryWithLogs
 
     return c.json({ data: entite });
   })
+
+  .patch(
+    '/admin/:id',
+    roleMiddleware([ROLES.SUPER_ADMIN]),
+    zValidator('json', EditEntiteInputSchema),
+    editEntiteAdminRoute,
+    async (c) => {
+      const id = c.req.param('id');
+      const data = c.req.valid('json');
+      const logger = c.get('logger');
+
+      try {
+        const entite = await editEntiteAdmin(id, data);
+
+        logger.info({ entite }, 'Edit entite successfully');
+
+        return c.json({ data: entite });
+      } catch (error) {
+        if (isOperationDependsOnRecordNotFoundError(error)) {
+          logger.warn({ entiteId: id }, 'Entite not found');
+          throwHTTPException404NotFound('Entite not found', { res: c.res });
+        }
+
+        throw error;
+      }
+    },
+  )
 
   .get('/:id?', getEntitesRoute, zValidator('query', GetEntitiesQuerySchema), async (c) => {
     const logger = c.get('logger');

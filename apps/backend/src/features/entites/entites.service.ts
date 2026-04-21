@@ -88,6 +88,17 @@ export const getEntites = async (
   };
 };
 
+export const getEntiteById = async (entiteId: string) =>
+  await prisma.entite.findUnique({
+    where: { id: entiteId },
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+      isActive: true,
+    },
+  });
+
 export const getEntitesListAdmin = async ({ offset = 0, limit }: Pick<Pagination, 'offset' | 'limit'>) => {
   const entites = await prisma.entite.findMany();
   const total = entites.length;
@@ -99,9 +110,17 @@ export const getEntitesListAdmin = async ({ offset = 0, limit }: Pick<Pagination
   };
 };
 
-export const getEntiteById = async (entiteId: string) => {
-  const entite = await prisma.entite.findUnique({
+export const editEntiteAdmin = async (
+  entiteId: string,
+  data: {
+    nomComplet: string;
+    label: string;
+    isActive: boolean;
+  },
+) =>
+  prisma.entite.update({
     where: { id: entiteId },
+    data,
     select: {
       id: true,
       nomComplet: true,
@@ -109,9 +128,6 @@ export const getEntiteById = async (entiteId: string) => {
       isActive: true,
     },
   });
-
-  return entite;
-};
 
 export async function* getEntiteChainGenerator(entiteId: string) {
   let currentId: string | null = entiteId;

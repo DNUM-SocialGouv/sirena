@@ -1,5 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchEntiteChain, fetchEntiteDescendants, fetchEntites, fetchEntitesListAdmin } from '@/lib/api/fetchEntites';
+import {
+  fetchEntiteByIdAdmin,
+  fetchEntiteChain,
+  fetchEntiteDescendants,
+  fetchEntites,
+  fetchEntitesListAdmin,
+} from '@/lib/api/fetchEntites';
 import type { QueryParams } from '@/types/pagination.type.ts';
 
 export const useEntitesQueryOptions = (id: string | undefined, query: QueryParams = {}) => ({
@@ -20,6 +26,13 @@ export const useEntitesListAdminQueryOptions = (query: QueryParams = {}) => ({
 });
 
 export const useEntitesListAdmin = (query: QueryParams = {}) => useQuery(useEntitesListAdminQueryOptions(query));
+
+export const useEntiteByIdAdmin = (entiteId: string) =>
+  useQuery({
+    queryKey: ['entite', 'admin', entiteId],
+    queryFn: () => fetchEntiteByIdAdmin(entiteId),
+    retry: false,
+  });
 
 export const useEntiteChainQueryOptions = (id: string | undefined) => ({
   queryKey: ['entiteChain', id],

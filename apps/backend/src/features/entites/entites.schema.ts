@@ -21,6 +21,13 @@ export const EntiteSchema = z.object({
   dptLib: z.string().nullable(),
 });
 
+const EntiteAdminSchema = z.object({
+  id: z.string(),
+  nomComplet: z.string(),
+  label: z.string(),
+  isActive: z.boolean(),
+});
+
 const columns = [
   Prisma.EntiteScalarFieldEnum.nomComplet,
   Prisma.EntiteScalarFieldEnum.label,
@@ -50,12 +57,10 @@ export const GetEntitesListAdminResponseSchema = z.array(
   }),
 );
 
-export const GetEntitesByIdAdminResponseSchema = z.object({
-  id: z.string(),
-  nomComplet: z.string(),
-  label: z.string(),
-  isActive: z.boolean(),
-});
+export const GetEntitesByIdAdminResponseSchema = EntiteAdminSchema;
+
+export const EditEntiteInputSchema = EntiteAdminSchema.omit({ id: true });
+export const EditEntiteAdminResponseSchema = EntiteAdminSchema;
 
 export const GetEntitiesChainResponseSchema = z.array(
   EntiteSchema.pick({
