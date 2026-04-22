@@ -98,11 +98,11 @@ describe('Admin entity edit route', () => {
     render(<RouteComponent />);
 
     expect(mockedUseEntiteByIdAdmin).toHaveBeenCalledWith('root-ars');
-    expect(screen.getByRole('heading', { level: 1, name: 'Éditer une entité' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Modifier une entité' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /liste des entités/i })).toHaveAttribute('href', '/admin/entites');
 
-    expect(screen.getByLabelText(/Nom \(libellé long\)/i)).toHaveValue('ARS Normandie');
-    expect(screen.getByLabelText(/Nom court/i)).toHaveValue('ARS NOR');
+    expect(screen.getByLabelText(/Nom de l'entité/i)).toHaveValue('ARS Normandie');
+    expect(screen.getByLabelText(/Libellé de l'entité/i)).toHaveValue('ARS NOR');
     expect(screen.getByRole('radio', { name: 'Oui' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Non' })).not.toBeChecked();
   });
@@ -129,10 +129,10 @@ describe('Admin entity edit route', () => {
 
     const user = userEvent.setup();
 
-    await user.clear(screen.getByLabelText(/Nom \(libellé long\)/i));
-    await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'ARS Bretagne');
-    await user.clear(screen.getByLabelText(/Nom court/i));
-    await user.type(screen.getByLabelText(/Nom court/i), 'ARS BRE');
+    await user.clear(screen.getByLabelText(/Nom de l'entité/i));
+    await user.type(screen.getByLabelText(/Nom de l'entité/i), 'ARS Bretagne');
+    await user.clear(screen.getByLabelText(/Libellé de l'entité/i));
+    await user.type(screen.getByLabelText(/Libellé de l'entité/i), 'ARS BRE');
     await user.click(screen.getByRole('radio', { name: 'Non' }));
     await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
 
@@ -170,8 +170,8 @@ describe('Admin entity edit route', () => {
 
     const user = userEvent.setup();
 
-    await user.clear(screen.getByLabelText(/Nom \(libellé long\)/i));
-    await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'ARS Bretagne');
+    await user.clear(screen.getByLabelText(/Nom de l'entité/i));
+    await user.type(screen.getByLabelText(/Nom de l'entité/i), 'ARS Bretagne');
     await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
 
     await waitFor(() => {
