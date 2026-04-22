@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { getActiveTab, getTabPaths, getTabs } from './-tabs';
 
 describe('tabs', () => {
-  it('shows the entities tab as the third tab for super admins', () => {
+  it('shows the entites tab as the third tab for super admins', () => {
     expect(getTabs(ROLES.SUPER_ADMIN).map((tab) => tab.label)).toEqual([
       "Gestion des demandes d'habilitations",
       'Gestion des utilisateurs',
@@ -11,7 +11,7 @@ describe('tabs', () => {
     ]);
   });
 
-  it('does not show the entities tab for entity admins', () => {
+  it('does not show the entites tab for entity admins', () => {
     expect(getTabs(ROLES.ENTITY_ADMIN).map((tab) => tab.label)).toEqual([
       "Gestion des demandes d'habilitations",
       'Gestion des utilisateurs',
@@ -19,7 +19,7 @@ describe('tabs', () => {
   });
 
   it('returns the matching tab paths for super admins', () => {
-    expect(getTabPaths(ROLES.SUPER_ADMIN)).toEqual(['/admin/users', '/admin/users/all', '/admin/entities']);
+    expect(getTabPaths(ROLES.SUPER_ADMIN)).toEqual(['/admin/users', '/admin/users/all', '/admin/entites']);
   });
 
   it('returns the matching tab paths for entity admins', () => {
@@ -34,15 +34,15 @@ describe('tabs', () => {
     expect(getActiveTab('/admin/users/all', ROLES.SUPER_ADMIN)).toBe(1);
   });
 
-  it('marks /admin/entities as the third tab for super admins', () => {
-    expect(getActiveTab('/admin/entities', ROLES.SUPER_ADMIN)).toBe(2);
+  it('marks /admin/entites as the third tab for super admins', () => {
+    expect(getActiveTab('/admin/entites', ROLES.SUPER_ADMIN)).toBe(2);
   });
 
-  it('marks /admin/entities/:entityId as the third tab for super admins', () => {
-    expect(getActiveTab('/admin/entities/root-ars', ROLES.SUPER_ADMIN)).toBe(2);
+  it('marks /admin/entites/:entityId as the third tab for super admins', () => {
+    expect(getActiveTab('/admin/entites/root-ars', ROLES.SUPER_ADMIN)).toBe(2);
   });
 
   it('falls back to the first tab for entity admins on unknown admin paths', () => {
-    expect(getActiveTab('/admin/entities', ROLES.ENTITY_ADMIN)).toBe(0);
+    expect(getActiveTab('/admin/entites', ROLES.ENTITY_ADMIN)).toBe(0);
   });
 });
