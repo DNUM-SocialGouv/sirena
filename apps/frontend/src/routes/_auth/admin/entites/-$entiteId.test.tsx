@@ -6,9 +6,11 @@ import { useEntiteByIdAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { Route, RouteComponent } from './$entiteId';
 
-const { addToastSpy, editEntiteAdminMutateAsyncSpy } = vi.hoisted(() => ({
+const { addToastSpy, editEntiteAdminMutateAsyncSpy, routerBackSpy, routerNavigateSpy } = vi.hoisted(() => ({
   addToastSpy: vi.fn(),
   editEntiteAdminMutateAsyncSpy: vi.fn(),
+  routerBackSpy: vi.fn(),
+  routerNavigateSpy: vi.fn(),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -17,6 +19,10 @@ vi.mock('@tanstack/react-router', () => ({
     useParams: () => ({ entiteId: 'root-ars' }),
   }),
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => <a href={to}>{children}</a>,
+  useRouter: () => ({
+    history: { back: routerBackSpy },
+    navigate: routerNavigateSpy,
+  }),
 }));
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
@@ -56,6 +62,8 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   editEntiteAdminMutateAsyncSpy.mockReset();
+  routerBackSpy.mockReset();
+  routerNavigateSpy.mockReset();
 });
 
 describe('Admin entity edit route', () => {
@@ -162,6 +170,35 @@ describe('Admin entity edit route', () => {
         timeout: 0,
         data: { icon: 'fr-alert--success' },
       });
+    });
+  });
+
+  it('navigates back after saving the entity successfully', async () => {
+    const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+
+    mockedUseEntiteByIdAdmin.mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    editEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
+      id: 'root-ars',
+      nomComplet: 'ARS Bretagne',
+      label: 'ARS BRE',
+      isActive: false,
+    });
+
+    render(<RouteComponent />);
+
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
+
+    await waitFor(() => {
+      expect(routerBackSpy).toHaveBeenCalled();
     });
   });
 });
