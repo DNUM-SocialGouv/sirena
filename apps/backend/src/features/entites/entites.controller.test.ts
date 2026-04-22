@@ -19,6 +19,7 @@ vi.mock('./entites.service.js', () => ({
   getEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
   editEntiteAdmin: editEntiteAdminSpy,
+  createChildEntiteAdmin: createEntiteAdminChildSpy,
 }));
 
 vi.mock('../../middlewares/auth.middleware.js', () => {
@@ -42,10 +43,12 @@ const {
   roleMiddlewareSpy,
   currentRole,
   patchEntiteAdminByIdSpy: editEntiteAdminSpy,
+  postEntiteAdminChildSpy: createEntiteAdminChildSpy,
 } = vi.hoisted(() => ({
   roleMiddlewareSpy: vi.fn(),
   currentRole: { value: 'SUPER_ADMIN' },
   patchEntiteAdminByIdSpy: vi.fn(),
+  postEntiteAdminChildSpy: vi.fn(),
 }));
 
 vi.mock('../../middlewares/role.middleware.js', () => {
@@ -282,6 +285,44 @@ describe('Entites endpoints: /entites', () => {
       expect(res.status).toBe(404);
       expect(await res.json()).toEqual({ message: 'Entite not found' });
       expect(editEntiteAdminSpy).toHaveBeenCalledWith('unknown', editEntitePayload);
+    });
+  });
+
+  describe('POST /admin/:id/children', () => {
+    const createChildEntitePayload = {
+      nomComplet: 'Direction de la prévention',
+      label: 'DIR PREV',
+      email: 'direction@example.fr',
+      emailDomain: '@example.fr',
+      organizationalUnit: 'DIR-PREV',
+      emailContactUsager: 'contact@example.fr',
+      adresseContactUsager: '1 rue de la République, 75000 Paris',
+      telContactUsager: '01 02 03 04 05',
+      isActive: true,
+    };
+
+    it('creates a child entity from a root parent for SUPER_ADMIN', async () => {
+      createEntiteAdminChildSpy.mockResolvedValueOnce({
+        id: 'direction-1',
+        ...createChildEntitePayload,
+      });
+
+      const res = await app.request('/admin/root-ars/children', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(createChildEntitePayload),
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: {
+          id: 'direction-1',
+          ...createChildEntitePayload,
+        },
+      });
+      expect(createEntiteAdminChildSpy).toHaveBeenCalledWith('root-ars', createChildEntitePayload);
     });
   });
 
