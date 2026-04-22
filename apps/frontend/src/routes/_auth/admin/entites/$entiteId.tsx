@@ -1,6 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { useEditEntiteAdmin, useEntiteByIdAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
@@ -10,6 +10,7 @@ export const Route = createFileRoute('/_auth/admin/entites/$entiteId')({
 });
 
 export function RouteComponent() {
+  const router = useRouter();
   const { entiteId } = Route.useParams();
   const editEntiteAdmin = useEditEntiteAdmin();
   const entiteQuery = useEntiteByIdAdmin(entiteId);
@@ -45,6 +46,8 @@ export function RouteComponent() {
       timeout: 0,
       data: { icon: 'fr-alert--success' },
     });
+
+    router.history.back();
   };
 
   return (
