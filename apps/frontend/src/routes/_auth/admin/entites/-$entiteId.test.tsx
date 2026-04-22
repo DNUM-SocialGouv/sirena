@@ -2,7 +2,7 @@ import { ROLES } from '@sirena/common/constants';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useEntiteByIdAdmin } from '@/hooks/queries/entites.hook';
+import { useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { Route, RouteComponent } from './$entiteId';
 
@@ -21,7 +21,9 @@ vi.mock('@tanstack/react-router', () => ({
     ...options,
     useParams: () => ({ entiteId: 'root-ars' }),
   }),
-  Link: ({ to, children }: { to: string; children: React.ReactNode }) => <a href={to}>{children}</a>,
+  Link: ({ to, params, children }: { to: string; params?: { entiteId?: string }; children: React.ReactNode }) => (
+    <a href={to.replace('$entiteId', params?.entiteId ?? '')}>{children}</a>
+  ),
   useRouter: () => ({
     history: { back: routerBackSpy },
     navigate: routerNavigateSpy,
@@ -30,6 +32,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
   useEntiteByIdAdmin: vi.fn(),
+  useEntiteChain: vi.fn(),
   useEditEntiteAdmin: () => ({
     mutateAsync: editEntiteAdminMutateAsyncSpy,
     isPending: false,
@@ -61,6 +64,14 @@ const buildSuccessQuery = (data: { id: string; nomComplet: string; label: string
     error: null,
   }) as never;
 
+const buildChainSuccessQuery = (data: Array<{ id: string; nomComplet: string; disabled: boolean }>) =>
+  ({
+    data,
+    isPending: false,
+    isError: false,
+    error: null,
+  }) as never;
+
 const setHistoryLength = (length: number) => {
   Object.defineProperty(window.history, 'length', {
     configurable: true,
@@ -85,6 +96,7 @@ describe('Admin entity edit route', () => {
 
   it('renders the limited edit form from the admin entity payload', () => {
     const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
 
     mockedUseEntiteByIdAdmin.mockReturnValue(
       buildSuccessQuery({
@@ -93,6 +105,9 @@ describe('Admin entity edit route', () => {
         label: 'ARS NOR',
         isActive: true,
       }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
     );
 
     render(<RouteComponent />);
@@ -107,8 +122,9 @@ describe('Admin entity edit route', () => {
     expect(screen.getByRole('radio', { name: 'Non' })).not.toBeChecked();
   });
 
-  it('submits the limited editable fields to the admin edit mutation', async () => {
+  it('shows a creation action on a root entity edit page', () => {
     const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
 
     mockedUseEntiteByIdAdmin.mockReturnValue(
       buildSuccessQuery({
@@ -117,6 +133,33 @@ describe('Admin entity edit route', () => {
         label: 'ARS NOR',
         isActive: true,
       }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('link', { name: /créer une entité \/ sous-entité/i })).toHaveAttribute(
+      'href',
+      '/admin/entites/root-ars/create',
+    );
+  });
+
+  it('submits the limited editable fields to the admin edit mutation', async () => {
+    const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
+
+    mockedUseEntiteByIdAdmin.mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
     );
     editEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
       id: 'root-ars',
@@ -150,6 +193,7 @@ describe('Admin entity edit route', () => {
 
   it('shows a success toast after saving the entity', async () => {
     const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
 
     mockedUseEntiteByIdAdmin.mockReturnValue(
       buildSuccessQuery({
@@ -158,6 +202,9 @@ describe('Admin entity edit route', () => {
         label: 'ARS NOR',
         isActive: true,
       }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
     );
     editEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
       id: 'root-ars',
@@ -188,6 +235,7 @@ describe('Admin entity edit route', () => {
     setHistoryLength(2);
 
     const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
 
     mockedUseEntiteByIdAdmin.mockReturnValue(
       buildSuccessQuery({
@@ -196,6 +244,9 @@ describe('Admin entity edit route', () => {
         label: 'ARS NOR',
         isActive: true,
       }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
     );
     editEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
       id: 'root-ars',
@@ -220,6 +271,7 @@ describe('Admin entity edit route', () => {
     setHistoryLength(historyLengthState.value);
 
     const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
 
     mockedUseEntiteByIdAdmin.mockReturnValue(
       buildSuccessQuery({
@@ -228,6 +280,9 @@ describe('Admin entity edit route', () => {
         label: 'ARS NOR',
         isActive: true,
       }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
     );
     editEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
       id: 'root-ars',
