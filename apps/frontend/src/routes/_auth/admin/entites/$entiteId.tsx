@@ -26,6 +26,14 @@ export function RouteComponent() {
 
   const entite = entiteQuery.data;
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.history.back();
+    } else {
+      router.navigate({ to: '/admin/entites' });
+    }
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -47,7 +55,7 @@ export function RouteComponent() {
       data: { icon: 'fr-alert--success' },
     });
 
-    router.history.back();
+    handleBack();
   };
 
   return (
