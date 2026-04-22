@@ -5,6 +5,7 @@ import {
   openApiResponses,
 } from '@sirena/backend-utils/helpers';
 import {
+  CreateChildEntiteAdminResponseSchema,
   EditEntiteAdminResponseSchema,
   GetEntitesByIdAdminResponseSchema,
   GetEntitesListAdminResponseSchema,
@@ -30,6 +31,14 @@ export const getEntiteByIdAdminRoute = openApiProtectedRoute({
   description: 'Get entite by id for super admins',
   responses: {
     ...openApiResponse(GetEntitesByIdAdminResponseSchema),
+    ...openApi404NotFound('Entite not found'),
+  },
+});
+
+export const createChildEntiteAdminRoute = openApiProtectedRoute({
+  description: 'Create child entite for super admins',
+  responses: {
+    ...openApiResponse(CreateChildEntiteAdminResponseSchema),
     ...openApi404NotFound('Entite not found'),
   },
 });

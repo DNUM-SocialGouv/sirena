@@ -70,3 +70,19 @@ export const GetEntitiesChainResponseSchema = z.array(
     disabled: z.boolean(),
   }),
 );
+
+export const CreateChildEntiteAdminInputSchema = z.object({
+  nomComplet: z.string(),
+  label: z.string(),
+  email: z.string(),
+  emailDomain: z.string(),
+  organizationalUnit: z.string(),
+  emailContactUsager: z.string(),
+  adresseContactUsager: z.string(),
+  telContactUsager: z.string(),
+  isActive: z.boolean(),
+});
+
+export const CreateChildEntiteAdminResponseSchema = CreateChildEntiteAdminInputSchema.extend({
+  id: z.string(),
+});

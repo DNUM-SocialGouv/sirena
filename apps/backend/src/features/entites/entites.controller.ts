@@ -7,15 +7,18 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import { EntiteNotFoundError } from './entites.error.js';
 import {
+  createChildEntiteAdminRoute,
   editEntiteAdminRoute,
   getEntiteByIdAdminRoute,
   getEntiteChainRoute,
   getEntitesListAdminRoute,
   getEntitesRoute,
 } from './entites.route.js';
-import { EditEntiteInputSchema, GetEntitiesQuerySchema } from './entites.schema.js';
+import { CreateChildEntiteAdminInputSchema, EditEntiteInputSchema, GetEntitiesQuerySchema } from './entites.schema.js';
 import {
+  createChildEntiteAdmin,
   editEntiteAdmin,
   getEditableEntitiesChain,
   getEntiteById,
@@ -109,6 +112,30 @@ const app = factoryWithLogs
 
     return c.json({ data: entite });
   })
+
+  .post(
+    '/admin/:id/children',
+    roleMiddleware([ROLES.SUPER_ADMIN]),
+    zValidator('json', CreateChildEntiteAdminInputSchema),
+    createChildEntiteAdminRoute,
+    async (c) => {
+      const id = c.req.param('id');
+      const data = c.req.valid('json');
+      const logger = c.get('logger');
+
+      try {
+        const entite = await createChildEntiteAdmin(id, data);
+        return c.json({ data: entite });
+      } catch (error) {
+        if (error instanceof EntiteNotFoundError) {
+          logger.warn({ entiteId: id }, 'Entite not found');
+          throwHTTPException404NotFound('Entite not found', { res: c.res });
+        }
+
+        throw error;
+      }
+    },
+  )
 
   .patch(
     '/admin/:id',

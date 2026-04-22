@@ -1,6 +1,7 @@
 import type { Pagination } from '@sirena/backend-utils/types';
-import { type Entite, prisma } from '../../libs/prisma.js';
+import { type Entite, Prisma, prisma } from '../../libs/prisma.js';
 import { buildEntitesListAdmin } from './entites.admin.list.js';
+import { EntiteNotFoundError } from './entites.error.js';
 import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type.js';
 
 export const getEntiteForUser = async (organizationalUnit: string | null, email: string) => {
@@ -108,6 +109,62 @@ export const getEntitesListAdmin = async ({ offset = 0, limit }: Pick<Pagination
     data: limit !== undefined ? orderedRows.slice(offset, offset + limit) : orderedRows.slice(offset),
     total,
   };
+};
+
+export const createChildEntiteAdmin = async (
+  parentId: string,
+  data: {
+    nomComplet: string;
+    label: string;
+    email: string;
+    emailDomain: string;
+    organizationalUnit: string;
+    emailContactUsager: string;
+    adresseContactUsager: string;
+    telContactUsager: string;
+    isActive: boolean;
+  },
+) => {
+  const parent = await prisma.entite.findUnique({
+    where: { id: parentId },
+    select: {
+      entiteTypeId: true,
+      departementCode: true,
+      ctcdCode: true,
+      regionCode: true,
+      regLib: true,
+      dptLib: true,
+    },
+  });
+
+  if (!parent) {
+    throw new EntiteNotFoundError();
+  }
+
+  return prisma.entite.create({
+    data: {
+      ...data,
+      entiteMereId: parentId,
+      entiteTypeId: parent.entiteTypeId,
+      departementCode: parent.departementCode,
+      ctcdCode: parent.ctcdCode,
+      regionCode: parent.regionCode,
+      regLib: parent.regLib,
+      dptLib: parent.dptLib,
+    },
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+      email: true,
+      emailDomain: true,
+      organizationalUnit: true,
+      emailContactUsager: true,
+      adresseContactUsager: true,
+      telContactUsager: true,
+      isActive: true,
+    },
+  });
 };
 
 export const editEntiteAdmin = async (
