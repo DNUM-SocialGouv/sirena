@@ -1,6 +1,10 @@
+import Button from '@codegouvfr/react-dsfr/Button';
+import Input from '@codegouvfr/react-dsfr/Input';
+import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import type { SubmitEvent } from 'react';
 import { useEditEntiteAdmin, useEntiteByIdAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
@@ -34,7 +38,7 @@ export function RouteComponent() {
     }
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
@@ -59,38 +63,72 @@ export function RouteComponent() {
   };
 
   return (
-    <div>
-      <Link to="/admin/entites">Liste des entités</Link>
+    <div className="fr-container fr-mt-4w">
+      <div className="fr-mb-3w">
+        <Link className="fr-link" to="/admin/entites">
+          <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
+          Liste des entités
+        </Link>
+      </div>
 
-      <h1>Éditer une entité</h1>
+      <h1 className="fr-mb-4w">Modifier une entité</h1>
 
-      <form onSubmit={handleSubmit}>
-        <label>
-          Nom (libellé long)
-          <input name="nomComplet" defaultValue={entite.nomComplet} />
-        </label>
+      <div
+        className="fr-p-4w fr-mb-4w"
+        style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
+      >
+        <form onSubmit={handleSubmit}>
+          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+            <legend>
+              <h2 className="fr-h6 fr-mb-3w">Informations de l’entité</h2>
+            </legend>
 
-        <label>
-          Nom court
-          <input name="label" defaultValue={entite.label} />
-        </label>
+            <Input
+              className="fr-fieldset__content"
+              label="Nom de l'entité"
+              nativeInputProps={{
+                name: 'nomComplet',
+                defaultValue: entite.nomComplet,
+              }}
+            />
 
-        <fieldset>
-          <legend>Actif dans SIRENA</legend>
+            <Input
+              className="fr-fieldset__content"
+              label="Libellé de l'entité"
+              nativeInputProps={{
+                name: 'label',
+                defaultValue: entite.label,
+              }}
+            />
 
-          <label>
-            <input type="radio" name="isActive" value="oui" defaultChecked={entite.isActive} />
-            Oui
-          </label>
+            <RadioButtons
+              legend="Actif dans SIRENA"
+              name="isActive"
+              orientation="horizontal"
+              options={[
+                {
+                  label: 'Oui',
+                  nativeInputProps: {
+                    value: 'oui',
+                    defaultChecked: entite.isActive,
+                  },
+                },
+                {
+                  label: 'Non',
+                  nativeInputProps: {
+                    value: 'non',
+                    defaultChecked: !entite.isActive,
+                  },
+                },
+              ]}
+            />
+          </fieldset>
 
-          <label>
-            <input type="radio" name="isActive" value="non" defaultChecked={!entite.isActive} />
-            Non
-          </label>
-        </fieldset>
-
-        <button type="submit">Valider les modifications</button>
-      </form>
+          <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
+            <Button type="submit">Valider les modifications</Button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
