@@ -1,4 +1,5 @@
 import { ROLES } from '@sirena/common/constants';
+import { Toast } from '@sirena/ui';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEditEntiteAdmin, useEntiteByIdAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
@@ -12,6 +13,7 @@ export function RouteComponent() {
   const { entiteId } = Route.useParams();
   const editEntiteAdmin = useEditEntiteAdmin();
   const entiteQuery = useEntiteByIdAdmin(entiteId);
+  const toastManager = Toast.useToastManager();
 
   if (entiteQuery.isPending) {
     return null;
@@ -35,6 +37,13 @@ export function RouteComponent() {
         label: String(formData.get('label') ?? ''),
         isActive: formData.get('isActive') === 'oui',
       },
+    });
+
+    toastManager.add({
+      title: 'Entité modifiée',
+      description: 'Les modifications ont été enregistrées avec succès.',
+      timeout: 0,
+      data: { icon: 'fr-alert--success' },
     });
   };
 
