@@ -1,5 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
+  type EditEntiteAdminInput,
+  editEntiteAdmin,
   fetchEntiteByIdAdmin,
   fetchEntiteChain,
   fetchEntiteDescendants,
@@ -53,3 +55,8 @@ export const useEntiteDescendantsQueryOptions = (id: string | undefined) => ({
 });
 
 export const useEntiteDescendants = (id: string | undefined) => useQuery(useEntiteDescendantsQueryOptions(id));
+
+export const useEditEntiteAdmin = () =>
+  useMutation({
+    mutationFn: ({ id, input }: { id: string; input: EditEntiteAdminInput }) => editEntiteAdmin(id, input),
+  });

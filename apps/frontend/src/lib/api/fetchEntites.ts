@@ -47,3 +47,19 @@ export async function fetchEntiteDescendants(id: string) {
   const { data } = await res.json();
   return data;
 }
+
+export type EditEntiteAdminInput = {
+  nomComplet: string;
+  label: string;
+  isActive: boolean;
+};
+
+export async function editEntiteAdmin(id: string, input: EditEntiteAdminInput) {
+  const res = await client.entites.admin[':id'].$patch({
+    param: { id },
+    json: input,
+  });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
