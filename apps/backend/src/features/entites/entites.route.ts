@@ -35,7 +35,7 @@ export const getEntiteByIdAdminRoute = openApiProtectedRoute({
 });
 
 export const editEntiteAdminRoute = openApiProtectedRoute({
-  description: 'Edit entite ',
+  description: 'Edit entite',
   responses: {
     ...openApiResponse(EditEntiteAdminResponseSchema),
     ...openApi404NotFound('Entite not found'),
