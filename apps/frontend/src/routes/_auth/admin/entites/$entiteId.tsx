@@ -1,6 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useEntiteByIdAdmin } from '@/hooks/queries/entites.hook';
+import { useEditEntiteAdmin, useEntiteByIdAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/admin/entites/$entiteId')({
@@ -10,6 +10,7 @@ export const Route = createFileRoute('/_auth/admin/entites/$entiteId')({
 
 export function RouteComponent() {
   const { entiteId } = Route.useParams();
+  const editEntiteAdmin = useEditEntiteAdmin();
   const entiteQuery = useEntiteByIdAdmin(entiteId);
 
   if (entiteQuery.isPending) {
@@ -22,35 +23,54 @@ export function RouteComponent() {
 
   const entite = entiteQuery.data;
 
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.currentTarget);
+
+    await editEntiteAdmin.mutateAsync({
+      id: entiteId,
+      input: {
+        nomComplet: String(formData.get('nomComplet') ?? ''),
+        label: String(formData.get('label') ?? ''),
+        isActive: formData.get('isActive') === 'oui',
+      },
+    });
+  };
+
   return (
     <div>
       <Link to="/admin/entites">Liste des entités</Link>
 
       <h1>Éditer une entité</h1>
 
-      <label>
-        Nom (libellé long)
-        <input defaultValue={entite.nomComplet} />
-      </label>
-
-      <label>
-        Nom court
-        <input defaultValue={entite.label} />
-      </label>
-
-      <fieldset>
-        <legend>Actif dans SIRENA</legend>
-
+      <form onSubmit={handleSubmit}>
         <label>
-          <input type="radio" name="isActive" value="oui" defaultChecked={entite.isActive} />
-          Oui
+          Nom (libellé long)
+          <input name="nomComplet" defaultValue={entite.nomComplet} />
         </label>
 
         <label>
-          <input type="radio" name="isActive" value="non" defaultChecked={!entite.isActive} />
-          Non
+          Nom court
+          <input name="label" defaultValue={entite.label} />
         </label>
-      </fieldset>
+
+        <fieldset>
+          <legend>Actif dans SIRENA</legend>
+
+          <label>
+            <input type="radio" name="isActive" value="oui" defaultChecked={entite.isActive} />
+            Oui
+          </label>
+
+          <label>
+            <input type="radio" name="isActive" value="non" defaultChecked={!entite.isActive} />
+            Non
+          </label>
+        </fieldset>
+
+        <button type="submit">Valider les modifications</button>
+      </form>
     </div>
   );
 }

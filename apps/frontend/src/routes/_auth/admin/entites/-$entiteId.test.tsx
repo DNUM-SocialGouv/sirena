@@ -1,9 +1,14 @@
 import { ROLES } from '@sirena/common/constants';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEntiteByIdAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { Route, RouteComponent } from './$entiteId';
+
+const { editEntiteAdminMutateAsyncSpy } = vi.hoisted(() => ({
+  editEntiteAdminMutateAsyncSpy: vi.fn(),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => ({
@@ -15,6 +20,10 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
   useEntiteByIdAdmin: vi.fn(),
+  useEditEntiteAdmin: () => ({
+    mutateAsync: editEntiteAdminMutateAsyncSpy,
+    isPending: false,
+  }),
 }));
 
 vi.mock('@/lib/auth-guards', () => ({
@@ -32,6 +41,7 @@ const buildSuccessQuery = (data: { id: string; nomComplet: string; label: string
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  editEntiteAdminMutateAsyncSpy.mockReset();
 });
 
 describe('Admin entity edit route', () => {
@@ -62,5 +72,46 @@ describe('Admin entity edit route', () => {
     expect(screen.getByLabelText(/Nom court/i)).toHaveValue('ARS NOR');
     expect(screen.getByRole('radio', { name: 'Oui' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Non' })).not.toBeChecked();
+  });
+
+  it('submits the limited editable fields to the admin edit mutation', async () => {
+    const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+
+    mockedUseEntiteByIdAdmin.mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    editEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
+      id: 'root-ars',
+      nomComplet: 'ARS Bretagne',
+      label: 'ARS BRE',
+      isActive: false,
+    });
+
+    render(<RouteComponent />);
+
+    const user = userEvent.setup();
+
+    await user.clear(screen.getByLabelText(/Nom \(libellé long\)/i));
+    await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'ARS Bretagne');
+    await user.clear(screen.getByLabelText(/Nom court/i));
+    await user.type(screen.getByLabelText(/Nom court/i), 'ARS BRE');
+    await user.click(screen.getByRole('radio', { name: 'Non' }));
+    await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
+
+    await waitFor(() => {
+      expect(editEntiteAdminMutateAsyncSpy).toHaveBeenCalledWith({
+        id: 'root-ars',
+        input: {
+          nomComplet: 'ARS Bretagne',
+          label: 'ARS BRE',
+          isActive: false,
+        },
+      });
+    });
   });
 });
