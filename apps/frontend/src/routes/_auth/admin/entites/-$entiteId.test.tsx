@@ -6,7 +6,8 @@ import { useEntiteByIdAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { Route, RouteComponent } from './$entiteId';
 
-const { editEntiteAdminMutateAsyncSpy } = vi.hoisted(() => ({
+const { addToastSpy, editEntiteAdminMutateAsyncSpy } = vi.hoisted(() => ({
+  addToastSpy: vi.fn(),
   editEntiteAdminMutateAsyncSpy: vi.fn(),
 }));
 
@@ -29,6 +30,19 @@ vi.mock('@/hooks/queries/entites.hook', () => ({
 vi.mock('@/lib/auth-guards', () => ({
   requireAuthAndRoles: vi.fn(() => 'mocked-super-admin-guard'),
 }));
+
+vi.mock('@sirena/ui', async () => {
+  const actual = await vi.importActual<typeof import('@sirena/ui')>('@sirena/ui');
+
+  return {
+    ...actual,
+    Toast: {
+      useToastManager: () => ({
+        add: addToastSpy,
+      }),
+    },
+  };
+});
 
 const buildSuccessQuery = (data: { id: string; nomComplet: string; label: string; isActive: boolean }) =>
   ({
@@ -111,6 +125,42 @@ describe('Admin entity edit route', () => {
           label: 'ARS BRE',
           isActive: false,
         },
+      });
+    });
+  });
+
+  it('shows a success toast after saving the entity', async () => {
+    const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+
+    mockedUseEntiteByIdAdmin.mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    editEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
+      id: 'root-ars',
+      nomComplet: 'ARS Bretagne',
+      label: 'ARS BRE',
+      isActive: false,
+    });
+
+    render(<RouteComponent />);
+
+    const user = userEvent.setup();
+
+    await user.clear(screen.getByLabelText(/Nom \(libellé long\)/i));
+    await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'ARS Bretagne');
+    await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
+
+    await waitFor(() => {
+      expect(addToastSpy).toHaveBeenCalledWith({
+        title: 'Entité modifiée',
+        description: 'Les modifications ont été enregistrées avec succès.',
+        timeout: 0,
+        data: { icon: 'fr-alert--success' },
       });
     });
   });
