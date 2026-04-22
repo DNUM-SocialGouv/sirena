@@ -4,6 +4,7 @@ import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
+import { Prisma } from '../../libs/prisma.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
 import { getEditableEntitiesChain, getEntiteById, getEntites, getEntitesListAdmin } from './entites.service.js';
@@ -213,12 +214,16 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('PATCH /admin/:id', () => {
+    const editEntitePayload = {
+      nomComplet: 'Entite B modifiée',
+      label: 'ENT B',
+      isActive: true,
+    };
+
     it('updates the limited admin entity payload for SUPER_ADMIN', async () => {
       editEntiteAdminSpy.mockResolvedValueOnce({
         id: '2',
-        nomComplet: 'Entite B modifiée',
-        label: 'ENT B',
-        isActive: true,
+        ...editEntitePayload,
       });
 
       const res = await app.request('/admin/2', {
@@ -226,27 +231,57 @@ describe('Entites endpoints: /entites', () => {
         headers: {
           'content-type': 'application/json',
         },
-        body: JSON.stringify({
-          nomComplet: 'Entite B modifiée',
-          label: 'ENT B',
-          isActive: true,
-        }),
+        body: JSON.stringify(editEntitePayload),
       });
 
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({
         data: {
           id: '2',
-          nomComplet: 'Entite B modifiée',
-          label: 'ENT B',
-          isActive: true,
+          ...editEntitePayload,
         },
       });
-      expect(editEntiteAdminSpy).toHaveBeenCalledWith('2', {
-        nomComplet: 'Entite B modifiée',
-        label: 'ENT B',
-        isActive: true,
+      expect(editEntiteAdminSpy).toHaveBeenCalledWith('2', editEntitePayload);
+    });
+
+    it('rejects non SUPER_ADMIN users with 403', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+
+      const res = await app.request('/admin/2', {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(editEntitePayload),
       });
+
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ message: 'Forbidden' });
+      expect(editEntiteAdminSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when the admin entity to update is not found', async () => {
+      editEntiteAdminSpy.mockRejectedValueOnce(
+        new Prisma.PrismaClientKnownRequestError('Record to update not found', {
+          code: 'P2025',
+          clientVersion: '6.0.0',
+          meta: {
+            modelName: 'Entite',
+          },
+        }),
+      );
+
+      const res = await app.request('/admin/unknown', {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(editEntitePayload),
+      });
+
+      expect(res.status).toBe(404);
+      expect(await res.json()).toEqual({ message: 'Entite not found' });
+      expect(editEntiteAdminSpy).toHaveBeenCalledWith('unknown', editEntitePayload);
     });
   });
 
