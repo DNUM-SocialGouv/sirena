@@ -5,7 +5,7 @@ import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import type { SubmitEvent } from 'react';
-import { useEditEntiteAdmin, useEntiteByIdAdmin } from '@/hooks/queries/entites.hook';
+import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/admin/entites/$entiteId')({
@@ -16,9 +16,13 @@ export const Route = createFileRoute('/_auth/admin/entites/$entiteId')({
 export function RouteComponent() {
   const router = useRouter();
   const { entiteId } = Route.useParams();
+  const toastManager = Toast.useToastManager();
   const editEntiteAdmin = useEditEntiteAdmin();
   const entiteQuery = useEntiteByIdAdmin(entiteId);
-  const toastManager = Toast.useToastManager();
+  const entiteChainQuery = useEntiteChain(entiteId);
+
+  const canCreateChild =
+    !entiteChainQuery.isError && (entiteChainQuery.data?.length ?? 0) > 0 && (entiteChainQuery.data?.length ?? 0) < 3;
 
   if (entiteQuery.isPending) {
     return null;
@@ -125,6 +129,12 @@ export function RouteComponent() {
           </fieldset>
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
+            {canCreateChild ? (
+              <Link className="fr-btn fr-btn--secondary" to="/admin/entites/$entiteId/create" params={{ entiteId }}>
+                Créer une entité / sous-entité
+              </Link>
+            ) : null}
+
             <Button type="submit">Valider les modifications</Button>
           </div>
         </form>
