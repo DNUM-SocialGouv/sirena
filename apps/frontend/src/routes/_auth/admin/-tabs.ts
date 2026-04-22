@@ -14,20 +14,20 @@ const baseTabs: TabDescriptor[] = [
   },
 ];
 
-const entitiesTab: TabDescriptor = {
+const entitesTab: TabDescriptor = {
   label: 'Gestion des entités',
-  tabPanelId: 'panel-entities',
-  tabId: 'tab-entities',
+  tabPanelId: 'panel-entites',
+  tabId: 'tab-entites',
 };
 
 export function getTabs(role: Role | null): TabDescriptor[] {
-  return role === ROLES.SUPER_ADMIN ? [...baseTabs, entitiesTab] : baseTabs;
+  return role === ROLES.SUPER_ADMIN ? [...baseTabs, entitesTab] : baseTabs;
 }
 
 export function getTabPaths(role: Role | null): string[] {
   const paths = ['/admin/users', '/admin/users/all'];
 
-  return role === ROLES.SUPER_ADMIN ? [...paths, '/admin/entities'] : paths;
+  return role === ROLES.SUPER_ADMIN ? [...paths, '/admin/entites'] : paths;
 }
 
 export function getActiveTab(pathname: string, role: Role | null): number {
@@ -35,7 +35,7 @@ export function getActiveTab(pathname: string, role: Role | null): number {
     return 1;
   }
 
-  if (role === ROLES.SUPER_ADMIN && (pathname === '/admin/entities' || pathname.startsWith('/admin/entities/'))) {
+  if (role === ROLES.SUPER_ADMIN && (pathname === '/admin/entites' || pathname.startsWith('/admin/entites/'))) {
     return 2;
   }
 

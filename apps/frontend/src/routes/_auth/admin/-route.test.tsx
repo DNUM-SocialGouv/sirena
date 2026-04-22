@@ -58,11 +58,11 @@ describe('Admin route', () => {
     expect(screen.queryByRole('tab', { name: 'Gestion des entités' })).not.toBeInTheDocument();
   });
 
-  it('renders the entities tab as active for super admins on entities routes', () => {
+  it('renders the entites tab as active for super admins on entites routes', () => {
     mockRole(ROLES.SUPER_ADMIN);
     mockedUseMatches.mockReturnValue([
       { routeId: '/_auth/admin', pathname: '/admin' },
-      { routeId: '/_auth/admin/entities', pathname: '/admin/entities' },
+      { routeId: '/_auth/admin/entites', pathname: '/admin/entites' },
     ] as never);
 
     render(<RouteComponent />);
