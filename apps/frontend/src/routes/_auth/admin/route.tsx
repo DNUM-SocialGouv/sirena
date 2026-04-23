@@ -29,7 +29,7 @@ export function RouteComponent() {
   return (
     <AdminLayout>
       <div className="home">
-        <h1>Espace administrateur</h1>
+        <h1 className="fr-mt-3w">Espace administrateur</h1>
         <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
           <Outlet />
         </Tabs>

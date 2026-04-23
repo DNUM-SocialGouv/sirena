@@ -510,6 +510,7 @@ model FaitMaltraitanceType {
 model RequeteEtape {
   id          String  @id @default(uuid())
   nom         String
+  type        String  @default("MANUAL")
   estPartagee Boolean @default(false)
 
   statutId String

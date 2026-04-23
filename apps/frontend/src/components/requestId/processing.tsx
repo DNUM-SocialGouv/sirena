@@ -1,6 +1,6 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
@@ -14,6 +14,7 @@ import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { CloseRequeteModal, type CloseRequeteModalRef } from './processing/CloseRequeteModal';
 import { CreateNoteDrawer, type CreateNoteDrawerRef } from './processing/CreateNoteDrawer';
 import { EditNoteDrawer, type EditNoteDrawerRef } from './processing/EditNoteDrawer';
+import { ReopenRequeteModal, type ReopenRequeteModalRef } from './processing/ReopenRequeteModal';
 import { OtherEntitiesAffected } from './sections/OtherEntitesAffected';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
@@ -31,8 +32,10 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const editNoteDrawerRef = useRef<EditNoteDrawerRef>(null);
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
   const closeRequeteButtonRef = useRef<HTMLButtonElement>(null);
+  const reopenRequeteModalRef = useRef<ReopenRequeteModalRef>(null);
+  const reopenRequeteButtonRef = useRef<HTMLButtonElement>(null);
   const queryProcessingSteps = useProcessingSteps(requestId || '');
-  const { canEdit } = useCanEdit({ requeteId: requestId });
+  const { canEdit, hasEditRole } = useCanEdit({ requeteId: requestId });
   const { data: { subAdministrativeEntites = [] } = {} } = useRequeteOtherEntitiesAffected(requestId);
 
   const isRequestClosed = useMemo(() => {
@@ -59,6 +62,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
     editNoteDrawerRef.current?.openDrawer(step, noteData);
   };
   const handleCloseRequete = () => closeRequeteModalRef.current?.openModal();
+  const handleReopenRequete = () => reopenRequeteModalRef.current?.openModal();
 
   const content = requestId ? (
     <>
@@ -68,18 +72,10 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
         <QueryStateHandler query={queryProcessingSteps}>
           {({ data }) =>
             data.data.map((step, index: number) => {
-              // Check if step was automatically updated: only for demat social requests,
-              // created automatically (createdBy === null), status is FAIT, and it's the acknowledgment step
-              const isDematSocialRequest = !!requestQuery.data?.requete?.dematSocialId;
-              const isAutomaticallyUpdated =
-                isDematSocialRequest &&
-                step.createdBy === null &&
-                step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT &&
-                step.nom === 'Envoyer un accusé de réception au déclarant';
               const isDisabled =
                 index === data.data.length - 1 ||
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ||
-                isAutomaticallyUpdated;
+                step.type !== REQUETE_ETAPE_TYPES.MANUAL;
               return (
                 <Step
                   key={step.id}
@@ -115,6 +111,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
         }
         triggerButtonRef={closeRequeteButtonRef}
       />
+      <ReopenRequeteModal ref={reopenRequeteModalRef} requestId={requestId} triggerButtonRef={reopenRequeteButtonRef} />
     </>
   ) : (
     <p className="fr-text--sm fr-text--grey">
@@ -161,6 +158,21 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                     </>
                   )}
                 </div>
+                {requestId &&
+                  !requestQuery.error &&
+                  requestQuery.data?.statutId === REQUETE_STATUT_TYPES.CLOTUREE &&
+                  hasEditRole && (
+                    <div className="fr-col-auto">
+                      <Button
+                        ref={reopenRequeteButtonRef}
+                        size="small"
+                        priority="primary"
+                        onClick={handleReopenRequete}
+                      >
+                        Rouvrir
+                      </Button>
+                    </div>
+                  )}
                 {requestId && canEdit && !requestQuery.error && (
                   <div className="fr-col-auto">
                     <Button

@@ -62,7 +62,7 @@ type UserFormData = z.infer<typeof userFormSchema>;
 function SubmitButton({ isPending }: { isPending: boolean }) {
   return (
     <Button type="submit" disabled={isPending}>
-      {isPending ? 'Mise à jour...' : 'Valider les modifications'}
+      {isPending ? 'Mise à jour...' : 'Modifier les informations'}
     </Button>
   );
 }
@@ -160,7 +160,7 @@ function RouteComponent() {
   );
 
   return (
-    <div className="fr-container">
+    <div className="fr-container fr-mt-3w fr-mb-7w">
       <div className="fr-mb-2w">
         <QueryStateHandler query={userQuery}>
           {({ data: user }) => (
@@ -172,7 +172,7 @@ function RouteComponent() {
                 </Link>
               </div>
               <div className="user">
-                <h1>Modifier un utilisateur</h1>
+                <h1>Modifier les informations de l'utilisateur</h1>
                 <div>
                   <form onSubmit={handleSubmit}>
                     <fieldset className="fr-fieldset">

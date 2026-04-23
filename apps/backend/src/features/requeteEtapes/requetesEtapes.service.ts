@@ -1,4 +1,4 @@
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
 import { capitalizeFirst, formatDateFr } from '../../helpers/string.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
@@ -86,6 +86,7 @@ export const createDefaultRequeteEtapes = async (
       entiteId: entiteId,
       statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
       nom: creationStepName,
+      type: REQUETE_ETAPE_TYPES.CREATION,
     },
   });
 
@@ -95,6 +96,7 @@ export const createDefaultRequeteEtapes = async (
       entiteId: entiteId,
       statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
       nom: ACKNOWLEDGMENT_STEP_NAME,
+      type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
     },
   });
 
@@ -190,6 +192,7 @@ export const addProcessingEtape = async (
       requeteId,
       entiteId,
       nom: data.nom,
+      type: REQUETE_ETAPE_TYPES.MANUAL,
       statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
       createdById: userId,
     },
@@ -219,6 +222,7 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
       select: {
         id: true,
         nom: true,
+        type: true,
         statutId: true,
         clotureReason: {
           select: {
@@ -328,6 +332,7 @@ export const updateAcknowledgmentStep = async (requeteId: string, entiteIds: str
         requeteId,
         entiteId: { in: entiteIds },
         nom: ACKNOWLEDGMENT_STEP_NAME,
+        type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
         statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
         createdBy: null,
       },

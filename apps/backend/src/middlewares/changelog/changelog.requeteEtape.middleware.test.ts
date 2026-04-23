@@ -22,11 +22,11 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
 
   const testRequeteEtape: RequeteEtape = {
     id: 'rs-1',
-    type: 'standard',
     requeteId: 'requete-1',
     entiteId: 'entite-1',
     nom: 'Initial Step',
     statutId: 'EN_ATTENTE',
+    type: 'MANUAL',
     estPartagee: false,
     createdAt: new Date(),
     updatedAt: new Date(),
