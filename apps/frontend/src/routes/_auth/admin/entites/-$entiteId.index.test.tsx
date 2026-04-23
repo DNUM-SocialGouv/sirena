@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { Route, RouteComponent } from './$entiteId';
+import { Route, RouteComponent } from './$entiteId.index';
 
 const { addToastSpy, editEntiteAdminMutateAsyncSpy, routerBackSpy, routerNavigateSpy, historyLengthState } = vi.hoisted(
   () => ({
