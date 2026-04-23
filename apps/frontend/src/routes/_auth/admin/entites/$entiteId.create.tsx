@@ -66,8 +66,8 @@ export function RouteComponent() {
     });
 
     toastManager.add({
-      title: 'Entité créée',
-      description: 'La nouvelle entité a été enregistrée avec succès.',
+      title: 'Entité créée avec succès',
+      description: 'La nouvelle entité a bien été enregistrée.',
       timeout: 0,
       data: { icon: 'fr-alert--success' },
     });
@@ -78,7 +78,7 @@ export function RouteComponent() {
       <div className="fr-mb-3w">
         <Link className="fr-link" to="/admin/entites/$entiteId" params={{ entiteId }}>
           <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
-          Modifier l'entité
+          Modifier l’entité
         </Link>
       </div>
 
@@ -88,8 +88,6 @@ export function RouteComponent() {
         className="fr-p-4w fr-mb-4w"
         style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
       >
-        <h2 className="fr-h6 fr-mb-2w">Contexte de création</h2>
-
         <p className="fr-text--sm fr-text-mention--grey fr-mb-1w">Entité mère</p>
         <p className="fr-mb-0">{entiteQuery.data.nomComplet}</p>
       </div>
@@ -121,7 +119,7 @@ export function RouteComponent() {
             <Input
               className="fr-fieldset__content"
               label="Adresse électronique de notification"
-              hintText="Boîte mail générique pour notification des nouvelles requêtes"
+              hintText="Boîte e-mail générique pour la notification des nouvelles requêtes. Exemple : prenom.nom@exemple.com"
               nativeInputProps={{
                 name: 'email',
                 type: 'email',
@@ -152,6 +150,7 @@ export function RouteComponent() {
             <Input
               className="fr-fieldset__content"
               label="Adresse électronique"
+              hintText="Exemple : prenom.nom@exemple.com"
               nativeInputProps={{
                 name: 'emailContactUsager',
                 type: 'email',
@@ -161,6 +160,8 @@ export function RouteComponent() {
             <Input
               className="fr-fieldset__content"
               label="Adresse postale"
+              hintText="Adresse postale complète pour l’usager : service, numéro et libellé de voie, code postal, ville. Exemple : Sous-direction de l’autonomie, Direction des Solidarités (DSOL), 5 bd
+ Diderot, 75012 Paris."
               textArea
               nativeTextAreaProps={{
                 name: 'adresseContactUsager',
@@ -170,7 +171,7 @@ export function RouteComponent() {
 
             <Input
               className="fr-fieldset__content"
-              label="Téléphone"
+              label="Numéro de téléphone"
               nativeInputProps={{
                 name: 'telContactUsager',
               }}
