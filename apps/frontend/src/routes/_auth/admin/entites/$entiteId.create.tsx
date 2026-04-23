@@ -45,14 +45,6 @@ export function RouteComponent() {
     return null;
   }
 
-  const handleBack = () => {
-    if (window.history.length > 1) {
-      router.history.back();
-    } else {
-      router.navigate({ to: '/admin/entites' });
-    }
-  };
-
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -79,8 +71,6 @@ export function RouteComponent() {
       timeout: 0,
       data: { icon: 'fr-alert--success' },
     });
-
-    handleBack();
   };
 
   return (

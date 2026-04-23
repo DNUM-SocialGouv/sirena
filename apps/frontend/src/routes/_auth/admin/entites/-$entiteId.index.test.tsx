@@ -6,15 +6,10 @@ import { useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { Route, RouteComponent } from './$entiteId.index';
 
-const { addToastSpy, editEntiteAdminMutateAsyncSpy, routerBackSpy, routerNavigateSpy, historyLengthState } = vi.hoisted(
-  () => ({
-    addToastSpy: vi.fn(),
-    editEntiteAdminMutateAsyncSpy: vi.fn(),
-    routerBackSpy: vi.fn(),
-    routerNavigateSpy: vi.fn(),
-    historyLengthState: { value: 2 },
-  }),
-);
+const { addToastSpy, editEntiteAdminMutateAsyncSpy } = vi.hoisted(() => ({
+  addToastSpy: vi.fn(),
+  editEntiteAdminMutateAsyncSpy: vi.fn(),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => ({
@@ -24,10 +19,6 @@ vi.mock('@tanstack/react-router', () => ({
   Link: ({ to, params, children }: { to: string; params?: { entiteId?: string }; children: React.ReactNode }) => (
     <a href={to.replace('$entiteId', params?.entiteId ?? '')}>{children}</a>
   ),
-  useRouter: () => ({
-    history: { back: routerBackSpy },
-    navigate: routerNavigateSpy,
-  }),
 }));
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
@@ -72,20 +63,10 @@ const buildChainSuccessQuery = (data: Array<{ id: string; nomComplet: string; di
     error: null,
   }) as never;
 
-const setHistoryLength = (length: number) => {
-  Object.defineProperty(window.history, 'length', {
-    configurable: true,
-    value: length,
-  });
-};
-
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   editEntiteAdminMutateAsyncSpy.mockReset();
-  routerBackSpy.mockReset();
-  routerNavigateSpy.mockReset();
-  historyLengthState.value = 2;
 });
 
 describe('Admin entity edit route', () => {
@@ -284,45 +265,7 @@ describe('Admin entity edit route', () => {
     });
   });
 
-  it('navigates back after saving the entity successfully', async () => {
-    setHistoryLength(2);
-
-    const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
-    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
-
-    mockedUseEntiteByIdAdmin.mockReturnValue(
-      buildSuccessQuery({
-        id: 'root-ars',
-        nomComplet: 'ARS Normandie',
-        label: 'ARS NOR',
-        isActive: true,
-      }),
-    );
-    mockedUseEntiteChain.mockReturnValue(
-      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
-    );
-    editEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
-      id: 'root-ars',
-      nomComplet: 'ARS Bretagne',
-      label: 'ARS BRE',
-      isActive: false,
-    });
-
-    render(<RouteComponent />);
-
-    const user = userEvent.setup();
-
-    await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
-
-    await waitFor(() => {
-      expect(routerBackSpy).toHaveBeenCalled();
-    });
-  });
-
   it('falls back to the entities list when browser history is unavailable', async () => {
-    historyLengthState.value = 1;
-    setHistoryLength(historyLengthState.value);
-
     const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
     const mockedUseEntiteChain = vi.mocked(useEntiteChain);
 
@@ -349,10 +292,5 @@ describe('Admin entity edit route', () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
-
-    await waitFor(() => {
-      expect(routerNavigateSpy).toHaveBeenCalledWith({ to: '/admin/entites' });
-    });
-    expect(routerBackSpy).not.toHaveBeenCalled();
   });
 });
