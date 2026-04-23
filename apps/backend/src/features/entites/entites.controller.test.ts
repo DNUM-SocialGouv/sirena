@@ -7,6 +7,7 @@ import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import { Prisma } from '../../libs/prisma.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
+import { EntiteNotFoundError } from './entites.error.js';
 import { getEditableEntitiesChain, getEntiteById, getEntites, getEntitesListAdmin } from './entites.service.js';
 
 vi.mock('../../config/env.js', () => ({
@@ -323,6 +324,22 @@ describe('Entites endpoints: /entites', () => {
         },
       });
       expect(createEntiteAdminChildSpy).toHaveBeenCalledWith('root-ars', createChildEntitePayload);
+    });
+
+    it('returns 404 when the parent entity is not found', async () => {
+      createEntiteAdminChildSpy.mockRejectedValueOnce(new EntiteNotFoundError());
+
+      const res = await app.request('/admin/unknown/children', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(createChildEntitePayload),
+      });
+
+      expect(res.status).toBe(404);
+      expect(await res.json()).toEqual({ message: 'Entite not found' });
+      expect(createEntiteAdminChildSpy).toHaveBeenCalledWith('unknown', createChildEntitePayload);
     });
   });
 
