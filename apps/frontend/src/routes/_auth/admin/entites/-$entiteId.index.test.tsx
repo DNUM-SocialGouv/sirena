@@ -1,5 +1,5 @@
 import { ROLES } from '@sirena/common/constants';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
@@ -125,6 +125,40 @@ describe('Admin entity edit route', () => {
       'href',
       '/admin/entites/root-ars/create',
     );
+  });
+
+  it('keeps the edit form actions limited to cancel and submit', () => {
+    const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
+
+    mockedUseEntiteByIdAdmin.mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+
+    render(<RouteComponent />);
+
+    const submitButton = screen.getByRole('button', { name: /valider les modifications/i });
+    const form = submitButton.closest('form');
+
+    expect(form).not.toBeNull();
+    expect(within(form as HTMLFormElement).getByRole('link', { name: /annuler/i })).toHaveAttribute(
+      'href',
+      '/admin/entites',
+    );
+    expect(within(form as HTMLFormElement).getByRole('button', { name: /valider les modifications/i })).toBe(
+      submitButton,
+    );
+    expect(
+      within(form as HTMLFormElement).queryByRole('link', { name: /créer une direction/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows a "Créer un service" action when the entity chain depth is 2', () => {

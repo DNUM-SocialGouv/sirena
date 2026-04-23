@@ -65,7 +65,19 @@ export function RouteComponent() {
         </Link>
       </div>
 
-      <h2 className="fr-mb-4w">Modifier une entité</h2>
+      <div className="fr-grid-row fr-grid-row--middle fr-grid-row--gutters fr-mb-4w">
+        <div className="fr-col-12 fr-col-md">
+          <h2 className="fr-mb-0">Modifier une entité</h2>
+        </div>
+
+        {canCreateChild ? (
+          <div className="fr-col-12 fr-col-md-auto">
+            <Link className="fr-btn fr-btn--secondary" to="/admin/entites/$entiteId/create" params={{ entiteId }}>
+              {createChildLabel}
+            </Link>
+          </div>
+        ) : null}
+      </div>
 
       <div
         className="fr-p-4w fr-mb-4w"
@@ -117,12 +129,9 @@ export function RouteComponent() {
           </fieldset>
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-            {canCreateChild ? (
-              <Link className="fr-btn fr-btn--secondary" to="/admin/entites/$entiteId/create" params={{ entiteId }}>
-                {createChildLabel}
-              </Link>
-            ) : null}
-
+            <Link className="fr-btn fr-btn--secondary" to="/admin/entites">
+              Annuler
+            </Link>
             <Button type="submit">Valider les modifications</Button>
           </div>
         </form>
