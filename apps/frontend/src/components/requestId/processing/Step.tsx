@@ -258,21 +258,23 @@ const StepComponent = ({
                     priority="tertiary no outline"
                     size="small"
                     iconId="fr-icon-edit-line"
-                    title="Modifier le nom de l'étape"
+                    title={`Modifier le nom de l'étape ${getStepTitle(rest.type, statutId, nom)}`}
                     aria-label="Modifier le nom de l'étape"
                     className="fr-btn--icon-center center-icon-with-sr-only"
                     onClick={() => handleEditButton(true)}
                     style={{ whiteSpace: 'nowrap' }}
                   >
-                    <span className="fr-sr-only">Modifier le nom de l'étape</span>
+                    <span className="fr-sr-only">
+                      Modifier le nom de l'étape {getStepTitle(rest.type, statutId, nom)}
+                    </span>
                   </Button>
                 )}
               </div>
             </div>
             <div>
-              <span className="fr-text--xs fr-text-mention--grey">
+              <p className="fr-text--xs fr-text-mention--grey">
                 {getStepSubtitle(rest.type, statutId, createdAt, createdBy, requete, notes[0]?.author)}
-              </span>
+              </p>
             </div>
           </div>
         )}

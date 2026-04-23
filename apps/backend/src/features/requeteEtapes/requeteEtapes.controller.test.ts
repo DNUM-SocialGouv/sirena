@@ -122,7 +122,6 @@ const fakeRequeteEtape: RequeteEtape = {
   statutId: 'A_FAIRE',
   createdAt: new Date(),
   updatedAt: new Date(),
-  type: 'MANUAL',
   estPartagee: false,
   createdById: null,
 };
@@ -649,7 +648,6 @@ describe('requeteEtapes.controller.ts', () => {
         createdAt: new Date(0),
         updatedAt: new Date(0),
         entiteId: 'e1',
-        type: 'MANUAL',
         estPartagee: false,
         createdById: null,
       };
