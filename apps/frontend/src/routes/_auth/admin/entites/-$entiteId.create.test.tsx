@@ -218,7 +218,9 @@ describe('Admin entity child creation route', () => {
     render(<RouteComponent />);
 
     expect(screen.getByLabelText(/Adresse électronique de notification/i)).toBeInTheDocument();
+    expect(screen.getByText(/Boîte mail générique pour notification des nouvelles requêtes/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Domaine e-mail/i)).toBeInTheDocument();
+    expect(screen.getByText(/Exemple : @lozere\.fr/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Unité organisationnelle/i)).toBeInTheDocument();
   });
 
