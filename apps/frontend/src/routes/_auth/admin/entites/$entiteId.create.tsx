@@ -100,9 +100,7 @@ export function RouteComponent() {
       >
         <form onSubmit={handleSubmit}>
           <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-            <legend>
-              <h2 className="fr-h6 fr-mb-3w">Informations de la nouvelle entité</h2>
-            </legend>
+            <legend className="fr-h6 fr-mb-3w">Informations de la nouvelle entité</legend>
 
             <Input
               className="fr-fieldset__content"
@@ -149,9 +147,7 @@ export function RouteComponent() {
           </fieldset>
 
           <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-            <legend>
-              <h2 className="fr-h6 fr-mb-3w">Éléments de contact pour l’usager</h2>
-            </legend>
+            <legend className="fr-h6 fr-mb-3w">Éléments de contact pour l’usager</legend>
 
             <Input
               className="fr-fieldset__content"
