@@ -10,6 +10,7 @@ import {
   fetchEntites,
   fetchEntitesListAdmin,
 } from '@/lib/api/fetchEntites';
+import { queryClient } from '@/lib/queryClient';
 import type { QueryParams } from '@/types/pagination.type.ts';
 
 export const useEntitesQueryOptions = (id: string | undefined, query: QueryParams = {}) => ({
@@ -61,6 +62,9 @@ export const useEntiteDescendants = (id: string | undefined) => useQuery(useEnti
 export const useEditEntiteAdmin = () =>
   useMutation({
     mutationFn: ({ id, input }: { id: string; input: EditEntiteAdminInput }) => editEntiteAdmin(id, input),
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(['entite', 'admin', variables.id], data);
+    },
   });
 
 export const useCreateChildEntiteAdmin = () =>
