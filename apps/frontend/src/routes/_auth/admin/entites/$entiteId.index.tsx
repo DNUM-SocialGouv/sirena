@@ -3,7 +3,7 @@ import Input from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import type { SubmitEvent } from 'react';
 import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
@@ -14,7 +14,6 @@ export const Route = createFileRoute('/_auth/admin/entites/$entiteId/')({
 });
 
 export function RouteComponent() {
-  const router = useRouter();
   const { entiteId } = Route.useParams();
   const toastManager = Toast.useToastManager();
   const editEntiteAdmin = useEditEntiteAdmin();
@@ -34,14 +33,6 @@ export function RouteComponent() {
   }
 
   const entite = entiteQuery.data;
-
-  const handleBack = () => {
-    if (window.history.length > 1) {
-      router.history.back();
-    } else {
-      router.navigate({ to: '/admin/entites' });
-    }
-  };
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -63,8 +54,6 @@ export function RouteComponent() {
       timeout: 0,
       data: { icon: 'fr-alert--success' },
     });
-
-    handleBack();
   };
 
   return (
