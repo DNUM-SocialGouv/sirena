@@ -21,6 +21,7 @@ import {
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
+  reopenRequeteForEntite,
   updateStatusRequete,
 } from './requetesEntite.service.js';
 
@@ -30,6 +31,7 @@ vi.mock('./requetesEntite.service.js', () => ({
   getRequetesEntite: vi.fn(),
   hasAccessToRequete: vi.fn(),
   getOtherEntitesAffected: vi.fn(),
+  reopenRequeteForEntite: vi.fn(),
   updateStatusRequete: vi.fn(),
 }));
 
@@ -116,6 +118,24 @@ vi.mock('../../middlewares/changelog/changelog.requeteEtape.middleware.js', () =
 vi.mock('../requetes/requetes.service.js', () => ({
   updateDateAndTypeRequete: vi.fn(),
 }));
+
+vi.mock('../../helpers/sse.js', () => ({
+  sseEventManager: {
+    emitRequeteUpdated: vi.fn(),
+  },
+}));
+
+vi.mock('@sentry/node', () => ({
+  captureException: vi.fn(),
+}));
+
+vi.mock('../../middlewares/changelog/changelog.requete.middleware.js', () => {
+  return {
+    default: () => (_: Context, next: Next) => {
+      return next();
+    },
+  };
+});
 
 export const fakeRequeteEntite = {
   requeteId: 'requeteId',
@@ -912,6 +932,91 @@ describe('RequetesEntite endpoints: /', () => {
         },
         undefined,
       );
+    });
+  });
+
+  describe('POST /:id/reopen', () => {
+    it('should reopen a closed requete successfully', async () => {
+      const fakeResult = {
+        etapeId: 'etape-reopen-id',
+        reopenedAt: '2026-03-30T00:00:00.000Z',
+        etape: {
+          id: 'etape-reopen-id',
+          requeteId: 'requeteId',
+          entiteId: 'entiteId',
+          nom: 'Requête rouverte le 30/03/2026',
+          type: 'REOPEN',
+          statutId: 'FAIT',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          estPartagee: false,
+          createdById: 'id1',
+        },
+      };
+
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+      vi.mocked(reopenRequeteForEntite).mockResolvedValueOnce(fakeResult);
+
+      const res = await client[':id'].reopen.$post({
+        param: { id: 'requeteId' },
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.data.etapeId).toBe('etape-reopen-id');
+      expect(reopenRequeteForEntite).toHaveBeenCalledWith('requeteId', 'entiteId', 'id1');
+    });
+
+    it('should return 403 if user has no access', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id'].reopen.$post({
+        param: { id: 'requeteId' },
+      });
+
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.message).toBe('You are not allowed to reopen this requete');
+      expect(reopenRequeteForEntite).not.toHaveBeenCalled();
+    });
+
+    it('should return 404 if requete not found', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+      vi.mocked(reopenRequeteForEntite).mockRejectedValueOnce(new Error('REQUETE_NOT_FOUND'));
+
+      const res = await client[':id'].reopen.$post({
+        param: { id: 'nonexistent' },
+      });
+
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.message).toBe('Requête not found');
+    });
+
+    it('should return 400 if requete is not closed', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+      vi.mocked(reopenRequeteForEntite).mockRejectedValueOnce(new Error('REQUETE_NOT_CLOSED'));
+
+      const res = await client[':id'].reopen.$post({
+        param: { id: 'requeteId' },
+      });
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toBe('REQUETE_NOT_CLOSED');
+    });
+
+    it('should return 500 on unexpected error', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+      vi.mocked(reopenRequeteForEntite).mockRejectedValueOnce(new Error('DATABASE_FAILURE'));
+
+      const res = await client[':id'].reopen.$post({
+        param: { id: 'requeteId' },
+      });
+
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body.error).toBe('INTERNAL_ERROR');
     });
   });
 });

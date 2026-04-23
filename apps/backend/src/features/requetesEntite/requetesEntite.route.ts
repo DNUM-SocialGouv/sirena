@@ -12,6 +12,7 @@ import {
   GetOtherEntitesAffectedResponseSchema,
   GetRequeteEntiteResponseSchema,
   GetRequetesEntiteResponseSchema,
+  ReopenRequeteResponseSchema,
   UpdateStatutResponseSchema,
 } from './requetesEntite.schema.js';
 
@@ -47,6 +48,13 @@ export const closeRequeteRoute = openApiProtectedRoute({
   description: 'Close a Requete for a specific entity',
   responses: {
     ...openApiResponse(CloseRequeteResponseSchema),
+  },
+});
+
+export const reopenRequeteRoute = openApiProtectedRoute({
+  description: 'Reopen a closed Requete for a specific entity',
+  responses: {
+    ...openApiResponse(ReopenRequeteResponseSchema),
   },
 });
 

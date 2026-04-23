@@ -31,6 +31,12 @@ const ETABLISSEMENTS: string[] = [
   LIEU_TYPE.AUTRES_ETABLISSEMENTS,
 ];
 
+const MIS_EN_CAUSE_PROFESSIONNEL_LABELS: string[] = [
+  misEnCauseTypeLabels.PROFESSIONNEL_SANTE,
+  misEnCauseTypeLabels.PROFESSIONNEL_SOCIAL,
+  misEnCauseTypeLabels.AUTRE_PROFESSIONNEL,
+];
+
 const groupMotifsByParent = (
   motifs: Array<{ motif?: { id?: string; label?: string } | null }>,
 ): Map<string, { parentLabel: string; children: string[] }> => {
@@ -376,7 +382,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
               </p>
             )}
             {getMisEnCauseIdentity(situation?.misEnCause) &&
-              situation?.misEnCause?.misEnCauseType?.label === misEnCauseTypeLabels.PROFESSIONNEL_SANTE && (
+              MIS_EN_CAUSE_PROFESSIONNEL_LABELS.includes(situation?.misEnCause?.misEnCauseType?.label || '') && (
                 <p className={fr.cx('fr-mb-2w')}>
                   <span>Identité du professionnel :</span> {getMisEnCauseIdentity(situation.misEnCause)}
                 </p>
