@@ -389,7 +389,7 @@ describe('Admin entity child creation route', () => {
     });
   });
 
-  it('falls back to the entities list when browser history is unavailable after create', async () => {
+  it('navigates to the created entity edit page after creating the child entity', async () => {
     vi.mocked(useEntiteByIdAdmin).mockReturnValue(
       buildSuccessQuery({
         id: 'root-ars',
@@ -419,5 +419,12 @@ describe('Admin entity child creation route', () => {
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'Direction de la prévention');
     await user.click(screen.getByRole('button', { name: 'Créer' }));
+
+    await waitFor(() => {
+      expect(routerNavigateSpy).toHaveBeenCalledWith({
+        to: '/admin/entites/$entiteId',
+        params: { entiteId: 'direction-1' },
+      });
+    });
   });
 });

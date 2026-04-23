@@ -50,7 +50,7 @@ export function RouteComponent() {
 
     const formData = new FormData(e.currentTarget);
 
-    await createEntiteAdminChild.mutateAsync({
+    const createdEntite = await createEntiteAdminChild.mutateAsync({
       id: entiteId,
       input: {
         nomComplet: String(formData.get('nomComplet') ?? ''),
@@ -70,6 +70,11 @@ export function RouteComponent() {
       description: 'La nouvelle entité a bien été enregistrée.',
       timeout: 0,
       data: { icon: 'fr-alert--success' },
+    });
+
+    await router.navigate({
+      to: '/admin/entites/$entiteId',
+      params: { entiteId: createdEntite.id },
     });
   };
 
