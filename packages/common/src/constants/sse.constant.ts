@@ -17,6 +17,7 @@ export const REQUETE_UPDATE_FIELDS = {
   FILES: 'files',
   DATE_TYPE: 'dateType',
   CLOSED: 'closed',
+  REOPENED: 'reopened',
 } as const;
 
 export type RequeteUpdateField = (typeof REQUETE_UPDATE_FIELDS)[keyof typeof REQUETE_UPDATE_FIELDS];

@@ -1,9 +1,14 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test purposes> */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DGCS_FALLBACK_EMAIL, NOTIFICATION_ENTITE_AFFECTATION_TEMPLATE_NAME } from '../../config/tipimail.constant.js';
+import {
+  DGCS_FALLBACK_EMAIL,
+  NOTIFICATION_ENTITE_AFFECTATION_TEMPLATE_NAME,
+  NOTIFICATION_SITUATION_ENTITE_TEMPLATE_NAME,
+} from '../../config/tipimail.constant.js';
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
 import { prisma } from '../../libs/prisma.js';
-import { sendEntiteAssignedNotification } from './entite.notification.service.js';
+import { sendEntiteAssignedNotification, sendSituationEntiteNotification } from './entite.notification.service.js';
+import { getEntiteChain } from './entites.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -35,6 +40,12 @@ vi.mock('../../config/env.js', () => ({
     FRONTEND_URI: 'https://sirena.example.gouv.fr',
   },
 }));
+
+vi.mock('./entites.service.js', () => ({
+  getEntiteChain: vi.fn(),
+}));
+
+const mockedGetEntiteChain = vi.mocked(getEntiteChain);
 
 const mockedPrismaEntite = vi.mocked(prisma.entite);
 const mockedSendTipimailEmail = vi.mocked(sendTipimailEmail);
@@ -321,5 +332,122 @@ describe('sendEntiteAssignedNotification()', () => {
         ],
       }),
     );
+  });
+});
+
+describe('sendSituationEntiteNotification()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockLogger.warn.mockClear();
+    mockLogger.info.mockClear();
+    mockLogger.error.mockClear();
+  });
+
+  it('should return early if entiteIds is empty', async () => {
+    await sendSituationEntiteNotification('RD-123-456', []);
+
+    expect(mockedPrismaEntite.findMany).not.toHaveBeenCalled();
+    expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
+  });
+
+  it('should send email to direction/service with email and use root entity name as entite', async () => {
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      { id: 'dir-1', nomComplet: 'Direction Régionale IdF', email: 'direction-idf@ars.gouv.fr' },
+    ] as any);
+    mockedGetEntiteChain.mockResolvedValueOnce([
+      { id: 'ars-1', nomComplet: 'ARS Île-de-France', entiteMereId: null, label: 'ARS IdF', entiteTypeId: 'ARS' },
+      {
+        id: 'dir-1',
+        nomComplet: 'Direction Régionale IdF',
+        entiteMereId: 'ars-1',
+        label: 'Direction IdF',
+        entiteTypeId: 'DIR',
+      },
+    ] as any);
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
+
+    await sendSituationEntiteNotification('RD-123-456', ['dir-1']);
+
+    expect(mockedSendTipimailEmail).toHaveBeenCalledTimes(1);
+    expect(mockedSendTipimailEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'direction-idf@ars.gouv.fr',
+        template: NOTIFICATION_SITUATION_ENTITE_TEMPLATE_NAME,
+        substitutions: [
+          expect.objectContaining({
+            email: 'direction-idf@ars.gouv.fr',
+            values: expect.objectContaining({
+              directionService: 'Direction Régionale IdF',
+              numeroRequete: 'RD-123-456',
+              entite: 'ARS Île-de-France',
+            }),
+          }),
+        ],
+      }),
+    );
+  });
+
+  it('should fallback to own nomComplet as entite when chain is empty', async () => {
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      { id: 'dir-1', nomComplet: 'Direction Orpheline', email: 'dir@test.fr' },
+    ] as any);
+    mockedGetEntiteChain.mockResolvedValueOnce([] as any);
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
+
+    await sendSituationEntiteNotification('RD-123-456', ['dir-1']);
+
+    expect(mockedSendTipimailEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        substitutions: [
+          expect.objectContaining({
+            values: expect.objectContaining({
+              directionService: 'Direction Orpheline',
+              entite: 'Direction Orpheline',
+            }),
+          }),
+        ],
+      }),
+    );
+  });
+
+  it('should skip and warn when direction/service has no email', async () => {
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      { id: 'dir-1', nomComplet: 'Direction sans email', email: '' },
+    ] as any);
+
+    await sendSituationEntiteNotification('RD-123-456', ['dir-1']);
+
+    expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
+    expect(mockLogger.warn).toHaveBeenCalledWith(expect.objectContaining({ entiteId: 'dir-1' }), expect.any(String));
+  });
+
+  it('should send to multiple entities, skip those without email', async () => {
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      { id: 'dir-1', nomComplet: 'Direction A', email: 'dir-a@test.fr' },
+      { id: 'dir-2', nomComplet: 'Direction B', email: '' },
+    ] as any);
+    mockedGetEntiteChain.mockResolvedValueOnce([
+      { id: 'ars-1', nomComplet: 'ARS Test', entiteMereId: null, label: 'ARS', entiteTypeId: 'ARS' },
+    ] as any);
+    mockedSendTipimailEmail.mockResolvedValue({ status: 'success' } as any);
+
+    await sendSituationEntiteNotification('RD-123-456', ['dir-1', 'dir-2']);
+
+    expect(mockedSendTipimailEmail).toHaveBeenCalledTimes(1);
+    expect(mockedSendTipimailEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'dir-a@test.fr' }));
+    expect(mockLogger.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not throw and log error when Tipimail fails', async () => {
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      { id: 'dir-1', nomComplet: 'Direction A', email: 'dir-a@test.fr' },
+    ] as any);
+    mockedGetEntiteChain.mockResolvedValueOnce([
+      { id: 'ars-1', nomComplet: 'ARS Test', entiteMereId: null, label: 'ARS', entiteTypeId: 'ARS' },
+    ] as any);
+    mockedSendTipimailEmail.mockRejectedValueOnce(new Error('tipimail error'));
+
+    await expect(sendSituationEntiteNotification('RD-123-456', ['dir-1'])).resolves.toBeUndefined();
+    expect(mockLogger.error).toHaveBeenCalledWith(expect.objectContaining({ entiteId: 'dir-1' }), expect.any(String));
   });
 });
