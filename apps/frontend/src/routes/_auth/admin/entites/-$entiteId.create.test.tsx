@@ -227,7 +227,11 @@ describe('Admin entity child creation route', () => {
     render(<RouteComponent />);
 
     expect(screen.getByLabelText(/Adresse électronique de notification/i)).toBeInTheDocument();
-    expect(screen.getByText(/Boîte mail générique pour notification des nouvelles requêtes/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Boîte e-mail générique pour la notification des nouvelles requêtes\. Exemple : prenom\.nom@exemple\.com/i,
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText(/Domaine e-mail/i)).toBeInTheDocument();
     expect(screen.getByText(/Exemple : @lozere\.fr/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Unité organisationnelle/i)).toBeInTheDocument();
@@ -252,8 +256,17 @@ describe('Admin entity child creation route', () => {
 
     expect(contactGroup).toBeInTheDocument();
     expect(within(contactGroup).getByLabelText(/Adresse électronique/i)).toBeInTheDocument();
+    expect(within(contactGroup).getByText(/Exemple : prenom\.nom@exemple\.com/i)).toBeInTheDocument();
     expect(within(contactGroup).getByLabelText(/Adresse postale/i)).toBeInTheDocument();
-    expect(within(contactGroup).getByLabelText(/Téléphone/i)).toBeInTheDocument();
+    expect(
+      within(contactGroup).getByText(
+        /Adresse postale complète pour l’usager : service, numéro et libellé de voie, code postal, ville\./i,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(contactGroup).getByText(/Sous-direction de l’autonomie, Direction des Solidarités \(DSOL\), 5 bd/i),
+    ).toBeInTheDocument();
+    expect(within(contactGroup).getByLabelText(/Numéro de téléphone/i)).toBeInTheDocument();
   });
 
   it('renders the active status choice with Oui / Non options', () => {
@@ -311,9 +324,9 @@ describe('Admin entity child creation route', () => {
     await user.type(screen.getByLabelText(/Adresse électronique de notification/i), 'direction@example.fr');
     await user.type(screen.getByLabelText(/Domaine e-mail/i), '@example.fr');
     await user.type(screen.getByLabelText(/Unité organisationnelle/i), 'DIR-PREV');
-    await user.type(within(contactGroup).getByLabelText(/^Adresse électronique$/i), 'contact-usager@example.fr');
+    await user.type(within(contactGroup).getByLabelText(/Adresse électronique/i), 'contact-usager@example.fr');
     await user.type(within(contactGroup).getByLabelText(/Adresse postale/i), '1 rue de la République, 75000 Paris');
-    await user.type(within(contactGroup).getByLabelText(/Téléphone/i), '01 02 03 04 05');
+    await user.type(within(contactGroup).getByLabelText(/Numéro de téléphone/i), '01 02 03 04 05');
     await user.click(screen.getByRole('radio', { name: 'Non' }));
     await user.click(screen.getByRole('button', { name: 'Créer' }));
 
@@ -368,8 +381,8 @@ describe('Admin entity child creation route', () => {
 
     await waitFor(() => {
       expect(addToastSpy).toHaveBeenCalledWith({
-        title: 'Entité créée',
-        description: 'La nouvelle entité a été enregistrée avec succès.',
+        title: 'Entité créée avec succès',
+        description: 'La nouvelle entité a bien été enregistrée.',
         timeout: 0,
         data: { icon: 'fr-alert--success' },
       });
