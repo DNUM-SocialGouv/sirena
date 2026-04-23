@@ -1,7 +1,7 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
-import { REQUETE_ETAPE_STATUT_TYPES, type RequeteEtapeStatutType } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, type RequeteEtapeStatutType } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
 
 import { clsx } from 'clsx';
@@ -81,12 +81,7 @@ const StepComponent = ({
   const [editError, setEditError] = useState<string | null>(null);
   const { canEdit } = useCanEdit({ requeteId: requestId });
 
-  // Check if step was automatically updated: created automatically (createdBy === null),
-  // status is FAIT, and it's the acknowledgment step
-  const isAutomaticallyUpdated =
-    createdBy === null &&
-    statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT &&
-    nom === 'Envoyer un accusé de réception au déclarant';
+  const isSystemStep = rest.type !== REQUETE_ETAPE_TYPES.MANUAL || statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE;
 
   const badges = requeteEtapeStatutBadges.filter((badge) => {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
@@ -216,7 +211,7 @@ const StepComponent = ({
                 />
               </div>
               <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-                {canEdit && !isAutomaticallyUpdated && (
+                {canEdit && !isSystemStep && (
                   <Button
                     priority="tertiary no outline"
                     size="small"
@@ -275,7 +270,7 @@ const StepComponent = ({
             </button>
           )}
         </div>
-        {canEdit && (
+        {canEdit && !isSystemStep && (
           <Button
             className={styles['request-step__add-note']}
             type="button"

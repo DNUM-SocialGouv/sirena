@@ -25,7 +25,10 @@ import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { sendEntiteAssignedNotification } from '../entites/entite.notification.service.js';
+import {
+  sendEntiteAssignedNotification,
+  sendSituationEntiteNotification,
+} from '../entites/entite.notification.service.js';
 import { getDirectionsServicesFromRequeteEntiteId, getEntitesByIds } from '../entites/entites.service.js';
 import { updateDateAndTypeRequete } from '../requetes/requetes.service.js';
 import {
@@ -43,6 +46,7 @@ import {
   getOtherEntitesAffectedRoute,
   getRequeteEntiteRoute,
   getRequetesEntiteRoute,
+  reopenRequeteRoute,
   updateStatutRoute,
 } from './requetesEntite.route.js';
 import {
@@ -68,6 +72,7 @@ import {
   getRequeteEntiteById,
   getRequetesEntite,
   hasAccessToRequete,
+  reopenRequeteForEntite,
   updatePrioriteRequete,
   updateRequeteDeclarant,
   updateRequeteParticipant,
@@ -790,11 +795,15 @@ const app = factoryWithLogs
     const {
       requete: updatedRequete,
       newAssignedEntiteIds,
+      newDirectionServiceIds,
       shouldCloseRequeteStatus,
     } = await createRequeteSituation(id, situationData, topEntiteId, userId, userEntityIds, topEntiteId);
 
     if (newAssignedEntiteIds.length > 0) {
       await sendEntiteAssignedNotification(id, newAssignedEntiteIds);
+    }
+    if (newDirectionServiceIds.length > 0) {
+      await sendSituationEntiteNotification(id, newDirectionServiceIds);
     }
 
     sseEventManager.emitRequeteUpdated({
@@ -859,11 +868,15 @@ const app = factoryWithLogs
     const {
       requete: updatedRequete,
       newAssignedEntiteIds,
+      newDirectionServiceIds,
       shouldCloseRequeteStatus,
     } = await updateRequeteSituation(id, situationId, situationData, topEntiteId, userId, userEntityIds, topEntiteId);
 
     if (newAssignedEntiteIds.length > 0) {
       await sendEntiteAssignedNotification(id, newAssignedEntiteIds);
+    }
+    if (newDirectionServiceIds.length > 0) {
+      await sendSituationEntiteNotification(id, newDirectionServiceIds);
     }
 
     sseEventManager.emitRequeteUpdated({
@@ -949,6 +962,71 @@ const app = factoryWithLogs
                 return c.json({ error: 'Unauthorized', message: 'You are not allowed to close this requete' }, 403);
               }
               logger.error({ requeteId: id, err: error }, 'Unexpected error closing requête');
+              Sentry.captureException(error);
+              return c.json({ error: 'INTERNAL_ERROR', message: 'Internal server error' }, 500);
+          }
+        }
+        throw error;
+      }
+    },
+  )
+
+  .post(
+    '/:id/reopen',
+    reopenRequeteRoute,
+    requeteStatesChangelogMiddleware({ action: ChangeLogAction.CREATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const userId = c.get('userId');
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to reopen requetes without topEntiteId.', {
+          res: c.res,
+        });
+      }
+
+      try {
+        const hasAccessToReq = await hasAccessToRequete({ requeteId: id, entiteId: topEntiteId });
+        if (!hasAccessToReq) {
+          throwHTTPException403Forbidden('You are not allowed to reopen this requete', {
+            res: c.res,
+          });
+        }
+
+        const result = await reopenRequeteForEntite(id, topEntiteId, userId);
+
+        c.set('changelogId', result.etapeId);
+
+        sseEventManager.emitRequeteUpdated({
+          requeteId: id,
+          entiteId: topEntiteId,
+          field: REQUETE_UPDATE_FIELDS.REOPENED,
+        });
+
+        logger.info(
+          {
+            requeteId: id,
+            entiteId: topEntiteId,
+            userId,
+          },
+          'Requête reopened successfully',
+        );
+
+        return c.json({ data: result });
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          switch (error.message) {
+            // biome-ignore lint/suspicious/noFallthroughSwitchClause: throwHTTPException404NotFound is throwing error
+            case 'REQUETE_NOT_FOUND':
+              throwHTTPException404NotFound('Requête not found', { res: c.res });
+            case 'REQUETE_NOT_CLOSED':
+              return c.json({ error: 'REQUETE_NOT_CLOSED', message: 'Requête is not closed for this entity' }, 400);
+            default:
+              if ('status' in error && error.status === 403) {
+                return c.json({ error: 'Unauthorized', message: 'You are not allowed to reopen this requete' }, 403);
+              }
+              logger.error({ requeteId: id, err: error }, 'Unexpected error reopening requête');
               Sentry.captureException(error);
               return c.json({ error: 'INTERNAL_ERROR', message: 'Internal server error' }, 500);
           }

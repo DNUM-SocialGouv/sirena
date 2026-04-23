@@ -172,6 +172,7 @@ describe('RequeteEtapes.service.ts', () => {
           entiteId,
           statutId: 'FAIT',
           nom: 'Création de la requête le 15/01/2024',
+          type: 'CREATION',
         },
       });
 
@@ -181,6 +182,7 @@ describe('RequeteEtapes.service.ts', () => {
           entiteId,
           statutId: 'A_FAIRE',
           nom: 'Envoyer un accusé de réception au déclarant',
+          type: 'ACKNOWLEDGMENT',
         },
       });
     });
@@ -263,6 +265,7 @@ describe('RequeteEtapes.service.ts', () => {
           entiteId,
           statutId: 'FAIT',
           nom: 'Création de la requête le 10/02/2024',
+          type: 'CREATION',
         },
       });
 
@@ -272,6 +275,7 @@ describe('RequeteEtapes.service.ts', () => {
           entiteId,
           statutId: 'A_FAIRE',
           nom: 'Envoyer un accusé de réception au déclarant',
+          type: 'ACKNOWLEDGMENT',
         },
       });
     });
@@ -430,6 +434,7 @@ describe('RequeteEtapes.service.ts', () => {
           requeteId: requeteEtape.requeteId,
           entiteId: requeteEtape.entiteId,
           nom: requeteEtape.nom,
+          type: 'MANUAL',
           statutId: requeteEtape.statutId,
         },
       });
@@ -502,6 +507,7 @@ describe('RequeteEtapes.service.ts', () => {
           requeteId: requeteEtape.requeteId,
           entiteId: requeteEtape.entiteId,
           nom: requeteEtape.nom,
+          type: 'MANUAL',
           statutId: requeteEtape.statutId,
           createdById: 'userId',
         },
@@ -523,6 +529,7 @@ describe('RequeteEtapes.service.ts', () => {
         select: {
           id: true,
           nom: true,
+          type: true,
           statutId: true,
           createdAt: true,
           updatedAt: true,
@@ -586,6 +593,7 @@ describe('RequeteEtapes.service.ts', () => {
         select: {
           id: true,
           nom: true,
+          type: true,
           statutId: true,
           createdAt: true,
           updatedAt: true,
