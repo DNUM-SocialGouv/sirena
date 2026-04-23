@@ -133,6 +133,7 @@ export function RouteComponent() {
             <Input
               className="fr-fieldset__content"
               label="Adresse électronique de notification"
+              hintText="Boîte mail générique pour notification des nouvelles requêtes"
               nativeInputProps={{
                 name: 'email',
                 type: 'email',
@@ -142,6 +143,7 @@ export function RouteComponent() {
             <Input
               className="fr-fieldset__content"
               label="Domaine e-mail"
+              hintText="Exemple : @lozere.fr"
               nativeInputProps={{
                 name: 'emailDomain',
               }}

@@ -848,8 +848,147 @@ describe('entites.service', () => {
 });
 
 describe('createChildEntiteAdmin()', () => {
+  const createChildInput = {
+    nomComplet: 'Direction de la prévention',
+    label: 'DIR PREV',
+    email: 'direction@example.fr',
+    emailDomain: '@example.fr',
+    organizationalUnit: 'DIR-PREV',
+    emailContactUsager: 'contact@example.fr',
+    adresseContactUsager: '1 rue de la République, 75000 Paris',
+    telContactUsager: '01 02 03 04 05',
+    isActive: true,
+  };
+
   beforeEach(() => {
     vi.resetAllMocks();
+  });
+
+  it('creates a child entity under a root parent', async () => {
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+      entiteTypeId: 'ARS',
+      departementCode: '14',
+      ctcdCode: '14118',
+      regionCode: '28',
+      regLib: 'Normandie',
+      dptLib: 'Calvados',
+      entiteMereId: null,
+    } as never);
+    vi.mocked(prisma.entite.create).mockResolvedValueOnce({
+      id: 'direction-1',
+      ...createChildInput,
+      entiteMereId: 'root-ars',
+      entiteTypeId: 'ARS',
+      departementCode: '14',
+      ctcdCode: '14118',
+      regionCode: '28',
+      regLib: 'Normandie',
+      dptLib: 'Calvados',
+    } as never);
+
+    const result = await createChildEntiteAdmin('root-ars', createChildInput);
+
+    expect(prisma.entite.findUnique).toHaveBeenCalledTimes(1);
+    expect(prisma.entite.create).toHaveBeenCalledWith({
+      data: {
+        ...createChildInput,
+        entiteMereId: 'root-ars',
+        entiteTypeId: 'ARS',
+        departementCode: '14',
+        ctcdCode: '14118',
+        regionCode: '28',
+        regLib: 'Normandie',
+        dptLib: 'Calvados',
+      },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        email: true,
+        emailDomain: true,
+        organizationalUnit: true,
+        emailContactUsager: true,
+        adresseContactUsager: true,
+        telContactUsager: true,
+        isActive: true,
+      },
+    });
+    expect(result).toMatchObject({
+      id: 'direction-1',
+      ...createChildInput,
+    });
+  });
+
+  it('creates a child entity under a direction parent', async () => {
+    vi.mocked(prisma.entite.findUnique)
+      .mockResolvedValueOnce({
+        entiteTypeId: 'ARS',
+        departementCode: '14',
+        ctcdCode: '14118',
+        regionCode: '28',
+        regLib: 'Normandie',
+        dptLib: 'Calvados',
+        entiteMereId: 'root-ars',
+      } as never)
+      .mockResolvedValueOnce({ entiteMereId: null } as never);
+    vi.mocked(prisma.entite.create).mockResolvedValueOnce({
+      id: 'service-1',
+      ...createChildInput,
+      entiteMereId: 'dir-1',
+      entiteTypeId: 'ARS',
+      departementCode: '14',
+      ctcdCode: '14118',
+      regionCode: '28',
+      regLib: 'Normandie',
+      dptLib: 'Calvados',
+    } as never);
+
+    const result = await createChildEntiteAdmin('dir-1', createChildInput);
+
+    expect(prisma.entite.findUnique).toHaveBeenNthCalledWith(1, {
+      where: { id: 'dir-1' },
+      select: {
+        entiteTypeId: true,
+        departementCode: true,
+        ctcdCode: true,
+        regionCode: true,
+        regLib: true,
+        dptLib: true,
+        entiteMereId: true,
+      },
+    });
+    expect(prisma.entite.findUnique).toHaveBeenNthCalledWith(2, {
+      where: { id: 'root-ars' },
+      select: { entiteMereId: true },
+    });
+    expect(prisma.entite.create).toHaveBeenCalledWith({
+      data: {
+        ...createChildInput,
+        entiteMereId: 'dir-1',
+        entiteTypeId: 'ARS',
+        departementCode: '14',
+        ctcdCode: '14118',
+        regionCode: '28',
+        regLib: 'Normandie',
+        dptLib: 'Calvados',
+      },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        email: true,
+        emailDomain: true,
+        organizationalUnit: true,
+        emailContactUsager: true,
+        adresseContactUsager: true,
+        telContactUsager: true,
+        isActive: true,
+      },
+    });
+    expect(result).toMatchObject({
+      id: 'service-1',
+      ...createChildInput,
+    });
   });
 
   it('throws when the parent entity is already a service', async () => {
@@ -865,19 +1004,9 @@ describe('createChildEntiteAdmin()', () => {
       } as never)
       .mockResolvedValueOnce({ entiteMereId: 'root-ars' } as never);
 
-    await expect(
-      createChildEntiteAdmin('service-1', {
-        nomComplet: 'Service enfant interdit',
-        label: 'SVC+',
-        email: 'service@example.fr',
-        emailDomain: '@example.fr',
-        organizationalUnit: 'SVC-PLUS',
-        emailContactUsager: 'contact@example.fr',
-        adresseContactUsager: '1 rue de la République, 75000 Paris',
-        telContactUsager: '01 02 03 04 05',
-        isActive: true,
-      }),
-    ).rejects.toBeInstanceOf(EntiteChildCreationForbiddenError);
+    await expect(createChildEntiteAdmin('service-1', createChildInput)).rejects.toBeInstanceOf(
+      EntiteChildCreationForbiddenError,
+    );
 
     expect(prisma.entite.create).not.toHaveBeenCalled();
   });
