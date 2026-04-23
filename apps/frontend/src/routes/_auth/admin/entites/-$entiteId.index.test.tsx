@@ -173,6 +173,32 @@ describe('Admin entity edit route', () => {
     );
   });
 
+  it('does not show any child creation action on a service edit page', () => {
+    const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
+
+    mockedUseEntiteByIdAdmin.mockReturnValue(
+      buildSuccessQuery({
+        id: 'service-1',
+        nomComplet: 'Service territorial',
+        label: 'SVC TER',
+        isActive: true,
+      }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([
+        { id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false },
+        { id: 'dir-1', nomComplet: 'Direction de la prévention', disabled: false },
+        { id: 'service-1', nomComplet: 'Service territorial', disabled: false },
+      ]),
+    );
+
+    render(<RouteComponent />);
+
+    expect(screen.queryByRole('link', { name: /créer une direction/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /créer un service/i })).not.toBeInTheDocument();
+  });
+
   it('submits the limited editable fields to the admin edit mutation', async () => {
     const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
     const mockedUseEntiteChain = vi.mocked(useEntiteChain);

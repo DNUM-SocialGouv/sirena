@@ -1,4 +1,5 @@
 import {
+  openApi400BadRequest,
   openApi404NotFound,
   openApiProtectedRoute,
   openApiResponse,
@@ -39,6 +40,7 @@ export const createChildEntiteAdminRoute = openApiProtectedRoute({
   description: 'Create child entite for super admins',
   responses: {
     ...openApiResponse(CreateChildEntiteAdminResponseSchema),
+    ...openApi400BadRequest('Child entite creation is not allowed for this parent'),
     ...openApi404NotFound('Entite not found'),
   },
 });

@@ -1,7 +1,7 @@
 import type { Pagination } from '@sirena/backend-utils/types';
-import { type Entite, Prisma, prisma } from '../../libs/prisma.js';
+import { type Entite, prisma } from '../../libs/prisma.js';
 import { buildEntitesListAdmin } from './entites.admin.list.js';
-import { EntiteNotFoundError } from './entites.error.js';
+import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type.js';
 
 export const getEntiteForUser = async (organizationalUnit: string | null, email: string) => {
@@ -134,11 +134,23 @@ export const createChildEntiteAdmin = async (
       regionCode: true,
       regLib: true,
       dptLib: true,
+      entiteMereId: true,
     },
   });
 
   if (!parent) {
     throw new EntiteNotFoundError();
+  }
+
+  if (parent.entiteMereId) {
+    const grandParent = await prisma.entite.findUnique({
+      where: { id: parent.entiteMereId },
+      select: { entiteMereId: true },
+    });
+
+    if (grandParent?.entiteMereId) {
+      throw new EntiteChildCreationForbiddenError();
+    }
   }
 
   return prisma.entite.create({

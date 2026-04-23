@@ -1,4 +1,4 @@
-import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
+import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
@@ -7,7 +7,7 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
-import { EntiteNotFoundError } from './entites.error.js';
+import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
   createChildEntiteAdminRoute,
   editEntiteAdminRoute,
@@ -130,6 +130,11 @@ const app = factoryWithLogs
         if (error instanceof EntiteNotFoundError) {
           logger.warn({ entiteId: id }, 'Entite not found');
           throwHTTPException404NotFound('Entite not found', { res: c.res });
+        }
+
+        if (error instanceof EntiteChildCreationForbiddenError) {
+          logger.warn({ entiteId: id }, 'Child entite creation is not allowed for this parent');
+          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', { res: c.res });
         }
 
         throw error;

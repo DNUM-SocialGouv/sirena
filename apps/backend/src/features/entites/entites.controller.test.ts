@@ -7,7 +7,7 @@ import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import { Prisma } from '../../libs/prisma.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
-import { EntiteNotFoundError } from './entites.error.js';
+import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import { getEditableEntitiesChain, getEntiteById, getEntites, getEntitesListAdmin } from './entites.service.js';
 
 vi.mock('../../config/env.js', () => ({
@@ -20,7 +20,7 @@ vi.mock('./entites.service.js', () => ({
   getEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
   editEntiteAdmin: editEntiteAdminSpy,
-  createChildEntiteAdmin: createEntiteAdminChildSpy,
+  createChildEntiteAdmin: createChildEntiteAdminSpy,
 }));
 
 vi.mock('../../middlewares/auth.middleware.js', () => {
@@ -44,12 +44,12 @@ const {
   roleMiddlewareSpy,
   currentRole,
   patchEntiteAdminByIdSpy: editEntiteAdminSpy,
-  postEntiteAdminChildSpy: createEntiteAdminChildSpy,
+  postChildEntiteAdminSpy: createChildEntiteAdminSpy,
 } = vi.hoisted(() => ({
   roleMiddlewareSpy: vi.fn(),
   currentRole: { value: 'SUPER_ADMIN' },
   patchEntiteAdminByIdSpy: vi.fn(),
-  postEntiteAdminChildSpy: vi.fn(),
+  postChildEntiteAdminSpy: vi.fn(),
 }));
 
 vi.mock('../../middlewares/role.middleware.js', () => {
@@ -303,7 +303,7 @@ describe('Entites endpoints: /entites', () => {
     };
 
     it('creates a child entity from a root parent for SUPER_ADMIN', async () => {
-      createEntiteAdminChildSpy.mockResolvedValueOnce({
+      createChildEntiteAdminSpy.mockResolvedValueOnce({
         id: 'direction-1',
         ...createChildEntitePayload,
       });
@@ -323,11 +323,11 @@ describe('Entites endpoints: /entites', () => {
           ...createChildEntitePayload,
         },
       });
-      expect(createEntiteAdminChildSpy).toHaveBeenCalledWith('root-ars', createChildEntitePayload);
+      expect(createChildEntiteAdminSpy).toHaveBeenCalledWith('root-ars', createChildEntitePayload);
     });
 
     it('returns 404 when the parent entity is not found', async () => {
-      createEntiteAdminChildSpy.mockRejectedValueOnce(new EntiteNotFoundError());
+      createChildEntiteAdminSpy.mockRejectedValueOnce(new EntiteNotFoundError());
 
       const res = await app.request('/admin/unknown/children', {
         method: 'POST',
@@ -339,7 +339,23 @@ describe('Entites endpoints: /entites', () => {
 
       expect(res.status).toBe(404);
       expect(await res.json()).toEqual({ message: 'Entite not found' });
-      expect(createEntiteAdminChildSpy).toHaveBeenCalledWith('unknown', createChildEntitePayload);
+      expect(createChildEntiteAdminSpy).toHaveBeenCalledWith('unknown', createChildEntitePayload);
+    });
+
+    it('returns 400 when the parent entity cannot create children', async () => {
+      createChildEntiteAdminSpy.mockRejectedValueOnce(new EntiteChildCreationForbiddenError());
+
+      const res = await app.request('/admin/service-1/children', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(createChildEntitePayload),
+      });
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toEqual({ message: 'Child entite creation is not allowed for this parent' });
+      expect(createChildEntiteAdminSpy).toHaveBeenCalledWith('service-1', createChildEntitePayload);
     });
   });
 

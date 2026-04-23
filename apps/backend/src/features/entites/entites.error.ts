@@ -4,3 +4,10 @@ export class EntiteNotFoundError extends Error {
     this.name = 'EntiteNotFoundError';
   }
 }
+
+export class EntiteChildCreationForbiddenError extends Error {
+  constructor(message = 'Child entite creation is not allowed for this parent') {
+    super(message);
+    this.name = 'EntiteChildCreationForbiddenError';
+  }
+}
