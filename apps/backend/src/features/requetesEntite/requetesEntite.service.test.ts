@@ -1422,6 +1422,10 @@ describe('requetesEntite.service', () => {
           requeteEtapeNote: {
             create: vi.fn().mockResolvedValue(mockNote),
           },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            update: vi.fn().mockResolvedValue(mockRequeteEntite),
+          },
           uploadedFile: {
             ...prismaMock.uploadedFile,
             updateMany: vi.fn().mockResolvedValue({ count: 2 }),
@@ -1495,6 +1499,10 @@ describe('requetesEntite.service', () => {
             ...prismaMock.requeteEtapeNote,
             create: vi.fn().mockResolvedValue(mockNote),
           },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            update: vi.fn().mockResolvedValue(mockRequeteEntite),
+          },
         } as typeof prismaMock;
         return cb(mockTx);
       });
@@ -1554,6 +1562,10 @@ describe('requetesEntite.service', () => {
           },
           requeteEtapeNote: {
             create: vi.fn().mockResolvedValue(mockNote),
+          },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            update: vi.fn().mockResolvedValue(mockRequeteEntite),
           },
         } as typeof prismaMock;
         return cb(mockTx);
@@ -1642,6 +1654,10 @@ describe('requetesEntite.service', () => {
           },
           requeteEtapeNote: {
             create: vi.fn().mockResolvedValue(mockNote),
+          },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            update: vi.fn().mockResolvedValue(mockRequeteEntite),
           },
           uploadedFile: {
             ...prismaMock.uploadedFile,

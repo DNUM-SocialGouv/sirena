@@ -7,12 +7,11 @@ export function useCanEdit({ requeteId }: { requeteId?: string } = {}) {
   const userStore = useUserStore();
   const requestQuery = requeteId ? useRequeteDetails(requeteId) : null;
 
-  const canEdit = useMemo(() => {
-    // First check user permissions
-    const editRoles: string[] = [ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER];
-    const hasUserPermissions = userStore.role ? editRoles.includes(userStore.role) : false;
+  const editRoles: string[] = [ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER];
+  const hasEditRole = userStore.role ? editRoles.includes(userStore.role) : false;
 
-    if (!hasUserPermissions) {
+  const canEdit = useMemo(() => {
+    if (!hasEditRole) {
       return false;
     }
 
@@ -20,13 +19,12 @@ export function useCanEdit({ requeteId }: { requeteId?: string } = {}) {
       return true;
     }
 
-    // Then check if the request is closed
     if (requestQuery?.data?.statutId === REQUETE_STATUT_TYPES.CLOTUREE) {
       return false;
     }
 
     return true;
-  }, [userStore.role, requestQuery, requeteId]);
+  }, [hasEditRole, requestQuery, requeteId]);
 
-  return { canEdit };
+  return { canEdit, hasEditRole };
 }

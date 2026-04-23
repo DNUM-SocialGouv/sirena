@@ -92,7 +92,6 @@ type IdentityFieldsProps = {
 
 function MisEnCauseIdentityFields({ formData, isSaving, setFormData }: IdentityFieldsProps) {
   const isIdentityReadOnly = isSaving || Boolean(formData.misEnCause?.rpps);
-  console.log(isIdentityReadOnly);
 
   return (
     <>

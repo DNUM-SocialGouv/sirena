@@ -38,7 +38,7 @@ async function navigateToUserEditPage(page: Page, context: BrowserContext): Prom
   await firstOtherUserRow.getByRole('link', { name: "Gérer l'utilisateur" }).click();
 
   await page.waitForURL(`${baseUrl}/admin/user/${targetUserId}`);
-  await expect(page.getByRole('heading', { name: 'Modifier un utilisateur', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
 
   return targetUserId;
 }
@@ -110,11 +110,11 @@ test.describe('Admin Feature', () => {
     await expect(tableCaption).toBeVisible();
   });
 
-  test('should go to "Modifier un utilisateur" form when clicking on "Gérer l\'utilisateur" link', async () => {
+  test('should go to "Modifier les informations" form when clicking on "Gérer l\'utilisateur" link', async () => {
     await navigateToUserEditPage(page, context);
 
     const heading = page.getByRole('heading', {
-      name: 'Modifier un utilisateur',
+      name: 'Modifier les informations',
       level: 1,
     });
 
@@ -139,7 +139,7 @@ test.describe('Admin Feature', () => {
       page.goto(`${baseUrl}/admin/user/${targetUserId}`),
     ]);
 
-    await expect(page.getByRole('heading', { name: 'Modifier un utilisateur', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
 
     const { data: userData } = await userResponse.json();
     expect(userData).toBeTruthy();
@@ -166,7 +166,7 @@ test.describe('Admin Feature', () => {
       page.goto(`${baseUrl}/admin/user/${targetUserId}`),
     ]);
 
-    await expect(page.getByRole('heading', { name: 'Modifier un utilisateur', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
 
     const { data: updatedUser } = await responseAfterChange.json();
     expect(updatedUser).toBeTruthy();
@@ -192,7 +192,7 @@ test.describe('Admin Feature', () => {
       page.goto(`${baseUrl}/admin/user/${targetUserId}`),
     ]);
 
-    await expect(page.getByRole('heading', { name: 'Modifier un utilisateur', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Modifier les informations', level: 1 })).toBeVisible();
 
     const { data: revertedUser } = await responseAfterReset.json();
     expect(revertedUser).toBeTruthy();
