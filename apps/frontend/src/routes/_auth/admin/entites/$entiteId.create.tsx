@@ -20,17 +20,7 @@ export function RouteComponent() {
   const createEntiteAdminChild = useCreateChildEntiteAdmin();
   const entiteQuery = useEntiteByIdAdmin(entiteId);
   const entiteChainQuery = useEntiteChain(entiteId);
-
-  if (entiteQuery.isPending || entiteChainQuery.isPending) {
-    return null;
-  }
-
-  if (entiteQuery.isError || !entiteQuery.data || entiteChainQuery.isError || !entiteChainQuery.data) {
-    return null;
-  }
-
-  const entiteDepth = entiteChainQuery.data.length;
-  const title = entiteDepth === 1 ? 'Créer une direction' : 'Créer un service';
+  const entiteDepth = entiteChainQuery.data?.length ?? 0;
 
   useEffect(() => {
     if (entiteDepth >= 3) {
@@ -40,6 +30,16 @@ export function RouteComponent() {
       });
     }
   }, [entiteDepth, entiteId, router]);
+
+  if (entiteQuery.isPending || entiteChainQuery.isPending) {
+    return null;
+  }
+
+  if (entiteQuery.isError || !entiteQuery.data || entiteChainQuery.isError || !entiteChainQuery.data) {
+    return null;
+  }
+
+  const title = entiteDepth === 1 ? 'Créer une direction' : 'Créer un service';
 
   if (entiteDepth >= 3) {
     return null;

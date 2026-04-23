@@ -1,6 +1,7 @@
 import { ROLES } from '@sirena/common/constants';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useEffect as useReactEffect, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
@@ -158,22 +159,55 @@ describe('Admin entity child creation route', () => {
     render(<RouteComponent />);
   });
 
-  it('renders the child creation name fields with the agreed labels', () => {
-    vi.mocked(useEntiteByIdAdmin).mockReturnValue(
-      buildSuccessQuery({
-        id: 'root-ars',
-        nomComplet: 'ARS Normandie',
-        label: 'ARS NOR',
-        isActive: true,
-      }),
-    );
-    vi.mocked(useEntiteChain).mockReturnValue(
-      buildSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
-    );
+  it('keeps a stable hook order when the create page leaves its pending state', async () => {
+    vi.mocked(useEntiteByIdAdmin).mockImplementation(() => {
+      const [query, setQuery] = useState(
+        () =>
+          ({
+            data: null,
+            isPending: true,
+            isError: false,
+            error: null,
+          }) as never,
+      );
+
+      useReactEffect(() => {
+        setQuery(
+          buildSuccessQuery({
+            id: 'root-ars',
+            nomComplet: 'ARS Normandie',
+            label: 'ARS NOR',
+            isActive: true,
+          }),
+        );
+      }, []);
+
+      return query;
+    });
+
+    vi.mocked(useEntiteChain).mockImplementation(() => {
+      const [query, setQuery] = useState(
+        () =>
+          ({
+            data: null,
+            isPending: true,
+            isError: false,
+            error: null,
+          }) as never,
+      );
+
+      useReactEffect(() => {
+        setQuery(buildSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]));
+      }, []);
+
+      return query;
+    });
 
     render(<RouteComponent />);
 
-    expect(screen.getByLabelText(/Nom \(libellé long\)/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Nom \(libellé long\)/i)).toBeInTheDocument();
+    });
     expect(screen.getByLabelText(/Nom court/i)).toBeInTheDocument();
   });
 
