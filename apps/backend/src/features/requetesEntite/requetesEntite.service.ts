@@ -5,6 +5,7 @@ import {
   type EntiteType,
   MOTIFS_HIERARCHICAL_DATA,
   REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_ETAPE_TYPES,
   REQUETE_STATUT_TYPES,
   REQUETE_UPDATE_FIELDS,
   type RequetePrioriteType,
@@ -1538,7 +1539,7 @@ export const closeRequeteForEntite = async (
       });
     }
 
-    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE);
+    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE, tx);
 
     return {
       etapeId: etape.id,
@@ -1607,8 +1608,72 @@ export const closeRequeteForEntite = async (
   return result;
 };
 
-export const updateStatusRequete = async (requeteId: string, entiteId: string, statut: RequeteStatutType) => {
-  const requeteEntite = await prisma.requeteEntite.update({
+export const reopenRequeteForEntite = async (requeteId: string, entiteId: string, authorId: string) => {
+  const requeteEntite = await prisma.requeteEntite.findUnique({
+    where: {
+      requeteId_entiteId: {
+        requeteId,
+        entiteId,
+      },
+    },
+    include: {
+      requete: true,
+    },
+  });
+
+  if (!requeteEntite) {
+    throw new Error('REQUETE_NOT_FOUND');
+  }
+
+  if (requeteEntite.statutId !== REQUETE_STATUT_TYPES.CLOTUREE) {
+    throw new Error('REQUETE_NOT_CLOSED');
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const etape = await tx.requeteEtape.create({
+      data: {
+        requeteId,
+        entiteId,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        type: REQUETE_ETAPE_TYPES.REOPEN,
+        createdById: authorId,
+        nom: `Requête rouverte le ${new Date().toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })}`,
+      },
+    });
+
+    await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.EN_COURS, tx);
+
+    return {
+      etapeId: etape.id,
+      reopenedAt: etape.createdAt.toISOString(),
+      etape,
+    };
+  });
+
+  await createChangeLogForRequeteEntite({
+    requeteId,
+    entiteId,
+    action: ChangeLogAction.UPDATED,
+    before: { statutId: REQUETE_STATUT_TYPES.CLOTUREE } as Prisma.JsonObject,
+    after: { statutId: REQUETE_STATUT_TYPES.EN_COURS } as Prisma.JsonObject,
+    changedById: authorId,
+  });
+
+  return result;
+};
+
+export const updateStatusRequete = async (
+  requeteId: string,
+  entiteId: string,
+  statut: RequeteStatutType,
+  tx?: Prisma.TransactionClient,
+) => {
+  const db = tx ?? prisma;
+  const requeteEntite = await db.requeteEntite.update({
     where: { requeteId_entiteId: { requeteId, entiteId } },
     data: { statutId: statut },
   });

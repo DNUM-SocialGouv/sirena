@@ -33,6 +33,17 @@ export async function closeRequete(requestId: string, json: CloseRequeteData) {
   return response;
 }
 
+export async function reopenRequete(requestId: string) {
+  const res = await client['requetes-entite'][':id'].reopen.$post({
+    param: { id: requestId },
+  });
+
+  await handleRequestErrors(res);
+
+  const response = await res.json();
+  return response;
+}
+
 export async function fetchRequeteDetails(requestId: string) {
   const res = await client['requetes-entite'][':id'].$get({
     param: { id: requestId },
