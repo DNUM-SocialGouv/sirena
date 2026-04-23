@@ -1,8 +1,13 @@
 import { envVars } from '../../config/env.js';
-import { DGCS_FALLBACK_EMAIL, NOTIFICATION_ENTITE_AFFECTATION_TEMPLATE_NAME } from '../../config/tipimail.constant.js';
+import {
+  DGCS_FALLBACK_EMAIL,
+  NOTIFICATION_ENTITE_AFFECTATION_TEMPLATE_NAME,
+  NOTIFICATION_SITUATION_ENTITE_TEMPLATE_NAME,
+} from '../../config/tipimail.constant.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
 import { prisma } from '../../libs/prisma.js';
+import { getEntiteChain } from './entites.service.js';
 
 async function fetchEntiteRegionParent(id: string) {
   return prisma.entite.findUnique({
@@ -62,6 +67,65 @@ async function resolveNotificationEmail(entite: {
     return { email: DGCS_FALLBACK_EMAIL, fallback: 'DGCS' };
   }
   return null;
+}
+
+export async function sendSituationEntiteNotification(requeteId: string, entiteIds: string[]): Promise<void> {
+  const logger = getLoggerStore();
+
+  if (entiteIds.length === 0) {
+    return;
+  }
+
+  const entites = await prisma.entite.findMany({
+    where: { id: { in: entiteIds } },
+    select: { id: true, nomComplet: true, email: true },
+  });
+
+  const lienDetailsRequeteSirena = `${envVars.FRONTEND_URI}/request/${requeteId}`;
+
+  for (const entite of entites) {
+    if (!entite.email?.trim()) {
+      logger.warn(
+        { requeteId, entiteId: entite.id, nomEntite: entite.nomComplet },
+        'Direction/service has no email, skipping situation assignment notification',
+      );
+      continue;
+    }
+
+    try {
+      const chain = await getEntiteChain(entite.id);
+      const rootEntiteNom = chain[0]?.nomComplet ?? entite.nomComplet;
+
+      await sendTipimailEmail({
+        to: entite.email.trim(),
+        subject: '',
+        text: '',
+        template: NOTIFICATION_SITUATION_ENTITE_TEMPLATE_NAME,
+        substitutions: [
+          {
+            email: entite.email.trim(),
+            values: {
+              directionService: entite.nomComplet,
+              numeroRequete: requeteId,
+              entite: rootEntiteNom,
+              lienDetailsRequeteSirena,
+              signature: '',
+            },
+          },
+        ],
+      });
+
+      logger.info(
+        { requeteId, entiteId: entite.id, recipientEmail: entite.email.trim() },
+        'Situation entity assignment notification email sent',
+      );
+    } catch (err) {
+      logger.error(
+        { requeteId, entiteId: entite.id, err },
+        'Failed to send situation entity assignment notification email',
+      );
+    }
+  }
 }
 
 export async function sendEntiteAssignedNotification(requeteId: string, entiteIds: string[]): Promise<void> {

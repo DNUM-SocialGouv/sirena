@@ -917,7 +917,7 @@ const updateSituationEntites = async (
   situationId: string,
   traitementDesFaits: SituationInput['traitementDesFaits'],
   topEntiteId: string,
-): Promise<string[]> => {
+): Promise<{ newRequeteRootIds: string[]; newDirectionServiceIds: string[] }> => {
   const situation = await tx.situation.findUnique({
     where: { id: situationId },
     select: { requeteId: true },
@@ -955,9 +955,13 @@ const updateSituationEntites = async (
   // Extract entity IDs from input, separating user's entities from others
   const newUserEntiteIds = new Set<string>();
   const newOtherEntiteIds = new Set<string>();
+  const allDirectionServiceIds = new Set<string>();
 
   if (traitementDesFaits?.entites) {
     for (const entite of traitementDesFaits.entites) {
+      if (entite.directionServiceId) {
+        allDirectionServiceIds.add(entite.directionServiceId);
+      }
       const { entiteId: rootId } = await getEntiteAscendanteInfo(entite.entiteId);
       if (rootId === topEntiteId) {
         // Entity belongs to user's hierarchy
@@ -1059,7 +1063,9 @@ const updateSituationEntites = async (
     }),
   );
 
-  return newToRequeteRootIds;
+  const newDirectionServiceIds = entitesToAdd.filter((id) => allDirectionServiceIds.has(id));
+
+  return { newRequeteRootIds: newToRequeteRootIds, newDirectionServiceIds };
 };
 
 const updateExistingSituation = async (
@@ -1068,7 +1074,7 @@ const updateExistingSituation = async (
   situationData: SituationInput,
   topEntiteId: string,
   changedById?: string,
-): Promise<{ newAssignedEntiteIds: string[]; deletedFilePaths: string[] }> => {
+): Promise<{ newAssignedEntiteIds: string[]; newDirectionServiceIds: string[]; deletedFilePaths: string[] }> => {
   const before = changedById ? await captureSituationState(tx, existingSituation.id) : null;
 
   const { filePaths: deletedFilePaths } = await deleteFaitFilesRemovedFromSituation(
@@ -1098,7 +1104,7 @@ const updateExistingSituation = async (
     }
   }
 
-  const newAssignedEntiteIds = await updateSituationEntites(
+  const { newRequeteRootIds: newAssignedEntiteIds, newDirectionServiceIds } = await updateSituationEntites(
     tx,
     existingSituation.id,
     situationData.traitementDesFaits,
@@ -1121,7 +1127,7 @@ const updateExistingSituation = async (
     });
   }
 
-  return { newAssignedEntiteIds, deletedFilePaths };
+  return { newAssignedEntiteIds, newDirectionServiceIds, deletedFilePaths };
 };
 
 const createNewSituation = async (
@@ -1130,7 +1136,7 @@ const createNewSituation = async (
   situationData: SituationInput,
   topEntiteId: string,
   changedById?: string,
-): Promise<{ id: string; newAssignedEntiteIds: string[] }> => {
+): Promise<{ id: string; newAssignedEntiteIds: string[]; newDirectionServiceIds: string[] }> => {
   const situationCreateData = mapSituationToPrismaCreate(situationData);
   const createdSituation = await tx.situation.create({
     data: {
@@ -1146,7 +1152,7 @@ const createNewSituation = async (
     }
   }
 
-  const newAssignedEntiteIds = await updateSituationEntites(
+  const { newRequeteRootIds: newAssignedEntiteIds, newDirectionServiceIds } = await updateSituationEntites(
     tx,
     createdSituation.id,
     situationData.traitementDesFaits,
@@ -1165,7 +1171,7 @@ const createNewSituation = async (
     });
   }
 
-  return { id: createdSituation.id, newAssignedEntiteIds };
+  return { id: createdSituation.id, newAssignedEntiteIds, newDirectionServiceIds };
 };
 
 export type ShouldCloseRequeteStatus = {
@@ -1245,6 +1251,7 @@ export const createRequeteSituation = async (
 ): Promise<{
   requete: Awaited<ReturnType<typeof prisma.requete.findUnique>>;
   newAssignedEntiteIds: string[];
+  newDirectionServiceIds: string[];
   shouldCloseRequeteStatus?: ShouldCloseRequeteStatus;
 }> => {
   const requete = await prisma.requete.findUnique({
@@ -1257,6 +1264,7 @@ export const createRequeteSituation = async (
 
   let createdSituationId: string | null = null;
   let newAssignedEntiteIds: string[] = [];
+  let newDirectionServiceIds: string[] = [];
   let updatedRequete: Awaited<ReturnType<typeof prisma.requete.findUnique>> = null;
 
   const entiteIdsToUpdate: string[] = [];
@@ -1281,6 +1289,7 @@ export const createRequeteSituation = async (
     const newSituation = await createNewSituation(tx, requeteId, situationData, entiteId, changedById);
     createdSituationId = newSituation.id;
     newAssignedEntiteIds = newSituation.newAssignedEntiteIds;
+    newDirectionServiceIds = newSituation.newDirectionServiceIds;
     await tx.requeteEntite.updateMany({
       where: {
         requeteId,
@@ -1314,7 +1323,7 @@ export const createRequeteSituation = async (
     });
   }
 
-  return { requete: updatedRequete, newAssignedEntiteIds, shouldCloseRequeteStatus };
+  return { requete: updatedRequete, newAssignedEntiteIds, newDirectionServiceIds, shouldCloseRequeteStatus };
 };
 
 export const updateRequeteSituation = async (
@@ -1328,6 +1337,7 @@ export const updateRequeteSituation = async (
 ): Promise<{
   requete: Awaited<ReturnType<typeof prisma.requete.findUnique>>;
   newAssignedEntiteIds: string[];
+  newDirectionServiceIds: string[];
   shouldCloseRequeteStatus?: ShouldCloseRequeteStatus;
 }> => {
   const requete = await prisma.requete.findUnique({
@@ -1339,6 +1349,7 @@ export const updateRequeteSituation = async (
   }
 
   let newAssignedEntiteIds: string[] = [];
+  let newDirectionServiceIds: string[] = [];
   let updatedRequete: Awaited<ReturnType<typeof prisma.requete.findUnique>> = null;
   const entiteIdsToUpdate: string[] = [];
 
@@ -1365,6 +1376,7 @@ export const updateRequeteSituation = async (
     }
     const result = await updateExistingSituation(tx, existingSituation, situationData, entiteId, changedById);
     newAssignedEntiteIds = result.newAssignedEntiteIds;
+    newDirectionServiceIds = result.newDirectionServiceIds;
     deletedFilePaths = result.deletedFilePaths;
     await tx.requeteEntite.updateMany({
       where: {
@@ -1399,7 +1411,7 @@ export const updateRequeteSituation = async (
     });
   }
 
-  return { requete: updatedRequete, newAssignedEntiteIds, shouldCloseRequeteStatus };
+  return { requete: updatedRequete, newAssignedEntiteIds, newDirectionServiceIds, shouldCloseRequeteStatus };
 };
 
 export const closeRequeteForEntite = async (
