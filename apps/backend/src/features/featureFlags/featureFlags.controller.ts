@@ -27,10 +27,13 @@ const resolveApp = factoryWithLogs
   .createApp()
   .use(authMiddleware)
   .use(userStatusMiddleware)
-  .get('/resolve', resolveFeatureFlagsRoute, async (c) => {
+  .get('/', resolveFeatureFlagsRoute, async (c) => {
     const userId = c.get('userId');
     const user = await getUserById(userId, null, null);
-    const data = await resolveFeatureFlags(user?.email ?? '', user?.entiteId ?? null);
+    if (!user) {
+      return throwHTTPException404NotFound('User not found', { res: c.res });
+    }
+    const data = await resolveFeatureFlags(user.email, user.entiteId);
     return c.json({ data });
   });
 
@@ -82,6 +85,6 @@ const adminApp = factoryWithLogs
     return c.body(null, 204);
   });
 
-const app = factoryWithLogs.createApp().route('/', resolveApp).route('/', adminApp);
+const app = factoryWithLogs.createApp().route('/resolve', resolveApp).route('/', adminApp);
 
 export default app;

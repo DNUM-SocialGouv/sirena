@@ -1,12 +1,10 @@
 import { client } from '@/lib/api/hc';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery';
-import { useFeatureFlagStore } from '@/stores/featureFlagStore';
 
 export async function fetchResolvedFeatureFlags() {
   const res = await client['feature-flags'].resolve.$get();
   await handleRequestErrors(res);
   const { data } = await res.json();
-  useFeatureFlagStore.getState().setFlags(data);
   return data;
 }
 

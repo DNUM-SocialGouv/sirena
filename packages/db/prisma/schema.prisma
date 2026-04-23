@@ -733,8 +733,8 @@ model FeatureFlag {
   name        String   @unique
   description String   @default("")
   enabled     Boolean  @default(false)
-  userEmails  String[]
-  entiteIds   String[]
+  userEmails  String[] @default([])
+  entiteIds   String[] @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -1,19 +1,21 @@
 import Badge from '@codegouvfr/react-dsfr/Badge';
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
+import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import ToggleSwitch from '@codegouvfr/react-dsfr/ToggleSwitch';
 import { ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable, Toast } from '@sirena/ui';
 import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCreateFeatureFlag, useDeleteFeatureFlag, usePatchFeatureFlag } from '@/hooks/mutations/featureFlags.hook';
 import { useFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+import { parseIds } from '@/utils/featureFlags';
 
 export const Route = createFileRoute('/_auth/admin/feature-flags')({
   beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
   head: () => ({
-    meta: [{ title: 'Feature flags - SIRENA' }],
+    meta: [{ title: 'Gestion des fonctionnalités - SIRENA' }],
   }),
   component: RouteComponent,
 });
@@ -45,6 +47,11 @@ const emptyForm: FormData = {
   entiteIds: '',
 };
 
+const deleteFlagModal = createModal({
+  id: 'delete-feature-flag-modal',
+  isOpenedByDefault: false,
+});
+
 function RouteComponent() {
   const toastManager = Toast.useToastManager();
   const { data: featureFlags, isFetching } = useFeatureFlags();
@@ -55,6 +62,16 @@ function RouteComponent() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyForm);
+  const [flagToDelete, setFlagToDelete] = useState<FeatureFlag | null>(null);
+  const firstInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!showForm) return;
+    const frame = requestAnimationFrame(() => {
+      firstInputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [showForm]);
 
   const handleCreate = useCallback(() => {
     setEditingId(null);
@@ -80,11 +97,17 @@ function RouteComponent() {
     setFormData(emptyForm);
   }, []);
 
-  const parseIds = (value: string): string[] =>
-    value
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
+  const notifySuccess = useCallback(
+    (title: string, description: string) => {
+      toastManager.add({
+        title,
+        description,
+        timeout: 0,
+        data: { icon: 'fr-alert--success' },
+      });
+    },
+    [toastManager],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,39 +123,27 @@ function RouteComponent() {
     if (editingId) {
       const { name: _, ...patchPayload } = payload;
       await patchFlag.mutateAsync({ id: editingId, json: patchPayload });
-      toastManager.add({
-        title: 'Feature flag modifié',
-        description: `Le flag "${formData.name}" a été mis à jour.`,
-        timeout: 0,
-        data: { icon: 'fr-alert--success' },
-      });
+      notifySuccess('Fonctionnalité modifiée avec succès', `Le flag "${formData.name}" a été mis à jour.`);
     } else {
       await createFlag.mutateAsync(payload);
-      toastManager.add({
-        title: 'Feature flag créé',
-        description: `Le flag "${formData.name}" a été créé.`,
-        timeout: 0,
-        data: { icon: 'fr-alert--success' },
-      });
+      notifySuccess('Fonctionnalité créée avec succès', `Le flag "${formData.name}" a été créé.`);
     }
 
     handleCancel();
   };
 
-  const handleDelete = useCallback(
-    async (flag: FeatureFlag) => {
-      if (!window.confirm(`Supprimer le flag "${flag.name}" ?`)) return;
+  const handleDelete = useCallback((flag: FeatureFlag) => {
+    setFlagToDelete(flag);
+    deleteFlagModal.open();
+  }, []);
 
-      await deleteFlag.mutateAsync(flag.id);
-      toastManager.add({
-        title: 'Feature flag supprimé',
-        description: `Le flag "${flag.name}" a été supprimé.`,
-        timeout: 0,
-        data: { icon: 'fr-alert--success' },
-      });
-    },
-    [deleteFlag, toastManager],
-  );
+  const confirmDelete = useCallback(async () => {
+    if (!flagToDelete) return;
+    await deleteFlag.mutateAsync(flagToDelete.id);
+    notifySuccess('Fonctionnalité supprimée avec succès', `Le flag "${flagToDelete.name}" a été supprimé.`);
+    setFlagToDelete(null);
+    deleteFlagModal.close();
+  }, [deleteFlag, flagToDelete, notifySuccess]);
 
   const columns: Column<FeatureFlag>[] = [
     { key: 'name', label: 'Nom', isSortable: true },
@@ -156,10 +167,10 @@ function RouteComponent() {
     'custom:actions': (row: FeatureFlag) => (
       <div style={{ display: 'flex', gap: '0.5rem' }}>
         <Button priority="secondary" size="small" onClick={() => handleEdit(row)}>
-          Modifier
+          Modifier <span className="fr-sr-only">la fonctionnalité {row.name}</span>
         </Button>
         <Button priority="tertiary" size="small" onClick={() => handleDelete(row)}>
-          Supprimer
+          Supprimer <span className="fr-sr-only">la fonctionnalité {row.name}</span>
         </Button>
       </div>
     ),
@@ -169,12 +180,12 @@ function RouteComponent() {
 
   return (
     <div className="home">
-      <h1>Feature flags</h1>
+      <h1 className="fr-mt-3w">Gestion des fonctionnalités</h1>
 
       {!showForm && (
         <div className="fr-mb-2w">
           <Button iconId="fr-icon-add-line" onClick={handleCreate}>
-            Créer un feature flag
+            Créer une fonctionnalité
           </Button>
         </div>
       )}
@@ -184,46 +195,47 @@ function RouteComponent() {
           className="fr-mb-4w fr-p-3w"
           style={{ border: '1px solid var(--border-default-grey)', borderRadius: '4px' }}
         >
-          <h2>{editingId ? 'Modifier le feature flag' : 'Créer un feature flag'}</h2>
+          <h2>{editingId ? 'Modifier la fonctionnalité' : 'Créer une fonctionnalité'}</h2>
           <form onSubmit={handleSubmit}>
             <Input
-              label="Nom (identifiant unique)"
+              label="Nom (identifiant unique, obligatoire)"
+              hintText="Exemple : MA_FONCTIONNALITE"
               disabled={!!editingId}
               nativeInputProps={{
+                ref: editingId ? undefined : firstInputRef,
                 value: formData.name,
                 onChange: (e) => setFormData((prev) => ({ ...prev, name: e.target.value })),
                 required: true,
-                placeholder: 'MY_FEATURE_FLAG',
               }}
             />
             <Input
               label="Description"
               nativeInputProps={{
+                ref: editingId ? firstInputRef : undefined,
                 value: formData.description,
                 onChange: (e) => setFormData((prev) => ({ ...prev, description: e.target.value })),
               }}
             />
             <ToggleSwitch
-              label="Activé"
+              label="Activer la fonctionnalité par défaut"
+              helperText="Utilisé uniquement si aucun utilisateur ou entité n’est ciblé"
               checked={formData.enabled}
               onChange={(checked) => setFormData((prev) => ({ ...prev, enabled: checked }))}
             />
             <Input
               label="Emails utilisateurs ciblés (séparés par des virgules)"
-              hintText="Laisser vide pour ne pas cibler d'utilisateurs spécifiques"
+              hintText="Laisser vide pour ne pas cibler d'utilisateurs spécifiques. Exemple : jean.dupont@sante.gouv.fr, marie.martin@sante.gouv.fr"
               nativeInputProps={{
                 value: formData.userEmails,
                 onChange: (e) => setFormData((prev) => ({ ...prev, userEmails: e.target.value })),
-                placeholder: 'jean.dupont@sante.gouv.fr, marie.martin@sante.gouv.fr',
               }}
             />
             <Input
-              label="IDs entités ciblées (séparés par des virgules)"
-              hintText="Laisser vide pour ne pas cibler d'entités spécifiques"
+              label="Identifiants d'entités ciblées (séparés par des virgules)"
+              hintText="Laisser vide pour ne pas cibler d'entités spécifiques. Exemple : entite-id-1, entite-id-2"
               nativeInputProps={{
                 value: formData.entiteIds,
                 onChange: (e) => setFormData((prev) => ({ ...prev, entiteIds: e.target.value })),
-                placeholder: 'entite-id-1, entite-id-2',
               }}
             />
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
@@ -247,6 +259,16 @@ function RouteComponent() {
         isLoading={isFetching}
         emptyPlaceholder="Aucun feature flag configuré"
       />
+
+      <deleteFlagModal.Component
+        title="Suppression d'une fonctionnalité"
+        buttons={[
+          { doClosesModal: true, children: 'Annuler' },
+          { doClosesModal: false, children: 'Supprimer', onClick: confirmDelete },
+        ]}
+      >
+        <p>Êtes-vous sûr de vouloir supprimer la fonctionnalité « {flagToDelete?.name} » ?</p>
+      </deleteFlagModal.Component>
     </div>
   );
 }

@@ -29,18 +29,18 @@ const resolveFlag = (
   userEmail: string,
   entiteChainIds: string[],
 ): boolean => {
-  const hasUserTargeting = flag.userEmails.length > 0;
-  const hasEntiteTargeting = flag.entiteIds.length > 0;
+  const hasUserEmails = flag.userEmails.length > 0;
+  const hasEntiteIds = flag.entiteIds.length > 0;
 
-  if (!hasUserTargeting && !hasEntiteTargeting) {
+  if (!hasUserEmails && !hasEntiteIds) {
     return flag.enabled;
   }
 
-  if (hasUserTargeting && flag.userEmails.includes(userEmail)) {
+  if (hasUserEmails && flag.userEmails.includes(userEmail)) {
     return true;
   }
 
-  if (hasEntiteTargeting && entiteChainIds.some((id) => flag.entiteIds.includes(id))) {
+  if (hasEntiteIds && entiteChainIds.some((id) => flag.entiteIds.includes(id))) {
     return true;
   }
 

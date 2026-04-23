@@ -4,8 +4,8 @@ CREATE TABLE "FeatureFlag" (
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL DEFAULT '',
     "enabled" BOOLEAN NOT NULL DEFAULT false,
-    "userEmails" TEXT[],
-    "entiteIds" TEXT[],
+    "userEmails" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "entiteIds" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
