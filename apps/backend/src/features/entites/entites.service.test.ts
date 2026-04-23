@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Entite, prisma } from '../../libs/prisma.js';
+import { EntiteChildCreationForbiddenError } from './entites.error.js';
 import {
+  createChildEntiteAdmin,
   getDirectionsFromRequeteEntiteId,
   getDirectionsServicesFromRequeteEntiteId,
   getEditableEntitiesChain,
@@ -19,6 +21,7 @@ vi.mock('../../libs/prisma.js', () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
       count: vi.fn(),
+      create: vi.fn(),
     },
     situationEntite: {
       findMany: vi.fn(),
@@ -841,6 +844,42 @@ describe('entites.service', () => {
 
     const result = await getEntitesByIds(['1', '2', '3']);
     expect(result).toEqual([fakeEntite('1'), fakeEntite('2'), fakeEntite('3')]);
+  });
+});
+
+describe('createChildEntiteAdmin()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('throws when the parent entity is already a service', async () => {
+    vi.mocked(prisma.entite.findUnique)
+      .mockResolvedValueOnce({
+        entiteTypeId: 'ARS',
+        departementCode: '14',
+        ctcdCode: '14118',
+        regionCode: '28',
+        regLib: 'Normandie',
+        dptLib: 'Calvados',
+        entiteMereId: 'dir-1',
+      } as never)
+      .mockResolvedValueOnce({ entiteMereId: 'root-ars' } as never);
+
+    await expect(
+      createChildEntiteAdmin('service-1', {
+        nomComplet: 'Service enfant interdit',
+        label: 'SVC+',
+        email: 'service@example.fr',
+        emailDomain: '@example.fr',
+        organizationalUnit: 'SVC-PLUS',
+        emailContactUsager: 'contact@example.fr',
+        adresseContactUsager: '1 rue de la République, 75000 Paris',
+        telContactUsager: '01 02 03 04 05',
+        isActive: true,
+      }),
+    ).rejects.toBeInstanceOf(EntiteChildCreationForbiddenError);
+
+    expect(prisma.entite.create).not.toHaveBeenCalled();
   });
 });
 
