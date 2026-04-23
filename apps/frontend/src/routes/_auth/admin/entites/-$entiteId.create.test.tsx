@@ -348,6 +348,69 @@ describe('Admin entity child creation route', () => {
     });
   });
 
+  it('ignores duplicate submissions while child creation is already in progress', async () => {
+    vi.mocked(useEntiteByIdAdmin).mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    vi.mocked(useEntiteChain).mockReturnValue(
+      buildSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+
+    let resolveCreation:
+      | ((value: {
+          id: string;
+          nomComplet: string;
+          label: string;
+          email: string;
+          emailDomain: string;
+          organizationalUnit: string;
+          emailContactUsager: string;
+          adresseContactUsager: string;
+          telContactUsager: string;
+          isActive: boolean;
+        }) => void)
+      | undefined;
+    createChildEntiteAdminMutateAsyncSpy.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveCreation = resolve;
+        }),
+    );
+
+    render(<RouteComponent />);
+
+    const user = userEvent.setup();
+    await user.dblClick(screen.getByRole('button', { name: 'Créer' }));
+
+    expect(createChildEntiteAdminMutateAsyncSpy).toHaveBeenCalledTimes(1);
+    expect(resolveCreation).toBeDefined();
+
+    resolveCreation?.({
+      id: 'direction-1',
+      nomComplet: 'Direction de la prévention',
+      label: 'DIR PREV',
+      email: 'direction@example.fr',
+      emailDomain: '@example.fr',
+      organizationalUnit: 'DIR-PREV',
+      emailContactUsager: 'contact-usager@example.fr',
+      adresseContactUsager: '1 rue de la République, 75000 Paris',
+      telContactUsager: '01 02 03 04 05',
+      isActive: true,
+    });
+
+    await waitFor(() => {
+      expect(routerNavigateSpy).toHaveBeenCalledWith({
+        to: '/admin/entites/$entiteId',
+        params: { entiteId: 'direction-1' },
+      });
+    });
+  });
+
   it('shows a success toast after creating the child entity', async () => {
     vi.mocked(useEntiteByIdAdmin).mockReturnValue(
       buildSuccessQuery({
