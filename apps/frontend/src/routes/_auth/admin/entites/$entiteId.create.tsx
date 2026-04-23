@@ -4,7 +4,7 @@ import RadioButtons from '@codegouvfr/react-dsfr/RadioButtons';
 import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { type SubmitEvent, useEffect } from 'react';
+import { type SubmitEvent, useEffect, useRef } from 'react';
 import { useCreateChildEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
@@ -18,6 +18,7 @@ export function RouteComponent() {
   const { entiteId } = Route.useParams();
   const toastManager = Toast.useToastManager();
   const createEntiteAdminChild = useCreateChildEntiteAdmin();
+  const isSubmittingRef = useRef(false);
   const entiteQuery = useEntiteByIdAdmin(entiteId);
   const entiteChainQuery = useEntiteChain(entiteId);
   const entiteDepth = entiteChainQuery.data?.length ?? 0;
@@ -48,34 +49,44 @@ export function RouteComponent() {
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (isSubmittingRef.current || createEntiteAdminChild.isPending) {
+      return;
+    }
+
+    isSubmittingRef.current = true;
+
     const formData = new FormData(e.currentTarget);
 
-    const createdEntite = await createEntiteAdminChild.mutateAsync({
-      id: entiteId,
-      input: {
-        nomComplet: String(formData.get('nomComplet') ?? ''),
-        label: String(formData.get('label') ?? ''),
-        email: String(formData.get('email') ?? ''),
-        emailDomain: String(formData.get('emailDomain') ?? ''),
-        organizationalUnit: String(formData.get('organizationalUnit') ?? ''),
-        emailContactUsager: String(formData.get('emailContactUsager') ?? ''),
-        adresseContactUsager: String(formData.get('adresseContactUsager') ?? ''),
-        telContactUsager: String(formData.get('telContactUsager') ?? ''),
-        isActive: formData.get('isActive') === 'oui',
-      },
-    });
+    try {
+      const createdEntite = await createEntiteAdminChild.mutateAsync({
+        id: entiteId,
+        input: {
+          nomComplet: String(formData.get('nomComplet') ?? ''),
+          label: String(formData.get('label') ?? ''),
+          email: String(formData.get('email') ?? ''),
+          emailDomain: String(formData.get('emailDomain') ?? ''),
+          organizationalUnit: String(formData.get('organizationalUnit') ?? ''),
+          emailContactUsager: String(formData.get('emailContactUsager') ?? ''),
+          adresseContactUsager: String(formData.get('adresseContactUsager') ?? ''),
+          telContactUsager: String(formData.get('telContactUsager') ?? ''),
+          isActive: formData.get('isActive') === 'oui',
+        },
+      });
 
-    toastManager.add({
-      title: 'Entité créée avec succès',
-      description: 'La nouvelle entité a bien été enregistrée.',
-      timeout: 0,
-      data: { icon: 'fr-alert--success' },
-    });
+      toastManager.add({
+        title: 'Entité créée avec succès',
+        description: 'La nouvelle entité a bien été enregistrée.',
+        timeout: 0,
+        data: { icon: 'fr-alert--success' },
+      });
 
-    await router.navigate({
-      to: '/admin/entites/$entiteId',
-      params: { entiteId: createdEntite.id },
-    });
+      await router.navigate({
+        to: '/admin/entites/$entiteId',
+        params: { entiteId: createdEntite.id },
+      });
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
   return (
@@ -204,7 +215,9 @@ export function RouteComponent() {
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-            <Button type="submit">Créer</Button>
+            <Button type="submit" disabled={createEntiteAdminChild.isPending}>
+              Créer
+            </Button>
           </div>
         </form>
       </div>
