@@ -128,16 +128,16 @@ export const enrichSituationWithTraitementDesFaits = async (situation: Situation
 // Mirrors the extractDptCode logic from getRequetesEntite for consistency.
 // For Corsica (2A/2B), resolves via InseePostal since they can't be derived from postal code prefix.
 const buildDeptPostalFilter = async (deptCodes: string[]): Promise<Prisma.LieuDeSurvenueWhereInput | null> => {
-  const corseaCodes = deptCodes.filter((c) => c === '2A' || c === '2B');
+  const corseCodes = deptCodes.filter((c) => c === '2A' || c === '2B');
   const regularCodes = deptCodes.filter((c) => c !== '2A' && c !== '2B');
 
   const orConditions: Prisma.LieuDeSurvenueWhereInput[] = regularCodes.map((code) => ({
     OR: [{ codePostal: { startsWith: code } }, { adresse: { codePostal: { startsWith: code } } }],
   }));
 
-  if (corseaCodes.length > 0) {
+  if (corseCodes.length > 0) {
     const rows = await prisma.inseePostal.findMany({
-      where: { commune: { dptCodeActuel: { in: corseaCodes } } },
+      where: { commune: { dptCodeActuel: { in: corseCodes } } },
       select: { codePostal: true },
       distinct: ['codePostal'],
     });

@@ -422,7 +422,6 @@ export function RequetesEntite() {
             )}
             {isTopEntiteARS && (
               <DepartementFilter
-                regionLabel={profile?.topEntiteRegionLabel ?? null}
                 departements={arsDepartements}
                 selectedCodes={selectedDepartements}
                 counts={departementCounts}

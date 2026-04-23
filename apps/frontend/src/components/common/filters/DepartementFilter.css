@@ -1,17 +1,32 @@
+.departement-filter {
+  position: relative;
+  width: auto;
+}
 .departement-filter__button {
   white-space: nowrap;
 }
 
+.departement-filter__button.fr-btn {
+  width: auto;
+  justify-content: space-between;
+  margin: 0;
+}
+
 .departement-filter__dropdown {
-  min-width: 260px;
-  padding: 1rem;
+  position: absolute;
+  top: calc(100% - 1px);
+  left: 0;
+
+  min-width: 18rem;
+
+  border-top: none;
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-overlap);
+
+  background-color: var(--background-default-grey);
+  z-index: 1000;
 }
 
-.departement-filter__region-label {
-  margin-bottom: 0.25rem;
-}
-
-.departement-filter__hint {
-  color: var(--text-mention-grey);
-  margin-bottom: 0.5rem;
+.departement-filter .fr-hint-text {
+  white-space: nowrap;
 }
