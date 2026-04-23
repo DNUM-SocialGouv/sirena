@@ -122,7 +122,7 @@ describe('Admin entity edit route', () => {
     expect(screen.getByRole('radio', { name: 'Non' })).not.toBeChecked();
   });
 
-  it('shows a creation action on a root entity edit page', () => {
+  it('shows a "Créer une direction" action on a root entity edit page', () => {
     const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
     const mockedUseEntiteChain = vi.mocked(useEntiteChain);
 
@@ -140,7 +140,34 @@ describe('Admin entity edit route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('link', { name: /créer une entité \/ sous-entité/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /créer une direction/i })).toHaveAttribute(
+      'href',
+      '/admin/entites/root-ars/create',
+    );
+  });
+
+  it('shows a "Créer un service" action when the entity chain depth is 2', () => {
+    const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
+
+    mockedUseEntiteByIdAdmin.mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([
+        { id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false },
+        { id: 'dir-1', nomComplet: 'Direction de la prévention', disabled: false },
+      ]),
+    );
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('link', { name: /créer un service/i })).toHaveAttribute(
       'href',
       '/admin/entites/root-ars/create',
     );
