@@ -30,8 +30,10 @@ import { Route as AuthAdminUserUserIdRouteImport } from './routes/_auth/admin/us
 import { Route as AuthAdminEntitesEntiteIdRouteImport } from './routes/_auth/admin/entites/$entiteId'
 import { Route as AuthUserRequestCreateRouteImport } from './routes/_auth/_user/request.create'
 import { Route as AuthUserRequestRequestIdRouteImport } from './routes/_auth/_user/request.$requestId'
+import { Route as AuthAdminEntitesEntiteIdIndexRouteImport } from './routes/_auth/admin/entites/$entiteId.index'
 import { Route as AuthUserRequestCreateIndexRouteImport } from './routes/_auth/_user/request.create.index'
 import { Route as AuthUserRequestRequestIdIndexRouteImport } from './routes/_auth/_user/request.$requestId.index'
+import { Route as AuthAdminEntitesEntiteIdCreateRouteImport } from './routes/_auth/admin/entites/$entiteId.create'
 import { Route as AuthUserRequestCreateSituationRouteImport } from './routes/_auth/_user/request.create.situation'
 import { Route as AuthUserRequestCreatePersonneConcerneeRouteImport } from './routes/_auth/_user/request.create.personne-concernee'
 import { Route as AuthUserRequestCreateDeclarantRouteImport } from './routes/_auth/_user/request.create.declarant'
@@ -147,6 +149,12 @@ const AuthUserRequestRequestIdRoute =
     path: '/request/$requestId',
     getParentRoute: () => AuthUserRouteRoute,
   } as any)
+const AuthAdminEntitesEntiteIdIndexRoute =
+  AuthAdminEntitesEntiteIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthAdminEntitesEntiteIdRoute,
+  } as any)
 const AuthUserRequestCreateIndexRoute =
   AuthUserRequestCreateIndexRouteImport.update({
     id: '/',
@@ -158,6 +166,12 @@ const AuthUserRequestRequestIdIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthUserRequestRequestIdRoute,
+  } as any)
+const AuthAdminEntitesEntiteIdCreateRoute =
+  AuthAdminEntitesEntiteIdCreateRouteImport.update({
+    id: '/create',
+    path: '/create',
+    getParentRoute: () => AuthAdminEntitesEntiteIdRoute,
   } as any)
 const AuthUserRequestCreateSituationRoute =
   AuthUserRequestCreateSituationRouteImport.update({
@@ -228,7 +242,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthAdminIndexRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/request/create': typeof AuthUserRequestCreateRouteWithChildren
-  '/admin/entites/$entiteId': typeof AuthAdminEntitesEntiteIdRoute
+  '/admin/entites/$entiteId': typeof AuthAdminEntitesEntiteIdRouteWithChildren
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
   '/admin/entites/': typeof AuthAdminEntitesIndexRoute
@@ -240,8 +254,10 @@ export interface FileRoutesByFullPath {
   '/request/create/declarant': typeof AuthUserRequestCreateDeclarantRoute
   '/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/request/create/situation': typeof AuthUserRequestCreateSituationRoute
+  '/admin/entites/$entiteId/create': typeof AuthAdminEntitesEntiteIdCreateRoute
   '/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
   '/request/create/': typeof AuthUserRequestCreateIndexRoute
+  '/admin/entites/$entiteId/': typeof AuthAdminEntitesEntiteIdIndexRoute
   '/request/$requestId/situation/$situationId': typeof AuthUserRequestRequestIdSituationSituationIdRoute
   '/request/$requestId/situation/': typeof AuthUserRequestRequestIdSituationIndexRoute
 }
@@ -255,7 +271,6 @@ export interface FileRoutesByTo {
   '/mentions-legales': typeof PublicMentionsLegalesRoute
   '/home': typeof AuthUserHomeRoute
   '/admin': typeof AuthAdminIndexRoute
-  '/admin/entites/$entiteId': typeof AuthAdminEntitesEntiteIdRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
   '/admin/entites': typeof AuthAdminEntitesIndexRoute
@@ -266,8 +281,10 @@ export interface FileRoutesByTo {
   '/request/create/declarant': typeof AuthUserRequestCreateDeclarantRoute
   '/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/request/create/situation': typeof AuthUserRequestCreateSituationRoute
+  '/admin/entites/$entiteId/create': typeof AuthAdminEntitesEntiteIdCreateRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdIndexRoute
   '/request/create': typeof AuthUserRequestCreateIndexRoute
+  '/admin/entites/$entiteId': typeof AuthAdminEntitesEntiteIdIndexRoute
   '/request/$requestId/situation/$situationId': typeof AuthUserRequestRequestIdSituationSituationIdRoute
   '/request/$requestId/situation': typeof AuthUserRequestRequestIdSituationIndexRoute
 }
@@ -289,7 +306,7 @@ export interface FileRoutesById {
   '/_auth/admin/': typeof AuthAdminIndexRoute
   '/_auth/_user/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/_auth/_user/request/create': typeof AuthUserRequestCreateRouteWithChildren
-  '/_auth/admin/entites/$entiteId': typeof AuthAdminEntitesEntiteIdRoute
+  '/_auth/admin/entites/$entiteId': typeof AuthAdminEntitesEntiteIdRouteWithChildren
   '/_auth/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/_auth/admin/users/all': typeof AuthAdminUsersAllRoute
   '/_auth/admin/entites/': typeof AuthAdminEntitesIndexRoute
@@ -301,8 +318,10 @@ export interface FileRoutesById {
   '/_auth/_user/request/create/declarant': typeof AuthUserRequestCreateDeclarantRoute
   '/_auth/_user/request/create/personne-concernee': typeof AuthUserRequestCreatePersonneConcerneeRoute
   '/_auth/_user/request/create/situation': typeof AuthUserRequestCreateSituationRoute
+  '/_auth/admin/entites/$entiteId/create': typeof AuthAdminEntitesEntiteIdCreateRoute
   '/_auth/_user/request/$requestId/': typeof AuthUserRequestRequestIdIndexRoute
   '/_auth/_user/request/create/': typeof AuthUserRequestCreateIndexRoute
+  '/_auth/admin/entites/$entiteId/': typeof AuthAdminEntitesEntiteIdIndexRoute
   '/_auth/_user/request/$requestId/situation/$situationId': typeof AuthUserRequestRequestIdSituationSituationIdRoute
   '/_auth/_user/request/$requestId/situation/': typeof AuthUserRequestRequestIdSituationIndexRoute
 }
@@ -334,8 +353,10 @@ export interface FileRouteTypes {
     | '/request/create/declarant'
     | '/request/create/personne-concernee'
     | '/request/create/situation'
+    | '/admin/entites/$entiteId/create'
     | '/request/$requestId/'
     | '/request/create/'
+    | '/admin/entites/$entiteId/'
     | '/request/$requestId/situation/$situationId'
     | '/request/$requestId/situation/'
   fileRoutesByTo: FileRoutesByTo
@@ -349,7 +370,6 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/home'
     | '/admin'
-    | '/admin/entites/$entiteId'
     | '/admin/user/$userId'
     | '/admin/users/all'
     | '/admin/entites'
@@ -360,8 +380,10 @@ export interface FileRouteTypes {
     | '/request/create/declarant'
     | '/request/create/personne-concernee'
     | '/request/create/situation'
+    | '/admin/entites/$entiteId/create'
     | '/request/$requestId'
     | '/request/create'
+    | '/admin/entites/$entiteId'
     | '/request/$requestId/situation/$situationId'
     | '/request/$requestId/situation'
   id:
@@ -394,8 +416,10 @@ export interface FileRouteTypes {
     | '/_auth/_user/request/create/declarant'
     | '/_auth/_user/request/create/personne-concernee'
     | '/_auth/_user/request/create/situation'
+    | '/_auth/admin/entites/$entiteId/create'
     | '/_auth/_user/request/$requestId/'
     | '/_auth/_user/request/create/'
+    | '/_auth/admin/entites/$entiteId/'
     | '/_auth/_user/request/$requestId/situation/$situationId'
     | '/_auth/_user/request/$requestId/situation/'
   fileRoutesById: FileRoutesById
@@ -556,6 +580,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthUserRequestRequestIdRouteImport
       parentRoute: typeof AuthUserRouteRoute
     }
+    '/_auth/admin/entites/$entiteId/': {
+      id: '/_auth/admin/entites/$entiteId/'
+      path: '/'
+      fullPath: '/admin/entites/$entiteId/'
+      preLoaderRoute: typeof AuthAdminEntitesEntiteIdIndexRouteImport
+      parentRoute: typeof AuthAdminEntitesEntiteIdRoute
+    }
     '/_auth/_user/request/create/': {
       id: '/_auth/_user/request/create/'
       path: '/'
@@ -569,6 +600,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/request/$requestId/'
       preLoaderRoute: typeof AuthUserRequestRequestIdIndexRouteImport
       parentRoute: typeof AuthUserRequestRequestIdRoute
+    }
+    '/_auth/admin/entites/$entiteId/create': {
+      id: '/_auth/admin/entites/$entiteId/create'
+      path: '/create'
+      fullPath: '/admin/entites/$entiteId/create'
+      preLoaderRoute: typeof AuthAdminEntitesEntiteIdCreateRouteImport
+      parentRoute: typeof AuthAdminEntitesEntiteIdRoute
     }
     '/_auth/_user/request/create/situation': {
       id: '/_auth/_user/request/create/situation'
@@ -729,10 +767,26 @@ const AuthAdminUsersRouteRouteChildren: AuthAdminUsersRouteRouteChildren = {
 const AuthAdminUsersRouteRouteWithChildren =
   AuthAdminUsersRouteRoute._addFileChildren(AuthAdminUsersRouteRouteChildren)
 
+interface AuthAdminEntitesEntiteIdRouteChildren {
+  AuthAdminEntitesEntiteIdCreateRoute: typeof AuthAdminEntitesEntiteIdCreateRoute
+  AuthAdminEntitesEntiteIdIndexRoute: typeof AuthAdminEntitesEntiteIdIndexRoute
+}
+
+const AuthAdminEntitesEntiteIdRouteChildren: AuthAdminEntitesEntiteIdRouteChildren =
+  {
+    AuthAdminEntitesEntiteIdCreateRoute: AuthAdminEntitesEntiteIdCreateRoute,
+    AuthAdminEntitesEntiteIdIndexRoute: AuthAdminEntitesEntiteIdIndexRoute,
+  }
+
+const AuthAdminEntitesEntiteIdRouteWithChildren =
+  AuthAdminEntitesEntiteIdRoute._addFileChildren(
+    AuthAdminEntitesEntiteIdRouteChildren,
+  )
+
 interface AuthAdminRouteRouteChildren {
   AuthAdminUsersRouteRoute: typeof AuthAdminUsersRouteRouteWithChildren
   AuthAdminIndexRoute: typeof AuthAdminIndexRoute
-  AuthAdminEntitesEntiteIdRoute: typeof AuthAdminEntitesEntiteIdRoute
+  AuthAdminEntitesEntiteIdRoute: typeof AuthAdminEntitesEntiteIdRouteWithChildren
   AuthAdminUserUserIdRoute: typeof AuthAdminUserUserIdRoute
   AuthAdminEntitesIndexRoute: typeof AuthAdminEntitesIndexRoute
 }
@@ -740,7 +794,7 @@ interface AuthAdminRouteRouteChildren {
 const AuthAdminRouteRouteChildren: AuthAdminRouteRouteChildren = {
   AuthAdminUsersRouteRoute: AuthAdminUsersRouteRouteWithChildren,
   AuthAdminIndexRoute: AuthAdminIndexRoute,
-  AuthAdminEntitesEntiteIdRoute: AuthAdminEntitesEntiteIdRoute,
+  AuthAdminEntitesEntiteIdRoute: AuthAdminEntitesEntiteIdRouteWithChildren,
   AuthAdminUserUserIdRoute: AuthAdminUserUserIdRoute,
   AuthAdminEntitesIndexRoute: AuthAdminEntitesIndexRoute,
 }

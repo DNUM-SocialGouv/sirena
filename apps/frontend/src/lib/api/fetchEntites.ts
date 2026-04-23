@@ -54,8 +54,30 @@ export type EditEntiteAdminInput = {
   isActive: boolean;
 };
 
+export type CreateChildEntiteAdminInput = {
+  nomComplet: string;
+  label: string;
+  email: string;
+  emailDomain: string;
+  organizationalUnit: string;
+  emailContactUsager: string;
+  adresseContactUsager: string;
+  telContactUsager: string;
+  isActive: boolean;
+};
+
 export async function editEntiteAdmin(id: string, input: EditEntiteAdminInput) {
   const res = await client.entites.admin[':id'].$patch({
+    param: { id },
+    json: input,
+  });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
+export async function createChildEntiteAdmin(id: string, input: CreateChildEntiteAdminInput) {
+  const res = await client.entites.admin[':id'].children.$post({
     param: { id },
     json: input,
   });
