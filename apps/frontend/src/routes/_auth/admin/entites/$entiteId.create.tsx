@@ -4,7 +4,7 @@ import RadioButtons from '@codegouvfr/react-dsfr/RadioButtons';
 import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import type { SubmitEvent } from 'react';
+import { type SubmitEvent, useEffect } from 'react';
 import { useCreateChildEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
@@ -31,6 +31,19 @@ export function RouteComponent() {
 
   const entiteDepth = entiteChainQuery.data.length;
   const title = entiteDepth === 1 ? 'Créer une direction' : 'Créer un service';
+
+  useEffect(() => {
+    if (entiteDepth >= 3) {
+      router.navigate({
+        to: '/admin/entites/$entiteId',
+        params: { entiteId },
+      });
+    }
+  }, [entiteDepth, entiteId, router]);
+
+  if (entiteDepth >= 3) {
+    return null;
+  }
 
   const handleBack = () => {
     if (window.history.length > 1) {

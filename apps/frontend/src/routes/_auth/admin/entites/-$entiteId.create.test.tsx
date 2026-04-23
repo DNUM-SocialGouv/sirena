@@ -6,19 +6,26 @@ import { useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { Route, RouteComponent } from './$entiteId.create';
 
-const { addToastSpy, routerBackSpy, routerNavigateSpy, historyLengthState, createChildEntiteAdminMutateAsyncSpy } =
-  vi.hoisted(() => ({
-    addToastSpy: vi.fn(),
-    routerBackSpy: vi.fn(),
-    routerNavigateSpy: vi.fn(),
-    historyLengthState: { value: 2 },
-    createChildEntiteAdminMutateAsyncSpy: vi.fn(),
-  }));
+const {
+  addToastSpy,
+  routerBackSpy,
+  routerNavigateSpy,
+  historyLengthState,
+  createChildEntiteAdminMutateAsyncSpy,
+  routeParamsState,
+} = vi.hoisted(() => ({
+  addToastSpy: vi.fn(),
+  routerBackSpy: vi.fn(),
+  routerNavigateSpy: vi.fn(),
+  historyLengthState: { value: 2 },
+  createChildEntiteAdminMutateAsyncSpy: vi.fn(),
+  routeParamsState: { entiteId: 'root-ars' },
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => ({
     ...options,
-    useParams: () => ({ entiteId: 'root-ars' }),
+    useParams: () => routeParamsState,
   }),
   Link: ({ to, params, children }: { to: string; params?: { entiteId?: string }; children: React.ReactNode }) => (
     <a href={to.replace('$entiteId', params?.entiteId ?? '')}>{children}</a>
@@ -77,6 +84,7 @@ afterEach(() => {
   routerBackSpy.mockReset();
   routerNavigateSpy.mockReset();
   historyLengthState.value = 2;
+  routeParamsState.entiteId = 'root-ars';
 });
 
 describe('Admin entity child creation route', () => {
@@ -124,6 +132,8 @@ describe('Admin entity child creation route', () => {
   });
 
   it('renders the title "Créer un service" when the parent entity is a direction', () => {
+    routeParamsState.entiteId = 'dir-1';
+
     vi.mocked(useEntiteByIdAdmin).mockReturnValue(
       buildSuccessQuery({
         id: 'dir-1',
@@ -142,6 +152,35 @@ describe('Admin entity child creation route', () => {
     render(<RouteComponent />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Créer un service' })).toBeInTheDocument();
+  });
+
+  it('redirects to the parent edit page when the parent entity is a service', async () => {
+    routeParamsState.entiteId = 'service-1';
+
+    vi.mocked(useEntiteByIdAdmin).mockReturnValue(
+      buildSuccessQuery({
+        id: 'service-1',
+        nomComplet: 'Service territorial',
+        label: 'SVC TER',
+        isActive: true,
+      }),
+    );
+    vi.mocked(useEntiteChain).mockReturnValue(
+      buildSuccessQuery([
+        { id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false },
+        { id: 'dir-1', nomComplet: 'Direction de la prévention', disabled: false },
+        { id: 'service-1', nomComplet: 'Service territorial', disabled: false },
+      ]),
+    );
+
+    render(<RouteComponent />);
+
+    await waitFor(() => {
+      expect(routerNavigateSpy).toHaveBeenCalledWith({
+        to: '/admin/entites/$entiteId',
+        params: { entiteId: 'service-1' },
+      });
+    });
   });
 
   it('renders the child creation name fields with the agreed labels', () => {
