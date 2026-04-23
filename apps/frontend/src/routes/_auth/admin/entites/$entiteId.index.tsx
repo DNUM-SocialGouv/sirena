@@ -49,8 +49,8 @@ export function RouteComponent() {
     });
 
     toastManager.add({
-      title: 'Entité modifiée',
-      description: 'Les modifications ont été enregistrées avec succès.',
+      title: 'Entité modifiée avec succès',
+      description: 'Les modifications ont bien été enregistrées.',
       timeout: 0,
       data: { icon: 'fr-alert--success' },
     });
@@ -65,7 +65,7 @@ export function RouteComponent() {
         </Link>
       </div>
 
-      <h1 className="fr-mb-4w">Modifier une entité</h1>
+      <h2 className="fr-mb-4w">Modifier une entité</h2>
 
       <div
         className="fr-p-4w fr-mb-4w"
@@ -73,9 +73,7 @@ export function RouteComponent() {
       >
         <form onSubmit={handleSubmit}>
           <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-            <legend>
-              <h2 className="fr-h6 fr-mb-3w">Informations de l’entité</h2>
-            </legend>
+            <legend className="fr-h6 fr-mb-3w">Informations de l’entité</legend>
 
             <Input
               className="fr-fieldset__content"

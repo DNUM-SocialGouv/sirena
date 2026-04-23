@@ -94,7 +94,7 @@ describe('Admin entity edit route', () => {
     render(<RouteComponent />);
 
     expect(mockedUseEntiteByIdAdmin).toHaveBeenCalledWith('root-ars');
-    expect(screen.getByRole('heading', { level: 1, name: 'Modifier une entité' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Modifier une entité' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /liste des entités/i })).toHaveAttribute('href', '/admin/entites');
 
     expect(screen.getByLabelText(/Nom de l'entité/i)).toHaveValue('ARS Normandie');
@@ -257,8 +257,8 @@ describe('Admin entity edit route', () => {
 
     await waitFor(() => {
       expect(addToastSpy).toHaveBeenCalledWith({
-        title: 'Entité modifiée',
-        description: 'Les modifications ont été enregistrées avec succès.',
+        title: 'Entité modifiée avec succès',
+        description: 'Les modifications ont bien été enregistrées.',
         timeout: 0,
         data: { icon: 'fr-alert--success' },
       });
