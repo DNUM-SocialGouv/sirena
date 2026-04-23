@@ -21,8 +21,9 @@ export function RouteComponent() {
   const entiteQuery = useEntiteByIdAdmin(entiteId);
   const entiteChainQuery = useEntiteChain(entiteId);
 
-  const canCreateChild =
-    !entiteChainQuery.isError && (entiteChainQuery.data?.length ?? 0) > 0 && (entiteChainQuery.data?.length ?? 0) < 3;
+  const entiteDepth = entiteChainQuery.data?.length ?? 0;
+  const canCreateChild = !entiteChainQuery.isError && entiteDepth > 0 && entiteDepth < 3;
+  const createChildLabel = entiteDepth === 1 ? 'Créer une direction' : 'Créer un service';
 
   if (entiteQuery.isPending) {
     return null;
@@ -131,7 +132,7 @@ export function RouteComponent() {
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
             {canCreateChild ? (
               <Link className="fr-btn fr-btn--secondary" to="/admin/entites/$entiteId/create" params={{ entiteId }}>
-                Créer une entité / sous-entité
+                {createChildLabel}
               </Link>
             ) : null}
 
