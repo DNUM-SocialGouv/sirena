@@ -81,7 +81,7 @@ export const StepNote = ({
             <>
               <span>par </span>
               <span className="fr-text--bold">
-                {capitalizeFirst(author.prenom)} {capitalizeFirst(author.nom)}
+                {capitalizeFirst(author.prenom)} <span className="lastname">{author.nom}</span>
               </span>
             </>
           )}

@@ -3,11 +3,29 @@ import type { JSX } from 'react/jsx-runtime';
 
 export const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
-export const formatFullName = (identite?: { civilite?: { label?: string }; prenom?: string; nom?: string } | null) => {
-  if (!identite) return '';
+export const formatFullName = (
+  identite?: { civilite?: { label?: string }; prenom?: string; nom?: string } | null,
+): JSX.Element | null => {
+  if (!identite) return null;
   const civiliteLabel = identite.civilite?.label;
   const formattedCivilite = civiliteLabel ? (civiliteLabel === 'M' ? `${civiliteLabel}.` : civiliteLabel) : '';
-  return [formattedCivilite, identite.nom, identite.prenom].filter(Boolean).join(' ');
+  const parts: Array<{ key: string; node: JSX.Element | string }> = [];
+  if (formattedCivilite) parts.push({ key: 'civilite', node: formattedCivilite });
+  if (identite.nom) parts.push({ key: 'nom', node: <span className="lastname">{identite.nom}</span> });
+  if (identite.prenom) parts.push({ key: 'prenom', node: identite.prenom });
+  if (parts.length === 0) return null;
+
+  return (
+    <>
+      {parts.map((part, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: parts are conditional; index disambiguates position
+        <span key={`${part.key}-${index}`}>
+          {index > 0 ? ' ' : ''}
+          {part.node}
+        </span>
+      ))}
+    </>
+  );
 };
 
 export const formatAddress = (

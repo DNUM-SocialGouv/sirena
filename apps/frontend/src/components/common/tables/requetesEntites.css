@@ -2,6 +2,13 @@
   --table-column-min-width: 320px;
 }
 
+.requetesEntitesTable__quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
 .requetesEntitesTable .fr-cell:has(.requetesEntitesTable__statut-cell) {
   white-space: nowrap;
   min-width: 10ch;

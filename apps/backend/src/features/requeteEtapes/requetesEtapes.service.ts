@@ -14,9 +14,9 @@ import type {
   UpdateRequeteEtapeStatutDto,
 } from './requetesEtapes.type.js';
 
-export const CREATION_STEP_NAME_PREFIX = 'Création de la requête le';
-export const AUTOMATIC_CREATION_STEP_NAME_PREFIX = 'Création automatique de la requête le';
-export const ACKNOWLEDGMENT_STEP_NAME = 'Envoyer un accusé de réception au déclarant';
+export const CREATION_STEP_NAME_PREFIX = 'Création de la requête';
+export const AUTOMATIC_CREATION_STEP_NAME_PREFIX = 'Création de la requête';
+export const ACKNOWLEDGMENT_STEP_NAME = "Envoi de l'accusé de réception";
 
 export const createDefaultRequeteEtapes = async (
   requeteId: string,
@@ -264,6 +264,14 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
         },
         requeteId: true,
         entiteId: true,
+        requete: {
+          select: {
+            createdBy: {
+              select: { prenom: true, nom: true },
+            },
+            dematSocialId: true,
+          },
+        },
       },
     }),
     prisma.requeteEtape.count({
@@ -331,7 +339,6 @@ export const updateAcknowledgmentStep = async (requeteId: string, entiteIds: str
       where: {
         requeteId,
         entiteId: { in: entiteIds },
-        nom: ACKNOWLEDGMENT_STEP_NAME,
         type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
         statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
         createdBy: null,

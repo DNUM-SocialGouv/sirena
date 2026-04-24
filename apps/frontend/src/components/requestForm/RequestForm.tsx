@@ -45,7 +45,7 @@ export function RequestForm({ requestId }: RequestFormProps) {
       ? {
           civilite: declarantIdentite.civiliteId ? { label: declarantIdentite.civiliteId } : undefined,
           prenom: declarantIdentite.prenom,
-          nom: declarantIdentite.nom?.toUpperCase() || '',
+          nom: declarantIdentite.nom || '',
         }
       : null,
   );

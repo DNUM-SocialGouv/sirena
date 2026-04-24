@@ -3,6 +3,7 @@ import { envVars } from './config/env.js';
 import AuthController from './features/auth/auth.controller.js';
 import EntitesController from './features/entites/entites.controller.js';
 import EsanteController from './features/esante/esante.controller.js';
+import FeatureFlagsController from './features/featureFlags/featureFlags.controller.js';
 import HealthController from './features/health/health.controller.js';
 import NotesController from './features/notes/notes.controller.js';
 import ProfileController from './features/profile/profile.controller.js';
@@ -31,6 +32,7 @@ export const app = baseApp
     }),
   )
   .route('/auth', AuthController)
+  .route('/feature-flags', FeatureFlagsController)
   .route('/roles', RolesController)
   .route('/users', UsersController)
   .route('/entites', EntitesController)
