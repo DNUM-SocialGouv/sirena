@@ -151,9 +151,9 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                         className="fr-mb-0"
                       />
                       {subAdministrativeEntites.map((entite) => (
-                        <span key={entite.directionServiceId} className="fr-tag fr-tag--sm fr-tag-default">
+                        <p key={entite.directionServiceId} className="fr-tag fr-tag--sm fr-tag-default">
                           {entite.directionServiceName}
-                        </span>
+                        </p>
                       ))}
                     </>
                   )}

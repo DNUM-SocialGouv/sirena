@@ -1632,11 +1632,8 @@ export const closeRequeteForEntite = async (
         clotureReason: {
           connect: uniqueReasonIds.map((id) => ({ id })),
         },
-        nom: `Requête clôturée le ${new Date().toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        })}`,
+        nom: 'Clôture',
+        createdById: authorId,
       },
     });
 

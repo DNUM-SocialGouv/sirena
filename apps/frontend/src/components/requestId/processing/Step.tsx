@@ -7,6 +7,7 @@ import { Toast } from '@sirena/ui';
 import { clsx } from 'clsx';
 import { memo, useState } from 'react';
 import { ButtonLink } from '@/components/common/ButtonLink';
+import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { StatusMenu } from '@/components/common/statusMenu';
 import { capitalizeFirst } from '@/components/requestId/sections/helpers';
 import { useDeleteProcessingStep, useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStep.hook';
@@ -34,22 +35,62 @@ type StepProps = StepType & {
   ): void;
 };
 
+const formatDate = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
 const formatStepCreationInfo = (
   createdBy: { prenom: string; nom: string } | null | undefined,
   createdAt: string,
 ): string => {
-  const formattedDate = new Date(createdAt).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-
+  const date = formatDate(createdAt);
   if (createdBy) {
-    const creatorName = `${capitalizeFirst(createdBy.prenom)} ${capitalizeFirst(createdBy.nom)}`;
-    return `Ajouté par ${creatorName} le ${formattedDate}`;
+    return `Ajouté par ${capitalizeFirst(createdBy.prenom)} ${capitalizeFirst(createdBy.nom)} le ${date}`;
+  }
+  return `Ajouté automatiquement le ${date}`;
+};
+
+const getStepTitle = (type: string, statutId: string, nom: string | null): string => {
+  if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return 'Clôture';
+  if (type === REQUETE_ETAPE_TYPES.CREATION) return 'Création de la requête';
+  if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) return "Envoi de l'accusé de réception";
+  return nom ?? '';
+};
+
+type RequeteRef =
+  | { createdBy: { prenom: string; nom: string } | null; dematSocialId: number | null }
+  | null
+  | undefined;
+
+const getStepSubtitle = (
+  type: string,
+  statutId: string,
+  createdAt: string,
+  createdBy: { prenom: string; nom: string } | null | undefined,
+  requete: RequeteRef,
+  clotureNoteAuthor?: { prenom: string; nom: string } | null,
+): string => {
+  const date = formatDate(createdAt);
+
+  if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
+    const agent = createdBy ?? clotureNoteAuthor;
+    const agentPart = agent ? ` par ${capitalizeFirst(agent.prenom)} ${capitalizeFirst(agent.nom)}` : '';
+    return `Requête clôturée le ${date}${agentPart}`;
   }
 
-  return `Ajouté automatiquement le ${formattedDate}`;
+  if (type === REQUETE_ETAPE_TYPES.CREATION) {
+    const isManual = requete?.dematSocialId == null && requete?.createdBy != null;
+    const creatorPart =
+      isManual && requete?.createdBy
+        ? ` par ${capitalizeFirst(requete.createdBy.prenom)} ${capitalizeFirst(requete.createdBy.nom)}`
+        : '';
+    return `Requête créée le ${date}${creatorPart}`;
+  }
+
+  if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
+    return requete?.dematSocialId != null ? `Envoyé automatiquement le ${date}` : `Ajouté automatiquement le ${date}`;
+  }
+
+  return formatStepCreationInfo(createdBy, createdAt);
 };
 
 const StepComponent = ({
@@ -63,6 +104,7 @@ const StepComponent = ({
   openEditNote,
   notes,
   id,
+  requete,
   ...rest
 }: StepProps) => {
   const deleteStepModal = createModal({
@@ -200,12 +242,12 @@ const StepComponent = ({
           <div className="fr-mb-2w">
             <div className="fr-grid-row fr-grid-row--middle">
               <div className="fr-col">
-                <h3 className="fr-h6 fr-mb-0">{nom ?? ''}</h3>
+                <h3 className="fr-h6 fr-mb-0">{getStepTitle(rest.type, statutId, nom)}</h3>
               </div>
               <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
                 <StatusMenu
                   badges={badges}
-                  value={statutId}
+                  value={statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ? REQUETE_ETAPE_STATUT_TYPES.FAIT : statutId}
                   disabled={disabled || !canEdit || updateStatusMutation.isPending}
                   onBadgeClick={handleStatusChange}
                 />
@@ -216,70 +258,120 @@ const StepComponent = ({
                     priority="tertiary no outline"
                     size="small"
                     iconId="fr-icon-edit-line"
-                    title="Modifier le nom de l'étape"
+                    title={`Modifier le nom de l'étape ${getStepTitle(rest.type, statutId, nom)}`}
                     aria-label="Modifier le nom de l'étape"
                     className="fr-btn--icon-center center-icon-with-sr-only"
                     onClick={() => handleEditButton(true)}
                     style={{ whiteSpace: 'nowrap' }}
                   >
-                    <span className="fr-sr-only">Modifier le nom de l'étape</span>
+                    <span className="fr-sr-only">
+                      Modifier le nom de l'étape {getStepTitle(rest.type, statutId, nom)}
+                    </span>
                   </Button>
                 )}
               </div>
             </div>
             <div>
-              <span className="fr-text--xs fr-text-mention--grey">{formatStepCreationInfo(createdBy, createdAt)}</span>
+              <p className="fr-text--xs fr-text-mention--grey">
+                {getStepSubtitle(rest.type, statutId, createdAt, createdBy, requete, notes[0]?.author)}
+              </p>
             </div>
           </div>
         )}
       </div>
       <div className={styles['request-step']}>
-        <div className={styles['request-notes']}>
-          {notes.slice(0, isOpen ? notes.length : 3).map((note: StepType['notes'][number]) => (
-            <StepNote
-              requestId={requestId}
-              key={note.id}
-              content={note.texte}
-              author={note.author}
-              id={note.id}
-              createdAt={note.createdAt}
-              files={note.uploadedFiles.map((file: (typeof note.uploadedFiles)[number]) => ({
-                id: file.id,
-                size: file.size,
-                originalName: (file.metadata as { originalName?: string })?.originalName || 'Unknown',
-                status: file.status,
-                scanStatus: file.scanStatus,
-                sanitizeStatus: file.sanitizeStatus,
-                safeFilePath: file.safeFilePath,
-              }))}
-              requeteStateId={id}
-              onEdit={(noteData) =>
-                openEditNote?.({ id, nom, statutId, notes, createdAt, createdBy, ...rest }, noteData)
-              }
-              clotureReasonLabels={clotureReasonLabels.length > 0 ? clotureReasonLabels : null}
-            />
-          ))}
-        </div>
-        <div className={styles['request-notes-distplay']}>
-          {notes.length > 3 && (
-            <button type="button" className="fr-btn-link" onClick={() => setIsOpen(!isOpen)}>
-              {isOpen ? 'Masquer' : 'Afficher'} les notes précédentes{' '}
-              <span
-                className={clsx('fr-icon-arrow-down-s-line fr-btn-link__icon', isOpen && 'fr-btn-link__icon--is-open')}
-              />
-            </button>
-          )}
-        </div>
-        {canEdit && !isSystemStep && (
-          <Button
-            className={styles['request-step__add-note']}
-            type="button"
-            priority="tertiary"
-            iconId="fr-icon-add-line"
-            onClick={() => openEdit?.({ id, nom, statutId, notes, createdAt, createdBy, ...rest })}
-          >
-            Ajouter une note ou un fichier
-          </Button>
+        {statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ? (
+          <>
+            <div className={styles['cloture-block']}>
+              {clotureReasonLabels.length > 0 && (
+                <div>
+                  <p className={styles['cloture-block__label']}>Raisons de la clôture :</p>
+                  {clotureReasonLabels.map((label) => (
+                    <p key={label} className={styles['cloture-block__reason']}>
+                      {label}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {notes[0]?.texte && (
+                <div className="fr-mt-2w">
+                  <p className={styles['cloture-block__label']}>Précisions :</p>
+                  <p className={styles['cloture-block__precision']}>{notes[0].texte}</p>
+                </div>
+              )}
+            </div>
+            {notes[0]?.uploadedFiles && notes[0].uploadedFiles.length > 0 && (
+              <ul className="fr-mt-1w">
+                {notes[0].uploadedFiles.map((file: (typeof notes)[number]['uploadedFiles'][number]) => (
+                  <li key={file.id} className={styles['request-note__file']}>
+                    <FileDownloadLink
+                      href={`/api/requete-etapes/${id}/file/${file.id}`}
+                      safeHref={`/api/requete-etapes/${id}/file/${file.id}/safe`}
+                      fileName={(file.metadata as { originalName?: string })?.originalName || 'Unknown'}
+                      fileId={file.id}
+                      fileSize={file.size}
+                      status={file.status}
+                      scanStatus={file.scanStatus}
+                      sanitizeStatus={file.sanitizeStatus}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <>
+            <div className={styles['request-notes']}>
+              {notes.slice(0, isOpen ? notes.length : 3).map((note: StepType['notes'][number]) => (
+                <StepNote
+                  requestId={requestId}
+                  key={note.id}
+                  content={note.texte}
+                  author={note.author}
+                  id={note.id}
+                  createdAt={note.createdAt}
+                  files={note.uploadedFiles.map((file: (typeof note.uploadedFiles)[number]) => ({
+                    id: file.id,
+                    size: file.size,
+                    originalName: (file.metadata as { originalName?: string })?.originalName || 'Unknown',
+                    status: file.status,
+                    scanStatus: file.scanStatus,
+                    sanitizeStatus: file.sanitizeStatus,
+                    safeFilePath: file.safeFilePath,
+                  }))}
+                  requeteStateId={id}
+                  onEdit={(noteData) =>
+                    openEditNote?.({ id, nom, statutId, notes, createdAt, createdBy, requete, ...rest }, noteData)
+                  }
+                  clotureReasonLabels={null}
+                />
+              ))}
+            </div>
+            <div className={styles['request-notes-distplay']}>
+              {notes.length > 3 && (
+                <button type="button" className="fr-btn-link" onClick={() => setIsOpen(!isOpen)}>
+                  {isOpen ? 'Masquer' : 'Afficher'} les notes précédentes{' '}
+                  <span
+                    className={clsx(
+                      'fr-icon-arrow-down-s-line fr-btn-link__icon',
+                      isOpen && 'fr-btn-link__icon--is-open',
+                    )}
+                  />
+                </button>
+              )}
+            </div>
+            {canEdit && !isSystemStep && (
+              <Button
+                className={styles['request-step__add-note']}
+                type="button"
+                priority="tertiary"
+                iconId="fr-icon-add-line"
+                onClick={() => openEdit?.({ id, nom, statutId, notes, createdAt, createdBy, requete, ...rest })}
+              >
+                Ajouter une note ou un fichier
+              </Button>
+            )}
+          </>
         )}
       </div>
 
