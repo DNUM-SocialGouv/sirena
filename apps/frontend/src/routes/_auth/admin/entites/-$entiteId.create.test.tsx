@@ -91,7 +91,7 @@ describe('Admin entity child creation route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Créer une direction' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Créer une direction' })).toBeInTheDocument();
   });
 
   it('shows the parent entity in read-only context outside the form', () => {
@@ -134,7 +134,7 @@ describe('Admin entity child creation route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Créer un service' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Créer un service' })).toBeInTheDocument();
   });
 
   it('redirects to the parent edit page when the parent entity is a service', async () => {
@@ -211,7 +211,7 @@ describe('Admin entity child creation route', () => {
     expect(screen.getByLabelText(/Nom court/i)).toBeInTheDocument();
   });
 
-  it('renders the notification and organizational fields with the agreed labels', () => {
+  it('renders the notification field and hides deprecated technical fields', () => {
     vi.mocked(useEntiteByIdAdmin).mockReturnValue(
       buildSuccessQuery({
         id: 'root-ars',
@@ -232,9 +232,6 @@ describe('Admin entity child creation route', () => {
         /Boîte e-mail générique pour la notification des nouvelles requêtes\. Exemple : prenom\.nom@exemple\.com/i,
       ),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(/Domaine e-mail/i)).toBeInTheDocument();
-    expect(screen.getByText(/Exemple : @lozere\.fr/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Unité organisationnelle/i)).toBeInTheDocument();
   });
 
   it('renders the user-facing contact section with semantic grouping and agreed labels', () => {
@@ -269,7 +266,7 @@ describe('Admin entity child creation route', () => {
     expect(within(contactGroup).getByLabelText(/Numéro de téléphone/i)).toBeInTheDocument();
   });
 
-  it('renders the active status choice with Oui / Non options', () => {
+  it('renders the active status choice with a required placeholder and Oui / Non options', () => {
     vi.mocked(useEntiteByIdAdmin).mockReturnValue(
       buildSuccessQuery({
         id: 'root-ars',
@@ -284,9 +281,10 @@ describe('Admin entity child creation route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('group', { name: /Actif dans SIRENA/i })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Oui' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Non' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /Actif dans SIRENA/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Sélectionnez une option' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Oui' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Non' })).toBeInTheDocument();
   });
 
   it('submits the child creation form to the admin mutation with a flat payload', async () => {
@@ -306,8 +304,6 @@ describe('Admin entity child creation route', () => {
       nomComplet: 'Direction de la prévention',
       label: 'DIR PREV',
       email: 'direction@example.fr',
-      emailDomain: '@example.fr',
-      organizationalUnit: 'DIR-PREV',
       emailContactUsager: 'contact-usager@example.fr',
       adresseContactUsager: '1 rue de la République, 75000 Paris',
       telContactUsager: '01 02 03 04 05',
@@ -322,12 +318,10 @@ describe('Admin entity child creation route', () => {
     await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'Direction de la prévention');
     await user.type(screen.getByLabelText(/Nom court/i), 'DIR PREV');
     await user.type(screen.getByLabelText(/Adresse électronique de notification/i), 'direction@example.fr');
-    await user.type(screen.getByLabelText(/Domaine e-mail/i), '@example.fr');
-    await user.type(screen.getByLabelText(/Unité organisationnelle/i), 'DIR-PREV');
     await user.type(within(contactGroup).getByLabelText(/Adresse électronique/i), 'contact-usager@example.fr');
     await user.type(within(contactGroup).getByLabelText(/Adresse postale/i), '1 rue de la République, 75000 Paris');
     await user.type(within(contactGroup).getByLabelText(/Numéro de téléphone/i), '01 02 03 04 05');
-    await user.click(screen.getByRole('radio', { name: 'Non' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), 'non');
     await user.click(screen.getByRole('button', { name: 'Créer' }));
 
     await waitFor(() => {
@@ -337,8 +331,6 @@ describe('Admin entity child creation route', () => {
           nomComplet: 'Direction de la prévention',
           label: 'DIR PREV',
           email: 'direction@example.fr',
-          emailDomain: '@example.fr',
-          organizationalUnit: 'DIR-PREV',
           emailContactUsager: 'contact-usager@example.fr',
           adresseContactUsager: '1 rue de la République, 75000 Paris',
           telContactUsager: '01 02 03 04 05',
@@ -367,8 +359,6 @@ describe('Admin entity child creation route', () => {
           nomComplet: string;
           label: string;
           email: string;
-          emailDomain: string;
-          organizationalUnit: string;
           emailContactUsager: string;
           adresseContactUsager: string;
           telContactUsager: string;
@@ -385,6 +375,9 @@ describe('Admin entity child creation route', () => {
     render(<RouteComponent />);
 
     const user = userEvent.setup();
+    await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'Direction de la prévention');
+    await user.type(screen.getByLabelText(/Nom court/i), 'DIR PREV');
+    await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), 'oui');
     await user.dblClick(screen.getByRole('button', { name: 'Créer' }));
 
     expect(createChildEntiteAdminMutateAsyncSpy).toHaveBeenCalledTimes(1);
@@ -395,8 +388,6 @@ describe('Admin entity child creation route', () => {
       nomComplet: 'Direction de la prévention',
       label: 'DIR PREV',
       email: 'direction@example.fr',
-      emailDomain: '@example.fr',
-      organizationalUnit: 'DIR-PREV',
       emailContactUsager: 'contact-usager@example.fr',
       adresseContactUsager: '1 rue de la République, 75000 Paris',
       telContactUsager: '01 02 03 04 05',
@@ -428,8 +419,6 @@ describe('Admin entity child creation route', () => {
       nomComplet: 'Direction de la prévention',
       label: 'DIR PREV',
       email: 'direction@example.fr',
-      emailDomain: '@example.fr',
-      organizationalUnit: 'DIR-PREV',
       emailContactUsager: 'contact-usager@example.fr',
       adresseContactUsager: '1 rue de la République, 75000 Paris',
       telContactUsager: '01 02 03 04 05',
@@ -440,6 +429,8 @@ describe('Admin entity child creation route', () => {
 
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'Direction de la prévention');
+    await user.type(screen.getByLabelText(/Nom court/i), 'DIR PREV');
+    await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), 'oui');
     await user.click(screen.getByRole('button', { name: 'Créer' }));
 
     await waitFor(() => {
@@ -469,8 +460,6 @@ describe('Admin entity child creation route', () => {
       nomComplet: 'Direction de la prévention',
       label: 'DIR PREV',
       email: 'direction@example.fr',
-      emailDomain: '@example.fr',
-      organizationalUnit: 'DIR-PREV',
       emailContactUsager: 'contact-usager@example.fr',
       adresseContactUsager: '1 rue de la République, 75000 Paris',
       telContactUsager: '01 02 03 04 05',
@@ -481,6 +470,8 @@ describe('Admin entity child creation route', () => {
 
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'Direction de la prévention');
+    await user.type(screen.getByLabelText(/Nom court/i), 'DIR PREV');
+    await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), 'oui');
     await user.click(screen.getByRole('button', { name: 'Créer' }));
 
     await waitFor(() => {

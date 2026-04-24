@@ -294,8 +294,6 @@ describe('Entites endpoints: /entites', () => {
       nomComplet: 'Direction de la prévention',
       label: 'DIR PREV',
       email: 'direction@example.fr',
-      emailDomain: '@example.fr',
-      organizationalUnit: 'DIR-PREV',
       emailContactUsager: 'contact@example.fr',
       adresseContactUsager: '1 rue de la République, 75000 Paris',
       telContactUsager: '01 02 03 04 05',

@@ -72,11 +72,9 @@ export const GetEntitiesChainResponseSchema = z.array(
 );
 
 export const CreateChildEntiteAdminInputSchema = z.object({
-  nomComplet: z.string(),
-  label: z.string(),
+  nomComplet: z.string().trim().min(1),
+  label: z.string().trim().min(1),
   email: z.string(),
-  emailDomain: z.string(),
-  organizationalUnit: z.string(),
   emailContactUsager: z.string(),
   adresseContactUsager: z.string(),
   telContactUsager: z.string(),
