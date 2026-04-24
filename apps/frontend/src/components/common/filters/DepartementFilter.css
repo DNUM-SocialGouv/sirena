@@ -1,0 +1,32 @@
+.departement-filter {
+  position: relative;
+  width: auto;
+}
+.departement-filter__button {
+  white-space: nowrap;
+}
+
+.departement-filter__button.fr-btn {
+  width: auto;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.departement-filter__dropdown {
+  position: absolute;
+  top: calc(100% - 1px);
+  left: 0;
+
+  min-width: 18rem;
+
+  border-top: none;
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-overlap);
+
+  background-color: var(--background-default-grey);
+  z-index: 1000;
+}
+
+.departement-filter .fr-hint-text {
+  white-space: nowrap;
+}

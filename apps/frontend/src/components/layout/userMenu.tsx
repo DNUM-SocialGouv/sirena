@@ -14,10 +14,18 @@ export const UserMenu = () => {
   const { data } = useProfile();
   const matches = useMatches();
 
-  const displayName = useMemo(
-    () => [data?.nom, data?.prenom].filter(Boolean).join(' ').trim() || '',
-    [data?.nom, data?.prenom],
-  );
+  const displayName = useMemo(() => {
+    const nom = data?.nom?.trim() ?? '';
+    const prenom = data?.prenom?.trim() ?? '';
+    if (!nom && !prenom) return null;
+    return (
+      <>
+        {nom && <span className="lastname">{nom}</span>}
+        {nom && prenom ? ' ' : ''}
+        {prenom}
+      </>
+    );
+  }, [data?.nom, data?.prenom]);
   const email = useMemo(() => data?.email ?? '', [data]);
   const role = useMemo(() => (data?.role?.id ?? '') as Role | '', [data]);
   const affectationChain = useMemo(
@@ -129,7 +137,7 @@ export const UserMenu = () => {
       {isOpen && (
         <div id={menuId} ref={popupRef} className="user-menu fr-card">
           <div className="user-menu__header fr-p-2w">
-            <p className="fr-text--bold">{displayName || 'Mon espace'}</p>
+            <p className="fr-text--bold">{displayName ?? 'Mon espace'}</p>
             {email && <p className="fr-hint-text">{email}</p>}
             {affectationChain.length > 0 && (
               <div className={clsx('fr-hint-text', 'fr-mt-1v')} data-testid="user-menu-affectation">

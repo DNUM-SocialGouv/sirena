@@ -10,7 +10,10 @@ const AffectationChainItemSchema = z.object({
 export const ProfileSchema = UserSchema.extend({
   role: RoleEnumSchema.nullable(),
   topEntiteId: z.string().nullable(),
+  topEntiteTypeId: z.string().nullable(),
   topEntiteIsActive: z.boolean().nullable(),
+  topEntiteRegionLabel: z.string().nullable(),
+  topEntiteDepartements: z.array(z.object({ code: z.string(), label: z.string() })).nullable(),
   entiteIds: z.array(z.string()),
   affectationChain: z.array(AffectationChainItemSchema),
 }).omit({

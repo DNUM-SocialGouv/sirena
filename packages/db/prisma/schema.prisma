@@ -727,3 +727,15 @@ model ApiKey {
   @@index([status])
   @@index([keyHash])
 }
+
+model FeatureFlag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String   @default("")
+  enabled     Boolean  @default(false)
+  userEmails  String[] @default([])
+  entiteIds   String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

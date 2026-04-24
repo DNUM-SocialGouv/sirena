@@ -7,4 +7,5 @@ export const QueryParamsSchema = z.object({
   sort: z.string().optional(),
   order: z.enum(['asc', 'desc']).optional(),
   entiteId: z.string().optional(),
+  departementCodes: z.string().optional(),
 });
