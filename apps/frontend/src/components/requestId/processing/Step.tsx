@@ -1,11 +1,16 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, type RequeteEtapeStatutType } from '@sirena/common/constants';
+import {
+  REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_ETAPE_TYPES,
+  type RequeteEtapeStatutType,
+  ROLES,
+} from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
 
 import { clsx } from 'clsx';
-import { memo, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import { ButtonLink } from '@/components/common/ButtonLink';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { StatusMenu } from '@/components/common/statusMenu';
@@ -17,7 +22,9 @@ import { useCanEdit } from '@/hooks/useCanEdit';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { UpdateProcessingStepNameSchema } from '@/schemas/processingSteps.schema';
+import { useUserStore } from '@/stores/userStore';
 import { requeteEtapeStatutBadges } from '@/utils/requeteStatutBadge.constant';
+import { AddFilesClotureDrawer, type AddFilesClotureDrawerRef } from './AddFilesClotureDrawer';
 import { StepNote } from './StepNote';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
@@ -136,11 +143,16 @@ const StepComponent = ({
   const deleteStepMutation = useDeleteProcessingStep(requestId);
   const toastManager = Toast.useToastManager();
   const { registerTrigger } = useModalFocusRestore([deleteStepModal.id]);
+  const addFilesClotureDrawerRef = useRef<AddFilesClotureDrawerRef>(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editStepName, setEditStepName] = useState(nom ?? '');
   const [editError, setEditError] = useState<string | null>(null);
   const { canEdit } = useCanEdit({ requeteId: requestId });
+  const userRole = useUserStore((s) => s.role);
+  const canWrite = userRole
+    ? ([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER] as string[]).includes(userRole)
+    : false;
 
   const isSystemStep = rest.type !== REQUETE_ETAPE_TYPES.MANUAL || statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE;
 
@@ -390,6 +402,20 @@ const StepComponent = ({
                 Ajouter une note ou un fichier
               </Button>
             )}
+          </>
+        )}
+        {statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && canWrite && notes[0] && (
+          <>
+            <Button
+              className={styles['request-step__add-note']}
+              type="button"
+              priority="tertiary"
+              iconId="fr-icon-add-line"
+              onClick={() => addFilesClotureDrawerRef.current?.openDrawer()}
+            >
+              Ajouter un fichier
+            </Button>
+            <AddFilesClotureDrawer ref={addFilesClotureDrawerRef} noteId={notes[0].id} noteTexte={notes[0].texte} />
           </>
         )}
       </div>
