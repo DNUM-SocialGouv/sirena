@@ -117,8 +117,6 @@ export const createChildEntiteAdmin = async (
     nomComplet: string;
     label: string;
     email: string;
-    emailDomain: string;
-    organizationalUnit: string;
     emailContactUsager: string;
     adresseContactUsager: string;
     telContactUsager: string;
@@ -169,8 +167,6 @@ export const createChildEntiteAdmin = async (
       nomComplet: true,
       label: true,
       email: true,
-      emailDomain: true,
-      organizationalUnit: true,
       emailContactUsager: true,
       adresseContactUsager: true,
       telContactUsager: true,

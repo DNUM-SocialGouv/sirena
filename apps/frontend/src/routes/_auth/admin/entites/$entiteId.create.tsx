@@ -1,12 +1,31 @@
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
-import RadioButtons from '@codegouvfr/react-dsfr/RadioButtons';
+import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
-import { type SubmitEvent, useEffect, useRef } from 'react';
+import { type SubmitEvent, useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
 import { useCreateChildEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+
+const optionalEmailSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+    'Veuillez saisir une adresse électronique valide.',
+  );
+
+const CreateChildEntiteFormSchema = z.object({
+  nomComplet: z.string().trim().min(1, 'Le nom est obligatoire.'),
+  label: z.string().trim().min(1, 'Le nom court est obligatoire.'),
+  email: optionalEmailSchema,
+  emailContactUsager: optionalEmailSchema,
+  adresseContactUsager: z.string().trim(),
+  telContactUsager: z.string().trim(),
+  isActive: z.enum(['oui', 'non'], 'Le statut actif dans SIRENA est obligatoire.'),
+});
 
 export const Route = createFileRoute('/_auth/admin/entites/$entiteId/create')({
   beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
@@ -21,6 +40,8 @@ export function RouteComponent() {
   const isSubmittingRef = useRef(false);
   const entiteQuery = useEntiteByIdAdmin(entiteId);
   const entiteChainQuery = useEntiteChain(entiteId);
+
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const entiteDepth = entiteChainQuery.data?.length ?? 0;
 
   useEffect(() => {
@@ -53,23 +74,38 @@ export function RouteComponent() {
       return;
     }
 
-    isSubmittingRef.current = true;
-
     const formData = new FormData(e.currentTarget);
+    const validationResult = CreateChildEntiteFormSchema.safeParse({
+      nomComplet: String(formData.get('nomComplet') ?? ''),
+      label: String(formData.get('label') ?? ''),
+      email: String(formData.get('email') ?? ''),
+      emailContactUsager: String(formData.get('emailContactUsager') ?? ''),
+      adresseContactUsager: String(formData.get('adresseContactUsager') ?? ''),
+      telContactUsager: String(formData.get('telContactUsager') ?? ''),
+      isActive: String(formData.get('isActive') ?? ''),
+    });
+
+    if (!validationResult.success) {
+      const errors: Record<string, string> = {};
+      validationResult.error.issues.forEach((error) => {
+        const field = error.path[0];
+        if (typeof field === 'string') {
+          errors[field] = error.message;
+        }
+      });
+      setValidationErrors(errors);
+      return;
+    }
+
+    setValidationErrors({});
+    isSubmittingRef.current = true;
 
     try {
       const createdEntite = await createEntiteAdminChild.mutateAsync({
         id: entiteId,
         input: {
-          nomComplet: String(formData.get('nomComplet') ?? ''),
-          label: String(formData.get('label') ?? ''),
-          email: String(formData.get('email') ?? ''),
-          emailDomain: String(formData.get('emailDomain') ?? ''),
-          organizationalUnit: String(formData.get('organizationalUnit') ?? ''),
-          emailContactUsager: String(formData.get('emailContactUsager') ?? ''),
-          adresseContactUsager: String(formData.get('adresseContactUsager') ?? ''),
-          telContactUsager: String(formData.get('telContactUsager') ?? ''),
-          isActive: formData.get('isActive') === 'oui',
+          ...validationResult.data,
+          isActive: validationResult.data.isActive === 'oui',
         },
       });
 
@@ -98,7 +134,7 @@ export function RouteComponent() {
         </Link>
       </div>
 
-      <h1 className="fr-mb-4w">{title}</h1>
+      <h2 className="fr-mb-4w">{title}</h2>
 
       <div
         className="fr-p-4w fr-mb-4w"
@@ -118,17 +154,23 @@ export function RouteComponent() {
 
             <Input
               className="fr-fieldset__content"
-              label="Nom (libellé long)"
+              label="Nom (libellé long)*"
+              state={validationErrors.nomComplet ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.nomComplet}
               nativeInputProps={{
                 name: 'nomComplet',
+                required: true,
               }}
             />
 
             <Input
               className="fr-fieldset__content"
-              label="Nom court"
+              label="Nom court*"
+              state={validationErrors.label ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.label}
               nativeInputProps={{
                 name: 'label',
+                required: true,
               }}
             />
 
@@ -136,26 +178,11 @@ export function RouteComponent() {
               className="fr-fieldset__content"
               label="Adresse électronique de notification"
               hintText="Boîte e-mail générique pour la notification des nouvelles requêtes. Exemple : prenom.nom@exemple.com"
+              state={validationErrors.email ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.email}
               nativeInputProps={{
                 name: 'email',
                 type: 'email',
-              }}
-            />
-
-            <Input
-              className="fr-fieldset__content"
-              label="Domaine e-mail"
-              hintText="Exemple : @lozere.fr"
-              nativeInputProps={{
-                name: 'emailDomain',
-              }}
-            />
-
-            <Input
-              className="fr-fieldset__content"
-              label="Unité organisationnelle"
-              nativeInputProps={{
-                name: 'organizationalUnit',
               }}
             />
           </fieldset>
@@ -167,6 +194,8 @@ export function RouteComponent() {
               className="fr-fieldset__content"
               label="Adresse électronique"
               hintText="Exemple : prenom.nom@exemple.com"
+              state={validationErrors.emailContactUsager ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.emailContactUsager}
               nativeInputProps={{
                 name: 'emailContactUsager',
                 type: 'email',
@@ -194,25 +223,25 @@ export function RouteComponent() {
             />
           </fieldset>
 
-          <RadioButtons
-            legend="Actif dans SIRENA"
-            name="isActive"
-            orientation="horizontal"
-            options={[
-              {
-                label: 'Oui',
-                nativeInputProps: {
-                  value: 'oui',
-                },
-              },
-              {
-                label: 'Non',
-                nativeInputProps: {
-                  value: 'non',
-                },
-              },
-            ]}
-          />
+          <fieldset className="fr-fieldset">
+            <Select
+              className="fr-fieldset__content"
+              label="Actif dans SIRENA*"
+              state={validationErrors.isActive ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.isActive}
+              nativeSelectProps={{
+                name: 'isActive',
+                required: true,
+                defaultValue: '',
+              }}
+            >
+              <option value="" disabled>
+                Sélectionnez une option
+              </option>
+              <option value="oui">Oui</option>
+              <option value="non">Non</option>
+            </Select>
+          </fieldset>
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
             <Button type="submit" disabled={createEntiteAdminChild.isPending}>

@@ -58,8 +58,6 @@ export type CreateChildEntiteAdminInput = {
   nomComplet: string;
   label: string;
   email: string;
-  emailDomain: string;
-  organizationalUnit: string;
   emailContactUsager: string;
   adresseContactUsager: string;
   telContactUsager: string;
