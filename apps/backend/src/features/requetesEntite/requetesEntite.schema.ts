@@ -40,6 +40,13 @@ const columns = [
 
 export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns).extend({
   entiteId: z.string().optional(),
+  departementCodes: z.string().optional(),
+});
+
+export const GetDepartementCountsQuerySchema = z.object({
+  departementCodes: z.string(),
+  entiteId: z.string().optional(),
+  search: z.string().optional(),
 });
 
 export const GetRequeteEntiteResponseSchema = RequeteSchema.extend({
@@ -112,6 +119,7 @@ const RequeteWithSituationsSchema = RequeteSchema.extend({
 export const GetRequeteEntiteSchema = RequeteEntiteSchema.extend({
   requete: RequeteWithSituationsSchema,
   requeteEtape: z.array(RequeteEtapeSchema),
+  departementsLieuSurvenue: z.array(z.object({ code: z.string(), lib: z.string() })),
 });
 
 export const GetRequetesEntiteResponseSchema = z.array(GetRequeteEntiteSchema);
