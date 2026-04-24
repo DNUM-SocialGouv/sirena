@@ -4,9 +4,17 @@ import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import type { SubmitEvent } from 'react';
+import { type SubmitEvent, useState } from 'react';
+import { z } from 'zod';
 import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+import { zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
+
+const EditEntiteFormSchema = z.object({
+  nomComplet: z.string().trim().min(1, 'Le nom est obligatoire.'),
+  label: z.string().trim().min(1, 'Le libellé est obligatoire.'),
+  isActive: z.enum(['oui', 'non'], 'Le statut actif dans SIRENA est obligatoire.'),
+});
 
 export const Route = createFileRoute('/_auth/admin/entites/$entiteId/')({
   beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
@@ -19,6 +27,7 @@ export function RouteComponent() {
   const editEntiteAdmin = useEditEntiteAdmin();
   const entiteQuery = useEntiteByIdAdmin(entiteId);
   const entiteChainQuery = useEntiteChain(entiteId);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const entiteDepth = entiteChainQuery.data?.length ?? 0;
   const canCreateChild = !entiteChainQuery.isError && entiteDepth > 0 && entiteDepth < 3;
@@ -39,12 +48,24 @@ export function RouteComponent() {
 
     const formData = new FormData(e.currentTarget);
 
+    const validationResult = EditEntiteFormSchema.safeParse({
+      nomComplet: String(formData.get('nomComplet') ?? ''),
+      label: String(formData.get('label') ?? ''),
+      isActive: String(formData.get('isActive') ?? ''),
+    });
+
+    if (!validationResult.success) {
+      setValidationErrors(zodIssuesToFieldErrors(validationResult.error));
+      return;
+    }
+
+    setValidationErrors({});
+
     await editEntiteAdmin.mutateAsync({
       id: entiteId,
       input: {
-        nomComplet: String(formData.get('nomComplet') ?? ''),
-        label: String(formData.get('label') ?? ''),
-        isActive: formData.get('isActive') === 'oui',
+        ...validationResult.data,
+        isActive: validationResult.data.isActive === 'oui',
       },
     });
 
@@ -83,13 +104,15 @@ export function RouteComponent() {
         className="fr-p-4w fr-mb-4w"
         style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
       >
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <fieldset className="fr-fieldset">
             <legend className="fr-fieldset__legend">Informations de l’entité</legend>
 
             <Input
               className="fr-fieldset__content"
               label="Nom de l'entité"
+              state={validationErrors.nomComplet ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.nomComplet}
               nativeInputProps={{
                 name: 'nomComplet',
                 defaultValue: entite.nomComplet,
@@ -99,6 +122,8 @@ export function RouteComponent() {
             <Input
               className="fr-fieldset__content"
               label="Libellé de l'entité"
+              state={validationErrors.label ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.label}
               nativeInputProps={{
                 name: 'label',
                 defaultValue: entite.label,
@@ -108,9 +133,10 @@ export function RouteComponent() {
             <Select
               className="fr-fieldset__content"
               label="Actif dans SIRENA"
+              state={validationErrors.isActive ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.isActive}
               nativeSelectProps={{
                 name: 'isActive',
-                required: true,
                 defaultValue: entite.isActive ? 'oui' : 'non',
               }}
             >
@@ -126,7 +152,9 @@ export function RouteComponent() {
             <Link className="fr-btn fr-btn--secondary" to="/admin/entites">
               Annuler
             </Link>
-            <Button type="submit">Valider les modifications</Button>
+            <Button type="submit" disabled={editEntiteAdmin.isPending}>
+              Valider les modifications
+            </Button>
           </div>
         </form>
       </div>

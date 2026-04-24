@@ -1,5 +1,5 @@
 import { ROLES } from '@sirena/common/constants';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
@@ -214,6 +214,41 @@ describe('Admin entity edit route', () => {
 
     expect(screen.queryByRole('link', { name: /créer une direction/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /créer un service/i })).not.toBeInTheDocument();
+  });
+
+  it('shows zod validation errors', async () => {
+    const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
+
+    mockedUseEntiteByIdAdmin.mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+
+    render(<RouteComponent />);
+
+    const submitButton = screen.getByRole('button', { name: /valider les modifications/i });
+    const form = submitButton.closest('form');
+    expect(form).toHaveAttribute('novalidate');
+    expect(screen.getByRole('combobox', { name: /Actif dans SIRENA/i })).not.toHaveAttribute('required');
+
+    const user = userEvent.setup();
+    await user.clear(screen.getByLabelText(/Nom de l'entité/i));
+    await user.clear(screen.getByLabelText(/Libellé de l'entité/i));
+    fireEvent.change(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), { target: { value: '' } });
+    await user.click(submitButton);
+
+    expect(await screen.findByText('Le nom est obligatoire.')).toBeInTheDocument();
+    expect(screen.getByText('Le libellé est obligatoire.')).toBeInTheDocument();
+    expect(screen.getByText('Le statut actif dans SIRENA est obligatoire.')).toBeInTheDocument();
+    expect(editEntiteAdminMutateAsyncSpy).not.toHaveBeenCalled();
   });
 
   it('submits the limited editable fields to the admin edit mutation', async () => {
