@@ -125,26 +125,27 @@ export const enrichSituationWithTraitementDesFaits = async (situation: Situation
   };
 };
 
-// Mirrors the extractDptCode logic from getRequetesEntite for consistency.
-// For Corsica (2A/2B), resolves via InseePostal since they can't be derived from postal code prefix.
+// Alphanumeric dept codes (e.g. Corsica's 2A/2B) don't match their postal-code prefix
+// and must be resolved via InseePostal. Purely numeric codes map directly to the prefix.
 const buildDeptPostalFilter = async (deptCodes: string[]): Promise<Prisma.LieuDeSurvenueWhereInput | null> => {
-  const corseCodes = deptCodes.filter((c) => c === '2A' || c === '2B');
-  const regularCodes = deptCodes.filter((c) => c !== '2A' && c !== '2B');
+  const needsLookup = (c: string) => /\D/.test(c);
+  const lookupCodes = deptCodes.filter(needsLookup);
+  const prefixCodes = deptCodes.filter((c) => !needsLookup(c));
 
-  const orConditions: Prisma.LieuDeSurvenueWhereInput[] = regularCodes.map((code) => ({
+  const orConditions: Prisma.LieuDeSurvenueWhereInput[] = prefixCodes.map((code) => ({
     OR: [{ codePostal: { startsWith: code } }, { adresse: { codePostal: { startsWith: code } } }],
   }));
 
-  if (corseCodes.length > 0) {
+  if (lookupCodes.length > 0) {
     const rows = await prisma.inseePostal.findMany({
-      where: { commune: { dptCodeActuel: { in: corseCodes } } },
+      where: { commune: { dptCodeActuel: { in: lookupCodes } } },
       select: { codePostal: true },
       distinct: ['codePostal'],
     });
-    const corseCPs = rows.map((r) => r.codePostal);
-    if (corseCPs.length > 0) {
+    const cps = rows.map((r) => r.codePostal);
+    if (cps.length > 0) {
       orConditions.push({
-        OR: [{ codePostal: { in: corseCPs } }, { adresse: { codePostal: { in: corseCPs } } }],
+        OR: [{ codePostal: { in: cps } }, { adresse: { codePostal: { in: cps } } }],
       });
     }
   }
@@ -237,31 +238,29 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     }),
   ]);
 
-  // DOM (97x) → 3 digits, otherwise → 2 digits. Also works for cedex codes (e.g. 75674 → "75").
-  const extractDptCode = (cp: string): string =>
-    cp.length >= 3 && cp.startsWith('97') ? cp.slice(0, 3) : cp.slice(0, 2);
-
   const getCpFromSituation = (s: (typeof rawData)[number]['requete']['situations'][number]) =>
     s.lieuDeSurvenue?.codePostal || s.lieuDeSurvenue?.adresse?.codePostal || '';
 
-  const cpToDptCode = new Map<string, string>();
+  // Fallback when a CP isn't in InseePostal (cedex codes like 75674, unseeded DB, etc.).
+  // DOM (97x) uses 3-digit dept codes; metropolitan France uses 2.
+  const extractDptCode = (cp: string): string => (cp.startsWith('97') ? cp.slice(0, 3) : cp.slice(0, 2));
+
+  const allCps = new Set<string>();
   for (const re of rawData) {
     for (const s of re.requete?.situations ?? []) {
       const cp = getCpFromSituation(s);
-      if (cp && !cpToDptCode.has(cp)) cpToDptCode.set(cp, extractDptCode(cp));
+      if (cp) allCps.add(cp);
     }
   }
 
-  // Corsican postal codes all start with "20" but their dept codes in DB are "2A" or "2B" —
-  // the split cannot be derived from the postal code alone, so we resolve via InseePostal.
-  const corseCPs = [...cpToDptCode.entries()].filter(([, dpt]) => dpt === '20').map(([cp]) => cp);
-  if (corseCPs.length > 0) {
-    const corseInsee = await prisma.inseePostal.findMany({
-      where: { codePostal: { in: corseCPs } },
+  const cpToDptCode = new Map<string, string>();
+  if (allCps.size > 0) {
+    const rows = await prisma.inseePostal.findMany({
+      where: { codePostal: { in: [...allCps] } },
       select: { codePostal: true, commune: { select: { dptCodeActuel: true } } },
       distinct: ['codePostal'],
     });
-    for (const row of corseInsee) {
+    for (const row of rows) {
       if (row.commune) cpToDptCode.set(row.codePostal, row.commune.dptCodeActuel);
     }
   }
