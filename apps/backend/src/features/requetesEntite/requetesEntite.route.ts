@@ -6,6 +6,7 @@ import {
   openApiResponses,
 } from '@sirena/backend-utils/helpers';
 import { describeRoute } from 'hono-openapi';
+import { z } from 'zod';
 import { RequeteSchema } from '../requetes/requetes.schema.js';
 import {
   CloseRequeteResponseSchema,
@@ -20,6 +21,17 @@ export const getRequetesEntiteRoute = openApiProtectedRoute({
   description: 'Get requetes entites',
   responses: {
     ...openApiResponses(GetRequetesEntiteResponseSchema),
+  },
+});
+
+export const getRequetesDepartementCountsRoute = openApiProtectedRoute({
+  description: 'Get requetes counts grouped by departement',
+  responses: {
+    ...openApiResponse(
+      z.object({
+        data: z.array(z.object({ code: z.string(), count: z.number() })),
+      }),
+    ),
   },
 });
 
