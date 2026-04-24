@@ -96,3 +96,7 @@ body {
 .bold {
   font-weight: 700;
 }
+
+.lastname {
+  text-transform: uppercase;
+}

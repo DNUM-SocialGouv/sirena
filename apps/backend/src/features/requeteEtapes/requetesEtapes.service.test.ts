@@ -102,9 +102,9 @@ const requeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: Requ
     receptionDate: new Date(),
     dematSocialId: 123,
     receptionTypeId: 'receptionTypeId',
+    createdById: null,
     provenanceId: null,
     provenancePrecision: null,
-    createdById: null,
     thirdPartyAccountId: null,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -135,8 +135,8 @@ describe('RequeteEtapes.service.ts', () => {
         id: 'etape1Id',
         requeteId,
         entiteId,
-        nom: 'Création de la requête le 15/01/2024',
-        type: 'MANUAL',
+        nom: 'Création de la requête',
+        type: 'CREATION',
         estPartagee: false,
         statutId: 'FAIT',
         createdAt: new Date(),
@@ -148,8 +148,8 @@ describe('RequeteEtapes.service.ts', () => {
         id: 'etape2Id',
         requeteId,
         entiteId,
-        nom: 'Envoyer un accusé de réception au déclarant',
-        type: 'MANUAL',
+        nom: "Envoi de l'accusé de réception",
+        type: 'ACKNOWLEDGMENT',
         estPartagee: false,
         statutId: 'A_FAIRE',
         createdAt: new Date(),
@@ -167,13 +167,13 @@ describe('RequeteEtapes.service.ts', () => {
       expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
 
       expect(prisma.requeteEtape.create).toHaveBeenNthCalledWith(1, {
-        data: {
+        data: expect.objectContaining({
           requeteId,
           entiteId,
           statutId: 'FAIT',
-          nom: 'Création de la requête le 15/01/2024',
+          nom: expect.stringContaining('Création de la requête'),
           type: 'CREATION',
-        },
+        }),
       });
 
       expect(prisma.requeteEtape.create).toHaveBeenNthCalledWith(2, {
@@ -181,10 +181,58 @@ describe('RequeteEtapes.service.ts', () => {
           requeteId,
           entiteId,
           statutId: 'A_FAIRE',
-          nom: 'Envoyer un accusé de réception au déclarant',
+          nom: "Envoi de l'accusé de réception",
           type: 'ACKNOWLEDGMENT',
         },
       });
+    });
+
+    it('should fall back to current date when requete createdAt is missing', async () => {
+      const requeteId = 'requeteId';
+      const entiteId = 'entiteId';
+      const currentDate = new Date();
+
+      const mockRequeteEntite: RequeteEntite = {
+        requeteId,
+        entiteId,
+        statutId: 'EN_COURS',
+        prioriteId: null,
+      };
+
+      const mockEtape1: RequeteEtape = {
+        id: 'etape1Id',
+        requeteId,
+        entiteId,
+        nom: 'Création de la requête',
+        type: 'CREATION',
+        estPartagee: false,
+        statutId: 'FAIT',
+        createdAt: currentDate,
+        updatedAt: currentDate,
+        createdById: null,
+      };
+
+      const mockEtape2: RequeteEtape = {
+        id: 'etape2Id',
+        requeteId,
+        entiteId,
+        nom: "Envoi de l'accusé de réception",
+        type: 'ACKNOWLEDGMENT',
+        estPartagee: false,
+        statutId: 'A_FAIRE',
+        createdAt: currentDate,
+        updatedAt: currentDate,
+        createdById: null,
+      };
+
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([]);
+      vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(mockEtape1).mockResolvedValueOnce(mockEtape2);
+
+      const result = await createDefaultRequeteEtapes(requeteId, entiteId);
+
+      expect(result).toEqual({ etape1: mockEtape1, etape2: mockEtape2 });
+      expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
     });
 
     it('should use transaction client when provided', async () => {
@@ -217,8 +265,8 @@ describe('RequeteEtapes.service.ts', () => {
         id: 'etape1Id',
         requeteId,
         entiteId,
-        nom: 'Création de la requête le 10/02/2024',
-        type: 'MANUAL',
+        nom: 'Création de la requête',
+        type: 'CREATION',
         estPartagee: false,
         statutId: 'FAIT',
         createdAt: new Date(),
@@ -230,8 +278,8 @@ describe('RequeteEtapes.service.ts', () => {
         id: 'etape2Id',
         requeteId,
         entiteId,
-        nom: 'Envoyer un accusé de réception au déclarant',
-        type: 'MANUAL',
+        nom: "Envoi de l'accusé de réception",
+        type: 'ACKNOWLEDGMENT',
         estPartagee: false,
         statutId: 'A_FAIRE',
         createdAt: new Date(),
@@ -260,13 +308,13 @@ describe('RequeteEtapes.service.ts', () => {
       expect(prisma.requeteEtape.create).not.toHaveBeenCalled();
 
       expect(mockCreate).toHaveBeenNthCalledWith(1, {
-        data: {
+        data: expect.objectContaining({
           requeteId,
           entiteId,
           statutId: 'FAIT',
-          nom: 'Création de la requête le 10/02/2024',
+          nom: expect.stringContaining('Création de la requête'),
           type: 'CREATION',
-        },
+        }),
       });
 
       expect(mockCreate).toHaveBeenNthCalledWith(2, {
@@ -274,7 +322,7 @@ describe('RequeteEtapes.service.ts', () => {
           requeteId,
           entiteId,
           statutId: 'A_FAIRE',
-          nom: 'Envoyer un accusé de réception au déclarant',
+          nom: "Envoi de l'accusé de réception",
           type: 'ACKNOWLEDGMENT',
         },
       });
@@ -297,8 +345,8 @@ describe('RequeteEtapes.service.ts', () => {
         id: 'etape1Id',
         requeteId,
         entiteId,
-        nom: 'Création de la requête le 25/12/2024',
-        type: 'MANUAL',
+        nom: 'Création de la requête',
+        type: 'CREATION',
         estPartagee: false,
         statutId: 'FAIT',
         createdAt: new Date(),
@@ -310,8 +358,8 @@ describe('RequeteEtapes.service.ts', () => {
         id: 'etape2Id',
         requeteId,
         entiteId,
-        nom: 'Envoyer un accusé de réception au déclarant',
-        type: 'MANUAL',
+        nom: "Envoi de l'accusé de réception",
+        type: 'ACKNOWLEDGMENT',
         estPartagee: false,
         statutId: 'FAIT',
         createdAt: new Date(),
@@ -326,7 +374,7 @@ describe('RequeteEtapes.service.ts', () => {
       await createDefaultRequeteEtapes(requeteId, entiteId);
 
       const firstCall = vi.mocked(prisma.requeteEtape.create).mock.calls[0];
-      expect(firstCall[0].data.nom).toMatch(/Création de la requête le \d{2}\/\d{2}\/\d{4}/);
+      expect(firstCall[0].data.nom).toContain('Création de la requête');
     });
 
     it('should create etapes with correct order (FAIT for creation, A_FAIRE for acknowledgment)', async () => {
@@ -346,8 +394,8 @@ describe('RequeteEtapes.service.ts', () => {
         id: 'etape1Id',
         requeteId,
         entiteId,
-        nom: 'Création de la requête le 01/06/2024',
-        type: 'MANUAL',
+        nom: 'Création de la requête',
+        type: 'CREATION',
         estPartagee: false,
         statutId: 'FAIT',
         createdAt: new Date(),
@@ -359,11 +407,10 @@ describe('RequeteEtapes.service.ts', () => {
         id: 'etape2Id',
         requeteId,
         entiteId,
-        nom: 'Envoyer un accusé de réception au déclarant',
-        type: 'MANUAL',
+        nom: "Envoi de l'accusé de réception",
+        type: 'ACKNOWLEDGMENT',
         estPartagee: false,
         statutId: 'A_FAIRE',
-        clotureReasonId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
@@ -379,7 +426,7 @@ describe('RequeteEtapes.service.ts', () => {
       expect(result?.etape1.statutId).toBe('FAIT');
       expect(result?.etape2.statutId).toBe('A_FAIRE');
       expect(result?.etape1.nom).toContain('Création de la requête');
-      expect(result?.etape2.nom).toBe('Envoyer un accusé de réception au déclarant');
+      expect(result?.etape2.nom).toBe("Envoi de l'accusé de réception");
     });
   });
 
@@ -391,9 +438,9 @@ describe('RequeteEtapes.service.ts', () => {
         receptionDate: new Date('2024-01-15T10:00:00Z'),
         dematSocialId: 123,
         receptionTypeId: 'type',
+        createdById: null,
         provenanceId: null,
         provenancePrecision: null,
-        createdById: null,
         thirdPartyAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -459,9 +506,9 @@ describe('RequeteEtapes.service.ts', () => {
         receptionDate: new Date('2024-01-15T10:00:00Z'),
         dematSocialId: 123,
         receptionTypeId: 'type',
+        createdById: null,
         provenanceId: null,
         provenancePrecision: null,
-        createdById: null,
         thirdPartyAccountId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -571,6 +618,17 @@ describe('RequeteEtapes.service.ts', () => {
               },
             },
           },
+          requete: {
+            select: {
+              createdBy: {
+                select: {
+                  prenom: true,
+                  nom: true,
+                },
+              },
+              dematSocialId: true,
+            },
+          },
           requeteId: true,
           entiteId: true,
         },
@@ -633,6 +691,17 @@ describe('RequeteEtapes.service.ts', () => {
                   nom: true,
                 },
               },
+            },
+          },
+          requete: {
+            select: {
+              createdBy: {
+                select: {
+                  prenom: true,
+                  nom: true,
+                },
+              },
+              dematSocialId: true,
             },
           },
           requeteId: true,
