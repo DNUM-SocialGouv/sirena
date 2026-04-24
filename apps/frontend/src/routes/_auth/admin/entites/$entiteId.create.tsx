@@ -152,9 +152,11 @@ export function RouteComponent() {
           <fieldset className="fr-fieldset">
             <legend className="fr-fieldset__legend">Informations de la nouvelle entité</legend>
 
+            <p className="fr-text--sm fr-mb-5w fr-ml-1w">Sauf mention contraire, les champs sont facultatifs</p>
+
             <Input
               className="fr-fieldset__content"
-              label="Nom (libellé long)*"
+              label="Nom - libellé long (obligatoire)"
               state={validationErrors.nomComplet ? 'error' : 'default'}
               stateRelatedMessage={validationErrors.nomComplet}
               nativeInputProps={{
@@ -165,7 +167,7 @@ export function RouteComponent() {
 
             <Input
               className="fr-fieldset__content"
-              label="Nom court*"
+              label="Nom court (obligatoire)"
               state={validationErrors.label ? 'error' : 'default'}
               stateRelatedMessage={validationErrors.label}
               nativeInputProps={{
@@ -226,7 +228,7 @@ export function RouteComponent() {
           <fieldset className="fr-fieldset">
             <Select
               className="fr-fieldset__content"
-              label="Actif dans SIRENA*"
+              label="Actif dans SIRENA (obligatoire)"
               state={validationErrors.isActive ? 'error' : 'default'}
               stateRelatedMessage={validationErrors.isActive}
               nativeSelectProps={{

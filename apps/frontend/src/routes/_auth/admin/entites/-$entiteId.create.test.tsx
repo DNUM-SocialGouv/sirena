@@ -206,7 +206,7 @@ describe('Admin entity child creation route', () => {
     render(<RouteComponent />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/Nom \(libellé long\)/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Nom - libellé long/i)).toBeInTheDocument();
     });
     expect(screen.getByLabelText(/Nom court/i)).toBeInTheDocument();
   });
@@ -315,7 +315,7 @@ describe('Admin entity child creation route', () => {
     const user = userEvent.setup();
     const contactGroup = screen.getByRole('group', { name: /Éléments de contact pour l’usager/i });
 
-    await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'Direction de la prévention');
+    await user.type(screen.getByLabelText(/Nom - libellé long/i), 'Direction de la prévention');
     await user.type(screen.getByLabelText(/Nom court/i), 'DIR PREV');
     await user.type(screen.getByLabelText(/Adresse électronique de notification/i), 'direction@example.fr');
     await user.type(within(contactGroup).getByLabelText(/Adresse électronique/i), 'contact-usager@example.fr');
@@ -375,7 +375,7 @@ describe('Admin entity child creation route', () => {
     render(<RouteComponent />);
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'Direction de la prévention');
+    await user.type(screen.getByLabelText(/Nom - libellé long/i), 'Direction de la prévention');
     await user.type(screen.getByLabelText(/Nom court/i), 'DIR PREV');
     await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), 'oui');
     await user.dblClick(screen.getByRole('button', { name: 'Créer' }));
@@ -428,7 +428,7 @@ describe('Admin entity child creation route', () => {
     render(<RouteComponent />);
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'Direction de la prévention');
+    await user.type(screen.getByLabelText(/Nom - libellé long/i), 'Direction de la prévention');
     await user.type(screen.getByLabelText(/Nom court/i), 'DIR PREV');
     await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), 'oui');
     await user.click(screen.getByRole('button', { name: 'Créer' }));
@@ -469,7 +469,7 @@ describe('Admin entity child creation route', () => {
     render(<RouteComponent />);
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/Nom \(libellé long\)/i), 'Direction de la prévention');
+    await user.type(screen.getByLabelText(/Nom - libellé long/i), 'Direction de la prévention');
     await user.type(screen.getByLabelText(/Nom court/i), 'DIR PREV');
     await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), 'oui');
     await user.click(screen.getByRole('button', { name: 'Créer' }));
