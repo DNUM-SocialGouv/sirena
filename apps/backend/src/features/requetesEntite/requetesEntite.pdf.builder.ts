@@ -43,6 +43,7 @@ export class RequetePdfBuilder {
   private readonly doc: TaggedPDFDocument;
   private readonly docElement: PDFStructureElement;
   private currentSection: PDFStructureElement | null = null;
+  private isFirstSubsectionInSection = true;
 
   constructor(title: string) {
     this.doc = new PDFDocument({
@@ -142,8 +143,8 @@ export class RequetePdfBuilder {
     this.docElement.add(
       this.doc.struct('H1', [
         () => {
-          this.doc.fontSize(16).font('Roboto-Bold').text(text, { align: 'center' });
-          this.doc.moveDown(0.4);
+          this.doc.fontSize(18).font('Roboto-Bold').text(text, { align: 'center' });
+          this.doc.moveDown(0.6);
         },
       ]),
     );
@@ -155,18 +156,19 @@ export class RequetePdfBuilder {
     const sect = this.doc.struct('Sect');
     this.docElement.add(sect);
     this.currentSection = sect;
+    this.isFirstSubsectionInSection = true;
 
     sect.add(
       this.doc.struct('H2', [
         () => {
-          this.doc.moveDown(0.5).fontSize(13).font('Roboto-Bold').text(title);
+          this.doc.moveDown(0.9).fontSize(15).font('Roboto-Bold').text(title);
           this.doc.markContent('Artifact', { type: 'Layout' });
           this.doc
             .moveTo(this.doc.page.margins.left, this.doc.y)
             .lineTo(this.doc.page.width - this.doc.page.margins.right, this.doc.y)
             .stroke();
           this.doc.endMarkedContent();
-          this.doc.moveDown(0.3);
+          this.doc.moveDown(0.5);
         },
       ]),
     );
@@ -174,11 +176,14 @@ export class RequetePdfBuilder {
   }
 
   subsection(title: string): this {
+    const isFirst = this.isFirstSubsectionInSection;
+    this.isFirstSubsectionInSection = false;
     this.current.add(
       this.doc.struct('H3', [
         () => {
-          this.doc.moveDown(0.3).fontSize(11).font('Roboto-Bold').text(title);
-          this.doc.moveDown(0.2);
+          if (!isFirst) this.doc.moveDown(0.7);
+          this.doc.fontSize(13).font('Roboto-Bold').text(title, { underline: true });
+          this.doc.moveDown(0.4);
         },
       ]),
     );
@@ -193,6 +198,7 @@ export class RequetePdfBuilder {
             .fontSize(12)
             .font(options?.bold ? 'Roboto-Bold' : 'Roboto')
             .text(text);
+          this.doc.moveDown(0.2);
         },
       ]),
     );
@@ -206,6 +212,7 @@ export class RequetePdfBuilder {
         () => {
           this.doc.fontSize(12).font('Roboto-Bold').text(`${label} : `, { continued: true });
           this.doc.font('Roboto').text(value);
+          this.doc.moveDown(0.2);
         },
       ]),
     );
@@ -239,6 +246,7 @@ export class RequetePdfBuilder {
     }
 
     list.end();
+    this.doc.moveDown(0.3);
     return this;
   }
 
@@ -302,6 +310,7 @@ export class RequetePdfBuilder {
     }
 
     list.end();
+    this.doc.moveDown(0.3);
     return this;
   }
 
