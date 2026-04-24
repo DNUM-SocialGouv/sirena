@@ -1,4 +1,4 @@
-import { RECEPTION_TYPE } from '@sirena/common/constants';
+import { RECEPTION_TYPE, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import { envVars } from '../../config/env.js';
 import {
   ACKNOWLEDGMENT_EMAIL_TEMPLATE_ID,
@@ -13,7 +13,7 @@ import { uploadFileToMinio } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { ACKNOWLEDGMENT_STEP_NAME, updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
+import { updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
 import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
 
 const ELIGIBLE_RECEPTION_TYPES_FOR_ACKNOWLEDGMENT = [RECEPTION_TYPE.FORMULAIRE, RECEPTION_TYPE.PLATEFORME] as const;
@@ -113,7 +113,7 @@ async function attachEmailPdfToStep(
       where: {
         requeteId,
         entiteId,
-        nom: ACKNOWLEDGMENT_STEP_NAME,
+        type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
       },
     });
 
