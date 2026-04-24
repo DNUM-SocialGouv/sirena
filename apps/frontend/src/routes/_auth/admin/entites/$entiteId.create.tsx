@@ -28,7 +28,7 @@ export const Route = createFileRoute('/_auth/admin/entites/$entiteId/create')({
 
 export function RouteComponent() {
   const router = useRouter();
-  const { entiteId } = Route.useParams();
+  const { entiteId } = (Route.useParams as () => { entiteId: string })();
   const toastManager = Toast.useToastManager();
   const createEntiteAdminChild = useCreateChildEntiteAdmin();
   const isSubmittingRef = useRef(false);
@@ -92,6 +92,9 @@ export function RouteComponent() {
         id: entiteId,
         input: {
           ...validationResult.data,
+          email: validationResult.data.email ?? '',
+          emailContactUsager: validationResult.data.emailContactUsager ?? '',
+          telContactUsager: validationResult.data.telContactUsager ?? '',
           isActive: validationResult.data.isActive === 'oui',
         },
       });

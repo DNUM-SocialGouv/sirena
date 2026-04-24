@@ -22,7 +22,7 @@ export const Route = createFileRoute('/_auth/admin/entites/$entiteId/')({
 });
 
 export function RouteComponent() {
-  const { entiteId } = Route.useParams();
+  const { entiteId } = (Route.useParams as () => { entiteId: string })();
   const toastManager = Toast.useToastManager();
   const editEntiteAdmin = useEditEntiteAdmin();
   const entiteQuery = useEntiteByIdAdmin(entiteId);
