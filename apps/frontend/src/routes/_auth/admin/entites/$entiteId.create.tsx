@@ -2,20 +2,14 @@ import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES } from '@sirena/common/constants';
+import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { useCreateChildEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-
-const optionalEmailSchema = z
-  .string()
-  .trim()
-  .refine(
-    (value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
-    'Veuillez saisir une adresse électronique valide.',
-  );
+import { zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
 
 const CreateChildEntiteFormSchema = z.object({
   nomComplet: z.string().trim().min(1, 'Le nom est obligatoire.'),
@@ -23,7 +17,7 @@ const CreateChildEntiteFormSchema = z.object({
   email: optionalEmailSchema,
   emailContactUsager: optionalEmailSchema,
   adresseContactUsager: z.string().trim(),
-  telContactUsager: z.string().trim(),
+  telContactUsager: optionalPhoneSchema,
   isActive: z.enum(['oui', 'non'], 'Le statut actif dans SIRENA est obligatoire.'),
 });
 
@@ -86,14 +80,7 @@ export function RouteComponent() {
     });
 
     if (!validationResult.success) {
-      const errors: Record<string, string> = {};
-      validationResult.error.issues.forEach((error) => {
-        const field = error.path[0];
-        if (typeof field === 'string') {
-          errors[field] = error.message;
-        }
-      });
-      setValidationErrors(errors);
+      setValidationErrors(zodIssuesToFieldErrors(validationResult.error));
       return;
     }
 
@@ -148,7 +135,7 @@ export function RouteComponent() {
         className="fr-p-4w fr-mb-4w"
         style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
       >
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <fieldset className="fr-fieldset">
             <legend className="fr-fieldset__legend">Informations de la nouvelle entité</legend>
 
@@ -161,7 +148,6 @@ export function RouteComponent() {
               stateRelatedMessage={validationErrors.nomComplet}
               nativeInputProps={{
                 name: 'nomComplet',
-                required: true,
               }}
             />
 
@@ -172,7 +158,6 @@ export function RouteComponent() {
               stateRelatedMessage={validationErrors.label}
               nativeInputProps={{
                 name: 'label',
-                required: true,
               }}
             />
 
@@ -184,7 +169,6 @@ export function RouteComponent() {
               stateRelatedMessage={validationErrors.email}
               nativeInputProps={{
                 name: 'email',
-                type: 'email',
               }}
             />
           </fieldset>
@@ -200,7 +184,6 @@ export function RouteComponent() {
               stateRelatedMessage={validationErrors.emailContactUsager}
               nativeInputProps={{
                 name: 'emailContactUsager',
-                type: 'email',
               }}
             />
 
@@ -219,8 +202,11 @@ export function RouteComponent() {
             <Input
               className="fr-fieldset__content"
               label="Numéro de téléphone"
+              state={validationErrors.telContactUsager ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.telContactUsager}
               nativeInputProps={{
                 name: 'telContactUsager',
+                type: 'tel',
               }}
             />
           </fieldset>
@@ -233,7 +219,6 @@ export function RouteComponent() {
               stateRelatedMessage={validationErrors.isActive}
               nativeSelectProps={{
                 name: 'isActive',
-                required: true,
                 defaultValue: '',
               }}
             >

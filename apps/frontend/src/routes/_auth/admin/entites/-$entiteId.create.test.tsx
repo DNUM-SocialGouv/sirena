@@ -287,6 +287,69 @@ describe('Admin entity child creation route', () => {
     expect(screen.getByRole('option', { name: 'Non' })).toBeInTheDocument();
   });
 
+  it('shows zod validation errors', async () => {
+    vi.mocked(useEntiteByIdAdmin).mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    vi.mocked(useEntiteChain).mockReturnValue(
+      buildSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+
+    render(<RouteComponent />);
+
+    const form = screen.getByRole('button', { name: 'Créer' }).closest('form');
+    expect(form).toHaveAttribute('novalidate');
+    expect(screen.getByLabelText(/Nom - libellé long/i)).not.toHaveAttribute('required');
+    expect(screen.getByLabelText(/Nom court/i)).not.toHaveAttribute('required');
+    expect(screen.getByRole('combobox', { name: /Actif dans SIRENA/i })).not.toHaveAttribute('required');
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Créer' }));
+
+    expect(await screen.findByText('Le nom est obligatoire.')).toBeInTheDocument();
+    expect(screen.getByText('Le nom court est obligatoire.')).toBeInTheDocument();
+    expect(screen.getByText('Le statut actif dans SIRENA est obligatoire.')).toBeInTheDocument();
+    expect(createChildEntiteAdminMutateAsyncSpy).not.toHaveBeenCalled();
+  });
+
+  it('validates emails and phone number', async () => {
+    vi.mocked(useEntiteByIdAdmin).mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    vi.mocked(useEntiteChain).mockReturnValue(
+      buildSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+
+    render(<RouteComponent />);
+
+    const user = userEvent.setup();
+    const contactGroup = screen.getByRole('group', { name: /Éléments de contact pour l’usager/i });
+
+    await user.type(screen.getByLabelText(/Nom - libellé long/i), 'Direction de la prévention');
+    await user.type(screen.getByLabelText(/Nom court/i), 'DIR PREV');
+    await user.type(screen.getByLabelText(/Adresse électronique de notification/i), 'invalid-email');
+    await user.type(within(contactGroup).getByLabelText(/Adresse électronique/i), 'invalid-contact-email');
+    await user.type(within(contactGroup).getByLabelText(/Numéro de téléphone/i), '123');
+    await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), 'oui');
+    await user.click(screen.getByRole('button', { name: 'Créer' }));
+
+    expect(await screen.findAllByText(/L’adresse e-mail est invalide/i)).toHaveLength(2);
+    expect(
+      screen.getByText(/Le numéro de téléphone doit être au format national ou international/i),
+    ).toBeInTheDocument();
+    expect(createChildEntiteAdminMutateAsyncSpy).not.toHaveBeenCalled();
+  });
+
   it('submits the child creation form to the admin mutation with a flat payload', async () => {
     vi.mocked(useEntiteByIdAdmin).mockReturnValue(
       buildSuccessQuery({
