@@ -3,10 +3,13 @@ import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
+import { entiteTypes } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { DepartementFilter } from '@/components/common/filters/DepartementFilter';
+import { useDepartementCounts } from '@/hooks/queries/departementCounts.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
@@ -85,6 +88,7 @@ export function RequetesEntite() {
   const { data: profile } = useProfile();
   const userTopEntiteId = profile?.topEntiteId;
   const userEntiteIdLevel = profile?.entiteIdLevel;
+  const isTopEntiteARS = profile?.topEntiteTypeId === entiteTypes.ARS;
   const topProfileEntiteId = (() => {
     if (profile?.topEntiteId === profile?.entiteId) {
       return undefined;
@@ -95,6 +99,39 @@ export function RequetesEntite() {
     if (!topProfileEntiteId) return false;
     return queries?.entiteId === topProfileEntiteId;
   }, [queries.entiteId, topProfileEntiteId]);
+
+  const arsDepartements = useMemo(() => profile?.topEntiteDepartements ?? [], [profile?.topEntiteDepartements]);
+  const [isDepartementDropdownOpen, setIsDepartementDropdownOpen] = useState(false);
+
+  const selectedDepartements = useMemo(
+    () => (queries.departementCodes ? queries.departementCodes.split(',').filter(Boolean) : []),
+    [queries.departementCodes],
+  );
+
+  const { data: departementCountsData } = useDepartementCounts({
+    departementCodes: arsDepartements.map((d) => d.code).join(','),
+    entiteId: queries.entiteId,
+    search: queries.search,
+    enabled: isTopEntiteARS && isDepartementDropdownOpen,
+  });
+
+  const departementCounts = useMemo(() => {
+    if (!departementCountsData) return null;
+    return Object.fromEntries(departementCountsData.map((d) => [d.code, d.count]));
+  }, [departementCountsData]);
+
+  const handleDepartementChange = useCallback(
+    (codes: string[]) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          departementCodes: codes.length > 0 ? codes.join(',') : undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
 
   const handleUpdate = useCallback(() => {
     // Debounce multiple rapid SSE events to prevent excessive refreshes
@@ -129,6 +166,7 @@ export function RequetesEntite() {
     ...(queries.order && { order: queries.order as 'asc' | 'desc' }),
     ...(queries.search && { search: queries.search }),
     ...(queries.entiteId ? { entiteId: queries.entiteId } : {}),
+    ...(queries.departementCodes ? { departementCodes: queries.departementCodes } : {}),
     offset,
     limit,
   });
@@ -202,6 +240,9 @@ export function RequetesEntite() {
     { key: 'custom:affectation', label: 'Affectation' },
     { key: 'custom:motifs', label: 'Motifs' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },
+    ...(isTopEntiteARS
+      ? [{ key: 'custom:departement', label: 'Département lieu de survenue' } as Column<RequeteEntiteRow>]
+      : []),
     { key: 'custom:action', label: 'Action', isFixedRight: true },
   ];
 
@@ -245,6 +286,21 @@ export function RequetesEntite() {
     'custom:misEnCause': (row) => (
       <div className="requetesEntitesTable__misEnCause-cell">{renderMisEnCauseCell(row)}</div>
     ),
+    ...(isTopEntiteARS
+      ? {
+          'custom:departement': (row: RequeteEntiteRow) => {
+            const depts = row.departementsLieuSurvenue;
+            if (!depts?.length) return <span>-</span>;
+            return (
+              <div>
+                {depts.map((dept) => (
+                  <div key={dept.code}>{dept.lib ? `${dept.code} - ${dept.lib}` : dept.code}</div>
+                ))}
+              </div>
+            );
+          },
+        }
+      : {}),
     'custom:action': (row) => (
       <Link to="/request/$requestId" className="one-line" params={{ requestId: row.requeteId }}>
         Voir la requête
@@ -335,33 +391,45 @@ export function RequetesEntite() {
         )}
       </div>
       <div className="requetesEntitesTable">
-        {(userEntiteIdLevel === 2 || userEntiteIdLevel === 3) && (
+        {(userEntiteIdLevel === 2 || userEntiteIdLevel === 3 || isTopEntiteARS) && (
           <div className="requetesEntitesTable__quick-filters fr-mb-2w">
-            <Checkbox
-              legend="Filtres rapides"
-              options={[
-                {
-                  label: userEntiteIdLevel === 2 ? 'Affectées à ma direction' : 'Affectées à mon service',
-                  nativeInputProps: {
-                    name: 'quick-filters',
-                    value: 'assigned-to-service',
-                    checked: isAssignedToServiceOnly,
-                    onChange: (e) => {
-                      const checked = e.target.checked;
-                      navigate({
-                        search: (prev) => ({
-                          ...prev,
-                          entiteId: checked ? topProfileEntiteId : undefined,
-                          offset: undefined,
-                        }),
-                      });
+            {(userEntiteIdLevel === 2 || userEntiteIdLevel === 3) && (
+              <Checkbox
+                legend="Filtres rapides"
+                options={[
+                  {
+                    label: userEntiteIdLevel === 2 ? 'Affectées à ma direction' : 'Affectées à mon service',
+                    nativeInputProps: {
+                      name: 'quick-filters',
+                      value: 'assigned-to-service',
+                      checked: isAssignedToServiceOnly,
+                      onChange: (e) => {
+                        const checked = e.target.checked;
+                        navigate({
+                          search: (prev) => ({
+                            ...prev,
+                            entiteId: checked ? topProfileEntiteId : undefined,
+                            offset: undefined,
+                          }),
+                        });
+                      },
                     },
                   },
-                },
-              ]}
-              orientation="horizontal"
-              state="default"
-            />
+                ]}
+                orientation="horizontal"
+                state="default"
+              />
+            )}
+            {isTopEntiteARS && (
+              <DepartementFilter
+                departements={arsDepartements}
+                selectedCodes={selectedDepartements}
+                counts={departementCounts}
+                onChange={handleDepartementChange}
+                onOpen={() => setIsDepartementDropdownOpen(true)}
+                onClose={() => setIsDepartementDropdownOpen(false)}
+              />
+            )}
           </div>
         )}
         <DataTable

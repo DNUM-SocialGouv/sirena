@@ -113,6 +113,7 @@ vi.mock('../../libs/prisma.js', () => ({
 
 export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situations?: unknown[] } } & {
   requeteEtape: RequeteEtape[];
+  departementsLieuSurvenue: { code: string; lib: string }[];
 } = {
   requeteId: 'req123',
   entiteId: 'ent123',
@@ -146,6 +147,7 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
       createdById: 'user123',
     },
   ],
+  departementsLieuSurvenue: [],
 };
 
 const mockedRequeteEntite = vi.mocked(prisma.requeteEntite);
