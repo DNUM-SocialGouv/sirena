@@ -1,6 +1,6 @@
 import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
-import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
+import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -84,8 +84,8 @@ export function RouteComponent() {
         style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
       >
         <form onSubmit={handleSubmit}>
-          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-            <legend className="fr-h6 fr-mb-3w">Informations de l’entité</legend>
+          <fieldset className="fr-fieldset">
+            <legend className="fr-fieldset__legend">Informations de l’entité</legend>
 
             <Input
               className="fr-fieldset__content"
@@ -105,27 +105,21 @@ export function RouteComponent() {
               }}
             />
 
-            <RadioButtons
-              legend="Actif dans SIRENA"
-              name="isActive"
-              orientation="horizontal"
-              options={[
-                {
-                  label: 'Oui',
-                  nativeInputProps: {
-                    value: 'oui',
-                    defaultChecked: entite.isActive,
-                  },
-                },
-                {
-                  label: 'Non',
-                  nativeInputProps: {
-                    value: 'non',
-                    defaultChecked: !entite.isActive,
-                  },
-                },
-              ]}
-            />
+            <Select
+              className="fr-fieldset__content"
+              label="Actif dans SIRENA"
+              nativeSelectProps={{
+                name: 'isActive',
+                required: true,
+                defaultValue: entite.isActive ? 'oui' : 'non',
+              }}
+            >
+              <option value="" disabled>
+                Sélectionnez une option
+              </option>
+              <option value="oui">Oui</option>
+              <option value="non">Non</option>
+            </Select>
           </fieldset>
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">

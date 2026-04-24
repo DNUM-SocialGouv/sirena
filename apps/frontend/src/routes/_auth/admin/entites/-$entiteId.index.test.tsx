@@ -99,8 +99,10 @@ describe('Admin entity edit route', () => {
 
     expect(screen.getByLabelText(/Nom de l'entité/i)).toHaveValue('ARS Normandie');
     expect(screen.getByLabelText(/Libellé de l'entité/i)).toHaveValue('ARS NOR');
-    expect(screen.getByRole('radio', { name: 'Oui' })).toBeChecked();
-    expect(screen.getByRole('radio', { name: 'Non' })).not.toBeChecked();
+    expect(screen.getByRole('combobox', { name: /Actif dans SIRENA/i })).toHaveValue('oui');
+    expect(screen.getByRole('option', { name: 'Sélectionnez une option' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Oui' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Non' })).toBeInTheDocument();
   });
 
   it('shows a "Créer une direction" action on a root entity edit page', () => {
@@ -244,7 +246,7 @@ describe('Admin entity edit route', () => {
     await user.type(screen.getByLabelText(/Nom de l'entité/i), 'ARS Bretagne');
     await user.clear(screen.getByLabelText(/Libellé de l'entité/i));
     await user.type(screen.getByLabelText(/Libellé de l'entité/i), 'ARS BRE');
-    await user.click(screen.getByRole('radio', { name: 'Non' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), 'non');
     await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
 
     await waitFor(() => {
