@@ -292,11 +292,11 @@ export function RequetesEntite() {
             const depts = row.departementsLieuSurvenue;
             if (!depts?.length) return <span>-</span>;
             return (
-              <div>
+              <ul>
                 {depts.map((dept) => (
-                  <div key={dept.code}>{dept.lib ? `${dept.code} - ${dept.lib}` : dept.code}</div>
+                  <li key={dept.code}>{dept.lib ? `${dept.code} - ${dept.lib}` : dept.code}</li>
                 ))}
-              </div>
+              </ul>
             );
           },
         }
