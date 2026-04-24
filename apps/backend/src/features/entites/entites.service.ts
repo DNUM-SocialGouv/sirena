@@ -284,6 +284,16 @@ export const getEntitesByIds = async (ids: string[]) =>
         where: { id: { in: ids } },
       });
 
+export const getDepartementsByRegionCode = async (regionCode: string) => {
+  const rows = await prisma.commune.findMany({
+    where: { regCodeActuel: regionCode },
+    select: { dptCodeActuel: true, dptLibActuel: true },
+    distinct: ['dptCodeActuel'],
+    orderBy: { dptCodeActuel: 'asc' },
+  });
+  return rows.map((r) => ({ code: r.dptCodeActuel, label: r.dptLibActuel }));
+};
+
 export async function getEntiteAscendanteInfo(entiteId: string) {
   const CYCLE_LIMIT = 6;
   let currentEntiteId = entiteId;

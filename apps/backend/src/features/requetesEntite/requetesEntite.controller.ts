@@ -45,6 +45,7 @@ import {
   exportPdfRoute,
   getOtherEntitesAffectedRoute,
   getRequeteEntiteRoute,
+  getRequetesDepartementCountsRoute,
   getRequetesEntiteRoute,
   reopenRequeteRoute,
   updateStatutRoute,
@@ -52,6 +53,7 @@ import {
 import {
   CloseRequeteBodySchema,
   CreateRequeteBodySchema,
+  GetDepartementCountsQuerySchema,
   GetRequetesEntiteQuerySchema,
   UpdateDeclarantBodySchema,
   UpdateParticipantBodySchema,
@@ -70,6 +72,7 @@ import {
   generateRequetePdfBuffer,
   getOtherEntitesAffected,
   getRequeteEntiteById,
+  getRequetesCountsByDepartement,
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
@@ -86,6 +89,30 @@ const app = factoryWithLogs
   .use(userStatusMiddleware)
   .use(roleMiddleware([...ROLES_READ]))
   .use(entitesMiddleware)
+
+  .get(
+    '/department-counts',
+    getRequetesDepartementCountsRoute,
+    zValidator('query', GetDepartementCountsQuerySchema),
+    async (c) => {
+      const query = c.req.valid('query');
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+        });
+      }
+      const codes = query.departementCodes
+        .split(',')
+        .map((code) => code.trim())
+        .filter(Boolean);
+      const data = await getRequetesCountsByDepartement([topEntiteId], codes, {
+        search: query.search,
+        entiteId: query.entiteId,
+      });
+      return c.json({ data });
+    },
+  )
 
   .get('/', getRequetesEntiteRoute, zValidator('query', GetRequetesEntiteQuerySchema), async (c) => {
     const logger = c.get('logger');

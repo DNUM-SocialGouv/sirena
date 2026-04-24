@@ -86,12 +86,28 @@ const getLieuDeSurvenue = (situation: SituationData) => {
   return text;
 };
 
-const getMisEnCauseIdentity = (misEnCause: SituationData['misEnCause'] | undefined | null): string => {
-  if (!misEnCause) return '';
+const getMisEnCauseIdentity = (misEnCause: SituationData['misEnCause'] | undefined | null): React.ReactNode => {
+  if (!misEnCause) return null;
   if (misEnCause.nomService) return misEnCause.nomService;
-  const identity = [misEnCause.civilite, misEnCause.prenom, misEnCause.nom].filter(Boolean).join(' ').trim();
-  if (identity) return identity;
-  return misEnCause.commentaire || '';
+  const { civilite, prenom, nom } = misEnCause;
+  if (civilite || prenom || nom) {
+    const parts: React.ReactNode[] = [];
+    if (civilite) parts.push(civilite);
+    if (prenom) parts.push(prenom);
+    if (nom) parts.push(<span className="lastname">{nom}</span>);
+    return (
+      <>
+        {parts.map((part, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: stable order
+          <span key={index}>
+            {index > 0 ? ' ' : ''}
+            {part}
+          </span>
+        ))}
+      </>
+    );
+  }
+  return misEnCause.commentaire || null;
 };
 
 const Affectations = ({ situation }: { situation?: SituationData | null }) => {
@@ -262,16 +278,25 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
           </div>
         )}
 
-        {hasMisEnCause && (
-          <div className="fr-col-auto">
-            <p className={fr.cx('fr-mb-0')}>
-              <span className={fr.cx('fr-icon-error-warning-line', 'fr-icon--sm')} aria-hidden="true" />
-              <span className="fr-sr-only">Identité de la personne concernée :</span>{' '}
-              {getMisEnCauseIdentity(situation?.misEnCause) && `${getMisEnCauseIdentity(situation?.misEnCause)} - `}
-              {situation?.misEnCause?.misEnCauseType?.label}
-            </p>
-          </div>
-        )}
+        {hasMisEnCause &&
+          (() => {
+            const identity = getMisEnCauseIdentity(situation?.misEnCause);
+            return (
+              <div className="fr-col-auto">
+                <p className={fr.cx('fr-mb-0')}>
+                  <span className={fr.cx('fr-icon-error-warning-line', 'fr-icon--sm')} aria-hidden="true" />
+                  <span className="fr-sr-only">Identité de la personne concernée :</span>{' '}
+                  {identity && (
+                    <>
+                      {identity}
+                      {' - '}
+                    </>
+                  )}
+                  {situation?.misEnCause?.misEnCauseType?.label}
+                </p>
+              </div>
+            );
+          })()}
 
         <div className="fr-col-auto">
           <MotifsQualified situation={situation} />

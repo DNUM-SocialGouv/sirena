@@ -68,6 +68,14 @@ const renderInlineList = (items: string[]): ReactNode => (
   </ul>
 );
 
+const renderInlineNodeList = (items: Array<{ key: string; node: ReactNode }>): ReactNode => (
+  <ul className={styles.inlineList}>
+    {items.map((item) => (
+      <li key={item.key}>{item.node}</li>
+    ))}
+  </ul>
+);
+
 const renderList = (items: string[]): ReactNode => (
   <ul className={styles.list}>
     {items.map((item) => (
@@ -179,36 +187,60 @@ const getMisEnCauseTypeInfo = (misEnCause: MisEnCause) => {
   return { typeId, typeLabel, precisionLabel: misEnCause?.misEnCauseTypePrecision?.label };
 };
 
+const buildIdentity = (misEnCause: MisEnCause): { key: string; node: ReactNode } | null => {
+  const civilite = misEnCause?.civilite ?? '';
+  const prenom = misEnCause?.prenom ?? '';
+  const nom = misEnCause?.nom ?? '';
+  const commentaire = misEnCause?.commentaire?.trim() ?? '';
+
+  if (civilite || prenom || nom) {
+    const key = [civilite, prenom, nom].filter(Boolean).join(' ').trim();
+    return {
+      key,
+      node: (
+        <>
+          {[civilite, prenom].filter(Boolean).join(' ')}
+          {(civilite || prenom) && nom ? ' ' : ''}
+          {nom && <span className="lastname">{nom}</span>}
+        </>
+      ),
+    };
+  }
+
+  if (commentaire) return { key: commentaire, node: commentaire };
+  return null;
+};
+
+const toStringItem = (value: string): { key: string; node: ReactNode } => ({ key: value, node: value });
+
 const getMisEnCauseDisplayValue = (
   typeId: MisEnCauseType,
   typeLabel: string,
   precisionLabel: string | undefined,
   misEnCause: MisEnCause,
   lieuDeSurvenue: LieuDeSurvenue,
-): string => {
-  const identity =
-    [misEnCause?.civilite, misEnCause?.prenom, misEnCause?.nom].filter(Boolean).join(' ').trim() ||
-    misEnCause?.commentaire?.trim();
+): { key: string; node: ReactNode } => {
+  const identity = buildIdentity(misEnCause);
 
   switch (typeId) {
     case MIS_EN_CAUSE_TYPE.PROFESSIONNEL_SANTE:
-      return identity || precisionLabel || typeLabel;
+      return identity || toStringItem(precisionLabel || typeLabel);
 
     case MIS_EN_CAUSE_TYPE.ETABLISSEMENT: {
       if (misEnCause?.nomService) {
-        return misEnCause.nomService;
+        return toStringItem(misEnCause.nomService);
       }
       const isEtablissementLieu = ETABLISSEMENT_LIEU_TYPES.includes(lieuDeSurvenue?.lieuTypeId || '');
       const establishmentName = isEtablissementLieu ? lieuDeSurvenue?.adresse?.label : undefined;
-      return establishmentName || precisionLabel || typeLabel;
+      return toStringItem(establishmentName || precisionLabel || typeLabel);
     }
 
     default:
-      return precisionLabel || typeLabel;
+      return toStringItem(precisionLabel || typeLabel);
   }
 };
 
-const extractMisEnCauseFromSituation = (situation: Situation): string | null => {
+const extractMisEnCauseFromSituation = (situation: Situation): { key: string; node: ReactNode } | null => {
   const typeInfo = getMisEnCauseTypeInfo(situation.misEnCause);
   if (!typeInfo) return null;
 
@@ -224,11 +256,11 @@ const extractMisEnCauseFromSituation = (situation: Situation): string | null => 
 export function renderMisEnCauseCell(row: RequeteEntiteRow): ReactNode {
   const items = (row.requete.situations ?? [])
     .map(extractMisEnCauseFromSituation)
-    .filter((v): v is string => v !== null);
+    .filter((v): v is { key: string; node: ReactNode } => v !== null);
 
-  const uniqueItems = [...new Set(items)];
+  const uniqueItems = uniqueBy(items, (item) => item.key);
 
-  return uniqueItems.length === 0 ? UNKNOWN_VALUE : renderInlineList(uniqueItems);
+  return uniqueItems.length === 0 ? UNKNOWN_VALUE : renderInlineNodeList(uniqueItems);
 }
 
 export function renderAffectationCell(row: RequeteEntiteRow, userTopEntiteId: string): ReactNode {

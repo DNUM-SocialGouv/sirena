@@ -32,7 +32,7 @@ export const OtherEntitiesAffected = () => {
           ))}
         </div>
       ) : (
-        <span className="fr-text--sm">Aucune autre entité affectée</span>
+        <p className="fr-text--sm">Aucune autre entité affectée</p>
       )}
     </div>
   );

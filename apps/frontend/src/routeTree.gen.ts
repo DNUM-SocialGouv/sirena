@@ -21,6 +21,7 @@ import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/r
 import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
 import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
 import { Route as AuthAdminIndexRouteImport } from './routes/_auth/admin/index'
+import { Route as AuthAdminFeatureFlagsRouteImport } from './routes/_auth/admin/feature-flags'
 import { Route as AuthUserHomeRouteImport } from './routes/_auth/_user/home'
 import { Route as AuthAdminUsersRouteRouteImport } from './routes/_auth/admin/users/route'
 import { Route as AuthAdminUsersIndexRouteImport } from './routes/_auth/admin/users/index'
@@ -100,6 +101,11 @@ const AuthUserRouteRoute = AuthUserRouteRouteImport.update({
 const AuthAdminIndexRoute = AuthAdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthAdminRouteRoute,
+} as any)
+const AuthAdminFeatureFlagsRoute = AuthAdminFeatureFlagsRouteImport.update({
+  id: '/feature-flags',
+  path: '/feature-flags',
   getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 const AuthUserHomeRoute = AuthUserHomeRouteImport.update({
@@ -239,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/mentions-legales': typeof PublicMentionsLegalesRoute
   '/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/home': typeof AuthUserHomeRoute
+  '/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/admin/': typeof AuthAdminIndexRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/request/create': typeof AuthUserRequestCreateRouteWithChildren
@@ -270,6 +277,7 @@ export interface FileRoutesByTo {
   '/gestion-cookies': typeof PublicGestionCookiesRoute
   '/mentions-legales': typeof PublicMentionsLegalesRoute
   '/home': typeof AuthUserHomeRoute
+  '/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/admin': typeof AuthAdminIndexRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/_public/mentions-legales': typeof PublicMentionsLegalesRoute
   '/_auth/admin/users': typeof AuthAdminUsersRouteRouteWithChildren
   '/_auth/_user/home': typeof AuthUserHomeRoute
+  '/_auth/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
   '/_auth/admin/': typeof AuthAdminIndexRoute
   '/_auth/_user/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/_auth/_user/request/create': typeof AuthUserRequestCreateRouteWithChildren
@@ -338,6 +347,7 @@ export interface FileRouteTypes {
     | '/mentions-legales'
     | '/admin/users'
     | '/home'
+    | '/admin/feature-flags'
     | '/admin/'
     | '/request/$requestId'
     | '/request/create'
@@ -369,6 +379,7 @@ export interface FileRouteTypes {
     | '/gestion-cookies'
     | '/mentions-legales'
     | '/home'
+    | '/admin/feature-flags'
     | '/admin'
     | '/admin/user/$userId'
     | '/admin/users/all'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/_public/mentions-legales'
     | '/_auth/admin/users'
     | '/_auth/_user/home'
+    | '/_auth/admin/feature-flags'
     | '/_auth/admin/'
     | '/_auth/_user/request/$requestId'
     | '/_auth/_user/request/create'
@@ -515,6 +527,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthAdminIndexRouteImport
+      parentRoute: typeof AuthAdminRouteRoute
+    }
+    '/_auth/admin/feature-flags': {
+      id: '/_auth/admin/feature-flags'
+      path: '/feature-flags'
+      fullPath: '/admin/feature-flags'
+      preLoaderRoute: typeof AuthAdminFeatureFlagsRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
     '/_auth/_user/home': {
@@ -785,6 +804,7 @@ const AuthAdminEntitesEntiteIdRouteWithChildren =
 
 interface AuthAdminRouteRouteChildren {
   AuthAdminUsersRouteRoute: typeof AuthAdminUsersRouteRouteWithChildren
+  AuthAdminFeatureFlagsRoute: typeof AuthAdminFeatureFlagsRoute
   AuthAdminIndexRoute: typeof AuthAdminIndexRoute
   AuthAdminEntitesEntiteIdRoute: typeof AuthAdminEntitesEntiteIdRouteWithChildren
   AuthAdminUserUserIdRoute: typeof AuthAdminUserUserIdRoute
@@ -793,6 +813,7 @@ interface AuthAdminRouteRouteChildren {
 
 const AuthAdminRouteRouteChildren: AuthAdminRouteRouteChildren = {
   AuthAdminUsersRouteRoute: AuthAdminUsersRouteRouteWithChildren,
+  AuthAdminFeatureFlagsRoute: AuthAdminFeatureFlagsRoute,
   AuthAdminIndexRoute: AuthAdminIndexRoute,
   AuthAdminEntitesEntiteIdRoute: AuthAdminEntitesEntiteIdRouteWithChildren,
   AuthAdminUserUserIdRoute: AuthAdminUserUserIdRoute,
