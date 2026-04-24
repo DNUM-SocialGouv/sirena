@@ -4,6 +4,7 @@ import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { queryClient } from '@/lib/queryClient';
 import { router } from '@/lib/router';
 import { toastManager } from '@/lib/toastManager';
+import { useFeatureFlagStore } from '@/stores/featureFlagStore';
 import { useUserStore } from '@/stores/userStore';
 
 export interface RequestErrorOptions {
@@ -74,6 +75,7 @@ export const handleRequestErrors = async (res: Response, options: RequestErrorOp
   if (res.status === 401) {
     const userStore = useUserStore.getState();
     userStore.logout();
+    useFeatureFlagStore.getState().reset();
     router.navigate({ to: '/login', search: { redirect: window.location.pathname } });
     errorFound = true;
   }
