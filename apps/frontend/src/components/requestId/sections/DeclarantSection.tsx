@@ -22,7 +22,7 @@ export const DeclarantSection = ({ requestId, id, declarant, editHref }: Declara
       ? {
           civilite: declarantIdentite.civiliteId ? { label: declarantIdentite.civiliteId } : undefined,
           prenom: declarantIdentite.prenom,
-          nom: declarantIdentite.nom?.toUpperCase() || '',
+          nom: declarantIdentite.nom || '',
         }
       : null,
   );
