@@ -1,6 +1,7 @@
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import type { RequetePrioriteType } from '@sirena/common/constants';
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import type { ReactNode } from 'react';
 import { useUpdatePriorite } from '@/hooks/mutations/updatePriorite.hook';
 import { useUpdateStatut } from '@/hooks/mutations/updateStatut.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
@@ -13,7 +14,7 @@ import { ContactInfo } from './sections/helpers';
 
 interface RequestInfosProps {
   requestId?: string;
-  fullName: string | null;
+  fullName: ReactNode;
   motifs: string[];
   statutId: string;
   prioriteId?: string | null;
