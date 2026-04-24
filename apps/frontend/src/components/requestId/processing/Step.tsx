@@ -38,13 +38,23 @@ type StepProps = StepType & {
 const formatDate = (dateStr: string) =>
   new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+const formatAgent = (agent: { prenom: string; nom: string }): React.ReactNode => (
+  <>
+    {capitalizeFirst(agent.prenom)} <span className="lastname">{capitalizeFirst(agent.nom)}</span>
+  </>
+);
+
 const formatStepCreationInfo = (
   createdBy: { prenom: string; nom: string } | null | undefined,
   createdAt: string,
-): string => {
+): React.ReactNode => {
   const date = formatDate(createdAt);
   if (createdBy) {
-    return `Ajouté par ${capitalizeFirst(createdBy.prenom)} ${capitalizeFirst(createdBy.nom)} le ${date}`;
+    return (
+      <>
+        Ajouté par {formatAgent(createdBy)} le {date}
+      </>
+    );
   }
   return `Ajouté automatiquement le ${date}`;
 };
@@ -68,22 +78,31 @@ const getStepSubtitle = (
   createdBy: { prenom: string; nom: string } | null | undefined,
   requete: RequeteRef,
   clotureNoteAuthor?: { prenom: string; nom: string } | null,
-): string => {
+): React.ReactNode => {
   const date = formatDate(createdAt);
 
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
     const agent = createdBy ?? clotureNoteAuthor;
-    const agentPart = agent ? ` par ${capitalizeFirst(agent.prenom)} ${capitalizeFirst(agent.nom)}` : '';
-    return `Requête clôturée le ${date}${agentPart}`;
+    if (agent) {
+      return (
+        <>
+          Requête clôturée le {date} par {formatAgent(agent)}
+        </>
+      );
+    }
+    return `Requête clôturée le ${date}`;
   }
 
   if (type === REQUETE_ETAPE_TYPES.CREATION) {
     const isManual = requete?.dematSocialId == null && requete?.createdBy != null;
-    const creatorPart =
-      isManual && requete?.createdBy
-        ? ` par ${capitalizeFirst(requete.createdBy.prenom)} ${capitalizeFirst(requete.createdBy.nom)}`
-        : '';
-    return `Requête créée le ${date}${creatorPart}`;
+    if (isManual && requete?.createdBy) {
+      return (
+        <>
+          Requête créée le {date} par {formatAgent(requete.createdBy)}
+        </>
+      );
+    }
+    return `Requête créée le ${date}`;
   }
 
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {

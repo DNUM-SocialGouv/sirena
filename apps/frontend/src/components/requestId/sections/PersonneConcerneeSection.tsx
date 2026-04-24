@@ -22,7 +22,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
       ? {
           civilite: personneIdentite.civiliteId ? { label: personneIdentite.civiliteId } : undefined,
           prenom: personneIdentite.prenom,
-          nom: personneIdentite.nom?.toUpperCase() || '',
+          nom: personneIdentite.nom || '',
         }
       : null,
   );

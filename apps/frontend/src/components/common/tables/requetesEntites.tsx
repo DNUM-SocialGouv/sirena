@@ -275,7 +275,7 @@ export function RequetesEntite() {
       if (participant?.identite) {
         return (
           <span className="one-line">
-            {participant.identite.prenom} {participant.identite.nom}
+            {participant.identite.prenom} <span className="lastname">{participant.identite.nom}</span>
           </span>
         );
       }
