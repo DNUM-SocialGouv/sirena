@@ -1,4 +1,10 @@
 ---
+anonymize:
+  enabled: true
+
+  sirena_db_secret_path: databases/sirena-integration
+  anonymize_db_secret_path: databases/sirena-integration-anonymisation
+
 backend:
   SDPSN-devops-charts:
     namespace: org-sdpsn-ws-sirena-integration

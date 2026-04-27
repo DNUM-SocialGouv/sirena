@@ -2,9 +2,9 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Release.Name }}-anonymize
+  name: anonymize
   labels:
-    app: {{ .Release.Name }}-anonymize
+    app: anonymize
 spec:
   schedule: {{ .Values.schedule | quote }}
   concurrencyPolicy: Forbid
@@ -13,14 +13,14 @@ spec:
   jobTemplate:
     metadata:
       labels:
-        app: {{ .Release.Name }}-anonymize
+        app: anonymize
     spec:
       backoffLimit: 1
       activeDeadlineSeconds: 3600
       template:
         metadata:
           labels:
-            app: {{ .Release.Name }}-anonymize
+            app: anonymize
           annotations:
             prometheus.io/scrape: "false"
         spec:
@@ -33,10 +33,8 @@ spec:
             - name: anonymize
               image: {{ .Values.image }}
               envFrom:
-                {{- range .Values.envFrom.secretRef }}
                 - secretRef:
-                    name: {{ . }}
-                {{- end }}
+                    name: anonymize-secret
               env:
                 {{- if .Values.pushgatewayUrl }}
                 - name: PUSHGATEWAY_URL
