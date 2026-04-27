@@ -1,1 +1,3 @@
-export const LOGGED_TOKEN_NAME = import.meta.env.VITE_IS_LOGGED_TOKEN_NAME;
+import { env } from '@/config/env';
+
+export const LOGGED_TOKEN_NAME = env.IS_LOGGED_TOKEN_NAME;

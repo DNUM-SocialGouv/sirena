@@ -134,21 +134,16 @@ build-backend:
 build-frontend:
   extends: .build-docker-images
   script:
-    - docker manifest inspect ${IMAGE_TAG}-frontend-${FRONTEND_ENV} > /dev/null 2>&1 && echo "Frontend image exists, skipping" || (
+    - docker manifest inspect ${IMAGE_TAG}-frontend > /dev/null 2>&1 && echo "Frontend image exists, skipping" || (
       docker build
       --file apps/frontend/Dockerfile
-      --tag ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
-      --build-arg VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
+      --tag ${IMAGE_TAG}-frontend
       --build-arg SENTRY_ENABLED=true
-      --build-arg SENTRY_ENVIRONEMENT=${FRONTEND_ENV}
       --build-arg APP_VERSION=${CI_COMMIT_SHORT_SHA}
-      --build-arg SENTRY_DSN_FRONTEND=https://343eb82fc1395b23dc747ac7d2fac3d6@sentry2.fabrique.social.gouv.fr/49
-      --build-arg VITE_MATOMO_URL=https://matomo.fabrique.social.gouv.fr
-      --build-arg VITE_MATOMO_SITE_ID=${MATOMO_SITE_ID}
       --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN
-      --cache-from ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
+      --cache-from ${IMAGE_TAG}-frontend
       --build-arg BUILDKIT_INLINE_CACHE=1
-      . && docker push ${IMAGE_TAG}-frontend-${FRONTEND_ENV}
+      . && docker push ${IMAGE_TAG}-frontend
       )
 
 .trivy-template:

@@ -1,3 +1,4 @@
+import { APP_ENVS } from '@sirena/common/constants';
 import { envVars } from '../../config/env.js';
 
 export interface Recipient {
@@ -273,7 +274,7 @@ function applyRedirectAllTo(
   substitutions: TipimailSubstitution[] | undefined;
 } {
   const redirectTo = envVars.TIPIMAIL_REDIRECT_ALL_TO?.trim();
-  const isProduction = envVars.SENTRY_ENVIRONMENT === 'production';
+  const isProduction = envVars.APP_ENV === APP_ENVS.PRODUCTION;
   if (!redirectTo || isProduction) return { recipients, subject, substitutions };
 
   const realRecipientsLabel = recipients.map((r) => r.address).join(', ');
@@ -321,7 +322,7 @@ function createTipimailRequest(options: SendTipimailOptions): TipimailSendReques
   subject = redirected.subject;
   substitutions = redirected.substitutions ?? options.substitutions;
 
-  const redirectIsOn = Boolean(envVars.TIPIMAIL_REDIRECT_ALL_TO?.trim()) && envVars.SENTRY_ENVIRONMENT !== 'production';
+  const redirectIsOn = Boolean(envVars.TIPIMAIL_REDIRECT_ALL_TO?.trim()) && envVars.APP_ENV !== APP_ENVS.PRODUCTION;
   if (!redirectIsOn) {
     substitutions = ensureTestRealRecipientsInSubstitutions(substitutions, '');
   }

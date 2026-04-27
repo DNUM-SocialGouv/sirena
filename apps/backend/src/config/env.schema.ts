@@ -1,3 +1,4 @@
+import { APP_ENV_VALUES } from '@sirena/common/constants';
 import { z } from 'zod';
 
 /**
@@ -184,7 +185,6 @@ export const AppEnvSchema = z.object({
     .transform((val) => val === 'true')
     .describe('Enable Sentry error tracking'),
   SENTRY_DSN_BACKEND: z.string().optional(),
-  SENTRY_ENVIRONMENT: z.string().optional(),
   S3_BUCKET_ACCESS_KEY: z
     .string({
       error: (issue) =>
@@ -295,7 +295,7 @@ export const AppEnvSchema = z.object({
     .default('false')
     .transform((val) => val === 'true'),
   APP_ENV: z
-    .enum(['integration', 'validation', 'production'] as const) // There is more environments, but only these 3 should enable specific debug features in the code (e.g. payload logging in non-prod envs)
+    .enum(APP_ENV_VALUES)
     .optional()
     .describe(
       'Deployment environment name. Used to enable debug features (e.g. payload logging) in non-production envs.',

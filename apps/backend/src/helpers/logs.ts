@@ -1,7 +1,8 @@
+import { APP_ENVS } from '@sirena/common/constants';
 import { envVars } from '../config/env.js';
 
 export const isPayloadDebugEnabled = (): boolean =>
-  envVars.APP_ENV === 'integration' || envVars.APP_ENV === 'validation';
+  envVars.APP_ENV === APP_ENVS.INTEGRATION || envVars.APP_ENV === APP_ENVS.VALIDATION;
 
 export const getPropertyTypes = (obj: Record<string, unknown>): Record<string, string> => {
   const types: Record<string, string> = {};

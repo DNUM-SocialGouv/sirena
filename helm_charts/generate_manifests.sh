@@ -16,6 +16,6 @@ done;
 helm template . -f values/${ENVIRONNEMENT}.yaml \
    --set backend.SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-backend" \
    --set backend.SDPSN-devops-charts.deployment.initContainer.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-backend"\
-   --set frontend.SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-frontend-${ENVIRONNEMENT}"\
+   --set frontend.SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-frontend"\
    --set worker.SDPSN-devops-charts.deployment.image="ghcr.io/dnum-socialgouv/sirena:${IMAGE_TAG}-worker"\
    --output-dir ./generated_manifests
