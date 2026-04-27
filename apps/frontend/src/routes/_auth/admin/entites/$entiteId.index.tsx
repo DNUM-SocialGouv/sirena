@@ -4,16 +4,17 @@ import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES } from '@sirena/common/constants';
 import { Toast } from '@sirena/ui';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { type SubmitEvent, useState } from 'react';
+import { type SubmitEvent, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
-import { zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
+import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
+import { getEditEntiteTitle } from './helpers';
 
 const EditEntiteFormSchema = z.object({
-  nomComplet: z.string().trim().min(1, 'Le nom est obligatoire.'),
-  label: z.string().trim().min(1, 'Le libellé est obligatoire.'),
-  isActive: z.enum(['oui', 'non'], 'Le statut actif dans SIRENA est obligatoire.'),
+  nomComplet: z.string().trim().min(1, 'Le champ "Nom de l’entité" est vide. Veuillez le renseigner.'),
+  label: z.string().trim().min(1, 'Le champ "Libellé de l’entité" est vide. Veuillez le renseigner.'),
+  isActive: z.enum(['oui', 'non'], 'Le statut actif dans SIRENA est obligatoire. Veuillez sélectionner une option.'),
 });
 
 export const Route = createFileRoute('/_auth/admin/entites/$entiteId/')({
@@ -33,48 +34,101 @@ export function RouteComponent() {
   const canCreateChild = !entiteChainQuery.isError && entiteDepth > 0 && entiteDepth < 3;
   const createChildLabel = entiteDepth === 1 ? 'Créer une direction' : 'Créer un service';
 
-  if (entiteQuery.isPending) {
-    return null;
-  }
+  const isSubmittingRef = useRef(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  if (entiteQuery.isError || !entiteQuery.data) {
-    return null;
-  }
+  const [formData, setFormData] = useState({
+    nomComplet: '',
+    label: '',
+    isActive: '',
+  });
 
-  const entite = entiteQuery.data;
+  useEffect(() => {
+    if (!entiteQuery.data) return;
+
+    document.title = `${getEditEntiteTitle(entiteQuery.data.nomComplet)} - Gestion des entités - SIRENA`;
+  }, [entiteQuery.data]);
+
+  useEffect(() => {
+    if (!entiteQuery.data) return;
+
+    setFormData({
+      nomComplet: entiteQuery.data.nomComplet,
+      label: entiteQuery.data.label,
+      isActive: entiteQuery.data.isActive ? 'oui' : 'non',
+    });
+  }, [entiteQuery.data]);
+
+  if (entiteQuery.isPending || entiteChainQuery.isPending) return null;
+
+  if (entiteQuery.isError || entiteChainQuery.isError || !entiteQuery.data) return null;
+
+  const handleInputChange =
+    (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const value = e.target.value;
+
+      setFormData((prev) => {
+        const updated = { ...prev, [field]: value };
+
+        if (hasSubmitted) {
+          const fieldError = getFieldError(EditEntiteFormSchema, updated, field);
+
+          setValidationErrors((prevErrors) => {
+            const next = { ...prevErrors };
+
+            if (fieldError) next[field] = fieldError;
+            else delete next[field];
+
+            return next;
+          });
+        }
+
+        return updated;
+      });
+    };
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const formData = new FormData(e.currentTarget);
+    if (isSubmittingRef.current || editEntiteAdmin.isPending) return;
 
-    const validationResult = EditEntiteFormSchema.safeParse({
-      nomComplet: String(formData.get('nomComplet') ?? ''),
-      label: String(formData.get('label') ?? ''),
-      isActive: String(formData.get('isActive') ?? ''),
-    });
+    setHasSubmitted(true);
 
-    if (!validationResult.success) {
-      setValidationErrors(zodIssuesToFieldErrors(validationResult.error));
+    const result = EditEntiteFormSchema.safeParse(formData);
+
+    if (!result.success) {
+      const errors = zodIssuesToFieldErrors(result.error);
+      setValidationErrors(errors);
+
+      const firstField = Object.keys(errors)[0];
+
+      const el = document.querySelector<HTMLElement>(`[name="${firstField}"]`);
+      el?.focus?.();
+
       return;
     }
 
     setValidationErrors({});
+    isSubmittingRef.current = true;
 
-    await editEntiteAdmin.mutateAsync({
-      id: entiteId,
-      input: {
-        ...validationResult.data,
-        isActive: validationResult.data.isActive === 'oui',
-      },
-    });
+    try {
+      await editEntiteAdmin.mutateAsync({
+        id: entiteId,
+        input: {
+          ...result.data,
+          isActive: result.data.isActive === 'oui',
+        },
+      });
 
-    toastManager.add({
-      title: 'Entité modifiée avec succès',
-      description: 'Les modifications ont bien été enregistrées.',
-      timeout: 0,
-      data: { icon: 'fr-alert--success' },
-    });
+      toastManager.add({
+        title: 'Entité modifiée avec succès',
+        description: 'Les modifications ont bien été enregistrées.',
+        timeout: 0,
+        data: { icon: 'fr-alert--success' },
+      });
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
   return (
@@ -100,11 +154,10 @@ export function RouteComponent() {
         ) : null}
       </div>
 
-      <div
-        className="fr-p-4w fr-mb-4w"
-        style={{ border: '1px solid var(--border-default-grey)', borderRadius: '0.25rem' }}
-      >
-        <form onSubmit={handleSubmit} noValidate>
+      <div className="fr-p-4w fr-mb-4w fr-card">
+        <form onSubmit={handleSubmit}>
+          <p>Tous les champs sont obligatoires.</p>
+
           <fieldset className="fr-fieldset">
             <legend className="fr-fieldset__legend">Informations de l’entité</legend>
 
@@ -115,7 +168,8 @@ export function RouteComponent() {
               stateRelatedMessage={validationErrors.nomComplet}
               nativeInputProps={{
                 name: 'nomComplet',
-                defaultValue: entite.nomComplet,
+                value: formData.nomComplet,
+                onChange: handleInputChange('nomComplet'),
               }}
             />
 
@@ -126,7 +180,8 @@ export function RouteComponent() {
               stateRelatedMessage={validationErrors.label}
               nativeInputProps={{
                 name: 'label',
-                defaultValue: entite.label,
+                value: formData.label,
+                onChange: handleInputChange('label'),
               }}
             />
 
@@ -137,7 +192,8 @@ export function RouteComponent() {
               stateRelatedMessage={validationErrors.isActive}
               nativeSelectProps={{
                 name: 'isActive',
-                defaultValue: entite.isActive ? 'oui' : 'non',
+                value: formData.isActive,
+                onChange: handleInputChange('isActive'),
               }}
             >
               <option value="" disabled>

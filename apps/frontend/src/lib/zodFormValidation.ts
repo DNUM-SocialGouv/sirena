@@ -13,3 +13,16 @@ export function zodIssuesToFieldErrors(error: ZodError): Record<string, string> 
 
   return errors;
 }
+
+export function getFieldError<T extends Record<string, unknown>>(
+  schema: any,
+  data: T,
+  field: keyof T,
+): string | undefined {
+  const result = schema.safeParse(data);
+
+  if (result.success) return undefined;
+
+  const errors = zodIssuesToFieldErrors(result.error);
+  return errors[field as string];
+}

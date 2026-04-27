@@ -302,8 +302,6 @@ describe('Admin entity child creation route', () => {
 
     render(<RouteComponent />);
 
-    const form = screen.getByRole('button', { name: 'Créer' }).closest('form');
-    expect(form).toHaveAttribute('novalidate');
     expect(screen.getByLabelText(/Nom - libellé long/i)).not.toHaveAttribute('required');
     expect(screen.getByLabelText(/Nom court/i)).not.toHaveAttribute('required');
     expect(screen.getByRole('combobox', { name: /Actif dans SIRENA/i })).not.toHaveAttribute('required');
@@ -311,9 +309,13 @@ describe('Admin entity child creation route', () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Créer' }));
 
-    expect(await screen.findByText('Le nom est obligatoire.')).toBeInTheDocument();
-    expect(screen.getByText('Le nom court est obligatoire.')).toBeInTheDocument();
-    expect(screen.getByText('Le statut actif dans SIRENA est obligatoire.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Le champ "Nom - libellé long" est vide. Veuillez le renseigner.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Le champ "Nom court" est vide. Veuillez le renseigner.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Le statut actif dans SIRENA est obligatoire. Veuillez sélectionner une option.'),
+    ).toBeInTheDocument();
     expect(createChildEntiteAdminMutateAsyncSpy).not.toHaveBeenCalled();
   });
 
