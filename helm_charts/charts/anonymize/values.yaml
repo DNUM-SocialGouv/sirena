@@ -16,6 +16,5 @@ resources:
 
 pushgatewayUrl: ""
 
-envFrom:
-  secretRef:
-    - anonymize-secret
+sirena_db_secret_path: databases/sirena
+anonymize_db_secret_path: databases/sirena-anonymisation
