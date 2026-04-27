@@ -39,7 +39,6 @@ const processEnv = {
   // Sentry
   SENTRY_ENABLED: process.env.SENTRY_ENABLED,
   SENTRY_DSN_BACKEND: process.env.SENTRY_DSN_BACKEND,
-  SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
   // Minio
   S3_BUCKET_ACCESS_KEY: process.env.S3_BUCKET_ACCESS_KEY,
   S3_BUCKET_SECRET_KEY: process.env.S3_BUCKET_SECRET_KEY,

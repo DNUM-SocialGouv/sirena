@@ -1,16 +1,18 @@
 import * as Sentry from '@sentry/react';
+import { env } from '@/config/env';
+import { APP_VERSION } from '@/config/version.constant';
 import { getSessionId } from '@/lib/tracking';
 
-if (import.meta.env.VITE_SENTRY_ENABLED === 'true') {
+if (env.SENTRY_ENABLED === 'true') {
   Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN_FRONTEND,
-    environment: import.meta.env.VITE_SENTRY_ENVIRONMENT,
+    dsn: env.SENTRY_DSN_FRONTEND,
+    environment: env.APP_ENV,
     integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
     tracesSampleRate: 1.0,
     tracePropagationTargets: ['localhost', /^\/api(\/|$)/],
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
-    release: import.meta.env.VITE_APP_VERSION,
+    release: APP_VERSION,
     beforeSend: (event) => {
       const sessionId = getSessionId();
       if (!event.tags?.sessionId) {

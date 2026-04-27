@@ -12,7 +12,6 @@ backend:
       FRONTEND_URI: https://sirena.validation.dev.atlas.fabrique.social.gouv.fr
       CRON_DEMAT_SOCIAL: "300"
       REDIS_TLS: "false"
-      SENTRY_ENVIRONMENT: validation
       APP_ENV: validation
 
     deployment:
@@ -41,6 +40,9 @@ external-secrets:
 frontend:
   SDPSN-devops-charts:
     namespace: org-sdpsn-ws-sirena-validation
+
+    appVariables:
+      APP_ENV: validation
 
     deployment:
       replicas: 1
