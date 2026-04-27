@@ -313,4 +313,4 @@ restore:
   pg_restore_options:
     dbname: "${PG_URL_TO}"
     jobs: 4
-    clean: true
+    exit-on-error: true

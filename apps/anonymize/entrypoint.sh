@@ -62,9 +62,13 @@ if [ -z "${PG_URL_TO:-}" ]; then
   exit 1
 fi
 
+mask_url() {
+  echo "$1" | sed -E 's#^([a-z]+://)[^@/]+@#\1***@#'
+}
+
 log "=== Sirena database anonymization ==="
-log "Source: ${PG_URL_FROM%%@*}@***"
-log "Target: ${PG_URL_TO%%@*}@***"
+log "Source: $(mask_url "${PG_URL_FROM}")"
+log "Target: $(mask_url "${PG_URL_TO}")"
 
 # ── Resolve env vars in config ──────────────────────────────────────
 envsubst < "${CONFIG_TEMPLATE}" > "${CONFIG_PATH}"
@@ -73,8 +77,11 @@ envsubst < "${CONFIG_TEMPLATE}" > "${CONFIG_PATH}"
 log "Step 1/2: Dumping with anonymization..."
 greenmask --config="${CONFIG_PATH}" dump
 
-# ── Step 2: Restore to target ───────────────────────────────────────
-log "Step 2/2: Restoring anonymized data..."
+# ── Step 2: Reset target schema then restore ─────────────────────────
+log "Step 2/2: Resetting target public schema..."
+psql "${PG_URL_TO}" -v ON_ERROR_STOP=1 -q -c 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;'
+
+log "Restoring anonymized data..."
 greenmask --config="${CONFIG_PATH}" restore latest
 
 log "=== Done ==="
