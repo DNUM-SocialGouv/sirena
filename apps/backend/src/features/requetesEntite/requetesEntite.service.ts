@@ -12,6 +12,7 @@ import {
   type RequeteStatutType,
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
+import { getLieuPrecisionLabel } from '@sirena/common/utils';
 import archiver from 'archiver';
 import type { z } from 'zod';
 import { getOriginalFileName } from '../../helpers/file.js';
@@ -2040,41 +2041,11 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
   const pdf = new RequetePdfBuilder(`Requête ${requete.id}`);
 
   // ===== 1. HEADERS =====
-  const allMaltraitanceTypes = (requete.situations ?? [])
-    .flatMap(
-      (s) =>
-        s.faits?.[0]?.maltraitanceTypes
-          ?.filter((mt) => mt.maltraitanceType.id !== 'NON')
-          .map((mt) => `${mt.maltraitanceType.label} (maltraitance)`) ?? [],
-    )
-    .filter((v, i, arr) => arr.indexOf(v) === i);
-
-  const allMotifsDeclaratifs = [
-    ...allMaltraitanceTypes,
-    ...(requete.situations ?? [])
-      .flatMap((s) => s.faits?.[0]?.motifsDeclaratifs?.map((m) => m.motifDeclaratif.label) ?? [])
-      .filter((v, i, arr) => arr.indexOf(v) === i),
-  ];
-
-  const allMotifsQualifies = (requete.situations ?? []).flatMap((s) => s.faits?.[0]?.motifs ?? []);
-  const allMotifsGrouped = groupMotifsByParent(allMotifsQualifies);
-
   pdf
     .h1(`Requête ${requete.id}`)
     .field('Statut', requeteEntite.statut?.label || requeteEntite.statutId)
-    .field('Priorité', requeteEntite.priorite?.label || null);
-
-  if (allMotifsDeclaratifs.length > 0) {
-    pdf.paragraph('Motifs renseignés par le déclarant :', { bold: true });
-    pdf.list(allMotifsDeclaratifs);
-  }
-
-  if (allMotifsGrouped.length > 0) {
-    pdf.paragraph('Motifs qualifiés :', { bold: true });
-    pdf.groupedList(allMotifsGrouped);
-  }
-
-  pdf.field('Date de génération', formatDateFr(new Date()));
+    .field('Priorité', requeteEntite.priorite?.label || null)
+    .field('Date de génération', formatDateFr(new Date()));
 
   // ===== 2. REQUÊTE ORIGINALE =====
   pdf
@@ -2096,9 +2067,8 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         .field('Civilité', d.identite?.civilite?.label || null)
         .field('Prénom', d.identite?.prenom || null)
         .field('Nom', d.identite?.nom || null)
-        .field('Lien avec la victime', d.lienVictime?.label || null)
+        .field('Lien avec la personne concernée', d.lienVictime?.label || null)
         .field('Précision lien', d.lienAutrePrecision || null)
-        .field('Tuteur/Curateur', booleanLabel(d.isTuteur))
         .field('Adresse', formatRue(d.adresse))
         .field('Code postal', d.adresse?.codePostal || null)
         .field('Ville', d.adresse?.ville || null)
@@ -2109,9 +2079,19 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
           booleanLabel(
             d.veutGarderAnonymat === null || d.veutGarderAnonymat === undefined ? null : !d.veutGarderAnonymat,
           ),
-        )
-        .field('Signalement professionnel (EIG)', booleanLabel(d.estSignalementProfessionnel))
-        .field('Autres précisions', d.commentaire || null);
+        );
+
+      if (d.isTuteur) {
+        pdf.paragraph('Le déclarant est curateur ou tuteur de la personne concernée');
+      }
+
+      if (d.estSignalementProfessionnel !== null && d.estSignalementProfessionnel !== undefined) {
+        pdf.paragraph(
+          `Le déclarant ${d.estSignalementProfessionnel ? 'est' : "n'est pas"} un professionnel qui signale des dysfonctionnements et évènements indésirables graves (EIG)`,
+        );
+      }
+
+      pdf.field('Autres précisions', d.commentaire || null);
     }
   }
 
@@ -2153,10 +2133,10 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       pdf
         .subsection('Lieu de survenue')
         .field('Type de lieu', lieu.lieuType?.label || null)
-        .field('Précision du lieu', lieu.lieuPrecision || null)
+        .field('Précision du lieu', getLieuPrecisionLabel(lieu.lieuType?.id, lieu.lieuPrecision) || null)
         .field('Rue', formatRue(lieu.adresse))
-        .field('Code postal', lieu.adresse?.codePostal || lieu.codePostal || null)
-        .field('Ville', lieu.adresse?.ville || null)
+        .field('Code postal renseigné par le déclarant', lieu.codePostal || null)
+        .field('Ville', `${lieu.adresse?.codePostal || ''} ${lieu.adresse?.ville || ''}`.trim() || null)
         .field("Nom de l'établissement", lieu.adresse?.label || lieu.categLib || null)
         .field('Numéro FINESS', lieu.finess || null)
         .field('Société de transport', lieu.societeTransport || null);
