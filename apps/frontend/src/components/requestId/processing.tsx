@@ -72,7 +72,10 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
         <QueryStateHandler query={queryProcessingSteps}>
           {({ data }) =>
             data.data.map((step, index: number) => {
-              const isManualRequest = step.requete?.dematSocialId == null && step.requete?.createdBy != null;
+              const isManualRequest =
+                step.requete?.dematSocialId == null &&
+                step.requete?.thirdPartyAccountId == null &&
+                step.requete?.createdBy != null;
               const isDisabled =
                 index === data.data.length - 1 ||
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ||
