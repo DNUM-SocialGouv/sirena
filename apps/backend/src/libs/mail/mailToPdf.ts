@@ -1,7 +1,59 @@
 import { htmlToText as convertHtmlToText } from 'html-to-text';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { RequetePdfBuilder } from '../../features/requetesEntite/requetesEntite.pdf.builder.js';
 import { getLoggerStore } from '../asyncLocalStorage.js';
 import { applySubstitutions, getTipimailTemplate, type TipimailTemplate } from './tipimail.js';
+
+const EMAIL_PDF_TITLE = 'Accusé de réception - Email envoyé';
+
+function formatDate(date: Date): string {
+  return date.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function buildEmailPdf(
+  from: { address: string; personalName?: string },
+  to: string,
+  sentDate: Date,
+  subject: string,
+  body: string,
+): Promise<Buffer> {
+  const fromText = from.personalName ? `${from.personalName} <${from.address}>` : from.address;
+
+  const builder = new RequetePdfBuilder(EMAIL_PDF_TITLE);
+  builder
+    .h1(EMAIL_PDF_TITLE)
+    .section('En-tête')
+    .field('Expéditeur', fromText)
+    .field('Destinataire', to)
+    .field("Date d'envoi", formatDate(sentDate))
+    .field('Objet', subject)
+    .section("Contenu de l'e-mail");
+
+  for (const line of body.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed) builder.paragraph(trimmed);
+  }
+
+  return builder.toBuffer();
+}
+
+export interface EmailPdfFromTextOptions {
+  from: { address: string; personalName?: string };
+  to: string;
+  sentDate: Date;
+  subject: string;
+  text: string;
+}
+
+export async function generateEmailPdfFromText(options: EmailPdfFromTextOptions): Promise<Buffer> {
+  const { from, to, sentDate, subject, text } = options;
+  return buildEmailPdf(from, to, sentDate, subject, text);
+}
 
 export interface EmailPdfOptions {
   from: { address: string; personalName?: string };
@@ -11,46 +63,10 @@ export interface EmailPdfOptions {
   substitutions: Record<string, unknown>;
 }
 
-/**
- * Wraps text to fit within a given width and returns lines
- */
-function wrapText(
-  text: string,
-  maxWidth: number,
-  font: { widthOfTextAtSize: (text: string, size: number) => number },
-  fontSize: number,
-): string[] {
-  const words = text.split(' ');
-  const lines: string[] = [];
-  let currentLine = '';
-
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    const textWidth = font.widthOfTextAtSize(testLine, fontSize);
-
-    if (textWidth > maxWidth && currentLine) {
-      lines.push(currentLine);
-      currentLine = word;
-    } else {
-      currentLine = testLine;
-    }
-  }
-
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
-  return lines;
-}
-
-/**
- * Generates a PDF document with the actual email content from Tipimail template
- */
 export async function generateEmailPdf(options: EmailPdfOptions): Promise<Buffer> {
   const logger = getLoggerStore();
   const { from, to, sentDate, template: templateId, substitutions } = options;
 
-  // Get template from Tipimail
   let template: TipimailTemplate;
   try {
     template = await getTipimailTemplate(templateId);
@@ -59,162 +75,12 @@ export async function generateEmailPdf(options: EmailPdfOptions): Promise<Buffer
     throw new Error(`Failed to fetch template ${templateId} from Tipimail`);
   }
 
-  // Apply substitutions to HTML and text content
   const htmlContent = template.htmlContent ? applySubstitutions(template.htmlContent, substitutions) : '';
   const textContent = template.textContent
     ? applySubstitutions(template.textContent, substitutions)
     : convertHtmlToText(htmlContent);
   const subject = template.subject ? applySubstitutions(template.subject, substitutions) : '';
+  const body = textContent || convertHtmlToText(htmlContent);
 
-  // Generate PDF
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595, 842]); // A4 size
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-  let yPosition = 800;
-  const lineHeight = 18;
-  const margin = 50;
-  const maxWidth = 495; // page width - 2*margin
-
-  // Title
-  page.drawText('Accusé de réception - Email envoyé', {
-    x: margin,
-    y: yPosition,
-    size: 16,
-    font: boldFont,
-    color: rgb(0, 0, 0),
-  });
-  yPosition -= 40;
-
-  // From
-  page.drawText('Expéditeur :', {
-    x: margin,
-    y: yPosition,
-    size: 12,
-    font: boldFont,
-    color: rgb(0, 0, 0),
-  });
-  yPosition -= lineHeight;
-  const fromText = from.personalName ? `${from.personalName} <${from.address}>` : from.address;
-  const fromLines = wrapText(fromText, maxWidth, font, 10);
-  for (const line of fromLines) {
-    page.drawText(line, {
-      x: margin + 20,
-      y: yPosition,
-      size: 10,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
-    yPosition -= lineHeight;
-  }
-  yPosition -= 10;
-
-  // To
-  page.drawText('Destinataire :', {
-    x: margin,
-    y: yPosition,
-    size: 12,
-    font: boldFont,
-    color: rgb(0, 0, 0),
-  });
-  yPosition -= lineHeight;
-  const toLines = wrapText(to, maxWidth, font, 10);
-  for (const line of toLines) {
-    page.drawText(line, {
-      x: margin + 20,
-      y: yPosition,
-      size: 10,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
-    yPosition -= lineHeight;
-  }
-  yPosition -= 10;
-
-  // Date
-  page.drawText("Date d'envoi :", {
-    x: margin,
-    y: yPosition,
-    size: 12,
-    font: boldFont,
-    color: rgb(0, 0, 0),
-  });
-  yPosition -= lineHeight;
-  const formattedDate = sentDate.toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  page.drawText(formattedDate, {
-    x: margin + 20,
-    y: yPosition,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
-  yPosition -= 20;
-
-  // Subject
-  if (subject) {
-    page.drawText('Sujet :', {
-      x: margin,
-      y: yPosition,
-      size: 12,
-      font: boldFont,
-      color: rgb(0, 0, 0),
-    });
-    yPosition -= lineHeight;
-    const subjectLines = wrapText(subject, maxWidth, font, 10);
-    for (const line of subjectLines) {
-      page.drawText(line, {
-        x: margin + 20,
-        y: yPosition,
-        size: 10,
-        font: font,
-        color: rgb(0, 0, 0),
-      });
-      yPosition -= lineHeight;
-    }
-    yPosition -= 10;
-  }
-
-  // Email content
-  page.drawText("Contenu de l'email :", {
-    x: margin,
-    y: yPosition,
-    size: 12,
-    font: boldFont,
-    color: rgb(0, 0, 0),
-  });
-  yPosition -= lineHeight + 5;
-
-  // Use text content (cleaner for PDF) or convert HTML to text
-  const emailBody = textContent || convertHtmlToText(htmlContent);
-  const emailLines = emailBody.split('\n').flatMap((line: string) => wrapText(line.trim(), maxWidth, font, 10));
-
-  let currentPage = page;
-  for (const line of emailLines) {
-    if (yPosition < 50) {
-      // Add new page if needed
-      currentPage = pdfDoc.addPage([595, 842]);
-      yPosition = 800;
-    }
-
-    if (line.trim()) {
-      currentPage.drawText(line, {
-        x: margin,
-        y: yPosition,
-        size: 10,
-        font: font,
-        color: rgb(0, 0, 0),
-      });
-    }
-    yPosition -= lineHeight;
-  }
-
-  const pdfBytes = await pdfDoc.save();
-  return Buffer.from(pdfBytes);
+  return buildEmailPdf(from, to, sentDate, subject, body);
 }

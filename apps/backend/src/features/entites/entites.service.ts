@@ -314,3 +314,26 @@ export const buildEntitesTraitement = async (entites: EntiteTraitementInput[]): 
 
   return entitesTraitement;
 };
+
+/**
+ * Fetches assigned ACTIVE entites for a requete (top-level active only)
+ */
+export async function getEntitesByRequeteId(requeteId: string) {
+  const requete = await prisma.requete.findUnique({
+    where: { id: requeteId },
+    include: { requeteEntites: true },
+  });
+  if (!requete) return [];
+  const entiteIds = requete.requeteEntites.map((re) => re.entiteId).filter((id): id is string => Boolean(id));
+  return prisma.entite.findMany({
+    where: { id: { in: entiteIds }, isActive: true },
+    select: {
+      id: true,
+      nomComplet: true,
+      emailContactUsager: true,
+      telContactUsager: true,
+      adresseContactUsager: true,
+      entiteMereId: true,
+    },
+  });
+}

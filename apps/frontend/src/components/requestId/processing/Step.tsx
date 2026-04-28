@@ -32,6 +32,8 @@ type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data
 type StepProps = StepType & {
   requestId: string;
   disabled?: boolean;
+  isAcknowledgmentSendable?: boolean;
+  onSendAcknowledgment?: () => void;
   openEdit?(step: StepType): void;
   openEditNote?(
     step: StepType,
@@ -43,7 +45,11 @@ type StepProps = StepType & {
 };
 
 const formatDate = (dateStr: string) =>
-  new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  new Date(dateStr).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 
 const formatAgent = (agent: { prenom: string; nom: string }): React.ReactNode => (
   <>
@@ -73,52 +79,6 @@ const getStepTitle = (type: string, statutId: string, nom: string | null): strin
   return nom ?? '';
 };
 
-type RequeteRef =
-  | { createdBy: { prenom: string; nom: string } | null; dematSocialId: number | null }
-  | null
-  | undefined;
-
-const getStepSubtitle = (
-  type: string,
-  statutId: string,
-  createdAt: string,
-  createdBy: { prenom: string; nom: string } | null | undefined,
-  requete: RequeteRef,
-  clotureNoteAuthor?: { prenom: string; nom: string } | null,
-): React.ReactNode => {
-  const date = formatDate(createdAt);
-
-  if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
-    const agent = createdBy ?? clotureNoteAuthor;
-    if (agent) {
-      return (
-        <>
-          Requête clôturée le {date} par {formatAgent(agent)}
-        </>
-      );
-    }
-    return `Requête clôturée le ${date}`;
-  }
-
-  if (type === REQUETE_ETAPE_TYPES.CREATION) {
-    const isManual = requete?.dematSocialId == null && requete?.createdBy != null;
-    if (isManual && requete?.createdBy) {
-      return (
-        <>
-          Requête créée le {date} par {formatAgent(requete.createdBy)}
-        </>
-      );
-    }
-    return `Requête créée le ${date}`;
-  }
-
-  if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
-    return requete?.dematSocialId != null ? `Envoyé automatiquement le ${date}` : `Ajouté automatiquement le ${date}`;
-  }
-
-  return formatStepCreationInfo(createdBy, createdAt);
-};
-
 const StepComponent = ({
   requestId,
   nom,
@@ -126,6 +86,8 @@ const StepComponent = ({
   createdAt,
   statutId,
   disabled,
+  isAcknowledgmentSendable,
+  onSendAcknowledgment,
   openEdit,
   openEditNote,
   notes,
@@ -302,10 +264,19 @@ const StepComponent = ({
                 )}
               </div>
             </div>
-            <div>
-              <p className="fr-text--xs fr-text-mention--grey">
-                {getStepSubtitle(rest.type, statutId, createdAt, createdBy, requete, notes[0]?.author)}
-              </p>
+            <div className="fr-grid-row fr-grid-row--middle fr-mt-1w">
+              <div className="fr-col">
+                {/* Sous-titre : auteur et date de création de l'étape */}
+                <p className="fr-text--xs fr-text-mention--grey">{formatStepCreationInfo(createdBy, createdAt)}</p>
+                {/* Bouton "Envoyer" affiché uniquement pour l'étape AR d'une requête manuelle A_FAIRE (ticket 343) */}
+                {isAcknowledgmentSendable && canEdit && (
+                  <div className="fr-mt-2w">
+                    <Button priority="secondary" size="small" onClick={onSendAcknowledgment}>
+                      Envoyer
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -372,7 +343,19 @@ const StepComponent = ({
                   }))}
                   requeteStateId={id}
                   onEdit={(noteData) =>
-                    openEditNote?.({ id, nom, statutId, notes, createdAt, createdBy, requete, ...rest }, noteData)
+                    openEditNote?.(
+                      {
+                        id,
+                        nom,
+                        statutId,
+                        notes,
+                        createdAt,
+                        createdBy,
+                        requete,
+                        ...rest,
+                      },
+                      noteData,
+                    )
                   }
                   clotureReasonLabels={null}
                 />
@@ -397,7 +380,18 @@ const StepComponent = ({
                 type="button"
                 priority="tertiary"
                 iconId="fr-icon-add-line"
-                onClick={() => openEdit?.({ id, nom, statutId, notes, createdAt, createdBy, requete, ...rest })}
+                onClick={() =>
+                  openEdit?.({
+                    id,
+                    nom,
+                    statutId,
+                    notes,
+                    createdAt,
+                    createdBy,
+                    requete,
+                    ...rest,
+                  })
+                }
               >
                 Ajouter une note ou un fichier
               </Button>

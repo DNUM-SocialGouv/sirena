@@ -91,3 +91,25 @@ export async function deleteProcessingStep(stepId: string) {
   await handleRequestErrors(res);
   return;
 }
+
+export async function fetchAcknowledgmentMessage(
+  stepId: string,
+): Promise<{ message: string; declarantEmail: string | null }> {
+  const res = await fetch(`/api/requete-etapes/${encodeURIComponent(stepId)}/acknowledgment-message`, {
+    credentials: 'include',
+  });
+  await handleRequestErrors(res);
+  const json = (await res.json()) as { data: { message: string; declarantEmail: string | null } };
+  return json.data;
+}
+
+export async function sendAcknowledgment(stepId: string, data: { comment?: string }) {
+  const res = await fetch(`/api/requete-etapes/${encodeURIComponent(stepId)}/send-acknowledgment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+  await handleRequestErrors(res, { silentToastError: true });
+  return res.json();
+}
