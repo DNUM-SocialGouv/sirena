@@ -232,11 +232,51 @@ export function RequetesEntite() {
   }, [queries.sort, queries.order]);
 
   const columns: Column<RequeteEntiteRow>[] = [
-    { key: 'requete.id', label: 'ID Requête', isSortable: true },
-    { key: 'custom:statut', label: 'Statut', isSortable: true },
-    { key: 'requete.receptionDate', label: 'Réception', isSortable: true },
-    { key: 'custom:priorite', label: 'Priorité', isSortable: true },
-    { key: 'custom:personne', label: 'Personne Concernée', isSortable: true },
+    {
+      key: 'requete.id',
+      label: 'ID Requête',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par numéro de requête croissant',
+        desc: 'Trier par numéro de requête décroissant',
+      },
+    },
+    {
+      key: 'custom:statut',
+      label: 'Statut',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par statut',
+        desc: 'Trier par statut',
+      },
+    },
+    {
+      key: 'requete.receptionDate',
+      label: 'Réception',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par date de réception du plus ancien au plus récent',
+        desc: 'Trier par date de réception du plus récent au plus ancien',
+      },
+    },
+    {
+      key: 'custom:priorite',
+      label: 'Priorité',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par priorité de la plus haute à la plus basse',
+        desc: 'Trier par priorité de la plus basse à la plus haute',
+      },
+    },
+    {
+      key: 'custom:personne',
+      label: 'Personne Concernée',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par ordre alphabétique croissant (A à Z)',
+        desc: 'Trier par ordre alphabétique décroissant (Z à A)',
+      },
+    },
     { key: 'custom:affectation', label: 'Affectation' },
     { key: 'custom:motifs', label: 'Motifs' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },
