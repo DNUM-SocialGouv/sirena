@@ -4,20 +4,11 @@ FROM node:$NODE_VERSION AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
-ARG APP_VERSION
-ENV VITE_APP_VERSION=$APP_VERSION
 ARG SENTRY_ENABLED
-ENV VITE_SENTRY_ENABLED=$SENTRY_ENABLED
-ARG SENTRY_ENVIRONMENT
-ENV VITE_SENTRY_ENVIRONMENT=$SENTRY_ENVIRONMENT
-ARG SENTRY_DSN_FRONTEND
-ENV VITE_SENTRY_DSN_FRONTEND=$SENTRY_DSN_FRONTEND
-ARG VITE_IS_LOGGED_TOKEN_NAME
-ENV VITE_IS_LOGGED_TOKEN_NAME=$VITE_IS_LOGGED_TOKEN_NAME
-ARG VITE_MATOMO_URL
-ENV VITE_MATOMO_URL=$VITE_MATOMO_URL
-ARG VITE_MATOMO_SITE_ID
-ENV VITE_MATOMO_SITE_ID=$VITE_MATOMO_SITE_ID
+ENV SENTRY_ENABLED=$SENTRY_ENABLED
+ARG APP_VERSION
+ENV APP_VERSION=$APP_VERSION
+ENV VITE_APP_VERSION=$APP_VERSION
 
 RUN npm install --global corepack@latest && \
     corepack enable pnpm
@@ -38,7 +29,7 @@ COPY --chown=node:node ./apps/frontend/package.json apps/frontend/
 COPY --chown=node:node ./packages/common/package.json packages/common/
 COPY --chown=node:node ./packages/db/package.json packages/db/
 
-RUN pnpm install --frozen-lockfile 
+RUN pnpm install --frozen-lockfile
 
 COPY --chown=node:node ./packages/ui packages/ui
 COPY --chown=node:node ./apps/backend apps/backend
@@ -63,10 +54,10 @@ RUN rm /etc/nginx/conf.d/default.conf
 
 COPY ./nginx/frontend.conf /etc/nginx/conf.d/
 
+COPY --from=builder --chown=nginx:nginx /app/apps/frontend/dist   /usr/share/nginx/html
+COPY --chown=nginx:nginx ./apps/frontend/docker-entrypoint.sh /docker-entrypoint.sh
+
 USER nginx
 
-# copy React build output
-COPY --from=builder --chown=nginx:nginx /app/apps/frontend/dist   /usr/share/nginx/html
-
 EXPOSE 8080
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -153,7 +153,7 @@ runs:
       shell: bash
       id: check-image-frontend
       run: |
-        if docker manifest inspect ${{ env.IMAGE_TAG }}-frontend-${{ inputs.environment }} > /dev/null 2>&1; then
+        if docker manifest inspect ${{ env.IMAGE_TAG }}-frontend > /dev/null 2>&1; then
           echo "frontend-exists=true" >> $GITHUB_OUTPUT
         else
           echo "frontend-exists=false" >> $GITHUB_OUTPUT
@@ -166,16 +166,11 @@ runs:
         context: .
         file: apps/frontend/Dockerfile
         push: true
-        tags: ${{ env.IMAGE_TAG }}-frontend-${{ inputs.environment }}
+        tags: ${{ env.IMAGE_TAG }}-frontend
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
-          VITE_IS_LOGGED_TOKEN_NAME=is_logged_token
           SENTRY_ENABLED=true
-          SENTRY_ENVIRONEMENT=${{ inputs.environment }}
           APP_VERSION=${{ inputs.version }}
-          SENTRY_DSN_FRONTEND=https://343eb82fc1395b23dc747ac7d2fac3d6@sentry2.fabrique.social.gouv.fr/49
-          VITE_MATOMO_URL=https://matomo.fabrique.social.gouv.fr
-          VITE_MATOMO_SITE_ID=${{ inputs.environment == 'production' && '154' || '155' }}
         secrets: |
           SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
         cache-from: |
@@ -189,7 +184,7 @@ runs:
       uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
       continue-on-error: true
       with:
-        image-ref: ${{ env.IMAGE_TAG }}-frontend-${{ inputs.environment }}
+        image-ref: ${{ env.IMAGE_TAG }}-frontend
         format: "sarif"
         output: "trivy-container-frontend-results.sarif"
         severity: "CRITICAL,HIGH,MEDIUM"

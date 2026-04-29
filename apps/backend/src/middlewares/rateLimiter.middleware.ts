@@ -1,6 +1,5 @@
 import { throwHTTPException429TooManyRequests } from '@sirena/backend-utils/helpers';
 import type { MiddlewareHandler } from 'hono';
-import { envVars } from '../config/env.js';
 import { attemptsKey, banCountKey, banKey } from '../config/redis.constant.js';
 import { connection as redis } from '../config/redis.js';
 import type { AppBindings } from '../helpers/factories/appWithLogs.js';
@@ -22,10 +21,6 @@ export function rateLimiter(options: RateLimiterOptions = {}): MiddlewareHandler
   const baseBanTimeMinutes = options.baseBanTimeMinutes ?? 1;
 
   return factoryWithLogs.createMiddleware(async (c, next) => {
-    if (envVars.SENTRY_ENVIRONMENT === 'integration') {
-      await next();
-      return;
-    }
     const logger = c.get('logger');
     const loggerBindings = logger.bindings() as { traceId?: string };
     const traceId = loggerBindings.traceId ?? 'unknown';
