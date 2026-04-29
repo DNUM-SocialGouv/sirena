@@ -146,6 +146,9 @@ export const createChildEntiteAdmin = async (
       regLib: true,
       dptLib: true,
       entiteMereId: true,
+      entiteMere: {
+        select: { entiteMereId: true },
+      },
     },
   });
 
@@ -153,15 +156,8 @@ export const createChildEntiteAdmin = async (
     throw new EntiteNotFoundError();
   }
 
-  if (parent.entiteMereId) {
-    const grandParent = await prisma.entite.findUnique({
-      where: { id: parent.entiteMereId },
-      select: { entiteMereId: true },
-    });
-
-    if (grandParent?.entiteMereId) {
-      throw new EntiteChildCreationForbiddenError();
-    }
+  if (parent.entiteMere?.entiteMereId) {
+    throw new EntiteChildCreationForbiddenError();
   }
 
   return prisma.entite.create({

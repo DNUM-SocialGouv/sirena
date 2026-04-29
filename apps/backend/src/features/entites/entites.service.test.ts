@@ -916,17 +916,16 @@ describe('createChildEntiteAdmin()', () => {
   });
 
   it('creates a child entity under a direction parent', async () => {
-    vi.mocked(prisma.entite.findUnique)
-      .mockResolvedValueOnce({
-        entiteTypeId: 'ARS',
-        departementCode: '14',
-        ctcdCode: '14118',
-        regionCode: '28',
-        regLib: 'Normandie',
-        dptLib: 'Calvados',
-        entiteMereId: 'root-ars',
-      } as never)
-      .mockResolvedValueOnce({ entiteMereId: null } as never);
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+      entiteTypeId: 'ARS',
+      departementCode: '14',
+      ctcdCode: '14118',
+      regionCode: '28',
+      regLib: 'Normandie',
+      dptLib: 'Calvados',
+      entiteMereId: 'root-ars',
+      entiteMere: { entiteMereId: null },
+    } as never);
     vi.mocked(prisma.entite.create).mockResolvedValueOnce({
       id: 'service-1',
       ...createChildInput,
@@ -951,11 +950,10 @@ describe('createChildEntiteAdmin()', () => {
         regLib: true,
         dptLib: true,
         entiteMereId: true,
+        entiteMere: {
+          select: { entiteMereId: true },
+        },
       },
-    });
-    expect(prisma.entite.findUnique).toHaveBeenNthCalledWith(2, {
-      where: { id: 'root-ars' },
-      select: { entiteMereId: true },
     });
     expect(prisma.entite.create).toHaveBeenCalledWith({
       data: {
@@ -986,17 +984,16 @@ describe('createChildEntiteAdmin()', () => {
   });
 
   it('throws when the parent entity is already a service', async () => {
-    vi.mocked(prisma.entite.findUnique)
-      .mockResolvedValueOnce({
-        entiteTypeId: 'ARS',
-        departementCode: '14',
-        ctcdCode: '14118',
-        regionCode: '28',
-        regLib: 'Normandie',
-        dptLib: 'Calvados',
-        entiteMereId: 'dir-1',
-      } as never)
-      .mockResolvedValueOnce({ entiteMereId: 'root-ars' } as never);
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+      entiteTypeId: 'ARS',
+      departementCode: '14',
+      ctcdCode: '14118',
+      regionCode: '28',
+      regLib: 'Normandie',
+      dptLib: 'Calvados',
+      entiteMereId: 'dir-1',
+      entiteMere: { entiteMereId: 'root-ars' },
+    } as never);
 
     await expect(createChildEntiteAdmin('service-1', createChildInput)).rejects.toBeInstanceOf(
       EntiteChildCreationForbiddenError,
