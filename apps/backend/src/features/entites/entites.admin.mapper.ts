@@ -1,4 +1,15 @@
-import type { Entite } from '../../libs/prisma.js';
+type EntiteAdmin = {
+  id: string;
+  nomComplet: string;
+  label: string;
+  email: string;
+  emailContactUsager: string;
+  telContactUsager: string;
+  adresseContactUsager: string;
+  isActive: boolean;
+  entiteMereId: string | null;
+  entiteTypeId: string;
+};
 
 type AdminEntiteRow = {
   id: string;
@@ -16,19 +27,19 @@ type AdminEntiteRow = {
 
 const ORDER_ENTITE_TYPE = ['ARS', 'CD', 'DD'];
 
-const computeContactUsager = (entite: Entite) =>
+const computeContactUsager = (entite: EntiteAdmin) =>
   [entite.emailContactUsager, entite.telContactUsager, entite.adresseContactUsager]
     .filter((value) => value && value.trim().length > 0)
     .join(' · ');
 
-const compareByNomComplet = (a: Entite, b: Entite) => a.nomComplet.localeCompare(b.nomComplet);
+const compareByNomComplet = (a: EntiteAdmin, b: EntiteAdmin) => a.nomComplet.localeCompare(b.nomComplet);
 
 const getRootTypeOrder = (entiteTypeId: string) => {
   const index = ORDER_ENTITE_TYPE.indexOf(entiteTypeId);
   return index === -1 ? Number.MAX_SAFE_INTEGER : index;
 };
 
-const compareRootEntiteType = (a: Entite, b: Entite) => {
+const compareRootEntiteType = (a: EntiteAdmin, b: EntiteAdmin) => {
   const aIndex = getRootTypeOrder(a.entiteTypeId);
   const bIndex = getRootTypeOrder(b.entiteTypeId);
 
@@ -39,22 +50,26 @@ const compareRootEntiteType = (a: Entite, b: Entite) => {
   return compareByNomComplet(a, b);
 };
 
-const buildTreeOrder = (entites: Entite[]) => {
-  const childrenByParentId = new Map<string, Entite[]>();
+const buildTreeOrder = (entites: EntiteAdmin[]) => {
+  const childrenByParentId = new Map<string, EntiteAdmin[]>();
 
   const sortedChildren = entites.filter((entite) => entite.entiteMereId !== null).toSorted(compareByNomComplet);
 
   for (const entite of sortedChildren) {
-    const siblings = childrenByParentId.get(entite.entiteMereId!) ?? [];
+    if (entite.entiteMereId === null) {
+      continue;
+    }
+
+    const siblings = childrenByParentId.get(entite.entiteMereId) ?? [];
     siblings.push(entite);
-    childrenByParentId.set(entite.entiteMereId!, siblings);
+    childrenByParentId.set(entite.entiteMereId, siblings);
   }
 
   const roots = entites.filter((entite) => entite.entiteMereId === null).sort(compareRootEntiteType);
 
-  const ordered: Entite[] = [];
+  const ordered: EntiteAdmin[] = [];
 
-  const visit = (entite: Entite) => {
+  const visit = (entite: EntiteAdmin) => {
     ordered.push(entite);
 
     const children = childrenByParentId.get(entite.id) ?? [];
@@ -70,8 +85,8 @@ const buildTreeOrder = (entites: Entite[]) => {
   return ordered;
 };
 
-const getAncestors = (entite: Entite, entitesById: Map<string, Entite>) => {
-  const ancestors: Entite[] = [];
+const getAncestors = (entite: EntiteAdmin, entitesById: Map<string, EntiteAdmin>) => {
+  const ancestors: EntiteAdmin[] = [];
   let currentParentId = entite.entiteMereId;
 
   while (currentParentId) {
@@ -88,7 +103,7 @@ const getAncestors = (entite: Entite, entitesById: Map<string, Entite>) => {
 };
 
 const buildRow = (
-  entite: Entite,
+  entite: EntiteAdmin,
   values: Pick<
     AdminEntiteRow,
     'entiteNom' | 'entiteLabel' | 'directionNom' | 'directionLabel' | 'serviceNom' | 'serviceLabel'
@@ -102,7 +117,7 @@ const buildRow = (
   ...values,
 });
 
-const toAdminEntiteRow = (entite: Entite, entitesById: Map<string, Entite>): AdminEntiteRow => {
+const toAdminEntiteRow = (entite: EntiteAdmin, entitesById: Map<string, EntiteAdmin>): AdminEntiteRow => {
   const ancestors = getAncestors(entite, entitesById);
 
   if (ancestors.length === 0) {
@@ -141,7 +156,7 @@ const toAdminEntiteRow = (entite: Entite, entitesById: Map<string, Entite>): Adm
   });
 };
 
-export const buildEntitesListAdmin = (entites: Entite[]) => {
+export const buildEntitesListAdmin = (entites: EntiteAdmin[]) => {
   const entitesById = new Map(entites.map((entite) => [entite.id, entite]));
   const orderedEntites = buildTreeOrder(entites);
 
