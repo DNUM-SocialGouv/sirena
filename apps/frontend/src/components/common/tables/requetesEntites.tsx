@@ -304,22 +304,20 @@ export function RequetesEntite() {
         </div>
       );
     },
-    'custom:priorite': (row) => {
-      return <RequetePrioriteTag statut={row.prioriteId as RequetePrioriteType} noIcon={true} />;
-    },
+    'custom:priorite': (row) =>
+      row.prioriteId ? <RequetePrioriteTag statut={row.prioriteId as RequetePrioriteType} noIcon /> : null,
     'custom:personne': (row) => {
       const requete = row.requete as typeof row.requete & {
         participant?: { estVictime?: boolean; identite?: { prenom: string; nom: string } } | null;
       };
       const { participant } = requete;
-      if (participant?.identite) {
-        return (
-          <span className="one-line">
-            {participant.identite.prenom} <span className="lastname">{participant.identite.nom}</span>
-          </span>
-        );
-      }
-      return '-';
+      if (!participant?.identite) return null;
+
+      return (
+        <span className="one-line">
+          {participant.identite.prenom} <span className="lastname">{participant.identite.nom}</span>
+        </span>
+      );
     },
     'custom:affectation': (row) => (userTopEntiteId ? renderAffectationCell(row, userTopEntiteId) : '-'),
     'custom:motifs': (row) => <div className="requetesEntitesTable__motifs-cell">{renderMotifsCell(row)}</div>,
@@ -330,7 +328,7 @@ export function RequetesEntite() {
       ? {
           'custom:departement': (row: RequeteEntiteRow) => {
             const depts = row.departementsLieuSurvenue;
-            if (!depts?.length) return <span>-</span>;
+            if (!depts?.length) return null;
             return (
               <ul>
                 {depts.map((dept) => (
