@@ -2,10 +2,11 @@ import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES } from '@sirena/common/constants';
-import { Toast } from '@sirena/ui';
+import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
+import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandler';
 import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
@@ -59,9 +60,21 @@ export function RouteComponent() {
     });
   }, [entiteQuery.data]);
 
-  if (entiteQuery.isPending || entiteChainQuery.isPending) return null;
+  if (entiteQuery.isPending || entiteChainQuery.isPending) {
+    return (
+      <div className="fr-container fr-mt-4w">
+        <Loader />
+      </div>
+    );
+  }
 
-  if (entiteQuery.isError || entiteChainQuery.isError || !entiteQuery.data) return null;
+  if (entiteQuery.isError || entiteChainQuery.isError || !entiteQuery.data) {
+    return (
+      <div className="fr-container fr-mt-4w">
+        <QueryErrorState message="Erreur lors du chargement de l’entité." />
+      </div>
+    );
+  }
 
   const handleInputChange =
     (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

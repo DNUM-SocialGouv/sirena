@@ -62,6 +62,22 @@ const buildSuccessQuery = (data: unknown) =>
     error: null,
   }) as never;
 
+const buildPendingQuery = () =>
+  ({
+    data: null,
+    isPending: true,
+    isError: false,
+    error: null,
+  }) as never;
+
+const buildErrorQuery = () =>
+  ({
+    data: null,
+    isPending: false,
+    isError: true,
+    error: new Error('Query failed'),
+  }) as never;
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -157,6 +173,30 @@ describe('Admin entity child creation route', () => {
     );
 
     render(<RouteComponent />);
+  });
+
+  it('displays the shared loader while entity data is loading', () => {
+    vi.mocked(useEntiteByIdAdmin).mockReturnValue(buildPendingQuery());
+    vi.mocked(useEntiteChain).mockReturnValue(
+      buildSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2, name: /Créer/i })).not.toBeInTheDocument();
+  });
+
+  it('displays the shared error state when entity data cannot be loaded', () => {
+    vi.mocked(useEntiteByIdAdmin).mockReturnValue(buildErrorQuery());
+    vi.mocked(useEntiteChain).mockReturnValue(
+      buildSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+
+    render(<RouteComponent />);
+
+    expect(screen.getByText('Erreur lors du chargement de l’entité.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2, name: /Créer/i })).not.toBeInTheDocument();
   });
 
   it('keeps a stable hook order when the create page leaves its pending state', async () => {

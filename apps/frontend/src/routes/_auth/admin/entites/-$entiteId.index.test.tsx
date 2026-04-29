@@ -63,6 +63,22 @@ const buildChainSuccessQuery = (data: Array<{ id: string; nomComplet: string; di
     error: null,
   }) as never;
 
+const buildPendingQuery = () =>
+  ({
+    data: null,
+    isPending: true,
+    isError: false,
+    error: null,
+  }) as never;
+
+const buildErrorQuery = () =>
+  ({
+    data: null,
+    isPending: false,
+    isError: true,
+    error: new Error('Query failed'),
+  }) as never;
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -73,6 +89,30 @@ describe('Admin entity edit route', () => {
   it('restricts the route to SUPER_ADMIN users', () => {
     expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.SUPER_ADMIN]);
     expect(Route.beforeLoad).toBe('mocked-super-admin-guard');
+  });
+
+  it('displays the shared loader while entity data is loading', () => {
+    vi.mocked(useEntiteByIdAdmin).mockReturnValue(buildPendingQuery());
+    vi.mocked(useEntiteChain).mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2, name: /Modifier/i })).not.toBeInTheDocument();
+  });
+
+  it('displays the shared error state when entity data cannot be loaded', () => {
+    vi.mocked(useEntiteByIdAdmin).mockReturnValue(buildErrorQuery());
+    vi.mocked(useEntiteChain).mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+
+    render(<RouteComponent />);
+
+    expect(screen.getByText('Erreur lors du chargement de l’entité.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2, name: /Modifier/i })).not.toBeInTheDocument();
   });
 
   it('renders the limited edit form from the admin entity payload', () => {

@@ -10,6 +10,18 @@ import type { UseQueryResult } from '@tanstack/react-query';
  * - Empty: Shows noDataComponent (unless disabled)
  * - Success: Renders children with data
  */
+interface QueryErrorStateProps {
+  message?: string;
+}
+
+export function QueryErrorState({ message = 'Erreur lors du chargement des données' }: QueryErrorStateProps) {
+  return (
+    <div className="error-state">
+      <p>{message}</p>
+    </div>
+  );
+}
+
 interface QueryStateHandlerProps<T> {
   /** The TanStack Query result object */
   query: UseQueryResult<T>;
@@ -88,13 +100,7 @@ export function QueryStateHandler<T>({
   if (query.isPending) return fallback;
 
   if (query.isError) {
-    return errorComponent ? (
-      errorComponent(query.error)
-    ) : (
-      <div className="error-state">
-        <p>Erreur lors du chargement des données</p>
-      </div>
-    );
+    return errorComponent ? errorComponent(query.error) : <QueryErrorState />;
   }
 
   if (isEmpty(query.data)) {
