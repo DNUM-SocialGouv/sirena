@@ -70,6 +70,7 @@ const getStepTitle = (type: string, statutId: string, nom: string | null): strin
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return 'Clôture';
   if (type === REQUETE_ETAPE_TYPES.CREATION) return 'Création de la requête';
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) return "Envoi de l'accusé de réception";
+  if (type === REQUETE_ETAPE_TYPES.REOPEN) return 'Réouverture de la requête';
   return nom ?? '';
 };
 
@@ -114,6 +115,17 @@ const getStepSubtitle = (
 
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
     return requete?.dematSocialId != null ? `Envoyé automatiquement le ${date}` : `Ajouté automatiquement le ${date}`;
+  }
+
+  if (type === REQUETE_ETAPE_TYPES.REOPEN) {
+    if (createdBy) {
+      return (
+        <>
+          Requête réouverte le {date} par {formatAgent(createdBy)}
+        </>
+      );
+    }
+    return `Requête réouverte le ${date}`;
   }
 
   return formatStepCreationInfo(createdBy, createdAt);
