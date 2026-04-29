@@ -322,7 +322,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
             </p>
             {situation?.lieuDeSurvenue.codePostal && (
               <p className={fr.cx('fr-mb-1w')}>
-                <span>Code postal :</span> {situation.lieuDeSurvenue.codePostal}
+                <span>Code postal renseigné par le déclarant :</span> {situation.lieuDeSurvenue.codePostal}
               </p>
             )}
             {situation?.lieuDeSurvenue?.lieuPrecision && (
@@ -353,7 +353,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
               ))}
             {situation?.lieuDeSurvenue?.adresse?.codePostal && situation?.lieuDeSurvenue?.adresse?.ville && (
               <p className={fr.cx('fr-mb-2w')}>
-                <span>Code postal :</span> {situation.lieuDeSurvenue.adresse.codePostal}{' '}
+                <span>Ville :</span> {situation.lieuDeSurvenue.adresse.codePostal}{' '}
                 {situation.lieuDeSurvenue.adresse.ville}
               </p>
             )}
