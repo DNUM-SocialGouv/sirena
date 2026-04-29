@@ -1,6 +1,6 @@
 import type { Pagination } from '@sirena/backend-utils/types';
 import { type Entite, prisma } from '../../libs/prisma.js';
-import { buildEntitesListAdmin } from './entites.admin.list.js';
+import { buildEntitesListAdmin } from './entites.admin.mapper.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type.js';
 

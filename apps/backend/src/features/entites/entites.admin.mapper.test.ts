@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildEntitesListAdmin } from './entites.admin.list.js';
+import { buildEntitesListAdmin } from './entites.admin.mapper.js';
 
 const entite = (overrides: Record<string, unknown> = {}) => ({
   id: 'id',
