@@ -1,5 +1,9 @@
 import type { ZodError } from 'zod';
 
+type SafeParseSchema<T> = {
+  safeParse(data: T): { success: true } | { success: false; error: ZodError };
+};
+
 export function zodIssuesToFieldErrors(error: ZodError): Record<string, string> {
   const errors: Record<string, string> = {};
 
@@ -15,7 +19,7 @@ export function zodIssuesToFieldErrors(error: ZodError): Record<string, string> 
 }
 
 export function getFieldError<T extends Record<string, unknown>>(
-  schema: any,
+  schema: SafeParseSchema<T>,
   data: T,
   field: keyof T,
 ): string | undefined {
