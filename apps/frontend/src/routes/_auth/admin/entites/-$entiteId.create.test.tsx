@@ -23,7 +23,6 @@ vi.mock('@tanstack/react-router', () => ({
     <a href={to.replace('$entiteId', params?.entiteId ?? '')}>{children}</a>
   ),
   useRouter: () => ({
-    // history: { back: routerBackSpy },
     navigate: routerNavigateSpy,
   }),
 }));
