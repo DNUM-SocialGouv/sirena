@@ -1,6 +1,6 @@
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { ROLES } from '@sirena/common/constants';
-import { type Cells, type Column, DataTable } from '@sirena/ui';
+import { type Cells, type Column, DataTable, type OnSortChangeParams, type SortDirection } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
@@ -10,6 +10,54 @@ import { useUserListSSE } from '@/hooks/useUserListSSE';
 type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
 
 const DEFAULT_PAGE_SIZE = 10;
+
+const shouldInvertSortDirection = (columnKey: string) => columnKey === 'createdAt';
+
+const uiDirToBackendOrder = (columnKey: string, dir: SortDirection): SortDirection => {
+  if (!dir) {
+    return '';
+  }
+
+  if (!shouldInvertSortDirection(columnKey)) {
+    return dir;
+  }
+
+  return dir === 'asc' ? 'desc' : 'asc';
+};
+
+const backendOrderToUiDir = (columnKey: string, order: SortDirection): SortDirection => {
+  if (!order) {
+    return '';
+  }
+
+  if (!shouldInvertSortDirection(columnKey)) {
+    return order;
+  }
+
+  return order === 'asc' ? 'desc' : 'asc';
+};
+
+const mapColumnKeyToSortKey = (columnKey: string): string | undefined => {
+  switch (columnKey) {
+    case 'createdAt':
+      return 'createdAt';
+    case 'custom:affectation':
+      return 'entite.nomComplet';
+    default:
+      return undefined;
+  }
+};
+
+const mapSortKeyToColumnKey = (sortKey: string | undefined): string => {
+  switch (sortKey) {
+    case 'createdAt':
+      return 'createdAt';
+    case 'entite.nomComplet':
+      return 'custom:affectation';
+    default:
+      return '';
+  }
+};
 
 export function PendingUsersTab() {
   const queryClient = useQueryClient();
@@ -33,6 +81,8 @@ export function PendingUsersTab() {
 
   const { data: users, isFetching } = useUsers({
     roleId: pendingRoleId,
+    ...(queries.sort && { sort: queries.sort }),
+    ...(queries.order && { order: queries.order }),
     limit,
     offset,
   });
@@ -40,8 +90,8 @@ export function PendingUsersTab() {
   const columns: Column<User>[] = [
     { key: 'nom', label: 'Nom' },
     { key: 'prenom', label: 'Prénom' },
-    { key: 'createdAt', label: 'Date de création' },
-    { key: 'custom:affectation', label: 'Affectation' },
+    { key: 'createdAt', label: 'Date de création', isSortable: true },
+    { key: 'custom:affectation', label: 'Affectation', isSortable: true },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 
@@ -82,6 +132,34 @@ export function PendingUsersTab() {
     ),
   };
 
+  const handleSortChange = useCallback(
+    (params: OnSortChangeParams<User>) => {
+      const { sort: columnKey, sortDirection } = params;
+      const sortKey = mapColumnKeyToSortKey(columnKey);
+      const backendOrder = uiDirToBackendOrder(columnKey, sortDirection);
+
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          sort: sortKey && backendOrder ? sortKey : undefined,
+          order: sortKey && backendOrder ? backendOrder : undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
+  const currentSort = useMemo(() => {
+    const columnKey = mapSortKeyToColumnKey(queries.sort);
+    const uiDirection = backendOrderToUiDir(columnKey, queries.order ?? '');
+
+    return {
+      sort: (columnKey || '') as OnSortChangeParams<User>['sort'],
+      sortDirection: (uiDirection || '') as OnSortChangeParams<User>['sortDirection'],
+    };
+  }, [queries.sort, queries.order]);
+
   const total = useMemo(() => users?.meta?.total ?? 0, [users?.meta?.total]);
   const totalPages = useMemo(() => Math.ceil(total / limit), [total, limit]);
   const shouldShowPagination = useMemo(() => total > limit, [total, limit]);
@@ -117,6 +195,8 @@ export function PendingUsersTab() {
         columns={columns}
         cells={cells}
         isLoading={isFetching}
+        sort={currentSort}
+        onSortChange={handleSortChange}
       />
       {shouldShowPagination && (
         <div className="fr-mt-3w fr-grid-row fr-grid-row--center">
