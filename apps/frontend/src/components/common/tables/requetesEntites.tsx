@@ -175,7 +175,7 @@ export function RequetesEntite() {
 
   useEffect(() => {
     if (requetes) {
-      setTitle(`Requêtes: ${requetes?.meta?.total ?? 0}`);
+      setTitle(`Liste des requêtes: ${requetes?.meta?.total ?? 0}`);
     }
   }, [requetes]);
 
