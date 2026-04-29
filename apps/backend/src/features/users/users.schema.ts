@@ -56,6 +56,10 @@ const columns = [
   Prisma.UserScalarFieldEnum.email,
   Prisma.UserScalarFieldEnum.prenom,
   Prisma.UserScalarFieldEnum.nom,
+  Prisma.UserScalarFieldEnum.createdAt,
+  Prisma.UserScalarFieldEnum.statutId,
+  'entite.nomComplet',
+  'role.label',
 ] as const;
 
 export const GetUsersQuerySchema = paginationQueryParamsSchema(columns).extend({

@@ -19,6 +19,14 @@ const filterByRoles = (roles: string[] | null) => {
   return { roleId: { in: roles } };
 };
 
+const getUserOrderBy = (sort: string, order: Prisma.SortOrder): Prisma.UserOrderByWithRelationInput => {
+  if (sort === 'entite.nomComplet') {
+    return { entite: { nomComplet: order } };
+  }
+
+  return { [sort]: order };
+};
+
 export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery = {}) => {
   const { offset = 0, limit, sort = 'nom', order = 'asc', roleId, statutId, search } = query;
 
@@ -45,7 +53,7 @@ export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery 
       where,
       skip: offset,
       ...(typeof limit === 'number' ? { take: limit } : {}),
-      orderBy: { [sort]: order },
+      orderBy: getUserOrderBy(sort, order),
       include: {
         role: true,
         entite: {
