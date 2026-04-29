@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
-import { getEditEntiteTitle } from './helpers';
+import { getEditEntiteTitle } from './-helpers';
 
 const EditEntiteFormSchema = z.object({
   nomComplet: z.string().trim().min(1, 'Le champ "Nom de l’entité" est vide. Veuillez le renseigner.'),

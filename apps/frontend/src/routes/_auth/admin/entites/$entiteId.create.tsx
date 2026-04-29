@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { useCreateChildEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
-import { getCreateEntiteTitle } from './helpers';
+import { getCreateEntiteTitle } from './-helpers';
 
 const CreateChildEntiteFormSchema = z.object({
   nomComplet: z.string().trim().min(1, 'Le champ "Nom - libellé long" est vide. Veuillez le renseigner.'),
