@@ -18,7 +18,41 @@
   text-overflow: ellipsis;
 }
 
+.request-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.request-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.request-left h1 {
+  margin: 0;
+}
+
+.download-menu-wrapper {
+  display: flex;
+  align-items: center;
+}
+.request-header h1 {
+  margin: 0;
+}
+
 .request-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.request-actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
