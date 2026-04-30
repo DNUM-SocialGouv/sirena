@@ -218,6 +218,26 @@ describe('user.service.ts', () => {
         expect.objectContaining({ orderBy: { entite: { nomComplet: 'asc' } } }),
       );
     });
+
+    it('should sort users by role label', async () => {
+      mockedUser.findMany.mockResolvedValueOnce([mockUser]);
+      mockedUser.count.mockResolvedValueOnce(1);
+
+      await getUsers(null, { sort: 'role.label', order: 'asc' });
+
+      expect(mockedUser.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: { role: { label: 'asc' } } }),
+      );
+    });
+
+    it('should sort users by status', async () => {
+      mockedUser.findMany.mockResolvedValueOnce([mockUser]);
+      mockedUser.count.mockResolvedValueOnce(1);
+
+      await getUsers(null, { sort: 'statutId', order: 'asc' });
+
+      expect(mockedUser.findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { statutId: 'asc' } }));
+    });
   });
 
   describe('getUserById()', () => {

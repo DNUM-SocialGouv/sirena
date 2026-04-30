@@ -9,6 +9,7 @@ const filterByEntities = (entiteIds: string[] | null) => {
   if (!entiteIds) {
     return null;
   }
+
   return { entiteId: { in: entiteIds } };
 };
 
@@ -16,12 +17,17 @@ const filterByRoles = (roles: string[] | null) => {
   if (!roles) {
     return null;
   }
+
   return { roleId: { in: roles } };
 };
 
 const getUserOrderBy = (sort: string, order: Prisma.SortOrder): Prisma.UserOrderByWithRelationInput => {
   if (sort === 'entite.nomComplet') {
     return { entite: { nomComplet: order } };
+  }
+
+  if (sort === 'role.label') {
+    return { role: { label: order } };
   }
 
   return { [sort]: order };
