@@ -1,0 +1,45 @@
+{{- if .Values.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: anonymize
+  labels:
+    app: anonymize
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: anonymize
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app: anonymize
+          annotations:
+            prometheus.io/scrape: "false"
+        spec:
+          {{- if .Values.imagePullSecretsName }}
+          imagePullSecrets:
+            - name: {{ .Values.imagePullSecretsName }}
+          {{- end }}
+          restartPolicy: Never
+          containers:
+            - name: anonymize
+              image: {{ .Values.image }}
+              envFrom:
+                - secretRef:
+                    name: anonymize-secret
+              env:
+                {{- if .Values.pushgatewayUrl }}
+                - name: PUSHGATEWAY_URL
+                  value: {{ .Values.pushgatewayUrl | quote }}
+                {{- end }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+{{- end }}

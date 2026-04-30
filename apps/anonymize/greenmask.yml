@@ -1,0 +1,316 @@
+common:
+  pg_bin_path: "/usr/bin"
+  tmp_dir: "/tmp"
+
+log:
+  level: "info"
+  format: "text"
+
+storage:
+  type: "directory"
+  directory:
+    path: "/tmp/greenmask-dumps"
+
+dump:
+  pg_dump_options:
+    dbname: "${PG_URL_FROM}"
+    jobs: 4
+
+  transformation:
+    # ── Users & Authentication ──────────────────────────────────────
+    - schema: "public"
+      name: "User"
+      transformers:
+        - name: "RandomPerson"
+          params:
+            columns:
+              - name: "prenom"
+                template: "{{ .FirstName }}"
+              - name: "nom"
+                template: "{{ .LastName }}"
+            engine: "hash"
+        - name: "RandomEmail"
+          params:
+            column: "email"
+            engine: "hash"
+        - name: "RandomUuid"
+          params:
+            column: "uid"
+            engine: "hash"
+        - name: "RandomUuid"
+          params:
+            column: "sub"
+            engine: "hash"
+        - name: "Replace"
+          params:
+            column: "pcData"
+            value: "{}"
+
+    - schema: "public"
+      name: "Session"
+      transformers:
+        - name: "RandomUuid"
+          params:
+            column: "token"
+        - name: "RandomUuid"
+          params:
+            column: "pcIdToken"
+
+    # ── Entites (organisations) ─────────────────────────────────────
+    - schema: "public"
+      name: "Entite"
+      transformers:
+        - name: "RandomEmail"
+          params:
+            column: "email"
+            engine: "hash"
+        - name: "RandomEmail"
+          params:
+            column: "emailContactUsager"
+            engine: "hash"
+        - name: "Replace"
+          params:
+            column: "telContactUsager"
+            value: "0100000000"
+        - name: "Replace"
+          params:
+            column: "adresseContactUsager"
+            value: "1 rue de la Paix, 75001 Paris"
+        - name: "Replace"
+          params:
+            column: "emailDomain"
+            value: "example.gouv.fr"
+
+    # ── Identite (PII: nom, prenom, email, telephone) ──────────────
+    - schema: "public"
+      name: "Identite"
+      transformers:
+        - name: "RandomPerson"
+          params:
+            columns:
+              - name: "prenom"
+                template: "{{ .FirstName }}"
+              - name: "nom"
+                template: "{{ .LastName }}"
+            engine: "hash"
+        - name: "RandomEmail"
+          params:
+            column: "email"
+            engine: "hash"
+        - name: "Replace"
+          params:
+            column: "telephone"
+            value: "0600000000"
+        - name: "Replace"
+          params:
+            column: "commentaire"
+            value: ""
+
+    # ── Adresses ────────────────────────────────────────────────────
+    - schema: "public"
+      name: "Adresse"
+      transformers:
+        - name: "Replace"
+          params:
+            column: "label"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "numero"
+            value: "1"
+        - name: "Replace"
+          params:
+            column: "rue"
+            value: "rue de la Paix"
+        - name: "Replace"
+          params:
+            column: "codePostal"
+            value: "75001"
+        - name: "Replace"
+          params:
+            column: "ville"
+            value: "Paris"
+
+    # ── PersonneConcernee (free text fields with potential PII) ─────
+    - schema: "public"
+      name: "PersonneConcernee"
+      transformers:
+        - name: "Replace"
+          params:
+            column: "commentaire"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "victimeInformeeCommentaire"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "autrePersonnes"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "lienAutrePrecision"
+            value: ""
+
+    # ── MisEnCause (accused party PII) ──────────────────────────────
+    - schema: "public"
+      name: "MisEnCause"
+      transformers:
+        - name: "RandomPerson"
+          params:
+            columns:
+              - name: "prenom"
+                template: "{{ .FirstName }}"
+              - name: "nom"
+                template: "{{ .LastName }}"
+            engine: "hash"
+        - name: "Replace"
+          params:
+            column: "commentaire"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "autrePrecision"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "rpps"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "finess"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "nomService"
+            value: ""
+
+    # ── Requete (commentaires) ──────────────────────────────────────
+    - schema: "public"
+      name: "Requete"
+      transformers:
+        - name: "Replace"
+          params:
+            column: "commentaire"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "provenancePrecision"
+            value: ""
+
+    # ── RequeteEtapeNote (free text notes) ──────────────────────────
+    - schema: "public"
+      name: "RequeteEtapeNote"
+      transformers:
+        - name: "Replace"
+          params:
+            column: "texte"
+            value: "Note anonymisee"
+
+    # ── LieuDeSurvenue ──────────────────────────────────────────────
+    - schema: "public"
+      name: "LieuDeSurvenue"
+      transformers:
+        - name: "Replace"
+          params:
+            column: "societeTransport"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "finess"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "tutelle"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "commentaire"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "lieuPrecision"
+            value: ""
+
+    # ── DemarchesEngagees ───────────────────────────────────────────
+    - schema: "public"
+      name: "DemarchesEngagees"
+      transformers:
+        - name: "Replace"
+          params:
+            column: "organisme"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "commentaire"
+            value: ""
+
+    # ── Fait ────────────────────────────────────────────────────────
+    - schema: "public"
+      name: "Fait"
+      transformers:
+        - name: "Replace"
+          params:
+            column: "commentaire"
+            value: ""
+        - name: "Replace"
+          params:
+            column: "autresPrecisions"
+            value: ""
+
+    # ── ChangeLog (snapshots may contain PII) ───────────────────────
+    - schema: "public"
+      name: "ChangeLog"
+      transformers:
+        - name: "SetNull"
+          params:
+            column: "before"
+        - name: "SetNull"
+          params:
+            column: "after"
+
+    # ── UploadedFile (file names may reveal PII) ────────────────────
+    - schema: "public"
+      name: "UploadedFile"
+      transformers:
+        - name: "Replace"
+          params:
+            column: "fileName"
+            value: "anonymized_file"
+        - name: "SetNull"
+          params:
+            column: "processingError"
+        - name: "SetNull"
+          params:
+            column: "scanResult"
+
+    # ── ApiKey (security tokens) ────────────────────────────────────
+    - schema: "public"
+      name: "ApiKey"
+      transformers:
+        - name: "RandomUuid"
+          params:
+            column: "keyHash"
+            engine: "hash"
+        - name: "Replace"
+          params:
+            column: "keyPrefix"
+            value: "sk_anon_"
+
+    # ── DematSocialImportFailure (error context may contain PII) ────
+    - schema: "public"
+      name: "DematSocialImportFailure"
+      transformers:
+        - name: "Replace"
+          params:
+            column: "errorMessage"
+            value: "anonymized"
+        - name: "SetNull"
+          params:
+            column: "errorContext"
+
+restore:
+  pg_restore_options:
+    dbname: "${PG_URL_TO}"
+    jobs: 4
+    exit-on-error: true
