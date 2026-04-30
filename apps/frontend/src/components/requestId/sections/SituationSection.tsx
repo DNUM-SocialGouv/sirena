@@ -351,7 +351,7 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                   {situation.lieuDeSurvenue.adresse.rue || situation.lieuDeSurvenue.adresse.label}
                 </p>
               ))}
-            {situation?.lieuDeSurvenue?.adresse?.codePostal && situation?.lieuDeSurvenue?.adresse?.ville && (
+            {(situation?.lieuDeSurvenue?.adresse?.codePostal || situation?.lieuDeSurvenue?.adresse?.ville) && (
               <p className={fr.cx('fr-mb-2w')}>
                 <span>Ville :</span> {situation.lieuDeSurvenue.adresse.codePostal}{' '}
                 {situation.lieuDeSurvenue.adresse.ville}
@@ -401,9 +401,9 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
                 <span>Numéro FINESS :</span> {situation.misEnCause.finess}
               </p>
             )}
-            {situation?.misEnCause?.codePostal && (
+            {(situation?.misEnCause?.codePostal || situation?.misEnCause?.ville) && (
               <p className={fr.cx('fr-mb-1w')}>
-                <span>Code postal :</span> {situation.misEnCause.codePostal} {situation.misEnCause.ville}
+                <span>Ville :</span> {situation.misEnCause.codePostal} {situation.misEnCause.ville}
               </p>
             )}
             {getMisEnCauseIdentity(situation?.misEnCause) &&
