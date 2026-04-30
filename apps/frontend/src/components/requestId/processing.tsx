@@ -147,7 +147,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                   className="fr-col"
                   style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}
                 >
-                  <h6 className="fr-mb-0">Traitement</h6>
+                  <h2 className="fr-mb-0 fr-text--xl">Traitement</h2>
                   {requestQuery.data && (
                     <>
                       <EntiteTypeBadge

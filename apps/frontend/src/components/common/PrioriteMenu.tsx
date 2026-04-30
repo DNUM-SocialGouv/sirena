@@ -1,78 +1,92 @@
-import { REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
-import { Menu } from '@sirena/ui';
-import { useState } from 'react';
+import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
+import { REQUETE_PRIORITE_TYPES, type RequetePrioriteType } from '@sirena/common/constants';
+import { useId } from 'react';
+import { useDisclosureMenu } from '@/hooks/useDisclosureMenu';
 import { requetePrioriteBadges } from '@/utils/requeteStatutBadge.constant';
 import prioriteStyles from './PrioriteMenu.module.css';
-import styles from './statusMenu.module.css';
+import { RequetePrioriteTag } from './RequeteStatutTag';
 
 type PrioriteMenuProps = {
-  onPrioriteClick?: (value: string | null) => void;
-  isLoading?: boolean;
-  disabled?: boolean;
   value: string | null;
+  onChange: (value: string | null) => void;
+  disabled?: boolean;
+  onOpen?: () => void;
+  onClose?: () => void;
 };
 
-export const PrioriteMenu = ({ value, onPrioriteClick, isLoading, disabled }: PrioriteMenuProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+export function PrioriteMenu({ value, onChange, disabled, onOpen, onClose }: PrioriteMenuProps) {
+  const { isOpen, toggle, triggerRef, panelRef, onPanelBlur } = useDisclosureMenu({ onOpen, onClose });
 
-  const badgeSelected = value ? requetePrioriteBadges.find((badge) => badge.value === value) : null;
+  const menuId = useId();
+
+  const badgeSelected = requetePrioriteBadges.find((b) => b.value === value);
+  const label = badgeSelected ? 'Modifier la priorité :' : 'Définir une priorité';
+
   const prioriteClassMap: Record<string, string> = {
     [REQUETE_PRIORITE_TYPES.HAUTE]: prioriteStyles['priorite-haute'],
     [REQUETE_PRIORITE_TYPES.MOYENNE]: prioriteStyles['priorite-moyenne'],
     [REQUETE_PRIORITE_TYPES.BASSE]: prioriteStyles['priorite-basse'],
   };
-  const badgeSelectedClassName =
-    value && badgeSelected ? prioriteClassMap[value] || `fr-badge--${badgeSelected.type}` : '';
-  const badgeSelectedText = badgeSelected ? `Priorité : ${badgeSelected.text}` : 'Définir une priorité';
 
-  const badgesFiltred = requetePrioriteBadges.filter((badge) => badge.value !== value);
-
-  const handleClick = (badgeValue: string) => {
-    onPrioriteClick?.(badgeValue);
-    setIsOpen(false);
-  };
-
-  const handleClear = () => {
-    onPrioriteClick?.(null);
-    setIsOpen(false);
-  };
+  const options = [
+    ...requetePrioriteBadges.map((badge) => ({
+      label: badge.text,
+      className: prioriteClassMap[badge.value],
+      nativeInputProps: {
+        value: badge.value,
+        checked: value === badge.value,
+        onChange: () => onChange(badge.value),
+      },
+    })),
+    {
+      label: 'Aucune',
+      nativeInputProps: {
+        value: '',
+        checked: value === null,
+        onChange: () => onChange(null),
+      },
+    },
+  ];
 
   return (
-    <Menu.Root onOpenChange={setIsOpen}>
-      <Menu.Trigger
-        isOpen={isOpen}
-        isLoading={isLoading}
+    <div className={prioriteStyles['priorite-filter']}>
+      <button
+        type="button"
         disabled={disabled}
-        className={`fr-badge fr-badge--no-icon fr-badge--sm ${badgeSelectedClassName} ${prioriteStyles['priorite-menu-trigger']}`}
+        className="fr-btn fr-btn--tertiary"
+        aria-expanded={isOpen}
+        aria-controls={menuId}
+        onClick={toggle}
+        ref={triggerRef}
       >
-        {badgeSelectedText}
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Positioner align="start">
-          <Menu.Popup className={styles['status-menu']}>
-            {value && (
-              <Menu.Item
-                className={`${styles['status-menu__item']} fr-badge fr-badge--no-icon fr-badge--sm`}
-                onClick={handleClear}
-              >
-                Définir une priorité
-              </Menu.Item>
+        {badgeSelected ? (
+          <span className={prioriteStyles['button-content']}>
+            <span>{label}</span>
+            {badgeSelected && (
+              <>
+                <span className="fr-sr-only">Priorité actuelle :</span>
+                <RequetePrioriteTag statut={value as RequetePrioriteType} noIcon />
+              </>
             )}
-            {badgesFiltred.map((badge) => {
-              const badgeClassName = prioriteClassMap[badge.value] || `fr-badge--${badge.type}`;
-              return (
-                <Menu.Item
-                  key={badge.value}
-                  className={`${styles['status-menu__item']} fr-badge fr-badge--no-icon fr-badge--sm ${badgeClassName}`}
-                  onClick={() => handleClick(badge.value)}
-                >
-                  {badge.text}
-                </Menu.Item>
-              );
-            })}
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
-    </Menu.Root>
+          </span>
+        ) : (
+          'Définir une priorité'
+        )}
+        <span
+          aria-hidden="true"
+          className={`fr-icon-arrow-down-s-line menu__trigger__icon${isOpen ? ' menu__trigger__icon--is-open' : ''}`}
+        />
+      </button>
+      {isOpen && (
+        <div
+          id={menuId}
+          ref={panelRef}
+          className={prioriteStyles['priorite-filter__dropdown']}
+          onBlurCapture={onPanelBlur}
+        >
+          <RadioButtons legend="Choisir une priorité" name={`priorite-${menuId}`} options={options} />
+        </div>
+      )}
+    </div>
   );
-};
+}
