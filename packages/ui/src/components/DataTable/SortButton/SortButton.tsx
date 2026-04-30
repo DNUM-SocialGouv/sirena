@@ -65,9 +65,9 @@ export const SortButtonComponent = <T extends string>({
       type="button"
       onClick={onClick}
       className="data-table-sort-button"
-      aria-label={label}
       aria-pressed={isActive ? 'true' : 'false'}
     >
+      <span className="fr-sr-only">{label}</span>
       <span className={iconClass} aria-hidden="true" />
     </button>
   );

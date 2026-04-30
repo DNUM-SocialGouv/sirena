@@ -10,11 +10,12 @@ describe('SortButton Component', () => {
     onSortChange: vi.fn(),
   };
 
-  it('renders the button with default label and aria-sort', () => {
+  it('renders the button with default label and visually hidden sort information', () => {
     render(<SortButton {...defaultProps} />);
     const button = screen.getByRole('button', { name: /trier/i });
 
     expect(button).toBeInTheDocument();
+    expect(screen.getByText(/trier/i)).toHaveClass('fr-sr-only');
   });
 
   it('calls onSortChange with asc when currently inactive', async () => {
