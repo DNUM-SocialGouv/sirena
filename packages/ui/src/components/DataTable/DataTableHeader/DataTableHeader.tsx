@@ -82,6 +82,7 @@ export const DataTableHeaderComponent = <T extends RowWithId<string>>({
                     sortDirection={sort.sortDirection}
                     onSortChange={onSortChange}
                     label={label}
+                    sortLabels={column.sortLabels}
                   />
                 )}
               </div>

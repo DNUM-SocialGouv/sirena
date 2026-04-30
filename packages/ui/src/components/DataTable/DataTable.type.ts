@@ -23,6 +23,7 @@ export type NestedKeys<T> = {
 type SortLabels = {
   asc: string;
   desc: string;
+  reset: string;
 };
 
 export type ColumnKey<T extends Row> = NestedKeys<T> | `custom:${string}`;

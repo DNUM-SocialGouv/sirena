@@ -239,6 +239,7 @@ export function RequetesEntite() {
       sortLabels: {
         asc: 'Trier par numéro de requête croissant',
         desc: 'Trier par numéro de requête décroissant',
+        reset: 'Réinitialiser le tri de la requête',
       },
     },
     {
@@ -248,6 +249,7 @@ export function RequetesEntite() {
       sortLabels: {
         asc: 'Trier par statut',
         desc: 'Trier par statut',
+        reset: 'Réinitialiser le tri du statut',
       },
     },
     {
@@ -257,6 +259,7 @@ export function RequetesEntite() {
       sortLabels: {
         asc: 'Trier par date de réception du plus ancien au plus récent',
         desc: 'Trier par date de réception du plus récent au plus ancien',
+        reset: 'Réinitialiser le tri de la date de réception',
       },
     },
     {
@@ -266,6 +269,7 @@ export function RequetesEntite() {
       sortLabels: {
         asc: 'Trier par priorité de la plus haute à la plus basse',
         desc: 'Trier par priorité de la plus basse à la plus haute',
+        reset: 'Réinitialiser le tri de la priorité',
       },
     },
     {
@@ -273,8 +277,9 @@ export function RequetesEntite() {
       label: 'Personne Concernée',
       isSortable: true,
       sortLabels: {
-        asc: 'Trier par ordre alphabétique croissant (A à Z)',
-        desc: 'Trier par ordre alphabétique décroissant (Z à A)',
+        asc: 'Trier par nom de A à Z',
+        desc: 'Trier par nom de Z à A',
+        reset: 'Réinitialiser le tri de la personne concernée',
       },
     },
     { key: 'custom:affectation', label: 'Affectation' },
