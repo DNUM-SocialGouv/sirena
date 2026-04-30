@@ -21,6 +21,13 @@ export const EntiteSchema = z.object({
   dptLib: z.string().nullable(),
 });
 
+const EntiteAdminSchema = z.object({
+  id: z.string(),
+  nomComplet: z.string(),
+  label: z.string(),
+  isActive: z.boolean(),
+});
+
 const columns = [
   Prisma.EntiteScalarFieldEnum.nomComplet,
   Prisma.EntiteScalarFieldEnum.label,
@@ -34,6 +41,27 @@ export const GetEntitiesQuerySchema = paginationQueryParamsSchema(columns);
 
 export const GetEntitiesResponseSchema = z.array(EntiteSchema);
 
+export const GetEntitesListAdminResponseSchema = z.array(
+  z.object({
+    id: z.string(),
+    entiteNom: z.string(),
+    entiteLabel: z.string(),
+    directionNom: z.string(),
+    directionLabel: z.string(),
+    serviceNom: z.string(),
+    serviceLabel: z.string(),
+    email: z.string(),
+    contactUsager: z.string(),
+    isActiveLabel: z.enum(['Oui', 'Non']),
+    editId: z.string(),
+  }),
+);
+
+export const GetEntitesByIdAdminResponseSchema = EntiteAdminSchema;
+
+export const EditEntiteInputSchema = EntiteAdminSchema.omit({ id: true });
+export const EditEntiteAdminResponseSchema = EntiteAdminSchema;
+
 export const GetEntitiesChainResponseSchema = z.array(
   EntiteSchema.pick({
     nomComplet: true,
@@ -42,3 +70,17 @@ export const GetEntitiesChainResponseSchema = z.array(
     disabled: z.boolean(),
   }),
 );
+
+export const CreateChildEntiteAdminInputSchema = z.object({
+  nomComplet: z.string().trim().min(1),
+  label: z.string().trim().min(1),
+  email: z.string(),
+  emailContactUsager: z.string(),
+  adresseContactUsager: z.string(),
+  telContactUsager: z.string(),
+  isActive: z.boolean(),
+});
+
+export const CreateChildEntiteAdminResponseSchema = CreateChildEntiteAdminInputSchema.extend({
+  id: z.string(),
+});

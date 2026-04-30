@@ -1,7 +1,10 @@
-import { ROLES } from '@sirena/common/constants';
-import { createFileRoute, Navigate, Outlet, useMatches } from '@tanstack/react-router';
+import { ROLES, type Role } from '@sirena/common/constants';
+import { Tabs } from '@sirena/ui';
+import { createFileRoute, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
 import { AdminLayout } from '@/components/layout/admin/layout';
+import { useProfile } from '@/hooks/queries/profile.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+import { getActiveTab, getTabPaths, getTabs } from './-tabs';
 
 export const Route = createFileRoute('/_auth/admin')({
   beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN, ROLES.ENTITY_ADMIN]),
@@ -9,17 +12,28 @@ export const Route = createFileRoute('/_auth/admin')({
 });
 
 export function RouteComponent() {
+  const navigate = useNavigate();
   const matches = useMatches();
+  const { data } = useProfile();
 
-  const hasChildRoute = matches.some((m) => m.routeId.startsWith('/_auth/admin/'));
+  const role = (data?.role?.id ?? null) as Role | null;
+  const pathname = matches.at(-1)?.pathname ?? '/admin/users';
+  const tabs = getTabs(role);
+  const tabPaths = getTabPaths(role);
+  const activeTab = getActiveTab(pathname, role);
 
-  if (!hasChildRoute) {
-    return <Navigate to="/admin/users" />;
-  }
+  const handleTabChange = (newTabIndex: number) => {
+    navigate({ to: tabPaths[newTabIndex] });
+  };
 
   return (
     <AdminLayout>
-      <Outlet />
+      <div className="home">
+        <h1 className="fr-mt-3w">Espace administrateur</h1>
+        <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
+          <Outlet />
+        </Tabs>
+      </div>
     </AdminLayout>
   );
 }
