@@ -1,25 +1,32 @@
-.priorite-menu-trigger {
-  font-size: 0.75rem;
-  line-height: 1.5rem;
-  padding: 0.25rem 0.5rem;
-  min-height: 1.5rem;
-  height: auto;
+.priorite-filter {
+  position: relative;
+  display: inline-block;
+}
+
+.priorite-filter__button {
   display: inline-flex;
   align-items: center;
-  box-sizing: border-box;
+  gap: 0.25rem;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.priorite-haute {
-  color: var(--text-default-warning);
-  background-color: var(--background-contrast-warning);
+.priorite-filter__dropdown {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  padding: 1rem;
+
+  background: var(--background-default-grey);
+  border-radius: var(--radius-1);
+  border-top: none;
+  box-shadow: var(--shadow-overlap);
+  z-index: 1000;
+  background-color: var(--background-default-grey);
 }
 
-.priorite-moyenne {
-  color: var(--brown-opera-200-100);
-  background-color: var(--brown-opera-950-100);
-}
-
-.priorite-basse {
-  color: var(--green-tilleul-verveine-75-active);
-  background-color: var(--green-tilleul-verveine-975-75);
+.button-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }

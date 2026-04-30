@@ -98,6 +98,12 @@
 .request-note__content {
   margin: 1rem 0;
 }
+.request-note__file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .request-note__file::marker {
   color: var(--text-action-high-blue-france);
 }

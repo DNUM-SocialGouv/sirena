@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { Column, ColumnKey, OnSortChangeParams, RowWithId } from '../DataTable.type';
 import { SortButton } from '../SortButton/SortButton';
-import { ARIA_SORT_VALUES } from '../SortButton/SortButton.constants';
+import { ARIA_SORT_VALUES, type SortDirection } from '../SortButton/SortButton.constants';
 
 type DataTableHeaderProps<T extends RowWithId<string>> = {
   id: string;
@@ -46,6 +46,13 @@ export const DataTableHeaderComponent = <T extends RowWithId<string>>({
         )}
         {columns.map((column) => {
           const isActive = sort.sort === column.key;
+
+          const currentDirection: SortDirection = isActive ? sort.sortDirection : '';
+
+          const nextDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+
+          const label = column.sortLabels?.[nextDirection] ?? `Trier par ${column.label}`;
+
           const getAriaSort = () => {
             if (!isActive || sort.sortDirection === '') {
               return ARIA_SORT_VALUES.NONE;
@@ -59,18 +66,22 @@ export const DataTableHeaderComponent = <T extends RowWithId<string>>({
           return (
             <th
               key={column.key}
-              className={`${column.isFixedLeft ? 'fr-cell--fixed' : ''} ${column.isFixedRight ? 'fr-cell--fixed-right' : ''}`}
+              className={`${column.isFixedLeft ? 'fr-cell--fixed' : ''} ${
+                column.isFixedRight ? 'fr-cell--fixed-right' : ''
+              }`}
               scope="col"
               aria-sort={column.isSortable ? getAriaSort() : undefined}
             >
               <div className="fr-cell--sort">
                 <span className="fr-cell__title">{column.label}</span>
+
                 {column.isSortable && (
                   <SortButton<ColumnKey<T>>
                     sort={sort.sort}
                     sortKey={column.key}
                     sortDirection={sort.sortDirection}
                     onSortChange={onSortChange}
+                    label={label}
                   />
                 )}
               </div>

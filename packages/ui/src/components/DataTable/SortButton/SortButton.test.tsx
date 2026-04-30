@@ -8,6 +8,7 @@ describe('SortButton Component', () => {
     sortKey: 'name',
     sortDirection: '' as const,
     onSortChange: vi.fn(),
+    label: 'trier',
   };
 
   it('renders the button with default label and aria-sort', () => {
