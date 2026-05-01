@@ -88,6 +88,20 @@ describe('PendingUsersTab', () => {
     });
   });
 
+  it('announces creation date as descending when newest to oldest sort is active', () => {
+    mockQueryClient();
+    mockNavigate(vi.fn());
+    mockSearch({ sort: 'createdAt', order: 'desc' });
+    mockUsersQuery();
+
+    render(<PendingUsersTab />);
+
+    const createdAtHeader = screen.getByRole('columnheader', { name: /date de création/i });
+
+    expect(createdAtHeader).toHaveAttribute('aria-sort', 'descending');
+    expect(within(createdAtHeader).getByRole('button', { name: /tri décroissant/i })).toBeInTheDocument();
+  });
+
   it('updates search params to sort affectation by entity full name on first click', async () => {
     const navigate = vi.fn();
     mockQueryClient();

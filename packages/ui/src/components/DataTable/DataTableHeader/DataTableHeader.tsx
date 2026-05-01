@@ -70,6 +70,7 @@ export const DataTableHeaderComponent = <T extends RowWithId<string>>({
                     sort={sort.sort}
                     sortKey={column.key}
                     sortDirection={sort.sortDirection}
+                    initialSortDirection={column.initialSortDirection}
                     onSortChange={onSortChange}
                   />
                 )}

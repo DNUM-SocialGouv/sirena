@@ -1,6 +1,6 @@
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { ROLES } from '@sirena/common/constants';
-import { type Cells, type Column, DataTable, type OnSortChangeParams, type SortDirection } from '@sirena/ui';
+import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
@@ -10,32 +10,6 @@ import { useUserListSSE } from '@/hooks/useUserListSSE';
 type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
 
 const DEFAULT_PAGE_SIZE = 10;
-
-const shouldInvertSortDirection = (columnKey: string) => columnKey === 'createdAt';
-
-const uiDirToBackendOrder = (columnKey: string, dir: SortDirection): SortDirection => {
-  if (!dir) {
-    return '';
-  }
-
-  if (!shouldInvertSortDirection(columnKey)) {
-    return dir;
-  }
-
-  return dir === 'asc' ? 'desc' : 'asc';
-};
-
-const backendOrderToUiDir = (columnKey: string, order: SortDirection): SortDirection => {
-  if (!order) {
-    return '';
-  }
-
-  if (!shouldInvertSortDirection(columnKey)) {
-    return order;
-  }
-
-  return order === 'asc' ? 'desc' : 'asc';
-};
 
 const mapColumnKeyToSortKey = (columnKey: string): string | undefined => {
   switch (columnKey) {
@@ -90,7 +64,7 @@ export function PendingUsersTab() {
   const columns: Column<User>[] = [
     { key: 'nom', label: 'Nom' },
     { key: 'prenom', label: 'Prénom' },
-    { key: 'createdAt', label: 'Date de création', isSortable: true },
+    { key: 'createdAt', label: 'Date de création', isSortable: true, initialSortDirection: 'desc' },
     { key: 'custom:affectation', label: 'Affectation', isSortable: true },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
@@ -136,13 +110,12 @@ export function PendingUsersTab() {
     (params: OnSortChangeParams<User>) => {
       const { sort: columnKey, sortDirection } = params;
       const sortKey = mapColumnKeyToSortKey(columnKey);
-      const backendOrder = uiDirToBackendOrder(columnKey, sortDirection);
 
       navigate({
         search: (prev) => ({
           ...prev,
-          sort: sortKey && backendOrder ? sortKey : undefined,
-          order: sortKey && backendOrder ? backendOrder : undefined,
+          sort: sortKey && sortDirection ? sortKey : undefined,
+          order: sortKey && sortDirection ? sortDirection : undefined,
           offset: undefined,
         }),
       });
@@ -152,11 +125,10 @@ export function PendingUsersTab() {
 
   const currentSort = useMemo(() => {
     const columnKey = mapSortKeyToColumnKey(queries.sort);
-    const uiDirection = backendOrderToUiDir(columnKey, queries.order ?? '');
 
     return {
       sort: (columnKey || '') as OnSortChangeParams<User>['sort'],
-      sortDirection: (uiDirection || '') as OnSortChangeParams<User>['sortDirection'],
+      sortDirection: (queries.order || '') as OnSortChangeParams<User>['sortDirection'],
     };
   }, [queries.sort, queries.order]);
 

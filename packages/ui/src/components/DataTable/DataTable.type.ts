@@ -28,6 +28,7 @@ export type Column<T extends Row> = {
   isFixedLeft?: boolean;
   isFixedRight?: boolean;
   isSortable?: boolean;
+  initialSortDirection?: 'asc' | 'desc';
 };
 
 export type OnSortChangeParams<T extends Row> = BaseSortParams<ColumnKey<T>>;

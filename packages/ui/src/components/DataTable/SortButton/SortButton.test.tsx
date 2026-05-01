@@ -28,6 +28,16 @@ describe('SortButton Component', () => {
     expect(onSortChange).toHaveBeenCalledWith({ sort: 'name', sortDirection: 'asc' });
   });
 
+  it('calls onSortChange with desc when initial sort direction is desc', async () => {
+    const user = userEvent.setup();
+    const onSortChange = vi.fn();
+
+    render(<SortButton {...defaultProps} initialSortDirection="desc" onSortChange={onSortChange} />);
+
+    await user.click(screen.getByRole('button'));
+    expect(onSortChange).toHaveBeenCalledWith({ sort: 'name', sortDirection: 'desc' });
+  });
+
   it('cycles to desc when already sorted asc', async () => {
     const user = userEvent.setup();
     const onSortChange = vi.fn();
@@ -36,6 +46,24 @@ describe('SortButton Component', () => {
 
     await user.click(screen.getByRole('button'));
     expect(onSortChange).toHaveBeenCalledWith({ sort: 'name', sortDirection: 'desc' });
+  });
+
+  it('cycles to asc when already sorted desc with initial sort direction desc', async () => {
+    const user = userEvent.setup();
+    const onSortChange = vi.fn();
+
+    render(
+      <SortButton
+        {...defaultProps}
+        sort="name"
+        sortDirection="desc"
+        initialSortDirection="desc"
+        onSortChange={onSortChange}
+      />,
+    );
+
+    await user.click(screen.getByRole('button'));
+    expect(onSortChange).toHaveBeenCalledWith({ sort: 'name', sortDirection: 'asc' });
   });
 
   it('cycles to "" when already sorted desc', async () => {
