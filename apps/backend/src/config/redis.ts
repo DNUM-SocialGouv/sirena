@@ -31,7 +31,7 @@ export const connection = new Redis({
   enableReadyCheck: false,
   keepAlive: 10,
   maxRetriesPerRequest: null,
-  retryStrategy: (t) => Math.min(200 * t, 2000),
+  retryStrategy: (t) => Math.min(2 ** t * 100, 30_000) + Math.floor(Math.random() * 1_000),
 });
 
 connection.on('error', (e) => logger.error({ err: sanitizeRedisError(e) }, '[Redis] error'));
