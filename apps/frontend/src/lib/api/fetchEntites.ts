@@ -2,18 +2,36 @@ import { client } from '@/lib/api/hc.ts';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery.ts';
 import type { QueryParams } from '@/types/pagination.type.ts';
 
+const formatPaginationParams = (query: QueryParams) => ({
+  ...query,
+  limit: query.limit?.toString(),
+  offset: query.offset?.toString(),
+});
+
 export async function fetchEntites(id: string | undefined, query: QueryParams = {}) {
   const res = await client.entites[':id?'].$get({
     param: { id },
-    query: {
-      ...query,
-      limit: query.limit?.toString(),
-      offset: query.offset?.toString(),
-    },
+    query: formatPaginationParams(query),
   });
   await handleRequestErrors(res);
   const { data, meta } = await res.json();
   return { data, meta };
+}
+
+export async function fetchEntitesListAdmin(query: QueryParams = {}) {
+  const res = await client.entites.admin.$get({
+    query: formatPaginationParams(query),
+  });
+  await handleRequestErrors(res);
+  const { data, meta } = await res.json();
+  return { data, meta };
+}
+
+export async function fetchEntiteByIdAdmin(id: string) {
+  const res = await client.entites.admin[':id'].$get({ param: { id } });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
 }
 
 export async function fetchEntiteChain(id: string | undefined) {
@@ -25,6 +43,42 @@ export async function fetchEntiteChain(id: string | undefined) {
 
 export async function fetchEntiteDescendants(id: string) {
   const res = await client.entites.descendants[':id'].$get({ param: { id } });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
+export type EditEntiteAdminInput = {
+  nomComplet: string;
+  label: string;
+  isActive: boolean;
+};
+
+export type CreateChildEntiteAdminInput = {
+  nomComplet: string;
+  label: string;
+  email: string;
+  emailContactUsager: string;
+  adresseContactUsager: string;
+  telContactUsager: string;
+  isActive: boolean;
+};
+
+export async function editEntiteAdmin(id: string, input: EditEntiteAdminInput) {
+  const res = await client.entites.admin[':id'].$patch({
+    param: { id },
+    json: input,
+  });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
+export async function createChildEntiteAdmin(id: string, input: CreateChildEntiteAdminInput) {
+  const res = await client.entites.admin[':id'].children.$post({
+    param: { id },
+    json: input,
+  });
   await handleRequestErrors(res);
   const { data } = await res.json();
   return data;

@@ -1,13 +1,32 @@
+import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
 import { ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
+import { isOperationDependsOnRecordNotFoundError } from '../../helpers/prisma.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
-import { getEntiteChainRoute, getEntitesRoute } from './entites.route.js';
-import { GetEntitiesQuerySchema } from './entites.schema.js';
-import { getEditableEntitiesChain, getEntiteDescendantIds, getEntites, getEntitesByIds } from './entites.service.js';
+import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
+import {
+  createChildEntiteAdminRoute,
+  editEntiteAdminRoute,
+  getEntiteByIdAdminRoute,
+  getEntiteChainRoute,
+  getEntitesListAdminRoute,
+  getEntitesRoute,
+} from './entites.route.js';
+import { CreateChildEntiteAdminInputSchema, EditEntiteInputSchema, GetEntitiesQuerySchema } from './entites.schema.js';
+import {
+  createChildEntiteAdmin,
+  editEntiteAdmin,
+  getEditableEntitiesChain,
+  getEntiteById,
+  getEntiteDescendantIds,
+  getEntites,
+  getEntitesByIds,
+  getEntitesListAdmin,
+} from './entites.service.js';
 
 const app = factoryWithLogs
   .createApp()
@@ -53,6 +72,102 @@ const app = factoryWithLogs
 
     return c.json({ data: descendants });
   })
+
+  .get(
+    '/admin',
+    roleMiddleware([ROLES.SUPER_ADMIN]),
+    getEntitesListAdminRoute,
+    zValidator('query', GetEntitiesQuerySchema),
+    async (c) => {
+      const logger = c.get('logger');
+      const query = c.req.valid('query');
+
+      logger.info({ query }, 'Admin entities list requested');
+      const { data, total } = await getEntitesListAdmin(query);
+      logger.info({ entitiesCount: data.length, total }, 'Admin entities list retrieved successfully');
+
+      return c.json({
+        data,
+        meta: {
+          ...(query.offset !== undefined && { offset: query.offset }),
+          ...(query.limit !== undefined && { limit: query.limit }),
+          total,
+        },
+      });
+    },
+  )
+
+  .get('/admin/:id', roleMiddleware([ROLES.SUPER_ADMIN]), getEntiteByIdAdminRoute, async (c) => {
+    const id = c.req.param('id');
+    const logger = c.get('logger');
+
+    const entite = await getEntiteById(id);
+
+    if (!entite) {
+      logger.warn({ entiteId: id }, 'Entite not found');
+      throwHTTPException404NotFound('Entite not found', { res: c.res });
+    }
+
+    logger.info({ entite }, 'Entite retrieved successfully');
+
+    return c.json({ data: entite });
+  })
+
+  .post(
+    '/admin/:id/children',
+    roleMiddleware([ROLES.SUPER_ADMIN]),
+    zValidator('json', CreateChildEntiteAdminInputSchema),
+    createChildEntiteAdminRoute,
+    async (c) => {
+      const id = c.req.param('id');
+      const data = c.req.valid('json');
+      const logger = c.get('logger');
+
+      try {
+        const entite = await createChildEntiteAdmin(id, data);
+        return c.json({ data: entite });
+      } catch (error) {
+        if (error instanceof EntiteNotFoundError) {
+          logger.warn({ entiteId: id }, 'Entite not found');
+          throwHTTPException404NotFound('Entite not found', { res: c.res });
+        }
+
+        if (error instanceof EntiteChildCreationForbiddenError) {
+          logger.warn({ entiteId: id }, 'Child entite creation is not allowed for this parent');
+          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', { res: c.res });
+        }
+
+        throw error;
+      }
+    },
+  )
+
+  .patch(
+    '/admin/:id',
+    roleMiddleware([ROLES.SUPER_ADMIN]),
+    zValidator('json', EditEntiteInputSchema),
+    editEntiteAdminRoute,
+    async (c) => {
+      const id = c.req.param('id');
+      const data = c.req.valid('json');
+      const logger = c.get('logger');
+
+      try {
+        const entite = await editEntiteAdmin(id, data);
+
+        logger.info({ entite }, 'Edit entite successfully');
+
+        return c.json({ data: entite });
+      } catch (error) {
+        if (isOperationDependsOnRecordNotFoundError(error)) {
+          logger.warn({ entiteId: id }, 'Entite not found');
+          throwHTTPException404NotFound('Entite not found', { res: c.res });
+        }
+
+        throw error;
+      }
+    },
+  )
 
   .get('/:id?', getEntitesRoute, zValidator('query', GetEntitiesQuerySchema), async (c) => {
     const logger = c.get('logger');
