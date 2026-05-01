@@ -59,46 +59,45 @@ export const RequestInfos = ({
       <div className="fr-col">
         <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--middle">
           <div className="fr-col">
-            <h1 className="fr-mb-2w">
-              {requestId ? (
-                <>
-                  <div className={style['request-title']}>
-                    <span>Requête {requestId}</span>
+            <div className={style['request-header']}>
+              <div className={style['request-left']}>
+                <h1>{requestId ? `Requête ${requestId}` : 'Nouvelle requête'}</h1>
+
+                {requestId && (
+                  <>
                     <RequeteStatutTag className={style['requete-statut-tag']} statut={statutId} noIcon />
                     <PrioriteMenu
                       value={prioriteId || null}
-                      onPrioriteClick={handlePrioriteChange}
-                      isLoading={updatePrioriteMutation.isPending}
+                      onChange={handlePrioriteChange}
                       disabled={!requestId || updatePrioriteMutation.isPending}
                     />
-                  </div>
-                  {showPriseEnCompteToggle && (
-                    <div className={`${style['toggle-line']} fr-text--md`}>
-                      <Checkbox
-                        options={[
-                          {
-                            label: 'Cette requête a été prise en compte',
-                            nativeInputProps: {
-                              checked: statutId === REQUETE_STATUT_TYPES.TRAITEE,
-                              onChange: (e) => handlePriseEnCompteChange(e.target.checked),
-                              disabled: updateStatutMutation.isPending,
+
+                    {showPriseEnCompteToggle && (
+                      <div className={`${style['toggle-line']} fr-text--md`}>
+                        <Checkbox
+                          options={[
+                            {
+                              label: 'Cette requête a été prise en compte',
+                              nativeInputProps: {
+                                checked: statutId === REQUETE_STATUT_TYPES.TRAITEE,
+                                onChange: (e) => handlePriseEnCompteChange(e.target.checked),
+                                disabled: updateStatutMutation.isPending,
+                              },
                             },
-                          },
-                        ]}
-                      />
-                    </div>
-                  )}
-                </>
-              ) : (
-                'Nouvelle requête'
+                          ]}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+              {requestId && (
+                <div className={style['download-menu-wrapper']}>
+                  <DownloadMenu requestId={requestId} disabled={!hasAttachments} hasUnsafeFiles={hasUnsafeFiles} />
+                </div>
               )}
-            </h1>
-          </div>
-          {requestId && (
-            <div className={`fr-col-auto ${style['download-menu-wrapper']}`}>
-              <DownloadMenu requestId={requestId ?? ''} disabled={!hasAttachments} hasUnsafeFiles={hasUnsafeFiles} />
             </div>
-          )}
+          </div>
         </div>
         {fullName && (
           <div className={style['legend-display']}>

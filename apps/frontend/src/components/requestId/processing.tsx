@@ -72,10 +72,15 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
         <QueryStateHandler query={queryProcessingSteps}>
           {({ data }) =>
             data.data.map((step, index: number) => {
+              const isManualRequest =
+                step.requete?.dematSocialId == null &&
+                step.requete?.thirdPartyAccountId == null &&
+                step.requete?.createdBy != null;
               const isDisabled =
                 index === data.data.length - 1 ||
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ||
-                step.type !== REQUETE_ETAPE_TYPES.MANUAL;
+                (step.type !== REQUETE_ETAPE_TYPES.MANUAL &&
+                  !(step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && isManualRequest));
               return (
                 <Step
                   key={step.id}
@@ -142,7 +147,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                   className="fr-col"
                   style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}
                 >
-                  <h6 className="fr-mb-0">Traitement</h6>
+                  <h2 className="fr-mb-0 fr-text--xl">Traitement</h2>
                   {requestQuery.data && (
                     <>
                       <EntiteTypeBadge

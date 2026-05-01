@@ -20,6 +20,11 @@ export type NestedKeys<T> = {
     : never;
 }[keyof T & string];
 
+type SortLabels = {
+  asc: string;
+  desc: string;
+};
+
 export type ColumnKey<T extends Row> = NestedKeys<T> | `custom:${string}`;
 
 export type Column<T extends Row> = {
@@ -29,6 +34,7 @@ export type Column<T extends Row> = {
   isFixedRight?: boolean;
   isSortable?: boolean;
   initialSortDirection?: 'asc' | 'desc';
+  sortLabels?: SortLabels;
 };
 
 export type OnSortChangeParams<T extends Row> = BaseSortParams<ColumnKey<T>>;

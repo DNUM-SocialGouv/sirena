@@ -1,3 +1,4 @@
+import { fr } from '@codegouvfr/react-dsfr';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
@@ -10,13 +11,14 @@ import {
 import { Toast } from '@sirena/ui';
 
 import { clsx } from 'clsx';
-import { memo, useRef, useState } from 'react';
+import { memo, useMemo, useRef, useState } from 'react';
 import { ButtonLink } from '@/components/common/ButtonLink';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { StatusMenu } from '@/components/common/statusMenu';
 import { capitalizeFirst } from '@/components/requestId/sections/helpers';
 import { useDeleteProcessingStep, useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStep.hook';
 import { useUpdateProcessingStepName } from '@/hooks/mutations/updateProcessingStepName.hook';
+import { useDeleteUploadedFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
@@ -43,7 +45,11 @@ type StepProps = StepType & {
 };
 
 const formatDate = (dateStr: string) =>
-  new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  new Date(dateStr).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 
 const formatAgent = (agent: { prenom: string; nom: string }): React.ReactNode => (
   <>
@@ -70,11 +76,16 @@ const getStepTitle = (type: string, statutId: string, nom: string | null): strin
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return 'Clôture';
   if (type === REQUETE_ETAPE_TYPES.CREATION) return 'Création de la requête';
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) return "Envoi de l'accusé de réception";
+  if (type === REQUETE_ETAPE_TYPES.REOPEN) return 'Réouverture de la requête';
   return nom ?? '';
 };
 
 type RequeteRef =
-  | { createdBy: { prenom: string; nom: string } | null; dematSocialId: number | null }
+  | {
+      createdBy: { prenom: string; nom: string } | null;
+      dematSocialId: number | null;
+      thirdPartyAccountId?: string | null;
+    }
   | null
   | undefined;
 
@@ -101,7 +112,8 @@ const getStepSubtitle = (
   }
 
   if (type === REQUETE_ETAPE_TYPES.CREATION) {
-    const isManual = requete?.dematSocialId == null && requete?.createdBy != null;
+    const isManual =
+      requete?.dematSocialId == null && requete?.thirdPartyAccountId == null && requete?.createdBy != null;
     if (isManual && requete?.createdBy) {
       return (
         <>
@@ -113,7 +125,20 @@ const getStepSubtitle = (
   }
 
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
-    return requete?.dematSocialId != null ? `Envoyé automatiquement le ${date}` : `Ajouté automatiquement le ${date}`;
+    const isManual =
+      requete?.dematSocialId == null && requete?.thirdPartyAccountId == null && requete?.createdBy != null;
+    return isManual ? `Envoyé automatiquement le ${date}` : `Ajouté automatiquement le ${date}`;
+  }
+
+  if (type === REQUETE_ETAPE_TYPES.REOPEN) {
+    if (createdBy) {
+      return (
+        <>
+          Requête réouverte le {date} par {formatAgent(createdBy)}
+        </>
+      );
+    }
+    return `Requête réouverte le ${date}`;
   }
 
   return formatStepCreationInfo(createdBy, createdAt);
@@ -137,12 +162,26 @@ const StepComponent = ({
     id: `delete-step-modal-${id}`,
     isOpenedByDefault: false,
   });
+  const deleteClotureFileModal = useMemo(
+    () =>
+      createModal({
+        id: `delete-cloture-file-modal-${id}`,
+        isOpenedByDefault: false,
+      }),
+    [id],
+  );
   const [isOpen, setIsOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [deletedFileIds, setDeletedFileIds] = useState<Set<string>>(new Set());
   const updateStatusMutation = useUpdateProcessingStepStatus(requestId);
   const updateStepNameMutation = useUpdateProcessingStepName(requestId);
   const deleteStepMutation = useDeleteProcessingStep(requestId);
+  const deleteFileMutation = useDeleteUploadedFile({ requeteId: requestId });
   const toastManager = Toast.useToastManager();
-  const { registerTrigger } = useModalFocusRestore([deleteStepModal.id]);
+  const { registerTrigger } = useModalFocusRestore([deleteStepModal.id, deleteClotureFileModal.id]);
   const addFilesClotureDrawerRef = useRef<AddFilesClotureDrawerRef>(null);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -155,6 +194,7 @@ const StepComponent = ({
     : false;
 
   const isSystemStep = rest.type !== REQUETE_ETAPE_TYPES.MANUAL || statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE;
+  const isAutomaticAcknowledgment = rest.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && createdBy === null;
 
   const badges = requeteEtapeStatutBadges.filter((badge) => {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
@@ -225,6 +265,28 @@ const StepComponent = ({
   const handleDeleteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     registerTrigger(e.currentTarget);
     deleteStepModal.open();
+  };
+
+  const handleConfirmDeleteClotureFile = async () => {
+    if (!fileToDelete) return;
+    try {
+      await deleteFileMutation.mutateAsync(fileToDelete.id);
+      setDeletedFileIds((prev) => new Set([...prev, fileToDelete.id]));
+      toastManager.add({
+        title: 'Fichier supprimé avec succès',
+        description: 'Le fichier a bien été supprimé.',
+        data: { icon: 'fr-alert--success' },
+      });
+    } catch {
+      toastManager.add({
+        title: 'Erreur',
+        description: 'Une erreur est survenue lors de la suppression du fichier.',
+        data: { icon: 'fr-alert--error' },
+      });
+    } finally {
+      deleteClotureFileModal.close();
+      setFileToDelete(null);
+    }
   };
 
   return (
@@ -306,6 +368,24 @@ const StepComponent = ({
               <p className="fr-text--xs fr-text-mention--grey">
                 {getStepSubtitle(rest.type, statutId, createdAt, createdBy, requete, notes[0]?.author)}
               </p>
+              {isAutomaticAcknowledgment && notes[0]?.uploadedFiles && notes[0].uploadedFiles.length > 0 && (
+                <ul className="fr-mt-1w">
+                  {notes[0].uploadedFiles.map((file: StepType['notes'][number]['uploadedFiles'][number]) => (
+                    <li key={file.id} className={styles['request-note__file']}>
+                      <FileDownloadLink
+                        href={`/api/requete-etapes/${id}/file/${file.id}`}
+                        safeHref={`/api/requete-etapes/${id}/file/${file.id}/safe`}
+                        fileName={(file.metadata as { originalName?: string })?.originalName || 'Unknown'}
+                        fileId={file.id}
+                        fileSize={file.size}
+                        status={file.status}
+                        scanStatus={file.scanStatus}
+                        sanitizeStatus={file.sanitizeStatus}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         )}
@@ -331,52 +411,87 @@ const StepComponent = ({
                 </div>
               )}
             </div>
-            {notes[0]?.uploadedFiles && notes[0].uploadedFiles.length > 0 && (
+            {notes[0]?.uploadedFiles && notes[0].uploadedFiles.filter((f) => !deletedFileIds.has(f.id)).length > 0 && (
               <ul className="fr-mt-1w">
-                {notes[0].uploadedFiles.map((file: (typeof notes)[number]['uploadedFiles'][number]) => (
-                  <li key={file.id} className={styles['request-note__file']}>
-                    <FileDownloadLink
-                      href={`/api/requete-etapes/${id}/file/${file.id}`}
-                      safeHref={`/api/requete-etapes/${id}/file/${file.id}/safe`}
-                      fileName={(file.metadata as { originalName?: string })?.originalName || 'Unknown'}
-                      fileId={file.id}
-                      fileSize={file.size}
-                      status={file.status}
-                      scanStatus={file.scanStatus}
-                      sanitizeStatus={file.sanitizeStatus}
-                    />
-                  </li>
-                ))}
+                {notes[0].uploadedFiles
+                  .filter((f) => !deletedFileIds.has(f.id))
+                  .map((file: (typeof notes)[number]['uploadedFiles'][number]) => {
+                    const fileName = (file.metadata as { originalName?: string })?.originalName || 'Unknown';
+                    return (
+                      <li key={file.id} className={styles['request-note__file']}>
+                        <FileDownloadLink
+                          href={`/api/requete-etapes/${id}/file/${file.id}`}
+                          safeHref={`/api/requete-etapes/${id}/file/${file.id}/safe`}
+                          fileName={fileName}
+                          fileId={file.id}
+                          fileSize={file.size}
+                          status={file.status}
+                          scanStatus={file.scanStatus}
+                          sanitizeStatus={file.sanitizeStatus}
+                        />
+                        {canEdit && (
+                          <Button
+                            aria-label="Supprimer le fichier"
+                            title="Supprimer le fichier"
+                            type="button"
+                            className={fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')}
+                            onClick={() => {
+                              setFileToDelete({
+                                id: file.id,
+                                name: fileName,
+                              });
+                              deleteClotureFileModal.open();
+                            }}
+                          >
+                            <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
+                          </Button>
+                        )}
+                      </li>
+                    );
+                  })}
               </ul>
             )}
           </>
         ) : (
           <>
             <div className={styles['request-notes']}>
-              {notes.slice(0, isOpen ? notes.length : 3).map((note: StepType['notes'][number]) => (
-                <StepNote
-                  requestId={requestId}
-                  key={note.id}
-                  content={note.texte}
-                  author={note.author}
-                  id={note.id}
-                  createdAt={note.createdAt}
-                  files={note.uploadedFiles.map((file: (typeof note.uploadedFiles)[number]) => ({
-                    id: file.id,
-                    size: file.size,
-                    originalName: (file.metadata as { originalName?: string })?.originalName || 'Unknown',
-                    status: file.status,
-                    scanStatus: file.scanStatus,
-                    sanitizeStatus: file.sanitizeStatus,
-                    safeFilePath: file.safeFilePath,
-                  }))}
-                  requeteStateId={id}
-                  onEdit={(noteData) =>
-                    openEditNote?.({ id, nom, statutId, notes, createdAt, createdBy, requete, ...rest }, noteData)
-                  }
-                  clotureReasonLabels={null}
-                />
-              ))}
+              {!isAutomaticAcknowledgment &&
+                notes.slice(0, isOpen ? notes.length : 3).map((note: StepType['notes'][number]) => (
+                  <StepNote
+                    requestId={requestId}
+                    key={note.id}
+                    content={note.texte}
+                    author={note.author}
+                    id={note.id}
+                    createdAt={note.createdAt}
+                    files={note.uploadedFiles.map((file: (typeof note.uploadedFiles)[number]) => ({
+                      id: file.id,
+                      size: file.size,
+                      originalName: (file.metadata as { originalName?: string })?.originalName || 'Unknown',
+                      status: file.status,
+                      scanStatus: file.scanStatus,
+                      sanitizeStatus: file.sanitizeStatus,
+                      safeFilePath: file.safeFilePath,
+                    }))}
+                    requeteStateId={id}
+                    onEdit={(noteData) =>
+                      openEditNote?.(
+                        {
+                          id,
+                          nom,
+                          statutId,
+                          notes,
+                          createdAt,
+                          createdBy,
+                          requete,
+                          ...rest,
+                        },
+                        noteData,
+                      )
+                    }
+                    clotureReasonLabels={null}
+                  />
+                ))}
             </div>
             <div className={styles['request-notes-distplay']}>
               {notes.length > 3 && (
@@ -397,7 +512,18 @@ const StepComponent = ({
                 type="button"
                 priority="tertiary"
                 iconId="fr-icon-add-line"
-                onClick={() => openEdit?.({ id, nom, statutId, notes, createdAt, createdBy, requete, ...rest })}
+                onClick={() =>
+                  openEdit?.({
+                    id,
+                    nom,
+                    statutId,
+                    notes,
+                    createdAt,
+                    createdBy,
+                    requete,
+                    ...rest,
+                  })
+                }
               >
                 Ajouter une note ou un fichier
               </Button>
@@ -439,6 +565,28 @@ const StepComponent = ({
           les notes et fichiers liés à cette étape.
         </p>
       </deleteStepModal.Component>
+
+      <deleteClotureFileModal.Component
+        concealingBackdrop={false}
+        title="Supprimer le fichier"
+        buttons={[
+          {
+            doClosesModal: true,
+            children: 'Annuler',
+            onClick: () => {
+              deleteClotureFileModal.close();
+              setFileToDelete(null);
+            },
+          },
+          {
+            doClosesModal: false,
+            children: 'Confirmer',
+            onClick: handleConfirmDeleteClotureFile,
+          },
+        ]}
+      >
+        <p>Êtes-vous sûr de vouloir supprimer le fichier "{fileToDelete?.name}" ? Cette action est irréversible.</p>
+      </deleteClotureFileModal.Component>
     </div>
   );
 };
