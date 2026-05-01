@@ -12,7 +12,7 @@ import {
 import type { Context } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import type { Redis } from 'ioredis';
-import { connection } from '../config/redis.js';
+import { connection, sanitizeRedisError } from '../config/redis.js';
 import type { AppBindings } from '../helpers/factories/appWithRole.js';
 import { createDefaultLogger } from '../helpers/pino.js';
 
@@ -53,7 +53,7 @@ class SSEEventManager extends EventEmitter {
       this.subscriber = connection.duplicate();
 
       this.subscriber.on('error', (err) => {
-        this.logger.error({ err }, 'SSE Redis subscriber error');
+        this.logger.error({ err: sanitizeRedisError(err) }, 'SSE Redis subscriber error');
       });
 
       // Set up message handler BEFORE subscribing to not miss any messages
