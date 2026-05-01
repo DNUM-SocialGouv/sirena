@@ -87,6 +87,7 @@ const StepComponent = ({
   nom,
   createdBy,
   createdAt,
+  updatedAt,
   statutId,
   disabled,
   isAcknowledgmentSendable,
@@ -335,7 +336,7 @@ const StepComponent = ({
                     )
                   ) : rest.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT ? (
                     statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT
-                      ? `Envoyé automatiquement le ${formatDate(createdAt)}`
+                      ? `Envoyé automatiquement le ${formatDate(updatedAt)}`
                       : `Ajouté automatiquement le ${formatDate(createdAt)}`
                   ) : (
                     formatStepCreationInfo(createdBy, createdAt)
@@ -444,6 +445,7 @@ const StepComponent = ({
                         statutId,
                         notes,
                         createdAt,
+                        updatedAt,
                         createdBy,
                         requete,
                         ...rest,
@@ -481,6 +483,7 @@ const StepComponent = ({
                     statutId,
                     notes,
                     createdAt,
+                    updatedAt,
                     createdBy,
                     requete,
                     ...rest,
