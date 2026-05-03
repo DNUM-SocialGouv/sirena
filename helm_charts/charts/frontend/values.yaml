@@ -23,6 +23,13 @@ SDPSN-devops-charts:
         cpu: 250m
         memory: 900Mi
 
+  appVariables:
+    IS_LOGGED_TOKEN_NAME: is_logged_token
+    SENTRY_ENABLED: "true"
+    SENTRY_DSN_FRONTEND: "https://86ed3a86e8f1e2d912d73bdec47b30e3@sentry2.fabrique.social.gouv.fr/55"
+    MATOMO_URL: "https://matomo.fabrique.social.gouv.fr"
+    MATOMO_SITE_ID: "155"
+
   enableSecurityHeaders: true
   securityHeaders:
     Content-Security-Policy: >-

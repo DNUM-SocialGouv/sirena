@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import * as Sentry from '@sentry/node';
+import { APP_ENVS } from '@sirena/common/constants';
 import { envVars } from '../../config/env.js';
 import { DossierState } from '../../graphql/graphql.js';
 import { serializeError } from '../../helpers/errors.js';
@@ -327,7 +328,7 @@ export const importRequetes = async (createdSince?: Date) => {
   let errorCount = 0;
   let skippedCount = 0;
 
-  const isProduction = envVars.SENTRY_ENVIRONMENT === 'production';
+  const isProduction = envVars.APP_ENV === APP_ENVS.PRODUCTION;
   const ignoredDossiers = new Set((envVars.DEMAT_SOCIAL_IGNORED_DOSSIERS || '').split(',').filter(Boolean).map(Number));
 
   for (const dossier of dossiers) {

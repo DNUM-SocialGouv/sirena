@@ -12,8 +12,8 @@ backend:
       FRONTEND_URI: https://sirena.formation.prod.atlas.fabrique.social.gouv.fr
       CRON_DEMAT_SOCIAL: "300"
       REDIS_TLS: "true"
-      SENTRY_ENVIRONMENT: formation
       PG_SSL_ALLOW_SELF_SIGNED: "true"
+      APP_ENV: formation
 
     deployment:
       replicas: 2
@@ -39,6 +39,9 @@ external-secrets:
 frontend:
   SDPSN-devops-charts:
     namespace: org-sdpsn-ws-sirena-formation
+
+    appVariables:
+      APP_ENV: formation
 
     deployment:
       replicas: 2

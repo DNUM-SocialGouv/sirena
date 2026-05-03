@@ -12,7 +12,6 @@ backend:
       FRONTEND_URI: https://sirena.integration.dev.atlas.fabrique.social.gouv.fr
       CRON_DEMAT_SOCIAL: "300"
       REDIS_TLS: "false"
-      SENTRY_ENVIRONMENT: integration
       TIPIMAIL_DISABLE_SENDING: "false"
       APP_ENV: integration
 
@@ -41,6 +40,9 @@ external-secrets:
 frontend:
   SDPSN-devops-charts:
     namespace: org-sdpsn-ws-sirena-integration
+
+    appVariables:
+      APP_ENV: integration
 
     deployment:
       replicas: 1

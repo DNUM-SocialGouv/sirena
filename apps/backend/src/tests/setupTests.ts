@@ -200,7 +200,6 @@ Object.assign(process.env, {
   // Sentry
   SENTRY_ENABLED: 'false',
   SENTRY_DSN_BACKEND: '',
-  SENTRY_ENVIRONMENT: 'test',
   // Minio
   S3_BUCKET_ACCESS_KEY: 'minio-access-key',
   S3_BUCKET_SECRET_KEY: 'minio-secret-key',

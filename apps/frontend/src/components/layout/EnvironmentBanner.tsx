@@ -1,21 +1,13 @@
 import { Notice } from '@codegouvfr/react-dsfr/Notice';
-
-const NON_PRODUCTION_ENVIRONMENTS: Record<string, string> = {
-  integration: 'intégration',
-  validation: 'validation',
-  formation: 'formation',
-  preproduction: 'préproduction',
-  test: 'test',
-  local: 'local',
-};
+import { APP_ENVS, type AppEnv, appEnvLabels } from '@sirena/common/constants';
+import { env } from '@/config/env';
 
 export function EnvironmentBanner() {
-  // TODO: utiliser APP_ENV quand il sera disponible côté frontend (SIRENA-563)
-  const env = import.meta.env.VITE_SENTRY_ENVIRONMENT;
+  const appEnv = env.APP_ENV as AppEnv | undefined;
 
-  if (!env || env === 'production') return null;
+  if (!appEnv || appEnv === APP_ENVS.PRODUCTION) return null;
 
-  const envLabel = NON_PRODUCTION_ENVIRONMENTS[env] ?? env;
+  const envLabel = appEnvLabels[appEnv] ?? appEnv;
 
   return (
     <Notice
