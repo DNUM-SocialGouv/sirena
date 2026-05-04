@@ -40,7 +40,6 @@ external-secrets:
   SDPSN-devops-charts:
     externalSecret:
       redis:
-        enable: false
         clusterName: sirena-production-redis
       bucket:
         bucketName: sirena-production-s3
