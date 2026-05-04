@@ -335,9 +335,11 @@ const StepComponent = ({
                       `Requête réouverte le ${formatDate(createdAt)}`
                     )
                   ) : rest.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT ? (
-                    statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT
-                      ? `Envoyé automatiquement le ${formatDate(updatedAt)}`
-                      : `Ajouté automatiquement le ${formatDate(createdAt)}`
+                    statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (
+                      `Envoyé automatiquement le ${formatDate(updatedAt)}`
+                    ) : (
+                      `Ajouté automatiquement le ${formatDate(createdAt)}`
+                    )
                   ) : (
                     formatStepCreationInfo(createdBy, createdAt)
                   )}
