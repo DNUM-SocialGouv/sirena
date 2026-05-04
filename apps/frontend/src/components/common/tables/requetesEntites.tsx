@@ -1,5 +1,4 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
@@ -8,13 +7,12 @@ import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@si
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DepartementFilter } from '@/components/common/filters/DepartementFilter';
-import { useDepartementCounts } from '@/hooks/queries/departementCounts.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
 import { RequetePrioriteTag, RequeteStatutTag } from '../RequeteStatutTag';
 import { renderAffectationCell, renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
+import { RequetesEntiteQuickFilters } from './requetesEntites.filters';
 import './requetesEntites.css';
 import Badge from '@codegouvfr/react-dsfr/Badge';
 
@@ -88,51 +86,7 @@ export function RequetesEntite() {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { data: profile } = useProfile();
   const userTopEntiteId = profile?.topEntiteId;
-  const userEntiteIdLevel = profile?.entiteIdLevel;
   const isTopEntiteARS = profile?.topEntiteTypeId === entiteTypes.ARS;
-  const topProfileEntiteId = (() => {
-    if (profile?.topEntiteId === profile?.entiteId) {
-      return undefined;
-    }
-    return profile?.entiteId ?? undefined;
-  })();
-  const isAssignedToServiceOnly = useMemo(() => {
-    if (!topProfileEntiteId) return false;
-    return queries?.entiteId === topProfileEntiteId;
-  }, [queries.entiteId, topProfileEntiteId]);
-
-  const arsDepartements = useMemo(() => profile?.topEntiteDepartements ?? [], [profile?.topEntiteDepartements]);
-  const [isDepartementDropdownOpen, setIsDepartementDropdownOpen] = useState(false);
-
-  const selectedDepartements = useMemo(
-    () => (queries.departementCodes ? queries.departementCodes.split(',').filter(Boolean) : []),
-    [queries.departementCodes],
-  );
-
-  const { data: departementCountsData } = useDepartementCounts({
-    departementCodes: arsDepartements.map((d) => d.code).join(','),
-    entiteId: queries.entiteId,
-    search: queries.search,
-    enabled: isTopEntiteARS && isDepartementDropdownOpen,
-  });
-
-  const departementCounts = useMemo(() => {
-    if (!departementCountsData) return null;
-    return Object.fromEntries(departementCountsData.map((d) => [d.code, d.count]));
-  }, [departementCountsData]);
-
-  const handleDepartementChange = useCallback(
-    (codes: string[]) => {
-      navigate({
-        search: (prev) => ({
-          ...prev,
-          departementCodes: codes.length > 0 ? codes.join(',') : undefined,
-          offset: undefined,
-        }),
-      });
-    },
-    [navigate],
-  );
 
   const handleUpdate = useCallback(() => {
     // Debounce multiple rapid SSE events to prevent excessive refreshes
@@ -168,6 +122,7 @@ export function RequetesEntite() {
     ...(queries.search && { search: queries.search }),
     ...(queries.entiteId ? { entiteId: queries.entiteId } : {}),
     ...(queries.departementCodes ? { departementCodes: queries.departementCodes } : {}),
+    ...(queries.prioriteId ? { prioriteId: queries.prioriteId } : {}),
     offset,
     limit,
   });
@@ -441,47 +396,7 @@ export function RequetesEntite() {
         )}
       </div>
       <div className="requetesEntitesTable">
-        {(userEntiteIdLevel === 2 || userEntiteIdLevel === 3 || isTopEntiteARS) && (
-          <div className="requetesEntitesTable__quick-filters fr-mb-2w">
-            {(userEntiteIdLevel === 2 || userEntiteIdLevel === 3) && (
-              <Checkbox
-                legend="Filtres rapides"
-                options={[
-                  {
-                    label: userEntiteIdLevel === 2 ? 'Affectées à ma direction' : 'Affectées à mon service',
-                    nativeInputProps: {
-                      name: 'quick-filters',
-                      value: 'assigned-to-service',
-                      checked: isAssignedToServiceOnly,
-                      onChange: (e) => {
-                        const checked = e.target.checked;
-                        navigate({
-                          search: (prev) => ({
-                            ...prev,
-                            entiteId: checked ? topProfileEntiteId : undefined,
-                            offset: undefined,
-                          }),
-                        });
-                      },
-                    },
-                  },
-                ]}
-                orientation="horizontal"
-                state="default"
-              />
-            )}
-            {isTopEntiteARS && (
-              <DepartementFilter
-                departements={arsDepartements}
-                selectedCodes={selectedDepartements}
-                counts={departementCounts}
-                onChange={handleDepartementChange}
-                onOpen={() => setIsDepartementDropdownOpen(true)}
-                onClose={() => setIsDepartementDropdownOpen(false)}
-              />
-            )}
-          </div>
-        )}
+        <RequetesEntiteQuickFilters />
         <DataTable
           title={title}
           rowId="id"
