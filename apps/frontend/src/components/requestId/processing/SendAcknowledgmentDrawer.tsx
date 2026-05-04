@@ -117,7 +117,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
             handleReset();
             setIsOpen(false);
             toastManager.add({
-              title: 'Accusé de réception envoyé',
+              title: 'Accusé de réception envoyé avec succès',
               description: "L'e-mail a bien été envoyé au déclarant.",
               timeout: 5000,
               data: { icon: 'fr-alert--success' },
@@ -182,6 +182,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                           rows: 14,
                           value: message,
                           readOnly: true,
+                          'aria-readonly': true,
                         }}
                       />
                       <Input

@@ -82,6 +82,51 @@ const getStepTitle = (type: string, statutId: string, nom: string | null): strin
   return nom ?? '';
 };
 
+const getStepSubtitle = (
+  type: string,
+  statutId: string,
+  createdAt: string,
+  updatedAt: string,
+  createdBy: StepType['createdBy'],
+  notes: StepType['notes'],
+  requete: StepType['requete'],
+): React.ReactNode => {
+  if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
+    const agent = createdBy ?? notes[0]?.author;
+    return agent ? (
+      <>
+        Requête clôturée le {formatDate(createdAt)} par {formatAgent(agent)}
+      </>
+    ) : (
+      `Requête clôturée le ${formatDate(createdAt)}`
+    );
+  }
+  if (type === REQUETE_ETAPE_TYPES.CREATION) {
+    return requete?.createdBy ? (
+      <>
+        Requête créée le {formatDate(createdAt)} par {formatAgent(requete.createdBy)}
+      </>
+    ) : (
+      `Requête créée le ${formatDate(createdAt)}`
+    );
+  }
+  if (type === REQUETE_ETAPE_TYPES.REOPEN) {
+    return createdBy ? (
+      <>
+        Requête réouverte le {formatDate(createdAt)} par {formatAgent(createdBy)}
+      </>
+    ) : (
+      `Requête réouverte le ${formatDate(createdAt)}`
+    );
+  }
+  if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
+    return statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT
+      ? `Envoyé automatiquement le ${formatDate(updatedAt)}`
+      : `Ajouté automatiquement le ${formatDate(createdAt)}`;
+  }
+  return formatStepCreationInfo(createdBy, createdAt);
+};
+
 const StepComponent = ({
   requestId,
   nom,
@@ -307,42 +352,7 @@ const StepComponent = ({
             <div className="fr-grid-row fr-grid-row--middle fr-mt-1w">
               <div className="fr-col">
                 <p className="fr-text--xs fr-text-mention--grey">
-                  {statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ? (
-                    (() => {
-                      const agent = createdBy ?? notes[0]?.author;
-                      return agent ? (
-                        <>
-                          Requête clôturée le {formatDate(createdAt)} par {formatAgent(agent)}
-                        </>
-                      ) : (
-                        `Requête clôturée le ${formatDate(createdAt)}`
-                      );
-                    })()
-                  ) : rest.type === REQUETE_ETAPE_TYPES.CREATION ? (
-                    requete?.createdBy ? (
-                      <>
-                        Requête créée le {formatDate(createdAt)} par {formatAgent(requete.createdBy)}
-                      </>
-                    ) : (
-                      `Requête créée le ${formatDate(createdAt)}`
-                    )
-                  ) : rest.type === REQUETE_ETAPE_TYPES.REOPEN ? (
-                    createdBy ? (
-                      <>
-                        Requête réouverte le {formatDate(createdAt)} par {formatAgent(createdBy)}
-                      </>
-                    ) : (
-                      `Requête réouverte le ${formatDate(createdAt)}`
-                    )
-                  ) : rest.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT ? (
-                    statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (
-                      `Envoyé automatiquement le ${formatDate(updatedAt)}`
-                    ) : (
-                      `Ajouté automatiquement le ${formatDate(createdAt)}`
-                    )
-                  ) : (
-                    formatStepCreationInfo(createdBy, createdAt)
-                  )}
+                  {getStepSubtitle(rest.type, statutId, createdAt, updatedAt, createdBy, notes, requete)}
                 </p>
                 {isAcknowledgmentSendable && canEdit && (
                   <div className="fr-mt-2w">
@@ -397,7 +407,7 @@ const StepComponent = ({
                         />
                         {canEdit && (
                           <Button
-                            aria-label="Supprimer le fichier"
+                            aria-label={`Supprimer le fichier ${fileName}`}
                             title="Supprimer le fichier"
                             type="button"
                             className={fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')}
