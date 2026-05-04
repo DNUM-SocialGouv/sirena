@@ -26,6 +26,9 @@ export async function runFileIntegrityCheck(options?: {
   const logger = getLoggerStore();
   const { removeOrphans = false, removeDangling = false } = options ?? {};
 
+  logger.info({ removeOrphans, removeDangling }, 'Starting file integrity check');
+
+  const dbStartedAt = Date.now();
   const dbFiles = await prisma.uploadedFile.findMany({
     select: {
       id: true,
@@ -41,10 +44,13 @@ export async function runFileIntegrityCheck(options?: {
       demarchesEngageesId: true,
     },
   });
+  logger.info({ count: dbFiles.length, durationMs: Date.now() - dbStartedAt }, 'Fetched uploaded files from database');
   logger.info(`Found ${dbFiles.length} files in database`);
 
+  const s3StartedAt = Date.now();
   const s3Objects = await listMinioObjects();
   const s3Paths = new Set(s3Objects.map((o) => o.name));
+  logger.info({ count: s3Objects.length, durationMs: Date.now() - s3StartedAt }, 'Listed objects from S3');
   logger.info(`Found ${s3Objects.length} objects in S3`);
 
   const dbPaths = new Set<string>();
@@ -52,6 +58,7 @@ export async function runFileIntegrityCheck(options?: {
     dbPaths.add(f.filePath);
     if (f.safeFilePath) dbPaths.add(f.safeFilePath);
   }
+  logger.info({ uniqueDbPaths: dbPaths.size }, 'Built DB path index');
 
   const orphanDbFiles = dbFiles.filter(
     (f) => !f.requeteId && !f.faitSituationId && !f.requeteEtapeNoteId && !f.demarchesEngageesId,
@@ -84,9 +91,15 @@ export async function runFileIntegrityCheck(options?: {
   }
 
   if (removeOrphans && (orphanDbFiles.length > 0 || s3FilesWithoutDb.length > 0)) {
+    logger.info(
+      { orphanDbFiles: orphanDbFiles.length, s3FilesWithoutDb: s3FilesWithoutDb.length },
+      'Removing orphan files',
+    );
+
     let removedDbOrphans = 0;
     for (const f of orphanDbFiles) {
       try {
+        logger.info({ fileId: f.id, filePath: f.filePath }, 'Removing orphan DB file');
         if (s3Paths.has(f.filePath)) {
           await deleteFileFromMinio(f.filePath);
         }
@@ -104,6 +117,7 @@ export async function runFileIntegrityCheck(options?: {
     let removedS3Orphans = 0;
     for (const f of s3FilesWithoutDb) {
       try {
+        logger.info({ path: f.name }, 'Removing orphan S3 file');
         await deleteFileFromMinio(f.name);
         removedS3Orphans++;
       } catch (err) {
@@ -114,9 +128,12 @@ export async function runFileIntegrityCheck(options?: {
   }
 
   if (removeDangling && dbFilesWithoutS3.length > 0) {
+    logger.info({ dbFilesWithoutS3: dbFilesWithoutS3.length }, 'Removing dangling DB records');
+
     let removedDangling = 0;
     for (const f of dbFilesWithoutS3) {
       try {
+        logger.debug({ fileId: f.id, filePath: f.filePath }, 'Removing dangling DB record');
         await prisma.uploadedFile.delete({ where: { id: f.id } });
         removedDangling++;
       } catch (err) {
@@ -126,7 +143,7 @@ export async function runFileIntegrityCheck(options?: {
     logger.info(`Removed ${removedDangling}/${dbFilesWithoutS3.length} dangling DB records`);
   }
 
-  return {
+  const result = {
     orphanDbFiles: orphanDbFiles.length,
     orphanDbFilesSize: orphanDbFiles.reduce((s, f) => s + f.size, 0),
     dbFilesWithoutS3: dbFilesWithoutS3.length,
@@ -134,4 +151,8 @@ export async function runFileIntegrityCheck(options?: {
     s3FilesWithoutDb: s3FilesWithoutDb.length,
     s3FilesWithoutDbSize: s3FilesWithoutDb.reduce((s, f) => s + f.size, 0),
   };
+
+  logger.info(result, 'File integrity check completed');
+
+  return result;
 }
