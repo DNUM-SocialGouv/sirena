@@ -11,7 +11,8 @@ export function EnvironmentBanner() {
 
   return (
     <Notice
-      title={`Vous êtes sur l'environnement ${envLabel}. Ne saisissez pas de données réelles dans cet environnement.`}
+      title={`Information : Vous êtes sur un environnement de test (${envLabel}).`}
+      description="Ne saisissez pas de données réelles dans cet environnement."
       severity="info"
       isClosable={false}
     />
