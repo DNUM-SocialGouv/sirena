@@ -79,6 +79,21 @@ describe('AllUsersTab', () => {
     vi.clearAllMocks();
   });
 
+  it('ignores unsupported URL sort params for this tab', () => {
+    mockQueryClient();
+    mockProfileQuery();
+    mockNavigate(vi.fn());
+    mockSearch({ sort: 'createdAt', order: 'desc' });
+    mockUsersQuery();
+
+    render(<AllUsersTab />);
+
+    const usersQuery = mockedUseUsers.mock.calls[0][0];
+
+    expect(usersQuery).not.toHaveProperty('sort');
+    expect(usersQuery).not.toHaveProperty('order');
+  });
+
   it.each([
     { header: /rôle/i, sort: 'role.label', order: 'asc' },
     { header: /statut/i, sort: 'statutId', order: 'asc' },

@@ -99,7 +99,21 @@ describe('PendingUsersTab', () => {
     const createdAtHeader = screen.getByRole('columnheader', { name: /date de création/i });
 
     expect(createdAtHeader).toHaveAttribute('aria-sort', 'descending');
-    expect(within(createdAtHeader).getByRole('button', { name: /tri décroissant/i })).toBeInTheDocument();
+    expect(within(createdAtHeader).getByRole('button', { name: /trier par date de création/i })).toBeInTheDocument();
+  });
+
+  it('ignores unsupported URL sort params for this tab', () => {
+    mockQueryClient();
+    mockNavigate(vi.fn());
+    mockSearch({ sort: 'role.label', order: 'asc' });
+    mockUsersQuery();
+
+    render(<PendingUsersTab />);
+
+    const usersQuery = mockedUseUsers.mock.calls[0][0];
+
+    expect(usersQuery).not.toHaveProperty('sort');
+    expect(usersQuery).not.toHaveProperty('order');
   });
 
   it('updates search params to sort affectation by entity full name on first click', async () => {

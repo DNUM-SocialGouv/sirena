@@ -38,6 +38,16 @@ const mapSortKeyToColumnKey = (sortKey?: string) => {
   }
 };
 
+const getEffectiveSort = (sort?: string, order?: 'asc' | 'desc') => {
+  const columnKey = mapSortKeyToColumnKey(sort);
+
+  if (!columnKey || !order) {
+    return {};
+  }
+
+  return { sort, order };
+};
+
 export function AllUsersTab() {
   const queryClient = useQueryClient();
   const { data } = useQuery({ ...profileQueryOptions(), enabled: false });
@@ -52,6 +62,7 @@ export function AllUsersTab() {
 
   const limit = queries.limit ?? DEFAULT_PAGE_SIZE;
   const offset = queries.offset ?? 0;
+  const effectiveSort = useMemo(() => getEffectiveSort(queries.sort, queries.order), [queries.sort, queries.order]);
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
   const handleUserListChange = useCallback(() => {
@@ -65,8 +76,7 @@ export function AllUsersTab() {
 
   const { data: users, isFetching } = useUsers({
     roleId: filteredRoles,
-    ...(queries.sort && { sort: queries.sort }),
-    ...(queries.order && { order: queries.order }),
+    ...effectiveSort,
     limit,
     offset,
   });
@@ -127,13 +137,13 @@ export function AllUsersTab() {
   );
 
   const currentSort = useMemo(() => {
-    const columnKey = mapSortKeyToColumnKey(queries.sort);
+    const columnKey = mapSortKeyToColumnKey(effectiveSort.sort);
 
     return {
       sort: (columnKey || '') as OnSortChangeParams<User>['sort'],
-      sortDirection: (queries.order || '') as OnSortChangeParams<User>['sortDirection'],
+      sortDirection: (effectiveSort.order || '') as OnSortChangeParams<User>['sortDirection'],
     };
-  }, [queries.sort, queries.order]);
+  }, [effectiveSort]);
 
   const total = useMemo(() => users?.meta?.total ?? 0, [users?.meta?.total]);
   const totalPages = useMemo(() => Math.ceil(total / limit), [total, limit]);
