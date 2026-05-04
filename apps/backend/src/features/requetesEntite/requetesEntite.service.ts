@@ -2136,8 +2136,8 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         .field('Précision du lieu', getLieuPrecisionLabel(lieu.lieuType?.id, lieu.lieuPrecision) || null)
         .field('Rue', formatRue(lieu.adresse))
         .field('Code postal renseigné par le déclarant', lieu.codePostal || null)
-        .field('Ville', `${lieu.adresse?.codePostal || ''} ${lieu.adresse?.ville || ''}`.trim() || null)
         .field("Nom de l'établissement", lieu.adresse?.label || lieu.categLib || null)
+        .field('Ville', `${lieu.adresse?.codePostal || ''} ${lieu.adresse?.ville || ''}`.trim() || null)
         .field('Numéro FINESS', lieu.finess || null)
         .field('Société de transport', lieu.societeTransport || null);
     }
