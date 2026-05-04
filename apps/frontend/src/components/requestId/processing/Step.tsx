@@ -125,9 +125,9 @@ const getStepSubtitle = (
   }
 
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
-    const isManual =
+    const isAutomatic =
       requete?.dematSocialId == null && requete?.thirdPartyAccountId == null && requete?.createdBy != null;
-    return isManual ? `Envoyé automatiquement le ${date}` : `Ajouté automatiquement le ${date}`;
+    return isAutomatic ? `Ajouté automatiquement le ${date}` : `Envoyé automatiquement le ${date}`;
   }
 
   if (type === REQUETE_ETAPE_TYPES.REOPEN) {
