@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useUsers } from '@/hooks/queries/users.hook';
 import { PendingUsersTab } from './pendingUsersTab';
@@ -11,7 +12,9 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: vi.fn(({ to, params, children }) => <a href={to.replace('$userId', params.userId)}>{children}</a>),
+  Link: ({ to, params, children }: { to: string; params: { userId: string }; children: ReactNode }) => (
+    <a href={to.replace('$userId', params.userId)}>{children}</a>
+  ),
   useNavigate: vi.fn(),
   useSearch: vi.fn(),
 }));
@@ -29,23 +32,24 @@ const mockedUseNavigate = vi.mocked(useNavigate);
 const mockedUseSearch = vi.mocked(useSearch);
 const mockedUseUsers = vi.mocked(useUsers);
 
-const mockQueryClient = () => {
+const renderPendingUsersTab = ({
+  search = {},
+  navigate = vi.fn(),
+}: {
+  search?: { offset?: number; limit?: number; sort?: string; order?: 'asc' | 'desc' };
+  navigate?: ReturnType<typeof vi.fn>;
+} = {}) => {
   mockedUseQueryClient.mockReturnValue({ invalidateQueries: vi.fn() } as unknown as ReturnType<typeof useQueryClient>);
-};
-
-const mockNavigate = (navigate: ReturnType<typeof vi.fn>) => {
   mockedUseNavigate.mockReturnValue(navigate as unknown as ReturnType<typeof useNavigate>);
-};
-
-const mockSearch = (search: { offset?: number; limit?: number; sort?: string; order?: 'asc' | 'desc' }) => {
   mockedUseSearch.mockReturnValue(search as unknown as ReturnType<typeof useSearch>);
-};
-
-const mockUsersQuery = () => {
   mockedUseUsers.mockReturnValue({
     data: { data: [user], meta: { total: 1 } },
     isFetching: false,
   } as unknown as ReturnType<typeof useUsers>);
+
+  render(<PendingUsersTab />);
+
+  return { navigate };
 };
 
 const user = {
@@ -68,13 +72,7 @@ describe('PendingUsersTab', () => {
   });
 
   it('updates search params to sort creation date from newest to oldest on first click', async () => {
-    const navigate = vi.fn();
-    mockQueryClient();
-    mockNavigate(navigate);
-    mockSearch({ offset: 20, limit: 10 });
-    mockUsersQuery();
-
-    render(<PendingUsersTab />);
+    const { navigate } = renderPendingUsersTab({ search: { offset: 20, limit: 10 } });
 
     const createdAtHeader = screen.getByRole('columnheader', { name: /date de création/i });
     await userEvent.click(within(createdAtHeader).getByRole('button', { name: /trier/i }));
@@ -89,12 +87,7 @@ describe('PendingUsersTab', () => {
   });
 
   it('announces creation date as descending when newest to oldest sort is active', () => {
-    mockQueryClient();
-    mockNavigate(vi.fn());
-    mockSearch({ sort: 'createdAt', order: 'desc' });
-    mockUsersQuery();
-
-    render(<PendingUsersTab />);
+    renderPendingUsersTab({ search: { sort: 'createdAt', order: 'desc' } });
 
     const createdAtHeader = screen.getByRole('columnheader', { name: /date de création/i });
 
@@ -103,12 +96,7 @@ describe('PendingUsersTab', () => {
   });
 
   it('ignores unsupported URL sort params for this tab', () => {
-    mockQueryClient();
-    mockNavigate(vi.fn());
-    mockSearch({ sort: 'role.label', order: 'asc' });
-    mockUsersQuery();
-
-    render(<PendingUsersTab />);
+    renderPendingUsersTab({ search: { sort: 'role.label', order: 'asc' } });
 
     const usersQuery = mockedUseUsers.mock.calls[0][0];
 
@@ -117,13 +105,7 @@ describe('PendingUsersTab', () => {
   });
 
   it('updates search params to sort affectation by entity full name on first click', async () => {
-    const navigate = vi.fn();
-    mockQueryClient();
-    mockNavigate(navigate);
-    mockSearch({ offset: 20, limit: 10 });
-    mockUsersQuery();
-
-    render(<PendingUsersTab />);
+    const { navigate } = renderPendingUsersTab({ search: { offset: 20, limit: 10 } });
 
     const affectationHeader = screen.getByRole('columnheader', { name: /affectation/i });
     await userEvent.click(within(affectationHeader).getByRole('button', { name: /trier/i }));
