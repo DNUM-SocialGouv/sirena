@@ -39,12 +39,12 @@ export const RequestInfos = ({
   const topEntiteIsActive = profile?.topEntiteIsActive ?? false;
   const showPriseEnCompteToggle = Boolean(requestId) && !canEdit && topEntiteIsActive === false;
 
-  const handlePrioriteChange = async (value: string | null) => {
-    if (requestId) {
-      await updatePrioriteMutation.mutateAsync({
-        prioriteId: value as RequetePrioriteType | null,
-      });
-    }
+  const handlePrioriteChange = (value: string | null) => {
+    if (!requestId) return;
+
+    updatePrioriteMutation.mutate({
+      prioriteId: value as RequetePrioriteType | null,
+    });
   };
 
   const handlePriseEnCompteChange = async (checked: boolean) => {

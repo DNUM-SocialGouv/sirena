@@ -11,8 +11,8 @@ backend:
       FRONTEND_REDIRECT_LOGIN_URI: https://sirena.preproduction.prod.atlas.fabrique.social.gouv.fr/login
       FRONTEND_URI: https://sirena.preproduction.prod.atlas.fabrique.social.gouv.fr
       REDIS_TLS: "true"
-      SENTRY_ENVIRONMENT: preproduction
       PG_SSL_ALLOW_SELF_SIGNED: "true"
+      APP_ENV: preproduction
 
     deployment:
       replicas: 2
@@ -38,6 +38,9 @@ external-secrets:
 frontend:
   SDPSN-devops-charts:
     namespace: org-sdpsn-ws-sirena-preproduction
+
+    appVariables:
+      APP_ENV: preproduction
 
     deployment:
       replicas: 2

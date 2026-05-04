@@ -1,3 +1,4 @@
+import { APP_ENVS } from '@sirena/common/constants';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SendTipimailOptions, TipimailSendResponse, TipimailSubstitution } from './tipimail.js';
 
@@ -12,7 +13,7 @@ vi.mock('../../config/env.js', () => {
     TIPIMAIL_FROM_PERSONAL_NAME: 'Default Sender',
     TIPIMAIL_REDIRECT_ALL_TO: undefined as string | undefined,
     TIPIMAIL_DISABLE_SENDING: false,
-    SENTRY_ENVIRONMENT: undefined as string | undefined,
+    APP_ENV: undefined as string | undefined,
   };
 
   return { envVars };
@@ -528,13 +529,13 @@ describe('tipimail', () => {
       beforeEach(async () => {
         const { envVars } = await import('../../config/env.js');
         envVars.TIPIMAIL_REDIRECT_ALL_TO = redirectTo;
-        envVars.SENTRY_ENVIRONMENT = 'integration';
+        envVars.APP_ENV = APP_ENVS.INTEGRATION;
       });
 
       afterEach(async () => {
         const { envVars } = await import('../../config/env.js');
         envVars.TIPIMAIL_REDIRECT_ALL_TO = undefined;
-        envVars.SENTRY_ENVIRONMENT = undefined;
+        envVars.APP_ENV = undefined;
       });
 
       it('should send to single redirect address and set subject and __testRealRecipients', async () => {

@@ -1,3 +1,4 @@
+import { env } from '@/config/env';
 import { router } from '@/lib/router';
 
 declare global {
@@ -6,8 +7,8 @@ declare global {
   }
 }
 
-const MATOMO_URL = import.meta.env.VITE_MATOMO_URL;
-const MATOMO_SITE_ID = import.meta.env.VITE_MATOMO_SITE_ID;
+const MATOMO_URL = env.MATOMO_URL;
+const MATOMO_SITE_ID = env.MATOMO_SITE_ID;
 
 function isMatomoEnabled(): boolean {
   return Boolean(MATOMO_URL && MATOMO_SITE_ID);
