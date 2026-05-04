@@ -32,6 +32,7 @@ external-secrets:
   SDPSN-devops-charts:
     externalSecret:
       redis:
+        enable: false
         clusterName: sirena-formation-redis
       bucket:
         bucketName: sirena-formation-s3
