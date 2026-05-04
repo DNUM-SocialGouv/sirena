@@ -1,13 +1,13 @@
-# Anonymisation de la base de donnees
+# Anonymisation de la base de données
 
-Sirena utilise [Greenmask](https://greenmask.io/) pour anonymiser les donnees personnelles (PII) de la base PostgreSQL. Le container produit un dump anonymise de la base source et le restaure sur la base cible.
+Sirena utilise [Greenmask](https://greenmask.io/) pour anonymiser les données personnelles (PII) de la base PostgreSQL. Le container produit un dump anonymisé de la base source et le restaure sur la base cible.
 
 ## Architecture
 
 ```
 apps/anonymize/
-├── Dockerfile        # Image basee sur greenmask/greenmask
-├── entrypoint.sh     # Orchestration dump → restore + metriques Prometheus
+├── Dockerfile        # Image basée sur greenmask/greenmask
+├── entrypoint.sh     # Orchestration dump → restore + métriques Prometheus
 └── greenmask.yml     # Configuration des transformations par table
 ```
 
@@ -17,11 +17,11 @@ Le container attend deux variables d'environnement :
 |----------|-------------|
 | `PG_URL_FROM` | URL PostgreSQL de la base source |
 | `PG_URL_TO` | URL PostgreSQL de la base cible |
-| `PUSHGATEWAY_URL` | (optionnel) URL du Prometheus Pushgateway pour les metriques |
+| `PUSHGATEWAY_URL` | (optionnel) URL du Prometheus Pushgateway pour les métriques |
 
 ## Utilisation locale
 
-Le service `anonymize` est declare dans `docker-compose.yaml` avec un profile dedie. Il ne demarre jamais avec `docker compose up`.
+Le service `anonymize` est déclaré dans `docker-compose.yaml` avec un profile dédié. Il ne démarre jamais avec `docker compose up`.
 
 ```bash
 # Anonymiser la base locale en place (source = cible)
@@ -32,30 +32,30 @@ PG_URL_TO=postgresql://user:pass@host:5432/other_db \
   dotenv -e .env -- podman compose run --rm anonymize
 ```
 
-Pour reconstruire l'image apres un changement de config :
+Pour reconstruire l'image après un changement de config :
 
 ```bash
 dotenv -e .env -- podman compose run --build --rm anonymize
 ```
 
-## Donnees anonymisees
+## Données anonymisées
 
-### Donnees personnelles (transformees)
+### Données personnelles (transformées)
 
-| Table | Champs | Methode |
+| Table | Champs | Méthode |
 |-------|--------|---------|
-| `User` | prenom, nom, email | RandomPerson / RandomEmail (deterministe) |
-| `User` | uid, sub | RandomUuid (deterministe) |
-| `User` | pcData | Remplace par `{}` |
+| `User` | prenom, nom, email | RandomPerson / RandomEmail (déterministe) |
+| `User` | uid, sub | RandomUuid (déterministe) |
+| `User` | pcData | Remplacé par `{}` |
 | `Session` | token, pcIdToken | RandomUuid |
-| `Entite` | email, emailContactUsager | RandomEmail (deterministe) |
-| `Entite` | telContactUsager, adresseContactUsager, emailDomain | Valeurs generiques |
+| `Entite` | email, emailContactUsager | RandomEmail (déterministe) |
+| `Entite` | telContactUsager, adresseContactUsager, emailDomain | Valeurs génériques |
 | `Identite` | prenom, nom, email, telephone | RandomPerson / RandomEmail |
-| `Adresse` | label, numero, rue, codePostal, ville | Adresse generique |
+| `Adresse` | label, numero, rue, codePostal, ville | Adresse générique |
 | `PersonneConcernee` | commentaire, victimeInformeeCommentaire, autrePersonnes, lienAutrePrecision | Vide |
 | `MisEnCause` | prenom, nom, rpps, finess, nomService, commentaire, autrePrecision | RandomPerson / vide |
 
-### Donnees metier sensibles (videes)
+### Données métier sensibles (vidées)
 
 | Table | Champs |
 |-------|--------|
@@ -65,63 +65,63 @@ dotenv -e .env -- podman compose run --build --rm anonymize
 | `DemarchesEngagees` | organisme, commentaire |
 | `Fait` | commentaire, autresPrecisions |
 
-### Donnees techniques (nettoyees)
+### Données techniques (nettoyées)
 
-| Table | Champs | Methode |
+| Table | Champs | Méthode |
 |-------|--------|---------|
-| `ChangeLog` | before, after | Mis a null |
-| `UploadedFile` | fileName, processingError, scanResult | Anonymise / null |
-| `ApiKey` | keyHash, keyPrefix | RandomUuid / valeur generique |
-| `DematSocialImportFailure` | errorMessage, errorContext | Anonymise / null |
+| `ChangeLog` | before, after | Mis à null |
+| `UploadedFile` | fileName, processingError, scanResult | Anonymisé / null |
+| `ApiKey` | keyHash, keyPrefix | RandomUuid / valeur générique |
+| `DematSocialImportFailure` | errorMessage, errorContext | Anonymisé / null |
 
-### Donnees non modifiees
+### Données non modifiées
 
-Les tables de reference (enums, communes, referentiels) et les donnees structurelles (relations, dates, statuts) ne sont pas modifiees.
+Les tables de référence (enums, communes, référentiels) et les données structurelles (relations, dates, statuts) ne sont pas modifiées.
 
-## Deploiement Kubernetes
+## Déploiement Kubernetes
 
-Un CronJob est disponible dans `helm_charts/charts/anonymize/`. Il est desactive par defaut.
+Un CronJob est disponible dans `helm_charts/charts/anonymize/`. Il est désactivé par défaut.
 
 Pour l'activer dans un environnement, ajouter dans le fichier values :
 
 ```yaml
 anonymize:
   enabled: true
-  schedule: "0 3 * * *"  # Tous les jours a 03h00
+  schedule: "0 3 * * *"  # Tous les jours à 03h00
   pushgatewayUrl: "http://prometheus-pushgateway:9091"
   externalSecret:
     storeName: secret-store
     key: sirena-<env>
 ```
 
-Les secrets `PG_URL_FROM` et `PG_URL_TO` doivent etre configures dans le secret store externe.
+Les secrets `PG_URL_FROM` et `PG_URL_TO` doivent être configurés dans le secret store externe.
 
-### Metriques Prometheus
+### Métriques Prometheus
 
-Si `PUSHGATEWAY_URL` est configure, le container pousse trois metriques apres chaque execution :
+Si `PUSHGATEWAY_URL` est configuré, le container pousse trois métriques après chaque exécution :
 
-| Metrique | Type | Description |
+| Métrique | Type | Description |
 |----------|------|-------------|
-| `sirena_anonymize_last_run_success` | gauge | 1 = succes, 0 = echec |
-| `sirena_anonymize_last_run_timestamp_seconds` | gauge | Timestamp Unix de la derniere execution |
-| `sirena_anonymize_duration_seconds` | gauge | Duree de l'execution en secondes |
+| `sirena_anonymize_last_run_success` | gauge | 1 = succès, 0 = échec |
+| `sirena_anonymize_last_run_timestamp_seconds` | gauge | Timestamp Unix de la dernière exécution |
+| `sirena_anonymize_duration_seconds` | gauge | Durée de l'exécution en secondes |
 
-Les metriques Kubernetes natives (`kube_cronjob_*`, `kube_job_*`) sont egalement disponibles via kube-state-metrics.
+Les métriques Kubernetes natives (`kube_cronjob_*`, `kube_job_*`) sont également disponibles via kube-state-metrics.
 
 ## CI
 
-Le workflow `.github/workflows/anonymize-smoke-test.yaml` se declenche sur les changements dans `apps/anonymize/` ou `packages/db/prisma/`. Il :
+Le workflow `.github/workflows/anonymize-smoke-test.yaml` se déclenche sur les changements dans `apps/anonymize/` ou `packages/db/prisma/`. Il :
 
-1. Demarre une base PostgreSQL
+1. Démarre une base PostgreSQL
 2. Joue les migrations Prisma
 3. Build l'image anonymize
-4. Execute `greenmask validate` pour verifier que la config est synchronisee avec le schema
+4. Exécute `greenmask validate` pour vérifier que la config est synchronisée avec le schéma
 
-Cela previent les regressions quand le schema evolue sans mise a jour de la config Greenmask.
+Cela prévient les régressions quand le schéma évolue sans mise à jour de la config Greenmask.
 
 ## Ajouter une nouvelle table
 
-Quand une nouvelle table contenant des PII est ajoutee au schema Prisma :
+Quand une nouvelle table contenant des PII est ajoutée au schéma Prisma :
 
-1. Ajouter une entree dans `apps/anonymize/greenmask.yml` sous `dump.transformation`
-2. Le smoke test CI echouera si une colonne referencee n'existe plus (mais pas si une nouvelle table PII est ajoutee sans config) — penser a verifier manuellement
+1. Ajouter une entrée dans `apps/anonymize/greenmask.yml` sous `dump.transformation`
+2. Le smoke test CI échouera si une colonne référencée n'existe plus (mais pas si une nouvelle table PII est ajoutée sans config) — penser à vérifier manuellement
