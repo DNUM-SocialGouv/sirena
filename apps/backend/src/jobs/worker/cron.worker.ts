@@ -17,7 +17,13 @@ export const cronWorker = new Worker(
       throw new Error(`No handler for job: ${job.name}`);
     }
 
-    return loggerStorage.run(createDefaultLogger(), async () => {
+    const jobLogger = createDefaultLogger().child({
+      job_name: job.name,
+      job_id: job.id,
+      attempt: job.attemptsMade + 1,
+    });
+
+    return loggerStorage.run(jobLogger, async () => {
       if (envVars.SENTRY_ENABLED) {
         return Sentry.withScope(async (scope) => {
           return sentryStorage.run(scope, async () => {

@@ -13,6 +13,9 @@ export async function withCronLifecycle<R extends Record<string, unknown>, J ext
 ): Promise<R> {
   const name = job.name;
   const startedAt = new Date();
+  const logger = getLoggerStore();
+
+  logger.info({ params }, 'Cron job started');
 
   const startedCron = await startCron({
     name,
@@ -34,6 +37,8 @@ export async function withCronLifecycle<R extends Record<string, unknown>, J ext
 
     recordCronJobRun(name, 'success', durationSeconds);
 
+    logger.info({ durationSeconds, result }, 'Cron job succeeded');
+
     return result;
   } catch (error) {
     const endedAt = new Date();
@@ -48,6 +53,8 @@ export async function withCronLifecycle<R extends Record<string, unknown>, J ext
     });
 
     recordCronJobRun(name, 'error', durationSeconds);
+
+    logger.error({ err: error, durationSeconds }, 'Cron job failed');
 
     if (envVars.SENTRY_ENABLED) {
       try {
@@ -75,7 +82,6 @@ export async function withCronLifecycle<R extends Record<string, unknown>, J ext
           });
         }
       } catch (err) {
-        const logger = getLoggerStore();
         logger.error({ err }, 'Failed to capture exception in Sentry:');
       }
     }
