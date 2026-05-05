@@ -12,6 +12,7 @@ const RUNTIME_ENV_KEYS = [
   'APP_ENV',
   'MATOMO_URL',
   'MATOMO_SITE_ID',
+  'APP_VERSION',
 ] as const;
 
 function devRuntimeEnvPlugin(): Plugin {
