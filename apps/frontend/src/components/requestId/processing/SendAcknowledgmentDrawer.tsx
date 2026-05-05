@@ -40,13 +40,12 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
     const generatedId = useId();
     const titleId = `${generatedId}-drawer`;
     const titleRef = useRef<HTMLHeadingElement>(null);
-    const commentRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
-      if (isOpen && !isLoadingMessage) {
-        commentRef.current?.focus();
+      if (isOpen) {
+        titleRef.current?.focus();
       }
-    }, [isOpen, isLoadingMessage]);
+    }, [isOpen]);
 
     const handleReset = () => {
       setStep(null);
@@ -192,7 +191,6 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                         textArea={true}
                         disabled={isSubmitting}
                         nativeTextAreaProps={{
-                          ref: commentRef,
                           rows: 5,
                           value: comment,
                           onChange: (e) => setComment(e.target.value),
