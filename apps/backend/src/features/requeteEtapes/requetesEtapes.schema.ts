@@ -53,6 +53,14 @@ export const UpdateRequeteEtapeStatutSchema = z.object({
   ]),
 });
 
+export const SendAcknowledgmentBodySchema = z.object({
+  comment: z
+    .string()
+    .max(30000)
+    .transform((str) => str.trim().replace(/[<>]/g, ''))
+    .optional(),
+});
+
 export const UpdateRequeteEtapeNomSchema = z.object({
   nom: z
     .string()
