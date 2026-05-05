@@ -1,7 +1,7 @@
 FROM greenmask/greenmask:v0.2.19
 
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends gettext-base && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends gettext-base jq && rm -rf /var/lib/apt/lists/*
 USER greenmask
 RUN mkdir -p /tmp/greenmask-dumps
 

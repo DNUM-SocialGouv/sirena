@@ -73,12 +73,40 @@ log "Target: $(mask_url "${PG_URL_TO}")"
 # ── Resolve env vars in config ──────────────────────────────────────
 envsubst < "${CONFIG_TEMPLATE}" > "${CONFIG_PATH}"
 
-# ── Step 1: Dump with anonymization ─────────────────────────────────
-log "Step 1/2: Dumping with anonymization..."
+# ── Step 1: Validate config against source schema ───────────────────
+# Fail-fast si une transformation reference une colonne disparue, si
+# le schema source a derive, ou si Greenmask emet un warning de
+# severite >= error (ex: data leakage detecte).
+log "Step 1/3: Validating config against source schema..."
+validate_exit=0
+validate_output=$(greenmask --config="${CONFIG_PATH}" validate --warnings --format=json 2>&1) || validate_exit=$?
+
+if [ "${validate_exit}" -ne 0 ]; then
+  log "ERROR: Greenmask validate exited with code ${validate_exit}"
+  echo "${validate_output}"
+  exit 1
+fi
+
+# Compte les warnings de severite >= error en parcourant n'importe
+# quelle structure JSON (array, NDJSON via -s, ou objet imbrique).
+blocking=$(echo "${validate_output}" \
+  | jq -s '[.. | objects | select(.severity? == "error" or .severity? == "critical")] | length' \
+    2>/dev/null || echo "0")
+
+if [ "${blocking}" != "0" ]; then
+  log "ERROR: Greenmask validation found ${blocking} blocking warning(s)"
+  echo "${validate_output}" | jq -s '.' 2>/dev/null || echo "${validate_output}"
+  exit 1
+fi
+
+log "Validation OK"
+
+# ── Step 2: Dump with anonymization ─────────────────────────────────
+log "Step 2/3: Dumping with anonymization..."
 greenmask --config="${CONFIG_PATH}" dump
 
-# ── Step 2: Reset target schema then restore ─────────────────────────
-log "Step 2/2: Resetting target public schema..."
+# ── Step 3: Reset target schema then restore ─────────────────────────
+log "Step 3/3: Resetting target public schema..."
 psql "${PG_URL_TO}" -v ON_ERROR_STOP=1 -q -c 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;'
 
 log "Restoring anonymized data..."

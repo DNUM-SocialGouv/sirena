@@ -314,3 +314,10 @@ restore:
     dbname: "${PG_URL_TO}"
     jobs: 4
     exit-on-error: true
+
+# Limite la sortie de `greenmask validate` aux seules colonnes
+# transformees (plus la PK) au lieu d'afficher toutes les colonnes
+# de chaque table — garde le smoke test lisible.
+validate:
+  transformed_only: true
+  warnings: true
