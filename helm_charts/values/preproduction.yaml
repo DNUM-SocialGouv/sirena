@@ -1,4 +1,10 @@
 ---
+anonymize:
+  enabled: true
+
+  sirena_db_secret_path: databases/sirena-preproduction
+  anonymize_db_secret_path: databases/sirena-preproduction-anonymisation
+
 backend:
   SDPSN-devops-charts:
     namespace: org-sdpsn-ws-sirena-preproduction

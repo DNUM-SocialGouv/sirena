@@ -1,0 +1,4 @@
+apiVersion: v2
+name: anonymize
+version: 0.1.0
+description: CronJob for daily database anonymization using Greenmask
