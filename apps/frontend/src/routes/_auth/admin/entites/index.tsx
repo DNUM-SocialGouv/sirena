@@ -7,6 +7,7 @@ import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHand
 import { useEntitesListAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { QueryParamsSchema } from '@/schemas/pagination.schema';
+import './index.css';
 
 export const Route = createFileRoute('/_auth/admin/entites/')({
   beforeLoad: requireAuthAndRoles([ROLES.SUPER_ADMIN]),
@@ -96,14 +97,16 @@ export function RouteComponent() {
     <>
       <QueryStateHandler query={entitesListQuery} noDataComponent={<p>Aucune entité administrative à afficher.</p>}>
         {({ data }) => (
-          <DataTable
-            title="Liste des entités administratives"
-            rowId="id"
-            data={data.data}
-            columns={columns}
-            cells={cells}
-            isLoading={entitesListQuery.isFetching}
-          />
+          <div className="admin-entites-table">
+            <DataTable
+              title="Liste des entités administratives"
+              rowId="id"
+              data={data.data}
+              columns={columns}
+              cells={cells}
+              isLoading={entitesListQuery.isFetching}
+            />
+          </div>
         )}
       </QueryStateHandler>
 
