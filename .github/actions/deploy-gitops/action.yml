@@ -50,6 +50,10 @@ runs:
         gitops-repo/deployment-targets/${{ inputs.environment }}/frontend \
         gitops-repo/deployment-targets/${{ inputs.environment }}/external-secrets \
         gitops-repo/deployment-targets/${{ inputs.environment }}/worker
+        
+        # Suppression du repertoire anonymize quand il existe
+        rm -r gitops-repo/deployment-targets/${{ inputs.environment }}/anonymize || true
+        
         mv helm_charts/generated_manifests/sirena/charts/* gitops-repo/deployment-targets/${{ inputs.environment }}/
 
         git config --global user.name "github-actions[bot]"
