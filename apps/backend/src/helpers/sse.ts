@@ -12,7 +12,7 @@ import {
 import type { Context } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import type { Redis } from 'ioredis';
-import { connection } from '../config/redis.js';
+import { connection, sanitizeRedisError } from '../config/redis.js';
 import type { AppBindings } from '../helpers/factories/appWithRole.js';
 import { createDefaultLogger } from '../helpers/pino.js';
 
@@ -53,7 +53,7 @@ class SSEEventManager extends EventEmitter {
       this.subscriber = connection.duplicate();
 
       this.subscriber.on('error', (err) => {
-        this.logger.error({ err }, 'SSE Redis subscriber error');
+        this.logger.error({ err: sanitizeRedisError(err) }, 'SSE Redis subscriber error');
       });
 
       // Set up message handler BEFORE subscribing to not miss any messages
@@ -72,14 +72,14 @@ class SSEEventManager extends EventEmitter {
 
       this.logger.info('SSE Redis subscriber initialized');
     } catch (err) {
-      this.logger.error({ err }, 'Failed to initialize SSE Redis subscriber');
+      this.logger.error({ err: sanitizeRedisError(err) }, 'Failed to initialize SSE Redis subscriber');
     }
   }
 
   private publish(type: SSEEventType, payload: unknown): void {
     const message: RedisSSEMessage = { type, payload };
     connection.publish(SSE_REDIS_CHANNEL, JSON.stringify(message)).catch((err) => {
-      this.logger.error({ err, type }, 'Failed to publish SSE event to Redis');
+      this.logger.error({ err: sanitizeRedisError(err), type }, 'Failed to publish SSE event to Redis');
       // Fallback to local emit for single-instance deployments
       this.emit(type, payload);
     });
