@@ -1,9 +1,11 @@
+import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
+import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import { ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useUsers } from '@/hooks/queries/users.hook';
 import { useUserListSSE } from '@/hooks/useUserListSSE';
 
@@ -55,6 +57,29 @@ export function PendingUsersTab() {
   const effectiveSort = useMemo(() => getEffectiveSort(queries.sort, queries.order), [queries.sort, queries.order]);
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
+  const [searchTerm, setSearchTerm] = useState<string>(queries.search ?? '');
+
+  const handleSearch = useCallback(() => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        search: searchTerm.trim() || undefined,
+        offset: undefined,
+      }),
+    });
+  }, [navigate, searchTerm]);
+
+  const handleClearSearch = useCallback(() => {
+    setSearchTerm('');
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        search: undefined,
+        offset: undefined,
+      }),
+    });
+  }, [navigate]);
+
   const handleUserListChange = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['users'] });
   }, [queryClient]);
@@ -69,6 +94,7 @@ export function PendingUsersTab() {
     ...effectiveSort,
     limit,
     offset,
+    ...(queries.search && { search: queries.search }),
   });
 
   const columns: Column<User>[] = [
@@ -189,6 +215,51 @@ export function PendingUsersTab() {
 
   return (
     <>
+      <div className="fr-mb-3w">
+        <div className="fr-grid-row">
+          <div className="fr-col-12 fr-col-md-5">
+            <SearchBar
+              label="Rechercher un utilisateur"
+              onButtonClick={handleSearch}
+              renderInput={(inputProps) => (
+                <input
+                  {...inputProps}
+                  placeholder="Nom, prénom ou email"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              )}
+            />
+          </div>
+        </div>
+        <div aria-live="polite" aria-atomic="true">
+          {queries.search && users && (
+            <div className="fr-mt-2w">
+              <div className="fr-grid-row fr-grid-row--middle">
+                <div className="fr-col-auto">
+                  <p className="fr-text--md fr-mb-0">
+                    <strong>{total}</strong> résultat{total !== 1 ? 's' : ''} pour "{queries.search}"
+                  </p>
+                </div>
+                <div className="fr-col-auto fr-ml-1w">
+                  <Button
+                    type="button"
+                    priority="secondary"
+                    iconId="fr-icon-delete-line"
+                    iconPosition="right"
+                    size="small"
+                    onClick={handleClearSearch}
+                    aria-label="Effacer la recherche"
+                    title="Effacer la recherche"
+                  >
+                    Effacer la recherche
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
       <DataTable
         title="Demande d'habilitation en attente"
         rowId="id"
