@@ -72,14 +72,14 @@ class SSEEventManager extends EventEmitter {
 
       this.logger.info('SSE Redis subscriber initialized');
     } catch (err) {
-      this.logger.error({ err }, 'Failed to initialize SSE Redis subscriber');
+      this.logger.error({ err: sanitizeRedisError(err) }, 'Failed to initialize SSE Redis subscriber');
     }
   }
 
   private publish(type: SSEEventType, payload: unknown): void {
     const message: RedisSSEMessage = { type, payload };
     connection.publish(SSE_REDIS_CHANNEL, JSON.stringify(message)).catch((err) => {
-      this.logger.error({ err, type }, 'Failed to publish SSE event to Redis');
+      this.logger.error({ err: sanitizeRedisError(err), type }, 'Failed to publish SSE event to Redis');
       // Fallback to local emit for single-instance deployments
       this.emit(type, payload);
     });
