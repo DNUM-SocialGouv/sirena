@@ -84,9 +84,36 @@ export function AllUsersTab() {
   const columns: Column<User>[] = [
     { key: 'nom', label: 'Nom' },
     { key: 'prenom', label: 'Prénom' },
-    { key: 'role.label', label: 'Rôle', isSortable: true },
-    { key: 'statutId', label: 'Statut', isSortable: true },
-    { key: 'custom:affectation', label: 'Affectation', isSortable: true },
+    {
+      key: 'role.label',
+      label: 'Rôle',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par rôle de A à Z',
+        desc: 'Trier par rôle de Z à A',
+        reset: 'Réinitialiser le tri du rôle',
+      },
+    },
+    {
+      key: 'statutId',
+      label: 'Statut',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par statut de A à Z',
+        desc: 'Trier par statut de Z à A',
+        reset: 'Réinitialiser le tri du statut',
+      },
+    },
+    {
+      key: 'custom:affectation',
+      label: 'Affectation',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par affectation de A à Z',
+        desc: 'Trier par affectation de Z à A',
+        reset: "Réinitialiser le tri de l'affectation",
+      },
+    },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 

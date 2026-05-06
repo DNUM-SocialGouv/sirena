@@ -74,8 +74,27 @@ export function PendingUsersTab() {
   const columns: Column<User>[] = [
     { key: 'nom', label: 'Nom' },
     { key: 'prenom', label: 'Prénom' },
-    { key: 'createdAt', label: 'Date de création', isSortable: true, initialSortDirection: 'desc' },
-    { key: 'custom:affectation', label: 'Affectation', isSortable: true },
+    {
+      key: 'createdAt',
+      label: 'Date de création',
+      isSortable: true,
+      initialSortDirection: 'desc',
+      sortLabels: {
+        asc: 'Trier par date de création de la plus ancienne à la plus récente',
+        desc: 'Trier par date de création de la plus récente à la plus ancienne',
+        reset: 'Réinitialiser le tri de la date de création',
+      },
+    },
+    {
+      key: 'custom:affectation',
+      label: 'Affectation',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par affectation de A à Z',
+        desc: 'Trier par affectation de Z à A',
+        reset: "Réinitialiser le tri de l'affectation",
+      },
+    },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 
