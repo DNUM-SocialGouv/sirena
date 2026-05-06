@@ -388,7 +388,7 @@ const StepComponent = ({
               )}
             </div>
             {notes[0]?.uploadedFiles && notes[0].uploadedFiles.filter((f) => !deletedFileIds.has(f.id)).length > 0 && (
-              <ul className="fr-mt-1w">
+              <ul className={`fr-mt-1w ${styles['cloture-files']}`}>
                 {notes[0].uploadedFiles
                   .filter((f) => !deletedFileIds.has(f.id))
                   .map((file: (typeof notes)[number]['uploadedFiles'][number]) => {
