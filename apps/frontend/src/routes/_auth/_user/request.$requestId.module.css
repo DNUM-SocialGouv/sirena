@@ -65,17 +65,22 @@
 }
 
 .request-step {
+  padding-left: 1.5rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--border-default-grey);
 }
 
 .request-step__add-note {
-  margin-left: 1rem;
+  margin-left: 0;
 }
 
 .request-notes-distplay {
-  margin: 0 1rem;
-  margin-bottom: 1rem;
+  margin: 0 0 1rem 0;
+}
+
+.cloture-files {
+  padding-left: 0;
+  list-style: none;
 }
 
 .request-notes {
