@@ -317,7 +317,7 @@ const StepComponent = ({
             </div>
           </div>
         ) : (
-          <div className="fr-mb-2w">
+          <div className="fr-mb-1w">
             <div className="fr-grid-row fr-grid-row--middle">
               <div className="fr-col">
                 <h3 className="fr-h6 fr-mb-0">{getStepTitle(rest.type, statutId, nom)}</h3>
@@ -388,7 +388,7 @@ const StepComponent = ({
               )}
             </div>
             {notes[0]?.uploadedFiles && notes[0].uploadedFiles.filter((f) => !deletedFileIds.has(f.id)).length > 0 && (
-              <ul className="fr-mt-1w">
+              <ul className={`fr-mt-1w ${styles['cloture-files']}`}>
                 {notes[0].uploadedFiles
                   .filter((f) => !deletedFileIds.has(f.id))
                   .map((file: (typeof notes)[number]['uploadedFiles'][number]) => {
