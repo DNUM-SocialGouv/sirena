@@ -159,7 +159,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                   ) : (
                     <form>
                       <div className="fr-form-group fr-mb-2w">
-                        <dl>
+                        <dl className={drawerStyles.dl}>
                           <dt className="fr-label fr-mb-1w">
                             Adresse électronique du déclarant
                             <span className="fr-hint-text">
@@ -174,14 +174,13 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                         <p className="fr-label fr-mb-1w">
                           Ce message est généré automatiquement et ne peut pas être modifié
                         </p>
-                        <dl>
-                          <dt className={`fr-text--sm fr-mb-1w ${drawerStyles.subject}`}>
+                        <dl className={`${drawerStyles.dl} ${drawerStyles.dlInline}`}>
+                          <dt className={`fr-text--sm ${drawerStyles.subject}`}>
                             <span className="fr-text--bold">Objet :</span>
                           </dt>
                           <dd className={`fr-text--sm fr-mb-1w ${drawerStyles.subject}`}>{subject}</dd>
-                          <dt className="fr-sr-only">Message</dt>
-                          <dd className={drawerStyles.messageField}>{message}</dd>
                         </dl>
+                        <div className={drawerStyles.messageField}>{message}</div>
                       </div>
                       <Input
                         label="Commentaire personnalisé (facultatif)"
