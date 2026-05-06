@@ -66,7 +66,7 @@ export const StepNote = ({
 
   return (
     <div className={styles['request-note']}>
-      <div className="fr-grid-row fr-grid-row--middle fr-mb-2w">
+      <div className="fr-grid-row fr-grid-row--middle fr-mb-1v">
         <p className={clsx('fr-col', styles['request-note__from'])}>
           Le
           <span>
