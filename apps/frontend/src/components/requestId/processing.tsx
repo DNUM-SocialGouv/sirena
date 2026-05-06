@@ -74,6 +74,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
         <QueryStateHandler query={queryProcessingSteps}>
           {({ data }) => {
             const isDematSocialRequest = !!requestQuery.data?.requete?.dematSocialId;
+            const isManualRequest = !!requestQuery.data?.requete?.createdById;
 
             return data.data.map((step, index: number) => {
               const isAutomaticallyUpdated =
@@ -87,7 +88,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 isAutomaticallyUpdated ||
                 (step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT);
               const isAcknowledgmentSendable =
-                !isDematSocialRequest &&
+                isManualRequest &&
                 step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
               return (

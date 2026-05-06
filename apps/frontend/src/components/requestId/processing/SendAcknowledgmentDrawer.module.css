@@ -10,6 +10,20 @@
   padding: 0 16px 88px 16px;
 }
 
+.dl {
+  margin: 0;
+  padding: 0;
+}
+
+.dl dd {
+  margin-inline-start: 0 !important;
+}
+
+.dlInline dt,
+.dlInline dd {
+  display: inline;
+}
+
 .emailField {
   background: #fff;
   border: 1px solid #929292;
