@@ -18,17 +18,17 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
   const quickAccessItems = [
     <a
       key={'faq'}
-      className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-btn--icon-left fr-icon-arrow-right-line"
+      className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm"
       href={FAQ_LINK}
       target="_blank"
       rel="noopener noreferrer"
     >
-      <abbr title="Foire Aux Questions">FAQ</abbr>
+      Questions fréquentes
       <span className="fr-sr-only"> - nouvel onglet</span>
     </a>,
     <a
       key={'doc'}
-      className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-btn--icon-left fr-icon-arrow-right-line"
+      className="fr-btn fr-btn--tertiary-no-outline fr-btn--sm"
       href={DOCUMENTATION_LINK}
       target="_blank"
       rel="noopener noreferrer"
