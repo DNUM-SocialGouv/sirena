@@ -25,12 +25,17 @@ export const StatusMenu = ({ badges, value, onBadgeClick, isLoading, disabled }:
 
   const badgesFiltred = badges.filter((badge) => badge.value !== value);
 
+  if (disabled) {
+    return (
+      <span className={`fr-badge fr-badge--no-icon fr-badge--sm ${badgeSelectedClassName}`}>{badgeSelectedText}</span>
+    );
+  }
+
   return (
     <Menu.Root onOpenChange={setIsOpen}>
       <Menu.Trigger
         isOpen={isOpen}
         isLoading={isLoading}
-        disabled={disabled}
         className={`fr-badge fr-badge--no-icon fr-badge--sm ${badgeSelectedClassName}`}
       >
         {badgeSelectedText}
