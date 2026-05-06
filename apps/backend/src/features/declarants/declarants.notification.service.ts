@@ -277,7 +277,8 @@ export function buildAcknowledgmentMessageText(
   const entiteAdmin = formatEntiteAdminString(entites);
   const entiteComplete = formatEntiteCompleteString(entites);
   return [
-    `Bonjour, votre dossier a bien été reçu sous le numéro ${requeteId}.`,
+    `Bonjour,`,
+    `Votre dossier a bien été reçu sous le numéro ${requeteId}.`,
     `Merci d'avoir pris le temps de partager ces informations.`,
     `Il est désormais suivi par ${entiteAdmin}.`,
     '',
