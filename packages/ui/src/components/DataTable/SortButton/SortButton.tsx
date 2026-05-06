@@ -10,18 +10,24 @@ type SortButtonProps<T extends string> = {
   sort: T | '';
   sortKey: T;
   sortDirection: SortDirection;
+  initialSortDirection?: Exclude<SortDirection, ''>;
   onSortChange: (params: OnSortChangeParams<T>) => void;
   label: string;
   sortLabels?: { asc: string; desc: string; reset: string };
 };
 
-const getNextDirection = (current: SortDirection): SortDirection => {
-  const directions: Record<SortDirection, SortDirection> = {
-    [SORT_DIRECTIONS.NONE]: SORT_DIRECTIONS.ASC,
-    [SORT_DIRECTIONS.ASC]: SORT_DIRECTIONS.DESC,
-    [SORT_DIRECTIONS.DESC]: SORT_DIRECTIONS.NONE,
-  };
-  return directions[current];
+const getNextDirection = (current: SortDirection, initialSortDirection: Exclude<SortDirection, ''>): SortDirection => {
+  const oppositeDirection = initialSortDirection === SORT_DIRECTIONS.ASC ? SORT_DIRECTIONS.DESC : SORT_DIRECTIONS.ASC;
+
+  if (current === SORT_DIRECTIONS.NONE) {
+    return initialSortDirection;
+  }
+
+  if (current === initialSortDirection) {
+    return oppositeDirection;
+  }
+
+  return SORT_DIRECTIONS.NONE;
 };
 
 const getSortIcon = (isActive: boolean, sortDirection: SortDirection): string => {
@@ -50,12 +56,13 @@ export const SortButtonComponent = <T extends string>({
   sortKey,
   sort,
   sortDirection,
+  initialSortDirection = SORT_DIRECTIONS.ASC,
   onSortChange,
   sortLabels,
 }: SortButtonProps<T>) => {
   const isActive = sort === sortKey;
   const currentDirection = isActive ? sortDirection : SORT_DIRECTIONS.NONE;
-  const nextDirection = isActive ? getNextDirection(sortDirection) : SORT_DIRECTIONS.ASC;
+  const nextDirection = getNextDirection(currentDirection, initialSortDirection);
 
   const onClick = () => {
     const nextSort = nextDirection === SORT_DIRECTIONS.NONE ? '' : sortKey;

@@ -34,6 +34,7 @@ export type Column<T extends Row> = {
   isFixedLeft?: boolean;
   isFixedRight?: boolean;
   isSortable?: boolean;
+  initialSortDirection?: 'asc' | 'desc';
   sortLabels?: SortLabels;
 };
 

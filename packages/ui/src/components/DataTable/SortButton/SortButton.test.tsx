@@ -11,40 +11,40 @@ describe('SortButton Component', () => {
     label: 'trier',
   };
 
-  it('renders the button with default label and aria-sort', () => {
+  const clickSortButton = async (props: Partial<Parameters<typeof SortButton>[0]> = {}) => {
+    const user = userEvent.setup();
+    const onSortChange = vi.fn();
+
+    render(<SortButton {...defaultProps} {...props} onSortChange={onSortChange} />);
+
+    await user.click(screen.getByRole('button'));
+
+    return onSortChange;
+  };
+
+  it('renders the button with default label and visually hidden sort information', () => {
     render(<SortButton {...defaultProps} />);
     const button = screen.getByRole('button', { name: /trier/i });
 
     expect(button).toBeInTheDocument();
+    expect(screen.getByText(/trier/i)).toHaveClass('fr-sr-only');
   });
 
-  it('calls onSortChange with asc when currently inactive', async () => {
-    const user = userEvent.setup();
-    const onSortChange = vi.fn();
+  it.each([
+    { props: {}, expected: { sort: 'name', sortDirection: 'asc' } },
+    { props: { initialSortDirection: 'desc' as const }, expected: { sort: 'name', sortDirection: 'desc' } },
+    {
+      props: { sort: 'name' as const, sortDirection: 'asc' as const },
+      expected: { sort: 'name', sortDirection: 'desc' },
+    },
+    {
+      props: { sort: 'name' as const, sortDirection: 'desc' as const, initialSortDirection: 'desc' as const },
+      expected: { sort: 'name', sortDirection: 'asc' },
+    },
+    { props: { sort: 'name' as const, sortDirection: 'desc' as const }, expected: { sort: '', sortDirection: '' } },
+  ])('calls onSortChange with $expected', async ({ props, expected }) => {
+    const onSortChange = await clickSortButton(props);
 
-    render(<SortButton {...defaultProps} onSortChange={onSortChange} />);
-
-    await user.click(screen.getByRole('button'));
-    expect(onSortChange).toHaveBeenCalledWith({ sort: 'name', sortDirection: 'asc' });
-  });
-
-  it('cycles to desc when already sorted asc', async () => {
-    const user = userEvent.setup();
-    const onSortChange = vi.fn();
-
-    render(<SortButton {...defaultProps} sort="name" sortDirection="asc" onSortChange={onSortChange} />);
-
-    await user.click(screen.getByRole('button'));
-    expect(onSortChange).toHaveBeenCalledWith({ sort: 'name', sortDirection: 'desc' });
-  });
-
-  it('cycles to "" when already sorted desc', async () => {
-    const user = userEvent.setup();
-    const onSortChange = vi.fn();
-
-    render(<SortButton {...defaultProps} sort="name" sortDirection="desc" onSortChange={onSortChange} />);
-
-    await user.click(screen.getByRole('button'));
-    expect(onSortChange).toHaveBeenCalledWith({ sort: '', sortDirection: '' });
+    expect(onSortChange).toHaveBeenCalledWith(expected);
   });
 });

@@ -198,6 +198,46 @@ describe('user.service.ts', () => {
 
       expect(result).toEqual({ data: [mockUser], total: 1 });
     });
+
+    it('should sort users by creation date descending', async () => {
+      mockedUser.findMany.mockResolvedValueOnce([mockUser]);
+      mockedUser.count.mockResolvedValueOnce(1);
+
+      await getUsers(null, { sort: 'createdAt', order: 'desc' });
+
+      expect(mockedUser.findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { createdAt: 'desc' } }));
+    });
+
+    it('should sort users by affected entity full name', async () => {
+      mockedUser.findMany.mockResolvedValueOnce([mockUser]);
+      mockedUser.count.mockResolvedValueOnce(1);
+
+      await getUsers(null, { sort: 'entite.nomComplet', order: 'asc' });
+
+      expect(mockedUser.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: { entite: { nomComplet: 'asc' } } }),
+      );
+    });
+
+    it('should sort users by role label', async () => {
+      mockedUser.findMany.mockResolvedValueOnce([mockUser]);
+      mockedUser.count.mockResolvedValueOnce(1);
+
+      await getUsers(null, { sort: 'role.label', order: 'asc' });
+
+      expect(mockedUser.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: { role: { label: 'asc' } } }),
+      );
+    });
+
+    it('should sort users by status', async () => {
+      mockedUser.findMany.mockResolvedValueOnce([mockUser]);
+      mockedUser.count.mockResolvedValueOnce(1);
+
+      await getUsers(null, { sort: 'statutId', order: 'asc' });
+
+      expect(mockedUser.findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { statutId: 'asc' } }));
+    });
   });
 
   describe('getUserById()', () => {

@@ -1,6 +1,6 @@
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { ROLES } from '@sirena/common/constants';
-import { type Cells, type Column, DataTable } from '@sirena/ui';
+import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
@@ -11,6 +11,38 @@ type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][nu
 
 const DEFAULT_PAGE_SIZE = 10;
 
+const mapColumnKeyToSortKey = (columnKey: string): string | undefined => {
+  switch (columnKey) {
+    case 'createdAt':
+      return 'createdAt';
+    case 'custom:affectation':
+      return 'entite.nomComplet';
+    default:
+      return undefined;
+  }
+};
+
+const mapSortKeyToColumnKey = (sortKey: string | undefined): string => {
+  switch (sortKey) {
+    case 'createdAt':
+      return 'createdAt';
+    case 'entite.nomComplet':
+      return 'custom:affectation';
+    default:
+      return '';
+  }
+};
+
+const getEffectiveSort = (sort?: string, order?: 'asc' | 'desc') => {
+  const columnKey = mapSortKeyToColumnKey(sort);
+
+  if (!columnKey || !order) {
+    return {};
+  }
+
+  return { sort, order };
+};
+
 export function PendingUsersTab() {
   const queryClient = useQueryClient();
   const pendingRoleId = ROLES.PENDING;
@@ -20,6 +52,7 @@ export function PendingUsersTab() {
 
   const limit = queries.limit ?? DEFAULT_PAGE_SIZE;
   const offset = queries.offset ?? 0;
+  const effectiveSort = useMemo(() => getEffectiveSort(queries.sort, queries.order), [queries.sort, queries.order]);
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
   const handleUserListChange = useCallback(() => {
@@ -33,6 +66,7 @@ export function PendingUsersTab() {
 
   const { data: users, isFetching } = useUsers({
     roleId: pendingRoleId,
+    ...effectiveSort,
     limit,
     offset,
   });
@@ -40,8 +74,27 @@ export function PendingUsersTab() {
   const columns: Column<User>[] = [
     { key: 'nom', label: 'Nom' },
     { key: 'prenom', label: 'Prénom' },
-    { key: 'createdAt', label: 'Date de création' },
-    { key: 'custom:affectation', label: 'Affectation' },
+    {
+      key: 'createdAt',
+      label: 'Date de création',
+      isSortable: true,
+      initialSortDirection: 'desc',
+      sortLabels: {
+        asc: 'Trier par date de création de la plus ancienne à la plus récente',
+        desc: 'Trier par date de création de la plus récente à la plus ancienne',
+        reset: 'Réinitialiser le tri de la date de création',
+      },
+    },
+    {
+      key: 'custom:affectation',
+      label: 'Affectation',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par affectation de A à Z',
+        desc: 'Trier par affectation de Z à A',
+        reset: "Réinitialiser le tri de l'affectation",
+      },
+    },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 
@@ -82,6 +135,32 @@ export function PendingUsersTab() {
     ),
   };
 
+  const handleSortChange = useCallback(
+    (params: OnSortChangeParams<User>) => {
+      const { sort: columnKey, sortDirection } = params;
+      const sortKey = mapColumnKeyToSortKey(columnKey);
+
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          sort: sortKey && sortDirection ? sortKey : undefined,
+          order: sortKey && sortDirection ? sortDirection : undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
+  const currentSort = useMemo(() => {
+    const columnKey = mapSortKeyToColumnKey(effectiveSort.sort);
+
+    return {
+      sort: (columnKey || '') as OnSortChangeParams<User>['sort'],
+      sortDirection: (effectiveSort.order || '') as OnSortChangeParams<User>['sortDirection'],
+    };
+  }, [effectiveSort]);
+
   const total = useMemo(() => users?.meta?.total ?? 0, [users?.meta?.total]);
   const totalPages = useMemo(() => Math.ceil(total / limit), [total, limit]);
   const shouldShowPagination = useMemo(() => total > limit, [total, limit]);
@@ -117,6 +196,8 @@ export function PendingUsersTab() {
         columns={columns}
         cells={cells}
         isLoading={isFetching}
+        sort={currentSort}
+        onSortChange={handleSortChange}
       />
       {shouldShowPagination && (
         <div className="fr-mt-3w fr-grid-row fr-grid-row--center">

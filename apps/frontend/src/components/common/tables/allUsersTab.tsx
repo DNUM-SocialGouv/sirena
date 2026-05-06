@@ -1,6 +1,6 @@
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { ROLES, type Role, roles, type StatutType, statutTypes } from '@sirena/common/constants';
-import { type Cells, type Column, DataTable } from '@sirena/ui';
+import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
@@ -11,6 +11,42 @@ import { useUserListSSE } from '@/hooks/useUserListSSE';
 type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
 
 const DEFAULT_PAGE_SIZE = 10;
+
+const mapColumnKeyToSortKey = (columnKey: string) => {
+  switch (columnKey) {
+    case 'role.label':
+      return 'role.label';
+    case 'statutId':
+      return 'statutId';
+    case 'custom:affectation':
+      return 'entite.nomComplet';
+    default:
+      return null;
+  }
+};
+
+const mapSortKeyToColumnKey = (sortKey?: string) => {
+  switch (sortKey) {
+    case 'role.label':
+      return 'role.label';
+    case 'statutId':
+      return 'statutId';
+    case 'entite.nomComplet':
+      return 'custom:affectation';
+    default:
+      return '';
+  }
+};
+
+const getEffectiveSort = (sort?: string, order?: 'asc' | 'desc') => {
+  const columnKey = mapSortKeyToColumnKey(sort);
+
+  if (!columnKey || !order) {
+    return {};
+  }
+
+  return { sort, order };
+};
 
 export function AllUsersTab() {
   const queryClient = useQueryClient();
@@ -26,6 +62,7 @@ export function AllUsersTab() {
 
   const limit = queries.limit ?? DEFAULT_PAGE_SIZE;
   const offset = queries.offset ?? 0;
+  const effectiveSort = useMemo(() => getEffectiveSort(queries.sort, queries.order), [queries.sort, queries.order]);
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
   const handleUserListChange = useCallback(() => {
@@ -39,6 +76,7 @@ export function AllUsersTab() {
 
   const { data: users, isFetching } = useUsers({
     roleId: filteredRoles,
+    ...effectiveSort,
     limit,
     offset,
   });
@@ -46,9 +84,36 @@ export function AllUsersTab() {
   const columns: Column<User>[] = [
     { key: 'nom', label: 'Nom' },
     { key: 'prenom', label: 'Prénom' },
-    { key: 'role.label', label: 'Rôle' },
-    { key: 'statutId', label: 'Statut' },
-    { key: 'custom:affectation', label: 'Affectation' },
+    {
+      key: 'role.label',
+      label: 'Rôle',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par rôle de A à Z',
+        desc: 'Trier par rôle de Z à A',
+        reset: 'Réinitialiser le tri du rôle',
+      },
+    },
+    {
+      key: 'statutId',
+      label: 'Statut',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par statut (actifs à inactifs)',
+        desc: 'Trier par statut (inactifs à actifs)',
+        reset: 'Réinitialiser le tri du statut',
+      },
+    },
+    {
+      key: 'custom:affectation',
+      label: 'Affectation',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par affectation de A à Z',
+        desc: 'Trier par affectation de Z à A',
+        reset: "Réinitialiser le tri de l'affectation",
+      },
+    },
     { key: 'custom:editionLabel', label: 'Action' },
   ];
 
@@ -80,6 +145,32 @@ export function AllUsersTab() {
       </Link>
     ),
   };
+
+  const handleSortChange = useCallback(
+    (params: OnSortChangeParams<User>) => {
+      const { sort: columnKey, sortDirection } = params;
+      const sortKey = mapColumnKeyToSortKey(columnKey);
+
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          sort: sortKey && sortDirection ? sortKey : undefined,
+          order: sortKey && sortDirection ? sortDirection : undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
+  const currentSort = useMemo(() => {
+    const columnKey = mapSortKeyToColumnKey(effectiveSort.sort);
+
+    return {
+      sort: (columnKey || '') as OnSortChangeParams<User>['sort'],
+      sortDirection: (effectiveSort.order || '') as OnSortChangeParams<User>['sortDirection'],
+    };
+  }, [effectiveSort]);
 
   const total = useMemo(() => users?.meta?.total ?? 0, [users?.meta?.total]);
   const totalPages = useMemo(() => Math.ceil(total / limit), [total, limit]);
@@ -116,6 +207,8 @@ export function AllUsersTab() {
         columns={columns}
         cells={cells}
         isLoading={isFetching}
+        sort={currentSort}
+        onSortChange={handleSortChange}
       />
       {shouldShowPagination && (
         <div className="fr-mt-3w fr-grid-row fr-grid-row--center">
