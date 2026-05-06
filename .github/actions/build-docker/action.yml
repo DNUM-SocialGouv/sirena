@@ -56,6 +56,52 @@ runs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
+    # ── Anonymize image ────────────────────────────────────────────
+    - name: Check anonymize version is not already created
+      shell: bash
+      id: check-image-anonymize
+      run: |
+        if docker manifest inspect ${{ env.IMAGE_TAG }}-anonymize > /dev/null 2>&1; then
+          echo "anonymize-exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "anonymize-exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Build and push Docker anonymize image
+      if: steps.check-image-anonymize.outputs.anonymize-exists == 'false'
+      uses: docker/build-push-action@v6
+      with:
+        context: apps/anonymize
+        file: apps/anonymize/Dockerfile
+        push: true
+        tags: ${{ env.IMAGE_TAG }}-anonymize
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: |
+          type=gha,scope=anonymize
+        cache-to: |
+          type=gha,mode=max,scope=anonymize
+        platforms: linux/amd64
+
+    - name: Trivy scan anonymize image
+      if: inputs.trivy-enabled == 'true' && steps.check-image-anonymize.outputs.anonymize-exists == 'false'
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+      continue-on-error: true
+      with:
+        image-ref: ${{ env.IMAGE_TAG }}-anonymize
+        format: "sarif"
+        output: "trivy-container-anonymize-results.sarif"
+        severity: "CRITICAL,HIGH,MEDIUM"
+        exit-code: "0"
+
+    - name: Upload Trivy anonymize scan results
+      if: inputs.trivy-enabled == 'true' && steps.check-image-anonymize.outputs.anonymize-exists == 'false'
+      uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v3
+      continue-on-error: true
+      with:
+        sarif_file: "trivy-container-anonymize-results.sarif"
+        category: "trivy-container-anonymize"
+
+    # ── Worker image ─────────────────────────────────────────────
     - name: Check worker version is not already created
       shell: bash
       id: check-image-worker

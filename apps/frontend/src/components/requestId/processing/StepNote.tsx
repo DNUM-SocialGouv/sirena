@@ -67,7 +67,7 @@ export const StepNote = ({
   return (
     <div className={styles['request-note']}>
       <div className="fr-grid-row fr-grid-row--middle fr-mb-2w">
-        <div className={clsx('fr-col', styles['request-note__from'])}>
+        <p className={clsx('fr-col', styles['request-note__from'])}>
           Le
           <span>
             {' '}
@@ -85,7 +85,7 @@ export const StepNote = ({
               </span>
             </>
           )}
-        </div>
+        </p>
         <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
           {canEdit && !isSystemNote && (
             <Button
@@ -116,7 +116,7 @@ export const StepNote = ({
       {content && (
         <div className="fr-mb-2w">
           {clotureReasonLabels && <div className="fr-text--xs fr-mb-0">Précisions</div>}
-          <div className="fr-text--sm fr-text--grey">{content}</div>
+          <p className="fr-text--sm fr-text--grey">{content}</p>
         </div>
       )}
       {files.length > 0 && (

@@ -22,8 +22,16 @@ const mockSentryScope = {
   setContext: vi.fn(),
 };
 
+const mockLogger = {
+  info: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+  debug: vi.fn(),
+};
+
 vi.mock('../../libs/asyncLocalStorage.js', () => ({
   getSentryStore: vi.fn(() => mockSentryScope),
+  getLoggerStore: vi.fn(() => mockLogger),
 }));
 
 const mockEnvVars = {

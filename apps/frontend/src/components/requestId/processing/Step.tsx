@@ -34,6 +34,8 @@ type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data
 type StepProps = StepType & {
   requestId: string;
   disabled?: boolean;
+  isAcknowledgmentSendable?: boolean;
+  onSendAcknowledgment?: () => void;
   openEdit?(step: StepType): void;
   openEditNote?(
     step: StepType,
@@ -80,67 +82,48 @@ const getStepTitle = (type: string, statutId: string, nom: string | null): strin
   return nom ?? '';
 };
 
-type RequeteRef =
-  | {
-      createdBy: { prenom: string; nom: string } | null;
-      dematSocialId: number | null;
-      thirdPartyAccountId?: string | null;
-    }
-  | null
-  | undefined;
-
 const getStepSubtitle = (
   type: string,
   statutId: string,
   createdAt: string,
-  createdBy: { prenom: string; nom: string } | null | undefined,
-  requete: RequeteRef,
-  clotureNoteAuthor?: { prenom: string; nom: string } | null,
+  updatedAt: string,
+  createdBy: StepType['createdBy'],
+  notes: StepType['notes'],
+  requete: StepType['requete'],
 ): React.ReactNode => {
-  const date = formatDate(createdAt);
-
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
-    const agent = createdBy ?? clotureNoteAuthor;
-    if (agent) {
-      return (
-        <>
-          Requête clôturée le {date} par {formatAgent(agent)}
-        </>
-      );
-    }
-    return `Requête clôturée le ${date}`;
+    const agent = createdBy ?? notes[0]?.author;
+    return agent ? (
+      <>
+        Requête clôturée le {formatDate(createdAt)} par {formatAgent(agent)}
+      </>
+    ) : (
+      `Requête clôturée le ${formatDate(createdAt)}`
+    );
   }
-
   if (type === REQUETE_ETAPE_TYPES.CREATION) {
-    const isManual =
-      requete?.dematSocialId == null && requete?.thirdPartyAccountId == null && requete?.createdBy != null;
-    if (isManual && requete?.createdBy) {
-      return (
-        <>
-          Requête créée le {date} par {formatAgent(requete.createdBy)}
-        </>
-      );
-    }
-    return `Requête créée le ${date}`;
+    return requete?.createdBy ? (
+      <>
+        Requête créée le {formatDate(createdAt)} par {formatAgent(requete.createdBy)}
+      </>
+    ) : (
+      `Requête créée le ${formatDate(createdAt)}`
+    );
   }
-
-  if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
-    const isAutomatic =
-      requete?.dematSocialId == null && requete?.thirdPartyAccountId == null && requete?.createdBy != null;
-    return isAutomatic ? `Ajouté automatiquement le ${date}` : `Envoyé automatiquement le ${date}`;
-  }
-
   if (type === REQUETE_ETAPE_TYPES.REOPEN) {
-    if (createdBy) {
-      return (
-        <>
-          Requête réouverte le {date} par {formatAgent(createdBy)}
-        </>
-      );
-    }
-    return `Requête réouverte le ${date}`;
+    return createdBy ? (
+      <>
+        Requête réouverte le {formatDate(createdAt)} par {formatAgent(createdBy)}
+      </>
+    ) : (
+      `Requête réouverte le ${formatDate(createdAt)}`
+    );
   }
-
+  if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
+    return statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT
+      ? `Envoyé automatiquement le ${formatDate(updatedAt)}`
+      : `Ajouté automatiquement le ${formatDate(createdAt)}`;
+  }
   return formatStepCreationInfo(createdBy, createdAt);
 };
 
@@ -149,8 +132,11 @@ const StepComponent = ({
   nom,
   createdBy,
   createdAt,
+  updatedAt,
   statutId,
   disabled,
+  isAcknowledgmentSendable,
+  onSendAcknowledgment,
   openEdit,
   openEditNote,
   notes,
@@ -194,7 +180,6 @@ const StepComponent = ({
     : false;
 
   const isSystemStep = rest.type !== REQUETE_ETAPE_TYPES.MANUAL || statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE;
-  const isAutomaticAcknowledgment = rest.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && createdBy === null;
 
   const badges = requeteEtapeStatutBadges.filter((badge) => {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
@@ -364,28 +349,19 @@ const StepComponent = ({
                 )}
               </div>
             </div>
-            <div>
-              <p className="fr-text--xs fr-text-mention--grey">
-                {getStepSubtitle(rest.type, statutId, createdAt, createdBy, requete, notes[0]?.author)}
-              </p>
-              {isAutomaticAcknowledgment && notes[0]?.uploadedFiles && notes[0].uploadedFiles.length > 0 && (
-                <ul className="fr-mt-1w">
-                  {notes[0].uploadedFiles.map((file: StepType['notes'][number]['uploadedFiles'][number]) => (
-                    <li key={file.id} className={styles['request-note__file']}>
-                      <FileDownloadLink
-                        href={`/api/requete-etapes/${id}/file/${file.id}`}
-                        safeHref={`/api/requete-etapes/${id}/file/${file.id}/safe`}
-                        fileName={(file.metadata as { originalName?: string })?.originalName || 'Unknown'}
-                        fileId={file.id}
-                        fileSize={file.size}
-                        status={file.status}
-                        scanStatus={file.scanStatus}
-                        sanitizeStatus={file.sanitizeStatus}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
+            <div className="fr-grid-row fr-grid-row--middle fr-mt-1w">
+              <div className="fr-col">
+                <p className="fr-text--xs fr-text-mention--grey">
+                  {getStepSubtitle(rest.type, statutId, createdAt, updatedAt, createdBy, notes, requete)}
+                </p>
+                {isAcknowledgmentSendable && canEdit && (
+                  <div className="fr-mt-2w">
+                    <Button priority="secondary" size="small" onClick={onSendAcknowledgment}>
+                      Envoyer
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -431,7 +407,7 @@ const StepComponent = ({
                         />
                         {canEdit && (
                           <Button
-                            aria-label="Supprimer le fichier"
+                            aria-label={`Supprimer le fichier ${fileName}`}
                             title="Supprimer le fichier"
                             type="button"
                             className={fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')}
@@ -455,43 +431,43 @@ const StepComponent = ({
         ) : (
           <>
             <div className={styles['request-notes']}>
-              {!isAutomaticAcknowledgment &&
-                notes.slice(0, isOpen ? notes.length : 3).map((note: StepType['notes'][number]) => (
-                  <StepNote
-                    requestId={requestId}
-                    key={note.id}
-                    content={note.texte}
-                    author={note.author}
-                    id={note.id}
-                    createdAt={note.createdAt}
-                    files={note.uploadedFiles.map((file: (typeof note.uploadedFiles)[number]) => ({
-                      id: file.id,
-                      size: file.size,
-                      originalName: (file.metadata as { originalName?: string })?.originalName || 'Unknown',
-                      status: file.status,
-                      scanStatus: file.scanStatus,
-                      sanitizeStatus: file.sanitizeStatus,
-                      safeFilePath: file.safeFilePath,
-                    }))}
-                    requeteStateId={id}
-                    onEdit={(noteData) =>
-                      openEditNote?.(
-                        {
-                          id,
-                          nom,
-                          statutId,
-                          notes,
-                          createdAt,
-                          createdBy,
-                          requete,
-                          ...rest,
-                        },
-                        noteData,
-                      )
-                    }
-                    clotureReasonLabels={null}
-                  />
-                ))}
+              {notes.slice(0, isOpen ? notes.length : 3).map((note: StepType['notes'][number]) => (
+                <StepNote
+                  requestId={requestId}
+                  key={note.id}
+                  content={note.texte}
+                  author={note.author}
+                  id={note.id}
+                  createdAt={note.createdAt}
+                  files={note.uploadedFiles.map((file: (typeof note.uploadedFiles)[number]) => ({
+                    id: file.id,
+                    size: file.size,
+                    originalName: (file.metadata as { originalName?: string })?.originalName || 'Unknown',
+                    status: file.status,
+                    scanStatus: file.scanStatus,
+                    sanitizeStatus: file.sanitizeStatus,
+                    safeFilePath: file.safeFilePath,
+                  }))}
+                  requeteStateId={id}
+                  onEdit={(noteData) =>
+                    openEditNote?.(
+                      {
+                        id,
+                        nom,
+                        statutId,
+                        notes,
+                        createdAt,
+                        updatedAt,
+                        createdBy,
+                        requete,
+                        ...rest,
+                      },
+                      noteData,
+                    )
+                  }
+                  clotureReasonLabels={null}
+                />
+              ))}
             </div>
             <div className={styles['request-notes-distplay']}>
               {notes.length > 3 && (
@@ -519,6 +495,7 @@ const StepComponent = ({
                     statutId,
                     notes,
                     createdAt,
+                    updatedAt,
                     createdBy,
                     requete,
                     ...rest,

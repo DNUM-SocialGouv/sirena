@@ -62,7 +62,7 @@ type UserFormData = z.infer<typeof userFormSchema>;
 function SubmitButton({ isPending }: { isPending: boolean }) {
   return (
     <Button type="submit" disabled={isPending}>
-      {isPending ? 'Mise à jour...' : 'Modifier les informations'}
+      {isPending ? 'Mise à jour...' : 'Modifier les informations de l’utilisateur'}
     </Button>
   );
 }

@@ -1,4 +1,10 @@
 ---
+anonymize:
+  enabled: true
+
+  sirena_db_secret_path: databases/sirena-validation
+  anonymize_db_secret_path: databases/sirena-validation-anonymisation
+
 backend:
   SDPSN-devops-charts:
     namespace: org-sdpsn-ws-sirena-validation

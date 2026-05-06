@@ -1,18 +1,21 @@
-import { RECEPTION_TYPE, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
+// Import des deux constantes : REQUETE_ETAPE_TYPES pour le lookup Prisma, REQUETE_ETAPE_STATUT_TYPES pour les transitions de statut
+import { RECEPTION_TYPE, REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import { envVars } from '../../config/env.js';
 import {
+  ACKNOWLEDGMENT_EMAIL_SUBJECT,
   ACKNOWLEDGMENT_EMAIL_TEMPLATE_ID,
   ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
 } from '../../config/tipimail.constant.js';
 import { pick } from '../../helpers/object.js';
 import { addFileProcessingJob } from '../../jobs/queues/fileProcessing.queue.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
-import { generateEmailPdf } from '../../libs/mail/mailToPdf.js';
+import { generateEmailPdf, generateEmailPdfFromText } from '../../libs/mail/mailToPdf.js';
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
 import { uploadFileToMinio } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
+import { getEntitesByRequeteId } from '../entites/entites.service.js';
 import { updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
 import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
 
@@ -201,7 +204,12 @@ async function attachEmailPdfToStep(
         });
       } catch (changelogError) {
         logger.error(
-          { requeteId, entiteId, fileId: uploadedFile.id, error: changelogError },
+          {
+            requeteId,
+            entiteId,
+            fileId: uploadedFile.id,
+            error: changelogError,
+          },
           'Failed to create changelog entry for uploaded file',
         );
       }
@@ -247,6 +255,174 @@ async function attachEmailPdfToStep(
     }
   } catch (error) {
     logger.error({ requeteId, entiteId, error }, 'Failed to attach email PDF to step');
+    throw error;
+  }
+}
+
+type EntiteForMessage = {
+  nomComplet: string;
+  emailContactUsager: string;
+  telContactUsager: string;
+  adresseContactUsager: string;
+  entiteMereId: string | null;
+};
+
+/**
+ * Builds the plain-text acknowledgment message for manual acknowledgment sending
+ */
+export function buildAcknowledgmentMessageText(
+  requeteId: string,
+  entites: EntiteForMessage[],
+  comment?: string,
+): string {
+  const entiteAdmin = formatEntiteAdminString(entites);
+  const entiteComplete = formatEntiteCompleteString(entites);
+  return [
+    `Votre dossier a bien été reçu sous le numéro ${requeteId}.`,
+    `Merci d'avoir pris le temps de partager ces informations.`,
+    `Il est désormais suivi par ${entiteAdmin}.`,
+    '',
+    'Les équipes des services compétents vous contacteront si nécessaire.',
+    '',
+    ...(comment ? [comment, ''] : []),
+    'Service(s) en charge de votre dossier :',
+    entiteComplete,
+    '',
+    'Merci,',
+    entiteAdmin,
+  ].join('\n');
+}
+
+/**
+ * Sends an acknowledgment email manually for a manual request
+ * @throws Error with code 'STEP_ALREADY_PROCESSED' if the step is no longer A_FAIRE
+ */
+export async function sendManualAcknowledgmentEmail({
+  etapeId,
+  requeteId,
+  entiteId,
+  userId,
+  comment,
+}: {
+  etapeId: string;
+  requeteId: string;
+  entiteId: string;
+  userId: string;
+  comment?: string;
+}): Promise<void> {
+  const logger = getLoggerStore();
+
+  const claimResult = await prisma.requeteEtape.updateMany({
+    where: { id: etapeId, statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
+    data: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT },
+  });
+
+  if (claimResult.count === 0) {
+    const err = new Error('Cet accusé de réception a déjà été envoyé.');
+    (err as unknown as { code: string }).code = 'STEP_ALREADY_PROCESSED';
+    throw err;
+  }
+
+  logger.info({ requeteId, entiteId, etapeId }, 'Acknowledgment step claimed, proceeding to send email');
+
+  try {
+    const [declarantResult, entites] = await Promise.all([
+      prisma.requete.findUnique({
+        where: { id: requeteId },
+        include: { declarant: { include: { identite: true } } },
+      }),
+      getEntitesByRequeteId(requeteId),
+    ]);
+
+    const declarantEmail = declarantResult?.declarant?.identite?.email;
+    if (!declarantEmail) {
+      logger.error({ requeteId, entiteId }, 'Declarant has no email for manual acknowledgment');
+      throw new Error("Le déclarant n'a pas d'adresse e-mail renseignée.");
+    }
+    const message = buildAcknowledgmentMessageText(requeteId, entites, comment);
+    const fromAddress = envVars.TIPIMAIL_FROM_ADDRESS;
+    const fromPersonalName = envVars.TIPIMAIL_FROM_PERSONAL_NAME;
+    const from = { address: fromAddress, personalName: fromPersonalName };
+    const sentDate = new Date();
+
+    await sendTipimailEmail({
+      to: declarantEmail,
+      subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
+      text: message,
+    });
+
+    logger.info({ requeteId, entiteId, declarantEmail }, 'Manual acknowledgment email sent successfully');
+
+    try {
+      await createChangeLog({
+        entity: 'RequeteEtape',
+        entityId: etapeId,
+        action: ChangeLogAction.UPDATED,
+        before: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
+        after: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT },
+        changedById: userId,
+      });
+    } catch (changelogError) {
+      logger.error(
+        { requeteId, etapeId, error: changelogError },
+        'Failed to create changelog for manual acknowledgment step',
+      );
+    }
+
+    // Generate and attach PDF from the message text
+    try {
+      const emailPdf = await generateEmailPdfFromText({
+        from,
+        to: declarantEmail,
+        sentDate,
+        subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
+        text: message,
+      });
+
+      await attachEmailPdfToStep(requeteId, entiteId, emailPdf, {
+        from,
+        to: declarantEmail,
+        sentDate,
+        subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
+      });
+    } catch (pdfError) {
+      logger.error(
+        { requeteId, entiteId, error: pdfError },
+        'Failed to generate or attach PDF for manual acknowledgment',
+      );
+    }
+
+    try {
+      await createChangeLog({
+        entity: 'Requete',
+        entityId: requeteId,
+        action: ChangeLogAction.UPDATED,
+        before: {},
+        after: {
+          acknowledgmentEmailSent: true,
+          acknowledgmentEmailSentAt: sentDate.toISOString(),
+          acknowledgmentEmailRecipient: declarantEmail,
+          acknowledgmentEmailManual: true,
+          acknowledgmentEmailSentBy: userId,
+        },
+        changedById: userId,
+      });
+    } catch (changelogError) {
+      logger.error({ requeteId, error: changelogError }, 'Failed to create changelog for manual acknowledgment email');
+    }
+  } catch (error) {
+    logger.error({ requeteId, entiteId, etapeId, error }, 'Failed to send manual acknowledgment email');
+    try {
+      await prisma.requeteEtapeNote.create({
+        data: {
+          texte: "Erreur lors de l'envoi de l'e-mail d'accusé de réception. Veuillez contacter le support.",
+          authorId: null,
+          requeteEtapeId: etapeId,
+        },
+      });
+    } catch (noteError) {
+      logger.error({ etapeId, error: noteError }, 'Failed to create error note on acknowledgment step');
+    }
     throw error;
   }
 }

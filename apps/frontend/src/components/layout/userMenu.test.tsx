@@ -81,10 +81,9 @@ describe('UserMenu', () => {
     expect(link).toBeInTheDocument();
   });
 
-  it('shows a "Liste des requêtes" entry for super admins inside the admin area', async () => {
+  it('does not show a "Liste des requêtes" entry for super admins inside the admin area', async () => {
     await renderUserMenu({ roleId: ROLES.SUPER_ADMIN, isAdminRoute: true });
 
-    const link = screen.getByRole('link', { name: 'Liste des requêtes' });
-    expect(link).toHaveAttribute('href', '/home');
+    expect(screen.queryByRole('link', { name: 'Liste des requêtes' })).not.toBeInTheDocument();
   });
 });
