@@ -9,6 +9,7 @@ import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { fetchAcknowledgmentMessage } from '@/lib/api/processingSteps';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import styles from './CreateNoteDrawer.module.css';
+import drawerStyles from './SendAcknowledgmentDrawer.module.css';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
@@ -136,20 +137,8 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
       <Drawer.Root variant="nonModal" withCloseButton={false} open={isOpen} onOpenChange={handleOpenChange}>
         <Drawer.Portal>
           <Drawer.Panel style={{ width: 'min(90vw, 600px)', maxWidth: '100%' }} titleId={titleId}>
-            <div
-              style={{
-                height: '100vh',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: 'auto',
-                  padding: '0 16px 88px 16px',
-                }}
-              >
+            <div className={drawerStyles.layout}>
+              <div className={drawerStyles.scrollArea}>
                 <div className="fr-container fr-mt-8w">
                   <div className={styles.topActions}>
                     <Button
@@ -177,46 +166,16 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                             déclarant.
                           </span>
                         </p>
-                        <div
-                          style={{
-                            background: '#fff',
-                            border: '1px solid #929292',
-                            borderRadius: '4px',
-                            padding: '8px 12px',
-                            minHeight: '2rem',
-                            overflowX: 'auto',
-                            whiteSpace: 'nowrap',
-                            fontSize: '1rem',
-                            lineHeight: '1.5rem',
-                            color: '#161616',
-                          }}
-                        >
-                          {declarantEmail}
-                        </div>
+                        <div className={drawerStyles.emailField}>{declarantEmail}</div>
                       </div>
                       <div className="fr-form-group fr-mb-2w">
                         <p className="fr-label fr-mb-1w">
                           Ce message est généré automatiquement et ne peut pas être modifié
                         </p>
-                        <p className="fr-text--sm fr-mb-1w" style={{ color: '#161616' }}>
+                        <p className={`fr-text--sm fr-mb-1w ${drawerStyles.subject}`}>
                           <strong>Objet :</strong> {subject}
                         </p>
-                        <div
-                          style={{
-                            background: '#fff',
-                            border: '1px solid #929292',
-                            borderRadius: '4px',
-                            padding: '8px 12px',
-                            overflowY: 'auto',
-                            maxHeight: '320px',
-                            whiteSpace: 'pre-wrap',
-                            fontSize: '1rem',
-                            lineHeight: '1.5rem',
-                            color: '#161616',
-                          }}
-                        >
-                          {message}
-                        </div>
+                        <div className={drawerStyles.messageField}>{message}</div>
                       </div>
                       <Input
                         label="Commentaire personnalisé (facultatif)"
