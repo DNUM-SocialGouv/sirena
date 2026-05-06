@@ -99,8 +99,8 @@ export function AllUsersTab() {
       label: 'Statut',
       isSortable: true,
       sortLabels: {
-        asc: 'Trier par statut de A à Z',
-        desc: 'Trier par statut de Z à A',
+        asc: 'Trier par statut (actifs à inactifs)',
+        desc: 'Trier par statut (inactifs à actifs)',
         reset: 'Réinitialiser le tri du statut',
       },
     },
