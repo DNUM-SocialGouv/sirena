@@ -21,6 +21,7 @@ export function RouteComponent() {
   const tabs = getTabs(role);
   const tabPaths = getTabPaths(role);
   const activeTab = getActiveTab(pathname, role);
+  const isUserEditPage = pathname.startsWith('/admin/user/');
 
   const handleTabChange = (newTabIndex: number) => {
     navigate({ to: tabPaths[newTabIndex] });
@@ -28,12 +29,16 @@ export function RouteComponent() {
 
   return (
     <AdminLayout>
-      <div className="home">
-        <h1 className="fr-mt-3w">Espace administrateur</h1>
-        <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
-          <Outlet />
-        </Tabs>
-      </div>
+      {isUserEditPage ? (
+        <Outlet />
+      ) : (
+        <div className="home">
+          <h1 className="fr-mt-3w">Espace administrateur</h1>
+          <Tabs tabs={tabs} activeTab={activeTab} onUpdateActiveTab={handleTabChange}>
+            <Outlet />
+          </Tabs>
+        </div>
+      )}
     </AdminLayout>
   );
 }
