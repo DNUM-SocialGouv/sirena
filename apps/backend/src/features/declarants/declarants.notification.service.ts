@@ -15,7 +15,6 @@ import { uploadFileToMinio } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { getEntitesByRequeteId } from '../entites/entites.service.js';
 import { updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
 import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
 
@@ -326,13 +325,24 @@ export async function sendManualAcknowledgmentEmail({
   logger.info({ requeteId, entiteId, etapeId }, 'Acknowledgment step claimed, proceeding to send email');
 
   try {
-    const [declarantResult, entites] = await Promise.all([
+    const [declarantResult, entite] = await Promise.all([
       prisma.requete.findUnique({
         where: { id: requeteId },
         include: { declarant: { include: { identite: true } } },
       }),
-      getEntitesByRequeteId(requeteId),
+      prisma.entite.findUnique({
+        where: { id: entiteId },
+        select: {
+          id: true,
+          nomComplet: true,
+          emailContactUsager: true,
+          telContactUsager: true,
+          adresseContactUsager: true,
+          entiteMereId: true,
+        },
+      }),
     ]);
+    const entites = entite ? [entite] : [];
 
     const declarantEmail = declarantResult?.declarant?.identite?.email;
     if (!declarantEmail) {
