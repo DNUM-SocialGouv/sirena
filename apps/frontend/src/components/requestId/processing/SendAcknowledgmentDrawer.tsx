@@ -159,23 +159,29 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                   ) : (
                     <form>
                       <div className="fr-form-group fr-mb-2w">
-                        <p className="fr-label fr-mb-1w">
-                          Adresse électronique du déclarant
-                          <span className="fr-hint-text">
-                            Ce champ est en lecture seule. Vous pouvez modifier l'adresse e-mail depuis les informations
-                            déclarant.
-                          </span>
-                        </p>
-                        <div className={drawerStyles.emailField}>{declarantEmail}</div>
+                        <dl>
+                          <dt className="fr-label fr-mb-1w">
+                            Adresse électronique du déclarant
+                            <span className="fr-hint-text">
+                              Ce champ est en lecture seule. Vous pouvez modifier l'adresse e-mail depuis les
+                              informations déclarant.
+                            </span>
+                          </dt>
+                          <dd className={drawerStyles.emailField}>{declarantEmail}</dd>
+                        </dl>
                       </div>
                       <div className="fr-form-group fr-mb-2w">
                         <p className="fr-label fr-mb-1w">
                           Ce message est généré automatiquement et ne peut pas être modifié
                         </p>
-                        <p className={`fr-text--sm fr-mb-1w ${drawerStyles.subject}`}>
-                          <strong>Objet :</strong> {subject}
-                        </p>
-                        <div className={drawerStyles.messageField}>{message}</div>
+                        <dl>
+                          <dt className={`fr-text--sm fr-mb-1w ${drawerStyles.subject}`}>
+                            <span className="fr-text--bold">Objet :</span>
+                          </dt>
+                          <dd className={`fr-text--sm fr-mb-1w ${drawerStyles.subject}`}>{subject}</dd>
+                          <dt className="fr-sr-only">Message</dt>
+                          <dd className={drawerStyles.messageField}>{message}</dd>
+                        </dl>
                       </div>
                       <Input
                         label="Commentaire personnalisé (facultatif)"
