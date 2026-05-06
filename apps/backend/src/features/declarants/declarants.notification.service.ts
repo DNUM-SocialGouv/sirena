@@ -421,17 +421,20 @@ export async function sendManualAcknowledgmentEmail({
       logger.error({ requeteId, error: changelogError }, 'Failed to create changelog for manual acknowledgment email');
     }
   } catch (error) {
-    logger.error({ requeteId, entiteId, etapeId, error }, 'Failed to send manual acknowledgment email');
+    logger.error(
+      { requeteId, entiteId, etapeId, error },
+      'Failed to send manual acknowledgment email, rolling back step to A_FAIRE',
+    );
     try {
-      await prisma.requeteEtapeNote.create({
-        data: {
-          texte: "Erreur lors de l'envoi de l'e-mail d'accusé de réception. Veuillez contacter le support.",
-          authorId: null,
-          requeteEtapeId: etapeId,
-        },
+      await prisma.requeteEtape.update({
+        where: { id: etapeId },
+        data: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
       });
-    } catch (noteError) {
-      logger.error({ etapeId, error: noteError }, 'Failed to create error note on acknowledgment step');
+    } catch (rollbackError) {
+      logger.error(
+        { etapeId, error: rollbackError },
+        'Failed to rollback acknowledgment step status after send failure',
+      );
     }
     throw error;
   }
