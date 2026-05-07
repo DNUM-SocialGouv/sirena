@@ -1,6 +1,4 @@
 import Button from '@codegouvfr/react-dsfr/Button';
-import Input from '@codegouvfr/react-dsfr/Input';
-import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES } from '@sirena/common/constants';
 import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Loader, Toast } from '@sirena/ui';
@@ -11,6 +9,7 @@ import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandle
 import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
+import { EntiteAdminFormFields } from './-components/EntiteAdminFormFields';
 import { getEditEntiteTitle } from './-helpers';
 
 const EditEntiteFormSchema = z.object({
@@ -39,6 +38,8 @@ export function RouteComponent() {
   const entiteDepth = entiteChainQuery.data?.length ?? 0;
   const canCreateChild = !entiteChainQuery.isError && entiteDepth > 0 && entiteDepth < 3;
   const createChildLabel = entiteDepth === 1 ? 'Créer une direction' : 'Créer un service';
+  const editTitlePrefix =
+    entiteDepth === 1 ? 'Modifier l’entité' : entiteDepth === 2 ? 'Modifier la direction' : 'Modifier le service';
 
   const isSubmittingRef = useRef(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -172,7 +173,7 @@ export function RouteComponent() {
 
       <div className="fr-grid-row fr-grid-row--middle fr-grid-row--gutters fr-mb-4w">
         <div className="fr-col-12 fr-col-md">
-          <h2 className="fr-mb-0">Modifier une entité</h2>
+          <h2 className="fr-mb-0">{`${editTitlePrefix} ${entiteQuery.data.nomComplet}`}</h2>
         </div>
 
         {canCreateChild ? (
@@ -188,110 +189,12 @@ export function RouteComponent() {
         <form onSubmit={handleSubmit}>
           <p>Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <fieldset className="fr-fieldset">
-            <legend className="fr-fieldset__legend">Informations de l’entité</legend>
-
-            <Input
-              className="fr-fieldset__content"
-              label="Nom - libellé long (obligatoire)"
-              state={validationErrors.nomComplet ? 'error' : 'default'}
-              stateRelatedMessage={validationErrors.nomComplet}
-              nativeInputProps={{
-                name: 'nomComplet',
-                value: formData.nomComplet,
-                onChange: handleInputChange('nomComplet'),
-              }}
-            />
-
-            <Input
-              className="fr-fieldset__content"
-              label="Nom court (obligatoire)"
-              state={validationErrors.label ? 'error' : 'default'}
-              stateRelatedMessage={validationErrors.label}
-              nativeInputProps={{
-                name: 'label',
-                value: formData.label,
-                onChange: handleInputChange('label'),
-              }}
-            />
-
-            <Input
-              className="fr-fieldset__content"
-              label="Adresse électronique de notification"
-              hintText="Boîte e-mail générique pour la notification des nouvelles requêtes. Exemple : prenom.nom@exemple.com"
-              state={validationErrors.email ? 'error' : 'default'}
-              stateRelatedMessage={validationErrors.email}
-              nativeInputProps={{
-                name: 'email',
-                value: formData.email,
-                onChange: handleInputChange('email'),
-              }}
-            />
-          </fieldset>
-
-          <fieldset className="fr-fieldset">
-            <legend className="fr-fieldset__legend">Éléments de contact pour l’usager</legend>
-
-            <Input
-              className="fr-fieldset__content"
-              label="Adresse électronique"
-              hintText="Exemple : prenom.nom@exemple.com"
-              state={validationErrors.emailContactUsager ? 'error' : 'default'}
-              stateRelatedMessage={validationErrors.emailContactUsager}
-              nativeInputProps={{
-                name: 'emailContactUsager',
-                value: formData.emailContactUsager,
-                onChange: handleInputChange('emailContactUsager'),
-              }}
-            />
-
-            <Input
-              className="fr-fieldset__content"
-              label="Adresse postale"
-              hintText="Adresse postale complète pour l’usager : service, numéro et libellé de voie, code postal, ville."
-              textArea
-              nativeTextAreaProps={{
-                name: 'adresseContactUsager',
-                rows: 4,
-                value: formData.adresseContactUsager,
-                onChange: handleInputChange('adresseContactUsager'),
-              }}
-            />
-
-            <Input
-              className="fr-fieldset__content"
-              label="Numéro de téléphone"
-              hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
-              state={validationErrors.telContactUsager ? 'error' : 'default'}
-              stateRelatedMessage={validationErrors.telContactUsager}
-              nativeInputProps={{
-                name: 'telContactUsager',
-                type: 'tel',
-                value: formData.telContactUsager,
-                onChange: handleInputChange('telContactUsager'),
-              }}
-            />
-          </fieldset>
-
-          <fieldset className="fr-fieldset">
-            <Select
-              className="fr-fieldset__content"
-              label="Actif dans SIRENA (obligatoire)"
-              state={validationErrors.isActive ? 'error' : 'default'}
-              stateRelatedMessage={validationErrors.isActive}
-              nativeSelectProps={{
-                name: 'isActive',
-                value: formData.isActive,
-                onChange: handleInputChange('isActive'),
-              }}
-            >
-              <option value="" disabled>
-                Sélectionnez une option
-              </option>
-              <option value="oui">Oui</option>
-              <option value="non">Non</option>
-            </Select>
-          </fieldset>
+          <EntiteAdminFormFields
+            formData={formData}
+            validationErrors={validationErrors}
+            onChange={handleInputChange}
+            legend="Informations de l’entité"
+          />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
             <Link className="fr-btn fr-btn--secondary" to="/admin/entites">

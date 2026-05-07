@@ -143,7 +143,7 @@ describe('Admin entity edit route', () => {
     render(<RouteComponent />);
 
     expect(mockedUseEntiteByIdAdmin).toHaveBeenCalledWith('root-ars');
-    expect(screen.getByRole('heading', { level: 2, name: 'Modifier une entité' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Modifier l’entité ARS Normandie' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /liste des entités/i })).toHaveAttribute('href', '/admin/entites');
     expect(screen.getByText('Sauf mention contraire, les champs sont facultatifs.')).toBeInTheDocument();
 
@@ -153,6 +153,42 @@ describe('Admin entity edit route', () => {
     expect(screen.getByRole('option', { name: 'Sélectionnez une option' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Oui' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Non' })).toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      chain: [{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }],
+      name: 'Modifier l’entité ARS Normandie',
+    },
+    {
+      chain: [
+        { id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false },
+        { id: 'dir-1', nomComplet: 'Direction de la prévention', disabled: false },
+      ],
+      name: 'Modifier la direction ARS Normandie',
+    },
+    {
+      chain: [
+        { id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false },
+        { id: 'dir-1', nomComplet: 'Direction de la prévention', disabled: false },
+        { id: 'service-1', nomComplet: 'Service territorial', disabled: false },
+      ],
+      name: 'Modifier le service ARS Normandie',
+    },
+  ])('renders the hierarchy-specific edit title: $name', ({ chain, name }) => {
+    vi.mocked(useEntiteByIdAdmin).mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    vi.mocked(useEntiteChain).mockReturnValue(buildChainSuccessQuery(chain));
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('heading', { level: 2, name })).toBeInTheDocument();
   });
 
   it('shows a "Créer une direction" action on a root entity edit page', () => {
