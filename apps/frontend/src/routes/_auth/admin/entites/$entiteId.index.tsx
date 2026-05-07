@@ -186,14 +186,14 @@ export function RouteComponent() {
 
       <div className="fr-p-4w fr-mb-4w fr-card">
         <form onSubmit={handleSubmit}>
-          <p>Tous les champs sont obligatoires.</p>
+          <p>Sauf mention contraire, les champs sont facultatifs.</p>
 
           <fieldset className="fr-fieldset">
             <legend className="fr-fieldset__legend">Informations de l’entité</legend>
 
             <Input
               className="fr-fieldset__content"
-              label="Nom de l'entité"
+              label="Nom - libellé long (obligatoire)"
               state={validationErrors.nomComplet ? 'error' : 'default'}
               stateRelatedMessage={validationErrors.nomComplet}
               nativeInputProps={{
@@ -205,7 +205,7 @@ export function RouteComponent() {
 
             <Input
               className="fr-fieldset__content"
-              label="Libellé de l'entité"
+              label="Nom court (obligatoire)"
               state={validationErrors.label ? 'error' : 'default'}
               stateRelatedMessage={validationErrors.label}
               nativeInputProps={{
@@ -276,7 +276,7 @@ export function RouteComponent() {
           <fieldset className="fr-fieldset">
             <Select
               className="fr-fieldset__content"
-              label="Actif dans SIRENA"
+              label="Actif dans SIRENA (obligatoire)"
               state={validationErrors.isActive ? 'error' : 'default'}
               stateRelatedMessage={validationErrors.isActive}
               nativeSelectProps={{
