@@ -272,12 +272,14 @@ type EntiteForMessage = {
 export function buildAcknowledgmentMessageText(
   requeteId: string,
   entites: EntiteForMessage[],
+  declarant: { nom: string; prenom: string },
   comment?: string,
 ): string {
   const entiteAdmin = formatEntiteAdminString(entites);
   const entiteComplete = formatEntiteCompleteString(entites);
+  const declarantName = `${declarant.nom.toUpperCase()} ${declarant.prenom}`;
   return [
-    `Bonjour,`,
+    `Bonjour ${declarantName},`,
     `Votre dossier a bien été reçu sous le numéro ${requeteId}.`,
     `Merci d'avoir pris le temps de partager ces informations.`,
     `Il est désormais suivi par ${entiteAdmin}.`,
@@ -350,7 +352,9 @@ export async function sendManualAcknowledgmentEmail({
       logger.error({ requeteId, entiteId }, 'Declarant has no email for manual acknowledgment');
       throw new Error("Le déclarant n'a pas d'adresse e-mail renseignée.");
     }
-    const message = buildAcknowledgmentMessageText(requeteId, entites, comment);
+    const declarantIdentite = declarantResult?.declarant?.identite;
+    const declarant = { nom: declarantIdentite?.nom ?? '', prenom: declarantIdentite?.prenom ?? '' };
+    const message = buildAcknowledgmentMessageText(requeteId, entites, declarant, comment);
     const fromAddress = envVars.TIPIMAIL_FROM_ADDRESS;
     const fromPersonalName = envVars.TIPIMAIL_FROM_PERSONAL_NAME;
     const from = { address: fromAddress, personalName: fromPersonalName };

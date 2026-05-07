@@ -454,8 +454,10 @@ const app = factoryWithLogs
       getRequeteEntiteById(requeteEtape.requeteId, topEntiteId),
     ]);
     const entites = entite ? [entite] : [];
-    const message = buildAcknowledgmentMessageText(requeteEtape.requeteId, entites);
-    const declarantEmail = requete?.requete?.declarant?.identite?.email ?? null;
+    const declarantIdentite = requete?.requete?.declarant?.identite;
+    const declarant = { nom: declarantIdentite?.nom ?? '', prenom: declarantIdentite?.prenom ?? '' };
+    const message = buildAcknowledgmentMessageText(requeteEtape.requeteId, entites, declarant);
+    const declarantEmail = declarantIdentite?.email ?? null;
 
     logger.info({ requeteEtapeId: id }, 'Acknowledgment message preview fetched');
 
