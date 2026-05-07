@@ -337,6 +337,42 @@ describe('Admin entity edit route', () => {
     expect(editEntiteAdminMutateAsyncSpy).not.toHaveBeenCalled();
   });
 
+  it('validates optional email and phone fields before submitting', async () => {
+    const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
+
+    mockedUseEntiteByIdAdmin.mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        isActive: true,
+      }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+
+    render(<RouteComponent />);
+
+    const user = userEvent.setup();
+
+    await user.type(screen.getByLabelText(/Adresse électronique de notification/), 'not-an-email');
+    await user.type(screen.getAllByLabelText(/Adresse électronique/)[1], 'still-not-an-email');
+    await user.type(screen.getByLabelText(/Numéro de téléphone/), 'abc');
+    await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
+
+    expect(
+      await screen.findAllByText(
+        'L’adresse e-mail est invalide. Merci de saisir une adresse au format prenom.nom@exemple.com.',
+      ),
+    ).toHaveLength(2);
+    expect(
+      screen.getByText('Le numéro de téléphone doit être au format national ou international (+33XXXXXXXXXX)'),
+    ).toBeInTheDocument();
+    expect(editEntiteAdminMutateAsyncSpy).not.toHaveBeenCalled();
+  });
+
   it('submits notification and usager contact fields to the admin edit mutation', async () => {
     const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
     const mockedUseEntiteChain = vi.mocked(useEntiteChain);
