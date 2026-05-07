@@ -164,8 +164,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                             <dt className="fr-label fr-mb-1w">
                               Adresse électronique du déclarant
                               <span className="fr-hint-text">
-                                Ce champ est en lecture seule. Vous pouvez modifier l'adresse e-mail depuis les
-                                informations déclarant.
+                                Pour modifier cette adresse, rendez-vous dans la section Déclarant.
                               </span>
                             </dt>
                             <dd className={drawerStyles.emailField}>{declarantEmail}</dd>
