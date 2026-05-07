@@ -124,7 +124,7 @@ describe('Admin entity edit route', () => {
     expect(screen.queryByRole('heading', { level: 2, name: /Modifier/i })).not.toBeInTheDocument();
   });
 
-  it('renders the limited edit form from the admin entity payload', () => {
+  it('renders ticket-aligned labels and helper text for the admin entity edit form', () => {
     const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
     const mockedUseEntiteChain = vi.mocked(useEntiteChain);
 
@@ -145,10 +145,11 @@ describe('Admin entity edit route', () => {
     expect(mockedUseEntiteByIdAdmin).toHaveBeenCalledWith('root-ars');
     expect(screen.getByRole('heading', { level: 2, name: 'Modifier une entité' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /liste des entités/i })).toHaveAttribute('href', '/admin/entites');
+    expect(screen.getByText('Sauf mention contraire, les champs sont facultatifs.')).toBeInTheDocument();
 
-    expect(screen.getByLabelText(/Nom de l'entité/i)).toHaveValue('ARS Normandie');
-    expect(screen.getByLabelText(/Libellé de l'entité/i)).toHaveValue('ARS NOR');
-    expect(screen.getByRole('combobox', { name: /Actif dans SIRENA/i })).toHaveValue('oui');
+    expect(screen.getByLabelText(/Nom - libellé long \(obligatoire\)/i)).toHaveValue('ARS Normandie');
+    expect(screen.getByLabelText(/Nom court \(obligatoire\)/i)).toHaveValue('ARS NOR');
+    expect(screen.getByRole('combobox', { name: /Actif dans SIRENA \(obligatoire\)/i })).toHaveValue('oui');
     expect(screen.getByRole('option', { name: 'Sélectionnez une option' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Oui' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Non' })).toBeInTheDocument();
@@ -287,8 +288,8 @@ describe('Admin entity edit route', () => {
     expect(screen.getByRole('combobox', { name: /Actif dans SIRENA/i })).not.toHaveAttribute('required');
 
     const user = userEvent.setup();
-    await user.clear(screen.getByLabelText(/Nom de l'entité/i));
-    await user.clear(screen.getByLabelText(/Libellé de l'entité/i));
+    await user.clear(screen.getByLabelText(/Nom - libellé long/i));
+    await user.clear(screen.getByLabelText(/Nom court/i));
     fireEvent.change(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), { target: { value: '' } });
     await user.click(submitButton);
 
@@ -334,10 +335,10 @@ describe('Admin entity edit route', () => {
 
     const user = userEvent.setup();
 
-    await user.clear(screen.getByLabelText(/Nom de l'entité/i));
-    await user.type(screen.getByLabelText(/Nom de l'entité/i), 'ARS Bretagne');
-    await user.clear(screen.getByLabelText(/Libellé de l'entité/i));
-    await user.type(screen.getByLabelText(/Libellé de l'entité/i), 'ARS BRE');
+    await user.clear(screen.getByLabelText(/Nom - libellé long/i));
+    await user.type(screen.getByLabelText(/Nom - libellé long/i), 'ARS Bretagne');
+    await user.clear(screen.getByLabelText(/Nom court/i));
+    await user.type(screen.getByLabelText(/Nom court/i), 'ARS BRE');
     await user.clear(screen.getByLabelText(/Adresse électronique de notification/));
     await user.type(screen.getByLabelText(/Adresse électronique de notification/), 'notification@example.fr');
     await user.clear(screen.getAllByLabelText(/Adresse électronique/)[1]);
@@ -447,8 +448,8 @@ describe('Admin entity edit route', () => {
 
     const user = userEvent.setup();
 
-    await user.clear(screen.getByLabelText(/Nom de l'entité/i));
-    await user.type(screen.getByLabelText(/Nom de l'entité/i), 'ARS Bretagne');
+    await user.clear(screen.getByLabelText(/Nom - libellé long/i));
+    await user.type(screen.getByLabelText(/Nom - libellé long/i), 'ARS Bretagne');
     await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
 
     await waitFor(() => {
