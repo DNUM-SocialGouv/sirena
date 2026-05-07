@@ -15,7 +15,6 @@ import { uploadFileToMinio } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { getEntitesByRequeteId } from '../entites/entites.service.js';
 import { updateAcknowledgmentStep } from '../requeteEtapes/requetesEtapes.service.js';
 import { createUploadedFile } from '../uploadedFiles/uploadedFiles.service.js';
 
@@ -278,6 +277,7 @@ export function buildAcknowledgmentMessageText(
   const entiteAdmin = formatEntiteAdminString(entites);
   const entiteComplete = formatEntiteCompleteString(entites);
   return [
+    `Bonjour,`,
     `Votre dossier a bien été reçu sous le numéro ${requeteId}.`,
     `Merci d'avoir pris le temps de partager ces informations.`,
     `Il est désormais suivi par ${entiteAdmin}.`,
@@ -326,13 +326,24 @@ export async function sendManualAcknowledgmentEmail({
   logger.info({ requeteId, entiteId, etapeId }, 'Acknowledgment step claimed, proceeding to send email');
 
   try {
-    const [declarantResult, entites] = await Promise.all([
+    const [declarantResult, entite] = await Promise.all([
       prisma.requete.findUnique({
         where: { id: requeteId },
         include: { declarant: { include: { identite: true } } },
       }),
-      getEntitesByRequeteId(requeteId),
+      prisma.entite.findUnique({
+        where: { id: entiteId },
+        select: {
+          id: true,
+          nomComplet: true,
+          emailContactUsager: true,
+          telContactUsager: true,
+          adresseContactUsager: true,
+          entiteMereId: true,
+        },
+      }),
     ]);
+    const entites = entite ? [entite] : [];
 
     const declarantEmail = declarantResult?.declarant?.identite?.email;
     if (!declarantEmail) {
@@ -411,17 +422,20 @@ export async function sendManualAcknowledgmentEmail({
       logger.error({ requeteId, error: changelogError }, 'Failed to create changelog for manual acknowledgment email');
     }
   } catch (error) {
-    logger.error({ requeteId, entiteId, etapeId, error }, 'Failed to send manual acknowledgment email');
+    logger.error(
+      { requeteId, entiteId, etapeId, error },
+      'Failed to send manual acknowledgment email, rolling back step to A_FAIRE',
+    );
     try {
-      await prisma.requeteEtapeNote.create({
-        data: {
-          texte: "Erreur lors de l'envoi de l'e-mail d'accusé de réception. Veuillez contacter le support.",
-          authorId: null,
-          requeteEtapeId: etapeId,
-        },
+      await prisma.requeteEtape.update({
+        where: { id: etapeId },
+        data: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
       });
-    } catch (noteError) {
-      logger.error({ etapeId, error: noteError }, 'Failed to create error note on acknowledgment step');
+    } catch (rollbackError) {
+      logger.error(
+        { etapeId, error: rollbackError },
+        'Failed to rollback acknowledgment step status after send failure',
+      );
     }
     throw error;
   }

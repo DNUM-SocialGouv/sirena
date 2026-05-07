@@ -9,6 +9,7 @@ import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { fetchAcknowledgmentMessage } from '@/lib/api/processingSteps';
 import { HttpError } from '@/lib/api/tanstackQuery';
 import styles from './CreateNoteDrawer.module.css';
+import drawerStyles from './SendAcknowledgmentDrawer.module.css';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
@@ -29,6 +30,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
     const [isOpen, setIsOpen] = useState(false);
     const [step, setStep] = useState<StepType | null>(null);
     const [declarantEmail, setDeclarantEmail] = useState('');
+    const [subject, setSubject] = useState('');
     const [message, setMessage] = useState('');
     const [comment, setComment] = useState('');
     const [isLoadingMessage, setIsLoadingMessage] = useState(false);
@@ -50,6 +52,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
     const handleReset = () => {
       setStep(null);
       setDeclarantEmail('');
+      setSubject('');
       setMessage('');
       setComment('');
       setIsLoadingMessage(false);
@@ -64,6 +67,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
       try {
         const data = await fetchAcknowledgmentMessage(s.id);
         setDeclarantEmail(data.declarantEmail ?? '');
+        setSubject(data.subject);
         setMessage(data.message);
       } catch {
         toastManager.add({
@@ -133,20 +137,8 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
       <Drawer.Root variant="nonModal" withCloseButton={false} open={isOpen} onOpenChange={handleOpenChange}>
         <Drawer.Portal>
           <Drawer.Panel style={{ width: 'min(90vw, 600px)', maxWidth: '100%' }} titleId={titleId}>
-            <div
-              style={{
-                height: '100vh',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: 'auto',
-                  padding: '0 16px 88px 16px',
-                }}
-              >
+            <div className={drawerStyles.layout}>
+              <div className={drawerStyles.scrollArea}>
                 <div className="fr-container fr-mt-8w">
                   <div className={styles.topActions}>
                     <Button
@@ -166,25 +158,30 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                     <p className="fr-text--sm fr-text-mention--grey">Chargement du message...</p>
                   ) : (
                     <form>
-                      <Input
-                        label="Adresse électronique du déclarant"
-                        hintText="Ce champ est en lecture seule. Vous pouvez modifier l'adresse e-mail depuis les informations déclarant."
-                        nativeInputProps={{
-                          value: declarantEmail,
-                          readOnly: true,
-                          'aria-readonly': true,
-                        }}
-                      />
-                      <Input
-                        label="Ce message est généré automatiquement et ne peut pas être modifié"
-                        textArea={true}
-                        nativeTextAreaProps={{
-                          rows: 14,
-                          value: message,
-                          readOnly: true,
-                          'aria-readonly': true,
-                        }}
-                      />
+                      <div className="fr-form-group fr-mb-2w">
+                        <dl className={drawerStyles.dl}>
+                          <dt className="fr-label fr-mb-1w">
+                            Adresse électronique du déclarant
+                            <span className="fr-hint-text">
+                              Ce champ est en lecture seule. Vous pouvez modifier l'adresse e-mail depuis les
+                              informations déclarant.
+                            </span>
+                          </dt>
+                          <dd className={drawerStyles.emailField}>{declarantEmail}</dd>
+                        </dl>
+                      </div>
+                      <div className="fr-form-group fr-mb-2w">
+                        <p className="fr-label fr-mb-1w">
+                          Ce message est généré automatiquement et ne peut pas être modifié
+                        </p>
+                        <dl className={`${drawerStyles.dl} ${drawerStyles.dlInline}`}>
+                          <dt className={`fr-text--sm ${drawerStyles.subject}`}>
+                            <span className="fr-text--bold">Objet :</span>
+                          </dt>
+                          <dd className={`fr-text--sm fr-mb-1w ${drawerStyles.subject}`}>{subject}</dd>
+                        </dl>
+                        <div className={drawerStyles.messageField}>{message}</div>
+                      </div>
                       <Input
                         label="Commentaire personnalisé (facultatif)"
                         hintText="Vous pouvez ajouter des informations ou demander des précisions au déclarant. Ce commentaire sera intégré au message automatique."
