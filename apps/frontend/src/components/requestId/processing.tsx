@@ -82,11 +82,14 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 step.createdBy === null &&
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT &&
                 step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
+              const isAcknowledgmentMailSent =
+                step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
+                step.notes.some((note) => note.author === null && note.uploadedFiles.length > 0);
               const isDisabled =
                 index === data.data.length - 1 ||
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ||
                 isAutomaticallyUpdated ||
-                (step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT);
+                isAcknowledgmentMailSent;
               const isAcknowledgmentSendable =
                 isManualRequest &&
                 step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
