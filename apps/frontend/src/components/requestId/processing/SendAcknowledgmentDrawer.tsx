@@ -30,7 +30,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
     const [isOpen, setIsOpen] = useState(false);
     const [step, setStep] = useState<StepType | null>(null);
     const [declarantEmail, setDeclarantEmail] = useState('');
-    const [subject, setSubject] = useState('');
+
     const [message, setMessage] = useState('');
     const [comment, setComment] = useState('');
     const [isLoadingMessage, setIsLoadingMessage] = useState(false);
@@ -52,7 +52,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
     const handleReset = () => {
       setStep(null);
       setDeclarantEmail('');
-      setSubject('');
+
       setMessage('');
       setComment('');
       setIsLoadingMessage(false);
@@ -67,7 +67,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
       try {
         const data = await fetchAcknowledgmentMessage(s.id);
         setDeclarantEmail(data.declarantEmail ?? '');
-        setSubject(data.subject);
+
         setMessage(data.message);
       } catch {
         toastManager.add({
@@ -162,24 +162,23 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                         <dl className={drawerStyles.dl}>
                           <dt className="fr-label fr-mb-1w">
                             Adresse électronique du déclarant
-                            <span className="fr-hint-text">
-                              Ce champ est en lecture seule. Vous pouvez modifier l'adresse e-mail depuis les
-                              informations déclarant.
-                            </span>
+                            {declarantEmail && (
+                              <span className="fr-hint-text">
+                                Ce champ est en lecture seule. Vous pouvez modifier l'adresse e-mail depuis les
+                                informations déclarant.
+                              </span>
+                            )}
                           </dt>
-                          <dd className={drawerStyles.emailField}>{declarantEmail}</dd>
+                          <dd className={declarantEmail ? drawerStyles.emailField : 'fr-text--sm fr-error-text'}>
+                            {declarantEmail ||
+                              'L\'adresse électronique du déclarant n\'est pas renseignée. Veuillez la renseigner dans la section "Déclarant".'}
+                          </dd>
                         </dl>
                       </div>
                       <div className="fr-form-group fr-mb-2w">
                         <p className="fr-label fr-mb-1w">
                           Ce message est généré automatiquement et ne peut pas être modifié
                         </p>
-                        <dl className={`${drawerStyles.dl} ${drawerStyles.dlInline}`}>
-                          <dt className={`fr-text--sm ${drawerStyles.subject}`}>
-                            <span className="fr-text--bold">Objet :</span>
-                          </dt>
-                          <dd className={`fr-text--sm fr-mb-1w ${drawerStyles.subject}`}>{subject}</dd>
-                        </dl>
                         <div className={drawerStyles.messageField}>{message}</div>
                       </div>
                       <Input
