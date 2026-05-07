@@ -25,6 +25,10 @@ const EntiteAdminSchema = z.object({
   id: z.string(),
   nomComplet: z.string(),
   label: z.string(),
+  email: z.string(),
+  emailContactUsager: z.string(),
+  adresseContactUsager: z.string(),
+  telContactUsager: z.string(),
   isActive: z.boolean(),
 });
 
