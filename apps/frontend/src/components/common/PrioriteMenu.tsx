@@ -21,7 +21,7 @@ const prioriteClassMap: Record<string, string> = {
 };
 
 export function PrioriteMenu({ value, onChange, disabled, onOpen, onClose }: PrioriteMenuProps) {
-  const { isOpen, toggle, triggerRef, panelRef, onPanelBlur } = useDisclosureMenu({ onOpen, onClose });
+  const { isOpen, toggle, triggerRef, panelRef } = useDisclosureMenu({ onOpen, onClose });
   const [selectedValue, setSelectedValue] = useState(value);
   const menuId = useId();
 
@@ -50,7 +50,9 @@ export function PrioriteMenu({ value, onChange, disabled, onOpen, onClose }: Pri
         nativeInputProps: {
           value: badge.value,
           checked: selectedValue === badge.value,
-          onChange: () => handleSelect(badge.value),
+          onChange: () => {
+            handleSelect(badge.value);
+          },
         },
       })),
       {
@@ -94,12 +96,7 @@ export function PrioriteMenu({ value, onChange, disabled, onOpen, onClose }: Pri
         />
       </button>
       {isOpen && (
-        <div
-          id={menuId}
-          ref={panelRef}
-          className={prioriteStyles['priorite-filter__dropdown']}
-          onBlurCapture={onPanelBlur}
-        >
+        <div id={menuId} ref={panelRef} className={prioriteStyles['priorite-filter__dropdown']}>
           <RadioButtons legend="Choisir une priorité" name={`priorite-${menuId}`} options={options} />
         </div>
       )}
