@@ -159,21 +159,23 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                   ) : (
                     <form>
                       <div className="fr-form-group fr-mb-2w">
-                        <dl className={drawerStyles.dl}>
-                          <dt className="fr-label fr-mb-1w">
-                            Adresse électronique du déclarant
-                            {declarantEmail && (
+                        {declarantEmail ? (
+                          <dl className={drawerStyles.dl}>
+                            <dt className="fr-label fr-mb-1w">
+                              Adresse électronique du déclarant
                               <span className="fr-hint-text">
                                 Ce champ est en lecture seule. Vous pouvez modifier l'adresse e-mail depuis les
                                 informations déclarant.
                               </span>
-                            )}
-                          </dt>
-                          <dd className={declarantEmail ? drawerStyles.emailField : 'fr-text--sm fr-error-text'}>
-                            {declarantEmail ||
-                              'L\'adresse électronique du déclarant n\'est pas renseignée. Veuillez la renseigner dans la section "Déclarant".'}
-                          </dd>
-                        </dl>
+                            </dt>
+                            <dd className={drawerStyles.emailField}>{declarantEmail}</dd>
+                          </dl>
+                        ) : (
+                          <p className="fr-text--sm fr-error-text">
+                            L&apos;adresse électronique du déclarant n&apos;est pas renseignée. Veuillez la renseigner
+                            dans la section &quot;Déclarant&quot;.
+                          </p>
+                        )}
                       </div>
                       <div className="fr-form-group fr-mb-2w">
                         <p className="fr-label fr-mb-1w">
