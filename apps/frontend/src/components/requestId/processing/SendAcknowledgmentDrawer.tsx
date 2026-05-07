@@ -44,9 +44,11 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
     const titleRef = useRef<HTMLHeadingElement>(null);
 
     useEffect(() => {
-      if (isOpen) {
+      if (!isOpen) return;
+      const timeout = setTimeout(() => {
         titleRef.current?.focus();
-      }
+      }, 0);
+      return () => clearTimeout(timeout);
     }, [isOpen]);
 
     const handleReset = () => {
@@ -180,7 +182,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                         <p className="fr-label fr-mb-1w">
                           Ce message est généré automatiquement et ne peut pas être modifié
                         </p>
-                        <div className={drawerStyles.messageField}>{message}</div>
+                        <p className={drawerStyles.messageField}>{message}</p>
                       </div>
                       <Input
                         label="Commentaire personnalisé (facultatif)"
