@@ -107,6 +107,7 @@ async function attachEmailPdfToStep(
     subject?: string;
     substitutions?: Record<string, unknown>;
   },
+  authorId?: string | null,
 ): Promise<void> {
   const logger = getLoggerStore();
 
@@ -216,7 +217,7 @@ async function attachEmailPdfToStep(
       const note = await prisma.requeteEtapeNote.create({
         data: {
           texte: `Email d'accusé de réception envoyé le ${emailInfo.sentDate.toLocaleString('fr-FR')}`,
-          authorId: null,
+          authorId: authorId ?? null,
           requeteEtapeId: etape.id,
           uploadedFiles: {
             connect: [{ id: uploadedFile.id }],
@@ -412,12 +413,13 @@ export async function sendManualAcknowledgmentEmail({
         text: message,
       });
 
-      await attachEmailPdfToStep(requeteId, entiteId, emailPdf, {
-        from,
-        to: declarantEmail,
-        sentDate,
-        subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
-      });
+      await attachEmailPdfToStep(
+        requeteId,
+        entiteId,
+        emailPdf,
+        { from, to: declarantEmail, sentDate, subject: ACKNOWLEDGMENT_EMAIL_SUBJECT },
+        userId,
+      );
     } catch (pdfError) {
       logger.error(
         { requeteId, entiteId, error: pdfError },
