@@ -47,7 +47,16 @@ vi.mock('@sirena/ui', async () => {
   };
 });
 
-const buildSuccessQuery = (data: { id: string; nomComplet: string; label: string; isActive: boolean }) =>
+const buildSuccessQuery = (data: {
+  id: string;
+  nomComplet: string;
+  label: string;
+  email?: string;
+  emailContactUsager?: string;
+  adresseContactUsager?: string;
+  telContactUsager?: string;
+  isActive: boolean;
+}) =>
   ({
     data,
     isPending: false,
@@ -291,7 +300,7 @@ describe('Admin entity edit route', () => {
     expect(editEntiteAdminMutateAsyncSpy).not.toHaveBeenCalled();
   });
 
-  it('submits the limited editable fields to the admin edit mutation', async () => {
+  it('submits notification and usager contact fields to the admin edit mutation', async () => {
     const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
     const mockedUseEntiteChain = vi.mocked(useEntiteChain);
 
@@ -300,6 +309,10 @@ describe('Admin entity edit route', () => {
         id: 'root-ars',
         nomComplet: 'ARS Normandie',
         label: 'ARS NOR',
+        email: 'old-notification@example.fr',
+        emailContactUsager: 'old-contact@example.fr',
+        adresseContactUsager: 'Ancienne adresse',
+        telContactUsager: '0100000000',
         isActive: true,
       }),
     );
@@ -310,6 +323,10 @@ describe('Admin entity edit route', () => {
       id: 'root-ars',
       nomComplet: 'ARS Bretagne',
       label: 'ARS BRE',
+      email: 'notification@example.fr',
+      emailContactUsager: 'contact-usager@example.fr',
+      adresseContactUsager: '1 rue de la République\n75000 Paris',
+      telContactUsager: '0102030405',
       isActive: false,
     });
 
@@ -321,6 +338,14 @@ describe('Admin entity edit route', () => {
     await user.type(screen.getByLabelText(/Nom de l'entité/i), 'ARS Bretagne');
     await user.clear(screen.getByLabelText(/Libellé de l'entité/i));
     await user.type(screen.getByLabelText(/Libellé de l'entité/i), 'ARS BRE');
+    await user.clear(screen.getByLabelText(/Adresse électronique de notification/));
+    await user.type(screen.getByLabelText(/Adresse électronique de notification/), 'notification@example.fr');
+    await user.clear(screen.getAllByLabelText(/Adresse électronique/)[1]);
+    await user.type(screen.getAllByLabelText(/Adresse électronique/)[1], 'contact-usager@example.fr');
+    await user.clear(screen.getByLabelText(/Adresse postale/));
+    await user.type(screen.getByLabelText(/Adresse postale/), '1 rue de la République\n75000 Paris');
+    await user.clear(screen.getByLabelText(/Numéro de téléphone/));
+    await user.type(screen.getByLabelText(/Numéro de téléphone/), '0102030405');
     await user.selectOptions(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), 'non');
     await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
 
@@ -330,7 +355,67 @@ describe('Admin entity edit route', () => {
         input: {
           nomComplet: 'ARS Bretagne',
           label: 'ARS BRE',
+          email: 'notification@example.fr',
+          emailContactUsager: 'contact-usager@example.fr',
+          adresseContactUsager: '1 rue de la République\n75000 Paris',
+          telContactUsager: '0102030405',
           isActive: false,
+        },
+      });
+    });
+  });
+
+  it('submits empty strings when optional contact fields are cleared', async () => {
+    const mockedUseEntiteByIdAdmin = vi.mocked(useEntiteByIdAdmin);
+    const mockedUseEntiteChain = vi.mocked(useEntiteChain);
+
+    mockedUseEntiteByIdAdmin.mockReturnValue(
+      buildSuccessQuery({
+        id: 'root-ars',
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        email: 'notification@example.fr',
+        emailContactUsager: 'contact-usager@example.fr',
+        adresseContactUsager: '1 rue de la République',
+        telContactUsager: '0102030405',
+        isActive: true,
+      }),
+    );
+    mockedUseEntiteChain.mockReturnValue(
+      buildChainSuccessQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', disabled: false }]),
+    );
+    editEntiteAdminMutateAsyncSpy.mockResolvedValueOnce({
+      id: 'root-ars',
+      nomComplet: 'ARS Normandie',
+      label: 'ARS NOR',
+      email: '',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+      isActive: true,
+    });
+
+    render(<RouteComponent />);
+
+    const user = userEvent.setup();
+
+    await user.clear(screen.getByLabelText(/Adresse électronique de notification/));
+    await user.clear(screen.getAllByLabelText(/Adresse électronique/)[1]);
+    await user.clear(screen.getByLabelText(/Adresse postale/));
+    await user.clear(screen.getByLabelText(/Numéro de téléphone/));
+    await user.click(screen.getByRole('button', { name: /valider les modifications/i }));
+
+    await waitFor(() => {
+      expect(editEntiteAdminMutateAsyncSpy).toHaveBeenCalledWith({
+        id: 'root-ars',
+        input: {
+          nomComplet: 'ARS Normandie',
+          label: 'ARS NOR',
+          email: '',
+          emailContactUsager: '',
+          adresseContactUsager: '',
+          telContactUsager: '',
+          isActive: true,
         },
       });
     });

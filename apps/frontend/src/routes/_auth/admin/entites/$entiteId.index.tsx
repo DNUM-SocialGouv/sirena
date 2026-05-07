@@ -2,6 +2,7 @@ import Button from '@codegouvfr/react-dsfr/Button';
 import Input from '@codegouvfr/react-dsfr/Input';
 import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES } from '@sirena/common/constants';
+import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useRef, useState } from 'react';
@@ -15,6 +16,10 @@ import { getEditEntiteTitle } from './-helpers';
 const EditEntiteFormSchema = z.object({
   nomComplet: z.string().trim().min(1, 'Le champ "Nom de l’entité" est vide. Veuillez le renseigner.'),
   label: z.string().trim().min(1, 'Le champ "Libellé de l’entité" est vide. Veuillez le renseigner.'),
+  email: optionalEmailSchema,
+  emailContactUsager: optionalEmailSchema,
+  adresseContactUsager: z.string().trim(),
+  telContactUsager: optionalPhoneSchema,
   isActive: z.enum(['oui', 'non'], 'Le statut actif dans SIRENA est obligatoire. Veuillez sélectionner une option.'),
 });
 
@@ -41,6 +46,10 @@ export function RouteComponent() {
   const [formData, setFormData] = useState({
     nomComplet: '',
     label: '',
+    email: '',
+    emailContactUsager: '',
+    adresseContactUsager: '',
+    telContactUsager: '',
     isActive: '',
   });
 
@@ -56,6 +65,10 @@ export function RouteComponent() {
     setFormData({
       nomComplet: entiteQuery.data.nomComplet,
       label: entiteQuery.data.label,
+      email: entiteQuery.data.email ?? '',
+      emailContactUsager: entiteQuery.data.emailContactUsager ?? '',
+      adresseContactUsager: entiteQuery.data.adresseContactUsager ?? '',
+      telContactUsager: entiteQuery.data.telContactUsager ?? '',
       isActive: entiteQuery.data.isActive ? 'oui' : 'non',
     });
   }, [entiteQuery.data]);
@@ -77,7 +90,8 @@ export function RouteComponent() {
   }
 
   const handleInputChange =
-    (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    (field: keyof typeof formData) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
       const value = e.target.value;
 
       setFormData((prev) => {
@@ -129,6 +143,9 @@ export function RouteComponent() {
         id: entiteId,
         input: {
           ...result.data,
+          email: result.data.email ?? '',
+          emailContactUsager: result.data.emailContactUsager ?? '',
+          telContactUsager: result.data.telContactUsager ?? '',
           isActive: result.data.isActive === 'oui',
         },
       });
@@ -198,6 +215,65 @@ export function RouteComponent() {
               }}
             />
 
+            <Input
+              className="fr-fieldset__content"
+              label="Adresse électronique de notification"
+              hintText="Boîte e-mail générique pour la notification des nouvelles requêtes. Exemple : prenom.nom@exemple.com"
+              state={validationErrors.email ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.email}
+              nativeInputProps={{
+                name: 'email',
+                value: formData.email,
+                onChange: handleInputChange('email'),
+              }}
+            />
+          </fieldset>
+
+          <fieldset className="fr-fieldset">
+            <legend className="fr-fieldset__legend">Éléments de contact pour l’usager</legend>
+
+            <Input
+              className="fr-fieldset__content"
+              label="Adresse électronique"
+              hintText="Exemple : prenom.nom@exemple.com"
+              state={validationErrors.emailContactUsager ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.emailContactUsager}
+              nativeInputProps={{
+                name: 'emailContactUsager',
+                value: formData.emailContactUsager,
+                onChange: handleInputChange('emailContactUsager'),
+              }}
+            />
+
+            <Input
+              className="fr-fieldset__content"
+              label="Adresse postale"
+              hintText="Adresse postale complète pour l’usager : service, numéro et libellé de voie, code postal, ville."
+              textArea
+              nativeTextAreaProps={{
+                name: 'adresseContactUsager',
+                rows: 4,
+                value: formData.adresseContactUsager,
+                onChange: handleInputChange('adresseContactUsager'),
+              }}
+            />
+
+            <Input
+              className="fr-fieldset__content"
+              label="Numéro de téléphone"
+              hintText="Format attendu : 10 chiffres (français) ou +33XXXXXXXXXX (international)"
+              state={validationErrors.telContactUsager ? 'error' : 'default'}
+              stateRelatedMessage={validationErrors.telContactUsager}
+              nativeInputProps={{
+                name: 'telContactUsager',
+                type: 'tel',
+                value: formData.telContactUsager,
+                onChange: handleInputChange('telContactUsager'),
+              }}
+            />
+          </fieldset>
+
+          <fieldset className="fr-fieldset">
             <Select
               className="fr-fieldset__content"
               label="Actif dans SIRENA"
