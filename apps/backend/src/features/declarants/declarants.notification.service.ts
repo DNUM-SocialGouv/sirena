@@ -267,19 +267,22 @@ type EntiteForMessage = {
   entiteMereId: string | null;
 };
 
-const LOGO_URL = 'https://sirena-sante.social.gouv.fr/republique_francaise_rvb.png';
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 function buildAcknowledgmentMessageHtml(text: string): string {
+  const logoUrl = `${envVars.FRONTEND_URI}/republique_francaise_rvb.png`;
   const lines = text
     .split('\n')
-    .map((line) => (line.trim() === '' ? '<br>' : `<p style="margin:0 0 4px 0">${line}</p>`))
+    .map((line) => (line.trim() === '' ? '<br>' : `<p style="margin:0 0 4px 0">${escapeHtml(line)}</p>`))
     .join('\n');
   return `<!DOCTYPE html>
 <html lang="fr">
 <body style="font-family:Arial,sans-serif;font-size:14px;color:#333;max-width:600px;margin:0 auto;padding:20px">
   ${lines}
   <br>
-  <img src="${LOGO_URL}" alt="République Française" style="height:80px;margin-top:24px">
+  <img src="${escapeHtml(logoUrl)}" alt="République Française" style="height:80px;margin-top:24px">
 </body>
 </html>`;
 }
