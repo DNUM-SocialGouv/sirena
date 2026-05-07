@@ -294,6 +294,37 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('false')
     .transform((val) => val === 'true'),
+  REDIS_MIGRATION_QUEUE_NAME: z
+    .string()
+    .optional()
+    .default(process.env.REDIS_MIGRATION_QUEUE_NAME ?? 'sirec-id-to-migrate'),
+  MYSQL_SIREC_HOST: z.string({
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_HOST est requise" : 'Not a string',
+  }),
+  MYSQL_SIREC_DB: z.string({
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_DB est requise" : 'Not a string',
+  }),
+  MYSQL_SIREC_PORT: z
+    .string()
+    .optional()
+    .default('3306')
+    .transform((val) => {
+      const parsed = Number.parseInt(val, 10);
+      if (Number.isNaN(parsed)) {
+        throw new Error("La variable d'environnement MYSQL_SIREC_PORT doit etre un integer");
+      }
+      return parsed;
+    }),
+  MYSQL_SIREC_USER: z.string({
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_USER est requise" : 'Not a string',
+  }),
+  MYSQL_SIREC_PASSWORD: z.string({
+    error: (issue) =>
+      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_PASSWORD est requise" : 'Not a string',
+  }),
   APP_ENV: z
     .enum(APP_ENV_VALUES)
     .optional()

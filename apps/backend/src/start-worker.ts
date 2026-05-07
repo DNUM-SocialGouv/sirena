@@ -4,6 +4,7 @@ import { createMonitoringServer } from './features/monitoring/server.js';
 import { createDefaultLogger } from './helpers/pino.js';
 import { cronWorker } from './jobs/worker/cron.worker.js';
 import { createFileProcessingWorker } from './jobs/workers/fileProcessing.worker.js';
+import { createSirecMigrationWorker } from './jobs/workers/sirecMigration.worker.js';
 import './libs/instrument.js';
 
 const logger = createDefaultLogger();
@@ -20,6 +21,9 @@ cronWorker.on('failed', (job, err) => {
 
 const fileProcessingWorker = createFileProcessingWorker();
 logger.info(`[worker] Starting file processing worker for queue "${fileProcessingWorker.name}"`);
+
+const sirecMigrationWorker = createSirecMigrationWorker();
+logger.info(`[worker] Starting SIREC migration worker for queue "${sirecMigrationWorker.name}"`);
 
 const monitoringServer = createMonitoringServer({
   getMetrics: getPrometheusMetrics,
@@ -43,6 +47,7 @@ const shutdown = async () => {
 
   await cronWorker.close();
   await fileProcessingWorker.close();
+  await sirecMigrationWorker.close();
   process.exit(0);
 };
 
