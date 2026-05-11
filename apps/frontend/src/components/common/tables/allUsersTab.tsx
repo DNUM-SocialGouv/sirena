@@ -230,12 +230,12 @@ export function AllUsersTab() {
         <div className="fr-grid-row">
           <div className="fr-col-12 fr-col-md-5">
             <SearchBar
-              label="Rechercher un utilisateur"
+              label="Rechercher un utilisateur par nom, prénom ou e-mail"
               onButtonClick={handleSearch}
               renderInput={(inputProps) => (
                 <input
                   {...inputProps}
-                  placeholder="Nom, prénom ou email"
+                  placeholder=""
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -249,7 +249,8 @@ export function AllUsersTab() {
               <div className="fr-grid-row fr-grid-row--middle">
                 <div className="fr-col-auto">
                   <p className="fr-text--md fr-mb-0">
-                    <strong>{total}</strong> résultat{total !== 1 ? 's' : ''} pour "{queries.search}"
+                    <span className="fr-text--bold">{total}</span> résultat{total !== 1 ? 's' : ''} pour "
+                    {queries.search}"
                   </p>
                 </div>
                 <div className="fr-col-auto fr-ml-1w">
@@ -260,7 +261,6 @@ export function AllUsersTab() {
                     iconPosition="right"
                     size="small"
                     onClick={handleClearSearch}
-                    aria-label="Effacer la recherche"
                     title="Effacer la recherche"
                   >
                     Effacer la recherche

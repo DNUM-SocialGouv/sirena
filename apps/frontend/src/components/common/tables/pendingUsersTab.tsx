@@ -219,12 +219,12 @@ export function PendingUsersTab() {
         <div className="fr-grid-row">
           <div className="fr-col-12 fr-col-md-5">
             <SearchBar
-              label="Rechercher un utilisateur"
+              label="Rechercher un utilisateur par nom, prénom ou e-mail"
               onButtonClick={handleSearch}
               renderInput={(inputProps) => (
                 <input
                   {...inputProps}
-                  placeholder="Nom, prénom ou email"
+                  placeholder=""
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
