@@ -329,8 +329,10 @@ describe('Admin entity edit route', () => {
     fireEvent.change(screen.getByRole('combobox', { name: /Actif dans SIRENA/i }), { target: { value: '' } });
     await user.click(submitButton);
 
-    expect(await screen.findByText('Le champ "Nom de l’entité" est vide. Veuillez le renseigner.')).toBeInTheDocument();
-    expect(screen.getByText('Le champ "Libellé de l’entité" est vide. Veuillez le renseigner.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Le champ "Nom - libellé long" est vide. Veuillez le renseigner.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Le champ "Nom court" est vide. Veuillez le renseigner.')).toBeInTheDocument();
     expect(
       screen.getByText('Le statut actif dans SIRENA est obligatoire. Veuillez sélectionner une option.'),
     ).toBeInTheDocument();
