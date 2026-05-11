@@ -6,7 +6,7 @@ import { requireAuthAndRoles } from '@/lib/auth-guards';
 export const Route = createFileRoute('/_auth/_user/request/$requestId')({
   beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.READER, ROLES.WRITER]),
   params: {
-    parse: (params) => ({
+    parse: (params: { requestId: string }) => ({
       requestId: z.string().parse(params.requestId),
     }),
   },
