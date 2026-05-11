@@ -21,10 +21,7 @@ export function RequetesEntiteQuickFilters() {
 
   const isHautePrioriteOnly = queries.prioriteId === REQUETE_PRIORITE_TYPES.HAUTE;
 
-  const isAssignedToServiceOnly = useMemo(() => {
-    if (!topProfileEntiteId) return false;
-    return queries.entiteId === topProfileEntiteId;
-  }, [queries.entiteId, topProfileEntiteId]);
+  const isAssignedToServiceOnly = !!topProfileEntiteId && queries.entiteId === topProfileEntiteId;
 
   const arsDepartements = useMemo(() => profile?.topEntiteDepartements ?? [], [profile?.topEntiteDepartements]);
   const [isDepartementDropdownOpen, setIsDepartementDropdownOpen] = useState(false);
@@ -96,7 +93,7 @@ export function RequetesEntiteQuickFilters() {
         state="default"
         options={[
           {
-            label: 'Prioritaires',
+            label: 'Priorité haute',
             nativeInputProps: {
               name: 'quick-filter-priorite',
               value: 'haute-priorite',
