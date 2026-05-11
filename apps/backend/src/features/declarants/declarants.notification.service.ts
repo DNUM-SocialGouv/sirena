@@ -276,7 +276,9 @@ function buildAcknowledgmentMessageHtml(text: string): string {
   const lines = text
     .split('\n')
     .map((line) =>
-      line.trim() === '' ? '<div style="margin:0 0 12px 0"></div>' : `<p style="margin:0 0 4px 0">${escapeHtml(line)}</p>`,
+      line.trim() === ''
+        ? '<div style="margin:0 0 12px 0"></div>'
+        : `<p style="margin:0 0 4px 0">${escapeHtml(line)}</p>`,
     )
     .join('\n');
   return `<!DOCTYPE html>
