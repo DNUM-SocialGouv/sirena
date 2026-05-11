@@ -5,7 +5,7 @@ import { authHeaders, buildAuthCookieHeader } from '../lib/auth.js';
 const BODY_TRUNC = 800;
 
 const truncate = (s) => {
-  if (!s) return s;
+  if (s == null) return '';
   return s.length > BODY_TRUNC ? `${s.slice(0, BODY_TRUNC)}…[+${s.length - BODY_TRUNC} more]` : s;
 };
 
@@ -37,7 +37,9 @@ const logResponse = (label, res) => {
 
 export function debugJourney() {
   const cookie = buildAuthCookieHeader();
-  const [name, token] = cookie.split('=');
+  const separator = cookie.indexOf('=');
+  const name = cookie.slice(0, separator);
+  const token = cookie.slice(separator + 1);
 
   console.log('=== k6 debug run ===');
   console.log(`baseUrl=${config.baseUrl}`);
@@ -52,6 +54,9 @@ export function debugJourney() {
 
   const params = { headers: authHeaders() };
 
+  const health = http.get(`${config.baseUrl}/health`, { tags: { endpoint: 'health' } });
+  logResponse('health', health);
+
   const profile = http.get(`${config.baseUrl}/profile`, { ...params, tags: { endpoint: 'profile' } });
   logResponse('profile', profile);
 
@@ -63,7 +68,4 @@ export function debugJourney() {
     tags: { endpoint: 'requetes_list' },
   });
   logResponse('requetes_list', list);
-
-  const health = http.get(`${config.baseUrl}/health`, { tags: { endpoint: 'health' } });
-  logResponse('health', health);
 }
