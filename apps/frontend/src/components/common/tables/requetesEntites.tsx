@@ -299,11 +299,11 @@ export function RequetesEntite() {
       const isOpen = row.statutId === REQUETE_STATUT_TYPES.NOUVEAU || row.statutId === REQUETE_STATUT_TYPES.EN_COURS;
       const isOver90Days = isOpen && Date.now() - createdAt.getTime() > 90 * 24 * 60 * 60 * 1000;
       return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div className="requetesEntitesTable__reception-date-cell">
           {createdAt.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
           {isOver90Days && (
             <Badge severity="warning" noIcon small>
-              +90 jours
+              <span className="fr-sr-only">Dossier reçu depuis</span>+90 jours
             </Badge>
           )}
         </div>
