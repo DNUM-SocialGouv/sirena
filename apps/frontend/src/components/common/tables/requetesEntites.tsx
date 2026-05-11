@@ -3,7 +3,7 @@ import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import type { RequetePrioriteType, RequeteStatutType } from '@sirena/common/constants';
-import { entiteTypes } from '@sirena/common/constants';
+import { entiteTypes, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
@@ -16,6 +16,7 @@ import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
 import { RequetePrioriteTag, RequeteStatutTag } from '../RequeteStatutTag';
 import { renderAffectationCell, renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
 import './requetesEntites.css';
+import Badge from '@codegouvfr/react-dsfr/Badge';
 
 type RequeteEntiteRow = NonNullable<Awaited<ReturnType<typeof useRequetesEntite>>['data']>['data'][number] & {
   id: string;
@@ -293,15 +294,21 @@ export function RequetesEntite() {
 
   const cells: Cells<RequeteEntiteRow> = {
     'requete.id': (row) => <span className="one-line">{row.requete.id}</span>,
-    'requete.receptionDate': (row) => (
-      <div>
-        {new Date(row.requete.createdAt).toLocaleDateString('fr-FR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        })}
-      </div>
-    ),
+    'requete.receptionDate': (row) => {
+      const createdAt = new Date(row.requete.createdAt);
+      const isOpen = row.statutId === REQUETE_STATUT_TYPES.NOUVEAU || row.statutId === REQUETE_STATUT_TYPES.EN_COURS;
+      const isOver90Days = isOpen && Date.now() - createdAt.getTime() > 90 * 24 * 60 * 60 * 1000;
+      return (
+        <div className="requetesEntitesTable__reception-date-cell">
+          {createdAt.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+          {isOver90Days && (
+            <Badge severity="warning" noIcon small>
+              <span className="fr-sr-only">Dossier reçu depuis</span>+90 jours
+            </Badge>
+          )}
+        </div>
+      );
+    },
     'custom:statut': (row) => {
       return (
         <div className="requetesEntitesTable__statut-cell">
