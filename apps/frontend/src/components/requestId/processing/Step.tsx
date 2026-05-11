@@ -120,9 +120,19 @@ const getStepSubtitle = (
     );
   }
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
-    return statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT
-      ? `Envoyé automatiquement le ${formatDate(updatedAt)}`
-      : `Ajouté automatiquement le ${formatDate(createdAt)}`;
+    if (statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
+      const sendNote = notes.find((note) => note.uploadedFiles.length > 0);
+      const isManualRequest = !!requete?.createdBy;
+      if (isManualRequest && sendNote?.author) {
+        return (
+          <>
+            Envoyé le {formatDate(updatedAt)} par {formatAgent(sendNote.author)}
+          </>
+        );
+      }
+      return `Envoyé automatiquement le ${formatDate(updatedAt)}`;
+    }
+    return `Ajouté automatiquement le ${formatDate(createdAt)}`;
   }
   return formatStepCreationInfo(createdBy, createdAt);
 };

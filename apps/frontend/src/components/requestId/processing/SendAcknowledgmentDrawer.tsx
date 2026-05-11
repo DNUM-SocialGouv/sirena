@@ -30,7 +30,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
     const [isOpen, setIsOpen] = useState(false);
     const [step, setStep] = useState<StepType | null>(null);
     const [declarantEmail, setDeclarantEmail] = useState('');
-    const [subject, setSubject] = useState('');
+
     const [message, setMessage] = useState('');
     const [comment, setComment] = useState('');
     const [isLoadingMessage, setIsLoadingMessage] = useState(false);
@@ -44,15 +44,17 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
     const titleRef = useRef<HTMLHeadingElement>(null);
 
     useEffect(() => {
-      if (isOpen) {
+      if (!isOpen) return;
+      const timeout = setTimeout(() => {
         titleRef.current?.focus();
-      }
+      }, 0);
+      return () => clearTimeout(timeout);
     }, [isOpen]);
 
     const handleReset = () => {
       setStep(null);
       setDeclarantEmail('');
-      setSubject('');
+
       setMessage('');
       setComment('');
       setIsLoadingMessage(false);
@@ -67,7 +69,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
       try {
         const data = await fetchAcknowledgmentMessage(s.id);
         setDeclarantEmail(data.declarantEmail ?? '');
-        setSubject(data.subject);
+
         setMessage(data.message);
       } catch {
         toastManager.add({
@@ -159,28 +161,28 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                   ) : (
                     <form>
                       <div className="fr-form-group fr-mb-2w">
-                        <dl className={drawerStyles.dl}>
-                          <dt className="fr-label fr-mb-1w">
-                            Adresse électronique du déclarant
-                            <span className="fr-hint-text">
-                              Ce champ est en lecture seule. Vous pouvez modifier l'adresse e-mail depuis les
-                              informations déclarant.
-                            </span>
-                          </dt>
-                          <dd className={drawerStyles.emailField}>{declarantEmail}</dd>
-                        </dl>
+                        {declarantEmail ? (
+                          <dl className={drawerStyles.dl}>
+                            <dt className="fr-label fr-mb-1w">
+                              Adresse électronique du déclarant
+                              <span className="fr-hint-text">
+                                Pour modifier cette adresse, rendez-vous dans la section Déclarant.
+                              </span>
+                            </dt>
+                            <dd className={drawerStyles.emailField}>{declarantEmail}</dd>
+                          </dl>
+                        ) : (
+                          <p className="fr-text--sm fr-error-text">
+                            L&apos;adresse électronique du déclarant n&apos;est pas renseignée. Veuillez la renseigner
+                            dans la section &quot;Déclarant&quot;.
+                          </p>
+                        )}
                       </div>
                       <div className="fr-form-group fr-mb-2w">
                         <p className="fr-label fr-mb-1w">
                           Ce message est généré automatiquement et ne peut pas être modifié
                         </p>
-                        <dl className={`${drawerStyles.dl} ${drawerStyles.dlInline}`}>
-                          <dt className={`fr-text--sm ${drawerStyles.subject}`}>
-                            <span className="fr-text--bold">Objet :</span>
-                          </dt>
-                          <dd className={`fr-text--sm fr-mb-1w ${drawerStyles.subject}`}>{subject}</dd>
-                        </dl>
-                        <div className={drawerStyles.messageField}>{message}</div>
+                        <p className={drawerStyles.messageField}>{message}</p>
                       </div>
                       <Input
                         label="Commentaire personnalisé (facultatif)"
