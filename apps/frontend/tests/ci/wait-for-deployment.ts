@@ -61,24 +61,23 @@ async function checkBackendVersion(): Promise<boolean> {
 
 async function checkFrontendVersion(): Promise<boolean> {
   try {
-    console.log(`🔍 Checking frontend version at ${FRONTEND_URL}/env.js...`);
+    console.log(`🔍 Checking frontend version at ${FRONTEND_URL}...`);
 
     if (!FRONTEND_URL) {
       console.error('❌ FRONTEND_URL environment variable is required');
       process.exit(1);
     }
 
-    const envJsUrl = `${FRONTEND_URL}/env.js`;
-    const response = await fetch(envJsUrl);
+    const response = await fetch(FRONTEND_URL);
     if (!response.ok) {
       console.log(`❌ Frontend HTTP ${response.status}: ${response.statusText}`);
       return false;
     }
 
-    const envJs = await response.text();
+    const html = await response.text();
 
-    const versionMatch = envJs.match(/"?APP_VERSION"?:\s*"([^"]*)"/);
-    const deployedVersion = versionMatch?.[1] || undefined;
+    const versionMatch = html.match(/<meta name="app-version" content="([^"]+)"/);
+    const deployedVersion = versionMatch?.[1];
 
     console.log(`📋 Frontend Expected: ${EXPECTED_VERSION}`);
     console.log(`📋 Frontend Deployed: ${deployedVersion}`);

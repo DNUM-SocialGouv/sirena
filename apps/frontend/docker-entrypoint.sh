@@ -9,7 +9,6 @@ window.__ENV__ = {
   APP_ENV: "${APP_ENV:-}",
   MATOMO_URL: "${MATOMO_URL:-}",
   MATOMO_SITE_ID: "${MATOMO_SITE_ID:-}",
-  APP_VERSION: "${APP_VERSION:-}",
 };
 EOF
 
