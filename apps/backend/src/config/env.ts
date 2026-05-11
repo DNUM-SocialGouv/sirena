@@ -78,7 +78,6 @@ const processEnv = {
   // Affectation
   AFFECTATION_DEBUG: process.env.AFFECTATION_DEBUG,
   // Migration SIREC
-  REDIS_MIGRATION_QUEUE_NAME: process.env.REDIS_MIGRATION_QUEUE_NAME,
   MYSQL_SIREC_HOST: process.env.MYSQL_SIREC_HOST,
   MYSQL_SIREC_PORT: process.env.MYSQL_SIREC_PORT,
   MYSQL_SIREC_DB: process.env.MYSQL_SIREC_DB,

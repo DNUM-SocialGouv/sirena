@@ -294,10 +294,6 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('false')
     .transform((val) => val === 'true'),
-  REDIS_MIGRATION_QUEUE_NAME: z
-    .string()
-    .optional()
-    .default(process.env.REDIS_MIGRATION_QUEUE_NAME ?? 'sirec-id-to-migrate'),
   MYSQL_SIREC_HOST: z.string({
     error: (issue) =>
       issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_HOST est requise" : 'Not a string',

@@ -1,12 +1,11 @@
 import { type Job, Worker } from 'bullmq';
-import { envVars } from '../../config/env.js';
 import { connection } from '../../config/redis.js';
 import { fetchSirecReclamationById } from '../../features/sirecMigration/sirecMigration.repository.js';
 import { getRequeteIdFromSirecId, saveRequeteFromSirec } from '../../features/sirecMigration/sirecMigration.service.js';
 import { transformSirecReclamation } from '../../features/sirecMigration/sirecMigration.transformer.js';
 import { createDefaultLogger } from '../../helpers/pino.js';
 import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
-import type { SirecMigrationJobData } from '../queues/sirecMigration.queue.js';
+import { SIREC_MIGRATION_QUEUE_NAME, type SirecMigrationJobData } from '../queues/sirecMigration.queue.js';
 
 const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> => {
   const { sirecId } = job.data;
@@ -40,7 +39,7 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
 };
 
 export const createSirecMigrationWorker = (): Worker<SirecMigrationJobData> => {
-  const worker = new Worker<SirecMigrationJobData>(envVars.REDIS_MIGRATION_QUEUE_NAME, processMigration, {
+  const worker = new Worker<SirecMigrationJobData>(SIREC_MIGRATION_QUEUE_NAME, processMigration, {
     connection,
     concurrency: 5,
   });

@@ -1,12 +1,13 @@
 import { Queue } from 'bullmq';
-import { envVars } from '../../config/env.js';
 import { connection } from '../../config/redis.js';
+
+export const SIREC_MIGRATION_QUEUE_NAME = 'sirec-ids-to-migrate';
 
 export interface SirecMigrationJobData {
   sirecId: number;
 }
 
-export const sirecMigrationQueue = new Queue<SirecMigrationJobData>(envVars.REDIS_MIGRATION_QUEUE_NAME, {
+export const sirecMigrationQueue = new Queue<SirecMigrationJobData>(SIREC_MIGRATION_QUEUE_NAME, {
   connection,
   defaultJobOptions: {
     attempts: 3,
