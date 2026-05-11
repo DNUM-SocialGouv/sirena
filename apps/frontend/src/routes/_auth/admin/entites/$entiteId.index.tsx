@@ -13,8 +13,8 @@ import { EntiteAdminFormFields } from './-components/EntiteAdminFormFields';
 import { getEditEntiteTitle } from './-helpers';
 
 const EditEntiteFormSchema = z.object({
-  nomComplet: z.string().trim().min(1, 'Le champ "Nom de l’entité" est vide. Veuillez le renseigner.'),
-  label: z.string().trim().min(1, 'Le champ "Libellé de l’entité" est vide. Veuillez le renseigner.'),
+  nomComplet: z.string().trim().min(1, 'Le champ "Nom - libellé long" est vide. Veuillez le renseigner.'),
+  label: z.string().trim().min(1, 'Le champ "Nom court" est vide. Veuillez le renseigner.'),
   email: optionalEmailSchema,
   emailContactUsager: optionalEmailSchema,
   adresseContactUsager: z.string().trim(),
