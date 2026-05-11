@@ -19,7 +19,7 @@ import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 
 export const Route = createFileRoute('/_auth/admin/user/$userId')({
   params: {
-    parse: (params) => ({
+    parse: (params: { userId: string }) => ({
       userId: z.string().parse(params.userId),
     }),
   },
