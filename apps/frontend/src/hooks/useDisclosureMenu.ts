@@ -34,18 +34,12 @@ export function useDisclosureMenu({ onOpen, onClose }: useDisclosureMenuOptions 
 
   useEffect(() => {
     if (!isOpen) return;
-
     const onMouseDown = (e: MouseEvent) => {
       const target = e.target as Node;
 
-      if (
-        panelRef.current &&
-        triggerRef.current &&
-        !panelRef.current.contains(target) &&
-        !triggerRef.current.contains(target)
-      ) {
-        close();
-      }
+      const isInside = panelRef.current?.contains(target) || triggerRef.current?.contains(target);
+
+      if (!isInside) close();
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
