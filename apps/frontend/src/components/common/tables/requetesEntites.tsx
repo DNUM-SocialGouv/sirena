@@ -353,12 +353,12 @@ export function RequetesEntite() {
         <div className="fr-grid-row">
           <div className="fr-col-12 fr-col-md-5">
             <SearchBar
-              label="Rechercher dans les requêtes"
+              label="Rechercher dans les requêtes par numéro, lieu de survenue, ..."
               onButtonClick={handleSearch}
               renderInput={(inputProps) => (
                 <input
                   {...inputProps}
-                  placeholder="Rechercher par numéro, lieu de survenue, ..."
+                  placeholder=""
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
