@@ -352,6 +352,9 @@ export function RequetesEntite() {
       <div className="fr-mb-3w">
         <div className="fr-grid-row">
           <div className="fr-col-12 fr-col-md-5">
+            <p className="fr-label fr-mb-1v" aria-hidden="true">
+              Rechercher dans les requêtes par numéro, lieu de survenue, ...
+            </p>
             <SearchBar
               label="Rechercher dans les requêtes par numéro, lieu de survenue, ..."
               onButtonClick={handleSearch}
