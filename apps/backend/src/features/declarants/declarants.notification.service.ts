@@ -107,6 +107,7 @@ async function attachEmailPdfToStep(
     subject?: string;
     substitutions?: Record<string, unknown>;
   },
+  authorId?: string | null,
 ): Promise<void> {
   const logger = getLoggerStore();
 
@@ -216,7 +217,7 @@ async function attachEmailPdfToStep(
       const note = await prisma.requeteEtapeNote.create({
         data: {
           texte: `Email d'accusé de réception envoyé le ${emailInfo.sentDate.toLocaleString('fr-FR')}`,
-          authorId: null,
+          authorId: authorId ?? null,
           requeteEtapeId: etape.id,
           uploadedFiles: {
             connect: [{ id: uploadedFile.id }],
@@ -266,18 +267,43 @@ type EntiteForMessage = {
   entiteMereId: string | null;
 };
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function buildAcknowledgmentMessageHtml(text: string): string {
+  const logoUrl = `${envVars.FRONTEND_URI}/republique_francaise_rvb.png`;
+  const lines = text
+    .split('\n')
+    .map((line) =>
+      line.trim() === ''
+        ? '<div style="margin:0 0 12px 0"></div>'
+        : `<p style="margin:0 0 4px 0">${escapeHtml(line)}</p>`,
+    )
+    .join('\n');
+  return `<!DOCTYPE html>
+<html lang="fr">
+<body style="font-family:Arial,sans-serif;font-size:14px;color:#333;max-width:600px;margin:0 auto;padding:20px">
+  ${lines}
+  <img src="${escapeHtml(logoUrl)}" alt="République Française" style="height:80px;margin-top:24px">
+</body>
+</html>`;
+}
+
 /**
  * Builds the plain-text acknowledgment message for manual acknowledgment sending
  */
 export function buildAcknowledgmentMessageText(
   requeteId: string,
   entites: EntiteForMessage[],
+  declarant: { nom: string; prenom: string },
   comment?: string,
 ): string {
   const entiteAdmin = formatEntiteAdminString(entites);
   const entiteComplete = formatEntiteCompleteString(entites);
+  const declarantName = `${declarant.nom.toUpperCase()} ${declarant.prenom}`;
   return [
-    `Bonjour,`,
+    `Bonjour ${declarantName},`,
     `Votre dossier a bien été reçu sous le numéro ${requeteId}.`,
     `Merci d'avoir pris le temps de partager ces informations.`,
     `Il est désormais suivi par ${entiteAdmin}.`,
@@ -350,7 +376,9 @@ export async function sendManualAcknowledgmentEmail({
       logger.error({ requeteId, entiteId }, 'Declarant has no email for manual acknowledgment');
       throw new Error("Le déclarant n'a pas d'adresse e-mail renseignée.");
     }
-    const message = buildAcknowledgmentMessageText(requeteId, entites, comment);
+    const declarantIdentite = declarantResult?.declarant?.identite;
+    const declarant = { nom: declarantIdentite?.nom ?? '', prenom: declarantIdentite?.prenom ?? '' };
+    const message = buildAcknowledgmentMessageText(requeteId, entites, declarant, comment);
     const fromAddress = envVars.TIPIMAIL_FROM_ADDRESS;
     const fromPersonalName = envVars.TIPIMAIL_FROM_PERSONAL_NAME;
     const from = { address: fromAddress, personalName: fromPersonalName };
@@ -360,6 +388,7 @@ export async function sendManualAcknowledgmentEmail({
       to: declarantEmail,
       subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
       text: message,
+      html: buildAcknowledgmentMessageHtml(message),
     });
 
     logger.info({ requeteId, entiteId, declarantEmail }, 'Manual acknowledgment email sent successfully');
@@ -390,12 +419,13 @@ export async function sendManualAcknowledgmentEmail({
         text: message,
       });
 
-      await attachEmailPdfToStep(requeteId, entiteId, emailPdf, {
-        from,
-        to: declarantEmail,
-        sentDate,
-        subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
-      });
+      await attachEmailPdfToStep(
+        requeteId,
+        entiteId,
+        emailPdf,
+        { from, to: declarantEmail, sentDate, subject: ACKNOWLEDGMENT_EMAIL_SUBJECT },
+        userId,
+      );
     } catch (pdfError) {
       logger.error(
         { requeteId, entiteId, error: pdfError },

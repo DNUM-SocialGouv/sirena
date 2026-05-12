@@ -1,0 +1,72 @@
+name: Load Test (k6)
+
+# Manual-only. Targets a deployed environment and runs the chosen k6 profile.
+#
+# Required GitHub Environment configuration (per environment):
+#   secrets:
+#     LOAD_TEST_AUTH_TOKEN_SECRET_KEY  HS256 secret matching the target backend's AUTH_TOKEN_SECRET_KEY
+#     LOAD_TEST_USER_ID                UUID of an ACTIF user in the target DB, attached to at least one entité
+#   vars:
+#     LOAD_TEST_BASE_URL               e.g. https://preproduction.sirena.example (no /api suffix)
+#     LOAD_TEST_AUTH_TOKEN_NAME        optional, defaults to "authToken"
+#
+# Production access is controlled by the GitHub Environment protection rules
+# (set "Required reviewers" on the production environment).
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - integration
+          - validation
+          - formation
+          - preproduction
+          - production
+        default: integration
+      scenario:
+        description: "Load profile"
+        required: true
+        type: choice
+        options:
+          - smoke
+          - load
+          - stress
+          - soak
+        default: smoke
+
+permissions:
+  contents: read
+
+jobs:
+  load-test:
+    name: k6 ${{ inputs.scenario }} → ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@db07bd9765aac508ef18982e52ab937fe633a065 # v1.2.1
+
+      - name: Run k6
+        env:
+          LOAD_TEST_BASE_URL: ${{ vars.LOAD_TEST_BASE_URL }}
+          SCENARIO: ${{ inputs.scenario }}
+          AUTH_TOKEN_SECRET_KEY: ${{ secrets.LOAD_TEST_AUTH_TOKEN_SECRET_KEY }}
+          AUTH_TOKEN_NAME: ${{ vars.LOAD_TEST_AUTH_TOKEN_NAME }}
+          LOAD_TEST_USER_ID: ${{ secrets.LOAD_TEST_USER_ID }}
+        run: k6 run --out json=k6-results.json tests/load/main.js
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v5
+        with:
+          name: k6-results-${{ inputs.environment }}-${{ inputs.scenario }}-${{ github.run_number }}
+          path: k6-results.json
+          retention-days: 30
