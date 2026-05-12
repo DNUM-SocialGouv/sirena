@@ -96,7 +96,7 @@ export function RequetesEntiteQuickFilters() {
           <FilterCheckbox
             name="quick-filter-priorite"
             value="haute-priorite"
-            label="Prioritaires"
+            label="Priorité haute"
             checked={quickFilters.isHautePrioriteOnly}
             className="requetesEntitesTable__filter-item"
             onChange={handlePrioriteChange}
