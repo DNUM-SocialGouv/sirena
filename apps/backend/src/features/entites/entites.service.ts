@@ -96,6 +96,10 @@ export const getEntiteById = async (entiteId: string) =>
       id: true,
       nomComplet: true,
       label: true,
+      email: true,
+      emailContactUsager: true,
+      adresseContactUsager: true,
+      telContactUsager: true,
       isActive: true,
     },
   });
@@ -189,6 +193,10 @@ export const editEntiteAdmin = async (
   data: {
     nomComplet: string;
     label: string;
+    email: string;
+    emailContactUsager: string;
+    adresseContactUsager: string;
+    telContactUsager: string;
     isActive: boolean;
   },
 ) =>
@@ -199,6 +207,10 @@ export const editEntiteAdmin = async (
       id: true,
       nomComplet: true,
       label: true,
+      email: true,
+      emailContactUsager: true,
+      adresseContactUsager: true,
+      telContactUsager: true,
       isActive: true,
     },
   });
