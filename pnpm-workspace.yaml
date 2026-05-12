@@ -8,11 +8,6 @@ allowBuilds:
   esbuild: true
   msgpackr-extract: true
   prisma: true
-auditConfig:
-  # Temporary ignore: npm/GitHub currently marks all @tanstack/history versions as vulnerable.
-  # Remove once the advisory is narrowed or a patched version is available.
-  ignoreGhsas:
-    - GHSA-rmmr-r34h-pfm5
 catalog:
   "@biomejs/biome": ^2.4.15
   "@codegouvfr/react-dsfr": ^1.32.1
