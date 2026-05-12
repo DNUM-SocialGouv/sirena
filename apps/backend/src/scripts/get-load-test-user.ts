@@ -8,7 +8,7 @@
  *   pnpm op:get-load-test-user --email x  # pick a specific user by email
  */
 
-import { STATUT_TYPES } from '@sirena/common/constants';
+import { ROLES_READ, STATUT_TYPES } from '@sirena/common/constants';
 import { prisma } from '../libs/prisma.js';
 
 const emailFlagIndex = process.argv.indexOf('--email');
@@ -18,6 +18,7 @@ const user = await prisma.user.findFirst({
   where: {
     statutId: STATUT_TYPES.ACTIF,
     entiteId: { not: null },
+    roleId: { in: [...ROLES_READ] },
     ...(emailFilter ? { email: emailFilter } : {}),
   },
   orderBy: { createdAt: 'asc' },
@@ -26,8 +27,8 @@ const user = await prisma.user.findFirst({
 
 if (!user) {
   const reason = emailFilter
-    ? `No ACTIF user with email "${emailFilter}" attached to an entité.`
-    : 'No ACTIF user attached to an entité found in this database.';
+    ? `No ACTIF user with email "${emailFilter}" attached to an entité with a ROLES_READ role.`
+    : 'No ACTIF user attached to an entité with a ROLES_READ role found in this database.';
   console.error(reason);
   await prisma.$disconnect();
   process.exit(1);
