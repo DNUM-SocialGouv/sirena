@@ -45,10 +45,10 @@ SDPSN-devops-charts:
 
     resources:
       limits:
-        cpu: 250m
+        cpu: 500m
         memory: 1500Mi
       requests:
-        cpu: 250m
+        cpu: 500m
         memory: 1500Mi
 
     initContainer:
@@ -64,10 +64,10 @@ SDPSN-devops-charts:
         - db-secret
       resources:
         limits:
-          cpu: 250m
+          cpu: 300m
           memory: 1500Mi
         requests:
-          cpu: 250m
+          cpu: 300m
           memory: 1500Mi
       workingDir: /app
 

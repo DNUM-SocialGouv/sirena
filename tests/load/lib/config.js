@@ -13,7 +13,7 @@ export const config = {
   scenario: __ENV.SCENARIO || 'smoke',
   auth: {
     secret: __ENV.AUTH_TOKEN_SECRET_KEY || '',
-    cookieName: __ENV.AUTH_TOKEN_NAME || 'authToken',
+    cookieName: __ENV.AUTH_TOKEN_NAME || 'auth_token',
     expirationSeconds: Number.parseInt(__ENV.AUTH_TOKEN_EXPIRATION || '600', 10),
     userId: __ENV.LOAD_TEST_USER_ID || '',
     roleId: __ENV.LOAD_TEST_ROLE_ID || 'PENDING',
