@@ -38,7 +38,7 @@ catalog:
   vitest: ^4.1.5
   zod: ^4.4.3
 enablePrePostScripts: true
-minimumReleaseAge: 0
+minimumReleaseAge: 10080
 overrides:
   "@hono/node-server@<1.19.13": ">=1.19.13"
   fast-uri@<3.1.2: ">=3.1.2"
