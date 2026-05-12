@@ -6,8 +6,10 @@ import {
 } from '@sirena/backend-utils/helpers';
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
+import { ACKNOWLEDGMENT_EMAIL_SUBJECT } from '../../config/tipimail.constant.js';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import { streamFileResponse, streamSafeFileResponse } from '../../helpers/file.js';
+import { prisma } from '../../libs/prisma.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import requeteEtapesChangelogMiddleware from '../../middlewares/changelog/changelog.requeteEtape.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
@@ -18,7 +20,6 @@ import {
   buildAcknowledgmentMessageText,
   sendManualAcknowledgmentEmail,
 } from '../declarants/declarants.notification.service.js';
-import { getEntitesByRequeteId } from '../entites/entites.service.js';
 import {
   getRequeteEntiteById,
   hasAccessToRequete,
@@ -438,15 +439,29 @@ const app = factoryWithLogs
       throwHTTPException403Forbidden('You are not allowed to access this requete', { res: c.res });
     }
 
-    const entites = await getEntitesByRequeteId(requeteEtape.requeteId);
-    const message = buildAcknowledgmentMessageText(requeteEtape.requeteId, entites);
-
-    const requete = await getRequeteEntiteById(requeteEtape.requeteId, topEntiteId);
-    const declarantEmail = requete?.requete?.declarant?.identite?.email ?? null;
+    const [entite, requete] = await Promise.all([
+      prisma.entite.findUnique({
+        where: { id: topEntiteId },
+        select: {
+          id: true,
+          nomComplet: true,
+          emailContactUsager: true,
+          telContactUsager: true,
+          adresseContactUsager: true,
+          entiteMereId: true,
+        },
+      }),
+      getRequeteEntiteById(requeteEtape.requeteId, topEntiteId),
+    ]);
+    const entites = entite ? [entite] : [];
+    const declarantIdentite = requete?.requete?.declarant?.identite;
+    const declarant = { nom: declarantIdentite?.nom ?? '', prenom: declarantIdentite?.prenom ?? '' };
+    const message = buildAcknowledgmentMessageText(requeteEtape.requeteId, entites, declarant);
+    const declarantEmail = declarantIdentite?.email ?? null;
 
     logger.info({ requeteEtapeId: id }, 'Acknowledgment message preview fetched');
 
-    return c.json({ data: { message, declarantEmail } });
+    return c.json({ data: { message, declarantEmail, subject: ACKNOWLEDGMENT_EMAIL_SUBJECT } });
   })
 
   .post(

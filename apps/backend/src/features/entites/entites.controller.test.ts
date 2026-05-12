@@ -221,10 +221,14 @@ describe('Entites endpoints: /entites', () => {
     const editEntitePayload = {
       nomComplet: 'Entite B modifiée',
       label: 'ENT B',
+      email: 'notification@example.fr',
+      emailContactUsager: 'contact-usager@example.fr',
+      adresseContactUsager: '1 rue de la République\n75000 Paris',
+      telContactUsager: '0102030405',
       isActive: true,
     };
 
-    it('updates the limited admin entity payload for SUPER_ADMIN', async () => {
+    it('updates the admin entity contact fields for SUPER_ADMIN', async () => {
       editEntiteAdminSpy.mockResolvedValueOnce({
         id: '2',
         ...editEntitePayload,
