@@ -76,10 +76,10 @@ export function RequetesEntiteQuickFilters() {
 
   return (
     <fieldset className="requetesEntitesTable__filters fr-mb-2w">
-      <legend className="fr-sr-only">Filtres</legend>
+      <legend className="fr-sr-only">Filtrer les requêtes</legend>
       <div className="requetesEntitesTable__filters-row">
         <span className="fr-text--regular" aria-hidden="true">
-          Filtres
+          Filtrer les requêtes
         </span>
         <div className="requetesEntitesTable__quick-filters">
           {quickFilters.affectation.isVisible && (
