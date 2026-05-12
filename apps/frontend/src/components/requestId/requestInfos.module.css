@@ -70,6 +70,10 @@
   gap: 0.5rem;
 }
 
+.motifs-display {
+  margin-top: 0.5rem;
+}
+
 .toggle-line {
   margin-top: 0.5rem;
   width: fit-content;
