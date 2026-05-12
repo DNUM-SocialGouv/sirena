@@ -222,12 +222,7 @@ export function PendingUsersTab() {
               label="Rechercher un utilisateur par nom, prénom ou e-mail"
               onButtonClick={handleSearch}
               renderInput={(inputProps) => (
-                <input
-                  {...inputProps}
-                  placeholder=""
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+                <input {...inputProps} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               )}
             />
           </div>
