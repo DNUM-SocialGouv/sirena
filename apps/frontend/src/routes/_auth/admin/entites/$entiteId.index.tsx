@@ -1,7 +1,6 @@
 import Button from '@codegouvfr/react-dsfr/Button';
-import Input from '@codegouvfr/react-dsfr/Input';
-import Select from '@codegouvfr/react-dsfr/Select';
 import { ROLES } from '@sirena/common/constants';
+import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Loader, Toast } from '@sirena/ui';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { type SubmitEvent, useEffect, useRef, useState } from 'react';
@@ -10,11 +9,16 @@ import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandle
 import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
+import { EntiteAdminFormFields } from './-components/EntiteAdminFormFields';
 import { getEditEntiteTitle } from './-helpers';
 
 const EditEntiteFormSchema = z.object({
-  nomComplet: z.string().trim().min(1, 'Le champ "Nom de l’entité" est vide. Veuillez le renseigner.'),
-  label: z.string().trim().min(1, 'Le champ "Libellé de l’entité" est vide. Veuillez le renseigner.'),
+  nomComplet: z.string().trim().min(1, 'Le champ "Nom - libellé long" est vide. Veuillez le renseigner.'),
+  label: z.string().trim().min(1, 'Le champ "Nom court" est vide. Veuillez le renseigner.'),
+  email: optionalEmailSchema,
+  emailContactUsager: optionalEmailSchema,
+  adresseContactUsager: z.string().trim(),
+  telContactUsager: optionalPhoneSchema,
   isActive: z.enum(['oui', 'non'], 'Le statut actif dans SIRENA est obligatoire. Veuillez sélectionner une option.'),
 });
 
@@ -34,6 +38,8 @@ export function RouteComponent() {
   const entiteDepth = entiteChainQuery.data?.length ?? 0;
   const canCreateChild = !entiteChainQuery.isError && entiteDepth > 0 && entiteDepth < 3;
   const createChildLabel = entiteDepth === 1 ? 'Créer une direction' : 'Créer un service';
+  const editTitlePrefix =
+    entiteDepth === 1 ? 'Modifier l’entité' : entiteDepth === 2 ? 'Modifier la direction' : 'Modifier le service';
 
   const isSubmittingRef = useRef(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -41,6 +47,10 @@ export function RouteComponent() {
   const [formData, setFormData] = useState({
     nomComplet: '',
     label: '',
+    email: '',
+    emailContactUsager: '',
+    adresseContactUsager: '',
+    telContactUsager: '',
     isActive: '',
   });
 
@@ -56,6 +66,10 @@ export function RouteComponent() {
     setFormData({
       nomComplet: entiteQuery.data.nomComplet,
       label: entiteQuery.data.label,
+      email: entiteQuery.data.email ?? '',
+      emailContactUsager: entiteQuery.data.emailContactUsager ?? '',
+      adresseContactUsager: entiteQuery.data.adresseContactUsager ?? '',
+      telContactUsager: entiteQuery.data.telContactUsager ?? '',
       isActive: entiteQuery.data.isActive ? 'oui' : 'non',
     });
   }, [entiteQuery.data]);
@@ -77,7 +91,8 @@ export function RouteComponent() {
   }
 
   const handleInputChange =
-    (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    (field: keyof typeof formData) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
       const value = e.target.value;
 
       setFormData((prev) => {
@@ -129,6 +144,9 @@ export function RouteComponent() {
         id: entiteId,
         input: {
           ...result.data,
+          email: result.data.email ?? '',
+          emailContactUsager: result.data.emailContactUsager ?? '',
+          telContactUsager: result.data.telContactUsager ?? '',
           isActive: result.data.isActive === 'oui',
         },
       });
@@ -155,7 +173,7 @@ export function RouteComponent() {
 
       <div className="fr-grid-row fr-grid-row--middle fr-grid-row--gutters fr-mb-4w">
         <div className="fr-col-12 fr-col-md">
-          <h2 className="fr-mb-0">Modifier une entité</h2>
+          <h2 className="fr-mb-0">{`${editTitlePrefix} ${entiteQuery.data.nomComplet}`}</h2>
         </div>
 
         {canCreateChild ? (
@@ -169,53 +187,14 @@ export function RouteComponent() {
 
       <div className="fr-p-4w fr-mb-4w fr-card">
         <form onSubmit={handleSubmit}>
-          <p>Tous les champs sont obligatoires.</p>
+          <p>Sauf mention contraire, les champs sont facultatifs.</p>
 
-          <fieldset className="fr-fieldset">
-            <legend className="fr-fieldset__legend">Informations de l’entité</legend>
-
-            <Input
-              className="fr-fieldset__content"
-              label="Nom de l'entité"
-              state={validationErrors.nomComplet ? 'error' : 'default'}
-              stateRelatedMessage={validationErrors.nomComplet}
-              nativeInputProps={{
-                name: 'nomComplet',
-                value: formData.nomComplet,
-                onChange: handleInputChange('nomComplet'),
-              }}
-            />
-
-            <Input
-              className="fr-fieldset__content"
-              label="Libellé de l'entité"
-              state={validationErrors.label ? 'error' : 'default'}
-              stateRelatedMessage={validationErrors.label}
-              nativeInputProps={{
-                name: 'label',
-                value: formData.label,
-                onChange: handleInputChange('label'),
-              }}
-            />
-
-            <Select
-              className="fr-fieldset__content"
-              label="Actif dans SIRENA"
-              state={validationErrors.isActive ? 'error' : 'default'}
-              stateRelatedMessage={validationErrors.isActive}
-              nativeSelectProps={{
-                name: 'isActive',
-                value: formData.isActive,
-                onChange: handleInputChange('isActive'),
-              }}
-            >
-              <option value="" disabled>
-                Sélectionnez une option
-              </option>
-              <option value="oui">Oui</option>
-              <option value="non">Non</option>
-            </Select>
-          </fieldset>
+          <EntiteAdminFormFields
+            formData={formData}
+            validationErrors={validationErrors}
+            onChange={handleInputChange}
+            legend="Informations de l’entité"
+          />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
             <Link className="fr-btn fr-btn--secondary" to="/admin/entites">
