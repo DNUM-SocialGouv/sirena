@@ -51,6 +51,10 @@ export async function fetchEntiteDescendants(id: string) {
 export type EditEntiteAdminInput = {
   nomComplet: string;
   label: string;
+  email: string;
+  emailContactUsager: string;
+  adresseContactUsager: string;
+  telContactUsager: string;
   isActive: boolean;
 };
 

@@ -3,6 +3,7 @@ import { type Entite, prisma } from '../../libs/prisma.js';
 import { EntiteChildCreationForbiddenError } from './entites.error.js';
 import {
   createChildEntiteAdmin,
+  editEntiteAdmin,
   getDirectionsFromRequeteEntiteId,
   getDirectionsServicesFromRequeteEntiteId,
   getEditableEntitiesChain,
@@ -22,6 +23,7 @@ vi.mock('../../libs/prisma.js', () => ({
       findUnique: vi.fn(),
       count: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
     },
     situationEntite: {
       findMany: vi.fn(),
@@ -844,6 +846,50 @@ describe('entites.service', () => {
 
     const result = await getEntitesByIds(['1', '2', '3']);
     expect(result).toEqual([fakeEntite('1'), fakeEntite('2'), fakeEntite('3')]);
+  });
+});
+
+describe('editEntiteAdmin()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('updates and returns notification and usager contact fields', async () => {
+    const editInput = {
+      nomComplet: 'ARS Normandie mise à jour',
+      label: 'ARS NOR',
+      email: 'notification@example.fr',
+      emailContactUsager: 'contact-usager@example.fr',
+      adresseContactUsager: '1 rue de la République\n75000 Paris',
+      telContactUsager: '0102030405',
+      isActive: true,
+    };
+
+    vi.mocked(prisma.entite.update).mockResolvedValueOnce({
+      id: 'entite-1',
+      ...editInput,
+    } as never);
+
+    const result = await editEntiteAdmin('entite-1', editInput);
+
+    expect(prisma.entite.update).toHaveBeenCalledWith({
+      where: { id: 'entite-1' },
+      data: editInput,
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        email: true,
+        emailContactUsager: true,
+        adresseContactUsager: true,
+        telContactUsager: true,
+        isActive: true,
+      },
+    });
+    expect(result).toEqual({
+      id: 'entite-1',
+      ...editInput,
+    });
   });
 });
 
