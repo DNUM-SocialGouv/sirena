@@ -1,6 +1,6 @@
-import Badge from '@codegouvfr/react-dsfr/Badge';
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
+import { Tag } from '@codegouvfr/react-dsfr/Tag';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useFileStatusSSE } from '@/hooks/useFileStatusSSE';
 import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
@@ -212,6 +212,21 @@ const getWarningMessage = (
 
 const POLL_INTERVAL = 3000;
 
+const FILE_TAG_STYLE = {
+  valid: {
+    backgroundColor: 'var(--background-contrast-info)',
+    color: 'var(--blue-cumulus-sun-368-moon-732)',
+  },
+  intermediate: {
+    backgroundColor: 'var(--background-contrast-yellow-moutarde)',
+    color: 'var(--yellow-moutarde-sun-348-moon-860)',
+  },
+  error: {
+    backgroundColor: 'var(--background-contrast-error)',
+    color: 'var(--text-default-error)',
+  },
+} as const;
+
 export const FileDownloadLink = ({
   href,
   safeHref,
@@ -367,67 +382,65 @@ export const FileDownloadLink = ({
 
     const { scanStatus, sanitizeStatus } = fileStatus;
 
-    // Antivirus statuses take priority - if not clean, show antivirus status only
     switch (scanStatus) {
       case 'PENDING':
         return (
-          <Badge severity="info" small noIcon>
+          <Tag as="span" small iconId="fr-icon-time-fill" style={FILE_TAG_STYLE.intermediate}>
             En attente d'analyse antivirus
-          </Badge>
+          </Tag>
         );
       case 'SCANNING':
         return (
-          <Badge severity="info" small noIcon>
+          <Tag as="span" small iconId="fr-icon-refresh-fill" style={FILE_TAG_STYLE.intermediate}>
             Analyse antivirus en cours...
-          </Badge>
+          </Tag>
         );
       case 'SKIPPED':
         return (
-          <Badge severity="warning" small noIcon>
+          <Tag as="span" small iconId="fr-icon-question-fill" style={FILE_TAG_STYLE.intermediate}>
             Non analysé (antivirus)
-          </Badge>
+          </Tag>
         );
       case 'ERROR':
         return (
-          <Badge severity="warning" small noIcon>
+          <Tag as="span" small iconId="fr-icon-error-warning-fill" style={FILE_TAG_STYLE.error}>
             Analyse antivirus échouée
-          </Badge>
+          </Tag>
         );
     }
 
-    // Scan is CLEAN - show sanitization status if pertinent
     if (scanStatus === 'CLEAN') {
       switch (sanitizeStatus) {
         case 'PENDING':
           return (
-            <Badge severity="info" small noIcon>
+            <Tag as="span" small iconId="fr-icon-time-fill" style={FILE_TAG_STYLE.intermediate}>
               En attente de sécurisation
-            </Badge>
+            </Tag>
           );
         case 'SANITIZING':
           return (
-            <Badge severity="info" small noIcon>
+            <Tag as="span" small iconId="fr-icon-refresh-fill" style={FILE_TAG_STYLE.intermediate}>
               Sécurisation...
-            </Badge>
+            </Tag>
           );
         case 'ERROR':
           return (
-            <Badge severity="warning" small noIcon>
+            <Tag as="span" small iconId="fr-icon-error-warning-fill" style={FILE_TAG_STYLE.error}>
               Sécurisation échouée
-            </Badge>
+            </Tag>
           );
         case 'COMPLETED':
           return (
-            <Badge severity="success" small noIcon>
+            <Tag as="span" small iconId="fr-icon-checkbox-circle-fill" style={FILE_TAG_STYLE.valid}>
               Sécurisé
-            </Badge>
+            </Tag>
           );
         case 'SKIPPED':
         case 'NOT_APPLICABLE':
           return (
-            <Badge severity="success" small noIcon>
+            <Tag as="span" small iconId="fr-icon-checkbox-circle-fill" style={FILE_TAG_STYLE.valid}>
               Vérifié
-            </Badge>
+            </Tag>
           );
       }
     }
@@ -452,9 +465,9 @@ export const FileDownloadLink = ({
           <span className="fr-sr-only"> - nouvel onglet</span>
         </a>
         {isFileInfected(fileStatus?.scanStatus) ? (
-          <Badge severity="error" small noIcon>
+          <Tag as="span" small iconId="fr-icon-warning-fill" style={FILE_TAG_STYLE.error}>
             Risque détecté
-          </Badge>
+          </Tag>
         ) : (
           renderStatusBadge()
         )}
