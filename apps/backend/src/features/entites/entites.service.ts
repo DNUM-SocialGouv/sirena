@@ -96,6 +96,10 @@ export const getEntiteById = async (entiteId: string) =>
       id: true,
       nomComplet: true,
       label: true,
+      email: true,
+      emailContactUsager: true,
+      adresseContactUsager: true,
+      telContactUsager: true,
       isActive: true,
     },
   });
