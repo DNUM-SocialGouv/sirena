@@ -2,9 +2,9 @@ import { entiteTypes, REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo, useState } from 'react';
 import { DepartementFilter } from '@/components/common/filters/DepartementFilter';
+import { FilterCheckbox } from '@/components/common/filters/filterCheckbox';
 import { useDepartementCounts } from '@/hooks/queries/departementCounts.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
-import { FilterCheckbox } from './filterCheckbox';
 import { getRequetesQuickFiltersViewModel } from './requetesEntites.filters.model';
 
 export function RequetesEntiteQuickFilters() {
@@ -88,6 +88,7 @@ export function RequetesEntiteQuickFilters() {
               value="assigned-to-service"
               label={quickFilters.affectation.label}
               checked={quickFilters.affectation.isChecked}
+              className="requetesEntitesTable__filter-item"
               onChange={handleAffectationChange}
             />
           )}
@@ -97,6 +98,7 @@ export function RequetesEntiteQuickFilters() {
             value="haute-priorite"
             label="Prioritaires"
             checked={quickFilters.isHautePrioriteOnly}
+            className="requetesEntitesTable__filter-item"
             onChange={handlePrioriteChange}
           />
 

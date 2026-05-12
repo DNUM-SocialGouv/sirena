@@ -6,13 +6,14 @@ type FilterCheckboxProps = {
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  className?: string;
 };
 
-export function FilterCheckbox({ name, value, label, checked, onChange }: FilterCheckboxProps) {
+export function FilterCheckbox({ name, value, label, checked, onChange, className }: FilterCheckboxProps) {
   return (
     <Checkbox
       small
-      className="requetesEntitesTable__filter-item"
+      className={className}
       options={[
         {
           label,
