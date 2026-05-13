@@ -1,4 +1,4 @@
-.boolean-filter {
+.checkbox-filter {
   display: flex;
   height: 40px;
   box-sizing: border-box;
@@ -10,6 +10,6 @@
   background: var(--background-default-grey);
 }
 
-.boolean-filter .fr-checkbox-group {
+.checkbox-filter .fr-checkbox-group {
   margin-bottom: 0;
 }

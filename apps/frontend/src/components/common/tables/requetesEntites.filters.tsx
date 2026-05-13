@@ -1,7 +1,7 @@
 import { entiteTypes, REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo, useState } from 'react';
-import { BooleanFilter } from '@/components/common/filters/BooleanFilter';
+import { CheckboxFilter } from '@/components/common/filters/CheckboxFilter';
 import { DepartementFilter } from '@/components/common/filters/DepartementFilter';
 import { useDepartementCounts } from '@/hooks/queries/departementCounts.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
@@ -83,14 +83,14 @@ export function RequetesEntiteQuickFilters() {
         </span>
         <div className="requetesEntitesTable__quick-filters">
           {quickFilters.affectation.isVisible && (
-            <BooleanFilter
+            <CheckboxFilter
               label={quickFilters.affectation.label}
               checked={quickFilters.affectation.isChecked}
               onChange={handleAffectationChange}
             />
           )}
 
-          <BooleanFilter
+          <CheckboxFilter
             label="Priorité haute"
             checked={quickFilters.isHautePrioriteOnly}
             onChange={handlePrioriteChange}
