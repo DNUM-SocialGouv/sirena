@@ -46,7 +46,7 @@ Toute la configuration passe par variables d'environnement. Les valeurs par déf
 | `LOAD_TEST_BASE_URL`         | toujours                  | Hôte de la cible. Le préfixe `/api` est ajouté par le code k6. Défaut : `http://localhost:5173`. |
 | `SCENARIO`                   | toujours                  | `smoke` \| `load` \| `stress` \| `soak` \| `debug`.                         |
 | `AUTH_TOKEN_SECRET_KEY`      | `load`/`stress`/`soak`    | Secret HS256 du backend cible.                                              |
-| `AUTH_TOKEN_NAME`            | optionnel                 | Nom du cookie. Défaut : `authToken`.                                        |
+| `AUTH_TOKEN_NAME`            | optionnel                 | Nom du cookie. Défaut : `auth_token` (valeur utilisée par les déploiements). |
 | `AUTH_TOKEN_EXPIRATION`      | optionnel                 | Durée de vie du token signé (secondes). Défaut : `600`.                     |
 | `LOAD_TEST_USER_ID`          | `load`/`stress`/`soak`    | UUID de l'utilisateur de test en base.                                      |
 | `LOAD_TEST_ROLE_ID`          | optionnel                 | Rôle injecté dans le JWT (le backend le ré-écrit depuis la base).           |
