@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import './BooleanFilter.css';
+import './CheckboxFilter.css';
 
 type Props = {
   label: string;
@@ -8,11 +8,11 @@ type Props = {
   groupLegend?: string;
 };
 
-export function BooleanFilter({ label, checked, onChange, groupLegend = 'Filtres rapides' }: Props) {
+export function CheckboxFilter({ label, checked, onChange, groupLegend = 'Filtres rapides' }: Props) {
   const inputId = useId();
 
   return (
-    <fieldset className="boolean-filter fr-fieldset">
+    <fieldset className="checkbox-filter fr-fieldset">
       <legend className="fr-sr-only">{groupLegend}</legend>
       <div className="fr-checkbox-group">
         <input type="checkbox" id={inputId} checked={checked} onChange={(e) => onChange(e.target.checked)} />
