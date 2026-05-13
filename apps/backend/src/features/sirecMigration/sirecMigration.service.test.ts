@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test purposes> */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ZodError } from 'zod';
 import { getRequeteIdFromSirecId, saveFromSirec } from './sirecMigration.service.js';
 
 vi.mock('@sirena/db', () => ({
@@ -14,12 +15,7 @@ vi.mock('@sirena/db', () => ({
   },
 }));
 
-vi.mock('../../libs/asyncLocalStorage.js', () => ({
-  getLoggerStore: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
-}));
-
 describe('sirecMigration.service.ts', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let prisma: any;
 
   beforeEach(async () => {
@@ -56,8 +52,7 @@ describe('sirecMigration.service.ts', () => {
       sirenaId: 'SIREC-42',
       sirecId: 42,
       receptionDate,
-      fait: { autresPrecisions: 'Ma réclamation' },
-      situation: {},
+      situation: { fait: { autresPrecisions: 'Ma réclamation' } },
     };
 
     beforeEach(() => {
@@ -84,17 +79,12 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should create LieuDeSurvenue, MisEnCause and DemarchesEngagees with empty data', async () => {
+    it('should create Situation with its sub-entities linked to the Requete', async () => {
       await saveFromSirec(data);
 
       expect(prisma.lieuDeSurvenue.create).toHaveBeenCalledWith({ data: {}, select: { id: true } });
       expect(prisma.misEnCause.create).toHaveBeenCalledWith({ data: {}, select: { id: true } });
       expect(prisma.demarchesEngagees.create).toHaveBeenCalledWith({ data: {}, select: { id: true } });
-    });
-
-    it('should create Situation linking sub-entities to the Requete', async () => {
-      await saveFromSirec(data);
-
       expect(prisma.situation.create).toHaveBeenCalledWith({
         data: {
           lieuDeSurvenueId: 'lieu-1',
@@ -106,12 +96,22 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should create Fait with autresPrecisions from faitData', async () => {
+    it('should create Fait with autresPrecisions from situation.fait', async () => {
       await saveFromSirec(data);
 
       expect(prisma.fait.create).toHaveBeenCalledWith({
         data: { situationId: 'sit-1', autresPrecisions: 'Ma réclamation' },
       });
+    });
+
+    it('should throw a ZodError if the situation does not match SituationDataSchema', async () => {
+      const invalidData = {
+        ...data,
+        situation: { fait: { autresPrecisions: 123 as any } },
+      };
+
+      await expect(saveFromSirec(invalidData)).rejects.toThrow(ZodError);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
     it('should wrap all creates in a single transaction', async () => {

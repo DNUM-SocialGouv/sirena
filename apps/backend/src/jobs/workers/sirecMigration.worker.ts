@@ -1,4 +1,5 @@
 import { type Job, Worker } from 'bullmq';
+import { ZodError } from 'zod';
 import { connection } from '../../config/redis.js';
 import { fetchSirecReclamationById } from '../../features/sirecMigration/sirecMigration.repository.js';
 import { getRequeteIdFromSirecId, saveFromSirec } from '../../features/sirecMigration/sirecMigration.service.js';
@@ -30,7 +31,16 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
         return;
       }
 
-      const sirenaRequeteId = await saveFromSirec(data);
+      let sirenaRequeteId: string;
+      try {
+        sirenaRequeteId = await saveFromSirec(data);
+      } catch (err) {
+        if (err instanceof ZodError) {
+          logger.error({ sirecId, validationErrors: err.issues }, 'SIREC record failed schema validation, skipping');
+          return;
+        }
+        throw err;
+      }
 
       logger.info({ requeteId: sirenaRequeteId, sirecId: data.sirecId }, 'SIREC record migrated successfully');
     },

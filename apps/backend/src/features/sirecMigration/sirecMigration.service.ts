@@ -1,3 +1,4 @@
+import { SituationDataSchema } from '@sirena/common/schemas';
 import { prisma } from '@sirena/db';
 import type { SirenaRequeteData } from './sirecMigration.transformer.js';
 
@@ -10,7 +11,9 @@ export async function getRequeteIdFromSirecId(sirecId: number): Promise<string |
 }
 
 export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
-  const requeteId = await prisma.$transaction(async (tx) => {
+  SituationDataSchema.parse(data.situation);
+
+  return prisma.$transaction(async (tx) => {
     const requete = await tx.requete.create({
       data: {
         id: data.sirenaId,
@@ -37,12 +40,10 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     await tx.fait.create({
       data: {
         situationId: situation.id,
-        autresPrecisions: data.fait.autresPrecisions,
+        autresPrecisions: data.situation.fait.autresPrecisions,
       },
     });
 
     return requete.id;
   });
-
-  return requeteId;
 }

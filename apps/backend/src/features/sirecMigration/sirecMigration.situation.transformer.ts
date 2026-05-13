@@ -1,10 +1,14 @@
+import { type SirenaFaitData, transformSirecFait } from './sirecMigration.fait.transformer.js';
 import type { SirecReclamationRow } from './sirecMigration.repository.js';
 
-// biome-ignore lint/suspicious/noEmptyInterface: vide pour le moment mais sera rempli avec d'autres champs SIREC.
+export type { SirenaFaitData };
+
 export interface SirenaSituationData {
-  // Will be enriched with more SIREC fields
+  fait: SirenaFaitData;
 }
 
-export function transformSirecSituation(_row: SirecReclamationRow): SirenaSituationData {
-  return {};
+export function transformSirecSituation(row: SirecReclamationRow): SirenaSituationData {
+  return {
+    fait: transformSirecFait(row),
+  };
 }
