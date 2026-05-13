@@ -1,0 +1,15 @@
+.checkbox-filter {
+  display: flex;
+  height: 40px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 16px;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border-default-grey);
+  background: var(--background-default-grey);
+}
+
+.checkbox-filter .fr-checkbox-group {
+  margin-bottom: 0;
+}
