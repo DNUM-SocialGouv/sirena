@@ -10,6 +10,7 @@ describe('sirecMigration.transformer.ts', () => {
     expect(result).toEqual({
       sirenaId: 'SIREC-42',
       sirecId: 42,
+      receptionDate: new Date('2024-01-15'),
     });
   });
 

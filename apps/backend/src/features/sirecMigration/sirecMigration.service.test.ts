@@ -51,7 +51,8 @@ describe('sirecMigration.service.ts', () => {
   });
 
   describe('saveRequeteFromSirec', () => {
-    const data = { sirenaId: 'SIREC-42', sirecId: 42 };
+    const receptionDate = new Date('2024-01-15');
+    const data = { sirenaId: 'SIREC-42', sirecId: 42, receptionDate };
 
     it('should create a Requete and return its id', async () => {
       vi.mocked(prisma.requete.create).mockResolvedValueOnce({ id: 'SIREC-42' } as any);
@@ -63,6 +64,22 @@ describe('sirecMigration.service.ts', () => {
         data: {
           id: 'SIREC-42',
           sirecId: 42,
+          receptionDate,
+        },
+        select: { id: true },
+      });
+    });
+
+    it('should pass null receptionDate when not provided', async () => {
+      vi.mocked(prisma.requete.create).mockResolvedValueOnce({ id: 'SIREC-99' } as any);
+
+      await saveRequeteFromSirec({ sirenaId: 'SIREC-99', sirecId: 99, receptionDate: null });
+
+      expect(prisma.requete.create).toHaveBeenCalledWith({
+        data: {
+          id: 'SIREC-99',
+          sirecId: 99,
+          receptionDate: null,
         },
         select: { id: true },
       });
