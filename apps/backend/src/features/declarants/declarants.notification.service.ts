@@ -283,9 +283,9 @@ function buildAcknowledgmentMessageHtml(text: string): string {
     .join('\n');
   return `<!DOCTYPE html>
 <html lang="fr">
-<body style="font-family:Arial,sans-serif;font-size:14px;color:#333;max-width:600px;margin:0 auto;padding:20px">
+<body style="font-family:Arial,sans-serif;font-size:14px;color:#333;max-width:600px;padding:20px">
   ${lines}
-  <img src="${escapeHtml(logoUrl)}" alt="République Française" style="height:80px;margin-top:24px">
+  <img src="${escapeHtml(logoUrl)}" alt="République Française" style="height:200px;margin-top:24px">
 </body>
 </html>`;
 }
@@ -301,7 +301,8 @@ export function buildAcknowledgmentMessageText(
 ): string {
   const entiteAdmin = formatEntiteAdminString(entites);
   const entiteComplete = formatEntiteCompleteString(entites);
-  const declarantName = `${declarant.nom.toUpperCase()} ${declarant.prenom}`;
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  const declarantName = `${capitalize(declarant.prenom)} ${capitalize(declarant.nom)}`;
   return [
     `Bonjour ${declarantName},`,
     `Votre dossier a bien été reçu sous le numéro ${requeteId}.`,

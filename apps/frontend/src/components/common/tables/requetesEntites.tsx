@@ -210,12 +210,12 @@ export function RequetesEntite() {
     },
     {
       key: 'requete.receptionDate',
-      label: 'Réception',
+      label: 'Date de création',
       isSortable: true,
       sortLabels: {
-        asc: 'Trier par date de réception du plus ancien au plus récent',
-        desc: 'Trier par date de réception du plus récent au plus ancien',
-        reset: 'Réinitialiser le tri de la date de réception',
+        asc: 'Trier par date de création du plus ancien au plus récent',
+        desc: 'Trier par date de création du plus récent au plus ancien',
+        reset: 'Réinitialiser le tri de la date de création',
       },
     },
     {
