@@ -17,7 +17,7 @@ SDPSN-devops-charts:
 
     resources:
       limits:
-        cpu: 250m
+        cpu: 750m
         memory: 900Mi
       requests:
         cpu: 250m
