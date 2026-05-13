@@ -252,13 +252,16 @@ export function RequetesEntite() {
     'requete.receptionDate': (row) => {
       const createdAt = new Date(row.requete.createdAt);
       const isOpen = row.statutId === REQUETE_STATUT_TYPES.NOUVEAU || row.statutId === REQUETE_STATUT_TYPES.EN_COURS;
-      const isOver90Days = isOpen && Date.now() - createdAt.getTime() > 90 * 24 * 60 * 60 * 1000;
+      const today = new Date();
+      const todayMidnight = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+      const createdAtMidnight = Date.UTC(createdAt.getFullYear(), createdAt.getMonth(), createdAt.getDate());
+      const isOver90Days = isOpen && todayMidnight - createdAtMidnight >= 90 * 24 * 60 * 60 * 1000;
       return (
         <div className="requetesEntitesTable__reception-date-cell">
           {createdAt.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
           {isOver90Days && (
             <Badge severity="warning" noIcon small>
-              <span className="fr-sr-only">Dossier reçu depuis</span>+90 jours
+              <span className="fr-sr-only">Requête reçue depuis</span>+90 jours
             </Badge>
           )}
         </div>
