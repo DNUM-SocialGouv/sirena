@@ -70,6 +70,14 @@
   gap: 0.5rem;
 }
 
+.motifs-display {
+  margin-top: 0.5rem;
+}
+
+.motifs-display :global(.fr-mb-0) {
+  white-space: normal;
+}
+
 .toggle-line {
   margin-top: 0.5rem;
   width: fit-content;
