@@ -2,6 +2,7 @@ import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { URL, fileURLToPath } from 'node:url';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, type Plugin } from 'vite';
 
 // Keep in sync with apps/frontend/docker-entrypoint.sh
@@ -31,20 +32,58 @@ function devRuntimeEnvPlugin(): Plugin {
   };
 }
 
+// Defer heavy non-critical stylesheets (DSFR ≈ 900KB) so they no longer block first paint.
+// Uses the classic `media="print" onload="this.media='all'"` swap pattern.
+function asyncCssPlugin(matchers: RegExp[]): Plugin {
+  return {
+    name: 'async-css',
+    apply: 'build',
+    enforce: 'post',
+    transformIndexHtml(html) {
+      return html.replace(
+        /<link\s+([^>]*?)rel="stylesheet"([^>]*?)>/g,
+        (match, before: string, after: string) => {
+          const hrefMatch = match.match(/href="([^"]+)"/);
+          if (!hrefMatch) return match;
+          const href = hrefMatch[1];
+          if (!matchers.some((re) => re.test(href))) return match;
+          const attrs = `${before}${after}`.replace(/\s+/g, ' ').trim();
+          return [
+            `<link ${attrs} rel="stylesheet" media="print" onload="this.media='all'">`,
+            `<noscript><link ${attrs} rel="stylesheet"></noscript>`,
+          ].join('\n    ');
+        },
+      );
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     devRuntimeEnvPlugin(),
     tanstackRouter({ target: 'react', autoCodeSplitting: true }),
     react(),
-    ...(process.env.SENTRY_ENABLED === 'true' ? 
+    asyncCssPlugin([/vendor-dsfr.*\.css$/]),
+    ...(process.env.SENTRY_ENABLED === 'true' ?
       [sentryVitePlugin({
         org: "incubateur",
         project: "psn-sirena-frontend",
         release: { name: process.env.APP_VERSION ?? 'unknown' },
         authToken: process.env.SENTRY_AUTH_TOKEN,
         url: "https://sentry2.fabrique.social.gouv.fr/"
-      })] : [])
+      })] : []),
+    ...(process.env.ANALYZE_BUNDLE === 'true'
+      ? [
+          visualizer({
+            filename: './dist/bundle-stats.html',
+            template: 'treemap',
+            gzipSize: true,
+            brotliSize: true,
+            open: false,
+          }) as Plugin,
+        ]
+      : []),
   ],
 
   resolve: {
@@ -71,5 +110,44 @@ export default defineConfig({
 
   build: {
     sourcemap: true,
-  }
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+
+          // Match by the *final* `/node_modules/<pkg>/` segment so that e.g.
+          // @sentry/react and @base-ui/react don't get caught by a naive "/react/" test.
+          const pkgMatch = id.match(/\/node_modules\/((?:@[^/]+\/)?[^/]+)\//g);
+          if (!pkgMatch) return;
+          const last = pkgMatch[pkgMatch.length - 1];
+          const pkg = last.replace(/^\/node_modules\//, '').replace(/\/$/, '');
+
+          if (pkg === 'react' || pkg === 'react-dom' || pkg === 'scheduler') {
+            return 'vendor-react';
+          }
+          if (
+            pkg.startsWith('@tanstack/react-router') ||
+            pkg.startsWith('@tanstack/router-') ||
+            pkg.startsWith('@tanstack/history') ||
+            pkg.startsWith('@tanstack/store') ||
+            pkg.startsWith('@tanstack/react-store')
+          ) {
+            return 'vendor-router';
+          }
+          if (pkg.startsWith('@tanstack/react-query') || pkg.startsWith('@tanstack/query-')) {
+            return 'vendor-query';
+          }
+          if (pkg.startsWith('@codegouvfr/react-dsfr')) return 'vendor-dsfr';
+          if (pkg.startsWith('@sentry/') || pkg.startsWith('@sentry-internal/')) {
+            return 'vendor-sentry';
+          }
+          if (pkg === 'zod') return 'vendor-zod';
+          if (pkg.startsWith('@base-ui/') || pkg.startsWith('@floating-ui/')) {
+            return 'vendor-ui-primitives';
+          }
+        },
+      },
+    },
+  },
 });

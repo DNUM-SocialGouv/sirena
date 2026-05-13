@@ -1,6 +1,14 @@
 import { createRootRouteWithContext, HeadContent, Outlet } from '@tanstack/react-router';
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { lazy, Suspense } from 'react';
 import { GlobalLayout } from '@/components/layout/globalLayout';
+
+const TanStackRouterDevtools = import.meta.env.PROD
+  ? () => null
+  : lazy(() =>
+      import('@tanstack/react-router-devtools').then((m) => ({
+        default: m.TanStackRouterDevtools,
+      })),
+    );
 
 export const Route = createRootRouteWithContext()({
   component: () => (
@@ -9,7 +17,9 @@ export const Route = createRootRouteWithContext()({
       <GlobalLayout>
         <Outlet />
       </GlobalLayout>
-      <TanStackRouterDevtools />
+      <Suspense>
+        <TanStackRouterDevtools />
+      </Suspense>
     </>
   ),
 });

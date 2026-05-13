@@ -1,4 +1,4 @@
-FROM greenmask/greenmask:v0.2.19
+FROM greenmask/greenmask:v0.2.20
 
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends gettext-base jq && rm -rf /var/lib/apt/lists/*
