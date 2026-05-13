@@ -215,7 +215,11 @@ export function PendingUsersTab() {
 
   return (
     <>
-      <div className="fr-mb-3w">
+      <h2 className="fr-h4 fr-mb-2w">Demande d'habilitation en attente</h2>
+      <div className="fr-mb-1w">
+        <p className="fr-label fr-mb-1v" aria-hidden="true">
+          Rechercher un utilisateur par nom, prénom ou e-mail
+        </p>
         <div className="fr-grid-row">
           <div className="fr-col-12 fr-col-md-5">
             <SearchBar
@@ -262,6 +266,7 @@ export function PendingUsersTab() {
       </div>
       <DataTable
         title="Demande d'habilitation en attente"
+        hideCaption
         rowId="id"
         data={users?.data ?? []}
         columns={columns}
