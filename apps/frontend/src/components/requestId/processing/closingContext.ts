@@ -46,11 +46,18 @@ export const buildClosingContextMessage = ({
   requestId,
   receptionDate,
   situations = [],
+  otherEntitiesAffected = [],
 }: BuildClosingContextMessageInput) => {
   const misEnCauseLabels = [
     ...new Set((situations ?? []).map((situation) => buildMisEnCauseLabel(situation.misEnCause ?? null))),
   ];
   const misEnCauseText = misEnCauseLabels.length > 0 ? misEnCauseLabels.join(', ') : 'non renseigné';
+  const activeOtherEntities = (otherEntitiesAffected ?? []).filter((entity) =>
+    ['NOUVEAU', 'EN_COURS'].includes(entity.statutId),
+  );
+  const continuationSentence = activeOtherEntities.length
+    ? ` Le traitement de la requête sera toujours en cours au ${activeOtherEntities.map((entity) => entity.nomComplet).join(', ')}.`
+    : '';
 
-  return `Vous allez clôturer la requête ${requestId} reçue le ${formatDate(receptionDate)} avec pour mis en cause ${misEnCauseText}.`;
+  return `Vous allez clôturer la requête ${requestId} reçue le ${formatDate(receptionDate)} avec pour mis en cause ${misEnCauseText}.${continuationSentence}`;
 };
