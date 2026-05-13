@@ -33,12 +33,10 @@ if (env.SENTRY_ENABLED === 'true') {
     },
   });
 
-  // Replay is bundled locally (we stay off the Sentry CDN — strict CSP +
-  // self-hosted policy) but its initialisation is deferred to idle so it
-  // doesn't compete with the boot path for CPU.
-  scheduleIdle(() => {
+  scheduleIdle(async () => {
     try {
-      Sentry.getClient()?.addIntegration(Sentry.replayIntegration());
+      const replay = await Sentry.lazyLoadIntegration('replayIntegration');
+      Sentry.getClient()?.addIntegration(replay());
     } catch {
       // Replay is non-critical: failures must not break the app.
     }
