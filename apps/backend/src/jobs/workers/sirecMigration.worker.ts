@@ -1,7 +1,7 @@
 import { type Job, Worker } from 'bullmq';
 import { connection } from '../../config/redis.js';
 import { fetchSirecReclamationById } from '../../features/sirecMigration/sirecMigration.repository.js';
-import { getRequeteIdFromSirecId, saveRequeteFromSirec } from '../../features/sirecMigration/sirecMigration.service.js';
+import { getRequeteIdFromSirecId, saveFromSirec } from '../../features/sirecMigration/sirecMigration.service.js';
 import { transformSirecReclamation } from '../../features/sirecMigration/sirecMigration.transformer.js';
 import { createDefaultLogger } from '../../helpers/pino.js';
 import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
@@ -24,14 +24,13 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
 
       const data = transformSirecReclamation(row);
 
-      const existingRequeteId = await getRequeteIdFromSirecId(row.id_data);
-
+      const existingRequeteId = await getRequeteIdFromSirecId(data.sirecId);
       if (existingRequeteId !== null) {
         logger.info({ requeteId: existingRequeteId, sirecId: data.sirecId }, 'SIREC record already migrated, skipping');
         return;
       }
 
-      const sirenaRequeteId = await saveRequeteFromSirec(data);
+      const sirenaRequeteId = await saveFromSirec(data);
 
       logger.info({ requeteId: sirenaRequeteId, sirecId: data.sirecId }, 'SIREC record migrated successfully');
     },

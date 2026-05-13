@@ -11,6 +11,8 @@ describe('sirecMigration.transformer.ts', () => {
       sirenaId: 'SIREC-42',
       sirecId: 42,
       receptionDate: new Date('2024-01-15'),
+      fait: { autresPrecisions: 'Ma réclamation' },
+      situation: {},
     });
   });
 

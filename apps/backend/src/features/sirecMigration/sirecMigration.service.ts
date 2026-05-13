@@ -1,5 +1,4 @@
 import { prisma } from '@sirena/db';
-import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import type { SirenaRequeteData } from './sirecMigration.transformer.js';
 
 export async function getRequeteIdFromSirecId(sirecId: number): Promise<string | null> {
@@ -10,19 +9,40 @@ export async function getRequeteIdFromSirecId(sirecId: number): Promise<string |
   return requete ? requete.id : null;
 }
 
-export async function saveRequeteFromSirec(data: SirenaRequeteData): Promise<string> {
-  const logger = getLoggerStore();
+export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
+  const requeteId = await prisma.$transaction(async (tx) => {
+    const requete = await tx.requete.create({
+      data: {
+        id: data.sirenaId,
+        sirecId: data.sirecId,
+        receptionDate: data.receptionDate,
+      },
+      select: { id: true },
+    });
 
-  const requete = await prisma.requete.create({
-    data: {
-      id: data.sirenaId,
-      sirecId: data.sirecId,
-      receptionDate: data.receptionDate,
-    },
-    select: { id: true },
+    const lieu = await tx.lieuDeSurvenue.create({ data: {}, select: { id: true } });
+    const misEnCause = await tx.misEnCause.create({ data: {}, select: { id: true } });
+    const demarchesEngagees = await tx.demarchesEngagees.create({ data: {}, select: { id: true } });
+
+    const situation = await tx.situation.create({
+      data: {
+        lieuDeSurvenueId: lieu.id,
+        misEnCauseId: misEnCause.id,
+        demarchesEngageesId: demarchesEngagees.id,
+        requeteId: requete.id,
+      },
+      select: { id: true },
+    });
+
+    await tx.fait.create({
+      data: {
+        situationId: situation.id,
+        autresPrecisions: data.fait.autresPrecisions,
+      },
+    });
+
+    return requete.id;
   });
 
-  logger.info({ requeteId: requete.id, sirecId: data.sirecId }, 'Requete created from SIREC');
-
-  return requete.id;
+  return requeteId;
 }
