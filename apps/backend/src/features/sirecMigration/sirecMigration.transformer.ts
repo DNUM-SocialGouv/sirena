@@ -1,5 +1,5 @@
 import { generateSirenaIdFromSirecReclamation } from '../../helpers/sirecMigration.js';
-import type { SirecReclamationRow } from './sirecMigration.repository.js';
+import type { SirecReclamationData } from './sirecMigration.repository.js';
 import { type SirenaSituationData, transformSirecSituation } from './sirecMigration.situation.transformer.js';
 
 export type { SirenaSituationData };
@@ -11,11 +11,11 @@ export interface SirenaRequeteData {
   situation: SirenaSituationData;
 }
 
-export function transformSirecReclamation(row: SirecReclamationRow): SirenaRequeteData {
+export function transformSirecReclamation(sirecData: SirecReclamationData): SirenaRequeteData {
   return {
-    sirenaId: generateSirenaIdFromSirecReclamation(row),
-    sirecId: row.id_data,
-    receptionDate: row.r_recept_date,
-    situation: transformSirecSituation(row),
+    sirenaId: generateSirenaIdFromSirecReclamation(sirecData.reclamation),
+    sirecId: sirecData.reclamation.id_data,
+    receptionDate: sirecData.reclamation.r_recept_date,
+    situation: transformSirecSituation(sirecData),
   };
 }

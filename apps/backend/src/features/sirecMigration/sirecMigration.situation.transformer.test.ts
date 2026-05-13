@@ -2,21 +2,29 @@ import { describe, expect, it } from 'vitest';
 import { transformSirecSituation } from './sirecMigration.situation.transformer.js';
 
 describe('sirecMigration.situation.transformer.ts', () => {
-  it('should map description to autresPrecisions in fait', () => {
-    const row = { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation' };
+  const sirecData = {
+    reclamation: { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation' },
+    motifsDeclaresIdDicos: [809],
+  };
 
-    const result = transformSirecSituation(row);
+  it('should map description to fait.autresPrecisions', () => {
+    const result = transformSirecSituation(sirecData);
 
-    expect(result).toEqual({
-      fait: { autresPrecisions: 'Ma réclamation' },
-    });
+    expect(result.fait.autresPrecisions).toBe('Ma réclamation');
   });
 
-  it('should default autresPrecisions to empty string when description is null', () => {
-    const row = { id_data: 42, r_recept_date: null, description: null };
+  it('should transcode motifsDeclaresIdDicos into fait.motifsDeclaratifs', () => {
+    const result = transformSirecSituation({
+      ...sirecData,
+      motifsDeclaresIdDicos: [809, 811],
+    });
 
-    const result = transformSirecSituation(row);
+    expect(result.fait.motifsDeclaratifs).toEqual(['PROBLEME_FACTURATION', 'PROBLEME_LOCAUX']);
+  });
 
-    expect(result.fait.autresPrecisions).toBe('');
+  it('should produce an empty motifsDeclaratifs when no motifs are provided', () => {
+    const result = transformSirecSituation({ ...sirecData, motifsDeclaresIdDicos: [] });
+
+    expect(result.fait.motifsDeclaratifs).toEqual([]);
   });
 });

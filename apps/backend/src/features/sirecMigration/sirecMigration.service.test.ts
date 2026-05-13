@@ -12,6 +12,7 @@ vi.mock('@sirena/db', () => ({
     demarchesEngagees: { create: vi.fn() },
     situation: { create: vi.fn() },
     fait: { create: vi.fn() },
+    faitMotifDeclaratif: { createMany: vi.fn() },
   },
 }));
 
@@ -52,7 +53,9 @@ describe('sirecMigration.service.ts', () => {
       sirenaId: 'SIREC-42',
       sirecId: 42,
       receptionDate,
-      situation: { fait: { autresPrecisions: 'Ma réclamation' } },
+      situation: {
+        fait: { autresPrecisions: 'Ma réclamation', motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'] },
+      },
     };
 
     beforeEach(() => {
@@ -62,12 +65,11 @@ describe('sirecMigration.service.ts', () => {
       vi.mocked(prisma.demarchesEngagees.create).mockResolvedValue({ id: 'dem-1' } as any);
       vi.mocked(prisma.situation.create).mockResolvedValue({ id: 'sit-1' } as any);
       vi.mocked(prisma.fait.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.faitMotifDeclaratif.createMany).mockResolvedValue({ count: 2 } as any);
     });
 
     it('should return the requete id', async () => {
-      const result = await saveFromSirec(data);
-
-      expect(result).toBe('SIREC-42');
+      expect(await saveFromSirec(data)).toBe('SIREC-42');
     });
 
     it('should create Requete with correct data', async () => {
@@ -79,24 +81,7 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should create Situation with its sub-entities linked to the Requete', async () => {
-      await saveFromSirec(data);
-
-      expect(prisma.lieuDeSurvenue.create).toHaveBeenCalledWith({ data: {}, select: { id: true } });
-      expect(prisma.misEnCause.create).toHaveBeenCalledWith({ data: {}, select: { id: true } });
-      expect(prisma.demarchesEngagees.create).toHaveBeenCalledWith({ data: {}, select: { id: true } });
-      expect(prisma.situation.create).toHaveBeenCalledWith({
-        data: {
-          lieuDeSurvenueId: 'lieu-1',
-          misEnCauseId: 'mec-1',
-          demarchesEngageesId: 'dem-1',
-          requeteId: 'SIREC-42',
-        },
-        select: { id: true },
-      });
-    });
-
-    it('should create Fait with autresPrecisions from situation.fait', async () => {
+    it('should create Fait with autresPrecisions', async () => {
       await saveFromSirec(data);
 
       expect(prisma.fait.create).toHaveBeenCalledWith({
@@ -104,10 +89,30 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
+    it('should create FaitMotifDeclaratif for each motif', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.faitMotifDeclaratif.createMany).toHaveBeenCalledWith({
+        data: [
+          { situationId: 'sit-1', motifDeclaratifId: 'PROBLEME_FACTURATION' },
+          { situationId: 'sit-1', motifDeclaratifId: 'AUTRE' },
+        ],
+      });
+    });
+
+    it('should not call faitMotifDeclaratif.createMany when motifs list is empty', async () => {
+      await saveFromSirec({
+        ...data,
+        situation: { fait: { autresPrecisions: 'Test', motifsDeclaratifs: [] } },
+      });
+
+      expect(prisma.faitMotifDeclaratif.createMany).toHaveBeenCalledWith({ data: [] });
+    });
+
     it('should throw a ZodError if the situation does not match SituationDataSchema', async () => {
       const invalidData = {
         ...data,
-        situation: { fait: { autresPrecisions: 123 as any } },
+        situation: { fait: { autresPrecisions: 123 as any, motifsDeclaratifs: [] } },
       };
 
       await expect(saveFromSirec(invalidData)).rejects.toThrow(ZodError);

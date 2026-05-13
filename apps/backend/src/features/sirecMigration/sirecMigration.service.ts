@@ -44,6 +44,13 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       },
     });
 
+    await tx.faitMotifDeclaratif.createMany({
+      data: data.situation.fait.motifsDeclaratifs.map((motifDeclaratifId) => ({
+        situationId: situation.id,
+        motifDeclaratifId,
+      })),
+    });
+
     return requete.id;
   });
 }

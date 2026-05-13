@@ -1,5 +1,5 @@
 import { type SirenaFaitData, transformSirecFait } from './sirecMigration.fait.transformer.js';
-import type { SirecReclamationRow } from './sirecMigration.repository.js';
+import type { SirecReclamationData } from './sirecMigration.repository.js';
 
 export type { SirenaFaitData };
 
@@ -7,8 +7,8 @@ export interface SirenaSituationData {
   fait: SirenaFaitData;
 }
 
-export function transformSirecSituation(row: SirecReclamationRow): SirenaSituationData {
+export function transformSirecSituation(sirecData: SirecReclamationData): SirenaSituationData {
   return {
-    fait: transformSirecFait(row),
+    fait: transformSirecFait(sirecData),
   };
 }
