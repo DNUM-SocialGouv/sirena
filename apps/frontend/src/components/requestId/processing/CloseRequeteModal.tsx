@@ -15,23 +15,8 @@ export type CloseRequeteModalRef = {
   openModal: () => void;
 };
 
-export type OtherEntityAffected = {
-  id: string;
-  nomComplet: string;
-  entiteTypeId: string;
-  statutId: string;
-};
-
-type ClosingContextSituation = Parameters<typeof buildClosingContextMessage>[0]['situations'];
-
 export type CloseRequeteModalProps = {
   requestId: string;
-  misEnCause?: string;
-  date?: string;
-  receptionDate?: string | Date | null;
-  situations?: ClosingContextSituation;
-  otherEntitiesAffected?: OtherEntityAffected[];
-  customDescription?: string;
   triggerButtonRef?: React.RefObject<HTMLButtonElement | null>;
   onBeforeClose?: () => Promise<void>;
   onCancel?: () => void;
@@ -40,22 +25,7 @@ export type CloseRequeteModalProps = {
 };
 
 export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteModalProps>(
-  (
-    {
-      requestId,
-      misEnCause,
-      date,
-      receptionDate,
-      situations,
-      otherEntitiesAffected = [],
-      triggerButtonRef,
-      onBeforeClose,
-      onCancel,
-      onSuccess,
-      onDismiss,
-    },
-    ref,
-  ) => {
+  ({ requestId, triggerButtonRef, onBeforeClose, onCancel, onSuccess, onDismiss }, ref) => {
     const reasonErrorId = useId();
     const [reasonIds, setReasonIds] = useState<string[]>([]);
     const [precision, setPrecision] = useState<string>('');
@@ -220,23 +190,17 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
     const requestDetails = requestDetailsQuery.data;
     const otherEntitiesAffectedFromQuery = otherEntitiesAffectedQuery.data?.otherEntites;
-    const hasExplicitContext =
-      !!receptionDate || !!date || !!situations || !!misEnCause || otherEntitiesAffected.length > 0;
-    const isContextLoading =
-      !hasExplicitContext && (requestDetailsQuery.isLoading || otherEntitiesAffectedQuery.isLoading);
-    const hasContextError = !hasExplicitContext && (requestDetailsQuery.error || otherEntitiesAffectedQuery.error);
+    const isContextLoading = requestDetailsQuery.isLoading || otherEntitiesAffectedQuery.isLoading;
+    const hasContextError = requestDetailsQuery.error || otherEntitiesAffectedQuery.error;
     const descriptionText = isContextLoading
       ? 'Chargement des informations de la requête...'
       : hasContextError
         ? `Vous allez clôturer la requête ${requestId}.`
         : buildClosingContextMessage({
             requestId,
-            receptionDate: receptionDate ?? requestDetails?.requete?.receptionDate ?? date,
-            situations:
-              situations ??
-              requestDetails?.requete?.situations ??
-              (misEnCause ? [{ misEnCause: { nom: misEnCause } }] : []),
-            otherEntitiesAffected: otherEntitiesAffectedFromQuery ?? otherEntitiesAffected,
+            receptionDate: requestDetails?.requete?.receptionDate,
+            situations: requestDetails?.requete?.situations ?? [],
+            otherEntitiesAffected: otherEntitiesAffectedFromQuery ?? [],
           });
 
     return (
