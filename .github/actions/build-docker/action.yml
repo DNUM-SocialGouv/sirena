@@ -1,7 +1,10 @@
-name: 'Build and Push Docker Images'
-description: 'Build and push backend and frontend Docker images to GitHub Container Registry'
+name: 'Build and Push a Docker Image'
+description: 'Build and push a single Sirena Docker image (anonymize, worker, backend or frontend) to GHCR with shared BuildKit cache.'
 
 inputs:
+  image:
+    description: "Image to build: one of anonymize, worker, backend, frontend"
+    required: true
   registry:
     description: 'Container registry URL'
     required: false
@@ -10,9 +13,6 @@ inputs:
     description: 'Base image name'
     required: false
     default: '${{ github.repository }}'
-  environment:
-    description: 'Environment name (test, integration, etc.)'
-    required: true
   version:
     description: 'Version identifier for tagging (tag name or short SHA)'
     required: true
@@ -20,225 +20,126 @@ inputs:
     description: 'GitHub token for registry login'
     required: true
   sentry-auth-token:
-    description: 'Sentry auth token'
-    required: true
-  trivy-enabled:
-    description: "Enable Trivy security scanning on built images"
+    description: 'Sentry auth token (only used by backend/frontend builds)'
     required: false
-    default: "true"
+    default: ''
+  cache-fallback-ref:
+    description: 'Git ref name used as cross-branch BuildKit cache fallback (typically main)'
+    required: false
+    default: 'main'
+
+outputs:
+  image-ref:
+    description: 'Fully-qualified image reference that was built (or that already existed)'
+    value: ${{ steps.meta.outputs.image-ref }}
+  skipped:
+    description: 'true if the image already existed in the registry'
+    value: ${{ steps.exists.outputs.skipped }}
 
 runs:
   using: 'composite'
   steps:
     - name: Log in to the Container registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
       with:
         registry: ${{ inputs.registry }}
         username: ${{ github.actor }}
         password: ${{ inputs.github-token }}
 
-    - name: Extract metadata (tags, labels) for Docker
+    - name: Resolve image reference
       id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ inputs.registry }}/${{ inputs.image-name }}
-        tags: |
-          type=raw,value=${{ inputs.version }}
-
-    - name: Save image tag and normalize repository name
       shell: bash
       run: |
-        echo "IMAGE_TAG=${{ steps.meta.outputs.tags }}" >> $GITHUB_ENV
-        # Convertir le nom du repository en minuscules pour Docker
         NORMALIZED_REPO=$(echo "${{ inputs.image-name }}" | tr '[:upper:]' '[:lower:]')
-        echo "NORMALIZED_REPO=${NORMALIZED_REPO}" >> $GITHUB_ENV
+        REF="${{ inputs.registry }}/${NORMALIZED_REPO}:${{ inputs.version }}-${{ inputs.image }}"
+        echo "image-ref=${REF}" >> "$GITHUB_OUTPUT"
+        echo "NORMALIZED_REPO=${NORMALIZED_REPO}" >> "$GITHUB_ENV"
+
+    - name: Check if image already exists in registry
+      id: exists
+      shell: bash
+      run: |
+        if docker manifest inspect "${{ steps.meta.outputs.image-ref }}" > /dev/null 2>&1; then
+          echo "skipped=true" >> "$GITHUB_OUTPUT"
+          echo "Image ${{ steps.meta.outputs.image-ref }} already exists, skipping build."
+        else
+          echo "skipped=false" >> "$GITHUB_OUTPUT"
+        fi
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      if: steps.exists.outputs.skipped == 'false'
+      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
 
-    # ── Anonymize image ────────────────────────────────────────────
-    - name: Check anonymize version is not already created
+    - name: Compute build matrix for image
+      if: steps.exists.outputs.skipped == 'false'
+      id: build_spec
       shell: bash
-      id: check-image-anonymize
       run: |
-        if docker manifest inspect ${{ env.IMAGE_TAG }}-anonymize > /dev/null 2>&1; then
-          echo "anonymize-exists=true" >> $GITHUB_OUTPUT
-        else
-          echo "anonymize-exists=false" >> $GITHUB_OUTPUT
-        fi
+        case "${{ inputs.image }}" in
+          anonymize)
+            echo "context=apps/anonymize" >> "$GITHUB_OUTPUT"
+            echo "dockerfile=apps/anonymize/Dockerfile" >> "$GITHUB_OUTPUT"
+            echo "needs_sentry=false" >> "$GITHUB_OUTPUT"
+            echo "build_args=" >> "$GITHUB_OUTPUT"
+            ;;
+          worker)
+            echo "context=." >> "$GITHUB_OUTPUT"
+            echo "dockerfile=apps/backend/Dockerfile.worker" >> "$GITHUB_OUTPUT"
+            echo "needs_sentry=true" >> "$GITHUB_OUTPUT"
+            echo "build_args=" >> "$GITHUB_OUTPUT"
+            ;;
+          backend)
+            echo "context=." >> "$GITHUB_OUTPUT"
+            echo "dockerfile=apps/backend/Dockerfile" >> "$GITHUB_OUTPUT"
+            echo "needs_sentry=true" >> "$GITHUB_OUTPUT"
+            echo "build_args=APP_VERSION=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            ;;
+          frontend)
+            echo "context=." >> "$GITHUB_OUTPUT"
+            echo "dockerfile=apps/frontend/Dockerfile" >> "$GITHUB_OUTPUT"
+            echo "needs_sentry=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "build_args<<EOF"
+              echo "SENTRY_ENABLED=true"
+              echo "APP_VERSION=${{ inputs.version }}"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            ;;
+          *)
+            echo "Unknown image: ${{ inputs.image }}" >&2
+            exit 1
+            ;;
+        esac
 
-    - name: Build and push Docker anonymize image
-      if: steps.check-image-anonymize.outputs.anonymize-exists == 'false'
-      uses: docker/build-push-action@v6
+    - name: Build and push image (with Sentry)
+      if: steps.exists.outputs.skipped == 'false' && steps.build_spec.outputs.needs_sentry == 'true'
+      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
       with:
-        context: apps/anonymize
-        file: apps/anonymize/Dockerfile
+        context: ${{ steps.build_spec.outputs.context }}
+        file: ${{ steps.build_spec.outputs.dockerfile }}
         push: true
-        tags: ${{ env.IMAGE_TAG }}-anonymize
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: |
-          type=gha,scope=anonymize
-        cache-to: |
-          type=gha,mode=max,scope=anonymize
-        platforms: linux/amd64
-
-    - name: Trivy scan anonymize image
-      if: inputs.trivy-enabled == 'true' && steps.check-image-anonymize.outputs.anonymize-exists == 'false'
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-      continue-on-error: true
-      with:
-        image-ref: ${{ env.IMAGE_TAG }}-anonymize
-        format: "sarif"
-        output: "trivy-container-anonymize-results.sarif"
-        severity: "CRITICAL,HIGH,MEDIUM"
-        exit-code: "0"
-
-    - name: Upload Trivy anonymize scan results
-      if: inputs.trivy-enabled == 'true' && steps.check-image-anonymize.outputs.anonymize-exists == 'false'
-      uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v3
-      continue-on-error: true
-      with:
-        sarif_file: "trivy-container-anonymize-results.sarif"
-        category: "trivy-container-anonymize"
-
-    # ── Worker image ─────────────────────────────────────────────
-    - name: Check worker version is not already created
-      shell: bash
-      id: check-image-worker
-      run: |
-        if docker manifest inspect ${{ env.IMAGE_TAG }}-worker > /dev/null 2>&1; then
-          echo "worker-exists=true" >> $GITHUB_OUTPUT
-        else
-          echo "worker-exists=false" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Build and push Docker worker image
-      if: steps.check-image-worker.outputs.worker-exists == 'false'
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        file: apps/backend/Dockerfile.worker
-        push: true
-        tags: ${{ env.IMAGE_TAG }}-worker
-        labels: ${{ steps.meta.outputs.labels }}
+        tags: ${{ steps.meta.outputs.image-ref }}
+        build-args: ${{ steps.build_spec.outputs.build_args }}
         secrets: |
           SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
         cache-from: |
-          type=gha,scope=worker
-        cache-to: |
-          type=gha,mode=max,scope=worker
+          type=gha,scope=${{ inputs.image }}-${{ github.ref_name }}
+          type=gha,scope=${{ inputs.image }}-${{ inputs.cache-fallback-ref }}
+        cache-to: type=gha,mode=max,scope=${{ inputs.image }}-${{ github.ref_name }}
         platforms: linux/amd64
+        provenance: false
 
-    - name: Trivy scan worker image
-      if: inputs.trivy-enabled == 'true' && steps.check-image-worker.outputs.worker-exists == 'false'
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-      continue-on-error: true
+    - name: Build and push image (no Sentry)
+      if: steps.exists.outputs.skipped == 'false' && steps.build_spec.outputs.needs_sentry == 'false'
+      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
       with:
-        image-ref: ${{ env.IMAGE_TAG }}-worker
-        format: "sarif"
-        output: "trivy-container-worker-results.sarif"
-        severity: "CRITICAL,HIGH,MEDIUM"
-        exit-code: "0"
-
-    - name: Upload Trivy worker scan results
-      if: inputs.trivy-enabled == 'true' && steps.check-image-worker.outputs.worker-exists == 'false'
-      uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v3
-      continue-on-error: true
-      with:
-        sarif_file: "trivy-container-worker-results.sarif"
-        category: "trivy-container-worker"
-
-    - name: Check backend version is not already created
-      shell: bash
-      id: check-image-backend
-      run: |
-        if docker manifest inspect ${{ env.IMAGE_TAG }}-backend > /dev/null 2>&1; then
-          echo "backend-exists=true" >> $GITHUB_OUTPUT
-        else
-          echo "backend-exists=false" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Build and push Docker backend image
-      if: steps.check-image-backend.outputs.backend-exists == 'false'
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        file: apps/backend/Dockerfile
+        context: ${{ steps.build_spec.outputs.context }}
+        file: ${{ steps.build_spec.outputs.dockerfile }}
         push: true
-        tags: ${{ env.IMAGE_TAG }}-backend
-        labels: ${{ steps.meta.outputs.labels }}
-        build-args: |
-          APP_VERSION=${{ inputs.version }}
-        secrets: |
-          SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
+        tags: ${{ steps.meta.outputs.image-ref }}
         cache-from: |
-          type=gha,scope=backend
-        cache-to: |
-          type=gha,mode=max,scope=backend
+          type=gha,scope=${{ inputs.image }}-${{ github.ref_name }}
+          type=gha,scope=${{ inputs.image }}-${{ inputs.cache-fallback-ref }}
+        cache-to: type=gha,mode=max,scope=${{ inputs.image }}-${{ github.ref_name }}
         platforms: linux/amd64
-
-    - name: Trivy scan backend image
-      if: inputs.trivy-enabled == 'true' && steps.check-image-backend.outputs.backend-exists == 'false'
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-      continue-on-error: true
-      with:
-        image-ref: ${{ env.IMAGE_TAG }}-backend
-        format: "sarif"
-        output: "trivy-container-backend-results.sarif"
-        severity: "CRITICAL,HIGH,MEDIUM"
-
-    - name: Upload Trivy backend scan results
-      if: inputs.trivy-enabled == 'true' && steps.check-image-backend.outputs.backend-exists == 'false'
-      uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v3
-      continue-on-error: true
-      with:
-        sarif_file: "trivy-container-backend-results.sarif"
-        category: "trivy-container-backend"
-
-    - name: Check frontend version is not already created
-      shell: bash
-      id: check-image-frontend
-      run: |
-        if docker manifest inspect ${{ env.IMAGE_TAG }}-frontend > /dev/null 2>&1; then
-          echo "frontend-exists=true" >> $GITHUB_OUTPUT
-        else
-          echo "frontend-exists=false" >> $GITHUB_OUTPUT
-        fi
-
-    - name: Build and push Docker frontend image
-      if: steps.check-image-frontend.outputs.frontend-exists == 'false'
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        file: apps/frontend/Dockerfile
-        push: true
-        tags: ${{ env.IMAGE_TAG }}-frontend
-        labels: ${{ steps.meta.outputs.labels }}
-        build-args: |
-          SENTRY_ENABLED=true
-          APP_VERSION=${{ inputs.version }}
-        secrets: |
-          SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
-        cache-from: |
-          type=gha,scope=frontend
-        cache-to: |
-          type=gha,mode=max,scope=frontend
-        platforms: linux/amd64
-
-    - name: Trivy scan frontend image
-      if: inputs.trivy-enabled == 'true' && steps.check-image-frontend.outputs.frontend-exists == 'false'
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
-      continue-on-error: true
-      with:
-        image-ref: ${{ env.IMAGE_TAG }}-frontend
-        format: "sarif"
-        output: "trivy-container-frontend-results.sarif"
-        severity: "CRITICAL,HIGH,MEDIUM"
-
-    - name: Upload Trivy frontend scan results
-      if: inputs.trivy-enabled == 'true' && steps.check-image-frontend.outputs.frontend-exists == 'false'
-      uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v3
-      continue-on-error: true
-      with:
-        sarif_file: "trivy-container-frontend-results.sarif"
-        category: "trivy-container-frontend"
+        provenance: false
