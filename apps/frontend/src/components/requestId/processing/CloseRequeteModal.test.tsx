@@ -27,22 +27,26 @@ vi.mock('@/hooks/queries/useRequeteDetails', () => ({
 
 describe('CloseRequeteModal', () => {
   it('displays a single info alert with the standard closing context', () => {
-    vi.mocked(useRequeteDetails).mockReturnValue({ data: null, isLoading: false, error: null } as ReturnType<
-      typeof useRequeteDetails
-    >);
+    vi.mocked(useRequeteDetails).mockReturnValue({
+      data: {
+        requete: {
+          receptionDate: '2024-03-15T00:00:00.000Z',
+          situations: [{ misEnCause: { nom: 'EHPAD Les Lilas' } }],
+        },
+      },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useRequeteDetails>);
     vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue({
-      data: null,
+      data: {
+        otherEntites: [{ id: 'ars', nomComplet: 'ARS Bretagne', entiteTypeId: 'ARS', statutId: 'NOUVEAU' }],
+        subAdministrativeEntites: [],
+      },
       isLoading: false,
       error: null,
     } as ReturnType<typeof useRequeteOtherEntitiesAffected>);
-    render(
-      <CloseRequeteModal
-        requestId="REQ-354"
-        receptionDate="2024-03-15T00:00:00.000Z"
-        situations={[{ misEnCause: { nom: 'EHPAD Les Lilas' } }]}
-        otherEntitiesAffected={[{ id: 'ars', nomComplet: 'ARS Bretagne', entiteTypeId: 'ARS', statutId: 'NOUVEAU' }]}
-      />,
-    );
+
+    render(<CloseRequeteModal requestId="REQ-354" />);
 
     expect(screen.getByText(/Vous allez clôturer la requête REQ-354 reçue le 15\/03\/2024/)).toBeInTheDocument();
     expect(
