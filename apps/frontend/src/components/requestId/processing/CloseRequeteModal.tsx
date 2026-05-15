@@ -7,6 +7,7 @@ import { SelectWithChildren } from '@sirena/ui';
 import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useCloseRequete } from '@/hooks/mutations/closeRequete.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
+import { useRequeteDetails, useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 import { buildClosingContextMessage } from './closingContext';
 
@@ -47,7 +48,6 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       receptionDate,
       situations,
       otherEntitiesAffected = [],
-      customDescription,
       triggerButtonRef,
       onBeforeClose,
       onCancel,
@@ -67,6 +67,8 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
     const closeRequeteMutation = useCloseRequete(requestId);
     const uploadFileMutation = useUploadFile({ silentToastError: true });
+    const requestDetailsQuery = useRequeteDetails(requestId);
+    const otherEntitiesAffectedQuery = useRequeteOtherEntitiesAffected(requestId);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const cleanupRef = useRef<(() => void) | null>(null);
 
@@ -216,11 +218,14 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       onCancel?.();
     };
 
+    const requestDetails = requestDetailsQuery.data;
+    const otherEntitiesAffectedFromQuery = otherEntitiesAffectedQuery.data?.otherEntites;
     const descriptionText = buildClosingContextMessage({
       requestId,
-      receptionDate: receptionDate ?? date,
-      situations: situations ?? (misEnCause ? [{ misEnCause: { nom: misEnCause } }] : []),
-      otherEntitiesAffected,
+      receptionDate: receptionDate ?? requestDetails?.requete?.receptionDate ?? date,
+      situations:
+        situations ?? requestDetails?.requete?.situations ?? (misEnCause ? [{ misEnCause: { nom: misEnCause } }] : []),
+      otherEntitiesAffected: otherEntitiesAffectedFromQuery ?? otherEntitiesAffected,
     });
 
     return (
