@@ -310,8 +310,13 @@ const StepComponent = ({
                 </ButtonLink>
               </div>
               <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-                <div className="fr-btns-group fr-btns-group--inline">
-                  <Button priority="secondary" size="small" onClick={() => handleEditButton(false)}>
+                <div className="fr-grid-row">
+                  <Button
+                    className="fr-mr-1w"
+                    priority="secondary"
+                    size="small"
+                    onClick={() => handleEditButton(false)}
+                  >
                     Annuler
                   </Button>
                   <Button
