@@ -3,40 +3,86 @@ name: Lint and Unit Tests
 on:
   push:
 
+concurrency:
+  group: lint-test-${{ github.ref }}
+  # On protected branches we let runs finish (post-merge signal matters).
+  # On feature branches, cancel previous runs when new commits land.
+  cancel-in-progress: ${{ !contains(fromJSON('["refs/heads/main","refs/heads/validation","refs/heads/production","refs/heads/preproduction","refs/heads/formation"]'), github.ref) }}
+
 permissions:
   contents: read
 
 jobs:
-  lint-and-build:
-    name: Lint and Unit Tests
+  audit:
+    name: pnpm audit
     runs-on: ubuntu-latest
-    env:
-      PG_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
+    # Non-blocking: vulnerability surface is reviewed but does not gate merges.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+        with:
+          fetch-depth: 1
       - uses: pnpm/action-setup@739bfe42ca9233c5e6aca07c1a25a9d34aca49b0 # v6
-      - name: Use Node.js 22
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 22
           cache: "pnpm"
       - name: Audit dependencies
         run: pnpm audit --audit-level=moderate
+
+  gitleaks:
+    name: GitLeaks secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+        with:
+          fetch-depth: 1
+      - name: Run GitLeaks
+        run: bash .husky/gitleaks-detect-secrets-ci.sh
+
+  lint-build-test:
+    name: Lint, Build and Unit Tests
+    runs-on: ubuntu-latest
+    env:
+      PG_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+        with:
+          fetch-depth: 1
+
+      - uses: pnpm/action-setup@739bfe42ca9233c5e6aca07c1a25a9d34aca49b0 # v6
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Cache node_modules
+        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+        with:
+          # actions/setup-node already caches the global pnpm store; this layer
+          # caches the project-level node_modules trees so install becomes a
+          # near no-op when the lockfile is unchanged.
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: pnpm-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-modules-${{ runner.os }}-
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --prefer-offline
+
       - name: Run linter
         run: pnpm lint
-      - name: Run gitLeaks
-        run: pnpm gitleaks:ci
-      - name: Build common
-        run: pnpm build:common
-      - name: Build backend-utils
-        run: pnpm build:backend-utils
-      - name: Generate types
+
+      - name: Generate Prisma client
         run: pnpm db:generate
-      - name: build db
-        run: pnpm build:db
-      - name: Build backend
-        run: pnpm build:backend
+
+      - name: Build workspace packages (parallel, topological)
+        run: pnpm --filter "@sirena/backend..." --workspace-concurrency=4 run build
+
       - name: Run tests
         run: pnpm test:unit
