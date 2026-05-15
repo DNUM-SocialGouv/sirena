@@ -115,25 +115,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
       <CreateNoteDrawer ref={createNoteDrawerRef} />
       <EditNoteDrawer ref={editNoteDrawerRef} />
       <SendAcknowledgmentDrawer ref={sendAcknowledgmentDrawerRef} />
-      <CloseRequeteModal
-        ref={closeRequeteModalRef}
-        requestId={requestId}
-        date={
-          requestQuery.data?.requete?.createdAt
-            ? new Date(requestQuery.data.requete.createdAt).toLocaleDateString('fr-FR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-              })
-            : ''
-        }
-        misEnCause={
-          requestQuery.data?.requete?.situations?.[0]?.misEnCause
-            ? requestQuery.data.requete.situations[0].misEnCause.misEnCauseType?.label || 'Non spécifié'
-            : undefined
-        }
-        triggerButtonRef={closeRequeteButtonRef}
-      />
+      <CloseRequeteModal ref={closeRequeteModalRef} requestId={requestId} triggerButtonRef={closeRequeteButtonRef} />
       <ReopenRequeteModal ref={reopenRequeteModalRef} requestId={requestId} triggerButtonRef={reopenRequeteButtonRef} />
     </>
   ) : (
