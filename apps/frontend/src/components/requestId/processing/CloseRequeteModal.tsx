@@ -8,6 +8,7 @@ import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, use
 import { useCloseRequete } from '@/hooks/mutations/closeRequete.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
+import { buildClosingContextMessage } from './closingContext';
 
 export type CloseRequeteModalRef = {
   openModal: () => void;
@@ -20,10 +21,14 @@ export type OtherEntityAffected = {
   statutId: string;
 };
 
+type ClosingContextSituation = Parameters<typeof buildClosingContextMessage>[0]['situations'];
+
 export type CloseRequeteModalProps = {
   requestId: string;
   misEnCause?: string;
   date?: string;
+  receptionDate?: string | Date | null;
+  situations?: ClosingContextSituation;
   otherEntitiesAffected?: OtherEntityAffected[];
   customDescription?: string;
   triggerButtonRef?: React.RefObject<HTMLButtonElement | null>;
@@ -39,6 +44,8 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       requestId,
       misEnCause,
       date,
+      receptionDate,
+      situations,
       otherEntitiesAffected = [],
       customDescription,
       triggerButtonRef,
@@ -209,9 +216,12 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       onCancel?.();
     };
 
-    const descriptionText =
-      customDescription ||
-      `Attention : vous allez clôturer la requête ${requestId} prise en charge le ${date} avec pour mise en cause "${misEnCause}".`;
+    const descriptionText = buildClosingContextMessage({
+      requestId,
+      receptionDate: receptionDate ?? date,
+      situations: situations ?? (misEnCause ? [{ misEnCause: { nom: misEnCause } }] : []),
+      otherEntitiesAffected,
+    });
 
     return (
       <closeModal.Component
@@ -234,30 +244,9 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       >
         <div className="fr-mb-4w">
           <div className="fr-text--sm fr-text--grey">
-            <Alert small={true} severity="warning" description={descriptionText} />
+            <Alert small={true} severity="info" description={descriptionText} />
           </div>
         </div>
-
-        {otherEntitiesAffected.length > 0 && (
-          <div className="fr-mb-4w">
-            <Alert
-              small={true}
-              severity="info"
-              description={
-                <div>
-                  <p className="fr-mb-2w">
-                    Information : les autres entités administratives affectées ne seront pas impactées par la clôture :
-                  </p>
-                  <ul className="fr-mb-0">
-                    {otherEntitiesAffected.map((entity) => (
-                      <li key={entity.id}>{entity.nomComplet}</li>
-                    ))}
-                  </ul>
-                </div>
-              }
-            />
-          </div>
-        )}
 
         <div className="fr-mb-4w">
           <SelectWithChildren
