@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { CloseRequeteModal, type CloseRequeteModalRef } from '@/components/requestId/processing/CloseRequeteModal';
 import { SituationForm } from '@/components/situation/SituationForm';
 import { useSituationCreate } from '@/hooks/mutations/useSituationCreate';
-import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/_user/request/create/situation')({
@@ -33,8 +32,6 @@ function RouteComponent() {
       statutId: string;
     }>;
   } | null>(null);
-
-  const requestQuery = useRequeteDetails(createdRequeteId ?? '');
 
   const { handleSave } = useSituationCreate({
     onSuccess: (result) => {
@@ -84,8 +81,6 @@ function RouteComponent() {
   };
 
   const showModal = createdRequeteId && shouldCloseRequeteStatus;
-  const requeteForModal = requestQuery.data?.requete;
-
   return (
     <>
       <SituationForm mode="create" onSave={handleSave} saveButtonRef={saveButtonRef} />
@@ -93,18 +88,6 @@ function RouteComponent() {
         <CloseRequeteModal
           ref={closeRequeteModalRef}
           requestId={createdRequeteId}
-          date={
-            requeteForModal?.createdAt
-              ? new Date(requeteForModal.createdAt).toLocaleDateString('fr-FR', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                })
-              : ''
-          }
-          misEnCause={requeteForModal?.situations?.[0]?.misEnCause?.misEnCauseType?.label ?? 'Non spécifié'}
-          otherEntitiesAffected={shouldCloseRequeteStatus.otherEntitiesAffected ?? []}
-          customDescription={`Attention : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${createdRequeteId}.`}
           triggerButtonRef={saveButtonRef}
           onBeforeClose={handleBeforeClose}
           onCancel={handleCloseModalCancel}
