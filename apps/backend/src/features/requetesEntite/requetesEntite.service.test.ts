@@ -522,7 +522,13 @@ describe('requetesEntite.service', () => {
       vi.mocked(prisma.requeteEntite.findMany).mockResolvedValueOnce([mockOtherEntite, mockSecondOtherEntite]);
       const result = await getOtherEntitesAffected(mockRequeteEntite.requeteId, mockRequeteEntite.entiteId);
 
-      expect(prisma.requeteEntite.findMany).toHaveBeenCalled();
+      expect(prisma.requeteEntite.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            statutId: { in: ['NOUVEAU', 'EN_COURS'] },
+          }),
+        }),
+      );
 
       expect(result).toEqual([
         {
