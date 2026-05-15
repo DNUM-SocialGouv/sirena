@@ -298,7 +298,7 @@ export const FileDownloadLink = ({
 
   const { isConnected: sseConnected } = useFileStatusSSE({
     fileId: fileId || '',
-    enabled: !!fileId && !pollingDisabledRef.current && !isProcessingComplete(fileStatus),
+    enabled: !import.meta.env.DEV && !!fileId && !pollingDisabledRef.current && !isProcessingComplete(fileStatus),
     onStatusChange: handleSSEStatusChange,
   });
 
@@ -325,6 +325,7 @@ export const FileDownloadLink = ({
   // Fallback to polling if SSE is not connected
   useEffect(() => {
     if (!fileId || pollingDisabledRef.current || isProcessingComplete(fileStatus)) return;
+    if (import.meta.env.DEV) return;
 
     // If SSE is connected, don't poll
     if (sseConnected) return;
