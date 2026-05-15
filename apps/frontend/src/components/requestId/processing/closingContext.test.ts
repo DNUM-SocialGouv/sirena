@@ -94,4 +94,20 @@ describe('buildClosingContextMessage', () => {
 
     expect(message).toContain('avec pour mis en cause EHPAD Les Lilas, Clinique du Centre.');
   });
+
+  it('omits the continuation sentence when other administrative entities are not active anymore', () => {
+    const message = buildClosingContextMessage({
+      requestId: 'REQ-354',
+      receptionDate: '2024-03-15T00:00:00.000Z',
+      situations: [{ misEnCause: { nom: 'EHPAD Les Lilas' } }],
+      otherEntitiesAffected: [
+        { nomComplet: 'ARS Bretagne', statutId: 'CLOTUREE' },
+        { nomComplet: 'DDETS 35', statutId: 'TRAITEE' },
+      ],
+    });
+
+    expect(message).toBe(
+      'Vous allez clôturer la requête REQ-354 reçue le 15/03/2024 avec pour mis en cause EHPAD Les Lilas.',
+    );
+  });
 });
