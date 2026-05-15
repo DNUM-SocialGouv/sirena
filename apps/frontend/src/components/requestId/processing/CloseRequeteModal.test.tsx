@@ -84,4 +84,20 @@ describe('CloseRequeteModal', () => {
       screen.getByText(/Le traitement de la requête sera toujours en cours au ARS Bretagne\./),
     ).toBeInTheDocument();
   });
+
+  it('displays a non-blocking loading message while the closing context is loading', () => {
+    vi.mocked(useRequeteDetails).mockReturnValue({ data: undefined, isLoading: true, error: null } as ReturnType<
+      typeof useRequeteDetails
+    >);
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      error: null,
+    } as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+
+    render(<CloseRequeteModal requestId="REQ-354" />);
+
+    expect(screen.getByText('Chargement des informations de la requête...')).toBeInTheDocument();
+    expect(screen.getByText('Raisons de la clôture (obligatoire)')).toBeInTheDocument();
+  });
 });
