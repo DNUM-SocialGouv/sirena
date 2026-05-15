@@ -220,13 +220,21 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
     const requestDetails = requestDetailsQuery.data;
     const otherEntitiesAffectedFromQuery = otherEntitiesAffectedQuery.data?.otherEntites;
-    const descriptionText = buildClosingContextMessage({
-      requestId,
-      receptionDate: receptionDate ?? requestDetails?.requete?.receptionDate ?? date,
-      situations:
-        situations ?? requestDetails?.requete?.situations ?? (misEnCause ? [{ misEnCause: { nom: misEnCause } }] : []),
-      otherEntitiesAffected: otherEntitiesAffectedFromQuery ?? otherEntitiesAffected,
-    });
+    const hasExplicitContext =
+      !!receptionDate || !!date || !!situations || !!misEnCause || otherEntitiesAffected.length > 0;
+    const isContextLoading =
+      !hasExplicitContext && (requestDetailsQuery.isLoading || otherEntitiesAffectedQuery.isLoading);
+    const descriptionText = isContextLoading
+      ? 'Chargement des informations de la requête...'
+      : buildClosingContextMessage({
+          requestId,
+          receptionDate: receptionDate ?? requestDetails?.requete?.receptionDate ?? date,
+          situations:
+            situations ??
+            requestDetails?.requete?.situations ??
+            (misEnCause ? [{ misEnCause: { nom: misEnCause } }] : []),
+          otherEntitiesAffected: otherEntitiesAffectedFromQuery ?? otherEntitiesAffected,
+        });
 
     return (
       <closeModal.Component
