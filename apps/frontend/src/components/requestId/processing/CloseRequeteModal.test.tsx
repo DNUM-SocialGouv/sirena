@@ -100,4 +100,22 @@ describe('CloseRequeteModal', () => {
     expect(screen.getByText('Chargement des informations de la requête...')).toBeInTheDocument();
     expect(screen.getByText('Raisons de la clôture (obligatoire)')).toBeInTheDocument();
   });
+
+  it('displays a non-blocking fallback message when the closing context cannot be loaded', () => {
+    vi.mocked(useRequeteDetails).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error('error'),
+    } as ReturnType<typeof useRequeteDetails>);
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error('error'),
+    } as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+
+    render(<CloseRequeteModal requestId="REQ-354" />);
+
+    expect(screen.getByText('Vous allez clôturer la requête REQ-354.')).toBeInTheDocument();
+    expect(screen.getByText('Raisons de la clôture (obligatoire)')).toBeInTheDocument();
+  });
 });
