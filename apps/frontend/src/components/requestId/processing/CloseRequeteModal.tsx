@@ -224,17 +224,20 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       !!receptionDate || !!date || !!situations || !!misEnCause || otherEntitiesAffected.length > 0;
     const isContextLoading =
       !hasExplicitContext && (requestDetailsQuery.isLoading || otherEntitiesAffectedQuery.isLoading);
+    const hasContextError = !hasExplicitContext && (requestDetailsQuery.error || otherEntitiesAffectedQuery.error);
     const descriptionText = isContextLoading
       ? 'Chargement des informations de la requête...'
-      : buildClosingContextMessage({
-          requestId,
-          receptionDate: receptionDate ?? requestDetails?.requete?.receptionDate ?? date,
-          situations:
-            situations ??
-            requestDetails?.requete?.situations ??
-            (misEnCause ? [{ misEnCause: { nom: misEnCause } }] : []),
-          otherEntitiesAffected: otherEntitiesAffectedFromQuery ?? otherEntitiesAffected,
-        });
+      : hasContextError
+        ? `Vous allez clôturer la requête ${requestId}.`
+        : buildClosingContextMessage({
+            requestId,
+            receptionDate: receptionDate ?? requestDetails?.requete?.receptionDate ?? date,
+            situations:
+              situations ??
+              requestDetails?.requete?.situations ??
+              (misEnCause ? [{ misEnCause: { nom: misEnCause } }] : []),
+            otherEntitiesAffected: otherEntitiesAffectedFromQuery ?? otherEntitiesAffected,
+          });
 
     return (
       <closeModal.Component
