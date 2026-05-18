@@ -94,12 +94,12 @@ export async function deleteProcessingStep(stepId: string) {
 
 export async function fetchAcknowledgmentMessage(
   stepId: string,
-): Promise<{ message: string; declarantEmail: string | null }> {
+): Promise<{ message: string; declarantEmail: string | null; subject: string }> {
   const res = await fetch(`/api/requete-etapes/${encodeURIComponent(stepId)}/acknowledgment-message`, {
     credentials: 'include',
   });
   await handleRequestErrors(res);
-  const json = (await res.json()) as { data: { message: string; declarantEmail: string | null } };
+  const json = (await res.json()) as { data: { message: string; declarantEmail: string | null; subject: string } };
   return json.data;
 }
 

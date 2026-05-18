@@ -120,9 +120,19 @@ const getStepSubtitle = (
     );
   }
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
-    return statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT
-      ? `Envoyé automatiquement le ${formatDate(updatedAt)}`
-      : `Ajouté automatiquement le ${formatDate(createdAt)}`;
+    if (statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
+      const sendNote = notes.find((note) => note.uploadedFiles.length > 0);
+      const isManualRequest = !!requete?.createdBy;
+      if (isManualRequest && sendNote?.author) {
+        return (
+          <>
+            Envoyé le {formatDate(updatedAt)} par {formatAgent(sendNote.author)}
+          </>
+        );
+      }
+      return `Envoyé automatiquement le ${formatDate(updatedAt)}`;
+    }
+    return `Ajouté automatiquement le ${formatDate(createdAt)}`;
   }
   return formatStepCreationInfo(createdBy, createdAt);
 };
@@ -317,7 +327,7 @@ const StepComponent = ({
             </div>
           </div>
         ) : (
-          <div className="fr-mb-2w">
+          <div className="fr-mb-1w">
             <div className="fr-grid-row fr-grid-row--middle">
               <div className="fr-col">
                 <h3 className="fr-h6 fr-mb-0">{getStepTitle(rest.type, statutId, nom)}</h3>
@@ -388,7 +398,7 @@ const StepComponent = ({
               )}
             </div>
             {notes[0]?.uploadedFiles && notes[0].uploadedFiles.filter((f) => !deletedFileIds.has(f.id)).length > 0 && (
-              <ul className="fr-mt-1w">
+              <ul className={`fr-mt-1w ${styles['cloture-files']}`}>
                 {notes[0].uploadedFiles
                   .filter((f) => !deletedFileIds.has(f.id))
                   .map((file: (typeof notes)[number]['uploadedFiles'][number]) => {

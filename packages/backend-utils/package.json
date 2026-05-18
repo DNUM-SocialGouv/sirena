@@ -35,8 +35,8 @@
   "license": "MIT",
   "packageManager": "pnpm@10.11.0",
   "dependencies": {
-    "@hono/standard-validator": "^0.2.2",
-    "@hono/zod-validator": "^0.7.6",
+    "@hono/standard-validator": "catalog:",
+    "@hono/zod-validator": "^0.8.0",
     "@sirena/common": "workspace:*",
     "hono": "catalog:",
     "hono-openapi": "catalog:",
@@ -45,6 +45,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "typescript": "^6.0.3"
+    "typescript": "catalog:"
   }
 }

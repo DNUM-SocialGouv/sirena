@@ -168,10 +168,14 @@ describe('user.service.ts', () => {
 
       expect(mockedUser.findMany).toHaveBeenCalledWith({
         where: {
-          OR: [
-            { prenom: { contains: 'doe', mode: 'insensitive' } },
-            { nom: { contains: 'doe', mode: 'insensitive' } },
-            { email: { contains: 'doe', mode: 'insensitive' } },
+          AND: [
+            {
+              OR: [
+                { prenom: { contains: 'doe', mode: 'insensitive' } },
+                { nom: { contains: 'doe', mode: 'insensitive' } },
+                { email: { contains: 'doe', mode: 'insensitive' } },
+              ],
+            },
           ],
         },
         skip: 0,

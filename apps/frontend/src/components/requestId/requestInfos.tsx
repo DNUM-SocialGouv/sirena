@@ -107,12 +107,10 @@ export const RequestInfos = ({
           </div>
         )}
         {motifs.length > 0 && (
-          <div className={style['legend-display']}>
-            {motifs.map((motif) => (
-              <ContactInfo key={motif} icon="fr-icon-todo-line" ariaLabel="Motif de la requête">
-                {motif}
-              </ContactInfo>
-            ))}
+          <div className={`${style['legend-display']} ${style['motifs-display']}`}>
+            <ContactInfo icon="fr-icon-todo-line" ariaLabel="Motif de la requête">
+              {motifs.join(', ')}
+            </ContactInfo>
           </div>
         )}
         {!requestId && (
