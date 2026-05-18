@@ -1,3 +1,4 @@
+import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { SituationDataSchema } from '@sirena/common/schemas';
 import { prisma } from '@sirena/db';
 import type { SirenaRequeteData } from './sirecMigration.transformer.js';
@@ -50,6 +51,17 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
         situationId: situation.id,
         motifDeclaratifId,
       })),
+    });
+
+    await tx.requeteEntite.create({
+      data: {
+        requeteId: requete.id,
+        // TODO: dériver entiteId depuis les données SIREC
+        entiteId: 'entite_id',
+        // TODO: mapper l'état SIREC vers statutId
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+        prioriteId: data.prioriteId,
+      },
     });
 
     return requete.id;

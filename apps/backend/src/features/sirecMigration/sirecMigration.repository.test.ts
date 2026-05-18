@@ -24,6 +24,7 @@ describe('sirecMigration.repository.ts', () => {
         r_recept_date: new Date('2024-01-15'),
         description: 'Ma réclamation',
         reception: 12,
+        prioritaire: 1,
       };
       vi.mocked(mysqlPool.query).mockResolvedValueOnce([[mockRow], []]);
 
@@ -78,6 +79,7 @@ describe('sirecMigration.repository.ts', () => {
       r_recept_date: new Date('2024-01-15'),
       description: 'Ma réclamation',
       reception: 12,
+      prioritaire: 1,
     };
 
     it('should return the aggregate data when the reclamation is found', async () => {

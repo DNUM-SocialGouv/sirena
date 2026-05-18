@@ -13,6 +13,7 @@ vi.mock('@sirena/db', () => ({
     situation: { create: vi.fn() },
     fait: { create: vi.fn() },
     faitMotifDeclaratif: { createMany: vi.fn() },
+    requeteEntite: { create: vi.fn() },
   },
 }));
 
@@ -54,6 +55,7 @@ describe('sirecMigration.service.ts', () => {
       sirecId: 42,
       receptionDate,
       receptionTypeId: 'EMAIL',
+      prioriteId: 'HAUTE',
       situation: {
         fait: { autresPrecisions: 'Ma réclamation', motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'] },
       },
@@ -67,6 +69,7 @@ describe('sirecMigration.service.ts', () => {
       vi.mocked(prisma.situation.create).mockResolvedValue({ id: 'sit-1' } as any);
       vi.mocked(prisma.fait.create).mockResolvedValue({} as any);
       vi.mocked(prisma.faitMotifDeclaratif.createMany).mockResolvedValue({ count: 2 } as any);
+      vi.mocked(prisma.requeteEntite.create).mockResolvedValue({} as any);
     });
 
     it('should return the requete id', async () => {
@@ -118,6 +121,22 @@ describe('sirecMigration.service.ts', () => {
 
       await expect(saveFromSirec(invalidData)).rejects.toThrow(ZodError);
       expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('should create RequeteEntite with prioriteId', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.requeteEntite.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ requeteId: 'SIREC-42', prioriteId: 'HAUTE' }),
+      });
+    });
+
+    it('should create RequeteEntite with null prioriteId when not prioritaire', async () => {
+      await saveFromSirec({ ...data, prioriteId: null });
+
+      expect(prisma.requeteEntite.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ requeteId: 'SIREC-42', prioriteId: null }),
+      });
     });
 
     it('should wrap all creates in a single transaction', async () => {
