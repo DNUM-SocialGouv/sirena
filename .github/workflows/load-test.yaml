@@ -49,7 +49,7 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+      - uses: actions/checkout@900f2210b1d28bbbd0bd22d17926b9e224e8f231 # v6
 
       - name: Install k6
         uses: grafana/setup-k6-action@db07bd9765aac508ef18982e52ab937fe633a065 # v1.2.1
