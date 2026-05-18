@@ -90,7 +90,9 @@ export const misEnCauseProchePrecisionLabels: Record<MisEnCauseProchePrecision, 
 
 export const MIS_EN_CAUSE_ETABLISSEMENT_PRECISION = {
   ETABLISSEMENT: 'ETABLISSEMENT',
-  SERVICE: 'SERVICE',
+  SAD_MIXTE: 'SAD_MIXTE',
+  SAD_SOINS: 'SAD_SOINS',
+  SAD_SANTE: 'SAD_SANTE',
   SAMSAH: 'SAMSAH',
   SAVS: 'SAVS',
   SESSAD: 'SESSAD',
@@ -104,7 +106,9 @@ export type MisEnCauseEtablissementPrecision = keyof typeof MIS_EN_CAUSE_ETABLIS
 
 export const misEnCauseEtablissementPrecisionLabels: Record<MisEnCauseEtablissementPrecision, string> = {
   ETABLISSEMENT: 'Etablissement où se sont déroulés les faits',
-  SERVICE: "Services de soins infirmiers ou d'aide à domicile (SAAD, SSIAD, SPASAD)",
+  SAD_MIXTE: 'SAD mixte',
+  SAD_SOINS: 'SAD Soins',
+  SAD_SANTE: 'SAD Santé',
   SAMSAH: 'SAMSAH',
   SAVS: "SAVS (Service d'accompagnement à la vie sociale)",
   SESSAD: "SESSAD (Service d'Education Spéciale et de Soins à Domicile) non rattaché à un établissement",
