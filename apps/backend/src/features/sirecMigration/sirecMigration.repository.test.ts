@@ -19,7 +19,12 @@ describe('sirecMigration.repository.ts', () => {
 
   describe('fetchSirecReclamationById', () => {
     it('should return the row when found', async () => {
-      const mockRow = { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation' };
+      const mockRow = {
+        id_data: 42,
+        r_recept_date: new Date('2024-01-15'),
+        description: 'Ma réclamation',
+        reception: 12,
+      };
       vi.mocked(mysqlPool.query).mockResolvedValueOnce([[mockRow], []]);
 
       const result = await fetchSirecReclamationById(42);
@@ -68,7 +73,12 @@ describe('sirecMigration.repository.ts', () => {
   });
 
   describe('fetchSirecData', () => {
-    const mockRow = { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation' };
+    const mockRow = {
+      id_data: 42,
+      r_recept_date: new Date('2024-01-15'),
+      description: 'Ma réclamation',
+      reception: 12,
+    };
 
     it('should return the aggregate data when the reclamation is found', async () => {
       vi.mocked(mysqlPool.query)

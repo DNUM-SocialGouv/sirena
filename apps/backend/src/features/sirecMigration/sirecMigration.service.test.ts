@@ -53,6 +53,7 @@ describe('sirecMigration.service.ts', () => {
       sirenaId: 'SIREC-42',
       sirecId: 42,
       receptionDate,
+      receptionTypeId: 'EMAIL',
       situation: {
         fait: { autresPrecisions: 'Ma réclamation', motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'] },
       },
@@ -76,7 +77,7 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec(data);
 
       expect(prisma.requete.create).toHaveBeenCalledWith({
-        data: { id: 'SIREC-42', sirecId: 42, receptionDate },
+        data: { id: 'SIREC-42', sirecId: 42, receptionDate, receptionTypeId: 'EMAIL' },
         select: { id: true },
       });
     });

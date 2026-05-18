@@ -3,7 +3,7 @@ import { transformSirecReclamation } from './sirecMigration.transformer.js';
 
 describe('sirecMigration.transformer.ts', () => {
   const sirecData = {
-    reclamation: { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation' },
+    reclamation: { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation', reception: 12 },
     motifsDeclaresIdDicos: [809],
   };
 
@@ -14,6 +14,7 @@ describe('sirecMigration.transformer.ts', () => {
       sirenaId: 'SIREC-42',
       sirecId: 42,
       receptionDate: new Date('2024-01-15'),
+      receptionTypeId: 'EMAIL',
       situation: {
         fait: {
           autresPrecisions: 'Ma réclamation',
@@ -27,5 +28,23 @@ describe('sirecMigration.transformer.ts', () => {
     const result = transformSirecReclamation({ ...sirecData, reclamation: { ...sirecData.reclamation, id_data: 999 } });
 
     expect(result.sirecId).toBe(999);
+  });
+
+  it('should map reception to receptionTypeId via transco', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, reception: 14 },
+    });
+
+    expect(result.receptionTypeId).toBe('TELEPHONE');
+  });
+
+  it('should map null reception to null receptionTypeId', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, reception: null },
+    });
+
+    expect(result.receptionTypeId).toBeNull();
   });
 });

@@ -19,6 +19,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
         id: data.sirenaId,
         sirecId: data.sirecId,
         receptionDate: data.receptionDate,
+        receptionTypeId: data.receptionTypeId,
       },
       select: { id: true },
     });
