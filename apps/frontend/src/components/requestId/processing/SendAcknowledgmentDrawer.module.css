@@ -10,37 +10,25 @@
   padding: 0 16px 88px 16px;
 }
 
-.dl {
+.separator {
+  border-top: 1px solid var(--border-default-grey);
+  margin: 1rem 0;
+}
+
+.sectionLabel {
   margin: 0;
-  padding: 0;
-}
-
-.dl dd {
-  margin-inline-start: 0 !important;
-}
-
-.emailField {
-  background: #fff;
-  border: 1px solid #929292;
-  border-radius: 4px;
-  padding: 8px 12px;
-  min-height: 2rem;
-  overflow-x: auto;
-  white-space: nowrap;
   font-size: 1rem;
   line-height: 1.5rem;
-  color: #161616;
+  color: var(--text-mention-grey);
 }
 
-.messageField {
-  background: #fff;
-  border: 1px solid #929292;
-  border-radius: 4px;
-  padding: 8px 12px;
-  overflow-y: auto;
-  max-height: 320px;
-  white-space: pre-wrap;
+.messageLink {
+  margin-left: 4px;
+}
+
+.plainText {
+  margin: 0;
   font-size: 1rem;
   line-height: 1.5rem;
-  color: #161616;
+  color: var(--text-default-grey);
 }
