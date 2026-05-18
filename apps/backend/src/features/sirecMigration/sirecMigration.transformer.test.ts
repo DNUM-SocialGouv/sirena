@@ -3,7 +3,13 @@ import { transformSirecReclamation } from './sirecMigration.transformer.js';
 
 describe('sirecMigration.transformer.ts', () => {
   const sirecData = {
-    reclamation: { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation', reception: 12 },
+    reclamation: {
+      id_data: 42,
+      r_recept_date: new Date('2024-01-15'),
+      description: 'Ma réclamation',
+      reception: 12,
+      prioritaire: 1,
+    },
     motifsDeclaresIdDicos: [809],
   };
 
@@ -15,6 +21,7 @@ describe('sirecMigration.transformer.ts', () => {
       sirecId: 42,
       receptionDate: new Date('2024-01-15'),
       receptionTypeId: 'EMAIL',
+      prioriteId: 'HAUTE',
       situation: {
         fait: {
           autresPrecisions: 'Ma réclamation',
@@ -46,5 +53,32 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.receptionTypeId).toBeNull();
+  });
+
+  it('should map prioritaire=1 to prioriteId HAUTE', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, prioritaire: 1 },
+    });
+
+    expect(result.prioriteId).toBe('HAUTE');
+  });
+
+  it('should map prioritaire=0 to null prioriteId', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, prioritaire: 0 },
+    });
+
+    expect(result.prioriteId).toBeNull();
+  });
+
+  it('should map null prioritaire to null prioriteId', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, prioritaire: null },
+    });
+
+    expect(result.prioriteId).toBeNull();
   });
 });
