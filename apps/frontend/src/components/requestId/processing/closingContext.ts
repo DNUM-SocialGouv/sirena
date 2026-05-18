@@ -18,7 +18,6 @@ type OtherEntityInput = {
 type BuildClosingContextMessageInput = {
   requestId: string;
   receptionDate?: string | Date | null;
-  createdAt?: string | Date | null;
   situations?: SituationInput[] | null;
   otherEntitiesAffected?: OtherEntityInput[] | null;
 };
