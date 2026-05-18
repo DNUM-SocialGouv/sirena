@@ -203,13 +203,14 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       'ARS Normandie',
       'Adresse e-mail : contact-ars@ex.com',
       'Téléphone : 02 31 00 00 00',
-      'Adresse postale : 1 rue Example, 76000 Rouen',
+      'Adresse postale :',
+      '1 rue Example, 76000 Rouen',
       '',
       'CD Calvados',
       'Adresse e-mail : contact-cd@ex.com',
     ];
     const expectedEntiteComplete: Record<string, string | number> = {
-      entitecomplete_nb: 7,
+      entitecomplete_nb: 8,
     };
     linesFormulaire.forEach((line, i) => {
       expectedEntiteComplete[`entitecomplete_${i + 1}`] = line;
