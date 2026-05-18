@@ -1,14 +1,15 @@
+import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { SirecTranscoError } from './sirecTransco.error.js';
 
 const RECEPTION_TYPE_TRANSCO: Record<number, string> = {
-  10: 'COURRIER',
-  12: 'EMAIL',
-  14: 'TELEPHONE',
-  89: 'AUTRE',
-  338: 'AUTRE',
-  340: 'AUTRE',
-  803: 'FORMULAIRE',
-  825: 'AUTRE',
+  10: RECEPTION_TYPE.COURRIER,
+  12: RECEPTION_TYPE.EMAIL,
+  14: RECEPTION_TYPE.TELEPHONE,
+  89: RECEPTION_TYPE.AUTRE,
+  338: RECEPTION_TYPE.AUTRE,
+  340: RECEPTION_TYPE.AUTRE,
+  803: RECEPTION_TYPE.FORMULAIRE,
+  825: RECEPTION_TYPE.AUTRE,
 };
 
 export function transcodeReceptionType(idSirec: number | null): string | null {
