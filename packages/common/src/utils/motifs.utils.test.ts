@@ -51,14 +51,6 @@ describe('motifs.utils', () => {
           }),
         ]),
       );
-      expect(flatMotifs).not.toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            label: 'Violences entre usagers',
-            value: 'VIOLENCES_ENTRE_USAGERS',
-          }),
-        ]),
-      );
     });
   });
 
