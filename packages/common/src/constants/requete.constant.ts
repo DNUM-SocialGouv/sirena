@@ -148,6 +148,7 @@ export const lienVictimeLabels: Record<LienVictime, string> = {
 export type MisEnCauseTypePrecisionUnion =
   | MisEnCauseFamillePrecision
   | MisEnCauseProchePrecision
+  | MisEnCauseEtablissementPrecision
   | MisEnCauseAutreNonProPrecision
   | ProfessionSantePrecision
   | ProfessionSocialPrecision

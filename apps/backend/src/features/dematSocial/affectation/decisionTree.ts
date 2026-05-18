@@ -94,7 +94,11 @@ function getDomicileProfessionnelCategory(ctx: SituationContext): DomicileProfes
     return 'SESSAD';
   }
 
-  if ((misEnCauseTypePrecision as string | undefined) === MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SERVICE) {
+  if (
+    misEnCauseTypePrecision === MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAD_MIXTE ||
+    misEnCauseTypePrecision === MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAD_SOINS ||
+    misEnCauseTypePrecision === MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAD_SANTE
+  ) {
     return 'SERVICE_AIDE_DOMICILE';
   }
 
