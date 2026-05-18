@@ -69,7 +69,9 @@ export const RequestInfos = ({
                     <PrioriteMenu
                       value={prioriteId || null}
                       onChange={handlePrioriteChange}
-                      disabled={!requestId || updatePrioriteMutation.isPending}
+                      disabled={
+                        !requestId || updatePrioriteMutation.isPending || statutId === REQUETE_STATUT_TYPES.CLOTUREE
+                      }
                     />
 
                     {showPriseEnCompteToggle && (
