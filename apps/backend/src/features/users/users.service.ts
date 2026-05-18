@@ -39,19 +39,26 @@ export const getUsers = async (entiteIds: string[] | null, query: GetUsersQuery 
   const entiteFilter = filterByEntities(entiteIds);
   const roleFilter = filterByRoles(roleId ?? null);
 
-  const searchConditions: Prisma.UserWhereInput[] | undefined = search?.trim()
-    ? [
-        { prenom: { contains: search, mode: 'insensitive' } },
-        { nom: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-      ]
+  const searchConditions: Prisma.UserWhereInput | undefined = search?.trim()
+    ? {
+        AND: search
+          .trim()
+          .split(/\s+/)
+          .map((word) => ({
+            OR: [
+              { prenom: { contains: word, mode: 'insensitive' as const } },
+              { nom: { contains: word, mode: 'insensitive' as const } },
+              { email: { contains: word, mode: 'insensitive' as const } },
+            ],
+          })),
+      }
     : undefined;
 
   const where: Prisma.UserWhereInput = {
     ...(entiteFilter ?? {}),
     ...(roleFilter ?? {}),
     ...(statutId !== undefined ? { statutId: { in: statutId } } : {}),
-    ...(searchConditions ? { OR: searchConditions } : {}),
+    ...(searchConditions ?? {}),
   };
 
   const [data, total] = await Promise.all([

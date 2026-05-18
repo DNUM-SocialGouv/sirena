@@ -64,6 +64,7 @@ export const useEditEntiteAdmin = () =>
     mutationFn: ({ id, input }: { id: string; input: EditEntiteAdminInput }) => editEntiteAdmin(id, input),
     onSuccess: (data, variables) => {
       queryClient.setQueryData(['entite', 'admin', variables.id], data);
+      queryClient.invalidateQueries({ queryKey: ['entites'] });
     },
   });
 
@@ -71,4 +72,7 @@ export const useCreateChildEntiteAdmin = () =>
   useMutation({
     mutationFn: ({ id, input }: { id: string; input: CreateChildEntiteAdminInput }) =>
       createChildEntiteAdmin(id, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entites'] });
+    },
   });

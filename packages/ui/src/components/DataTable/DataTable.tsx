@@ -10,6 +10,7 @@ import './DataTable.css';
 
 export type DataTableProps<K extends string, T extends RowWithId<K>> = {
   title: string;
+  hideCaption?: boolean;
   id?: string;
   rowId: K;
   data: T[];
@@ -75,6 +76,7 @@ function getTableClasses(size: 'sm' | 'md' | 'lg', isBordered: boolean): string 
 
 export const DataTableComponent = <RowId extends string, Datum extends RowWithId<RowId>>({
   title,
+  hideCaption = false,
   columns,
   id,
   data,
@@ -171,7 +173,7 @@ export const DataTableComponent = <RowId extends string, Datum extends RowWithId
           <div className="fr-table__content">
             <table id={tableId}>
               <caption>
-                <div className="fr-table__caption-with-loader">
+                <div className={`fr-table__caption-with-loader${hideCaption ? ' fr-sr-only' : ''}`}>
                   <span aria-live="polite">{title}</span>
                   {isLoading && <Loader size="sm" />}
                 </div>

@@ -2,11 +2,32 @@
   --table-column-min-width: 320px;
 }
 
+.requetesEntitesTable__filters {
+  padding: 0;
+  border: 0;
+}
+
+.requetesEntitesTable__filters-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .requetesEntitesTable__quick-filters {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.requetesEntitesTable__filter-item {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-default-grey);
+  background-color: var(--background-default-grey);
 }
 
 .requetesEntitesTable .fr-cell:has(.requetesEntitesTable__statut-cell) {
@@ -29,4 +50,11 @@
 
 .requetesEntitesTable .fr-cell:has(.requetesEntitesTable__misEnCause-cell) {
   min-width: var(--table-column-min-width);
+}
+
+.requetesEntitesTable__reception-date-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }

@@ -156,9 +156,9 @@ const buildDeptPostalFilter = async (deptCodes: string[]): Promise<Prisma.LieuDe
 
 const buildRequetesEntiteWhere = async (
   entiteIds: string[] | null,
-  query: { search?: string; entiteId?: string; departementCodes?: string },
+  query: { search?: string; entiteId?: string; departementCodes?: string; prioriteId?: string },
 ): Promise<Prisma.RequeteEntiteWhereInput> => {
-  const { search, entiteId, departementCodes } = query;
+  const { search, entiteId, departementCodes, prioriteId } = query;
   const searchConditions: Prisma.RequeteEntiteWhereInput = search ? createSearchConditionsForRequeteEntite(search) : {};
   const andFilters: Prisma.RequeteEntiteWhereInput[] = [];
 
@@ -191,6 +191,9 @@ const buildRequetesEntiteWhere = async (
         requete: { situations: { some: { lieuDeSurvenue: lieuFilter } } },
       });
     }
+  }
+  if (prioriteId) {
+    andFilters.push({ prioriteId });
   }
 
   return {
