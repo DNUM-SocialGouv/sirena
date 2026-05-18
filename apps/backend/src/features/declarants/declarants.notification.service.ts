@@ -68,7 +68,7 @@ function formatEntiteCompleteString(
         parts.push(`Téléphone : ${entite.telContactUsager}`);
       }
       if (entite.adresseContactUsager) {
-        parts.push(`Adresse postale : ${entite.adresseContactUsager}`);
+        parts.push(`Adresse postale :\n${entite.adresseContactUsager}`);
       }
       return parts.join('\n');
     })
