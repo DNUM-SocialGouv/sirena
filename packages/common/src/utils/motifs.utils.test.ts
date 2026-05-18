@@ -32,7 +32,7 @@ const TEST_OPTIONS: MotifOption[] = [
 
 describe('motifs.utils', () => {
   describe('qualified motifs referential', () => {
-    it('exposes the new violence-between-users motifs and removes the old generic motif', () => {
+    it('exposes the new violence-between-users motifs', () => {
       const flatMotifs = getAllOptionsFlat(MOTIFS_HIERARCHICAL_DATA);
 
       expect(flatMotifs).toEqual(
