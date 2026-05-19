@@ -362,7 +362,7 @@ export const getResponsable = ({
     if (professionDomicileType === DS_PROFESSION_DOMICILE_TYPE.AUTRE_PROFESSIONNEL) {
       return {
         misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
-        misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAD_MIXTE,
+        misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAD_AIDE,
       };
     }
     if (professionDomicileType === DS_PROFESSION_DOMICILE_TYPE.SERVICE_EDUCATION) {
