@@ -481,6 +481,7 @@ export const updateDateAndTypeRequete = async (
   requeteId: string,
   data: {
     receptionDate?: Date | null;
+    dateDemandeDeclarant?: Date | null;
     receptionTypeId?: string | null;
     provenanceId?: string | null;
     provenancePrecision?: string | null;
@@ -513,6 +514,7 @@ export const updateDateAndTypeRequete = async (
     where: { id: requeteId },
     data: {
       ...(data.receptionDate !== undefined && { receptionDate: data.receptionDate }),
+      ...(data.dateDemandeDeclarant !== undefined && { dateDemandeDeclarant: data.dateDemandeDeclarant }),
       ...(data.receptionTypeId !== undefined && { receptionTypeId: data.receptionTypeId }),
       ...(data.provenanceId !== undefined && { provenanceId: data.provenanceId }),
       ...(data.provenancePrecision !== undefined && { provenancePrecision: data.provenancePrecision }),

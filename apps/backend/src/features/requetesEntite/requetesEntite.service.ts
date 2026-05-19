@@ -459,6 +459,7 @@ export const getRequeteEntiteById = async (requeteId: string, entiteId: string |
 interface CreateRequeteInput {
   receptionTypeId?: string | null;
   receptionDate?: string | null;
+  dateDemandeDeclarant?: string | null;
   provenanceId?: string | null;
   provenancePrecision?: string | null;
   declarant?: DeclarantInput;
@@ -478,6 +479,7 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
         data: {
           id: requeteId,
           receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
+          dateDemandeDeclarant: data?.dateDemandeDeclarant ? new Date(data.dateDemandeDeclarant) : null,
           receptionTypeId: data?.receptionTypeId ?? null,
           provenanceId: data?.provenanceId ?? null,
           provenancePrecision: data?.provenancePrecision ?? null,
@@ -2074,6 +2076,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
   pdf
     .section('Requête originale')
     .field('Date de réception', formatDateFr(requete.receptionDate))
+    .field('Date de la demande par le déclarant', formatDateFr(requete.dateDemandeDeclarant))
     .field('Mode de réception', requete.receptionType?.label || null)
     .field('Provenance', requete.provenance?.label || null)
     .field('Précision provenance', requete.provenancePrecision || null)
