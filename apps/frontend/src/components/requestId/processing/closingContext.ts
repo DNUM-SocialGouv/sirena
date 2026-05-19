@@ -58,5 +58,9 @@ export const buildClosingContextMessage = ({
     ? ` Le traitement de la requête sera toujours en cours au ${activeOtherEntities.map((entity) => entity.nomComplet).join(', ')}.`
     : '';
 
+  if (!continuationSentence) {
+    return `Information : vous allez clôturer la requête ${requestId}.`;
+  }
+
   return `Vous allez clôturer la requête ${requestId} reçue le ${formatDate(receptionDate)} avec pour mis en cause ${misEnCauseText}.${continuationSentence}`;
 };

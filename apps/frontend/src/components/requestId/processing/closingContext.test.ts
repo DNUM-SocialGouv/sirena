@@ -2,22 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { buildClosingContextMessage } from './closingContext';
 
 describe('buildClosingContextMessage', () => {
-  it('displays the request reception date instead of the creation date', () => {
+  it('displays the minimal information sentence with the request number', () => {
     const message = buildClosingContextMessage({
       requestId: 'REQ-354',
-      receptionDate: '2024-03-15T00:00:00.000Z',
-      situations: [
-        {
-          misEnCause: {
-            nom: 'EHPAD Les Lilas',
-          },
-        },
-      ],
       otherEntitiesAffected: [],
     });
 
-    expect(message).toContain('Vous allez clôturer la requête REQ-354 reçue le 15/03/2024');
-    expect(message).not.toContain('10/01/2024');
+    expect(message).toBe('Information : vous allez clôturer la requête REQ-354.');
   });
 
   it('displays a person concerned as civility last name first name', () => {
