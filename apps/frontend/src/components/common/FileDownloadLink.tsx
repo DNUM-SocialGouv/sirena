@@ -211,6 +211,7 @@ const getWarningMessage = (
 };
 
 const POLL_INTERVAL = 3000;
+const MAX_POLL_DURATION_MS = 2 * 60 * 1000; // stop polling after 2 minutes
 
 const FILE_TAG_STYLE = {
   valid: {
@@ -291,6 +292,7 @@ export const FileDownloadLink = ({
   const initialPollDoneRef = useRef(false);
   const pollingDisabledRef = useRef(false);
   const sseDisconnectedRef = useRef(false);
+  const pollStartedAtRef = useRef<number | null>(null);
 
   const handleSSEStatusChange = useCallback((status: FileProcessingStatus) => {
     setFileStatus(status);
@@ -311,6 +313,12 @@ export const FileDownloadLink = ({
 
   const pollStatus = useCallback(async () => {
     if (!fileId || pollingDisabledRef.current) return;
+
+    if (pollStartedAtRef.current !== null && Date.now() - pollStartedAtRef.current > MAX_POLL_DURATION_MS) {
+      pollingDisabledRef.current = true;
+      return;
+    }
+
     try {
       const status = await getFileProcessingStatus(fileId);
       setFileStatus(status);
@@ -328,6 +336,10 @@ export const FileDownloadLink = ({
 
     // If SSE is connected, don't poll
     if (sseConnected) return;
+
+    if (pollStartedAtRef.current === null) {
+      pollStartedAtRef.current = Date.now();
+    }
 
     // Poll immediately on first run if no initial status was provided
     if (!initialPollDoneRef.current && !initialStatus) {

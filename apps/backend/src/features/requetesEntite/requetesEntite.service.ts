@@ -1665,6 +1665,13 @@ export const closeRequeteForEntite = async (
 
     await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE, tx);
 
+    if (requeteEntite.prioriteId) {
+      await tx.requeteEntite.update({
+        where: { requeteId_entiteId: { requeteId, entiteId } },
+        data: { prioriteId: null },
+      });
+    }
+
     return {
       etapeId: etape.id,
       closedAt: etape.createdAt.toISOString(),
