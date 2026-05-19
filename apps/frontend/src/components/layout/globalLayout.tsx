@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useRef } from 'react';
 import { EnvironmentBanner } from './EnvironmentBanner';
 import { AppFooter } from './footer';
 import { HeaderMenu } from './header';
+import { UpdateBanner } from './UpdateBanner';
 
 type GlobalLayoutProps = {
   children: ReactNode;
@@ -51,6 +52,7 @@ export const GlobalLayout = ({ children }: GlobalLayoutProps) => {
       <HeaderMenu homeHref="/" />
       <main id={mainId} role="main" className="main-content">
         <EnvironmentBanner />
+        <UpdateBanner />
         <div className="fr-container">{children}</div>
       </main>
       <AppFooter />
