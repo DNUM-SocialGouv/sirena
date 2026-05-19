@@ -16,12 +16,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
 import { useRequeteDateTypeSave } from '@/hooks/mutations/useRequeteDateTypeSave';
 import { useCanEdit } from '@/hooks/useCanEdit';
+import { SectionTitle } from './helpers';
 import style from './OriginalRequestSection.module.css';
 
 type OriginalRequestSectionProps = {
   requestId?: string;
   data?: {
     receptionDate?: string | null;
+    dateDemandeDeclarant?: string | null;
     receptionTypeId?: ReceptionType | null;
     dematSocialId?: number | null;
     provenanceId?: string | null;
@@ -31,19 +33,59 @@ type OriginalRequestSectionProps = {
   onEdit?: () => void;
 };
 
+const RenderExtraInfos = ({
+  provenanceId,
+  provenancePrecision,
+  dateDemandeDeclarant,
+}: {
+  provenanceId?: RequeteProvenance | null;
+  provenancePrecision?: string | null;
+  dateDemandeDeclarant?: string | null;
+}) => (
+  <>
+    {dateDemandeDeclarant && (
+      <>
+        <SectionTitle level={4}>Date de la demande par le déclarant</SectionTitle>
+        <p className={fr.cx('fr-mb-0')}>{new Date(dateDemandeDeclarant).toLocaleDateString('fr-FR')}</p>
+      </>
+    )}
+    {provenanceId && (
+      <>
+        <SectionTitle level={4}>Provenance</SectionTitle>
+        <p className={fr.cx('fr-mb-0')}>
+          {requeteProvenanceLabels[provenanceId]}
+          {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
+            provenancePrecision &&
+            ` – ${provenancePrecision}`}
+        </p>
+      </>
+    )}
+  </>
+);
+
 const RenderCompleted = ({
   date,
   receptionType,
   dematSocialId,
   provenanceId,
   provenancePrecision,
+  dateDemandeDeclarant,
 }: {
   date?: string;
   receptionType?: ReceptionType;
   dematSocialId?: number | null;
   provenanceId?: RequeteProvenance | null;
   provenancePrecision?: string | null;
+  dateDemandeDeclarant?: string | null;
 }) => {
+  const extras = (
+    <RenderExtraInfos
+      provenanceId={provenanceId}
+      provenancePrecision={provenancePrecision}
+      dateDemandeDeclarant={dateDemandeDeclarant}
+    />
+  );
+
   if (date && receptionType) {
     return (
       <div className="text-vertical-align">
@@ -51,14 +93,7 @@ const RenderCompleted = ({
         {receptionType === RECEPTION_TYPE.FORMULAIRE && (
           <div className={fr.cx('fr-text--xs')}>Dossier Demat.Social n° {dematSocialId}</div>
         )}
-        {provenanceId && (
-          <div className={fr.cx('fr-text--xs', 'fr-mt-1v')}>
-            Provenance : {requeteProvenanceLabels[provenanceId]}
-            {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
-              provenancePrecision &&
-              ` – ${provenancePrecision}`}
-          </div>
-        )}
+        {extras}
       </div>
     );
   }
@@ -67,14 +102,7 @@ const RenderCompleted = ({
     return (
       <div className="text-vertical-align">
         Reçue le {new Date(date).toLocaleDateString('fr-FR')}
-        {provenanceId && (
-          <div className={fr.cx('fr-text--xs', 'fr-mt-1v')}>
-            Provenance : {requeteProvenanceLabels[provenanceId]}
-            {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
-              provenancePrecision &&
-              ` – ${provenancePrecision}`}
-          </div>
-        )}
+        {extras}
       </div>
     );
   }
@@ -83,29 +111,13 @@ const RenderCompleted = ({
     return (
       <div className="text-vertical-align">
         Reçue par {receptionTypeLabels[receptionType]}
-        {provenanceId && (
-          <div className={fr.cx('fr-text--xs', 'fr-mt-1v')}>
-            Provenance : {requeteProvenanceLabels[provenanceId]}
-            {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
-              provenancePrecision &&
-              ` – ${provenancePrecision}`}
-          </div>
-        )}
+        {extras}
       </div>
     );
   }
 
-  if (provenanceId) {
-    return (
-      <div className="text-vertical-align">
-        <div className={fr.cx('fr-text--xs')}>
-          Provenance : {requeteProvenanceLabels[provenanceId]}
-          {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
-            provenancePrecision &&
-            ` – ${provenancePrecision}`}
-        </div>
-      </div>
-    );
+  if (provenanceId || dateDemandeDeclarant) {
+    return <div className="text-vertical-align">{extras}</div>;
   }
 
   return null;
@@ -126,6 +138,9 @@ const provenanceOptions = Object.entries(requeteProvenanceLabels).map(([value, l
 
 export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: OriginalRequestSectionProps) => {
   const [dateValue, setDateValue] = useState<string>(formatDateForInput(data?.receptionDate));
+  const [dateDemandeDeclarantValue, setDateDemandeDeclarantValue] = useState<string>(
+    formatDateForInput(data?.dateDemandeDeclarant),
+  );
   const [typeValue, setTypeValue] = useState<ReceptionType | ''>(data?.receptionTypeId ?? '');
   const [provenanceValue, setProvenanceValue] = useState<RequeteProvenance | ''>(
     (data?.provenanceId as RequeteProvenance | null | undefined) ?? '',
@@ -143,10 +158,17 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
 
   useEffect(() => {
     setDateValue(formatDateForInput(data?.receptionDate));
+    setDateDemandeDeclarantValue(formatDateForInput(data?.dateDemandeDeclarant));
     setTypeValue(data?.receptionTypeId ?? '');
     setProvenanceValue((data?.provenanceId as RequeteProvenance | null | undefined) ?? '');
     setProvenancePrecisionValue(data?.provenancePrecision ?? '');
-  }, [data?.receptionDate, data?.receptionTypeId, data?.provenanceId, data?.provenancePrecision]);
+  }, [
+    data?.receptionDate,
+    data?.dateDemandeDeclarant,
+    data?.receptionTypeId,
+    data?.provenanceId,
+    data?.provenancePrecision,
+  ]);
 
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const isNotEditable = data?.receptionTypeId === RECEPTION_TYPE.FORMULAIRE;
@@ -178,6 +200,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
 
     const payload = {
       receptionDate: dateValue || null,
+      dateDemandeDeclarant: dateDemandeDeclarantValue || null,
       receptionTypeId: normalizeReceptionType(typeValue),
       ...(showProvenance && {
         provenanceId: provenanceValue || null,
@@ -201,6 +224,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
       setIsSaving(false);
     }
   };
+
+  const hasAnyValue = Boolean(dateValue || typeValue || provenanceValue || dateDemandeDeclarantValue);
 
   return (
     <div>
@@ -229,6 +254,17 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                     type: 'date',
                     value: dateValue,
                     onChange: (event) => setDateValue(event.target.value),
+                  }}
+                />
+              </div>
+              <div className={fr.cx('fr-col-12', 'fr-mb-2w')}>
+                <Input
+                  label="Date de la demande par le déclarant"
+                  hintText="Format attendu : JJ-MM-AAAA"
+                  nativeInputProps={{
+                    type: 'date',
+                    value: dateDemandeDeclarantValue,
+                    onChange: (event) => setDateDemandeDeclarantValue(event.target.value),
                   }}
                 />
               </div>
@@ -294,8 +330,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
             </div>
           </form>
         ) : (
-          <div className={clsx(style.wrapper, (dateValue || typeValue || provenanceValue) && style.wrapperFilled)}>
-            {!dateValue && !typeValue && !provenanceValue ? (
+          <div className={clsx(style.wrapper, hasAnyValue && style.wrapperFilled)}>
+            {!hasAnyValue ? (
               <RenderEmpty />
             ) : (
               <RenderCompleted
@@ -304,6 +340,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
                 dematSocialId={data?.dematSocialId}
                 provenanceId={provenanceValue || undefined}
                 provenancePrecision={provenancePrecisionValue || undefined}
+                dateDemandeDeclarant={dateDemandeDeclarantValue || undefined}
               />
             )}
             {canEdit && !isNotEditable && (
