@@ -361,7 +361,6 @@ export const getOtherEntitesAffected = async (requeteId: string, excludeEntiteId
     where: {
       requeteId,
       entiteId: { not: excludeEntiteId },
-      statutId: { in: [REQUETE_STATUT_TYPES.NOUVEAU, REQUETE_STATUT_TYPES.EN_COURS] },
     },
     include: {
       entite: {
