@@ -88,6 +88,7 @@ function RouteComponent() {
         <CloseRequeteModal
           ref={closeRequeteModalRef}
           requestId={createdRequeteId}
+          otherEntitiesAffected={shouldCloseRequeteStatus.otherEntitiesAffected ?? []}
           triggerButtonRef={saveButtonRef}
           onBeforeClose={handleBeforeClose}
           onCancel={handleCloseModalCancel}

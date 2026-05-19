@@ -15,8 +15,16 @@ export type CloseRequeteModalRef = {
   openModal: () => void;
 };
 
+export type OtherEntityAffected = {
+  id: string;
+  nomComplet: string;
+  entiteTypeId: string;
+  statutId: string;
+};
+
 export type CloseRequeteModalProps = {
   requestId: string;
+  otherEntitiesAffected?: OtherEntityAffected[];
   triggerButtonRef?: React.RefObject<HTMLButtonElement | null>;
   onBeforeClose?: () => Promise<void>;
   onCancel?: () => void;
@@ -25,7 +33,7 @@ export type CloseRequeteModalProps = {
 };
 
 export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteModalProps>(
-  ({ requestId, triggerButtonRef, onBeforeClose, onCancel, onSuccess, onDismiss }, ref) => {
+  ({ requestId, otherEntitiesAffected, triggerButtonRef, onBeforeClose, onCancel, onSuccess, onDismiss }, ref) => {
     const reasonErrorId = useId();
     const [reasonIds, setReasonIds] = useState<string[]>([]);
     const [precision, setPrecision] = useState<string>('');
@@ -188,12 +196,17 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     };
 
     const otherEntitiesAffectedFromQuery = otherEntitiesAffectedQuery.data?.otherEntites;
-    const isContextLoading = otherEntitiesAffectedQuery.isLoading;
+    const hasProvidedOtherEntitiesAffected = otherEntitiesAffected !== undefined;
+    const isContextLoading = !hasProvidedOtherEntitiesAffected && otherEntitiesAffectedQuery.isLoading;
     const descriptionText = isContextLoading
       ? 'Chargement des informations de la requête...'
       : buildClosingContextMessage({
           requestId,
-          otherEntitiesAffected: otherEntitiesAffectedQuery.error ? [] : (otherEntitiesAffectedFromQuery ?? []),
+          otherEntitiesAffected: hasProvidedOtherEntitiesAffected
+            ? otherEntitiesAffected
+            : otherEntitiesAffectedQuery.error
+              ? []
+              : (otherEntitiesAffectedFromQuery ?? []),
         });
 
     return (
