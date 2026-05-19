@@ -20,7 +20,7 @@ WHERE "motifId" IN (
 UPDATE "MisEnCause"
 SET "misEnCauseTypePrecisionId" = 'SERVICE'
 WHERE "misEnCauseTypeId" = 'ETABLISSEMENT'
-  AND "misEnCauseTypePrecisionId" IN ('SAD_MIXTE', 'SAD_SOINS', 'SAD_SANTE');
+  AND "misEnCauseTypePrecisionId" IN ('SAD_MIXTE', 'SAD_SOINS', 'SAD_AIDE');
 
 -- Remove new referential values once no data points to them anymore.
 DELETE FROM "MotifEnum"
@@ -32,4 +32,4 @@ WHERE "id" IN (
 
 DELETE FROM "MisEnCauseTypePrecisionEnum"
 WHERE "misEnCauseTypeId" = 'ETABLISSEMENT'
-  AND "id" IN ('SAD_MIXTE', 'SAD_SOINS', 'SAD_SANTE');
+  AND "id" IN ('SAD_MIXTE', 'SAD_SOINS', 'SAD_AIDE');

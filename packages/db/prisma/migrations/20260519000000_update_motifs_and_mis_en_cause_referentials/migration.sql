@@ -10,8 +10,8 @@ ON CONFLICT ("id") DO UPDATE SET "label" = EXCLUDED."label";
 INSERT INTO "MisEnCauseTypePrecisionEnum" ("id", "label", "misEnCauseTypeId")
 VALUES
   ('SAD_MIXTE', 'SAD mixte', 'ETABLISSEMENT'),
-  ('SAD_SOINS', 'SAD Soins', 'ETABLISSEMENT'),
-  ('SAD_SANTE', 'SAD Santé', 'ETABLISSEMENT')
+  ('SAD_SOINS', 'SAD soins', 'ETABLISSEMENT'),
+  ('SAD_AIDE', 'SAD aide', 'ETABLISSEMENT')
 ON CONFLICT ("misEnCauseTypeId", "id") DO UPDATE SET "label" = EXCLUDED."label";
 
 -- Migrate historical facts from the old generic motif to the new default physical-violence motif.

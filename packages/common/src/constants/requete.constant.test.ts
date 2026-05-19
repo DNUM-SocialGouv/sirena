@@ -8,14 +8,14 @@ describe('requete constants', () => {
         expect.objectContaining({
           SAD_MIXTE: 'SAD_MIXTE',
           SAD_SOINS: 'SAD_SOINS',
-          SAD_SANTE: 'SAD_SANTE',
+          SAD_AIDE: 'SAD_AIDE',
         }),
       );
       expect(misEnCauseEtablissementPrecisionLabels).toEqual(
         expect.objectContaining({
           SAD_MIXTE: 'SAD mixte',
-          SAD_SOINS: 'SAD Soins',
-          SAD_SANTE: 'SAD Santé',
+          SAD_SOINS: 'SAD soins',
+          SAD_AIDE: 'SAD aide',
         }),
       );
     });
