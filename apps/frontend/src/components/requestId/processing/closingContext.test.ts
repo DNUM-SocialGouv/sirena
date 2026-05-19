@@ -41,7 +41,9 @@ describe('buildClosingContextMessage', () => {
       ],
     });
 
-    expect(message).toContain('Le traitement de la requête sera toujours en cours au ARS Bretagne, DDETS 35.');
+    expect(message).toBe(
+      "Information : vous allez clôturer la requête REQ-354. Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne, DDETS 35.",
+    );
   });
 
   it('uses precision, type, then non renseigné when the concerned person or establishment has no name', () => {
@@ -96,8 +98,6 @@ describe('buildClosingContextMessage', () => {
       ],
     });
 
-    expect(message).toBe(
-      'Vous allez clôturer la requête REQ-354 reçue le 15/03/2024 avec pour mis en cause EHPAD Les Lilas.',
-    );
+    expect(message).toBe('Information : vous allez clôturer la requête REQ-354.');
   });
 });

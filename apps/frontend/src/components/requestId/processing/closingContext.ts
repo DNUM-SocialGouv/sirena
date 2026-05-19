@@ -55,12 +55,8 @@ export const buildClosingContextMessage = ({
     ['NOUVEAU', 'EN_COURS'].includes(entity.statutId),
   );
   const continuationSentence = activeOtherEntities.length
-    ? ` Le traitement de la requête sera toujours en cours au ${activeOtherEntities.map((entity) => entity.nomComplet).join(', ')}.`
+    ? ` Le traitement de la requête sera toujours en cours pour l'entité administrative ${activeOtherEntities.map((entity) => entity.nomComplet).join(', ')}.`
     : '';
 
-  if (!continuationSentence) {
-    return `Information : vous allez clôturer la requête ${requestId}.`;
-  }
-
-  return `Vous allez clôturer la requête ${requestId} reçue le ${formatDate(receptionDate)} avec pour mis en cause ${misEnCauseText}.${continuationSentence}`;
+  return `Information : vous allez clôturer la requête ${requestId}.${continuationSentence}`;
 };
