@@ -7,7 +7,7 @@ import { SelectWithChildren } from '@sirena/ui';
 import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useCloseRequete } from '@/hooks/mutations/closeRequete.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
-import { useRequeteDetails, useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
+import { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
 import { buildClosingContextMessage } from './closingContext';
 
@@ -37,7 +37,6 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
     const closeRequeteMutation = useCloseRequete(requestId);
     const uploadFileMutation = useUploadFile({ silentToastError: true });
-    const requestDetailsQuery = useRequeteDetails(requestId);
     const otherEntitiesAffectedQuery = useRequeteOtherEntitiesAffected(requestId);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const cleanupRef = useRef<(() => void) | null>(null);
@@ -188,20 +187,14 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       onCancel?.();
     };
 
-    const requestDetails = requestDetailsQuery.data;
     const otherEntitiesAffectedFromQuery = otherEntitiesAffectedQuery.data?.otherEntites;
-    const isContextLoading = requestDetailsQuery.isLoading || otherEntitiesAffectedQuery.isLoading;
-    const hasContextError = requestDetailsQuery.error || otherEntitiesAffectedQuery.error;
+    const isContextLoading = otherEntitiesAffectedQuery.isLoading;
     const descriptionText = isContextLoading
       ? 'Chargement des informations de la requête...'
-      : hasContextError
-        ? `Vous allez clôturer la requête ${requestId}.`
-        : buildClosingContextMessage({
-            requestId,
-            receptionDate: requestDetails?.requete?.receptionDate,
-            situations: requestDetails?.requete?.situations ?? [],
-            otherEntitiesAffected: otherEntitiesAffectedFromQuery ?? [],
-          });
+      : buildClosingContextMessage({
+          requestId,
+          otherEntitiesAffected: otherEntitiesAffectedQuery.error ? [] : (otherEntitiesAffectedFromQuery ?? []),
+        });
 
     return (
       <closeModal.Component
