@@ -36,6 +36,15 @@ function RouteComponent() {
   const requestQuery = useRequeteDetails(requestId);
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const [shouldCloseRequeteStatus, setShouldCloseRequeteStatus] = useState<{
+    willUserBeUnassignedAfterSave: boolean;
+    otherEntitiesAffected: Array<{
+      id: string;
+      nomComplet: string;
+      entiteTypeId: string;
+      statutId: string;
+    }>;
+  } | null>(null);
   const [formResetKey] = useState(0);
 
   const { handleSave: performSave } = useSituationSave({
@@ -44,6 +53,7 @@ function RouteComponent() {
     onRefetch: () => requestQuery.refetch(),
     onSuccess: (result) => {
       if (result.shouldCloseRequeteStatus?.willUserBeUnassignedAfterSave) {
+        setShouldCloseRequeteStatus(result.shouldCloseRequeteStatus);
         closeRequeteModalRef.current?.openModal();
       } else {
         navigate({ to: '/request/$requestId', params: { requestId } });
@@ -52,6 +62,7 @@ function RouteComponent() {
   });
 
   const handleCloseModalCancel = async () => {
+    setShouldCloseRequeteStatus(null);
     navigate({ to: '/request/$requestId', params: { requestId } });
   };
 
@@ -60,7 +71,12 @@ function RouteComponent() {
   };
 
   const handleCloseModalSuccess = () => {
+    setShouldCloseRequeteStatus(null);
     navigate({ to: '/request/$requestId', params: { requestId } });
+  };
+
+  const handleModalDismiss = () => {
+    setShouldCloseRequeteStatus(null);
   };
 
   return (
@@ -89,10 +105,12 @@ function RouteComponent() {
             <CloseRequeteModal
               ref={closeRequeteModalRef}
               requestId={requestId}
+              otherEntitiesAffected={shouldCloseRequeteStatus?.otherEntitiesAffected ?? []}
               triggerButtonRef={saveButtonRef}
               onBeforeClose={handleBeforeClose}
               onCancel={handleCloseModalCancel}
               onSuccess={handleCloseModalSuccess}
+              onDismiss={handleModalDismiss}
             />
           </>
         );

@@ -95,4 +95,25 @@ describe('CloseRequeteModal', () => {
     expect(screen.getByText('Information : vous allez clôturer la requête REQ-354.')).toBeInTheDocument();
     expect(screen.getByText('Raisons de la clôture (obligatoire)')).toBeInTheDocument();
   });
+
+  it('uses provided other affected entities when the query cannot be loaded', () => {
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error('error'),
+    } as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+
+    render(
+      <CloseRequeteModal
+        requestId="REQ-354"
+        otherEntitiesAffected={[{ id: 'ars', nomComplet: 'ARS Bretagne', entiteTypeId: 'ARS', statutId: 'NOUVEAU' }]}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "Information : vous allez clôturer la requête REQ-354. Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne.",
+      ),
+    ).toBeInTheDocument();
+  });
 });
