@@ -1,6 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { z } from 'zod';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { CloseRequeteModal, type CloseRequeteModalRef } from '@/components/requestId/processing/CloseRequeteModal';
@@ -32,29 +32,16 @@ function RouteComponent() {
   const requestQuery = useRequeteDetails(requestId);
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
-  const [shouldCloseRequeteStatus, setShouldCloseRequeteStatus] = useState<{
-    willUserBeUnassignedAfterSave: boolean;
-    otherEntitiesAffected: Array<{
-      id: string;
-      nomComplet: string;
-      entiteTypeId: string;
-      statutId: string;
-    }>;
-  } | null>(null);
 
   return (
     <QueryStateHandler query={requestQuery}>
-      {({ data }) => {
-        const request = data;
-        const situations = request?.requete?.situations ?? [];
-
+      {() => {
         const { handleSave } = useSituationSave({
           requestId,
           situationId: undefined,
           onRefetch: () => requestQuery.refetch(),
           onSuccess: (result) => {
             if (result.shouldCloseRequeteStatus?.willUserBeUnassignedAfterSave) {
-              setShouldCloseRequeteStatus(result.shouldCloseRequeteStatus);
               closeRequeteModalRef.current?.openModal();
             } else {
               navigate({ to: '/request/$requestId', params: { requestId } });
@@ -63,7 +50,6 @@ function RouteComponent() {
         });
 
         const handleCloseModalCancel = async () => {
-          setShouldCloseRequeteStatus(null);
           navigate({ to: '/request/$requestId', params: { requestId } });
         };
 
@@ -72,12 +58,7 @@ function RouteComponent() {
         };
 
         const handleCloseModalSuccess = () => {
-          setShouldCloseRequeteStatus(null);
           navigate({ to: '/request/$requestId', params: { requestId } });
-        };
-
-        const handleModalDismiss = () => {
-          setShouldCloseRequeteStatus(null);
         };
 
         return (
@@ -96,7 +77,6 @@ function RouteComponent() {
               onBeforeClose={handleBeforeClose}
               onCancel={handleCloseModalCancel}
               onSuccess={handleCloseModalSuccess}
-              onDismiss={handleModalDismiss}
             />
           </>
         );
