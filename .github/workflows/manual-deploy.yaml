@@ -14,54 +14,93 @@ on:
         default: "preproduction"
 
 jobs:
-  build-docker:
-    name: Build docker images
+  prepare:
+    name: Prepare build context
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
-      attestations: write
-      id-token: write
-      security-events: write
-
+    outputs:
+      version: ${{ steps.version.outputs.value }}
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
-
       - name: Compute version identifier
-        id: compute_version
+        id: version
         run: |
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
           else
             VERSION=${GITHUB_SHA::7}
           fi
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "value=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push Docker images
-        uses: ./.github/actions/build-docker
-        with:
-          version: ${{ steps.compute_version.outputs.VERSION }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          environment: ${{ github.event.inputs.environment }}
-
-    outputs:
-      VERSION: ${{ steps.compute_version.outputs.VERSION }}
-
-  deploy:
-    name: Deploy to ${{ github.event.inputs.environment }}
-    needs: build-docker
+  build-docker:
+    name: Build ${{ matrix.image }} image
+    needs: prepare
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
+      packages: write
+      attestations: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [anonymize, worker, backend, frontend]
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+        with:
+          fetch-depth: 1
+
+      - name: Build and push ${{ matrix.image }} image
+        uses: ./.github/actions/build-docker
+        with:
+          image: ${{ matrix.image }}
+          version: ${{ needs.prepare.outputs.version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+  trivy-scan:
+    name: Trivy scan ${{ matrix.image }}
+    needs: [prepare, build-docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [anonymize, worker, backend, frontend]
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+        with:
+          fetch-depth: 1
+
+      - name: Resolve image reference
+        id: ref
+        run: |
+          NORMALIZED_REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "value=ghcr.io/${NORMALIZED_REPO}:${{ needs.prepare.outputs.version }}-${{ matrix.image }}" >> "$GITHUB_OUTPUT"
+
+      - name: Trivy image scan
+        uses: ./.github/actions/trivy-image-scan
+        with:
+          image-ref: ${{ steps.ref.outputs.value }}
+          category: trivy-container-${{ matrix.image }}
+
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment }}
+    needs: [prepare, build-docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+        with:
+          fetch-depth: 1
 
       - name: Deploy to GitOps
         uses: ./.github/actions/deploy-gitops
         with:
           environment: ${{ github.event.inputs.environment }}
-          version: ${{ needs.build-docker.outputs.VERSION }}
+          version: ${{ needs.prepare.outputs.version }}
           gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }}
           helm-repo-pat: ${{ secrets.HELM_REPO_PAT }}
