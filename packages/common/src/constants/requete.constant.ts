@@ -90,7 +90,9 @@ export const misEnCauseProchePrecisionLabels: Record<MisEnCauseProchePrecision, 
 
 export const MIS_EN_CAUSE_ETABLISSEMENT_PRECISION = {
   ETABLISSEMENT: 'ETABLISSEMENT',
-  SERVICE: 'SERVICE',
+  SAD_MIXTE: 'SAD_MIXTE',
+  SAD_SOINS: 'SAD_SOINS',
+  SAD_AIDE: 'SAD_AIDE',
   SAMSAH: 'SAMSAH',
   SAVS: 'SAVS',
   SESSAD: 'SESSAD',
@@ -104,7 +106,9 @@ export type MisEnCauseEtablissementPrecision = keyof typeof MIS_EN_CAUSE_ETABLIS
 
 export const misEnCauseEtablissementPrecisionLabels: Record<MisEnCauseEtablissementPrecision, string> = {
   ETABLISSEMENT: 'Etablissement où se sont déroulés les faits',
-  SERVICE: "Services de soins infirmiers ou d'aide à domicile (SAAD, SSIAD, SPASAD)",
+  SAD_MIXTE: 'SAD mixte',
+  SAD_SOINS: 'SAD soins',
+  SAD_AIDE: 'SAD aide',
   SAMSAH: 'SAMSAH',
   SAVS: "SAVS (Service d'accompagnement à la vie sociale)",
   SESSAD: "SESSAD (Service d'Education Spéciale et de Soins à Domicile) non rattaché à un établissement",
@@ -144,6 +148,7 @@ export const lienVictimeLabels: Record<LienVictime, string> = {
 export type MisEnCauseTypePrecisionUnion =
   | MisEnCauseFamillePrecision
   | MisEnCauseProchePrecision
+  | MisEnCauseEtablissementPrecision
   | MisEnCauseAutreNonProPrecision
   | ProfessionSantePrecision
   | ProfessionSocialPrecision
@@ -1046,43 +1051,6 @@ export const sousMotifPROBLEMES_D_ORGANISATION_OU_DE_RESSOURCES_HUMAINESLabels: 
   ABSENCE_DE_MEDEC: 'Absence de MEDEC',
   MANQUE_DE_QUALIFICATION_DU_PERSONNEL_DIPLOME: 'Manque de qualification du personnel (diplôme...)',
   MANQUE_DE_PERSONNEL_NON_SOIGNANT: 'Manque de personnel non soignant',
-};
-
-// Sous-motifs pour: Qualité de l\'accompagnement ou du service
-export const SOUS_MOTIF_QUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICE = {
-  PROBLEME_D_ACCOMPAGNEMENT_ET_OU_SUIVI_INDIVIDUEL_PROJET_DE_VIE_SUIVI_SOCIAL_EDUCATIF_ADMINISTRATIF:
-    'PROBLEME_D_ACCOMPAGNEMENT_ET_OU_SUIVI_INDIVIDUEL_PROJET_DE_VIE_SUIVI_SOCIAL_EDUCATIF_ADMINISTRATIF',
-  NON_RESPECT_DES_PROGRAMMES_DE_FORMATION: 'NON_RESPECT_DES_PROGRAMMES_DE_FORMATION',
-  ABSENCE_D_ANIMATION: 'ABSENCE_D_ANIMATION',
-  AUTRES: 'AUTRES',
-  QUALITE_DES_ANIMATIONS_AU_LIEU_D_INTERVENTIONS: 'QUALITE_DES_ANIMATIONS_AU_LIEU_D_INTERVENTIONS',
-  PROBLEMATIQUE_DE_FONCTIONNEMENT_DE_L_ESSMS_REGLEMENT_INTERIEUR:
-    'PROBLEMATIQUE_DE_FONCTIONNEMENT_DE_L_ESSMS_REGLEMENT_INTERIEUR',
-  VIOLENCES_ENTRE_USAGERS: 'VIOLENCES_ENTRE_USAGERS',
-  VILOLENCES_D_UN_USAGER_ENVERS_SON_ENTOURAGE: 'VILOLENCES_D_UN_USAGER_ENVERS_SON_ENTOURAGE',
-  VIOLENCES_D_UN_USAGER_ENVERS_UN_PROFESSIONNEL: 'VIOLENCES_D_UN_USAGER_ENVERS_UN_PROFESSIONNEL',
-  DEFAUT_DE_SURVEILLANCE_FUGUE_DISPARITION_INQUIETANTE: 'DEFAUT_DE_SURVEILLANCE_FUGUE_DISPARITION_INQUIETANTE',
-} as const;
-
-export type SousMotifQUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICE =
-  keyof typeof SOUS_MOTIF_QUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICE;
-
-export const sousMotifQUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICELabels: Record<
-  SousMotifQUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICE,
-  string
-> = {
-  PROBLEME_D_ACCOMPAGNEMENT_ET_OU_SUIVI_INDIVIDUEL_PROJET_DE_VIE_SUIVI_SOCIAL_EDUCATIF_ADMINISTRATIF:
-    "Problème d'accompagnement et/ou suivi individuel : projet de vie, suivi social, éducatif, administratif…",
-  NON_RESPECT_DES_PROGRAMMES_DE_FORMATION: 'Non respect des programmes de formation',
-  ABSENCE_D_ANIMATION: "Absence d'animation",
-  AUTRES: 'Autres',
-  QUALITE_DES_ANIMATIONS_AU_LIEU_D_INTERVENTIONS: "Qualité des animations au lieu d'interventions",
-  PROBLEMATIQUE_DE_FONCTIONNEMENT_DE_L_ESSMS_REGLEMENT_INTERIEUR:
-    "Problématique de fonctionnement de l'ESSMS (règlement intérieur, …)",
-  VIOLENCES_ENTRE_USAGERS: 'Violences entre usagers',
-  VILOLENCES_D_UN_USAGER_ENVERS_SON_ENTOURAGE: "Violences d'un usager envers son entourage",
-  VIOLENCES_D_UN_USAGER_ENVERS_UN_PROFESSIONNEL: "Violences d'un usager envers un professionnel",
-  DEFAUT_DE_SURVEILLANCE_FUGUE_DISPARITION_INQUIETANTE: 'Défaut de surveillance (fugue / disparition inquiétante)',
 };
 
 // Sous-motifs pour: Qualité des soins

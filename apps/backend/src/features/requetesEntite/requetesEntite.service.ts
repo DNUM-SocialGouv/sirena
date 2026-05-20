@@ -269,7 +269,12 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     }
   }
 
-  const uniqueDptCodes = [...new Set(cpToDptCode.values())];
+  const allDptCodes = new Set<string>();
+  for (const cp of allCps) {
+    const dptCode = cpToDptCode.get(cp) ?? extractDptCode(cp);
+    if (dptCode) allDptCodes.add(dptCode);
+  }
+  const uniqueDptCodes = [...allDptCodes];
 
   const communesQuery =
     uniqueDptCodes.length > 0

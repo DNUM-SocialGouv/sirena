@@ -137,6 +137,17 @@ describe('runDecisionTree - domicile', () => {
     expect(result.sort()).toEqual(['CD']);
   });
 
+  it('should assign CD for domicile with ETABLISSEMENT and SAD_AIDE precision', async () => {
+    const ctx: SituationContext = {
+      lieuType: 'DOMICILE',
+      misEnCauseType: 'ETABLISSEMENT',
+      misEnCauseTypePrecision: 'SAD_AIDE',
+    };
+
+    const result = await runDecisionTree(ctx, { requeteId: 'test-requete', situationId: 'test-situation' });
+    expect(result.sort()).toEqual(['CD']);
+  });
+
   it('should assign ARS for domicile with PROFESSIONNEL_SANTE and SESSAD precision', async () => {
     const ctx: SituationContext = {
       lieuType: 'DOMICILE',

@@ -257,11 +257,11 @@ describe('getResponsable', () => {
       professionnelResponsableTypeId: DS_PROFESSION_DOMICILE_TYPE.AUTRE_PROFESSIONNEL,
     };
 
-    it('maps to ETABLISSEMENT / SERVICE when lieu is domicile', () => {
+    it('maps to ETABLISSEMENT / SAD_AIDE when lieu is domicile', () => {
       const result = getResponsable({ lieuTypeId: DS_LIEU_TYPE.DOMICILE, ...params });
       expect(result).toEqual({
         misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
-        misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SERVICE,
+        misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.SAD_AIDE,
       });
     });
 
