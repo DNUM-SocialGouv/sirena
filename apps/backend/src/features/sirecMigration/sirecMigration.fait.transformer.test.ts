@@ -7,9 +7,29 @@ vi.mock('./transco/motifsDeclaratifs.transco.js', () => ({
 
 describe('sirecMigration.fait.transformer.ts', () => {
   const sirecData = {
-    reclamation: { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation' },
+    reclamation: {
+      id_data: 42,
+      r_recept_date: new Date('2024-01-15'),
+      description: 'Ma réclamation',
+      prioritaire_precisez: 'Précision prioritaire',
+    },
     motifsDeclaresIdDicos: [809, 811],
   };
+
+  it('should map prioritaire_precisez to commentaire', () => {
+    const result = transformSirecFait(sirecData);
+
+    expect(result.commentaire).toBe('Précision prioritaire');
+  });
+
+  it('should default commentaire to empty string when prioritaire_precisez is null', () => {
+    const result = transformSirecFait({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, prioritaire_precisez: null },
+    });
+
+    expect(result.commentaire).toBe('');
+  });
 
   it('should map description to autresPrecisions', () => {
     const result = transformSirecFait(sirecData);

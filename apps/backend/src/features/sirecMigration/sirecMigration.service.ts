@@ -42,6 +42,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     await tx.fait.create({
       data: {
         situationId: situation.id,
+        commentaire: data.situation.fait.commentaire,
         autresPrecisions: data.situation.fait.autresPrecisions,
       },
     });
