@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MOTIFS_HIERARCHICAL_DATA } from '../constants/motifs.constant.js';
 import type { MotifOption } from './motifs.utils.js';
 import { getAllOptionsFlat, labelsToValues, labelToValue, valuesToLabels, valueToLabel } from './motifs.utils.js';
 
@@ -30,6 +31,29 @@ const TEST_OPTIONS: MotifOption[] = [
 ];
 
 describe('motifs.utils', () => {
+  describe('qualified motifs referential', () => {
+    it('exposes the new violence-between-users motifs', () => {
+      const flatMotifs = getAllOptionsFlat(MOTIFS_HIERARCHICAL_DATA);
+
+      expect(flatMotifs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            label: 'Violences physiques entre usagers',
+            value: 'VIOLENCES_PHYSIQUES_ENTRE_USAGERS',
+          }),
+          expect.objectContaining({
+            label: 'Violences sexuelles entre usagers',
+            value: 'VIOLENCES_SEXUELLES_ENTRE_USAGERS',
+          }),
+          expect.objectContaining({
+            label: 'Violences psychologiques entre usagers',
+            value: 'VIOLENCES_PSYCHOLOGIQUES_ENTRE_USAGERS',
+          }),
+        ]),
+      );
+    });
+  });
+
   describe('getAllOptionsFlat', () => {
     it('should flatten recursive structure', () => {
       const flat = getAllOptionsFlat(TEST_OPTIONS);
