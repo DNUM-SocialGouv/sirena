@@ -546,7 +546,7 @@ const StepComponent = ({
                   })
                 }
               >
-                Note ou fichier
+                Ajouter une note ou un fichier
               </Button>
             )}
           </>
