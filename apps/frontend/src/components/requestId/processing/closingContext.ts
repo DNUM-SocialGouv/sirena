@@ -3,21 +3,17 @@ type OtherEntityInput = {
   statutId: string;
 };
 
-type BuildClosingContextMessageInput = {
+type BuildClosingContextInput = {
   requestId: string;
   otherEntitiesAffected?: OtherEntityInput[] | null;
 };
 
-export const buildClosingContextMessage = ({
-  requestId,
+export const getActiveOtherEntityNames = ({
   otherEntitiesAffected = [],
-}: BuildClosingContextMessageInput) => {
-  const activeOtherEntities = (otherEntitiesAffected ?? []).filter((entity) =>
-    ['NOUVEAU', 'EN_COURS'].includes(entity.statutId),
-  );
-  const continuationSentence = activeOtherEntities.length
-    ? ` Le traitement de la requête sera toujours en cours pour l'entité administrative ${activeOtherEntities.map((entity) => entity.nomComplet).join(', ')}.`
-    : '';
+}: Pick<BuildClosingContextInput, 'otherEntitiesAffected'>) =>
+  (otherEntitiesAffected ?? [])
+    .filter((entity) => ['NOUVEAU', 'EN_COURS'].includes(entity.statutId))
+    .map((entity) => entity.nomComplet);
 
-  return `Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${requestId}.${continuationSentence}`;
-};
+export const buildClosingContextMessage = ({ requestId }: BuildClosingContextInput) =>
+  `Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${requestId}.`;

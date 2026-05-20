@@ -9,7 +9,7 @@ import { useCloseRequete } from '@/hooks/mutations/closeRequete.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
-import { buildClosingContextMessage } from './closingContext';
+import { buildClosingContextMessage, getActiveOtherEntityNames } from './closingContext';
 
 export type CloseRequeteModalRef = {
   openModal: () => void;
@@ -198,16 +198,15 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     const otherEntitiesAffectedFromQuery = otherEntitiesAffectedQuery.data?.otherEntites;
     const hasProvidedOtherEntitiesAffected = otherEntitiesAffected !== undefined;
     const isContextLoading = !hasProvidedOtherEntitiesAffected && otherEntitiesAffectedQuery.isLoading;
+    const closingContextEntities = hasProvidedOtherEntitiesAffected
+      ? otherEntitiesAffected
+      : otherEntitiesAffectedQuery.error
+        ? []
+        : (otherEntitiesAffectedFromQuery ?? []);
+    const activeOtherEntityNames = getActiveOtherEntityNames({ otherEntitiesAffected: closingContextEntities });
     const descriptionText = isContextLoading
       ? 'Chargement des informations de la requête...'
-      : buildClosingContextMessage({
-          requestId,
-          otherEntitiesAffected: hasProvidedOtherEntitiesAffected
-            ? otherEntitiesAffected
-            : otherEntitiesAffectedQuery.error
-              ? []
-              : (otherEntitiesAffectedFromQuery ?? []),
-        });
+      : buildClosingContextMessage({ requestId });
 
     return (
       <closeModal.Component
@@ -230,7 +229,25 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       >
         <div className="fr-mb-4w">
           <div className="fr-text--sm fr-text--grey">
-            <Alert small={true} severity="info" description={descriptionText} />
+            <Alert
+              small={true}
+              severity="info"
+              description={
+                isContextLoading || activeOtherEntityNames.length === 0 ? (
+                  descriptionText
+                ) : (
+                  <div>
+                    <p>{descriptionText}</p>
+                    <p>Le traitement de la requête sera toujours en cours pour l'entité administrative :</p>
+                    <ul>
+                      {activeOtherEntityNames.map((entityName) => (
+                        <li key={entityName}>{entityName}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              }
+            />
           </div>
         </div>
 
