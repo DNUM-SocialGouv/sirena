@@ -74,8 +74,10 @@ function TraitementDesFaitsRowComponent({
           <div className={styles.entiteField}>
             {isEntiteReadOnly ? (
               <div className="fr-input-group">
-                <p className="fr-label">Entité administrative (obligatoire)</p>
-                <div className={styles.readOnlyValue}>{entiteLabel}</div>
+                <label className="fr-label" htmlFor={`entite-readonly-${row.id}`}>
+                  Entité administrative (obligatoire)
+                </label>
+                <input id={`entite-readonly-${row.id}`} className={styles.readOnlyValue} value={entiteLabel} readOnly />
               </div>
             ) : (
               <Select
@@ -114,13 +116,20 @@ function TraitementDesFaitsRowComponent({
         <div className="fr-col-12 fr-col-md-6" style={alignSelectStyle}>
           {disabled ? (
             <div className="fr-input-group">
-              <p className="fr-label">Direction ou Service</p>
-              <div className={styles.readOnlyValue}>
-                {row.directionServiceIds
-                  ?.map((id) => directionsServices.find((ds) => ds.id === id)?.nomComplet)
-                  .filter(Boolean)
-                  .join(', ') || ''}
-              </div>
+              <label className="fr-label" htmlFor={`direction-readonly-${row.id}`}>
+                Direction ou Service
+              </label>
+              <input
+                id={`direction-readonly-${row.id}`}
+                className={styles.readOnlyValue}
+                value={
+                  row.directionServiceIds
+                    ?.map((id) => directionsServices.find((ds) => ds.id === id)?.nomComplet)
+                    .filter(Boolean)
+                    .join(', ') || ''
+                }
+                readOnly
+              />
             </div>
           ) : (
             <SelectWithChildren
@@ -377,7 +386,7 @@ function TraitementDesFaitsSection({
               </div>
             );
           })}
-          <hr className="fr-mt-4w" />
+          <div className="fr-mt-4w" />
           {rows.readOnlyRows.length > 0 && (
             <p className="fr-text--md fr-mb-2w fr-text--bold">Autres entités affectées au traitement</p>
           )}
