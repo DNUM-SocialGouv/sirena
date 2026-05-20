@@ -33,13 +33,13 @@ describe('CloseRequeteModal', () => {
       },
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
     expect(
       screen.getByText(
-        "Information : vous allez clôturer la requête REQ-354. Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne.",
+        "Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête REQ-354. Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne.",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Attention/)).not.toBeInTheDocument();
@@ -56,7 +56,7 @@ describe('CloseRequeteModal', () => {
       },
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
@@ -65,7 +65,7 @@ describe('CloseRequeteModal', () => {
     expect(screen.queryByText(/mis en cause/)).not.toBeInTheDocument();
     expect(
       screen.getByText(
-        "Information : vous allez clôturer la requête REQ-354. Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne.",
+        "Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête REQ-354. Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne.",
       ),
     ).toBeInTheDocument();
   });
@@ -75,7 +75,7 @@ describe('CloseRequeteModal', () => {
       data: undefined,
       isLoading: true,
       error: null,
-    } as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
@@ -88,11 +88,15 @@ describe('CloseRequeteModal', () => {
       data: undefined,
       isLoading: false,
       error: new Error('error'),
-    } as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
-    expect(screen.getByText('Information : vous allez clôturer la requête REQ-354.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête REQ-354.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText('Raisons de la clôture (obligatoire)')).toBeInTheDocument();
   });
 
@@ -101,7 +105,7 @@ describe('CloseRequeteModal', () => {
       data: undefined,
       isLoading: false,
       error: new Error('error'),
-    } as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
 
     render(
       <CloseRequeteModal
@@ -112,7 +116,7 @@ describe('CloseRequeteModal', () => {
 
     expect(
       screen.getByText(
-        "Information : vous allez clôturer la requête REQ-354. Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne.",
+        "Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête REQ-354. Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne.",
       ),
     ).toBeInTheDocument();
   });
@@ -122,7 +126,7 @@ describe('CloseRequeteModal', () => {
       data: undefined,
       isLoading: true,
       error: null,
-    } as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
 
     render(
       <CloseRequeteModal
@@ -134,7 +138,7 @@ describe('CloseRequeteModal', () => {
     expect(screen.queryByText('Chargement des informations de la requête...')).not.toBeInTheDocument();
     expect(
       screen.getByText(
-        "Information : vous allez clôturer la requête REQ-354. Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne.",
+        "Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête REQ-354. Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne.",
       ),
     ).toBeInTheDocument();
   });

@@ -19,5 +19,5 @@ export const buildClosingContextMessage = ({
     ? ` Le traitement de la requête sera toujours en cours pour l'entité administrative ${activeOtherEntities.map((entity) => entity.nomComplet).join(', ')}.`
     : '';
 
-  return `Information : vous allez clôturer la requête ${requestId}.${continuationSentence}`;
+  return `Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${requestId}.${continuationSentence}`;
 };
