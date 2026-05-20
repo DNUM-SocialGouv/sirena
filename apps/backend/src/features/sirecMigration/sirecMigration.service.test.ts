@@ -59,7 +59,11 @@ describe('sirecMigration.service.ts', () => {
       prioriteId: 'HAUTE',
       requeteEntiteIds: ['ars-1', 'ars-2'],
       situation: {
-        fait: { autresPrecisions: 'Ma réclamation', motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'] },
+        fait: {
+          commentaire: 'Précision prioritaire',
+          autresPrecisions: 'Ma réclamation',
+          motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'],
+        },
         entiteIds: ['service-1', 'ars-1'],
       },
     };
@@ -89,11 +93,11 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should create Fait with autresPrecisions', async () => {
+    it('should create Fait with commentaire and autresPrecisions', async () => {
       await saveFromSirec(data);
 
       expect(prisma.fait.create).toHaveBeenCalledWith({
-        data: { situationId: 'sit-1', autresPrecisions: 'Ma réclamation' },
+        data: { situationId: 'sit-1', commentaire: 'Précision prioritaire', autresPrecisions: 'Ma réclamation' },
       });
     });
 
@@ -111,7 +115,7 @@ describe('sirecMigration.service.ts', () => {
     it('should not call faitMotifDeclaratif.createMany when motifs list is empty', async () => {
       await saveFromSirec({
         ...data,
-        situation: { ...data.situation, fait: { autresPrecisions: 'Test', motifsDeclaratifs: [] } },
+        situation: { ...data.situation, fait: { commentaire: '', autresPrecisions: 'Test', motifsDeclaratifs: [] } },
       });
 
       expect(prisma.faitMotifDeclaratif.createMany).toHaveBeenCalledWith({ data: [] });

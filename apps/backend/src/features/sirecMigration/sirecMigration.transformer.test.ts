@@ -9,6 +9,7 @@ describe('sirecMigration.transformer.ts', () => {
       description: 'Ma réclamation',
       reception: 12,
       prioritaire: 1,
+      prioritaire_precisez: 'Précision prioritaire',
       service_recepteur_niv1: 693,
       service_gestionnaire: null,
     },
@@ -27,6 +28,7 @@ describe('sirecMigration.transformer.ts', () => {
       requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
       situation: {
         fait: {
+          commentaire: 'Précision prioritaire',
           autresPrecisions: 'Ma réclamation',
           motifsDeclaratifs: ['PROBLEME_FACTURATION'],
         },
