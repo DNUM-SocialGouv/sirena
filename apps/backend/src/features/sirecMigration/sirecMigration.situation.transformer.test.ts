@@ -3,7 +3,7 @@ import { transformSirecSituation } from './sirecMigration.situation.transformer.
 
 describe('sirecMigration.situation.transformer.ts', () => {
   const sirecData = {
-    reclamation: { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation' },
+    reclamation: { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation', dest: null },
     motifsDeclaresIdDicos: [809],
   };
 
