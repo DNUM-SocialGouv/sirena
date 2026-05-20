@@ -16,7 +16,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useCreateRequeteEntite } from '@/hooks/mutations/createRequeteEntite.hook';
 import { useRequeteDateTypeSave } from '@/hooks/mutations/useRequeteDateTypeSave';
 import { useCanEdit } from '@/hooks/useCanEdit';
-import { SectionTitle } from './helpers';
 import style from './OriginalRequestSection.module.css';
 
 type OriginalRequestSectionProps = {
@@ -41,27 +40,31 @@ const RenderExtraInfos = ({
   provenanceId?: RequeteProvenance | null;
   provenancePrecision?: string | null;
   dateDemandeDeclarant?: string | null;
-}) => (
-  <>
-    {dateDemandeDeclarant && (
-      <>
-        <SectionTitle level={4}>Date de la demande par le déclarant</SectionTitle>
-        <p className={fr.cx('fr-mb-0')}>{new Date(dateDemandeDeclarant).toLocaleDateString('fr-FR')}</p>
-      </>
-    )}
-    {provenanceId && (
-      <>
-        <SectionTitle level={4}>Provenance</SectionTitle>
-        <p className={fr.cx('fr-mb-0')}>
-          {requeteProvenanceLabels[provenanceId]}
-          {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
-            provenancePrecision &&
-            ` – ${provenancePrecision}`}
-        </p>
-      </>
-    )}
-  </>
-);
+}) => {
+  if (!dateDemandeDeclarant && !provenanceId) return null;
+
+  return (
+    <dl className={fr.cx('fr-mb-0')}>
+      {dateDemandeDeclarant && (
+        <>
+          <dt>Date de la demande par le déclarant</dt>
+          <dd>{new Date(dateDemandeDeclarant).toLocaleDateString('fr-FR')}</dd>
+        </>
+      )}
+      {provenanceId && (
+        <>
+          <dt>Provenance</dt>
+          <dd>
+            {requeteProvenanceLabels[provenanceId]}
+            {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
+              provenancePrecision &&
+              ` – ${provenancePrecision}`}
+          </dd>
+        </>
+      )}
+    </dl>
+  );
+};
 
 const RenderCompleted = ({
   date,
@@ -88,11 +91,13 @@ const RenderCompleted = ({
 
   if (date && receptionType) {
     return (
-      <div className="text-vertical-align">
-        Reçue le {new Date(date).toLocaleDateString('fr-FR')} par {receptionTypeLabels[receptionType]}
-        {receptionType === RECEPTION_TYPE.FORMULAIRE && (
-          <div className={fr.cx('fr-text--xs')}>Dossier Demat.Social n° {dematSocialId}</div>
-        )}
+      <div>
+        <p className="text-vertical-align">
+          Reçue le {new Date(date).toLocaleDateString('fr-FR')} par {receptionTypeLabels[receptionType]}
+          {receptionType === RECEPTION_TYPE.FORMULAIRE && (
+            <span className={fr.cx('fr-text--xs')}>Dossier Demat.Social n° {dematSocialId}</span>
+          )}
+        </p>
         {extras}
       </div>
     );
@@ -100,8 +105,8 @@ const RenderCompleted = ({
 
   if (date) {
     return (
-      <div className="text-vertical-align">
-        Reçue le {new Date(date).toLocaleDateString('fr-FR')}
+      <div>
+        <p className="text-vertical-align">Reçue le {new Date(date).toLocaleDateString('fr-FR')}</p>
         {extras}
       </div>
     );
@@ -109,15 +114,15 @@ const RenderCompleted = ({
 
   if (receptionType) {
     return (
-      <div className="text-vertical-align">
-        Reçue par {receptionTypeLabels[receptionType]}
+      <div>
+        <p className="text-vertical-align">Reçue par {receptionTypeLabels[receptionType]}</p>
         {extras}
       </div>
     );
   }
 
   if (provenanceId || dateDemandeDeclarant) {
-    return <div className="text-vertical-align">{extras}</div>;
+    return <div>{extras}</div>;
   }
 
   return null;
@@ -225,7 +230,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
     }
   };
 
-  const hasAnyValue = Boolean(dateValue || typeValue || provenanceValue || dateDemandeDeclarantValue);
+  const hasRequestData = Boolean(dateValue || typeValue || provenanceValue || dateDemandeDeclarantValue);
 
   return (
     <div>
@@ -330,8 +335,8 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
             </div>
           </form>
         ) : (
-          <div className={clsx(style.wrapper, hasAnyValue && style.wrapperFilled)}>
-            {!hasAnyValue ? (
+          <div className={clsx(style.wrapper, hasRequestData && style.wrapperFilled)}>
+            {!hasRequestData ? (
               <RenderEmpty />
             ) : (
               <RenderCompleted
