@@ -235,6 +235,11 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
               description={
                 isContextLoading || activeOtherEntityNames.length === 0 ? (
                   descriptionText
+                ) : activeOtherEntityNames.length === 1 ? (
+                  <div>
+                    <p>{descriptionText}</p>
+                    <p>{`Le traitement de la requête sera toujours en cours pour l'entité administrative ${activeOtherEntityNames[0]}.`}</p>
+                  </div>
                 ) : (
                   <div>
                     <p>{descriptionText}</p>

@@ -24,16 +24,21 @@ vi.mock('@/hooks/queries/useRequeteDetails', () => ({
   useRequeteOtherEntitiesAffected: vi.fn(),
 }));
 
+const singleActiveEntity = { id: 'ars', nomComplet: 'ARS Bretagne', entiteTypeId: 'ARS', statutId: 'NOUVEAU' };
+
+const mockOtherEntitiesAffectedQuery = (
+  query: Pick<ReturnType<typeof useRequeteOtherEntitiesAffected>, 'data' | 'isLoading' | 'error'>,
+) => query as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>;
+
 describe('CloseRequeteModal', () => {
   it('displays a single info alert with the standard closing context', () => {
-    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue({
-      data: {
-        otherEntites: [{ id: 'ars', nomComplet: 'ARS Bretagne', entiteTypeId: 'ARS', statutId: 'NOUVEAU' }],
-        subAdministrativeEntites: [],
-      },
-      isLoading: false,
-      error: null,
-    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({
+        data: { otherEntites: [singleActiveEntity], subAdministrativeEntites: [] },
+        isLoading: false,
+        error: null,
+      }),
+    );
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
@@ -43,9 +48,9 @@ describe('CloseRequeteModal', () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative :"),
+      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
     ).toBeInTheDocument();
-    expect(screen.getByText('ARS Bretagne')).toBeInTheDocument();
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
     expect(screen.queryByText(/Attention/)).not.toBeInTheDocument();
     expect(
       screen.queryByText(/les autres entités administratives affectées ne seront pas impactées par la clôture/),
@@ -53,14 +58,13 @@ describe('CloseRequeteModal', () => {
   });
 
   it('loads the standard closing context from other affected entities only', () => {
-    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue({
-      data: {
-        otherEntites: [{ id: 'ars', nomComplet: 'ARS Bretagne', entiteTypeId: 'ARS', statutId: 'NOUVEAU' }],
-        subAdministrativeEntites: [],
-      },
-      isLoading: false,
-      error: null,
-    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({
+        data: { otherEntites: [singleActiveEntity], subAdministrativeEntites: [] },
+        isLoading: false,
+        error: null,
+      }),
+    );
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
@@ -73,17 +77,40 @@ describe('CloseRequeteModal', () => {
       ),
     ).toBeInTheDocument();
     expect(
+      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
+  });
+
+  it('displays multiple active other entities as a bullet list', () => {
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({
+        data: {
+          otherEntites: [
+            singleActiveEntity,
+            { id: 'ddets', nomComplet: 'DDETS 35', entiteTypeId: 'DD', statutId: 'EN_COURS' },
+          ],
+          subAdministrativeEntites: [],
+        },
+        isLoading: false,
+        error: null,
+      }),
+    );
+
+    render(<CloseRequeteModal requestId="REQ-354" />);
+
+    expect(
       screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative :"),
     ).toBeInTheDocument();
+    expect(screen.getByRole('list')).toBeInTheDocument();
     expect(screen.getByText('ARS Bretagne')).toBeInTheDocument();
+    expect(screen.getByText('DDETS 35')).toBeInTheDocument();
   });
 
   it('displays a non-blocking loading message while the closing context is loading', () => {
-    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({ data: undefined, isLoading: true, error: null }),
+    );
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
@@ -92,11 +119,9 @@ describe('CloseRequeteModal', () => {
   });
 
   it('displays a non-blocking fallback message when the closing context cannot be loaded', () => {
-    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: new Error('error'),
-    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({ data: undefined, isLoading: false, error: new Error('error') }),
+    );
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
@@ -109,18 +134,11 @@ describe('CloseRequeteModal', () => {
   });
 
   it('uses provided other affected entities when the query cannot be loaded', () => {
-    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: new Error('error'),
-    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
-
-    render(
-      <CloseRequeteModal
-        requestId="REQ-354"
-        otherEntitiesAffected={[{ id: 'ars', nomComplet: 'ARS Bretagne', entiteTypeId: 'ARS', statutId: 'NOUVEAU' }]}
-      />,
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({ data: undefined, isLoading: false, error: new Error('error') }),
     );
+
+    render(<CloseRequeteModal requestId="REQ-354" otherEntitiesAffected={[singleActiveEntity]} />);
 
     expect(
       screen.getByText(
@@ -128,22 +146,20 @@ describe('CloseRequeteModal', () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative :"),
+      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
     ).toBeInTheDocument();
-    expect(screen.getByText('ARS Bretagne')).toBeInTheDocument();
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
   });
 
   it('uses provided other affected entities immediately for the close proposal flow', () => {
-    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      error: null,
-    } as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>);
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({ data: undefined, isLoading: true, error: null }),
+    );
 
     render(
       <CloseRequeteModal
         requestId="REQ-354"
-        otherEntitiesAffected={[{ id: 'ars', nomComplet: 'ARS Bretagne', entiteTypeId: 'ARS', statutId: 'EN_COURS' }]}
+        otherEntitiesAffected={[{ ...singleActiveEntity, statutId: 'EN_COURS' }]}
       />,
     );
 
@@ -154,8 +170,8 @@ describe('CloseRequeteModal', () => {
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative :"),
+      screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
     ).toBeInTheDocument();
-    expect(screen.getByText('ARS Bretagne')).toBeInTheDocument();
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
   });
 });
