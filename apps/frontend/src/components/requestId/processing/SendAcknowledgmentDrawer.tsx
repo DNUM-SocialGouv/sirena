@@ -198,7 +198,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                           {message}
                         </p>
                       </div>
-                      <div className={drawerStyles.separator} aria-hidden="true" />
+                      <div className={drawerStyles.separator} />
                       <Input
                         label="Commentaire personnalisé (facultatif)"
                         hintText="Vous pouvez ajouter des informations ou demander des précisions au déclarant. Ce commentaire sera intégré au message automatique."
