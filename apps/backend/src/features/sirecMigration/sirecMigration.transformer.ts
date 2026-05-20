@@ -14,7 +14,6 @@ export interface SirenaRequeteData {
   receptionTypeId: string | null;
   prioriteId: string | null;
   requeteEntiteIds: string[];
-  situationEntiteIds: string[];
   situation: SirenaSituationData;
 }
 
@@ -28,7 +27,6 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
     receptionTypeId: transcodeReceptionType(sirecData.reclamation.reception),
     prioriteId: sirecData.reclamation.prioritaire === 1 ? REQUETE_PRIORITE_TYPES.HAUTE : null,
     requeteEntiteIds,
-    situationEntiteIds,
-    situation: transformSirecSituation(sirecData),
+    situation: transformSirecSituation(sirecData, situationEntiteIds),
   };
 }

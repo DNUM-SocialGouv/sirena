@@ -58,9 +58,9 @@ describe('sirecMigration.service.ts', () => {
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
       requeteEntiteIds: ['ars-1', 'ars-2'],
-      situationEntiteIds: ['service-1', 'ars-1'],
       situation: {
         fait: { autresPrecisions: 'Ma réclamation', motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'] },
+        entiteIds: ['service-1', 'ars-1'],
       },
     };
 
@@ -111,7 +111,7 @@ describe('sirecMigration.service.ts', () => {
     it('should not call faitMotifDeclaratif.createMany when motifs list is empty', async () => {
       await saveFromSirec({
         ...data,
-        situation: { fait: { autresPrecisions: 'Test', motifsDeclaratifs: [] } },
+        situation: { ...data.situation, fait: { autresPrecisions: 'Test', motifsDeclaratifs: [] } },
       });
 
       expect(prisma.faitMotifDeclaratif.createMany).toHaveBeenCalledWith({ data: [] });
@@ -157,8 +157,8 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should create no SituationEntite when situationEntiteIds is empty', async () => {
-      await saveFromSirec({ ...data, situationEntiteIds: [] });
+    it('should create no SituationEntite when entiteIds is empty', async () => {
+      await saveFromSirec({ ...data, situation: { ...data.situation, entiteIds: [] } });
 
       expect(prisma.situationEntite.createMany).toHaveBeenCalledWith({ data: [] });
     });

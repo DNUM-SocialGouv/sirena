@@ -25,12 +25,12 @@ describe('sirecMigration.transformer.ts', () => {
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
       requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
-      situationEntiteIds: [],
       situation: {
         fait: {
           autresPrecisions: 'Ma réclamation',
           motifsDeclaratifs: ['PROBLEME_FACTURATION'],
         },
+        entiteIds: [],
       },
     });
   });
@@ -42,7 +42,7 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.requeteEntiteIds).toEqual(['4af829ff-07c1-425d-85d6-83b5f97e4422']);
-    expect(result.situationEntiteIds).toContain('c773bd6f-73e8-479c-b552-fd72f91c2efb');
+    expect(result.situation.entiteIds).toContain('c773bd6f-73e8-479c-b552-fd72f91c2efb');
   });
 
   it('should map id_data to sirecId', () => {
