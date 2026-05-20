@@ -64,7 +64,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     });
 
     await tx.situationEntite.createMany({
-      data: data.situationEntiteIds.map((entiteId) => ({
+      data: data.situation.entiteIds.map((entiteId) => ({
         situationId: situation.id,
         entiteId,
       })),

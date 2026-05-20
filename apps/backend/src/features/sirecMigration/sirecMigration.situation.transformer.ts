@@ -5,10 +5,12 @@ export type { SirenaFaitData };
 
 export interface SirenaSituationData {
   fait: SirenaFaitData;
+  entiteIds: string[];
 }
 
-export function transformSirecSituation(sirecData: SirecReclamationData): SirenaSituationData {
+export function transformSirecSituation(sirecData: SirecReclamationData, entiteIds: string[]): SirenaSituationData {
   return {
     fait: transformSirecFait(sirecData),
+    entiteIds,
   };
 }
