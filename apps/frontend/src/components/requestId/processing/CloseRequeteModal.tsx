@@ -45,7 +45,9 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
     const closeRequeteMutation = useCloseRequete(requestId);
     const uploadFileMutation = useUploadFile({ silentToastError: true });
-    const otherEntitiesAffectedQuery = useRequeteOtherEntitiesAffected(requestId);
+    const otherEntitiesAffectedQuery = useRequeteOtherEntitiesAffected(requestId, {
+      enabled: otherEntitiesAffected === undefined,
+    });
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const cleanupRef = useRef<(() => void) | null>(null);
 

@@ -68,7 +68,7 @@ describe('CloseRequeteModal', () => {
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
-    expect(useRequeteOtherEntitiesAffected).toHaveBeenCalledWith('REQ-354');
+    expect(useRequeteOtherEntitiesAffected).toHaveBeenCalledWith('REQ-354', { enabled: true });
     expect(screen.queryByText(/reçue le/)).not.toBeInTheDocument();
     expect(screen.queryByText(/mis en cause/)).not.toBeInTheDocument();
     expect(
@@ -149,6 +149,7 @@ describe('CloseRequeteModal', () => {
       screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
     ).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
+    expect(useRequeteOtherEntitiesAffected).toHaveBeenCalledWith('REQ-354', { enabled: false });
   });
 
   it('uses provided other affected entities immediately for the close proposal flow', () => {
@@ -173,5 +174,6 @@ describe('CloseRequeteModal', () => {
       screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
     ).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
+    expect(useRequeteOtherEntitiesAffected).toHaveBeenCalledWith('REQ-354', { enabled: false });
   });
 });
