@@ -9,6 +9,8 @@ describe('sirecMigration.transformer.ts', () => {
       description: 'Ma réclamation',
       reception: 12,
       prioritaire: 1,
+      service_recepteur_niv1: 693,
+      service_gestionnaire: null,
     },
     motifsDeclaresIdDicos: [809],
   };
@@ -22,6 +24,8 @@ describe('sirecMigration.transformer.ts', () => {
       receptionDate: new Date('2024-01-15'),
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
+      requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
+      situationEntiteIds: [],
       situation: {
         fait: {
           autresPrecisions: 'Ma réclamation',
@@ -29,6 +33,16 @@ describe('sirecMigration.transformer.ts', () => {
         },
       },
     });
+  });
+
+  it('should map service_recepteur_niv1 to requeteEntiteIds via affectation transco', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, service_recepteur_niv1: 1115, service_gestionnaire: null },
+    });
+
+    expect(result.requeteEntiteIds).toEqual(['4af829ff-07c1-425d-85d6-83b5f97e4422']);
+    expect(result.situationEntiteIds).toContain('c773bd6f-73e8-479c-b552-fd72f91c2efb');
   });
 
   it('should map id_data to sirecId', () => {
