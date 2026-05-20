@@ -189,7 +189,7 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                           </p>
                         )}
                       </div>
-                      <div className={drawerStyles.separator} aria-hidden="true" />
+                      <div className={drawerStyles.separator} />
                       <div className="fr-form-group fr-mb-2w">
                         <p className={`${drawerStyles.sectionLabel} fr-mb-1w`}>
                           Message automatique envoyé au déclarant
