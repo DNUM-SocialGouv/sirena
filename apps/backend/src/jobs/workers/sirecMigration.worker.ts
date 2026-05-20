@@ -4,7 +4,7 @@ import { connection } from '../../config/redis.js';
 import { fetchSirecData } from '../../features/sirecMigration/sirecMigration.repository.js';
 import { getRequeteIdFromSirecId, saveFromSirec } from '../../features/sirecMigration/sirecMigration.service.js';
 import { transformSirecReclamation } from '../../features/sirecMigration/sirecMigration.transformer.js';
-import { SirecTranscoError } from '../../features/sirecMigration/transco/sirecTransco.error.js';
+import { SirecDataError, SirecTranscoError } from '../../features/sirecMigration/transco/sirecTransco.error.js';
 import { createDefaultLogger } from '../../helpers/pino.js';
 import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
 import { SIREC_MIGRATION_QUEUE_NAME, type SirecMigrationJobData } from '../queues/sirecMigration.queue.js';
@@ -39,6 +39,10 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
             { sirecId, idDico: err.idDico, tableName: err.tableName },
             'Unknown SIREC id_dico in transco table',
           );
+          throw new UnrecoverableError(err.message);
+        }
+        if (err instanceof SirecDataError) {
+          logger.error({ sirecId }, err.message);
           throw new UnrecoverableError(err.message);
         }
         throw err;

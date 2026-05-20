@@ -25,6 +25,8 @@ describe('sirecMigration.repository.ts', () => {
         description: 'Ma réclamation',
         reception: 12,
         prioritaire: 1,
+        service_recepteur_niv1: 693,
+        service_gestionnaire: null,
       };
       vi.mocked(mysqlPool.query).mockResolvedValueOnce([[mockRow], []]);
 
@@ -80,6 +82,8 @@ describe('sirecMigration.repository.ts', () => {
       description: 'Ma réclamation',
       reception: 12,
       prioritaire: 1,
+      service_recepteur_niv1: 693,
+      service_gestionnaire: null,
     };
 
     it('should return the aggregate data when the reclamation is found', async () => {

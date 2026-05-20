@@ -7,3 +7,10 @@ export class SirecTranscoError extends Error {
     this.name = 'SirecTranscoError';
   }
 }
+
+export class SirecDataError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SirecDataError';
+  }
+}

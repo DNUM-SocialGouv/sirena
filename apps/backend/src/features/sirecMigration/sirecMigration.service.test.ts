@@ -13,7 +13,8 @@ vi.mock('@sirena/db', () => ({
     situation: { create: vi.fn() },
     fait: { create: vi.fn() },
     faitMotifDeclaratif: { createMany: vi.fn() },
-    requeteEntite: { create: vi.fn() },
+    requeteEntite: { createMany: vi.fn() },
+    situationEntite: { createMany: vi.fn() },
   },
 }));
 
@@ -56,6 +57,8 @@ describe('sirecMigration.service.ts', () => {
       receptionDate,
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
+      requeteEntiteIds: ['ars-1', 'ars-2'],
+      situationEntiteIds: ['service-1', 'ars-1'],
       situation: {
         fait: { autresPrecisions: 'Ma réclamation', motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'] },
       },
@@ -69,7 +72,8 @@ describe('sirecMigration.service.ts', () => {
       vi.mocked(prisma.situation.create).mockResolvedValue({ id: 'sit-1' } as any);
       vi.mocked(prisma.fait.create).mockResolvedValue({} as any);
       vi.mocked(prisma.faitMotifDeclaratif.createMany).mockResolvedValue({ count: 2 } as any);
-      vi.mocked(prisma.requeteEntite.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.requeteEntite.createMany).mockResolvedValue({ count: 2 } as any);
+      vi.mocked(prisma.situationEntite.createMany).mockResolvedValue({ count: 2 } as any);
     });
 
     it('should return the requete id', async () => {
@@ -123,20 +127,40 @@ describe('sirecMigration.service.ts', () => {
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
-    it('should create RequeteEntite with prioriteId', async () => {
+    it('should create one RequeteEntite per entiteId with correct data', async () => {
       await saveFromSirec(data);
 
-      expect(prisma.requeteEntite.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ requeteId: 'SIREC-42', prioriteId: 'HAUTE' }),
+      expect(prisma.requeteEntite.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({ requeteId: 'SIREC-42', entiteId: 'ars-1', prioriteId: 'HAUTE' }),
+          expect.objectContaining({ requeteId: 'SIREC-42', entiteId: 'ars-2', prioriteId: 'HAUTE' }),
+        ],
       });
     });
 
     it('should create RequeteEntite with null prioriteId when not prioritaire', async () => {
       await saveFromSirec({ ...data, prioriteId: null });
 
-      expect(prisma.requeteEntite.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ requeteId: 'SIREC-42', prioriteId: null }),
+      expect(prisma.requeteEntite.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([expect.objectContaining({ prioriteId: null })]),
       });
+    });
+
+    it('should create one SituationEntite per entiteId', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.situationEntite.createMany).toHaveBeenCalledWith({
+        data: [
+          { situationId: 'sit-1', entiteId: 'service-1' },
+          { situationId: 'sit-1', entiteId: 'ars-1' },
+        ],
+      });
+    });
+
+    it('should create no SituationEntite when situationEntiteIds is empty', async () => {
+      await saveFromSirec({ ...data, situationEntiteIds: [] });
+
+      expect(prisma.situationEntite.createMany).toHaveBeenCalledWith({ data: [] });
     });
 
     it('should wrap all creates in a single transaction', async () => {

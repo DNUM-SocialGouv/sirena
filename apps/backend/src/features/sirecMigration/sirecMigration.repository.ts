@@ -7,6 +7,8 @@ export interface SirecReclamationRow {
   description: string | null;
   reception: number | null;
   prioritaire: number | null;
+  service_recepteur_niv1: number | null;
+  service_gestionnaire: number | null;
 }
 
 export interface SirecReclamationData {
@@ -16,7 +18,7 @@ export interface SirecReclamationData {
 
 export async function fetchSirecReclamationById(sirecId: number): Promise<SirecReclamationRow | null> {
   const [rows] = await mysqlPool.query<(SirecReclamationRow & RowDataPacket)[]>(
-    'SELECT id_data, r_recept_date, description, reception, prioritaire FROM sire_reclamation_data WHERE id_data = ?',
+    'SELECT id_data, r_recept_date, description, reception, prioritaire, service_recepteur_niv1, service_gestionnaire FROM sire_reclamation_data WHERE id_data = ?',
     [sirecId],
   );
   return rows[0] ?? null;

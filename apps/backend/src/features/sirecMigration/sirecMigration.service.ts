@@ -53,15 +53,21 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       })),
     });
 
-    await tx.requeteEntite.create({
-      data: {
+    await tx.requeteEntite.createMany({
+      data: data.requeteEntiteIds.map((entiteId) => ({
         requeteId: requete.id,
-        // TODO: dériver entiteId depuis les données SIREC
-        entiteId: 'entite_id',
+        entiteId,
         // TODO: mapper l'état SIREC vers statutId
         statutId: REQUETE_STATUT_TYPES.EN_COURS,
         prioriteId: data.prioriteId,
-      },
+      })),
+    });
+
+    await tx.situationEntite.createMany({
+      data: data.situationEntiteIds.map((entiteId) => ({
+        situationId: situation.id,
+        entiteId,
+      })),
     });
 
     return requete.id;
