@@ -1,3 +1,4 @@
+import { type SirenaIdentiteData, transformSirecIdentite } from './sirecMigration.identite.transformer.js';
 import type { SirecReclamationRow } from './sirecMigration.repository.js';
 import { transcodeDeclarant } from './transco/declarant.transco.js';
 import { SIREC_DICO } from './transco/dictionnaire.transco.js';
@@ -15,6 +16,7 @@ export interface SirenaDeclarantData {
   estVictime: boolean | null;
   veutGarderAnonymat: boolean | null;
   adresse: SirenaAdresseData | null;
+  identite: SirenaIdentiteData | null;
   commentaire: string;
 }
 
@@ -33,6 +35,8 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
     nom_representant,
     prenom_representant,
   } = reclamation;
+
+  const identite = transformSirecIdentite(reclamation);
 
   const plaignantTypeLabel = plaignant_type !== null ? SIREC_DICO[plaignant_type] : undefined;
   const showPlaignantTypeDetails = plaignant_type !== null && PLAIGNANT_TYPE_PAS_PHYSIQUE.has(plaignant_type);
@@ -65,7 +69,13 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
 
   const declarantCommentaire = declarantCommentaireParts.join('\n');
   const hasDeclarantData =
-    estVictime !== null || veutGarderAnonymat !== null || adresse !== null || declarantCommentaire !== '';
+    estVictime !== null ||
+    veutGarderAnonymat !== null ||
+    adresse !== null ||
+    identite !== null ||
+    declarantCommentaire !== '';
 
-  return hasDeclarantData ? { estVictime, veutGarderAnonymat, adresse, commentaire: declarantCommentaire } : null;
+  return hasDeclarantData
+    ? { estVictime, veutGarderAnonymat, adresse, identite, commentaire: declarantCommentaire }
+    : null;
 }

@@ -16,18 +16,34 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     plaignant_rs: null as string | null,
     nom_representant: null as string | null,
     prenom_representant: null as string | null,
+    plaignant_nom: null as string | null,
+    plaignant_prenom: null as string | null,
+    plaignant_mail: null as string | null,
+    plaignant_tel: null as string | null,
   };
 
   it('should map plaignant=34 to declarant with estVictime true', () => {
     const result = transformSirecDeclarant({ ...reclamation, plaignant: 34 });
 
-    expect(result).toEqual({ estVictime: true, veutGarderAnonymat: null, adresse: null, commentaire: '' });
+    expect(result).toEqual({
+      estVictime: true,
+      veutGarderAnonymat: null,
+      adresse: null,
+      identite: null,
+      commentaire: '',
+    });
   });
 
   it('should map plaignant=36 to declarant with estVictime false', () => {
     const result = transformSirecDeclarant({ ...reclamation, plaignant: 36 });
 
-    expect(result).toEqual({ estVictime: false, veutGarderAnonymat: null, adresse: null, commentaire: '' });
+    expect(result).toEqual({
+      estVictime: false,
+      veutGarderAnonymat: null,
+      adresse: null,
+      identite: null,
+      commentaire: '',
+    });
   });
 
   it('should return null when all declarant fields are null', () => {
@@ -41,6 +57,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       estVictime: null,
       veutGarderAnonymat: null,
       adresse: null,
+      identite: null,
       commentaire: 'Le requérant est anonyme : oui',
     });
   });
@@ -62,6 +79,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       estVictime: true,
       veutGarderAnonymat: null,
       adresse: null,
+      identite: null,
       commentaire: 'Le requérant est anonyme : oui',
     });
   });
@@ -304,5 +322,9 @@ describe('sirecMigration.declarant.transformer.ts', () => {
 
   it('should return null when all requerant address fields are null (non-physical)', () => {
     expect(transformSirecDeclarant({ ...reclamation, plaignant_type: null })).toBeNull();
+  });
+
+  it('should create declarant from plaignant_nom alone', () => {
+    expect(transformSirecDeclarant({ ...reclamation, plaignant_nom: 'Dupont' })).not.toBeNull();
   });
 });

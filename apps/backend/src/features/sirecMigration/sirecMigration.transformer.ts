@@ -7,6 +7,7 @@ import { type SirenaSituationData, transformSirecSituation } from './sirecMigrat
 import { transcodeReceptionType } from './transco/receptionType.transco.js';
 
 export type { SirenaAdresseData } from './sirecMigration.declarant.transformer.js';
+export type { SirenaIdentiteData } from './sirecMigration.identite.transformer.js';
 export type { SirenaDeclarantData, SirenaSituationData };
 
 export interface SirenaRequeteData {
