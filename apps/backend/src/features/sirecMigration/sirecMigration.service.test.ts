@@ -15,6 +15,7 @@ vi.mock('@sirena/db', () => ({
     faitMotifDeclaratif: { createMany: vi.fn() },
     requeteEntite: { createMany: vi.fn() },
     situationEntite: { createMany: vi.fn() },
+    personneConcernee: { create: vi.fn() },
   },
 }));
 
@@ -57,6 +58,7 @@ describe('sirecMigration.service.ts', () => {
       receptionDate,
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
+      estVictime: null as boolean | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
       situation: {
         fait: {
@@ -79,6 +81,7 @@ describe('sirecMigration.service.ts', () => {
       vi.mocked(prisma.faitMotifDeclaratif.createMany).mockResolvedValue({ count: 2 } as any);
       vi.mocked(prisma.requeteEntite.createMany).mockResolvedValue({ count: 2 } as any);
       vi.mocked(prisma.situationEntite.createMany).mockResolvedValue({ count: 2 } as any);
+      vi.mocked(prisma.personneConcernee.create).mockResolvedValue({} as any);
     });
 
     it('should return the requete id', async () => {
@@ -183,6 +186,28 @@ describe('sirecMigration.service.ts', () => {
       expect(prisma.demarchesEngagees.create).toHaveBeenCalledWith({
         data: { demarches: { connect: [{ id: 'PLAINTE' }] } },
         select: { id: true },
+      });
+    });
+
+    it('should not create PersonneConcernee when estVictime is null', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.personneConcernee.create).not.toHaveBeenCalled();
+    });
+
+    it('should create PersonneConcernee with both participantDeId and declarantDeId when estVictime is true', async () => {
+      await saveFromSirec({ ...data, estVictime: true });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: { estVictime: true, declarantDeId: 'SIREC-42', participantDeId: 'SIREC-42' },
+      });
+    });
+
+    it('should create PersonneConcernee with only declarantDeId when estVictime is false', async () => {
+      await saveFromSirec({ ...data, estVictime: false });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: { estVictime: false, declarantDeId: 'SIREC-42' },
       });
     });
 

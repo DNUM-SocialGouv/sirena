@@ -76,6 +76,16 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       })),
     });
 
+    if (data.estVictime !== null) {
+      await tx.personneConcernee.create({
+        data: {
+          estVictime: data.estVictime,
+          declarantDeId: requete.id,
+          ...(data.estVictime ? { participantDeId: requete.id } : {}),
+        },
+      });
+    }
+
     return requete.id;
   });
 }
