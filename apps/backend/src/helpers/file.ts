@@ -5,6 +5,7 @@ import { FileTypeParser } from 'file-type';
 import type { Context } from 'hono';
 import { stream as honoStream } from 'hono/streaming';
 import { MAX_FILE_SIZE } from '../config/files.constant.js';
+import type { DecryptionParams } from '../libs/encryption.js';
 import { getFileStream } from '../libs/minio.js';
 import type { Prisma, UploadedFile } from '../libs/prisma.js';
 
@@ -60,11 +61,31 @@ export const getOriginalFileName = (file: UploadedFile): string => {
   return metadata?.originalName?.toString() || file.fileName;
 };
 
+const extractEncryptionParams = (raw: unknown): DecryptionParams | undefined => {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const { iv, authTag } = raw as { iv?: unknown; authTag?: unknown };
+  if (typeof iv !== 'string' || typeof authTag !== 'string' || !iv || !authTag) {
+    return undefined;
+  }
+  return { iv, authTag };
+};
+
+export const getFileEncryptionParams = (file: Pick<UploadedFile, 'metadata'>): DecryptionParams | undefined => {
+  const metadata = file.metadata as Prisma.JsonObject | null;
+  return extractEncryptionParams(metadata?.encryption);
+};
+
+export const getSafeFileEncryptionParams = (file: Pick<UploadedFile, 'metadata'>): DecryptionParams | undefined => {
+  const metadata = file.metadata as Prisma.JsonObject | null;
+  return extractEncryptionParams(metadata?.encryptionSafe);
+};
+
 interface StreamFileOptions {
   filePath: string;
   fileName: string;
   contentType: string;
   fileId: string;
+  decryptionParams?: DecryptionParams;
 }
 
 const removeControlChars = (value: string) =>
@@ -120,14 +141,14 @@ export const createInlineContentDisposition = (rawFileName: string) => {
 
 const createFileStreamResponse = async (c: Context, options: StreamFileOptions) => {
   const logger = c.get('logger');
-  const { filePath, fileName, contentType, fileId } = options;
+  const { filePath, fileName, contentType, fileId, decryptionParams } = options;
 
   c.header('Content-Type', contentType);
   c.header('Content-Disposition', createInlineContentDisposition(fileName));
 
   return honoStream(c, async (s) => {
     try {
-      const { stream: nodeStream } = await getFileStream(filePath);
+      const { stream: nodeStream } = await getFileStream(filePath, decryptionParams);
       const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream<Uint8Array>;
 
       s.onAbort(() => {
@@ -156,6 +177,7 @@ export const streamFileResponse = async (c: Context, file: UploadedFile) => {
     fileName: getOriginalFileName(file),
     contentType: file.mimeType || 'application/octet-stream',
     fileId: file.id,
+    decryptionParams: getFileEncryptionParams(file),
   });
 };
 
@@ -169,5 +191,6 @@ export const streamSafeFileResponse = async (c: Context, file: UploadedFile) => 
     fileName: `safe_${getOriginalFileName(file)}`,
     contentType: file.mimeType || 'application/octet-stream',
     fileId: file.id,
+    decryptionParams: getSafeFileEncryptionParams(file),
   });
 };
