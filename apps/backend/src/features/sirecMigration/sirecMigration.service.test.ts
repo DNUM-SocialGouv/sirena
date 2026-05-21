@@ -16,6 +16,7 @@ vi.mock('@sirena/db', () => ({
     requeteEntite: { createMany: vi.fn() },
     situationEntite: { createMany: vi.fn() },
     personneConcernee: { create: vi.fn() },
+    identite: { create: vi.fn() },
   },
 }));
 
@@ -62,6 +63,7 @@ describe('sirecMigration.service.ts', () => {
         estVictime: boolean | null;
         veutGarderAnonymat: boolean | null;
         adresse: { rue: string | null; codePostal: string | null; ville: string | null } | null;
+        identite: { nom: string | null; prenom: string | null; email: string | null; telephone: string | null } | null;
         commentaire: string;
       } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
@@ -203,7 +205,7 @@ describe('sirecMigration.service.ts', () => {
     it('should create PersonneConcernee with both participantDeId and declarantDeId when estVictime is true', async () => {
       await saveFromSirec({
         ...data,
-        declarant: { estVictime: true, veutGarderAnonymat: null, adresse: null, commentaire: '' },
+        declarant: { estVictime: true, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -220,7 +222,7 @@ describe('sirecMigration.service.ts', () => {
     it('should create PersonneConcernee with only declarantDeId when estVictime is false', async () => {
       await saveFromSirec({
         ...data,
-        declarant: { estVictime: false, veutGarderAnonymat: null, adresse: null, commentaire: '' },
+        declarant: { estVictime: false, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -235,6 +237,7 @@ describe('sirecMigration.service.ts', () => {
           estVictime: null,
           veutGarderAnonymat: null,
           adresse: null,
+          identite: null,
           commentaire: 'Le requérant est anonyme : oui',
         },
       });
@@ -252,7 +255,7 @@ describe('sirecMigration.service.ts', () => {
     it('should pass veutGarderAnonymat to PersonneConcernee', async () => {
       await saveFromSirec({
         ...data,
-        declarant: { estVictime: null, veutGarderAnonymat: true, adresse: null, commentaire: '' },
+        declarant: { estVictime: null, veutGarderAnonymat: true, adresse: null, identite: null, commentaire: '' },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -267,6 +270,7 @@ describe('sirecMigration.service.ts', () => {
           estVictime: null,
           veutGarderAnonymat: null,
           adresse: { rue: '12 rue de la Paix', codePostal: '75001', ville: 'Paris' },
+          identite: null,
           commentaire: '',
         },
       });
@@ -289,6 +293,7 @@ describe('sirecMigration.service.ts', () => {
           estVictime: null,
           veutGarderAnonymat: null,
           adresse: { rue: '12 rue de la Paix', codePostal: null, ville: null },
+          identite: null,
           commentaire: '',
         },
       });
@@ -301,6 +306,65 @@ describe('sirecMigration.service.ts', () => {
           declarantDeId: 'SIREC-42',
           adresse: { create: { rue: '12 rue de la Paix', codePostal: '', ville: '' } },
         },
+      });
+    });
+
+    it('should create PersonneConcernee with nested identite when identite is set', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: {
+          estVictime: null,
+          veutGarderAnonymat: null,
+          adresse: null,
+          identite: { nom: 'Dupont', prenom: 'Jean', email: 'jean@example.com', telephone: '0612345678' },
+          commentaire: '',
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: {
+          estVictime: null,
+          veutGarderAnonymat: null,
+          commentaire: '',
+          declarantDeId: 'SIREC-42',
+          identite: {
+            create: { nom: 'Dupont', prenom: 'Jean', email: 'jean@example.com', telephone: '0612345678' },
+          },
+        },
+      });
+    });
+
+    it('should use empty strings for null identite fields', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: {
+          estVictime: null,
+          veutGarderAnonymat: null,
+          adresse: null,
+          identite: { nom: 'Dupont', prenom: null, email: null, telephone: null },
+          commentaire: '',
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: {
+          estVictime: null,
+          veutGarderAnonymat: null,
+          commentaire: '',
+          declarantDeId: 'SIREC-42',
+          identite: { create: { nom: 'Dupont', prenom: '', email: '', telephone: '' } },
+        },
+      });
+    });
+
+    it('should not add identite to PersonneConcernee when identite is null', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: { estVictime: null, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: expect.not.objectContaining({ identite: expect.anything() }),
       });
     });
 

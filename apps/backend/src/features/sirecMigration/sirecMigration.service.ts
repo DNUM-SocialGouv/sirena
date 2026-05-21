@@ -95,6 +95,18 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
                 },
               }
             : {}),
+          ...(data.declarant.identite !== null
+            ? {
+                identite: {
+                  create: {
+                    nom: data.declarant.identite.nom ?? '',
+                    prenom: data.declarant.identite.prenom ?? '',
+                    email: data.declarant.identite.email ?? '',
+                    telephone: data.declarant.identite.telephone ?? '',
+                  },
+                },
+              }
+            : {}),
         },
       });
     }
