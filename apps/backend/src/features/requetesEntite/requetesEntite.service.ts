@@ -15,7 +15,7 @@ import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSch
 import { getLieuPrecisionLabel } from '@sirena/common/utils';
 import archiver from 'archiver';
 import type { z } from 'zod';
-import { getOriginalFileName } from '../../helpers/file.js';
+import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
@@ -1948,9 +1948,11 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
   const usedNames = new Set<string>();
 
   const appendFileToArchive = async (file: UploadedFile, entryName: string) => {
-    const filePath = isPdf(file) && file.safeFilePath ? file.safeFilePath : file.filePath;
+    const useSafeFile = isPdf(file) && file.safeFilePath;
+    const filePath = useSafeFile ? (file.safeFilePath as string) : file.filePath;
+    const decryptionParams = useSafeFile ? getSafeFileEncryptionParams(file) : getFileEncryptionParams(file);
     try {
-      const { stream } = await getFileStream(filePath);
+      const { stream } = await getFileStream(filePath, decryptionParams);
       archive.append(stream, { name: entryName, date: file.createdAt });
     } catch {
       archive.append(Buffer.from('Fichier indisponible'), { name: `${entryName}.erreur.txt` });

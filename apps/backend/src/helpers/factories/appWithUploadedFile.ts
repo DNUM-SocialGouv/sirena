@@ -1,6 +1,14 @@
+import type { Readable } from 'node:stream';
 import { createFactory } from 'hono/factory';
 
 import type { PinoLogger } from 'hono-pino';
+
+export interface UploadedFileContext {
+  stream: Readable;
+  fileName: string;
+  contentType: string;
+  getReadBytes: () => number;
+}
 
 export type AppBindings = {
   Variables: {
@@ -8,12 +16,7 @@ export type AppBindings = {
     userId: string;
     roleId: string;
     entiteIds: string[];
-    uploadedFile?: {
-      buffer: Buffer;
-      fileName: string;
-      contentType: string;
-      size: number;
-    };
+    uploadedFile?: UploadedFileContext;
   };
 };
 
