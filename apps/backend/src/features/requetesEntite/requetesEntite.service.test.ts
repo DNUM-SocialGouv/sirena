@@ -12,10 +12,12 @@ import {
 import {
   closeRequeteForEntite,
   collectRequeteFiles,
+  computeShouldCloseRequeteStatus,
   createChangeLogForRequeteEntite,
   createRequeteFilesArchive,
   deduplicateFileName,
   enrichSituationWithTraitementDesFaits,
+  filterOtherEntitesAffectedForUser,
   getOtherEntitesAffected,
   getPrefixedFileName,
   getRequeteEntiteById,
@@ -97,6 +99,9 @@ vi.mock('../../libs/prisma.js', () => ({
       findMany: vi.fn(),
     },
     requeteEtape: {
+      findFirst: vi.fn(),
+    },
+    situationEntite: {
       findFirst: vi.fn(),
     },
     uploadedFile: {
@@ -534,6 +539,70 @@ describe('requetesEntite.service', () => {
           statutId: mockOtherEntite.statutId,
         },
       ]);
+    });
+  });
+
+  describe('filterOtherEntitesAffectedForUser', () => {
+    it('excludes user entities from other affected entities', () => {
+      const result = filterOtherEntitesAffectedForUser(
+        [
+          { id: 'user-direction-id', nomComplet: 'Direction Offre de Soins' },
+          { id: 'ars-bretagne-id', nomComplet: 'ARS Bretagne' },
+        ],
+        ['user-top-id', 'user-direction-id'],
+      );
+
+      expect(result).toEqual([{ id: 'ars-bretagne-id', nomComplet: 'ARS Bretagne' }]);
+    });
+  });
+
+  describe('computeShouldCloseRequeteStatus', () => {
+    it('excludes both user top entity and direction/service from other affected entities', async () => {
+      vi.mocked(prisma.situationEntite.findFirst).mockResolvedValueOnce(null);
+      vi.mocked(prisma.requeteEntite.findMany).mockResolvedValueOnce([
+        {
+          prioriteId: null,
+          entiteId: 'user-direction-id',
+          requeteId: 'REQ-354',
+          statutId: 'NOUVEAU',
+          entite: {
+            id: 'user-direction-id',
+            label: 'DOS',
+            nomComplet: 'Direction Offre de Soins',
+            entiteTypeId: 'ARS',
+          },
+        },
+        {
+          prioriteId: null,
+          entiteId: 'ars-bretagne-id',
+          requeteId: 'REQ-354',
+          statutId: 'NOUVEAU',
+          entite: {
+            id: 'ars-bretagne-id',
+            label: 'ARS Bretagne',
+            nomComplet: 'ARS Bretagne',
+            entiteTypeId: 'ARS',
+          },
+        },
+      ]);
+
+      const result = await computeShouldCloseRequeteStatus({
+        requeteId: 'REQ-354',
+        userEntityIds: ['user-top-id', 'user-direction-id'],
+        excludeTopEntiteId: 'user-top-id',
+      });
+
+      expect(result).toEqual({
+        willUserBeUnassignedAfterSave: true,
+        otherEntitiesAffected: [
+          {
+            id: 'ars-bretagne-id',
+            nomComplet: 'ARS Bretagne',
+            entiteTypeId: 'ARS',
+            statutId: 'NOUVEAU',
+          },
+        ],
+      });
     });
   });
 

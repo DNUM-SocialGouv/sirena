@@ -27,6 +27,9 @@ import {
 
 vi.mock('./requetesEntite.service.js', () => ({
   closeRequeteForEntite: vi.fn(),
+  filterOtherEntitesAffectedForUser: vi.fn((otherEntites, userEntityIds) =>
+    otherEntites.filter((entite: { id: string }) => !userEntityIds.includes(entite.id)),
+  ),
   getRequeteEntiteById: vi.fn(),
   getRequetesEntite: vi.fn(),
   hasAccessToRequete: vi.fn(),
@@ -507,6 +510,35 @@ describe('RequetesEntite endpoints: /', () => {
         },
       });
       expect(getDirectionsServicesFromRequeteEntiteId).toHaveBeenCalledWith('requeteId', 'entiteId');
+    });
+
+    it('should not return the current user entites among other entites affected by the requete', async () => {
+      const currentUserSubEntite = {
+        id: 'e1',
+        label: 'Offre de soins',
+        nomComplet: 'Direction Offre de Soins',
+        entiteTypeId: 'ARS' as EntiteType,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      };
+      const otherEntite = {
+        id: 'ars-bretagne',
+        label: 'ARS BRET',
+        nomComplet: 'ARS Bretagne',
+        entiteTypeId: 'ARS' as EntiteType,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      };
+
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(getOtherEntitesAffected).mockResolvedValueOnce([currentUserSubEntite, otherEntite]);
+      vi.mocked(getDirectionsServicesFromRequeteEntiteId).mockResolvedValueOnce([]);
+
+      const res = await client[':id']['other-entites-affected'].$get({
+        param: { id: 'requeteId' },
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.data.otherEntites).toEqual([otherEntite]);
     });
 
     it('should return 404 when requeteEntite not found', async () => {

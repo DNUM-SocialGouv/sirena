@@ -69,6 +69,7 @@ import {
   createRequeteEntite,
   createRequeteFilesArchive,
   createRequeteSituation,
+  filterOtherEntitesAffectedForUser,
   generateRequetePdfBuffer,
   getOtherEntitesAffected,
   getRequeteEntiteById,
@@ -177,14 +178,21 @@ const app = factoryWithLogs
       });
     }
 
+    const currentUserEntiteIds = c.get('entiteIds') ?? [];
+
     const [otherEntites, subAdministrativeEntites] = await Promise.all([
       getOtherEntitesAffected(requeteEntite.requeteId, requeteEntite.entiteId),
       getDirectionsServicesFromRequeteEntiteId(requeteEntite.requeteId, requeteEntite.entiteId),
     ]);
 
+    const otherEntitesExcludingCurrentUserEntites = filterOtherEntitesAffectedForUser(
+      otherEntites,
+      currentUserEntiteIds,
+    );
+
     return c.json({
       data: {
-        otherEntites,
+        otherEntites: otherEntitesExcludingCurrentUserEntites,
         subAdministrativeEntites,
       },
     });
