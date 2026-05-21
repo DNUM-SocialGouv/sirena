@@ -7,7 +7,9 @@ import { SelectWithChildren } from '@sirena/ui';
 import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useCloseRequete } from '@/hooks/mutations/closeRequete.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
+import { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
+import { buildClosingContextMessage, getActiveOtherEntityNames } from './closingContext';
 
 export type CloseRequeteModalRef = {
   openModal: () => void;
@@ -22,10 +24,7 @@ export type OtherEntityAffected = {
 
 export type CloseRequeteModalProps = {
   requestId: string;
-  misEnCause?: string;
-  date?: string;
   otherEntitiesAffected?: OtherEntityAffected[];
-  customDescription?: string;
   triggerButtonRef?: React.RefObject<HTMLButtonElement | null>;
   onBeforeClose?: () => Promise<void>;
   onCancel?: () => void;
@@ -34,21 +33,7 @@ export type CloseRequeteModalProps = {
 };
 
 export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteModalProps>(
-  (
-    {
-      requestId,
-      misEnCause,
-      date,
-      otherEntitiesAffected = [],
-      customDescription,
-      triggerButtonRef,
-      onBeforeClose,
-      onCancel,
-      onSuccess,
-      onDismiss,
-    },
-    ref,
-  ) => {
+  ({ requestId, otherEntitiesAffected, triggerButtonRef, onBeforeClose, onCancel, onSuccess, onDismiss }, ref) => {
     const reasonErrorId = useId();
     const [reasonIds, setReasonIds] = useState<string[]>([]);
     const [precision, setPrecision] = useState<string>('');
@@ -60,6 +45,9 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
     const closeRequeteMutation = useCloseRequete(requestId);
     const uploadFileMutation = useUploadFile({ silentToastError: true });
+    const otherEntitiesAffectedQuery = useRequeteOtherEntitiesAffected(requestId, {
+      enabled: otherEntitiesAffected === undefined,
+    });
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const cleanupRef = useRef<(() => void) | null>(null);
 
@@ -209,9 +197,18 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       onCancel?.();
     };
 
-    const descriptionText =
-      customDescription ||
-      `Attention : vous allez clôturer la requête ${requestId} prise en charge le ${date} avec pour mise en cause "${misEnCause}".`;
+    const otherEntitiesAffectedFromQuery = otherEntitiesAffectedQuery.data?.otherEntites;
+    const hasProvidedOtherEntitiesAffected = otherEntitiesAffected !== undefined;
+    const isContextLoading = !hasProvidedOtherEntitiesAffected && otherEntitiesAffectedQuery.isLoading;
+    const closingContextEntities = hasProvidedOtherEntitiesAffected
+      ? otherEntitiesAffected
+      : otherEntitiesAffectedQuery.error
+        ? []
+        : (otherEntitiesAffectedFromQuery ?? []);
+    const activeOtherEntityNames = getActiveOtherEntityNames({ otherEntitiesAffected: closingContextEntities });
+    const descriptionText = isContextLoading
+      ? 'Chargement des informations de la requête...'
+      : buildClosingContextMessage({ requestId });
 
     return (
       <closeModal.Component
@@ -234,30 +231,32 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
       >
         <div className="fr-mb-4w">
           <div className="fr-text--sm fr-text--grey">
-            <Alert small={true} severity="warning" description={descriptionText} />
-          </div>
-        </div>
-
-        {otherEntitiesAffected.length > 0 && (
-          <div className="fr-mb-4w">
             <Alert
               small={true}
               severity="info"
               description={
-                <div>
-                  <p className="fr-mb-2w">
-                    Information : les autres entités administratives affectées ne seront pas impactées par la clôture :
-                  </p>
-                  <ul className="fr-mb-0">
-                    {otherEntitiesAffected.map((entity) => (
-                      <li key={entity.id}>{entity.nomComplet}</li>
-                    ))}
-                  </ul>
-                </div>
+                isContextLoading || activeOtherEntityNames.length === 0 ? (
+                  descriptionText
+                ) : activeOtherEntityNames.length === 1 ? (
+                  <div>
+                    <p>{descriptionText}</p>
+                    <p>{`Le traitement de la requête sera toujours en cours pour l'entité administrative ${activeOtherEntityNames[0]}.`}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p>{descriptionText}</p>
+                    <p>Le traitement de la requête sera toujours en cours pour l'entité administrative :</p>
+                    <ul>
+                      {activeOtherEntityNames.map((entityName) => (
+                        <li key={entityName}>{entityName}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )
               }
             />
           </div>
-        )}
+        </div>
 
         <div className="fr-mb-4w">
           <SelectWithChildren

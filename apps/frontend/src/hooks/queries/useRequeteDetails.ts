@@ -16,10 +16,13 @@ type RequeteOtherEntitiesAffected = Awaited<ReturnType<typeof fetchRequeteOtherE
 
 const emptyOtherEntitiesAffected: RequeteOtherEntitiesAffected = { otherEntites: [], subAdministrativeEntites: [] };
 
-export const useRequeteOtherEntitiesAffected = (requestId?: string) => {
+export const useRequeteOtherEntitiesAffected = (requestId?: string, options: { enabled?: boolean } = {}) => {
+  const isEnabled = options.enabled ?? true;
+
   return useQuery<RequeteOtherEntitiesAffected>({
     queryKey: ['requeteOtherEntitiesAffected', requestId ?? ''],
-    queryFn: requestId ? () => fetchRequeteOtherEntitiesAffected(requestId) : skipToken,
+    queryFn: requestId && isEnabled ? () => fetchRequeteOtherEntitiesAffected(requestId) : skipToken,
+    enabled: isEnabled,
     placeholderData: emptyOtherEntitiesAffected,
   });
 };
