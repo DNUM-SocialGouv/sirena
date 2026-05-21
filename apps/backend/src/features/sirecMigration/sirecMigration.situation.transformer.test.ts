@@ -9,6 +9,7 @@ describe('sirecMigration.situation.transformer.ts', () => {
       description: 'Ma réclamation',
       dest: null,
       saisine: null as number | null,
+      courrier_signal: null as number | null,
     },
     motifsDeclaresIdDicos: [809],
   };

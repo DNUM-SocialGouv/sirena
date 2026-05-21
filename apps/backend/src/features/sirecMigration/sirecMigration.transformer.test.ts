@@ -12,6 +12,7 @@ describe('sirecMigration.transformer.ts', () => {
       prioritaire_precisez: 'Précision prioritaire',
       dest: null,
       saisine: null as number | null,
+      courrier_signal: null as number | null,
       service_recepteur_niv1: 693,
       service_gestionnaire: null,
     },
