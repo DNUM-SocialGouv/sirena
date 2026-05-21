@@ -4,8 +4,11 @@ import { transformSirecAffectation } from './sirecMigration.affectation.transfor
 import type { SirecReclamationData } from './sirecMigration.repository.js';
 import { type SirenaSituationData, transformSirecSituation } from './sirecMigration.situation.transformer.js';
 import { transcodeDeclarant } from './transco/declarant.transco.js';
+import { SIREC_DICO } from './transco/dictionnaire.transco.js';
 import { transcodePlaignantAnonyme } from './transco/plaignantAnonyme.transco.js';
 import { transcodeReceptionType } from './transco/receptionType.transco.js';
+
+const PLAIGNANT_TYPE_PAS_PHYSIQUE = new Set([22, 106]);
 
 export type { SirenaSituationData };
 
@@ -30,8 +33,19 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
   const { requeteEntiteIds, situationEntiteIds } = transformSirecAffectation(sirecData);
   const estVictime = transcodeDeclarant(sirecData.reclamation.plaignant);
   const veutGarderAnonymat = transcodePlaignantAnonyme(sirecData.reclamation.plaignant_anonyme);
+  const { plaignant_type, preciser_statut, plaignant_rs, nom_representant, prenom_representant } =
+    sirecData.reclamation;
+  const plaignantTypeLabel = plaignant_type !== null ? SIREC_DICO[plaignant_type] : undefined;
+  const showPlaignantTypeDetails = plaignant_type !== null && PLAIGNANT_TYPE_PAS_PHYSIQUE.has(plaignant_type);
   const declarantCommentaireParts = [
     sirecData.reclamation.plaignant_est_anonyme === 1 ? 'Le requérant est anonyme : oui' : null,
+    showPlaignantTypeDetails && plaignantTypeLabel ? `Statut : ${plaignantTypeLabel}` : null,
+    showPlaignantTypeDetails && preciser_statut ? `Précisions : ${preciser_statut}` : null,
+    showPlaignantTypeDetails && plaignant_rs ? `Raison sociale : ${plaignant_rs}` : null,
+    showPlaignantTypeDetails && nom_representant ? `Nom du représentant des requérants : ${nom_representant}` : null,
+    showPlaignantTypeDetails && prenom_representant
+      ? `Prénom du représentant des requérants : ${prenom_representant}`
+      : null,
   ].filter(Boolean) as string[];
   const declarantCommentaire = declarantCommentaireParts.join('\n');
   const hasDeclarantData = estVictime !== null || veutGarderAnonymat !== null || declarantCommentaire !== '';

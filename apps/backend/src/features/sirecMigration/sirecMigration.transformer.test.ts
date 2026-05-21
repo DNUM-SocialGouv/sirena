@@ -16,6 +16,11 @@ describe('sirecMigration.transformer.ts', () => {
       plaignant: null as number | null,
       plaignant_anonyme: null as number | null,
       plaignant_est_anonyme: null as number | null,
+      plaignant_type: null as number | null,
+      preciser_statut: null as string | null,
+      plaignant_rs: null as string | null,
+      nom_representant: null as string | null,
+      prenom_representant: null as string | null,
       service_recepteur_niv1: 693,
       service_gestionnaire: null,
     },
@@ -226,5 +231,66 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.declarant).not.toBeNull();
+  });
+
+  it('should add statut and detail lines to declarant.commentaire when plaignant_type=22', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: 22,
+        preciser_statut: 'Précision statut',
+        plaignant_rs: 'Ma société',
+        nom_representant: 'Dupont',
+        prenom_representant: 'Jean',
+      },
+    });
+
+    expect(result.declarant?.commentaire).toBe(
+      'Statut : Personne moral\nPrécisions : Précision statut\nRaison sociale : Ma société\nNom du représentant des requérants : Dupont\nPrénom du représentant des requérants : Jean',
+    );
+  });
+
+  it('should add statut and detail lines to declarant.commentaire when plaignant_type=106', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: 106, plaignant_rs: 'Asso' },
+    });
+
+    expect(result.declarant?.commentaire).toContain('Statut : Autre');
+    expect(result.declarant?.commentaire).toContain('Raison sociale : Asso');
+  });
+
+  it('should skip null detail fields in declarant.commentaire for plaignant_type=22', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: 22 },
+    });
+
+    expect(result.declarant?.commentaire).toBe('Statut : Personne moral');
+  });
+
+  it('should create declarant from plaignant_type=22 alone', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: 22 },
+    });
+
+    expect(result.declarant).not.toBeNull();
+  });
+
+  it('should ignore plaignant_type when value is not 22 or 106', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: 24, plaignant_rs: 'Ignoré' },
+    });
+
+    expect(result.declarant).toBeNull();
+  });
+
+  it('should ignore plaignant_type when null', () => {
+    const result = transformSirecReclamation(sirecData);
+
+    expect(result.declarant).toBeNull();
   });
 });
