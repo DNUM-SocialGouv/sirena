@@ -61,7 +61,7 @@ describe('sirecMigration.service.ts', () => {
       declarant: null as {
         estVictime: boolean | null;
         veutGarderAnonymat: boolean | null;
-        adresse: { rue: string } | null;
+        adresse: { rue: string | null; codePostal: string | null; ville: string | null } | null;
         commentaire: string;
       } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
@@ -260,13 +260,13 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should create PersonneConcernee with nested adresse when adresseLabel is set', async () => {
+    it('should create PersonneConcernee with nested adresse when adresse is set', async () => {
       await saveFromSirec({
         ...data,
         declarant: {
           estVictime: null,
           veutGarderAnonymat: null,
-          adresse: { rue: '12 rue de la Paix' },
+          adresse: { rue: '12 rue de la Paix', codePostal: '75001', ville: 'Paris' },
           commentaire: '',
         },
       });
@@ -277,7 +277,29 @@ describe('sirecMigration.service.ts', () => {
           veutGarderAnonymat: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
-          adresse: { create: { rue: '12 rue de la Paix' } },
+          adresse: { create: { rue: '12 rue de la Paix', codePostal: '75001', ville: 'Paris' } },
+        },
+      });
+    });
+
+    it('should create PersonneConcernee with empty strings for null adresse fields', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: {
+          estVictime: null,
+          veutGarderAnonymat: null,
+          adresse: { rue: '12 rue de la Paix', codePostal: null, ville: null },
+          commentaire: '',
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: {
+          estVictime: null,
+          veutGarderAnonymat: null,
+          commentaire: '',
+          declarantDeId: 'SIREC-42',
+          adresse: { create: { rue: '12 rue de la Paix', codePostal: '', ville: '' } },
         },
       });
     });

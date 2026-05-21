@@ -13,7 +13,9 @@ const PLAIGNANT_TYPE_PAS_PHYSIQUE = new Set([22, 106]);
 export type { SirenaSituationData };
 
 export interface SirenaAdresseData {
-  rue: string;
+  rue: string | null;
+  codePostal: string | null;
+  ville: string | null;
 }
 
 export interface SirenaDeclarantData {
@@ -42,6 +44,9 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
     plaignant_type,
     plaignant_adresse,
     plaignant_adresse_complement,
+    requerant_adresse,
+    requerant_cp,
+    requerant_ville,
     preciser_statut,
     plaignant_rs,
     nom_representant,
@@ -50,10 +55,16 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
   const plaignantTypeLabel = plaignant_type !== null ? SIREC_DICO[plaignant_type] : undefined;
   const showPlaignantTypeDetails = plaignant_type !== null && PLAIGNANT_TYPE_PAS_PHYSIQUE.has(plaignant_type);
   const plaignantEstPhysique = plaignant_type !== null && !PLAIGNANT_TYPE_PAS_PHYSIQUE.has(plaignant_type);
-  const adresseLabel = plaignantEstPhysique
-    ? [plaignant_adresse, plaignant_adresse_complement].filter(Boolean).join(' ') || null
+  const rue = plaignantEstPhysique
+    ? [plaignant_adresse, plaignant_adresse_complement, requerant_adresse].filter(Boolean).join(' ') || null
     : null;
-  const adresse = adresseLabel ? { rue: adresseLabel } : null;
+  const adresseNonPhysiqueTexte = !plaignantEstPhysique
+    ? [requerant_adresse, requerant_cp, requerant_ville].filter(Boolean).join(' ') || null
+    : null;
+  const adresse: SirenaAdresseData | null =
+    plaignantEstPhysique && (rue || requerant_cp || requerant_ville)
+      ? { rue, codePostal: requerant_cp, ville: requerant_ville }
+      : null;
   const declarantCommentaireParts = [
     sirecData.reclamation.plaignant_est_anonyme === 1 ? 'Le requérant est anonyme : oui' : null,
     showPlaignantTypeDetails && plaignantTypeLabel ? `Statut : ${plaignantTypeLabel}` : null,
@@ -63,7 +74,7 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
     showPlaignantTypeDetails && prenom_representant
       ? `Prénom du représentant des requérants : ${prenom_representant}`
       : null,
-    !plaignantEstPhysique && plaignant_adresse ? `Adresse : ${plaignant_adresse}` : null,
+    adresseNonPhysiqueTexte ? `Adresse : ${adresseNonPhysiqueTexte}` : null,
     !plaignantEstPhysique && plaignant_adresse_complement
       ? `Complément d'adresse : ${plaignant_adresse_complement}`
       : null,
