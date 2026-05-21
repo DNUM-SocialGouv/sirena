@@ -3,7 +3,13 @@ import { transformSirecSituation } from './sirecMigration.situation.transformer.
 
 describe('sirecMigration.situation.transformer.ts', () => {
   const sirecData = {
-    reclamation: { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation', dest: null },
+    reclamation: {
+      id_data: 42,
+      r_recept_date: new Date('2024-01-15'),
+      description: 'Ma réclamation',
+      dest: null,
+      saisine: null as number | null,
+    },
     motifsDeclaresIdDicos: [809],
   };
 
@@ -35,5 +41,29 @@ describe('sirecMigration.situation.transformer.ts', () => {
     const result = transformSirecSituation(sirecData, []);
 
     expect(result.entiteIds).toEqual([]);
+  });
+
+  it('should add PLAINTE to demarchesIds when saisine is 75', () => {
+    const result = transformSirecSituation(
+      { ...sirecData, reclamation: { ...sirecData.reclamation, saisine: 75 } },
+      [],
+    );
+
+    expect(result.demarchesIds).toEqual(['PLAINTE']);
+  });
+
+  it('should produce empty demarchesIds when saisine is null', () => {
+    const result = transformSirecSituation(sirecData, []);
+
+    expect(result.demarchesIds).toEqual([]);
+  });
+
+  it('should produce empty demarchesIds when saisine is a different value', () => {
+    const result = transformSirecSituation(
+      { ...sirecData, reclamation: { ...sirecData.reclamation, saisine: 12 } },
+      [],
+    );
+
+    expect(result.demarchesIds).toEqual([]);
   });
 });

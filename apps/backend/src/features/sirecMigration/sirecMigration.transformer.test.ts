@@ -11,6 +11,7 @@ describe('sirecMigration.transformer.ts', () => {
       prioritaire: 1,
       prioritaire_precisez: 'Précision prioritaire',
       dest: null,
+      saisine: null as number | null,
       service_recepteur_niv1: 693,
       service_gestionnaire: null,
     },
@@ -34,6 +35,7 @@ describe('sirecMigration.transformer.ts', () => {
           motifsDeclaratifs: ['PROBLEME_FACTURATION'],
         },
         entiteIds: [],
+        demarchesIds: [],
       },
     });
   });
