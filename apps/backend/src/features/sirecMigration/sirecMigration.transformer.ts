@@ -38,12 +38,22 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
   const { requeteEntiteIds, situationEntiteIds } = transformSirecAffectation(sirecData);
   const estVictime = transcodeDeclarant(sirecData.reclamation.plaignant);
   const veutGarderAnonymat = transcodePlaignantAnonyme(sirecData.reclamation.plaignant_anonyme);
-  const { plaignant_type, plaignant_adresse, preciser_statut, plaignant_rs, nom_representant, prenom_representant } =
-    sirecData.reclamation;
+  const {
+    plaignant_type,
+    plaignant_adresse,
+    plaignant_adresse_complement,
+    preciser_statut,
+    plaignant_rs,
+    nom_representant,
+    prenom_representant,
+  } = sirecData.reclamation;
   const plaignantTypeLabel = plaignant_type !== null ? SIREC_DICO[plaignant_type] : undefined;
   const showPlaignantTypeDetails = plaignant_type !== null && PLAIGNANT_TYPE_PAS_PHYSIQUE.has(plaignant_type);
   const plaignantEstPhysique = plaignant_type !== null && !PLAIGNANT_TYPE_PAS_PHYSIQUE.has(plaignant_type);
-  const adresse = plaignantEstPhysique && plaignant_adresse ? { label: plaignant_adresse } : null;
+  const adresseLabel = plaignantEstPhysique
+    ? [plaignant_adresse, plaignant_adresse_complement].filter(Boolean).join(' ') || null
+    : null;
+  const adresse = adresseLabel ? { label: adresseLabel } : null;
   const declarantCommentaireParts = [
     sirecData.reclamation.plaignant_est_anonyme === 1 ? 'Le requérant est anonyme : oui' : null,
     showPlaignantTypeDetails && plaignantTypeLabel ? `Statut : ${plaignantTypeLabel}` : null,
@@ -54,6 +64,9 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
       ? `Prénom du représentant des requérants : ${prenom_representant}`
       : null,
     !plaignantEstPhysique && plaignant_adresse ? `Adresse : ${plaignant_adresse}` : null,
+    !plaignantEstPhysique && plaignant_adresse_complement
+      ? `Complément d'adresse : ${plaignant_adresse_complement}`
+      : null,
   ].filter(Boolean) as string[];
   const declarantCommentaire = declarantCommentaireParts.join('\n');
   const hasDeclarantData =

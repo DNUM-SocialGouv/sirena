@@ -18,6 +18,7 @@ describe('sirecMigration.transformer.ts', () => {
       plaignant_est_anonyme: null as number | null,
       plaignant_type: null as number | null,
       plaignant_adresse: null as string | null,
+      plaignant_adresse_complement: null as string | null,
       preciser_statut: null as string | null,
       plaignant_rs: null as string | null,
       nom_representant: null as string | null,
@@ -353,5 +354,86 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.declarant).toBeNull();
+  });
+
+  it('should concatenate plaignant_adresse and plaignant_adresse_complement into adresse.label for physical person', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: 24,
+        plaignant_adresse: '12 rue de la Paix',
+        plaignant_adresse_complement: 'Bât A',
+      },
+    });
+
+    expect(result.declarant?.adresse).toEqual({ label: '12 rue de la Paix Bât A' });
+  });
+
+  it('should use only complement in adresse.label when plaignant_adresse is null for physical person', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: 24,
+        plaignant_adresse: null,
+        plaignant_adresse_complement: 'Bât A',
+      },
+    });
+
+    expect(result.declarant?.adresse).toEqual({ label: 'Bât A' });
+  });
+
+  it('should add complement to commentaire for non-physical person', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: 22,
+        plaignant_adresse_complement: 'Bât A',
+      },
+    });
+
+    expect(result.declarant?.commentaire).toContain("Complément d'adresse : Bât A");
+  });
+
+  it('should add complement to commentaire when plaignant_type is null', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: null,
+        plaignant_adresse_complement: 'Bât A',
+      },
+    });
+
+    expect(result.declarant?.commentaire).toBe("Complément d'adresse : Bât A");
+  });
+
+  it('should not add complement to commentaire when plaignant_adresse_complement is null', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: 22,
+        plaignant_adresse_complement: null,
+      },
+    });
+
+    expect(result.declarant?.commentaire).not.toContain("Complément d'adresse");
+  });
+
+  it('should create declarant from plaignant_adresse_complement alone (physical)', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: 24,
+        plaignant_adresse: null,
+        plaignant_adresse_complement: 'Bât A',
+      },
+    });
+
+    expect(result.declarant).not.toBeNull();
   });
 });
