@@ -9,6 +9,10 @@ vi.mock('./transco/dest.transco.js', () => ({
   transcodeDest: vi.fn((id: number | null) => (id === null ? null : 'Courriel')),
 }));
 
+vi.mock('./transco/courrierSignal.transco.js', () => ({
+  transcodeCourrierSignal: vi.fn((id: number | null) => (id === null ? null : 'Courrier')),
+}));
+
 describe('sirecMigration.fait.transformer.ts', () => {
   const sirecData = {
     reclamation: {
@@ -19,6 +23,7 @@ describe('sirecMigration.fait.transformer.ts', () => {
       dest: null as number | null,
       dest_primaire: null as string | null,
       dest_secondaire: null as string | null,
+      courrier_signal: null as number | null,
     },
     motifsDeclaresIdDicos: [809, 811],
   };
@@ -129,5 +134,31 @@ describe('sirecMigration.fait.transformer.ts', () => {
     });
 
     expect(result.commentaire).toBe('');
+  });
+
+  it('should append courrier_signal label to commentaire when set', () => {
+    const result = transformSirecFait({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, courrier_signal: 10 },
+    });
+
+    expect(result.commentaire).toBe('Courrier signalé : Courrier');
+  });
+
+  it('should not include courrier_signal line when courrier_signal is null', () => {
+    const result = transformSirecFait({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, courrier_signal: null },
+    });
+
+    expect(result.commentaire).toBe('');
+  });
+
+  it('should delegate courrier_signal transcoding to transcodeCourrierSignal', async () => {
+    const { transcodeCourrierSignal } = await import('./transco/courrierSignal.transco.js');
+
+    transformSirecFait({ ...sirecData, reclamation: { ...sirecData.reclamation, courrier_signal: 10 } });
+
+    expect(transcodeCourrierSignal).toHaveBeenCalledWith(10);
   });
 });
