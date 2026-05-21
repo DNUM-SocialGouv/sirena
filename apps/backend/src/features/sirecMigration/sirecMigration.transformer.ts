@@ -10,6 +10,7 @@ export type { SirenaSituationData };
 
 export interface SirenaDeclarantData {
   estVictime: boolean | null;
+  commentaire: string;
 }
 
 export interface SirenaRequeteData {
@@ -26,6 +27,11 @@ export interface SirenaRequeteData {
 export function transformSirecReclamation(sirecData: SirecReclamationData): SirenaRequeteData {
   const { requeteEntiteIds, situationEntiteIds } = transformSirecAffectation(sirecData);
   const estVictime = transcodeDeclarant(sirecData.reclamation.plaignant);
+  const declarantCommentaireParts = [
+    sirecData.reclamation.plaignant_est_anonyme === 1 ? 'Le requérant est anonyme : oui' : null,
+  ].filter(Boolean) as string[];
+  const declarantCommentaire = declarantCommentaireParts.join('\n');
+  const hasDeclarantData = estVictime !== null || declarantCommentaire !== '';
 
   return {
     sirenaId: generateSirenaIdFromSirecReclamation(sirecData.reclamation),
@@ -33,7 +39,7 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
     receptionDate: sirecData.reclamation.r_recept_date,
     receptionTypeId: transcodeReceptionType(sirecData.reclamation.reception),
     prioriteId: sirecData.reclamation.prioritaire === 1 ? REQUETE_PRIORITE_TYPES.HAUTE : null,
-    declarant: estVictime !== null ? { estVictime } : null,
+    declarant: hasDeclarantData ? { estVictime, commentaire: declarantCommentaire } : null,
     requeteEntiteIds,
     situation: transformSirecSituation(sirecData, situationEntiteIds),
   };
