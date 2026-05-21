@@ -9,7 +9,11 @@ import { useCloseRequete } from '@/hooks/mutations/closeRequete.hook';
 import { useUploadFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { type FileValidationError, validateFiles } from '@/utils/fileValidation';
-import { buildClosingContextMessage, getActiveOtherEntityNames } from './closingContext';
+import {
+  buildDirectClosingContextMessage,
+  buildUnassignmentClosingContextMessage,
+  getActiveOtherEntityNames,
+} from './closingContext';
 
 export type CloseRequeteModalRef = {
   openModal: () => void;
@@ -208,7 +212,9 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     const activeOtherEntityNames = getActiveOtherEntityNames({ otherEntitiesAffected: closingContextEntities });
     const descriptionText = isContextLoading
       ? 'Chargement des informations de la requête...'
-      : buildClosingContextMessage({ requestId });
+      : hasProvidedOtherEntitiesAffected
+        ? buildUnassignmentClosingContextMessage({ requestId })
+        : buildDirectClosingContextMessage({ requestId });
 
     return (
       <closeModal.Component

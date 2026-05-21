@@ -31,7 +31,7 @@ const mockOtherEntitiesAffectedQuery = (
 ) => query as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>;
 
 describe('CloseRequeteModal', () => {
-  it('displays a single info alert with the standard closing context', () => {
+  it('displays a single info alert with the direct closing context from the treatment tab', () => {
     vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
       mockOtherEntitiesAffectedQuery({
         data: { otherEntites: [singleActiveEntity], subAdministrativeEntites: [] },
@@ -42,11 +42,8 @@ describe('CloseRequeteModal', () => {
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
-    expect(
-      screen.getByText(
-        "Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête REQ-354.",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Information : vous allez clôturer la requête REQ-354.')).toBeInTheDocument();
+    expect(screen.queryByText(/votre entité n'est plus en charge du traitement/)).not.toBeInTheDocument();
     expect(
       screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
     ).toBeInTheDocument();
@@ -57,7 +54,7 @@ describe('CloseRequeteModal', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('loads the standard closing context from other affected entities only', () => {
+  it('loads the direct closing context from other affected entities only', () => {
     vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
       mockOtherEntitiesAffectedQuery({
         data: { otherEntites: [singleActiveEntity], subAdministrativeEntites: [] },
@@ -71,11 +68,7 @@ describe('CloseRequeteModal', () => {
     expect(useRequeteOtherEntitiesAffected).toHaveBeenCalledWith('REQ-354', { enabled: true });
     expect(screen.queryByText(/reçue le/)).not.toBeInTheDocument();
     expect(screen.queryByText(/mis en cause/)).not.toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête REQ-354.",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Information : vous allez clôturer la requête REQ-354.')).toBeInTheDocument();
     expect(
       screen.getByText("Le traitement de la requête sera toujours en cours pour l'entité administrative ARS Bretagne."),
     ).toBeInTheDocument();
@@ -118,18 +111,14 @@ describe('CloseRequeteModal', () => {
     expect(screen.getByText('Raisons de la clôture (obligatoire)')).toBeInTheDocument();
   });
 
-  it('displays a non-blocking fallback message when the closing context cannot be loaded', () => {
+  it('displays a non-blocking direct fallback message when the closing context cannot be loaded', () => {
     vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
       mockOtherEntitiesAffectedQuery({ data: undefined, isLoading: false, error: new Error('error') }),
     );
 
     render(<CloseRequeteModal requestId="REQ-354" />);
 
-    expect(
-      screen.getByText(
-        "Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête REQ-354.",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Information : vous allez clôturer la requête REQ-354.')).toBeInTheDocument();
     expect(screen.getByText('Raisons de la clôture (obligatoire)')).toBeInTheDocument();
   });
 
