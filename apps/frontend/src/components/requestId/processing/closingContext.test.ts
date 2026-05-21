@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { buildClosingContextMessage, getActiveOtherEntityNames } from './closingContext';
+import {
+  buildDirectClosingContextMessage,
+  buildUnassignmentClosingContextMessage,
+  getActiveOtherEntityNames,
+} from './closingContext';
 
-describe('buildClosingContextMessage', () => {
-  it('displays the minimal information sentence with the request number', () => {
-    const message = buildClosingContextMessage({
-      requestId: 'REQ-354',
-      otherEntitiesAffected: [],
-    });
+describe('closing context messages', () => {
+  it('displays the direct closing sentence with the request number', () => {
+    const message = buildDirectClosingContextMessage({ requestId: 'REQ-354' });
+
+    expect(message).toBe('Information : vous allez clôturer la requête REQ-354.');
+  });
+
+  it('displays the unassignment closing proposal sentence with the request number', () => {
+    const message = buildUnassignmentClosingContextMessage({ requestId: 'REQ-354' });
 
     expect(message).toBe(
       "Information : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête REQ-354.",
