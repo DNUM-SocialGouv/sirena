@@ -94,6 +94,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
         const situations = data?.requete.situations ?? [];
         const receptionTypeId = data?.requete.receptionTypeId as ReceptionType | undefined;
         const receptionDate = data?.requete.receptionDate;
+        const dateDemandeDeclarant = data?.requete.dateDemandeDeclarant;
 
         return (
           <div className={fr.cx('fr-container--fluid')}>
@@ -115,6 +116,7 @@ export const Details = ({ requestId, requestQuery }: DetailsProps) => {
                   requestId={requestId}
                   data={{
                     receptionDate,
+                    dateDemandeDeclarant,
                     receptionTypeId,
                     dematSocialId: data?.requete.dematSocialId,
                     provenanceId: data?.requete.provenanceId ?? null,

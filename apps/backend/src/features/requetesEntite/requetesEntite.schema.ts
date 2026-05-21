@@ -93,6 +93,7 @@ export const GetOtherEntitesAffectedResponseSchema = z.object({
 });
 
 const receptionDate = z.iso.date().nullable().optional();
+const dateDemandeDeclarant = z.iso.date().nullable().optional();
 const receptionTypeId = z
   .enum([
     RECEPTION_TYPE.EMAIL,
@@ -134,6 +135,7 @@ export const CreateRequeteBodySchema = z.object({
   declarant: DeclarantDataSchema.optional(),
   participant: PersonneConcerneeDataSchema.optional(),
   receptionDate,
+  dateDemandeDeclarant,
   receptionTypeId,
   provenanceId: provenanceIdOptional,
   provenancePrecision: provenancePrecisionOptional,
@@ -170,6 +172,7 @@ export const UpdateSituationBodySchema = z.object({
 });
 export const UpdateTypeAndDateRequeteBodySchema = z.object({
   receptionDate,
+  dateDemandeDeclarant,
   receptionTypeId,
   provenanceId: provenanceIdOptional,
   provenancePrecision: provenancePrecisionOptional,
