@@ -24,7 +24,13 @@ vi.mock('@/hooks/queries/useRequeteDetails', () => ({
   useRequeteOtherEntitiesAffected: vi.fn(),
 }));
 
-const singleActiveEntity = { id: 'ars', nomComplet: 'ARS Bretagne', entiteTypeId: 'ARS', statutId: 'NOUVEAU' };
+const singleActiveEntity = {
+  id: 'ars',
+  label: 'ARS BRET',
+  nomComplet: 'ARS Bretagne',
+  entiteTypeId: 'ARS',
+  statutId: 'NOUVEAU',
+} as const;
 
 const mockOtherEntitiesAffectedQuery = (
   query: Pick<ReturnType<typeof useRequeteOtherEntitiesAffected>, 'data' | 'isLoading' | 'error'>,
