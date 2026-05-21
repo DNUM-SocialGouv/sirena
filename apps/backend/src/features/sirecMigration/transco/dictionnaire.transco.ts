@@ -443,3 +443,10 @@ export const SIREC_DICO: Record<number, string> = {
   823: "Difficultés d'accès aux soins (établissement ou professionnel)",
   825: 'Signal Conso',
 };
+
+export const SIREC_BOOLEAN_TRANSCO: Record<number, boolean> = {
+  1: true,
+  112: true,
+  0: false,
+  111: false,
+};

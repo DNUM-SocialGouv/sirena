@@ -4,12 +4,14 @@ import { transformSirecAffectation } from './sirecMigration.affectation.transfor
 import type { SirecReclamationData } from './sirecMigration.repository.js';
 import { type SirenaSituationData, transformSirecSituation } from './sirecMigration.situation.transformer.js';
 import { transcodeDeclarant } from './transco/declarant.transco.js';
+import { transcodePlaignantAnonyme } from './transco/plaignantAnonyme.transco.js';
 import { transcodeReceptionType } from './transco/receptionType.transco.js';
 
 export type { SirenaSituationData };
 
 export interface SirenaDeclarantData {
   estVictime: boolean | null;
+  veutGarderAnonymat: boolean | null;
   commentaire: string;
 }
 
@@ -27,11 +29,12 @@ export interface SirenaRequeteData {
 export function transformSirecReclamation(sirecData: SirecReclamationData): SirenaRequeteData {
   const { requeteEntiteIds, situationEntiteIds } = transformSirecAffectation(sirecData);
   const estVictime = transcodeDeclarant(sirecData.reclamation.plaignant);
+  const veutGarderAnonymat = transcodePlaignantAnonyme(sirecData.reclamation.plaignant_anonyme);
   const declarantCommentaireParts = [
     sirecData.reclamation.plaignant_est_anonyme === 1 ? 'Le requérant est anonyme : oui' : null,
   ].filter(Boolean) as string[];
   const declarantCommentaire = declarantCommentaireParts.join('\n');
-  const hasDeclarantData = estVictime !== null || declarantCommentaire !== '';
+  const hasDeclarantData = estVictime !== null || veutGarderAnonymat !== null || declarantCommentaire !== '';
 
   return {
     sirenaId: generateSirenaIdFromSirecReclamation(sirecData.reclamation),
@@ -39,7 +42,7 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
     receptionDate: sirecData.reclamation.r_recept_date,
     receptionTypeId: transcodeReceptionType(sirecData.reclamation.reception),
     prioriteId: sirecData.reclamation.prioritaire === 1 ? REQUETE_PRIORITE_TYPES.HAUTE : null,
-    declarant: hasDeclarantData ? { estVictime, commentaire: declarantCommentaire } : null,
+    declarant: hasDeclarantData ? { estVictime, veutGarderAnonymat, commentaire: declarantCommentaire } : null,
     requeteEntiteIds,
     situation: transformSirecSituation(sirecData, situationEntiteIds),
   };

@@ -14,6 +14,7 @@ describe('sirecMigration.transformer.ts', () => {
       saisine: null as number | null,
       courrier_signal: null as number | null,
       plaignant: null as number | null,
+      plaignant_anonyme: null as number | null,
       plaignant_est_anonyme: null as number | null,
       service_recepteur_niv1: 693,
       service_gestionnaire: null,
@@ -111,7 +112,7 @@ describe('sirecMigration.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, plaignant: 34 },
     });
 
-    expect(result.declarant).toEqual({ estVictime: true, commentaire: '' });
+    expect(result.declarant).toEqual({ estVictime: true, veutGarderAnonymat: null, commentaire: '' });
   });
 
   it('should map plaignant=36 to declarant with estVictime false', () => {
@@ -120,10 +121,10 @@ describe('sirecMigration.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, plaignant: 36 },
     });
 
-    expect(result.declarant).toEqual({ estVictime: false, commentaire: '' });
+    expect(result.declarant).toEqual({ estVictime: false, veutGarderAnonymat: null, commentaire: '' });
   });
 
-  it('should map null plaignant to null declarant when plaignant_est_anonyme is also null', () => {
+  it('should map null plaignant to null declarant when all declarant fields are null', () => {
     const result = transformSirecReclamation(sirecData);
 
     expect(result.declarant).toBeNull();
@@ -135,7 +136,11 @@ describe('sirecMigration.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, plaignant_est_anonyme: 1 },
     });
 
-    expect(result.declarant).toEqual({ estVictime: null, commentaire: 'Le requérant est anonyme : oui' });
+    expect(result.declarant).toEqual({
+      estVictime: null,
+      veutGarderAnonymat: null,
+      commentaire: 'Le requérant est anonyme : oui',
+    });
   });
 
   it('should create declarant from plaignant_est_anonyme alone even if plaignant is null', () => {
@@ -162,6 +167,64 @@ describe('sirecMigration.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, plaignant: 34, plaignant_est_anonyme: 1 },
     });
 
-    expect(result.declarant).toEqual({ estVictime: true, commentaire: 'Le requérant est anonyme : oui' });
+    expect(result.declarant).toEqual({
+      estVictime: true,
+      veutGarderAnonymat: null,
+      commentaire: 'Le requérant est anonyme : oui',
+    });
+  });
+
+  it('should map plaignant_anonyme=1 to declarant with veutGarderAnonymat true', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_anonyme: 1 },
+    });
+
+    expect(result.declarant?.veutGarderAnonymat).toBe(true);
+  });
+
+  it('should map plaignant_anonyme=112 to declarant with veutGarderAnonymat true', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_anonyme: 112 },
+    });
+
+    expect(result.declarant?.veutGarderAnonymat).toBe(true);
+  });
+
+  it('should map plaignant_anonyme=0 to declarant with veutGarderAnonymat false', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_anonyme: 0 },
+    });
+
+    expect(result.declarant?.veutGarderAnonymat).toBe(false);
+  });
+
+  it('should map plaignant_anonyme=111 to declarant with veutGarderAnonymat false', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_anonyme: 111 },
+    });
+
+    expect(result.declarant?.veutGarderAnonymat).toBe(false);
+  });
+
+  it('should map null plaignant_anonyme to null veutGarderAnonymat', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant: 34, plaignant_anonyme: null },
+    });
+
+    expect(result.declarant?.veutGarderAnonymat).toBeNull();
+  });
+
+  it('should create declarant from plaignant_anonyme alone even if plaignant is null', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant: null, plaignant_anonyme: 1 },
+    });
+
+    expect(result.declarant).not.toBeNull();
   });
 });
