@@ -356,6 +356,14 @@ export const hasAccessToRequete = async ({ requeteId, entiteId }: RequeteEntiteK
   return !!requete;
 };
 
+export const filterOtherEntitesAffectedForUser = <T extends { id: string }>(
+  otherEntites: T[],
+  userEntityIds: string[],
+): T[] => {
+  const excludedUserEntityIds = new Set(userEntityIds);
+  return otherEntites.filter((entite) => !excludedUserEntityIds.has(entite.id));
+};
+
 export const getOtherEntitesAffected = async (requeteId: string, excludeEntiteId: string) => {
   const requeteEntites = await prisma.requeteEntite.findMany({
     where: {
@@ -1359,7 +1367,7 @@ export const computeShouldCloseRequeteStatus = async (params: {
   let otherEntitiesAffected: ShouldCloseRequeteStatus['otherEntitiesAffected'] = [];
   if (excludeTopEntiteId) {
     const otherEntites = await getOtherEntitesAffected(requeteId, excludeTopEntiteId);
-    otherEntitiesAffected = otherEntites.map((entite) => ({
+    otherEntitiesAffected = filterOtherEntitesAffectedForUser(otherEntites, userEntityIds).map((entite) => ({
       id: entite.id,
       nomComplet: entite.nomComplet,
       entiteTypeId: entite.entiteTypeId || '',
