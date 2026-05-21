@@ -584,7 +584,7 @@ describe('requetesEntite.service', () => {
             entiteTypeId: 'ARS',
           },
         },
-      ]);
+      ] as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findMany>>);
 
       const result = await computeShouldCloseRequeteStatus({
         requeteId: 'REQ-354',
