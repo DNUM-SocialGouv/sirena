@@ -61,7 +61,7 @@ describe('sirecMigration.service.ts', () => {
       declarant: null as {
         estVictime: boolean | null;
         veutGarderAnonymat: boolean | null;
-        adresse: { label: string } | null;
+        adresse: { rue: string } | null;
         commentaire: string;
       } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
@@ -266,7 +266,7 @@ describe('sirecMigration.service.ts', () => {
         declarant: {
           estVictime: null,
           veutGarderAnonymat: null,
-          adresse: { label: '12 rue de la Paix' },
+          adresse: { rue: '12 rue de la Paix' },
           commentaire: '',
         },
       });
@@ -277,7 +277,7 @@ describe('sirecMigration.service.ts', () => {
           veutGarderAnonymat: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
-          adresse: { create: { label: '12 rue de la Paix' } },
+          adresse: { create: { rue: '12 rue de la Paix' } },
         },
       });
     });

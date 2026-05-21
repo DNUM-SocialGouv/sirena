@@ -314,7 +314,7 @@ describe('sirecMigration.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, plaignant_type: 24, plaignant_adresse: '12 rue de la Paix' },
     });
 
-    expect(result.declarant?.adresse).toEqual({ label: '12 rue de la Paix' });
+    expect(result.declarant?.adresse).toEqual({ rue: '12 rue de la Paix' });
     expect(result.declarant?.commentaire).toBe('');
   });
 
@@ -356,7 +356,7 @@ describe('sirecMigration.transformer.ts', () => {
     expect(result.declarant).toBeNull();
   });
 
-  it('should concatenate plaignant_adresse and plaignant_adresse_complement into adresse.label for physical person', () => {
+  it('should concatenate plaignant_adresse and plaignant_adresse_complement into adresse.rue for physical person', () => {
     const result = transformSirecReclamation({
       ...sirecData,
       reclamation: {
@@ -367,10 +367,10 @@ describe('sirecMigration.transformer.ts', () => {
       },
     });
 
-    expect(result.declarant?.adresse).toEqual({ label: '12 rue de la Paix Bât A' });
+    expect(result.declarant?.adresse).toEqual({ rue: '12 rue de la Paix Bât A' });
   });
 
-  it('should use only complement in adresse.label when plaignant_adresse is null for physical person', () => {
+  it('should use only complement in adresse.rue when plaignant_adresse is null for physical person', () => {
     const result = transformSirecReclamation({
       ...sirecData,
       reclamation: {
@@ -381,7 +381,7 @@ describe('sirecMigration.transformer.ts', () => {
       },
     });
 
-    expect(result.declarant?.adresse).toEqual({ label: 'Bât A' });
+    expect(result.declarant?.adresse).toEqual({ rue: 'Bât A' });
   });
 
   it('should add complement to commentaire for non-physical person', () => {

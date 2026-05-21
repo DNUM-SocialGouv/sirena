@@ -13,7 +13,7 @@ const PLAIGNANT_TYPE_PAS_PHYSIQUE = new Set([22, 106]);
 export type { SirenaSituationData };
 
 export interface SirenaAdresseData {
-  label: string;
+  rue: string;
 }
 
 export interface SirenaDeclarantData {
@@ -53,7 +53,7 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
   const adresseLabel = plaignantEstPhysique
     ? [plaignant_adresse, plaignant_adresse_complement].filter(Boolean).join(' ') || null
     : null;
-  const adresse = adresseLabel ? { label: adresseLabel } : null;
+  const adresse = adresseLabel ? { rue: adresseLabel } : null;
   const declarantCommentaireParts = [
     sirecData.reclamation.plaignant_est_anonyme === 1 ? 'Le requérant est anonyme : oui' : null,
     showPlaignantTypeDetails && plaignantTypeLabel ? `Statut : ${plaignantTypeLabel}` : null,
