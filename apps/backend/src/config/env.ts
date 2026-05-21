@@ -77,6 +77,13 @@ const processEnv = {
   WORKER_MONITORING_PORT: process.env.WORKER_MONITORING_PORT,
   // Affectation
   AFFECTATION_DEBUG: process.env.AFFECTATION_DEBUG,
+  // Migration SIREC
+  MYSQL_SIREC_HOST: process.env.MYSQL_SIREC_HOST,
+  MYSQL_SIREC_PORT: process.env.MYSQL_SIREC_PORT,
+  MYSQL_SIREC_DB: process.env.MYSQL_SIREC_DB,
+  MYSQL_SIREC_USER: process.env.MYSQL_SIREC_USER,
+  MYSQL_SIREC_PASSWORD: process.env.MYSQL_SIREC_PASSWORD,
+
   // Environment
   APP_ENV: process.env.APP_ENV,
 };

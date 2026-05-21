@@ -36,6 +36,11 @@ describe('env.schema.ts - LOG_EXTRA_CONTEXT', () => {
     REDIS_PORT: '6379',
     REDIS_TLS: 'false',
     API_KEY_HASH_SALT: 'test-salt',
+    MYSQL_SIREC_HOST: 'localhost',
+    MYSQL_SIREC_PORT: '3306',
+    MYSQL_SIREC_DB: 'sirec',
+    MYSQL_SIREC_USER: 'sirec',
+    MYSQL_SIREC_PASSWORD: 'sirec',
   };
 
   const createConfig = (logExtraContext?: string) => ({

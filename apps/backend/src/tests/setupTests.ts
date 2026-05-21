@@ -230,4 +230,9 @@ Object.assign(process.env, {
   REDIS_TLS: 'false',
   REDIS_USERNAME: 'redis-username',
   REDIS_PASSWORD: 'redis-password',
+  MYSQL_SIREC_HOST: 'localhost',
+  MYSQL_SIREC_PORT: '3306',
+  MYSQL_SIREC_DB: 'sirec',
+  MYSQL_SIREC_USER: 'sirec',
+  MYSQL_SIREC_PASSWORD: 'sirec',
 });

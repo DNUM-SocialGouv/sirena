@@ -75,6 +75,7 @@
     "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.3",
     "minio": "^8.0.7",
+    "mysql2": "^3.22.3",
     "openid-client": "^6.8.4",
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.18.0",

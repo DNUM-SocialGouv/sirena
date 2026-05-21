@@ -119,6 +119,7 @@ model Requete {
   commentaire   String    @default("")
   receptionDate DateTime?
   dematSocialId Int?
+  sirecId       Int?      @unique
 
   receptionTypeId String?
   receptionType   ReceptionTypeEnum? @relation(fields: [receptionTypeId], references: [id])
