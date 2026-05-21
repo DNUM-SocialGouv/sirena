@@ -17,6 +17,8 @@ describe('sirecMigration.fait.transformer.ts', () => {
       description: 'Ma réclamation',
       prioritaire_precisez: 'Précision prioritaire',
       dest: null as number | null,
+      dest_primaire: null as string | null,
+      dest_secondaire: null as string | null,
     },
     motifsDeclaresIdDicos: [809, 811],
   };
@@ -80,5 +82,52 @@ describe('sirecMigration.fait.transformer.ts', () => {
     transformSirecFait(sirecData);
 
     expect(transcodeMotifsDeclaratifs).toHaveBeenCalledWith([809, 811]);
+  });
+
+  it('should append dest_primaire label to commentaire when set', () => {
+    const result = transformSirecFait({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, dest_primaire: 'Service X' },
+    });
+
+    expect(result.commentaire).toBe('Précision prioritaire\nDestinataire primaire : Service X');
+  });
+
+  it('should append dest_secondaire label to commentaire when set', () => {
+    const result = transformSirecFait({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, dest_secondaire: 'Service Y' },
+    });
+
+    expect(result.commentaire).toBe('Précision prioritaire\nDestinataire secondaire : Service Y');
+  });
+
+  it('should append both dest_primaire and dest_secondaire when both are set', () => {
+    const result = transformSirecFait({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, dest_primaire: 'Service X', dest_secondaire: 'Service Y' },
+    });
+
+    expect(result.commentaire).toBe(
+      'Précision prioritaire\nDestinataire primaire : Service X\nDestinataire secondaire : Service Y',
+    );
+  });
+
+  it('should not include dest_primaire or dest_secondaire when both are null', () => {
+    const result = transformSirecFait({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, dest_primaire: null, dest_secondaire: null },
+    });
+
+    expect(result.commentaire).toBe('');
+  });
+
+  it('should not include dest_primaire when it is an empty string', () => {
+    const result = transformSirecFait({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, prioritaire_precisez: null, dest_primaire: '' },
+    });
+
+    expect(result.commentaire).toBe('');
   });
 });

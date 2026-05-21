@@ -13,6 +13,8 @@ export function transformSirecFait(sirecData: SirecReclamationData): SirenaFaitD
   const commentaireParts = [
     sirecData.reclamation.prioritaire_precisez,
     destLabel ? `Destinataire(s) de la réclamation : ${destLabel}` : null,
+    sirecData.reclamation.dest_primaire ? `Destinataire primaire : ${sirecData.reclamation.dest_primaire}` : null,
+    sirecData.reclamation.dest_secondaire ? `Destinataire secondaire : ${sirecData.reclamation.dest_secondaire}` : null,
   ].filter(Boolean) as string[];
 
   return {
