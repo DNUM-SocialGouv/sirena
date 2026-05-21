@@ -17,6 +17,7 @@ export interface SirecReclamationRow {
   plaignant_anonyme: number | null;
   plaignant_est_anonyme: number | null;
   plaignant_type: number | null;
+  plaignant_adresse: string | null;
   preciser_statut: string | null;
   plaignant_rs: string | null;
   nom_representant: string | null;
@@ -32,7 +33,7 @@ export interface SirecReclamationData {
 
 export async function fetchSirecReclamationById(sirecId: number): Promise<SirecReclamationRow | null> {
   const [rows] = await mysqlPool.query<(SirecReclamationRow & RowDataPacket)[]>(
-    'SELECT id_data, r_recept_date, description, reception, prioritaire, prioritaire_precisez, dest, dest_primaire, dest_secondaire, saisine, courrier_signal, plaignant, plaignant_anonyme, plaignant_est_anonyme, plaignant_type, preciser_statut, plaignant_rs, nom_representant, prenom_representant, service_recepteur_niv1, service_gestionnaire FROM sire_reclamation_data WHERE id_data = ?',
+    'SELECT id_data, r_recept_date, description, reception, prioritaire, prioritaire_precisez, dest, dest_primaire, dest_secondaire, saisine, courrier_signal, plaignant, plaignant_anonyme, plaignant_est_anonyme, plaignant_type, plaignant_adresse, preciser_statut, plaignant_rs, nom_representant, prenom_representant, service_recepteur_niv1, service_gestionnaire FROM sire_reclamation_data WHERE id_data = ?',
     [sirecId],
   );
   return rows[0] ?? null;
