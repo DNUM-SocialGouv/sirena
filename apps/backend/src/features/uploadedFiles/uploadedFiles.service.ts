@@ -303,6 +303,23 @@ export type FileProcessingStatus = {
   status?: string;
 };
 
+export const attachSafeFileEncryption = async (
+  id: UploadedFile['id'],
+  encryptionSafe: { iv: string; authTag: string },
+): Promise<void> => {
+  const current = await prisma.uploadedFile.findUniqueOrThrow({
+    where: { id },
+    select: { metadata: true },
+  });
+  const currentMeta = (current.metadata as Prisma.JsonObject | null) ?? {};
+  await prisma.uploadedFile.update({
+    where: { id },
+    data: {
+      metadata: { ...currentMeta, encryptionSafe } as Prisma.InputJsonValue,
+    },
+  });
+};
+
 export const updateFileProcessingStatus = async (
   id: UploadedFile['id'],
   updates: FileProcessingStatus,
