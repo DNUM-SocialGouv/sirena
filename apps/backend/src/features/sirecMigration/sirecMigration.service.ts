@@ -81,6 +81,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
         data: {
           declarantDeId: requete.id,
           estVictime: data.declarant.estVictime,
+          commentaire: data.declarant.commentaire,
           ...(data.declarant.estVictime ? { participantDeId: requete.id } : {}),
         },
       });

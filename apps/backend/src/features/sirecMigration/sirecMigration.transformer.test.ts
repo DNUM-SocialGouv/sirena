@@ -14,6 +14,7 @@ describe('sirecMigration.transformer.ts', () => {
       saisine: null as number | null,
       courrier_signal: null as number | null,
       plaignant: null as number | null,
+      plaignant_est_anonyme: null as number | null,
       service_recepteur_niv1: 693,
       service_gestionnaire: null,
     },
@@ -110,7 +111,7 @@ describe('sirecMigration.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, plaignant: 34 },
     });
 
-    expect(result.declarant).toEqual({ estVictime: true });
+    expect(result.declarant).toEqual({ estVictime: true, commentaire: '' });
   });
 
   it('should map plaignant=36 to declarant with estVictime false', () => {
@@ -119,12 +120,48 @@ describe('sirecMigration.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, plaignant: 36 },
     });
 
-    expect(result.declarant).toEqual({ estVictime: false });
+    expect(result.declarant).toEqual({ estVictime: false, commentaire: '' });
   });
 
-  it('should map null plaignant to null declarant', () => {
+  it('should map null plaignant to null declarant when plaignant_est_anonyme is also null', () => {
     const result = transformSirecReclamation(sirecData);
 
     expect(result.declarant).toBeNull();
+  });
+
+  it('should set declarant.commentaire when plaignant_est_anonyme=1', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_est_anonyme: 1 },
+    });
+
+    expect(result.declarant).toEqual({ estVictime: null, commentaire: 'Le requérant est anonyme : oui' });
+  });
+
+  it('should create declarant from plaignant_est_anonyme alone even if plaignant is null', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant: null, plaignant_est_anonyme: 1 },
+    });
+
+    expect(result.declarant).not.toBeNull();
+  });
+
+  it('should leave declarant.commentaire empty when plaignant_est_anonyme is null', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant: 34, plaignant_est_anonyme: null },
+    });
+
+    expect(result.declarant?.commentaire).toBe('');
+  });
+
+  it('should combine estVictime and commentaire when both plaignant and plaignant_est_anonyme are set', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant: 34, plaignant_est_anonyme: 1 },
+    });
+
+    expect(result.declarant).toEqual({ estVictime: true, commentaire: 'Le requérant est anonyme : oui' });
   });
 });
