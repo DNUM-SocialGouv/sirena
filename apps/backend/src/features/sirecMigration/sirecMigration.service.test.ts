@@ -65,6 +65,7 @@ describe('sirecMigration.service.ts', () => {
           motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'],
         },
         entiteIds: ['service-1', 'ars-1'],
+        demarchesIds: [] as string[],
       },
     };
 
@@ -165,6 +166,24 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec({ ...data, situation: { ...data.situation, entiteIds: [] } });
 
       expect(prisma.situationEntite.createMany).toHaveBeenCalledWith({ data: [] });
+    });
+
+    it('should create DemarchesEngagees with no demarches when demarchesIds is empty', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.demarchesEngagees.create).toHaveBeenCalledWith({
+        data: { demarches: { connect: [] } },
+        select: { id: true },
+      });
+    });
+
+    it('should connect PLAINTE demarche when demarchesIds contains PLAINTE', async () => {
+      await saveFromSirec({ ...data, situation: { ...data.situation, demarchesIds: ['PLAINTE'] } });
+
+      expect(prisma.demarchesEngagees.create).toHaveBeenCalledWith({
+        data: { demarches: { connect: [{ id: 'PLAINTE' }] } },
+        select: { id: true },
+      });
     });
 
     it('should wrap all creates in a single transaction', async () => {
