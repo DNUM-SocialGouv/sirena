@@ -19,6 +19,9 @@ describe('sirecMigration.transformer.ts', () => {
       plaignant_type: null as number | null,
       plaignant_adresse: null as string | null,
       plaignant_adresse_complement: null as string | null,
+      requerant_adresse: null as string | null,
+      requerant_cp: null as string | null,
+      requerant_ville: null as string | null,
       preciser_statut: null as string | null,
       plaignant_rs: null as string | null,
       nom_representant: null as string | null,
@@ -314,14 +317,14 @@ describe('sirecMigration.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, plaignant_type: 24, plaignant_adresse: '12 rue de la Paix' },
     });
 
-    expect(result.declarant?.adresse).toEqual({ rue: '12 rue de la Paix' });
+    expect(result.declarant?.adresse).toEqual({ rue: '12 rue de la Paix', codePostal: null, ville: null });
     expect(result.declarant?.commentaire).toBe('');
   });
 
   it('should add adresse to commentaire when plaignant_type is in PLAIGNANT_TYPE_PAS_PHYSIQUE (22)', () => {
     const result = transformSirecReclamation({
       ...sirecData,
-      reclamation: { ...sirecData.reclamation, plaignant_type: 22, plaignant_adresse: '12 rue de la Paix' },
+      reclamation: { ...sirecData.reclamation, plaignant_type: 22, requerant_adresse: '12 rue de la Paix' },
     });
 
     expect(result.declarant?.adresse).toBeNull();
@@ -331,7 +334,7 @@ describe('sirecMigration.transformer.ts', () => {
   it('should add adresse to commentaire when plaignant_type is null', () => {
     const result = transformSirecReclamation({
       ...sirecData,
-      reclamation: { ...sirecData.reclamation, plaignant_type: null, plaignant_adresse: '12 rue de la Paix' },
+      reclamation: { ...sirecData.reclamation, plaignant_type: null, requerant_adresse: '12 rue de la Paix' },
     });
 
     expect(result.declarant?.adresse).toBeNull();
@@ -367,7 +370,7 @@ describe('sirecMigration.transformer.ts', () => {
       },
     });
 
-    expect(result.declarant?.adresse).toEqual({ rue: '12 rue de la Paix Bât A' });
+    expect(result.declarant?.adresse).toEqual({ rue: '12 rue de la Paix Bât A', codePostal: null, ville: null });
   });
 
   it('should use only complement in adresse.rue when plaignant_adresse is null for physical person', () => {
@@ -381,7 +384,7 @@ describe('sirecMigration.transformer.ts', () => {
       },
     });
 
-    expect(result.declarant?.adresse).toEqual({ rue: 'Bât A' });
+    expect(result.declarant?.adresse).toEqual({ rue: 'Bât A', codePostal: null, ville: null });
   });
 
   it('should add complement to commentaire for non-physical person', () => {
@@ -435,5 +438,104 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.declarant).not.toBeNull();
+  });
+
+  it('should map requerant_adresse to adresse.rue for physical person', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: 24, requerant_adresse: '15 avenue Victor Hugo' },
+    });
+
+    expect(result.declarant?.adresse?.rue).toBe('15 avenue Victor Hugo');
+  });
+
+  it('should concatenate plaignant_adresse and requerant_adresse into rue for physical person', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: 24,
+        plaignant_adresse: '12 rue de la Paix',
+        requerant_adresse: 'Bât A',
+      },
+    });
+
+    expect(result.declarant?.adresse?.rue).toBe('12 rue de la Paix Bât A');
+  });
+
+  it('should map requerant_cp to adresse.codePostal for physical person', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: 24,
+        requerant_adresse: '1 rue X',
+        requerant_cp: '75001',
+      },
+    });
+
+    expect(result.declarant?.adresse?.codePostal).toBe('75001');
+  });
+
+  it('should map requerant_ville to adresse.ville for physical person', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: 24,
+        requerant_adresse: '1 rue X',
+        requerant_ville: 'Paris',
+      },
+    });
+
+    expect(result.declarant?.adresse?.ville).toBe('Paris');
+  });
+
+  it('should create adresse from requerant_cp alone (physical person)', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: 24, requerant_cp: '75001' },
+    });
+
+    expect(result.declarant?.adresse).toEqual({ rue: null, codePostal: '75001', ville: null });
+  });
+
+  it('should concatenate requerant_adresse, requerant_cp, requerant_ville in commentaire for non-physical', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: 22,
+        requerant_adresse: '12 rue de la Paix',
+        requerant_cp: '75001',
+        requerant_ville: 'Paris',
+      },
+    });
+
+    expect(result.declarant?.adresse).toBeNull();
+    expect(result.declarant?.commentaire).toContain('Adresse : 12 rue de la Paix 75001 Paris');
+  });
+
+  it('should concatenate only non-null requerant fields in commentaire for non-physical', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: {
+        ...sirecData.reclamation,
+        plaignant_type: null,
+        requerant_cp: '75001',
+        requerant_ville: 'Paris',
+      },
+    });
+
+    expect(result.declarant?.commentaire).toBe('Adresse : 75001 Paris');
+  });
+
+  it('should not add Adresse line in commentaire when all requerant address fields are null (non-physical)', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: null },
+    });
+
+    expect(result.declarant).toBeNull();
   });
 });
