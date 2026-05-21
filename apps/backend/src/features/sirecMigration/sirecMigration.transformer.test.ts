@@ -17,6 +17,7 @@ describe('sirecMigration.transformer.ts', () => {
       plaignant_anonyme: null as number | null,
       plaignant_est_anonyme: null as number | null,
       plaignant_type: null as number | null,
+      plaignant_adresse: null as string | null,
       preciser_statut: null as string | null,
       plaignant_rs: null as string | null,
       nom_representant: null as string | null,
@@ -117,7 +118,12 @@ describe('sirecMigration.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, plaignant: 34 },
     });
 
-    expect(result.declarant).toEqual({ estVictime: true, veutGarderAnonymat: null, commentaire: '' });
+    expect(result.declarant).toEqual({
+      estVictime: true,
+      veutGarderAnonymat: null,
+      adresse: null,
+      commentaire: '',
+    });
   });
 
   it('should map plaignant=36 to declarant with estVictime false', () => {
@@ -126,7 +132,12 @@ describe('sirecMigration.transformer.ts', () => {
       reclamation: { ...sirecData.reclamation, plaignant: 36 },
     });
 
-    expect(result.declarant).toEqual({ estVictime: false, veutGarderAnonymat: null, commentaire: '' });
+    expect(result.declarant).toEqual({
+      estVictime: false,
+      veutGarderAnonymat: null,
+      adresse: null,
+      commentaire: '',
+    });
   });
 
   it('should map null plaignant to null declarant when all declarant fields are null', () => {
@@ -144,6 +155,7 @@ describe('sirecMigration.transformer.ts', () => {
     expect(result.declarant).toEqual({
       estVictime: null,
       veutGarderAnonymat: null,
+      adresse: null,
       commentaire: 'Le requérant est anonyme : oui',
     });
   });
@@ -175,6 +187,7 @@ describe('sirecMigration.transformer.ts', () => {
     expect(result.declarant).toEqual({
       estVictime: true,
       veutGarderAnonymat: null,
+      adresse: null,
       commentaire: 'Le requérant est anonyme : oui',
     });
   });
@@ -290,6 +303,54 @@ describe('sirecMigration.transformer.ts', () => {
 
   it('should ignore plaignant_type when null', () => {
     const result = transformSirecReclamation(sirecData);
+
+    expect(result.declarant).toBeNull();
+  });
+
+  it('should set adresseLabel when plaignant_type is physical (not in PLAIGNANT_TYPE_PAS_PHYSIQUE)', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: 24, plaignant_adresse: '12 rue de la Paix' },
+    });
+
+    expect(result.declarant?.adresse).toEqual({ label: '12 rue de la Paix' });
+    expect(result.declarant?.commentaire).toBe('');
+  });
+
+  it('should add adresse to commentaire when plaignant_type is in PLAIGNANT_TYPE_PAS_PHYSIQUE (22)', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: 22, plaignant_adresse: '12 rue de la Paix' },
+    });
+
+    expect(result.declarant?.adresse).toBeNull();
+    expect(result.declarant?.commentaire).toContain('Adresse : 12 rue de la Paix');
+  });
+
+  it('should add adresse to commentaire when plaignant_type is null', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: null, plaignant_adresse: '12 rue de la Paix' },
+    });
+
+    expect(result.declarant?.adresse).toBeNull();
+    expect(result.declarant?.commentaire).toBe('Adresse : 12 rue de la Paix');
+  });
+
+  it('should create declarant from adresseLabel alone (physical type)', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: 24, plaignant_adresse: '12 rue de la Paix' },
+    });
+
+    expect(result.declarant).not.toBeNull();
+  });
+
+  it('should set adresseLabel to null when plaignant_adresse is null', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, plaignant_type: 24, plaignant_adresse: null },
+    });
 
     expect(result.declarant).toBeNull();
   });
