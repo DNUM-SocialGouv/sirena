@@ -29,7 +29,7 @@ describe('sirecMigration.transformer.ts', () => {
       receptionDate: new Date('2024-01-15'),
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
-      estVictime: null,
+      declarant: null,
       requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
       situation: {
         fait: {
@@ -104,27 +104,27 @@ describe('sirecMigration.transformer.ts', () => {
     expect(result.prioriteId).toBeNull();
   });
 
-  it('should map plaignant=34 to estVictime true', () => {
+  it('should map plaignant=34 to declarant with estVictime true', () => {
     const result = transformSirecReclamation({
       ...sirecData,
       reclamation: { ...sirecData.reclamation, plaignant: 34 },
     });
 
-    expect(result.estVictime).toBe(true);
+    expect(result.declarant).toEqual({ estVictime: true });
   });
 
-  it('should map plaignant=36 to estVictime false', () => {
+  it('should map plaignant=36 to declarant with estVictime false', () => {
     const result = transformSirecReclamation({
       ...sirecData,
       reclamation: { ...sirecData.reclamation, plaignant: 36 },
     });
 
-    expect(result.estVictime).toBe(false);
+    expect(result.declarant).toEqual({ estVictime: false });
   });
 
-  it('should map null plaignant to null estVictime', () => {
+  it('should map null plaignant to null declarant', () => {
     const result = transformSirecReclamation(sirecData);
 
-    expect(result.estVictime).toBeNull();
+    expect(result.declarant).toBeNull();
   });
 });

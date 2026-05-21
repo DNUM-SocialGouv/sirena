@@ -76,12 +76,12 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       })),
     });
 
-    if (data.estVictime !== null) {
+    if (data.declarant !== null) {
       await tx.personneConcernee.create({
         data: {
-          estVictime: data.estVictime,
           declarantDeId: requete.id,
-          ...(data.estVictime ? { participantDeId: requete.id } : {}),
+          estVictime: data.declarant.estVictime,
+          ...(data.declarant.estVictime ? { participantDeId: requete.id } : {}),
         },
       });
     }

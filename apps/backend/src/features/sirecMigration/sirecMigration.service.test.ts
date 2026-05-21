@@ -58,7 +58,7 @@ describe('sirecMigration.service.ts', () => {
       receptionDate,
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
-      estVictime: null as boolean | null,
+      declarant: null as { estVictime: boolean | null } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
       situation: {
         fait: {
@@ -189,14 +189,14 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should not create PersonneConcernee when estVictime is null', async () => {
+    it('should not create PersonneConcernee when declarant is null', async () => {
       await saveFromSirec(data);
 
       expect(prisma.personneConcernee.create).not.toHaveBeenCalled();
     });
 
     it('should create PersonneConcernee with both participantDeId and declarantDeId when estVictime is true', async () => {
-      await saveFromSirec({ ...data, estVictime: true });
+      await saveFromSirec({ ...data, declarant: { estVictime: true } });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: { estVictime: true, declarantDeId: 'SIREC-42', participantDeId: 'SIREC-42' },
@@ -204,7 +204,7 @@ describe('sirecMigration.service.ts', () => {
     });
 
     it('should create PersonneConcernee with only declarantDeId when estVictime is false', async () => {
-      await saveFromSirec({ ...data, estVictime: false });
+      await saveFromSirec({ ...data, declarant: { estVictime: false } });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: { estVictime: false, declarantDeId: 'SIREC-42' },
