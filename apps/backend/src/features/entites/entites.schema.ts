@@ -55,6 +55,14 @@ export const GetEntitiesQuerySchema = paginationQueryParamsSchema(columns).exten
 
 export const GetEntitiesResponseSchema = z.array(EntiteSchema);
 
+export const RootEntiteAdminSchema = z.object({
+  id: z.string(),
+  nomComplet: z.string(),
+  label: z.string(),
+});
+
+export const GetRootEntitesListAdminResponseSchema = z.array(RootEntiteAdminSchema);
+
 export const GetEntitesListAdminResponseSchema = z.array(
   z.object({
     id: z.string(),
