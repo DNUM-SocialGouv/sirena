@@ -3,6 +3,7 @@ import { ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
+import { RootEntitesFilter } from '@/components/common/filters/RootEntitesFilter';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { useEntitesListAdmin, useRootEntitesListAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
@@ -34,7 +35,24 @@ export function RouteComponent() {
   const offset = search.offset ?? 0;
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
-  useRootEntitesListAdmin();
+  const rootEntitesListQuery = useRootEntitesListAdmin();
+  const selectedRootEntiteIds = useMemo(
+    () => (search.rootEntiteIds ? search.rootEntiteIds.split(',').filter(Boolean) : []),
+    [search.rootEntiteIds],
+  );
+
+  const handleRootEntitesChange = useCallback(
+    (rootEntiteIds: string[]) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          rootEntiteIds: rootEntiteIds.length > 0 ? rootEntiteIds.join(',') : undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
 
   const entitesListQuery = useEntitesListAdmin({
     offset,
@@ -98,6 +116,22 @@ export function RouteComponent() {
 
   return (
     <>
+      <fieldset className="admin-entites-filters fr-mb-2w">
+        <legend className="fr-sr-only">Filtrer les entités</legend>
+        <div className="admin-entites-filters__row">
+          <span className="fr-text--regular" aria-hidden="true">
+            Filtrer les entités
+          </span>
+          <div className="admin-entites-filters__items">
+            <RootEntitesFilter
+              rootEntites={rootEntitesListQuery.data?.data ?? []}
+              selectedRootEntiteIds={selectedRootEntiteIds}
+              onChange={handleRootEntitesChange}
+            />
+          </div>
+        </div>
+      </fieldset>
+
       <QueryStateHandler query={entitesListQuery} noDataComponent={<p>Aucune entité administrative à afficher.</p>}>
         {({ data }) => (
           <div className="admin-entites-table">

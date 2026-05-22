@@ -47,9 +47,9 @@ const buildSuccessQuery = (data: {
     error: null,
   }) as never;
 
-const buildRootEntitesQuery = () =>
+const buildRootEntitesQuery = (data: Array<{ id: string; nomComplet: string; label: string }> = []) =>
   ({
-    data: { data: [] },
+    data: { data },
     isPending: false,
     isError: false,
     error: null,
@@ -129,6 +129,36 @@ describe('Admin entites index route', () => {
     render(<RouteComponent />);
 
     expect(screen.getByText('Aucune entité administrative à afficher.')).toBeInTheDocument();
+  });
+
+  it('updates rootEntiteIds search param and resets offset when selecting a root entite filter', async () => {
+    const navigate = vi.fn();
+    mockedUseNavigate.mockReturnValue(navigate);
+    mockedUseSearch.mockReturnValue({ offset: 20 });
+    mockedUseRootEntitesAdmin.mockReturnValue(
+      buildRootEntitesQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR' }]),
+    );
+    mockedUseEntitesAdmin.mockReturnValue(
+      buildSuccessQuery({
+        data: [],
+        meta: { total: 0 },
+      }),
+    );
+
+    render(<RouteComponent />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Entité administrative' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'ARS Normandie' }));
+
+    expect(navigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+    });
+
+    const searchUpdater = navigate.mock.calls[0][0].search;
+    expect(searchUpdater({ offset: 20 })).toEqual({
+      offset: undefined,
+      rootEntiteIds: 'root-ars',
+    });
   });
 
   it('uses rootEntiteIds search param to fetch the filtered admin entites list', () => {
