@@ -34,6 +34,7 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
     plaignant_rs,
     nom_representant,
     prenom_representant,
+    plaignant_connu,
   } = reclamation;
 
   const identite = transformSirecIdentite(reclamation);
@@ -54,6 +55,7 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
 
   const declarantCommentaireParts = [
     reclamation.plaignant_est_anonyme === 1 ? 'Le requérant est anonyme : oui' : null,
+    plaignant_connu === 1 ? 'Plus de 2 réclamations déposées : oui' : null,
     showPlaignantTypeDetails && plaignantTypeLabel ? `Statut : ${plaignantTypeLabel}` : null,
     showPlaignantTypeDetails && preciser_statut ? `Précisions : ${preciser_statut}` : null,
     showPlaignantTypeDetails && plaignant_rs ? `Raison sociale : ${plaignant_rs}` : null,
