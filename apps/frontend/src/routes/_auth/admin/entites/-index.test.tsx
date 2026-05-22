@@ -1,8 +1,8 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useEntitesListAdmin } from '@/hooks/queries/entites.hook';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useEntitesListAdmin, useRootEntitesListAdmin } from '@/hooks/queries/entites.hook';
 import { RouteComponent } from './index';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -16,9 +16,11 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
   useEntitesListAdmin: vi.fn(),
+  useRootEntitesListAdmin: vi.fn(),
 }));
 
 const mockedUseEntitesAdmin = vi.mocked(useEntitesListAdmin);
+const mockedUseRootEntitesAdmin = vi.mocked(useRootEntitesListAdmin);
 const mockedUseSearch = vi.mocked(useSearch);
 const mockedUseNavigate = vi.mocked(useNavigate);
 
@@ -45,6 +47,14 @@ const buildSuccessQuery = (data: {
     error: null,
   }) as never;
 
+const buildRootEntitesQuery = () =>
+  ({
+    data: { data: [] },
+    isPending: false,
+    isError: false,
+    error: null,
+  }) as never;
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -52,6 +62,25 @@ afterEach(() => {
 });
 
 describe('Admin entites index route', () => {
+  beforeEach(() => {
+    mockedUseRootEntitesAdmin.mockReturnValue(buildRootEntitesQuery());
+  });
+
+  it('fetches root entites for the admin filter options', () => {
+    mockedUseNavigate.mockReturnValue(vi.fn() as never);
+    mockedUseSearch.mockReturnValue({} as never);
+    mockedUseEntitesAdmin.mockReturnValue(
+      buildSuccessQuery({
+        data: [],
+        meta: { total: 0 },
+      }),
+    );
+
+    render(<RouteComponent />);
+
+    expect(mockedUseRootEntitesAdmin).toHaveBeenCalledWith();
+  });
+
   it('renders the admin entites list', () => {
     mockedUseNavigate.mockReturnValue(vi.fn() as never);
     mockedUseSearch.mockReturnValue({} as never);
@@ -100,6 +129,25 @@ describe('Admin entites index route', () => {
     render(<RouteComponent />);
 
     expect(screen.getByText('Aucune entité administrative à afficher.')).toBeInTheDocument();
+  });
+
+  it('uses rootEntiteIds search param to fetch the filtered admin entites list', () => {
+    mockedUseNavigate.mockReturnValue(vi.fn());
+    mockedUseSearch.mockReturnValue({ rootEntiteIds: 'root-ars,root-dd' });
+    mockedUseEntitesAdmin.mockReturnValue(
+      buildSuccessQuery({
+        data: [],
+        meta: { total: 0 },
+      }),
+    );
+
+    render(<RouteComponent />);
+
+    expect(mockedUseEntitesAdmin).toHaveBeenCalledWith({
+      offset: 0,
+      limit: 10,
+      rootEntiteIds: 'root-ars,root-dd',
+    });
   });
 
   it('uses pagination search params to fetch the admin entites list', () => {

@@ -9,6 +9,7 @@ import {
   fetchEntiteDescendants,
   fetchEntites,
   fetchEntitesListAdmin,
+  fetchRootEntitesListAdmin,
 } from '@/lib/api/fetchEntites';
 import { queryClient } from '@/lib/queryClient';
 import type { QueryParams } from '@/types/pagination.type.ts';
@@ -31,6 +32,15 @@ export const useEntitesListAdminQueryOptions = (query: QueryParams = {}) => ({
 });
 
 export const useEntitesListAdmin = (query: QueryParams = {}) => useQuery(useEntitesListAdminQueryOptions(query));
+
+export const useRootEntitesListAdminQueryOptions = () => ({
+  queryKey: ['entites', 'admin', 'roots'],
+  queryFn: () => fetchRootEntitesListAdmin(),
+  retry: false,
+  initialData: { data: [] },
+});
+
+export const useRootEntitesListAdmin = () => useQuery(useRootEntitesListAdminQueryOptions());
 
 export const useEntiteByIdAdmin = (entiteId: string) =>
   useQuery({
