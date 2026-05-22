@@ -248,6 +248,36 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
+    it('should create PersonneConcernee with nested identite when victime has identite', async () => {
+      await saveFromSirec({
+        ...data,
+        victime: {
+          identite: { nom: 'Martin', prenom: 'Alice', email: 'alice@example.com', telephone: '0612345678' },
+          commentaire: '',
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: {
+          participantDeId: 'SIREC-42',
+          estVictime: true,
+          commentaire: '',
+          identite: { create: { nom: 'Martin', prenom: 'Alice', email: 'alice@example.com', telephone: '0612345678' } },
+        },
+      });
+    });
+
+    it('should not add identite to victime PersonneConcernee when identite is null', async () => {
+      await saveFromSirec({
+        ...data,
+        victime: { identite: null, commentaire: '' },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: expect.not.objectContaining({ identite: expect.anything() }),
+      });
+    });
+
     it('should not create victime PersonneConcernee when victime is null', async () => {
       await saveFromSirec({
         ...data,
