@@ -150,6 +150,24 @@ describe('buildEntitesListAdmin', () => {
     expect(rows.map((row) => row.id)).toEqual(['root-ars', 'dir-ars', 'svc-ars']);
   });
 
+  it('ignores invalid and non-root selected ids', () => {
+    const rows = buildEntitesListAdmin(
+      [
+        entite({ id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR', entiteTypeId: 'ARS' }),
+        entite({
+          id: 'dir-ars',
+          nomComplet: 'Direction A',
+          label: 'DIR A',
+          entiteTypeId: 'ARS',
+          entiteMereId: 'root-ars',
+        }),
+      ],
+      { rootEntiteIds: ['dir-ars', 'unknown'] },
+    );
+
+    expect(rows).toEqual([]);
+  });
+
   it('returns all selected roots and their descendants in global table order', () => {
     const rows = buildEntitesListAdmin(
       [
