@@ -31,6 +31,7 @@ describe('sirecMigration.transformer.ts', () => {
       plaignant_mail: null as string | null,
       plaignant_tel: null as string | null,
       plaignant_connu: null as number | null,
+      victime_non_identifiee: null as number | null,
       service_recepteur_niv1: 693,
       service_gestionnaire: null,
     },
@@ -120,5 +121,23 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.prioriteId).toBeNull();
+  });
+
+  it('should create victime from transformSirecVictime when victime_non_identifiee=1', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, victime_non_identifiee: 1 },
+    });
+
+    expect(result.victime).not.toBeNull();
+  });
+
+  it('should leave victime null when no victime data and declarant is not the victim', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, victime_non_identifiee: null },
+    });
+
+    expect(result.victime).toBeNull();
   });
 });

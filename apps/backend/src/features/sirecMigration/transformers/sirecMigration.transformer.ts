@@ -4,16 +4,12 @@ import type { SirecReclamationData } from '../sirecMigration.repository.js';
 import { transcodeReceptionType } from '../transco/receptionType.transco.js';
 import { transformSirecAffectation } from './sirecMigration.affectation.transformer.js';
 import { type SirenaDeclarantData, transformSirecDeclarant } from './sirecMigration.declarant.transformer.js';
-import type { SirenaIdentiteData } from './sirecMigration.identite.transformer.js';
 import { type SirenaSituationData, transformSirecSituation } from './sirecMigration.situation.transformer.js';
+import { type SirenaVictimeData, transformSirecVictime } from './sirecMigration.victime.transformer.js';
 
 export type { SirenaAdresseData } from './sirecMigration.declarant.transformer.js';
 export type { SirenaIdentiteData } from './sirecMigration.identite.transformer.js';
-export type { SirenaDeclarantData, SirenaSituationData };
-
-export interface SirenaVictimeData {
-  identite: SirenaIdentiteData | null;
-}
+export type { SirenaDeclarantData, SirenaSituationData, SirenaVictimeData };
 
 export interface SirenaRequeteData {
   sirenaId: string;
@@ -30,6 +26,7 @@ export interface SirenaRequeteData {
 export function transformSirecReclamation(sirecData: SirecReclamationData): SirenaRequeteData {
   const { requeteEntiteIds, situationEntiteIds } = transformSirecAffectation(sirecData);
   const declarant = transformSirecDeclarant(sirecData.reclamation);
+  const victime = transformSirecVictime(sirecData.reclamation);
 
   return {
     sirenaId: generateSirenaIdFromSirecReclamation(sirecData.reclamation),
@@ -38,7 +35,7 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
     receptionTypeId: transcodeReceptionType(sirecData.reclamation.reception),
     prioriteId: sirecData.reclamation.prioritaire === 1 ? REQUETE_PRIORITE_TYPES.HAUTE : null,
     declarant,
-    victime: declarant?.estVictime === true ? { identite: null } : null,
+    victime,
     requeteEntiteIds,
     situation: transformSirecSituation(sirecData, situationEntiteIds),
   };

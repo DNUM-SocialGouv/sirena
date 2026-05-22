@@ -68,6 +68,7 @@ describe('sirecMigration.service.ts', () => {
       } | null,
       victime: null as {
         identite: { nom: string | null; prenom: string | null; email: string | null; telephone: string | null } | null;
+        commentaire: string;
       } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
       situation: {
@@ -209,13 +210,14 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec({
         ...data,
         declarant: { estVictime: true, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
-        victime: { identite: null },
+        victime: { identite: null, commentaire: '' },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledOnce();
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
           estVictime: true,
+          commentaire: '',
           declarantDeId: 'SIREC-42',
           participantDeId: 'SIREC-42',
         },
@@ -226,12 +228,23 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec({
         ...data,
         declarant: { estVictime: false, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
-        victime: { identite: null },
+        victime: { identite: null, commentaire: '' },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledTimes(2);
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
-        data: { participantDeId: 'SIREC-42', estVictime: true },
+        data: { participantDeId: 'SIREC-42', estVictime: true, commentaire: '' },
+      });
+    });
+
+    it('should pass victime.commentaire to PersonneConcernee when victime_non_identifiee=1', async () => {
+      await saveFromSirec({
+        ...data,
+        victime: { identite: null, commentaire: 'Usager (Victime) non identifié : oui' },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: { participantDeId: 'SIREC-42', estVictime: true, commentaire: 'Usager (Victime) non identifié : oui' },
       });
     });
 
