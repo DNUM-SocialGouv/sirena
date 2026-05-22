@@ -156,9 +156,18 @@ const toAdminEntiteRow = (entite: EntiteAdmin, entitesById: Map<string, EntiteAd
   });
 };
 
-export const buildEntitesListAdmin = (entites: EntiteAdmin[]) => {
+export const buildEntitesListAdmin = (entites: EntiteAdmin[], options: { rootEntiteIds?: string[] } = {}) => {
   const entitesById = new Map(entites.map((entite) => [entite.id, entite]));
   const orderedEntites = buildTreeOrder(entites);
 
-  return orderedEntites.map((entite) => toAdminEntiteRow(entite, entitesById));
+  const selectedRootIds = new Set(options.rootEntiteIds ?? []);
+  const filteredEntites =
+    selectedRootIds.size > 0
+      ? orderedEntites.filter((entite) => {
+          const [root] = entite.entiteMereId === null ? [entite] : getAncestors(entite, entitesById);
+          return selectedRootIds.has(root?.id ?? '');
+        })
+      : orderedEntites;
+
+  return filteredEntites.map((entite) => toAdminEntiteRow(entite, entitesById));
 };

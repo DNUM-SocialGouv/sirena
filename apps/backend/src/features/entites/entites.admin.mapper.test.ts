@@ -108,6 +108,48 @@ describe('buildEntitesListAdmin', () => {
     });
   });
 
+  it('returns only the selected root and its descendants', () => {
+    const rows = buildEntitesListAdmin(
+      [
+        entite({
+          id: 'root-cd',
+          nomComplet: 'CD Calvados',
+          label: 'CD 14',
+          entiteTypeId: 'CD',
+        }),
+        entite({
+          id: 'dir-ars',
+          nomComplet: 'Direction A',
+          label: 'DIR A',
+          entiteTypeId: 'ARS',
+          entiteMereId: 'root-ars',
+        }),
+        entite({
+          id: 'svc-ars',
+          nomComplet: 'Service Z',
+          label: 'SZ',
+          entiteTypeId: 'ARS',
+          entiteMereId: 'dir-ars',
+        }),
+        entite({
+          id: 'root-ars',
+          nomComplet: 'ARS Normandie',
+          label: 'ARS NOR',
+          entiteTypeId: 'ARS',
+        }),
+        entite({
+          id: 'root-dd',
+          nomComplet: 'DD Loire',
+          label: 'DD 42',
+          entiteTypeId: 'DD',
+        }),
+      ],
+      { rootEntiteIds: ['root-ars'] },
+    );
+
+    expect(rows.map((row) => row.id)).toEqual(['root-ars', 'dir-ars', 'svc-ars']);
+  });
+
   it('orders siblings alphabetically under the same parent', () => {
     const rows = buildEntitesListAdmin([
       entite({
