@@ -4,7 +4,7 @@ import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
-import { useEntitesListAdmin } from '@/hooks/queries/entites.hook';
+import { useEntitesListAdmin, useRootEntitesListAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { QueryParamsSchema } from '@/schemas/pagination.schema';
 import './index.css';
@@ -34,9 +34,12 @@ export function RouteComponent() {
   const offset = search.offset ?? 0;
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
+  useRootEntitesListAdmin();
+
   const entitesListQuery = useEntitesListAdmin({
     offset,
     limit,
+    ...(search.rootEntiteIds ? { rootEntiteIds: search.rootEntiteIds } : {}),
   });
 
   const total = useMemo(() => entitesListQuery.data?.meta?.total ?? 0, [entitesListQuery.data?.meta?.total]);
