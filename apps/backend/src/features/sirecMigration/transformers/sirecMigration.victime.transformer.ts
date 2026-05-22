@@ -6,15 +6,25 @@ export interface SirenaVictimeData {
   commentaire: string;
 }
 
+function transformVictimeIdentite(reclamation: SirecReclamationRow): SirenaIdentiteData | null {
+  const { victime_nom, victime_prenom, victime_mail, victime_tel } = reclamation;
+  if (victime_nom === null && victime_prenom === null && victime_mail === null && victime_tel === null) {
+    return null;
+  }
+  return { nom: victime_nom, prenom: victime_prenom, email: victime_mail, telephone: victime_tel };
+}
+
 export function transformSirecVictime(reclamation: SirecReclamationRow): SirenaVictimeData | null {
   const { victime_non_identifiee } = reclamation;
+
+  const identite = transformVictimeIdentite(reclamation);
 
   const victimeCommentaireParts = [victime_non_identifiee === 1 ? 'Usager (Victime) non identifié : oui' : null].filter(
     Boolean,
   ) as string[];
 
   const commentaire = victimeCommentaireParts.join('\n');
-  const hasVictimeData = commentaire !== '';
+  const hasVictimeData = identite !== null || commentaire !== '';
 
-  return hasVictimeData ? { identite: null, commentaire } : null;
+  return hasVictimeData ? { identite, commentaire } : null;
 }
