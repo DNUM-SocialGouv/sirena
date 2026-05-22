@@ -1,4 +1,4 @@
-import type { SirecReclamationRow } from './sirecMigration.repository.js';
+import type { SirecReclamationRow } from '../sirecMigration.repository.js';
 
 export interface SirenaIdentiteData {
   nom: string | null;

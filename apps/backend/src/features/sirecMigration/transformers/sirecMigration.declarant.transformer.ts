@@ -1,8 +1,8 @@
+import type { SirecReclamationRow } from '../sirecMigration.repository.js';
+import { transcodeDeclarant } from '../transco/declarant.transco.js';
+import { SIREC_DICO } from '../transco/dictionnaire.transco.js';
+import { transcodePlaignantAnonyme } from '../transco/plaignantAnonyme.transco.js';
 import { type SirenaIdentiteData, transformSirecIdentite } from './sirecMigration.identite.transformer.js';
-import type { SirecReclamationRow } from './sirecMigration.repository.js';
-import { transcodeDeclarant } from './transco/declarant.transco.js';
-import { SIREC_DICO } from './transco/dictionnaire.transco.js';
-import { transcodePlaignantAnonyme } from './transco/plaignantAnonyme.transco.js';
 
 const PLAIGNANT_TYPE_PAS_PHYSIQUE = new Set([22, 106]);
 

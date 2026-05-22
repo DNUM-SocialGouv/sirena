@@ -1,7 +1,7 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { SituationDataSchema } from '@sirena/common/schemas';
 import { prisma } from '@sirena/db';
-import type { SirenaRequeteData } from './sirecMigration.transformer.js';
+import type { SirenaRequeteData } from './transformers/sirecMigration.transformer.js';
 
 export async function getRequeteIdFromSirecId(sirecId: number): Promise<string | null> {
   const requete = await prisma.requete.findFirst({
