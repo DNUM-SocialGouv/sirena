@@ -107,17 +107,12 @@ export function DropdownCheckboxFilter({
         className="dropdown-checkbox-filter__button fr-btn fr-btn--tertiary"
         aria-expanded={isOpen}
         aria-controls={menuId}
+        aria-label={hasSelection ? `${buttonLabel} (${selectedValues.length})` : buttonLabel}
         onClick={toggle}
       >
         <span>
           {buttonLabel}
-          {hasSelection && (
-            <span>
-              {' '}
-              <span>({selectedValues.length})</span>
-              <span className="fr-sr-only"> sélectionnés</span>
-            </span>
-          )}
+          {hasSelection && <span aria-hidden="true"> ({selectedValues.length})</span>}
         </span>
         <span
           aria-hidden="true"

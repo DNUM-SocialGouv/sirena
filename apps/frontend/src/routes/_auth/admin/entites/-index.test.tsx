@@ -161,6 +161,38 @@ describe('Admin entites index route', () => {
     });
   });
 
+  it('removes rootEntiteIds search param when unchecking the last selected root entite', async () => {
+    const navigate = vi.fn();
+    mockedUseNavigate.mockReturnValue(navigate);
+    mockedUseSearch.mockReturnValue({ offset: 20, rootEntiteIds: 'root-ars' });
+    mockedUseRootEntitesAdmin.mockReturnValue(
+      buildRootEntitesQuery([{ id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR' }]),
+    );
+    mockedUseEntitesAdmin.mockReturnValue(
+      buildSuccessQuery({
+        data: [],
+        meta: { total: 0 },
+      }),
+    );
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('button', { name: /Entité administrative \(1\)/ })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Entité administrative \(1\)/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'ARS Normandie' }));
+
+    expect(navigate).toHaveBeenCalledWith({
+      search: expect.any(Function),
+    });
+
+    const searchUpdater = navigate.mock.calls[0][0].search;
+    expect(searchUpdater({ offset: 20, rootEntiteIds: 'root-ars' })).toEqual({
+      offset: undefined,
+      rootEntiteIds: undefined,
+    });
+  });
+
   it('uses rootEntiteIds search param to fetch the filtered admin entites list', () => {
     mockedUseNavigate.mockReturnValue(vi.fn());
     mockedUseSearch.mockReturnValue({ rootEntiteIds: 'root-ars,root-dd' });
