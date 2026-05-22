@@ -66,6 +66,9 @@ describe('sirecMigration.service.ts', () => {
         identite: { nom: string | null; prenom: string | null; email: string | null; telephone: string | null } | null;
         commentaire: string;
       } | null,
+      victime: null as {
+        identite: { nom: string | null; prenom: string | null; email: string | null; telephone: string | null } | null;
+      } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
       situation: {
         fait: {
@@ -206,17 +209,40 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec({
         ...data,
         declarant: { estVictime: true, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
+        victime: { identite: null },
       });
 
+      expect(prisma.personneConcernee.create).toHaveBeenCalledOnce();
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
           estVictime: true,
-          veutGarderAnonymat: null,
-          commentaire: '',
           declarantDeId: 'SIREC-42',
           participantDeId: 'SIREC-42',
         },
       });
+    });
+
+    it('should create PersonneConcernee for victime with participantDeId when victime is not null', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: { estVictime: false, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
+        victime: { identite: null },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledTimes(2);
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: { participantDeId: 'SIREC-42', estVictime: true },
+      });
+    });
+
+    it('should not create victime PersonneConcernee when victime is null', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: { estVictime: false, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
+        victime: null,
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledOnce();
     });
 
     it('should create PersonneConcernee with only declarantDeId when estVictime is false', async () => {

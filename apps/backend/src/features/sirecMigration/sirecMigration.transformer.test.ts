@@ -47,6 +47,7 @@ describe('sirecMigration.transformer.ts', () => {
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
       declarant: null,
+      victime: null,
       requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
       situation: {
         fait: {

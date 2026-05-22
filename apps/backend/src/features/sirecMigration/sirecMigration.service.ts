@@ -76,14 +76,13 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       })),
     });
 
-    if (data.declarant !== null) {
+    if (data.declarant !== null && !data.declarant.estVictime) {
       await tx.personneConcernee.create({
         data: {
           declarantDeId: requete.id,
           estVictime: data.declarant.estVictime,
           veutGarderAnonymat: data.declarant.veutGarderAnonymat,
           commentaire: data.declarant.commentaire,
-          ...(data.declarant.estVictime ? { participantDeId: requete.id } : {}),
           ...(data.declarant.adresse !== null
             ? {
                 adresse: {
@@ -107,6 +106,16 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
                 },
               }
             : {}),
+        },
+      });
+    }
+
+    if (data.victime !== null || data.declarant?.estVictime) {
+      await tx.personneConcernee.create({
+        data: {
+          participantDeId: requete.id,
+          estVictime: true,
+          ...(data.declarant?.estVictime && { declarantDeId: requete.id }),
         },
       });
     }
