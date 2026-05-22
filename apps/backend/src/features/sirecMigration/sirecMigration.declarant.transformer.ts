@@ -22,6 +22,11 @@ export interface SirenaDeclarantData {
 
 export function transformSirecDeclarant(reclamation: SirecReclamationRow): SirenaDeclarantData | null {
   const estVictime = transcodeDeclarant(reclamation.plaignant);
+
+  if (estVictime === true) {
+    return { estVictime: true, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' };
+  }
+
   const veutGarderAnonymat = transcodePlaignantAnonyme(reclamation.plaignant_anonyme);
   const {
     plaignant_type,

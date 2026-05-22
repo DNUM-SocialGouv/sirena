@@ -73,7 +73,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     );
   });
 
-  it('should combine estVictime and commentaire when both plaignant and plaignant_est_anonyme are set', () => {
+  it('should return only estVictime when estVictime is true, ignoring other fields', () => {
     const result = transformSirecDeclarant({ ...reclamation, plaignant: 34, plaignant_est_anonyme: 1 });
 
     expect(result).toEqual({
@@ -81,7 +81,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       veutGarderAnonymat: null,
       adresse: null,
       identite: null,
-      commentaire: 'Le requérant est anonyme : oui',
+      commentaire: '',
     });
   });
 
