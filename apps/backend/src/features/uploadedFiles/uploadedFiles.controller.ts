@@ -1,5 +1,5 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ROLES_READ, ROLES_WRITE } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES_READ, ROLES_WRITE } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import { addFileProcessingJob } from '../../jobs/queues/fileProcessing.queue.js';
@@ -37,6 +37,7 @@ const app = factoryWithLogs
       if (!uploadedFile) {
         throwHTTPException400BadRequest('No file uploaded', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -45,6 +46,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to create uploaded files without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -126,6 +128,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to delete uploaded files without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -134,12 +137,14 @@ const app = factoryWithLogs
         logger.warn({ uploadedFileId: id }, 'Uploaded file not found or unauthorized access');
         throwHTTPException404NotFound('Uploaded file not found', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
       if (!uploadedFile.canDelete) {
         throwHTTPException400BadRequest('You are not allowed to delete this uploaded file.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -162,6 +167,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to access uploaded files without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -169,6 +175,7 @@ const app = factoryWithLogs
     if (!uploadedFile) {
       throwHTTPException404NotFound('Uploaded file not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 

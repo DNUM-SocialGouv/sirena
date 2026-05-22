@@ -1,5 +1,5 @@
 import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
-import { PERMISSION_ERROR, ROLES, STATUT_TYPES } from '@sirena/common/constants';
+import { ERROR_KIND, PERMISSION_ERROR, ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import { getUserById } from '../features/users/users.service.js';
 import factoryWithAuth from '../helpers/factories/appWithAuth.js';
 
@@ -23,6 +23,7 @@ const userStatusMiddleware = factoryWithAuth.createMiddleware(async (c, next) =>
     throwHTTPException403Forbidden('Account inactive', {
       res: c.res,
       cause: { name: PERMISSION_ERROR.ACCOUNT_INACTIVE },
+      kind: ERROR_KIND.BUSINESS,
     });
   }
 

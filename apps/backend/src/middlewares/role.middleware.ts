@@ -1,5 +1,5 @@
 import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
-import type { Role } from '@sirena/common/constants';
+import { ERROR_KIND, type Role } from '@sirena/common/constants';
 import factoryWithAuth from '../helpers/factories/appWithAuth.js';
 
 const app = (roles: Role[]) =>
@@ -9,6 +9,7 @@ const app = (roles: Role[]) =>
     if (!userRole || !roles.includes(userRole)) {
       throwHTTPException403Forbidden('Forbidden, you do not have the required role to access this resource', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 

@@ -1,4 +1,5 @@
 import { Readable } from 'node:stream';
+import { ERROR_KIND } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
@@ -174,6 +175,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({
         message: 'RequeteEtape not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(updateRequeteEtapeStatut).not.toHaveBeenCalled();
     });
@@ -206,6 +208,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({
         message: 'RequeteEtape not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
 
@@ -222,6 +225,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(403);
       expect(body).toEqual({
         message: 'You are not allowed to add notes to this requete etape',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(updateRequeteEtapeStatut).not.toHaveBeenCalled();
     });
@@ -265,6 +269,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({
         message: 'RequeteEtape not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(updateRequeteEtapeNom).not.toHaveBeenCalled();
     });
@@ -282,6 +287,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({
         message: 'RequeteEtape not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
 
@@ -298,6 +304,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(403);
       expect(body).toEqual({
         message: 'You are not allowed to add notes to this requete etape',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(updateRequeteEtapeNom).not.toHaveBeenCalled();
     });
@@ -426,7 +433,7 @@ describe('requeteEtapes.controller.ts', () => {
       const body = await res.json();
 
       expect(res.status).toBe(404);
-      expect(body).toEqual({ message: 'RequeteEtape not found' });
+      expect(body).toEqual({ message: 'RequeteEtape not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
@@ -445,6 +452,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(403);
       expect(body).toEqual({
         message: 'You are not allowed to read this file for this requete etape',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
@@ -465,7 +473,7 @@ describe('requeteEtapes.controller.ts', () => {
       const body = await res.json();
 
       expect(res.status).toBe(404);
-      expect(body).toEqual({ message: 'File not found' });
+      expect(body).toEqual({ message: 'File not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
       expect(getFileStream).not.toHaveBeenCalled();
     });
@@ -516,6 +524,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({
         message: 'RequeteEtape not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(deleteRequeteEtape).not.toHaveBeenCalled();
     });
@@ -532,6 +541,7 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(403);
       expect(body).toEqual({
         message: 'You are not allowed to add notes to this requete etape',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(deleteRequeteEtape).not.toHaveBeenCalled();
     });
@@ -676,7 +686,7 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(404);
       const json = await res.json();
-      expect(json).toEqual({ message: 'Requete entite not found' });
+      expect(json).toEqual({ message: 'Requete entite not found', cause: { kind: ERROR_KIND.BUSINESS } });
     });
 
     it('should return 404 if step is not created', async () => {
@@ -691,7 +701,7 @@ describe('requeteEtapes.controller.ts', () => {
 
       expect(res.status).toBe(404);
       const json = await res.json();
-      expect(json).toEqual({ message: 'Requete entite not found' });
+      expect(json).toEqual({ message: 'Requete entite not found', cause: { kind: ERROR_KIND.BUSINESS } });
       expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' }, 'test-user-id');
     });
   });

@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http';
 import { type Readable, Transform } from 'node:stream';
 import { Busboy, type BusboyFileStream } from '@fastify/busboy';
 import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
-import { API_ERROR_CODES } from '@sirena/common/constants';
+import { API_ERROR_CODES, ERROR_KIND } from '@sirena/common/constants';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../config/files.constant.js';
 import factoryWithUploadedFile, { type UploadedFileContext } from '../helpers/factories/appWithUploadedFile.js';
 import { fileTypeParser, sanitizeFilename } from '../helpers/file.js';
@@ -214,6 +214,7 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
     throwHTTPException400BadRequest(`File type "${detectedType?.mime ?? 'unknown'}" is not allowed`, {
       cause: { name: API_ERROR_CODES.FILE_TYPE },
       res: c.res,
+      kind: ERROR_KIND.BUSINESS,
     });
     return;
   }
@@ -255,6 +256,7 @@ const extractUploadedFileMiddleware = factoryWithUploadedFile.createMiddleware(a
       throwHTTPException400BadRequest('File size exceeds the maximum allowed', {
         cause: { name: API_ERROR_CODES.FILE_MAX_SIZE },
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
     throw err;

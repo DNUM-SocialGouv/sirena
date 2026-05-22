@@ -1,5 +1,5 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ROLES } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import { isOperationDependsOnRecordNotFoundError } from '../../helpers/prisma.js';
@@ -105,7 +105,7 @@ const app = factoryWithLogs
 
     if (!entite) {
       logger.warn({ entiteId: id }, 'Entite not found');
-      throwHTTPException404NotFound('Entite not found', { res: c.res });
+      throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     logger.info({ entite }, 'Entite retrieved successfully');
@@ -129,12 +129,15 @@ const app = factoryWithLogs
       } catch (error) {
         if (error instanceof EntiteNotFoundError) {
           logger.warn({ entiteId: id }, 'Entite not found');
-          throwHTTPException404NotFound('Entite not found', { res: c.res });
+          throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
         }
 
         if (error instanceof EntiteChildCreationForbiddenError) {
           logger.warn({ entiteId: id }, 'Child entite creation is not allowed for this parent');
-          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', { res: c.res });
+          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
         }
 
         throw error;
@@ -161,7 +164,7 @@ const app = factoryWithLogs
       } catch (error) {
         if (isOperationDependsOnRecordNotFoundError(error)) {
           logger.warn({ entiteId: id }, 'Entite not found');
-          throwHTTPException404NotFound('Entite not found', { res: c.res });
+          throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
         }
 
         throw error;

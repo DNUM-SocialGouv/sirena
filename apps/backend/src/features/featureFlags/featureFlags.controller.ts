@@ -1,5 +1,5 @@
 import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ROLES } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
@@ -62,7 +62,7 @@ const adminApp = factoryWithLogs
 
     const existing = await getFeatureFlagById(id);
     if (!existing) {
-      throwHTTPException404NotFound('Feature flag not found', { res: c.res });
+      throwHTTPException404NotFound('Feature flag not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const body = c.req.valid('json');
@@ -77,7 +77,7 @@ const adminApp = factoryWithLogs
 
     const existing = await getFeatureFlagById(id);
     if (!existing) {
-      throwHTTPException404NotFound('Feature flag not found', { res: c.res });
+      throwHTTPException404NotFound('Feature flag not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     await deleteFeatureFlag(id);

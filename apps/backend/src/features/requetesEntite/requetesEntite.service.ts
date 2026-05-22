@@ -3,6 +3,7 @@ import { mappers } from '@sirena/common';
 import {
   demarcheEngageeLabels,
   type EntiteType,
+  ERROR_KIND,
   MOTIFS_HIERARCHICAL_DATA,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
@@ -612,6 +613,7 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
             serverData: requete.declarant,
             serverUpdatedAt: serverUpdatedAt.toISOString(),
           },
+          kind: ERROR_KIND.BUSINESS,
         });
       }
     }

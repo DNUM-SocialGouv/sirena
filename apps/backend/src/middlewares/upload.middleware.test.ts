@@ -1,4 +1,5 @@
 import { Readable } from 'node:stream';
+import { ERROR_KIND } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -183,6 +184,7 @@ describe('upload.middleware.ts', () => {
       expect(mockThrowHTTPException400BadRequest).toHaveBeenCalledWith('File type "unknown" is not allowed', {
         res: mockContext.res,
         cause: { name: 'FILE_TYPE' },
+        kind: ERROR_KIND.BUSINESS,
       });
       expect(next).not.toHaveBeenCalled();
     });
@@ -281,6 +283,7 @@ describe('upload.middleware.ts', () => {
       expect(mockThrowHTTPException400BadRequest).toHaveBeenCalledWith('File size exceeds the maximum allowed', {
         cause: { name: 'FILE_MAX_SIZE' },
         res: mockContext.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     });
 
@@ -305,6 +308,7 @@ describe('upload.middleware.ts', () => {
       expect(mockThrowHTTPException400BadRequest).toHaveBeenCalledWith('File type "application/toto" is not allowed', {
         cause: { name: 'FILE_TYPE' },
         res: mockContext.res,
+        kind: ERROR_KIND.BUSINESS,
       });
       expect(next).not.toHaveBeenCalled();
     });
