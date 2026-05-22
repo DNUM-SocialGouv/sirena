@@ -20,6 +20,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     plaignant_prenom: null as string | null,
     plaignant_mail: null as string | null,
     plaignant_tel: null as string | null,
+    plaignant_connu: null as number | null,
   };
 
   it('should map plaignant=34 to declarant with estVictime true', () => {
@@ -326,5 +327,29 @@ describe('sirecMigration.declarant.transformer.ts', () => {
 
   it('should create declarant from plaignant_nom alone', () => {
     expect(transformSirecDeclarant({ ...reclamation, plaignant_nom: 'Dupont' })).not.toBeNull();
+  });
+
+  it('should add "Plus de 2 réclamations déposées : oui" to commentaire when plaignant_connu=1', () => {
+    const result = transformSirecDeclarant({ ...reclamation, plaignant_connu: 1 });
+
+    expect(result?.commentaire).toBe('Plus de 2 réclamations déposées : oui');
+  });
+
+  it('should not add plaignant_connu line to commentaire when plaignant_connu=0', () => {
+    expect(transformSirecDeclarant({ ...reclamation, plaignant: 34, plaignant_connu: 0 })?.commentaire).toBe('');
+  });
+
+  it('should not add plaignant_connu line to commentaire when plaignant_connu is null', () => {
+    expect(transformSirecDeclarant({ ...reclamation, plaignant: 34, plaignant_connu: null })?.commentaire).toBe('');
+  });
+
+  it('should create declarant from plaignant_connu=1 alone', () => {
+    expect(transformSirecDeclarant({ ...reclamation, plaignant_connu: 1 })).not.toBeNull();
+  });
+
+  it('should combine plaignant_connu and plaignant_est_anonyme in commentaire', () => {
+    const result = transformSirecDeclarant({ ...reclamation, plaignant_est_anonyme: 1, plaignant_connu: 1 });
+
+    expect(result?.commentaire).toBe('Le requérant est anonyme : oui\nPlus de 2 réclamations déposées : oui');
   });
 });

@@ -30,6 +30,7 @@ describe('sirecMigration.transformer.ts', () => {
       plaignant_prenom: null as string | null,
       plaignant_mail: null as string | null,
       plaignant_tel: null as string | null,
+      plaignant_connu: null as number | null,
       service_recepteur_niv1: 693,
       service_gestionnaire: null,
     },
