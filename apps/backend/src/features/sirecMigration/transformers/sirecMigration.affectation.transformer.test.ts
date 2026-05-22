@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
+import { SirecDataError, SirecTranscoError } from '../transco/sirecTransco.error.js';
 import { transformSirecAffectation } from './sirecMigration.affectation.transformer.js';
-import { SirecDataError, SirecTranscoError } from './transco/sirecTransco.error.js';
 
-vi.mock('./transco/affectation.transco.js', () => ({
+vi.mock('../transco/affectation.transco.js', () => ({
   transcodeAffectation: vi.fn((id: number) => {
     if (id === 693) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] };
     if (id === 677) return { requeteEntiteIds: ['ars-grand-est'], situationEntiteIds: [] };
