@@ -132,6 +132,17 @@ export const getEntitesListAdmin = async ({
   };
 };
 
+export const getRootEntitesListAdmin = async () =>
+  prisma.entite.findMany({
+    where: { entiteMereId: null },
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+    },
+    orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
+  });
+
 export const createChildEntiteAdmin = async (
   parentId: string,
   data: {
