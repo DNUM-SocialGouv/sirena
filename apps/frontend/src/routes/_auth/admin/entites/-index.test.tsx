@@ -193,6 +193,35 @@ describe('Admin entites index route', () => {
     });
   });
 
+  it('appends a selected root entite to existing rootEntiteIds search param', async () => {
+    const navigate = vi.fn();
+    mockedUseNavigate.mockReturnValue(navigate);
+    mockedUseSearch.mockReturnValue({ rootEntiteIds: 'root-ars' });
+    mockedUseRootEntitesAdmin.mockReturnValue(
+      buildRootEntitesQuery([
+        { id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR' },
+        { id: 'root-cd', nomComplet: 'CD Calvados', label: 'CD 14' },
+      ]),
+    );
+    mockedUseEntitesAdmin.mockReturnValue(
+      buildSuccessQuery({
+        data: [],
+        meta: { total: 0 },
+      }),
+    );
+
+    render(<RouteComponent />);
+
+    await userEvent.click(screen.getByRole('button', { name: /Entité administrative \(1\)/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'CD Calvados' }));
+
+    const searchUpdater = navigate.mock.calls[0][0].search;
+    expect(searchUpdater({ rootEntiteIds: 'root-ars' })).toEqual({
+      rootEntiteIds: 'root-ars,root-cd',
+      offset: undefined,
+    });
+  });
+
   it('uses rootEntiteIds search param to fetch the filtered admin entites list', () => {
     mockedUseNavigate.mockReturnValue(vi.fn());
     mockedUseSearch.mockReturnValue({ rootEntiteIds: 'root-ars,root-dd' });
