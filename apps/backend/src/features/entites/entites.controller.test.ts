@@ -118,6 +118,24 @@ describe('Entites endpoints: /entites', () => {
       expect(getEntitesListAdmin).not.toHaveBeenCalled();
     });
 
+    it('passes rootEntiteIds query param to admin entities list service', async () => {
+      vi.mocked(getEntitesListAdmin).mockResolvedValueOnce({
+        data: [],
+        total: 0,
+      });
+
+      const res = await client.admin.$get({
+        query: { offset: '20', limit: '10', rootEntiteIds: 'root-ars,root-dd' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(getEntitesListAdmin).toHaveBeenCalledWith({
+        offset: 20,
+        limit: 10,
+        rootEntiteIds: ['root-ars', 'root-dd'],
+      });
+    });
+
     it('returns admin entities list with pagination metadata for SUPER_ADMIN', async () => {
       vi.mocked(getEntitesListAdmin).mockResolvedValueOnce({
         data: [
