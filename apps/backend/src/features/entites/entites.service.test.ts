@@ -1101,6 +1101,46 @@ describe('getEntitesListAdmin()', () => {
     });
   });
 
+  it('filters admin rows by selected roots before pagination and total count', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('root-cd'),
+        nomComplet: 'CD Calvados',
+        label: 'CD 14',
+        entiteTypeId: 'CD',
+      },
+      {
+        ...fakeEntite('dir-ars'),
+        nomComplet: 'Direction A',
+        label: 'DIR A',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('svc-ars'),
+        nomComplet: 'Service Z',
+        label: 'SZ',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'dir-ars',
+      },
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteTypeId: 'ARS',
+      },
+    ]);
+
+    const result = await getEntitesListAdmin({
+      offset: 1,
+      limit: 1,
+      rootEntiteIds: ['root-ars'],
+    });
+
+    expect(result.total).toBe(3);
+    expect(result.data.map((row) => row.id)).toEqual(['dir-ars']);
+  });
+
   it('applies pagination after global admin ordering', async () => {
     vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
       {
