@@ -1,5 +1,5 @@
 import { Checkbox } from '@codegouvfr/react-dsfr/Checkbox';
-import { useCallback, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import './DropdownCheckboxFilter.css';
 
 type Option = {
@@ -14,13 +14,80 @@ type Props = {
   options: Option[];
   selectedValues: string[];
   onChange: (values: string[]) => void;
+  onOpen?: () => void;
+  onClose?: () => void;
 };
 
-export function DropdownCheckboxFilter({ buttonLabel, legend, hintText, options, selectedValues, onChange }: Props) {
+export function DropdownCheckboxFilter({
+  buttonLabel,
+  legend,
+  hintText,
+  options,
+  selectedValues,
+  onChange,
+  onOpen,
+  onClose,
+}: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const hasSelection = selectedValues.length > 0;
+
+  const close = useCallback(() => {
+    setIsOpen(false);
+    triggerRef.current?.focus();
+    onClose?.();
+  }, [onClose]);
+
+  const toggle = useCallback(() => {
+    setIsOpen((value) => {
+      const next = !value;
+      next ? onOpen?.() : onClose?.();
+      return next;
+    });
+  }, [onOpen, onClose]);
+
+  const handleClickOutside = useCallback(
+    (e: MouseEvent) => {
+      const target = e.target as Node;
+
+      if (!panelRef.current?.contains(target) && !triggerRef.current?.contains(target)) {
+        close();
+      }
+    },
+    [close],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+      }
+      if (e.key === 'Tab' && !panelRef.current?.contains(document.activeElement)) {
+        close();
+      }
+    },
+    [close],
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
+    requestAnimationFrame(() => {
+      const first = panelRef.current?.querySelector<HTMLInputElement>('input:not([disabled])');
+      first?.focus();
+    });
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, handleClickOutside, handleKeyDown]);
 
   const handleCheckboxChange = useCallback(
     (value: string, checked: boolean) => {
@@ -40,7 +107,7 @@ export function DropdownCheckboxFilter({ buttonLabel, legend, hintText, options,
         className="dropdown-checkbox-filter__button fr-btn fr-btn--tertiary"
         aria-expanded={isOpen}
         aria-controls={menuId}
-        onClick={() => setIsOpen((value) => !value)}
+        onClick={toggle}
       >
         <span>
           {buttonLabel}
@@ -59,7 +126,7 @@ export function DropdownCheckboxFilter({ buttonLabel, legend, hintText, options,
       </button>
 
       {isOpen && (
-        <div id={menuId} className="dropdown-checkbox-filter__dropdown fr-card fr-px-3w fr-py-2w">
+        <div id={menuId} ref={panelRef} className="dropdown-checkbox-filter__dropdown fr-card fr-px-3w fr-py-2w">
           <Checkbox
             legend={legend}
             hintText={hintText}
