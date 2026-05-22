@@ -14,6 +14,7 @@ import {
   getEntites,
   getEntitesByIds,
   getEntitesListAdmin,
+  getRootEntitesListAdmin,
 } from './entites.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
@@ -1046,6 +1047,31 @@ describe('createChildEntiteAdmin()', () => {
     );
 
     expect(prisma.entite.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('getRootEntitesListAdmin()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('returns only root entites ordered for admin filter options', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      { id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR' },
+    ] as never);
+
+    const result = await getRootEntitesListAdmin();
+
+    expect(prisma.entite.findMany).toHaveBeenCalledWith({
+      where: { entiteMereId: null },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+      },
+      orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
+    });
+    expect(result).toEqual([{ id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR' }]);
   });
 });
 
