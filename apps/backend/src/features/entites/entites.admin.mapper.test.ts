@@ -150,6 +150,26 @@ describe('buildEntitesListAdmin', () => {
     expect(rows.map((row) => row.id)).toEqual(['root-ars', 'dir-ars', 'svc-ars']);
   });
 
+  it('returns all selected roots and their descendants in global table order', () => {
+    const rows = buildEntitesListAdmin(
+      [
+        entite({ id: 'root-dd', nomComplet: 'DD Loire', label: 'DD 42', entiteTypeId: 'DD' }),
+        entite({ id: 'root-cd', nomComplet: 'CD Calvados', label: 'CD 14', entiteTypeId: 'CD' }),
+        entite({
+          id: 'dir-ars',
+          nomComplet: 'Direction A',
+          label: 'DIR A',
+          entiteTypeId: 'ARS',
+          entiteMereId: 'root-ars',
+        }),
+        entite({ id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR', entiteTypeId: 'ARS' }),
+      ],
+      { rootEntiteIds: ['root-dd', 'root-ars'] },
+    );
+
+    expect(rows.map((row) => row.id)).toEqual(['root-ars', 'dir-ars', 'root-dd']);
+  });
+
   it('orders siblings alphabetically under the same parent', () => {
     const rows = buildEntitesListAdmin([
       entite({
