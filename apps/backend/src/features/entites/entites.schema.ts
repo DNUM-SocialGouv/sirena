@@ -41,7 +41,17 @@ const columns = [
   Prisma.EntiteScalarFieldEnum.adresseContactUsager,
 ] as const;
 
-export const GetEntitiesQuerySchema = paginationQueryParamsSchema(columns);
+export const GetEntitiesQuerySchema = paginationQueryParamsSchema(columns).extend({
+  rootEntiteIds: z
+    .string()
+    .transform((val) =>
+      val
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    )
+    .optional(),
+});
 
 export const GetEntitiesResponseSchema = z.array(EntiteSchema);
 
