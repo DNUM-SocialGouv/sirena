@@ -1,4 +1,5 @@
 import { Readable } from 'node:stream';
+import { ERROR_KIND } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
@@ -176,6 +177,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(res.status).toBe(400);
       expect(body).toEqual({
         message: 'No file uploaded',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
 
@@ -191,6 +193,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(res.status).toBe(400);
       expect(body).toEqual({
         message: 'You are not allowed to create uploaded files without topEntiteId.',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
 
@@ -266,6 +269,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(res.status).toBe(400);
       expect(body).toEqual({
         message: 'You are not allowed to delete uploaded files without topEntiteId.',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(deleteUploadedFile).not.toHaveBeenCalled();
       expect(deleteFileFromMinio).not.toHaveBeenCalled();
@@ -283,6 +287,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({
         message: 'Uploaded file not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(deleteUploadedFile).not.toHaveBeenCalled();
       expect(deleteFileFromMinio).not.toHaveBeenCalled();
@@ -352,6 +357,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(res.status).toBe(400);
       expect(body).toEqual({
         message: 'You are not allowed to access uploaded files without topEntiteId.',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
 
@@ -366,6 +372,7 @@ describe('uploadedFiles.controller.ts', () => {
       const body = await res.json();
       expect(body).toEqual({
         message: 'Uploaded file not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
   });

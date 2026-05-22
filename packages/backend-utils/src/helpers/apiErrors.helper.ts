@@ -1,3 +1,4 @@
+import type { ErrorKind } from '@sirena/common/constants';
 import type { Cause } from '@sirena/common/types';
 import { HTTPException } from 'hono/http-exception';
 import type { ResolverReturnType } from 'hono-openapi';
@@ -8,6 +9,7 @@ type ErrorOptions = {
   cause?: Cause;
   res?: Response;
   headers?: Record<string, string>;
+  kind?: ErrorKind;
 };
 
 const MESSAGES = {
@@ -22,9 +24,13 @@ const MESSAGES = {
 };
 
 const getParamsOptions = (status: number, message: string, options?: ErrorOptions) => {
-  const params: { message: string; cause?: unknown } = { message };
-  if (options?.cause) {
-    params.cause = options.cause;
+  const params: { message: string; cause?: Cause } = { message };
+  const cause: Cause = { ...(options?.cause ?? {}) };
+  if (options?.kind) {
+    cause.kind = options.kind;
+  }
+  if (Object.keys(cause).length > 0) {
+    params.cause = cause;
   }
 
   const extraHeaders = options?.headers ?? {};
