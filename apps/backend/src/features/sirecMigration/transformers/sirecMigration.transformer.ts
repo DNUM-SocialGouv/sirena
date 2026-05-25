@@ -8,7 +8,6 @@ import { type SirenaSituationData, transformSirecSituation } from './sirecMigrat
 import { type SirenaVictimeData, transformSirecVictime } from './sirecMigration.victime.transformer.js';
 
 export type { SirenaAdresseData } from './sirecMigration.declarant.transformer.js';
-export type { SirenaIdentiteData } from './sirecMigration.identite.transformer.js';
 export type { SirenaDeclarantData, SirenaSituationData, SirenaVictimeData };
 
 export interface SirenaRequeteData {

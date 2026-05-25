@@ -62,6 +62,8 @@ describe('sirecMigration.service.ts', () => {
       declarant: null as {
         estVictime: boolean | null;
         veutGarderAnonymat: boolean | null;
+        lienVictimeId: string | null;
+        lienAutrePrecision: string | null;
         adresse: { rue: string | null; codePostal: string | null; ville: string | null } | null;
         identite: {
           nom: string | null;
@@ -223,7 +225,15 @@ describe('sirecMigration.service.ts', () => {
     it('should create PersonneConcernee with both participantDeId and declarantDeId when estVictime is true', async () => {
       await saveFromSirec({
         ...data,
-        declarant: { estVictime: true, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
+        declarant: {
+          estVictime: true,
+          veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          adresse: null,
+          identite: null,
+          commentaire: '',
+        },
         victime: { identite: null, adresse: null, commentaire: '', ageId: null },
       });
 
@@ -242,7 +252,15 @@ describe('sirecMigration.service.ts', () => {
     it('should create PersonneConcernee for victime with participantDeId when victime is not null', async () => {
       await saveFromSirec({
         ...data,
-        declarant: { estVictime: false, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
+        declarant: {
+          estVictime: false,
+          veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          adresse: null,
+          identite: null,
+          commentaire: '',
+        },
         victime: { identite: null, adresse: null, commentaire: '', ageId: null },
       });
 
@@ -365,7 +383,15 @@ describe('sirecMigration.service.ts', () => {
     it('should not create victime PersonneConcernee when victime is null', async () => {
       await saveFromSirec({
         ...data,
-        declarant: { estVictime: false, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
+        declarant: {
+          estVictime: false,
+          veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          adresse: null,
+          identite: null,
+          commentaire: '',
+        },
         victime: null,
       });
 
@@ -375,11 +401,26 @@ describe('sirecMigration.service.ts', () => {
     it('should create PersonneConcernee with only declarantDeId when estVictime is false', async () => {
       await saveFromSirec({
         ...data,
-        declarant: { estVictime: false, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
+        declarant: {
+          estVictime: false,
+          veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          adresse: null,
+          identite: null,
+          commentaire: '',
+        },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
-        data: { estVictime: false, veutGarderAnonymat: null, commentaire: '', declarantDeId: 'SIREC-42' },
+        data: {
+          estVictime: false,
+          veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          commentaire: '',
+          declarantDeId: 'SIREC-42',
+        },
       });
     });
 
@@ -389,6 +430,8 @@ describe('sirecMigration.service.ts', () => {
         declarant: {
           estVictime: null,
           veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
           adresse: null,
           identite: null,
           commentaire: 'Le requérant est anonyme : oui',
@@ -399,6 +442,8 @@ describe('sirecMigration.service.ts', () => {
         data: {
           estVictime: null,
           veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
           commentaire: 'Le requérant est anonyme : oui',
           declarantDeId: 'SIREC-42',
         },
@@ -408,11 +453,26 @@ describe('sirecMigration.service.ts', () => {
     it('should pass veutGarderAnonymat to PersonneConcernee', async () => {
       await saveFromSirec({
         ...data,
-        declarant: { estVictime: null, veutGarderAnonymat: true, adresse: null, identite: null, commentaire: '' },
+        declarant: {
+          estVictime: null,
+          veutGarderAnonymat: true,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          adresse: null,
+          identite: null,
+          commentaire: '',
+        },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
-        data: { estVictime: null, veutGarderAnonymat: true, commentaire: '', declarantDeId: 'SIREC-42' },
+        data: {
+          estVictime: null,
+          veutGarderAnonymat: true,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          commentaire: '',
+          declarantDeId: 'SIREC-42',
+        },
       });
     });
 
@@ -422,6 +482,8 @@ describe('sirecMigration.service.ts', () => {
         declarant: {
           estVictime: null,
           veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
           adresse: { rue: '12 rue de la Paix', codePostal: '75001', ville: 'Paris' },
           identite: null,
           commentaire: '',
@@ -432,6 +494,8 @@ describe('sirecMigration.service.ts', () => {
         data: {
           estVictime: null,
           veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
           adresse: { create: { rue: '12 rue de la Paix', codePostal: '75001', ville: 'Paris' } },
@@ -445,6 +509,8 @@ describe('sirecMigration.service.ts', () => {
         declarant: {
           estVictime: null,
           veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
           adresse: { rue: '12 rue de la Paix', codePostal: null, ville: null },
           identite: null,
           commentaire: '',
@@ -455,6 +521,8 @@ describe('sirecMigration.service.ts', () => {
         data: {
           estVictime: null,
           veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
           adresse: { create: { rue: '12 rue de la Paix', codePostal: '', ville: '' } },
@@ -468,6 +536,8 @@ describe('sirecMigration.service.ts', () => {
         declarant: {
           estVictime: null,
           veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
           adresse: null,
           identite: {
             nom: 'Dupont',
@@ -484,6 +554,8 @@ describe('sirecMigration.service.ts', () => {
         data: {
           estVictime: null,
           veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
           identite: {
@@ -505,6 +577,8 @@ describe('sirecMigration.service.ts', () => {
         declarant: {
           estVictime: null,
           veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
           adresse: null,
           identite: { nom: 'Dupont', prenom: null, email: null, telephone: null, civiliteId: null },
           commentaire: '',
@@ -515,6 +589,8 @@ describe('sirecMigration.service.ts', () => {
         data: {
           estVictime: null,
           veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
           identite: { create: { nom: 'Dupont', prenom: '', email: '', telephone: '', civiliteId: null } },
@@ -525,7 +601,15 @@ describe('sirecMigration.service.ts', () => {
     it('should not add identite to PersonneConcernee when identite is null', async () => {
       await saveFromSirec({
         ...data,
-        declarant: { estVictime: null, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
+        declarant: {
+          estVictime: null,
+          veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          adresse: null,
+          identite: null,
+          commentaire: '',
+        },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -585,6 +669,44 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: expect.not.objectContaining({ adresse: expect.anything() }),
+      });
+    });
+
+    it('should pass lienVictimeId to declarant PersonneConcernee when set', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: {
+          estVictime: null,
+          veutGarderAnonymat: null,
+          lienVictimeId: 'MEMBRE_FAMILLE',
+          lienAutrePrecision: null,
+          adresse: null,
+          identite: null,
+          commentaire: '',
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ lienVictimeId: 'MEMBRE_FAMILLE', declarantDeId: 'SIREC-42' }),
+      });
+    });
+
+    it('should pass lienAutrePrecision to declarant PersonneConcernee when set', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: {
+          estVictime: null,
+          veutGarderAnonymat: null,
+          lienVictimeId: 'AUTRE',
+          lienAutrePrecision: 'Voisin',
+          adresse: null,
+          identite: null,
+          commentaire: '',
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ lienAutrePrecision: 'Voisin', declarantDeId: 'SIREC-42' }),
       });
     });
 
