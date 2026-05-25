@@ -34,6 +34,10 @@ runs:
         severity: ${{ inputs.severity }}
         exit-code: "0"
         cache: 'true'
+        # Ne remonte que les CVE pour lesquelles une version corrigée existe en
+        # amont. Cela évite de polluer le Security tab avec les CVE Debian
+        # marquées "won't fix" / "no-dsa" sur lesquelles on n'a aucun levier.
+        ignore-unfixed: 'true'
 
     - name: Upload Trivy SARIF
       uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v3
