@@ -147,6 +147,8 @@ export function RouteComponent() {
 
   return (
     <>
+      <h2 className="fr-h4 fr-mb-2w">Liste des entités administratives</h2>
+
       <fieldset className="admin-entites-filters fr-mb-2w">
         <legend className="fr-sr-only">Filtrer les entités</legend>
         <div className="admin-entites-filters__row">
@@ -162,7 +164,6 @@ export function RouteComponent() {
           </div>
         </div>
       </fieldset>
-
       <TableSearchBar
         label="Rechercher une entité administrative par nom ou libellé"
         value={searchTerm}
@@ -179,6 +180,7 @@ export function RouteComponent() {
           <div className="admin-entites-table">
             <DataTable
               title="Liste des entités administratives"
+              hideCaption
               rowId="id"
               data={data.data}
               columns={columns}
