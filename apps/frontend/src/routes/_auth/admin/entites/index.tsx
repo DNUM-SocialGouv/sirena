@@ -1,6 +1,6 @@
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { ROLES } from '@sirena/common/constants';
-import { type Cells, type Column, DataTable } from '@sirena/ui';
+import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RootEntitesFilter } from '@/components/common/filters/RootEntitesFilter';
@@ -27,6 +27,46 @@ export const Route = createFileRoute('/_auth/admin/entites/')({
 const DEFAULT_PAGE_SIZE = 10;
 
 type Entity = NonNullable<Awaited<ReturnType<typeof useEntitesListAdmin>>['data']>['data'][number];
+
+const mapColumnKeyToSortKey = (columnKey: string): string | undefined => {
+  switch (columnKey) {
+    case 'entiteNom':
+    case 'entiteLabel':
+    case 'directionNom':
+    case 'directionLabel':
+    case 'serviceNom':
+    case 'serviceLabel':
+    case 'email':
+    case 'contactUsager':
+    case 'isActiveLabel':
+      return columnKey;
+    default:
+      return undefined;
+  }
+};
+
+const mapSortKeyToColumnKey = (sortKey: string | undefined): string => {
+  switch (sortKey) {
+    case 'entiteNom':
+    case 'entiteLabel':
+    case 'directionNom':
+    case 'directionLabel':
+    case 'serviceNom':
+    case 'serviceLabel':
+    case 'email':
+    case 'contactUsager':
+    case 'isActiveLabel':
+      return sortKey;
+    default:
+      return '';
+  }
+};
+
+const getEffectiveSort = (sort?: string, order?: 'asc' | 'desc') => {
+  const columnKey = mapSortKeyToColumnKey(sort);
+  if (!columnKey || !order) return {};
+  return { sort, order };
+};
 
 export function RouteComponent() {
   const search = useSearch({ from: '/_auth/admin/entites/' });
@@ -84,11 +124,14 @@ export function RouteComponent() {
     });
   }, [navigate]);
 
+  const effectiveSort = useMemo(() => getEffectiveSort(search.sort, search.order), [search.sort, search.order]);
+
   const entitesListQuery = useEntitesListAdmin({
     offset,
     limit,
     ...(search.rootEntiteIds ? { rootEntiteIds: search.rootEntiteIds } : {}),
     ...(search.search ? { search: search.search } : {}),
+    ...effectiveSort,
   });
 
   const total = useMemo(() => entitesListQuery.data?.meta?.total ?? 0, [entitesListQuery.data?.meta?.total]);
@@ -103,17 +146,100 @@ export function RouteComponent() {
   const shouldShowPagination = useMemo(() => total > limit, [total, limit]);
 
   const columns: Column<Entity>[] = [
-    { key: 'entiteNom', label: 'Nom de l’entité' }, // Nom complet de l'entité
-    { key: 'entiteLabel', label: 'Libellé de l’entité' },
-    { key: 'directionNom', label: 'Nom de la direction' }, // Nom complet de la direction
-    { key: 'directionLabel', label: 'Libellé de la direction' },
-    { key: 'serviceNom', label: 'Nom du service' }, // Nom complet du service
-    { key: 'serviceLabel', label: 'Libellé du service' },
-    { key: 'email', label: 'Email' },
-    { key: 'contactUsager', label: 'Contact usager' },
-    { key: 'isActiveLabel', label: 'Statut (Actif)' },
+    {
+      key: 'entiteNom',
+      label: 'Nom de l’entité',
+      isSortable: true,
+      sortLabels: {
+        asc: "Trier le nom de l'entité de A à Z",
+        desc: "Trier le nom de l'entité de Z à A",
+        reset: "Réinitialiser le tri du nom de l'entité",
+      },
+    },
+    {
+      key: 'entiteLabel',
+      label: 'Libellé de l’entité',
+      isSortable: true,
+      sortLabels: {
+        asc: "Trier le libellé de l'entité de A à Z",
+        desc: "Trier le libellé de l'entité de Z à A",
+        reset: "Réinitialiser le tri du libellé de l'entité",
+      },
+    },
+    {
+      key: 'directionNom',
+      label: 'Nom de la direction',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier le nom de la direction de A à Z',
+        desc: 'Trier le nom de la direction de Z à A',
+        reset: 'Réinitialiser le tri du nom de la direction',
+      },
+    },
+    {
+      key: 'directionLabel',
+      label: 'Libellé de la direction',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier le libellé de la direction de A à Z',
+        desc: 'Trier le libellé de la direction de Z à A',
+        reset: 'Réinitialiser le tri du libellé de la direction',
+      },
+    },
+    {
+      key: 'serviceNom',
+      label: 'Nom du service',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier le nom du service de A à Z',
+        desc: 'Trier le nom du service de Z à A',
+        reset: 'Réinitialiser le tri du nom du service',
+      },
+    },
+    {
+      key: 'serviceLabel',
+      label: 'Libellé du service',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier le libellé du service de A à Z',
+        desc: 'Trier le libellé du service de Z à A',
+        reset: 'Réinitialiser le tri du libellé du service',
+      },
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      isSortable: true,
+      sortLabels: {
+        asc: "Trier l'email de A à Z",
+        desc: "Trier l'email de Z à A",
+        reset: "Réinitialiser le tri de l'email",
+      },
+    },
+    {
+      key: 'contactUsager',
+      label: 'Contact usager',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier le contact usager de A à Z',
+        desc: 'Trier le contact usager de Z à A',
+        reset: 'Réinitialiser le tri du contact usager',
+      },
+    },
+    {
+      key: 'isActiveLabel',
+      label: 'Statut (Actif)',
+      isSortable: true,
+      initialSortDirection: 'desc',
+      sortLabels: {
+        desc: 'Trier les statuts actifs en premier',
+        asc: 'Trier les statuts inactifs en premier',
+        reset: 'Réinitialiser le tri du statut',
+      },
+    },
     { key: 'custom:edit', label: 'Modifier' },
   ];
+
   const cells: Cells<Entity> = {
     'custom:edit': (row) => {
       const srLabel = row.serviceNom
@@ -129,6 +255,32 @@ export function RouteComponent() {
       );
     },
   };
+
+  const handleSortChange = useCallback(
+    (params: OnSortChangeParams<Entity>) => {
+      const { sort: columnKey, sortDirection } = params;
+      const sortKey = mapColumnKeyToSortKey(columnKey);
+
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          sort: sortKey && sortDirection ? sortKey : undefined,
+          order: sortKey && sortDirection ? sortDirection : undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
+  const currentSort = useMemo(() => {
+    const columnKey = mapSortKeyToColumnKey(effectiveSort.sort);
+
+    return {
+      sort: (columnKey || '') as OnSortChangeParams<Entity>['sort'],
+      sortDirection: (effectiveSort.order || '') as OnSortChangeParams<Entity>['sortDirection'],
+    };
+  }, [effectiveSort]);
 
   const getPageLinkProps = useCallback(
     (pageNumber: number) => {
@@ -190,6 +342,8 @@ export function RouteComponent() {
               columns={columns}
               cells={cells}
               isLoading={entitesListQuery.isFetching}
+              sort={currentSort}
+              onSortChange={handleSortChange}
             />
           </div>
         )}
