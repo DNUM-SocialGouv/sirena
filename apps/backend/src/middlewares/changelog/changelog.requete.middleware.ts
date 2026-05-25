@@ -44,6 +44,7 @@ const requeteTrackedFields: (keyof Requete)[] = [
   'id',
   'commentaire',
   'receptionDate',
+  'dateDemandeDeclarant',
   'dematSocialId',
   'receptionTypeId',
   'provenanceId',

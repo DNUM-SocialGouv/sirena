@@ -1,7 +1,7 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Drawer, Toast } from '@sirena/ui';
-import { useParams } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { useSendAcknowledgment } from '@/hooks/mutations/updateProcessingStep.hook';
@@ -161,29 +161,44 @@ export const SendAcknowledgmentDrawer = forwardRef<SendAcknowledgmentDrawerRef, 
                   ) : (
                     <form>
                       <div className="fr-form-group fr-mb-2w">
+                        <p className={`${drawerStyles.sectionLabel} fr-mb-1w`}>Adresse électronique du déclarant</p>
                         {declarantEmail ? (
-                          <dl className={drawerStyles.dl}>
-                            <dt className="fr-label fr-mb-1w">
-                              Adresse électronique du déclarant
-                              <span className="fr-hint-text">
-                                Pour modifier cette adresse, rendez-vous dans la section Déclarant.
-                              </span>
-                            </dt>
-                            <dd className={drawerStyles.emailField}>{declarantEmail}</dd>
-                          </dl>
+                          <>
+                            <p className={drawerStyles.plainText}>{declarantEmail}</p>
+                            <p className="fr-message fr-message--info">
+                              {"Vous pouvez modifier l'adresse électronique depuis les "}
+                              <Link
+                                className={drawerStyles.messageLink}
+                                to="/request/$requestId/declarant"
+                                params={{ requestId }}
+                              >
+                                informations déclarant
+                              </Link>
+                            </p>
+                          </>
                         ) : (
-                          <p className="fr-text--sm fr-error-text">
-                            L&apos;adresse électronique du déclarant n&apos;est pas renseignée. Veuillez la renseigner
-                            dans la section &quot;Déclarant&quot;.
+                          <p className="fr-message fr-message--warning">
+                            {"Renseignez l'adresse électronique dans les "}
+                            <Link
+                              className={drawerStyles.messageLink}
+                              to="/request/$requestId/declarant"
+                              params={{ requestId }}
+                            >
+                              informations du déclarant
+                            </Link>
                           </p>
                         )}
                       </div>
+                      <div className={drawerStyles.separator} />
                       <div className="fr-form-group fr-mb-2w">
-                        <p className="fr-label fr-mb-1w">
-                          Ce message est généré automatiquement et ne peut pas être modifié
+                        <p className={`${drawerStyles.sectionLabel} fr-mb-1w`}>
+                          Message automatique envoyé au déclarant
                         </p>
-                        <p className={drawerStyles.messageField}>{message}</p>
+                        <p className={drawerStyles.plainText} style={{ whiteSpace: 'pre-wrap' }}>
+                          {message}
+                        </p>
                       </div>
+                      <div className={drawerStyles.separator} />
                       <Input
                         label="Commentaire personnalisé (facultatif)"
                         hintText="Vous pouvez ajouter des informations ou demander des précisions au déclarant. Ce commentaire sera intégré au message automatique."

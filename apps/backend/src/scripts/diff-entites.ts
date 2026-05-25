@@ -234,7 +234,12 @@ function mapCsvToRows(csvFileContent: string): { inserts: CsvRow[]; updates: Csv
     const emailContactUsager = (line[idxEmailContactUsager] ?? '').trim() || undefined;
     const telContactUsager = (line[idxTelContactUsager] ?? '').trim() || undefined;
     const adresseContactUsager = (line[idxAdresseContactUsager] ?? '').trim() || undefined;
-    const emailDomain = (line[idxEmailDomain] ?? '').trim() || undefined;
+    const emailDomainRaw = (line[idxEmailDomain] ?? '').trim();
+    const emailDomain = emailDomainRaw
+      ? emailDomainRaw.startsWith('@')
+        ? emailDomainRaw
+        : `@${emailDomainRaw}`
+      : undefined;
     const organizationalUnit = (line[idxOrganizationalUnit] ?? '').trim() || undefined;
     const entiteTypeId = (line[idxEntiteTypeId] ?? '').trim() || undefined;
     const entiteMereIdRaw = idxEntiteMereId !== -1 ? (line[idxEntiteMereId] ?? '').trim() : '';

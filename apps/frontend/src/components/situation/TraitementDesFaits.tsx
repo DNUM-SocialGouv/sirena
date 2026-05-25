@@ -1,5 +1,4 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Input } from '@codegouvfr/react-dsfr/Input';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { SelectWithChildren } from '@sirena/ui';
 import { useEffect, useId, useRef, useState } from 'react';
@@ -74,14 +73,12 @@ function TraitementDesFaitsRowComponent({
         <div className={styles.entiteWrapper}>
           <div className={styles.entiteField}>
             {isEntiteReadOnly ? (
-              <Input
-                label={'Entité administrative (obligatoire) '}
-                nativeInputProps={{
-                  value: entiteLabel,
-                  readOnly: true,
-                  'aria-readonly': true,
-                }}
-              />
+              <div className="fr-input-group">
+                <label className="fr-label" htmlFor={`entite-readonly-${row.id}`}>
+                  Entité administrative (obligatoire)
+                </label>
+                <input id={`entite-readonly-${row.id}`} className={styles.readOnlyValue} value={entiteLabel} readOnly />
+              </div>
             ) : (
               <Select
                 label={'Entité administrative (obligatoire) '}
@@ -115,21 +112,25 @@ function TraitementDesFaitsRowComponent({
       </div>
 
       {/* Direction / service */}
-      {row.entiteId && (
+      {row.entiteId && (!disabled || (row.directionServiceIds && row.directionServiceIds.length > 0)) && (
         <div className="fr-col-12 fr-col-md-6" style={alignSelectStyle}>
           {disabled ? (
-            <Input
-              label="Direction ou Service"
-              nativeInputProps={{
-                value:
+            <div className="fr-input-group">
+              <label className="fr-label" htmlFor={`direction-readonly-${row.id}`}>
+                Direction ou Service
+              </label>
+              <input
+                id={`direction-readonly-${row.id}`}
+                className={styles.readOnlyValue}
+                value={
                   row.directionServiceIds
                     ?.map((id) => directionsServices.find((ds) => ds.id === id)?.nomComplet)
                     .filter(Boolean)
-                    .join(', ') || '',
-                readOnly: true,
-                'aria-readonly': true,
-              }}
-            />
+                    .join(', ') || ''
+                }
+                readOnly
+              />
+            </div>
           ) : (
             <SelectWithChildren
               value={row.directionServiceIds || []}
@@ -385,20 +386,7 @@ function TraitementDesFaitsSection({
               </div>
             );
           })}
-          <p className="fr-text--md fr-mb-2w">
-            Ajoutez une autre entité si le traitement de la situation concerne plusieurs entités.
-          </p>
-
-          <Button
-            iconId="fr-icon-add-line"
-            iconPosition="right"
-            priority="secondary"
-            onClick={handleAddRow}
-            disabled={disabled}
-          >
-            Ajouter une autre entité
-          </Button>
-          <hr className="fr-mt-4w" />
+          <div className="fr-mt-4w" />
           {rows.readOnlyRows.length > 0 && (
             <p className="fr-text--md fr-mb-2w fr-text--bold">Autres entités affectées au traitement</p>
           )}
@@ -412,6 +400,19 @@ function TraitementDesFaitsSection({
               disabled
             />
           ))}
+          <p className="fr-text--md fr-mb-2w">
+            Ajoutez une autre entité si le traitement de la situation concerne plusieurs entités.
+          </p>
+
+          <Button
+            iconId="fr-icon-add-line"
+            iconPosition="right"
+            priority="secondary"
+            onClick={handleAddRow}
+            disabled={disabled}
+          >
+            Ajouter une autre entité
+          </Button>
         </div>
       </fieldset>
     </div>

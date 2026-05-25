@@ -6,69 +6,121 @@ on:
       - main
       - validation
 
+# Protected-branch deploys must not be cancelled mid-flight, but we still
+# group runs so concurrent pushes serialize cleanly per branch.
+concurrency:
+  group: auto-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   ENVIRONMENT: ${{ github.ref_name == 'main' && 'integration' || 'validation' }}
 
 jobs:
+  prepare:
+    name: Prepare build context
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - name: Compute version
+        id: version
+        run: echo "value=${{ env.ENVIRONMENT }}-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
   build-docker:
-    name: Build docker images
+    name: Build ${{ matrix.image }} image
+    needs: prepare
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
       attestations: write
       id-token: write
-      security-events: write
-
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [anonymize, worker, backend, frontend]
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+        with:
+          fetch-depth: 1
 
-      - name: Compute version
-        id: version
-        run: echo "value=${{ env.ENVIRONMENT }}-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-
-      - name: Build and push Docker images
+      - name: Build and push ${{ matrix.image }} image
         uses: ./.github/actions/build-docker
         with:
-          version: ${{ steps.version.outputs.value }}
+          image: ${{ matrix.image }}
+          version: ${{ needs.prepare.outputs.version }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          environment: ${{ env.ENVIRONMENT }}
 
-    outputs:
-      version: ${{ steps.version.outputs.value }}
-
-  deploy:
-    name: Deploy to ${{ needs.build-docker.outputs.version }}
-    needs: build-docker
+  trivy-scan:
+    name: Trivy scan ${{ matrix.image }}
+    needs: [prepare, build-docker]
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [anonymize, worker, backend, frontend]
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+        with:
+          fetch-depth: 1
+
+      - name: Resolve image reference
+        id: ref
+        run: |
+          NORMALIZED_REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "value=ghcr.io/${NORMALIZED_REPO}:${{ needs.prepare.outputs.version }}-${{ matrix.image }}" >> "$GITHUB_OUTPUT"
+
+      - name: Trivy image scan
+        uses: ./.github/actions/trivy-image-scan
+        with:
+          image-ref: ${{ steps.ref.outputs.value }}
+          category: trivy-container-${{ matrix.image }}
+
+  deploy:
+    name: Deploy ${{ needs.prepare.outputs.version }}
+    needs: [prepare, build-docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+        with:
+          fetch-depth: 1
 
       - name: Deploy to GitOps
         uses: ./.github/actions/deploy-gitops
         with:
           environment: ${{ env.ENVIRONMENT }}
-          version: ${{ needs.build-docker.outputs.version }}
+          version: ${{ needs.prepare.outputs.version }}
           gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }}
           helm-repo-pat: ${{ secrets.HELM_REPO_PAT }}
 
   e2e-tests:
-    name: End-to-End Tests
+    name: E2E (shard ${{ matrix.shard }}/${{ matrix.total }})
     if: github.ref_name == 'main'
-    needs: [build-docker, deploy]
+    needs: [prepare, deploy]
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+        total: [3]
 
     env:
       BASE_URL: https://sirena.${{ github.ref_name == 'main' && 'integration' || 'validation' }}.dev.atlas.fabrique.social.gouv.fr
 
     steps:
       - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+        with:
+          fetch-depth: 1
 
       - uses: pnpm/action-setup@739bfe42ca9233c5e6aca07c1a25a9d34aca49b0 # v6
 
@@ -78,44 +130,55 @@ jobs:
           node-version: "22"
           cache: "pnpm"
 
-      - name: Audit dependencies
-        run: |
-          cd apps/frontend
-          pnpm audit --audit-level=moderate
       - name: Install dependencies
-        run: |
-          cd apps/frontend
-          pnpm install
+        run: pnpm install --frozen-lockfile --prefer-offline
+        working-directory: apps/frontend
 
-      - name: Install Playwright Browsers
+      - name: Resolve Playwright version
+        id: pw_version
         run: |
-          cd apps/frontend
-          npx playwright install --with-deps chromium
+          VERSION=$(node -p "require('./apps/frontend/package.json').devDependencies['@playwright/test'].replace(/^\^|~/, '')")
+          echo "value=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: pw_cache
+        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw_version.outputs.value }}
+
+      - name: Install Playwright browsers (cache miss)
+        if: steps.pw_cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/frontend
+
+      - name: Install Playwright OS deps (cache hit)
+        if: steps.pw_cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+        working-directory: apps/frontend
 
       - name: Wait for deployment
-        run: |
-          cd apps/frontend
-          npx tsx tests/ci/wait-for-deployment.ts
+        run: npx tsx tests/ci/wait-for-deployment.ts
+        working-directory: apps/frontend
         env:
-          EXPECTED_VERSION: ${{ needs.build-docker.outputs.version }}
+          EXPECTED_VERSION: ${{ needs.prepare.outputs.version }}
           BACKEND_URL: ${{ env.BASE_URL }}/api
           FRONTEND_URL: ${{ env.BASE_URL }}
 
       - name: Run Playwright tests
-        run: |
-          cd apps/frontend
-          pnpm run test:e2e
+        run: pnpm run test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total }}
+        working-directory: apps/frontend
         env:
           FRONTEND_URI: ${{ env.BASE_URL }}
           E2E_CI: true
           E2E_ENTITY_ADMIN_USER_1_EMAIL: ${{ vars.TEST_USER_EMAIL }}
           E2E_ENTITY_ADMIN_USER_1_PASSWORD: ${{ vars.TEST_USER_PASSWORD }}
 
-      - name: Upload Playwright Report
+      - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v5
         if: always()
         continue-on-error: true
         with:
-          name: playwright-report
+          name: playwright-report-shard-${{ matrix.shard }}
           path: apps/frontend/playwright-report/
           retention-days: 1
