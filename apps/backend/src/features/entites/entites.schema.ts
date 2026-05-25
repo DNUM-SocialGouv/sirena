@@ -53,6 +53,20 @@ export const GetEntitiesQuerySchema = paginationQueryParamsSchema(columns).exten
     .optional(),
 });
 
+const adminSortColumns = [
+  'entiteNom',
+  'entiteLabel',
+  'directionNom',
+  'directionLabel',
+  'serviceNom',
+  'serviceLabel',
+  'email',
+  'contactUsager',
+  'isActiveLabel',
+] as const;
+
+export const GetEntitesListAdminQuerySchema = paginationQueryParamsSchema(adminSortColumns);
+
 export const GetEntitiesResponseSchema = z.array(EntiteSchema);
 
 export const RootEntiteAdminSchema = z.object({
