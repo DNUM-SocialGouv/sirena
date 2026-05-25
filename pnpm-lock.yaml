@@ -279,6 +279,7 @@ overrides:
   hono@<4.12.18: '>=4.12.18'
   brace-expansion@<5.0.6: '>=5.0.6'
   ws@<8.20.1: '>=8.20.1'
+  lodash@<4.18.1: '>=4.18.1'
 
 importers:
 
@@ -348,9 +349,6 @@ importers:
       bullmq:
         specifier: ^5.76.7
         version: 5.76.7
-      fhir:
-        specifier: ^4.12.0
-        version: 4.12.0
       file-type:
         specifier: ^22.0.1
         version: 22.0.1
@@ -3617,15 +3615,6 @@ packages:
     resolution: {integrity: sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ==}
     engines: {node: ^12.20 || >= 14.13}
 
-  fhir@4.12.0:
-    resolution: {integrity: sha512-N+eLuUbYjvjX5NlZPhE08OVrsJJhulQKkVWnW1M3HpNvreWC1yVvoF8ptmGzlvtDZRCrNrBArfLklphFO2L0oA==}
-    deprecated: This package has been renamed to fhir-tool. Please install and use fhir-tool instead.
-    bundledDependencies:
-      - lodash
-      - path
-      - q
-      - xml-js
-
   file-type@22.0.1:
     resolution: {integrity: sha512-ww5Mhre0EE+jmBvOXTmXAbEMuZE7uX4a3+oRCQFNj8w++g3ev913N6tXQz0XTXbueQ5TWQfm6BdaViEHHn8bhA==}
     engines: {node: '>=22'}
@@ -3952,10 +3941,6 @@ packages:
     engines: {node: '>=14.16'}
     hasBin: true
 
-  is-number@4.0.0:
-    resolution: {integrity: sha512-rSklcAIlf1OmFdyAqbnWTLVelsQ58uvZ66S/ZyawjWqIviTWCjg2PzVGw8WUA+nNuPTqb4wgA+NszrJ+08LlgQ==}
-    engines: {node: '>=0.10.0'}
-
   is-number@7.0.0:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
     engines: {node: '>=0.12.0'}
@@ -4099,10 +4084,6 @@ packages:
 
   jws@4.0.1:
     resolution: {integrity: sha512-EKI/M/yqPncGUUh44xz0PxSidXFr/+r0pA70+gIYhjv+et7yxM+s29Y+VGDkovRofQem0fs7Uvf4+YmAdyRduA==}
-
-  kind-of@6.0.3:
-    resolution: {integrity: sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==}
-    engines: {node: '>=0.10.0'}
 
   lazystream@1.0.1:
     resolution: {integrity: sha512-b94GiNHQNy6JNTrt5w6zNyffMrNkXZb3KTkCZJb2V1xaEGCk093vkZ2jk3tpaeP33/OiXC+WvK9AxUebnf5nbw==}
@@ -4294,9 +4275,6 @@ packages:
   map-cache@0.2.2:
     resolution: {integrity: sha512-8y/eV9QQZCiyn1SprXSrCmqJN0yNRATe+PO8ztwqrvrbdRLA3eYJF0yaR0YayLWkMbsQSKWS9N2gPcGEc4UsZg==}
     engines: {node: '>=0.10.0'}
-
-  math-random@1.0.4:
-    resolution: {integrity: sha512-rUxjysqif/BZQH2yhd5Aaq7vXMSx9NdEsQcyA07uEzIvxgI7zIr33gGsh+RU0/XjmQpCW7RsVof1vlkvQVCK5A==}
 
   mdn-data@2.27.1:
     resolution: {integrity: sha512-9Yubnt3e8A0OKwxYSXyhLymGW4sCufcLG6VdiDdUGVkPhpqLxlvP5vl1983gQjJl3tqbrM731mjaZaP68AgosQ==}
@@ -4745,10 +4723,6 @@ packages:
 
   quick-format-unescaped@4.0.4:
     resolution: {integrity: sha512-tYC1Q1hgyRuHgloV/YXs2w15unPVh8qfu/qCTfhTYamaw7fyhumKa2yGpdSo87vY32rIclj+4fWYQXUMs9EHvg==}
-
-  randomatic@3.1.1:
-    resolution: {integrity: sha512-TuDE5KxZ0J461RVjrJZCJc+J+zCkTb1MbH9AQUq68sMhOMcy9jLcb3BrZKgp9q9Ncltdg4QVqWrH02W2EFFVYw==}
-    engines: {node: '>= 0.10.0'}
 
   rc9@3.0.1:
     resolution: {integrity: sha512-gMDyleLWVE+i6Sgtc0QbbY6pEKqYs97NGi6isHQPqYlLemPoO8dxQ3uGi0f4NiP98c+jMW6cG1Kx9dDwfvqARQ==}
@@ -8718,10 +8692,6 @@ snapshots:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
 
-  fhir@4.12.0:
-    dependencies:
-      randomatic: 3.1.1
-
   file-type@22.0.1:
     dependencies:
       '@tokenizer/inflate': 0.4.1
@@ -9043,8 +9013,6 @@ snapshots:
     dependencies:
       is-docker: 3.0.0
 
-  is-number@4.0.0: {}
-
   is-number@7.0.0: {}
 
   is-obj@2.0.0: {}
@@ -9186,8 +9154,6 @@ snapshots:
     dependencies:
       jwa: 2.0.1
       safe-buffer: 5.2.1
-
-  kind-of@6.0.3: {}
 
   lazystream@1.0.1:
     dependencies:
@@ -9341,8 +9307,6 @@ snapshots:
       semver: 7.7.4
 
   map-cache@0.2.2: {}
-
-  math-random@1.0.4: {}
 
   mdn-data@2.27.1: {}
 
@@ -9795,12 +9759,6 @@ snapshots:
   queue-microtask@1.2.3: {}
 
   quick-format-unescaped@4.0.4: {}
-
-  randomatic@3.1.1:
-    dependencies:
-      is-number: 4.0.0
-      kind-of: 6.0.3
-      math-random: 1.0.4
 
   rc9@3.0.1:
     dependencies:

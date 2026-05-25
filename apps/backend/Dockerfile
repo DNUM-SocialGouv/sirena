@@ -9,7 +9,11 @@ ENV PATH="$PNPM_HOME:$PATH"
 ENV PNPM_STORE_DIR="/pnpm/store"
 ENV APP_VERSION=$APP_VERSION
 
-RUN apk add --no-cache tzdata && corepack enable pnpm
+RUN apk add --no-cache tzdata \
+    && apk upgrade --no-cache \
+    && corepack enable pnpm \
+    && npm install -g npm@latest \
+    && npm cache clean --force
 
 # Stage pour les dépendances
 FROM base AS deps
