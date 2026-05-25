@@ -2,8 +2,9 @@ import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { createFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RootEntitesFilter } from '@/components/common/filters/RootEntitesFilter';
+import { TableSearchBar } from '@/components/common/tables/TableSearchBar';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { useEntitesListAdmin, useRootEntitesListAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
@@ -34,6 +35,11 @@ export function RouteComponent() {
   const limit = search.limit ?? DEFAULT_PAGE_SIZE;
   const offset = search.offset ?? 0;
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
+  const [searchTerm, setSearchTerm] = useState(search.search ?? '');
+
+  useEffect(() => {
+    setSearchTerm(search.search ?? '');
+  }, [search.search]);
 
   const rootEntitesListQuery = useRootEntitesListAdmin();
   const selectedRootEntiteIds = useMemo(
@@ -54,10 +60,35 @@ export function RouteComponent() {
     [navigate],
   );
 
+  const handleSearch = useCallback(
+    (value: string) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          search: value.trim() || undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
+  const handleClearSearch = useCallback(() => {
+    setSearchTerm('');
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        search: undefined,
+        offset: undefined,
+      }),
+    });
+  }, [navigate]);
+
   const entitesListQuery = useEntitesListAdmin({
     offset,
     limit,
     ...(search.rootEntiteIds ? { rootEntiteIds: search.rootEntiteIds } : {}),
+    ...(search.search ? { search: search.search } : {}),
   });
 
   const total = useMemo(() => entitesListQuery.data?.meta?.total ?? 0, [entitesListQuery.data?.meta?.total]);
@@ -131,6 +162,17 @@ export function RouteComponent() {
           </div>
         </div>
       </fieldset>
+
+      <TableSearchBar
+        label="Rechercher une entité administrative par nom ou libellé"
+        value={searchTerm}
+        activeSearch={search.search}
+        total={entitesListQuery.data?.meta?.total}
+        onValueChange={setSearchTerm}
+        onSearch={handleSearch}
+        onClear={handleClearSearch}
+        inputContainerClassName="fr-col-12 fr-col-md-5"
+      />
 
       <QueryStateHandler query={entitesListQuery} noDataComponent={<p>Aucune entité administrative à afficher.</p>}>
         {({ data }) => (
