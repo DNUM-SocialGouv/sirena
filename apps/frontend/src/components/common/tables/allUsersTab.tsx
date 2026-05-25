@@ -1,14 +1,13 @@
-import { Button } from '@codegouvfr/react-dsfr/Button';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
-import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
 import { ROLES, type Role, roles, type StatutType, statutTypes } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@sirena/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { profileQueryOptions } from '@/hooks/queries/profile.hook';
 import { useUsers } from '@/hooks/queries/users.hook';
 import { useUserListSSE } from '@/hooks/useUserListSSE';
+import { TableSearchBar } from './TableSearchBar';
 
 type User = NonNullable<Awaited<ReturnType<typeof useUsers>>['data']>['data'][number];
 
@@ -69,15 +68,22 @@ export function AllUsersTab() {
 
   const [searchTerm, setSearchTerm] = useState<string>(queries.search ?? '');
 
-  const handleSearch = useCallback(() => {
-    navigate({
-      search: (prev) => ({
-        ...prev,
-        search: searchTerm.trim() || undefined,
-        offset: undefined,
-      }),
-    });
-  }, [navigate, searchTerm]);
+  useEffect(() => {
+    setSearchTerm(queries.search ?? '');
+  }, [queries.search]);
+
+  const handleSearch = useCallback(
+    (value: string) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          search: value.trim() || undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
 
   const handleClearSearch = useCallback(() => {
     setSearchTerm('');
@@ -227,54 +233,15 @@ export function AllUsersTab() {
   return (
     <>
       <h2 className="fr-h4 fr-mb-2w">Liste des utilisateurs</h2>
-      <div className="fr-mb-1w">
-        <p className="fr-label fr-mb-1v" aria-hidden="true">
-          Rechercher un utilisateur par nom, prénom ou e-mail
-        </p>
-        <div className="fr-grid-row">
-          <div className="fr-col-12 fr-col-md-5">
-            <SearchBar
-              label="Rechercher un utilisateur par nom, prénom ou e-mail"
-              onButtonClick={handleSearch}
-              renderInput={(inputProps) => (
-                <input
-                  {...inputProps}
-                  placeholder=""
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              )}
-            />
-          </div>
-        </div>
-        <div aria-live="polite" aria-atomic="true">
-          {queries.search && users && (
-            <div className="fr-mt-2w">
-              <div className="fr-grid-row fr-grid-row--middle">
-                <div className="fr-col-auto">
-                  <p className="fr-text--md fr-mb-0">
-                    <span className="fr-text--bold">{total}</span> résultat{total !== 1 ? 's' : ''} pour "
-                    {queries.search}"
-                  </p>
-                </div>
-                <div className="fr-col-auto fr-ml-1w">
-                  <Button
-                    type="button"
-                    priority="secondary"
-                    iconId="fr-icon-delete-line"
-                    iconPosition="right"
-                    size="small"
-                    onClick={handleClearSearch}
-                    title="Effacer la recherche"
-                  >
-                    Effacer la recherche
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <TableSearchBar
+        label="Rechercher un utilisateur par nom, prénom ou e-mail"
+        value={searchTerm}
+        activeSearch={queries.search}
+        total={users ? total : undefined}
+        onValueChange={setSearchTerm}
+        onSearch={handleSearch}
+        onClear={handleClearSearch}
+      />
       <DataTable
         title="Liste des utilisateurs"
         hideCaption
