@@ -171,6 +171,7 @@ export const fakeRequeteEntite = {
     createdById: null,
     commentaire: 'Commentaire',
     receptionDate: new Date(),
+    dateDemandeDeclarant: null,
     dematSocialId: 123,
     receptionTypeId: 'receptionTypeId',
     provenanceId: null,
@@ -208,6 +209,7 @@ describe('RequetesEntite endpoints: /', () => {
         thirdPartyAccountId: null,
         commentaire: 'Commentaire',
         receptionDate: new Date(),
+        dateDemandeDeclarant: null,
         dematSocialId: 123,
         receptionTypeId: 'receptionTypeId',
         participant: null,
@@ -327,7 +329,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(isFileBelongsToRequete).toHaveBeenCalledWith('file1', 'requeteId');
       expect(getUploadedFileById).toHaveBeenCalledWith('file1');
-      expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf');
+      expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf', undefined);
     });
 
     it('returns 200 with empty body when file size is 0 (no streaming)', async () => {

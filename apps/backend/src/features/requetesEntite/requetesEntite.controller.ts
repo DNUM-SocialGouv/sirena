@@ -649,7 +649,8 @@ const app = factoryWithLogs
           res: c.res,
         });
       }
-      const { receptionDate, receptionTypeId, provenanceId, provenancePrecision, controls } = c.req.valid('json');
+      const { receptionDate, dateDemandeDeclarant, receptionTypeId, provenanceId, provenancePrecision, controls } =
+        c.req.valid('json');
 
       const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
 
@@ -667,6 +668,7 @@ const app = factoryWithLogs
 
       const payload: {
         receptionDate?: Date | null;
+        dateDemandeDeclarant?: Date | null;
         receptionTypeId?: string | null;
         provenanceId?: string | null;
         provenancePrecision?: string | null;
@@ -674,6 +676,10 @@ const app = factoryWithLogs
 
       if (receptionDate !== undefined) {
         payload.receptionDate = receptionDate ? new Date(receptionDate) : null;
+      }
+
+      if (dateDemandeDeclarant !== undefined) {
+        payload.dateDemandeDeclarant = dateDemandeDeclarant ? new Date(dateDemandeDeclarant) : null;
       }
 
       if (receptionTypeId !== undefined) {

@@ -15,7 +15,7 @@ import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSch
 import { getLieuPrecisionLabel } from '@sirena/common/utils';
 import archiver from 'archiver';
 import type { z } from 'zod';
-import { getOriginalFileName } from '../../helpers/file.js';
+import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
@@ -459,6 +459,7 @@ export const getRequeteEntiteById = async (requeteId: string, entiteId: string |
 interface CreateRequeteInput {
   receptionTypeId?: string | null;
   receptionDate?: string | null;
+  dateDemandeDeclarant?: string | null;
   provenanceId?: string | null;
   provenancePrecision?: string | null;
   declarant?: DeclarantInput;
@@ -478,6 +479,7 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
         data: {
           id: requeteId,
           receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
+          dateDemandeDeclarant: data?.dateDemandeDeclarant ? new Date(data.dateDemandeDeclarant) : null,
           receptionTypeId: data?.receptionTypeId ?? null,
           provenanceId: data?.provenanceId ?? null,
           provenancePrecision: data?.provenancePrecision ?? null,
@@ -1956,9 +1958,11 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
   const usedNames = new Set<string>();
 
   const appendFileToArchive = async (file: UploadedFile, entryName: string) => {
-    const filePath = isPdf(file) && file.safeFilePath ? file.safeFilePath : file.filePath;
+    const useSafeFile = isPdf(file) && file.safeFilePath;
+    const filePath = useSafeFile ? (file.safeFilePath as string) : file.filePath;
+    const decryptionParams = useSafeFile ? getSafeFileEncryptionParams(file) : getFileEncryptionParams(file);
     try {
-      const { stream } = await getFileStream(filePath);
+      const { stream } = await getFileStream(filePath, decryptionParams);
       archive.append(stream, { name: entryName, date: file.createdAt });
     } catch {
       archive.append(Buffer.from('Fichier indisponible'), { name: `${entryName}.erreur.txt` });
@@ -2074,6 +2078,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
   pdf
     .section('Requête originale')
     .field('Date de réception', formatDateFr(requete.receptionDate))
+    .field('Date de la demande par le déclarant', formatDateFr(requete.dateDemandeDeclarant))
     .field('Mode de réception', requete.receptionType?.label || null)
     .field('Provenance', requete.provenance?.label || null)
     .field('Précision provenance', requete.provenancePrecision || null)

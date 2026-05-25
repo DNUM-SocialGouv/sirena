@@ -115,10 +115,11 @@ model RoleEnum {
 }
 
 model Requete {
-  id            String    @id
-  commentaire   String    @default("")
-  receptionDate DateTime?
-  dematSocialId Int?
+  id                    String    @id
+  commentaire           String    @default("")
+  receptionDate         DateTime?
+  dateDemandeDeclarant  DateTime?
+  dematSocialId         Int?
 
   receptionTypeId String?
   receptionType   ReceptionTypeEnum? @relation(fields: [receptionTypeId], references: [id])

@@ -10,10 +10,12 @@ import {
   recordFileScanSize,
 } from '../../features/monitoring/metrics.worker.js';
 import {
+  attachSafeFileEncryption,
   getUploadedFileByIdInternal,
   tryAcquireProcessingLock,
   updateFileProcessingStatus,
 } from '../../features/uploadedFiles/uploadedFiles.service.js';
+import { getFileEncryptionParams } from '../../helpers/file.js';
 import { createDefaultLogger } from '../../helpers/pino.js';
 import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
 import {
@@ -24,8 +26,10 @@ import {
   scanBuffer,
   scanStream,
 } from '../../libs/clamav.js';
+import type { DecryptionParams } from '../../libs/encryption.js';
 import { getFileBuffer, getFileStream, uploadFileToMinio } from '../../libs/minio.js';
 import { isPdfMimeType, sanitizePdf } from '../../libs/pdfSanitizer.js';
+import type { UploadedFile } from '../../libs/prisma.js';
 import type { FileProcessingJobData } from '../queues/fileProcessing.queue.js';
 
 interface ProcessingResult {
@@ -57,6 +61,7 @@ const processNonPdfFile = async (
   fileName: string,
   filePath: string,
   fileSize: number,
+  decryptionParams: DecryptionParams | undefined,
   logger: Logger,
 ): Promise<ProcessingResult> => {
   if (!isClamAvEnabled()) {
@@ -74,7 +79,7 @@ const processNonPdfFile = async (
   const scanStartTime = Date.now();
 
   try {
-    const { stream } = await getFileStream(filePath);
+    const { stream } = await getFileStream(filePath, decryptionParams);
     const scanResult = await scanStream(stream, fileName, fileSize);
     const scanDurationSeconds = (Date.now() - scanStartTime) / 1000;
 
@@ -150,13 +155,14 @@ const processPdfFile = async (
   filePath: string,
   mimeType: string,
   fileSize: number,
+  decryptionParams: DecryptionParams | undefined,
   logger: Logger,
 ): Promise<ProcessingResult> => {
   let fileBuffer: Buffer;
   let scanStatus = 'SKIPPED';
 
   try {
-    fileBuffer = await getFileBuffer(filePath);
+    fileBuffer = await getFileBuffer(filePath, decryptionParams);
   } catch (err) {
     logger.error({ error: err }, 'Failed to download file from storage');
     await updateFileProcessingStatus(fileId, {
@@ -231,10 +237,16 @@ const processPdfFile = async (
   try {
     const sanitizedBuffer = await sanitizePdf(fileBuffer);
     const safeFileName = `safe_${fileName}`;
-    const { objectPath: safeFilePath } = await uploadFileToMinio(sanitizedBuffer, safeFileName, mimeType);
+    const { objectPath: safeFilePath, encryptionMetadata: safeEncryption } = await uploadFileToMinio(
+      sanitizedBuffer,
+      safeFileName,
+      mimeType,
+      sanitizedBuffer.length,
+    );
 
     logger.info({ safeFilePath }, 'PDF sanitized successfully');
 
+    await attachSafeFileEncryption(fileId, safeEncryption);
     await updateFileProcessingStatus(fileId, {
       sanitizeStatus: 'COMPLETED',
       safeFilePath,
@@ -277,11 +289,13 @@ const processFile = async (job: Job<FileProcessingJobData>): Promise<void> => {
           return;
         }
 
+        const decryptionParams = getFileEncryptionParams(file as UploadedFile);
+
         let result: ProcessingResult;
         if (isPdfMimeType(mimeType)) {
-          result = await processPdfFile(fileId, fileName, filePath, mimeType, file.size, logger);
+          result = await processPdfFile(fileId, fileName, filePath, mimeType, file.size, decryptionParams, logger);
         } else {
-          result = await processNonPdfFile(fileId, fileName, filePath, file.size, logger);
+          result = await processNonPdfFile(fileId, fileName, filePath, file.size, decryptionParams, logger);
         }
 
         const durationSeconds = (Date.now() - startTime) / 1000;
