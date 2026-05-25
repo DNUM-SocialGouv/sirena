@@ -3,7 +3,7 @@ import {
   throwHTTPException403Forbidden,
   throwHTTPException404NotFound,
 } from '@sirena/backend-utils/helpers';
-import { REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
+import { ERROR_KIND, REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
@@ -43,6 +43,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
       const { requeteEtapeId } = body;
@@ -50,12 +51,13 @@ const app = factoryWithLogs
       const requeteEtape = await getRequeteEtapeById(requeteEtapeId);
 
       if (!requeteEtape) {
-        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
       if (topEntiteId !== requeteEtape.entiteId) {
         throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -67,6 +69,7 @@ const app = factoryWithLogs
       if (!hasAccessToReq) {
         throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -83,6 +86,7 @@ const app = factoryWithLogs
         if (!isAllowed) {
           throwHTTPException403Forbidden('You are not allowed to add notes with these files', {
             res: c.res,
+            kind: ERROR_KIND.BUSINESS,
           });
         }
       }
@@ -120,24 +124,26 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
       const existingNote = await getNoteById(noteId);
 
       if (!existingNote) {
-        throwHTTPException404NotFound('Note not found', { res: c.res });
+        throwHTTPException404NotFound('Note not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
       const requeteEtape = await getRequeteEtapeById(existingNote.requeteEtapeId);
 
       if (!requeteEtape) {
-        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
       if (topEntiteId !== requeteEtape.entiteId) {
         throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -148,6 +154,7 @@ const app = factoryWithLogs
       if (!hasAccessToReq) {
         throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -160,6 +167,7 @@ const app = factoryWithLogs
         if (!isAllowed) {
           throwHTTPException403Forbidden('You are not allowed to add these files to the note', {
             res: c.res,
+            kind: ERROR_KIND.BUSINESS,
           });
         }
 
@@ -189,23 +197,25 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
       const existingNote = await getNoteById(noteId);
 
       if (!existingNote) {
-        throwHTTPException404NotFound('Note not found', { res: c.res });
+        throwHTTPException404NotFound('Note not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
       const requeteEtape = await getRequeteEtapeById(existingNote.requeteEtapeId);
 
       if (!requeteEtape) {
-        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
       if (topEntiteId !== requeteEtape.entiteId) {
         throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -216,6 +226,7 @@ const app = factoryWithLogs
       if (!hasAccessToReq) {
         throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 

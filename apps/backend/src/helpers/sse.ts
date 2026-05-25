@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { throwHTTPException400BadRequest } from '@sirena/backend-utils/helpers';
 import {
+  ERROR_KIND,
   type FileStatusEvent,
   type RequeteUpdatedEvent,
   type RequeteUpdateField,
@@ -191,7 +192,10 @@ export const createSSEStream = <T>(c: SSEContext, options: SSEStreamOptions<T>) 
 export const requireTopEntiteId = (c: SSEContext): string => {
   const topEntiteId = c.get('topEntiteId');
   if (!topEntiteId) {
-    throwHTTPException400BadRequest('topEntiteId required for SSE subscription', { res: c.res });
+    throwHTTPException400BadRequest('topEntiteId required for SSE subscription', {
+      res: c.res,
+      kind: ERROR_KIND.BUSINESS,
+    });
   }
   return topEntiteId;
 };
@@ -199,7 +203,7 @@ export const requireTopEntiteId = (c: SSEContext): string => {
 export const requireUserId = (c: SSEContext): string => {
   const userId = c.get('userId');
   if (!userId) {
-    throwHTTPException400BadRequest('userId required for SSE subscription', { res: c.res });
+    throwHTTPException400BadRequest('userId required for SSE subscription', { res: c.res, kind: ERROR_KIND.BUSINESS });
   }
   return userId;
 };

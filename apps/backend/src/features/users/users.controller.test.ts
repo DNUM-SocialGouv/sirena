@@ -1,4 +1,4 @@
-import { ROLES, STATUT_TYPES } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES, STATUT_TYPES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -137,6 +137,7 @@ describe('Users endpoints: /users', () => {
       const json = await res.json();
       expect(json).toEqual({
         message: 'You are not allowed to filter on this role.',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
 
@@ -237,7 +238,7 @@ describe('Users endpoints: /users', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(await res.json()).toMatchObject({ message: 'No permissions' });
+      expect(await res.json()).toMatchObject({ message: 'No permissions', cause: { kind: ERROR_KIND.BUSINESS } });
     });
 
     it('should return 404 if user not found', async () => {
@@ -249,7 +250,7 @@ describe('Users endpoints: /users', () => {
       });
 
       expect(res.status).toBe(404);
-      expect(await res.json()).toMatchObject({ message: 'User not found' });
+      expect(await res.json()).toMatchObject({ message: 'User not found', cause: { kind: ERROR_KIND.BUSINESS } });
     });
 
     it('should silently ignore entiteId if unchanged', async () => {
@@ -277,7 +278,7 @@ describe('Users endpoints: /users', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(await res.json()).toMatchObject({ message: 'No permissions' });
+      expect(await res.json()).toMatchObject({ message: 'No permissions', cause: { kind: ERROR_KIND.BUSINESS } });
     });
 
     it('should prevent user from changing their own role', async () => {

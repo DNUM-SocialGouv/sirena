@@ -1,4 +1,5 @@
 import { throwHTTPException401Unauthorized } from '@sirena/backend-utils/helpers';
+import { ERROR_KIND } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { envVars } from '../config/env.js';
@@ -16,7 +17,7 @@ const cleanAnSendError = (c: Context<AppBindings>, error: unknown, errorMessage:
   deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
   deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
   logger.info({ err: error }, errorMessage);
-  throwHTTPException401Unauthorized(errorResponse, { res: c.res });
+  throwHTTPException401Unauthorized(errorResponse, { res: c.res, kind: ERROR_KIND.BUSINESS });
 };
 
 const updateSentryUserContext = (
@@ -80,7 +81,10 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
     if (session === null) {
       deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
       deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-      throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired', { res: c.res });
+      throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
 
     try {
@@ -108,7 +112,10 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
         logger.error({ err: error }, 'Error in auth token verification - not a JWT error');
         deleteCookie(c, envVars.REFRESH_TOKEN_NAME);
         deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-        throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired', { res: c.res });
+        throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
       }
       cleanAnSendError(
         c,
@@ -119,7 +126,10 @@ const app = factoryWithAuth.createMiddleware(async (c, next) => {
     }
   } else {
     deleteCookie(c, envVars.IS_LOGGED_TOKEN_NAME);
-    throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired', { res: c.res });
+    throwHTTPException401Unauthorized('Unauthorized, Refresh token is invalid or expired', {
+      res: c.res,
+      kind: ERROR_KIND.BUSINESS,
+    });
   }
 });
 
