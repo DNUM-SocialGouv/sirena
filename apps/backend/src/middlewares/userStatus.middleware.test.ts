@@ -1,4 +1,4 @@
-import { PERMISSION_ERROR, STATUT_TYPES } from '@sirena/common/constants';
+import { ERROR_KIND, PERMISSION_ERROR, STATUT_TYPES } from '@sirena/common/constants';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -102,6 +102,7 @@ describe('userStatus.middleware.ts', () => {
         cause: {
           name: PERMISSION_ERROR.ACCOUNT_INACTIVE,
         },
+        kind: ERROR_KIND.BUSINESS,
         res: mockContext.res,
       });
       expect(next).not.toHaveBeenCalled();
@@ -135,6 +136,7 @@ describe('userStatus.middleware.ts', () => {
         cause: {
           name: PERMISSION_ERROR.ACCOUNT_INACTIVE,
         },
+        kind: ERROR_KIND.BUSINESS,
         res: mockContext.res,
       });
       expect(next).not.toHaveBeenCalled();

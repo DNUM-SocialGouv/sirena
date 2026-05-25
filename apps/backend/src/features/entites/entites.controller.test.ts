@@ -1,4 +1,4 @@
-import { ROLES } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -213,7 +213,7 @@ describe('Entites endpoints: /entites', () => {
 
       expect(getEntiteById).toHaveBeenCalledWith('unknown');
       expect(res.status).toBe(404);
-      expect(await res.json()).toEqual({ message: 'Entite not found' });
+      expect(await res.json()).toEqual({ message: 'Entite not found', cause: { kind: ERROR_KIND.BUSINESS } });
     });
   });
 
@@ -288,7 +288,7 @@ describe('Entites endpoints: /entites', () => {
       });
 
       expect(res.status).toBe(404);
-      expect(await res.json()).toEqual({ message: 'Entite not found' });
+      expect(await res.json()).toEqual({ message: 'Entite not found', cause: { kind: ERROR_KIND.BUSINESS } });
       expect(editEntiteAdminSpy).toHaveBeenCalledWith('unknown', editEntitePayload);
     });
   });
@@ -340,7 +340,7 @@ describe('Entites endpoints: /entites', () => {
       });
 
       expect(res.status).toBe(404);
-      expect(await res.json()).toEqual({ message: 'Entite not found' });
+      expect(await res.json()).toEqual({ message: 'Entite not found', cause: { kind: ERROR_KIND.BUSINESS } });
       expect(createChildEntiteAdminSpy).toHaveBeenCalledWith('unknown', createChildEntitePayload);
     });
 
@@ -356,7 +356,10 @@ describe('Entites endpoints: /entites', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(await res.json()).toEqual({ message: 'Child entite creation is not allowed for this parent' });
+      expect(await res.json()).toEqual({
+        message: 'Child entite creation is not allowed for this parent',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
       expect(createChildEntiteAdminSpy).toHaveBeenCalledWith('service-1', createChildEntitePayload);
     });
   });
