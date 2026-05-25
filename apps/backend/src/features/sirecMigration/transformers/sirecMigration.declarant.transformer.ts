@@ -2,7 +2,6 @@ import type { SirecReclamationRow } from '../sirecMigration.repository.js';
 import { transcodeDeclarant } from '../transco/declarant.transco.js';
 import { SIREC_DICO } from '../transco/dictionnaire.transco.js';
 import { transcodePlaignantAnonyme } from '../transco/plaignantAnonyme.transco.js';
-import { type SirenaIdentiteData, transformSirecIdentite } from './sirecMigration.identite.transformer.js';
 
 const PLAIGNANT_TYPE_PAS_PHYSIQUE = new Set([22, 106]);
 
@@ -12,12 +11,33 @@ export interface SirenaAdresseData {
   ville: string | null;
 }
 
+export interface SirenaIdentiteData {
+  nom: string | null;
+  prenom: string | null;
+  email: string | null;
+  telephone: string | null;
+  civiliteId: string | null;
+}
+
 export interface SirenaDeclarantData {
   estVictime: boolean | null;
   veutGarderAnonymat: boolean | null;
   adresse: SirenaAdresseData | null;
   identite: SirenaIdentiteData | null;
   commentaire: string;
+}
+export function transformDeclarantIdentite(reclamation: SirecReclamationRow): SirenaIdentiteData | null {
+  const { plaignant_nom, plaignant_prenom, plaignant_mail, plaignant_tel } = reclamation;
+  if (plaignant_nom === null && plaignant_prenom === null && plaignant_mail === null && plaignant_tel === null) {
+    return null;
+  }
+  return {
+    nom: plaignant_nom,
+    prenom: plaignant_prenom,
+    email: plaignant_mail,
+    telephone: plaignant_tel,
+    civiliteId: null,
+  };
 }
 
 export function transformSirecDeclarant(reclamation: SirecReclamationRow): SirenaDeclarantData | null {
@@ -42,7 +62,7 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
     plaignant_connu,
   } = reclamation;
 
-  const identite = transformSirecIdentite(reclamation);
+  const identite = transformDeclarantIdentite(reclamation);
 
   const plaignantTypeLabel = plaignant_type !== null ? SIREC_DICO[plaignant_type] : undefined;
   const showPlaignantTypeDetails = plaignant_type !== null && PLAIGNANT_TYPE_PAS_PHYSIQUE.has(plaignant_type);

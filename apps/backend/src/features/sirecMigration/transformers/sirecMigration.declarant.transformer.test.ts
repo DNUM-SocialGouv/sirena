@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { transformSirecDeclarant } from './sirecMigration.declarant.transformer.js';
+import { transformDeclarantIdentite, transformSirecDeclarant } from './sirecMigration.declarant.transformer.js';
 
 describe('sirecMigration.declarant.transformer.ts', () => {
   const reclamation = {
@@ -351,5 +351,54 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     const result = transformSirecDeclarant({ ...reclamation, plaignant_est_anonyme: 1, plaignant_connu: 1 });
 
     expect(result?.commentaire).toBe('Le requérant est anonyme : oui\nPlus de 2 réclamations déposées : oui');
+  });
+  it('should return null when all 4 fields are null', () => {
+    expect(transformDeclarantIdentite(reclamation as never)).toBeNull();
+  });
+
+  it('should map plaignant_nom to nom', () => {
+    expect(transformDeclarantIdentite({ ...reclamation, plaignant_nom: 'Dupont' } as never)?.nom).toBe('Dupont');
+  });
+
+  it('should map plaignant_prenom to prenom', () => {
+    expect(transformDeclarantIdentite({ ...reclamation, plaignant_prenom: 'Jean' } as never)?.prenom).toBe('Jean');
+  });
+
+  it('should map plaignant_mail to email', () => {
+    expect(transformDeclarantIdentite({ ...reclamation, plaignant_mail: 'jean@example.com' } as never)?.email).toBe(
+      'jean@example.com',
+    );
+  });
+
+  it('should map plaignant_tel to telephone', () => {
+    expect(transformDeclarantIdentite({ ...reclamation, plaignant_tel: '0612345678' } as never)?.telephone).toBe(
+      '0612345678',
+    );
+  });
+
+  it('should keep null for absent fields when at least one field is set', () => {
+    expect(transformDeclarantIdentite({ ...reclamation, plaignant_nom: 'Dupont' } as never)).toEqual({
+      nom: 'Dupont',
+      prenom: null,
+      email: null,
+      telephone: null,
+      civiliteId: null,
+    });
+  });
+
+  it('should map all 4 fields when all are set', () => {
+    expect(
+      transformDeclarantIdentite({
+        ...reclamation,
+        plaignant_nom: 'Dupont',
+        plaignant_prenom: 'Jean',
+        plaignant_mail: 'jean@example.com',
+        plaignant_tel: '0612345678',
+      } as never),
+    ).toEqual({ nom: 'Dupont', prenom: 'Jean', email: 'jean@example.com', telephone: '0612345678', civiliteId: null });
+  });
+
+  it('should always return civiliteId as null (declarant has no civilite)', () => {
+    expect(transformDeclarantIdentite({ ...reclamation, plaignant_nom: 'Dupont' } as never)?.civiliteId).toBeNull();
   });
 });
