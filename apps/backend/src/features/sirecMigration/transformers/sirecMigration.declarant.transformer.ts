@@ -53,6 +53,7 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
     plaignant_adresse,
     plaignant_adresse_complement,
     requerant_adresse,
+    requerant_adresse_complete,
     requerant_cp,
     requerant_ville,
     preciser_statut,
@@ -67,8 +68,9 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
   const plaignantTypeLabel = plaignant_type !== null ? SIREC_DICO[plaignant_type] : undefined;
   const showPlaignantTypeDetails = plaignant_type !== null && PLAIGNANT_TYPE_PAS_PHYSIQUE.has(plaignant_type);
   const plaignantEstPhysique = plaignant_type !== null && !PLAIGNANT_TYPE_PAS_PHYSIQUE.has(plaignant_type);
+  const effectiveRequerantAdresse = requerant_adresse || requerant_adresse_complete;
   const rue = plaignantEstPhysique
-    ? [plaignant_adresse, plaignant_adresse_complement, requerant_adresse].filter(Boolean).join(' ') || null
+    ? [plaignant_adresse, plaignant_adresse_complement, effectiveRequerantAdresse].filter(Boolean).join(' ') || null
     : null;
   const adresseNonPhysiqueTexte = !plaignantEstPhysique
     ? [requerant_adresse, requerant_cp, requerant_ville].filter(Boolean).join(' ') || null
