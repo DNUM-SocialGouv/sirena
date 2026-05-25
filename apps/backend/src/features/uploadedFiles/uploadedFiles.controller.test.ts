@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
@@ -52,6 +53,7 @@ vi.mock('../../libs/minio.js', () => ({
     return Promise.resolve({
       objectPath: fakeFile.filePath,
       rollback: vi.fn(),
+      encryptionMetadata: { iv: 'iv', authTag: 'authTag' },
     });
   }),
   getSignedUrl: vi.fn(() => Promise.resolve(signedUrl)),
@@ -67,11 +69,12 @@ vi.mock('./uploadedFiles.service.js', () => ({
 
 vi.mock('../../middlewares/upload.middleware.js', () => ({
   default: vi.fn((c: Context, next: Next) => {
+    const fileSize = fakeFile.size;
     c.set('uploadedFile', {
-      buffer: Buffer.from('test pdf content'),
+      stream: Readable.from(Buffer.from('test pdf content')),
       fileName: fakeFile.fileName,
       contentType: fakeFile.mimeType,
-      size: fakeFile.size,
+      getReadBytes: () => fileSize,
     });
     return next();
   }),
@@ -197,6 +200,7 @@ describe('uploadedFiles.controller.ts', () => {
         return Promise.resolve({
           objectPath: 'uploads/test.pdf',
           rollback: rollbackMinio,
+          encryptionMetadata: { iv: 'iv', authTag: 'authTag' },
         });
       });
 
@@ -219,6 +223,7 @@ describe('uploadedFiles.controller.ts', () => {
         return Promise.resolve({
           objectPath: '',
           rollback: vi.fn(),
+          encryptionMetadata: { iv: 'iv', authTag: 'authTag' },
         });
       });
 

@@ -1,9 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { PassThrough, Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
-import { Client } from 'minio';
+import { Readable } from 'node:stream';
+import { Client, CopyDestinationOptions, CopySourceOptions } from 'minio';
 import { envVars } from '../config/env.js';
 import { createDecryptionStream, createEncryptionStream, type DecryptionParams } from './encryption.js';
 
@@ -30,16 +29,28 @@ const minioClient = S3_BUCKET_ENDPOINT
 export interface UploadResult {
   objectPath: string;
   rollback: () => Promise<void>;
-  encryptionMetadata?: {
+  encryptionMetadata: {
     iv: string;
     authTag: string;
   };
 }
 
+/**
+ * Streams the input through AES-GCM encryption directly into MinIO without
+ * materializing the encrypted output in memory.
+ *
+ * The AES-GCM auth tag is only known after the encryption stream finalises,
+ * which is too late to include in the putObject request headers. We backfill
+ * iv + authTag into the S3 object metadata via copyObject(self, self, REPLACE)
+ * — a server-side metadata-only operation, no body re-transfer. This keeps
+ * parity with the pre-existing on-disk encryption layout (key material lives
+ * on the API side; S3 only sees the iv and auth tag, never the master key).
+ */
 export const uploadFileToMinio = async (
   input: string | Readable | Buffer,
   originalName: string,
   contentType?: string,
+  size?: number,
 ): Promise<UploadResult> => {
   if (!minioClient) {
     throw new Error('MinIO client not initialized, check your S3_BUCKET_ENDPOINT');
@@ -63,28 +74,49 @@ export const uploadFileToMinio = async (
   // Create encryption stream
   const { stream: encryptStream, getMetadata } = createEncryptionStream();
 
-  // Create passthrough to collect encrypted data for MinIO
-  // (MinIO client needs the full stream to calculate content-length)
-  const encryptedChunks: Buffer[] = [];
-  const collectStream = new PassThrough();
-  collectStream.on('data', (chunk) => encryptedChunks.push(chunk));
+  sourceStream.on('error', (err) => encryptStream.destroy(err));
+  sourceStream.pipe(encryptStream);
 
-  // Pipe: source → encrypt → collect
-  await pipeline(sourceStream, encryptStream, collectStream);
-
-  const encryptedBuffer = Buffer.concat(encryptedChunks);
-  const encryptionMetadata = getMetadata();
-
-  const metadata: Record<string, string> = {
-    'Content-Type': contentType || 'application/octet-stream',
+  const resolvedContentType = contentType || 'application/octet-stream';
+  const baseHeaders: Record<string, string> = {
+    'Content-Type': resolvedContentType,
     'x-amz-meta-filename': originalName,
     'x-amz-meta-uploadedfileid': fileId,
     'x-amz-meta-encrypted': 'true',
-    'x-amz-meta-encryption-iv': encryptionMetadata.iv,
-    'x-amz-meta-encryption-authtag': encryptionMetadata.authTag,
   };
 
-  await minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptedBuffer, undefined, metadata);
+  try {
+    await minioClient.putObject(S3_BUCKET_NAME, objectPath, encryptStream, size, baseHeaders);
+  } catch (err) {
+    if (!sourceStream.destroyed) sourceStream.destroy(err as Error);
+    throw err;
+  }
+
+  const encryptionMetadata = getMetadata();
+
+  try {
+    await minioClient.copyObject(
+      new CopySourceOptions({ Bucket: S3_BUCKET_NAME, Object: objectPath }),
+      new CopyDestinationOptions({
+        Bucket: S3_BUCKET_NAME,
+        Object: objectPath,
+        MetadataDirective: 'REPLACE',
+        UserMetadata: {
+          filename: originalName,
+          uploadedfileid: fileId,
+          encrypted: 'true',
+          'encryption-iv': encryptionMetadata.iv,
+          'encryption-authtag': encryptionMetadata.authTag,
+        },
+        Headers: {
+          'Content-Type': resolvedContentType,
+        },
+      }),
+    );
+  } catch (err) {
+    await deleteFileFromMinio(objectPath).catch(() => {});
+    throw err;
+  }
 
   return {
     objectPath,
@@ -128,7 +160,7 @@ export const getFileStream = async (
   const stream = await minioClient.getObject(S3_BUCKET_NAME, filePath);
 
   if (encrypted) {
-    const params = decryptionParams || {
+    const params = decryptionParams ?? {
       iv: stat.metaData?.['encryption-iv'] || '',
       authTag: stat.metaData?.['encryption-authtag'] || '',
     };
@@ -138,6 +170,7 @@ export const getFileStream = async (
     }
 
     const decryptionStream = createDecryptionStream(params);
+    stream.on('error', (err) => decryptionStream.destroy(err));
     stream.pipe(decryptionStream);
 
     return {

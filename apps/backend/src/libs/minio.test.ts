@@ -16,6 +16,7 @@ vi.mock('../config/env.js', () => ({
 const { mockMinioClient, mockReadStream, mockUnlink, mockReadFile } = vi.hoisted(() => {
   const mockMinioClient = {
     putObject: vi.fn(),
+    copyObject: vi.fn(),
     presignedUrl: vi.fn(),
     removeObject: vi.fn(),
     statObject: vi.fn(),
@@ -32,6 +33,16 @@ const { mockMinioClient, mockReadStream, mockUnlink, mockReadFile } = vi.hoisted
 vi.mock('minio', () => ({
   Client: function MockClient() {
     return mockMinioClient;
+  },
+  CopySourceOptions: class CopySourceOptions {
+    constructor(opts: Record<string, unknown>) {
+      Object.assign(this, opts);
+    }
+  },
+  CopyDestinationOptions: class CopyDestinationOptions {
+    constructor(opts: Record<string, unknown>) {
+      Object.assign(this, opts);
+    }
   },
 }));
 
@@ -64,7 +75,16 @@ describe('minio.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockMinioClient.putObject.mockResolvedValue(undefined);
+    // putObject must drain the source stream so the encryption Transform's
+    // flush() fires and the AES-GCM auth tag becomes available.
+    mockMinioClient.putObject.mockImplementation(async (_bucket: string, _key: string, source: unknown) => {
+      if (source && typeof source === 'object' && 'on' in source) {
+        for await (const _chunk of source as unknown as AsyncIterable<unknown>) {
+          // drain
+        }
+      }
+    });
+    mockMinioClient.copyObject.mockResolvedValue(undefined);
     mockMinioClient.presignedUrl.mockResolvedValue('https://test-signed-url.com');
     mockReadStream.mockReturnValue({});
     mockUnlink.mockResolvedValue(undefined);
@@ -90,8 +110,20 @@ describe('minio.ts', () => {
       expect(metadata['x-amz-meta-filename']).toBe(originalName);
       expect(metadata['x-amz-meta-uploadedfileid']).toBe('test-uuid');
       expect(metadata['x-amz-meta-encrypted']).toBe('true');
-      expect(metadata['x-amz-meta-encryption-iv']).toBeDefined();
-      expect(metadata['x-amz-meta-encryption-authtag']).toBeDefined();
+
+      // After the encryption stream finalises, copyObject backfills iv +
+      // authTag into the S3 object metadata so encrypted objects in S3 carry
+      // everything needed to decrypt them.
+      expect(mockMinioClient.copyObject).toHaveBeenCalledTimes(1);
+      const [, dest] = mockMinioClient.copyObject.mock.calls[0];
+      expect(dest.MetadataDirective).toBe('REPLACE');
+      expect(dest.UserMetadata).toMatchObject({
+        filename: originalName,
+        uploadedfileid: 'test-uuid',
+        encrypted: 'true',
+        'encryption-iv': expect.any(String),
+        'encryption-authtag': expect.any(String),
+      });
     });
 
     it('should fallback to octet-stream if no contentType is provided', async () => {
@@ -108,6 +140,10 @@ describe('minio.ts', () => {
       const metadata = putObjectCall[4];
       expect(metadata['Content-Type']).toBe('application/octet-stream');
       expect(metadata['x-amz-meta-encrypted']).toBe('true');
+
+      expect(mockMinioClient.copyObject).toHaveBeenCalledTimes(1);
+      const [, dest] = mockMinioClient.copyObject.mock.calls[0];
+      expect(dest.UserMetadata['encryption-authtag']).toBeDefined();
     });
   });
 
