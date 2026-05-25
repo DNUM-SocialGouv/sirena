@@ -80,6 +80,7 @@ describe('sirecMigration.service.ts', () => {
           telephone: string | null;
           civiliteId: string | null;
         } | null;
+        adresse: { rue: string | null; codePostal: string | null; ville: string | null } | null;
         commentaire: string;
         ageId: string | null;
       } | null,
@@ -223,7 +224,7 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec({
         ...data,
         declarant: { estVictime: true, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
-        victime: { identite: null, commentaire: '', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledOnce();
@@ -242,7 +243,7 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec({
         ...data,
         declarant: { estVictime: false, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
-        victime: { identite: null, commentaire: '', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledTimes(2);
@@ -254,7 +255,7 @@ describe('sirecMigration.service.ts', () => {
     it('should pass victime.commentaire to PersonneConcernee when victime_non_identifiee=1', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, commentaire: 'Usager (Victime) non identifié : oui', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: 'Usager (Victime) non identifié : oui', ageId: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -278,6 +279,7 @@ describe('sirecMigration.service.ts', () => {
             telephone: '0612345678',
             civiliteId: null,
           },
+          adresse: null,
           commentaire: '',
           ageId: null,
         },
@@ -313,6 +315,7 @@ describe('sirecMigration.service.ts', () => {
             telephone: '0612345678',
             civiliteId: 'M',
           },
+          adresse: null,
           commentaire: '',
           ageId: null,
         },
@@ -340,7 +343,7 @@ describe('sirecMigration.service.ts', () => {
     it('should pass ageId to victime PersonneConcernee when set', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, commentaire: 'Age de la victime : 45', ageId: '30-59' },
+        victime: { identite: null, adresse: null, commentaire: 'Age de la victime : 45', ageId: '30-59' },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -351,7 +354,7 @@ describe('sirecMigration.service.ts', () => {
     it('should not add identite to victime PersonneConcernee when identite is null', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, commentaire: '', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -527,6 +530,61 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: expect.not.objectContaining({ identite: expect.anything() }),
+      });
+    });
+
+    it('should create PersonneConcernee with nested adresse when victime has adresse', async () => {
+      await saveFromSirec({
+        ...data,
+        victime: {
+          identite: null,
+          adresse: { rue: '5 rue des Lilas', codePostal: '69001', ville: 'Lyon' },
+          commentaire: '',
+          ageId: null,
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: {
+          participantDeId: 'SIREC-42',
+          estVictime: true,
+          commentaire: '',
+          ageId: null,
+          adresse: { create: { rue: '5 rue des Lilas', codePostal: '69001', ville: 'Lyon' } },
+        },
+      });
+    });
+
+    it('should use empty strings for null victime adresse fields', async () => {
+      await saveFromSirec({
+        ...data,
+        victime: {
+          identite: null,
+          adresse: { rue: '5 rue des Lilas', codePostal: null, ville: null },
+          commentaire: '',
+          ageId: null,
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: {
+          participantDeId: 'SIREC-42',
+          estVictime: true,
+          commentaire: '',
+          ageId: null,
+          adresse: { create: { rue: '5 rue des Lilas', codePostal: '', ville: '' } },
+        },
+      });
+    });
+
+    it('should not add adresse to victime PersonneConcernee when adresse is null', async () => {
+      await saveFromSirec({
+        ...data,
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: expect.not.objectContaining({ adresse: expect.anything() }),
       });
     });
 
