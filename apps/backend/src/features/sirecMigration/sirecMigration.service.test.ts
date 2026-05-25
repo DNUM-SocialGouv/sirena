@@ -63,11 +63,23 @@ describe('sirecMigration.service.ts', () => {
         estVictime: boolean | null;
         veutGarderAnonymat: boolean | null;
         adresse: { rue: string | null; codePostal: string | null; ville: string | null } | null;
-        identite: { nom: string | null; prenom: string | null; email: string | null; telephone: string | null } | null;
+        identite: {
+          nom: string | null;
+          prenom: string | null;
+          email: string | null;
+          telephone: string | null;
+          civiliteId: string | null;
+        } | null;
         commentaire: string;
       } | null,
       victime: null as {
-        identite: { nom: string | null; prenom: string | null; email: string | null; telephone: string | null } | null;
+        identite: {
+          nom: string | null;
+          prenom: string | null;
+          email: string | null;
+          telephone: string | null;
+          civiliteId: string | null;
+        } | null;
         commentaire: string;
       } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
@@ -252,7 +264,13 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec({
         ...data,
         victime: {
-          identite: { nom: 'Martin', prenom: 'Alice', email: 'alice@example.com', telephone: '0612345678' },
+          identite: {
+            nom: 'Martin',
+            prenom: 'Alice',
+            email: 'alice@example.com',
+            telephone: '0612345678',
+            civiliteId: null,
+          },
           commentaire: '',
         },
       });
@@ -262,7 +280,48 @@ describe('sirecMigration.service.ts', () => {
           participantDeId: 'SIREC-42',
           estVictime: true,
           commentaire: '',
-          identite: { create: { nom: 'Martin', prenom: 'Alice', email: 'alice@example.com', telephone: '0612345678' } },
+          identite: {
+            create: {
+              nom: 'Martin',
+              prenom: 'Alice',
+              email: 'alice@example.com',
+              telephone: '0612345678',
+              civiliteId: null,
+            },
+          },
+        },
+      });
+    });
+
+    it('should pass civiliteId to victime identite create when set', async () => {
+      await saveFromSirec({
+        ...data,
+        victime: {
+          identite: {
+            nom: 'Martin',
+            prenom: 'Alice',
+            email: 'alice@example.com',
+            telephone: '0612345678',
+            civiliteId: 'M',
+          },
+          commentaire: '',
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: {
+          participantDeId: 'SIREC-42',
+          estVictime: true,
+          commentaire: '',
+          identite: {
+            create: {
+              nom: 'Martin',
+              prenom: 'Alice',
+              email: 'alice@example.com',
+              telephone: '0612345678',
+              civiliteId: 'M',
+            },
+          },
         },
       });
     });
@@ -385,7 +444,13 @@ describe('sirecMigration.service.ts', () => {
           estVictime: null,
           veutGarderAnonymat: null,
           adresse: null,
-          identite: { nom: 'Dupont', prenom: 'Jean', email: 'jean@example.com', telephone: '0612345678' },
+          identite: {
+            nom: 'Dupont',
+            prenom: 'Jean',
+            email: 'jean@example.com',
+            telephone: '0612345678',
+            civiliteId: null,
+          },
           commentaire: '',
         },
       });
@@ -397,7 +462,13 @@ describe('sirecMigration.service.ts', () => {
           commentaire: '',
           declarantDeId: 'SIREC-42',
           identite: {
-            create: { nom: 'Dupont', prenom: 'Jean', email: 'jean@example.com', telephone: '0612345678' },
+            create: {
+              nom: 'Dupont',
+              prenom: 'Jean',
+              email: 'jean@example.com',
+              telephone: '0612345678',
+              civiliteId: null,
+            },
           },
         },
       });
@@ -410,7 +481,7 @@ describe('sirecMigration.service.ts', () => {
           estVictime: null,
           veutGarderAnonymat: null,
           adresse: null,
-          identite: { nom: 'Dupont', prenom: null, email: null, telephone: null },
+          identite: { nom: 'Dupont', prenom: null, email: null, telephone: null, civiliteId: null },
           commentaire: '',
         },
       });
@@ -421,7 +492,7 @@ describe('sirecMigration.service.ts', () => {
           veutGarderAnonymat: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
-          identite: { create: { nom: 'Dupont', prenom: '', email: '', telephone: '' } },
+          identite: { create: { nom: 'Dupont', prenom: '', email: '', telephone: '', civiliteId: null } },
         },
       });
     });

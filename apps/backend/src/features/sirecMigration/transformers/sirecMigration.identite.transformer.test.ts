@@ -39,6 +39,7 @@ describe('sirecMigration.identite.transformer.ts', () => {
       prenom: null,
       email: null,
       telephone: null,
+      civiliteId: null,
     });
   });
 
@@ -51,6 +52,10 @@ describe('sirecMigration.identite.transformer.ts', () => {
         plaignant_mail: 'jean@example.com',
         plaignant_tel: '0612345678',
       } as never),
-    ).toEqual({ nom: 'Dupont', prenom: 'Jean', email: 'jean@example.com', telephone: '0612345678' });
+    ).toEqual({ nom: 'Dupont', prenom: 'Jean', email: 'jean@example.com', telephone: '0612345678', civiliteId: null });
+  });
+
+  it('should always return civiliteId as null (declarant has no civilite)', () => {
+    expect(transformSirecIdentite({ ...reclamation, plaignant_nom: 'Dupont' } as never)?.civiliteId).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import { transformSirecVictime } from './sirecMigration.victime.transformer.js';
 describe('sirecMigration.victime.transformer.ts', () => {
   const reclamation = {
     victime_non_identifiee: null as number | null,
+    victime_sexe: null as number | null,
     victime_nom: null as string | null,
     victime_prenom: null as string | null,
     victime_mail: null as string | null,
@@ -38,7 +39,33 @@ describe('sirecMigration.victime.transformer.ts', () => {
       prenom: 'Alice',
       email: 'alice@example.com',
       telephone: '0612345678',
+      civiliteId: null,
     });
+  });
+
+  it('should set civiliteId to CIVILITE.M when victime_sexe=38', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_nom: 'Martin', victime_sexe: 38 });
+
+    expect(result?.identite?.civiliteId).toBe('M');
+  });
+
+  it('should set civiliteId to CIVILITE.MME when victime_sexe=40', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_nom: 'Martin', victime_sexe: 40 });
+
+    expect(result?.identite?.civiliteId).toBe('MME');
+  });
+
+  it('should set civiliteId to null when victime_sexe is null', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_nom: 'Martin', victime_sexe: null });
+
+    expect(result?.identite?.civiliteId).toBeNull();
+  });
+
+  it('should return non-null identite when only victime_sexe is set', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_sexe: 38 });
+
+    expect(result?.identite).not.toBeNull();
+    expect(result?.identite?.civiliteId).toBe('M');
   });
 
   it('should return non-null with identite when victime_nom is set alone', () => {
