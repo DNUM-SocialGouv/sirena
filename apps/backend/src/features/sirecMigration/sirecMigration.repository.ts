@@ -20,6 +20,7 @@ export interface SirecReclamationRow {
   plaignant_adresse: string | null;
   plaignant_adresse_complement: string | null;
   requerant_adresse: string | null;
+  requerant_adresse_complete: string | null;
   requerant_cp: string | null;
   requerant_ville: string | null;
   preciser_statut: string | null;
@@ -37,6 +38,7 @@ export interface SirecReclamationRow {
   victime_adresse: string | null;
   victime_adresse_complement: string | null;
   usager_adresse: string | null;
+  usager_adresse_complete: string | null;
   usager_cp: string | null;
   usager_ville: string | null;
   victime_nom: string | null;
@@ -54,7 +56,7 @@ export interface SirecReclamationData {
 
 export async function fetchSirecReclamationById(sirecId: number): Promise<SirecReclamationRow | null> {
   const [rows] = await mysqlPool.query<(SirecReclamationRow & RowDataPacket)[]>(
-    'SELECT id_data, r_recept_date, description, reception, prioritaire, prioritaire_precisez, dest, dest_primaire, dest_secondaire, saisine, courrier_signal, plaignant, plaignant_anonyme, plaignant_est_anonyme, plaignant_type, plaignant_adresse, plaignant_adresse_complement, requerant_adresse, requerant_cp, requerant_ville, preciser_statut, plaignant_rs, nom_representant, prenom_representant, plaignant_nom, plaignant_prenom, plaignant_mail, plaignant_tel, plaignant_connu, victime_non_identifiee, victime_age, victime_sexe, victime_adresse, victime_adresse_complement, usager_adresse, usager_cp, usager_ville, victime_nom, victime_prenom, victime_mail, victime_tel, service_recepteur_niv1, service_gestionnaire FROM sire_reclamation_data WHERE id_data = ?',
+    'SELECT id_data, r_recept_date, description, reception, prioritaire, prioritaire_precisez, dest, dest_primaire, dest_secondaire, saisine, courrier_signal, plaignant, plaignant_anonyme, plaignant_est_anonyme, plaignant_type, plaignant_adresse, plaignant_adresse_complement, requerant_adresse, requerant_adresse_complete, requerant_cp, requerant_ville, preciser_statut, plaignant_rs, nom_representant, prenom_representant, plaignant_nom, plaignant_prenom, plaignant_mail, plaignant_tel, plaignant_connu, victime_non_identifiee, victime_age, victime_sexe, victime_adresse, victime_adresse_complement, usager_adresse, usager_adresse_complete, usager_cp, usager_ville, victime_nom, victime_prenom, victime_mail, victime_tel, service_recepteur_niv1, service_gestionnaire FROM sire_reclamation_data WHERE id_data = ?',
     [sirecId],
   );
   return rows[0] ?? null;

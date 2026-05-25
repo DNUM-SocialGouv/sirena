@@ -10,6 +10,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     plaignant_adresse: null as string | null,
     plaignant_adresse_complement: null as string | null,
     requerant_adresse: null as string | null,
+    requerant_adresse_complete: null as string | null,
     requerant_cp: null as string | null,
     requerant_ville: null as string | null,
     preciser_statut: null as string | null,
@@ -351,6 +352,39 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     const result = transformSirecDeclarant({ ...reclamation, plaignant_est_anonyme: 1, plaignant_connu: 1 });
 
     expect(result?.commentaire).toBe('Le requérant est anonyme : oui\nPlus de 2 réclamations déposées : oui');
+  });
+
+  it('should use requerant_adresse_complete in rue when requerant_adresse is null (physical person)', () => {
+    const result = transformSirecDeclarant({
+      ...reclamation,
+      plaignant_type: 24,
+      requerant_adresse: null,
+      requerant_adresse_complete: '15 avenue Victor Hugo',
+    });
+
+    expect(result?.adresse?.rue).toBe('15 avenue Victor Hugo');
+  });
+
+  it('should prefer requerant_adresse over requerant_adresse_complete when both are set (physical person)', () => {
+    const result = transformSirecDeclarant({
+      ...reclamation,
+      plaignant_type: 24,
+      requerant_adresse: '12 rue de la Paix',
+      requerant_adresse_complete: 'Adresse complète ignorée',
+    });
+
+    expect(result?.adresse?.rue).toBe('12 rue de la Paix');
+  });
+
+  it('should not use requerant_adresse_complete for non-physical person (only used in rue)', () => {
+    const result = transformSirecDeclarant({
+      ...reclamation,
+      plaignant_type: null,
+      requerant_adresse: null,
+      requerant_adresse_complete: '15 avenue Victor Hugo',
+    });
+
+    expect(result).toBeNull();
   });
   it('should return null when all 4 fields are null', () => {
     expect(transformDeclarantIdentite(reclamation as never)).toBeNull();

@@ -9,6 +9,7 @@ describe('sirecMigration.victime.transformer.ts', () => {
     victime_adresse: null as string | null,
     victime_adresse_complement: null as string | null,
     usager_adresse: null as string | null,
+    usager_adresse_complete: null as string | null,
     usager_cp: null as string | null,
     usager_ville: null as string | null,
     victime_nom: null as string | null,
@@ -203,5 +204,29 @@ describe('sirecMigration.victime.transformer.ts', () => {
     const result = transformSirecVictime({ ...reclamation, usager_ville: 'Lyon' });
 
     expect(result?.adresse).toEqual({ rue: null, codePostal: null, ville: 'Lyon' });
+  });
+
+  it('should use usager_adresse_complete in rue when usager_adresse is null', () => {
+    const result = transformSirecVictime({
+      ...reclamation,
+      usager_adresse: null,
+      usager_adresse_complete: '5 allée des Roses',
+    });
+
+    expect(result?.adresse?.rue).toBe('5 allée des Roses');
+  });
+
+  it('should prefer usager_adresse over usager_adresse_complete when both are set', () => {
+    const result = transformSirecVictime({
+      ...reclamation,
+      usager_adresse: '5 rue des Lilas',
+      usager_adresse_complete: 'Adresse complète ignorée',
+    });
+
+    expect(result?.adresse?.rue).toBe('5 rue des Lilas');
+  });
+
+  it('should return null when only usager_adresse_complete is null and no other data', () => {
+    expect(transformSirecVictime({ ...reclamation, usager_adresse_complete: null })).toBeNull();
   });
 });

@@ -26,8 +26,16 @@ function transformVictimeIdentite(reclamation: SirecReclamationRow): SirenaIdent
 }
 
 function transformVictimeAdresse(reclamation: SirecReclamationRow): SirenaAdresseData | null {
-  const { victime_adresse, victime_adresse_complement, usager_adresse, usager_cp, usager_ville } = reclamation;
-  const rue = [victime_adresse, victime_adresse_complement, usager_adresse].filter(Boolean).join(' ') || null;
+  const {
+    victime_adresse,
+    victime_adresse_complement,
+    usager_adresse,
+    usager_adresse_complete,
+    usager_cp,
+    usager_ville,
+  } = reclamation;
+  const effectiveUsagerAdresse = usager_adresse || usager_adresse_complete;
+  const rue = [victime_adresse, victime_adresse_complement, effectiveUsagerAdresse].filter(Boolean).join(' ') || null;
   return rue || usager_cp || usager_ville ? { rue, codePostal: usager_cp, ville: usager_ville } : null;
 }
 
