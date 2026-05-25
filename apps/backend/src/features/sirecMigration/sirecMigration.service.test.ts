@@ -81,6 +81,7 @@ describe('sirecMigration.service.ts', () => {
           civiliteId: string | null;
         } | null;
         commentaire: string;
+        ageId: string | null;
       } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
       situation: {
@@ -222,7 +223,7 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec({
         ...data,
         declarant: { estVictime: true, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
-        victime: { identite: null, commentaire: '' },
+        victime: { identite: null, commentaire: '', ageId: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledOnce();
@@ -230,6 +231,7 @@ describe('sirecMigration.service.ts', () => {
         data: {
           estVictime: true,
           commentaire: '',
+          ageId: null,
           declarantDeId: 'SIREC-42',
           participantDeId: 'SIREC-42',
         },
@@ -240,23 +242,28 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec({
         ...data,
         declarant: { estVictime: false, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' },
-        victime: { identite: null, commentaire: '' },
+        victime: { identite: null, commentaire: '', ageId: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledTimes(2);
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
-        data: { participantDeId: 'SIREC-42', estVictime: true, commentaire: '' },
+        data: { participantDeId: 'SIREC-42', estVictime: true, commentaire: '', ageId: null },
       });
     });
 
     it('should pass victime.commentaire to PersonneConcernee when victime_non_identifiee=1', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, commentaire: 'Usager (Victime) non identifié : oui' },
+        victime: { identite: null, commentaire: 'Usager (Victime) non identifié : oui', ageId: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
-        data: { participantDeId: 'SIREC-42', estVictime: true, commentaire: 'Usager (Victime) non identifié : oui' },
+        data: {
+          participantDeId: 'SIREC-42',
+          estVictime: true,
+          commentaire: 'Usager (Victime) non identifié : oui',
+          ageId: null,
+        },
       });
     });
 
@@ -272,6 +279,7 @@ describe('sirecMigration.service.ts', () => {
             civiliteId: null,
           },
           commentaire: '',
+          ageId: null,
         },
       });
 
@@ -280,6 +288,7 @@ describe('sirecMigration.service.ts', () => {
           participantDeId: 'SIREC-42',
           estVictime: true,
           commentaire: '',
+          ageId: null,
           identite: {
             create: {
               nom: 'Martin',
@@ -305,6 +314,7 @@ describe('sirecMigration.service.ts', () => {
             civiliteId: 'M',
           },
           commentaire: '',
+          ageId: null,
         },
       });
 
@@ -313,6 +323,7 @@ describe('sirecMigration.service.ts', () => {
           participantDeId: 'SIREC-42',
           estVictime: true,
           commentaire: '',
+          ageId: null,
           identite: {
             create: {
               nom: 'Martin',
@@ -326,10 +337,21 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
+    it('should pass ageId to victime PersonneConcernee when set', async () => {
+      await saveFromSirec({
+        ...data,
+        victime: { identite: null, commentaire: 'Age de la victime : 45', ageId: '30-59' },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: { participantDeId: 'SIREC-42', estVictime: true, commentaire: 'Age de la victime : 45', ageId: '30-59' },
+      });
+    });
+
     it('should not add identite to victime PersonneConcernee when identite is null', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, commentaire: '' },
+        victime: { identite: null, commentaire: '', ageId: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({

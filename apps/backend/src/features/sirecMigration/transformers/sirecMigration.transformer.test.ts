@@ -32,6 +32,7 @@ describe('sirecMigration.transformer.ts', () => {
       plaignant_tel: null as string | null,
       plaignant_connu: null as number | null,
       victime_non_identifiee: null as number | null,
+      victime_age: null as number | null,
       victime_sexe: null as number | null,
       victime_nom: null as string | null,
       victime_prenom: null as string | null,
