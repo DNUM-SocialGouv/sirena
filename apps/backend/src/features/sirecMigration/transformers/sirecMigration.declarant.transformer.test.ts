@@ -22,6 +22,8 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     plaignant_mail: null as string | null,
     plaignant_tel: null as string | null,
     plaignant_connu: null as number | null,
+    victime_lien_plaignant: null as number | null,
+    lien_plai_autre: null as string | null,
   };
 
   it('should map plaignant=34 to declarant with estVictime true', () => {
@@ -30,6 +32,8 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     expect(result).toEqual({
       estVictime: true,
       veutGarderAnonymat: null,
+      lienVictimeId: null,
+      lienAutrePrecision: null,
       adresse: null,
       identite: null,
       commentaire: '',
@@ -42,6 +46,8 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     expect(result).toEqual({
       estVictime: false,
       veutGarderAnonymat: null,
+      lienVictimeId: null,
+      lienAutrePrecision: null,
       adresse: null,
       identite: null,
       commentaire: '',
@@ -58,6 +64,8 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     expect(result).toEqual({
       estVictime: null,
       veutGarderAnonymat: null,
+      lienVictimeId: null,
+      lienAutrePrecision: null,
       adresse: null,
       identite: null,
       commentaire: 'Le requérant est anonyme : oui',
@@ -80,6 +88,8 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     expect(result).toEqual({
       estVictime: true,
       veutGarderAnonymat: null,
+      lienVictimeId: null,
+      lienAutrePrecision: null,
       adresse: null,
       identite: null,
       commentaire: '',
@@ -374,6 +384,39 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     });
 
     expect(result?.adresse?.rue).toBe('12 rue de la Paix');
+  });
+
+  it('should map victime_lien_plaignant=46 to lienVictimeId MEMBRE_FAMILLE', () => {
+    expect(transformSirecDeclarant({ ...reclamation, victime_lien_plaignant: 46 })?.lienVictimeId).toBe(
+      'MEMBRE_FAMILLE',
+    );
+  });
+
+  it('should map victime_lien_plaignant=107 to lienVictimeId AUTRE', () => {
+    expect(transformSirecDeclarant({ ...reclamation, victime_lien_plaignant: 107 })?.lienVictimeId).toBe('AUTRE');
+  });
+
+  it('should set lienVictimeId to null when victime_lien_plaignant is null', () => {
+    expect(transformSirecDeclarant({ ...reclamation, plaignant: 36 })?.lienVictimeId).toBeNull();
+  });
+
+  it('should create declarant from victime_lien_plaignant alone', () => {
+    expect(transformSirecDeclarant({ ...reclamation, victime_lien_plaignant: 46 })).not.toBeNull();
+  });
+
+  it('should set lienAutrePrecision from lien_plai_autre', () => {
+    expect(
+      transformSirecDeclarant({ ...reclamation, victime_lien_plaignant: 107, lien_plai_autre: 'Voisin' })
+        ?.lienAutrePrecision,
+    ).toBe('Voisin');
+  });
+
+  it('should set lienAutrePrecision to null when lien_plai_autre is null', () => {
+    expect(transformSirecDeclarant({ ...reclamation, victime_lien_plaignant: 107 })?.lienAutrePrecision).toBeNull();
+  });
+
+  it('should create declarant from lien_plai_autre alone', () => {
+    expect(transformSirecDeclarant({ ...reclamation, lien_plai_autre: 'Voisin' })).not.toBeNull();
   });
 
   it('should not use requerant_adresse_complete for non-physical person (only used in rue)', () => {

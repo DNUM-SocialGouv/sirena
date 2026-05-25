@@ -2,6 +2,7 @@ import type { SirecReclamationRow } from '../sirecMigration.repository.js';
 import { transcodeDeclarant } from '../transco/declarant.transco.js';
 import { SIREC_DICO } from '../transco/dictionnaire.transco.js';
 import { transcodePlaignantAnonyme } from '../transco/plaignantAnonyme.transco.js';
+import { transcodeVictimeLienPlaignant } from '../transco/victimeLienPlaignant.transco.js';
 
 const PLAIGNANT_TYPE_PAS_PHYSIQUE = new Set([22, 106]);
 
@@ -22,6 +23,8 @@ export interface SirenaIdentiteData {
 export interface SirenaDeclarantData {
   estVictime: boolean | null;
   veutGarderAnonymat: boolean | null;
+  lienVictimeId: string | null;
+  lienAutrePrecision: string | null;
   adresse: SirenaAdresseData | null;
   identite: SirenaIdentiteData | null;
   commentaire: string;
@@ -44,10 +47,19 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
   const estVictime = transcodeDeclarant(reclamation.plaignant);
 
   if (estVictime === true) {
-    return { estVictime: true, veutGarderAnonymat: null, adresse: null, identite: null, commentaire: '' };
+    return {
+      estVictime: true,
+      veutGarderAnonymat: null,
+      lienVictimeId: null,
+      lienAutrePrecision: null,
+      adresse: null,
+      identite: null,
+      commentaire: '',
+    };
   }
 
   const veutGarderAnonymat = transcodePlaignantAnonyme(reclamation.plaignant_anonyme);
+  const lienVictimeId = transcodeVictimeLienPlaignant(reclamation.victime_lien_plaignant);
   const {
     plaignant_type,
     plaignant_adresse,
@@ -61,6 +73,7 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
     nom_representant,
     prenom_representant,
     plaignant_connu,
+    lien_plai_autre,
   } = reclamation;
 
   const identite = transformDeclarantIdentite(reclamation);
@@ -100,11 +113,21 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
   const hasDeclarantData =
     estVictime !== null ||
     veutGarderAnonymat !== null ||
+    lienVictimeId !== null ||
+    lien_plai_autre !== null ||
     adresse !== null ||
     identite !== null ||
     declarantCommentaire !== '';
 
   return hasDeclarantData
-    ? { estVictime, veutGarderAnonymat, adresse, identite, commentaire: declarantCommentaire }
+    ? {
+        estVictime,
+        veutGarderAnonymat,
+        lienVictimeId,
+        lienAutrePrecision: lien_plai_autre,
+        adresse,
+        identite,
+        commentaire: declarantCommentaire,
+      }
     : null;
 }
