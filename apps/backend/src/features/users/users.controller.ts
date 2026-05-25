@@ -112,7 +112,7 @@ const app = factoryWithLogs
       if (newEntiteId === currentEntiteId) {
         delete json.entiteId;
       } else if (newEntiteId && entiteIds !== null && !entiteIds.includes(newEntiteId)) {
-        throwHTTPException400BadRequest('No permissions', { kind: ERROR_KIND.BUSINESS });
+        throwHTTPException400BadRequest('No permissions', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
       // Check if status is changing to ACTIF to send activation email
