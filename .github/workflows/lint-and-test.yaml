@@ -19,10 +19,10 @@ jobs:
     # Non-blocking: vulnerability surface is reviewed but does not gate merges.
     continue-on-error: true
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+      - uses: actions/checkout@900f2210b1d28bbbd0bd22d17926b9e224e8f231 # v6
         with:
           fetch-depth: 1
-      - uses: pnpm/action-setup@739bfe42ca9233c5e6aca07c1a25a9d34aca49b0 # v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 22
@@ -34,7 +34,7 @@ jobs:
     name: GitLeaks secret scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+      - uses: actions/checkout@900f2210b1d28bbbd0bd22d17926b9e224e8f231 # v6
         with:
           fetch-depth: 1
       - name: Run GitLeaks
@@ -46,11 +46,11 @@ jobs:
     env:
       PG_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+      - uses: actions/checkout@900f2210b1d28bbbd0bd22d17926b9e224e8f231 # v6
         with:
           fetch-depth: 1
 
-      - uses: pnpm/action-setup@739bfe42ca9233c5e6aca07c1a25a9d34aca49b0 # v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
 
       - name: Use Node.js 22
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
@@ -59,7 +59,7 @@ jobs:
           cache: "pnpm"
 
       - name: Cache node_modules
-        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           # actions/setup-node already caches the global pnpm store; this layer
           # caches the project-level node_modules trees so install becomes a
