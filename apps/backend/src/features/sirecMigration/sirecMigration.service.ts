@@ -102,6 +102,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
                     prenom: data.declarant.identite.prenom ?? '',
                     email: data.declarant.identite.email ?? '',
                     telephone: data.declarant.identite.telephone ?? '',
+                    civiliteId: data.declarant.identite.civiliteId,
                   },
                 },
               }
@@ -125,6 +126,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
                     prenom: data.victime.identite.prenom ?? '',
                     email: data.victime.identite.email ?? '',
                     telephone: data.victime.identite.telephone ?? '',
+                    civiliteId: data.victime.identite.civiliteId,
                   },
                 },
               }
