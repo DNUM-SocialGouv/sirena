@@ -1,6 +1,6 @@
 import type { SirecReclamationRow } from '../sirecMigration.repository.js';
 import { transcodeVictimeSexe } from '../transco/victimeSexe.transco.js';
-import type { SirenaIdentiteData } from './sirecMigration.identite.transformer.js';
+import type { SirenaIdentiteData } from './sirecMigration.declarant.transformer.js';
 
 export interface SirenaVictimeData {
   identite: SirenaIdentiteData | null;
