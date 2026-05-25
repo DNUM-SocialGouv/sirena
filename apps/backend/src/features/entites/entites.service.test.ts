@@ -1127,6 +1127,47 @@ describe('getEntitesListAdmin()', () => {
     });
   });
 
+  it('filters admin rows by search terms across displayed hierarchy fields before pagination and total count', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteTypeId: 'ARS',
+      },
+      {
+        ...fakeEntite('dir-handicap'),
+        nomComplet: 'Direction Autonomie',
+        label: 'Pôle Handicap',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('svc-mediation'),
+        nomComplet: 'Service Médiation',
+        label: 'SM',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'dir-handicap',
+      },
+      {
+        ...fakeEntite('svc-sante'),
+        nomComplet: 'Service Santé',
+        label: 'SS',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'dir-handicap',
+      },
+    ]);
+
+    const result = await getEntitesListAdmin({
+      offset: 0,
+      limit: 1,
+      search: 'mediation handicap',
+    });
+
+    expect(result.total).toBe(1);
+    expect(result.data.map((row) => row.id)).toEqual(['svc-mediation']);
+  });
+
   it('filters admin rows by selected roots before pagination and total count', async () => {
     vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
       {
