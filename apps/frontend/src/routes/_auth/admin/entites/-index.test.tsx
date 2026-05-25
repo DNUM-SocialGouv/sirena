@@ -258,6 +258,32 @@ describe('Admin entites index route', () => {
     });
   });
 
+  it('shows active search result count and clears search while preserving filters and resetting offset', async () => {
+    const navigate = vi.fn();
+    mockedUseNavigate.mockReturnValue(navigate as never);
+    mockedUseSearch.mockReturnValue({ offset: 20, rootEntiteIds: 'root-ars', search: 'test' });
+    mockedUseEntitesAdmin.mockReturnValue(
+      buildSuccessQuery({
+        data: [],
+        meta: { total: 102 },
+      }),
+    );
+
+    render(<RouteComponent />);
+
+    expect(screen.getByText(/102/)).toBeInTheDocument();
+    expect(screen.getByText(/résultats pour "test"/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Effacer la recherche' }));
+
+    const searchUpdater = navigate.mock.calls[0][0].search;
+    expect(searchUpdater({ offset: 20, rootEntiteIds: 'root-ars', search: 'test' })).toEqual({
+      offset: undefined,
+      rootEntiteIds: 'root-ars',
+      search: undefined,
+    });
+  });
+
   it('uses rootEntiteIds search param to fetch the filtered admin entites list', () => {
     mockedUseNavigate.mockReturnValue(vi.fn());
     mockedUseSearch.mockReturnValue({ rootEntiteIds: 'root-ars,root-dd' });
