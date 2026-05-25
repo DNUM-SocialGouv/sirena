@@ -222,6 +222,42 @@ describe('Admin entites index route', () => {
     });
   });
 
+  it('renders search and submits trimmed search while preserving filters and resetting offset', async () => {
+    const navigate = vi.fn();
+    mockedUseNavigate.mockReturnValue(navigate);
+    mockedUseSearch.mockReturnValue({ offset: 20, rootEntiteIds: 'root-ars', search: 'ars' });
+    mockedUseEntitesAdmin.mockReturnValue(
+      buildSuccessQuery({
+        data: [],
+        meta: { total: 0 },
+      }),
+    );
+
+    render(<RouteComponent />);
+
+    expect(screen.getAllByText('Rechercher une entité administrative par nom ou libellé')).not.toHaveLength(0);
+    expect(mockedUseEntitesAdmin).toHaveBeenCalledWith({
+      offset: 20,
+      limit: 10,
+      rootEntiteIds: 'root-ars',
+      search: 'ars',
+    });
+
+    const searchInput = screen.getByRole('searchbox', {
+      name: 'Rechercher une entité administrative par nom ou libellé',
+    });
+    await userEvent.clear(searchInput);
+    await userEvent.type(searchInput, '  médiation  ');
+    await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }));
+
+    const searchUpdater = navigate.mock.calls[0][0].search;
+    expect(searchUpdater({ offset: 20, rootEntiteIds: 'root-ars', search: 'ars' })).toEqual({
+      offset: undefined,
+      rootEntiteIds: 'root-ars',
+      search: 'médiation',
+    });
+  });
+
   it('uses rootEntiteIds search param to fetch the filtered admin entites list', () => {
     mockedUseNavigate.mockReturnValue(vi.fn());
     mockedUseSearch.mockReturnValue({ rootEntiteIds: 'root-ars,root-dd' });
