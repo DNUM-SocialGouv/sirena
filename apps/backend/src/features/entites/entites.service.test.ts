@@ -1208,6 +1208,54 @@ describe('getEntitesListAdmin()', () => {
     expect(result.data.map((row) => row.id)).toEqual(['dir-ars']);
   });
 
+  it('combines selected roots and search before pagination', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteTypeId: 'ARS',
+      },
+      {
+        ...fakeEntite('dir-ars-a'),
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('dir-ars-b'),
+        nomComplet: 'Direction Enfance',
+        label: 'DE',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('root-cd'),
+        nomComplet: 'CD Calvados',
+        label: 'CD 14',
+        entiteTypeId: 'CD',
+      },
+      {
+        ...fakeEntite('dir-cd'),
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        entiteTypeId: 'CD',
+        entiteMereId: 'root-cd',
+      },
+    ]);
+
+    const result = await getEntitesListAdmin({
+      offset: 1,
+      limit: 1,
+      rootEntiteIds: ['root-ars'],
+      search: 'direction',
+    });
+
+    expect(result.total).toBe(2);
+    expect(result.data.map((row) => row.id)).toEqual(['dir-ars-b']);
+  });
+
   it('applies pagination after global admin ordering', async () => {
     vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
       {
