@@ -14,38 +14,39 @@ catalog:
   "@hono/standard-validator": ^0.2.2
   "@prisma/adapter-pg": ^7.8.0
   "@prisma/client": ^7.8.0
-  "@tanstack/react-router": ^1.169.2
+  "@tanstack/react-router": ^1.170.4
   "@testing-library/jest-dom": ^6.9.1
   "@testing-library/react": ^16.3.2
   "@testing-library/user-event": ^14.6.1
-  "@types/node": ^25.6.2
+  "@types/node": ^25.8.0
   "@types/react": ^19.2.14
   "@types/react-dom": ^19.2.3
-  "@vitejs/plugin-react": ^6.0.1
-  "@vitest/browser": ^4.1.5
-  "@vitest/coverage-v8": ^4.1.5
+  "@vitejs/plugin-react": ^6.0.2
+  "@vitest/browser": ^4.1.6
+  "@vitest/coverage-v8": ^4.1.6
   clsx: ^2.1.1
   dotenv: ^17.4.2
-  hono: ^4.12.18
+  hono: ^4.12.19
   hono-openapi: ^1.3.0
   jsdom: ^29.1.1
   prisma: ^7.8.0
   react: ^19.2.6
   react-dom: ^19.2.6
-  tsx: ^4.21.0
+  tsx: ^4.22.1
   typescript: ~6.0.3
-  vite: ^8.0.12
-  vitest: ^4.1.5
+  vite: ^8.0.13
+  vitest: ^4.1.6
   zod: ^4.4.3
 enablePrePostScripts: true
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - tmp@0.2.6
 overrides:
+  # CVE-2025-23206 (GHSA-92pp-h63x-v22m). @hono/node-server est tiré
+  # transitivement par prisma > @prisma/dev. Aucun consommateur n'a encore
+  # bumpé sa contrainte, l'override est donc actif.
   "@hono/node-server@<1.19.13": ">=1.19.13"
-  fast-uri@<3.1.2: ">=3.1.2"
-  fast-xml-builder@<1.1.7: ">=1.1.7"
-  hono@<4.12.18: ">=4.12.18"
+  # brace-expansion 2.x est encore résolu transitivement (npm, etc.) et
+  # tombe sous CVE-2025-5889 (ReDoS). On force la branche 5.x patchée.
   brace-expansion@<5.0.6: ">=5.0.6"
-  ws@<8.20.1: ">=8.20.1"
   tmp@<0.2.6: ^0.2.6
