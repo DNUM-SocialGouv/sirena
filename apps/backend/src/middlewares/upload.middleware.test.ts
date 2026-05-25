@@ -2,6 +2,7 @@ import { Readable } from 'node:stream';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MAX_FILE_SIZE } from '../config/files.constant.js';
 import type { AppBindings, UploadedFileContext } from '../helpers/factories/appWithUploadedFile.js';
 import { createMockPinoLogger } from '../tests/test-utils.js';
 import extractUploadedFileMiddleware from './upload.middleware.js';
@@ -257,6 +258,30 @@ describe('upload.middleware.ts', () => {
         }),
       );
       expect(next).toHaveBeenCalled();
+    });
+
+    it('should throw an error if the file is too large', async () => {
+      mockFromBuffer.mockResolvedValue({ mime: 'application/pdf', ext: 'pdf' });
+      mockThrowHTTPException400BadRequest.mockImplementation((msg: string) => {
+        throw new HTTPException(400, { message: msg });
+      });
+
+      const oversized = Buffer.alloc(MAX_FILE_SIZE + 1024);
+      const mockContext = createUploadMockContext({
+        incoming: buildMockIncoming({ content: oversized, filename: 'big.pdf', mimeType: 'application/pdf' }),
+      });
+
+      const next = vi.fn(async () => {
+        await drainUploadedFileStream(mockContext);
+      });
+
+      await expect(extractUploadedFileMiddleware(mockContext as unknown as Context<AppBindings>, next)).rejects.toThrow(
+        'File size exceeds the maximum allowed',
+      );
+      expect(mockThrowHTTPException400BadRequest).toHaveBeenCalledWith('File size exceeds the maximum allowed', {
+        cause: { name: 'FILE_MAX_SIZE' },
+        res: mockContext.res,
+      });
     });
 
     it('should throw an error when detected mime is not allowed', async () => {
