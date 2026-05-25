@@ -1,10 +1,11 @@
 import type { SirecReclamationRow } from '../sirecMigration.repository.js';
 import { transcodeVictimeAge } from '../transco/victimeAge.transco.js';
 import { transcodeVictimeSexe } from '../transco/victimeSexe.transco.js';
-import type { SirenaIdentiteData } from './sirecMigration.declarant.transformer.js';
+import type { SirenaAdresseData, SirenaIdentiteData } from './sirecMigration.declarant.transformer.js';
 
 export interface SirenaVictimeData {
   identite: SirenaIdentiteData | null;
+  adresse: SirenaAdresseData | null;
   commentaire: string;
   ageId: string | null;
 }
@@ -24,10 +25,17 @@ function transformVictimeIdentite(reclamation: SirecReclamationRow): SirenaIdent
   return { nom: victime_nom, prenom: victime_prenom, email: victime_mail, telephone: victime_tel, civiliteId };
 }
 
+function transformVictimeAdresse(reclamation: SirecReclamationRow): SirenaAdresseData | null {
+  const { victime_adresse, victime_adresse_complement, usager_adresse, usager_cp, usager_ville } = reclamation;
+  const rue = [victime_adresse, victime_adresse_complement, usager_adresse].filter(Boolean).join(' ') || null;
+  return rue || usager_cp || usager_ville ? { rue, codePostal: usager_cp, ville: usager_ville } : null;
+}
+
 export function transformSirecVictime(reclamation: SirecReclamationRow): SirenaVictimeData | null {
   const { victime_non_identifiee, victime_age } = reclamation;
 
   const identite = transformVictimeIdentite(reclamation);
+  const adresse = transformVictimeAdresse(reclamation);
   const ageId = transcodeVictimeAge(victime_age);
 
   const victimeCommentaireParts = [
@@ -36,7 +44,7 @@ export function transformSirecVictime(reclamation: SirecReclamationRow): SirenaV
   ].filter(Boolean) as string[];
 
   const commentaire = victimeCommentaireParts.join('\n');
-  const hasVictimeData = identite !== null || commentaire !== '' || ageId !== null;
+  const hasVictimeData = identite !== null || adresse !== null || commentaire !== '' || ageId !== null;
 
-  return hasVictimeData ? { identite, commentaire, ageId } : null;
+  return hasVictimeData ? { identite, adresse, commentaire, ageId } : null;
 }

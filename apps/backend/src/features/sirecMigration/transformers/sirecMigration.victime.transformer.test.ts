@@ -6,6 +6,11 @@ describe('sirecMigration.victime.transformer.ts', () => {
     victime_non_identifiee: null as number | null,
     victime_age: null as number | null,
     victime_sexe: null as number | null,
+    victime_adresse: null as string | null,
+    victime_adresse_complement: null as string | null,
+    usager_adresse: null as string | null,
+    usager_cp: null as string | null,
+    usager_ville: null as string | null,
     victime_nom: null as string | null,
     victime_prenom: null as string | null,
     victime_mail: null as string | null,
@@ -23,7 +28,12 @@ describe('sirecMigration.victime.transformer.ts', () => {
   it('should set commentaire to "Usager (Victime) non identifié : oui" when victime_non_identifiee=1', () => {
     const result = transformSirecVictime({ ...reclamation, victime_non_identifiee: 1 });
 
-    expect(result).toEqual({ identite: null, commentaire: 'Usager (Victime) non identifié : oui', ageId: null });
+    expect(result).toEqual({
+      identite: null,
+      adresse: null,
+      commentaire: 'Usager (Victime) non identifié : oui',
+      ageId: null,
+    });
   });
 
   it('should set identite from victime_nom, victime_prenom, victime_mail, victime_tel', () => {
@@ -142,5 +152,56 @@ describe('sirecMigration.victime.transformer.ts', () => {
 
   it('should return non-null when only victime_age is set', () => {
     expect(transformSirecVictime({ ...reclamation, victime_age: 25 })).not.toBeNull();
+  });
+
+  it('should return null when all victime fields including address are null', () => {
+    expect(transformSirecVictime(reclamation)).toBeNull();
+  });
+
+  it('should return non-null with adresse when only victime_adresse is set', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_adresse: '5 rue des Lilas' });
+
+    expect(result).not.toBeNull();
+    expect(result?.adresse).toEqual({ rue: '5 rue des Lilas', codePostal: null, ville: null });
+  });
+
+  it('should concatenate victime_adresse, victime_adresse_complement, usager_adresse into rue', () => {
+    const result = transformSirecVictime({
+      ...reclamation,
+      victime_adresse: '5 rue des Lilas',
+      victime_adresse_complement: 'Bât B',
+      usager_adresse: 'Lieu-dit La Forêt',
+    });
+
+    expect(result?.adresse?.rue).toBe('5 rue des Lilas Bât B Lieu-dit La Forêt');
+  });
+
+  it('should set rue to null when all address line fields are null', () => {
+    const result = transformSirecVictime({ ...reclamation, usager_cp: '69001' });
+
+    expect(result?.adresse?.rue).toBeNull();
+  });
+
+  it('should map usager_cp to codePostal and usager_ville to ville', () => {
+    const result = transformSirecVictime({
+      ...reclamation,
+      victime_adresse: '5 rue des Lilas',
+      usager_cp: '69001',
+      usager_ville: 'Lyon',
+    });
+
+    expect(result?.adresse).toEqual({ rue: '5 rue des Lilas', codePostal: '69001', ville: 'Lyon' });
+  });
+
+  it('should return adresse null when all address fields are null', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_nom: 'Martin' });
+
+    expect(result?.adresse).toBeNull();
+  });
+
+  it('should return non-null when only usager_ville is set', () => {
+    const result = transformSirecVictime({ ...reclamation, usager_ville: 'Lyon' });
+
+    expect(result?.adresse).toEqual({ rue: null, codePostal: null, ville: 'Lyon' });
   });
 });
