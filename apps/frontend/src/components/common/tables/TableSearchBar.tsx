@@ -31,7 +31,7 @@ export function TableSearchBar({
         <div className={inputContainerClassName}>
           <SearchBar
             label={label}
-            onButtonClick={() => onSearch(value)}
+            onButtonClick={onSearch}
             renderInput={(inputProps) => (
               <input {...inputProps} placeholder="" value={value} onChange={(e) => onValueChange(e.target.value)} />
             )}
