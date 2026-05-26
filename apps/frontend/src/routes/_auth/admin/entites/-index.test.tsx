@@ -177,9 +177,13 @@ describe('Admin entites index route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('button', { name: /Entité administrative \(1\)/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Entité administrative, 1 entité administrative sélectionnée/ }),
+    ).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: /Entité administrative \(1\)/ }));
+    await userEvent.click(
+      screen.getByRole('button', { name: /Entité administrative, 1 entité administrative sélectionnée/ }),
+    );
     await userEvent.click(screen.getByRole('checkbox', { name: 'ARS Normandie' }));
 
     expect(navigate).toHaveBeenCalledWith({
@@ -212,7 +216,9 @@ describe('Admin entites index route', () => {
 
     render(<RouteComponent />);
 
-    await userEvent.click(screen.getByRole('button', { name: /Entité administrative \(1\)/ }));
+    await userEvent.click(
+      screen.getByRole('button', { name: /Entité administrative, 1 entité administrative sélectionnée/ }),
+    );
     await userEvent.click(screen.getByRole('checkbox', { name: 'CD Calvados' }));
 
     const searchUpdater = navigate.mock.calls[0][0].search;

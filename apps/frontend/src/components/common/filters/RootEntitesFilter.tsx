@@ -26,6 +26,9 @@ export function RootEntitesFilter({ rootEntites, selectedRootEntiteIds, onChange
   return (
     <DropdownCheckboxFilter
       buttonLabel="Entité administrative"
+      selectedValuesLabel={(count) =>
+        `${count} entité${count > 1 ? 's' : ''} administrative${count > 1 ? 's' : ''} sélectionnée${count > 1 ? 's' : ''}`
+      }
       legend="Filtrer les entités par entité administrative"
       hintText="Entité administrative"
       options={options}
