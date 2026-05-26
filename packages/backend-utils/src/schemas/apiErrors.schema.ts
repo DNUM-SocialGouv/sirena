@@ -1,3 +1,4 @@
+import { ERROR_KIND } from '@sirena/common/constants';
 import { z } from 'zod';
 
 export const ErrorSchema = z.object({
@@ -7,6 +8,7 @@ export const ErrorSchema = z.object({
       name: z.string().optional(),
       message: z.string().optional(),
       stack: z.string().optional(),
+      kind: z.enum([ERROR_KIND.BUSINESS, ERROR_KIND.SYSTEM]).optional(),
     })
     .optional(),
 });
