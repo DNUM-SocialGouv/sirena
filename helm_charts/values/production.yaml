@@ -33,6 +33,7 @@ backend:
       host: sirena-sante.social.gouv.fr
       appAnnotations:
         external-dns.alpha.kubernetes.io/hostname: sirena-sante.social.prod.atlas.fabrique.social.gouv.fr
+        alpha.external-dns.io/target: 79.137.10.7
       tls:
         hosts:
           - sirena-sante.social.gouv.fr
@@ -68,6 +69,7 @@ frontend:
       host: sirena-sante.social.gouv.fr
       appAnnotations:
         external-dns.alpha.kubernetes.io/hostname: sirena-sante.social.prod.atlas.fabrique.social.gouv.fr
+        alpha.external-dns.io/target: 79.137.10.7
       tls:
         hosts:
           - sirena-sante.social.gouv.fr
