@@ -9,6 +9,7 @@ type Option = {
 
 type Props = {
   buttonLabel: string;
+  selectedValuesLabel: (count: number) => string;
   legend: string;
   hintText: string;
   options: Option[];
@@ -20,6 +21,7 @@ type Props = {
 
 export function DropdownCheckboxFilter({
   buttonLabel,
+  selectedValuesLabel,
   legend,
   hintText,
   options,
@@ -107,17 +109,15 @@ export function DropdownCheckboxFilter({
         className="dropdown-checkbox-filter__button fr-btn fr-btn--tertiary"
         aria-expanded={isOpen}
         aria-controls={menuId}
-        aria-label={hasSelection ? `${buttonLabel} (${selectedValues.length})` : buttonLabel}
         onClick={toggle}
       >
-        <span>
-          {buttonLabel}
-          {hasSelection && <span aria-hidden="true"> ({selectedValues.length})</span>}
-        </span>
-        <span
-          aria-hidden="true"
-          className={`fr-icon-arrow-down-s-line menu__trigger__icon${isOpen ? ' menu__trigger__icon--is-open' : ''}`}
-        />
+        {buttonLabel}
+        {hasSelection && (
+          <>
+            <span aria-hidden="true"> ({selectedValues.length})</span>
+            <span className="fr-sr-only">, {selectedValuesLabel(selectedValues.length)}</span>
+          </>
+        )}
       </button>
 
       {isOpen && (
