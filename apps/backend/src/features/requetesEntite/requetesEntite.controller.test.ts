@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import { type EntiteType, RECEPTION_TYPE, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { type EntiteType, ERROR_KIND, RECEPTION_TYPE, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -363,7 +363,7 @@ describe('RequetesEntite endpoints: /', () => {
       const body = await res.json();
 
       expect(res.status).toBe(404);
-      expect(body).toEqual({ message: 'Requete not found' });
+      expect(body).toEqual({ message: 'Requete not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
@@ -379,7 +379,7 @@ describe('RequetesEntite endpoints: /', () => {
       const body = await res.json();
 
       expect(res.status).toBe(404);
-      expect(body).toEqual({ message: 'Requete not found' });
+      expect(body).toEqual({ message: 'Requete not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
@@ -396,7 +396,7 @@ describe('RequetesEntite endpoints: /', () => {
       const body = await res.json();
 
       expect(res.status).toBe(404);
-      expect(body).toEqual({ message: 'File not found' });
+      expect(body).toEqual({ message: 'File not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
@@ -414,7 +414,7 @@ describe('RequetesEntite endpoints: /', () => {
       const body = await res.json();
 
       expect(res.status).toBe(404);
-      expect(body).toEqual({ message: 'File not found' });
+      expect(body).toEqual({ message: 'File not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
       expect(getFileStream).not.toHaveBeenCalled();
     });
@@ -552,7 +552,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(404);
       const json = await res.json();
-      expect(json).toEqual({ message: 'Requete not found' });
+      expect(json).toEqual({ message: 'Requete not found', cause: { kind: ERROR_KIND.BUSINESS } });
     });
   });
 
@@ -704,7 +704,10 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(400);
       const json = await res.json();
-      expect(json).toEqual({ message: 'You are not allowed to close requetes without topEntiteId.' });
+      expect(json).toEqual({
+        message: 'You are not allowed to close requetes without topEntiteId.',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
 
       expect(closeRequeteForEntite).not.toHaveBeenCalled();
     });
@@ -722,7 +725,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(404);
       const json = await res.json();
-      expect(json).toEqual({ message: 'Requête not found' });
+      expect(json).toEqual({ message: 'Requête not found', cause: { kind: ERROR_KIND.BUSINESS } });
     });
 
     it('should return 400 when reason is invalid', async () => {

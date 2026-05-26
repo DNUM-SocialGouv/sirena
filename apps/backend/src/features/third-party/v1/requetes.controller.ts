@@ -1,5 +1,5 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { RECEPTION_TYPE } from '@sirena/common/constants';
+import { ERROR_KIND, RECEPTION_TYPE } from '@sirena/common/constants';
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from '../../../config/files.constant.js';
 import factoryWithLogs from '../../../helpers/factories/appWithLogs.js';
 import { fileTypeParser, sanitizeFilename } from '../../../helpers/file.js';
@@ -87,21 +87,30 @@ const app = factoryWithLogs
     const file = body.file;
 
     if (!(file instanceof File)) {
-      throwHTTPException400BadRequest('No file uploaded. Send a file in the "file" field.', { res: c.res });
+      throwHTTPException400BadRequest('No file uploaded. Send a file in the "file" field.', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     if (buffer.length > MAX_FILE_SIZE) {
-      throwHTTPException400BadRequest('File size exceeds the maximum allowed', { res: c.res });
+      throwHTTPException400BadRequest('File size exceeds the maximum allowed', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
 
     const detectedType = await fileTypeParser.fromBuffer(buffer);
     const mimeType = detectedType?.mime ?? file.type ?? 'application/octet-stream';
 
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-      throwHTTPException400BadRequest(`File type "${mimeType}" is not allowed`, { res: c.res });
+      throwHTTPException400BadRequest(`File type "${mimeType}" is not allowed`, {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
 
     const ext = detectedType?.ext ?? file.name.split('.').pop() ?? '';
@@ -122,7 +131,10 @@ const app = factoryWithLogs
     });
 
     if (!result) {
-      throwHTTPException404NotFound('Requete not found or not owned by this account', { res: c.res });
+      throwHTTPException404NotFound('Requete not found or not owned by this account', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
 
     logger.info({ requeteId, fileId: result.fileId }, 'Attachment added via third-party API');

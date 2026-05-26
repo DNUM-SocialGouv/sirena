@@ -1,3 +1,4 @@
+import { ERROR_KIND } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
@@ -169,6 +170,7 @@ describe('notes.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({
         message: 'RequeteEtape not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(addNote).not.toHaveBeenCalled();
     });
@@ -185,6 +187,7 @@ describe('notes.controller.ts', () => {
       expect(res.status).toBe(403);
       expect(body).toEqual({
         message: 'You are not allowed to add notes to this requete etape',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(addNote).not.toHaveBeenCalled();
     });
@@ -201,6 +204,7 @@ describe('notes.controller.ts', () => {
       expect(res.status).toBe(403);
       expect(body).toEqual({
         message: 'You are not allowed to add notes with these files',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
 
       expect(isUserOwner).toHaveBeenCalledWith('test-user-id', ['f1', 'f2']);
@@ -347,6 +351,7 @@ describe('notes.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({
         message: 'RequeteEtape not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(updateNote).not.toHaveBeenCalled();
     });
@@ -365,6 +370,7 @@ describe('notes.controller.ts', () => {
       expect(res.status).toBe(403);
       expect(body).toEqual({
         message: 'You are not allowed to update this requete etape',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(updateNote).not.toHaveBeenCalled();
     });
@@ -382,6 +388,7 @@ describe('notes.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({
         message: 'Note not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(updateNote).not.toHaveBeenCalled();
     });
@@ -437,6 +444,7 @@ describe('notes.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({
         message: 'RequeteEtape not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(deleteNote).not.toHaveBeenCalled();
     });
@@ -454,6 +462,7 @@ describe('notes.controller.ts', () => {
       expect(res.status).toBe(403);
       expect(body).toEqual({
         message: 'You are not allowed to delete this requete etape',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(deleteNote).not.toHaveBeenCalled();
     });
@@ -469,6 +478,7 @@ describe('notes.controller.ts', () => {
       const body = await res.json();
       expect(body).toEqual({
         message: 'Note not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(deleteNote).not.toHaveBeenCalled();
     });
