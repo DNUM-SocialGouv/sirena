@@ -117,11 +117,8 @@ export function RouteComponent() {
   return (
     <>
       <fieldset className="admin-entites-filters fr-mb-2w">
-        <legend className="fr-sr-only">Filtrer les entités</legend>
         <div className="admin-entites-filters__row">
-          <span className="fr-text--regular" aria-hidden="true">
-            Filtrer les entités
-          </span>
+          <legend className="fr-text--regular">Filtrer les entités</legend>
           <div className="admin-entites-filters__items">
             <RootEntitesFilter
               rootEntites={rootEntitesListQuery.data?.data ?? []}
