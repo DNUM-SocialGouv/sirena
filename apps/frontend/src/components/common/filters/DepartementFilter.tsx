@@ -30,7 +30,7 @@ export function DepartementFilter({ departements, selectedCodes, counts, onChang
   return (
     <DropdownCheckboxFilter
       buttonLabel="Département"
-      selectedValuesLabel={(count) => `${count} département${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`}
+      selectedValuesLabel={(count) => `département${count > 1 ? 's' : ''} sélectionné${count > 1 ? 's' : ''}`}
       legend="Filtrer les requêtes par département"
       hintText="Code - Département (nombre de requêtes)"
       options={options}
