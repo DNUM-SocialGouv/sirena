@@ -178,11 +178,11 @@ describe('Admin entites index route', () => {
     render(<RouteComponent />);
 
     expect(
-      screen.getByRole('button', { name: /Entité administrative, 1 entité administrative sélectionnée/ }),
+      screen.getByRole('button', { name: /Entité administrative\s*\(1\)\s*entité administrative sélectionnée/ }),
     ).toBeInTheDocument();
 
     await userEvent.click(
-      screen.getByRole('button', { name: /Entité administrative, 1 entité administrative sélectionnée/ }),
+      screen.getByRole('button', { name: /Entité administrative\s*\(1\)\s*entité administrative sélectionnée/ }),
     );
     await userEvent.click(screen.getByRole('checkbox', { name: 'ARS Normandie' }));
 
@@ -217,7 +217,7 @@ describe('Admin entites index route', () => {
     render(<RouteComponent />);
 
     await userEvent.click(
-      screen.getByRole('button', { name: /Entité administrative, 1 entité administrative sélectionnée/ }),
+      screen.getByRole('button', { name: /Entité administrative\s*\(1\)\s*entité administrative sélectionnée/ }),
     );
     await userEvent.click(screen.getByRole('checkbox', { name: 'CD Calvados' }));
 

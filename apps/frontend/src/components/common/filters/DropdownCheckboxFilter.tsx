@@ -114,8 +114,8 @@ export function DropdownCheckboxFilter({
         {buttonLabel}
         {hasSelection && (
           <>
-            <span aria-hidden="true"> ({selectedValues.length})</span>
-            <span className="fr-sr-only">, {selectedValuesLabel(selectedValues.length)}</span>
+            <span> ({selectedValues.length})</span>
+            <span className="fr-sr-only"> {selectedValuesLabel(selectedValues.length)}</span>
           </>
         )}
       </button>
