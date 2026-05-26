@@ -264,6 +264,21 @@ describe('Admin entites index route', () => {
     });
   });
 
+  it('updates the page title with the active search result count', () => {
+    mockedUseNavigate.mockReturnValue(vi.fn() as never);
+    mockedUseSearch.mockReturnValue({ search: 'test' });
+    mockedUseEntitesAdmin.mockReturnValue(
+      buildSuccessQuery({
+        data: [],
+        meta: { total: 2 },
+      }),
+    );
+
+    render(<RouteComponent />);
+
+    expect(document.title).toBe('2 résultats pour : "test" - Gestion des entités - Espace administrateur - SIRENA');
+  });
+
   it('shows active search result count and clears search while preserving filters and resetting offset', async () => {
     const navigate = vi.fn();
     mockedUseNavigate.mockReturnValue(navigate as never);

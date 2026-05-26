@@ -92,6 +92,13 @@ export function RouteComponent() {
   });
 
   const total = useMemo(() => entitesListQuery.data?.meta?.total ?? 0, [entitesListQuery.data?.meta?.total]);
+
+  useEffect(() => {
+    document.title = search.search
+      ? `${total} résultat${total > 1 ? 's' : ''} pour : "${search.search}" - Gestion des entités - Espace administrateur - SIRENA`
+      : 'Gestion des entités - Espace administrateur - SIRENA';
+  }, [search.search, total]);
+
   const totalPages = useMemo(() => Math.ceil(total / limit), [total, limit]);
   const shouldShowPagination = useMemo(() => total > limit, [total, limit]);
 
