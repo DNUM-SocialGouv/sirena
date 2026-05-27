@@ -75,6 +75,7 @@ export const mapPersonneConcerneeToPrismaCreate = (participantData: PersonneConc
   victimeInformeeCommentaire: participantData.victimeInformeeCommentaire || '',
   autrePersonnes: participantData.autrePersonnes || '',
   aAutrePersonnes: participantData.aAutrePersonnes,
+  mesureProtection: participantData.mesureProtection,
   commentaire: participantData.commentaire || '',
   ageId: participantData.age || undefined,
   dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : null,

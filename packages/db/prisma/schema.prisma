@@ -225,6 +225,12 @@ model DemarchesEngageesEnum {
   demarchesEngagees DemarchesEngagees[]
 }
 
+enum MesureProtection {
+  MANDATAIRE_JUDICIAIRE
+  HABILITATION_FAMILIALE
+  NON
+}
+
 model PersonneConcernee {
   id                          String   @id @default(uuid())
   estNonIdentifiee            Boolean?
@@ -239,6 +245,7 @@ model PersonneConcernee {
   commentaire                 String   @default("")
   autrePersonnes              String   @default("")
   aAutrePersonnes             Boolean?
+  mesureProtection            MesureProtection?
 
   identite Identite? @relation("PersonneIdentite")
 

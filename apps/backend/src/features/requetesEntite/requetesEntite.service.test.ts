@@ -26,6 +26,7 @@ import {
   updatePrioriteRequete,
   updateRequete,
   updateRequeteDeclarant,
+  updateRequeteParticipant,
   updateRequeteSituation,
   updateStatusRequete,
 } from './requetesEntite.service.js';
@@ -1352,6 +1353,34 @@ describe('requetesEntite.service', () => {
 
       expect(result).toEqual(mockRequete);
       expect(prisma.requete.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateRequeteParticipant', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('persists the Mesure de protection when updating the Personne concernée', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite.requete,
+        participant: { id: 'participant123', identite: null },
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+
+      await updateRequeteParticipant('req123', { mesureProtection: 'MANDATAIRE_JUDICIAIRE' });
+
+      expect(prisma.requete.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            participant: expect.objectContaining({
+              update: expect.objectContaining({
+                mesureProtection: 'MANDATAIRE_JUDICIAIRE',
+              }),
+            }),
+          }),
+        }),
+      );
     });
   });
 
