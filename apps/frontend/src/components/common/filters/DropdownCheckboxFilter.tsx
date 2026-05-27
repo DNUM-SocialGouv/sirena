@@ -114,7 +114,9 @@ export function DropdownCheckboxFilter({
         {buttonLabel}
         {hasSelection && (
           <>
-            <span> ({selectedValues.length})</span>
+            <span>
+              {'\u00A0'}({selectedValues.length})
+            </span>
             <span className="fr-sr-only"> {selectedValuesLabel(selectedValues.length)}</span>
           </>
         )}
