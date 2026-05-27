@@ -39,6 +39,8 @@ catalog:
   zod: ^4.4.3
 enablePrePostScripts: true
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - tmp@0.2.6
 overrides:
   # CVE-2025-23206 (GHSA-92pp-h63x-v22m). @hono/node-server est tiré
   # transitivement par prisma > @prisma/dev. Aucun consommateur n'a encore
@@ -47,3 +49,4 @@ overrides:
   # brace-expansion 2.x est encore résolu transitivement (npm, etc.) et
   # tombe sous CVE-2025-5889 (ReDoS). On force la branche 5.x patchée.
   brace-expansion@<5.0.6: ">=5.0.6"
+  tmp@<0.2.6: ^0.2.6
