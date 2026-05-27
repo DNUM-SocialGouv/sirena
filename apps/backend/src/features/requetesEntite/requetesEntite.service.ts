@@ -15,7 +15,7 @@ import {
   type RequeteStatutType,
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
-import { getLieuPrecisionLabel } from '@sirena/common/utils';
+import { formatMesureProtectionPersonneConcernee, getLieuPrecisionLabel } from '@sirena/common/utils';
 import archiver from 'archiver';
 import type { z } from 'zod';
 import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
@@ -2174,6 +2174,8 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
   // ===== 4. PERSONNE CONCERNÉE =====
   if (requete.participant) {
     const p = requete.participant;
+    const mesureProtectionLabel = formatMesureProtectionPersonneConcernee(p.mesureProtection);
+
     pdf
       .section('Personne concernée')
       .field('Civilité', p.identite?.civilite?.label || null)
@@ -2198,6 +2200,10 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       .field("D'autres personnes sont concernées par la requête", booleanLabel(p.aAutrePersonnes))
       .field('Précisions sur les autres personnes concernées', p.autrePersonnes || null)
       .field('Autres précisions', p.commentaire || null);
+
+    if (mesureProtectionLabel) {
+      pdf.paragraph(mesureProtectionLabel);
+    }
   }
 
   // ===== 5. SITUATIONS =====

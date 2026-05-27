@@ -18,6 +18,7 @@ import {
   deduplicateFileName,
   enrichSituationWithTraitementDesFaits,
   filterOtherEntitesAffectedForUser,
+  generateRequetePdfBuffer,
   getOtherEntitesAffected,
   getPrefixedFileName,
   getRequeteEntiteById,
@@ -81,6 +82,7 @@ import { getFileStream } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
+import { RequetePdfBuilder } from './requetesEntite.pdf.builder.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -3040,6 +3042,45 @@ describe('requetesEntite.service', () => {
       await updatePrioriteRequete('req123', 'ent123', 'HAUTE');
 
       expect(vi.mocked(createChangeLog)).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('generateRequetePdfBuffer', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      vi.restoreAllMocks();
+    });
+
+    it('adds positive Mesure de protection to the generated request PDF', async () => {
+      const paragraphSpy = vi.spyOn(RequetePdfBuilder.prototype, 'paragraph');
+      vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statut: { id: 'EN_COURS', label: 'En cours' },
+        priorite: null,
+        requete: {
+          ...mockRequeteEntite.requete,
+          receptionType: null,
+          provenance: null,
+          declarant: null,
+          participant: {
+            id: 'participant123',
+            mesureProtection: 'MANDATAIRE_JUDICIAIRE',
+            identite: null,
+            adresse: null,
+            age: null,
+            lienVictime: null,
+          },
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+      await generateRequetePdfBuffer('req123', 'ent123');
+
+      expect(paragraphSpy).toHaveBeenCalledWith(
+        'La personne concernée est sous mesure de protection : mandataire judiciaire',
+      );
     });
   });
 
