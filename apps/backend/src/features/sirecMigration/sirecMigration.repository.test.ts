@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mysqlPool } from '../../config/mysql.js';
 import {
   fetchSirecData,
+  fetchSirecGroupIds,
   fetchSirecMotifsDeclaresById,
   fetchSirecReclamationById,
 } from './sirecMigration.repository.js';
@@ -75,6 +76,25 @@ describe('sirecMigration.repository.ts', () => {
     });
   });
 
+  describe('fetchSirecGroupIds', () => {
+    it('should return the list of group ids when found', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[{ id_group: 3 }, { id_group: 5 }], []]);
+
+      const result = await fetchSirecGroupIds(42);
+
+      expect(result).toEqual([3, 5]);
+      expect(mysqlPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_data_group'), [42]);
+    });
+
+    it('should return an empty array when no groups found', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[], []]);
+
+      const result = await fetchSirecGroupIds(42);
+
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('fetchSirecData', () => {
     const mockRow = {
       id_data: 42,
@@ -89,13 +109,15 @@ describe('sirecMigration.repository.ts', () => {
     it('should return the aggregate data when the reclamation is found', async () => {
       vi.mocked(mysqlPool.query)
         .mockResolvedValueOnce([[mockRow], []])
-        .mockResolvedValueOnce([[{ id_dico: 823 }, { id_dico: 809 }], []]);
+        .mockResolvedValueOnce([[{ id_dico: 823 }, { id_dico: 809 }], []])
+        .mockResolvedValueOnce([[{ id_group: 3 }, { id_group: 5 }], []]);
 
       const result = await fetchSirecData(42);
 
       expect(result).toEqual({
         reclamation: mockRow,
         motifsDeclaresIdDicos: [823, 809],
+        groupIds: [3, 5],
       });
     });
 
@@ -107,7 +129,7 @@ describe('sirecMigration.repository.ts', () => {
       expect(result).toBeNull();
     });
 
-    it('should not query motifs when the reclamation is not found', async () => {
+    it('should not query motifs or groupIds when the reclamation is not found', async () => {
       vi.mocked(mysqlPool.query).mockResolvedValueOnce([[], []]);
 
       await fetchSirecData(99);

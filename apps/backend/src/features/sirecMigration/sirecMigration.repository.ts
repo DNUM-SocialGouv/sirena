@@ -54,6 +54,7 @@ export interface SirecReclamationRow {
 export interface SirecReclamationData {
   reclamation: SirecReclamationRow;
   motifsDeclaresIdDicos: number[];
+  groupIds: number[];
 }
 
 export async function fetchSirecReclamationById(sirecId: number): Promise<SirecReclamationRow | null> {
@@ -72,11 +73,22 @@ export async function fetchSirecMotifsDeclaresById(sirecId: number): Promise<num
   return rows.map((row) => row.id_dico);
 }
 
+export async function fetchSirecGroupIds(sirecId: number): Promise<number[]> {
+  const [rows] = await mysqlPool.query<({ id_group: number } & RowDataPacket)[]>(
+    'SELECT id_group FROM sire_reclamation_data_group WHERE id_data = ? AND id_group != 1',
+    [sirecId],
+  );
+  return rows.map((row) => row.id_group);
+}
+
 export async function fetchSirecData(sirecId: number): Promise<SirecReclamationData | null> {
   const reclamation = await fetchSirecReclamationById(sirecId);
   if (!reclamation) return null;
 
-  const motifsDeclaresIdDicos = await fetchSirecMotifsDeclaresById(sirecId);
+  const [motifsDeclaresIdDicos, groupIds] = await Promise.all([
+    fetchSirecMotifsDeclaresById(sirecId),
+    fetchSirecGroupIds(sirecId),
+  ]);
 
-  return { reclamation, motifsDeclaresIdDicos };
+  return { reclamation, motifsDeclaresIdDicos, groupIds };
 }
