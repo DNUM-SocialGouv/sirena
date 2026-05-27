@@ -1,25 +1,16 @@
 import { REQUETE_ETAPE_STATUT_TYPES } from '@sirena/common/constants';
+import { formatSirecDate } from '../../../helpers/sirecMigration.js';
 import type { SirecReclamationData } from '../sirecMigration.repository.js';
 import { SIREC_BOOLEAN_TRANSCO } from '../transco/dictionnaire.transco.js';
 import { SirecTranscoError } from '../transco/sirecTransco.error.js';
+import type { SirenaEtapeData } from './sirecMigration.etape.types.js';
 
-export interface SirenaAccuseReceptionEtapeData {
-  entiteId: string;
-  statutId: string;
-  createdAt?: Date;
-  note: string | null;
-}
-
-function formatDate(date: Date): string {
-  const d = String(date.getDate()).padStart(2, '0');
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  return `${d}/${m}/${date.getFullYear()}`;
-}
+const NOM_ETAPE = 'Envoyer un accusé de réception au déclarant';
 
 export function transformSirecAccuseReception(
   sirecData: SirecReclamationData,
   arsEntiteIds: string[],
-): SirenaAccuseReceptionEtapeData[] {
+): SirenaEtapeData[] {
   const { accuser_reception, date_envoi_ar, accuser_reception_precision } = sirecData.reclamation;
 
   if (accuser_reception === null) return [];
@@ -30,6 +21,7 @@ export function transformSirecAccuseReception(
   return arsEntiteIds.map((entiteId) => {
     if (!value) {
       return {
+        nom: NOM_ETAPE,
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
         note: "Envoi d'un accusé de réception : non",
@@ -38,13 +30,14 @@ export function transformSirecAccuseReception(
 
     const parts: string[] = [];
     if (date_envoi_ar !== null) {
-      parts.push(`Date d'envoi de l'accusé de réception au requérant : ${formatDate(date_envoi_ar)}`);
+      parts.push(`Date d'envoi de l'accusé de réception au requérant : ${formatSirecDate(date_envoi_ar)}`);
     }
     if (accuser_reception_precision !== null) {
       parts.push(`Précisions : ${accuser_reception_precision}`);
     }
 
     return {
+      nom: NOM_ETAPE,
       entiteId,
       statutId: date_envoi_ar !== null ? REQUETE_ETAPE_STATUT_TYPES.FAIT : REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
       ...(date_envoi_ar !== null ? { createdAt: date_envoi_ar } : {}),

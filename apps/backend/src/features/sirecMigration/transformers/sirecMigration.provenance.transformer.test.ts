@@ -46,7 +46,13 @@ describe('sirecMigration.provenance.transformer.ts', () => {
   it('should map id_provenance to nom via SIREC_DICO', () => {
     const result = transformSirecProvenances(makeData([{ id_provenance: 103, id_group: 693 }]));
 
-    expect(result[0].nom).toBe('Institution 1');
+    expect(result[0].nom).toBe("Réception à l'institution de provenance : Institution 1");
+  });
+
+  it('should set statutId to FAIT', () => {
+    const result = transformSirecProvenances(makeData([{ id_provenance: 103, id_group: 693 }]));
+
+    expect(result[0].statutId).toBe('FAIT');
   });
 
   it('should map id_group to entiteId via transcodeAffectation', () => {
@@ -63,9 +69,9 @@ describe('sirecMigration.provenance.transformer.ts', () => {
       ]),
     );
 
-    expect(result[0].nom).toBe('Institution 1');
+    expect(result[0].nom).toBe("Réception à l'institution de provenance : Institution 1");
     expect(result[0].entiteId).toBe('ars-normandie');
-    expect(result[1].nom).toBe('Institution 2');
+    expect(result[1].nom).toBe("Réception à l'institution de provenance : Institution 2");
     expect(result[1].entiteId).toBe('ars-grand-est');
   });
 
