@@ -1,4 +1,3 @@
-// Import des deux constantes : REQUETE_ETAPE_TYPES pour le lookup Prisma, REQUETE_ETAPE_STATUT_TYPES pour les transitions de statut
 import { RECEPTION_TYPE, REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import { envVars } from '../../config/env.js';
 import {
@@ -46,30 +45,29 @@ function formatEntiteAdminString(entites: Array<{ nomComplet: string; entiteMere
  * Téléphone : 02 01 02 03 04 05
  * Adresse postale : Bâtiment, Voie, Code postal, Ville
  */
-function formatEntiteCompleteString(
-  entites: Array<{
-    nomComplet: string;
-    emailContactUsager: string;
-    telContactUsager: string;
-    adresseContactUsager: string;
-    entiteMereId: string | null;
-  }>,
-): string {
+function formatEntiteCompleteString(entites: EntiteForMessage[]): string {
   // Filter only administrative entities
   const entitesAdmin = entites.filter((e) => e.entiteMereId === null);
 
   return entitesAdmin
     .map((entite) => {
       const parts: string[] = [entite.nomComplet];
-      if (entite.emailContactUsager) {
-        parts.push(`Adresse e-mail : ${entite.emailContactUsager}`);
+      const hasContactInfo = entite.emailContactUsager || entite.telContactUsager || entite.adresseContactUsager;
+      if (hasContactInfo) {
+        if (entite.emailContactUsager) {
+          parts.push(`Adresse e-mail : ${entite.emailContactUsager}`);
+        }
+        if (entite.telContactUsager) {
+          parts.push(`Téléphone : ${entite.telContactUsager}`);
+        }
+        if (entite.adresseContactUsager) {
+          parts.push(`Adresse postale :\n${entite.adresseContactUsager}`);
+        }
+      } else if (entite.email) {
+        // Fallback: no usager contact fields but an internal email is available
+        parts.push(`Adresse e-mail : ${entite.email}`);
       }
-      if (entite.telContactUsager) {
-        parts.push(`Téléphone : ${entite.telContactUsager}`);
-      }
-      if (entite.adresseContactUsager) {
-        parts.push(`Adresse postale :\n${entite.adresseContactUsager}`);
-      }
+      // Otherwise: name only (no info available)
       return parts.join('\n');
     })
     .join('\n\n');
@@ -261,6 +259,7 @@ async function attachEmailPdfToStep(
 
 type EntiteForMessage = {
   nomComplet: string;
+  email: string;
   emailContactUsager: string;
   telContactUsager: string;
   adresseContactUsager: string;
@@ -363,6 +362,7 @@ export async function sendManualAcknowledgmentEmail({
         select: {
           id: true,
           nomComplet: true,
+          email: true,
           emailContactUsager: true,
           telContactUsager: true,
           adresseContactUsager: true,
@@ -537,6 +537,7 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
       select: {
         id: true,
         nomComplet: true,
+        email: true,
         emailContactUsager: true,
         telContactUsager: true,
         adresseContactUsager: true,
@@ -546,6 +547,16 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
 
     if (entites.length === 0) {
       logger.debug({ requeteId }, 'No active entities found for this requete, skipping acknowledgment email');
+      return;
+    }
+
+    // Do not send if no admin entity has any displayable info
+    const entitesAdmin = entites.filter((e) => e.entiteMereId === null);
+    const hasAnyDisplayableInfo = entitesAdmin.some(
+      (e) => e.emailContactUsager || e.telContactUsager || e.adresseContactUsager || e.email,
+    );
+    if (!hasAnyDisplayableInfo) {
+      logger.warn({ requeteId }, 'No displayable info on any entity, skipping acknowledgment email');
       return;
     }
 
