@@ -90,6 +90,12 @@ RUN curl -fSL "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" | tar -
 
 FROM nginxinc/nginx-unprivileged:${NGINX_VERSION}-alpine AS frontend
 
+# Récupère les correctifs Alpine publiés depuis le tag amont (curl/libcurl
+# notamment). Exécuté en root, puis on revient à l'utilisateur nginx plus bas.
+USER root
+RUN apk upgrade --no-cache
+USER nginx
+
 COPY --from=nginx-modules-builder /modules/ngx_http_headers_more_filter_module.so \
      /usr/lib/nginx/modules/
 
