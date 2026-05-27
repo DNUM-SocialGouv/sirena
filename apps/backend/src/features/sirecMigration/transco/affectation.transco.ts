@@ -96,6 +96,11 @@ export interface AffectationEntites {
   situationEntiteIds: string[];
 }
 
+export function filterArsEntiteIds(entiteIds: string[]): string[] {
+  const arsEntiteIdSet = new Set(Object.values(ARS_TRANSCO));
+  return entiteIds.filter((id) => arsEntiteIdSet.has(id));
+}
+
 export function transcodeAffectation(idSirec: number): AffectationEntites {
   const arsEntiteId = ARS_TRANSCO[idSirec];
   if (arsEntiteId !== undefined) {

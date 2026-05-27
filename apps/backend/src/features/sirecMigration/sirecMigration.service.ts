@@ -81,6 +81,19 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       });
     }
 
+    for (const { entiteId, statutId, createdAt, note } of data.accuseReceptionEtapes) {
+      await tx.requeteEtape.create({
+        data: {
+          requeteId: requete.id,
+          entiteId,
+          statutId,
+          nom: 'Envoyer un accusé de réception au déclarant',
+          ...(createdAt !== undefined ? { createdAt } : {}),
+          ...(note !== null ? { notes: { create: [{ texte: note }] } } : {}),
+        },
+      });
+    }
+
     await tx.situationEntite.createMany({
       data: data.situation.entiteIds.map((entiteId) => ({
         situationId: situation.id,

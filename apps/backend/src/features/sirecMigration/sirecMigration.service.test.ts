@@ -89,6 +89,7 @@ describe('sirecMigration.service.ts', () => {
       } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
       provenances: [] as { nom: string; entiteId: string; note: string }[],
+      accuseReceptionEtapes: [] as { entiteId: string; statutId: string; createdAt?: Date; note: string | null }[],
       situation: {
         fait: {
           commentaire: 'Précision prioritaire',
@@ -763,6 +764,84 @@ describe('sirecMigration.service.ts', () => {
           data: expect.objectContaining({ nom: "Réception à l'institution de provenance : Institution 2" }),
         }),
       );
+    });
+
+    it('should not call requeteEtape.create for accuseReceptionEtapes when list is empty', async () => {
+      await saveFromSirec({ ...data, accuseReceptionEtapes: [] });
+
+      expect(prisma.requeteEtape.create).not.toHaveBeenCalled();
+    });
+
+    it('should create RequeteEtape with correct data for a false accuseReception etape', async () => {
+      await saveFromSirec({
+        ...data,
+        accuseReceptionEtapes: [{ entiteId: 'ars-1', statutId: 'FAIT', note: "Envoi d'un accusé de réception : non" }],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledOnce();
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'FAIT',
+          nom: 'Envoyer un accusé de réception au déclarant',
+          notes: { create: [{ texte: "Envoi d'un accusé de réception : non" }] },
+        },
+      });
+    });
+
+    it('should create RequeteEtape with createdAt and note when date_envoi_ar is set', async () => {
+      const date = new Date('2024-06-10');
+      await saveFromSirec({
+        ...data,
+        accuseReceptionEtapes: [
+          {
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            createdAt: date,
+            note: "Date d'envoi de l'accusé de réception au requérant : 10/06/2024",
+          },
+        ],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'FAIT',
+          nom: 'Envoyer un accusé de réception au déclarant',
+          createdAt: date,
+          notes: { create: [{ texte: "Date d'envoi de l'accusé de réception au requérant : 10/06/2024" }] },
+        },
+      });
+    });
+
+    it('should create RequeteEtape without notes when note is null', async () => {
+      await saveFromSirec({
+        ...data,
+        accuseReceptionEtapes: [{ entiteId: 'ars-1', statutId: 'A_FAIRE', note: null }],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'A_FAIRE',
+          nom: 'Envoyer un accusé de réception au déclarant',
+        },
+      });
+    });
+
+    it('should create one RequeteEtape per accuseReceptionEtape when multiple', async () => {
+      await saveFromSirec({
+        ...data,
+        accuseReceptionEtapes: [
+          { entiteId: 'ars-1', statutId: 'FAIT', note: "Envoi d'un accusé de réception : non" },
+          { entiteId: 'ars-2', statutId: 'FAIT', note: "Envoi d'un accusé de réception : non" },
+        ],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
     });
   });
 });
