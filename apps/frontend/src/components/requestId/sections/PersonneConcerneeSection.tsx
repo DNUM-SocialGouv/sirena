@@ -1,3 +1,4 @@
+import { formatMesureProtectionPersonneConcernee } from '@sirena/common/utils';
 import { InfoSection } from '@sirena/ui';
 import type { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
@@ -40,6 +41,8 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
     ? new Date(personne.dateNaissance).toLocaleDateString('fr-FR')
     : undefined;
 
+  const mesureProtectionLabel = formatMesureProtectionPersonneConcernee(personne?.mesureProtection);
+
   const isFulfilled =
     !!fullName ||
     !!personne?.age?.label ||
@@ -53,6 +56,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
     !!personne?.victimeInformeeCommentaire ||
     (personne?.aAutrePersonnes !== null && personne?.aAutrePersonnes !== undefined) ||
     !!personne?.autrePersonnes ||
+    !!mesureProtectionLabel ||
     !!personne?.commentaire;
 
   const renderSummary = () => {
@@ -94,6 +98,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
       !!personne?.victimeInformeeCommentaire ||
       (personne?.aAutrePersonnes !== null && personne?.aAutrePersonnes !== undefined) ||
       !!personne?.autrePersonnes ||
+      !!mesureProtectionLabel ||
       !!personne?.commentaire;
 
     if (!hasIdentitySection && !hasAddressSection && !hasContactSection && !hasComplementaryInfo) {
@@ -147,6 +152,7 @@ export const PersonneConcerneeSection = ({ requestId, id, personne, editHref }: 
               {personne?.estVictimeInformee === false && (
                 <li>Il/elle n&apos;a pas été informé(e) de la démarche par le déclarant</li>
               )}
+              {mesureProtectionLabel && <li>{mesureProtectionLabel}</li>}
             </ul>
             {personne?.estVictimeInformee === false && personne?.victimeInformeeCommentaire && (
               <p className="fr-mb-2w">
