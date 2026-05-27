@@ -108,7 +108,8 @@ export const getEntitesListAdmin = async ({
   offset = 0,
   limit,
   rootEntiteIds,
-}: Pick<Pagination, 'offset' | 'limit'> & { rootEntiteIds?: string[] }) => {
+  search,
+}: Pick<Pagination, 'offset' | 'limit' | 'search'> & { rootEntiteIds?: string[] }) => {
   const entites = await prisma.entite.findMany({
     select: {
       id: true,
@@ -123,7 +124,7 @@ export const getEntitesListAdmin = async ({
       entiteTypeId: true,
     },
   });
-  const orderedRows = buildEntitesListAdmin(entites, { rootEntiteIds });
+  const orderedRows = buildEntitesListAdmin(entites, { rootEntiteIds, search });
   const total = orderedRows.length;
 
   return {

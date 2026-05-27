@@ -102,6 +102,28 @@ const getAncestors = (entite: EntiteAdmin, entitesById: Map<string, EntiteAdmin>
   return ancestors;
 };
 
+const normalizeSearchText = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase();
+
+const getSearchTerms = (search: string) => normalizeSearchText(search).trim().split(/\s+/).filter(Boolean);
+
+const rowMatchesSearch = (row: AdminEntiteRow, search: string) => {
+  const terms = getSearchTerms(search);
+
+  if (terms.length === 0) {
+    return true;
+  }
+
+  const searchableText = normalizeSearchText(
+    [row.entiteNom, row.entiteLabel, row.directionNom, row.directionLabel, row.serviceNom, row.serviceLabel].join(' '),
+  );
+
+  return terms.every((term) => searchableText.includes(term));
+};
+
 const buildRow = (
   entite: EntiteAdmin,
   values: Pick<
@@ -156,7 +178,10 @@ const toAdminEntiteRow = (entite: EntiteAdmin, entitesById: Map<string, EntiteAd
   });
 };
 
-export const buildEntitesListAdmin = (entites: EntiteAdmin[], options: { rootEntiteIds?: string[] } = {}) => {
+export const buildEntitesListAdmin = (
+  entites: EntiteAdmin[],
+  options: { rootEntiteIds?: string[]; search?: string } = {},
+) => {
   const entitesById = new Map(entites.map((entite) => [entite.id, entite]));
   const orderedEntites = buildTreeOrder(entites);
 
@@ -169,5 +194,7 @@ export const buildEntitesListAdmin = (entites: EntiteAdmin[], options: { rootEnt
         })
       : orderedEntites;
 
-  return filteredEntites.map((entite) => toAdminEntiteRow(entite, entitesById));
+  return filteredEntites
+    .map((entite) => toAdminEntiteRow(entite, entitesById))
+    .filter((row) => rowMatchesSearch(row, options.search ?? ''));
 };
