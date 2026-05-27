@@ -69,14 +69,17 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       })),
     });
 
-    await tx.requeteEtape.createMany({
-      data: data.provenances.map(({ nom, entiteId }) => ({
-        requeteId: requete.id,
-        entiteId,
-        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-        nom: `Réception à l'institution de provenance : ${nom}`,
-      })),
-    });
+    for (const { nom, entiteId, note } of data.provenances) {
+      await tx.requeteEtape.create({
+        data: {
+          requeteId: requete.id,
+          entiteId,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          nom: `Réception à l'institution de provenance : ${nom}`,
+          notes: { create: [{ texte: note }] },
+        },
+      });
+    }
 
     await tx.situationEntite.createMany({
       data: data.situation.entiteIds.map((entiteId) => ({

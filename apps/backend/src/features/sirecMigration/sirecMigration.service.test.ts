@@ -14,7 +14,7 @@ vi.mock('@sirena/db', () => ({
     fait: { create: vi.fn() },
     faitMotifDeclaratif: { createMany: vi.fn() },
     requeteEntite: { createMany: vi.fn() },
-    requeteEtape: { createMany: vi.fn() },
+    requeteEtape: { create: vi.fn() },
     situationEntite: { createMany: vi.fn() },
     personneConcernee: { create: vi.fn() },
     identite: { create: vi.fn() },
@@ -88,7 +88,7 @@ describe('sirecMigration.service.ts', () => {
         ageId: string | null;
       } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
-      provenances: [] as { nom: string; entiteId: string }[],
+      provenances: [] as { nom: string; entiteId: string; note: string }[],
       situation: {
         fait: {
           commentaire: 'Précision prioritaire',
@@ -109,7 +109,7 @@ describe('sirecMigration.service.ts', () => {
       vi.mocked(prisma.fait.create).mockResolvedValue({} as any);
       vi.mocked(prisma.faitMotifDeclaratif.createMany).mockResolvedValue({ count: 2 } as any);
       vi.mocked(prisma.requeteEntite.createMany).mockResolvedValue({ count: 2 } as any);
-      vi.mocked(prisma.requeteEtape.createMany).mockResolvedValue({ count: 0 } as any);
+      vi.mocked(prisma.requeteEtape.create).mockResolvedValue({} as any);
       vi.mocked(prisma.situationEntite.createMany).mockResolvedValue({ count: 2 } as any);
       vi.mocked(prisma.personneConcernee.create).mockResolvedValue({} as any);
     });
@@ -719,27 +719,27 @@ describe('sirecMigration.service.ts', () => {
       expect(prisma.$transaction).toHaveBeenCalledOnce();
     });
 
-    it('should create no RequeteEtape when provenances is empty', async () => {
+    it('should not call requeteEtape.create when provenances is empty', async () => {
       await saveFromSirec(data);
 
-      expect(prisma.requeteEtape.createMany).toHaveBeenCalledWith({ data: [] });
+      expect(prisma.requeteEtape.create).not.toHaveBeenCalled();
     });
 
     it('should create one RequeteEtape per provenance with correct data', async () => {
       await saveFromSirec({
         ...data,
-        provenances: [{ nom: 'Institution 1', entiteId: 'ars-1' }],
+        provenances: [{ nom: 'Institution 1', entiteId: 'ars-1', note: 'Note ligne 1\nNote ligne 2' }],
       });
 
-      expect(prisma.requeteEtape.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            requeteId: 'SIREC-42',
-            entiteId: 'ars-1',
-            statutId: 'FAIT',
-            nom: "Réception à l'institution de provenance : Institution 1",
-          },
-        ],
+      expect(prisma.requeteEtape.create).toHaveBeenCalledOnce();
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'FAIT',
+          nom: "Réception à l'institution de provenance : Institution 1",
+          notes: { create: [{ texte: 'Note ligne 1\nNote ligne 2' }] },
+        },
       });
     });
 
@@ -747,17 +747,22 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec({
         ...data,
         provenances: [
-          { nom: 'Institution 1', entiteId: 'ars-1' },
-          { nom: 'Institution 2', entiteId: 'ars-2' },
+          { nom: 'Institution 1', entiteId: 'ars-1', note: '' },
+          { nom: 'Institution 2', entiteId: 'ars-2', note: '' },
         ],
       });
 
-      expect(prisma.requeteEtape.createMany).toHaveBeenCalledWith({
-        data: [
-          expect.objectContaining({ nom: "Réception à l'institution de provenance : Institution 1" }),
-          expect.objectContaining({ nom: "Réception à l'institution de provenance : Institution 2" }),
-        ],
-      });
+      expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ nom: "Réception à l'institution de provenance : Institution 1" }),
+        }),
+      );
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ nom: "Réception à l'institution de provenance : Institution 2" }),
+        }),
+      );
     });
   });
 });

@@ -54,6 +54,8 @@ export interface SirecReclamationRow {
 export interface SirecProvenance {
   id_provenance: number;
   id_group: number;
+  date_signalement: Date | null;
+  reponse_attendue: number | null;
 }
 
 export interface SirecReclamationData {
@@ -89,13 +91,18 @@ export async function fetchSirecGroupIds(sirecId: number): Promise<number[]> {
 
 export async function fetchSirecProvenances(sirecId: number): Promise<SirecProvenance[]> {
   const [rows] = await mysqlPool.query<(SirecProvenance & RowDataPacket)[]>(
-    `SELECT p.id_provenance, pg.id_group
+    `SELECT p.id_provenance, pg.id_group, p.date_signalement, p.reponse_attendue
      FROM sire_provenances_data p
      INNER JOIN sire_provenances_data_group pg ON pg.id_data = p.id_data
      WHERE p.id_reclamation = ?`,
     [sirecId],
   );
-  return rows.map((row) => ({ id_provenance: row.id_provenance, id_group: row.id_group }));
+  return rows.map((row) => ({
+    id_provenance: row.id_provenance,
+    id_group: row.id_group,
+    date_signalement: row.date_signalement,
+    reponse_attendue: row.reponse_attendue,
+  }));
 }
 
 export async function fetchSirecData(sirecId: number): Promise<SirecReclamationData | null> {

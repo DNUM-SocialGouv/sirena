@@ -97,13 +97,28 @@ describe('sirecMigration.repository.ts', () => {
   });
 
   describe('fetchSirecProvenances', () => {
-    it('should return provenances when found', async () => {
-      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[{ id_provenance: 103, id_group: 693 }], []]);
+    it('should return provenances with all fields when found', async () => {
+      const date = new Date('2024-03-05');
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([
+        [{ id_provenance: 103, id_group: 693, date_signalement: date, reponse_attendue: 134 }],
+        [],
+      ]);
 
       const result = await fetchSirecProvenances(42);
 
-      expect(result).toEqual([{ id_provenance: 103, id_group: 693 }]);
+      expect(result).toEqual([{ id_provenance: 103, id_group: 693, date_signalement: date, reponse_attendue: 134 }]);
       expect(mysqlPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_provenances_data'), [42]);
+    });
+
+    it('should handle null date_signalement and reponse_attendue', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([
+        [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
+        [],
+      ]);
+
+      const result = await fetchSirecProvenances(42);
+
+      expect(result).toEqual([{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }]);
     });
 
     it('should return an empty array when no provenances found', async () => {
@@ -131,7 +146,10 @@ describe('sirecMigration.repository.ts', () => {
         .mockResolvedValueOnce([[mockRow], []])
         .mockResolvedValueOnce([[{ id_dico: 823 }, { id_dico: 809 }], []])
         .mockResolvedValueOnce([[{ id_group: 3 }, { id_group: 5 }], []])
-        .mockResolvedValueOnce([[{ id_provenance: 103, id_group: 693 }], []]);
+        .mockResolvedValueOnce([
+          [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
+          [],
+        ]);
 
       const result = await fetchSirecData(42);
 
@@ -139,7 +157,7 @@ describe('sirecMigration.repository.ts', () => {
         reclamation: mockRow,
         motifsDeclaresIdDicos: [823, 809],
         groupIds: [3, 5],
-        provenances: [{ id_provenance: 103, id_group: 693 }],
+        provenances: [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
       });
     });
 

@@ -6,6 +6,7 @@ vi.mock('../transco/dictionnaire.transco.js', () => ({
   SIREC_DICO: {
     103: 'Institution 1',
     104: 'Institution 2',
+    134: 'Réponse attendue type A',
   },
 }));
 
@@ -17,11 +18,22 @@ vi.mock('../transco/affectation.transco.js', () => ({
   }),
 }));
 
-const makeData = (provenances: { id_provenance: number; id_group: number }[]) => ({
+const makeData = (
+  provenances: {
+    id_provenance: number;
+    id_group: number;
+    date_signalement?: Date | null;
+    reponse_attendue?: number | null;
+  }[],
+) => ({
   reclamation: { id_data: 42 },
   motifsDeclaresIdDicos: [],
   groupIds: [],
-  provenances,
+  provenances: provenances.map((p) => ({
+    date_signalement: null,
+    reponse_attendue: null,
+    ...p,
+  })),
 });
 
 describe('sirecMigration.provenance.transformer.ts', () => {
@@ -51,10 +63,64 @@ describe('sirecMigration.provenance.transformer.ts', () => {
       ]),
     );
 
-    expect(result).toEqual([
-      { nom: 'Institution 1', entiteId: 'ars-normandie' },
-      { nom: 'Institution 2', entiteId: 'ars-grand-est' },
-    ]);
+    expect(result[0].nom).toBe('Institution 1');
+    expect(result[0].entiteId).toBe('ars-normandie');
+    expect(result[1].nom).toBe('Institution 2');
+    expect(result[1].entiteId).toBe('ars-grand-est');
+  });
+
+  describe('date_signalement note', () => {
+    it('should format a date as "Date de réception à l\'institution de provenance : DD/MM/YYYY"', () => {
+      const result = transformSirecProvenances(
+        makeData([{ id_provenance: 103, id_group: 693, date_signalement: new Date('2024-03-05') }]),
+      );
+
+      expect(result[0].note).toContain("Date de réception à l'institution de provenance : 05/03/2024");
+    });
+
+    it('should produce "Date de réception non renseignée" when date_signalement is null', () => {
+      const result = transformSirecProvenances(
+        makeData([{ id_provenance: 103, id_group: 693, date_signalement: null }]),
+      );
+
+      expect(result[0].note).toContain('Date de réception non renseignée');
+    });
+  });
+
+  describe('reponse_attendue note', () => {
+    it('should transcode reponse_attendue via SIREC_DICO and prefix with "Réponse attendue : "', () => {
+      const result = transformSirecProvenances(
+        makeData([{ id_provenance: 103, id_group: 693, reponse_attendue: 134 }]),
+      );
+
+      expect(result[0].note).toContain('Réponse attendue : Réponse attendue type A');
+    });
+
+    it('should produce "Réponse attendue non précisée" when reponse_attendue is null', () => {
+      const result = transformSirecProvenances(
+        makeData([{ id_provenance: 103, id_group: 693, reponse_attendue: null }]),
+      );
+
+      expect(result[0].note).toContain('Réponse attendue non précisée');
+    });
+
+    it('should throw SirecTranscoError for an unknown reponse_attendue id', () => {
+      expect(() =>
+        transformSirecProvenances(makeData([{ id_provenance: 103, id_group: 693, reponse_attendue: 9999 }])),
+      ).toThrow(SirecTranscoError);
+    });
+  });
+
+  it('should join both lines into a single note with newline separator', () => {
+    const result = transformSirecProvenances(
+      makeData([
+        { id_provenance: 103, id_group: 693, date_signalement: new Date('2024-01-15'), reponse_attendue: 134 },
+      ]),
+    );
+
+    expect(result[0].note).toContain("Date de réception à l'institution de provenance");
+    expect(result[0].note).toContain('Réponse attendue');
+    expect(result[0].note).toContain('\n');
   });
 
   it('should throw SirecTranscoError for an unknown id_provenance', () => {

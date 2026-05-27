@@ -172,10 +172,11 @@ describe('sirecMigration.transformer.ts', () => {
       // provenance id_group: 693 → same ARS Normandie
       const result = transformSirecReclamation({
         ...sirecData,
-        provenances: [{ id_provenance: 103, id_group: 693 }],
+        provenances: [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
       });
 
-      expect(result.provenances).toEqual([{ nom: 'Institution 1', entiteId: '4af829ff-07c1-425d-85d6-83b5f97e4422' }]);
+      expect(result.provenances[0].nom).toBe('Institution 1');
+      expect(result.provenances[0].entiteId).toBe('4af829ff-07c1-425d-85d6-83b5f97e4422');
     });
 
     it('should throw SirecDataError when provenance entiteId is not in requeteEntiteIds', () => {
@@ -183,7 +184,7 @@ describe('sirecMigration.transformer.ts', () => {
       expect(() =>
         transformSirecReclamation({
           ...sirecData,
-          provenances: [{ id_provenance: 103, id_group: 677 }],
+          provenances: [{ id_provenance: 103, id_group: 677, date_signalement: null, reponse_attendue: null }],
         }),
       ).toThrow(SirecDataError);
     });
