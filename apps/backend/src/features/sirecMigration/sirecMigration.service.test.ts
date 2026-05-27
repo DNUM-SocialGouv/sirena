@@ -88,8 +88,7 @@ describe('sirecMigration.service.ts', () => {
         ageId: string | null;
       } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
-      provenances: [] as { nom: string; entiteId: string; note: string }[],
-      accuseReceptionEtapes: [] as { entiteId: string; statutId: string; createdAt?: Date; note: string | null }[],
+      etapes: [] as { nom: string; entiteId: string; statutId: string; createdAt?: Date; note: string | null }[],
       situation: {
         fait: {
           commentaire: 'Précision prioritaire',
@@ -720,16 +719,23 @@ describe('sirecMigration.service.ts', () => {
       expect(prisma.$transaction).toHaveBeenCalledOnce();
     });
 
-    it('should not call requeteEtape.create when provenances is empty', async () => {
+    it('should not call requeteEtape.create when etapes is empty', async () => {
       await saveFromSirec(data);
 
       expect(prisma.requeteEtape.create).not.toHaveBeenCalled();
     });
 
-    it('should create one RequeteEtape per provenance with correct data', async () => {
+    it('should create one RequeteEtape per etape with correct data', async () => {
       await saveFromSirec({
         ...data,
-        provenances: [{ nom: 'Institution 1', entiteId: 'ars-1', note: 'Note ligne 1\nNote ligne 2' }],
+        etapes: [
+          {
+            nom: "Réception à l'institution de provenance : Institution 1",
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            note: 'Note ligne 1\nNote ligne 2',
+          },
+        ],
       });
 
       expect(prisma.requeteEtape.create).toHaveBeenCalledOnce();
@@ -744,58 +750,13 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should create one RequeteEtape per provenance when multiple provenances', async () => {
-      await saveFromSirec({
-        ...data,
-        provenances: [
-          { nom: 'Institution 1', entiteId: 'ars-1', note: '' },
-          { nom: 'Institution 2', entiteId: 'ars-2', note: '' },
-        ],
-      });
-
-      expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
-      expect(prisma.requeteEtape.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ nom: "Réception à l'institution de provenance : Institution 1" }),
-        }),
-      );
-      expect(prisma.requeteEtape.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ nom: "Réception à l'institution de provenance : Institution 2" }),
-        }),
-      );
-    });
-
-    it('should not call requeteEtape.create for accuseReceptionEtapes when list is empty', async () => {
-      await saveFromSirec({ ...data, accuseReceptionEtapes: [] });
-
-      expect(prisma.requeteEtape.create).not.toHaveBeenCalled();
-    });
-
-    it('should create RequeteEtape with correct data for a false accuseReception etape', async () => {
-      await saveFromSirec({
-        ...data,
-        accuseReceptionEtapes: [{ entiteId: 'ars-1', statutId: 'FAIT', note: "Envoi d'un accusé de réception : non" }],
-      });
-
-      expect(prisma.requeteEtape.create).toHaveBeenCalledOnce();
-      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
-        data: {
-          requeteId: 'SIREC-42',
-          entiteId: 'ars-1',
-          statutId: 'FAIT',
-          nom: 'Envoyer un accusé de réception au déclarant',
-          notes: { create: [{ texte: "Envoi d'un accusé de réception : non" }] },
-        },
-      });
-    });
-
-    it('should create RequeteEtape with createdAt and note when date_envoi_ar is set', async () => {
+    it('should create RequeteEtape with createdAt when set', async () => {
       const date = new Date('2024-06-10');
       await saveFromSirec({
         ...data,
-        accuseReceptionEtapes: [
+        etapes: [
           {
+            nom: 'Envoyer un accusé de réception au déclarant',
             entiteId: 'ars-1',
             statutId: 'FAIT',
             createdAt: date,
@@ -819,7 +780,9 @@ describe('sirecMigration.service.ts', () => {
     it('should create RequeteEtape without notes when note is null', async () => {
       await saveFromSirec({
         ...data,
-        accuseReceptionEtapes: [{ entiteId: 'ars-1', statutId: 'A_FAIRE', note: null }],
+        etapes: [
+          { nom: 'Envoyer un accusé de réception au déclarant', entiteId: 'ars-1', statutId: 'A_FAIRE', note: null },
+        ],
       });
 
       expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
@@ -832,12 +795,12 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should create one RequeteEtape per accuseReceptionEtape when multiple', async () => {
+    it('should create one RequeteEtape per etape when multiple', async () => {
       await saveFromSirec({
         ...data,
-        accuseReceptionEtapes: [
-          { entiteId: 'ars-1', statutId: 'FAIT', note: "Envoi d'un accusé de réception : non" },
-          { entiteId: 'ars-2', statutId: 'FAIT', note: "Envoi d'un accusé de réception : non" },
+        etapes: [
+          { nom: "Réception à l'institution de provenance : A", entiteId: 'ars-1', statutId: 'FAIT', note: '' },
+          { nom: "Réception à l'institution de provenance : B", entiteId: 'ars-2', statutId: 'FAIT', note: '' },
         ],
       });
 

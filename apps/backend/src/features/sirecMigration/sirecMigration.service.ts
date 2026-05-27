@@ -1,4 +1,4 @@
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { SituationDataSchema } from '@sirena/common/schemas';
 import { prisma } from '@sirena/db';
 import type { SirenaRequeteData } from './transformers/sirecMigration.transformer.js';
@@ -69,25 +69,13 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       })),
     });
 
-    for (const { nom, entiteId, note } of data.provenances) {
-      await tx.requeteEtape.create({
-        data: {
-          requeteId: requete.id,
-          entiteId,
-          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-          nom: `Réception à l'institution de provenance : ${nom}`,
-          notes: { create: [{ texte: note }] },
-        },
-      });
-    }
-
-    for (const { entiteId, statutId, createdAt, note } of data.accuseReceptionEtapes) {
+    for (const { nom, entiteId, statutId, createdAt, note } of data.etapes) {
       await tx.requeteEtape.create({
         data: {
           requeteId: requete.id,
           entiteId,
           statutId,
-          nom: 'Envoyer un accusé de réception au déclarant',
+          nom,
           ...(createdAt !== undefined ? { createdAt } : {}),
           ...(note !== null ? { notes: { create: [{ texte: note }] } } : {}),
         },

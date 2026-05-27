@@ -71,8 +71,7 @@ describe('sirecMigration.transformer.ts', () => {
       declarant: null,
       victime: null,
       requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
-      provenances: [],
-      accuseReceptionEtapes: [],
+      etapes: [],
       situation: {
         fait: {
           commentaire: 'Précision prioritaire',
@@ -164,14 +163,14 @@ describe('sirecMigration.transformer.ts', () => {
     expect(result.victime).toBeNull();
   });
 
-  describe('provenances', () => {
-    it('should return an empty provenances array when there are no provenances', () => {
+  describe('etapes (provenances)', () => {
+    it('should return an empty etapes array when there are no provenances', () => {
       const result = transformSirecReclamation(sirecData);
 
-      expect(result.provenances).toEqual([]);
+      expect(result.etapes).toEqual([]);
     });
 
-    it('should map a provenance whose entiteId matches requeteEntiteIds', () => {
+    it('should map a provenance to an etape with the institution name in nom', () => {
       // service_recepteur_niv1: 693 → ARS Normandie (4af829ff-...)
       // provenance id_group: 693 → same ARS Normandie
       const result = transformSirecReclamation({
@@ -179,8 +178,8 @@ describe('sirecMigration.transformer.ts', () => {
         provenances: [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
       });
 
-      expect(result.provenances[0].nom).toBe('Institution 1');
-      expect(result.provenances[0].entiteId).toBe('4af829ff-07c1-425d-85d6-83b5f97e4422');
+      expect(result.etapes[0].nom).toBe("Réception à l'institution de provenance : Institution 1");
+      expect(result.etapes[0].entiteId).toBe('4af829ff-07c1-425d-85d6-83b5f97e4422');
     });
 
     it('should throw SirecDataError when provenance entiteId is not in requeteEntiteIds', () => {
@@ -194,47 +193,47 @@ describe('sirecMigration.transformer.ts', () => {
     });
   });
 
-  describe('accuseReceptionEtapes', () => {
-    it('should return empty accuseReceptionEtapes when accuser_reception is null', () => {
+  describe('etapes (accuseReception)', () => {
+    it('should add no etape when accuser_reception is null', () => {
       const result = transformSirecReclamation({
         ...sirecData,
         reclamation: { ...sirecData.reclamation, accuser_reception: null },
       });
 
-      expect(result.accuseReceptionEtapes).toEqual([]);
+      expect(result.etapes).toEqual([]);
     });
 
-    it('should create one etape per ARS entiteId when accuser_reception is false', () => {
+    it('should add one etape per ARS entiteId when accuser_reception is false', () => {
       // service_recepteur_niv1: 693 → ARS Normandie (1 ARS entiteId)
       const result = transformSirecReclamation({
         ...sirecData,
         reclamation: { ...sirecData.reclamation, accuser_reception: 111 },
       });
 
-      expect(result.accuseReceptionEtapes).toHaveLength(1);
-      expect(result.accuseReceptionEtapes[0].statutId).toBe('FAIT');
-      expect(result.accuseReceptionEtapes[0].note).toBe("Envoi d'un accusé de réception : non");
+      expect(result.etapes).toHaveLength(1);
+      expect(result.etapes[0].statutId).toBe('FAIT');
+      expect(result.etapes[0].note).toBe("Envoi d'un accusé de réception : non");
     });
 
-    it('should create etape with statut FAIT and createdAt when accuser_reception is true and date is set', () => {
+    it('should add etape with statut FAIT and createdAt when accuser_reception is true and date is set', () => {
       const date = new Date('2024-06-10');
       const result = transformSirecReclamation({
         ...sirecData,
         reclamation: { ...sirecData.reclamation, accuser_reception: 1, date_envoi_ar: date },
       });
 
-      expect(result.accuseReceptionEtapes[0].statutId).toBe('FAIT');
-      expect(result.accuseReceptionEtapes[0].createdAt).toEqual(date);
-      expect(result.accuseReceptionEtapes[0].note).toContain("Date d'envoi de l'accusé de réception au requérant");
+      expect(result.etapes[0].statutId).toBe('FAIT');
+      expect(result.etapes[0].createdAt).toEqual(date);
+      expect(result.etapes[0].note).toContain("Date d'envoi de l'accusé de réception au requérant");
     });
 
-    it('should create etape with statut A_FAIRE when accuser_reception is true and date is null', () => {
+    it('should add etape with statut A_FAIRE when accuser_reception is true and date is null', () => {
       const result = transformSirecReclamation({
         ...sirecData,
         reclamation: { ...sirecData.reclamation, accuser_reception: 1, date_envoi_ar: null },
       });
 
-      expect(result.accuseReceptionEtapes[0].statutId).toBe('A_FAIRE');
+      expect(result.etapes[0].statutId).toBe('A_FAIRE');
     });
   });
 });

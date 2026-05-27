@@ -4,24 +4,16 @@ import type { SirecReclamationData } from '../sirecMigration.repository.js';
 import { filterArsEntiteIds } from '../transco/affectation.transco.js';
 import { transcodeReceptionType } from '../transco/receptionType.transco.js';
 import { SirecDataError } from '../transco/sirecTransco.error.js';
-import {
-  type SirenaAccuseReceptionEtapeData,
-  transformSirecAccuseReception,
-} from './sirecMigration.accuseReception.transformer.js';
+import { transformSirecAccuseReception } from './sirecMigration.accuseReception.transformer.js';
 import { transformSirecAffectation } from './sirecMigration.affectation.transformer.js';
 import { type SirenaDeclarantData, transformSirecDeclarant } from './sirecMigration.declarant.transformer.js';
-import { type SirenaProvenanceData, transformSirecProvenances } from './sirecMigration.provenance.transformer.js';
+import type { SirenaEtapeData } from './sirecMigration.etape.types.js';
+import { transformSirecProvenances } from './sirecMigration.provenance.transformer.js';
 import { type SirenaSituationData, transformSirecSituation } from './sirecMigration.situation.transformer.js';
 import { type SirenaVictimeData, transformSirecVictime } from './sirecMigration.victime.transformer.js';
 
 export type { SirenaAdresseData } from './sirecMigration.declarant.transformer.js';
-export type {
-  SirenaAccuseReceptionEtapeData,
-  SirenaDeclarantData,
-  SirenaProvenanceData,
-  SirenaSituationData,
-  SirenaVictimeData,
-};
+export type { SirenaDeclarantData, SirenaEtapeData, SirenaSituationData, SirenaVictimeData };
 
 export interface SirenaRequeteData {
   sirenaId: string;
@@ -32,22 +24,21 @@ export interface SirenaRequeteData {
   declarant: SirenaDeclarantData | null;
   victime: SirenaVictimeData | null;
   requeteEntiteIds: string[];
-  provenances: SirenaProvenanceData[];
-  accuseReceptionEtapes: SirenaAccuseReceptionEtapeData[];
+  etapes: SirenaEtapeData[];
   situation: SirenaSituationData;
 }
 
 export function transformSirecReclamation(sirecData: SirecReclamationData): SirenaRequeteData {
   const { requeteEntiteIds, situationEntiteIds } = transformSirecAffectation(sirecData);
   const arsEntiteIds = filterArsEntiteIds(requeteEntiteIds);
-  const provenances = transformSirecProvenances(sirecData);
+  const provenanceEtapes = transformSirecProvenances(sirecData);
   const declarant = transformSirecDeclarant(sirecData.reclamation);
   const victime = transformSirecVictime(sirecData.reclamation);
 
-  for (const provenance of provenances) {
-    if (!requeteEntiteIds.includes(provenance.entiteId)) {
+  for (const etape of provenanceEtapes) {
+    if (!requeteEntiteIds.includes(etape.entiteId)) {
       throw new SirecDataError(
-        `L'entité de la provenance "${provenance.nom}" (id ${provenance.entiteId}) n'est pas parmi les entités de la réclamation SIREC ${sirecData.reclamation.id_data}`,
+        `L'entité de la provenance "${etape.nom}" (id ${etape.entiteId}) n'est pas parmi les entités de la réclamation SIREC ${sirecData.reclamation.id_data}`,
       );
     }
   }
@@ -61,8 +52,7 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
     declarant,
     victime,
     requeteEntiteIds,
-    provenances,
-    accuseReceptionEtapes: transformSirecAccuseReception(sirecData, arsEntiteIds),
+    etapes: [...provenanceEtapes, ...transformSirecAccuseReception(sirecData, arsEntiteIds)],
     situation: transformSirecSituation(sirecData, situationEntiteIds),
   };
 }
