@@ -1,4 +1,4 @@
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { SituationDataSchema } from '@sirena/common/schemas';
 import { prisma } from '@sirena/db';
 import type { SirenaRequeteData } from './transformers/sirecMigration.transformer.js';
@@ -66,6 +66,15 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
         // TODO: mapper l'état SIREC vers statutId
         statutId: REQUETE_STATUT_TYPES.EN_COURS,
         prioriteId: data.prioriteId,
+      })),
+    });
+
+    await tx.requeteEtape.createMany({
+      data: data.provenances.map(({ nom, entiteId }) => ({
+        requeteId: requete.id,
+        entiteId,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        nom: `Réception à l'institution de provenance : ${nom}`,
       })),
     });
 

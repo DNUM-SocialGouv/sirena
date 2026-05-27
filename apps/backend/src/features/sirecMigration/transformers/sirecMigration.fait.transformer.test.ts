@@ -27,6 +27,7 @@ describe('sirecMigration.fait.transformer.ts', () => {
     },
     motifsDeclaresIdDicos: [809, 811],
     groupIds: [],
+    provenances: [],
   };
 
   it('should map prioritaire_precisez to commentaire when dest is null', () => {

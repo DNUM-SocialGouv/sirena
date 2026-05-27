@@ -28,6 +28,7 @@ const makeData = (
   },
   motifsDeclaresIdDicos: [],
   groupIds,
+  provenances: [],
 });
 
 describe('sirecMigration.affectation.transformer.ts', () => {

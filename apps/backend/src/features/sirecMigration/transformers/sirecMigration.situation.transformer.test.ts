@@ -13,6 +13,7 @@ describe('sirecMigration.situation.transformer.ts', () => {
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
+    provenances: [],
   };
 
   it('should map description to fait.autresPrecisions', () => {
