@@ -15,6 +15,7 @@ import {
   getEntiteChainRoute,
   getEntitesListAdminRoute,
   getEntitesRoute,
+  getRootEntitesListAdminRoute,
 } from './entites.route.js';
 import { CreateChildEntiteAdminInputSchema, EditEntiteInputSchema, GetEntitiesQuerySchema } from './entites.schema.js';
 import {
@@ -26,6 +27,7 @@ import {
   getEntites,
   getEntitesByIds,
   getEntitesListAdmin,
+  getRootEntitesListAdmin,
 } from './entites.service.js';
 
 const app = factoryWithLogs
@@ -96,6 +98,16 @@ const app = factoryWithLogs
       });
     },
   )
+
+  .get('/admin/roots', roleMiddleware([ROLES.SUPER_ADMIN]), getRootEntitesListAdminRoute, async (c) => {
+    const logger = c.get('logger');
+
+    logger.info('Admin root entities list requested');
+    const entites = await getRootEntitesListAdmin();
+    logger.info({ entitiesCount: entites.length }, 'Admin root entities list retrieved successfully');
+
+    return c.json({ data: entites });
+  })
 
   .get('/admin/:id', roleMiddleware([ROLES.SUPER_ADMIN]), getEntiteByIdAdminRoute, async (c) => {
     const id = c.req.param('id');

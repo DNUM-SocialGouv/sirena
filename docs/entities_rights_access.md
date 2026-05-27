@@ -56,6 +56,22 @@ ARS Normandie
 
 ---
 
+## 🛠️ Gestion des entités — filtre administrateur
+
+Dans l’espace administrateur, l’onglet “Gestion des entités” permet aux super admin de consulter et modifier les entités administratives.
+
+Le filtre “Entité administrative” de cet écran désigne uniquement les entités racines de la hiérarchie, c’est-à-dire les entités sans entité mère.
+
+Lorsqu’une ou plusieurs entités racines sont sélectionnées :
+- le tableau affiche chaque entité racine sélectionnée.
+- il affiche aussi toutes ses Directions et tous ses Services descendants.
+- le résultat conserve l’ordre global du tableau d’administration.
+- le filtre est porté par le query param `rootEntiteIds` au format CSV.
+
+Les Directions et Services ne sont pas proposés comme options de ce filtre. Un identifiant invalide ou ne correspondant pas à une entité racine ne doit pas bloquer l’affichage : il ne produit simplement aucun résultat pour cet identifiant.
+
+---
+
 ## 💾 Implémentation technique
 
 ### Base de données

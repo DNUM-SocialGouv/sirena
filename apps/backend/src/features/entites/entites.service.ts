@@ -104,7 +104,11 @@ export const getEntiteById = async (entiteId: string) =>
     },
   });
 
-export const getEntitesListAdmin = async ({ offset = 0, limit }: Pick<Pagination, 'offset' | 'limit'>) => {
+export const getEntitesListAdmin = async ({
+  offset = 0,
+  limit,
+  rootEntiteIds,
+}: Pick<Pagination, 'offset' | 'limit'> & { rootEntiteIds?: string[] }) => {
   const entites = await prisma.entite.findMany({
     select: {
       id: true,
@@ -119,14 +123,25 @@ export const getEntitesListAdmin = async ({ offset = 0, limit }: Pick<Pagination
       entiteTypeId: true,
     },
   });
-  const total = entites.length;
-  const orderedRows = buildEntitesListAdmin(entites);
+  const orderedRows = buildEntitesListAdmin(entites, { rootEntiteIds });
+  const total = orderedRows.length;
 
   return {
     data: limit !== undefined ? orderedRows.slice(offset, offset + limit) : orderedRows.slice(offset),
     total,
   };
 };
+
+export const getRootEntitesListAdmin = async () =>
+  prisma.entite.findMany({
+    where: { entiteMereId: null },
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+    },
+    orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
+  });
 
 export const createChildEntiteAdmin = async (
   parentId: string,

@@ -18,6 +18,13 @@ export async function fetchEntites(id: string | undefined, query: QueryParams = 
   return { data, meta };
 }
 
+export async function fetchRootEntitesListAdmin() {
+  const res = await client.entites.admin.roots.$get();
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return { data };
+}
+
 export async function fetchEntitesListAdmin(query: QueryParams = {}) {
   const res = await client.entites.admin.$get({
     query: formatPaginationParams(query),
