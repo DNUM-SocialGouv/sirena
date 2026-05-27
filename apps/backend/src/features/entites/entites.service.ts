@@ -4,6 +4,28 @@ import { buildEntitesListAdmin } from './entites.admin.mapper.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type.js';
 
+const ADMIN_SORT_COLUMNS = [
+  'entiteNom',
+  'entiteLabel',
+  'directionNom',
+  'directionLabel',
+  'serviceNom',
+  'serviceLabel',
+  'email',
+  'contactUsager',
+  'isActiveLabel',
+] as const;
+type AdminSortColumn = (typeof ADMIN_SORT_COLUMNS)[number];
+
+const isAdminSortColumn = (sort: string): sort is AdminSortColumn =>
+  (ADMIN_SORT_COLUMNS as readonly string[]).includes(sort);
+
+const sortAdminRows = (rows: ReturnType<typeof buildEntitesListAdmin>, sort: AdminSortColumn, order: 'asc' | 'desc') =>
+  [...rows].sort((a, b) => {
+    const comparison = a[sort].localeCompare(b[sort], 'fr', { sensitivity: 'base' });
+    return order === 'asc' ? comparison : -comparison;
+  });
+
 export const getEntiteForUser = async (organizationalUnit: string | null, email: string) => {
   if (organizationalUnit?.trim()) {
     const organizationalUnitTrimmed = organizationalUnit.trim();
@@ -109,7 +131,9 @@ export const getEntitesListAdmin = async ({
   limit,
   rootEntiteIds,
   search,
-}: Pick<Pagination, 'offset' | 'limit' | 'search'> & { rootEntiteIds?: string[] }) => {
+  sort,
+  order,
+}: Pick<Pagination, 'offset' | 'limit' | 'search'> & { rootEntiteIds?: string[]; sort?: string; order?: 'asc' | 'desc' }) => {
   const entites = await prisma.entite.findMany({
     select: {
       id: true,
@@ -124,8 +148,12 @@ export const getEntitesListAdmin = async ({
       entiteTypeId: true,
     },
   });
-  const orderedRows = buildEntitesListAdmin(entites, { rootEntiteIds, search });
+  let orderedRows = buildEntitesListAdmin(entites, { rootEntiteIds, search });
   const total = orderedRows.length;
+
+  if (sort && order && isAdminSortColumn(sort)) {
+    orderedRows = sortAdminRows(orderedRows, sort, order);
+  }
 
   return {
     data: limit !== undefined ? orderedRows.slice(offset, offset + limit) : orderedRows.slice(offset),
