@@ -12,6 +12,7 @@ describe('sirecMigration.situation.transformer.ts', () => {
       courrier_signal: null as number | null,
     },
     motifsDeclaresIdDicos: [809],
+    groupIds: [],
   };
 
   it('should map description to fait.autresPrecisions', () => {

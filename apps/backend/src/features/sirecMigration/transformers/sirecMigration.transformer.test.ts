@@ -51,6 +51,7 @@ describe('sirecMigration.transformer.ts', () => {
       service_gestionnaire: null,
     },
     motifsDeclaresIdDicos: [809],
+    groupIds: [],
   };
 
   it('should map all fields correctly', () => {

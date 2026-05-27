@@ -12,7 +12,11 @@ vi.mock('../transco/affectation.transco.js', () => ({
   }),
 }));
 
-const makeData = (service_recepteur_niv1: number | null, service_gestionnaire: number | null) => ({
+const makeData = (
+  service_recepteur_niv1: number | null,
+  service_gestionnaire: number | null,
+  groupIds: number[] = [],
+) => ({
   reclamation: {
     id_data: 42,
     r_recept_date: null,
@@ -23,6 +27,7 @@ const makeData = (service_recepteur_niv1: number | null, service_gestionnaire: n
     service_gestionnaire,
   },
   motifsDeclaresIdDicos: [],
+  groupIds,
 });
 
 describe('sirecMigration.affectation.transformer.ts', () => {
@@ -101,9 +106,51 @@ describe('sirecMigration.affectation.transformer.ts', () => {
     });
   });
 
+  describe('groupIds', () => {
+    it('should add ARS from groupId to requeteEntiteIds', () => {
+      const result = transformSirecAffectation(makeData(null, null, [677]));
+
+      expect(result.requeteEntiteIds).toEqual(['ars-grand-est']);
+    });
+
+    it('should add service and ARS from groupId to both requeteEntiteIds and situationEntiteIds', () => {
+      const result = transformSirecAffectation(makeData(null, null, [1115]));
+
+      expect(result.requeteEntiteIds).toEqual(['ars-normandie']);
+      expect(result.situationEntiteIds).toContain('service-1');
+      expect(result.situationEntiteIds).toContain('ars-normandie');
+    });
+
+    it('should deduplicate requeteEntiteIds between groupIds and service fields', () => {
+      const result = transformSirecAffectation(makeData(693, null, [677]));
+
+      expect(result.requeteEntiteIds).toContain('ars-normandie');
+      expect(result.requeteEntiteIds).toContain('ars-grand-est');
+      expect(result.requeteEntiteIds).toHaveLength(2);
+    });
+
+    it('should deduplicate when groupId resolves to the same ARS as a service field', () => {
+      const result = transformSirecAffectation(makeData(693, null, [693]));
+
+      expect(result.requeteEntiteIds).toEqual(['ars-normandie']);
+    });
+
+    it('should satisfy the non-empty check with groupIds alone', () => {
+      expect(() => transformSirecAffectation(makeData(null, null, [693]))).not.toThrow();
+    });
+
+    it('should still throw SirecDataError when all fields and groupIds are empty', () => {
+      expect(() => transformSirecAffectation(makeData(null, null, []))).toThrow(SirecDataError);
+    });
+  });
+
   describe('unknown ids', () => {
     it('should propagate SirecTranscoError for an unknown id', () => {
       expect(() => transformSirecAffectation(makeData(9999, null))).toThrow(SirecTranscoError);
+    });
+
+    it('should propagate SirecTranscoError for an unknown groupId', () => {
+      expect(() => transformSirecAffectation(makeData(null, null, [9999]))).toThrow(SirecTranscoError);
     });
   });
 });

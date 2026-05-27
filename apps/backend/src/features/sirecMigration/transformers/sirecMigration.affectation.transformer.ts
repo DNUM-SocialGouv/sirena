@@ -11,7 +11,13 @@ export function transformSirecAffectation(sirecData: SirecReclamationData): Sire
   const requeteIds = new Set<string>();
   const situationIds = new Set<string>();
 
-  for (const fieldValue of [sirecData.reclamation.service_recepteur_niv1, sirecData.reclamation.service_gestionnaire]) {
+  const allIds: (number | null)[] = [
+    sirecData.reclamation.service_recepteur_niv1,
+    sirecData.reclamation.service_gestionnaire,
+    ...sirecData.groupIds,
+  ];
+
+  for (const fieldValue of allIds) {
     if (!fieldValue) continue;
 
     const { requeteEntiteIds, situationEntiteIds } = transcodeAffectation(fieldValue);
