@@ -3,7 +3,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import { Select } from '@codegouvfr/react-dsfr/Select';
 import { mappers } from '@sirena/common';
-import { optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
+import { type MesureProtection, optionalEmailSchema, optionalPhoneSchema } from '@sirena/common/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -62,6 +62,10 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
       }
       return { ...prev, [field]: value };
     });
+  };
+
+  const handleMesureProtectionChange = (value: MesureProtection) => {
+    setFormData((prev: PersonneConcerneeData) => ({ ...prev, mesureProtection: value }));
   };
 
   const handleSave = async () => {
@@ -365,6 +369,66 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
 
             <div className="fr-mb-3w">
               <RadioButtons
+                legend={personneConcerneeFieldMetadata.mesureProtection.label}
+                name="personne-concernee-mesure-protection"
+                orientation="horizontal"
+                options={[
+                  {
+                    label: 'Mandataire judiciaire',
+                    nativeInputProps: {
+                      value: 'MANDATAIRE_JUDICIAIRE',
+                      checked: formData.mesureProtection === 'MANDATAIRE_JUDICIAIRE',
+                      onChange: () => handleMesureProtectionChange('MANDATAIRE_JUDICIAIRE'),
+                    },
+                  },
+                  {
+                    label: 'Habilitation familiale',
+                    nativeInputProps: {
+                      value: 'HABILITATION_FAMILIALE',
+                      checked: formData.mesureProtection === 'HABILITATION_FAMILIALE',
+                      onChange: () => handleMesureProtectionChange('HABILITATION_FAMILIALE'),
+                    },
+                  },
+                  {
+                    label: 'Non',
+                    nativeInputProps: {
+                      value: 'NON',
+                      checked: formData.mesureProtection === 'NON',
+                      onChange: () => handleMesureProtectionChange('NON'),
+                    },
+                  },
+                ]}
+              />
+            </div>
+
+            <div className="fr-mb-3w">
+              <RadioButtons
+                legend={personneConcerneeFieldMetadata.estHandicapee.label}
+                name="personne-concernee-est-handicapee"
+                orientation="horizontal"
+                options={[
+                  {
+                    label: 'Oui',
+                    nativeInputProps: {
+                      value: 'true',
+                      checked: formData.estHandicapee === true,
+                      onChange: () => handleBooleanChange('estHandicapee', true),
+                    },
+                  },
+                  {
+                    label: 'Non',
+                    nativeInputProps: {
+                      value: 'false',
+                      checked: formData.estHandicapee === false,
+                      onChange: () => handleBooleanChange('estHandicapee', false),
+                    },
+                  },
+                ]}
+              />
+            </div>
+
+            <div className="fr-mb-3w">
+              <RadioButtons
                 legend={personneConcerneeFieldMetadata.aAutrePersonnes.label}
                 name="personne-concernee-a-autre-personnes"
                 orientation="horizontal"
@@ -401,32 +465,6 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                 }}
               />
             )}
-
-            <div className="fr-mb-3w">
-              <RadioButtons
-                legend={personneConcerneeFieldMetadata.estHandicapee.label}
-                name="personne-concernee-est-handicapee"
-                orientation="horizontal"
-                options={[
-                  {
-                    label: 'Oui',
-                    nativeInputProps: {
-                      value: 'true',
-                      checked: formData.estHandicapee === true,
-                      onChange: () => handleBooleanChange('estHandicapee', true),
-                    },
-                  },
-                  {
-                    label: 'Non',
-                    nativeInputProps: {
-                      value: 'false',
-                      checked: formData.estHandicapee === false,
-                      onChange: () => handleBooleanChange('estHandicapee', false),
-                    },
-                  },
-                ]}
-              />
-            </div>
 
             <Input
               label={personneConcerneeFieldMetadata.commentaire.label}
