@@ -25,6 +25,8 @@ backend:
       replicas: 1
 
     ingress:
+      appAnnotations:
+        external-dns.alpha.kubernetes.io/target: 57.128.65.138
       host: sirena.integration.dev.atlas.fabrique.social.gouv.fr
       tls:
         hosts:
@@ -54,6 +56,8 @@ frontend:
       replicas: 1
 
     ingress:
+      appAnnotations:
+        external-dns.alpha.kubernetes.io/target: 57.128.65.138
       host: sirena.integration.dev.atlas.fabrique.social.gouv.fr
       tls:
         hosts:

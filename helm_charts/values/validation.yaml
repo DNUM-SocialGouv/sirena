@@ -18,12 +18,15 @@ backend:
       FRONTEND_URI: https://sirena.validation.dev.atlas.fabrique.social.gouv.fr
       CRON_DEMAT_SOCIAL: "300"
       REDIS_TLS: "false"
+      TIPIMAIL_DISABLE_SENDING: "false"
       APP_ENV: validation
 
     deployment:
       replicas: 1
 
     ingress:
+      appAnnotations:
+        external-dns.alpha.kubernetes.io/target: 57.128.65.138
       host: sirena.validation.dev.atlas.fabrique.social.gouv.fr
       tls:
         hosts:
@@ -54,6 +57,8 @@ frontend:
       replicas: 1
 
     ingress:
+      appAnnotations:
+        external-dns.alpha.kubernetes.io/target: 57.128.65.138
       host: sirena.validation.dev.atlas.fabrique.social.gouv.fr
       tls:
         hosts:

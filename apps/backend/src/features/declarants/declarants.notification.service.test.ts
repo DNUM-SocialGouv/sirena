@@ -145,6 +145,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       select: {
         id: true,
         nomComplet: true,
+        email: true,
         emailContactUsager: true,
         telContactUsager: true,
         adresseContactUsager: true,
@@ -168,6 +169,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       {
         id: 'e1',
         nomComplet: 'ARS Normandie',
+        email: '',
         emailContactUsager: 'contact-ars@ex.com',
         telContactUsager: '02 31 00 00 00',
         adresseContactUsager: '1 rue Example, 76000 Rouen',
@@ -176,6 +178,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       {
         id: 'e2',
         nomComplet: 'CD Calvados',
+        email: '',
         emailContactUsager: 'contact-cd@ex.com',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -184,6 +187,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       {
         id: 'child1',
         nomComplet: 'UA 14',
+        email: '',
         emailContactUsager: 'contact-ua@ex.com',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -199,13 +203,14 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       'ARS Normandie',
       'Adresse e-mail : contact-ars@ex.com',
       'Téléphone : 02 31 00 00 00',
-      'Adresse postale : 1 rue Example, 76000 Rouen',
+      'Adresse postale :',
+      '1 rue Example, 76000 Rouen',
       '',
       'CD Calvados',
       'Adresse e-mail : contact-cd@ex.com',
     ];
     const expectedEntiteComplete: Record<string, string | number> = {
-      entitecomplete_nb: 7,
+      entitecomplete_nb: 8,
     };
     linesFormulaire.forEach((line, i) => {
       expectedEntiteComplete[`entitecomplete_${i + 1}`] = line;
@@ -263,6 +268,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       {
         id: 'e1',
         nomComplet: 'ARS Normandie',
+        email: '',
         emailContactUsager: 'ars@ex.com',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -316,6 +322,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       {
         id: 'e1',
         nomComplet: 'ARS Normandie',
+        email: '',
         emailContactUsager: 'contact-ars@ex.com',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -339,5 +346,115 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
     expect(mockedCreateChangeLog).not.toHaveBeenCalled();
+  });
+
+  it('should not send email when no entity has any displayable info (neither contact fields nor email)', async () => {
+    mockedPrismaRequete.findUnique.mockResolvedValueOnce({
+      id: 'req1',
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+      declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
+      requeteEntites: [{ entiteId: 'e1' }, { entiteId: 'e2' }],
+    } as any);
+
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+      {
+        id: 'e2',
+        nomComplet: 'CD Calvados',
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+    ] as any);
+
+    await sendDeclarantAcknowledgmentEmail('req1');
+
+    expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
+  });
+
+  it('should send email using fallback email field when contact fields are empty', async () => {
+    mockedPrismaRequete.findUnique.mockResolvedValueOnce({
+      id: 'req1',
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+      declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
+      requeteEntites: [{ entiteId: 'e1' }],
+    } as any);
+
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        email: 'ars-interne@example.com',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+    ] as any);
+
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
+
+    await sendDeclarantAcknowledgmentEmail('req1');
+
+    expect(mockedSendTipimailEmail).toHaveBeenCalled();
+    const call = mockedSendTipimailEmail.mock.calls[0]?.[0];
+    const values = (call as any)?.substitutions?.[0]?.values ?? {};
+    expect(values.entitecomplete_1).toBe('ARS Normandie');
+    expect(values.entitecomplete_2).toBe('Adresse e-mail : ars-interne@example.com');
+    expect(values.entitecomplete_nb).toBe(2);
+  });
+
+  it('should send email with name only when entity has no info at all', async () => {
+    mockedPrismaRequete.findUnique.mockResolvedValueOnce({
+      id: 'req1',
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+      declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
+      requeteEntites: [{ entiteId: 'e1' }, { entiteId: 'e2' }],
+    } as any);
+
+    // e1 has contact info, e2 has nothing → email is sent, e2 shows name only
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        email: '',
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+      {
+        id: 'e2',
+        nomComplet: 'CD Calvados',
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+    ] as any);
+
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
+
+    await sendDeclarantAcknowledgmentEmail('req1');
+
+    expect(mockedSendTipimailEmail).toHaveBeenCalled();
+    const call = mockedSendTipimailEmail.mock.calls[0]?.[0];
+    const values = (call as any)?.substitutions?.[0]?.values ?? {};
+    // ARS Normandie with email, then blank line, then CD Calvados name only
+    expect(values.entitecomplete_1).toBe('ARS Normandie');
+    expect(values.entitecomplete_2).toBe('Adresse e-mail : contact@ars.fr');
+    expect(values.entitecomplete_3).toBe('');
+    expect(values.entitecomplete_4).toBe('CD Calvados');
   });
 });

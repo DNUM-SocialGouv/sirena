@@ -24,6 +24,8 @@ backend:
       replicas: 2
 
     ingress:
+      appAnnotations:
+        external-dns.alpha.kubernetes.io/target: 79.137.10.7
       host: sirena.preproduction.prod.atlas.fabrique.social.gouv.fr
       tls:
         hosts:
@@ -52,6 +54,8 @@ frontend:
       replicas: 2
 
     ingress:
+      appAnnotations:
+        external-dns.alpha.kubernetes.io/target: 79.137.10.7
       host: sirena.preproduction.prod.atlas.fabrique.social.gouv.fr
       tls:
         hosts:
