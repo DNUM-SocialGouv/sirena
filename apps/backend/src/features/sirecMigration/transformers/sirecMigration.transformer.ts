@@ -2,13 +2,15 @@ import { REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { generateSirenaIdFromSirecReclamation } from '../../../helpers/sirecMigration.js';
 import type { SirecReclamationData } from '../sirecMigration.repository.js';
 import { transcodeReceptionType } from '../transco/receptionType.transco.js';
+import { SirecDataError } from '../transco/sirecTransco.error.js';
 import { transformSirecAffectation } from './sirecMigration.affectation.transformer.js';
 import { type SirenaDeclarantData, transformSirecDeclarant } from './sirecMigration.declarant.transformer.js';
+import { type SirenaProvenanceData, transformSirecProvenances } from './sirecMigration.provenance.transformer.js';
 import { type SirenaSituationData, transformSirecSituation } from './sirecMigration.situation.transformer.js';
 import { type SirenaVictimeData, transformSirecVictime } from './sirecMigration.victime.transformer.js';
 
 export type { SirenaAdresseData } from './sirecMigration.declarant.transformer.js';
-export type { SirenaDeclarantData, SirenaSituationData, SirenaVictimeData };
+export type { SirenaDeclarantData, SirenaProvenanceData, SirenaSituationData, SirenaVictimeData };
 
 export interface SirenaRequeteData {
   sirenaId: string;
@@ -19,13 +21,23 @@ export interface SirenaRequeteData {
   declarant: SirenaDeclarantData | null;
   victime: SirenaVictimeData | null;
   requeteEntiteIds: string[];
+  provenances: SirenaProvenanceData[];
   situation: SirenaSituationData;
 }
 
 export function transformSirecReclamation(sirecData: SirecReclamationData): SirenaRequeteData {
   const { requeteEntiteIds, situationEntiteIds } = transformSirecAffectation(sirecData);
+  const provenances = transformSirecProvenances(sirecData);
   const declarant = transformSirecDeclarant(sirecData.reclamation);
   const victime = transformSirecVictime(sirecData.reclamation);
+
+  for (const provenance of provenances) {
+    if (!requeteEntiteIds.includes(provenance.entiteId)) {
+      throw new SirecDataError(
+        `L'entité de la provenance "${provenance.nom}" (id ${provenance.entiteId}) n'est pas parmi les entités de la réclamation SIREC ${sirecData.reclamation.id_data}`,
+      );
+    }
+  }
 
   return {
     sirenaId: generateSirenaIdFromSirecReclamation(sirecData.reclamation),
@@ -36,6 +48,7 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
     declarant,
     victime,
     requeteEntiteIds,
+    provenances,
     situation: transformSirecSituation(sirecData, situationEntiteIds),
   };
 }

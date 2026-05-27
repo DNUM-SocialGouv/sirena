@@ -4,6 +4,7 @@ import {
   fetchSirecData,
   fetchSirecGroupIds,
   fetchSirecMotifsDeclaresById,
+  fetchSirecProvenances,
   fetchSirecReclamationById,
 } from './sirecMigration.repository.js';
 
@@ -95,6 +96,25 @@ describe('sirecMigration.repository.ts', () => {
     });
   });
 
+  describe('fetchSirecProvenances', () => {
+    it('should return provenances when found', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[{ id_provenance: 103, id_group: 693 }], []]);
+
+      const result = await fetchSirecProvenances(42);
+
+      expect(result).toEqual([{ id_provenance: 103, id_group: 693 }]);
+      expect(mysqlPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_provenances_data'), [42]);
+    });
+
+    it('should return an empty array when no provenances found', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[], []]);
+
+      const result = await fetchSirecProvenances(42);
+
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('fetchSirecData', () => {
     const mockRow = {
       id_data: 42,
@@ -110,7 +130,8 @@ describe('sirecMigration.repository.ts', () => {
       vi.mocked(mysqlPool.query)
         .mockResolvedValueOnce([[mockRow], []])
         .mockResolvedValueOnce([[{ id_dico: 823 }, { id_dico: 809 }], []])
-        .mockResolvedValueOnce([[{ id_group: 3 }, { id_group: 5 }], []]);
+        .mockResolvedValueOnce([[{ id_group: 3 }, { id_group: 5 }], []])
+        .mockResolvedValueOnce([[{ id_provenance: 103, id_group: 693 }], []]);
 
       const result = await fetchSirecData(42);
 
@@ -118,6 +139,7 @@ describe('sirecMigration.repository.ts', () => {
         reclamation: mockRow,
         motifsDeclaresIdDicos: [823, 809],
         groupIds: [3, 5],
+        provenances: [{ id_provenance: 103, id_group: 693 }],
       });
     });
 

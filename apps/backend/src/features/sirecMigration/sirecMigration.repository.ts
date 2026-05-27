@@ -51,10 +51,16 @@ export interface SirecReclamationRow {
   service_gestionnaire: number | null;
 }
 
+export interface SirecProvenance {
+  id_provenance: number;
+  id_group: number;
+}
+
 export interface SirecReclamationData {
   reclamation: SirecReclamationRow;
   motifsDeclaresIdDicos: number[];
   groupIds: number[];
+  provenances: SirecProvenance[];
 }
 
 export async function fetchSirecReclamationById(sirecId: number): Promise<SirecReclamationRow | null> {
@@ -81,14 +87,26 @@ export async function fetchSirecGroupIds(sirecId: number): Promise<number[]> {
   return rows.map((row) => row.id_group);
 }
 
+export async function fetchSirecProvenances(sirecId: number): Promise<SirecProvenance[]> {
+  const [rows] = await mysqlPool.query<(SirecProvenance & RowDataPacket)[]>(
+    `SELECT p.id_provenance, pg.id_group
+     FROM sire_provenances_data p
+     INNER JOIN sire_provenances_data_group pg ON pg.id_data = p.id_data
+     WHERE p.id_reclamation = ?`,
+    [sirecId],
+  );
+  return rows.map((row) => ({ id_provenance: row.id_provenance, id_group: row.id_group }));
+}
+
 export async function fetchSirecData(sirecId: number): Promise<SirecReclamationData | null> {
   const reclamation = await fetchSirecReclamationById(sirecId);
   if (!reclamation) return null;
 
-  const [motifsDeclaresIdDicos, groupIds] = await Promise.all([
+  const [motifsDeclaresIdDicos, groupIds, provenances] = await Promise.all([
     fetchSirecMotifsDeclaresById(sirecId),
     fetchSirecGroupIds(sirecId),
+    fetchSirecProvenances(sirecId),
   ]);
 
-  return { reclamation, motifsDeclaresIdDicos, groupIds };
+  return { reclamation, motifsDeclaresIdDicos, groupIds, provenances };
 }

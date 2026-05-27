@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SirecDataError } from '../transco/sirecTransco.error.js';
 import { transformSirecReclamation } from './sirecMigration.transformer.js';
 
 describe('sirecMigration.transformer.ts', () => {
@@ -52,6 +53,7 @@ describe('sirecMigration.transformer.ts', () => {
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
+    provenances: [],
   };
 
   it('should map all fields correctly', () => {
@@ -66,6 +68,7 @@ describe('sirecMigration.transformer.ts', () => {
       declarant: null,
       victime: null,
       requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
+      provenances: [],
       situation: {
         fait: {
           commentaire: 'Précision prioritaire',
@@ -155,5 +158,34 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.victime).toBeNull();
+  });
+
+  describe('provenances', () => {
+    it('should return an empty provenances array when there are no provenances', () => {
+      const result = transformSirecReclamation(sirecData);
+
+      expect(result.provenances).toEqual([]);
+    });
+
+    it('should map a provenance whose entiteId matches requeteEntiteIds', () => {
+      // service_recepteur_niv1: 693 → ARS Normandie (4af829ff-...)
+      // provenance id_group: 693 → same ARS Normandie
+      const result = transformSirecReclamation({
+        ...sirecData,
+        provenances: [{ id_provenance: 103, id_group: 693 }],
+      });
+
+      expect(result.provenances).toEqual([{ nom: 'Institution 1', entiteId: '4af829ff-07c1-425d-85d6-83b5f97e4422' }]);
+    });
+
+    it('should throw SirecDataError when provenance entiteId is not in requeteEntiteIds', () => {
+      // service_recepteur_niv1: 693 → ARS Normandie, provenance id_group: 677 → ARS Grand Est (mismatch)
+      expect(() =>
+        transformSirecReclamation({
+          ...sirecData,
+          provenances: [{ id_provenance: 103, id_group: 677 }],
+        }),
+      ).toThrow(SirecDataError);
+    });
   });
 });
