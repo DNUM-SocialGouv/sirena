@@ -12,6 +12,7 @@ import { transformSirecExamenCommission } from './sirecMigration.examenCommissio
 import { transformSirecInstitutionsPartenaires } from './sirecMigration.institutionPartenaire.transformer.js';
 import { transformSirecPriseEnCharge } from './sirecMigration.priseEnCharge.transformer.js';
 import { transformSirecProvenances } from './sirecMigration.provenance.transformer.js';
+import { transformSirecReponsePlaignant } from './sirecMigration.reponsePlaignant.transformer.js';
 import { transformSirecReponseProvenances } from './sirecMigration.reponseProvenance.transformer.js';
 import { type SirenaSituationData, transformSirecSituation } from './sirecMigration.situation.transformer.js';
 import { type SirenaVictimeData, transformSirecVictime } from './sirecMigration.victime.transformer.js';
@@ -63,6 +64,7 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
       ...transformSirecInstitutionsPartenaires(sirecData, arsEntiteIds),
       ...transformSirecPriseEnCharge(sirecData, arsEntiteIds),
       ...transformSirecExamenCommission(sirecData, arsEntiteIds),
+      ...transformSirecReponsePlaignant(sirecData, arsEntiteIds),
     ],
     situation: transformSirecSituation(sirecData, situationEntiteIds),
   };
