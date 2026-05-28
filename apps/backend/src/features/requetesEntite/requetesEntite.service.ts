@@ -2157,7 +2157,10 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       .field('Autres précisions', p.commentaire || null);
 
     if (mesureProtectionLabel) {
-      pdf.paragraph(mesureProtectionLabel);
+      pdf.field(
+        'La personne concernée est sous mesure de protection',
+        mesureProtectionLabel.replace('La personne concernée est sous mesure de protection : ', ''),
+      );
     }
   }
 

@@ -3048,7 +3048,7 @@ describe('requetesEntite.service', () => {
     });
 
     it('adds positive Mesure de protection to the generated request PDF', async () => {
-      const paragraphSpy = vi.spyOn(RequetePdfBuilder.prototype, 'paragraph');
+      const fieldSpy = vi.spyOn(RequetePdfBuilder.prototype, 'field');
       vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
       vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
         ...mockRequeteEntite,
@@ -3074,8 +3074,9 @@ describe('requetesEntite.service', () => {
 
       await generateRequetePdfBuffer('req123', 'ent123');
 
-      expect(paragraphSpy).toHaveBeenCalledWith(
-        'La personne concernée est sous mesure de protection : mandataire judiciaire',
+      expect(fieldSpy).toHaveBeenCalledWith(
+        'La personne concernée est sous mesure de protection',
+        'mandataire judiciaire',
       );
     });
   });
