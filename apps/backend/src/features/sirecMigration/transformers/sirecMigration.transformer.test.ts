@@ -53,10 +53,20 @@ describe('sirecMigration.transformer.ts', () => {
       accuser_reception: null as number | null,
       date_envoi_ar: null as Date | null,
       accuser_reception_precision: null as string | null,
+      institution_part: null as string | null,
+      niv_competence_reclam: null as number | null,
+      date_transfert_instit1: null as Date | null,
+      date_transfert_instit2: null as Date | null,
+      date_transfert_instit3: null as Date | null,
+      date_rep_provenance1: null as Date | null,
+      date_rep_provenance2: null as Date | null,
+      date_rep_provenance3: null as Date | null,
+      prec_niv_comp: null as string | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
     provenances: [],
+    institutionPartenaires: {} as Record<number, string>,
   };
 
   it('should map all fields correctly', () => {
@@ -190,6 +200,51 @@ describe('sirecMigration.transformer.ts', () => {
           provenances: [{ id_provenance: 103, id_group: 677, date_signalement: null, reponse_attendue: null }],
         }),
       ).toThrow(SirecDataError);
+    });
+  });
+
+  describe('etapes (institutionsPartenaires)', () => {
+    it('should add no etape when institution_part is null', () => {
+      const result = transformSirecReclamation({
+        ...sirecData,
+        reclamation: { ...sirecData.reclamation, institution_part: null, niv_competence_reclam: 54 },
+      });
+
+      expect(result.etapes).toEqual([]);
+    });
+
+    it('should add no etape when niv_competence_reclam is null', () => {
+      const result = transformSirecReclamation({
+        ...sirecData,
+        reclamation: { ...sirecData.reclamation, institution_part: '1', niv_competence_reclam: null },
+        institutionPartenaires: { 1: 'CHU de Rouen' },
+      });
+
+      expect(result.etapes).toEqual([]);
+    });
+
+    it('should create one etape per institution using the ARS entiteId', () => {
+      // service_recepteur_niv1: 693 → ARS Normandie (4af829ff-...)
+      const result = transformSirecReclamation({
+        ...sirecData,
+        reclamation: { ...sirecData.reclamation, institution_part: '1,2', niv_competence_reclam: 54 },
+        institutionPartenaires: { 1: 'Institution A', 2: 'Institution B' },
+      });
+
+      expect(result.etapes).toHaveLength(2);
+      expect(result.etapes[0].entiteId).toBe('4af829ff-07c1-425d-85d6-83b5f97e4422');
+      expect(result.etapes[0].nom).toBe("Transfert à l'institution : Institution A");
+      expect(result.etapes[1].nom).toBe("Transfert à l'institution : Institution B");
+    });
+
+    it('should create etapes with "Réponse hors compétence" prefix when niv_competence_reclam is 52', () => {
+      const result = transformSirecReclamation({
+        ...sirecData,
+        reclamation: { ...sirecData.reclamation, institution_part: '1', niv_competence_reclam: 52 },
+        institutionPartenaires: { 1: 'CPAM' },
+      });
+
+      expect(result.etapes[0].nom).toBe("Réponse hors compétence à l'institution : CPAM");
     });
   });
 

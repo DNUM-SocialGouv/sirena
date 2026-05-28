@@ -85,6 +85,7 @@ services:
     image: mysql:8.0
     container_name: sirena-mysql-dev
     environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_SIREC_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_SIREC_DB}
       MYSQL_USER: ${MYSQL_SIREC_USER}
       MYSQL_PASSWORD: ${MYSQL_SIREC_PASSWORD}
