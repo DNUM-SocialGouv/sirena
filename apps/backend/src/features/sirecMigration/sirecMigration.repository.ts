@@ -57,9 +57,6 @@ export interface SirecReclamationRow {
   date_transfert_instit1: Date | null;
   date_transfert_instit2: Date | null;
   date_transfert_instit3: Date | null;
-  date_rep_provenance1: Date | null;
-  date_rep_provenance2: Date | null;
-  date_rep_provenance3: Date | null;
   prec_niv_comp: string | null;
   date_traitement: Date | null;
   type_traitement_prec: string | null;
@@ -84,7 +81,7 @@ export interface SirecReclamationData {
 
 export async function fetchSirecReclamationById(sirecId: number): Promise<SirecReclamationRow | null> {
   const [rows] = await mysqlPool.query<(SirecReclamationRow & RowDataPacket)[]>(
-    'SELECT id_data, r_recept_date, description, reception, prioritaire, prioritaire_precisez, dest, dest_primaire, dest_secondaire, saisine, courrier_signal, plaignant, plaignant_anonyme, plaignant_est_anonyme, plaignant_type, plaignant_adresse, plaignant_adresse_complement, requerant_adresse, requerant_adresse_complete, requerant_cp, requerant_ville, preciser_statut, plaignant_rs, nom_representant, prenom_representant, plaignant_nom, plaignant_prenom, plaignant_mail, plaignant_tel, plaignant_connu, victime_lien_plaignant, lien_plai_autre, victime_non_identifiee, victime_age, victime_sexe, victime_adresse, victime_adresse_complement, usager_adresse, usager_adresse_complete, usager_cp, usager_ville, victime_nom, victime_prenom, victime_mail, victime_tel, service_recepteur_niv1, service_gestionnaire, accuser_reception, date_envoi_ar, accuser_reception_precision, institution_part, niv_competence_reclam, date_transfert_instit1, date_transfert_instit2, date_transfert_instit3, date_rep_provenance1, date_rep_provenance2, date_rep_provenance3, prec_niv_comp, date_traitement, type_traitement_prec, date_commission FROM sire_reclamation_data WHERE id_data = ?',
+    'SELECT id_data, r_recept_date, description, reception, prioritaire, prioritaire_precisez, dest, dest_primaire, dest_secondaire, saisine, courrier_signal, plaignant, plaignant_anonyme, plaignant_est_anonyme, plaignant_type, plaignant_adresse, plaignant_adresse_complement, requerant_adresse, requerant_adresse_complete, requerant_cp, requerant_ville, preciser_statut, plaignant_rs, nom_representant, prenom_representant, plaignant_nom, plaignant_prenom, plaignant_mail, plaignant_tel, plaignant_connu, victime_lien_plaignant, lien_plai_autre, victime_non_identifiee, victime_age, victime_sexe, victime_adresse, victime_adresse_complement, usager_adresse, usager_adresse_complete, usager_cp, usager_ville, victime_nom, victime_prenom, victime_mail, victime_tel, service_recepteur_niv1, service_gestionnaire, accuser_reception, date_envoi_ar, accuser_reception_precision, institution_part, niv_competence_reclam, date_transfert_instit1, date_transfert_instit2, date_transfert_instit3, prec_niv_comp, date_traitement, type_traitement_prec, date_commission FROM sire_reclamation_data WHERE id_data = ?',
     [sirecId],
   );
   return rows[0] ?? null;

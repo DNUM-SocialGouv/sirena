@@ -9,9 +9,6 @@ const makeData = (
     date_transfert_instit1?: Date | null;
     date_transfert_instit2?: Date | null;
     date_transfert_instit3?: Date | null;
-    date_rep_provenance1?: Date | null;
-    date_rep_provenance2?: Date | null;
-    date_rep_provenance3?: Date | null;
     prec_niv_comp?: string | null;
   } = {},
   institutionPartenaires: Record<number, string> = {},
@@ -23,9 +20,6 @@ const makeData = (
     date_transfert_instit1: null,
     date_transfert_instit2: null,
     date_transfert_instit3: null,
-    date_rep_provenance1: null,
-    date_rep_provenance2: null,
-    date_rep_provenance3: null,
     prec_niv_comp: null,
     ...overrides,
   },
@@ -163,76 +157,18 @@ describe('sirecMigration.institutionPartenaire.transformer.ts', () => {
     });
   });
 
-  describe('réponse date (niv_competence_reclam 52)', () => {
-    it('should use date_rep_provenance1 for the first institution with "Date de réponse" label', () => {
+  describe('transfer date', () => {
+    it('should use date_transfert_instit1 for niv_competence_reclam 52', () => {
       const date = new Date('2024-03-15');
       const result = transformSirecInstitutionsPartenaires(
-        makeData({ institution_part: '1', niv_competence_reclam: 52, date_rep_provenance1: date }, { 1: 'A' }),
+        makeData({ institution_part: '1', niv_competence_reclam: 52, date_transfert_instit1: date }, { 1: 'A' }),
         [ARS_1],
       );
 
-      expect(result[0].note).toContain('Date de réponse : 15/03/2024');
+      expect(result[0].note).toContain('Date de transfert : 15/03/2024');
       expect(result[0].createdAt).toEqual(date);
     });
 
-    it('should use date_rep_provenance2 for the second institution', () => {
-      const date = new Date('2024-04-20');
-      const result = transformSirecInstitutionsPartenaires(
-        makeData(
-          { institution_part: '1,2', niv_competence_reclam: 52, date_rep_provenance2: date },
-          { 1: 'A', 2: 'B' },
-        ),
-        [ARS_1],
-      );
-
-      expect(result[1].note).toContain('Date de réponse : 20/04/2024');
-      expect(result[1].createdAt).toEqual(date);
-    });
-
-    it('should use date_rep_provenance3 for the third institution', () => {
-      const date = new Date('2024-05-25');
-      const result = transformSirecInstitutionsPartenaires(
-        makeData(
-          { institution_part: '1,2,3', niv_competence_reclam: 52, date_rep_provenance3: date },
-          { 1: 'A', 2: 'B', 3: 'C' },
-        ),
-        [ARS_1],
-      );
-
-      expect(result[2].note).toContain('Date de réponse : 25/05/2024');
-      expect(result[2].createdAt).toEqual(date);
-    });
-
-    it('should produce "Date de réponse non renseignée" when date is null', () => {
-      const result = transformSirecInstitutionsPartenaires(
-        makeData({ institution_part: '1', niv_competence_reclam: 52, date_rep_provenance1: null }, { 1: 'A' }),
-        [ARS_1],
-      );
-
-      expect(result[0].note).toContain('Date de réponse non renseignée');
-    });
-
-    it('should not use date_transfert_instit1 when niv_competence_reclam is 52', () => {
-      const date = new Date('2024-03-15');
-      const result = transformSirecInstitutionsPartenaires(
-        makeData(
-          {
-            institution_part: '1',
-            niv_competence_reclam: 52,
-            date_transfert_instit1: date,
-            date_rep_provenance1: null,
-          },
-          { 1: 'A' },
-        ),
-        [ARS_1],
-      );
-
-      expect(result[0].note).toContain('Date de réponse non renseignée');
-      expect(result[0].note).not.toContain('Date de transfert');
-    });
-  });
-
-  describe('transfer date', () => {
     it('should use date_transfert_instit1 for the first institution', () => {
       const date = new Date('2024-03-15');
       const result = transformSirecInstitutionsPartenaires(

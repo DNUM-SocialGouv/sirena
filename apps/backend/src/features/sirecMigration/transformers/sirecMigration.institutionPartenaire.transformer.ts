@@ -14,9 +14,9 @@ function resolveInstitutionNom(token: string, institutionPartenaires: Record<num
   return token;
 }
 
-function formatDateNote(label: string, date: Date | null): string {
-  if (date === null) return `${label} non renseignée`;
-  return `${label} : ${formatSirecDate(date)}`;
+function formatTransfertNote(date: Date | null): string {
+  if (date === null) return 'Date de transfert non renseignée';
+  return `Date de transfert : ${formatSirecDate(date)}`;
 }
 
 export const NIVEAU_COMPETENCE_PARTAGEE = 52;
@@ -33,22 +33,18 @@ export function transformSirecInstitutionsPartenaires(
     date_transfert_instit1,
     date_transfert_instit2,
     date_transfert_instit3,
-    date_rep_provenance1,
-    date_rep_provenance2,
-    date_rep_provenance3,
   } = sirecData.reclamation;
 
   if (!institution_part) return [];
   if (niv_competence_reclam !== NIVEAU_COMPETENCE_PARTAGEE && niv_competence_reclam !== NIVEAU_COMPETENCE_HORS_ARS)
     return [];
 
-  const isReponse = niv_competence_reclam === NIVEAU_COMPETENCE_PARTAGEE;
-  const prefix = isReponse ? "Réponse hors compétence à l'institution : " : "Transfert à l'institution : ";
-  const dateLabel = isReponse ? 'Date de réponse' : 'Date de transfert';
-  const relevantDates: (Date | null)[] = isReponse
-    ? [date_rep_provenance1, date_rep_provenance2, date_rep_provenance3]
-    : [date_transfert_instit1, date_transfert_instit2, date_transfert_instit3];
+  const prefix =
+    niv_competence_reclam === NIVEAU_COMPETENCE_PARTAGEE
+      ? "Réponse hors compétence à l'institution : "
+      : "Transfert à l'institution : ";
 
+  const transferDates: (Date | null)[] = [date_transfert_instit1, date_transfert_instit2, date_transfert_instit3];
   const tokens = institution_part
     .split(',')
     .map((s) => s.trim())
@@ -58,9 +54,9 @@ export function transformSirecInstitutionsPartenaires(
 
   for (let i = 0; i < tokens.length; i++) {
     const institutionNom = resolveInstitutionNom(tokens[i], sirecData.institutionPartenaires);
-    const date = i < 3 ? relevantDates[i] : null;
+    const date = i < 3 ? transferDates[i] : null;
 
-    const noteParts: string[] = [formatDateNote(dateLabel, date)];
+    const noteParts: string[] = [formatTransfertNote(date)];
     if (prec_niv_comp !== null) noteParts.push(`Précision : ${prec_niv_comp}`);
 
     for (const entiteId of arsEntiteIds) {
