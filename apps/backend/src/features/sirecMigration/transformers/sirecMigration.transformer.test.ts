@@ -64,6 +64,7 @@ describe('sirecMigration.transformer.ts', () => {
       prec_niv_comp: null as string | null,
       date_traitement: null as Date | null,
       type_traitement_prec: null as string | null,
+      date_commission: null as Date | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
@@ -332,6 +333,28 @@ describe('sirecMigration.transformer.ts', () => {
 
       expect(result.etapes).toHaveLength(1);
       expect(result.etapes[0].note).toContain('Précisions : Précision quelconque');
+    });
+  });
+
+  describe('etapes (examenCommission)', () => {
+    it('should add no etape when date_commission is null', () => {
+      const result = transformSirecReclamation(sirecData);
+
+      expect(result.etapes).toEqual([]);
+    });
+
+    it('should add one etape per ARS entiteId when date_commission is set', () => {
+      // service_recepteur_niv1: 693 → ARS Normandie (1 ARS entiteId)
+      const date = new Date('2024-09-05');
+      const result = transformSirecReclamation({
+        ...sirecData,
+        reclamation: { ...sirecData.reclamation, date_commission: date },
+      });
+
+      expect(result.etapes).toHaveLength(1);
+      expect(result.etapes[0].nom).toBe('Examen en commission');
+      expect(result.etapes[0].createdAt).toEqual(date);
+      expect(result.etapes[0].note).toBe("Date d'examen en commission : 05/09/2024");
     });
   });
 });
