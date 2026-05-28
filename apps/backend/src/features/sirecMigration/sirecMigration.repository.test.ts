@@ -3,6 +3,7 @@ import { mysqlPool } from '../../config/mysql.js';
 import {
   fetchSirecData,
   fetchSirecGroupIds,
+  fetchSirecInstitutionPartenaires,
   fetchSirecMotifsDeclaresById,
   fetchSirecProvenances,
   fetchSirecReclamationById,
@@ -130,6 +131,30 @@ describe('sirecMigration.repository.ts', () => {
     });
   });
 
+  describe('fetchSirecInstitutionPartenaires', () => {
+    it('should return a map of id_data to institution name', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([
+        [
+          { id_data: 10, institution: 'CPAM de Rouen' },
+          { id_data: 20, institution: 'DREETS Normandie' },
+        ],
+        [],
+      ]);
+
+      const result = await fetchSirecInstitutionPartenaires([10, 20]);
+
+      expect(result).toEqual({ 10: 'CPAM de Rouen', 20: 'DREETS Normandie' });
+      expect(mysqlPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_institution_data'), [[10, 20]]);
+    });
+
+    it('should return an empty object without querying when ids is empty', async () => {
+      const result = await fetchSirecInstitutionPartenaires([]);
+
+      expect(result).toEqual({});
+      expect(mysqlPool.query).not.toHaveBeenCalled();
+    });
+  });
+
   describe('fetchSirecData', () => {
     const mockRow = {
       id_data: 42,
@@ -139,6 +164,7 @@ describe('sirecMigration.repository.ts', () => {
       prioritaire: 1,
       service_recepteur_niv1: 693,
       service_gestionnaire: null,
+      institution_part: null,
     };
 
     it('should return the aggregate data when the reclamation is found', async () => {
@@ -158,7 +184,42 @@ describe('sirecMigration.repository.ts', () => {
         motifsDeclaresIdDicos: [823, 809],
         groupIds: [3, 5],
         provenances: [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
+        institutionPartenaires: {},
       });
+    });
+
+    it('should fetch institution partenaires when institution_part contains numeric ids', async () => {
+      const rowWithInstitutions = { ...mockRow, institution_part: '10,20' };
+      vi.mocked(mysqlPool.query)
+        .mockResolvedValueOnce([[rowWithInstitutions], []])
+        .mockResolvedValueOnce([[{ id_dico: 823 }], []])
+        .mockResolvedValueOnce([[], []])
+        .mockResolvedValueOnce([[], []])
+        .mockResolvedValueOnce([
+          [
+            { id_data: 10, institution: 'CPAM de Rouen' },
+            { id_data: 20, institution: 'DREETS Normandie' },
+          ],
+          [],
+        ]);
+
+      const result = await fetchSirecData(42);
+
+      expect(result?.institutionPartenaires).toEqual({ 10: 'CPAM de Rouen', 20: 'DREETS Normandie' });
+    });
+
+    it('should not query institutions when institution_part has no numeric ids', async () => {
+      const rowWithTextPart = { ...mockRow, institution_part: 'Autre institution' };
+      vi.mocked(mysqlPool.query)
+        .mockResolvedValueOnce([[rowWithTextPart], []])
+        .mockResolvedValueOnce([[], []])
+        .mockResolvedValueOnce([[], []])
+        .mockResolvedValueOnce([[], []]);
+
+      const result = await fetchSirecData(42);
+
+      expect(result?.institutionPartenaires).toEqual({});
+      expect(mysqlPool.query).toHaveBeenCalledTimes(4);
     });
 
     it('should return null when the reclamation is not found', async () => {
