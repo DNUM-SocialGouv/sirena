@@ -113,7 +113,7 @@ export async function fetchSirecProvenances(sirecId: number): Promise<SirecProve
   const [rows] = await mysqlPool.query<(SirecProvenance & RowDataPacket)[]>(
     `SELECT p.id_provenance, pg.id_group, p.date_signalement, p.reponse_attendue
      FROM sire_provenances_data p
-     INNER JOIN sire_provenances_data_group pg ON pg.id_data = p.id_data
+     INNER JOIN sire_provenances_data_group pg ON pg.id_data = p.id_data and pg.id_group != 1
      WHERE p.id_reclamation = ?`,
     [sirecId],
   );
