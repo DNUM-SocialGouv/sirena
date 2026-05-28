@@ -62,11 +62,14 @@ describe('sirecMigration.transformer.ts', () => {
       date_rep_provenance2: null as Date | null,
       date_rep_provenance3: null as Date | null,
       prec_niv_comp: null as string | null,
+      date_traitement: null as Date | null,
+      type_traitement_prec: null as string | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
     provenances: [],
     institutionPartenaires: {} as Record<number, string>,
+    typeTraitementIdDicos: [] as number[],
   };
 
   it('should map all fields correctly', () => {
@@ -289,6 +292,46 @@ describe('sirecMigration.transformer.ts', () => {
       });
 
       expect(result.etapes[0].statutId).toBe('A_FAIRE');
+    });
+  });
+
+  describe('etapes (priseEnCharge)', () => {
+    it('should add no etape when all prise en charge fields are absent', () => {
+      const result = transformSirecReclamation(sirecData);
+
+      expect(result.etapes).toEqual([]);
+    });
+
+    it('should add one etape per ARS entiteId when date_traitement is set', () => {
+      // service_recepteur_niv1: 693 → ARS Normandie (1 ARS entiteId)
+      const result = transformSirecReclamation({
+        ...sirecData,
+        reclamation: { ...sirecData.reclamation, date_traitement: new Date('2024-06-01') },
+      });
+
+      expect(result.etapes).toHaveLength(1);
+      expect(result.etapes[0].nom).toBe('Prise en charge de la requête');
+      expect(result.etapes[0].statutId).toBe('FAIT');
+    });
+
+    it('should add one etape when typeTraitementIdDicos is non-empty', () => {
+      const result = transformSirecReclamation({
+        ...sirecData,
+        typeTraitementIdDicos: [344],
+      });
+
+      expect(result.etapes).toHaveLength(1);
+      expect(result.etapes[0].note).toContain('Type(s) de traitement');
+    });
+
+    it('should add one etape when type_traitement_prec is set', () => {
+      const result = transformSirecReclamation({
+        ...sirecData,
+        reclamation: { ...sirecData.reclamation, type_traitement_prec: 'Précision quelconque' },
+      });
+
+      expect(result.etapes).toHaveLength(1);
+      expect(result.etapes[0].note).toContain('Précisions : Précision quelconque');
     });
   });
 });
