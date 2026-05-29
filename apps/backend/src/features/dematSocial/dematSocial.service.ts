@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import * as Sentry from '@sentry/node';
 import { APP_ENVS } from '@sirena/common/constants';
+import { parse } from 'graphql';
 import { envVars } from '../../config/env.js';
 import { DossierState } from '../../graphql/graphql.js';
 import { serializeError } from '../../helpers/errors.js';
@@ -29,10 +31,88 @@ export const getInstructeurs = async () => {
   return await graffle.gql(GetInstructeursDocument).send({ demarcheNumber: envVars.DEMAT_SOCIAL_API_DIRECTORY });
 };
 
+const encodeDematSocialId = (id: string) => Buffer.from(id).toString('base64');
+
+const AccepterDossierDocument = parse(`
+  mutation accepterDossier(
+    $dossierId: ID!
+    $instructeurId: ID!
+    $motivation: String
+    $disableNotification: Boolean = true
+  ) {
+    dossierAccepter(
+      input: {
+        dossierId: $dossierId
+        instructeurId: $instructeurId
+        motivation: $motivation
+        disableNotification: $disableNotification
+      }
+    ) {
+      dossier {
+        id
+        number
+        state
+      }
+      errors {
+        message
+      }
+    }
+  }
+`) as unknown as TypedDocumentNode<unknown, FinalisationVariables>;
+
+const ClasserDossierSansSuiteDocument = parse(`
+  mutation classerDossierSansSuite(
+    $dossierId: ID!
+    $instructeurId: ID!
+    $motivation: String!
+    $disableNotification: Boolean = true
+  ) {
+    dossierClasserSansSuite(
+      input: {
+        dossierId: $dossierId
+        instructeurId: $instructeurId
+        motivation: $motivation
+        disableNotification: $disableNotification
+      }
+    ) {
+      dossier {
+        id
+        number
+        state
+      }
+      errors {
+        message
+      }
+    }
+  }
+`) as unknown as TypedDocumentNode<unknown, FinalisationVariables>;
+
+type FinalisationVariables = {
+  dossierId: string;
+  instructeurId: string;
+  motivation: string;
+  disableNotification: boolean;
+};
+
+const getFinalisationVariables = (id: string, motivation: string): FinalisationVariables => ({
+  dossierId: encodeDematSocialId(id),
+  instructeurId: encodeDematSocialId(envVars.DEMAT_SOCIAL_INSTRUCTEUR_ID),
+  motivation,
+  disableNotification: true,
+});
+
 export const updateInstruction = async (id: string) => {
-  const dossierId = Buffer.from(id).toString('base64');
-  const instructeurId = Buffer.from(envVars.DEMAT_SOCIAL_INSTRUCTEUR_ID).toString('base64');
+  const dossierId = encodeDematSocialId(id);
+  const instructeurId = encodeDematSocialId(envVars.DEMAT_SOCIAL_INSTRUCTEUR_ID);
   return await graffle.gql(ChangerInstructionDocument).send({ dossierId, instructeurId, disableNotification: true });
+};
+
+export const acceptDossierWithoutNotification = async (id: string, motivation: string) => {
+  return await graffle.gql(AccepterDossierDocument).send(getFinalisationVariables(id, motivation));
+};
+
+export const classerDossierSansSuiteWithoutNotification = async (id: string, motivation: string) => {
+  return await graffle.gql(ClasserDossierSansSuiteDocument).send(getFinalisationVariables(id, motivation));
 };
 
 export const getRequetes = async (createdSince?: Date, state?: DossierState) => {
