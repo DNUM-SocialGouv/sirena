@@ -23,6 +23,6 @@ export function transformSirecFait(sirecData: SirecReclamationData): SirenaFaitD
   return {
     commentaire: commentaireParts.join('\n'),
     autresPrecisions: sirecData.reclamation.description ?? '',
-    motifsDeclaratifs: transcodeMotifsDeclaratifs(sirecData.motifsDeclaresIdDicos),
+    motifsDeclaratifs: [...new Set(transcodeMotifsDeclaratifs(sirecData.motifsDeclaresIdDicos))],
   };
 }
