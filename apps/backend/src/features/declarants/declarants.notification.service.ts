@@ -1,15 +1,10 @@
-// Import des deux constantes : REQUETE_ETAPE_TYPES pour le lookup Prisma, REQUETE_ETAPE_STATUT_TYPES pour les transitions de statut
 import { RECEPTION_TYPE, REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES } from '@sirena/common/constants';
 import { envVars } from '../../config/env.js';
-import {
-  ACKNOWLEDGMENT_EMAIL_SUBJECT,
-  ACKNOWLEDGMENT_EMAIL_TEMPLATE_ID,
-  ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
-} from '../../config/tipimail.constant.js';
+import { ACKNOWLEDGMENT_EMAIL_SUBJECT } from '../../config/tipimail.constant.js';
 import { pick } from '../../helpers/object.js';
 import { addFileProcessingJob } from '../../jobs/queues/fileProcessing.queue.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
-import { generateEmailPdf, generateEmailPdfFromText } from '../../libs/mail/mailToPdf.js';
+import { generateEmailPdfFromText } from '../../libs/mail/mailToPdf.js';
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
 import { uploadFileToMinio } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
@@ -46,50 +41,32 @@ function formatEntiteAdminString(entites: Array<{ nomComplet: string; entiteMere
  * Téléphone : 02 01 02 03 04 05
  * Adresse postale : Bâtiment, Voie, Code postal, Ville
  */
-function formatEntiteCompleteString(
-  entites: Array<{
-    nomComplet: string;
-    emailContactUsager: string;
-    telContactUsager: string;
-    adresseContactUsager: string;
-    entiteMereId: string | null;
-  }>,
-): string {
+function formatEntiteCompleteString(entites: EntiteForMessage[]): string {
   // Filter only administrative entities
   const entitesAdmin = entites.filter((e) => e.entiteMereId === null);
 
   return entitesAdmin
     .map((entite) => {
       const parts: string[] = [entite.nomComplet];
-      if (entite.emailContactUsager) {
-        parts.push(`Adresse e-mail : ${entite.emailContactUsager}`);
+      const hasContactInfo = entite.emailContactUsager || entite.telContactUsager || entite.adresseContactUsager;
+      if (hasContactInfo) {
+        if (entite.emailContactUsager) {
+          parts.push(`Adresse e-mail : ${entite.emailContactUsager}`);
+        }
+        if (entite.telContactUsager) {
+          parts.push(`Téléphone : ${entite.telContactUsager}`);
+        }
+        if (entite.adresseContactUsager) {
+          parts.push(`Adresse postale :\n${entite.adresseContactUsager}`);
+        }
+      } else if (entite.email) {
+        // Fallback: no usager contact fields but an internal email is available
+        parts.push(`Adresse e-mail : ${entite.email}`);
       }
-      if (entite.telContactUsager) {
-        parts.push(`Téléphone : ${entite.telContactUsager}`);
-      }
-      if (entite.adresseContactUsager) {
-        parts.push(`Adresse postale :\n${entite.adresseContactUsager}`);
-      }
+      // Otherwise: name only (no info available)
       return parts.join('\n');
     })
     .join('\n\n');
-}
-
-/** Max number of lines sent as entitecomplete_1 … entitecomplete_N (template must have N placeholders). */
-const ENTITE_COMPLETE_MAX_LINES = 25;
-
-/**
- * Builds values for entitecomplete_1, entitecomplete_2
- */
-function buildEntiteCompleteSubstitutions(entiteComplete: string): Record<string, string | number> {
-  const lines = entiteComplete.split('\n');
-  const result: Record<string, string | number> = {
-    entitecomplete_nb: Math.min(lines.length, ENTITE_COMPLETE_MAX_LINES),
-  };
-  for (let i = 0; i < ENTITE_COMPLETE_MAX_LINES; i++) {
-    result[`entitecomplete_${i + 1}`] = lines[i] ?? '';
-  }
-  return result;
 }
 
 /**
@@ -261,6 +238,7 @@ async function attachEmailPdfToStep(
 
 type EntiteForMessage = {
   nomComplet: string;
+  email: string;
   emailContactUsager: string;
   telContactUsager: string;
   adresseContactUsager: string;
@@ -363,6 +341,7 @@ export async function sendManualAcknowledgmentEmail({
         select: {
           id: true,
           nomComplet: true,
+          email: true,
           emailContactUsager: true,
           telContactUsager: true,
           adresseContactUsager: true,
@@ -537,6 +516,7 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
       select: {
         id: true,
         nomComplet: true,
+        email: true,
         emailContactUsager: true,
         telContactUsager: true,
         adresseContactUsager: true,
@@ -549,28 +529,23 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
       return;
     }
 
+    // Do not send if no admin entity has any displayable info
+    const entitesAdmin = entites.filter((e) => e.entiteMereId === null);
+    const hasAnyDisplayableInfo = entitesAdmin.some(
+      (e) => e.emailContactUsager || e.telContactUsager || e.adresseContactUsager || e.email,
+    );
+    if (!hasAnyDisplayableInfo) {
+      logger.warn({ requeteId }, 'No displayable info on any entity, skipping acknowledgment email');
+      return;
+    }
+
     const declarantEmail = requete.declarant.identite.email;
-    const declarantPrenom = requete.declarant.identite.prenom || '';
-    const declarantNom = requete.declarant.identite.nom || '';
-
-    const entiteAdmin = formatEntiteAdminString(entites);
-    const entiteComplete = formatEntiteCompleteString(entites);
-    const entiteCompleteValues = buildEntiteCompleteSubstitutions(entiteComplete);
-
-    // TODO: Get signature/logo
-    const signature = '';
-
-    const substitutions = {
-      email: declarantEmail,
-      values: {
-        prenomdeclarant: declarantPrenom,
-        nomdeclarant: declarantNom,
-        entiteadmin: entiteAdmin,
-        requeteid: requeteId,
-        ...entiteCompleteValues,
-        signature,
-      },
+    const declarant = {
+      prenom: requete.declarant.identite.prenom || '',
+      nom: requete.declarant.identite.nom || '',
     };
+
+    const message = buildAcknowledgmentMessageText(requeteId, entites, declarant);
 
     const fromAddress = envVars.TIPIMAIL_FROM_ADDRESS;
     const fromPersonalName = envVars.TIPIMAIL_FROM_PERSONAL_NAME;
@@ -583,10 +558,9 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
 
     const sendResult = await sendTipimailEmail({
       to: declarantEmail,
-      subject: '',
-      text: '',
-      template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
-      substitutions: [substitutions],
+      subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
+      text: message,
+      html: buildAcknowledgmentMessageHtml(message),
     });
 
     if (sendResult.status === 'disabled') {
@@ -619,12 +593,12 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
 
     // Generate and attach PDF to each entity's acknowledgment step
     try {
-      const emailPdf = await generateEmailPdf({
+      const emailPdf = await generateEmailPdfFromText({
         from,
         to: declarantEmail,
         sentDate,
-        template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_ID,
-        substitutions: substitutions.values,
+        subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
+        text: message,
       });
 
       // Attach PDF to each entity's acknowledgment step
@@ -635,8 +609,7 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
               from,
               to: declarantEmail,
               sentDate,
-              template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_ID,
-              substitutions: substitutions.values,
+              subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
             });
           } catch (error) {
             logger.error({ requeteId, entiteId: entite.id, error }, 'Failed to attach email PDF to step for entity');
@@ -655,7 +628,6 @@ export async function sendDeclarantAcknowledgmentEmail(requeteId: string): Promi
         before: {},
         after: {
           acknowledgmentEmailSent: true,
-          acknowledgmentEmailTemplate: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
           acknowledgmentEmailSentAt: new Date().toISOString(),
           acknowledgmentEmailRecipient: declarantEmail,
           acknowledgmentEmailEntites: entites.map((e) => e.nomComplet),

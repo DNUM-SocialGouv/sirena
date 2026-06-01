@@ -9,4 +9,5 @@ export const QueryParamsSchema = z.object({
   entiteId: z.string().optional(),
   departementCodes: z.string().optional(),
   prioriteId: z.string().optional(),
+  rootEntiteIds: z.string().optional(),
 });

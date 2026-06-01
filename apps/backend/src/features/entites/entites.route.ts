@@ -12,6 +12,7 @@ import {
   GetEntitesListAdminResponseSchema,
   GetEntitiesChainResponseSchema,
   GetEntitiesResponseSchema,
+  GetRootEntitesListAdminResponseSchema,
 } from './entites.schema.js';
 
 export const getEntitesRoute = openApiProtectedRoute({
@@ -25,6 +26,13 @@ export const getEntitesListAdminRoute = openApiProtectedRoute({
   description: 'Get entites list for super admins',
   responses: {
     ...openApiResponses(GetEntitesListAdminResponseSchema),
+  },
+});
+
+export const getRootEntitesListAdminRoute = openApiProtectedRoute({
+  description: 'Get root entites list for super admins',
+  responses: {
+    ...openApiResponses(GetRootEntitesListAdminResponseSchema),
   },
 });
 

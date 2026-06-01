@@ -481,6 +481,7 @@ const app = factoryWithLogs
         select: {
           id: true,
           nomComplet: true,
+          email: true,
           emailContactUsager: true,
           telContactUsager: true,
           adresseContactUsager: true,

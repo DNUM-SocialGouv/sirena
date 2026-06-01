@@ -108,6 +108,86 @@ describe('buildEntitesListAdmin', () => {
     });
   });
 
+  it('returns only the selected root and its descendants', () => {
+    const rows = buildEntitesListAdmin(
+      [
+        entite({
+          id: 'root-cd',
+          nomComplet: 'CD Calvados',
+          label: 'CD 14',
+          entiteTypeId: 'CD',
+        }),
+        entite({
+          id: 'dir-ars',
+          nomComplet: 'Direction A',
+          label: 'DIR A',
+          entiteTypeId: 'ARS',
+          entiteMereId: 'root-ars',
+        }),
+        entite({
+          id: 'svc-ars',
+          nomComplet: 'Service Z',
+          label: 'SZ',
+          entiteTypeId: 'ARS',
+          entiteMereId: 'dir-ars',
+        }),
+        entite({
+          id: 'root-ars',
+          nomComplet: 'ARS Normandie',
+          label: 'ARS NOR',
+          entiteTypeId: 'ARS',
+        }),
+        entite({
+          id: 'root-dd',
+          nomComplet: 'DD Loire',
+          label: 'DD 42',
+          entiteTypeId: 'DD',
+        }),
+      ],
+      { rootEntiteIds: ['root-ars'] },
+    );
+
+    expect(rows.map((row) => row.id)).toEqual(['root-ars', 'dir-ars', 'svc-ars']);
+  });
+
+  it('ignores invalid and non-root selected ids', () => {
+    const rows = buildEntitesListAdmin(
+      [
+        entite({ id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR', entiteTypeId: 'ARS' }),
+        entite({
+          id: 'dir-ars',
+          nomComplet: 'Direction A',
+          label: 'DIR A',
+          entiteTypeId: 'ARS',
+          entiteMereId: 'root-ars',
+        }),
+      ],
+      { rootEntiteIds: ['dir-ars', 'unknown'] },
+    );
+
+    expect(rows).toEqual([]);
+  });
+
+  it('returns all selected roots and their descendants in global table order', () => {
+    const rows = buildEntitesListAdmin(
+      [
+        entite({ id: 'root-dd', nomComplet: 'DD Loire', label: 'DD 42', entiteTypeId: 'DD' }),
+        entite({ id: 'root-cd', nomComplet: 'CD Calvados', label: 'CD 14', entiteTypeId: 'CD' }),
+        entite({
+          id: 'dir-ars',
+          nomComplet: 'Direction A',
+          label: 'DIR A',
+          entiteTypeId: 'ARS',
+          entiteMereId: 'root-ars',
+        }),
+        entite({ id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR', entiteTypeId: 'ARS' }),
+      ],
+      { rootEntiteIds: ['root-dd', 'root-ars'] },
+    );
+
+    expect(rows.map((row) => row.id)).toEqual(['root-ars', 'dir-ars', 'root-dd']);
+  });
+
   it('orders siblings alphabetically under the same parent', () => {
     const rows = buildEntitesListAdmin([
       entite({
