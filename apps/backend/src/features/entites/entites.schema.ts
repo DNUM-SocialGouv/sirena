@@ -41,9 +41,41 @@ const columns = [
   Prisma.EntiteScalarFieldEnum.adresseContactUsager,
 ] as const;
 
-export const GetEntitiesQuerySchema = paginationQueryParamsSchema(columns);
+export const GetEntitiesQuerySchema = paginationQueryParamsSchema(columns).extend({
+  rootEntiteIds: z
+    .string()
+    .transform((val) =>
+      val
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    )
+    .optional(),
+});
+
+const adminSortColumns = [
+  'entiteNom',
+  'entiteLabel',
+  'directionNom',
+  'directionLabel',
+  'serviceNom',
+  'serviceLabel',
+  'email',
+  'contactUsager',
+  'isActiveLabel',
+] as const;
+
+export const GetEntitesListAdminQuerySchema = paginationQueryParamsSchema(adminSortColumns);
 
 export const GetEntitiesResponseSchema = z.array(EntiteSchema);
+
+export const RootEntiteAdminSchema = z.object({
+  id: z.string(),
+  nomComplet: z.string(),
+  label: z.string(),
+});
+
+export const GetRootEntitesListAdminResponseSchema = z.array(RootEntiteAdminSchema);
 
 export const GetEntitesListAdminResponseSchema = z.array(
   z.object({

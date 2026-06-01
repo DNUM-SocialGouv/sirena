@@ -1,4 +1,5 @@
 import { throwHTTPException401Unauthorized, throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
+import { ERROR_KIND } from '@sirena/common/constants';
 import { findApiKeyByHash, markApiKeyAsExpired, updateApiKeyLastUsedAt } from '../features/apiKeys/apiKeys.service.js';
 import factoryWithLogs from '../helpers/factories/appWithLogs.js';
 import { hashApiKey, isValidApiKeyFormat } from '../libs/apiKey.js';
@@ -9,31 +10,34 @@ export const apiKeyAuth = () =>
 
     const apiKey = c.req.header('X-API-Key');
     if (!apiKey) {
-      throwHTTPException401Unauthorized('API key is required. Include X-API-Key header.', { res: c.res });
+      throwHTTPException401Unauthorized('API key is required. Include X-API-Key header.', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
 
     if (!isValidApiKeyFormat(apiKey)) {
-      throwHTTPException401Unauthorized('Invalid API key format.', { res: c.res });
+      throwHTTPException401Unauthorized('Invalid API key format.', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const keyHash = hashApiKey(apiKey);
     const apiKeyRecord = await findApiKeyByHash(keyHash);
 
     if (!apiKeyRecord) {
-      throwHTTPException401Unauthorized('Invalid API key.', { res: c.res });
+      throwHTTPException401Unauthorized('Invalid API key.', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     if (apiKeyRecord.status === 'REVOKED') {
-      throwHTTPException403Forbidden('This API key has been revoked.', { res: c.res });
+      throwHTTPException403Forbidden('This API key has been revoked.', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     if (apiKeyRecord.status === 'SUSPENDED') {
-      throwHTTPException403Forbidden('This API key has been suspended.', { res: c.res });
+      throwHTTPException403Forbidden('This API key has been suspended.', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     if (apiKeyRecord.expiresAt && apiKeyRecord.expiresAt < new Date()) {
       await markApiKeyAsExpired(apiKeyRecord.id);
-      throwHTTPException403Forbidden('This API key has expired.', { res: c.res });
+      throwHTTPException403Forbidden('This API key has expired.', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     updateApiKeyLastUsedAt(apiKeyRecord.id).catch((error) => {

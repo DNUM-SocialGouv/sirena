@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import { type EntiteType, RECEPTION_TYPE, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { type EntiteType, ERROR_KIND, RECEPTION_TYPE, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,6 +27,9 @@ import {
 
 vi.mock('./requetesEntite.service.js', () => ({
   closeRequeteForEntite: vi.fn(),
+  filterOtherEntitesAffectedForUser: vi.fn((otherEntites, userEntityIds) =>
+    otherEntites.filter((entite: { id: string }) => !userEntityIds.includes(entite.id)),
+  ),
   getRequeteEntiteById: vi.fn(),
   getRequetesEntite: vi.fn(),
   hasAccessToRequete: vi.fn(),
@@ -168,6 +171,7 @@ export const fakeRequeteEntite = {
     createdById: null,
     commentaire: 'Commentaire',
     receptionDate: new Date(),
+    dateDemandeDeclarant: null,
     dematSocialId: 123,
     receptionTypeId: 'receptionTypeId',
     provenanceId: null,
@@ -205,6 +209,7 @@ describe('RequetesEntite endpoints: /', () => {
         thirdPartyAccountId: null,
         commentaire: 'Commentaire',
         receptionDate: new Date(),
+        dateDemandeDeclarant: null,
         dematSocialId: 123,
         receptionTypeId: 'receptionTypeId',
         participant: null,
@@ -324,7 +329,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(isFileBelongsToRequete).toHaveBeenCalledWith('file1', 'requeteId');
       expect(getUploadedFileById).toHaveBeenCalledWith('file1');
-      expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf');
+      expect(getFileStream).toHaveBeenCalledWith('/uploads/test.pdf', undefined);
     });
 
     it('returns 200 with empty body when file size is 0 (no streaming)', async () => {
@@ -358,7 +363,7 @@ describe('RequetesEntite endpoints: /', () => {
       const body = await res.json();
 
       expect(res.status).toBe(404);
-      expect(body).toEqual({ message: 'Requete not found' });
+      expect(body).toEqual({ message: 'Requete not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
@@ -374,7 +379,7 @@ describe('RequetesEntite endpoints: /', () => {
       const body = await res.json();
 
       expect(res.status).toBe(404);
-      expect(body).toEqual({ message: 'Requete not found' });
+      expect(body).toEqual({ message: 'Requete not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
@@ -391,7 +396,7 @@ describe('RequetesEntite endpoints: /', () => {
       const body = await res.json();
 
       expect(res.status).toBe(404);
-      expect(body).toEqual({ message: 'File not found' });
+      expect(body).toEqual({ message: 'File not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
       expect(getUploadedFileById).not.toHaveBeenCalled();
       expect(getFileStream).not.toHaveBeenCalled();
@@ -409,7 +414,7 @@ describe('RequetesEntite endpoints: /', () => {
       const body = await res.json();
 
       expect(res.status).toBe(404);
-      expect(body).toEqual({ message: 'File not found' });
+      expect(body).toEqual({ message: 'File not found', cause: { kind: ERROR_KIND.BUSINESS } });
 
       expect(getFileStream).not.toHaveBeenCalled();
     });
@@ -509,6 +514,35 @@ describe('RequetesEntite endpoints: /', () => {
       expect(getDirectionsServicesFromRequeteEntiteId).toHaveBeenCalledWith('requeteId', 'entiteId');
     });
 
+    it('should not return the current user entites among other entites affected by the requete', async () => {
+      const currentUserSubEntite = {
+        id: 'e1',
+        label: 'Offre de soins',
+        nomComplet: 'Direction Offre de Soins',
+        entiteTypeId: 'ARS' as EntiteType,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      };
+      const otherEntite = {
+        id: 'ars-bretagne',
+        label: 'ARS BRET',
+        nomComplet: 'ARS Bretagne',
+        entiteTypeId: 'ARS' as EntiteType,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      };
+
+      vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(fakeRequeteEntite);
+      vi.mocked(getOtherEntitesAffected).mockResolvedValueOnce([currentUserSubEntite, otherEntite]);
+      vi.mocked(getDirectionsServicesFromRequeteEntiteId).mockResolvedValueOnce([]);
+
+      const res = await client[':id']['other-entites-affected'].$get({
+        param: { id: 'requeteId' },
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.data.otherEntites).toEqual([otherEntite]);
+    });
+
     it('should return 404 when requeteEntite not found', async () => {
       vi.mocked(getRequeteEntiteById).mockResolvedValueOnce(null);
 
@@ -518,7 +552,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(404);
       const json = await res.json();
-      expect(json).toEqual({ message: 'Requete not found' });
+      expect(json).toEqual({ message: 'Requete not found', cause: { kind: ERROR_KIND.BUSINESS } });
     });
   });
 
@@ -670,7 +704,10 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(400);
       const json = await res.json();
-      expect(json).toEqual({ message: 'You are not allowed to close requetes without topEntiteId.' });
+      expect(json).toEqual({
+        message: 'You are not allowed to close requetes without topEntiteId.',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
 
       expect(closeRequeteForEntite).not.toHaveBeenCalled();
     });
@@ -688,7 +725,7 @@ describe('RequetesEntite endpoints: /', () => {
 
       expect(res.status).toBe(404);
       const json = await res.json();
-      expect(json).toEqual({ message: 'Requête not found' });
+      expect(json).toEqual({ message: 'Requête not found', cause: { kind: ERROR_KIND.BUSINESS } });
     });
 
     it('should return 400 when reason is invalid', async () => {

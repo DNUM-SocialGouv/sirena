@@ -1,5 +1,5 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ROLES } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import { isOperationDependsOnRecordNotFoundError } from '../../helpers/prisma.js';
@@ -15,8 +15,14 @@ import {
   getEntiteChainRoute,
   getEntitesListAdminRoute,
   getEntitesRoute,
+  getRootEntitesListAdminRoute,
 } from './entites.route.js';
-import { CreateChildEntiteAdminInputSchema, EditEntiteInputSchema, GetEntitiesQuerySchema } from './entites.schema.js';
+import {
+  CreateChildEntiteAdminInputSchema,
+  EditEntiteInputSchema,
+  GetEntitesListAdminQuerySchema,
+  GetEntitiesQuerySchema,
+} from './entites.schema.js';
 import {
   createChildEntiteAdmin,
   editEntiteAdmin,
@@ -26,6 +32,7 @@ import {
   getEntites,
   getEntitesByIds,
   getEntitesListAdmin,
+  getRootEntitesListAdmin,
 } from './entites.service.js';
 
 const app = factoryWithLogs
@@ -77,7 +84,7 @@ const app = factoryWithLogs
     '/admin',
     roleMiddleware([ROLES.SUPER_ADMIN]),
     getEntitesListAdminRoute,
-    zValidator('query', GetEntitiesQuerySchema),
+    zValidator('query', GetEntitesListAdminQuerySchema),
     async (c) => {
       const logger = c.get('logger');
       const query = c.req.valid('query');
@@ -97,6 +104,16 @@ const app = factoryWithLogs
     },
   )
 
+  .get('/admin/roots', roleMiddleware([ROLES.SUPER_ADMIN]), getRootEntitesListAdminRoute, async (c) => {
+    const logger = c.get('logger');
+
+    logger.info('Admin root entities list requested');
+    const entites = await getRootEntitesListAdmin();
+    logger.info({ entitiesCount: entites.length }, 'Admin root entities list retrieved successfully');
+
+    return c.json({ data: entites });
+  })
+
   .get('/admin/:id', roleMiddleware([ROLES.SUPER_ADMIN]), getEntiteByIdAdminRoute, async (c) => {
     const id = c.req.param('id');
     const logger = c.get('logger');
@@ -105,7 +122,7 @@ const app = factoryWithLogs
 
     if (!entite) {
       logger.warn({ entiteId: id }, 'Entite not found');
-      throwHTTPException404NotFound('Entite not found', { res: c.res });
+      throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     logger.info({ entite }, 'Entite retrieved successfully');
@@ -129,12 +146,15 @@ const app = factoryWithLogs
       } catch (error) {
         if (error instanceof EntiteNotFoundError) {
           logger.warn({ entiteId: id }, 'Entite not found');
-          throwHTTPException404NotFound('Entite not found', { res: c.res });
+          throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
         }
 
         if (error instanceof EntiteChildCreationForbiddenError) {
           logger.warn({ entiteId: id }, 'Child entite creation is not allowed for this parent');
-          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', { res: c.res });
+          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
         }
 
         throw error;
@@ -161,7 +181,7 @@ const app = factoryWithLogs
       } catch (error) {
         if (isOperationDependsOnRecordNotFoundError(error)) {
           logger.warn({ entiteId: id }, 'Entite not found');
-          throwHTTPException404NotFound('Entite not found', { res: c.res });
+          throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
         }
 
         throw error;

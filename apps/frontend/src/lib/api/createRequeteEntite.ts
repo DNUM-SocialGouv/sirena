@@ -6,6 +6,7 @@ import type { DeclarantData } from '@/lib/declarant';
 export interface CreateRequeteInput {
   declarant?: DeclarantData;
   receptionDate?: string | null;
+  dateDemandeDeclarant?: string | null;
   receptionTypeId?: Exclude<ReceptionType, 'FORMULAIRE'> | null;
 }
 

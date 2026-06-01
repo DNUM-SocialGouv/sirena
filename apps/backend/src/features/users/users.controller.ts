@@ -1,5 +1,5 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES, type Role, STATUT_TYPES } from '@sirena/common/constants';
 import { getAssignableRoles } from '@sirena/common/utils';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
@@ -31,6 +31,7 @@ const app = factoryWithLogs
     if (query.roleId?.some((roleOption: string) => !roles.includes(roleOption))) {
       throwHTTPException400BadRequest('You are not allowed to filter on this role.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -59,6 +60,7 @@ const app = factoryWithLogs
       logger.warn({ userId: id }, 'User not found or unauthorized access');
       throwHTTPException404NotFound('User not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
     logger.info({ userId: id }, 'User details retrieved successfully');
@@ -93,12 +95,14 @@ const app = factoryWithLogs
       if (!userToPatch) {
         throwHTTPException404NotFound('User not found', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
       if (json.roleId && !(roles as string[]).includes(json.roleId)) {
         throwHTTPException400BadRequest('No permissions', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -108,7 +112,7 @@ const app = factoryWithLogs
       if (newEntiteId === currentEntiteId) {
         delete json.entiteId;
       } else if (newEntiteId && entiteIds !== null && !entiteIds.includes(newEntiteId)) {
-        throwHTTPException400BadRequest('No permissions');
+        throwHTTPException400BadRequest('No permissions', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
       // Check if status is changing to ACTIF to send activation email

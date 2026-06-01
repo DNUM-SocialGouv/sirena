@@ -6,6 +6,7 @@ import {
   throwHTTPException404NotFound,
 } from '@sirena/backend-utils/helpers';
 import {
+  ERROR_KIND,
   RECEPTION_TYPE,
   REQUETE_STATUT_TYPES,
   REQUETE_UPDATE_FIELDS,
@@ -69,6 +70,7 @@ import {
   createRequeteEntite,
   createRequeteFilesArchive,
   createRequeteSituation,
+  filterOtherEntitesAffectedForUser,
   generateRequetePdfBuffer,
   getOtherEntitesAffected,
   getRequeteEntiteById,
@@ -100,6 +102,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
       const codes = query.departementCodes
@@ -121,6 +124,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
     const { data, total } = await getRequetesEntite([topEntiteId], query);
@@ -144,6 +148,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -152,6 +157,7 @@ const app = factoryWithLogs
     if (!requeteEntite) {
       throwHTTPException404NotFound('Requete not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -166,6 +172,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -174,17 +181,25 @@ const app = factoryWithLogs
     if (!requeteEntite) {
       throwHTTPException404NotFound('Requete not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
+
+    const currentUserEntiteIds = c.get('entiteIds') ?? [];
 
     const [otherEntites, subAdministrativeEntites] = await Promise.all([
       getOtherEntitesAffected(requeteEntite.requeteId, requeteEntite.entiteId),
       getDirectionsServicesFromRequeteEntiteId(requeteEntite.requeteId, requeteEntite.entiteId),
     ]);
 
+    const otherEntitesExcludingCurrentUserEntites = filterOtherEntitesAffectedForUser(
+      otherEntites,
+      currentUserEntiteIds,
+    );
+
     return c.json({
       data: {
-        otherEntites,
+        otherEntites: otherEntitesExcludingCurrentUserEntites,
         subAdministrativeEntites,
       },
     });
@@ -197,6 +212,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -205,6 +221,7 @@ const app = factoryWithLogs
     if (!requeteEntite) {
       throwHTTPException404NotFound('Requete not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -212,13 +229,13 @@ const app = factoryWithLogs
 
     if (!belongsToRequete) {
       logger.warn({ requeteId: id, fileId }, 'Attempt to access file not belonging to requete');
-      throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const file = await getUploadedFileById(fileId);
 
     if (!file) {
-      throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     logger.info({ requeteId: id, fileId }, 'Retrieving file for requete');
@@ -232,6 +249,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -240,6 +258,7 @@ const app = factoryWithLogs
     if (!requeteEntite) {
       throwHTTPException404NotFound('Requete not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -247,17 +266,17 @@ const app = factoryWithLogs
 
     if (!belongsToRequete) {
       logger.warn({ requeteId: id, fileId }, 'Attempt to access safe file not belonging to requete');
-      throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const file = await getUploadedFileById(fileId);
 
     if (!file) {
-      throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     if (!file.safeFilePath) {
-      throwHTTPException404NotFound('Safe file not available', { res: c.res });
+      throwHTTPException404NotFound('Safe file not available', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     logger.info({ requeteId: id, fileId }, 'Retrieving safe file for requete');
@@ -271,32 +290,33 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
     const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
 
     if (!requeteEntite) {
-      throwHTTPException404NotFound('Requete entite not found', { res: c.res });
+      throwHTTPException404NotFound('Requete entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const situation = requeteEntite.requete?.situations?.find((s) => s.id === situationId);
 
     if (!situation) {
       logger.warn({ requeteId: id, situationId }, 'Situation not found in requete');
-      throwHTTPException404NotFound('Situation not found', { res: c.res });
+      throwHTTPException404NotFound('Situation not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const belongsToRequete = await isFileBelongsToRequete(fileId, id);
 
     if (!belongsToRequete) {
       logger.warn({ requeteId: id, situationId, fileId }, 'Attempt to access file not belonging to requete');
-      throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const file = await getUploadedFileById(fileId);
     if (!file) {
-      throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     logger.info({ requeteId: id, situationId, fileId }, 'Retrieving file for situation');
@@ -310,37 +330,38 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
     const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
 
     if (!requeteEntite) {
-      throwHTTPException404NotFound('Requete entite not found', { res: c.res });
+      throwHTTPException404NotFound('Requete entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const situation = requeteEntite.requete?.situations?.find((s) => s.id === situationId);
 
     if (!situation) {
       logger.warn({ requeteId: id, situationId }, 'Situation not found in requete');
-      throwHTTPException404NotFound('Situation not found', { res: c.res });
+      throwHTTPException404NotFound('Situation not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const belongsToRequete = await isFileBelongsToRequete(fileId, id);
 
     if (!belongsToRequete) {
       logger.warn({ requeteId: id, situationId, fileId }, 'Attempt to access safe file not belonging to requete');
-      throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const file = await getUploadedFileById(fileId);
 
     if (!file) {
-      throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     if (!file.safeFilePath) {
-      throwHTTPException404NotFound('Safe file not available', { res: c.res });
+      throwHTTPException404NotFound('Safe file not available', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     logger.info({ requeteId: id, situationId, fileId }, 'Retrieving safe file for situation');
@@ -355,13 +376,14 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
     const pdfBuffer = await generateRequetePdfBuffer(id, topEntiteId);
 
     if (!pdfBuffer) {
-      throwHTTPException404NotFound('Requete not found', { res: c.res });
+      throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const pdfFileName = `requete-${id}.pdf`;
@@ -380,17 +402,18 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
     const result = await createRequeteFilesArchive(id, topEntiteId);
 
     if (!result) {
-      throwHTTPException404NotFound('Requete not found', { res: c.res });
+      throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     if (result === 'NO_FILES') {
-      throwHTTPException404NotFound('No attachments found for this requete', { res: c.res });
+      throwHTTPException404NotFound('No attachments found for this requete', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const { archive, requeteId } = result;
@@ -425,6 +448,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
     const { statutId } = c.req.valid('json');
@@ -433,6 +457,7 @@ const app = factoryWithLogs
     if (!requeteEntite) {
       throwHTTPException404NotFound('Requete not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -444,6 +469,7 @@ const app = factoryWithLogs
     if (!isReadOnlyWithInactiveEntite) {
       throwHTTPException403Forbidden('You are not allowed to update the status of a requete with an inactive entite.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -479,6 +505,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to create requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -488,6 +515,7 @@ const app = factoryWithLogs
         if (!isAllowed) {
           throwHTTPException403Forbidden('You are not allowed to add these files to the requete', {
             res: c.res,
+            kind: ERROR_KIND.BUSINESS,
           });
         }
       }
@@ -534,6 +562,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
       const { declarant: declarantData, controls } = c.req.valid('json');
@@ -543,6 +572,7 @@ const app = factoryWithLogs
       if (!requeteEntite) {
         throwHTTPException404NotFound('Requete not found', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -580,6 +610,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
       const { participant: participantData, controls } = c.req.valid('json');
@@ -589,6 +620,7 @@ const app = factoryWithLogs
       if (!requeteEntite) {
         throwHTTPException404NotFound('Requete not found', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -639,26 +671,31 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
-      const { receptionDate, receptionTypeId, provenanceId, provenancePrecision, controls } = c.req.valid('json');
+      const { receptionDate, dateDemandeDeclarant, receptionTypeId, provenanceId, provenancePrecision, controls } =
+        c.req.valid('json');
 
       const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
 
       if (!requeteEntite) {
         throwHTTPException404NotFound('Requete not found', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
       if (requeteEntite.requete.receptionTypeId === RECEPTION_TYPE.FORMULAIRE) {
         throwHTTPException400BadRequest('You are not allowed to update requetes from formulaire.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
       const payload: {
         receptionDate?: Date | null;
+        dateDemandeDeclarant?: Date | null;
         receptionTypeId?: string | null;
         provenanceId?: string | null;
         provenancePrecision?: string | null;
@@ -666,6 +703,10 @@ const app = factoryWithLogs
 
       if (receptionDate !== undefined) {
         payload.receptionDate = receptionDate ? new Date(receptionDate) : null;
+      }
+
+      if (dateDemandeDeclarant !== undefined) {
+        payload.dateDemandeDeclarant = dateDemandeDeclarant ? new Date(dateDemandeDeclarant) : null;
       }
 
       if (receptionTypeId !== undefined) {
@@ -721,6 +762,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
     const { fileIds } = c.req.valid('json');
@@ -730,6 +772,7 @@ const app = factoryWithLogs
     if (!requeteEntite) {
       throwHTTPException404NotFound('Requete not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -738,6 +781,7 @@ const app = factoryWithLogs
     if (!isAllowed) {
       throwHTTPException403Forbidden('You are not allowed to add these files to the requete', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -766,6 +810,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
     const { prioriteId } = c.req.valid('json');
@@ -775,6 +820,7 @@ const app = factoryWithLogs
     if (!requeteEntite) {
       throwHTTPException404NotFound('Requete not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -793,6 +839,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
     const { situation: situationData } = c.req.valid('json');
@@ -802,6 +849,7 @@ const app = factoryWithLogs
     if (!requeteEntite) {
       throwHTTPException404NotFound('Requete not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -812,6 +860,7 @@ const app = factoryWithLogs
       if (!isAllowed) {
         throwHTTPException403Forbidden('You are not allowed to add these files to the situation', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
     }
@@ -856,6 +905,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to update requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
     const { situation: situationData } = c.req.valid('json');
@@ -865,6 +915,7 @@ const app = factoryWithLogs
     if (!requeteEntite) {
       throwHTTPException404NotFound('Requete not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -885,6 +936,7 @@ const app = factoryWithLogs
       if (!isAllowed) {
         throwHTTPException403Forbidden('You are not allowed to add these files to the situation', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
     }
@@ -934,6 +986,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to close requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
       const { reasonIds, precision, fileIds } = c.req.valid('json');
@@ -943,6 +996,7 @@ const app = factoryWithLogs
         if (!hasAccessToReq) {
           throwHTTPException403Forbidden('You are not allowed to close this requete', {
             res: c.res,
+            kind: ERROR_KIND.BUSINESS,
           });
         }
 
@@ -974,7 +1028,7 @@ const app = factoryWithLogs
           switch (error.message) {
             // biome-ignore lint/suspicious/noFallthroughSwitchClause: throwHTTPException404NotFound is throwing error
             case 'REQUETE_NOT_FOUND':
-              throwHTTPException404NotFound('Requête not found', { res: c.res });
+              throwHTTPException404NotFound('Requête not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
             case 'REASON_INVALID':
               return c.json({ error: 'REASON_INVALID', message: 'Invalid reason provided' }, 400);
             case 'READONLY_FOR_ENTITY':
@@ -1010,6 +1064,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to reopen requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -1018,6 +1073,7 @@ const app = factoryWithLogs
         if (!hasAccessToReq) {
           throwHTTPException403Forbidden('You are not allowed to reopen this requete', {
             res: c.res,
+            kind: ERROR_KIND.BUSINESS,
           });
         }
 
@@ -1046,7 +1102,7 @@ const app = factoryWithLogs
           switch (error.message) {
             // biome-ignore lint/suspicious/noFallthroughSwitchClause: throwHTTPException404NotFound is throwing error
             case 'REQUETE_NOT_FOUND':
-              throwHTTPException404NotFound('Requête not found', { res: c.res });
+              throwHTTPException404NotFound('Requête not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
             case 'REQUETE_NOT_CLOSED':
               return c.json({ error: 'REQUETE_NOT_CLOSED', message: 'Requête is not closed for this entity' }, 400);
             default:

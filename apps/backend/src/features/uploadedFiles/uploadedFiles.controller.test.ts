@@ -1,3 +1,5 @@
+import { Readable } from 'node:stream';
+import { ERROR_KIND } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
@@ -52,6 +54,7 @@ vi.mock('../../libs/minio.js', () => ({
     return Promise.resolve({
       objectPath: fakeFile.filePath,
       rollback: vi.fn(),
+      encryptionMetadata: { iv: 'iv', authTag: 'authTag' },
     });
   }),
   getSignedUrl: vi.fn(() => Promise.resolve(signedUrl)),
@@ -67,11 +70,12 @@ vi.mock('./uploadedFiles.service.js', () => ({
 
 vi.mock('../../middlewares/upload.middleware.js', () => ({
   default: vi.fn((c: Context, next: Next) => {
+    const fileSize = fakeFile.size;
     c.set('uploadedFile', {
-      buffer: Buffer.from('test pdf content'),
+      stream: Readable.from(Buffer.from('test pdf content')),
       fileName: fakeFile.fileName,
       contentType: fakeFile.mimeType,
-      size: fakeFile.size,
+      getReadBytes: () => fileSize,
     });
     return next();
   }),
@@ -173,6 +177,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(res.status).toBe(400);
       expect(body).toEqual({
         message: 'No file uploaded',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
 
@@ -188,6 +193,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(res.status).toBe(400);
       expect(body).toEqual({
         message: 'You are not allowed to create uploaded files without topEntiteId.',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
 
@@ -197,6 +203,7 @@ describe('uploadedFiles.controller.ts', () => {
         return Promise.resolve({
           objectPath: 'uploads/test.pdf',
           rollback: rollbackMinio,
+          encryptionMetadata: { iv: 'iv', authTag: 'authTag' },
         });
       });
 
@@ -219,6 +226,7 @@ describe('uploadedFiles.controller.ts', () => {
         return Promise.resolve({
           objectPath: '',
           rollback: vi.fn(),
+          encryptionMetadata: { iv: 'iv', authTag: 'authTag' },
         });
       });
 
@@ -261,6 +269,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(res.status).toBe(400);
       expect(body).toEqual({
         message: 'You are not allowed to delete uploaded files without topEntiteId.',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(deleteUploadedFile).not.toHaveBeenCalled();
       expect(deleteFileFromMinio).not.toHaveBeenCalled();
@@ -278,6 +287,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(res.status).toBe(404);
       expect(body).toEqual({
         message: 'Uploaded file not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
       expect(deleteUploadedFile).not.toHaveBeenCalled();
       expect(deleteFileFromMinio).not.toHaveBeenCalled();
@@ -347,6 +357,7 @@ describe('uploadedFiles.controller.ts', () => {
       expect(res.status).toBe(400);
       expect(body).toEqual({
         message: 'You are not allowed to access uploaded files without topEntiteId.',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
 
@@ -361,6 +372,7 @@ describe('uploadedFiles.controller.ts', () => {
       const body = await res.json();
       expect(body).toEqual({
         message: 'Uploaded file not found',
+        cause: { kind: ERROR_KIND.BUSINESS },
       });
     });
   });

@@ -82,11 +82,14 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                 step.createdBy === null &&
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT &&
                 step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
+              const hasAcknowledgmentEmailSent =
+                step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
+                step.notes.some((note) => note.texte?.startsWith("Email d'accusé de réception envoyé le"));
               const isDisabled =
                 index === data.data.length - 1 ||
                 step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ||
                 isAutomaticallyUpdated ||
-                (step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT);
+                (hasAcknowledgmentEmailSent && step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT);
               const isAcknowledgmentSendable =
                 isManualRequest &&
                 step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
@@ -112,25 +115,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
       <CreateNoteDrawer ref={createNoteDrawerRef} />
       <EditNoteDrawer ref={editNoteDrawerRef} />
       <SendAcknowledgmentDrawer ref={sendAcknowledgmentDrawerRef} />
-      <CloseRequeteModal
-        ref={closeRequeteModalRef}
-        requestId={requestId}
-        date={
-          requestQuery.data?.requete?.createdAt
-            ? new Date(requestQuery.data.requete.createdAt).toLocaleDateString('fr-FR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-              })
-            : ''
-        }
-        misEnCause={
-          requestQuery.data?.requete?.situations?.[0]?.misEnCause
-            ? requestQuery.data.requete.situations[0].misEnCause.misEnCauseType?.label || 'Non spécifié'
-            : undefined
-        }
-        triggerButtonRef={closeRequeteButtonRef}
-      />
+      <CloseRequeteModal ref={closeRequeteModalRef} requestId={requestId} triggerButtonRef={closeRequeteButtonRef} />
       <ReopenRequeteModal ref={reopenRequeteModalRef} requestId={requestId} triggerButtonRef={reopenRequeteButtonRef} />
     </>
   ) : (
