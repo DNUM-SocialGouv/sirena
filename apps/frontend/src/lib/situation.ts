@@ -87,6 +87,7 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
           commentaire: demarchesEngagees.commentaire || '',
         }
       : undefined,
+    domainesFonctionnels: situation.domainesFonctionnels?.id || undefined,
     traitementDesFaits: situation.traitementDesFaits,
   };
 }

@@ -7,9 +7,8 @@ import { MisEnCause } from '@/components/situation/sections/MisEnCause';
 import { useEntites } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { hasSituationContent } from '@/utils/situationHelpers';
-import { AttachedFiles } from './sections/AttachedFiles';
-import { DemarchesEngagees } from './sections/DemarchesEngagees';
 import { DescriptionFaits } from './sections/DescriptionSituation';
+import { InformationsComplementaires } from './sections/InformationsComplementaires';
 import { LieuSurvenu } from './sections/LieuSurvenu';
 import TraitementDesFaitsSection from './TraitementDesFaits';
 
@@ -122,15 +121,13 @@ export function SituationForm({
           initialData={initialData}
         />
 
-        <DemarchesEngagees formData={formData} setFormData={setFormData} />
-
-        <AttachedFiles
+        <InformationsComplementaires
           formData={formData}
+          setFormData={setFormData}
           situationId={situationId}
           requestId={requestId}
           faitFiles={faitFiles}
           setFaitFiles={setFaitFiles}
-          setFormData={setFormData}
           isSaving={isSaving}
         />
 
