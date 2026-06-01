@@ -4,6 +4,14 @@ externalSecret:
     enable: true
     databaseType: databases
     targetSecretName: db-secret
+  mariadbSirec:
+    enable: false
+    host: ""
+    port: "3306"
+    db: ""
+    user: ""
+    vaultPath: "databases/mariadb"
+    passwordKey: "mariadb-password"
 
 redis_unmanaged: false
 
