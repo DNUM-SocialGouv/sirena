@@ -149,8 +149,8 @@ export function AttachedFiles({
                     </div>
                     {!isSaving && file.canDelete !== false && file.entiteId === profile?.topEntiteId && (
                       <Button
-                        aria-label="Supprimer le fichier"
-                        title="Supprimer le fichier"
+                        aria-label={`Supprimer le fichier ${file.fileName}`}
+                        title={`Supprimer le fichier ${file.fileName}`}
                         type="button"
                         className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
                         onClick={(event) => {
@@ -158,40 +158,7 @@ export function AttachedFiles({
                           handleDeleteExistingFile(file, event);
                         }}
                       >
-                        <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* Selected files (not yet saved) */}
-      {faitFiles.length > 0 && (
-        <div className={fr.cx('fr-mb-3w')} style={{ width: '100%' }}>
-          <h4 className={fr.cx('fr-text--lg')}>Nouveaux fichiers sélectionnés</h4>
-          <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
-            <ul>
-              {faitFiles.map((file) => (
-                <li key={`${file.name}-${file.size}-${file.lastModified}`} className={noteStyles['request-note__file']}>
-                  <div className={styles.fileItem}>
-                    <div className={styles.fileName}>
-                      <span className={fr.cx('fr-text--sm')}>
-                        {file.name} ({formatFileSize(file.size)})
-                      </span>
-                    </div>
-                    {!isSaving && (
-                      <Button
-                        aria-label="Supprimer le fichier"
-                        title="Supprimer le fichier"
-                        type="button"
-                        className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
-                        onClick={(event) => handleDeleteSelectedFile(file, event)}
-                      >
-                        <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
+                        <span className={fr.cx('fr-sr-only')}>Supprimer le fichier {file.fileName}</span>
                       </Button>
                     )}
                   </div>
@@ -221,6 +188,39 @@ export function AttachedFiles({
             },
           }}
         />
+      )}
+
+      {/* Selected files (not yet saved) */}
+      {faitFiles.length > 0 && (
+        <div className={fr.cx('fr-mb-3w')} style={{ width: '100%' }}>
+          <h3 className={fr.cx('fr-text--lg')}>Nouveaux fichiers sélectionnés</h3>
+          <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
+            <ul>
+              {faitFiles.map((file) => (
+                <li key={`${file.name}-${file.size}-${file.lastModified}`} className={noteStyles['request-note__file']}>
+                  <div className={styles.fileItem}>
+                    <div className={styles.fileName}>
+                      <span className={fr.cx('fr-text--sm')}>
+                        {file.name} ({formatFileSize(file.size)})
+                      </span>
+                    </div>
+                    {!isSaving && (
+                      <Button
+                        aria-label={`Supprimer le fichier ${file.name}`}
+                        title={`Supprimer le fichier ${file.name}`}
+                        type="button"
+                        className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
+                        onClick={(event) => handleDeleteSelectedFile(file, event)}
+                      >
+                        <span className={fr.cx('fr-sr-only')}>Supprimer le fichier {file.name}</span>
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       )}
 
       {/* File validation errors */}

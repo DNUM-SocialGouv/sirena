@@ -40,8 +40,8 @@ export function InformationsComplementaires({
   };
 
   return (
-    <section className={`fr-p-4w fr-mb-4w ${styles.container}`}>
-      <h2 className="fr-h6">Informations complémentaires</h2>
+    <fieldset className={`fr-p-4w fr-mb-4w ${styles.container}`}>
+      <legend className="fr-h6">Informations complémentaires</legend>
 
       <Select
         label="Domaine fonctionnel"
@@ -69,6 +69,6 @@ export function InformationsComplementaires({
         setFormData={setFormData}
         isSaving={isSaving}
       />
-    </section>
+    </fieldset>
   );
 }
