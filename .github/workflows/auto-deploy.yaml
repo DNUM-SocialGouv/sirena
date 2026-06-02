@@ -42,7 +42,7 @@ jobs:
       matrix:
         image: [anonymize, worker, backend, frontend]
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+      - uses: actions/checkout@1cce3390c2bfda521930d01229c073c7ff920824 # v6
         with:
           fetch-depth: 1
 
@@ -66,7 +66,7 @@ jobs:
       matrix:
         image: [anonymize, worker, backend, frontend]
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+      - uses: actions/checkout@1cce3390c2bfda521930d01229c073c7ff920824 # v6
         with:
           fetch-depth: 1
 
@@ -89,7 +89,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+      - uses: actions/checkout@1cce3390c2bfda521930d01229c073c7ff920824 # v6
         with:
           fetch-depth: 1
 
@@ -118,11 +118,11 @@ jobs:
       BASE_URL: https://sirena.${{ github.ref_name == 'main' && 'integration' || 'validation' }}.dev.atlas.fabrique.social.gouv.fr
 
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+      - uses: actions/checkout@1cce3390c2bfda521930d01229c073c7ff920824 # v6
         with:
           fetch-depth: 1
 
-      - uses: pnpm/action-setup@739bfe42ca9233c5e6aca07c1a25a9d34aca49b0 # v6
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
 
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
@@ -142,7 +142,7 @@ jobs:
 
       - name: Cache Playwright browsers
         id: pw_cache
-        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw_version.outputs.value }}
