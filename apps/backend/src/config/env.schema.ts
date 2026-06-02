@@ -294,6 +294,21 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('false')
     .transform((val) => val === 'true'),
+  METABASE_SITE_URL: z
+    .string()
+    .optional()
+    .default('')
+    .describe("URL publique de l'instance Metabase (ex: https://metabase.example.com)"),
+  METABASE_SECRET_KEY: z
+    .string()
+    .optional()
+    .default('')
+    .describe("Clé secrète Metabase utilisée pour signer les JWT d'embedding signé"),
+  METABASE_DASHBOARD_ID: z
+    .string()
+    .optional()
+    .default('')
+    .describe('Identifiant du dashboard Metabase à exposer sur la page statistiques (ex: "42")'),
   APP_ENV: z
     .enum(APP_ENV_VALUES)
     .optional()

@@ -96,6 +96,7 @@ packages/
 | `pnpm op:diff:enums`                   | Check enum consistency (`@sirena/backend`) with `.env`. Use `--dump-migration` for clean SQL output (no logger timestamps), `--invert` for rollback SQL |
 | `pnpm op:import:dematsocial`           | Import requests from DematSocial (`@sirena/backend`) with `.env`                       |
 | `pnpm op:manage-api-keys`              | Manage third-party API keys (see [Third-Party API](#-third-party-api) section)       |
+| `pnpm op:metabase:export-dashboard`    | Export a Metabase dashboard + its cards as JSON for repo-tracked backup (see [Metabase Dashboard Backup](#-metabase-dashboard-backup) section) |
 | `pnpm db:deploy`                       | Deploy pending migrations to DB (`@sirena/backend`) with `.env`                      |
 | `pnpm db:studio`                       | Open Prisma Studio (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:reset`                        | Reset the database (`@sirena/backend`) with `.env`                                   |
@@ -225,6 +226,54 @@ content-type: application/json
 ```
 
 The `traceId` is also included in successful response bodies for convenience.
+
+## 📊 Metabase Dashboard Backup
+
+The `op:metabase:export-dashboard` script snapshots a Metabase dashboard (and every card it references) as normalized JSON files under `docs/metabase_dashboards/<dashboard-id>/`. The output is human-readable, key-sorted, and stripped of volatile metadata so commits produce clean diffs and changes can be reviewed in PRs.
+
+### Setup
+
+Add the API key to your local `.env` (the existing `METABASE_SITE_URL` and `METABASE_DASHBOARD_ID` are reused):
+
+```bash
+# Metabase Admin → Authentication → API keys (requires Metabase ≥ 0.49)
+METABASE_API_KEY=mb_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+### Usage
+
+```bash
+# Uses METABASE_DASHBOARD_ID from .env
+pnpm op:metabase:export-dashboard
+
+# Explicit dashboard id (overrides the env value)
+pnpm op:metabase:export-dashboard 4
+```
+
+### Output layout
+
+```text
+docs/metabase_dashboards/
+└── 4/
+    ├── dashboard.json        # full dashboard definition (layout, parameters, dashcards)
+    └── cards/
+        ├── 42.json           # one file per referenced card (SQL, visualization, settings)
+        └── 43.json
+```
+
+### Diff-friendly normalization
+
+- Object keys sorted alphabetically at every depth
+- Stripped fields:
+  - **Personal data (never committed):** `creator`, `last_edit_info` / `last-edit-info` (both embed author email + first/last name)
+  - **Volatile metadata (diff noise):** `created_at`, `updated_at`, `last_used_at`, `last_query_started_at`, `view_count`, `cache_invalidated_at`, `initially_published_at`
+- 2-space indentation with trailing newline
+
+### When to run
+
+Commit the regenerated JSON whenever a dashboard or one of its cards is edited in the Metabase UI. The diff shows exactly what changed in the dashboard's definition.
+
+> **Note:** This is an export-only tool. Restoring a dashboard from these JSON is out of scope
 
 ## Docker build
 
