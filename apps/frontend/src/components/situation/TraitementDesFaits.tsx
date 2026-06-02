@@ -1,7 +1,7 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Select } from '@codegouvfr/react-dsfr/Select';
 import { SelectWithChildren } from '@sirena/ui';
 import { useEffect, useId, useRef, useState } from 'react';
+import { EntiteCombobox } from '@/components/common/EntiteCombobox';
 import { useEntiteDescendants } from '@/hooks/queries/entites.hook';
 import styles from './TraitementDesFaits.module.css';
 
@@ -80,25 +80,17 @@ function TraitementDesFaitsRowComponent({
                 <input id={`entite-readonly-${row.id}`} className={styles.readOnlyValue} value={entiteLabel} readOnly />
               </div>
             ) : (
-              <Select
-                label={'Entité administrative (obligatoire) '}
+              <EntiteCombobox
+                label="Entité administrative (obligatoire)"
+                entites={availableEntites}
+                value={row.entiteId}
+                onChange={(id) => onChange(row.id, 'entiteId', id)}
+                disabled={disabled}
                 state={showError ? 'error' : 'default'}
                 stateRelatedMessage={showError ? errorMessage : undefined}
-                nativeSelectProps={{
-                  value: row.entiteId || '',
-                  onChange: (e) => onChange(row.id, 'entiteId', e.target.value),
-                  disabled,
-                  required: true,
-                  'aria-invalid': showError ? 'true' : undefined,
-                }}
-              >
-                <option value="">Sélectionner une option</option>
-                {availableEntites.map((entite) => (
-                  <option key={entite.id} value={entite.id}>
-                    {entite.nomComplet}
-                  </option>
-                ))}
-              </Select>
+                required
+                aria-invalid={showError ? 'true' : undefined}
+              />
             )}
           </div>
           {showModifyButton && (
