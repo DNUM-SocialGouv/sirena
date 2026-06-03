@@ -180,12 +180,48 @@ describe('sirecMigration.repository.ts', () => {
   });
 
   describe('fetchSirecMisEnCauses', () => {
-    it('should return mis en cause with their group ids', async () => {
+    it('should return mis en cause with their group ids and type', async () => {
       vi.mocked(mysqlPool.query).mockResolvedValueOnce([
         [
-          { id_data: 10, id_group: 693 },
-          { id_data: 10, id_group: 677 },
-          { id_data: 20, id_group: 693 },
+          {
+            id_data: 10,
+            type: 12,
+            identifiant: null,
+            id_group: 693,
+            rpps_id_data: null,
+            rpps_civilite: null,
+            rpps_nom: null,
+            rpps_prenom: null,
+            rpps_code_postal: null,
+            rpps_commune: null,
+            rpps_libelle_prof: null,
+          },
+          {
+            id_data: 10,
+            type: 12,
+            identifiant: null,
+            id_group: 677,
+            rpps_id_data: null,
+            rpps_civilite: null,
+            rpps_nom: null,
+            rpps_prenom: null,
+            rpps_code_postal: null,
+            rpps_commune: null,
+            rpps_libelle_prof: null,
+          },
+          {
+            id_data: 20,
+            type: 12,
+            identifiant: null,
+            id_group: 693,
+            rpps_id_data: null,
+            rpps_civilite: null,
+            rpps_nom: null,
+            rpps_prenom: null,
+            rpps_code_postal: null,
+            rpps_commune: null,
+            rpps_libelle_prof: null,
+          },
         ],
         [],
       ]);
@@ -193,18 +229,109 @@ describe('sirecMigration.repository.ts', () => {
       const result = await fetchSirecMisEnCauses(42);
 
       expect(result).toEqual([
-        { id_data: 10, groupIds: [693, 677] },
-        { id_data: 20, groupIds: [693] },
+        { id_data: 10, type: 12, identifiant: null, groupIds: [693, 677], rppsData: null },
+        { id_data: 20, type: 12, identifiant: null, groupIds: [693], rppsData: null },
       ]);
       expect(mysqlPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_misencause_data'), [42]);
     });
 
-    it('should return mis en cause with empty groupIds when no groups are linked', async () => {
-      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[{ id_data: 10, id_group: null }], []]);
+    it('should populate rppsData when type is 65 and RPPS record is found', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([
+        [
+          {
+            id_data: 10,
+            type: 65,
+            identifiant: 12345678901,
+            id_group: null,
+            rpps_id_data: 12345678901,
+            rpps_civilite: 'mme',
+            rpps_nom: 'Martin',
+            rpps_prenom: 'Alice',
+            rpps_code_postal: '76000',
+            rpps_commune: 'Rouen',
+            rpps_libelle_prof: 'Médecin',
+          },
+        ],
+        [],
+      ]);
 
       const result = await fetchSirecMisEnCauses(42);
 
-      expect(result).toEqual([{ id_data: 10, groupIds: [] }]);
+      expect(result).toEqual([
+        {
+          id_data: 10,
+          type: 65,
+          identifiant: 12345678901,
+          groupIds: [],
+          rppsData: {
+            id_data: 12345678901,
+            civilite: 'mme',
+            nom: 'Martin',
+            prenom: 'Alice',
+            code_postal: '76000',
+            commune: 'Rouen',
+            libelle_prof: 'Médecin',
+          },
+        },
+      ]);
+    });
+
+    it('should set rppsData to null when type is 65 but rpps_id_data is null', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([
+        [
+          {
+            id_data: 10,
+            type: 65,
+            identifiant: 999,
+            id_group: null,
+            rpps_id_data: null,
+            rpps_civilite: null,
+            rpps_nom: null,
+            rpps_prenom: null,
+            rpps_code_postal: null,
+            rpps_commune: null,
+            rpps_libelle_prof: null,
+          },
+        ],
+        [],
+      ]);
+
+      const result = await fetchSirecMisEnCauses(42);
+
+      expect(result[0].rppsData).toBeNull();
+    });
+
+    it('should return mis en cause with empty groupIds when no groups are linked', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([
+        [
+          {
+            id_data: 10,
+            type: null,
+            identifiant: null,
+            id_group: null,
+            rpps_id_data: null,
+            rpps_civilite: null,
+            rpps_nom: null,
+            rpps_prenom: null,
+            rpps_code_postal: null,
+            rpps_commune: null,
+            rpps_libelle_prof: null,
+          },
+        ],
+        [],
+      ]);
+
+      const result = await fetchSirecMisEnCauses(42);
+
+      expect(result).toEqual([{ id_data: 10, type: null, identifiant: null, groupIds: [], rppsData: null }]);
+    });
+
+    it('should join with sire_rpps_data in the query', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[], []]);
+
+      await fetchSirecMisEnCauses(42);
+
+      expect(mysqlPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_rpps_data'), [42]);
     });
 
     it('should return an empty array when no mis en cause found', async () => {

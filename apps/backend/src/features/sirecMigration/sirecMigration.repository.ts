@@ -76,9 +76,22 @@ export interface SirecProvenance {
   reponse_attendue: number | null;
 }
 
+export interface SirecRppsData {
+  id_data: number;
+  civilite: string | null;
+  nom: string | null;
+  prenom: string | null;
+  code_postal: string | null;
+  commune: string | null;
+  libelle_prof: string | null;
+}
+
 export interface SirecMisEnCause {
   id_data: number;
+  type: number | null;
+  identifiant: number | null;
   groupIds: number[];
+  rppsData: SirecRppsData | null;
 }
 
 export interface SirecReclamationData {
@@ -148,11 +161,29 @@ export async function fetchSirecTypeTraitementIds(sirecId: number): Promise<numb
   return rows.map((row) => row.id_dico);
 }
 
+type MisEnCauseRow = {
+  id_data: number;
+  type: number | null;
+  identifiant: number | null;
+  id_group: number | null;
+  rpps_id_data: number | null;
+  rpps_civilite: string | null;
+  rpps_nom: string | null;
+  rpps_prenom: string | null;
+  rpps_code_postal: string | null;
+  rpps_commune: string | null;
+  rpps_libelle_prof: string | null;
+} & RowDataPacket;
+
 export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEnCause[]> {
-  const [rows] = await mysqlPool.query<({ id_data: number; id_group: number | null } & RowDataPacket)[]>(
-    `SELECT m.id_data, mcg.id_group
+  const [rows] = await mysqlPool.query<MisEnCauseRow[]>(
+    `SELECT m.id_data, m.type, m.identifiant, mcg.id_group,
+            r.id_data AS rpps_id_data, r.civilite AS rpps_civilite, r.nom AS rpps_nom,
+            r.prenom AS rpps_prenom, r.code_postal AS rpps_code_postal,
+            r.commune AS rpps_commune, r.libelle_prof AS rpps_libelle_prof
      FROM sire_misencause_data m
      LEFT JOIN sire_misencause_data_group mcg ON m.id_data = mcg.id_data AND mcg.id_group != 1
+     LEFT JOIN sire_rpps_data r ON r.id_data = m.identifiant AND m.type = 65
      WHERE m.id_reclamation = ?`,
     [sirecId],
   );
@@ -160,7 +191,25 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
   const map = new Map<number, SirecMisEnCause>();
   for (const row of rows) {
     if (!map.has(row.id_data)) {
-      map.set(row.id_data, { id_data: row.id_data, groupIds: [] });
+      const rppsData: SirecRppsData | null =
+        row.rpps_id_data !== null
+          ? {
+              id_data: row.rpps_id_data,
+              civilite: row.rpps_civilite,
+              nom: row.rpps_nom,
+              prenom: row.rpps_prenom,
+              code_postal: row.rpps_code_postal,
+              commune: row.rpps_commune,
+              libelle_prof: row.rpps_libelle_prof,
+            }
+          : null;
+      map.set(row.id_data, {
+        id_data: row.id_data,
+        type: row.type,
+        identifiant: row.identifiant,
+        groupIds: [],
+        rppsData,
+      });
     }
     if (row.id_group !== null) {
       // biome-ignore lint/style/noNonNullAssertion: key was just set above

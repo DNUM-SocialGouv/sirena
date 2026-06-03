@@ -1,6 +1,19 @@
-import type { SirecReclamationData } from '../sirecMigration.repository.js';
+import type { SirecMisEnCause, SirecReclamationData } from '../sirecMigration.repository.js';
+import { SIREC_TYPE_RPPS } from '../transco/misEnCauseRpps.transco.js';
+import { SirecDataError } from '../transco/sirecTransco.error.js';
 import { computeSituationEntiteIds } from './sirecMigration.affectation.transformer.js';
+import { type SirenaMisEnCauseData, transformSirecRpps } from './sirecMigration.rpps.transformer.js';
 import { type SirenaSituationData, transformSirecSituation } from './sirecMigration.situation.transformer.js';
+
+function resolveMisEnCauseData(misEnCause: SirecMisEnCause): SirenaMisEnCauseData | null {
+  if (misEnCause.type !== SIREC_TYPE_RPPS) return null;
+  if (!misEnCause.rppsData) {
+    throw new SirecDataError(
+      `Mis en cause RPPS (id_data=${misEnCause.id_data}, identifiant=${misEnCause.identifiant}) introuvable dans sire_rpps_data`,
+    );
+  }
+  return transformSirecRpps(misEnCause.rppsData);
+}
 
 export function transformSirecMisEnCauseSituations(
   sirecData: SirecReclamationData,
@@ -26,6 +39,6 @@ export function transformSirecMisEnCauseSituations(
   return misEnCauses.map((misEnCause) => {
     const misEnCauseEntiteIds = computeSituationEntiteIds(misEnCause.groupIds);
     const entiteIds = [...new Set([...orphanEntiteIds, ...misEnCauseEntiteIds])];
-    return { ...baseSituation, entiteIds };
+    return { ...baseSituation, entiteIds, misEnCauseData: resolveMisEnCauseData(misEnCause) };
   });
 }

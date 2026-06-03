@@ -30,7 +30,27 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     const lieu = await tx.lieuDeSurvenue.create({ data: {}, select: { id: true } });
 
     for (const situationData of data.situations) {
-      const misEnCause = await tx.misEnCause.create({ data: {}, select: { id: true } });
+      let misEnCauseId: string;
+
+      if (situationData.misEnCauseData !== null) {
+        const { rpps, civilite, nom, prenom, codePostal, ville, misEnCauseTypeId, misEnCauseTypePrecisionId } =
+          situationData.misEnCauseData;
+        const existing = await tx.misEnCause.findFirst({ where: { rpps }, select: { id: true } });
+        if (existing) {
+          misEnCauseId = existing.id;
+        } else {
+          const created = await tx.misEnCause.create({
+            data: { rpps, civilite, nom, prenom, codePostal, ville, misEnCauseTypeId, misEnCauseTypePrecisionId },
+            select: { id: true },
+          });
+          misEnCauseId = created.id;
+        }
+      } else {
+        const created = await tx.misEnCause.create({ data: {}, select: { id: true } });
+        misEnCauseId = created.id;
+      }
+
+      const misEnCause = { id: misEnCauseId };
       const demarchesEngagees = await tx.demarchesEngagees.create({
         data: {
           demarches: { connect: situationData.demarchesIds.map((id) => ({ id })) },
