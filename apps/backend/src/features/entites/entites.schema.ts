@@ -65,7 +65,17 @@ const adminSortColumns = [
   'isActiveLabel',
 ] as const;
 
-export const GetEntitesListAdminQuerySchema = paginationQueryParamsSchema(adminSortColumns);
+export const GetEntitesListAdminQuerySchema = paginationQueryParamsSchema(adminSortColumns).extend({
+  rootEntiteIds: z
+    .string()
+    .transform((val) =>
+      val
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    )
+    .optional(),
+});
 
 export const GetEntitiesResponseSchema = z.array(EntiteSchema);
 
