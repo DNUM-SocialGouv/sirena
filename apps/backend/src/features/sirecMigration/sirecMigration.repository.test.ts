@@ -244,6 +244,7 @@ describe('sirecMigration.repository.ts', () => {
             identifiant: 12345678901,
             id_group: null,
             rpps_id_data: 12345678901,
+            rpps_rpps: '12345678901',
             rpps_civilite: 'mme',
             rpps_nom: 'Martin',
             rpps_prenom: 'Alice',
@@ -265,6 +266,7 @@ describe('sirecMigration.repository.ts', () => {
           groupIds: [],
           rppsData: {
             id_data: 12345678901,
+            rpps: '12345678901',
             civilite: 'mme',
             nom: 'Martin',
             prenom: 'Alice',

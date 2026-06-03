@@ -15,7 +15,7 @@ export interface SirenaMisEnCauseData {
 export function transformSirecRpps(rppsData: SirecRppsData): SirenaMisEnCauseData {
   const { misEnCauseTypeId, misEnCauseTypePrecisionId } = transcodeLibelleProfRpps(rppsData.libelle_prof);
   return {
-    rpps: String(rppsData.id_data),
+    rpps: rppsData.rpps ?? '',
     civilite: transcodeCiviliteRpps(rppsData.civilite),
     nom: rppsData.nom ?? '',
     prenom: rppsData.prenom ?? '',

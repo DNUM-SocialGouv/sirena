@@ -78,6 +78,7 @@ const makeData = (groupIds: number[] = [], misEnCauses: ReturnType<typeof makeMi
 
 const mockRppsData: SirecRppsData = {
   id_data: 12345678901,
+  rpps: '12345678901',
   civilite: 'm',
   nom: 'Dupont',
   prenom: 'Jean',
