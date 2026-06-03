@@ -2158,8 +2158,8 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
 
     if (mesureProtectionLabel) {
       pdf.field(
-        'La personne concernée est sous mesure de protection',
-        mesureProtectionLabel.replace('La personne concernée est sous mesure de protection : ', ''),
+        'Il/Elle est sous mesure de protection',
+        mesureProtectionLabel.replace('Il/Elle est sous mesure de protection : ', ''),
       );
     }
   }
