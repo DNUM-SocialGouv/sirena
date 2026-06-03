@@ -1,5 +1,6 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { SearchBar } from '@codegouvfr/react-dsfr/SearchBar';
+import { useCallback, useEffect, useRef } from 'react';
 
 type TableSearchBarProps = {
   label: string;
@@ -22,6 +23,25 @@ export function TableSearchBar({
   onClear,
   inputContainerClassName = 'fr-col-12 fr-col-md-5',
 }: TableSearchBarProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pendingFocusRef = useRef(false);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: activeSearch is used as a trigger to restore focus after navigation
+  useEffect(() => {
+    if (pendingFocusRef.current) {
+      pendingFocusRef.current = false;
+      inputRef.current?.focus();
+    }
+  }, [activeSearch]);
+
+  const handleSearch = useCallback(
+    (val: string) => {
+      pendingFocusRef.current = true;
+      onSearch(val);
+    },
+    [onSearch],
+  );
+
   return (
     <div className="fr-mb-1w">
       <p className="fr-label fr-mb-1v" aria-hidden="true">
@@ -31,9 +51,15 @@ export function TableSearchBar({
         <div className={inputContainerClassName}>
           <SearchBar
             label={label}
-            onButtonClick={onSearch}
+            onButtonClick={handleSearch}
             renderInput={(inputProps) => (
-              <input {...inputProps} placeholder="" value={value} onChange={(e) => onValueChange(e.target.value)} />
+              <input
+                {...inputProps}
+                ref={inputRef}
+                placeholder=""
+                value={value}
+                onChange={(e) => onValueChange(e.target.value)}
+              />
             )}
           />
         </div>
