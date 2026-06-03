@@ -10,5 +10,5 @@ export const formatMesureProtectionPersonneConcernee = (
 ): string | null => {
   if (!mesureProtection || mesureProtection === 'NON') return null;
 
-  return `La personne concernée est sous mesure de protection : ${MESURE_PROTECTION_PERSONNE_CONCERNEE_LABELS[mesureProtection]}`;
+  return `Il/Elle est sous mesure de protection : ${MESURE_PROTECTION_PERSONNE_CONCERNEE_LABELS[mesureProtection]}`;
 };
