@@ -37,6 +37,11 @@ external-secrets:
   externalSecret:
     database:
       databaseName: sirena-integration
+    mariadbSirec:
+      enable: true
+      host: "mariadb.org-sdpsn-ws-sirena-services-integration.svc.cluster.local"
+      db: "sirec"
+      user: "sirec"
 
   SDPSN-devops-charts:
     externalSecret:
@@ -69,3 +74,5 @@ worker:
 
     deployment:
       replicas: 1
+      additionalsecretRef:
+        - mariadb-sirec-secret
