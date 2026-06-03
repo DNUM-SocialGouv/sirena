@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import {
   type CreateChildEntiteAdminInput,
   createChildEntiteAdmin,
@@ -28,7 +28,7 @@ export const useEntitesListAdminQueryOptions = (query: QueryParams = {}) => ({
   queryKey: ['entites', 'admin', query],
   queryFn: () => fetchEntitesListAdmin(query),
   retry: false,
-  initialData: { data: [], meta: { total: 0 } },
+  placeholderData: keepPreviousData,
 });
 
 export const useEntitesListAdmin = (query: QueryParams = {}) => useQuery(useEntitesListAdminQueryOptions(query));
