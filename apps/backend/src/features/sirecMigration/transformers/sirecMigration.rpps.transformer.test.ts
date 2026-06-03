@@ -21,6 +21,10 @@ const rppsData = {
 };
 
 describe('sirecMigration.rpps.transformer.ts', () => {
+  it('should return kind rpps', () => {
+    expect(transformSirecRpps(rppsData).kind).toBe('rpps');
+  });
+
   it('should map rpps field from sire_rpps_data.rpps', () => {
     expect(transformSirecRpps(rppsData).rpps).toBe('12345678901');
   });

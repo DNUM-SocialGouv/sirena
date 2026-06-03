@@ -1,7 +1,8 @@
 import type { SirecRppsData } from '../sirecMigration.repository.js';
 import { transcodeCiviliteRpps, transcodeLibelleProfRpps } from '../transco/misEnCauseRpps.transco.js';
 
-export interface SirenaMisEnCauseData {
+export interface SirenaRppsMisEnCauseData {
+  kind: 'rpps';
   rpps: string;
   civilite: string;
   nom: string;
@@ -12,9 +13,10 @@ export interface SirenaMisEnCauseData {
   misEnCauseTypePrecisionId: string;
 }
 
-export function transformSirecRpps(rppsData: SirecRppsData): SirenaMisEnCauseData {
+export function transformSirecRpps(rppsData: SirecRppsData): SirenaRppsMisEnCauseData {
   const { misEnCauseTypeId, misEnCauseTypePrecisionId } = transcodeLibelleProfRpps(rppsData.libelle_prof);
   return {
+    kind: 'rpps',
     rpps: rppsData.rpps ?? '',
     civilite: transcodeCiviliteRpps(rppsData.civilite),
     nom: rppsData.nom ?? '',

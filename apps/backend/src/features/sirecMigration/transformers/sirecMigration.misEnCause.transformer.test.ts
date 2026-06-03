@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { SirecRppsData } from '../sirecMigration.repository.js';
+import type { SirecFinessData, SirecRppsData } from '../sirecMigration.repository.js';
 import { SirecDataError, SirecTranscoError } from '../transco/sirecTransco.error.js';
 import { transformSirecMisEnCauseSituations } from './sirecMigration.misEnCause.transformer.js';
 
@@ -30,7 +30,8 @@ vi.mock('./sirecMigration.situation.transformer.js', () => ({
 
 vi.mock('./sirecMigration.rpps.transformer.js', () => ({
   transformSirecRpps: vi.fn((rppsData: SirecRppsData) => ({
-    rpps: String(rppsData.id_data),
+    kind: 'rpps',
+    rpps: rppsData.rpps ?? String(rppsData.id_data),
     civilite: 'M',
     nom: rppsData.nom ?? '',
     prenom: rppsData.prenom ?? '',
@@ -39,6 +40,35 @@ vi.mock('./sirecMigration.rpps.transformer.js', () => ({
     misEnCauseTypeId: 'PROFESSIONNEL_SANTE',
     misEnCauseTypePrecisionId: 'PROF_SANTE',
   })),
+}));
+
+vi.mock('./sirecMigration.finess.transformer.js', () => ({
+  transformSirecFiness: vi.fn((finessData: SirecFinessData) => ({
+    misEnCauseData: {
+      kind: 'finess',
+      finess: finessData.nofinesset ?? '',
+      misEnCauseTypeId: 'ETABLISSEMENT',
+      misEnCauseTypePrecisionId: 'ETABLISSEMENT',
+      nomService: finessData.rs ?? '',
+      codePostal: finessData.codepostal,
+      ville: finessData.libcommune,
+    },
+    lieuDeSurvenueData:
+      finessData.categetab === 355
+        ? {
+            finess: finessData.nofinesset,
+            lieuTypeId: 'ETABLISSEMENT_SANTE',
+            codePostal: '75010',
+            categCode: '355',
+            categLib: 'CH',
+            adresse: { label: '', numero: '', rue: '', codePostal: '', ville: '' },
+          }
+        : null,
+  })),
+}));
+
+vi.mock('../transco/finessCategetab.transco.js', () => ({
+  SIREC_TYPE_FINESS: 64,
 }));
 
 vi.mock('../transco/misEnCauseRpps.transco.js', () => ({
@@ -52,6 +82,7 @@ const makeMisEnCause = (
     identifiant: number | null;
     groupIds: number[];
     rppsData: SirecRppsData | null;
+    finessData: SirecFinessData | null;
   }> = {},
 ) => ({
   id_data: 10,
@@ -59,8 +90,22 @@ const makeMisEnCause = (
   identifiant: null,
   groupIds: [],
   rppsData: null,
+  finessData: null,
   ...overrides,
 });
+
+const mockFinessData: SirecFinessData = {
+  id_data: 20,
+  nofinesset: '750000001',
+  categetab: 355,
+  libcategetab: 'CH',
+  rs: 'Hôpital Saint-Louis',
+  codepostal: '75010',
+  libcommune: 'Paris',
+  numvoie: '1',
+  typevoie: 'RUE',
+  voie: 'de la Paix',
+};
 
 const makeData = (groupIds: number[] = [], misEnCauses: ReturnType<typeof makeMisEnCause>[] = []) => ({
   reclamation: {
@@ -175,6 +220,40 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
           [],
         ),
       ).toThrow(SirecDataError);
+    });
+
+    it('should set misEnCauseData with kind:finess when type is 64', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: 64, identifiant: 20, finessData: mockFinessData })]),
+        [],
+      );
+
+      expect(result[0].misEnCauseData?.kind).toBe('finess');
+    });
+
+    it('should set lieuDeSurvenueData for FINESS Case B', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: 64, identifiant: 20, finessData: mockFinessData })]),
+        [],
+      );
+
+      expect(result[0].lieuDeSurvenueData).not.toBeNull();
+      expect(result[0].lieuDeSurvenueData?.lieuTypeId).toBe('ETABLISSEMENT_SANTE');
+    });
+
+    it('should throw SirecDataError when type is 64 but finessData is null', () => {
+      expect(() =>
+        transformSirecMisEnCauseSituations(
+          makeData([], [makeMisEnCause({ id_data: 10, type: 64, identifiant: 999, finessData: null })]),
+          [],
+        ),
+      ).toThrow(SirecDataError);
+    });
+
+    it('should set lieuDeSurvenueData null for non-FINESS/RPPS type', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [makeMisEnCause({ id_data: 10, type: 12 })]), []);
+
+      expect(result[0].lieuDeSurvenueData).toBeNull();
     });
   });
 
