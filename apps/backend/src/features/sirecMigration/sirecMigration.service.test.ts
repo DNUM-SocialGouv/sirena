@@ -89,15 +89,17 @@ describe('sirecMigration.service.ts', () => {
       } | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
       etapes: [] as { nom: string; entiteId: string; statutId: string; createdAt?: Date; note: string | null }[],
-      situation: {
-        fait: {
-          commentaire: 'Précision prioritaire',
-          autresPrecisions: 'Ma réclamation',
-          motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'],
+      situations: [
+        {
+          fait: {
+            commentaire: 'Précision prioritaire',
+            autresPrecisions: 'Ma réclamation',
+            motifsDeclaratifs: ['PROBLEME_FACTURATION', 'AUTRE'],
+          },
+          entiteIds: ['service-1', 'ars-1'],
+          demarchesIds: [] as string[],
         },
-        entiteIds: ['service-1', 'ars-1'],
-        demarchesIds: [] as string[],
-      },
+      ],
     };
 
     beforeEach(() => {
@@ -149,7 +151,9 @@ describe('sirecMigration.service.ts', () => {
     it('should not call faitMotifDeclaratif.createMany when motifs list is empty', async () => {
       await saveFromSirec({
         ...data,
-        situation: { ...data.situation, fait: { commentaire: '', autresPrecisions: 'Test', motifsDeclaratifs: [] } },
+        situations: [
+          { ...data.situations[0], fait: { commentaire: '', autresPrecisions: 'Test', motifsDeclaratifs: [] } },
+        ],
       });
 
       expect(prisma.faitMotifDeclaratif.createMany).toHaveBeenCalledWith({ data: [] });
@@ -158,7 +162,7 @@ describe('sirecMigration.service.ts', () => {
     it('should throw a ZodError if the situation does not match SituationDataSchema', async () => {
       const invalidData = {
         ...data,
-        situation: { fait: { autresPrecisions: 123 as any, motifsDeclaratifs: [] } },
+        situations: [{ fait: { autresPrecisions: 123 as any, motifsDeclaratifs: [] } }],
       };
 
       await expect(saveFromSirec(invalidData)).rejects.toThrow(ZodError);
@@ -196,7 +200,7 @@ describe('sirecMigration.service.ts', () => {
     });
 
     it('should create no SituationEntite when entiteIds is empty', async () => {
-      await saveFromSirec({ ...data, situation: { ...data.situation, entiteIds: [] } });
+      await saveFromSirec({ ...data, situations: [{ ...data.situations[0], entiteIds: [] }] });
 
       expect(prisma.situationEntite.createMany).toHaveBeenCalledWith({ data: [] });
     });
@@ -211,7 +215,7 @@ describe('sirecMigration.service.ts', () => {
     });
 
     it('should connect PLAINTE demarche when demarchesIds contains PLAINTE', async () => {
-      await saveFromSirec({ ...data, situation: { ...data.situation, demarchesIds: ['PLAINTE'] } });
+      await saveFromSirec({ ...data, situations: [{ ...data.situations[0], demarchesIds: ['PLAINTE'] }] });
 
       expect(prisma.demarchesEngagees.create).toHaveBeenCalledWith({
         data: { demarches: { connect: [{ id: 'PLAINTE' }] } },

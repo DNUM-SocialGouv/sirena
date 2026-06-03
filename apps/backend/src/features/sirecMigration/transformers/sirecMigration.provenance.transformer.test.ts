@@ -34,6 +34,7 @@ const makeData = (
     reponse_attendue: null,
     ...p,
   })),
+  misEnCauses: [],
 });
 
 describe('sirecMigration.provenance.transformer.ts', () => {

@@ -7,6 +7,16 @@ export interface SirenaAffectationData {
   situationEntiteIds: string[];
 }
 
+export function computeSituationEntiteIds(sourceIds: (number | null)[]): string[] {
+  const ids = new Set<string>();
+  for (const id of sourceIds) {
+    if (!id) continue;
+    const { situationEntiteIds } = transcodeAffectation(id);
+    for (const entiteId of situationEntiteIds) ids.add(entiteId);
+  }
+  return [...ids];
+}
+
 export function transformSirecAffectation(sirecData: SirecReclamationData): SirenaAffectationData {
   const requeteIds = new Set<string>();
   const situationIds = new Set<string>();

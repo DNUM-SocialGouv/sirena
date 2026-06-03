@@ -4,6 +4,7 @@ import {
   fetchSirecData,
   fetchSirecGroupIds,
   fetchSirecInstitutionPartenaires,
+  fetchSirecMisEnCauses,
   fetchSirecMotifsDeclaresById,
   fetchSirecProvenances,
   fetchSirecReclamationById,
@@ -178,6 +179,43 @@ describe('sirecMigration.repository.ts', () => {
     });
   });
 
+  describe('fetchSirecMisEnCauses', () => {
+    it('should return mis en cause with their group ids', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([
+        [
+          { id_data: 10, id_group: 693 },
+          { id_data: 10, id_group: 677 },
+          { id_data: 20, id_group: 693 },
+        ],
+        [],
+      ]);
+
+      const result = await fetchSirecMisEnCauses(42);
+
+      expect(result).toEqual([
+        { id_data: 10, groupIds: [693, 677] },
+        { id_data: 20, groupIds: [693] },
+      ]);
+      expect(mysqlPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_misencause_data'), [42]);
+    });
+
+    it('should return mis en cause with empty groupIds when no groups are linked', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[{ id_data: 10, id_group: null }], []]);
+
+      const result = await fetchSirecMisEnCauses(42);
+
+      expect(result).toEqual([{ id_data: 10, groupIds: [] }]);
+    });
+
+    it('should return an empty array when no mis en cause found', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[], []]);
+
+      const result = await fetchSirecMisEnCauses(42);
+
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('fetchSirecData', () => {
     const mockRow = {
       id_data: 42,
@@ -199,7 +237,8 @@ describe('sirecMigration.repository.ts', () => {
           [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
           [],
         ])
-        .mockResolvedValueOnce([[{ id_dico: 344 }], []]);
+        .mockResolvedValueOnce([[{ id_dico: 344 }], []])
+        .mockResolvedValueOnce([[], []]);
 
       const result = await fetchSirecData(42);
 
@@ -210,6 +249,7 @@ describe('sirecMigration.repository.ts', () => {
         provenances: [{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }],
         institutionPartenaires: {},
         typeTraitementIdDicos: [344],
+        misEnCauses: [],
       });
     });
 
@@ -227,6 +267,7 @@ describe('sirecMigration.repository.ts', () => {
           ],
           [],
         ])
+        .mockResolvedValueOnce([[], []])
         .mockResolvedValueOnce([[], []]);
 
       const result = await fetchSirecData(42);
@@ -241,12 +282,13 @@ describe('sirecMigration.repository.ts', () => {
         .mockResolvedValueOnce([[], []])
         .mockResolvedValueOnce([[], []])
         .mockResolvedValueOnce([[], []])
+        .mockResolvedValueOnce([[], []])
         .mockResolvedValueOnce([[], []]);
 
       const result = await fetchSirecData(42);
 
       expect(result?.institutionPartenaires).toEqual({});
-      expect(mysqlPool.query).toHaveBeenCalledTimes(5);
+      expect(mysqlPool.query).toHaveBeenCalledTimes(6);
     });
 
     it('should return null when the reclamation is not found', async () => {

@@ -76,6 +76,11 @@ export interface SirecProvenance {
   reponse_attendue: number | null;
 }
 
+export interface SirecMisEnCause {
+  id_data: number;
+  groupIds: number[];
+}
+
 export interface SirecReclamationData {
   reclamation: SirecReclamationRow;
   motifsDeclaresIdDicos: number[];
@@ -83,6 +88,7 @@ export interface SirecReclamationData {
   provenances: SirecProvenance[];
   institutionPartenaires: Record<number, string>;
   typeTraitementIdDicos: number[];
+  misEnCauses: SirecMisEnCause[];
 }
 
 export async function fetchSirecReclamationById(sirecId: number): Promise<SirecReclamationRow | null> {
@@ -142,6 +148,28 @@ export async function fetchSirecTypeTraitementIds(sirecId: number): Promise<numb
   return rows.map((row) => row.id_dico);
 }
 
+export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEnCause[]> {
+  const [rows] = await mysqlPool.query<({ id_data: number; id_group: number | null } & RowDataPacket)[]>(
+    `SELECT m.id_data, mcg.id_group
+     FROM sire_misencause_data m
+     LEFT JOIN sire_misencause_data_group mcg ON m.id_data = mcg.id_data AND mcg.id_group != 1
+     WHERE m.id_reclamation = ?`,
+    [sirecId],
+  );
+
+  const map = new Map<number, SirecMisEnCause>();
+  for (const row of rows) {
+    if (!map.has(row.id_data)) {
+      map.set(row.id_data, { id_data: row.id_data, groupIds: [] });
+    }
+    if (row.id_group !== null) {
+      // biome-ignore lint/style/noNonNullAssertion: key was just set above
+      map.get(row.id_data)!.groupIds.push(row.id_group);
+    }
+  }
+  return [...map.values()];
+}
+
 function parseInstitutionPartNumericIds(value: string | null): number[] {
   if (!value) return [];
   return value
@@ -157,14 +185,23 @@ export async function fetchSirecData(sirecId: number): Promise<SirecReclamationD
 
   const institutionIds = parseInstitutionPartNumericIds(reclamation.institution_part);
 
-  const [motifsDeclaresIdDicos, groupIds, provenances, institutionPartenaires, typeTraitementIdDicos] =
+  const [motifsDeclaresIdDicos, groupIds, provenances, institutionPartenaires, typeTraitementIdDicos, misEnCauses] =
     await Promise.all([
       fetchSirecMotifsDeclaresById(sirecId),
       fetchSirecGroupIds(sirecId),
       fetchSirecProvenances(sirecId),
       fetchSirecInstitutionPartenaires(institutionIds),
       fetchSirecTypeTraitementIds(sirecId),
+      fetchSirecMisEnCauses(sirecId),
     ]);
 
-  return { reclamation, motifsDeclaresIdDicos, groupIds, provenances, institutionPartenaires, typeTraitementIdDicos };
+  return {
+    reclamation,
+    motifsDeclaresIdDicos,
+    groupIds,
+    provenances,
+    institutionPartenaires,
+    typeTraitementIdDicos,
+    misEnCauses,
+  };
 }

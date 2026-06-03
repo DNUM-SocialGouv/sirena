@@ -17,6 +17,7 @@ const makeData = (overrides: {
   motifsDeclaresIdDicos: [],
   groupIds: [],
   provenances: [],
+  misEnCauses: [],
 });
 
 const ARS_IDS = ['ars-normandie', 'ars-grand-est'];

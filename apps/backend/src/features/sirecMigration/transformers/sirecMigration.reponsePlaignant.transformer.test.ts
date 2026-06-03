@@ -19,6 +19,7 @@ const makeData = (overrides: {
   provenances: [],
   institutionPartenaires: {},
   typeTraitementIdDicos: [],
+  misEnCauses: [],
 });
 
 const ARS_IDS = ['ars-normandie', 'ars-grand-est'];

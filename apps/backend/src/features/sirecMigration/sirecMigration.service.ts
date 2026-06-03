@@ -12,7 +12,9 @@ export async function getRequeteIdFromSirecId(sirecId: number): Promise<string |
 }
 
 export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
-  SituationDataSchema.parse(data.situation);
+  for (const situation of data.situations) {
+    SituationDataSchema.parse(situation);
+  }
 
   return prisma.$transaction(async (tx) => {
     const requete = await tx.requete.create({
@@ -26,38 +28,48 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     });
 
     const lieu = await tx.lieuDeSurvenue.create({ data: {}, select: { id: true } });
-    const misEnCause = await tx.misEnCause.create({ data: {}, select: { id: true } });
-    const demarchesEngagees = await tx.demarchesEngagees.create({
-      data: {
-        demarches: { connect: data.situation.demarchesIds.map((id) => ({ id })) },
-      },
-      select: { id: true },
-    });
 
-    const situation = await tx.situation.create({
-      data: {
-        lieuDeSurvenueId: lieu.id,
-        misEnCauseId: misEnCause.id,
-        demarchesEngageesId: demarchesEngagees.id,
-        requeteId: requete.id,
-      },
-      select: { id: true },
-    });
+    for (const situationData of data.situations) {
+      const misEnCause = await tx.misEnCause.create({ data: {}, select: { id: true } });
+      const demarchesEngagees = await tx.demarchesEngagees.create({
+        data: {
+          demarches: { connect: situationData.demarchesIds.map((id) => ({ id })) },
+        },
+        select: { id: true },
+      });
 
-    await tx.fait.create({
-      data: {
-        situationId: situation.id,
-        commentaire: data.situation.fait.commentaire,
-        autresPrecisions: data.situation.fait.autresPrecisions,
-      },
-    });
+      const situation = await tx.situation.create({
+        data: {
+          lieuDeSurvenueId: lieu.id,
+          misEnCauseId: misEnCause.id,
+          demarchesEngageesId: demarchesEngagees.id,
+          requeteId: requete.id,
+        },
+        select: { id: true },
+      });
 
-    await tx.faitMotifDeclaratif.createMany({
-      data: data.situation.fait.motifsDeclaratifs.map((motifDeclaratifId) => ({
-        situationId: situation.id,
-        motifDeclaratifId,
-      })),
-    });
+      await tx.fait.create({
+        data: {
+          situationId: situation.id,
+          commentaire: situationData.fait.commentaire,
+          autresPrecisions: situationData.fait.autresPrecisions,
+        },
+      });
+
+      await tx.faitMotifDeclaratif.createMany({
+        data: situationData.fait.motifsDeclaratifs.map((motifDeclaratifId) => ({
+          situationId: situation.id,
+          motifDeclaratifId,
+        })),
+      });
+
+      await tx.situationEntite.createMany({
+        data: situationData.entiteIds.map((entiteId) => ({
+          situationId: situation.id,
+          entiteId,
+        })),
+      });
+    }
 
     await tx.requeteEntite.createMany({
       data: data.requeteEntiteIds.map((entiteId) => ({
@@ -81,13 +93,6 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
         },
       });
     }
-
-    await tx.situationEntite.createMany({
-      data: data.situation.entiteIds.map((entiteId) => ({
-        situationId: situation.id,
-        entiteId,
-      })),
-    });
 
     if (data.declarant !== null && !data.declarant.estVictime) {
       await tx.personneConcernee.create({

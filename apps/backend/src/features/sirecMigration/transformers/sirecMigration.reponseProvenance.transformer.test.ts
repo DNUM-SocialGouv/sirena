@@ -43,6 +43,7 @@ const makeData = (
   })),
   institutionPartenaires: {},
   typeTraitementIdDicos: [],
+  misEnCauses: [],
 });
 
 describe('sirecMigration.reponseProvenance.transformer.ts', () => {
