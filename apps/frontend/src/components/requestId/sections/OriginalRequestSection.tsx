@@ -44,17 +44,17 @@ const RenderExtraInfos = ({
   if (!dateDemandeDeclarant && !provenanceId) return null;
 
   return (
-    <dl className={fr.cx('fr-mb-0')}>
+    <dl className={clsx(fr.cx('fr-mb-0'), style.extraInfos)}>
       {dateDemandeDeclarant && (
         <>
-          <dt>Date de la demande par le déclarant</dt>
-          <dd>{new Date(dateDemandeDeclarant).toLocaleDateString('fr-FR')}</dd>
+          <dt className={fr.cx('fr-text--sm', 'fr-hint-text', 'fr-mb-0')}>Date de demande par le déclarant</dt>
+          <dd className={fr.cx('fr-mb-1w')}>{new Date(dateDemandeDeclarant).toLocaleDateString('fr-FR')}</dd>
         </>
       )}
       {provenanceId && (
         <>
-          <dt>Provenance</dt>
-          <dd>
+          <dt className={fr.cx('fr-text--sm', 'fr-hint-text', 'fr-mb-0')}>Provenance</dt>
+          <dd className={fr.cx('fr-mb-0')}>
             {requeteProvenanceLabels[provenanceId]}
             {REQUETE_PROVENANCE_NEEDS_PRECISION.includes(provenanceId) &&
               provenancePrecision &&
@@ -92,7 +92,7 @@ const RenderCompleted = ({
   if (date && receptionType) {
     return (
       <div>
-        <p className="text-vertical-align">
+        <p className={fr.cx('fr-mb-1w')}>
           Reçue le {new Date(date).toLocaleDateString('fr-FR')} par {receptionTypeLabels[receptionType]}
           {receptionType === RECEPTION_TYPE.FORMULAIRE && (
             <span className={fr.cx('fr-text--xs')}>Dossier Demat.Social n° {dematSocialId}</span>
@@ -106,7 +106,7 @@ const RenderCompleted = ({
   if (date) {
     return (
       <div>
-        <p className="text-vertical-align">Reçue le {new Date(date).toLocaleDateString('fr-FR')}</p>
+        <p className={fr.cx('fr-mb-1w')}>Reçue le {new Date(date).toLocaleDateString('fr-FR')}</p>
         {extras}
       </div>
     );
@@ -115,7 +115,7 @@ const RenderCompleted = ({
   if (receptionType) {
     return (
       <div>
-        <p className="text-vertical-align">Reçue par {receptionTypeLabels[receptionType]}</p>
+        <p className={fr.cx('fr-mb-1w')}>Reçue par {receptionTypeLabels[receptionType]}</p>
         {extras}
       </div>
     );

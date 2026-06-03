@@ -16,3 +16,19 @@
 .editButton :global(.fr-icon) {
   font-size: 1rem;
 }
+
+.extraInfos {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+.extraInfos dt {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+.extraInfos dd {
+  margin-left: 0 !important;
+  margin-inline-start: 0 !important;
+  padding-left: 0 !important;
+}
