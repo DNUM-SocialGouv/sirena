@@ -11,6 +11,7 @@ vi.mock('../transco/misEnCauseRpps.transco.js', () => ({
 
 const rppsData = {
   id_data: 12345678901,
+  rpps: '12345678901',
   civilite: 'mme',
   nom: 'Martin',
   prenom: 'Alice',
@@ -20,8 +21,12 @@ const rppsData = {
 };
 
 describe('sirecMigration.rpps.transformer.ts', () => {
-  it('should map id_data to rpps as string', () => {
+  it('should map rpps field from sire_rpps_data.rpps', () => {
     expect(transformSirecRpps(rppsData).rpps).toBe('12345678901');
+  });
+
+  it('should use empty string when rpps is null', () => {
+    expect(transformSirecRpps({ ...rppsData, rpps: null }).rpps).toBe('');
   });
 
   it('should transcode civilite via transcodeCiviliteRpps', () => {
