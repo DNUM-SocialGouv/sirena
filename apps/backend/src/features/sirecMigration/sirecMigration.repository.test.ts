@@ -423,7 +423,7 @@ describe('sirecMigration.repository.ts', () => {
             finess_rs: 'Hôpital A',
             finess_codepostal: '75010',
             finess_libcommune: 'Paris',
-            finess_numvoie: '1',
+            finess_numvoie: 1,
             finess_typevoie: 'RUE',
             finess_voie: 'de la Paix',
           },
@@ -441,7 +441,7 @@ describe('sirecMigration.repository.ts', () => {
         rs: 'Hôpital A',
         codepostal: '75010',
         libcommune: 'Paris',
-        numvoie: '1',
+        numvoie: 1,
         typevoie: 'RUE',
         voie: 'de la Paix',
       });

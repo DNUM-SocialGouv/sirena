@@ -65,7 +65,7 @@ export function transformSirecFiness(finessData: SirecFinessData): SirenaFinessR
       lieuTypeId: entry.lieuTypeId,
       adresse: {
         label: finessData.rs ?? '',
-        numero: finessData.numvoie ?? '',
+        numero: finessData.numvoie !== null ? String(finessData.numvoie) : '',
         rue: `${finessData.typevoie ?? ''} ${finessData.voie ?? ''}`.trim(),
         codePostal: finessData.codepostal ?? '',
         ville: finessData.libcommune ?? '',
