@@ -195,6 +195,16 @@ describe('sirecMigration.repository.ts', () => {
             rpps_code_postal: null,
             rpps_commune: null,
             rpps_libelle_prof: null,
+            finess_id_data: null,
+            finess_nofinesset: null,
+            finess_categetab: null,
+            finess_libcategetab: null,
+            finess_rs: null,
+            finess_codepostal: null,
+            finess_libcommune: null,
+            finess_numvoie: null,
+            finess_typevoie: null,
+            finess_voie: null,
           },
           {
             id_data: 10,
@@ -208,6 +218,16 @@ describe('sirecMigration.repository.ts', () => {
             rpps_code_postal: null,
             rpps_commune: null,
             rpps_libelle_prof: null,
+            finess_id_data: null,
+            finess_nofinesset: null,
+            finess_categetab: null,
+            finess_libcategetab: null,
+            finess_rs: null,
+            finess_codepostal: null,
+            finess_libcommune: null,
+            finess_numvoie: null,
+            finess_typevoie: null,
+            finess_voie: null,
           },
           {
             id_data: 20,
@@ -221,6 +241,16 @@ describe('sirecMigration.repository.ts', () => {
             rpps_code_postal: null,
             rpps_commune: null,
             rpps_libelle_prof: null,
+            finess_id_data: null,
+            finess_nofinesset: null,
+            finess_categetab: null,
+            finess_libcategetab: null,
+            finess_rs: null,
+            finess_codepostal: null,
+            finess_libcommune: null,
+            finess_numvoie: null,
+            finess_typevoie: null,
+            finess_voie: null,
           },
         ],
         [],
@@ -229,8 +259,8 @@ describe('sirecMigration.repository.ts', () => {
       const result = await fetchSirecMisEnCauses(42);
 
       expect(result).toEqual([
-        { id_data: 10, type: 12, identifiant: null, groupIds: [693, 677], rppsData: null },
-        { id_data: 20, type: 12, identifiant: null, groupIds: [693], rppsData: null },
+        { id_data: 10, type: 12, identifiant: null, groupIds: [693, 677], rppsData: null, finessData: null },
+        { id_data: 20, type: 12, identifiant: null, groupIds: [693], rppsData: null, finessData: null },
       ]);
       expect(mysqlPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_misencause_data'), [42]);
     });
@@ -251,6 +281,16 @@ describe('sirecMigration.repository.ts', () => {
             rpps_code_postal: '76000',
             rpps_commune: 'Rouen',
             rpps_libelle_prof: 'Médecin',
+            finess_id_data: null,
+            finess_nofinesset: null,
+            finess_categetab: null,
+            finess_libcategetab: null,
+            finess_rs: null,
+            finess_codepostal: null,
+            finess_libcommune: null,
+            finess_numvoie: null,
+            finess_typevoie: null,
+            finess_voie: null,
           },
         ],
         [],
@@ -264,6 +304,7 @@ describe('sirecMigration.repository.ts', () => {
           type: 65,
           identifiant: 12345678901,
           groupIds: [],
+          finessData: null,
           rppsData: {
             id_data: 12345678901,
             rpps: '12345678901',
@@ -293,6 +334,16 @@ describe('sirecMigration.repository.ts', () => {
             rpps_code_postal: null,
             rpps_commune: null,
             rpps_libelle_prof: null,
+            finess_id_data: null,
+            finess_nofinesset: null,
+            finess_categetab: null,
+            finess_libcategetab: null,
+            finess_rs: null,
+            finess_codepostal: null,
+            finess_libcommune: null,
+            finess_numvoie: null,
+            finess_typevoie: null,
+            finess_voie: null,
           },
         ],
         [],
@@ -318,6 +369,16 @@ describe('sirecMigration.repository.ts', () => {
             rpps_code_postal: null,
             rpps_commune: null,
             rpps_libelle_prof: null,
+            finess_id_data: null,
+            finess_nofinesset: null,
+            finess_categetab: null,
+            finess_libcategetab: null,
+            finess_rs: null,
+            finess_codepostal: null,
+            finess_libcommune: null,
+            finess_numvoie: null,
+            finess_typevoie: null,
+            finess_voie: null,
           },
         ],
         [],
@@ -325,15 +386,102 @@ describe('sirecMigration.repository.ts', () => {
 
       const result = await fetchSirecMisEnCauses(42);
 
-      expect(result).toEqual([{ id_data: 10, type: null, identifiant: null, groupIds: [], rppsData: null }]);
+      expect(result).toEqual([
+        { id_data: 10, type: null, identifiant: null, groupIds: [], rppsData: null, finessData: null },
+      ]);
     });
 
-    it('should join with sire_rpps_data in the query', async () => {
+    it('should join with sire_rpps_data and sire_finess_data in the query', async () => {
       vi.mocked(mysqlPool.query).mockResolvedValueOnce([[], []]);
 
       await fetchSirecMisEnCauses(42);
 
       expect(mysqlPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_rpps_data'), [42]);
+      expect(mysqlPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_finess_data'), [42]);
+    });
+
+    it('should populate finessData when type is 64 and FINESS record is found', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([
+        [
+          {
+            id_data: 10,
+            type: 64,
+            identifiant: 1234,
+            id_group: null,
+            rpps_id_data: null,
+            rpps_rpps: null,
+            rpps_civilite: null,
+            rpps_nom: null,
+            rpps_prenom: null,
+            rpps_code_postal: null,
+            rpps_commune: null,
+            rpps_libelle_prof: null,
+            finess_id_data: 1234,
+            finess_nofinesset: '750000001',
+            finess_categetab: 355,
+            finess_libcategetab: 'CH',
+            finess_rs: 'Hôpital A',
+            finess_codepostal: '75010',
+            finess_libcommune: 'Paris',
+            finess_numvoie: '1',
+            finess_typevoie: 'RUE',
+            finess_voie: 'de la Paix',
+          },
+        ],
+        [],
+      ]);
+
+      const result = await fetchSirecMisEnCauses(42);
+
+      expect(result[0].finessData).toEqual({
+        id_data: 1234,
+        nofinesset: '750000001',
+        categetab: 355,
+        libcategetab: 'CH',
+        rs: 'Hôpital A',
+        codepostal: '75010',
+        libcommune: 'Paris',
+        numvoie: '1',
+        typevoie: 'RUE',
+        voie: 'de la Paix',
+      });
+      expect(result[0].rppsData).toBeNull();
+    });
+
+    it('should set finessData to null when type is 64 but finess_id_data is null', async () => {
+      vi.mocked(mysqlPool.query).mockResolvedValueOnce([
+        [
+          {
+            id_data: 10,
+            type: 64,
+            identifiant: 999,
+            id_group: null,
+            rpps_id_data: null,
+            rpps_rpps: null,
+            rpps_civilite: null,
+            rpps_nom: null,
+            rpps_prenom: null,
+            rpps_code_postal: null,
+            rpps_commune: null,
+            rpps_libelle_prof: null,
+            finess_id_data: null,
+            finess_nofinesset: null,
+            finess_categetab: null,
+            finess_libcategetab: null,
+            finess_rs: null,
+            finess_codepostal: null,
+            finess_libcommune: null,
+            finess_numvoie: null,
+            finess_typevoie: null,
+            finess_voie: null,
+          },
+        ],
+        [],
+      ]);
+
+      const result = await fetchSirecMisEnCauses(42);
+
+      expect(result[0].finessData).toBeNull();
     });
 
     it('should return an empty array when no mis en cause found', async () => {

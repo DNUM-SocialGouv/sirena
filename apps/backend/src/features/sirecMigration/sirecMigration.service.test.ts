@@ -98,16 +98,8 @@ describe('sirecMigration.service.ts', () => {
           },
           entiteIds: ['service-1', 'ars-1'],
           demarchesIds: [] as string[],
-          misEnCauseData: null as {
-            rpps: string;
-            civilite: string;
-            nom: string;
-            prenom: string;
-            codePostal: string | null;
-            ville: string | null;
-            misEnCauseTypeId: string;
-            misEnCauseTypePrecisionId: string;
-          } | null,
+          misEnCauseData: null as any,
+          lieuDeSurvenueData: null as any,
         },
       ],
     };
@@ -824,6 +816,7 @@ describe('sirecMigration.service.ts', () => {
 
     describe('misEnCause RPPS (find-or-create)', () => {
       const rppsData = {
+        kind: 'rpps' as const,
         rpps: '12345678901',
         civilite: 'M',
         nom: 'Dupont',
@@ -874,6 +867,86 @@ describe('sirecMigration.service.ts', () => {
 
         expect(prisma.misEnCause.findFirst).not.toHaveBeenCalled();
         expect(prisma.misEnCause.create).toHaveBeenCalledWith({ data: {}, select: { id: true } });
+      });
+    });
+
+    describe('misEnCause FINESS (find-or-create)', () => {
+      const finessData = {
+        kind: 'finess' as const,
+        finess: '750000001',
+        misEnCauseTypeId: 'ETABLISSEMENT',
+        misEnCauseTypePrecisionId: 'ETABLISSEMENT',
+        nomService: 'Hôpital A',
+        codePostal: '75010',
+        ville: 'Paris',
+      };
+
+      it('should create MisEnCause with FINESS data when not found', async () => {
+        vi.mocked(prisma.misEnCause.findFirst).mockResolvedValueOnce(null);
+
+        await saveFromSirec({ ...data, situations: [{ ...data.situations[0], misEnCauseData: finessData }] });
+
+        expect(prisma.misEnCause.findFirst).toHaveBeenCalledWith({
+          where: { finess: '750000001' },
+          select: { id: true },
+        });
+        expect(prisma.misEnCause.create).toHaveBeenCalledWith({
+          data: {
+            finess: '750000001',
+            misEnCauseTypeId: 'ETABLISSEMENT',
+            misEnCauseTypePrecisionId: 'ETABLISSEMENT',
+            nomService: 'Hôpital A',
+            codePostal: '75010',
+            ville: 'Paris',
+          },
+          select: { id: true },
+        });
+      });
+
+      it('should reuse existing MisEnCause when found by finess', async () => {
+        vi.mocked(prisma.misEnCause.findFirst).mockResolvedValueOnce({ id: 'mec-finess-existing' } as any);
+
+        await saveFromSirec({ ...data, situations: [{ ...data.situations[0], misEnCauseData: finessData }] });
+
+        expect(prisma.misEnCause.create).not.toHaveBeenCalled();
+        expect(prisma.situation.create).toHaveBeenCalledWith(
+          expect.objectContaining({ data: expect.objectContaining({ misEnCauseId: 'mec-finess-existing' }) }),
+        );
+      });
+    });
+
+    describe('LieuDeSurvenue avec données (Case B FINESS)', () => {
+      const lieuData = {
+        finess: '750000001',
+        codePostal: '75010',
+        categCode: '355',
+        categLib: 'CH',
+        lieuTypeId: 'ETABLISSEMENT_SANTE',
+        adresse: { label: 'Hôpital A', numero: '1', rue: 'RUE de la Paix', codePostal: '75010', ville: 'Paris' },
+      };
+
+      it('should create LieuDeSurvenue with all fields and nested adresse', async () => {
+        await saveFromSirec({ ...data, situations: [{ ...data.situations[0], lieuDeSurvenueData: lieuData }] });
+
+        expect(prisma.lieuDeSurvenue.create).toHaveBeenCalledWith({
+          data: {
+            finess: '750000001',
+            codePostal: '75010',
+            categCode: '355',
+            categLib: 'CH',
+            lieuTypeId: 'ETABLISSEMENT_SANTE',
+            adresse: {
+              create: { label: 'Hôpital A', numero: '1', rue: 'RUE de la Paix', codePostal: '75010', ville: 'Paris' },
+            },
+          },
+          select: { id: true },
+        });
+      });
+
+      it('should create empty LieuDeSurvenue when lieuDeSurvenueData is null', async () => {
+        await saveFromSirec(data);
+
+        expect(prisma.lieuDeSurvenue.create).toHaveBeenCalledWith({ data: {}, select: { id: true } });
       });
     });
   });

@@ -87,12 +87,26 @@ export interface SirecRppsData {
   libelle_prof: string | null;
 }
 
+export interface SirecFinessData {
+  id_data: number;
+  nofinesset: string | null;
+  categetab: number | null;
+  libcategetab: string | null;
+  rs: string | null;
+  codepostal: string | null;
+  libcommune: string | null;
+  numvoie: string | null;
+  typevoie: string | null;
+  voie: string | null;
+}
+
 export interface SirecMisEnCause {
   id_data: number;
   type: number | null;
   identifiant: number | null;
   groupIds: number[];
   rppsData: SirecRppsData | null;
+  finessData: SirecFinessData | null;
 }
 
 export interface SirecReclamationData {
@@ -175,6 +189,16 @@ type MisEnCauseRow = {
   rpps_code_postal: string | null;
   rpps_commune: string | null;
   rpps_libelle_prof: string | null;
+  finess_id_data: number | null;
+  finess_nofinesset: string | null;
+  finess_categetab: number | null;
+  finess_libcategetab: string | null;
+  finess_rs: string | null;
+  finess_codepostal: string | null;
+  finess_libcommune: string | null;
+  finess_numvoie: string | null;
+  finess_typevoie: string | null;
+  finess_voie: string | null;
 } & RowDataPacket;
 
 export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEnCause[]> {
@@ -182,10 +206,15 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
     `SELECT m.id_data, m.type, m.identifiant, mcg.id_group,
             r.id_data AS rpps_id_data, r.rpps AS rpps_rpps, r.civilite AS rpps_civilite, r.nom AS rpps_nom,
             r.prenom AS rpps_prenom, r.code_postal AS rpps_code_postal,
-            r.commune AS rpps_commune, r.libelle_prof AS rpps_libelle_prof
+            r.commune AS rpps_commune, r.libelle_prof AS rpps_libelle_prof,
+            f.id_data AS finess_id_data, f.nofinesset AS finess_nofinesset,
+            f.categetab AS finess_categetab, f.libcategetab AS finess_libcategetab,
+            f.rs AS finess_rs, f.codepostal AS finess_codepostal, f.libcommune AS finess_libcommune,
+            f.numvoie AS finess_numvoie, f.typevoie AS finess_typevoie, f.voie AS finess_voie
      FROM sire_misencause_data m
      LEFT JOIN sire_misencause_data_group mcg ON m.id_data = mcg.id_data AND mcg.id_group != 1
      LEFT JOIN sire_rpps_data r ON r.id_data = m.identifiant AND m.type = 65
+     LEFT JOIN sire_finess_data f ON f.id_data = m.identifiant AND m.type = 64
      WHERE m.id_reclamation = ?`,
     [sirecId],
   );
@@ -206,12 +235,28 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
               libelle_prof: row.rpps_libelle_prof,
             }
           : null;
+      const finessData: SirecFinessData | null =
+        row.finess_id_data !== null
+          ? {
+              id_data: row.finess_id_data,
+              nofinesset: row.finess_nofinesset,
+              categetab: row.finess_categetab,
+              libcategetab: row.finess_libcategetab,
+              rs: row.finess_rs,
+              codepostal: row.finess_codepostal,
+              libcommune: row.finess_libcommune,
+              numvoie: row.finess_numvoie,
+              typevoie: row.finess_typevoie,
+              voie: row.finess_voie,
+            }
+          : null;
       map.set(row.id_data, {
         id_data: row.id_data,
         type: row.type,
         identifiant: row.identifiant,
         groupIds: [],
         rppsData,
+        finessData,
       });
     }
     if (row.id_group !== null) {

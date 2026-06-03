@@ -27,30 +27,83 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       select: { id: true },
     });
 
-    const lieu = await tx.lieuDeSurvenue.create({ data: {}, select: { id: true } });
-
     for (const situationData of data.situations) {
       let misEnCauseId: string;
 
       if (situationData.misEnCauseData !== null) {
-        const { rpps, civilite, nom, prenom, codePostal, ville, misEnCauseTypeId, misEnCauseTypePrecisionId } =
-          situationData.misEnCauseData;
-        const existing = await tx.misEnCause.findFirst({ where: { rpps }, select: { id: true } });
-        if (existing) {
-          misEnCauseId = existing.id;
+        const mec = situationData.misEnCauseData;
+        if (mec.kind === 'rpps') {
+          const existing = await tx.misEnCause.findFirst({ where: { rpps: mec.rpps }, select: { id: true } });
+          if (existing) {
+            misEnCauseId = existing.id;
+          } else {
+            const created = await tx.misEnCause.create({
+              data: {
+                rpps: mec.rpps,
+                civilite: mec.civilite,
+                nom: mec.nom,
+                prenom: mec.prenom,
+                codePostal: mec.codePostal,
+                ville: mec.ville,
+                misEnCauseTypeId: mec.misEnCauseTypeId,
+                misEnCauseTypePrecisionId: mec.misEnCauseTypePrecisionId,
+              },
+              select: { id: true },
+            });
+            misEnCauseId = created.id;
+          }
         } else {
-          const created = await tx.misEnCause.create({
-            data: { rpps, civilite, nom, prenom, codePostal, ville, misEnCauseTypeId, misEnCauseTypePrecisionId },
-            select: { id: true },
-          });
-          misEnCauseId = created.id;
+          const existing = await tx.misEnCause.findFirst({ where: { finess: mec.finess }, select: { id: true } });
+          if (existing) {
+            misEnCauseId = existing.id;
+          } else {
+            const created = await tx.misEnCause.create({
+              data: {
+                finess: mec.finess,
+                misEnCauseTypeId: mec.misEnCauseTypeId,
+                misEnCauseTypePrecisionId: mec.misEnCauseTypePrecisionId,
+                nomService: mec.nomService,
+                codePostal: mec.codePostal,
+                ville: mec.ville,
+              },
+              select: { id: true },
+            });
+            misEnCauseId = created.id;
+          }
         }
       } else {
         const created = await tx.misEnCause.create({ data: {}, select: { id: true } });
         misEnCauseId = created.id;
       }
 
-      const misEnCause = { id: misEnCauseId };
+      let lieuId: string;
+      if (situationData.lieuDeSurvenueData !== null) {
+        const lsd = situationData.lieuDeSurvenueData;
+        const created = await tx.lieuDeSurvenue.create({
+          data: {
+            finess: lsd.finess,
+            codePostal: lsd.codePostal,
+            categCode: lsd.categCode,
+            categLib: lsd.categLib,
+            lieuTypeId: lsd.lieuTypeId,
+            adresse: {
+              create: {
+                label: lsd.adresse.label,
+                numero: lsd.adresse.numero,
+                rue: lsd.adresse.rue,
+                codePostal: lsd.adresse.codePostal,
+                ville: lsd.adresse.ville,
+              },
+            },
+          },
+          select: { id: true },
+        });
+        lieuId = created.id;
+      } else {
+        const created = await tx.lieuDeSurvenue.create({ data: {}, select: { id: true } });
+        lieuId = created.id;
+      }
+
       const demarchesEngagees = await tx.demarchesEngagees.create({
         data: {
           demarches: { connect: situationData.demarchesIds.map((id) => ({ id })) },
@@ -60,8 +113,8 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
 
       const situation = await tx.situation.create({
         data: {
-          lieuDeSurvenueId: lieu.id,
-          misEnCauseId: misEnCause.id,
+          lieuDeSurvenueId: lieuId,
+          misEnCauseId,
           demarchesEngageesId: demarchesEngagees.id,
           requeteId: requete.id,
         },

@@ -73,4 +73,10 @@ describe('sirecMigration.situation.transformer.ts', () => {
 
     expect(result.demarchesIds).toEqual([]);
   });
+
+  it('should always return lieuDeSurvenueData as null', () => {
+    const result = transformSirecSituation(sirecData, []);
+
+    expect(result.lieuDeSurvenueData).toBeNull();
+  });
 });

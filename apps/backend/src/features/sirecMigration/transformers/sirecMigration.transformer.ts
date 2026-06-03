@@ -19,7 +19,16 @@ import type { SirenaSituationData } from './sirecMigration.situation.transformer
 import { type SirenaVictimeData, transformSirecVictime } from './sirecMigration.victime.transformer.js';
 
 export type { SirenaAdresseData } from './sirecMigration.declarant.transformer.js';
-export type { SirenaDeclarantData, SirenaEtapeData, SirenaMisEnCauseData, SirenaSituationData, SirenaVictimeData };
+export type {
+  SirenaDeclarantData,
+  SirenaEtapeData,
+  SirenaFinessMisEnCauseData,
+  SirenaLieuDeSurvenueData,
+  SirenaMisEnCauseData,
+  SirenaRppsMisEnCauseData,
+  SirenaSituationData,
+  SirenaVictimeData,
+};
 
 export interface SirenaRequeteData {
   sirenaId: string;
