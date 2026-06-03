@@ -95,7 +95,7 @@ export interface SirecFinessData {
   rs: string | null;
   codepostal: string | null;
   libcommune: string | null;
-  numvoie: string | null;
+  numvoie: number | null;
   typevoie: string | null;
   voie: string | null;
 }
@@ -196,7 +196,7 @@ type MisEnCauseRow = {
   finess_rs: string | null;
   finess_codepostal: string | null;
   finess_libcommune: string | null;
-  finess_numvoie: string | null;
+  finess_numvoie: number | null;
   finess_typevoie: string | null;
   finess_voie: string | null;
 } & RowDataPacket;

@@ -21,7 +21,7 @@ const makeFinessData = (overrides: Partial<SirecFinessData> = {}): SirecFinessDa
   rs: 'Hôpital Saint-Louis',
   codepostal: '75010',
   libcommune: 'Paris',
-  numvoie: '1',
+  numvoie: 1,
   typevoie: 'RUE',
   voie: 'de la Paix',
   ...overrides,
