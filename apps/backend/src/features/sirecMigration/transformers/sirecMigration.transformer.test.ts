@@ -99,6 +99,7 @@ describe('sirecMigration.transformer.ts', () => {
           },
           entiteIds: [],
           demarchesIds: [],
+          misEnCauseData: null,
         },
       ],
     });
