@@ -321,7 +321,7 @@ export function RouteComponent() {
         </div>
       </fieldset>
       <TableSearchBar
-        label="Rechercher une entité administrative par nom ou libellé"
+        label="Rechercher une entité, direction ou service par nom ou libellé"
         value={searchTerm}
         activeSearch={search.search}
         total={entitesListQuery.data?.meta?.total}

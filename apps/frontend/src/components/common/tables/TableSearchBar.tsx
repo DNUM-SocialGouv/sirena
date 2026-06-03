@@ -51,6 +51,7 @@ export function TableSearchBar({
         <div className={inputContainerClassName}>
           <SearchBar
             label={label}
+            allowEmptySearch
             onButtonClick={handleSearch}
             renderInput={(inputProps) => (
               <input

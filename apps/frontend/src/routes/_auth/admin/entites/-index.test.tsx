@@ -241,7 +241,7 @@ describe('Admin entites index route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getAllByText('Rechercher une entité administrative par nom ou libellé')).not.toHaveLength(0);
+    expect(screen.getAllByText('Rechercher une entité, direction ou service par nom ou libellé')).not.toHaveLength(0);
     expect(mockedUseEntitesAdmin).toHaveBeenCalledWith({
       offset: 20,
       limit: 10,
@@ -250,7 +250,7 @@ describe('Admin entites index route', () => {
     });
 
     const searchInput = screen.getByRole('searchbox', {
-      name: 'Rechercher une entité administrative par nom ou libellé',
+      name: 'Rechercher une entité, direction ou service par nom ou libellé',
     });
     await userEvent.clear(searchInput);
     await userEvent.type(searchInput, '  médiation  ');
