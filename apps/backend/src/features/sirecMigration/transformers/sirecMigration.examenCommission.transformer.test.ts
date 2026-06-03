@@ -8,6 +8,7 @@ const makeData = (date_commission: Date | null = null) => ({
   provenances: [],
   institutionPartenaires: {},
   typeTraitementIdDicos: [],
+  misEnCauses: [],
 });
 
 const ARS_1 = 'ars-normandie';

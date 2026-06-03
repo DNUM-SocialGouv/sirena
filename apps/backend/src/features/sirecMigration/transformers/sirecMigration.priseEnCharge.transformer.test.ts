@@ -20,6 +20,7 @@ const makeData = (
   provenances: [],
   institutionPartenaires: {},
   typeTraitementIdDicos,
+  misEnCauses: [],
 });
 
 const ARS_1 = 'ars-normandie';

@@ -133,7 +133,11 @@ export const getEntitesListAdmin = async ({
   search,
   sort,
   order,
-}: Pick<Pagination, 'offset' | 'limit' | 'search'> & { rootEntiteIds?: string[]; sort?: string; order?: 'asc' | 'desc' }) => {
+}: Pick<Pagination, 'offset' | 'limit' | 'search'> & {
+  rootEntiteIds?: string[];
+  sort?: string;
+  order?: 'asc' | 'desc';
+}) => {
   const entites = await prisma.entite.findMany({
     select: {
       id: true,

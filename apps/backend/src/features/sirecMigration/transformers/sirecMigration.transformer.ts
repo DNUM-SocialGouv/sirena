@@ -10,11 +10,12 @@ import { type SirenaDeclarantData, transformSirecDeclarant } from './sirecMigrat
 import type { SirenaEtapeData } from './sirecMigration.etape.types.js';
 import { transformSirecExamenCommission } from './sirecMigration.examenCommission.transformer.js';
 import { transformSirecInstitutionsPartenaires } from './sirecMigration.institutionPartenaire.transformer.js';
+import { transformSirecMisEnCauseSituations } from './sirecMigration.misEnCause.transformer.js';
 import { transformSirecPriseEnCharge } from './sirecMigration.priseEnCharge.transformer.js';
 import { transformSirecProvenances } from './sirecMigration.provenance.transformer.js';
 import { transformSirecReponsePlaignant } from './sirecMigration.reponsePlaignant.transformer.js';
 import { transformSirecReponseProvenances } from './sirecMigration.reponseProvenance.transformer.js';
-import { type SirenaSituationData, transformSirecSituation } from './sirecMigration.situation.transformer.js';
+import type { SirenaSituationData } from './sirecMigration.situation.transformer.js';
 import { type SirenaVictimeData, transformSirecVictime } from './sirecMigration.victime.transformer.js';
 
 export type { SirenaAdresseData } from './sirecMigration.declarant.transformer.js';
@@ -30,7 +31,7 @@ export interface SirenaRequeteData {
   victime: SirenaVictimeData | null;
   requeteEntiteIds: string[];
   etapes: SirenaEtapeData[];
-  situation: SirenaSituationData;
+  situations: SirenaSituationData[];
 }
 
 export function transformSirecReclamation(sirecData: SirecReclamationData): SirenaRequeteData {
@@ -66,6 +67,6 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
       ...transformSirecExamenCommission(sirecData, arsEntiteIds),
       ...transformSirecReponsePlaignant(sirecData, arsEntiteIds),
     ],
-    situation: transformSirecSituation(sirecData, situationEntiteIds),
+    situations: transformSirecMisEnCauseSituations(sirecData, situationEntiteIds),
   };
 }

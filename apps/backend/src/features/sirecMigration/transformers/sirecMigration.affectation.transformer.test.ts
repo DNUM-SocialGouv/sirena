@@ -32,6 +32,7 @@ const makeData = (
   motifsDeclaresIdDicos: [],
   groupIds,
   provenances: [],
+  misEnCauses: [],
 });
 
 describe('sirecMigration.affectation.transformer.ts', () => {

@@ -74,6 +74,7 @@ describe('sirecMigration.transformer.ts', () => {
     provenances: [],
     institutionPartenaires: {} as Record<number, string>,
     typeTraitementIdDicos: [] as number[],
+    misEnCauses: [],
   };
 
   it('should map all fields correctly', () => {
@@ -89,15 +90,17 @@ describe('sirecMigration.transformer.ts', () => {
       victime: null,
       requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
       etapes: [],
-      situation: {
-        fait: {
-          commentaire: 'Précision prioritaire',
-          autresPrecisions: 'Ma réclamation',
-          motifsDeclaratifs: ['PROBLEME_FACTURATION'],
+      situations: [
+        {
+          fait: {
+            commentaire: 'Précision prioritaire',
+            autresPrecisions: 'Ma réclamation',
+            motifsDeclaratifs: ['PROBLEME_FACTURATION'],
+          },
+          entiteIds: [],
+          demarchesIds: [],
         },
-        entiteIds: [],
-        demarchesIds: [],
-      },
+      ],
     });
   });
 
@@ -108,7 +111,7 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.requeteEntiteIds).toEqual(['4af829ff-07c1-425d-85d6-83b5f97e4422']);
-    expect(result.situation.entiteIds).toContain('c773bd6f-73e8-479c-b552-fd72f91c2efb');
+    expect(result.situations[0].entiteIds).toContain('c773bd6f-73e8-479c-b552-fd72f91c2efb');
   });
 
   it('should map id_data to sirecId', () => {
