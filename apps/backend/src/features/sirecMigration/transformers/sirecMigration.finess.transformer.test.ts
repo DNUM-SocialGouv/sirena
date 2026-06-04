@@ -6,9 +6,18 @@ import { transformSirecFiness } from './sirecMigration.finess.transformer.js';
 vi.mock('../transco/finessCategetab.transco.js', () => ({
   transcodeFinessCategetab: vi.fn((categetab: number | null) => {
     if (categetab === null) throw new SirecDataError('categetab null');
-    if (categetab === 354) return { kind: 'mec', mecPrecisionId: 'SAD_SOINS' };
-    if (categetab === 500) return { kind: 'lieu', lieuTypeId: 'ETABLISSEMENT_PERSONNES_AGEES' };
-    if (categetab === 355) return { kind: 'lieu', lieuTypeId: 'ETABLISSEMENT_SANTE' };
+    if (categetab === 354)
+      return { misEnCause: { misEnCauseTypeId: 'ETABLISSEMENT', misEnCauseTypePrecisionId: 'SAD_SOINS' } };
+    if (categetab === 500)
+      return {
+        misEnCause: { misEnCauseTypeId: 'ETABLISSEMENT', misEnCauseTypePrecisionId: 'ETABLISSEMENT' },
+        lieuSurvenue: { lieuTypeId: 'ETABLISSEMENT_PERSONNES_AGEES', lieuPrecision: 'EHPAD' },
+      };
+    if (categetab === 355)
+      return {
+        misEnCause: { misEnCauseTypeId: 'ETABLISSEMENT', misEnCauseTypePrecisionId: 'ETABLISSEMENT' },
+        lieuSurvenue: { lieuTypeId: 'ETABLISSEMENT_SANTE', lieuPrecision: 'CH' },
+      };
     throw new SirecTranscoError(categetab, 'finessCategetab');
   }),
 }));
@@ -28,7 +37,7 @@ const makeFinessData = (overrides: Partial<SirecFinessData> = {}): SirecFinessDa
 });
 
 describe('sirecMigration.finess.transformer.ts', () => {
-  describe('Case A — MEC précision (kind:mec)', () => {
+  describe('Case A — MEC précision (pas de lieu survenu)', () => {
     it('should return misEnCauseData with the MEC precision id', () => {
       const { misEnCauseData } = transformSirecFiness(makeFinessData({ categetab: 354 }));
 
@@ -57,10 +66,18 @@ describe('sirecMigration.finess.transformer.ts', () => {
     });
   });
 
-  describe('Case B — Lieu survenue (kind:lieu)', () => {
+  describe('Case B — Lieu survenue (précision ETABLISSEMENT)', () => {
     it('should return misEnCauseData with ETABLISSEMENT precision', () => {
       const { misEnCauseData } = transformSirecFiness(makeFinessData({ categetab: 355 }));
       expect(misEnCauseData.misEnCauseTypePrecisionId).toBe('ETABLISSEMENT');
+    });
+
+    it('should not include finess/nomService/codePostal/ville in misEnCauseData', () => {
+      const { misEnCauseData } = transformSirecFiness(makeFinessData({ categetab: 355 }));
+      expect(misEnCauseData.finess).toBeUndefined();
+      expect(misEnCauseData.nomService).toBeUndefined();
+      expect(misEnCauseData.codePostal).toBeUndefined();
+      expect(misEnCauseData.ville).toBeUndefined();
     });
 
     it('should return lieuDeSurvenueData with finess and lieuTypeId', () => {
@@ -69,6 +86,11 @@ describe('sirecMigration.finess.transformer.ts', () => {
       expect(lieuDeSurvenueData).not.toBeNull();
       expect(lieuDeSurvenueData?.finess).toBe('750000001');
       expect(lieuDeSurvenueData?.lieuTypeId).toBe('ETABLISSEMENT_SANTE');
+    });
+
+    it('should set lieuPrecision from transco entry', () => {
+      const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: 355 }));
+      expect(lieuDeSurvenueData?.lieuPrecision).toBe('CH');
     });
 
     it('should map categCode and categLib from FINESS data', () => {

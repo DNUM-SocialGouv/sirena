@@ -33,43 +33,33 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       if (situationData.misEnCauseData !== null) {
         const mec = situationData.misEnCauseData;
         if (mec.kind === 'rpps') {
-          const existing = await tx.misEnCause.findFirst({ where: { rpps: mec.rpps }, select: { id: true } });
-          if (existing) {
-            misEnCauseId = existing.id;
-          } else {
-            const created = await tx.misEnCause.create({
-              data: {
-                rpps: mec.rpps,
-                civilite: mec.civilite,
-                nom: mec.nom,
-                prenom: mec.prenom,
-                codePostal: mec.codePostal,
-                ville: mec.ville,
-                misEnCauseTypeId: mec.misEnCauseTypeId,
-                misEnCauseTypePrecisionId: mec.misEnCauseTypePrecisionId,
-              },
-              select: { id: true },
-            });
-            misEnCauseId = created.id;
-          }
+          const created = await tx.misEnCause.create({
+            data: {
+              rpps: mec.rpps,
+              civilite: mec.civilite,
+              nom: mec.nom,
+              prenom: mec.prenom,
+              codePostal: mec.codePostal,
+              ville: mec.ville,
+              misEnCauseTypeId: mec.misEnCauseTypeId,
+              misEnCauseTypePrecisionId: mec.misEnCauseTypePrecisionId,
+            },
+            select: { id: true },
+          });
+          misEnCauseId = created.id;
         } else {
-          const existing = await tx.misEnCause.findFirst({ where: { finess: mec.finess }, select: { id: true } });
-          if (existing) {
-            misEnCauseId = existing.id;
-          } else {
-            const created = await tx.misEnCause.create({
-              data: {
-                finess: mec.finess,
-                misEnCauseTypeId: mec.misEnCauseTypeId,
-                misEnCauseTypePrecisionId: mec.misEnCauseTypePrecisionId,
-                nomService: mec.nomService,
-                codePostal: mec.codePostal,
-                ville: mec.ville,
-              },
-              select: { id: true },
-            });
-            misEnCauseId = created.id;
-          }
+          const created = await tx.misEnCause.create({
+            data: {
+              finess: mec.finess,
+              misEnCauseTypeId: mec.misEnCauseTypeId,
+              misEnCauseTypePrecisionId: mec.misEnCauseTypePrecisionId,
+              nomService: mec.nomService,
+              codePostal: mec.codePostal,
+              ville: mec.ville,
+            },
+            select: { id: true },
+          });
+          misEnCauseId = created.id;
         }
       } else {
         const created = await tx.misEnCause.create({ data: {}, select: { id: true } });
@@ -86,6 +76,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
             categCode: lsd.categCode,
             categLib: lsd.categLib,
             lieuTypeId: lsd.lieuTypeId,
+            lieuPrecision: lsd.lieuPrecision,
             adresse: {
               create: {
                 label: lsd.adresse.label,
