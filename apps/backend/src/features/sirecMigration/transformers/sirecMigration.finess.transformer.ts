@@ -1,16 +1,15 @@
-import { MIS_EN_CAUSE_ETABLISSEMENT_PRECISION, MIS_EN_CAUSE_TYPE } from '@sirena/common/constants';
 import type { SirecFinessData } from '../sirecMigration.repository.js';
 import { transcodeFinessCategetab } from '../transco/finessCategetab.transco.js';
 import { SirecDataError } from '../transco/sirecTransco.error.js';
 
 export interface SirenaFinessMisEnCauseData {
   kind: 'finess';
-  finess: string;
   misEnCauseTypeId: string;
   misEnCauseTypePrecisionId: string;
-  nomService: string;
-  codePostal: string | null;
-  ville: string | null;
+  finess?: string;
+  nomService?: string;
+  codePostal?: string | null;
+  ville?: string | null;
 }
 
 export interface SirenaLieuDeSurvenueData {
@@ -19,6 +18,7 @@ export interface SirenaLieuDeSurvenueData {
   categCode: string;
   categLib: string;
   lieuTypeId: string;
+  lieuPrecision: string;
   adresse: {
     label: string;
     numero: string;
@@ -42,16 +42,17 @@ export function transformSirecFiness(finessData: SirecFinessData): SirenaFinessR
 
   const misEnCauseData: SirenaFinessMisEnCauseData = {
     kind: 'finess',
-    finess: finessData.nofinesset,
-    misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
-    misEnCauseTypePrecisionId:
-      entry.kind === 'mec' ? entry.mecPrecisionId : MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.ETABLISSEMENT,
-    nomService: finessData.rs ?? '',
-    codePostal: finessData.codepostal,
-    ville: finessData.libcommune,
+    misEnCauseTypeId: entry.misEnCause.misEnCauseTypeId,
+    misEnCauseTypePrecisionId: entry.misEnCause.misEnCauseTypePrecisionId,
+    ...(entry.lieuSurvenue === undefined && {
+      finess: finessData.nofinesset,
+      nomService: finessData.rs ?? '',
+      codePostal: finessData.codepostal,
+      ville: finessData.libcommune,
+    }),
   };
 
-  if (entry.kind === 'mec') {
+  if (entry.lieuSurvenue === undefined) {
     return { misEnCauseData, lieuDeSurvenueData: null };
   }
 
@@ -62,7 +63,8 @@ export function transformSirecFiness(finessData: SirecFinessData): SirenaFinessR
       codePostal: finessData.codepostal ?? '',
       categCode: String(finessData.categetab ?? ''),
       categLib: finessData.libcategetab ?? '',
-      lieuTypeId: entry.lieuTypeId,
+      lieuTypeId: entry.lieuSurvenue.lieuTypeId,
+      lieuPrecision: entry.lieuSurvenue.lieuPrecision,
       adresse: {
         label: finessData.rs ?? '',
         numero: finessData.numvoie !== null ? String(finessData.numvoie) : '',
