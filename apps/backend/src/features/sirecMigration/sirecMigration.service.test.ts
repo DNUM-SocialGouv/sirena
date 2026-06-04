@@ -8,7 +8,7 @@ vi.mock('@sirena/db', () => ({
     $transaction: vi.fn(),
     requete: { findFirst: vi.fn(), create: vi.fn() },
     lieuDeSurvenue: { create: vi.fn() },
-    misEnCause: { create: vi.fn(), findFirst: vi.fn() },
+    misEnCause: { create: vi.fn() },
     demarchesEngagees: { create: vi.fn() },
     situation: { create: vi.fn() },
     fait: { create: vi.fn() },
@@ -108,7 +108,6 @@ describe('sirecMigration.service.ts', () => {
       vi.mocked(prisma.requete.create).mockResolvedValue({ id: 'SIREC-42' } as any);
       vi.mocked(prisma.lieuDeSurvenue.create).mockResolvedValue({ id: 'lieu-1' } as any);
       vi.mocked(prisma.misEnCause.create).mockResolvedValue({ id: 'mec-1' } as any);
-      vi.mocked(prisma.misEnCause.findFirst).mockResolvedValue(null);
       vi.mocked(prisma.demarchesEngagees.create).mockResolvedValue({ id: 'dem-1' } as any);
       vi.mocked(prisma.situation.create).mockResolvedValue({ id: 'sit-1' } as any);
       vi.mocked(prisma.fait.create).mockResolvedValue({} as any);
@@ -814,7 +813,7 @@ describe('sirecMigration.service.ts', () => {
       expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
     });
 
-    describe('misEnCause RPPS (find-or-create)', () => {
+    describe('misEnCause RPPS', () => {
       const rppsData = {
         kind: 'rpps' as const,
         rpps: '12345678901',
@@ -827,15 +826,9 @@ describe('sirecMigration.service.ts', () => {
         misEnCauseTypePrecisionId: 'PROF_SANTE',
       };
 
-      it('should create MisEnCause with RPPS data when not found', async () => {
-        vi.mocked(prisma.misEnCause.findFirst).mockResolvedValueOnce(null);
-
+      it('should always create MisEnCause with RPPS data', async () => {
         await saveFromSirec({ ...data, situations: [{ ...data.situations[0], misEnCauseData: rppsData }] });
 
-        expect(prisma.misEnCause.findFirst).toHaveBeenCalledWith({
-          where: { rpps: '12345678901' },
-          select: { id: true },
-        });
         expect(prisma.misEnCause.create).toHaveBeenCalledWith({
           data: {
             rpps: '12345678901',
@@ -851,26 +844,14 @@ describe('sirecMigration.service.ts', () => {
         });
       });
 
-      it('should reuse existing MisEnCause when found by RPPS', async () => {
-        vi.mocked(prisma.misEnCause.findFirst).mockResolvedValueOnce({ id: 'mec-existing' } as any);
-
-        await saveFromSirec({ ...data, situations: [{ ...data.situations[0], misEnCauseData: rppsData }] });
-
-        expect(prisma.misEnCause.create).not.toHaveBeenCalled();
-        expect(prisma.situation.create).toHaveBeenCalledWith(
-          expect.objectContaining({ data: expect.objectContaining({ misEnCauseId: 'mec-existing' }) }),
-        );
-      });
-
       it('should create empty MisEnCause when misEnCauseData is null', async () => {
         await saveFromSirec(data);
 
-        expect(prisma.misEnCause.findFirst).not.toHaveBeenCalled();
         expect(prisma.misEnCause.create).toHaveBeenCalledWith({ data: {}, select: { id: true } });
       });
     });
 
-    describe('misEnCause FINESS (find-or-create)', () => {
+    describe('misEnCause FINESS', () => {
       const finessData = {
         kind: 'finess' as const,
         finess: '750000001',
@@ -881,15 +862,9 @@ describe('sirecMigration.service.ts', () => {
         ville: 'Paris',
       };
 
-      it('should create MisEnCause with FINESS data when not found', async () => {
-        vi.mocked(prisma.misEnCause.findFirst).mockResolvedValueOnce(null);
-
+      it('should always create MisEnCause with FINESS data', async () => {
         await saveFromSirec({ ...data, situations: [{ ...data.situations[0], misEnCauseData: finessData }] });
 
-        expect(prisma.misEnCause.findFirst).toHaveBeenCalledWith({
-          where: { finess: '750000001' },
-          select: { id: true },
-        });
         expect(prisma.misEnCause.create).toHaveBeenCalledWith({
           data: {
             finess: '750000001',
@@ -902,17 +877,6 @@ describe('sirecMigration.service.ts', () => {
           select: { id: true },
         });
       });
-
-      it('should reuse existing MisEnCause when found by finess', async () => {
-        vi.mocked(prisma.misEnCause.findFirst).mockResolvedValueOnce({ id: 'mec-finess-existing' } as any);
-
-        await saveFromSirec({ ...data, situations: [{ ...data.situations[0], misEnCauseData: finessData }] });
-
-        expect(prisma.misEnCause.create).not.toHaveBeenCalled();
-        expect(prisma.situation.create).toHaveBeenCalledWith(
-          expect.objectContaining({ data: expect.objectContaining({ misEnCauseId: 'mec-finess-existing' }) }),
-        );
-      });
     });
 
     describe('LieuDeSurvenue avec données (Case B FINESS)', () => {
@@ -922,10 +886,11 @@ describe('sirecMigration.service.ts', () => {
         categCode: '355',
         categLib: 'CH',
         lieuTypeId: 'ETABLISSEMENT_SANTE',
+        lieuPrecision: 'CH',
         adresse: { label: 'Hôpital A', numero: '1', rue: 'RUE de la Paix', codePostal: '75010', ville: 'Paris' },
       };
 
-      it('should create LieuDeSurvenue with all fields and nested adresse', async () => {
+      it('should always create LieuDeSurvenue with all fields and nested adresse', async () => {
         await saveFromSirec({ ...data, situations: [{ ...data.situations[0], lieuDeSurvenueData: lieuData }] });
 
         expect(prisma.lieuDeSurvenue.create).toHaveBeenCalledWith({
@@ -935,6 +900,7 @@ describe('sirecMigration.service.ts', () => {
             categCode: '355',
             categLib: 'CH',
             lieuTypeId: 'ETABLISSEMENT_SANTE',
+            lieuPrecision: 'CH',
             adresse: {
               create: { label: 'Hôpital A', numero: '1', rue: 'RUE de la Paix', codePostal: '75010', ville: 'Paris' },
             },
