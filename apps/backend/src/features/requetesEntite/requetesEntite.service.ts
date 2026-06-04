@@ -244,7 +244,7 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
   ]);
 
   const getCpFromSituation = (s: (typeof rawData)[number]['requete']['situations'][number]) =>
-    s.lieuDeSurvenue?.codePostal || s.lieuDeSurvenue?.adresse?.codePostal || '';
+    s.lieuDeSurvenue?.adresse?.codePostal || s.lieuDeSurvenue?.codePostal || '';
 
   // Fallback when a CP isn't in InseePostal (cedex codes like 75674, unseeded DB, etc.).
   // DOM (97x) uses 3-digit dept codes; metropolitan France uses 2.
