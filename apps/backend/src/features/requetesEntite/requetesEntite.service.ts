@@ -9,6 +9,8 @@ import {
   REQUETE_ETAPE_TYPES,
   REQUETE_STATUT_TYPES,
   REQUETE_UPDATE_FIELDS,
+  type RequeteEtapeStatutType,
+  type RequeteEtapeType,
   type RequetePrioriteType,
   type RequeteStatutType,
 } from '@sirena/common/constants';
@@ -2024,7 +2026,7 @@ const groupMotifsByParent = (motifs: { motifId: string }[]): { label: string; ch
   return Array.from(grouped.values());
 };
 
-const getEtapePdfTitle = (type: string, statutId: string, nom: string): string => {
+const getEtapePdfTitle = (type: RequeteEtapeType, statutId: RequeteEtapeStatutType, nom: string): string => {
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return 'Clôture';
   if (type === REQUETE_ETAPE_TYPES.CREATION) return 'Création de la requête';
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) return "Envoi de l'accusé de réception";
@@ -2033,7 +2035,7 @@ const getEtapePdfTitle = (type: string, statutId: string, nom: string): string =
 };
 
 const buildEtapeCreatorLabel = (
-  type: string,
+  type: RequeteEtapeType,
   createdBy: { prenom: string; nom: string } | null,
   requeteCreatedBy: { prenom: string; nom: string } | null,
 ): string | null => {
@@ -2085,7 +2087,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
             include: {
               author: { select: { prenom: true, nom: true } },
               uploadedFiles: {
-                select: { id: true, fileName: true, metadata: true },
+                select: { fileName: true, metadata: true },
               },
             },
           },
@@ -2334,13 +2336,18 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
     pdf.section('Étapes de traitement');
 
     for (const etape of etapes) {
-      const etapeTitle = getEtapePdfTitle(etape.type, etape.statutId, etape.nom);
-      pdf.subsection(etapeTitle);
+      const etapeTitle = getEtapePdfTitle(
+        etape.type as RequeteEtapeType,
+        etape.statutId as RequeteEtapeStatutType,
+        etape.nom,
+      );
 
-      pdf.field('Statut', etape.statut?.label || etape.statutId);
-      pdf.field('Date', formatDateFr(etape.createdAt));
+      pdf
+        .subsection(etapeTitle)
+        .field('Statut', etape.statut?.label || etape.statutId)
+        .field('Date', formatDateFr(etape.createdAt));
 
-      const creatorLabel = buildEtapeCreatorLabel(etape.type, etape.createdBy, requete.createdBy ?? null);
+      const creatorLabel = buildEtapeCreatorLabel(etape.type as RequeteEtapeType, etape.createdBy, requete.createdBy);
       if (creatorLabel) pdf.paragraph(creatorLabel);
 
       if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && etape.clotureReason.length > 0) {
