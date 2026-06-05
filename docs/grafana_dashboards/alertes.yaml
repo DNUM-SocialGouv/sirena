@@ -1,0 +1,381 @@
+apiVersion: 1
+groups:
+    - orgId: 79
+      name: default
+      folder: Sirena
+      interval: 2m
+      rules:
+        - uid: cf9xomiyzzeo0f
+          title: KubernetesPodCrashLooping
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: feqx8avvem5mob
+              model:
+                editorMode: code
+                expr: increase(kube_pod_container_status_restarts_total[1m]) > 3
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 3
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: OK
+          execErrState: OK
+          for: 2m
+          isPaused: false
+          notification_settings:
+            receiver: sirena-slack
+        - uid: ff9xoqqq0gjr4d
+          title: ContainerHighCpuUtilization
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: feqx8avvem5mob
+              model:
+                editorMode: code
+                expr: (sum(rate(container_cpu_usage_seconds_total{container!="", zone="prod"}[5m])) by (pod, container, namespace) / sum(container_spec_cpu_quota{container!="", zone="prod"}/container_spec_cpu_period{container!="", zone="prod"}) by (pod, container,namespace) * 100)
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 80
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: OK
+          execErrState: OK
+          for: 2m
+          isPaused: false
+          notification_settings:
+            receiver: sirena-slack
+        - uid: ff9xox9lxoq9sb
+          title: ContainerHighMemoryUsage
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: feqx8avvem5mob
+              model:
+                editorMode: code
+                expr: (sum(container_memory_working_set_bytes{name!="",zone="prod"}) BY (container, pod, namespace) / sum(container_spec_memory_limit_bytes{zone="prod"} > 0) BY (container, pod, namespace) * 100)
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 80
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: OK
+          execErrState: OK
+          for: 2m
+          isPaused: true
+          notification_settings:
+            receiver: sirena-slack
+        - uid: af9xp1l17qps0f
+          title: KubernetesContainerOomKiller
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: feqx8avvem5mob
+              model:
+                editorMode: code
+                expr: ' (kube_pod_container_status_restarts_total{zone="prod"} - kube_pod_container_status_restarts_total{zone="prod"} offset 10m >= 1) and ignoring (reason) min_over_time(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[10m])'
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 1
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: OK
+          execErrState: OK
+          for: 2m
+          isPaused: false
+          notification_settings:
+            receiver: sirena-slack
+        - uid: afh70u1j7deyof
+          title: Cron job failed (validation)
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: feqx8avvem5mob
+              model:
+                editorMode: code
+                expr: avg(sirena_cron_job_last_run_success{namespace=~"org-sdpsn-ws-sirena-validation", app_type=~"worker"})
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 1
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          dashboardUid: gatvjzc
+          panelId: 49
+          noDataState: NoData
+          execErrState: Error
+          for: 10m
+          annotations:
+            __dashboardUid__: gatvjzc
+            __panelId__: "49"
+            description: |-
+                Vérifier si ce n'est pas une régression, avant que ça rejoigne la prod !
+                Dashboard : https://grafana.atlas.fabrique.social.gouv.fr/d/gatvjzc/worker-monitoring?var-interval=1m&orgId=79&from=now-1h&to=now&timezone=Europe%2FParis&var-namespace=org-sdpsn-ws-sirena-validation
+                Logs : https://grafana.atlas.fabrique.social.gouv.fr/explore?schemaVersion=1&panes=%7B%22t75%22%3A%7B%22datasource%22%3A%22eeqx8awbm9ds0f%22%2C%22queries%22%3A%5B%7B%22datasource%22%3A%7B%22type%22%3A%22loki%22%2C%22uid%22%3A%22eeqx8awbm9ds0f%22%7D%2C%22direction%22%3A%22backward%22%2C%22editorMode%22%3A%22code%22%2C%22expr%22%3A%22%7Bnamespace%3D~%5C%22org-sdpsn-ws-sirena-validation%5C%22%2C%20service_name%3D~%5C%22worker%5C%22%7D%22%2C%22queryType%22%3A%22range%22%2C%22refId%22%3A%22A%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%2C%22compact%22%3Afalse%7D%7D&orgId=79
+            summary: Un cron job a échoué (sur validation)
+          isPaused: false
+          notification_settings:
+            receiver: sirena-devalerts
+        - uid: dfhasp1dhvksgc
+          title: Cron job failed (production)
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: feqx8avvem5mob
+              model:
+                editorMode: code
+                expr: avg(sirena_cron_job_last_run_success{namespace=~"org-sdpsn-ws-sirena-production", app_type=~"worker"})
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 1
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          dashboardUid: gatvjzc
+          panelId: 49
+          noDataState: NoData
+          execErrState: Error
+          for: 10m
+          annotations:
+            __dashboardUid__: gatvjzc
+            __panelId__: "49"
+            description: |-
+                Dashboard : https://grafana.atlas.fabrique.social.gouv.fr/d/gatvjzc/worker-monitoring?var-interval=1m&orgId=79&from=now-1h&to=now&timezone=Europe%2FParis&var-namespace=org-sdpsn-ws-sirena-production
+                Logs : https://grafana.atlas.fabrique.social.gouv.fr/explore?schemaVersion=1&panes=%7B%22q0s%22%3A%7B%22datasource%22%3A%22eeqx8awbm9ds0f%22%2C%22queries%22%3A%5B%7B%22datasource%22%3A%7B%22type%22%3A%22loki%22%2C%22uid%22%3A%22eeqx8awbm9ds0f%22%7D%2C%22direction%22%3A%22backward%22%2C%22editorMode%22%3A%22code%22%2C%22expr%22%3A%22%7Bnamespace%3D~%5C%22org-sdpsn-ws-sirena-production%5C%22%2C%20service_name%3D~%5C%22worker%5C%22%7D%22%2C%22queryType%22%3A%22range%22%2C%22refId%22%3A%22A%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%2C%22compact%22%3Afalse%7D%7D&orgId=79
+            summary: "\U0001F6A8 Un cron job a échoué (en production)"
+          isPaused: false
+          notification_settings:
+            receiver: sirena-devalerts
+        - uid: cfo4b2a95itq8b
+          title: Crash containers
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: feqx8avvem5mob
+              model:
+                editorMode: code
+                expr: |-
+                    kube_pod_container_status_waiting_reason{
+                      namespace=~"org-sdpsn-ws-sirena-integration|org-sdpsn-ws-sirena-validation|org-sdpsn-ws-sirena-formation|org-sdpsn-ws-sirena-preproduction|org-sdpsn-ws-sirena-production",
+                      reason=~"CrashLoopBackOff|ImagePullBackOff|ErrImagePull|CreateContainerConfigError|CreateContainerError|InvalidImageName"
+                    } == 1
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          dashboardUid: gakm5rr
+          panelId: 2
+          noDataState: NoData
+          execErrState: Error
+          annotations:
+            __dashboardUid__: gakm5rr
+            __panelId__: "2"
+            summary: Un container est en erreur
+          isPaused: false
+          notification_settings:
+            receiver: sirena-devalerts
+            group_by:
+                - '...'
