@@ -75,11 +75,27 @@ vi.mock('../transco/misEnCauseRpps.transco.js', () => ({
   SIREC_TYPE_RPPS: 65,
 }));
 
+vi.mock('../transco/misEnCauseAutre.transco.js', () => ({
+  SIREC_TYPE_AUTRE: 67,
+}));
+
+vi.mock('./sirecMigration.autre.transformer.js', () => ({
+  transformSirecAutre: vi.fn(() => ({
+    kind: 'autre',
+    misEnCauseTypeId: 'AUTRE_PROFESSIONNEL',
+    misEnCauseTypePrecisionId: 'ACUPUNCTEUR',
+    autrePrecision: 'Type de mis en cause : Acuponcteur\nNom / structure : Dr Test\nAdresse : Non renseigné',
+  })),
+}));
+
 const makeMisEnCause = (
   overrides: Partial<{
     id_data: number;
     type: number | null;
     identifiant: number | null;
+    autresMcType: number | null;
+    label: string | null;
+    adresse: string | null;
     groupIds: number[];
     rppsData: SirecRppsData | null;
     finessData: SirecFinessData | null;
@@ -88,6 +104,9 @@ const makeMisEnCause = (
   id_data: 10,
   type: null,
   identifiant: null,
+  autresMcType: null,
+  label: null,
+  adresse: null,
   groupIds: [],
   rppsData: null,
   finessData: null,
@@ -252,6 +271,21 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
 
     it('should set lieuDeSurvenueData null for non-FINESS/RPPS type', () => {
       const result = transformSirecMisEnCauseSituations(makeData([], [makeMisEnCause({ id_data: 10, type: 12 })]), []);
+
+      expect(result[0].lieuDeSurvenueData).toBeNull();
+    });
+
+    it('should set misEnCauseData with kind:autre when type is 67', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: 67, autresMcType: 120, label: 'Dr Test', adresse: null })]),
+        [],
+      );
+
+      expect(result[0].misEnCauseData?.kind).toBe('autre');
+    });
+
+    it('should set lieuDeSurvenueData null for type 67', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [makeMisEnCause({ id_data: 10, type: 67 })]), []);
 
       expect(result[0].lieuDeSurvenueData).toBeNull();
     });

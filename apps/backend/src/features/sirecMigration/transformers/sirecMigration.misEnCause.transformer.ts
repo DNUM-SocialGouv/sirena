@@ -1,8 +1,10 @@
 import type { SirecMisEnCause, SirecReclamationData } from '../sirecMigration.repository.js';
 import { SIREC_TYPE_FINESS } from '../transco/finessCategetab.transco.js';
+import { SIREC_TYPE_AUTRE } from '../transco/misEnCauseAutre.transco.js';
 import { SIREC_TYPE_RPPS } from '../transco/misEnCauseRpps.transco.js';
 import { SirecDataError } from '../transco/sirecTransco.error.js';
 import { computeSituationEntiteIds } from './sirecMigration.affectation.transformer.js';
+import { transformSirecAutre } from './sirecMigration.autre.transformer.js';
 import {
   type SirenaFinessResult,
   type SirenaLieuDeSurvenueData,
@@ -38,6 +40,10 @@ function resolveMisEnCause(misEnCause: SirecMisEnCause): MisEnCauseResolution {
     }
     const result: SirenaFinessResult = transformSirecFiness(misEnCause.finessData);
     return { misEnCauseData: result.misEnCauseData, lieuDeSurvenueData: result.lieuDeSurvenueData };
+  }
+
+  if (misEnCause.type === SIREC_TYPE_AUTRE) {
+    return { misEnCauseData: transformSirecAutre(misEnCause), lieuDeSurvenueData: null };
   }
 
   return { misEnCauseData: null, lieuDeSurvenueData: null };
