@@ -303,6 +303,9 @@ export const AppEnvSchema = z.object({
     .string()
     .optional()
     .default('')
+    .refine((val) => val === '' || val.length >= 32, {
+      message: 'METABASE_SECRET_KEY doit faire au moins 32 caractères',
+    })
     .describe("Clé secrète Metabase utilisée pour signer les JWT d'embedding signé"),
   METABASE_DASHBOARD_ID: z
     .string()

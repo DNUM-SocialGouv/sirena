@@ -6,5 +6,6 @@ export const useStatisticsDashboard = (enabled = true) =>
     queryKey: ['statistics', 'dashboard'],
     queryFn: fetchStatisticsDashboard,
     enabled,
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    retry: 1,
   });

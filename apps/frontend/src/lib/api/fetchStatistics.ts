@@ -12,5 +12,5 @@ export async function fetchStatisticsDashboard(): Promise<{ cards: StatisticsCar
   const res = await client.statistics.dashboard.$get();
   await handleRequestErrors(res);
   const { data } = await res.json();
-  return data as { cards: StatisticsCard[] };
+  return data;
 }

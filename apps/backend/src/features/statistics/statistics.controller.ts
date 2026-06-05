@@ -1,14 +1,12 @@
 import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
 import { ERROR_KIND } from '@sirena/common/constants';
-import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { getEntiteById } from '../entites/entites.service.js';
-import { getStatisticsCardDataRoute, getStatisticsDashboardRoute } from './statistics.route.js';
-import { StatisticsCardParamsSchema } from './statistics.schema.js';
-import { fetchCardData, fetchDashboardCardsData } from './statistics.service.js';
+import { getStatisticsDashboardRoute } from './statistics.route.js';
+import { fetchDashboardCardsData } from './statistics.service.js';
 
 const app = factoryWithLogs
   .createApp()
@@ -27,17 +25,6 @@ const app = factoryWithLogs
     }
     return next();
   })
-
-  .get(
-    '/cards/:cardId/data',
-    getStatisticsCardDataRoute,
-    zValidator('param', StatisticsCardParamsSchema),
-    async (c) => {
-      const { cardId } = c.req.valid('param');
-      const data = await fetchCardData(cardId);
-      return c.json({ data });
-    },
-  )
 
   .get('/dashboard', getStatisticsDashboardRoute, async (c) => {
     const logger = c.get('logger');

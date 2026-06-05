@@ -40,75 +40,6 @@ describe('statistics.service.ts', () => {
     vi.resetModules();
   });
 
-  describe('signMetabaseCardToken', () => {
-    it('signs a JWT with the card ID and a future expiry', async () => {
-      const { signMetabaseCardToken } = await import('./statistics.service.js');
-      const token = signMetabaseCardToken(42, 'test-secret-key');
-
-      const decoded = jwt.verify(token, 'test-secret-key') as {
-        resource: { question: number };
-        params: Record<string, unknown>;
-        exp: number;
-      };
-
-      expect(decoded.resource).toEqual({ question: 42 });
-      expect(decoded.params).toEqual({});
-      expect(decoded.exp).toBeGreaterThan(Math.floor(Date.now() / 1000));
-    });
-  });
-
-  describe('fetchCardData', () => {
-    it('returns the JSON array returned by Metabase', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => [{ count: 12 }, { count: 7 }],
-      });
-
-      const { fetchCardData } = await import('./statistics.service.js');
-      const result = await fetchCardData(42);
-
-      expect(result).toEqual([{ count: 12 }, { count: 7 }]);
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      const [calledUrl, calledInit] = fetchMock.mock.calls[0];
-      expect(calledUrl).toMatch(/^https:\/\/metabase\.example\.com\/api\/embed\/card\/[^/]+\/query\/json$/);
-      expect((calledInit as RequestInit).method).toBe('GET');
-    });
-
-    it('throws 503 when Metabase responds non-OK', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-      });
-
-      const { fetchCardData } = await import('./statistics.service.js');
-      await expect(fetchCardData(42)).rejects.toThrow(/^503:/);
-    });
-
-    it('throws 503 when Metabase returns a non-array payload', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({ unexpected: 'shape' }),
-      });
-
-      const { fetchCardData } = await import('./statistics.service.js');
-      await expect(fetchCardData(42)).rejects.toThrow(/^503:/);
-    });
-
-    it('throws 503 when Metabase env vars are missing', async () => {
-      vi.resetModules();
-      vi.doMock('../../config/env.js', () => ({
-        envVars: { METABASE_SITE_URL: '', METABASE_SECRET_KEY: '', METABASE_DASHBOARD_ID: '' },
-      }));
-
-      const { fetchCardData } = await import('./statistics.service.js');
-      await expect(fetchCardData(42)).rejects.toThrow(/^503:Metabase is not configured/);
-      expect(fetchMock).not.toHaveBeenCalled();
-    });
-  });
-
   describe('signMetabaseDashboardToken', () => {
     it('signs a JWT with the dashboard ID and a future expiry', async () => {
       const { signMetabaseDashboardToken } = await import('./statistics.service.js');
@@ -217,6 +148,65 @@ describe('statistics.service.ts', () => {
 
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       await expect(fetchDashboardCardsData()).rejects.toThrow(/^503:/);
+    });
+
+    it('degrades gracefully when a single dashcard fetch fails', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            dashcards: [
+              { id: 100, card_id: 42, card: { id: 42, name: 'OK' } },
+              { id: 101, card_id: 43, card: { id: 43, name: 'KO' } },
+            ],
+          }),
+        })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ total: 12 }] })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error',
+          text: async () => 'boom',
+        });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      const result = await fetchDashboardCardsData();
+
+      expect(result).toEqual([
+        { id: 42, dashcardId: 100, name: 'OK', data: [{ total: 12 }] },
+        { id: 43, dashcardId: 101, name: 'KO', data: [] },
+      ]);
+    });
+
+    it('returns empty data for a dashcard whose payload is not an array', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Card' } }] }),
+        })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ unexpected: 'shape' }) });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      const result = await fetchDashboardCardsData();
+
+      expect(result).toEqual([{ id: 42, dashcardId: 100, name: 'Card', data: [] }]);
+    });
+
+    it('falls back to a generated name when the card has no name', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ dashcards: [{ id: 100, card_id: 42, card: { id: 42 } }] }),
+        })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 1 }] });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      const result = await fetchDashboardCardsData();
+
+      expect(result).toEqual([{ id: 42, dashcardId: 100, name: 'Carte 42', data: [{ k: 1 }] }]);
     });
 
     it('forwards params into the dashboard JWT so they reach Metabase locked filters', async () => {
