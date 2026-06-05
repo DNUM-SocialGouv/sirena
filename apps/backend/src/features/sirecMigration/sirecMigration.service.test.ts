@@ -915,5 +915,47 @@ describe('sirecMigration.service.ts', () => {
         expect(prisma.lieuDeSurvenue.create).toHaveBeenCalledWith({ data: {}, select: { id: true } });
       });
     });
+
+    describe('misEnCause AUTRE', () => {
+      const autreDataWithType = {
+        kind: 'autre' as const,
+        misEnCauseTypeId: 'AUTRE_PROFESSIONNEL',
+        misEnCauseTypePrecisionId: 'ACUPUNCTEUR',
+        autrePrecision: 'Type de mis en cause : Acuponcteur\nNom / structure : Dr Test\nAdresse : Non renseigné',
+      };
+
+      const autreDataNoType = {
+        kind: 'autre' as const,
+        misEnCauseTypeId: null,
+        misEnCauseTypePrecisionId: null,
+        autrePrecision: 'Type de mis en cause : Autre\nNom / structure : Non renseigné\nAdresse : Non renseigné',
+      };
+
+      it('should create MisEnCause with type, precision and autrePrecision', async () => {
+        await saveFromSirec({ ...data, situations: [{ ...data.situations[0], misEnCauseData: autreDataWithType }] });
+
+        expect(prisma.misEnCause.create).toHaveBeenCalledWith({
+          data: {
+            misEnCauseTypeId: 'AUTRE_PROFESSIONNEL',
+            misEnCauseTypePrecisionId: 'ACUPUNCTEUR',
+            autrePrecision: 'Type de mis en cause : Acuponcteur\nNom / structure : Dr Test\nAdresse : Non renseigné',
+          },
+          select: { id: true },
+        });
+      });
+
+      it('should create MisEnCause without type and precision when both are null', async () => {
+        await saveFromSirec({ ...data, situations: [{ ...data.situations[0], misEnCauseData: autreDataNoType }] });
+
+        expect(prisma.misEnCause.create).toHaveBeenCalledWith({
+          data: {
+            misEnCauseTypeId: undefined,
+            misEnCauseTypePrecisionId: undefined,
+            autrePrecision: 'Type de mis en cause : Autre\nNom / structure : Non renseigné\nAdresse : Non renseigné',
+          },
+          select: { id: true },
+        });
+      });
+    });
   });
 });

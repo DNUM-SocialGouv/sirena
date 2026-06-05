@@ -47,7 +47,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
             select: { id: true },
           });
           misEnCauseId = created.id;
-        } else {
+        } else if (mec.kind === 'finess') {
           const created = await tx.misEnCause.create({
             data: {
               finess: mec.finess,
@@ -56,6 +56,16 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
               nomService: mec.nomService,
               codePostal: mec.codePostal,
               ville: mec.ville,
+            },
+            select: { id: true },
+          });
+          misEnCauseId = created.id;
+        } else {
+          const created = await tx.misEnCause.create({
+            data: {
+              misEnCauseTypeId: mec.misEnCauseTypeId ?? undefined,
+              misEnCauseTypePrecisionId: mec.misEnCauseTypePrecisionId ?? undefined,
+              autrePrecision: mec.autrePrecision,
             },
             select: { id: true },
           });

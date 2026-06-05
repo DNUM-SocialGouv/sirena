@@ -104,6 +104,9 @@ export interface SirecMisEnCause {
   id_data: number;
   type: number | null;
   identifiant: number | null;
+  autresMcType: number | null;
+  label: string | null;
+  adresse: string | null;
   groupIds: number[];
   rppsData: SirecRppsData | null;
   finessData: SirecFinessData | null;
@@ -180,6 +183,9 @@ type MisEnCauseRow = {
   id_data: number;
   type: number | null;
   identifiant: number | null;
+  autres_mc_type: number | null;
+  label: string | null;
+  adresse: string | null;
   id_group: number | null;
   rpps_id_data: number | null;
   rpps_rpps: string | null;
@@ -203,7 +209,7 @@ type MisEnCauseRow = {
 
 export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEnCause[]> {
   const [rows] = await mysqlPool.query<MisEnCauseRow[]>(
-    `SELECT m.id_data, m.type, m.identifiant, mcg.id_group,
+    `SELECT m.id_data, m.type, m.identifiant, m.autres_mc_type, m.label, m.adresse, mcg.id_group,
             r.id_data AS rpps_id_data, r.rpps AS rpps_rpps, r.civilite AS rpps_civilite, r.nom AS rpps_nom,
             r.prenom AS rpps_prenom, r.code_postal AS rpps_code_postal,
             r.commune AS rpps_commune, r.libelle_prof AS rpps_libelle_prof,
@@ -254,6 +260,9 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
         id_data: row.id_data,
         type: row.type,
         identifiant: row.identifiant,
+        autresMcType: row.autres_mc_type,
+        label: row.label,
+        adresse: row.adresse,
         groupIds: [],
         rppsData,
         finessData,
