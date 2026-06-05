@@ -69,6 +69,7 @@ describe('sirecMigration.transformer.ts', () => {
       date_rep_plaignant: null as Date | null,
       reponse_plaignant_precision: null as string | null,
       sans_mc: null as number | null,
+      observation: null as string | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],

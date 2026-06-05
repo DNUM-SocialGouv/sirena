@@ -10,6 +10,7 @@ export interface SirenaFinessMisEnCauseData {
   nomService?: string;
   codePostal?: string | null;
   ville?: string | null;
+  autrePrecision?: string;
 }
 
 export interface SirenaLieuDeSurvenueData {

@@ -43,6 +43,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
               ville: mec.ville,
               misEnCauseTypeId: mec.misEnCauseTypeId,
               misEnCauseTypePrecisionId: mec.misEnCauseTypePrecisionId,
+              ...(mec.autrePrecision ? { autrePrecision: mec.autrePrecision } : {}),
             },
             select: { id: true },
           });
@@ -56,6 +57,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
               nomService: mec.nomService,
               codePostal: mec.codePostal,
               ville: mec.ville,
+              ...(mec.autrePrecision ? { autrePrecision: mec.autrePrecision } : {}),
             },
             select: { id: true },
           });

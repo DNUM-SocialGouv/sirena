@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <test assertions on optional fields> */
 import { describe, expect, it, vi } from 'vitest';
 import type { SirecFinessData, SirecRppsData } from '../sirecMigration.repository.js';
 import { SirecDataError, SirecTranscoError } from '../transco/sirecTransco.error.js';
@@ -134,12 +135,14 @@ const makeData = (
   groupIds: number[] = [],
   misEnCauses: ReturnType<typeof makeMisEnCause>[] = [],
   sansMc: number | null = null,
+  observation: string | null = null,
 ) => ({
   reclamation: {
     id_data: 42,
     service_recepteur_niv1: 693 as number | null,
     service_gestionnaire: null as number | null,
     sans_mc: sansMc,
+    observation,
   },
   motifsDeclaresIdDicos: [],
   groupIds,
@@ -373,6 +376,81 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
 
       expect(result[0].misEnCauseData).not.toBeNull();
       expect(result[1].misEnCauseData).toBeNull();
+    });
+  });
+
+  describe('observation', () => {
+    it('should not set autrePrecision on mis en cause when observation is null', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })],
+          null,
+          null,
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBeUndefined();
+    });
+
+    it('should set autrePrecision with observation prefix on RPPS mis en cause', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })],
+          null,
+          'Texte obs',
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBe('Observations : Texte obs');
+    });
+
+    it('should append observation to existing autrePrecision for type autre', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: 67 })], null, 'Texte obs'),
+        [],
+      );
+
+      const autrePrecision = (result[0].misEnCauseData as any)?.autrePrecision as string;
+      expect(autrePrecision).toContain('Observations : Texte obs');
+      expect(autrePrecision.indexOf('Observations')).toBeGreaterThan(0);
+    });
+
+    it('should append observation to "Sans mis en cause" when sans_mc is true', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [], 1, 'Texte obs'), []);
+
+      const autrePrecision = (result[0].misEnCauseData as any)?.autrePrecision as string;
+      expect(autrePrecision).toBe('Sans mis en cause\nObservations : Texte obs');
+    });
+
+    it('should not set autrePrecision for null misEnCauseData even with observation', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: null })], null, 'Texte obs'),
+        [],
+      );
+
+      expect(result[0].misEnCauseData).toBeNull();
+    });
+
+    it('should apply observation to each mis en cause when multiple', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [
+            makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData }),
+            makeMisEnCause({ id_data: 20, type: 65, identifiant: 12345678901, rppsData: mockRppsData }),
+          ],
+          null,
+          'Obs commune',
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBe('Observations : Obs commune');
+      expect((result[1].misEnCauseData as any)?.autrePrecision).toBe('Observations : Obs commune');
     });
   });
 });
