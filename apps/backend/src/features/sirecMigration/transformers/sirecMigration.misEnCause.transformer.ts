@@ -25,6 +25,15 @@ const SANS_MEC_DATA = {
   autrePrecision: 'Sans mis en cause',
 };
 
+function applyObservation(data: SirenaMisEnCauseData | null, observation: string | null): SirenaMisEnCauseData | null {
+  if (!observation || data === null) return data;
+  const suffix = `Observations : ${observation}`;
+  if (data.kind === 'autre') {
+    return { ...data, autrePrecision: data.autrePrecision ? `${data.autrePrecision}\n${suffix}` : suffix };
+  }
+  return { ...data, autrePrecision: suffix };
+}
+
 function resolveSansMc(sansMc: number | null): SirenaMisEnCauseData | null {
   if (sansMc === null) return null;
   const value = SIREC_BOOLEAN_TRANSCO[sansMc];
@@ -73,7 +82,7 @@ export function transformSirecMisEnCauseSituations(
   if (misEnCauses.length === 0) {
     const sansMcData = resolveSansMc(reclamation.sans_mc);
     const baseSituationNoMec = transformSirecSituation(sirecData, situationEntiteIds);
-    return [{ ...baseSituationNoMec, misEnCauseData: sansMcData }];
+    return [{ ...baseSituationNoMec, misEnCauseData: applyObservation(sansMcData, reclamation.observation) }];
   }
 
   const baseSituation = transformSirecSituation(sirecData, []);
@@ -91,6 +100,11 @@ export function transformSirecMisEnCauseSituations(
     const misEnCauseEntiteIds = computeSituationEntiteIds(misEnCause.groupIds);
     const entiteIds = [...new Set([...orphanEntiteIds, ...misEnCauseEntiteIds])];
     const { misEnCauseData, lieuDeSurvenueData } = resolveMisEnCause(misEnCause);
-    return { ...baseSituation, entiteIds, misEnCauseData, lieuDeSurvenueData };
+    return {
+      ...baseSituation,
+      entiteIds,
+      misEnCauseData: applyObservation(misEnCauseData, reclamation.observation),
+      lieuDeSurvenueData,
+    };
   });
 }

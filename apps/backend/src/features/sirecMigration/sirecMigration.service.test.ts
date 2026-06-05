@@ -957,5 +957,57 @@ describe('sirecMigration.service.ts', () => {
         });
       });
     });
+
+    describe('misEnCause observation (autrePrecision sur RPPS/FINESS)', () => {
+      const rppsWithObs = {
+        kind: 'rpps' as const,
+        rpps: '12345678901',
+        civilite: 'M',
+        nom: 'Dupont',
+        prenom: 'Jean',
+        codePostal: '76000',
+        ville: 'Rouen',
+        misEnCauseTypeId: 'PROFESSIONNEL_SANTE',
+        misEnCauseTypePrecisionId: 'PROF_SANTE',
+        autrePrecision: 'Observations : Texte important',
+      };
+
+      it('should include autrePrecision in RPPS MisEnCause when set', async () => {
+        await saveFromSirec({ ...data, situations: [{ ...data.situations[0], misEnCauseData: rppsWithObs }] });
+
+        expect(prisma.misEnCause.create).toHaveBeenCalledWith({
+          data: {
+            rpps: '12345678901',
+            civilite: 'M',
+            nom: 'Dupont',
+            prenom: 'Jean',
+            codePostal: '76000',
+            ville: 'Rouen',
+            misEnCauseTypeId: 'PROFESSIONNEL_SANTE',
+            misEnCauseTypePrecisionId: 'PROF_SANTE',
+            autrePrecision: 'Observations : Texte important',
+          },
+          select: { id: true },
+        });
+      });
+
+      it('should not include autrePrecision in RPPS MisEnCause when absent', async () => {
+        const rppsData = {
+          kind: 'rpps' as const,
+          rpps: '12345678901',
+          civilite: 'M',
+          nom: 'Dupont',
+          prenom: 'Jean',
+          codePostal: '76000',
+          ville: 'Rouen',
+          misEnCauseTypeId: 'PROFESSIONNEL_SANTE',
+          misEnCauseTypePrecisionId: 'PROF_SANTE',
+        };
+        await saveFromSirec({ ...data, situations: [{ ...data.situations[0], misEnCauseData: rppsData }] });
+
+        const call = vi.mocked(prisma.misEnCause.create).mock.calls[0][0];
+        expect(call.data).not.toHaveProperty('autrePrecision');
+      });
+    });
   });
 });

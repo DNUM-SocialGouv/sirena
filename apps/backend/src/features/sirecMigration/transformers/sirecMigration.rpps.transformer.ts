@@ -11,6 +11,7 @@ export interface SirenaRppsMisEnCauseData {
   ville: string | null;
   misEnCauseTypeId: string;
   misEnCauseTypePrecisionId: string;
+  autrePrecision?: string;
 }
 
 export function transformSirecRpps(rppsData: SirecRppsData): SirenaRppsMisEnCauseData {
