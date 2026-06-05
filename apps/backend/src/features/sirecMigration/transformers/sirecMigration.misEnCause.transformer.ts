@@ -1,8 +1,9 @@
 import type { SirecMisEnCause, SirecReclamationData } from '../sirecMigration.repository.js';
+import { SIREC_BOOLEAN_TRANSCO } from '../transco/dictionnaire.transco.js';
 import { SIREC_TYPE_FINESS } from '../transco/finessCategetab.transco.js';
 import { SIREC_TYPE_AUTRE } from '../transco/misEnCauseAutre.transco.js';
 import { SIREC_TYPE_RPPS } from '../transco/misEnCauseRpps.transco.js';
-import { SirecDataError } from '../transco/sirecTransco.error.js';
+import { SirecDataError, SirecTranscoError } from '../transco/sirecTransco.error.js';
 import { computeSituationEntiteIds } from './sirecMigration.affectation.transformer.js';
 import { transformSirecAutre } from './sirecMigration.autre.transformer.js';
 import {
@@ -16,6 +17,20 @@ import {
   type SirenaSituationData,
   transformSirecSituation,
 } from './sirecMigration.situation.transformer.js';
+
+const SANS_MEC_DATA = {
+  kind: 'autre' as const,
+  misEnCauseTypeId: null,
+  misEnCauseTypePrecisionId: null,
+  autrePrecision: 'Sans mis en cause',
+};
+
+function resolveSansMc(sansMc: number | null): SirenaMisEnCauseData | null {
+  if (sansMc === null) return null;
+  const value = SIREC_BOOLEAN_TRANSCO[sansMc];
+  if (value === undefined) throw new SirecTranscoError(sansMc, 'sans_mc');
+  return value ? SANS_MEC_DATA : null;
+}
 
 interface MisEnCauseResolution {
   misEnCauseData: SirenaMisEnCauseData | null;
@@ -56,7 +71,9 @@ export function transformSirecMisEnCauseSituations(
   const { misEnCauses, reclamation, groupIds } = sirecData;
 
   if (misEnCauses.length === 0) {
-    return [transformSirecSituation(sirecData, situationEntiteIds)];
+    const sansMcData = resolveSansMc(reclamation.sans_mc);
+    const baseSituationNoMec = transformSirecSituation(sirecData, situationEntiteIds);
+    return [{ ...baseSituationNoMec, misEnCauseData: sansMcData }];
   }
 
   const baseSituation = transformSirecSituation(sirecData, []);

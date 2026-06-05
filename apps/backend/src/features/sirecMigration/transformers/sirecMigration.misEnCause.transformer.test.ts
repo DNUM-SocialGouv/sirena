@@ -67,6 +67,10 @@ vi.mock('./sirecMigration.finess.transformer.js', () => ({
   })),
 }));
 
+vi.mock('../transco/dictionnaire.transco.js', () => ({
+  SIREC_BOOLEAN_TRANSCO: { 1: true, 112: true, 0: false, 111: false },
+}));
+
 vi.mock('../transco/finessCategetab.transco.js', () => ({
   SIREC_TYPE_FINESS: 64,
 }));
@@ -126,11 +130,16 @@ const mockFinessData: SirecFinessData = {
   voie: 'de la Paix',
 };
 
-const makeData = (groupIds: number[] = [], misEnCauses: ReturnType<typeof makeMisEnCause>[] = []) => ({
+const makeData = (
+  groupIds: number[] = [],
+  misEnCauses: ReturnType<typeof makeMisEnCause>[] = [],
+  sansMc: number | null = null,
+) => ({
   reclamation: {
     id_data: 42,
     service_recepteur_niv1: 693 as number | null,
     service_gestionnaire: null as number | null,
+    sans_mc: sansMc,
   },
   motifsDeclaresIdDicos: [],
   groupIds,
@@ -160,8 +169,41 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
       expect(result[0].entiteIds).toEqual(['ars-normandie']);
     });
 
-    it('should return misEnCauseData null in the single situation', () => {
-      const result = transformSirecMisEnCauseSituations(makeData(), []);
+    it('should return misEnCauseData null when sans_mc is null', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [], null), []);
+
+      expect(result[0].misEnCauseData).toBeNull();
+    });
+
+    it('should return misEnCauseData null when sans_mc is false (0)', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [], 0), []);
+
+      expect(result[0].misEnCauseData).toBeNull();
+    });
+
+    it('should return "Sans mis en cause" misEnCauseData when sans_mc is true (1)', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [], 1), []);
+
+      expect(result[0].misEnCauseData).toEqual({
+        kind: 'autre',
+        misEnCauseTypeId: null,
+        misEnCauseTypePrecisionId: null,
+        autrePrecision: 'Sans mis en cause',
+      });
+    });
+
+    it('should return "Sans mis en cause" misEnCauseData when sans_mc is 112', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [], 112), []);
+
+      expect(result[0].misEnCauseData?.autrePrecision).toBe('Sans mis en cause');
+    });
+
+    it('should throw SirecTranscoError when sans_mc has an unknown value', () => {
+      expect(() => transformSirecMisEnCauseSituations(makeData([], [], 999), [])).toThrow(SirecTranscoError);
+    });
+
+    it('should ignore sans_mc when mis en cause records are present', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [makeMisEnCause({ id_data: 10 })], 1), []);
 
       expect(result[0].misEnCauseData).toBeNull();
     });
