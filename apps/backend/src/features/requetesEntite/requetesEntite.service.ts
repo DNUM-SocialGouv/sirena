@@ -110,6 +110,7 @@ const SITUATION_INCLUDE_FULL = {
       entite: true,
     },
   },
+  domainesFonctionnels: true,
 };
 
 type SituationWithIncludes = Prisma.SituationGetPayload<{
@@ -1237,6 +1238,9 @@ const updateExistingSituation = async (
       lieuDeSurvenue: { update: buildLieuDeSurvenueUpdate(situationData.lieuDeSurvenue) },
       misEnCause: { update: buildMisEnCauseUpdate(situationData.misEnCause) },
       demarchesEngagees: { update: buildDemarchesEngageesUpdate(situationData.demarchesEngagees) },
+      domainesFonctionnels: situationData.domainesFonctionnels
+        ? { connect: { id: situationData.domainesFonctionnels } }
+        : { disconnect: true },
     },
   });
 
@@ -1288,6 +1292,9 @@ const createNewSituation = async (
     data: {
       ...situationCreateData,
       requete: { connect: { id: requeteId } },
+      domainesFonctionnels: situationData.domainesFonctionnels
+        ? { connect: { id: situationData.domainesFonctionnels } }
+        : undefined,
     },
   });
 
@@ -2273,6 +2280,10 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       if (fichiersSituation.length > 0) {
         pdf.subsection('Pièces jointes de la situation').list(fichiersSituation.map(getOriginalFileName));
       }
+    }
+
+    if (situation.domainesFonctionnels?.label) {
+      pdf.field('Domaine fonctionnel', situation.domainesFonctionnels.label);
     }
 
     const demarches = situation.demarchesEngagees;

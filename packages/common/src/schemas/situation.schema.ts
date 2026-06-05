@@ -90,6 +90,8 @@ export const SituationDataSchema = z.object({
         .optional(),
     })
     .optional(),
+
+  domainesFonctionnels: z.string().optional(),
 });
 
 export type SituationData = z.infer<typeof SituationDataSchema>;
