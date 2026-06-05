@@ -89,7 +89,6 @@ function TraitementDesFaitsRowComponent({
                 state={showError ? 'error' : 'default'}
                 stateRelatedMessage={showError ? errorMessage : undefined}
                 required
-                aria-invalid={showError ? 'true' : undefined}
               />
             )}
           </div>
