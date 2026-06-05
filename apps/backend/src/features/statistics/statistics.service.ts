@@ -48,7 +48,7 @@ const ensureMetabaseDashboardConfigured = (): MetabaseDashboardConfig => {
   return { ...base, dashboardId };
 };
 
-type MetabaseResource = { question: number } | { dashboard: number };
+type MetabaseResource = { dashboard: number };
 
 const signMetabaseToken = (
   resource: MetabaseResource,
@@ -63,9 +63,6 @@ const signMetabaseToken = (
     },
     secretKey,
   );
-
-export const signMetabaseCardToken = (cardId: number, secretKey: string): string =>
-  signMetabaseToken({ question: cardId }, secretKey);
 
 export const signMetabaseDashboardToken = (
   dashboardId: number,
@@ -95,7 +92,9 @@ const fetchJson = async (url: string, logContext: Record<string, unknown>): Prom
     });
 
     if (!response.ok) {
-      const body = await safeReadErrorBody(response);
+      // Sur 401/403, Metabase peut renvoyer le token signé dans le corps : on ne le loggue pas.
+      const isAuthError = response.status === 401 || response.status === 403;
+      const body = isAuthError ? '<redacted>' : await safeReadErrorBody(response);
       logger.warn(
         { ...logContext, status: response.status, statusText: response.statusText, body },
         '[statistics] Metabase fetch returned non-2xx',
@@ -113,23 +112,6 @@ const fetchJson = async (url: string, logContext: Record<string, unknown>): Prom
   } finally {
     clearTimeout(timeoutId);
   }
-};
-
-export const fetchCardData = async (cardId: number): Promise<Array<Record<string, unknown>>> => {
-  const logger = getLoggerStore();
-  const { siteUrl, secretKey } = ensureMetabaseConfigured();
-
-  const token = signMetabaseCardToken(cardId, secretKey);
-  const url = `${siteUrl.replace(/\/$/, '')}/api/embed/card/${token}/query/json`;
-
-  const data = await fetchJson(url, { cardId });
-
-  if (!Array.isArray(data)) {
-    logger.warn({ cardId, payloadType: typeof data }, '[statistics] Metabase card response is not an array');
-    throwHTTPException503ServiceUnavailable('Unexpected response from Metabase service.');
-  }
-
-  return data as Array<Record<string, unknown>>;
 };
 
 type RawDashcard = {
@@ -182,7 +164,9 @@ export const fetchDashboardCardsData = async (params: Record<string, unknown> = 
     return [];
   }
 
-  return Promise.all(
+  // allSettled (et non all) : une dashcard en échec ne doit pas rendre tout le dashboard
+  // inaccessible. La carte fautive est renvoyée avec des données vides et le reste s'affiche.
+  const settled = await Promise.allSettled(
     dashcards.map(async ({ dashcardId, cardId, name }) => {
       const cardUrl = `${base}/api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${cardId}/json`;
       const data = await fetchJson(cardUrl, { dashboardId, dashcardId, cardId, step: 'card-data' });
@@ -198,4 +182,20 @@ export const fetchDashboardCardsData = async (params: Record<string, unknown> = 
       return { id: cardId, dashcardId, name, data: data as Array<Record<string, unknown>> };
     }),
   );
+
+  return settled.map((result, index) => {
+    if (result.status === 'fulfilled') return result.value;
+
+    const { dashcardId, cardId, name } = dashcards[index];
+    logger.warn(
+      {
+        dashboardId,
+        dashcardId,
+        cardId,
+        reason: result.reason instanceof Error ? result.reason.message : result.reason,
+      },
+      '[statistics] dashcard fetch failed, returning empty data',
+    );
+    return { id: cardId, dashcardId, name, data: [] };
+  });
 };

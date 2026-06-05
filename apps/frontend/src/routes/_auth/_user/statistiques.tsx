@@ -41,7 +41,8 @@ function getScalarValue(card: StatisticsCard): unknown | undefined {
   const [row] = card.data;
   const keys = Object.keys(row);
   if (keys.length !== 1) return undefined;
-  return row[keys[0]];
+  const [key] = keys;
+  return row[key];
 }
 
 function KpiCard({ card }: { card: StatisticsCard }) {
