@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import styles from './EntiteCombobox.module.css';
 
 interface EntiteComboboxProps {
@@ -10,7 +10,6 @@ interface EntiteComboboxProps {
   state?: 'default' | 'error';
   stateRelatedMessage?: string;
   required?: boolean;
-  'aria-invalid'?: 'true' | undefined;
 }
 
 const MIN_FILTER_LENGTH = 3;
@@ -24,7 +23,6 @@ export function EntiteCombobox({
   state = 'default',
   stateRelatedMessage,
   required,
-  'aria-invalid': ariaInvalid,
 }: EntiteComboboxProps) {
   const uid = useId();
   const inputId = `combobox-${uid}`;
@@ -40,18 +38,20 @@ export function EntiteCombobox({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const skipNextFocus = useRef(false);
 
   useEffect(() => {
     const entite = entites.find((e) => e.id === value);
     setInputValue(entite?.nomComplet ?? '');
   }, [value, entites]);
 
-  const filteredEntites =
-    hasTyped && inputValue.length >= MIN_FILTER_LENGTH
-      ? entites.filter((e) => e.nomComplet.toLowerCase().includes(inputValue.toLowerCase()))
-      : entites;
-
-  const activeEntiteId = activeIndex >= 0 ? filteredEntites[activeIndex]?.id : undefined;
+  const filteredEntites = useMemo(
+    () =>
+      hasTyped && inputValue.length >= MIN_FILTER_LENGTH
+        ? entites.filter((e) => e.nomComplet.toLowerCase().includes(inputValue.toLowerCase()))
+        : entites,
+    [hasTyped, inputValue, entites],
+  );
 
   // Close on click outside
   useEffect(() => {
@@ -59,9 +59,9 @@ export function EntiteCombobox({
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setIsOpen(false);
         setActiveIndex(-1);
-        // Restore display value to the currently selected entite
         const entite = entites.find((ent) => ent.id === value);
-        setInputValue(entite?.nomComplet ?? '');
+        // Restaurer uniquement si une entité était sélectionnée ; sinon préserver la saisie partielle
+        if (entite) setInputValue(entite.nomComplet);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -81,6 +81,8 @@ export function EntiteCombobox({
     onChange(entite.id);
     setIsOpen(false);
     setActiveIndex(-1);
+    // Empêche onFocus de rouvrir le dropdown sur mobile (focus programmatique)
+    skipNextFocus.current = true;
     inputRef.current?.focus();
   };
 
@@ -91,6 +93,19 @@ export function EntiteCombobox({
     setActiveIndex(-1);
     if (e.target.value === '') {
       onChange('');
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Nettoyer le flag ici : si la sélection s'est faite au clavier (Enter), .focus() était
+    // un no-op et skipNextFocus serait resté true indéfiniment sans ce reset.
+    skipNextFocus.current = false;
+    if (!wrapperRef.current?.contains(e.relatedTarget as Node)) {
+      setIsOpen(false);
+      setActiveIndex(-1);
+      const entite = entites.find((ent) => ent.id === value);
+      // Restaurer uniquement si une entité était sélectionnée ; sinon préserver la saisie partielle
+      if (entite) setInputValue(entite.nomComplet);
     }
   };
 
@@ -107,7 +122,14 @@ export function EntiteCombobox({
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setActiveIndex((prev) => Math.max(prev - 1, 0));
+        if (!isOpen) {
+          setIsOpen(true);
+          setActiveIndex(filteredEntites.length - 1);
+        } else if (activeIndex <= 0) {
+          setActiveIndex(-1);
+        } else {
+          setActiveIndex((prev) => prev - 1);
+        }
         break;
       case 'Enter':
         e.preventDefault();
@@ -119,11 +141,22 @@ export function EntiteCombobox({
         e.preventDefault();
         setIsOpen(false);
         setActiveIndex(-1);
-        // Restore previously selected value
         const entite = entites.find((ent) => ent.id === value);
         setInputValue(entite?.nomComplet ?? '');
         break;
       }
+      case 'Home':
+        if (isOpen && filteredEntites.length > 0) {
+          e.preventDefault();
+          setActiveIndex(0);
+        }
+        break;
+      case 'End':
+        if (isOpen && filteredEntites.length > 0) {
+          e.preventDefault();
+          setActiveIndex(filteredEntites.length - 1);
+        }
+        break;
       case 'Tab':
         setIsOpen(false);
         setActiveIndex(-1);
@@ -134,6 +167,13 @@ export function EntiteCombobox({
   const hasError = state === 'error';
   const inputGroupClass = ['fr-input-group', hasError ? 'fr-input-group--error' : ''].filter(Boolean).join(' ');
   const inputClass = ['fr-input', hasError ? 'fr-input--error' : ''].filter(Boolean).join(' ');
+
+  const statusMessage =
+    isOpen && hasTyped && inputValue.length >= MIN_FILTER_LENGTH
+      ? filteredEntites.length === 0
+        ? 'Aucun résultat'
+        : `${filteredEntites.length} résultat${filteredEntites.length > 1 ? 's' : ''} disponible${filteredEntites.length > 1 ? 's' : ''}`
+      : '';
 
   return (
     <div ref={wrapperRef} className={styles.wrapper}>
@@ -152,24 +192,33 @@ export function EntiteCombobox({
           aria-expanded={isOpen}
           aria-autocomplete="list"
           aria-controls={listboxId}
-          aria-activedescendant={activeEntiteId !== undefined ? `option-${uid}-${activeIndex}` : undefined}
+          aria-activedescendant={activeIndex >= 0 ? `option-${uid}-${activeIndex}` : undefined}
           aria-required={required || undefined}
-          aria-invalid={ariaInvalid}
+          aria-invalid={hasError ? 'true' : undefined}
           aria-describedby={hasError ? errorId : undefined}
           autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
           disabled={disabled}
           value={inputValue}
           onChange={handleInputChange}
+          onBlur={handleBlur}
           onFocus={() => {
+            if (skipNextFocus.current) {
+              skipNextFocus.current = false;
+              return;
+            }
             if (!disabled) {
               setIsOpen(true);
-              setHasTyped(false);
+              // Si une saisie partielle est en attente (aucune entité sélectionnée), reprendre le filtre
+              setHasTyped(!value && inputValue.length >= MIN_FILTER_LENGTH);
             }
           }}
           onClick={() => {
             if (!disabled) {
               setIsOpen(true);
-              setHasTyped(false);
+              setHasTyped(!value && inputValue.length >= MIN_FILTER_LENGTH);
             }
           }}
           onKeyDown={handleKeyDown}
@@ -182,31 +231,43 @@ export function EntiteCombobox({
         )}
       </div>
 
-      {isOpen && !disabled && (
-        <div ref={listRef} id={listboxId} role="listbox" aria-label={label} className={styles.dropdown}>
-          {filteredEntites.length === 0 ? (
-            <output className={styles.empty}>Aucun résultat</output>
-          ) : (
-            filteredEntites.map((entite, index) => (
-              <div
-                key={entite.id}
-                id={`option-${uid}-${index}`}
-                role="option"
-                aria-selected={entite.id === value}
-                tabIndex={-1}
-                className={`${styles.item} ${index === activeIndex ? styles.active : ''}`}
-                onMouseDown={(e) => {
-                  // onMouseDown instead of onClick to fire before onBlur
-                  e.preventDefault();
-                  selectEntite(entite);
-                }}
-              >
-                {entite.nomComplet}
-              </div>
-            ))
-          )}
-        </div>
-      )}
+      {/* Toujours dans le DOM pour que aria-controls soit toujours résolu */}
+      <div
+        ref={listRef}
+        id={listboxId}
+        role="listbox"
+        aria-label={label}
+        className={styles.dropdown}
+        hidden={!isOpen || disabled}
+      >
+        {filteredEntites.length === 0 ? (
+          <div role="option" aria-disabled="true" aria-selected="false" tabIndex={-1} className={styles.empty}>
+            Aucun résultat
+          </div>
+        ) : (
+          filteredEntites.map((entite, index) => (
+            <div
+              key={entite.id}
+              id={`option-${uid}-${index}`}
+              role="option"
+              aria-selected={entite.id === value}
+              tabIndex={-1}
+              className={`${styles.item} ${index === activeIndex ? styles.active : ''}`}
+              onMouseDown={(e) => {
+                // onMouseDown plutôt que onClick pour précéder le onBlur de l'input
+                e.preventDefault();
+                selectEntite(entite);
+              }}
+            >
+              {entite.nomComplet}
+            </div>
+          ))
+        )}
+      </div>
+
+      <output aria-live="polite" className={styles.srOnly}>
+        {statusMessage}
+      </output>
     </div>
   );
 }
