@@ -77,6 +77,10 @@ const processEnv = {
   WORKER_MONITORING_PORT: process.env.WORKER_MONITORING_PORT,
   // Affectation
   AFFECTATION_DEBUG: process.env.AFFECTATION_DEBUG,
+  // Metabase
+  METABASE_SITE_URL: process.env.METABASE_SITE_URL,
+  METABASE_SECRET_KEY: process.env.METABASE_SECRET_KEY,
+  METABASE_DASHBOARD_ID: process.env.METABASE_DASHBOARD_ID,
   // Environment
   APP_ENV: process.env.APP_ENV,
 };
