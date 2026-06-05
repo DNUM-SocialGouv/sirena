@@ -1,5 +1,5 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
+import { FEATURE_FLAGS, ROLES_READ } from '@sirena/common/constants';
 import { createFileRoute, Navigate } from '@tanstack/react-router';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
@@ -12,13 +12,7 @@ import styles from './statistiques.module.css';
 const numberFormatter = new Intl.NumberFormat('fr-FR');
 
 export const Route = createFileRoute('/_auth/_user/statistiques')({
-  beforeLoad: requireAuthAndRoles([
-    ROLES.READER,
-    ROLES.WRITER,
-    ROLES.ENTITY_ADMIN,
-    ROLES.NATIONAL_STEERING,
-    ROLES.SUPER_ADMIN,
-  ]),
+  beforeLoad: requireAuthAndRoles([...ROLES_READ]),
   head: () => ({
     meta: [{ title: 'Indicateurs - SIRENA' }],
   }),
@@ -61,8 +55,7 @@ function RouteComponent() {
   const resolvedFlagsQuery = useResolvedFeatureFlags();
   const { data: profile, isPending: isProfilePending } = useProfile();
 
-  const isSuperAdmin = profile?.roleId === ROLES.SUPER_ADMIN;
-  const hasEntityLink = profile != null && (isSuperAdmin || profile.entiteId != null);
+  const hasEntityLink = profile?.entiteId != null;
 
   const areFlagsReady = resolvedFlagsQuery.status !== 'pending';
   const isEnabled = resolvedFlagsQuery.data?.[FEATURE_FLAGS.STATISTICS] ?? false;
