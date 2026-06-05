@@ -75,4 +75,5 @@ worker:
     deployment:
       replicas: 1
       additionalsecretRef:
+        - backend
         - mariadb-sirec-secret
