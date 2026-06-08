@@ -46,6 +46,10 @@ vi.mock('../changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn().mockResolvedValue({}),
 }));
 
+vi.mock('../dematSocial/closureSync/closureSync.service.js', () => ({
+  safeSyncClosedRequeteToDematSocial: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('../../helpers/sse.js', () => ({
   sseEventManager: {
     emitRequeteUpdated: vi.fn(),
@@ -79,6 +83,7 @@ import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { getFileStream } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
+import { safeSyncClosedRequeteToDematSocial } from '../dematSocial/closureSync/closureSync.service.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
@@ -1603,6 +1608,91 @@ describe('requetesEntite.service', () => {
         before: { statutId: 'EN_COURS' },
         after: { statutId: REQUETE_STATUT_TYPES.CLOTUREE, clotureReasonIds: ['reason123'], precision: null },
         changedById: 'user123',
+      });
+    });
+
+    it('should sync demat.social after the closure transaction succeeds', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
+
+      const transactionEvents: string[] = [];
+      const mockEtape = {
+        id: 'etape123',
+        nom: 'Requête clôturée le 01/01/2024',
+        estPartagee: false,
+        statutId: 'CLOTUREE',
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+      const mockNote = {
+        id: 'note123',
+        texte: '',
+        authorId: 'user123',
+        requeteEtapeId: 'etape123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        transactionEvents.push('transaction:start');
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue(mockEtape) },
+          requeteEtapeNote: { ...prismaMock.requeteEtapeNote, create: vi.fn().mockResolvedValue(mockNote) },
+          requeteEntite: { ...prismaMock.requeteEntite, update: vi.fn().mockResolvedValue(mockRequeteEntite) },
+        } as typeof prismaMock;
+        const result = await cb(mockTx);
+        transactionEvents.push('transaction:committed');
+        return result;
+      });
+      vi.mocked(safeSyncClosedRequeteToDematSocial).mockImplementation(async () => {
+        transactionEvents.push('sync');
+      });
+
+      await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123');
+
+      expect(safeSyncClosedRequeteToDematSocial).toHaveBeenCalledWith('req123');
+      expect(transactionEvents).toEqual(['transaction:start', 'transaction:committed', 'sync']);
+    });
+
+    it('should not fail closure when demat.social sync fails', async () => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
+      vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
+        { id: 'reason123', label: 'Reason 123' },
+      ]);
+
+      const mockEtape = {
+        id: 'etape123',
+        nom: 'Requête clôturée le 01/01/2024',
+        estPartagee: false,
+        statutId: 'CLOTUREE',
+        requeteId: 'req123',
+        entiteId: 'ent123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+      const mockNote = {
+        id: 'note123',
+        texte: '',
+        authorId: 'user123',
+        requeteEtapeId: 'etape123',
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+
+      vi.mocked(prisma.$transaction).mockImplementation(async (cb) => {
+        const mockTx = {
+          ...prismaMock,
+          requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue(mockEtape) },
+          requeteEtapeNote: { ...prismaMock.requeteEtapeNote, create: vi.fn().mockResolvedValue(mockNote) },
+          requeteEntite: { ...prismaMock.requeteEntite, update: vi.fn().mockResolvedValue(mockRequeteEntite) },
+        } as typeof prismaMock;
+        return cb(mockTx);
+      });
+      vi.mocked(safeSyncClosedRequeteToDematSocial).mockRejectedValueOnce(new Error('demat.social unavailable'));
+
+      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123')).resolves.toMatchObject({
+        etapeId: 'etape123',
       });
     });
 
