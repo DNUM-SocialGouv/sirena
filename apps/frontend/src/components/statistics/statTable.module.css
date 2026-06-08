@@ -1,0 +1,88 @@
+.scroll {
+  overflow-x: auto;
+}
+
+.scroll:focus-visible {
+  outline: 2px solid var(--focus, #0a76f6);
+  outline-offset: 2px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.caption {
+  text-align: left;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.table thead th {
+  padding: 0.5rem 1rem;
+  text-align: left;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-mention-grey);
+  border-bottom: 2px solid var(--border-default-grey);
+}
+
+.table tbody th,
+.table tbody td {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-default-grey);
+}
+
+.table tbody th {
+  text-align: left;
+  font-weight: 400;
+}
+
+.table tbody tr {
+  transition: background-color 150ms ease;
+}
+
+.table tbody tr:hover {
+  background-color: var(--background-alt-grey);
+}
+
+.table tfoot th,
+.table tfoot td {
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  border-top: 2px solid var(--border-default-grey);
+}
+
+.numCol {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.barCell {
+  position: relative;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bar {
+  position: absolute;
+  inset-block: 4px;
+  inset-inline-start: 0;
+  background-color: var(--artwork-major-blue-france);
+  opacity: 0.16;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.barValue {
+  position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table tbody tr {
+    transition: none;
+  }
+}
