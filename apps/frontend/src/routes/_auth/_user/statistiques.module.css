@@ -1,0 +1,34 @@
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 2.5rem 3rem;
+  align-items: start;
+  margin: 0;
+  padding: 0;
+}
+
+.kpi-card {
+  display: flex;
+  /* DOM order is <dt> then <dd> for screen readers; visually invert so the value sits on top. */
+  flex-direction: column-reverse;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+}
+
+.kpi-value {
+  font-size: clamp(2.5rem, 1.5rem + 2.5vw, 3.75rem);
+  font-weight: 700;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.kpi-label {
+  font-size: 0.95rem;
+  color: var(--text-mention-grey);
+  margin: 0;
+  line-height: 1.4;
+}

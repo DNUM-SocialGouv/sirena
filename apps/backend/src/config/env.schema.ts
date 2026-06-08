@@ -294,33 +294,39 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('false')
     .transform((val) => val === 'true'),
-  MYSQL_SIREC_HOST: z.string({
-    error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_HOST est requise" : 'Not a string',
-  }),
-  MYSQL_SIREC_DB: z.string({
-    error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_DB est requise" : 'Not a string',
-  }),
-  MYSQL_SIREC_PORT: z
+  MARIADB_SIREC_HOST: z.string().optional(),
+  MARIADB_SIREC_DB: z.string().optional(),
+  MARIADB_SIREC_PORT: z
     .string()
     .optional()
     .default('3306')
     .transform((val) => {
       const parsed = Number.parseInt(val, 10);
       if (Number.isNaN(parsed)) {
-        throw new Error("La variable d'environnement MYSQL_SIREC_PORT doit etre un integer");
+        throw new Error("La variable d'environnement MARIADB_SIREC_PORT doit etre un integer");
       }
       return parsed;
     }),
-  MYSQL_SIREC_USER: z.string({
-    error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_USER est requise" : 'Not a string',
-  }),
-  MYSQL_SIREC_PASSWORD: z.string({
-    error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_PASSWORD est requise" : 'Not a string',
-  }),
+  MARIADB_SIREC_USER: z.string().optional(),
+  MARIADB_SIREC_PASSWORD: z.string().optional(),
+  METABASE_SITE_URL: z
+    .string()
+    .optional()
+    .default('')
+    .describe("URL publique de l'instance Metabase (ex: https://metabase.example.com)"),
+  METABASE_SECRET_KEY: z
+    .string()
+    .optional()
+    .default('')
+    .refine((val) => val === '' || val.length >= 32, {
+      message: 'METABASE_SECRET_KEY doit faire au moins 32 caractères',
+    })
+    .describe("Clé secrète Metabase utilisée pour signer les JWT d'embedding signé"),
+  METABASE_DASHBOARD_ID: z
+    .string()
+    .optional()
+    .default('')
+    .describe('Identifiant du dashboard Metabase à exposer sur la page statistiques (ex: "42")'),
   APP_ENV: z
     .enum(APP_ENV_VALUES)
     .optional()

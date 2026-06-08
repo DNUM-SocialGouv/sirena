@@ -4,6 +4,14 @@ externalSecret:
     enable: true
     databaseType: databases
     targetSecretName: db-secret
+  mariadbSirec:
+    enable: false
+    host: ""
+    port: "3306"
+    db: ""
+    user: ""
+    vaultPath: "databases/mariadb"
+    passwordKey: "mariadb-password"
 
 redis_unmanaged: false
 
@@ -35,11 +43,11 @@ SDPSN-devops-charts:
         AUTH_TOKEN_SECRET_KEY: "{{ .AUTH_TOKEN_SECRET_KEY }}"
         CLAMAV_HOST: "{{ .CLAMAV_HOST }}"
         DEMAT_SOCIAL_API_TOKEN: "{{ .DEMAT_SOCIAL_API_TOKEN }}"
-        MYSQL_SIREC_HOST: "{{ .MYSQL_SIREC_HOST }}"
-        MYSQL_SIREC_PORT: "{{ .MYSQL_SIREC_PORT }}"
-        MYSQL_SIREC_DB: "{{ .MYSQL_SIREC_DB }}"
-        MYSQL_SIREC_USER: "{{ .MYSQL_SIREC_USER }}"
-        MYSQL_SIREC_PASSWORD: "{{ .MYSQL_SIREC_PASSWORD }}"
+        MARIADB_SIREC_HOST: "{{ .MARIADB_SIREC_HOST }}"
+        MARIADB_SIREC_PORT: "{{ .MARIADB_SIREC_PORT }}"
+        MARIADB_SIREC_DB: "{{ .MARIADB_SIREC_DB }}"
+        MARIADB_SIREC_USER: "{{ .MARIADB_SIREC_USER }}"
+        MARIADB_SIREC_PASSWORD: "{{ .MARIADB_SIREC_PASSWORD }}"
         PC_CLIENT_ID: "{{ .PC_CLIENT_ID }}"
         PC_CLIENT_SECRET: "{{ .PC_CLIENT_SECRET }}"
         REFRESH_TOKEN_SECRET_KEY: "{{ .REFRESH_TOKEN_SECRET_KEY }}"
@@ -49,3 +57,6 @@ SDPSN-devops-charts:
         TIPIMAIL_API_KEY: "{{ .TIPIMAIL_API_KEY }}"
         TIPIMAIL_USER_ID: "{{ .TIPIMAIL_USER_ID }}"
         TIPIMAIL_REDIRECT_ALL_TO: "{{ .TIPIMAIL_REDIRECT_ALL_TO }}"
+        METABASE_SITE_URL: "{{ .METABASE_SITE_URL }}"
+        METABASE_SECRET_KEY: "{{ .METABASE_SECRET_KEY }}"
+        METABASE_DASHBOARD_ID: "{{ .METABASE_DASHBOARD_ID }}"
