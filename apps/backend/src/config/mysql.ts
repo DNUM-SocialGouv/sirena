@@ -1,14 +1,15 @@
 import mysql from 'mysql2/promise';
 import { envVars } from './env.js';
 
-const { MYSQL_SIREC_HOST, MYSQL_SIREC_PORT, MYSQL_SIREC_DB, MYSQL_SIREC_USER, MYSQL_SIREC_PASSWORD } = envVars;
+const { MARIADB_SIREC_HOST, MARIADB_SIREC_PORT, MARIADB_SIREC_DB, MARIADB_SIREC_USER, MARIADB_SIREC_PASSWORD } =
+  envVars;
 
 export const mysqlPool = mysql.createPool({
-  host: MYSQL_SIREC_HOST,
-  port: MYSQL_SIREC_PORT,
-  database: MYSQL_SIREC_DB,
-  user: MYSQL_SIREC_USER,
-  password: MYSQL_SIREC_PASSWORD,
+  host: MARIADB_SIREC_HOST,
+  port: MARIADB_SIREC_PORT,
+  database: MARIADB_SIREC_DB,
+  user: MARIADB_SIREC_USER,
+  password: MARIADB_SIREC_PASSWORD,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

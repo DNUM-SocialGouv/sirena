@@ -85,15 +85,15 @@ services:
     image: mysql:8.0
     container_name: sirena-mysql-dev
     environment:
-      MYSQL_DATABASE: ${MYSQL_SIREC_DB}
-      MYSQL_USER: ${MYSQL_SIREC_USER}
-      MYSQL_PASSWORD: ${MYSQL_SIREC_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_SIREC_DB}
+      MARIADB_USER: ${MARIADB_SIREC_USER}
+      MARIADB_PASSWORD: ${MARIADB_SIREC_PASSWORD}
     ports:
       - "127.0.0.1:3306:3306"
     volumes:
       - mysqldata:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "${MYSQL_SIREC_USER}", "-p${MYSQL_SIREC_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "${MARIADB_SIREC_USER}", "-p${MARIADB_SIREC_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5

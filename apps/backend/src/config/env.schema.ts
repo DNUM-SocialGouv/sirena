@@ -294,32 +294,32 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('false')
     .transform((val) => val === 'true'),
-  MYSQL_SIREC_HOST: z.string({
+  MARIADB_SIREC_HOST: z.string({
     error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_HOST est requise" : 'Not a string',
+      issue.input === undefined ? "La variable d'environnement MARIADB_SIREC_HOST est requise" : 'Not a string',
   }),
-  MYSQL_SIREC_DB: z.string({
+  MARIADB_SIREC_DB: z.string({
     error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_DB est requise" : 'Not a string',
+      issue.input === undefined ? "La variable d'environnement MARIADB_SIREC_DB est requise" : 'Not a string',
   }),
-  MYSQL_SIREC_PORT: z
+  MARIADB_SIREC_PORT: z
     .string()
     .optional()
     .default('3306')
     .transform((val) => {
       const parsed = Number.parseInt(val, 10);
       if (Number.isNaN(parsed)) {
-        throw new Error("La variable d'environnement MYSQL_SIREC_PORT doit etre un integer");
+        throw new Error("La variable d'environnement MARIADB_SIREC_PORT doit etre un integer");
       }
       return parsed;
     }),
-  MYSQL_SIREC_USER: z.string({
+  MARIADB_SIREC_USER: z.string({
     error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_USER est requise" : 'Not a string',
+      issue.input === undefined ? "La variable d'environnement MARIADB_SIREC_USER est requise" : 'Not a string',
   }),
-  MYSQL_SIREC_PASSWORD: z.string({
+  MARIADB_SIREC_PASSWORD: z.string({
     error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MYSQL_SIREC_PASSWORD est requise" : 'Not a string',
+      issue.input === undefined ? "La variable d'environnement MARIADB_SIREC_PASSWORD est requise" : 'Not a string',
   }),
   METABASE_SITE_URL: z
     .string()
