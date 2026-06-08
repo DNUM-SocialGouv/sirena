@@ -7,11 +7,11 @@ vi.mock('@/hooks/useCanEdit', () => ({
 }));
 
 describe('PersonneConcerneeSection', () => {
-  it('shows positive Mesure de protection with neutral wording in request details', () => {
+  it('shows positive Mesure de protection with request detail wording', () => {
     const sectionId = 'personne-concernee';
 
     render(<PersonneConcerneeSection id={sectionId} personne={{ mesureProtection: 'MANDATAIRE_JUDICIAIRE' }} />);
 
-    expect(screen.getByText('Il/Elle est sous mesure de protection : mandataire judiciaire')).toBeInTheDocument();
+    expect(screen.getByText('Il/elle est sous mesure de protection : mandataire judiciaire')).toBeInTheDocument();
   });
 });

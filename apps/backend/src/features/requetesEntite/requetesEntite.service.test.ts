@@ -3074,7 +3074,7 @@ describe('requetesEntite.service', () => {
 
       await generateRequetePdfBuffer('req123', 'ent123');
 
-      expect(fieldSpy).toHaveBeenCalledWith('Il/Elle est sous mesure de protection', 'mandataire judiciaire');
+      expect(fieldSpy).toHaveBeenCalledWith('Il/elle est sous mesure de protection', 'mandataire judiciaire');
     });
   });
 
