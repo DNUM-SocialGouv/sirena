@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { transformSirecRpps } from './sirecMigration.rpps.transformer.js';
 
-vi.mock('../transco/misEnCauseRpps.transco.js', () => ({
+vi.mock('../../transco/misEnCauseRpps.transco.js', () => ({
   transcodeCiviliteRpps: vi.fn((v: string | null) => (v === 'mme' ? 'MME' : v === 'm' ? 'M' : '')),
   transcodeLibelleProfRpps: vi.fn(() => ({
     misEnCauseTypeId: 'PROFESSIONNEL_SANTE',

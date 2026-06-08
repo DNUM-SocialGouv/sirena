@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test assertions on optional fields> */
 import { describe, expect, it, vi } from 'vitest';
-import type { SirecFinessData, SirecRppsData } from '../sirecMigration.repository.js';
-import { SirecDataError, SirecTranscoError } from '../transco/sirecTransco.error.js';
+import type { SirecFinessData, SirecRppsData } from '../../sirecMigration.repository.js';
+import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecMisEnCauseSituations } from './sirecMigration.misEnCause.transformer.js';
 
 vi.mock('./sirecMigration.affectation.transformer.js', () => ({

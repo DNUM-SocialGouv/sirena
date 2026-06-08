@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { SirecFinessData } from '../sirecMigration.repository.js';
-import { SirecDataError, SirecTranscoError } from '../transco/sirecTransco.error.js';
+import type { SirecFinessData } from '../../sirecMigration.repository.js';
+import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecFiness } from './sirecMigration.finess.transformer.js';
 
 vi.mock('../transco/finessCategetab.transco.js', () => ({

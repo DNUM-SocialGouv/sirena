@@ -1,5 +1,5 @@
-import type { SirecRppsData } from '../sirecMigration.repository.js';
-import { transcodeCiviliteRpps, transcodeLibelleProfRpps } from '../transco/misEnCauseRpps.transco.js';
+import type { SirecRppsData } from '../../sirecMigration.repository.js';
+import { transcodeCiviliteRpps, transcodeLibelleProfRpps } from '../../transco/misEnCauseRpps.transco.js';
 
 export interface SirenaRppsMisEnCauseData {
   kind: 'rpps';

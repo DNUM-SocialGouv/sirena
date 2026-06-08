@@ -4,7 +4,7 @@ import type { SirecReclamationData } from '../sirecMigration.repository.js';
 import { transcodeAffectation } from '../transco/affectation.transco.js';
 import { SIREC_DICO } from '../transco/dictionnaire.transco.js';
 import { SirecTranscoError } from '../transco/sirecTransco.error.js';
-import type { SirenaEtapeData } from './sirecMigration.etape.types.js';
+import type { SirenaEtapeData } from './etapes/sirecMigration.etape.types.js';
 
 function formatDateNote(date: Date | null): string {
   if (date === null) return 'Date de réception non renseignée';

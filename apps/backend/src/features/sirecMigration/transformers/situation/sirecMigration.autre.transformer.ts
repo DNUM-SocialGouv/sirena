@@ -1,5 +1,5 @@
-import type { SirecMisEnCause } from '../sirecMigration.repository.js';
-import { buildAutrePrecision, transcodeAutresMcType } from '../transco/misEnCauseAutre.transco.js';
+import type { SirecMisEnCause } from '../../sirecMigration.repository.js';
+import { buildAutrePrecision, transcodeAutresMcType } from '../../transco/misEnCauseAutre.transco.js';
 
 export interface SirenaAutreMisEnCauseData {
   kind: 'autre';

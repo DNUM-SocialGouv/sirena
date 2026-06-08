@@ -1,6 +1,6 @@
-import type { SirecFinessData } from '../sirecMigration.repository.js';
-import { transcodeFinessCategetab } from '../transco/finessCategetab.transco.js';
-import { SirecDataError } from '../transco/sirecTransco.error.js';
+import type { SirecFinessData } from '../../sirecMigration.repository.js';
+import { transcodeFinessCategetab } from '../../transco/finessCategetab.transco.js';
+import { SirecDataError } from '../../transco/sirecTransco.error.js';
 
 export interface SirenaFinessMisEnCauseData {
   kind: 'finess';

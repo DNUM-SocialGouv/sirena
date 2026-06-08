@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SirecTranscoError } from '../transco/sirecTransco.error.js';
+import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecPriseEnCharge } from './sirecMigration.priseEnCharge.transformer.js';
 
 const makeData = (

@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import { transformSirecFait } from './sirecMigration.fait.transformer.js';
 
-vi.mock('../transco/motifsDeclaratifs.transco.js', () => ({
+vi.mock('../../transco/motifsDeclaratifs.transco.js', () => ({
   transcodeMotifsDeclaratifs: vi.fn((ids: number[]) => ids.map(String)),
 }));
 
-vi.mock('../transco/dest.transco.js', () => ({
+vi.mock('../../transco/dest.transco.js', () => ({
   transcodeDest: vi.fn((id: number | null) => (id === null ? null : 'Courriel')),
 }));
 
-vi.mock('../transco/courrierSignal.transco.js', () => ({
+vi.mock('../../transco/courrierSignal.transco.js', () => ({
   transcodeCourrierSignal: vi.fn((id: number | null) => (id === null ? null : 'Courrier')),
 }));
 
@@ -68,7 +68,7 @@ describe('sirecMigration.fait.transformer.ts', () => {
   });
 
   it('should delegate dest transcoding to transcodeDest', async () => {
-    const { transcodeDest } = await import('../transco/dest.transco.js');
+    const { transcodeDest } = await import('../../transco/dest.transco.js');
 
     transformSirecFait({ ...sirecData, reclamation: { ...sirecData.reclamation, dest: 12 } });
 
@@ -88,7 +88,7 @@ describe('sirecMigration.fait.transformer.ts', () => {
   });
 
   it('should delegate motif transcoding to transcodeMotifsDeclaratifs', async () => {
-    const { transcodeMotifsDeclaratifs } = await import('../transco/motifsDeclaratifs.transco.js');
+    const { transcodeMotifsDeclaratifs } = await import('../../transco/motifsDeclaratifs.transco.js');
 
     transformSirecFait(sirecData);
 
@@ -161,7 +161,7 @@ describe('sirecMigration.fait.transformer.ts', () => {
   });
 
   it('should delegate courrier_signal transcoding to transcodeCourrierSignal', async () => {
-    const { transcodeCourrierSignal } = await import('../transco/courrierSignal.transco.js');
+    const { transcodeCourrierSignal } = await import('../../transco/courrierSignal.transco.js');
 
     transformSirecFait({ ...sirecData, reclamation: { ...sirecData.reclamation, courrier_signal: 10 } });
 
