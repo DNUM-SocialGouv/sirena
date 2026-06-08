@@ -4,10 +4,10 @@ import { formatMesureProtectionPersonneConcernee } from './mesureProtection.util
 describe('mesureProtection.utils', () => {
   it('formats only positive Mesure de protection values for display', () => {
     expect(formatMesureProtectionPersonneConcernee('MANDATAIRE_JUDICIAIRE')).toBe(
-      'Il/Elle est sous mesure de protection : mandataire judiciaire',
+      'Il/elle est sous mesure de protection : mandataire judiciaire',
     );
     expect(formatMesureProtectionPersonneConcernee('HABILITATION_FAMILIALE')).toBe(
-      'Il/Elle est sous mesure de protection : habilitation familiale',
+      'Il/elle est sous mesure de protection : habilitation familiale',
     );
     expect(formatMesureProtectionPersonneConcernee('NON')).toBeNull();
     expect(formatMesureProtectionPersonneConcernee(null)).toBeNull();
