@@ -11,13 +11,15 @@ import { decideDematSocialClosureTarget } from './closureReasonDecision.js';
 
 const finalStates = new Set<DossierState>([DossierState.Accepte, DossierState.Refuse, DossierState.SansSuite]);
 
-export async function syncClosedRequeteToDematSocial(requeteId: string): Promise<void> {
+export type DematSocialClosureSyncResult = { kind: 'synced' } | { kind: 'skipped'; reason: string };
+
+export async function syncClosedRequeteToDematSocial(requeteId: string): Promise<DematSocialClosureSyncResult> {
   const logger = getLoggerStore();
   const syncData = await loadClosedRequeteForDematSocialSync(requeteId);
 
   if (syncData.kind === 'skip') {
     logger.debug({ requeteId, reason: syncData.reason }, 'Skipping demat.social closure sync');
-    return;
+    return { kind: 'skipped', reason: syncData.reason };
   }
 
   if (syncData.kind === 'anomaly') {
@@ -25,7 +27,7 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
       { requeteId, reason: syncData.reason, entiteIds: syncData.entiteIds },
       'Skipping demat.social closure sync anomaly',
     );
-    return;
+    return { kind: 'skipped', reason: syncData.reason };
   }
 
   const decision = decideDematSocialClosureTarget(syncData.closureReasons);
@@ -34,7 +36,7 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
       { requeteId, dematSocialId: syncData.dematSocialId, reason: decision.reason },
       'Skipping demat.social closure sync anomaly',
     );
-    return;
+    return { kind: 'skipped', reason: decision.reason };
   }
 
   const dematSocialDossier = await getRequete(syncData.dematSocialId);
@@ -44,7 +46,7 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
       { requeteId, dematSocialId: syncData.dematSocialId },
       'Skipping demat.social closure sync: dossier not found',
     );
-    return;
+    return { kind: 'skipped', reason: 'DOSSIER_NOT_FOUND' };
   }
 
   if (dossier.state === decision.targetState) {
@@ -52,12 +54,12 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
       { requeteId, dematSocialId: syncData.dematSocialId, expectedState: decision.targetState },
       'demat.social dossier already in expected final state',
     );
-    return;
+    return { kind: 'skipped', reason: 'ALREADY_EXPECTED_FINAL_STATE' };
   }
 
   if (dossier.state === DossierState.Refuse) {
     logger.debug({ requeteId, dematSocialId: syncData.dematSocialId }, 'demat.social dossier already refused');
-    return;
+    return { kind: 'skipped', reason: 'ALREADY_REFUSED' };
   }
 
   if (finalStates.has(dossier.state)) {
@@ -70,7 +72,7 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
       },
       'demat.social dossier already in a different final state',
     );
-    return;
+    return { kind: 'skipped', reason: 'DIFFERENT_FINAL_STATE' };
   }
 
   if (dossier.state === DossierState.EnConstruction) {
@@ -79,10 +81,11 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
 
   if (decision.targetState === DossierState.Accepte) {
     await acceptDossierWithoutNotification(dossier.id, decision.motivation);
-    return;
+    return { kind: 'synced' };
   }
 
   await classerDossierSansSuiteWithoutNotification(dossier.id, decision.motivation);
+  return { kind: 'synced' };
 }
 
 export async function safeSyncClosedRequeteToDematSocial(requeteId: string): Promise<void> {
