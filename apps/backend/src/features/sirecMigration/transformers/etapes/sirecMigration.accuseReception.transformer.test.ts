@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test purposes> */
 import { describe, expect, it } from 'vitest';
-import { SirecTranscoError } from '../transco/sirecTransco.error.js';
+import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecAccuseReception } from './sirecMigration.accuseReception.transformer.js';
 
 const makeData = (overrides: {

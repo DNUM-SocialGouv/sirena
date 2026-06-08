@@ -1,5 +1,5 @@
 import { DEMARCHES_ENGAGEES } from '@sirena/common/constants';
-import type { SirecReclamationData } from '../sirecMigration.repository.js';
+import type { SirecReclamationData } from '../../sirecMigration.repository.js';
 import type { SirenaAutreMisEnCauseData } from './sirecMigration.autre.transformer.js';
 import { type SirenaFaitData, transformSirecFait } from './sirecMigration.fait.transformer.js';
 import type { SirenaFinessMisEnCauseData, SirenaLieuDeSurvenueData } from './sirecMigration.finess.transformer.js';

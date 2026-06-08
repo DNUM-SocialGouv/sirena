@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { SirecTranscoError } from '../transco/sirecTransco.error.js';
+import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecReponseProvenances } from './sirecMigration.reponseProvenance.transformer.js';
 
-vi.mock('../transco/dictionnaire.transco.js', () => ({
+vi.mock('../../transco/dictionnaire.transco.js', () => ({
   SIREC_DICO: {
     103: 'Institution 1',
     104: 'Institution 2',
@@ -10,7 +10,7 @@ vi.mock('../transco/dictionnaire.transco.js', () => ({
   },
 }));
 
-vi.mock('../transco/affectation.transco.js', () => ({
+vi.mock('../../transco/affectation.transco.js', () => ({
   transcodeAffectation: vi.fn((id: number) => {
     if (id === 693) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] };
     if (id === 677) return { requeteEntiteIds: ['ars-grand-est'], situationEntiteIds: [] };

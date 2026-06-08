@@ -1,6 +1,6 @@
-import type { SirecReclamationData } from '../sirecMigration.repository.js';
-import { transcodeAffectation } from '../transco/affectation.transco.js';
-import { SirecDataError } from '../transco/sirecTransco.error.js';
+import type { SirecReclamationData } from '../../sirecMigration.repository.js';
+import { transcodeAffectation } from '../../transco/affectation.transco.js';
+import { SirecDataError } from '../../transco/sirecTransco.error.js';
 
 export interface SirenaAffectationData {
   requeteEntiteIds: string[];

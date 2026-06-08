@@ -1,9 +1,9 @@
-import type { SirecMisEnCause, SirecReclamationData } from '../sirecMigration.repository.js';
-import { SIREC_BOOLEAN_TRANSCO } from '../transco/dictionnaire.transco.js';
-import { SIREC_TYPE_FINESS } from '../transco/finessCategetab.transco.js';
-import { SIREC_TYPE_AUTRE } from '../transco/misEnCauseAutre.transco.js';
-import { SIREC_TYPE_RPPS } from '../transco/misEnCauseRpps.transco.js';
-import { SirecDataError, SirecTranscoError } from '../transco/sirecTransco.error.js';
+import type { SirecMisEnCause, SirecReclamationData } from '../../sirecMigration.repository.js';
+import { SIREC_BOOLEAN_TRANSCO } from '../../transco/dictionnaire.transco.js';
+import { SIREC_TYPE_FINESS } from '../../transco/finessCategetab.transco.js';
+import { SIREC_TYPE_AUTRE } from '../../transco/misEnCauseAutre.transco.js';
+import { SIREC_TYPE_RPPS } from '../../transco/misEnCauseRpps.transco.js';
+import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { computeSituationEntiteIds } from './sirecMigration.affectation.transformer.js';
 import { transformSirecAutre } from './sirecMigration.autre.transformer.js';
 import {

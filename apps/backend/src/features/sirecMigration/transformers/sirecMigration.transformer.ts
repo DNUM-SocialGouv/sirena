@@ -4,31 +4,22 @@ import type { SirecReclamationData } from '../sirecMigration.repository.js';
 import { filterArsEntiteIds } from '../transco/affectation.transco.js';
 import { transcodeReceptionType } from '../transco/receptionType.transco.js';
 import { SirecDataError } from '../transco/sirecTransco.error.js';
-import { transformSirecAccuseReception } from './sirecMigration.accuseReception.transformer.js';
-import { transformSirecAffectation } from './sirecMigration.affectation.transformer.js';
+import { transformSirecAccuseReception } from './etapes/sirecMigration.accuseReception.transformer.js';
+import type { SirenaEtapeData } from './etapes/sirecMigration.etape.types.js';
+import { transformSirecExamenCommission } from './etapes/sirecMigration.examenCommission.transformer.js';
+import { transformSirecInstitutionsPartenaires } from './etapes/sirecMigration.institutionPartenaire.transformer.js';
+import { transformSirecPriseEnCharge } from './etapes/sirecMigration.priseEnCharge.transformer.js';
+import { transformSirecReponsePlaignant } from './etapes/sirecMigration.reponsePlaignant.transformer.js';
+import { transformSirecReponseProvenances } from './etapes/sirecMigration.reponseProvenance.transformer.js';
 import { type SirenaDeclarantData, transformSirecDeclarant } from './sirecMigration.declarant.transformer.js';
-import type { SirenaEtapeData } from './sirecMigration.etape.types.js';
-import { transformSirecExamenCommission } from './sirecMigration.examenCommission.transformer.js';
-import { transformSirecInstitutionsPartenaires } from './sirecMigration.institutionPartenaire.transformer.js';
-import { transformSirecMisEnCauseSituations } from './sirecMigration.misEnCause.transformer.js';
-import { transformSirecPriseEnCharge } from './sirecMigration.priseEnCharge.transformer.js';
 import { transformSirecProvenances } from './sirecMigration.provenance.transformer.js';
-import { transformSirecReponsePlaignant } from './sirecMigration.reponsePlaignant.transformer.js';
-import { transformSirecReponseProvenances } from './sirecMigration.reponseProvenance.transformer.js';
-import type { SirenaSituationData } from './sirecMigration.situation.transformer.js';
 import { type SirenaVictimeData, transformSirecVictime } from './sirecMigration.victime.transformer.js';
+import { transformSirecAffectation } from './situation/sirecMigration.affectation.transformer.js';
+import { transformSirecMisEnCauseSituations } from './situation/sirecMigration.misEnCause.transformer.js';
+import type { SirenaSituationData } from './situation/sirecMigration.situation.transformer.js';
 
 export type { SirenaAdresseData } from './sirecMigration.declarant.transformer.js';
-export type {
-  SirenaDeclarantData,
-  SirenaEtapeData,
-  SirenaFinessMisEnCauseData,
-  SirenaLieuDeSurvenueData,
-  SirenaMisEnCauseData,
-  SirenaRppsMisEnCauseData,
-  SirenaSituationData,
-  SirenaVictimeData,
-};
+export type { SirenaDeclarantData, SirenaEtapeData, SirenaSituationData, SirenaVictimeData };
 
 export interface SirenaRequeteData {
   sirenaId: string;
