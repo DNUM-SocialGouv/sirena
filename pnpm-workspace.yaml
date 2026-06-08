@@ -9,33 +9,33 @@ allowBuilds:
   msgpackr-extract: true
   prisma: true
 catalog:
-  "@biomejs/biome": ^2.4.15
-  "@codegouvfr/react-dsfr": ^1.32.1
+  "@biomejs/biome": ^2.4.16
+  "@codegouvfr/react-dsfr": ^1.32.2
   "@hono/standard-validator": ^0.2.2
   "@prisma/adapter-pg": ^7.8.0
   "@prisma/client": ^7.8.0
-  "@tanstack/react-router": ^1.170.4
+  "@tanstack/react-router": ^1.170.9
   "@testing-library/jest-dom": ^6.9.1
   "@testing-library/react": ^16.3.2
   "@testing-library/user-event": ^14.6.1
-  "@types/node": ^25.8.0
-  "@types/react": ^19.2.14
+  "@types/node": ^25.9.1
+  "@types/react": ^19.2.15
   "@types/react-dom": ^19.2.3
   "@vitejs/plugin-react": ^6.0.2
-  "@vitest/browser": ^4.1.6
-  "@vitest/coverage-v8": ^4.1.6
+  "@vitest/browser": ^4.1.7
+  "@vitest/coverage-v8": ^4.1.7
   clsx: ^2.1.1
   dotenv: ^17.4.2
-  hono: ^4.12.19
+  hono: ^4.12.23
   hono-openapi: ^1.3.0
   jsdom: ^29.1.1
   prisma: ^7.8.0
   react: ^19.2.6
   react-dom: ^19.2.6
-  tsx: ^4.22.1
+  tsx: ^4.22.3
   typescript: ~6.0.3
-  vite: ^8.0.13
-  vitest: ^4.1.6
+  vite: ^8.0.14
+  vitest: ^4.1.7
   zod: ^4.4.3
 enablePrePostScripts: true
 minimumReleaseAge: 10080
@@ -50,3 +50,8 @@ overrides:
   # tombe sous CVE-2025-5889 (ReDoS). On force la branche 5.x patchée.
   brace-expansion@<5.0.6: ">=5.0.6"
   tmp@<0.2.6: ^0.2.6
+  # bullmq épingle ioredis à un patch exact (5.10.1) alors que le backend
+  # consomme 5.11.0. Sans alignement, deux copies coexistent et leurs types
+  # `Redis` deviennent incompatibles. On unifie l'arbre sur la branche 5.11.x
+  # (minor additif, compatible bullmq) pour garder une seule instance.
+  ioredis: ^5.11.0

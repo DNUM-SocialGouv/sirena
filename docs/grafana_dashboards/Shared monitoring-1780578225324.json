@@ -1,0 +1,845 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "gakm5rr",
+    "namespace": "org-79",
+    "uid": "4abbcc12-746a-4e5f-979e-fe841f9c9051",
+    "resourceVersion": "1780579111224801",
+    "generation": 5,
+    "creationTimestamp": "2026-06-04T11:52:05Z",
+    "labels": {
+      "grafana.app/deprecatedInternalID": "4357618385166336"
+    },
+    "annotations": {
+      "grafana.app/createdBy": "user:dew1uzuute70ge",
+      "grafana.app/folder": "bf665p8qegao0b",
+      "grafana.app/saved-from-ui": "Grafana v13.0.1+security-01 (9bbe672d)",
+      "grafana.app/updatedBy": "user:dew1uzuute70ge",
+      "grafana.app/updatedTimestamp": "2026-06-04T13:18:31Z",
+      "grafana.app/folderTitle": "Sirena",
+      "grafana.app/folderUrl": "/dashboards/f/bf665p8qegao0b/sirena"
+    }
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana",
+            "version": "v0",
+            "spec": {}
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "builtIn": true
+        }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "prometheus",
+            "version": "v0",
+            "datasource": {
+              "name": "feqx8avvem5mob"
+            },
+            "spec": {
+              "expr": "increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\"}[1m]) > 0",
+              "interval": "",
+              "refId": "Anno"
+            }
+          },
+          "enable": true,
+          "hide": false,
+          "iconColor": "red",
+          "name": "Restarts"
+        }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "prometheus",
+            "version": "v0",
+            "datasource": {
+              "name": "feqx8avvem5mob"
+            },
+            "spec": {
+              "expr": "group by (namespace, deployment) (\n  changes(kube_deployment_metadata_generation{namespace=~\"$namespace\"}[1m]) > 0\n)",
+              "interval": "",
+              "refId": "Anno"
+            }
+          },
+          "enable": true,
+          "hide": false,
+          "iconColor": "blue",
+          "name": "Rollout start"
+        }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "prometheus",
+            "version": "v0",
+            "datasource": {
+              "name": "feqx8avvem5mob"
+            },
+            "spec": {
+              "expr": "group by (namespace, container, image) (\n  changes(\n    count by (namespace, container, image) (\n      kube_pod_container_info{namespace=~\"$namespace\"}\n    )[2m:30s]\n  ) > 0\n)",
+              "interval": "",
+              "refId": "Anno"
+            }
+          },
+          "enable": true,
+          "hide": false,
+          "iconColor": "green",
+          "name": "Changement image"
+        }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "prometheus",
+            "version": "v0",
+            "datasource": {
+              "name": "feqx8avvem5mob"
+            },
+            "spec": {
+              "expr": "group by (namespace, deployment) (\n  (kube_deployment_status_replicas_unavailable{namespace=~\"$namespace\"} == 0)\n  unless\n  (kube_deployment_status_replicas_unavailable{namespace=~\"$namespace\"} offset 2m == 0)\n)",
+              "interval": "",
+              "refId": "Anno"
+            }
+          },
+          "enable": true,
+          "hide": false,
+          "iconColor": "dark-blue",
+          "name": "Rollout end"
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Nodejs runtime metrics - customized for namespace filtering",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "id": 1,
+          "title": "Alertes",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "alertlist",
+            "version": "13.0.1+security-01",
+            "spec": {
+              "options": {
+                "alertInstanceLabelFilter": "",
+                "alertName": "",
+                "dashboardAlerts": false,
+                "folder": {
+                  "title": "Sirena",
+                  "uid": "bf665p8qegao0b"
+                },
+                "groupBy": [],
+                "groupMode": "default",
+                "maxItems": 20,
+                "showInactiveAlerts": false,
+                "sortOrder": 1,
+                "stateFilter": {
+                  "error": true,
+                  "firing": true,
+                  "noData": true,
+                  "normal": true,
+                  "pending": true,
+                  "recovering": true
+                },
+                "viewMode": "list"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "Erreurs de conteneurs",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "feqx8avvem5mob"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "sum(kube_pod_container_status_waiting_reason{namespace=~\"$namespace\"}) by (container, reason)",
+                        "format": "time_series",
+                        "interval": "",
+                        "legendFormat": "{{reason}} in {{container}}",
+                        "range": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.0.1+security-01",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "decimals": 0,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "continuous-BlYlRd"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.1,
+                    "drawStyle": "points",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 2,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "fieldMinMax": false
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "id": 3,
+          "title": "Fichiers orphelin",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "feqx8avvem5mob"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max (sirena_file_integrity_orphan_s3_total{namespace=~\"$namespace\"})",
+                        "legendFormat": "Orphan S3",
+                        "range": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "feqx8avvem5mob"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max (sirena_file_integrity_orphan_db_total{namespace=~\"$namespace\"})",
+                        "instant": false,
+                        "legendFormat": "Orphan DB",
+                        "range": true
+                      }
+                    },
+                    "refId": "B",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "feqx8avvem5mob"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max (sirena_file_integrity_dangling_db_total{namespace=~\"$namespace\"})",
+                        "instant": false,
+                        "legendFormat": "Dangling",
+                        "range": true
+                      }
+                    },
+                    "refId": "C",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.0.1+security-01",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "Fichiers orphelin (par poids)",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "feqx8avvem5mob"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max (sirena_file_integrity_orphan_s3_bytes{namespace=~\"$namespace\"})",
+                        "legendFormat": "Orphan S3",
+                        "range": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "feqx8avvem5mob"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max (sirena_file_integrity_orphan_db_bytes{namespace=~\"$namespace\"})",
+                        "instant": false,
+                        "legendFormat": "Orphan DB",
+                        "range": true
+                      }
+                    },
+                    "refId": "B",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "feqx8avvem5mob"
+                      },
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max (sirena_file_integrity_dangling_db_bytes{namespace=~\"$namespace\"})",
+                        "instant": false,
+                        "legendFormat": "Dangling",
+                        "range": true
+                      }
+                    },
+                    "refId": "C",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.0.1+security-01",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "decbytes",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "AutoGridLayout",
+      "spec": {
+        "maxColumnCount": 3,
+        "columnWidthMode": "standard",
+        "rowHeightMode": "standard",
+        "items": [
+          {
+            "kind": "AutoGridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              }
+            }
+          },
+          {
+            "kind": "AutoGridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              }
+            }
+          },
+          {
+            "kind": "AutoGridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              }
+            }
+          },
+          {
+            "kind": "AutoGridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [],
+    "timeSettings": {
+      "timezone": "browser",
+      "from": "now-1h",
+      "to": "now",
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "hideTimepicker": false,
+      "fiscalYearStartMonth": 0
+    },
+    "title": "Shared monitoring",
+    "variables": [
+      {
+        "kind": "IntervalVariable",
+        "spec": {
+          "name": "interval",
+          "query": "10s,30s,1m,5m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+          "current": {
+            "text": "1m",
+            "value": "1m"
+          },
+          "options": [
+            {
+              "selected": false,
+              "text": "auto",
+              "value": "$__auto_interval_interval"
+            },
+            {
+              "selected": false,
+              "text": "10s",
+              "value": "10s"
+            },
+            {
+              "selected": false,
+              "text": "30s",
+              "value": "30s"
+            },
+            {
+              "selected": true,
+              "text": "1m",
+              "value": "1m"
+            },
+            {
+              "selected": false,
+              "text": "5m",
+              "value": "5m"
+            },
+            {
+              "selected": false,
+              "text": "10m",
+              "value": "10m"
+            },
+            {
+              "selected": false,
+              "text": "30m",
+              "value": "30m"
+            },
+            {
+              "selected": false,
+              "text": "1h",
+              "value": "1h"
+            },
+            {
+              "selected": false,
+              "text": "6h",
+              "value": "6h"
+            },
+            {
+              "selected": false,
+              "text": "12h",
+              "value": "12h"
+            },
+            {
+              "selected": false,
+              "text": "1d",
+              "value": "1d"
+            },
+            {
+              "selected": false,
+              "text": "7d",
+              "value": "7d"
+            },
+            {
+              "selected": false,
+              "text": "14d",
+              "value": "14d"
+            },
+            {
+              "selected": false,
+              "text": "30d",
+              "value": "30d"
+            }
+          ],
+          "auto": true,
+          "auto_min": "10s",
+          "auto_count": 30,
+          "refresh": "onTimeRangeChanged",
+          "label": "Interval",
+          "hide": "dontHide",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "ConstantVariable",
+        "spec": {
+          "name": "app_type",
+          "query": "shared",
+          "current": {
+            "text": "shared",
+            "value": "shared"
+          },
+          "label": "App Type",
+          "hide": "hideVariable",
+          "skipUrlSync": true
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "namespace",
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "label": "Namespace",
+          "hide": "dontHide",
+          "refresh": "onTimeRangeChanged",
+          "skipUrlSync": false,
+          "query": {
+            "kind": "DataQuery",
+            "group": "prometheus",
+            "version": "v0",
+            "spec": {
+              "__legacyStringValue": "label_values(nodejs_active_handles, namespace)"
+            }
+          },
+          "regex": "",
+          "regexApplyTo": "value",
+          "sort": "alphabeticalAsc",
+          "definition": "label_values(nodejs_active_handles, namespace)",
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "allowCustomValue": true
+        }
+      }
+    ]
+  }
+}

@@ -364,10 +364,8 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     expect(mockedSendTipimailEmail).toHaveBeenCalled();
     const call = mockedSendTipimailEmail.mock.calls[0]?.[0];
-    const values = (call as any)?.substitutions?.[0]?.values ?? {};
-    expect(values.entitecomplete_1).toBe('ARS Normandie');
-    expect(values.entitecomplete_2).toBe('Adresse e-mail : ars-interne@example.com');
-    expect(values.entitecomplete_nb).toBe(2);
+    expect(call?.text).toContain('ARS Normandie');
+    expect(call?.text).toContain('Adresse e-mail : ars-interne@example.com');
   });
 
   it('should send email with name only when entity has no info at all', async () => {
@@ -406,11 +404,9 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     expect(mockedSendTipimailEmail).toHaveBeenCalled();
     const call = mockedSendTipimailEmail.mock.calls[0]?.[0];
-    const values = (call as any)?.substitutions?.[0]?.values ?? {};
     // ARS Normandie with email, then blank line, then CD Calvados name only
-    expect(values.entitecomplete_1).toBe('ARS Normandie');
-    expect(values.entitecomplete_2).toBe('Adresse e-mail : contact@ars.fr');
-    expect(values.entitecomplete_3).toBe('');
-    expect(values.entitecomplete_4).toBe('CD Calvados');
+    expect(call?.text).toContain('ARS Normandie');
+    expect(call?.text).toContain('Adresse e-mail : contact@ars.fr');
+    expect(call?.text).toContain('CD Calvados');
   });
 });

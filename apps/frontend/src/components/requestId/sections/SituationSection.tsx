@@ -510,6 +510,13 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
           </>
         )}
 
+        {situation?.domainesFonctionnels?.label && (
+          <>
+            <SectionTitle level={4}>Domaine fonctionnel</SectionTitle>
+            <p className={fr.cx('fr-mb-3w')}>{situation.domainesFonctionnels.label}</p>
+          </>
+        )}
+
         {situation?.demarchesEngagees?.demarches && situation.demarchesEngagees.demarches.length > 0 && (
           <>
             <SectionTitle level={4}>Démarches engagées</SectionTitle>
