@@ -1,4 +1,4 @@
-import { mariadbPool } from '../../config/mysql.js';
+import { mariadbPool } from '../../config/mariadb.js';
 
 export interface SirecReclamationRow {
   id_data: number;

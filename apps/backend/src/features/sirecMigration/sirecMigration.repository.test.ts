@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mariadbPool } from '../../config/mariadb.js';
 import { fetchSirecReclamationById } from './sirecMigration.repository.js';
 
-vi.mock('../../config/mysql.js', () => ({
-  mysqlPool: {
+vi.mock('../../config/mariadb.js', () => ({
+  mariadbPool: {
     query: vi.fn(),
   },
 }));
