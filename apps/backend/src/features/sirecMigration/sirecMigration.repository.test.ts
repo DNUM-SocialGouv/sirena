@@ -15,7 +15,7 @@ describe('sirecMigration.repository.ts', () => {
 
   it('should return the row when found', async () => {
     const mockRow = { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation' };
-    vi.mocked(mariadbPool.query).mockResolvedValueOnce([[mockRow], []]);
+    vi.mocked(mariadbPool.query).mockResolvedValueOnce([mockRow]);
 
       const result = await fetchSirecReclamationById(42);
 
@@ -24,7 +24,7 @@ describe('sirecMigration.repository.ts', () => {
   });
 
   it('should return null when not found', async () => {
-    vi.mocked(mariadbPool.query).mockResolvedValueOnce([[], []]);
+    vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
 
       const result = await fetchSirecReclamationById(99);
 
@@ -32,7 +32,7 @@ describe('sirecMigration.repository.ts', () => {
     });
 
   it('should pass the sirecId as parameter', async () => {
-    vi.mocked(mariadbPool.query).mockResolvedValueOnce([[], []]);
+    vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
 
       await fetchSirecReclamationById(123);
 
