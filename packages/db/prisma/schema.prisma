@@ -336,10 +336,19 @@ model Situation {
   demarchesEngageesId String
   demarchesEngagees   DemarchesEngagees @relation(fields: [demarchesEngageesId], references: [id], onDelete: Cascade)
 
+  domainesFonctionnelsId String?
+  domainesFonctionnels   DomainesFonctionnelsEnum? @relation(fields: [domainesFonctionnelsId], references: [id], onDelete: SetNull)
+
   requete   Requete? @relation(fields: [requeteId], references: [id], onDelete: Cascade)
   requeteId String?
 
   situationEntites SituationEntite[]
+}
+
+model DomainesFonctionnelsEnum {
+  id         String      @id
+  label      String      @unique
+  situations Situation[]
 }
 
 model SituationEntite {
