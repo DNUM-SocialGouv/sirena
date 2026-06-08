@@ -312,14 +312,8 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('')
     .describe('Identifiant du dashboard Metabase à exposer sur la page statistiques (ex: "42")'),
-  MARIADB_SIREC_HOST: z.string({
-    error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MARIADB_SIREC_HOST est requise" : 'Not a string',
-  }),
-  MARIADB_SIREC_DB: z.string({
-    error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MARIADB_SIREC_DB est requise" : 'Not a string',
-  }),
+  MARIADB_SIREC_HOST: z.string().optional(),
+  MARIADB_SIREC_DB: z.string().optional(),
   MARIADB_SIREC_PORT: z
     .string()
     .optional()
@@ -331,14 +325,8 @@ export const AppEnvSchema = z.object({
       }
       return parsed;
     }),
-  MARIADB_SIREC_USER: z.string({
-    error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MARIADB_SIREC_USER est requise" : 'Not a string',
-  }),
-  MARIADB_SIREC_PASSWORD: z.string({
-    error: (issue) =>
-      issue.input === undefined ? "La variable d'environnement MARIADB_SIREC_PASSWORD est requise" : 'Not a string',
-  }),
+  MARIADB_SIREC_USER: z.string().optional(),
+  MARIADB_SIREC_PASSWORD: z.string().optional(),
   APP_ENV: z
     .enum(APP_ENV_VALUES)
     .optional()
