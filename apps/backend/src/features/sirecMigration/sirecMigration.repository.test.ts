@@ -1,15 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mysqlPool } from '../../config/mysql.js';
-import {
-  fetchSirecData,
-  fetchSirecGroupIds,
-  fetchSirecInstitutionPartenaires,
-  fetchSirecMisEnCauses,
-  fetchSirecMotifsDeclaresById,
-  fetchSirecProvenances,
-  fetchSirecReclamationById,
-  fetchSirecTypeTraitementIds,
-} from './sirecMigration.repository.js';
+import { mariadbPool } from '../../config/mariadb.js';
+import { fetchSirecReclamationById } from './sirecMigration.repository.js';
 
 vi.mock('../../config/mysql.js', () => ({
   mysqlPool: {
@@ -22,41 +13,32 @@ describe('sirecMigration.repository.ts', () => {
     vi.clearAllMocks();
   });
 
-  describe('fetchSirecReclamationById', () => {
-    it('should return the row when found', async () => {
-      const mockRow = {
-        id_data: 42,
-        r_recept_date: new Date('2024-01-15'),
-        description: 'Ma réclamation',
-        reception: 12,
-        prioritaire: 1,
-        service_recepteur_niv1: 693,
-        service_gestionnaire: null,
-      };
-      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[mockRow], []]);
+  it('should return the row when found', async () => {
+    const mockRow = { id_data: 42, r_recept_date: new Date('2024-01-15'), description: 'Ma réclamation' };
+    vi.mocked(mariadbPool.query).mockResolvedValueOnce([[mockRow], []]);
 
       const result = await fetchSirecReclamationById(42);
 
-      expect(result).toEqual(mockRow);
-      expect(mysqlPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_data'), [42]);
-    });
+    expect(result).toEqual(mockRow);
+    expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_data'), [42]);
+  });
 
-    it('should return null when not found', async () => {
-      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[], []]);
+  it('should return null when not found', async () => {
+    vi.mocked(mariadbPool.query).mockResolvedValueOnce([[], []]);
 
       const result = await fetchSirecReclamationById(99);
 
       expect(result).toBeNull();
     });
 
-    it('should pass the sirecId as parameter', async () => {
-      vi.mocked(mysqlPool.query).mockResolvedValueOnce([[], []]);
+  it('should pass the sirecId as parameter', async () => {
+    vi.mocked(mariadbPool.query).mockResolvedValueOnce([[], []]);
 
       await fetchSirecReclamationById(123);
 
-      expect(mysqlPool.query).toHaveBeenCalledWith(expect.any(String), [123]);
-    });
+    expect(mariadbPool.query).toHaveBeenCalledWith(expect.any(String), [123]);
   });
+});
 
   describe('fetchSirecMotifsDeclaresById', () => {
     it('should return the list of id_dico when found', async () => {
