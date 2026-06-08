@@ -81,19 +81,20 @@ services:
       timeout: 5s
       retries: 5
 
-  mysql:
-    image: mysql:8.0
-    container_name: sirena-mysql-dev
+  mariadb:
+    image: mariadb:11.8
+    container_name: sirena-mariadb-dev
     environment:
       MARIADB_DATABASE: ${MARIADB_SIREC_DB}
       MARIADB_USER: ${MARIADB_SIREC_USER}
       MARIADB_PASSWORD: ${MARIADB_SIREC_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_SIREC_PASSWORD}
     ports:
       - "127.0.0.1:3306:3306"
     volumes:
-      - mysqldata:/var/lib/mysql
+      - mariadbdata:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "${MARIADB_SIREC_USER}", "-p${MARIADB_SIREC_PASSWORD}"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -132,7 +133,7 @@ services:
 volumes:
   pgdata:
   miniodata:
-  mysqldata:
+  mariadbdata:
   clamav-db:
 
 networks:
