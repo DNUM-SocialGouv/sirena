@@ -5,51 +5,92 @@ on:
     branches:
       - chore/deploy
 
+concurrency:
+  group: auto-test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  prepare:
+    name: Prepare build context
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - name: Compute short sha
+        id: version
+        run: echo "value=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
   build-docker:
-    name: Build docker images
+    name: Build ${{ matrix.image }} image
+    needs: prepare
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
       attestations: write
       id-token: write
-      security-events: write
-
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [anonymize, worker, backend, frontend]
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+      - uses: actions/checkout@1cce3390c2bfda521930d01229c073c7ff920824 # v6
+        with:
+          fetch-depth: 1
 
-      - name: Compute short sha
-        id: compute_short_sha
-        run: |
-          SHORT_SHA=${GITHUB_SHA::7}
-          echo "SHORT_SHA=${SHORT_SHA}" >> $GITHUB_OUTPUT
-
-      - name: Build and push Docker images
+      - name: Build and push ${{ matrix.image }} image
         uses: ./.github/actions/build-docker
         with:
-          version: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
+          image: ${{ matrix.image }}
+          version: ${{ needs.prepare.outputs.version }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          environment: test
 
-    outputs:
-      SHORT_SHA: ${{ steps.compute_short_sha.outputs.SHORT_SHA }}
-
-  deploy:
-    name: Deploy to GitOps
-    needs: build-docker
+  trivy-scan:
+    name: Trivy scan ${{ matrix.image }}
+    needs: [prepare, build-docker]
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [anonymize, worker, backend, frontend]
     steps:
-      - uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v6
+      - uses: actions/checkout@1cce3390c2bfda521930d01229c073c7ff920824 # v6
+        with:
+          fetch-depth: 1
+
+      - name: Resolve image reference
+        id: ref
+        run: |
+          NORMALIZED_REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "value=ghcr.io/${NORMALIZED_REPO}:${{ needs.prepare.outputs.version }}-${{ matrix.image }}" >> "$GITHUB_OUTPUT"
+
+      - name: Trivy image scan
+        uses: ./.github/actions/trivy-image-scan
+        with:
+          image-ref: ${{ steps.ref.outputs.value }}
+          category: trivy-container-${{ matrix.image }}
+
+  deploy:
+    name: Deploy to GitOps
+    needs: [prepare, build-docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@1cce3390c2bfda521930d01229c073c7ff920824 # v6
+        with:
+          fetch-depth: 1
 
       - name: Deploy to GitOps
         uses: ./.github/actions/deploy-gitops
         with:
           environment: test
-          version: ${{ needs.build-docker.outputs.SHORT_SHA }}
+          version: ${{ needs.prepare.outputs.version }}
           gitops-repo-key: ${{ secrets.GITOPS_REPO_KEY }}
           helm-repo-pat: ${{ secrets.HELM_REPO_PAT }}

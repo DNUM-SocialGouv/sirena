@@ -114,166 +114,154 @@ export function AttachedFiles({
   };
 
   return (
-    <div className={`fr-p-4w fr-mb-4w ${styles.container}`}>
-      <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-        <legend>
-          <h2 className="fr-h6 fr-mb-3w">Pièces jointes</h2>
-        </legend>
+    <fieldset className="fr-mb-3w" style={{ border: 'none', padding: 0, margin: 0 }}>
+      <legend className="fr-label fr-mb-1w">Pièces jointes fournies par le déclarant :</legend>
 
-        {/* Existing files */}
-        {existingFiles.length > 0 && (
-          <div className={fr.cx('fr-mb-3w')} style={{ width: '100%' }}>
-            <h4 className={fr.cx('fr-text--lg')}>Fichiers importés</h4>
-            <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
-              <ul>
-                {existingFiles.map((file) => (
-                  <li key={file.id} className={noteStyles['request-note__file']}>
-                    <div className={styles.fileItem}>
-                      <div className={styles.fileName}>
-                        <FileDownloadLink
-                          href={
-                            situationId && requestId
-                              ? `/api/requetes-entite/${requestId}/situation/${situationId}/file/${file.id}`
-                              : '#'
-                          }
-                          safeHref={
-                            requestId && situationId
-                              ? `/api/requetes-entite/${requestId}/situation/${situationId}/file/${file.id}/safe`
-                              : undefined
-                          }
-                          fileName={file.fileName}
-                          fileId={file.id}
-                          fileSize={file.size}
-                          status={file.status}
-                          scanStatus={file.scanStatus}
-                          sanitizeStatus={file.sanitizeStatus}
-                          className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
-                        />
-                      </div>
-                      {!isSaving && file.canDelete !== false && file.entiteId === profile?.topEntiteId && (
-                        <Button
-                          aria-label="Supprimer le fichier"
-                          title="Supprimer le fichier"
-                          type="button"
-                          className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
-                          onClick={(event) => {
-                            registerTrigger(event.currentTarget);
-                            handleDeleteExistingFile(file, event);
-                          }}
-                        >
-                          <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
-                        </Button>
-                      )}
+      {/* Existing files */}
+      {existingFiles.length > 0 && (
+        <div className={fr.cx('fr-mb-3w')} style={{ width: '100%' }}>
+          <h4 className={fr.cx('fr-text--lg')}>Fichiers importés</h4>
+          <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
+            <ul>
+              {existingFiles.map((file) => (
+                <li key={file.id} className={noteStyles['request-note__file']}>
+                  <div className={styles.fileItem}>
+                    <div className={styles.fileName}>
+                      <FileDownloadLink
+                        href={
+                          situationId && requestId
+                            ? `/api/requetes-entite/${requestId}/situation/${situationId}/file/${file.id}`
+                            : '#'
+                        }
+                        safeHref={
+                          requestId && situationId
+                            ? `/api/requetes-entite/${requestId}/situation/${situationId}/file/${file.id}/safe`
+                            : undefined
+                        }
+                        fileName={file.fileName}
+                        fileId={file.id}
+                        fileSize={file.size}
+                        status={file.status}
+                        scanStatus={file.scanStatus}
+                        sanitizeStatus={file.sanitizeStatus}
+                        className={`${fr.cx('fr-link', 'fr-text--sm')} ${styles.fileNameLink}`}
+                      />
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                    {!isSaving && file.canDelete !== false && file.entiteId === profile?.topEntiteId && (
+                      <Button
+                        aria-label={`Supprimer le fichier ${file.fileName}`}
+                        title={`Supprimer le fichier ${file.fileName}`}
+                        type="button"
+                        className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
+                        onClick={(event) => {
+                          registerTrigger(event.currentTarget);
+                          handleDeleteExistingFile(file, event);
+                        }}
+                      >
+                        <span className={fr.cx('fr-sr-only')}>Supprimer le fichier {file.fileName}</span>
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Selected files (not yet saved) */}
-        {faitFiles.length > 0 && (
-          <div className={fr.cx('fr-mb-3w')} style={{ width: '100%' }}>
-            <h4 className={fr.cx('fr-text--lg')}>Nouveaux fichiers sélectionnés</h4>
-            <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
-              <ul>
-                {faitFiles.map((file) => (
-                  <li
-                    key={`${file.name}-${file.size}-${file.lastModified}`}
-                    className={noteStyles['request-note__file']}
-                  >
-                    <div className={styles.fileItem}>
-                      <div className={styles.fileName}>
-                        <span className={fr.cx('fr-text--sm')}>
-                          {file.name} ({formatFileSize(file.size)})
-                        </span>
-                      </div>
-                      {!isSaving && (
-                        <Button
-                          aria-label="Supprimer le fichier"
-                          title="Supprimer le fichier"
-                          type="button"
-                          className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
-                          onClick={(event) => handleDeleteSelectedFile(file, event)}
-                        >
-                          <span className={fr.cx('fr-sr-only')}>Supprimer le fichier</span>
-                        </Button>
-                      )}
+      {/* Upload component */}
+      {!isSaving && (
+        <Upload
+          label="Ajouter des fichiers relatifs aux faits"
+          hint={FILE_UPLOAD_HINT}
+          multiple
+          disabled={isSaving}
+          nativeInputProps={{
+            ref: uploadInputRef,
+            accept: ACCEPTED_FILE_TYPES,
+            onChange: (e) => {
+              const files = e.target.files;
+              if (files) {
+                const fileArray = Array.from(files);
+                handleFileSelect(fileArray.map((file) => new File([file], file.name, { type: file.type })));
+              }
+            },
+          }}
+        />
+      )}
+
+      {/* Selected files (not yet saved) */}
+      {faitFiles.length > 0 && (
+        <div className={fr.cx('fr-mb-3w')} style={{ width: '100%' }}>
+          <h3 className={fr.cx('fr-text--lg')}>Nouveaux fichiers sélectionnés</h3>
+          <div className={fr.cx('fr-mt-1w')} style={{ maxHeight: '200px', overflowY: 'auto', overflowX: 'hidden' }}>
+            <ul>
+              {faitFiles.map((file) => (
+                <li key={`${file.name}-${file.size}-${file.lastModified}`} className={noteStyles['request-note__file']}>
+                  <div className={styles.fileItem}>
+                    <div className={styles.fileName}>
+                      <span className={fr.cx('fr-text--sm')}>
+                        {file.name} ({formatFileSize(file.size)})
+                      </span>
                     </div>
-                  </li>
-                ))}
-              </ul>
+                    {!isSaving && (
+                      <Button
+                        aria-label={`Supprimer le fichier ${file.name}`}
+                        title={`Supprimer le fichier ${file.name}`}
+                        type="button"
+                        className={`${fr.cx('fr-btn', 'fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-delete-line')} ${styles.deleteButton}`}
+                        onClick={(event) => handleDeleteSelectedFile(file, event)}
+                      >
+                        <span className={fr.cx('fr-sr-only')}>Supprimer le fichier {file.name}</span>
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* File validation errors */}
+      {Object.keys(fileErrors).length > 0 && (
+        <div className={fr.cx('fr-mt-2w')}>
+          <h4 className={`${fr.cx('fr-text--sm', 'fr-text--bold')} ${styles.errorText}`}>Erreurs de validation</h4>
+          {Object.entries(fileErrors).map(([fileName, errors]) => (
+            <div key={fileName} className={fr.cx('fr-mb-1w')}>
+              <p className={`${fr.cx('fr-text--sm', 'fr-text--bold')} ${styles.errorText}`}>{fileName}</p>
+              {errors.map((error) => (
+                <p key={`${fileName}-error-${error.message}`} className={`${fr.cx('fr-text--xs')} ${styles.errorText}`}>
+                  {error.message}
+                </p>
+              ))}
             </div>
-          </div>
-        )}
+          ))}
+        </div>
+      )}
 
-        {/* Upload component */}
-        {!isSaving && (
-          <Upload
-            label="Ajouter des fichiers relatifs aux faits"
-            hint={FILE_UPLOAD_HINT}
-            multiple
-            disabled={isSaving}
-            nativeInputProps={{
-              ref: uploadInputRef,
-              accept: ACCEPTED_FILE_TYPES,
-              onChange: (e) => {
-                const files = e.target.files;
-                if (files) {
-                  const fileArray = Array.from(files);
-                  handleFileSelect(fileArray.map((file) => new File([file], file.name, { type: file.type })));
-                }
-              },
-            }}
-          />
-        )}
-
-        {/* File validation errors */}
-        {Object.keys(fileErrors).length > 0 && (
-          <div className={fr.cx('fr-mt-2w')}>
-            <h4 className={`${fr.cx('fr-text--sm', 'fr-text--bold')} ${styles.errorText}`}>Erreurs de validation</h4>
-            {Object.entries(fileErrors).map(([fileName, errors]) => (
-              <div key={fileName} className={fr.cx('fr-mb-1w')}>
-                <p className={`${fr.cx('fr-text--sm', 'fr-text--bold')} ${styles.errorText}`}>{fileName}</p>
-                {errors.map((error) => (
-                  <p
-                    key={`${fileName}-error-${error.message}`}
-                    className={`${fr.cx('fr-text--xs')} ${styles.errorText}`}
-                  >
-                    {error.message}
-                  </p>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Delete confirmation modal */}
-        <deleteFileModal.Component
-          concealingBackdrop={false}
-          title="Supprimer le fichier"
-          buttons={[
-            {
-              doClosesModal: true,
-              children: 'Annuler',
-              onClick: () => {
-                deleteFileModal.close();
-                setFileToDelete(null);
-              },
+      {/* Delete confirmation modal */}
+      <deleteFileModal.Component
+        concealingBackdrop={false}
+        title="Supprimer le fichier"
+        buttons={[
+          {
+            doClosesModal: true,
+            children: 'Annuler',
+            onClick: () => {
+              deleteFileModal.close();
+              setFileToDelete(null);
             },
-            {
-              doClosesModal: false,
-              children: 'Confirmer',
-              onClick: handleConfirmDeleteExistingFile,
-            },
-          ]}
-        >
-          <p>
-            Êtes-vous sûr de vouloir supprimer le fichier "{fileToDelete?.fileName}" ? Cette action est irréversible.
-          </p>
-        </deleteFileModal.Component>
-      </fieldset>
-    </div>
+          },
+          {
+            doClosesModal: false,
+            children: 'Confirmer',
+            onClick: handleConfirmDeleteExistingFile,
+          },
+        ]}
+      >
+        <p>Êtes-vous sûr de vouloir supprimer le fichier "{fileToDelete?.fileName}" ? Cette action est irréversible.</p>
+      </deleteFileModal.Component>
+    </fieldset>
   );
 }

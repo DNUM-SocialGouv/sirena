@@ -121,7 +121,7 @@ const getStepSubtitle = (
   }
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
-      const sendNote = notes.find((note) => note.uploadedFiles.length > 0);
+      const sendNote = notes.find((note) => note.texte?.startsWith("Email d'accusé de réception envoyé le"));
       const isManualRequest = !!requete?.createdBy;
       if (isManualRequest && sendNote?.author) {
         return (
@@ -129,6 +129,9 @@ const getStepSubtitle = (
             Envoyé le {formatDate(updatedAt)} par {formatAgent(sendNote.author)}
           </>
         );
+      }
+      if (isManualRequest && !sendNote) {
+        return `Marqué comme fait le ${formatDate(updatedAt)}`;
       }
       return `Envoyé automatiquement le ${formatDate(updatedAt)}`;
     }
@@ -190,6 +193,11 @@ const StepComponent = ({
     : false;
 
   const isSystemStep = rest.type !== REQUETE_ETAPE_TYPES.MANUAL || statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE;
+  const isAcknowledgmentStep = rest.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
+  const sendNote = isAcknowledgmentStep
+    ? notes.find((note) => note.texte?.startsWith("Email d'accusé de réception envoyé le"))
+    : undefined;
+  const displayNotes = sendNote ? notes.filter((note) => note.id !== sendNote.id) : notes;
 
   const badges = requeteEtapeStatutBadges.filter((badge) => {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
@@ -310,8 +318,13 @@ const StepComponent = ({
                 </ButtonLink>
               </div>
               <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-                <div className="fr-btns-group fr-btns-group--inline">
-                  <Button priority="secondary" size="small" onClick={() => handleEditButton(false)}>
+                <div className="fr-grid-row">
+                  <Button
+                    className="fr-mr-1w"
+                    priority="secondary"
+                    size="small"
+                    onClick={() => handleEditButton(false)}
+                  >
                     Annuler
                   </Button>
                   <Button
@@ -440,8 +453,29 @@ const StepComponent = ({
           </>
         ) : (
           <>
+            {sendNote && sendNote.uploadedFiles.length > 0 && (
+              <ul className="fr-mt-1w fr-mb-2w" style={{ listStyle: 'none', padding: 0 }}>
+                {sendNote.uploadedFiles.map((file: (typeof sendNote.uploadedFiles)[number]) => {
+                  const fileName = (file.metadata as { originalName?: string })?.originalName || 'Unknown';
+                  return (
+                    <li key={file.id} className={styles['request-note__file']}>
+                      <FileDownloadLink
+                        href={`/api/requete-etapes/${id}/file/${file.id}`}
+                        safeHref={`/api/requete-etapes/${id}/file/${file.id}/safe`}
+                        fileName={fileName}
+                        fileId={file.id}
+                        fileSize={file.size}
+                        status={file.status}
+                        scanStatus={file.scanStatus}
+                        sanitizeStatus={file.sanitizeStatus}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
             <div className={styles['request-notes']}>
-              {notes.slice(0, isOpen ? notes.length : 3).map((note: StepType['notes'][number]) => (
+              {displayNotes.slice(0, isOpen ? displayNotes.length : 3).map((note: StepType['notes'][number]) => (
                 <StepNote
                   requestId={requestId}
                   key={note.id}
@@ -480,7 +514,7 @@ const StepComponent = ({
               ))}
             </div>
             <div className={styles['request-notes-distplay']}>
-              {notes.length > 3 && (
+              {displayNotes.length > 3 && (
                 <button type="button" className="fr-btn-link" onClick={() => setIsOpen(!isOpen)}>
                   {isOpen ? 'Masquer' : 'Afficher'} les notes précédentes{' '}
                   <span
@@ -492,7 +526,7 @@ const StepComponent = ({
                 </button>
               )}
             </div>
-            {canEdit && !isSystemStep && (
+            {canEdit && (!isSystemStep || isAcknowledgmentStep) && (
               <Button
                 className={styles['request-step__add-note']}
                 type="button"

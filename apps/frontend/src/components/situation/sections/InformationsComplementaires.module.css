@@ -1,0 +1,25 @@
+.container {
+  border: 1px solid var(--border-default-grey);
+  border-radius: 0.25rem;
+}
+
+.container > legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+}
+
+.container > legend + * {
+  clear: left;
+}
+
+[data-fr-theme="dark"] .container,
+html[data-fr-theme="dark"] .container {
+  border-color: var(--border-default-grey, #3a3a3a);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-fr-theme="light"]) .container {
+    border-color: var(--border-default-grey, #3a3a3a);
+  }
+}

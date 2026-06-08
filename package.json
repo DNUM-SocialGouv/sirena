@@ -26,6 +26,7 @@
     "op:manage-api-keys": "dotenv -e .env -- pnpm --filter @sirena/backend op:manage-api-keys",
     "op:file-integrity": "dotenv -e .env -- pnpm --filter @sirena/backend op:file-integrity",
     "op:get-load-test-user": "dotenv -e .env -- pnpm --filter @sirena/backend op:get-load-test-user",
+    "op:metabase:export-dashboard": "dotenv -e .env -- pnpm --filter @sirena/backend op:metabase:export-dashboard",
     "db:deploy": "dotenv -e .env -- pnpm --filter @sirena/db run deploy",
     "db:generate": "dotenv -e .env -- pnpm --filter @sirena/db generate",
     "db:migrate:resolve": "dotenv -e .env -- pnpm --filter @sirena/db migrate:resolve",
@@ -56,26 +57,13 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
-  "packageManager": "pnpm@11.0.0-rc.0+sha512.1f08eadeea025e91448de6d5dee42a6c94764257000c043a9e36b8ff12849a72ebcb9c65fc1885094747249e52f53d8b73ada1181446bba81866810c8a4d3f6c",
+  "packageManager": "pnpm@11.5.0+sha512.dbfcc4f81cf48597afd4bc391ffdf12c11f1a9fb83a395bfa6b0a2d9cc2fd8ffebafdb1ccbd529632153f793904c2615b7f09fe1a345473fd1c35845172a8eb1",
   "dependencies": {
     "dotenv-cli": "^11.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.0.0",
-    "@commitlint/config-conventional": "^21.0.0",
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
     "husky": "^9.1.7"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "@sentry/cli",
-      "esbuild",
-      "msgpackr-extract",
-      "prisma"
-    ],
-    "overrides": {
-      "@hono/node-server@<1.19.13": ">=1.19.13"
-    }
   }
 }

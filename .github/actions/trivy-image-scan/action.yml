@@ -1,0 +1,47 @@
+name: 'Trivy image scan'
+description: 'Scan a Docker image with Trivy and upload SARIF results, with a persistent Trivy DB cache.'
+
+inputs:
+  image-ref:
+    description: 'Fully-qualified image reference to scan'
+    required: true
+  category:
+    description: 'CodeQL SARIF category (used to namespace results in the Security tab)'
+    required: true
+  severity:
+    description: 'Comma-separated severities to include'
+    required: false
+    default: 'CRITICAL,HIGH,MEDIUM'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache Trivy DB
+      uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
+      with:
+        path: ~/.cache/trivy
+        key: trivy-db-${{ runner.os }}-${{ github.run_id }}
+        restore-keys: |
+          trivy-db-${{ runner.os }}-
+
+    - name: Trivy scan
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+      continue-on-error: true
+      with:
+        image-ref: ${{ inputs.image-ref }}
+        format: "sarif"
+        output: "trivy-${{ inputs.category }}.sarif"
+        severity: ${{ inputs.severity }}
+        exit-code: "0"
+        cache: 'true'
+        # Ne remonte que les CVE pour lesquelles une version corrigée existe en
+        # amont. Cela évite de polluer le Security tab avec les CVE Debian
+        # marquées "won't fix" / "no-dsa" sur lesquelles on n'a aucun levier.
+        ignore-unfixed: 'true'
+
+    - name: Upload Trivy SARIF
+      uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v3
+      continue-on-error: true
+      with:
+        sarif_file: "trivy-${{ inputs.category }}.sarif"
+        category: ${{ inputs.category }}

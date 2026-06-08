@@ -12,10 +12,12 @@ import {
 import {
   closeRequeteForEntite,
   collectRequeteFiles,
+  computeShouldCloseRequeteStatus,
   createChangeLogForRequeteEntite,
   createRequeteFilesArchive,
   deduplicateFileName,
   enrichSituationWithTraitementDesFaits,
+  filterOtherEntitesAffectedForUser,
   getOtherEntitesAffected,
   getPrefixedFileName,
   getRequeteEntiteById,
@@ -99,6 +101,9 @@ vi.mock('../../libs/prisma.js', () => ({
     requeteEtape: {
       findFirst: vi.fn(),
     },
+    situationEntite: {
+      findFirst: vi.fn(),
+    },
     uploadedFile: {
       findMany: vi.fn(),
     },
@@ -127,6 +132,7 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
     createdById: null,
     commentaire: 'Commentaire',
     receptionDate: new Date(),
+    dateDemandeDeclarant: null,
     receptionTypeId: 'receptionTypeId',
     provenanceId: null,
     provenancePrecision: null,
@@ -249,6 +255,7 @@ describe('requetesEntite.service', () => {
                       entite: true,
                     },
                   },
+                  domainesFonctionnels: true,
                 },
               },
             },
@@ -353,6 +360,7 @@ describe('requetesEntite.service', () => {
                       entite: true,
                     },
                   },
+                  domainesFonctionnels: true,
                 },
               },
             },
@@ -457,6 +465,7 @@ describe('requetesEntite.service', () => {
                       entite: true,
                     },
                   },
+                  domainesFonctionnels: true,
                 },
               },
             },
@@ -537,6 +546,70 @@ describe('requetesEntite.service', () => {
     });
   });
 
+  describe('filterOtherEntitesAffectedForUser', () => {
+    it('excludes user entities from other affected entities', () => {
+      const result = filterOtherEntitesAffectedForUser(
+        [
+          { id: 'user-direction-id', nomComplet: 'Direction Offre de Soins' },
+          { id: 'ars-bretagne-id', nomComplet: 'ARS Bretagne' },
+        ],
+        ['user-top-id', 'user-direction-id'],
+      );
+
+      expect(result).toEqual([{ id: 'ars-bretagne-id', nomComplet: 'ARS Bretagne' }]);
+    });
+  });
+
+  describe('computeShouldCloseRequeteStatus', () => {
+    it('excludes both user top entity and direction/service from other affected entities', async () => {
+      vi.mocked(prisma.situationEntite.findFirst).mockResolvedValueOnce(null);
+      vi.mocked(prisma.requeteEntite.findMany).mockResolvedValueOnce([
+        {
+          prioriteId: null,
+          entiteId: 'user-direction-id',
+          requeteId: 'REQ-354',
+          statutId: 'NOUVEAU',
+          entite: {
+            id: 'user-direction-id',
+            label: 'DOS',
+            nomComplet: 'Direction Offre de Soins',
+            entiteTypeId: 'ARS',
+          },
+        },
+        {
+          prioriteId: null,
+          entiteId: 'ars-bretagne-id',
+          requeteId: 'REQ-354',
+          statutId: 'NOUVEAU',
+          entite: {
+            id: 'ars-bretagne-id',
+            label: 'ARS Bretagne',
+            nomComplet: 'ARS Bretagne',
+            entiteTypeId: 'ARS',
+          },
+        },
+      ] as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findMany>>);
+
+      const result = await computeShouldCloseRequeteStatus({
+        requeteId: 'REQ-354',
+        userEntityIds: ['user-top-id', 'user-direction-id'],
+        excludeTopEntiteId: 'user-top-id',
+      });
+
+      expect(result).toEqual({
+        willUserBeUnassignedAfterSave: true,
+        otherEntitiesAffected: [
+          {
+            id: 'ars-bretagne-id',
+            nomComplet: 'ARS Bretagne',
+            entiteTypeId: 'ARS',
+            statutId: 'NOUVEAU',
+          },
+        ],
+      });
+    });
+  });
+
   describe('getRequeteEntiteById', () => {
     it('should fetch requeteEntite by id with related data', async () => {
       vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce(mockRequeteEntite);
@@ -609,6 +682,7 @@ describe('requetesEntite.service', () => {
                       entite: true,
                     },
                   },
+                  domainesFonctionnels: true,
                 },
               },
             },
@@ -748,6 +822,7 @@ describe('requetesEntite.service', () => {
         createdById: null,
         commentaire: '',
         receptionDate: new Date(),
+        dateDemandeDeclarant: null,
         receptionTypeId: 'EMAIL',
         provenanceId: null,
         provenancePrecision: null,
@@ -823,6 +898,7 @@ describe('requetesEntite.service', () => {
         createdById: null,
         commentaire: '',
         receptionDate: new Date(),
+        dateDemandeDeclarant: null,
         receptionTypeId: 'EMAIL',
         provenanceId: null,
         provenancePrecision: null,
@@ -1228,6 +1304,7 @@ describe('requetesEntite.service', () => {
         createdById: null,
         commentaire: '',
         receptionDate: new Date(),
+        dateDemandeDeclarant: null,
         receptionTypeId: 'EMAIL',
         provenanceId: null,
         provenancePrecision: null,

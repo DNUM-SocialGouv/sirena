@@ -105,18 +105,7 @@ function RouteComponent() {
             <CloseRequeteModal
               ref={closeRequeteModalRef}
               requestId={requestId}
-              date={
-                request?.requete?.createdAt
-                  ? new Date(request.requete.createdAt).toLocaleDateString('fr-FR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric',
-                    })
-                  : ''
-              }
-              misEnCause={situations?.[0]?.misEnCause?.misEnCauseType?.label || 'Non spécifié'}
-              otherEntitiesAffected={shouldCloseRequeteStatus?.otherEntitiesAffected || []}
-              customDescription={`Attention : votre entité n'est plus en charge du traitement d'aucune situation, vous pouvez clôturer la requête ${requestId}.`}
+              otherEntitiesAffected={shouldCloseRequeteStatus?.otherEntitiesAffected ?? []}
               triggerButtonRef={saveButtonRef}
               onBeforeClose={handleBeforeClose}
               onCancel={handleCloseModalCancel}

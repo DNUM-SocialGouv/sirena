@@ -90,7 +90,9 @@ export const misEnCauseProchePrecisionLabels: Record<MisEnCauseProchePrecision, 
 
 export const MIS_EN_CAUSE_ETABLISSEMENT_PRECISION = {
   ETABLISSEMENT: 'ETABLISSEMENT',
-  SERVICE: 'SERVICE',
+  SAD_MIXTE: 'SAD_MIXTE',
+  SAD_SOINS: 'SAD_SOINS',
+  SAD_AIDE: 'SAD_AIDE',
   SAMSAH: 'SAMSAH',
   SAVS: 'SAVS',
   SESSAD: 'SESSAD',
@@ -104,7 +106,9 @@ export type MisEnCauseEtablissementPrecision = keyof typeof MIS_EN_CAUSE_ETABLIS
 
 export const misEnCauseEtablissementPrecisionLabels: Record<MisEnCauseEtablissementPrecision, string> = {
   ETABLISSEMENT: 'Etablissement où se sont déroulés les faits',
-  SERVICE: "Services de soins infirmiers ou d'aide à domicile (SAAD, SSIAD, SPASAD)",
+  SAD_MIXTE: 'SAD mixte',
+  SAD_SOINS: 'SAD soins',
+  SAD_AIDE: 'SAD aide',
   SAMSAH: 'SAMSAH',
   SAVS: "SAVS (Service d'accompagnement à la vie sociale)",
   SESSAD: "SESSAD (Service d'Education Spéciale et de Soins à Domicile) non rattaché à un établissement",
@@ -144,6 +148,7 @@ export const lienVictimeLabels: Record<LienVictime, string> = {
 export type MisEnCauseTypePrecisionUnion =
   | MisEnCauseFamillePrecision
   | MisEnCauseProchePrecision
+  | MisEnCauseEtablissementPrecision
   | MisEnCauseAutreNonProPrecision
   | ProfessionSantePrecision
   | ProfessionSocialPrecision
@@ -1048,43 +1053,6 @@ export const sousMotifPROBLEMES_D_ORGANISATION_OU_DE_RESSOURCES_HUMAINESLabels: 
   MANQUE_DE_PERSONNEL_NON_SOIGNANT: 'Manque de personnel non soignant',
 };
 
-// Sous-motifs pour: Qualité de l\'accompagnement ou du service
-export const SOUS_MOTIF_QUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICE = {
-  PROBLEME_D_ACCOMPAGNEMENT_ET_OU_SUIVI_INDIVIDUEL_PROJET_DE_VIE_SUIVI_SOCIAL_EDUCATIF_ADMINISTRATIF:
-    'PROBLEME_D_ACCOMPAGNEMENT_ET_OU_SUIVI_INDIVIDUEL_PROJET_DE_VIE_SUIVI_SOCIAL_EDUCATIF_ADMINISTRATIF',
-  NON_RESPECT_DES_PROGRAMMES_DE_FORMATION: 'NON_RESPECT_DES_PROGRAMMES_DE_FORMATION',
-  ABSENCE_D_ANIMATION: 'ABSENCE_D_ANIMATION',
-  AUTRES: 'AUTRES',
-  QUALITE_DES_ANIMATIONS_AU_LIEU_D_INTERVENTIONS: 'QUALITE_DES_ANIMATIONS_AU_LIEU_D_INTERVENTIONS',
-  PROBLEMATIQUE_DE_FONCTIONNEMENT_DE_L_ESSMS_REGLEMENT_INTERIEUR:
-    'PROBLEMATIQUE_DE_FONCTIONNEMENT_DE_L_ESSMS_REGLEMENT_INTERIEUR',
-  VIOLENCES_ENTRE_USAGERS: 'VIOLENCES_ENTRE_USAGERS',
-  VILOLENCES_D_UN_USAGER_ENVERS_SON_ENTOURAGE: 'VILOLENCES_D_UN_USAGER_ENVERS_SON_ENTOURAGE',
-  VIOLENCES_D_UN_USAGER_ENVERS_UN_PROFESSIONNEL: 'VIOLENCES_D_UN_USAGER_ENVERS_UN_PROFESSIONNEL',
-  DEFAUT_DE_SURVEILLANCE_FUGUE_DISPARITION_INQUIETANTE: 'DEFAUT_DE_SURVEILLANCE_FUGUE_DISPARITION_INQUIETANTE',
-} as const;
-
-export type SousMotifQUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICE =
-  keyof typeof SOUS_MOTIF_QUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICE;
-
-export const sousMotifQUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICELabels: Record<
-  SousMotifQUALITE_DE_L_ACCOMPAGNEMENT_OU_DU_SERVICE,
-  string
-> = {
-  PROBLEME_D_ACCOMPAGNEMENT_ET_OU_SUIVI_INDIVIDUEL_PROJET_DE_VIE_SUIVI_SOCIAL_EDUCATIF_ADMINISTRATIF:
-    "Problème d'accompagnement et/ou suivi individuel : projet de vie, suivi social, éducatif, administratif…",
-  NON_RESPECT_DES_PROGRAMMES_DE_FORMATION: 'Non respect des programmes de formation',
-  ABSENCE_D_ANIMATION: "Absence d'animation",
-  AUTRES: 'Autres',
-  QUALITE_DES_ANIMATIONS_AU_LIEU_D_INTERVENTIONS: "Qualité des animations au lieu d'interventions",
-  PROBLEMATIQUE_DE_FONCTIONNEMENT_DE_L_ESSMS_REGLEMENT_INTERIEUR:
-    "Problématique de fonctionnement de l'ESSMS (règlement intérieur, …)",
-  VIOLENCES_ENTRE_USAGERS: 'Violences entre usagers',
-  VILOLENCES_D_UN_USAGER_ENVERS_SON_ENTOURAGE: "Violences d'un usager envers son entourage",
-  VIOLENCES_D_UN_USAGER_ENVERS_UN_PROFESSIONNEL: "Violences d'un usager envers un professionnel",
-  DEFAUT_DE_SURVEILLANCE_FUGUE_DISPARITION_INQUIETANTE: 'Défaut de surveillance (fugue / disparition inquiétante)',
-};
-
 // Sous-motifs pour: Qualité des soins
 export const SOUS_MOTIF_QUALITE_DES_SOINS = {
   ABSENCE_OU_INSUFFISANCE_DE_SOINS_MEDICAUX: 'ABSENCE_OU_INSUFFISANCE_DE_SOINS_MEDICAUX',
@@ -1249,3 +1217,53 @@ export const requeteClotureReasonLabels: Record<RequeteClotureReason, string> = 
   SANS_SUITE: 'Sans suite après évaluation',
   AUTRE: 'Autre',
 } as const;
+
+export const DOMAINES_FONCTIONNELS = {
+  SANITAIRE: 'SANITAIRE',
+  DOMICILE_HORS_PRO_PH: 'DOMICILE_HORS_PRO_PH',
+  DOMICILE_HORS_PRO_PA: 'DOMICILE_HORS_PRO_PA',
+  HEBERGEMENT_VEILLE_SOCIALE: 'HEBERGEMENT_VEILLE_SOCIALE',
+  ACCUEIL_DEMANDEURS_ASILE: 'ACCUEIL_DEMANDEURS_ASILE',
+  PROTECTION_MAJEURS: 'PROTECTION_MAJEURS',
+  LOGEMENT_ADAPTE: 'LOGEMENT_ADAPTE',
+  SOCIAL: 'SOCIAL',
+  PERSONNES_DIFFICULTES_SPECIFIQUES: 'PERSONNES_DIFFICULTES_SPECIFIQUES',
+  MEDICO_SOCIAL_PA: 'MEDICO_SOCIAL_PA',
+  MEDICO_SOCIAL_HANDICAPES_ADULTES: 'MEDICO_SOCIAL_HANDICAPES_ADULTES',
+  MEDICO_SOCIAL_HANDICAPES_ENFANTS: 'MEDICO_SOCIAL_HANDICAPES_ENFANTS',
+  SANTE_ENVIRONNEMENT: 'SANTE_ENVIRONNEMENT',
+  DEFAUT_OFFRE_SOINS_GENERAL: 'DEFAUT_OFFRE_SOINS_GENERAL',
+  DEFAUT_OFFRE_SOINS_CAS_CRITIQUE: 'DEFAUT_OFFRE_SOINS_CAS_CRITIQUE',
+  HOSPITALISATIONS_CONTRAINTE: 'HOSPITALISATIONS_CONTRAINTE',
+  AMBULATOIRE_GENERAL: 'AMBULATOIRE_GENERAL',
+  AMBULATOIRE_TRANSPORT_SANITAIRE: 'AMBULATOIRE_TRANSPORT_SANITAIRE',
+  PHARMACIES_LABORATOIRES: 'PHARMACIES_LABORATOIRES',
+  ETABLISSEMENT_PENITENCIAIRE: 'ETABLISSEMENT_PENITENCIAIRE',
+  AUTRES: 'AUTRES',
+} as const;
+
+export type DomainesFonctionnels = keyof typeof DOMAINES_FONCTIONNELS;
+
+export const domainesFonctionnelsLabels: Record<DomainesFonctionnels, string> = {
+  SANITAIRE: 'Sanitaire',
+  DOMICILE_HORS_PRO_PH: 'Domicile hors professionnel - Personnes handicapées',
+  DOMICILE_HORS_PRO_PA: 'Domicile hors professionnel - Personnes âgées',
+  HEBERGEMENT_VEILLE_SOCIALE: 'Hébergement et Veille sociale',
+  ACCUEIL_DEMANDEURS_ASILE: "Accueil des demandeurs et des bénéficiaires de l'asile",
+  PROTECTION_MAJEURS: 'Protection des majeurs',
+  LOGEMENT_ADAPTE: 'Logement adapté',
+  SOCIAL: 'Social',
+  PERSONNES_DIFFICULTES_SPECIFIQUES: 'Personnes en difficultés spécifiques (ARS)',
+  MEDICO_SOCIAL_PA: 'Médico-Social - Personnes âgées',
+  MEDICO_SOCIAL_HANDICAPES_ADULTES: 'Médico-Social - Handicapés adultes',
+  MEDICO_SOCIAL_HANDICAPES_ENFANTS: 'Médico-Social - Handicapés enfants',
+  SANTE_ENVIRONNEMENT: 'Santé environnement',
+  DEFAUT_OFFRE_SOINS_GENERAL: "Défaut d'offre de soins - Général",
+  DEFAUT_OFFRE_SOINS_CAS_CRITIQUE: "Défaut d'offre de soins - Cas critique",
+  HOSPITALISATIONS_CONTRAINTE: 'Hospitalisations sous contrainte',
+  AMBULATOIRE_GENERAL: 'Ambulatoire - Général',
+  AMBULATOIRE_TRANSPORT_SANITAIRE: 'Ambulatoire - Transport sanitaire',
+  PHARMACIES_LABORATOIRES: 'Pharmacies-Laboratoires',
+  ETABLISSEMENT_PENITENCIAIRE: 'Etablissement pénitenciaire',
+  AUTRES: 'Autres',
+};

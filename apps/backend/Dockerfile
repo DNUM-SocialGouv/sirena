@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 ARG NODE_VERSION=24-alpine
 FROM node:$NODE_VERSION AS base
 
@@ -5,11 +6,14 @@ ARG APP_VERSION
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+ENV PNPM_STORE_DIR="/pnpm/store"
 ENV APP_VERSION=$APP_VERSION
 
-RUN apk add --no-cache tzdata && \
-    npm install --global corepack@latest && \
-    corepack enable pnpm
+RUN apk add --no-cache tzdata \
+    && apk upgrade --no-cache \
+    && corepack enable pnpm \
+    && npm install -g npm@latest \
+    && npm cache clean --force
 
 # Stage pour les dépendances
 FROM base AS deps
@@ -22,7 +26,8 @@ COPY --chown=node:node ./packages/backend-utils/package.json packages/backend-ut
 COPY --chown=node:node ./packages/common/package.json packages/common/
 COPY --chown=node:node ./packages/db/package.json packages/db/
 
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm-store-backend,target=/pnpm/store,sharing=locked \
+    pnpm install --frozen-lockfile --prefer-offline
 
 # Stage de build
 FROM deps AS builder
@@ -37,9 +42,10 @@ COPY --chown=node:node ./packages/db packages/db
 
 RUN pnpm db:generate
 
-RUN pnpm --filter @sirena/common build
-RUN pnpm --filter @sirena/db build
-RUN pnpm --filter @sirena/backend-utils build
+# Build dependencies of @sirena/backend in topological order, parallelizing
+# siblings (common/db/backend-utils have no inter-deps among themselves).
+RUN pnpm --filter "@sirena/backend^..." --workspace-concurrency=4 run build
+
 RUN --mount=type=secret,id=SENTRY_AUTH_TOKEN \
     export SENTRY_AUTH_TOKEN=$(cat /run/secrets/SENTRY_AUTH_TOKEN) \
     export APP_VERSION=$APP_VERSION \
@@ -55,8 +61,7 @@ ENV TZ=Europe/Paris
 
 # Copier seulement les dépendances de production
 COPY --from=deps --chown=node:node /app/node_modules ./node_modules
-COPY --from=deps --chown=node:node /app/package*.json ./
-COPY --from=deps --chown=node:node /app/pnpm* ./
+COPY --from=deps --chown=node:node /app/package*.json /app/pnpm* ./
 
 # Copier les builds
 COPY --from=builder --chown=node:node /app/apps/backend apps/backend

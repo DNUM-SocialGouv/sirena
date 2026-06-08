@@ -1,5 +1,5 @@
 import { throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ROLES, ROLES_READ, SSE_EVENT_TYPES } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES, ROLES_READ, SSE_EVENT_TYPES } from '@sirena/common/constants';
 import factoryWithRole from '../../helpers/factories/appWithRole.js';
 import {
   createSSEHandler,
@@ -56,7 +56,7 @@ const app = factoryWithRole
 
     const requeteEntite = await getRequeteEntiteById(id, topEntiteId);
     if (!requeteEntite) {
-      throwHTTPException404NotFound('Requete not found', { res: c.res });
+      throwHTTPException404NotFound('Requete not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const logger = c.get('logger');
@@ -74,7 +74,7 @@ const app = factoryWithRole
 
     const uploadedFile = await getUploadedFileById(id, [topEntiteId]);
     if (!uploadedFile) {
-      throwHTTPException404NotFound('Uploaded file not found', { res: c.res });
+      throwHTTPException404NotFound('Uploaded file not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     const logger = c.get('logger');

@@ -1,5 +1,5 @@
 import { throwHTTPException400BadRequest, throwHTTPException404NotFound } from '@sirena/backend-utils/helpers';
-import { ROLES_READ, ROLES_WRITE } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES_READ, ROLES_WRITE } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import { addFileProcessingJob } from '../../jobs/queues/fileProcessing.queue.js';
@@ -37,6 +37,7 @@ const app = factoryWithLogs
       if (!uploadedFile) {
         throwHTTPException400BadRequest('No file uploaded', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -45,6 +46,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to create uploaded files without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -54,13 +56,20 @@ const app = factoryWithLogs
         objectPath,
         rollback: rollbackMinio,
         encryptionMetadata,
-      } = await uploadFileToMinio(uploadedFile.buffer, uploadedFile.fileName, uploadedFile.contentType);
+      } = await uploadFileToMinio(uploadedFile.stream, uploadedFile.fileName, uploadedFile.contentType);
+
+      const size = uploadedFile.getReadBytes();
 
       const pathParts = objectPath.split('/');
       const fileName = pathParts[pathParts.length - 1] || '';
       const id = fileName.split('.')[0] || '';
 
       if (!fileName || !id) {
+        try {
+          await rollbackMinio();
+        } catch {
+          // ignore rollback error so we surface the original failure
+        }
         throw new Error('File name is not valid');
       }
 
@@ -69,10 +78,10 @@ const app = factoryWithLogs
         fileName,
         filePath: objectPath,
         mimeType: uploadedFile.contentType,
-        size: uploadedFile.size,
+        size,
         metadata: {
           originalName: uploadedFile.fileName,
-          ...(encryptionMetadata && { encryption: encryptionMetadata }),
+          encryption: encryptionMetadata,
         },
         entiteId: topEntiteId,
         uploadedById: userId,
@@ -119,6 +128,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to delete uploaded files without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -127,12 +137,14 @@ const app = factoryWithLogs
         logger.warn({ uploadedFileId: id }, 'Uploaded file not found or unauthorized access');
         throwHTTPException404NotFound('Uploaded file not found', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
       if (!uploadedFile.canDelete) {
         throwHTTPException400BadRequest('You are not allowed to delete this uploaded file.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -155,6 +167,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to access uploaded files without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -162,6 +175,7 @@ const app = factoryWithLogs
     if (!uploadedFile) {
       throwHTTPException404NotFound('Uploaded file not found', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 

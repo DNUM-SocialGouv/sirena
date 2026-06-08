@@ -323,8 +323,16 @@ export const MOTIFS_HIERARCHICAL_DATA = [
         value: 'PROBLEMATIQUE_FONCTIONNEMENT_ESSMS',
       },
       {
-        label: 'Violences entre usagers',
-        value: 'VIOLENCES_ENTRE_USAGERS',
+        label: 'Violences physiques entre usagers',
+        value: 'VIOLENCES_PHYSIQUES_ENTRE_USAGERS',
+      },
+      {
+        label: 'Violences sexuelles entre usagers',
+        value: 'VIOLENCES_SEXUELLES_ENTRE_USAGERS',
+      },
+      {
+        label: 'Violences psychologiques entre usagers',
+        value: 'VIOLENCES_PSYCHOLOGIQUES_ENTRE_USAGERS',
       },
       {
         label: "Violences d'un usager envers son entourage",

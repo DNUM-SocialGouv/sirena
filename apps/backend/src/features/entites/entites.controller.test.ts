@@ -1,4 +1,4 @@
-import { ROLES } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,7 +8,13 @@ import { Prisma } from '../../libs/prisma.js';
 import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
-import { getEditableEntitiesChain, getEntiteById, getEntites, getEntitesListAdmin } from './entites.service.js';
+import {
+  getEditableEntitiesChain,
+  getEntiteById,
+  getEntites,
+  getEntitesListAdmin,
+  getRootEntitesListAdmin,
+} from './entites.service.js';
 
 vi.mock('../../config/env.js', () => ({
   envVars: {},
@@ -18,6 +24,7 @@ vi.mock('./entites.service.js', () => ({
   getEntites: vi.fn(),
   getEntiteById: vi.fn(),
   getEntitesListAdmin: vi.fn(),
+  getRootEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
   editEntiteAdmin: editEntiteAdminSpy,
   createChildEntiteAdmin: createChildEntiteAdminSpy,
@@ -118,6 +125,24 @@ describe('Entites endpoints: /entites', () => {
       expect(getEntitesListAdmin).not.toHaveBeenCalled();
     });
 
+    it('passes rootEntiteIds query param to admin entities list service', async () => {
+      vi.mocked(getEntitesListAdmin).mockResolvedValueOnce({
+        data: [],
+        total: 0,
+      });
+
+      const res = await client.admin.$get({
+        query: { offset: '20', limit: '10', rootEntiteIds: 'root-ars,root-dd' },
+      });
+
+      expect(res.status).toBe(200);
+      expect(getEntitesListAdmin).toHaveBeenCalledWith({
+        offset: 20,
+        limit: 10,
+        rootEntiteIds: ['root-ars', 'root-dd'],
+      });
+    });
+
     it('returns admin entities list with pagination metadata for SUPER_ADMIN', async () => {
       vi.mocked(getEntitesListAdmin).mockResolvedValueOnce({
         data: [
@@ -173,12 +198,42 @@ describe('Entites endpoints: /entites', () => {
     });
   });
 
+  describe('GET /admin/roots', () => {
+    it('returns root entites options for SUPER_ADMIN', async () => {
+      vi.mocked(getRootEntitesListAdmin).mockResolvedValueOnce([
+        { id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR' },
+      ]);
+
+      const res = await app.request('/admin/roots');
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: [{ id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR' }],
+      });
+      expect(getRootEntitesListAdmin).toHaveBeenCalledWith();
+    });
+
+    it('rejects non SUPER_ADMIN users with 403', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+
+      const res = await app.request('/admin/roots');
+
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ message: 'Forbidden' });
+      expect(getRootEntitesListAdmin).not.toHaveBeenCalled();
+    });
+  });
+
   describe('GET /admin/:id', () => {
     it('returns the limited admin entity payload for SUPER_ADMIN', async () => {
       vi.mocked(getEntiteById).mockResolvedValueOnce({
         id: '2',
         nomComplet: 'Entite B',
         label: 'b',
+        email: 'test2@domain.fr',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
         isActive: false,
       });
 
@@ -191,6 +246,10 @@ describe('Entites endpoints: /entites', () => {
           id: '2',
           nomComplet: 'Entite B',
           label: 'b',
+          email: 'test2@domain.fr',
+          emailContactUsager: '',
+          telContactUsager: '',
+          adresseContactUsager: '',
           isActive: false,
         },
       });
@@ -213,7 +272,7 @@ describe('Entites endpoints: /entites', () => {
 
       expect(getEntiteById).toHaveBeenCalledWith('unknown');
       expect(res.status).toBe(404);
-      expect(await res.json()).toEqual({ message: 'Entite not found' });
+      expect(await res.json()).toEqual({ message: 'Entite not found', cause: { kind: ERROR_KIND.BUSINESS } });
     });
   });
 
@@ -288,7 +347,7 @@ describe('Entites endpoints: /entites', () => {
       });
 
       expect(res.status).toBe(404);
-      expect(await res.json()).toEqual({ message: 'Entite not found' });
+      expect(await res.json()).toEqual({ message: 'Entite not found', cause: { kind: ERROR_KIND.BUSINESS } });
       expect(editEntiteAdminSpy).toHaveBeenCalledWith('unknown', editEntitePayload);
     });
   });
@@ -340,7 +399,7 @@ describe('Entites endpoints: /entites', () => {
       });
 
       expect(res.status).toBe(404);
-      expect(await res.json()).toEqual({ message: 'Entite not found' });
+      expect(await res.json()).toEqual({ message: 'Entite not found', cause: { kind: ERROR_KIND.BUSINESS } });
       expect(createChildEntiteAdminSpy).toHaveBeenCalledWith('unknown', createChildEntitePayload);
     });
 
@@ -356,7 +415,10 @@ describe('Entites endpoints: /entites', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(await res.json()).toEqual({ message: 'Child entite creation is not allowed for this parent' });
+      expect(await res.json()).toEqual({
+        message: 'Child entite creation is not allowed for this parent',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
       expect(createChildEntiteAdminSpy).toHaveBeenCalledWith('service-1', createChildEntitePayload);
     });
   });

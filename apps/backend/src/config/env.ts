@@ -84,6 +84,10 @@ const processEnv = {
   MYSQL_SIREC_USER: process.env.MYSQL_SIREC_USER,
   MYSQL_SIREC_PASSWORD: process.env.MYSQL_SIREC_PASSWORD,
 
+  // Metabase
+  METABASE_SITE_URL: process.env.METABASE_SITE_URL,
+  METABASE_SECRET_KEY: process.env.METABASE_SECRET_KEY,
+  METABASE_DASHBOARD_ID: process.env.METABASE_DASHBOARD_ID,
   // Environment
   APP_ENV: process.env.APP_ENV,
 };

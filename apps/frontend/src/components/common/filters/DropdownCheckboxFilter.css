@@ -1,0 +1,36 @@
+.dropdown-checkbox-filter {
+  position: relative;
+  width: auto;
+}
+
+.dropdown-checkbox-filter__button {
+  white-space: nowrap;
+}
+
+.dropdown-checkbox-filter__button.fr-btn {
+  width: auto;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.dropdown-checkbox-filter__dropdown {
+  position: absolute;
+  top: calc(100% - 1px);
+  left: 0;
+
+  min-width: 18rem;
+  max-width: min(32rem, calc(100vw - 2rem));
+  max-height: 300px;
+  overflow-y: auto;
+
+  border-top: none;
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-overlap);
+
+  background-color: var(--background-default-grey);
+  z-index: 1000;
+}
+
+.dropdown-checkbox-filter .fr-hint-text {
+  white-space: nowrap;
+}

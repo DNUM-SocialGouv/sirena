@@ -4,7 +4,13 @@ import {
   throwHTTPException404NotFound,
   throwHTTPException409Conflict,
 } from '@sirena/backend-utils/helpers';
-import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES, ROLES } from '@sirena/common/constants';
+import {
+  ERROR_KIND,
+  REQUETE_ETAPE_STATUT_TYPES,
+  REQUETE_ETAPE_TYPES,
+  REQUETE_STATUT_TYPES,
+  ROLES,
+} from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import { ACKNOWLEDGMENT_EMAIL_SUBJECT } from '../../config/tipimail.constant.js';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
@@ -62,6 +68,7 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -78,18 +85,20 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
     const requeteEtape = await getRequeteEtapeById(id);
 
     if (!requeteEtape) {
-      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     if (topEntiteId !== requeteEtape.entiteId) {
       throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -101,13 +110,14 @@ const app = factoryWithLogs
     if (!hasAccessToReq) {
       throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
     const file = await getUploadedFileById(fileId, [topEntiteId]);
 
     if (!file) {
-      throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     logger.info({ requeteEtapeId: id, fileId }, 'Retrieving file for requete etape');
@@ -121,18 +131,20 @@ const app = factoryWithLogs
     if (!topEntiteId) {
       throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
     const requeteEtape = await getRequeteEtapeById(id);
 
     if (!requeteEtape) {
-      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     if (topEntiteId !== requeteEtape.entiteId) {
       throwHTTPException403Forbidden('You are not allowed to read this file for this requete etape', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
@@ -144,17 +156,18 @@ const app = factoryWithLogs
     if (!hasAccessToReq) {
       throwHTTPException403Forbidden('You are not allowed to access this file', {
         res: c.res,
+        kind: ERROR_KIND.BUSINESS,
       });
     }
 
     const file = await getUploadedFileById(fileId, [topEntiteId]);
 
     if (!file) {
-      throwHTTPException404NotFound('File not found', { res: c.res });
+      throwHTTPException404NotFound('File not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     if (!file.safeFilePath) {
-      throwHTTPException404NotFound('Safe file not available', { res: c.res });
+      throwHTTPException404NotFound('Safe file not available', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     logger.info({ requeteEtapeId: id, fileId }, 'Retrieving safe file for requete etape');
@@ -178,6 +191,7 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -189,6 +203,7 @@ const app = factoryWithLogs
       if (!hasAccess) {
         throwHTTPException404NotFound('Requete entite not found', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -211,6 +226,7 @@ const app = factoryWithLogs
         logger.error({ requestId: requeteId, userId }, 'Inconsistent state: step not created');
         throwHTTPException404NotFound('Requete entite not found', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -235,12 +251,13 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
       const requeteEtape = await getRequeteEtapeById(id);
 
       if (!requeteEtape) {
-        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
       const hasAccessToReq = await hasAccessToRequete({
@@ -251,12 +268,14 @@ const app = factoryWithLogs
       if (!hasAccessToReq) {
         throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
       if (topEntiteId !== requeteEtape.entiteId) {
         throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -273,6 +292,7 @@ const app = factoryWithLogs
       if (!updatedRequeteEtape) {
         throwHTTPException404NotFound('RequeteEtape not found', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -307,12 +327,13 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
       const requeteEtape = await getRequeteEtapeById(id);
 
       if (!requeteEtape) {
-        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
       const hasAccessToReq = await hasAccessToRequete({
         requeteId: requeteEtape.requeteId,
@@ -322,12 +343,14 @@ const app = factoryWithLogs
       if (!hasAccessToReq) {
         throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
       if (topEntiteId !== requeteEtape.entiteId) {
         throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -344,6 +367,7 @@ const app = factoryWithLogs
       if (!updatedRequeteEtape) {
         throwHTTPException404NotFound('RequeteEtape not found', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -375,12 +399,13 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
       const requeteEtape = await getRequeteEtapeById(id);
 
       if (!requeteEtape) {
-        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
       const hasAccessToReq = await hasAccessToRequete({
@@ -391,12 +416,14 @@ const app = factoryWithLogs
       if (!hasAccessToReq) {
         throwHTTPException403Forbidden('You are not allowed to add notes to this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
       if (topEntiteId !== requeteEtape.entiteId) {
         throwHTTPException403Forbidden('You are not allowed to delete this requete etape', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
@@ -419,16 +446,22 @@ const app = factoryWithLogs
     const topEntiteId = c.get('topEntiteId');
 
     if (!topEntiteId) {
-      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', { res: c.res });
+      throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
 
     const requeteEtape = await getRequeteEtapeById(id);
     if (!requeteEtape) {
-      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
     }
 
     if (topEntiteId !== requeteEtape.entiteId) {
-      throwHTTPException403Forbidden('You are not allowed to access this requete etape', { res: c.res });
+      throwHTTPException403Forbidden('You are not allowed to access this requete etape', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
 
     const hasAccessToReq = await hasAccessToRequete({
@@ -436,7 +469,10 @@ const app = factoryWithLogs
       entiteId: topEntiteId,
     });
     if (!hasAccessToReq) {
-      throwHTTPException403Forbidden('You are not allowed to access this requete', { res: c.res });
+      throwHTTPException403Forbidden('You are not allowed to access this requete', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
     }
 
     const [entite, requete] = await Promise.all([
@@ -445,6 +481,7 @@ const app = factoryWithLogs
         select: {
           id: true,
           nomComplet: true,
+          email: true,
           emailContactUsager: true,
           telContactUsager: true,
           adresseContactUsager: true,
@@ -478,17 +515,21 @@ const app = factoryWithLogs
       if (!topEntiteId) {
         throwHTTPException400BadRequest('You are not allowed to perform this action without topEntiteId.', {
           res: c.res,
+          kind: ERROR_KIND.BUSINESS,
         });
       }
 
       const requeteEtape = await getRequeteEtapeById(id);
 
       if (!requeteEtape) {
-        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res });
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
       }
 
       if (topEntiteId !== requeteEtape.entiteId) {
-        throwHTTPException403Forbidden('You are not allowed to act on this requete etape', { res: c.res });
+        throwHTTPException403Forbidden('You are not allowed to act on this requete etape', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
       }
 
       const hasAccessToReq = await hasAccessToRequete({
@@ -497,22 +538,31 @@ const app = factoryWithLogs
       });
 
       if (!hasAccessToReq) {
-        throwHTTPException403Forbidden('You are not allowed to access this requete', { res: c.res });
+        throwHTTPException403Forbidden('You are not allowed to access this requete', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
       }
 
       if (requeteEtape.type !== REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
-        throwHTTPException400BadRequest("Cette étape n'est pas une étape d'accusé de réception.", { res: c.res });
+        throwHTTPException400BadRequest("Cette étape n'est pas une étape d'accusé de réception.", {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
       }
 
       if (requeteEtape.statutId !== REQUETE_ETAPE_STATUT_TYPES.A_FAIRE) {
-        throwHTTPException409Conflict("L'accusé de réception a déjà été envoyé pour cette étape.", { res: c.res });
+        throwHTTPException409Conflict("L'accusé de réception a déjà été envoyé pour cette étape.", {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
       }
 
       const requeteForEmail = await getRequeteEntiteById(requeteEtape.requeteId, topEntiteId);
       if (!requeteForEmail?.requete?.declarant?.identite?.email) {
         throwHTTPException400BadRequest(
           "Le déclarant n'a pas d'adresse e-mail renseignée. Veuillez la renseigner avant d'envoyer l'accusé de réception.",
-          { res: c.res },
+          { res: c.res, kind: ERROR_KIND.BUSINESS },
         );
       }
 
@@ -526,7 +576,10 @@ const app = factoryWithLogs
         });
       } catch (error) {
         if (error instanceof Error && (error as unknown as { code: string }).code === 'STEP_ALREADY_PROCESSED') {
-          throwHTTPException409Conflict("L'accusé de réception a déjà été envoyé pour cette étape.", { res: c.res });
+          throwHTTPException409Conflict("L'accusé de réception a déjà été envoyé pour cette étape.", {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
         }
         throw error;
       }

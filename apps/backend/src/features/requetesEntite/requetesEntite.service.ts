@@ -3,11 +3,14 @@ import { mappers } from '@sirena/common';
 import {
   demarcheEngageeLabels,
   type EntiteType,
+  ERROR_KIND,
   MOTIFS_HIERARCHICAL_DATA,
   REQUETE_ETAPE_STATUT_TYPES,
   REQUETE_ETAPE_TYPES,
   REQUETE_STATUT_TYPES,
   REQUETE_UPDATE_FIELDS,
+  type RequeteEtapeStatutType,
+  type RequeteEtapeType,
   type RequetePrioriteType,
   type RequeteStatutType,
 } from '@sirena/common/constants';
@@ -15,11 +18,11 @@ import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSch
 import { getLieuPrecisionLabel } from '@sirena/common/utils';
 import archiver from 'archiver';
 import type { z } from 'zod';
-import { getOriginalFileName } from '../../helpers/file.js';
+import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
-import { formatDateFr } from '../../helpers/string.js';
+import { capitalizeFirst, formatDateFr } from '../../helpers/string.js';
 import { deleteFileFromMinio, getFileStream } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
@@ -107,6 +110,7 @@ const SITUATION_INCLUDE_FULL = {
       entite: true,
     },
   },
+  domainesFonctionnels: true,
 };
 
 type SituationWithIncludes = Prisma.SituationGetPayload<{
@@ -269,7 +273,12 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
     }
   }
 
-  const uniqueDptCodes = [...new Set(cpToDptCode.values())];
+  const allDptCodes = new Set<string>();
+  for (const cp of allCps) {
+    const dptCode = cpToDptCode.get(cp) ?? extractDptCode(cp);
+    if (dptCode) allDptCodes.add(dptCode);
+  }
+  const uniqueDptCodes = [...allDptCodes];
 
   const communesQuery =
     uniqueDptCodes.length > 0
@@ -349,6 +358,14 @@ export const hasAccessToRequete = async ({ requeteId, entiteId }: RequeteEntiteK
   });
 
   return !!requete;
+};
+
+export const filterOtherEntitesAffectedForUser = <T extends { id: string }>(
+  otherEntites: T[],
+  userEntityIds: string[],
+): T[] => {
+  const excludedUserEntityIds = new Set(userEntityIds);
+  return otherEntites.filter((entite) => !excludedUserEntityIds.has(entite.id));
 };
 
 export const getOtherEntitesAffected = async (requeteId: string, excludeEntiteId: string) => {
@@ -446,6 +463,7 @@ export const getRequeteEntiteById = async (requeteId: string, entiteId: string |
 interface CreateRequeteInput {
   receptionTypeId?: string | null;
   receptionDate?: string | null;
+  dateDemandeDeclarant?: string | null;
   provenanceId?: string | null;
   provenancePrecision?: string | null;
   declarant?: DeclarantInput;
@@ -465,6 +483,7 @@ export const createRequeteEntite = async (entiteId: string, data?: CreateRequete
         data: {
           id: requeteId,
           receptionDate: data?.receptionDate ? new Date(data.receptionDate) : null,
+          dateDemandeDeclarant: data?.dateDemandeDeclarant ? new Date(data.dateDemandeDeclarant) : null,
           receptionTypeId: data?.receptionTypeId ?? null,
           provenanceId: data?.provenanceId ?? null,
           provenancePrecision: data?.provenancePrecision ?? null,
@@ -597,6 +616,7 @@ export const updateRequete = async (requeteId: string, data: UpdateRequeteInput,
             serverData: requete.declarant,
             serverUpdatedAt: serverUpdatedAt.toISOString(),
           },
+          kind: ERROR_KIND.BUSINESS,
         });
       }
     }
@@ -1218,6 +1238,9 @@ const updateExistingSituation = async (
       lieuDeSurvenue: { update: buildLieuDeSurvenueUpdate(situationData.lieuDeSurvenue) },
       misEnCause: { update: buildMisEnCauseUpdate(situationData.misEnCause) },
       demarchesEngagees: { update: buildDemarchesEngageesUpdate(situationData.demarchesEngagees) },
+      domainesFonctionnels: situationData.domainesFonctionnels
+        ? { connect: { id: situationData.domainesFonctionnels } }
+        : { disconnect: true },
     },
   });
 
@@ -1269,6 +1292,9 @@ const createNewSituation = async (
     data: {
       ...situationCreateData,
       requete: { connect: { id: requeteId } },
+      domainesFonctionnels: situationData.domainesFonctionnels
+        ? { connect: { id: situationData.domainesFonctionnels } }
+        : undefined,
     },
   });
 
@@ -1354,7 +1380,7 @@ export const computeShouldCloseRequeteStatus = async (params: {
   let otherEntitiesAffected: ShouldCloseRequeteStatus['otherEntitiesAffected'] = [];
   if (excludeTopEntiteId) {
     const otherEntites = await getOtherEntitesAffected(requeteId, excludeTopEntiteId);
-    otherEntitiesAffected = otherEntites.map((entite) => ({
+    otherEntitiesAffected = filterOtherEntitesAffectedForUser(otherEntites, userEntityIds).map((entite) => ({
       id: entite.id,
       nomComplet: entite.nomComplet,
       entiteTypeId: entite.entiteTypeId || '',
@@ -1664,6 +1690,13 @@ export const closeRequeteForEntite = async (
 
     await updateStatusRequete(requeteId, entiteId, REQUETE_STATUT_TYPES.CLOTUREE, tx);
 
+    if (requeteEntite.prioriteId) {
+      await tx.requeteEntite.update({
+        where: { requeteId_entiteId: { requeteId, entiteId } },
+        data: { prioriteId: null },
+      });
+    }
+
     return {
       etapeId: etape.id,
       closedAt: etape.createdAt.toISOString(),
@@ -1936,9 +1969,11 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
   const usedNames = new Set<string>();
 
   const appendFileToArchive = async (file: UploadedFile, entryName: string) => {
-    const filePath = isPdf(file) && file.safeFilePath ? file.safeFilePath : file.filePath;
+    const useSafeFile = isPdf(file) && file.safeFilePath;
+    const filePath = useSafeFile ? (file.safeFilePath as string) : file.filePath;
+    const decryptionParams = useSafeFile ? getSafeFileEncryptionParams(file) : getFileEncryptionParams(file);
     try {
-      const { stream } = await getFileStream(filePath);
+      const { stream } = await getFileStream(filePath, decryptionParams);
       archive.append(stream, { name: entryName, date: file.createdAt });
     } catch {
       archive.append(Buffer.from('Fichier indisponible'), { name: `${entryName}.erreur.txt` });
@@ -1998,6 +2033,24 @@ const groupMotifsByParent = (motifs: { motifId: string }[]): { label: string; ch
   return Array.from(grouped.values());
 };
 
+const getEtapePdfTitle = (type: RequeteEtapeType, statutId: RequeteEtapeStatutType, nom: string): string => {
+  if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return 'Clôture';
+  if (type === REQUETE_ETAPE_TYPES.CREATION) return 'Création de la requête';
+  if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) return "Envoi de l'accusé de réception";
+  if (type === REQUETE_ETAPE_TYPES.REOPEN) return 'Réouverture de la requête';
+  return nom;
+};
+
+const buildEtapeCreatorLabel = (
+  type: RequeteEtapeType,
+  createdBy: { prenom: string; nom: string } | null,
+  requeteCreatedBy: { prenom: string; nom: string } | null,
+): string | null => {
+  const agent = type === REQUETE_ETAPE_TYPES.CREATION ? requeteCreatedBy : createdBy;
+  if (!agent) return null;
+  return `Par ${capitalizeFirst(agent.prenom)} ${capitalizeFirst(agent.nom)}`;
+};
+
 export const generateRequetePdfBuffer = async (requeteId: string, entiteId: string | null): Promise<Buffer | null> => {
   if (!entiteId) return null;
 
@@ -2010,6 +2063,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         include: {
           receptionType: true,
           provenance: true,
+          createdBy: { select: { prenom: true, nom: true } },
           declarant: {
             include: {
               identite: { include: { civilite: true } },
@@ -2027,6 +2081,23 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
           },
           fichiersRequeteOriginale: true,
           situations: { include: SITUATION_INCLUDE_FULL },
+        },
+      },
+      requeteEtape: {
+        orderBy: { createdAt: 'asc' },
+        include: {
+          statut: true,
+          clotureReason: true,
+          createdBy: { select: { prenom: true, nom: true } },
+          notes: {
+            orderBy: { createdAt: 'asc' },
+            include: {
+              author: { select: { prenom: true, nom: true } },
+              uploadedFiles: {
+                select: { fileName: true, metadata: true },
+              },
+            },
+          },
         },
       },
     },
@@ -2054,6 +2125,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
   pdf
     .section('Requête originale')
     .field('Date de réception', formatDateFr(requete.receptionDate))
+    .field('Date de la demande par le déclarant', formatDateFr(requete.dateDemandeDeclarant))
     .field('Mode de réception', requete.receptionType?.label || null)
     .field('Provenance', requete.provenance?.label || null)
     .field('Précision provenance', requete.provenancePrecision || null)
@@ -2210,6 +2282,10 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       }
     }
 
+    if (situation.domainesFonctionnels?.label) {
+      pdf.field('Domaine fonctionnel', situation.domainesFonctionnels.label);
+    }
+
     const demarches = situation.demarchesEngagees;
     if (demarches?.demarches && demarches.demarches.length > 0) {
       pdf.subsection('Démarches engagées');
@@ -2265,7 +2341,50 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
     }
   }
 
-  // ===== 6. PIÈCES JOINTES REQUÊTE ORIGINALE =====
+  // ===== 6. ÉTAPES DE TRAITEMENT =====
+  const etapes = requeteEntite.requeteEtape ?? [];
+  if (etapes.length > 0) {
+    pdf.section('Étapes de traitement');
+
+    for (const etape of etapes) {
+      const etapeTitle = getEtapePdfTitle(
+        etape.type as RequeteEtapeType,
+        etape.statutId as RequeteEtapeStatutType,
+        etape.nom,
+      );
+
+      pdf
+        .subsection(etapeTitle)
+        .field('Statut', etape.statut?.label || etape.statutId)
+        .field('Date', formatDateFr(etape.createdAt));
+
+      const creatorLabel = buildEtapeCreatorLabel(etape.type as RequeteEtapeType, etape.createdBy, requete.createdBy);
+      if (creatorLabel) pdf.paragraph(creatorLabel);
+
+      if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && etape.clotureReason.length > 0) {
+        pdf.field('Motif(s) de clôture', etape.clotureReason.map((r) => r.label).join(', '));
+      }
+
+      for (const note of etape.notes) {
+        const noteAuthor = note.author
+          ? `${capitalizeFirst(note.author.prenom)} ${capitalizeFirst(note.author.nom)}`
+          : 'Système';
+        const noteDate = formatDateFr(note.createdAt);
+        pdf.paragraph(`Note du ${noteDate} — ${noteAuthor}`, { bold: true });
+        if (note.texte) pdf.paragraph(note.texte);
+
+        const noteFiles = note.uploadedFiles
+          .map((f) => getOriginalFileName(f as Parameters<typeof getOriginalFileName>[0]))
+          .filter(Boolean);
+        if (noteFiles.length > 0) {
+          pdf.paragraph('Pièces jointes :', { bold: true });
+          pdf.list(noteFiles);
+        }
+      }
+    }
+  }
+
+  // ===== 7. PIÈCES JOINTES REQUÊTE ORIGINALE =====
   const fichiersRequete = requete.fichiersRequeteOriginale ?? [];
   if (fichiersRequete.length > 0) {
     pdf.section('Pièces jointes de la requête originale').list(fichiersRequete.map(getOriginalFileName));

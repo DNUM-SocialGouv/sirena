@@ -14,6 +14,7 @@ import {
   getEntites,
   getEntitesByIds,
   getEntitesListAdmin,
+  getRootEntitesListAdmin,
 } from './entites.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
@@ -1049,6 +1050,31 @@ describe('createChildEntiteAdmin()', () => {
   });
 });
 
+describe('getRootEntitesListAdmin()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('returns only root entites ordered for admin filter options', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      { id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR' },
+    ] as never);
+
+    const result = await getRootEntitesListAdmin();
+
+    expect(prisma.entite.findMany).toHaveBeenCalledWith({
+      where: { entiteMereId: null },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+      },
+      orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
+    });
+    expect(result).toEqual([{ id: 'root-ars', nomComplet: 'ARS Normandie', label: 'ARS NOR' }]);
+  });
+});
+
 describe('getEntitesListAdmin()', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -1099,6 +1125,135 @@ describe('getEntitesListAdmin()', () => {
       entiteNom: 'ARS Normandie',
       entiteLabel: 'ARS NOR',
     });
+  });
+
+  it('filters admin rows by search terms across displayed hierarchy fields before pagination and total count', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteTypeId: 'ARS',
+      },
+      {
+        ...fakeEntite('dir-handicap'),
+        nomComplet: 'Direction Autonomie',
+        label: 'Pôle Handicap',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('svc-mediation'),
+        nomComplet: 'Service Médiation',
+        label: 'SM',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'dir-handicap',
+      },
+      {
+        ...fakeEntite('svc-sante'),
+        nomComplet: 'Service Santé',
+        label: 'SS',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'dir-handicap',
+      },
+    ]);
+
+    const result = await getEntitesListAdmin({
+      offset: 0,
+      limit: 1,
+      search: 'mediation handicap',
+    });
+
+    expect(result.total).toBe(1);
+    expect(result.data.map((row) => row.id)).toEqual(['svc-mediation']);
+  });
+
+  it('filters admin rows by selected roots before pagination and total count', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('root-cd'),
+        nomComplet: 'CD Calvados',
+        label: 'CD 14',
+        entiteTypeId: 'CD',
+      },
+      {
+        ...fakeEntite('dir-ars'),
+        nomComplet: 'Direction A',
+        label: 'DIR A',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('svc-ars'),
+        nomComplet: 'Service Z',
+        label: 'SZ',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'dir-ars',
+      },
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteTypeId: 'ARS',
+      },
+    ]);
+
+    const result = await getEntitesListAdmin({
+      offset: 1,
+      limit: 1,
+      rootEntiteIds: ['root-ars'],
+    });
+
+    expect(result.total).toBe(3);
+    expect(result.data.map((row) => row.id)).toEqual(['dir-ars']);
+  });
+
+  it('combines selected roots and search before pagination', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteTypeId: 'ARS',
+      },
+      {
+        ...fakeEntite('dir-ars-a'),
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('dir-ars-b'),
+        nomComplet: 'Direction Enfance',
+        label: 'DE',
+        entiteTypeId: 'ARS',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('root-cd'),
+        nomComplet: 'CD Calvados',
+        label: 'CD 14',
+        entiteTypeId: 'CD',
+      },
+      {
+        ...fakeEntite('dir-cd'),
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        entiteTypeId: 'CD',
+        entiteMereId: 'root-cd',
+      },
+    ]);
+
+    const result = await getEntitesListAdmin({
+      offset: 1,
+      limit: 1,
+      rootEntiteIds: ['root-ars'],
+      search: 'direction',
+    });
+
+    expect(result.total).toBe(2);
+    expect(result.data.map((row) => row.id)).toEqual(['dir-ars-b']);
   });
 
   it('applies pagination after global admin ordering', async () => {

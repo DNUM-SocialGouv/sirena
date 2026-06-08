@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test purposes> */
 import { RECEPTION_TYPE } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME } from '../../config/tipimail.constant.js';
+import { ACKNOWLEDGMENT_EMAIL_SUBJECT } from '../../config/tipimail.constant.js';
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
 import { prisma } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
@@ -45,7 +45,7 @@ vi.mock('../../libs/minio.js', () => ({
 }));
 
 vi.mock('../../libs/mail/mailToPdf.js', () => ({
-  generateEmailPdf: vi.fn(),
+  generateEmailPdfFromText: vi.fn().mockResolvedValue(Buffer.from('pdf')),
 }));
 
 vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
@@ -145,6 +145,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       select: {
         id: true,
         nomComplet: true,
+        email: true,
         emailContactUsager: true,
         telContactUsager: true,
         adresseContactUsager: true,
@@ -154,7 +155,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
   });
 
-  it('should send acknowledgment email with formatted entiteadmin and entitecomplete for FORMULAIRE', async () => {
+  it('should send acknowledgment email with formatted content for FORMULAIRE', async () => {
     mockedPrismaRequete.findUnique.mockResolvedValueOnce({
       id: 'req1',
       receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
@@ -168,6 +169,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       {
         id: 'e1',
         nomComplet: 'ARS Normandie',
+        email: '',
         emailContactUsager: 'contact-ars@ex.com',
         telContactUsager: '02 31 00 00 00',
         adresseContactUsager: '1 rue Example, 76000 Rouen',
@@ -176,6 +178,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       {
         id: 'e2',
         nomComplet: 'CD Calvados',
+        email: '',
         emailContactUsager: 'contact-cd@ex.com',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -184,6 +187,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       {
         id: 'child1',
         nomComplet: 'UA 14',
+        email: '',
         emailContactUsager: 'contact-ua@ex.com',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -195,53 +199,29 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     await sendDeclarantAcknowledgmentEmail('req1');
 
-    const linesFormulaire = [
-      'ARS Normandie',
-      'Adresse e-mail : contact-ars@ex.com',
-      'Téléphone : 02 31 00 00 00',
-      'Adresse postale : 1 rue Example, 76000 Rouen',
-      '',
-      'CD Calvados',
-      'Adresse e-mail : contact-cd@ex.com',
-    ];
-    const expectedEntiteComplete: Record<string, string | number> = {
-      entitecomplete_nb: 7,
-    };
-    linesFormulaire.forEach((line, i) => {
-      expectedEntiteComplete[`entitecomplete_${i + 1}`] = line;
-    });
-    for (let i = linesFormulaire.length; i < 25; i++) {
-      expectedEntiteComplete[`entitecomplete_${i + 1}`] = '';
-    }
-
-    expect(mockedSendTipimailEmail).toHaveBeenCalledWith({
-      to: 'john@example.com',
-      subject: '',
-      text: '',
-      template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
-      substitutions: [
-        {
-          email: 'john@example.com',
-          values: {
-            prenomdeclarant: 'John',
-            nomdeclarant: 'Doe',
-            entiteadmin: 'ARS Normandie et CD Calvados',
-            requeteid: 'req1',
-            ...expectedEntiteComplete,
-            signature: '',
-          },
-        },
-      ],
-    });
+    const call = mockedSendTipimailEmail.mock.calls[0][0];
+    expect(call.to).toBe('john@example.com');
+    expect(call.subject).toBe(ACKNOWLEDGMENT_EMAIL_SUBJECT);
+    expect(call.template).toBeUndefined();
+    expect(call.substitutions).toBeUndefined();
+    expect(call.text).toContain('John');
+    expect(call.text).toContain('req1');
+    expect(call.text).toContain('ARS Normandie');
+    expect(call.text).toContain('CD Calvados');
+    expect(call.text).toContain('contact-ars@ex.com');
+    expect(call.text).toContain('02 31 00 00 00');
+    expect(call.text).toContain('1 rue Example, 76000 Rouen');
+    expect(call.text).toContain('contact-cd@ex.com');
+    // child entity should not appear in the signature
+    expect(call.text).not.toContain('UA 14');
+    expect(typeof call.html).toBe('string');
 
     expect(mockedCreateChangeLog).toHaveBeenCalledWith(
       expect.objectContaining({
         entity: 'Requete',
         entityId: 'req1',
-        action: expect.any(String),
         after: expect.objectContaining({
           acknowledgmentEmailSent: true,
-          acknowledgmentEmailTemplate: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
           acknowledgmentEmailRecipient: 'john@example.com',
           acknowledgmentEmailEntites: ['ARS Normandie', 'CD Calvados', 'UA 14'],
         }),
@@ -263,6 +243,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       {
         id: 'e1',
         nomComplet: 'ARS Normandie',
+        email: '',
         emailContactUsager: 'ars@ex.com',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -274,34 +255,15 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     await sendDeclarantAcknowledgmentEmail('req1');
 
-    const expectedEntiteCompleteTel: Record<string, string | number> = {
-      entitecomplete_nb: 2,
-      entitecomplete_1: 'ARS Normandie',
-      entitecomplete_2: 'Adresse e-mail : ars@ex.com',
-    };
-    for (let i = 2; i < 25; i++) {
-      expectedEntiteCompleteTel[`entitecomplete_${i + 1}`] = '';
-    }
-
-    expect(mockedSendTipimailEmail).toHaveBeenCalledWith({
-      to: 'jane@example.com',
-      subject: '',
-      text: '',
-      template: ACKNOWLEDGMENT_EMAIL_TEMPLATE_NAME,
-      substitutions: [
-        {
-          email: 'jane@example.com',
-          values: {
-            prenomdeclarant: 'Jane',
-            nomdeclarant: 'Smith',
-            entiteadmin: 'ARS Normandie',
-            requeteid: 'req1',
-            ...expectedEntiteCompleteTel,
-            signature: '',
-          },
-        },
-      ],
-    });
+    const call = mockedSendTipimailEmail.mock.calls[0][0];
+    expect(call.to).toBe('jane@example.com');
+    expect(call.subject).toBe(ACKNOWLEDGMENT_EMAIL_SUBJECT);
+    expect(call.template).toBeUndefined();
+    expect(call.text).toContain('Jane');
+    expect(call.text).toContain('req1');
+    expect(call.text).toContain('ARS Normandie');
+    expect(call.text).toContain('ars@ex.com');
+    expect(typeof call.html).toBe('string');
   });
 
   it('should not fail if changelog creation fails', async () => {
@@ -316,6 +278,7 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
       {
         id: 'e1',
         nomComplet: 'ARS Normandie',
+        email: '',
         emailContactUsager: 'contact-ars@ex.com',
         telContactUsager: '',
         adresseContactUsager: '',
@@ -339,5 +302,111 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
 
     expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
     expect(mockedCreateChangeLog).not.toHaveBeenCalled();
+  });
+
+  it('should not send email when no entity has any displayable info (neither contact fields nor email)', async () => {
+    mockedPrismaRequete.findUnique.mockResolvedValueOnce({
+      id: 'req1',
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+      declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
+      requeteEntites: [{ entiteId: 'e1' }, { entiteId: 'e2' }],
+    } as any);
+
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+      {
+        id: 'e2',
+        nomComplet: 'CD Calvados',
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+    ] as any);
+
+    await sendDeclarantAcknowledgmentEmail('req1');
+
+    expect(mockedSendTipimailEmail).not.toHaveBeenCalled();
+  });
+
+  it('should send email using fallback email field when contact fields are empty', async () => {
+    mockedPrismaRequete.findUnique.mockResolvedValueOnce({
+      id: 'req1',
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+      declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
+      requeteEntites: [{ entiteId: 'e1' }],
+    } as any);
+
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        email: 'ars-interne@example.com',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+    ] as any);
+
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
+
+    await sendDeclarantAcknowledgmentEmail('req1');
+
+    expect(mockedSendTipimailEmail).toHaveBeenCalled();
+    const call = mockedSendTipimailEmail.mock.calls[0]?.[0];
+    expect(call?.text).toContain('ARS Normandie');
+    expect(call?.text).toContain('Adresse e-mail : ars-interne@example.com');
+  });
+
+  it('should send email with name only when entity has no info at all', async () => {
+    mockedPrismaRequete.findUnique.mockResolvedValueOnce({
+      id: 'req1',
+      receptionTypeId: RECEPTION_TYPE.FORMULAIRE,
+      declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
+      requeteEntites: [{ entiteId: 'e1' }, { entiteId: 'e2' }],
+    } as any);
+
+    // e1 has contact info, e2 has nothing → email is sent, e2 shows name only
+    mockedPrismaEntite.findMany.mockResolvedValueOnce([
+      {
+        id: 'e1',
+        nomComplet: 'ARS Normandie',
+        email: '',
+        emailContactUsager: 'contact@ars.fr',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+      {
+        id: 'e2',
+        nomComplet: 'CD Calvados',
+        email: '',
+        emailContactUsager: '',
+        telContactUsager: '',
+        adresseContactUsager: '',
+        entiteMereId: null,
+      },
+    ] as any);
+
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
+
+    await sendDeclarantAcknowledgmentEmail('req1');
+
+    expect(mockedSendTipimailEmail).toHaveBeenCalled();
+    const call = mockedSendTipimailEmail.mock.calls[0]?.[0];
+    // ARS Normandie with email, then blank line, then CD Calvados name only
+    expect(call?.text).toContain('ARS Normandie');
+    expect(call?.text).toContain('Adresse e-mail : contact@ars.fr');
+    expect(call?.text).toContain('CD Calvados');
   });
 });

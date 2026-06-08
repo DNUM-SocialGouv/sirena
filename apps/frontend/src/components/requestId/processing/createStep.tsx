@@ -59,8 +59,14 @@ const CreateStepComponent = ({ requestId, isAddingStep, setIsAddingStep }: Creat
               stateRelatedMessage={stepNameError}
             />
           </div>
-          <div className="fr-btns-group fr-btns-group--inline fr-grid-row--right">
-            <Button priority="secondary" size="small" onClick={handleCancel} disabled={addStepMutation.isPending}>
+          <div className="fr-grid-row fr-grid-row--right">
+            <Button
+              className="fr-mr-1w"
+              priority="secondary"
+              size="small"
+              onClick={handleCancel}
+              disabled={addStepMutation.isPending}
+            >
               Annuler
             </Button>
             <Button priority="primary" size="small" onClick={handleAddStep} disabled={addStepMutation.isPending}>
