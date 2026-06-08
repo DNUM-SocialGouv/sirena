@@ -218,22 +218,12 @@ export function RequetesEntite() {
         reset: 'Réinitialiser le tri de la date de création',
       },
     },
-    {
-      key: 'custom:priorite',
-      label: 'Priorité',
-      isSortable: true,
-      sortLabels: {
-        asc: 'Trier par priorité de la plus haute à la plus basse',
-        desc: 'Trier par priorité de la plus basse à la plus haute',
-        reset: 'Réinitialiser le tri de la priorité',
-      },
-    },
     { key: 'custom:affectation', label: 'Affectation' },
-    { key: 'custom:misEnCause', label: 'Mis en cause' },
-    { key: 'custom:motifs', label: 'Motifs' },
     ...(isTopEntiteARS
       ? [{ key: 'custom:departement', label: 'Département lieu de survenue' } as Column<RequeteEntiteRow>]
       : []),
+    { key: 'custom:misEnCause', label: 'Mis en cause' },
+    { key: 'custom:motifs', label: 'Motifs' },
     {
       key: 'custom:personne',
       label: 'Personne Concernée',
@@ -242,6 +232,16 @@ export function RequetesEntite() {
         asc: 'Trier par nom de A à Z',
         desc: 'Trier par nom de Z à A',
         reset: 'Réinitialiser le tri de la personne concernée',
+      },
+    },
+    {
+      key: 'custom:priorite',
+      label: 'Priorité',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par priorité de la plus haute à la plus basse',
+        desc: 'Trier par priorité de la plus basse à la plus haute',
+        reset: 'Réinitialiser le tri de la priorité',
       },
     },
   ];
