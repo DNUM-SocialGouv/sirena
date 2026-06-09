@@ -1,9 +1,11 @@
-import { entiteTypes, REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
+import { DOMAINES_FONCTIONNELS, entiteTypes, REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo, useState } from 'react';
 import { CheckboxFilter } from '@/components/common/filters/CheckboxFilter';
 import { DepartementFilter } from '@/components/common/filters/DepartementFilter';
+import { DomaineFilter } from '@/components/common/filters/DomaineFilter';
 import { useDepartementCounts } from '@/hooks/queries/departementCounts.hook';
+import { useDomaineCounts } from '@/hooks/queries/domaineCounts.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { getRequetesQuickFiltersViewModel } from './requetesEntites.filters.model';
 
@@ -17,10 +19,18 @@ export function RequetesEntiteQuickFilters() {
 
   const arsDepartements = useMemo(() => profile?.topEntiteDepartements ?? [], [profile?.topEntiteDepartements]);
   const [isDepartementDropdownOpen, setIsDepartementDropdownOpen] = useState(false);
+  const [isDomaineDropdownOpen, setIsDomaineDropdownOpen] = useState(false);
+
+  const allDomaineIds = useMemo(() => Object.values(DOMAINES_FONCTIONNELS).join(','), []);
 
   const selectedDepartements = useMemo(
     () => (queries.departementCodes ? queries.departementCodes.split(',').filter(Boolean) : []),
     [queries.departementCodes],
+  );
+
+  const selectedDomaines = useMemo(
+    () => (queries.domaineIds ? queries.domaineIds.split(',').filter(Boolean) : []),
+    [queries.domaineIds],
   );
 
   const { data: departementCountsData } = useDepartementCounts({
@@ -34,6 +44,18 @@ export function RequetesEntiteQuickFilters() {
     if (!departementCountsData) return null;
     return Object.fromEntries(departementCountsData.map((d) => [d.code, d.count]));
   }, [departementCountsData]);
+
+  const { data: domaineCountsData } = useDomaineCounts({
+    domaineIds: allDomaineIds,
+    entiteId: queries.entiteId,
+    search: queries.search,
+    enabled: isDomaineDropdownOpen,
+  });
+
+  const domaineCounts = useMemo(() => {
+    if (!domaineCountsData) return null;
+    return Object.fromEntries(domaineCountsData.map((d) => [d.id, d.count]));
+  }, [domaineCountsData]);
 
   const handleAffectationChange = useCallback(
     (checked: boolean) => {
@@ -74,6 +96,19 @@ export function RequetesEntiteQuickFilters() {
     [navigate],
   );
 
+  const handleDomaineChange = useCallback(
+    (ids: string[]) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          domaineIds: ids.length > 0 ? ids.join(',') : undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
   return (
     <fieldset className="requetesEntitesTable__filters fr-mb-2w">
       <legend className="fr-sr-only">Filtrer les requêtes</legend>
@@ -106,6 +141,14 @@ export function RequetesEntiteQuickFilters() {
               onClose={() => setIsDepartementDropdownOpen(false)}
             />
           )}
+
+          <DomaineFilter
+            selectedIds={selectedDomaines}
+            counts={domaineCounts}
+            onChange={handleDomaineChange}
+            onOpen={() => setIsDomaineDropdownOpen(true)}
+            onClose={() => setIsDomaineDropdownOpen(false)}
+          />
         </div>
       </div>
     </fieldset>
