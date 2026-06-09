@@ -218,16 +218,12 @@ export function RequetesEntite() {
         reset: 'Réinitialiser le tri de la date de création',
       },
     },
-    {
-      key: 'custom:priorite',
-      label: 'Priorité',
-      isSortable: true,
-      sortLabels: {
-        asc: 'Trier par priorité de la plus haute à la plus basse',
-        desc: 'Trier par priorité de la plus basse à la plus haute',
-        reset: 'Réinitialiser le tri de la priorité',
-      },
-    },
+    { key: 'custom:affectation', label: 'Affectation' },
+    ...(isTopEntiteARS
+      ? [{ key: 'custom:departement', label: 'Département lieu de survenue' } as Column<RequeteEntiteRow>]
+      : []),
+    { key: 'custom:misEnCause', label: 'Mis en cause' },
+    { key: 'custom:motifs', label: 'Motifs' },
     {
       key: 'custom:personne',
       label: 'Personne Concernée',
@@ -238,17 +234,24 @@ export function RequetesEntite() {
         reset: 'Réinitialiser le tri de la personne concernée',
       },
     },
-    { key: 'custom:affectation', label: 'Affectation' },
-    { key: 'custom:motifs', label: 'Motifs' },
-    { key: 'custom:misEnCause', label: 'Mis en cause' },
-    ...(isTopEntiteARS
-      ? [{ key: 'custom:departement', label: 'Département lieu de survenue' } as Column<RequeteEntiteRow>]
-      : []),
-    { key: 'custom:action', label: 'Action', isFixedRight: true },
+    {
+      key: 'custom:priorite',
+      label: 'Priorité',
+      isSortable: true,
+      sortLabels: {
+        asc: 'Trier par priorité de la plus haute à la plus basse',
+        desc: 'Trier par priorité de la plus basse à la plus haute',
+        reset: 'Réinitialiser le tri de la priorité',
+      },
+    },
   ];
 
   const cells: Cells<RequeteEntiteRow> = {
-    'requete.id': (row) => <span className="one-line">{row.requete.id}</span>,
+    'requete.id': (row) => (
+      <Link to="/request/$requestId" params={{ requestId: row.requeteId }}>
+        Voir {row.requete.id}
+      </Link>
+    ),
     'requete.receptionDate': (row) => {
       const createdAt = new Date(row.requete.createdAt);
       const isOpen = row.statutId === REQUETE_STATUT_TYPES.NOUVEAU || row.statutId === REQUETE_STATUT_TYPES.EN_COURS;
@@ -309,11 +312,6 @@ export function RequetesEntite() {
           },
         }
       : {}),
-    'custom:action': (row) => (
-      <Link to="/request/$requestId" className="one-line" params={{ requestId: row.requeteId }}>
-        Voir la requête
-      </Link>
-    ),
   };
 
   const total = useMemo(() => requetes?.meta?.total ?? 0, [requetes?.meta?.total]);
