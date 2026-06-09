@@ -76,7 +76,12 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
   }
 
   if (dossier.state === DossierState.EnConstruction) {
-    await updateInstruction(dossier.id);
+    const instruction = await updateInstruction(dossier.id);
+    const errors = instruction?.dossierPasserEnInstruction?.errors ?? [];
+    if (errors.length > 0 || !instruction?.dossierPasserEnInstruction?.dossier) {
+      const message = errors.map((error) => error.message).join(', ') || 'No dossier returned';
+      throw new Error(`demat.social dossierPasserEnInstruction failed: ${message}`);
+    }
   }
 
   if (decision.targetState === DossierState.Accepte) {

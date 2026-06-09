@@ -178,6 +178,9 @@ describe('syncClosedRequeteToDematSocial', () => {
   it('passes an en_construction demat.social dossier to instruction before finalising it', async () => {
     mockSyncData([REQUETE_CLOTURE_REASON.HORS_COMPETENCE]);
     mockDossierState(DossierState.EnConstruction);
+    vi.mocked(updateInstruction).mockResolvedValueOnce({
+      dossierPasserEnInstruction: { dossier: { id: 'Dossier-123' }, errors: [] },
+    } as Awaited<ReturnType<typeof updateInstruction>>);
 
     await syncClosedRequeteToDematSocial('requete-1');
 
@@ -186,6 +189,19 @@ describe('syncClosedRequeteToDematSocial', () => {
       'Dossier-123',
       'Dossier clôturé dans SIRENA. Motifs de clôture : Hors compétence.',
     );
+  });
+
+  it('throws and does not finalise when passing an en_construction dossier to instruction returns errors', async () => {
+    mockSyncData([REQUETE_CLOTURE_REASON.HORS_COMPETENCE]);
+    mockDossierState(DossierState.EnConstruction);
+    vi.mocked(updateInstruction).mockResolvedValueOnce({
+      dossierPasserEnInstruction: { dossier: null, errors: [{ message: 'Transition impossible' }] },
+    } as unknown as Awaited<ReturnType<typeof updateInstruction>>);
+
+    await expect(syncClosedRequeteToDematSocial('requete-1')).rejects.toThrow('Transition impossible');
+
+    expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();
+    expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
   });
 });
 

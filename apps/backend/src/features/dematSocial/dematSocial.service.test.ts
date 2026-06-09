@@ -138,6 +138,24 @@ describe('dematSocial.service.ts', () => {
         disableNotification: true,
       });
     });
+
+    it('throws when accepting a dossier returns demat.social validation errors', async () => {
+      sendMock.mockResolvedValueOnce({
+        dossierAccepter: { dossier: null, errors: [{ message: 'Le dossier ne peut pas être accepté' }] },
+      });
+
+      await expect(acceptDossierWithoutNotification('Dossier-123', 'Motivation SIRENA')).rejects.toThrow(
+        'Le dossier ne peut pas être accepté',
+      );
+    });
+
+    it('throws when classifying a dossier sans suite does not return a dossier', async () => {
+      sendMock.mockResolvedValueOnce({ dossierClasserSansSuite: { dossier: null, errors: [] } });
+
+      await expect(classerDossierSansSuiteWithoutNotification('Dossier-123', 'Motivation SIRENA')).rejects.toThrow(
+        'No dossier returned',
+      );
+    });
   });
 
   describe('getRequetes()', () => {

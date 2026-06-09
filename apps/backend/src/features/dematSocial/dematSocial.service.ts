@@ -94,12 +94,29 @@ type FinalisationVariables = {
   disableNotification: boolean;
 };
 
+type FinalisationResponse = {
+  dossierAccepter?: { dossier?: unknown; errors?: { message: string }[] | null } | null;
+  dossierClasserSansSuite?: { dossier?: unknown; errors?: { message: string }[] | null } | null;
+};
+
 const getFinalisationVariables = (id: string, motivation: string): FinalisationVariables => ({
   dossierId: encodeDematSocialId(id),
   instructeurId: encodeDematSocialId(envVars.DEMAT_SOCIAL_INSTRUCTEUR_ID),
   motivation,
   disableNotification: true,
 });
+
+const assertFinalisationSuccess = (response: FinalisationResponse, payloadKey: keyof FinalisationResponse) => {
+  const payload = response[payloadKey];
+  const errors = payload?.errors ?? [];
+
+  if (errors.length > 0 || !payload?.dossier) {
+    const message = errors.map((error) => error.message).join(', ') || 'No dossier returned';
+    throw new Error(`demat.social ${payloadKey} failed: ${message}`);
+  }
+
+  return response;
+};
 
 export const updateInstruction = async (id: string) => {
   const dossierId = encodeDematSocialId(id);
@@ -108,11 +125,17 @@ export const updateInstruction = async (id: string) => {
 };
 
 export const acceptDossierWithoutNotification = async (id: string, motivation: string) => {
-  return await graffle.gql(AccepterDossierDocument).send(getFinalisationVariables(id, motivation));
+  const response = (await graffle
+    .gql(AccepterDossierDocument)
+    .send(getFinalisationVariables(id, motivation))) as FinalisationResponse;
+  return assertFinalisationSuccess(response, 'dossierAccepter');
 };
 
 export const classerDossierSansSuiteWithoutNotification = async (id: string, motivation: string) => {
-  return await graffle.gql(ClasserDossierSansSuiteDocument).send(getFinalisationVariables(id, motivation));
+  const response = (await graffle
+    .gql(ClasserDossierSansSuiteDocument)
+    .send(getFinalisationVariables(id, motivation))) as FinalisationResponse;
+  return assertFinalisationSuccess(response, 'dossierClasserSansSuite');
 };
 
 export const getRequetes = async (createdSince?: Date, state?: DossierState) => {
