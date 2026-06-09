@@ -2375,7 +2375,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         pdf.field('Motif(s) de clôture', etape.clotureReason.map((r) => r.label).join(', '));
       }
 
-      for (const note of etape.notes) {
+      for (const note of etape.notes ?? []) {
         const noteAuthor = note.author
           ? `${capitalizeFirst(note.author.prenom)} ${capitalizeFirst(note.author.nom)}`
           : 'Système';
@@ -2383,7 +2383,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         pdf.paragraph(`Note du ${noteDate} — ${noteAuthor}`, { bold: true });
         if (note.texte) pdf.paragraph(note.texte);
 
-        const noteFiles = note.uploadedFiles
+        const noteFiles = (note.uploadedFiles ?? [])
           .map((f) => getOriginalFileName(f as Parameters<typeof getOriginalFileName>[0]))
           .filter(Boolean);
         if (noteFiles.length > 0) {
