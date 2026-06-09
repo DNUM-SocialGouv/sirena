@@ -1,11 +1,10 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
-export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
-export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
-export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: { input: string; output: string; }
@@ -14,10 +13,10 @@ export type Scalars = {
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
   BigInt: { input: bigint; output: bigint; }
-  Coordinates: { input: any; output: any; }
+  Coordinates: { input: unknown; output: unknown; }
   ISO8601Date: { input: string; output: string; }
   ISO8601DateTime: { input: string; output: string; }
-  JSON: { input: any; output: any; }
+  JSON: { input: unknown; output: unknown; }
   URL: { input: string; output: string; }
 };
 
@@ -868,6 +867,7 @@ export type Dossier = {
   dateTraitementSVASVR?: Maybe<Scalars['ISO8601DateTime']['output']>;
   demandeur: Demandeur;
   demarche: DemarcheDescriptor;
+  deposeParUnTiers?: Maybe<Scalars['Boolean']['output']>;
   /** Indique si le dossier est déposé par un mandataire pour le compte d'un tiers */
   forTiers: Scalars['Boolean']['output'];
   /** L’URL du GeoJSON contenant les données cartographiques du dossier. */
@@ -882,11 +882,13 @@ export type Dossier = {
   messages: Array<Message>;
   motivation?: Maybe<Scalars['String']['output']>;
   motivationAttachment?: Maybe<File>;
+  nomMandataire?: Maybe<Scalars['String']['output']>;
   /** Le numero du dossier. */
   number: Scalars['Int']['output'];
   /** L’URL du dossier au format PDF. */
   pdf?: Maybe<File>;
   prefilled: Scalars['Boolean']['output'];
+  prenomMandataire?: Maybe<Scalars['String']['output']>;
   /** @deprecated Utilisez le champ `demarche.revision` à la place. */
   revision: Revision;
   /** L’état du dossier. */
@@ -2218,7 +2220,7 @@ export type PersonnePhysique = Demandeur & {
   __typename?: 'PersonnePhysique';
   civilite?: Maybe<Civilite>;
   dateDeNaissance?: Maybe<Scalars['ISO8601Date']['output']>;
-  /** Email de contact du bénéficiaire (si dossier déposé par un mandataire) */
+  /** Email du bénéficiaire (dans le cas d'un dossier déposé par et pour l'usager connecté, l'email est celui de l'usager connecté. Dans le cas d'un dossier déposé pour un bénéficiaire, l'email est celui du bénéficiaire, s'il a été renseigné) */
   email?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   nom: Scalars['String']['output'];
@@ -2349,6 +2351,28 @@ export type QueryDossierArgs = {
 
 export type QueryGroupeInstructeurArgs = {
   number: Scalars['Int']['input'];
+};
+
+export type Rna = {
+  __typename?: 'RNA';
+  address?: Maybe<Address>;
+  id: Scalars['String']['output'];
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type RnaChamp = Champ & {
+  __typename?: 'RNAChamp';
+  commune?: Maybe<Commune>;
+  departement?: Maybe<Departement>;
+  id: Scalars['ID']['output'];
+  /** Libellé du champ. */
+  label: Scalars['String']['output'];
+  prefilled: Scalars['Boolean']['output'];
+  rna?: Maybe<Rna>;
+  /** La valeur du champ sous forme texte. */
+  stringValue?: Maybe<Scalars['String']['output']>;
+  /** Date de dernière modification du champ. */
+  updatedAt: Scalars['ISO8601DateTime']['output'];
 };
 
 export type RnaChampDescriptor = ChampDescriptor & {
@@ -2822,81 +2846,112 @@ export type YesNoChampDescriptor = ChampDescriptor & {
   type: TypeDeChamp;
 };
 
-type RootChampFragment_AddressChamp_Fragment = { __typename: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null };
+export type AddressType =
+  /** numéro « à la plaque » */
+  | 'housenumber'
+  /** lieu-dit */
+  | 'locality'
+  /** numéro « à la commune » */
+  | 'municipality'
+  /** position « à la voie », placé approximativement au centre de celle-ci */
+  | 'street';
 
-type RootChampFragment_CarteChamp_Fragment = { __typename: 'CarteChamp', id: string, label: string, stringValue?: string | null };
+export type Civilite =
+  /** Monsieur */
+  | 'M'
+  /** Madame */
+  | 'Mme';
 
-type RootChampFragment_CheckboxChamp_Fragment = { __typename: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean };
+export type DossierState =
+  /** Accepté */
+  | 'accepte'
+  /** En construction */
+  | 'en_construction'
+  /** En instruction */
+  | 'en_instruction'
+  /** Refusé */
+  | 'refuse'
+  /** Classé sans suite */
+  | 'sans_suite';
 
-type RootChampFragment_CiviliteChamp_Fragment = { __typename: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null };
+type RootChampFragment_AddressChamp_Fragment = { __typename: 'AddressChamp', id: string, label: string, stringValue: string | null, address: { label: string, type: AddressType, streetAddress: string | null, streetNumber: string | null, streetName: string | null, postalCode: string, cityName: string, cityCode: string, departmentName: string | null, departmentCode: string | null, regionName: string | null, regionCode: string | null } | null };
 
-type RootChampFragment_CommuneChamp_Fragment = { __typename: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null };
+type RootChampFragment_CarteChamp_Fragment = { __typename: 'CarteChamp', id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_DateChamp_Fragment = { __typename: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null };
+type RootChampFragment_CheckboxChamp_Fragment = { __typename: 'CheckboxChamp', id: string, label: string, stringValue: string | null, checked: boolean };
 
-type RootChampFragment_DatetimeChamp_Fragment = { __typename: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null };
+type RootChampFragment_CiviliteChamp_Fragment = { __typename: 'CiviliteChamp', id: string, label: string, stringValue: string | null, civilite: Civilite | null };
 
-type RootChampFragment_DecimalNumberChamp_Fragment = { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null };
+type RootChampFragment_CommuneChamp_Fragment = { __typename: 'CommuneChamp', id: string, label: string, stringValue: string | null, commune: { code: string, name: string, postalCode: string | null } | null, departement: { code: string, name: string } | null };
 
-type RootChampFragment_DepartementChamp_Fragment = { __typename: 'DepartementChamp', id: string, label: string, stringValue?: string | null };
+type RootChampFragment_DateChamp_Fragment = { __typename: 'DateChamp', date: string | null, id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_DossierLinkChamp_Fragment = { __typename: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null };
+type RootChampFragment_DatetimeChamp_Fragment = { __typename: 'DatetimeChamp', datetime: string | null, id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_EngagementJuridiqueChamp_Fragment = { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null };
+type RootChampFragment_DecimalNumberChamp_Fragment = { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue: string | null, decimalNumber: number | null };
 
-type RootChampFragment_EpciChamp_Fragment = { __typename: 'EpciChamp', id: string, label: string, stringValue?: string | null };
+type RootChampFragment_DepartementChamp_Fragment = { __typename: 'DepartementChamp', id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_FinessChamp_Fragment = { __typename: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string };
+type RootChampFragment_DossierLinkChamp_Fragment = { __typename: 'DossierLinkChamp', id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_IntegerNumberChamp_Fragment = { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null };
+type RootChampFragment_EngagementJuridiqueChamp_Fragment = { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_LinkedDropDownListChamp_Fragment = { __typename: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null };
+type RootChampFragment_EpciChamp_Fragment = { __typename: 'EpciChamp', id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_MultipleDropDownListChamp_Fragment = { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null };
+type RootChampFragment_FinessChamp_Fragment = { __typename: 'FinessChamp', data: unknown, stringValue: string | null, id: string, label: string };
 
-type RootChampFragment_PaysChamp_Fragment = { __typename: 'PaysChamp', id: string, label: string, stringValue?: string | null };
+type RootChampFragment_IntegerNumberChamp_Fragment = { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue: string | null, integerNumber: bigint | null };
 
-type RootChampFragment_PieceJustificativeChamp_Fragment = { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> };
+type RootChampFragment_LinkedDropDownListChamp_Fragment = { __typename: 'LinkedDropDownListChamp', primaryValue: string | null, secondaryValue: string | null, id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_RnfChamp_Fragment = { __typename: 'RNFChamp', id: string, label: string, stringValue?: string | null };
+type RootChampFragment_MultipleDropDownListChamp_Fragment = { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_RegionChamp_Fragment = { __typename: 'RegionChamp', id: string, label: string, stringValue?: string | null };
+type RootChampFragment_PaysChamp_Fragment = { __typename: 'PaysChamp', id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_RepetitionChamp_Fragment = { __typename: 'RepetitionChamp', id: string, label: string, stringValue?: string | null, champs: Array<
-    | { __typename: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null }
-    | { __typename: 'CarteChamp', id: string, label: string, stringValue?: string | null }
-    | { __typename: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean }
-    | { __typename: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null }
-    | { __typename: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null }
-    | { __typename: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null }
-    | { __typename: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null }
-    | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null }
-    | { __typename: 'DepartementChamp', id: string, label: string, stringValue?: string | null }
-    | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null }
-    | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null }
-    | { __typename: 'EpciChamp', id: string, label: string, stringValue?: string | null }
-    | { __typename: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string }
-    | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null }
-    | { __typename: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null }
-    | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null }
-    | { __typename: 'PaysChamp', id: string, label: string, stringValue?: string | null }
-    | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
-    | { __typename: 'RNFChamp', id: string, label: string, stringValue?: string | null }
-    | { __typename: 'RegionChamp', id: string, label: string, stringValue?: string | null }
-    | { __typename: 'RepetitionChamp', id: string, label: string, stringValue?: string | null }
-    | { __typename: 'RppsanteChamp', stringValue?: string | null, data?: any | null, id: string, label: string }
-    | { __typename: 'SiretChamp', id: string, label: string, stringValue?: string | null }
-    | { __typename: 'TextChamp', id: string, label: string, stringValue?: string | null }
-    | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }
+type RootChampFragment_PieceJustificativeChamp_Fragment = { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> };
+
+type RootChampFragment_RnaChamp_Fragment = { __typename: 'RNAChamp', id: string, label: string, stringValue: string | null };
+
+type RootChampFragment_RnfChamp_Fragment = { __typename: 'RNFChamp', id: string, label: string, stringValue: string | null };
+
+type RootChampFragment_RegionChamp_Fragment = { __typename: 'RegionChamp', id: string, label: string, stringValue: string | null };
+
+type RootChampFragment_RepetitionChamp_Fragment = { __typename: 'RepetitionChamp', id: string, label: string, stringValue: string | null, champs: Array<
+    | { __typename: 'AddressChamp', id: string, label: string, stringValue: string | null, address: { label: string, type: AddressType, streetAddress: string | null, streetNumber: string | null, streetName: string | null, postalCode: string, cityName: string, cityCode: string, departmentName: string | null, departmentCode: string | null, regionName: string | null, regionCode: string | null } | null }
+    | { __typename: 'CarteChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'CheckboxChamp', id: string, label: string, stringValue: string | null, checked: boolean }
+    | { __typename: 'CiviliteChamp', id: string, label: string, stringValue: string | null, civilite: Civilite | null }
+    | { __typename: 'CommuneChamp', id: string, label: string, stringValue: string | null, commune: { code: string, name: string, postalCode: string | null } | null, departement: { code: string, name: string } | null }
+    | { __typename: 'DateChamp', date: string | null, id: string, label: string, stringValue: string | null }
+    | { __typename: 'DatetimeChamp', datetime: string | null, id: string, label: string, stringValue: string | null }
+    | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue: string | null, decimalNumber: number | null }
+    | { __typename: 'DepartementChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'EpciChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'FinessChamp', data: unknown, stringValue: string | null, id: string, label: string }
+    | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue: string | null, integerNumber: bigint | null }
+    | { __typename: 'LinkedDropDownListChamp', primaryValue: string | null, secondaryValue: string | null, id: string, label: string, stringValue: string | null }
+    | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue: string | null }
+    | { __typename: 'PaysChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
+    | { __typename: 'RNAChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'RNFChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'RegionChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'RepetitionChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'RppsanteChamp', stringValue: string | null, data: unknown, id: string, label: string }
+    | { __typename: 'SiretChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'TextChamp', id: string, label: string, stringValue: string | null }
+    | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue: string | null }
   > };
 
-type RootChampFragment_RppsanteChamp_Fragment = { __typename: 'RppsanteChamp', stringValue?: string | null, data?: any | null, id: string, label: string };
+type RootChampFragment_RppsanteChamp_Fragment = { __typename: 'RppsanteChamp', stringValue: string | null, data: unknown, id: string, label: string };
 
-type RootChampFragment_SiretChamp_Fragment = { __typename: 'SiretChamp', id: string, label: string, stringValue?: string | null };
+type RootChampFragment_SiretChamp_Fragment = { __typename: 'SiretChamp', id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_TextChamp_Fragment = { __typename: 'TextChamp', id: string, label: string, stringValue?: string | null };
+type RootChampFragment_TextChamp_Fragment = { __typename: 'TextChamp', id: string, label: string, stringValue: string | null };
 
-type RootChampFragment_TitreIdentiteChamp_Fragment = { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null };
+type RootChampFragment_TitreIdentiteChamp_Fragment = { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue: string | null };
 
 export type RootChampFragmentFragment =
   | RootChampFragment_AddressChamp_Fragment
@@ -2917,6 +2972,7 @@ export type RootChampFragmentFragment =
   | RootChampFragment_MultipleDropDownListChamp_Fragment
   | RootChampFragment_PaysChamp_Fragment
   | RootChampFragment_PieceJustificativeChamp_Fragment
+  | RootChampFragment_RnaChamp_Fragment
   | RootChampFragment_RnfChamp_Fragment
   | RootChampFragment_RegionChamp_Fragment
   | RootChampFragment_RepetitionChamp_Fragment
@@ -2926,63 +2982,65 @@ export type RootChampFragmentFragment =
   | RootChampFragment_TitreIdentiteChamp_Fragment
 ;
 
-export type AddressFragmentFragment = { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null };
+export type AddressFragmentFragment = { label: string, type: AddressType, streetAddress: string | null, streetNumber: string | null, streetName: string | null, postalCode: string, cityName: string, cityCode: string, departmentName: string | null, departmentCode: string | null, regionName: string | null, regionCode: string | null };
 
-export type CommuneFragmentFragment = { __typename?: 'Commune', code: string, name: string, postalCode?: string | null };
+export type CommuneFragmentFragment = { code: string, name: string, postalCode: string | null };
 
-export type DepartementFragmentFragment = { __typename?: 'Departement', code: string, name: string };
+export type DepartementFragmentFragment = { code: string, name: string };
 
 export type FileFragmentFragment = { __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint };
 
-type ChampFragment_AddressChamp_Fragment = { __typename: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null };
+type ChampFragment_AddressChamp_Fragment = { __typename: 'AddressChamp', id: string, label: string, stringValue: string | null, address: { label: string, type: AddressType, streetAddress: string | null, streetNumber: string | null, streetName: string | null, postalCode: string, cityName: string, cityCode: string, departmentName: string | null, departmentCode: string | null, regionName: string | null, regionCode: string | null } | null };
 
-type ChampFragment_CarteChamp_Fragment = { __typename: 'CarteChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_CarteChamp_Fragment = { __typename: 'CarteChamp', id: string, label: string, stringValue: string | null };
 
-type ChampFragment_CheckboxChamp_Fragment = { __typename: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean };
+type ChampFragment_CheckboxChamp_Fragment = { __typename: 'CheckboxChamp', id: string, label: string, stringValue: string | null, checked: boolean };
 
-type ChampFragment_CiviliteChamp_Fragment = { __typename: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null };
+type ChampFragment_CiviliteChamp_Fragment = { __typename: 'CiviliteChamp', id: string, label: string, stringValue: string | null, civilite: Civilite | null };
 
-type ChampFragment_CommuneChamp_Fragment = { __typename: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null };
+type ChampFragment_CommuneChamp_Fragment = { __typename: 'CommuneChamp', id: string, label: string, stringValue: string | null, commune: { code: string, name: string, postalCode: string | null } | null, departement: { code: string, name: string } | null };
 
-type ChampFragment_DateChamp_Fragment = { __typename: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null };
+type ChampFragment_DateChamp_Fragment = { __typename: 'DateChamp', date: string | null, id: string, label: string, stringValue: string | null };
 
-type ChampFragment_DatetimeChamp_Fragment = { __typename: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null };
+type ChampFragment_DatetimeChamp_Fragment = { __typename: 'DatetimeChamp', datetime: string | null, id: string, label: string, stringValue: string | null };
 
-type ChampFragment_DecimalNumberChamp_Fragment = { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null };
+type ChampFragment_DecimalNumberChamp_Fragment = { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue: string | null, decimalNumber: number | null };
 
-type ChampFragment_DepartementChamp_Fragment = { __typename: 'DepartementChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_DepartementChamp_Fragment = { __typename: 'DepartementChamp', id: string, label: string, stringValue: string | null };
 
-type ChampFragment_DossierLinkChamp_Fragment = { __typename: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_DossierLinkChamp_Fragment = { __typename: 'DossierLinkChamp', id: string, label: string, stringValue: string | null };
 
-type ChampFragment_EngagementJuridiqueChamp_Fragment = { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_EngagementJuridiqueChamp_Fragment = { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue: string | null };
 
-type ChampFragment_EpciChamp_Fragment = { __typename: 'EpciChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_EpciChamp_Fragment = { __typename: 'EpciChamp', id: string, label: string, stringValue: string | null };
 
-type ChampFragment_FinessChamp_Fragment = { __typename: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string };
+type ChampFragment_FinessChamp_Fragment = { __typename: 'FinessChamp', data: unknown, stringValue: string | null, id: string, label: string };
 
-type ChampFragment_IntegerNumberChamp_Fragment = { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null };
+type ChampFragment_IntegerNumberChamp_Fragment = { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue: string | null, integerNumber: bigint | null };
 
-type ChampFragment_LinkedDropDownListChamp_Fragment = { __typename: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null };
+type ChampFragment_LinkedDropDownListChamp_Fragment = { __typename: 'LinkedDropDownListChamp', primaryValue: string | null, secondaryValue: string | null, id: string, label: string, stringValue: string | null };
 
-type ChampFragment_MultipleDropDownListChamp_Fragment = { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null };
+type ChampFragment_MultipleDropDownListChamp_Fragment = { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue: string | null };
 
-type ChampFragment_PaysChamp_Fragment = { __typename: 'PaysChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_PaysChamp_Fragment = { __typename: 'PaysChamp', id: string, label: string, stringValue: string | null };
 
-type ChampFragment_PieceJustificativeChamp_Fragment = { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> };
+type ChampFragment_PieceJustificativeChamp_Fragment = { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> };
 
-type ChampFragment_RnfChamp_Fragment = { __typename: 'RNFChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_RnaChamp_Fragment = { __typename: 'RNAChamp', id: string, label: string, stringValue: string | null };
 
-type ChampFragment_RegionChamp_Fragment = { __typename: 'RegionChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_RnfChamp_Fragment = { __typename: 'RNFChamp', id: string, label: string, stringValue: string | null };
 
-type ChampFragment_RepetitionChamp_Fragment = { __typename: 'RepetitionChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_RegionChamp_Fragment = { __typename: 'RegionChamp', id: string, label: string, stringValue: string | null };
 
-type ChampFragment_RppsanteChamp_Fragment = { __typename: 'RppsanteChamp', stringValue?: string | null, data?: any | null, id: string, label: string };
+type ChampFragment_RepetitionChamp_Fragment = { __typename: 'RepetitionChamp', id: string, label: string, stringValue: string | null };
 
-type ChampFragment_SiretChamp_Fragment = { __typename: 'SiretChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_RppsanteChamp_Fragment = { __typename: 'RppsanteChamp', stringValue: string | null, data: unknown, id: string, label: string };
 
-type ChampFragment_TextChamp_Fragment = { __typename: 'TextChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_SiretChamp_Fragment = { __typename: 'SiretChamp', id: string, label: string, stringValue: string | null };
 
-type ChampFragment_TitreIdentiteChamp_Fragment = { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null };
+type ChampFragment_TextChamp_Fragment = { __typename: 'TextChamp', id: string, label: string, stringValue: string | null };
+
+type ChampFragment_TitreIdentiteChamp_Fragment = { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue: string | null };
 
 export type ChampFragmentFragment =
   | ChampFragment_AddressChamp_Fragment
@@ -3003,6 +3061,7 @@ export type ChampFragmentFragment =
   | ChampFragment_MultipleDropDownListChamp_Fragment
   | ChampFragment_PaysChamp_Fragment
   | ChampFragment_PieceJustificativeChamp_Fragment
+  | ChampFragment_RnaChamp_Fragment
   | ChampFragment_RnfChamp_Fragment
   | ChampFragment_RegionChamp_Fragment
   | ChampFragment_RepetitionChamp_Fragment
@@ -3013,152 +3072,176 @@ export type ChampFragmentFragment =
 ;
 
 export type GetDossiersMetadataQueryVariables = Exact<{
-  demarcheNumber: Scalars['Int']['input'];
+  demarcheNumber: number;
 }>;
 
 
-export type GetDossiersMetadataQuery = { __typename?: 'Query', demarche: { __typename?: 'Demarche', dossiers: { __typename?: 'DossierConnection', edges?: Array<{ __typename?: 'DossierEdge', node?: { __typename?: 'Dossier', id: string, number: number, dateDerniereModification: string, dateDepot: string, champs: Array<
-            | { __typename: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null }
-            | { __typename: 'CarteChamp', id: string, label: string, stringValue?: string | null }
-            | { __typename: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean }
-            | { __typename: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null }
-            | { __typename: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null }
-            | { __typename: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null }
-            | { __typename: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null }
-            | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null }
-            | { __typename: 'DepartementChamp', id: string, label: string, stringValue?: string | null }
-            | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null }
-            | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null }
-            | { __typename: 'EpciChamp', id: string, label: string, stringValue?: string | null }
-            | { __typename: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string }
-            | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null }
-            | { __typename: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null }
-            | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null }
-            | { __typename: 'PaysChamp', id: string, label: string, stringValue?: string | null }
-            | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
-            | { __typename: 'RNFChamp', id: string, label: string, stringValue?: string | null }
-            | { __typename: 'RegionChamp', id: string, label: string, stringValue?: string | null }
-            | { __typename: 'RepetitionChamp', id: string, label: string, stringValue?: string | null, champs: Array<
-                | { __typename: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null }
-                | { __typename: 'CarteChamp', id: string, label: string, stringValue?: string | null }
-                | { __typename: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean }
-                | { __typename: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null }
-                | { __typename: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null }
-                | { __typename: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null }
-                | { __typename: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null }
-                | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null }
-                | { __typename: 'DepartementChamp', id: string, label: string, stringValue?: string | null }
-                | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null }
-                | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null }
-                | { __typename: 'EpciChamp', id: string, label: string, stringValue?: string | null }
-                | { __typename: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string }
-                | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null }
-                | { __typename: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null }
-                | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null }
-                | { __typename: 'PaysChamp', id: string, label: string, stringValue?: string | null }
-                | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
-                | { __typename: 'RNFChamp', id: string, label: string, stringValue?: string | null }
-                | { __typename: 'RegionChamp', id: string, label: string, stringValue?: string | null }
-                | { __typename: 'RepetitionChamp', id: string, label: string, stringValue?: string | null }
-                | { __typename: 'RppsanteChamp', stringValue?: string | null, data?: any | null, id: string, label: string }
-                | { __typename: 'SiretChamp', id: string, label: string, stringValue?: string | null }
-                | { __typename: 'TextChamp', id: string, label: string, stringValue?: string | null }
-                | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }
+export type GetDossiersMetadataQuery = { demarche: { dossiers: { edges: Array<{ node: { id: string, number: number, dateDerniereModification: string, dateDepot: string, champs: Array<
+            | { __typename: 'AddressChamp', id: string, label: string, stringValue: string | null, address: { label: string, type: AddressType, streetAddress: string | null, streetNumber: string | null, streetName: string | null, postalCode: string, cityName: string, cityCode: string, departmentName: string | null, departmentCode: string | null, regionName: string | null, regionCode: string | null } | null }
+            | { __typename: 'CarteChamp', id: string, label: string, stringValue: string | null }
+            | { __typename: 'CheckboxChamp', id: string, label: string, stringValue: string | null, checked: boolean }
+            | { __typename: 'CiviliteChamp', id: string, label: string, stringValue: string | null, civilite: Civilite | null }
+            | { __typename: 'CommuneChamp', id: string, label: string, stringValue: string | null, commune: { code: string, name: string, postalCode: string | null } | null, departement: { code: string, name: string } | null }
+            | { __typename: 'DateChamp', date: string | null, id: string, label: string, stringValue: string | null }
+            | { __typename: 'DatetimeChamp', datetime: string | null, id: string, label: string, stringValue: string | null }
+            | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue: string | null, decimalNumber: number | null }
+            | { __typename: 'DepartementChamp', id: string, label: string, stringValue: string | null }
+            | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue: string | null }
+            | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue: string | null }
+            | { __typename: 'EpciChamp', id: string, label: string, stringValue: string | null }
+            | { __typename: 'FinessChamp', data: unknown, stringValue: string | null, id: string, label: string }
+            | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue: string | null, integerNumber: bigint | null }
+            | { __typename: 'LinkedDropDownListChamp', primaryValue: string | null, secondaryValue: string | null, id: string, label: string, stringValue: string | null }
+            | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue: string | null }
+            | { __typename: 'PaysChamp', id: string, label: string, stringValue: string | null }
+            | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
+            | { __typename: 'RNAChamp', id: string, label: string, stringValue: string | null }
+            | { __typename: 'RNFChamp', id: string, label: string, stringValue: string | null }
+            | { __typename: 'RegionChamp', id: string, label: string, stringValue: string | null }
+            | { __typename: 'RepetitionChamp', id: string, label: string, stringValue: string | null, champs: Array<
+                | { __typename: 'AddressChamp', id: string, label: string, stringValue: string | null, address: { label: string, type: AddressType, streetAddress: string | null, streetNumber: string | null, streetName: string | null, postalCode: string, cityName: string, cityCode: string, departmentName: string | null, departmentCode: string | null, regionName: string | null, regionCode: string | null } | null }
+                | { __typename: 'CarteChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'CheckboxChamp', id: string, label: string, stringValue: string | null, checked: boolean }
+                | { __typename: 'CiviliteChamp', id: string, label: string, stringValue: string | null, civilite: Civilite | null }
+                | { __typename: 'CommuneChamp', id: string, label: string, stringValue: string | null, commune: { code: string, name: string, postalCode: string | null } | null, departement: { code: string, name: string } | null }
+                | { __typename: 'DateChamp', date: string | null, id: string, label: string, stringValue: string | null }
+                | { __typename: 'DatetimeChamp', datetime: string | null, id: string, label: string, stringValue: string | null }
+                | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue: string | null, decimalNumber: number | null }
+                | { __typename: 'DepartementChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'EpciChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'FinessChamp', data: unknown, stringValue: string | null, id: string, label: string }
+                | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue: string | null, integerNumber: bigint | null }
+                | { __typename: 'LinkedDropDownListChamp', primaryValue: string | null, secondaryValue: string | null, id: string, label: string, stringValue: string | null }
+                | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue: string | null }
+                | { __typename: 'PaysChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
+                | { __typename: 'RNAChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'RNFChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'RegionChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'RepetitionChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'RppsanteChamp', stringValue: string | null, data: unknown, id: string, label: string }
+                | { __typename: 'SiretChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'TextChamp', id: string, label: string, stringValue: string | null }
+                | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue: string | null }
               > }
-            | { __typename: 'RppsanteChamp', stringValue?: string | null, data?: any | null, id: string, label: string }
-            | { __typename: 'SiretChamp', id: string, label: string, stringValue?: string | null }
-            | { __typename: 'TextChamp', id: string, label: string, stringValue?: string | null }
-            | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }
+            | { __typename: 'RppsanteChamp', stringValue: string | null, data: unknown, id: string, label: string }
+            | { __typename: 'SiretChamp', id: string, label: string, stringValue: string | null }
+            | { __typename: 'TextChamp', id: string, label: string, stringValue: string | null }
+            | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue: string | null }
           > } | null } | null> | null } } };
 
 export type GetDossiersByDateQueryVariables = Exact<{
-  demarcheNumber: Scalars['Int']['input'];
-  createdSince?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
-  after?: InputMaybe<Scalars['String']['input']>;
-  state?: InputMaybe<DossierState>;
+  demarcheNumber: number;
+  createdSince?: string | null | undefined;
+  after?: string | null | undefined;
+  state?: DossierState | null | undefined;
 }>;
 
 
-export type GetDossiersByDateQuery = { __typename?: 'Query', demarche: { __typename?: 'Demarche', dossiers: { __typename?: 'DossierConnection', pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null }, nodes?: Array<{ __typename?: 'Dossier', id: string, number: number, dateDepot: string, dateDerniereModification: string, state: DossierState } | null> | null } } };
+export type GetDossiersByDateQuery = { demarche: { dossiers: { pageInfo: { hasNextPage: boolean, endCursor: string | null }, nodes: Array<{ id: string, number: number, dateDepot: string, dateDerniereModification: string, state: DossierState } | null> | null } } };
 
 export type GetDossierQueryVariables = Exact<{
-  dossierNumber: Scalars['Int']['input'];
+  dossierNumber: number;
 }>;
 
 
-export type GetDossierQuery = { __typename?: 'Query', dossier: { __typename?: 'Dossier', id: string, number: number, state: DossierState, dateDerniereModification: string, dateDepot: string, archived: boolean, mandataireFirstName?: string | null, mandataireLastName?: string | null, usager: { __typename?: 'Profile', email: string }, demandeur:
+export type GetDossierQuery = { dossier: { id: string, number: number, state: DossierState, dateDerniereModification: string, dateDepot: string, archived: boolean, mandataireFirstName: string | null, mandataireLastName: string | null, usager: { email: string }, demandeur:
       | { __typename: 'PersonneMorale' }
       | { __typename: 'PersonneMoraleIncomplete' }
-      | { __typename: 'PersonnePhysique', nom: string, prenom: string, civilite?: Civilite | null, email?: string | null }
+      | { __typename: 'PersonnePhysique', nom: string, prenom: string, civilite: Civilite | null, email: string | null }
     , champs: Array<
-      | { __typename: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null }
-      | { __typename: 'CarteChamp', id: string, label: string, stringValue?: string | null }
-      | { __typename: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean }
-      | { __typename: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null }
-      | { __typename: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null }
-      | { __typename: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null }
-      | { __typename: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null }
-      | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null }
-      | { __typename: 'DepartementChamp', id: string, label: string, stringValue?: string | null }
-      | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null }
-      | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null }
-      | { __typename: 'EpciChamp', id: string, label: string, stringValue?: string | null }
-      | { __typename: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string }
-      | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null }
-      | { __typename: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null }
-      | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null }
-      | { __typename: 'PaysChamp', id: string, label: string, stringValue?: string | null }
-      | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
-      | { __typename: 'RNFChamp', id: string, label: string, stringValue?: string | null }
-      | { __typename: 'RegionChamp', id: string, label: string, stringValue?: string | null }
-      | { __typename: 'RepetitionChamp', id: string, label: string, stringValue?: string | null, champs: Array<
-          | { __typename: 'AddressChamp', id: string, label: string, stringValue?: string | null, address?: { __typename?: 'Address', label: string, type: AddressType, streetAddress?: string | null, streetNumber?: string | null, streetName?: string | null, postalCode: string, cityName: string, cityCode: string, departmentName?: string | null, departmentCode?: string | null, regionName?: string | null, regionCode?: string | null } | null }
-          | { __typename: 'CarteChamp', id: string, label: string, stringValue?: string | null }
-          | { __typename: 'CheckboxChamp', id: string, label: string, stringValue?: string | null, checked: boolean }
-          | { __typename: 'CiviliteChamp', id: string, label: string, stringValue?: string | null, civilite?: Civilite | null }
-          | { __typename: 'CommuneChamp', id: string, label: string, stringValue?: string | null, commune?: { __typename?: 'Commune', code: string, name: string, postalCode?: string | null } | null, departement?: { __typename?: 'Departement', code: string, name: string } | null }
-          | { __typename: 'DateChamp', date?: string | null, id: string, label: string, stringValue?: string | null }
-          | { __typename: 'DatetimeChamp', datetime?: string | null, id: string, label: string, stringValue?: string | null }
-          | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue?: string | null, decimalNumber?: number | null }
-          | { __typename: 'DepartementChamp', id: string, label: string, stringValue?: string | null }
-          | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue?: string | null }
-          | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue?: string | null }
-          | { __typename: 'EpciChamp', id: string, label: string, stringValue?: string | null }
-          | { __typename: 'FinessChamp', data?: any | null, stringValue?: string | null, id: string, label: string }
-          | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue?: string | null, integerNumber?: bigint | null }
-          | { __typename: 'LinkedDropDownListChamp', primaryValue?: string | null, secondaryValue?: string | null, id: string, label: string, stringValue?: string | null }
-          | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue?: string | null }
-          | { __typename: 'PaysChamp', id: string, label: string, stringValue?: string | null }
-          | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue?: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
-          | { __typename: 'RNFChamp', id: string, label: string, stringValue?: string | null }
-          | { __typename: 'RegionChamp', id: string, label: string, stringValue?: string | null }
-          | { __typename: 'RepetitionChamp', id: string, label: string, stringValue?: string | null }
-          | { __typename: 'RppsanteChamp', stringValue?: string | null, data?: any | null, id: string, label: string }
-          | { __typename: 'SiretChamp', id: string, label: string, stringValue?: string | null }
-          | { __typename: 'TextChamp', id: string, label: string, stringValue?: string | null }
-          | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }
+      | { __typename: 'AddressChamp', id: string, label: string, stringValue: string | null, address: { label: string, type: AddressType, streetAddress: string | null, streetNumber: string | null, streetName: string | null, postalCode: string, cityName: string, cityCode: string, departmentName: string | null, departmentCode: string | null, regionName: string | null, regionCode: string | null } | null }
+      | { __typename: 'CarteChamp', id: string, label: string, stringValue: string | null }
+      | { __typename: 'CheckboxChamp', id: string, label: string, stringValue: string | null, checked: boolean }
+      | { __typename: 'CiviliteChamp', id: string, label: string, stringValue: string | null, civilite: Civilite | null }
+      | { __typename: 'CommuneChamp', id: string, label: string, stringValue: string | null, commune: { code: string, name: string, postalCode: string | null } | null, departement: { code: string, name: string } | null }
+      | { __typename: 'DateChamp', date: string | null, id: string, label: string, stringValue: string | null }
+      | { __typename: 'DatetimeChamp', datetime: string | null, id: string, label: string, stringValue: string | null }
+      | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue: string | null, decimalNumber: number | null }
+      | { __typename: 'DepartementChamp', id: string, label: string, stringValue: string | null }
+      | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue: string | null }
+      | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue: string | null }
+      | { __typename: 'EpciChamp', id: string, label: string, stringValue: string | null }
+      | { __typename: 'FinessChamp', data: unknown, stringValue: string | null, id: string, label: string }
+      | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue: string | null, integerNumber: bigint | null }
+      | { __typename: 'LinkedDropDownListChamp', primaryValue: string | null, secondaryValue: string | null, id: string, label: string, stringValue: string | null }
+      | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue: string | null }
+      | { __typename: 'PaysChamp', id: string, label: string, stringValue: string | null }
+      | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
+      | { __typename: 'RNAChamp', id: string, label: string, stringValue: string | null }
+      | { __typename: 'RNFChamp', id: string, label: string, stringValue: string | null }
+      | { __typename: 'RegionChamp', id: string, label: string, stringValue: string | null }
+      | { __typename: 'RepetitionChamp', id: string, label: string, stringValue: string | null, champs: Array<
+          | { __typename: 'AddressChamp', id: string, label: string, stringValue: string | null, address: { label: string, type: AddressType, streetAddress: string | null, streetNumber: string | null, streetName: string | null, postalCode: string, cityName: string, cityCode: string, departmentName: string | null, departmentCode: string | null, regionName: string | null, regionCode: string | null } | null }
+          | { __typename: 'CarteChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'CheckboxChamp', id: string, label: string, stringValue: string | null, checked: boolean }
+          | { __typename: 'CiviliteChamp', id: string, label: string, stringValue: string | null, civilite: Civilite | null }
+          | { __typename: 'CommuneChamp', id: string, label: string, stringValue: string | null, commune: { code: string, name: string, postalCode: string | null } | null, departement: { code: string, name: string } | null }
+          | { __typename: 'DateChamp', date: string | null, id: string, label: string, stringValue: string | null }
+          | { __typename: 'DatetimeChamp', datetime: string | null, id: string, label: string, stringValue: string | null }
+          | { __typename: 'DecimalNumberChamp', id: string, label: string, stringValue: string | null, decimalNumber: number | null }
+          | { __typename: 'DepartementChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'DossierLinkChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'EngagementJuridiqueChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'EpciChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'FinessChamp', data: unknown, stringValue: string | null, id: string, label: string }
+          | { __typename: 'IntegerNumberChamp', id: string, label: string, stringValue: string | null, integerNumber: bigint | null }
+          | { __typename: 'LinkedDropDownListChamp', primaryValue: string | null, secondaryValue: string | null, id: string, label: string, stringValue: string | null }
+          | { __typename: 'MultipleDropDownListChamp', values: Array<string>, id: string, label: string, stringValue: string | null }
+          | { __typename: 'PaysChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'PieceJustificativeChamp', id: string, label: string, stringValue: string | null, files: Array<{ __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint }> }
+          | { __typename: 'RNAChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'RNFChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'RegionChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'RepetitionChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'RppsanteChamp', stringValue: string | null, data: unknown, id: string, label: string }
+          | { __typename: 'SiretChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'TextChamp', id: string, label: string, stringValue: string | null }
+          | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue: string | null }
         > }
-      | { __typename: 'RppsanteChamp', stringValue?: string | null, data?: any | null, id: string, label: string }
-      | { __typename: 'SiretChamp', id: string, label: string, stringValue?: string | null }
-      | { __typename: 'TextChamp', id: string, label: string, stringValue?: string | null }
-      | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue?: string | null }
-    >, pdf?: { __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint } | null } };
+      | { __typename: 'RppsanteChamp', stringValue: string | null, data: unknown, id: string, label: string }
+      | { __typename: 'SiretChamp', id: string, label: string, stringValue: string | null }
+      | { __typename: 'TextChamp', id: string, label: string, stringValue: string | null }
+      | { __typename: 'TitreIdentiteChamp', id: string, label: string, stringValue: string | null }
+    >, pdf: { __typename: 'File', filename: string, contentType: string, checksum: string, url: string, createdAt: string, byteSize: bigint } | null } };
 
 export type GetInstructeursQueryVariables = Exact<{
-  demarcheNumber: Scalars['Int']['input'];
+  demarcheNumber: number;
 }>;
 
 
-export type GetInstructeursQuery = { __typename?: 'Query', demarche: { __typename?: 'Demarche', groupeInstructeurs: Array<{ __typename?: 'GroupeInstructeur', instructeurs: Array<{ __typename?: 'Profile', id: string, email: string }> }> } };
+export type GetInstructeursQuery = { demarche: { groupeInstructeurs: Array<{ instructeurs: Array<{ id: string, email: string }> }> } };
 
 export type ChangerInstructionMutationVariables = Exact<{
-  dossierId: Scalars['ID']['input'];
-  instructeurId: Scalars['ID']['input'];
-  disableNotification?: InputMaybe<Scalars['Boolean']['input']>;
+  dossierId: string | number;
+  instructeurId: string | number;
+  disableNotification?: boolean | null | undefined;
 }>;
 
 
-export type ChangerInstructionMutation = { __typename?: 'Mutation', dossierPasserEnInstruction?: { __typename?: 'DossierPasserEnInstructionPayload', dossier?: { __typename?: 'Dossier', id: string, number: number, state: DossierState } | null, errors?: Array<{ __typename?: 'ValidationError', message: string }> | null } | null };
+export type ChangerInstructionMutation = { dossierPasserEnInstruction: { dossier: { id: string, number: number, state: DossierState } | null, errors: Array<{ message: string }> | null } | null };
+
+export type AccepterDossierMutationVariables = Exact<{
+  dossierId: string | number;
+  instructeurId: string | number;
+  motivation?: string | null | undefined;
+  disableNotification?: boolean | null | undefined;
+}>;
+
+
+export type AccepterDossierMutation = { dossierAccepter: { dossier: { id: string, number: number, state: DossierState } | null, errors: Array<{ message: string }> | null } | null };
+
+export type ClasserDossierSansSuiteMutationVariables = Exact<{
+  dossierId: string | number;
+  instructeurId: string | number;
+  motivation: string;
+  disableNotification?: boolean | null | undefined;
+}>;
+
+
+export type ClasserDossierSansSuiteMutation = { dossierClasserSansSuite: { dossier: { id: string, number: number, state: DossierState } | null, errors: Array<{ message: string }> | null } | null };
 
 export const FileFragmentFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"FileFragment"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"File"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"filename"}},{"kind":"Field","name":{"kind":"Name","value":"contentType"}},{"kind":"Field","name":{"kind":"Name","value":"checksum"}},{"kind":"Field","alias":{"kind":"Name","value":"byteSize"},"name":{"kind":"Name","value":"byteSizeBigInt"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]} as unknown as DocumentNode<FileFragmentFragment, unknown>;
 export const AddressFragmentFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AddressFragment"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Address"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"streetAddress"}},{"kind":"Field","name":{"kind":"Name","value":"streetNumber"}},{"kind":"Field","name":{"kind":"Name","value":"streetName"}},{"kind":"Field","name":{"kind":"Name","value":"postalCode"}},{"kind":"Field","name":{"kind":"Name","value":"cityName"}},{"kind":"Field","name":{"kind":"Name","value":"cityCode"}},{"kind":"Field","name":{"kind":"Name","value":"departmentName"}},{"kind":"Field","name":{"kind":"Name","value":"departmentCode"}},{"kind":"Field","name":{"kind":"Name","value":"regionName"}},{"kind":"Field","name":{"kind":"Name","value":"regionCode"}}]}}]} as unknown as DocumentNode<AddressFragmentFragment, unknown>;
@@ -3171,3 +3254,5 @@ export const GetDossiersByDateDocument = {"kind":"Document","definitions":[{"kin
 export const GetDossierDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getDossier"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"dossierNumber"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"dossier"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"number"},"value":{"kind":"Variable","name":{"kind":"Name","value":"dossierNumber"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"number"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"dateDerniereModification"}},{"kind":"Field","name":{"kind":"Name","value":"dateDepot"}},{"kind":"Field","name":{"kind":"Name","value":"archived"}},{"kind":"Field","name":{"kind":"Name","value":"mandataireFirstName"}},{"kind":"Field","name":{"kind":"Name","value":"mandataireLastName"}},{"kind":"Field","name":{"kind":"Name","value":"usager"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}}]}},{"kind":"Field","name":{"kind":"Name","value":"demandeur"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PersonnePhysique"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"nom"}},{"kind":"Field","name":{"kind":"Name","value":"prenom"}},{"kind":"Field","name":{"kind":"Name","value":"civilite"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"champs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"RootChampFragment"}}]}},{"kind":"Field","name":{"kind":"Name","value":"pdf"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"FileFragment"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"FileFragment"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"File"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"filename"}},{"kind":"Field","name":{"kind":"Name","value":"contentType"}},{"kind":"Field","name":{"kind":"Name","value":"checksum"}},{"kind":"Field","alias":{"kind":"Name","value":"byteSize"},"name":{"kind":"Name","value":"byteSizeBigInt"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AddressFragment"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Address"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"streetAddress"}},{"kind":"Field","name":{"kind":"Name","value":"streetNumber"}},{"kind":"Field","name":{"kind":"Name","value":"streetName"}},{"kind":"Field","name":{"kind":"Name","value":"postalCode"}},{"kind":"Field","name":{"kind":"Name","value":"cityName"}},{"kind":"Field","name":{"kind":"Name","value":"cityCode"}},{"kind":"Field","name":{"kind":"Name","value":"departmentName"}},{"kind":"Field","name":{"kind":"Name","value":"departmentCode"}},{"kind":"Field","name":{"kind":"Name","value":"regionName"}},{"kind":"Field","name":{"kind":"Name","value":"regionCode"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"CommuneFragment"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Commune"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"postalCode"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"departementFragment"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Departement"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ChampFragment"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Champ"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"stringValue"}},{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DateChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"date"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DatetimeChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"datetime"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CheckboxChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"checked"},"name":{"kind":"Name","value":"value"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DecimalNumberChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"decimalNumber"},"name":{"kind":"Name","value":"value"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"IntegerNumberChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"integerNumber"},"name":{"kind":"Name","value":"value"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CiviliteChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"civilite"},"name":{"kind":"Name","value":"value"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"LinkedDropDownListChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"primaryValue"}},{"kind":"Field","name":{"kind":"Name","value":"secondaryValue"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"MultipleDropDownListChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"values"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PieceJustificativeChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"files"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"FileFragment"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"FinessChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"}},{"kind":"Field","name":{"kind":"Name","value":"stringValue"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"RppsanteChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"stringValue"}},{"kind":"Field","name":{"kind":"Name","value":"data"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AddressChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AddressFragment"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CommuneChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"commune"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"CommuneFragment"}}]}},{"kind":"Field","name":{"kind":"Name","value":"departement"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"departementFragment"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"RootChampFragment"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Champ"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ChampFragment"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"RepetitionChamp"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"champs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ChampFragment"}}]}}]}}]}}]} as unknown as DocumentNode<GetDossierQuery, GetDossierQueryVariables>;
 export const GetInstructeursDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getInstructeurs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"demarcheNumber"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"demarche"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"number"},"value":{"kind":"Variable","name":{"kind":"Name","value":"demarcheNumber"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"groupeInstructeurs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"instructeurs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetInstructeursQuery, GetInstructeursQueryVariables>;
 export const ChangerInstructionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"changerInstruction"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"dossierId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"instructeurId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"disableNotification"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}},"defaultValue":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"dossierPasserEnInstruction"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"dossierId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"dossierId"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"instructeurId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"instructeurId"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"disableNotification"},"value":{"kind":"Variable","name":{"kind":"Name","value":"disableNotification"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"dossier"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"number"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}},{"kind":"Field","name":{"kind":"Name","value":"errors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<ChangerInstructionMutation, ChangerInstructionMutationVariables>;
+export const AccepterDossierDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"accepterDossier"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"dossierId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"instructeurId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"motivation"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"disableNotification"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}},"defaultValue":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"dossierAccepter"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"dossierId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"dossierId"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"instructeurId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"instructeurId"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"motivation"},"value":{"kind":"Variable","name":{"kind":"Name","value":"motivation"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"disableNotification"},"value":{"kind":"Variable","name":{"kind":"Name","value":"disableNotification"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"dossier"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"number"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}},{"kind":"Field","name":{"kind":"Name","value":"errors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<AccepterDossierMutation, AccepterDossierMutationVariables>;
+export const ClasserDossierSansSuiteDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"classerDossierSansSuite"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"dossierId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"instructeurId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"motivation"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"disableNotification"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}},"defaultValue":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"dossierClasserSansSuite"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"dossierId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"dossierId"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"instructeurId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"instructeurId"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"motivation"},"value":{"kind":"Variable","name":{"kind":"Name","value":"motivation"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"disableNotification"},"value":{"kind":"Variable","name":{"kind":"Name","value":"disableNotification"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"dossier"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"number"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}},{"kind":"Field","name":{"kind":"Name","value":"errors"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]}}]} as unknown as DocumentNode<ClasserDossierSansSuiteMutation, ClasserDossierSansSuiteMutationVariables>;
