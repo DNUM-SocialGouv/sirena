@@ -1,15 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import * as Sentry from '@sentry/node';
 import { APP_ENVS } from '@sirena/common/constants';
-import { parse } from 'graphql';
 import { envVars } from '../../config/env.js';
 import { DossierState } from '../../graphql/graphql.js';
 import { serializeError } from '../../helpers/errors.js';
 import { isPrismaUniqueConstraintError, retryWithBackoff } from '../../helpers/retry.js';
 import { abortControllerStorage, getLoggerStore, getSentryStore } from '../../libs/asyncLocalStorage.js';
 import {
+  AccepterDossierDocument,
   ChangerInstructionDocument,
+  ClasserDossierSansSuiteDocument,
   GetDossierDocument,
   GetDossiersByDateDocument,
   GetDossiersMetadataDocument,
@@ -32,60 +32,6 @@ export const getInstructeurs = async () => {
 };
 
 const encodeDematSocialId = (id: string) => Buffer.from(id).toString('base64');
-
-const AccepterDossierDocument = parse(`
-  mutation accepterDossier(
-    $dossierId: ID!
-    $instructeurId: ID!
-    $motivation: String
-    $disableNotification: Boolean = true
-  ) {
-    dossierAccepter(
-      input: {
-        dossierId: $dossierId
-        instructeurId: $instructeurId
-        motivation: $motivation
-        disableNotification: $disableNotification
-      }
-    ) {
-      dossier {
-        id
-        number
-        state
-      }
-      errors {
-        message
-      }
-    }
-  }
-`) as unknown as TypedDocumentNode<unknown, FinalisationVariables>;
-
-const ClasserDossierSansSuiteDocument = parse(`
-  mutation classerDossierSansSuite(
-    $dossierId: ID!
-    $instructeurId: ID!
-    $motivation: String!
-    $disableNotification: Boolean = true
-  ) {
-    dossierClasserSansSuite(
-      input: {
-        dossierId: $dossierId
-        instructeurId: $instructeurId
-        motivation: $motivation
-        disableNotification: $disableNotification
-      }
-    ) {
-      dossier {
-        id
-        number
-        state
-      }
-      errors {
-        message
-      }
-    }
-  }
-`) as unknown as TypedDocumentNode<unknown, FinalisationVariables>;
 
 type FinalisationVariables = {
   dossierId: string;
