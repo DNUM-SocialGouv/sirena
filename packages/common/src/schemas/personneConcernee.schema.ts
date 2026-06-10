@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const MesureProtectionSchema = z.enum(['MANDATAIRE_JUDICIAIRE', 'HABILITATION_FAMILIALE', 'NON']);
+
 export const PersonneConcerneeDataSchema = z.object({
   civilite: z.string().optional(),
   nom: z.string().optional(),
@@ -32,7 +34,9 @@ export const PersonneConcerneeDataSchema = z.object({
   victimeInformeeCommentaire: z.string().optional(),
   autrePersonnes: z.string().optional(),
   aAutrePersonnes: z.boolean().optional().nullable(),
+  mesureProtection: MesureProtectionSchema.optional().nullable(),
   commentaire: z.string().optional(),
 });
 
+export type MesureProtection = z.infer<typeof MesureProtectionSchema>;
 export type PersonneConcerneeData = z.infer<typeof PersonneConcerneeDataSchema>;
