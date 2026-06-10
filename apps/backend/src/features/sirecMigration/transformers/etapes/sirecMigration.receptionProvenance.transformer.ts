@@ -6,18 +6,23 @@ import { SIREC_DICO } from '../../transco/dictionnaire.transco.js';
 import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import type { SirenaEtapeData } from './sirecMigration.etape.types.js';
 
-export function transformSirecReponseProvenances(sirecData: SirecReclamationData): SirenaEtapeData[] {
-  const { date_rep_provenance1, date_rep_provenance2, date_rep_provenance3 } = sirecData.reclamation;
-  const reponseDates: (Date | null)[] = [date_rep_provenance1, date_rep_provenance2, date_rep_provenance3];
+function formatDateNote(date: Date | null): string {
+  if (date === null) return 'Date de réception non renseignée';
+  return `Date de réception à l'institution de provenance : ${formatSirecDate(date)}`;
+}
 
+function formatReponseNote(reponse: number | null): string {
+  if (reponse === null) return 'Réponse attendue non précisée';
+  const label = SIREC_DICO[reponse];
+  if (label === undefined) throw new SirecTranscoError(reponse, 'reponse_attendue');
+  return `Réponse attendue : ${label}`;
+}
+
+export function transformSirecReceptionProvenances(sirecData: SirecReclamationData): SirenaEtapeData[] {
   const etapes: SirenaEtapeData[] = [];
   const provenanceForEntitySet = new Set<string>();
 
-  for (let i = 0; i < sirecData.provenances.length && i < 3; i++) {
-    const date = reponseDates[i];
-    if (date === null) continue;
-
-    const { id_provenance, id_group } = sirecData.provenances[i];
+  for (const { id_provenance, id_group, date_signalement, reponse_attendue } of sirecData.provenances) {
     const institutionNom = SIREC_DICO[id_provenance];
     if (institutionNom === undefined) throw new SirecTranscoError(id_provenance, 'provenance');
 
@@ -29,11 +34,10 @@ export function transformSirecReponseProvenances(sirecData: SirecReclamationData
     provenanceForEntitySet.add(currentProvenanceForEntity);
 
     etapes.push({
-      nom: `Réponse à l'institution de provenance : ${institutionNom}`,
+      nom: `Réception à l'institution de provenance : ${institutionNom}`,
       entiteId,
       statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-      createdAt: date,
-      note: `Date de la réponse : ${formatSirecDate(date)}`,
+      note: [formatDateNote(date_signalement), formatReponseNote(reponse_attendue)].join('\n'),
     });
   }
 

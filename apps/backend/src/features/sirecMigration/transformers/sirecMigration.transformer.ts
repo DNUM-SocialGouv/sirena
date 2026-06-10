@@ -9,10 +9,10 @@ import type { SirenaEtapeData } from './etapes/sirecMigration.etape.types.js';
 import { transformSirecExamenCommission } from './etapes/sirecMigration.examenCommission.transformer.js';
 import { transformSirecInstitutionsPartenaires } from './etapes/sirecMigration.institutionPartenaire.transformer.js';
 import { transformSirecPriseEnCharge } from './etapes/sirecMigration.priseEnCharge.transformer.js';
+import { transformSirecReceptionProvenances } from './etapes/sirecMigration.receptionProvenance.transformer.js';
 import { transformSirecReponsePlaignant } from './etapes/sirecMigration.reponsePlaignant.transformer.js';
 import { transformSirecReponseProvenances } from './etapes/sirecMigration.reponseProvenance.transformer.js';
 import { type SirenaDeclarantData, transformSirecDeclarant } from './sirecMigration.declarant.transformer.js';
-import { transformSirecProvenances } from './sirecMigration.provenance.transformer.js';
 import { type SirenaVictimeData, transformSirecVictime } from './sirecMigration.victime.transformer.js';
 import { transformSirecAffectation } from './situation/sirecMigration.affectation.transformer.js';
 import { transformSirecMisEnCauseSituations } from './situation/sirecMigration.misEnCause.transformer.js';
@@ -37,7 +37,7 @@ export interface SirenaRequeteData {
 export function transformSirecReclamation(sirecData: SirecReclamationData): SirenaRequeteData {
   const { requeteEntiteIds, situationEntiteIds } = transformSirecAffectation(sirecData);
   const arsEntiteIds = filterArsEntiteIds(requeteEntiteIds);
-  const provenanceEtapes = transformSirecProvenances(sirecData);
+  const provenanceEtapes = transformSirecReceptionProvenances(sirecData);
   const declarant = transformSirecDeclarant(sirecData.reclamation);
   const victime = transformSirecVictime(sirecData.reclamation);
 

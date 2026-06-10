@@ -151,6 +151,22 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
     expect(result).toHaveLength(1);
   });
 
+  it('should deduplicate etapes with the same id_provenance and entiteId', () => {
+    const date1 = new Date('2024-01-10');
+    const date2 = new Date('2024-02-15');
+    // id_group 693 and 677 both map to 'ars-normandie' in this scenario
+    const result = transformSirecReponseProvenances(
+      makeData({ date_rep_provenance1: date1, date_rep_provenance2: date2 }, [
+        { id_provenance: 103, id_group: 693 },
+        { id_provenance: 103, id_group: 693 },
+      ]),
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].entiteId).toBe('ars-normandie');
+    expect(result[0].createdAt).toEqual(date1);
+  });
+
   it('should throw SirecTranscoError for an unknown id_provenance', () => {
     expect(() =>
       transformSirecReponseProvenances(
