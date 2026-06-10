@@ -15,7 +15,7 @@ import {
   type RequeteStatutType,
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
-import { formatMesureProtectionPersonneConcernee, getLieuPrecisionLabel } from '@sirena/common/utils';
+import { getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
 import archiver from 'archiver';
 import type { z } from 'zod';
 import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
@@ -2174,7 +2174,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
   // ===== 4. PERSONNE CONCERNÉE =====
   if (requete.participant) {
     const p = requete.participant;
-    const mesureProtectionLabel = formatMesureProtectionPersonneConcernee(p.mesureProtection);
+    const mesureProtectionLabel = getMesureProtectionShortLabel(p.mesureProtection);
 
     pdf
       .section('Personne concernée')
@@ -2202,10 +2202,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       .field('Autres précisions', p.commentaire || null);
 
     if (mesureProtectionLabel) {
-      pdf.field(
-        'Il/elle est sous mesure de protection',
-        mesureProtectionLabel.replace('Il/elle est sous mesure de protection : ', ''),
-      );
+      pdf.field('Il/elle est sous mesure de protection', mesureProtectionLabel);
     }
   }
 
