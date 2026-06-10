@@ -2285,57 +2285,66 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         .field('Période', periodeLabel)
         .field('Explication des faits', faits.commentaire || null)
         .field('Autres précisions', faits.autresPrecisions || null);
-
-      const fichiersSituation = faits.fichiers ?? [];
-      if (fichiersSituation.length > 0) {
-        pdf.subsubsection('Pièces jointes de la situation').list(fichiersSituation.map(getOriginalFileName));
-      }
     }
 
-    if (situation.domainesFonctionnels?.label) {
-      pdf.field('Domaine fonctionnel', situation.domainesFonctionnels.label);
-    }
-
+    const fichiersSituation = faits?.fichiers ?? [];
     const demarches = situation.demarchesEngagees;
-    if (demarches?.demarches && demarches.demarches.length > 0) {
-      pdf.subsubsection('Démarches engagées');
+    const hasDemarches = !!(demarches?.demarches && demarches.demarches.length > 0);
+    const hasInfosComplementaires =
+      !!situation.domainesFonctionnels?.label || hasDemarches || fichiersSituation.length > 0;
 
-      const groups: { label: string; children: string[] }[] = [];
+    if (hasInfosComplementaires) {
+      pdf.subsubsection('Informations complémentaires');
 
-      for (const demarche of demarches.demarches) {
-        const children: string[] = [];
-
-        if (demarche.label === demarcheEngageeLabels.CONTACT_RESPONSABLES) {
-          const dateContact = formatDateFr(demarches.dateContactEtablissement);
-          if (dateContact) {
-            children.push(`Date de prise de contact : ${dateContact}`);
-          }
-          if (demarches.etablissementARepondu) {
-            children.push('Le déclarant a reçu une réponse');
-          }
-        }
-
-        if (demarche.label === demarcheEngageeLabels.CONTACT_ORGANISME && demarches.organisme) {
-          children.push(`Précisions sur l'organisme contacté : ${demarches.organisme}`);
-        }
-
-        if (demarche.label === demarcheEngageeLabels.PLAINTE) {
-          const datePlainte = formatDateFr(demarches.datePlainte);
-          if (datePlainte) {
-            children.push(`Date du dépôt de plainte : ${datePlainte}`);
-          }
-          if (demarches.autoriteType?.label) {
-            children.push(`Lieu de dépôt de la plainte : ${demarches.autoriteType.label}`);
-          }
-        }
-
-        groups.push({ label: demarche.label, children });
+      if (situation.domainesFonctionnels?.label) {
+        pdf.field('Domaine fonctionnel', situation.domainesFonctionnels.label);
       }
 
-      pdf.groupedList(groups);
+      if (hasDemarches && demarches) {
+        pdf.paragraph('Démarches engagées par le déclarant :', { bold: true });
 
-      if (demarches.commentaire) {
-        pdf.field('Commentaire', demarches.commentaire);
+        const groups: { label: string; children: string[] }[] = [];
+
+        for (const demarche of demarches.demarches) {
+          const children: string[] = [];
+
+          if (demarche.label === demarcheEngageeLabels.CONTACT_RESPONSABLES) {
+            const dateContact = formatDateFr(demarches.dateContactEtablissement);
+            if (dateContact) {
+              children.push(`Date de prise de contact : ${dateContact}`);
+            }
+            if (demarches.etablissementARepondu) {
+              children.push('Le déclarant a reçu une réponse');
+            }
+          }
+
+          if (demarche.label === demarcheEngageeLabels.CONTACT_ORGANISME && demarches.organisme) {
+            children.push(`Précisions sur l'organisme contacté : ${demarches.organisme}`);
+          }
+
+          if (demarche.label === demarcheEngageeLabels.PLAINTE) {
+            const datePlainte = formatDateFr(demarches.datePlainte);
+            if (datePlainte) {
+              children.push(`Date du dépôt de plainte : ${datePlainte}`);
+            }
+            if (demarches.autoriteType?.label) {
+              children.push(`Lieu de dépôt de la plainte : ${demarches.autoriteType.label}`);
+            }
+          }
+
+          groups.push({ label: demarche.label, children });
+        }
+
+        pdf.groupedList(groups);
+
+        if (demarches.commentaire) {
+          pdf.field('Commentaire', demarches.commentaire);
+        }
+      }
+
+      if (fichiersSituation.length > 0) {
+        pdf.paragraph('Pièces jointes :', { bold: true });
+        pdf.list(fichiersSituation.map(getOriginalFileName));
       }
     }
 
