@@ -92,6 +92,11 @@ describe('logging configuration', () => {
       CRON_DEMAT_SOCIAL: '10000',
       CRON_RETRY_AFFECTATION: '10000',
       API_KEY_HASH_SALT: 'test-salt',
+      MARIADB_SIREC_HOST: 'localhost',
+      MARIADB_SIREC_PORT: '3306',
+      MARIADB_SIREC_DB: 'sirec',
+      MARIADB_SIREC_USER: 'sirec',
+      MARIADB_SIREC_PASSWORD: 'sirec',
     };
   }
 });
