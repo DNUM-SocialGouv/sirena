@@ -67,6 +67,7 @@ export class RequetePdfBuilder {
       H1: 'H1',
       H2: 'H2',
       H3: 'H3',
+      H4: 'H4',
       P: 'P',
       L: 'L',
       LI: 'LI',
@@ -184,6 +185,19 @@ export class RequetePdfBuilder {
           if (!isFirst) this.doc.moveDown(0.7);
           this.doc.fontSize(13).font('Roboto-Bold').text(title, { underline: true });
           this.doc.moveDown(0.4);
+        },
+      ]),
+    );
+    return this;
+  }
+
+  subsubsection(title: string): this {
+    this.current.add(
+      this.doc.struct('H4', [
+        () => {
+          this.doc.moveDown(0.5);
+          this.doc.fontSize(12).font('Roboto-Bold').text(title);
+          this.doc.moveDown(0.3);
         },
       ]),
     );
