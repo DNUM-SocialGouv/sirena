@@ -1,6 +1,9 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { SituationDataSchema } from '@sirena/common/schemas';
-import { prisma } from '@sirena/db';
+import { prisma, type Requete } from '@sirena/db';
+import { UnrecoverableError } from 'bullmq';
+import { isPrismaUniqueConstraintError } from '../../helpers/prisma.js';
+import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import type { SirenaRequeteData } from './transformers/sirecMigration.transformer.js';
 
 export async function getRequeteIdFromSirecId(sirecId: number): Promise<string | null> {
@@ -12,20 +15,30 @@ export async function getRequeteIdFromSirecId(sirecId: number): Promise<string |
 }
 
 export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
+  const logger = getLoggerStore();
   for (const situation of data.situations) {
     SituationDataSchema.parse(situation);
   }
 
   return prisma.$transaction(async (tx) => {
-    const requete = await tx.requete.create({
-      data: {
-        id: data.sirenaId,
-        sirecId: data.sirecId,
-        receptionDate: data.receptionDate,
-        receptionTypeId: data.receptionTypeId,
-      },
-      select: { id: true },
-    });
+    let sirenaRequete: Pick<Requete, 'id'>;
+    try {
+      sirenaRequete = await tx.requete.create({
+        data: {
+          id: data.sirenaId,
+          sirecId: data.sirecId,
+          receptionDate: data.receptionDate,
+          receptionTypeId: data.receptionTypeId,
+        },
+        select: { id: true },
+      });
+    } catch (error) {
+      if (isPrismaUniqueConstraintError(error)) {
+        logger.info({ err: error }, `Sirec record already exists, skipping SIREC import : ${data.sirecId}`);
+        throw new UnrecoverableError(`Sirec record already exists, skipping SIREC import : ${data.sirecId}`);
+      }
+      throw error;
+    }
 
     for (const situationData of data.situations) {
       let misEnCauseId: string;
@@ -119,7 +132,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
           lieuDeSurvenueId: lieuId,
           misEnCauseId,
           demarchesEngageesId: demarchesEngagees.id,
-          requeteId: requete.id,
+          requeteId: sirenaRequete.id,
         },
         select: { id: true },
       });
@@ -149,7 +162,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
 
     await tx.requeteEntite.createMany({
       data: data.requeteEntiteIds.map((entiteId) => ({
-        requeteId: requete.id,
+        requeteId: sirenaRequete.id,
         entiteId,
         // TODO: mapper l'état SIREC vers statutId
         statutId: REQUETE_STATUT_TYPES.EN_COURS,
@@ -160,7 +173,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     for (const { nom, entiteId, statutId, createdAt, note } of data.etapes) {
       await tx.requeteEtape.create({
         data: {
-          requeteId: requete.id,
+          requeteId: sirenaRequete.id,
           entiteId,
           statutId,
           nom,
@@ -173,7 +186,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     if (data.declarant !== null && !data.declarant.estVictime) {
       await tx.personneConcernee.create({
         data: {
-          declarantDeId: requete.id,
+          declarantDeId: sirenaRequete.id,
           estVictime: data.declarant.estVictime,
           veutGarderAnonymat: data.declarant.veutGarderAnonymat,
           lienVictimeId: data.declarant.lienVictimeId,
@@ -210,11 +223,11 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     if (data.victime !== null || data.declarant?.estVictime) {
       await tx.personneConcernee.create({
         data: {
-          participantDeId: requete.id,
+          participantDeId: sirenaRequete.id,
           estVictime: true,
           commentaire: data.victime?.commentaire ?? '',
           ageId: data.victime?.ageId ?? null,
-          ...(data.declarant?.estVictime && { declarantDeId: requete.id }),
+          ...(data.declarant?.estVictime && { declarantDeId: sirenaRequete.id }),
           ...(data.victime?.adresse !== null && data.victime?.adresse !== undefined
             ? {
                 adresse: {
@@ -242,7 +255,6 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
         },
       });
     }
-
-    return requete.id;
+    return sirenaRequete?.id;
   });
 }

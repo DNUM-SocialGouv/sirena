@@ -294,7 +294,22 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('false')
     .transform((val) => val === 'true'),
-    METABASE_SITE_URL: z
+  MARIADB_SIREC_HOST: z.string().optional(),
+  MARIADB_SIREC_DB: z.string().optional(),
+  MARIADB_SIREC_PORT: z
+    .string()
+    .optional()
+    .default('3306')
+    .transform((val) => {
+      const parsed = Number.parseInt(val, 10);
+      if (Number.isNaN(parsed)) {
+        throw new Error("La variable d'environnement MARIADB_SIREC_PORT doit etre un integer");
+      }
+      return parsed;
+    }),
+  MARIADB_SIREC_USER: z.string().optional(),
+  MARIADB_SIREC_PASSWORD: z.string().optional(),
+  METABASE_SITE_URL: z
     .string()
     .optional()
     .default('')
@@ -312,21 +327,6 @@ export const AppEnvSchema = z.object({
     .optional()
     .default('')
     .describe('Identifiant du dashboard Metabase à exposer sur la page statistiques (ex: "42")'),
-  MARIADB_SIREC_HOST: z.string().optional(),
-  MARIADB_SIREC_DB: z.string().optional(),
-  MARIADB_SIREC_PORT: z
-    .string()
-    .optional()
-    .default('3306')
-    .transform((val) => {
-      const parsed = Number.parseInt(val, 10);
-      if (Number.isNaN(parsed)) {
-        throw new Error("La variable d'environnement MARIADB_SIREC_PORT doit etre un integer");
-      }
-      return parsed;
-    }),
-  MARIADB_SIREC_USER: z.string().optional(),
-  MARIADB_SIREC_PASSWORD: z.string().optional(),
   APP_ENV: z
     .enum(APP_ENV_VALUES)
     .optional()

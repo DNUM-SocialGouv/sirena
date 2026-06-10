@@ -124,15 +124,15 @@ export interface SirecReclamationData {
 }
 
 export async function fetchSirecReclamationById(sirecId: number): Promise<SirecReclamationRow | null> {
-  const [rows] = await mariadbPool.query<(SirecReclamationRow[])>(
-    'SELECT id_data, r_recept_date, description FROM sire_reclamation_data WHERE id_data = ?',
+  const rows = await mariadbPool.query<SirecReclamationRow[]>(
+    'SELECT id_data, r_recept_date, description, reception, prioritaire, prioritaire_precisez, dest, dest_primaire, dest_secondaire, saisine, courrier_signal, plaignant, plaignant_anonyme, plaignant_est_anonyme, plaignant_type, plaignant_adresse, plaignant_adresse_complement, requerant_adresse, requerant_adresse_complete, requerant_cp, requerant_ville, preciser_statut, plaignant_rs, nom_representant, prenom_representant, plaignant_nom, plaignant_prenom, plaignant_mail, plaignant_tel, plaignant_connu, victime_lien_plaignant, lien_plai_autre, victime_non_identifiee, victime_age, victime_sexe, victime_adresse, victime_adresse_complement, usager_adresse, usager_adresse_complete, usager_cp, usager_ville, victime_nom, victime_prenom, victime_mail, victime_tel, service_recepteur_niv1, service_gestionnaire, accuser_reception, date_envoi_ar, accuser_reception_precision, institution_part, niv_competence_reclam, date_transfert_instit1, date_transfert_instit2, date_transfert_instit3, prec_niv_comp, date_traitement, type_traitement_prec, date_commission, date_rep_provenance1, date_rep_provenance2, date_rep_provenance3, reponse_plaignant, date_rep_plaignant, reponse_plaignant_precision, sans_mc, observation FROM sire_reclamation_data WHERE id_data = ?',
     [sirecId],
   );
   return rows[0] ?? null;
 }
 
 export async function fetchSirecMotifsDeclaresById(sirecId: number): Promise<number[]> {
-  const [rows] = await mysqlPool.query<({ id_dico: number } & RowDataPacket)[]>(
+  const rows = await mariadbPool.query<{ id_dico: number }[]>(
     'SELECT id_dico FROM sire_reclamation_dico_motifs_declares_data WHERE id_reclamation = ?',
     [sirecId],
   );
@@ -140,7 +140,7 @@ export async function fetchSirecMotifsDeclaresById(sirecId: number): Promise<num
 }
 
 export async function fetchSirecGroupIds(sirecId: number): Promise<number[]> {
-  const [rows] = await mysqlPool.query<({ id_group: number } & RowDataPacket)[]>(
+  const rows = await mariadbPool.query<{ id_group: number }[]>(
     'SELECT id_group FROM sire_reclamation_data_group WHERE id_data = ? AND id_group != 1',
     [sirecId],
   );
@@ -148,7 +148,7 @@ export async function fetchSirecGroupIds(sirecId: number): Promise<number[]> {
 }
 
 export async function fetchSirecProvenances(sirecId: number): Promise<SirecProvenance[]> {
-  const [rows] = await mysqlPool.query<(SirecProvenance & RowDataPacket)[]>(
+  const rows = await mariadbPool.query<SirecProvenance[]>(
     `SELECT p.id_provenance, pg.id_group, p.date_signalement, p.reponse_attendue
      FROM sire_provenances_data p
      INNER JOIN sire_provenances_data_group pg ON pg.id_data = p.id_data and pg.id_group != 1
@@ -165,7 +165,7 @@ export async function fetchSirecProvenances(sirecId: number): Promise<SirecProve
 
 export async function fetchSirecInstitutionPartenaires(ids: number[]): Promise<Record<number, string>> {
   if (ids.length === 0) return {};
-  const [rows] = await mysqlPool.query<({ id_data: number; institution: string } & RowDataPacket)[]>(
+  const rows = await mariadbPool.query<{ id_data: number; institution: string }[]>(
     'SELECT id_data, institution FROM sire_institution_data WHERE id_data IN (?)',
     [ids],
   );
@@ -173,7 +173,7 @@ export async function fetchSirecInstitutionPartenaires(ids: number[]): Promise<R
 }
 
 export async function fetchSirecTypeTraitementIds(sirecId: number): Promise<number[]> {
-  const [rows] = await mysqlPool.query<({ id_dico: number } & RowDataPacket)[]>(
+  const rows = await mariadbPool.query<{ id_dico: number }[]>(
     'SELECT id_dico FROM sire_reclamation_dico_type_traitement_data WHERE id_reclamation = ?',
     [sirecId],
   );
@@ -206,10 +206,10 @@ type MisEnCauseRow = {
   finess_numvoie: number | null;
   finess_typevoie: string | null;
   finess_voie: string | null;
-} & RowDataPacket;
+};
 
 export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEnCause[]> {
-  const [rows] = await mysqlPool.query<MisEnCauseRow[]>(
+  const rows = await mariadbPool.query<MisEnCauseRow[]>(
     `SELECT m.id_data, m.type, m.identifiant, m.autres_mc_type, m.label, m.adresse, mcg.id_group,
             r.id_data AS rpps_id_data, r.rpps AS rpps_rpps, r.civilite AS rpps_civilite, r.nom AS rpps_nom,
             r.prenom AS rpps_prenom, r.code_postal AS rpps_code_postal,

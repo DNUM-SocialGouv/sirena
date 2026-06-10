@@ -138,7 +138,15 @@ export default defineConfig({
           if (pkg.startsWith('@tanstack/react-query') || pkg.startsWith('@tanstack/query-')) {
             return 'vendor-query';
           }
-          if (pkg.startsWith('@codegouvfr/react-dsfr')) return 'vendor-dsfr';
+          if (pkg.startsWith('@codegouvfr/react-dsfr')) {
+            // react-dsfr loads its core runtime via a dynamic import at startup
+            // (start.js → `await import("./dsfr/dsfr.module")`), which mutates
+            // `window.dsfr`. Keep that file as its own chunk so the side-effect
+            // runs AFTER window.dsfr has been initialized — otherwise
+            // `window.dsfr.start is not a function` at boot.
+            if (id.includes('react-dsfr/dsfr/dsfr.module')) return;
+            return 'vendor-dsfr';
+          }
           if (pkg.startsWith('@sentry/') || pkg.startsWith('@sentry-internal/')) {
             return 'vendor-sentry';
           }
