@@ -11,21 +11,14 @@ export const numberFormatter = new Intl.NumberFormat('fr-FR');
 export const percentFormatter = new Intl.NumberFormat('fr-FR', { style: 'percent', maximumFractionDigits: 1 });
 
 export const CHART_COLORS = [
-  'var(--artwork-major-blue-france)',
-  'var(--artwork-major-orange-terre-battue)',
-  'var(--artwork-major-green-emeraude)',
-  'var(--artwork-major-purple-glycine)',
-  'var(--artwork-major-pink-tuile)',
-  'var(--artwork-major-yellow-moutarde)',
-  'var(--artwork-major-green-menthe)',
-  'var(--artwork-major-brown-caramel)',
-  'var(--artwork-major-blue-ecume)',
-  'var(--artwork-major-green-tilleul-verveine)',
-  'var(--artwork-major-pink-macaron)',
-  'var(--artwork-major-brown-opera)',
-  'var(--artwork-major-blue-cumulus)',
-  'var(--artwork-major-beige-gris-galet)',
-  'var(--artwork-major-green-archipel)',
+  'var(--sirena-chart-color-01)',
+  'var(--sirena-chart-color-02)',
+  'var(--sirena-chart-color-03)',
+  'var(--sirena-chart-color-04)',
+  'var(--sirena-chart-color-05)',
+  'var(--sirena-chart-color-06)',
+  'var(--sirena-chart-color-07)',
+  'var(--sirena-chart-color-08)',
 ] as const;
 
 const toNumber = (value: unknown): number | null => {
@@ -38,7 +31,10 @@ const toNumber = (value: unknown): number | null => {
 };
 
 const humanize = (key: string): string => {
-  const spaced = key.replace(/[_-]+/g, ' ').trim();
+  const spaced = key
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(/^nb\s+/i, 'Nombre de ');
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 };
 
@@ -48,8 +44,12 @@ export const parseCard = (rows: Array<Record<string, unknown>>): ParsedCard | nu
   const keys = Object.keys(first);
   if (keys.length < 2) return null;
 
-  const metricKey = keys.find((key) => rows.every((row) => toNumber(row[key]) !== null)) ?? keys[keys.length - 1];
-  const dimensionKey = keys.find((key) => key !== metricKey) ?? keys[0];
+  // Plusieurs colonnes peuvent être numériques (ex. un id technique + la valeur) :
+  // la métrique est la dernière colonne numérique, Metabase plaçant les agrégats en fin de ligne.
+  const numericKeys = keys.filter((key) => rows.every((row) => toNumber(row[key]) !== null));
+  const metricKey = numericKeys.at(-1) ?? keys[keys.length - 1];
+  const dimensionKey =
+    keys.find((key) => !numericKeys.includes(key)) ?? keys.find((key) => key !== metricKey) ?? keys[0];
 
   const items = rows.map((row) => ({
     label: row[dimensionKey] == null ? 'Non précisé' : String(row[dimensionKey]),

@@ -1,3 +1,28 @@
+/* Palette catégorielle de dsfr-chart 
+   https://gouvernementfr.github.io/dsfr-chart/#Accessibilité
+   déclinés clair/sombre car ils ne font pas partie des variables CSS du DSFR. */
+:global(:root) {
+  --sirena-chart-color-01: #5c68e5;
+  --sirena-chart-color-02: #82b5f2;
+  --sirena-chart-color-03: #29598f;
+  --sirena-chart-color-04: #31a7ae;
+  --sirena-chart-color-05: #81eef5;
+  --sirena-chart-color-06: #b478f1;
+  --sirena-chart-color-07: #cfb1f5;
+  --sirena-chart-color-08: #cecece;
+}
+
+:global(:root[data-fr-theme="dark"]) {
+  --sirena-chart-color-01: #5c68e5;
+  --sirena-chart-color-02: #699bd6;
+  --sirena-chart-color-03: #4878b1;
+  --sirena-chart-color-04: #00828a;
+  --sirena-chart-color-05: #51c1c8;
+  --sirena-chart-color-06: #bc8af2;
+  --sirena-chart-color-07: #cfb1f5;
+  --sirena-chart-color-08: #a4a4a4;
+}
+
 .figure {
   margin: 0;
 }
@@ -20,16 +45,6 @@
   flex: 0 0 auto;
   width: clamp(180px, 38vw, 240px);
   height: auto;
-}
-
-.slice {
-  transition: stroke-width 150ms ease;
-}
-
-/* Survol : liseré sombre contrasté sur la part pointée (renfort non chromatique, ~16:1 sur blanc). */
-.slice:hover {
-  stroke: var(--text-default-grey);
-  stroke-width: 3;
 }
 
 .legend {
@@ -96,7 +111,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slice,
   .legendItem {
     transition: none;
   }

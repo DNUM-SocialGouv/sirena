@@ -24,8 +24,22 @@ describe('chartData', () => {
         ],
         total: 4,
         dimensionLabel: 'Raison cloture',
-        metricLabel: 'Nb requetes',
+        metricLabel: 'Nombre de requetes',
       });
+    });
+
+    it('picks the last numeric column as metric when several columns are numeric (e.g. id + value)', () => {
+      const parsed = parseCard([
+        { id: 7, raison_cloture: 'Hors compétence', nb_requetes: 3 },
+        { id: 8, raison_cloture: 'Autre', nb_requetes: 1 },
+      ]);
+
+      expect(parsed?.items).toEqual([
+        { label: 'Hors compétence', value: 3 },
+        { label: 'Autre', value: 1 },
+      ]);
+      expect(parsed?.metricLabel).toBe('Nombre de requetes');
+      expect(parsed?.dimensionLabel).toBe('Raison cloture');
     });
 
     it('coerces numeric strings into the metric value', () => {

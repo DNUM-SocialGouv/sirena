@@ -19,7 +19,7 @@ describe('StatTable', () => {
 
     expect(screen.getByRole('columnheader', { name: 'Raison' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Nombre' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Part' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Part (en pourcentage)' })).toBeInTheDocument();
     expect(screen.getByRole('rowheader', { name: 'Hors compétence' })).toBeInTheDocument();
     expect(screen.getByRole('rowheader', { name: 'Total' })).toBeInTheDocument();
     expect(screen.getAllByText(/75/).length).toBeGreaterThan(0);

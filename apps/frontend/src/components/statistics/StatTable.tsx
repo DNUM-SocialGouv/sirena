@@ -26,11 +26,7 @@ export function StatTable({ caption, items, total, dimensionLabel, metricLabel, 
   const { ref, isOverflowing } = useOverflowX<HTMLDivElement>();
 
   return (
-    <div
-      ref={ref}
-      className={styles.scroll}
-      {...(isOverflowing ? { tabIndex: 0, role: 'region', 'aria-label': caption } : {})}
-    >
+    <div ref={ref} className={styles.scroll} {...(isOverflowing ? { tabIndex: 0 } : {})}>
       <table className={styles.table}>
         <caption className={hideCaption ? fr.cx('fr-sr-only') : styles.caption}>{caption}</caption>
         <thead>
@@ -40,7 +36,7 @@ export function StatTable({ caption, items, total, dimensionLabel, metricLabel, 
               {metricLabel}
             </th>
             <th scope="col" className={styles.numCol}>
-              Part
+              Part (en pourcentage)
             </th>
           </tr>
         </thead>

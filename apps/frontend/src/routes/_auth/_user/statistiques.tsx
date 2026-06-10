@@ -54,14 +54,19 @@ function KpiCard({ card }: { card: StatisticsCard }) {
   );
 }
 
-function isScalarCard(card: StatisticsCard): boolean {
+function isKpiCard(card: StatisticsCard): boolean {
   return card.display === 'scalar' || getScalarValue(card) !== undefined;
 }
 
 function ChartCard({ card }: { card: StatisticsCard }) {
   const parsed = parseCard(card.data);
   if (!parsed) {
-    return null;
+    return (
+      <>
+        <h2 className={fr.cx('fr-h5')}>{card.name}</h2>
+        <p>Données non disponibles.</p>
+      </>
+    );
   }
 
   if (card.display === 'pie') {
@@ -109,8 +114,8 @@ function RouteComponent() {
             return <p>Aucune carte configurée dans le dashboard Metabase.</p>;
           }
 
-          const scalarCards = data.cards.filter(isScalarCard);
-          const chartCards = data.cards.filter((card) => !isScalarCard(card));
+          const scalarCards = data.cards.filter(isKpiCard);
+          const chartCards = data.cards.filter((card) => !isKpiCard(card));
 
           return (
             <>

@@ -20,12 +20,16 @@ const parsed: ParsedCard = {
 afterEach(cleanup);
 
 describe('StatChart', () => {
-  it('renders a real heading, an img-role chart pointing to the legend, and a data-table disclosure', () => {
+  it('renders a real heading, an img-role chart described by the data table, and a data-table disclosure', () => {
     render(<StatChart name="Répartition" parsed={parsed} />);
 
     expect(screen.getByRole('heading', { level: 2, name: 'Répartition' })).toBeInTheDocument();
-    expect(screen.getByRole('img')).toHaveAttribute('aria-label', expect.stringContaining('légende'));
-    expect(screen.getByText('Afficher les données du graphique')).toBeInTheDocument();
+    const img = screen.getByRole('img');
+    expect(img).toHaveAttribute('aria-label', expect.stringContaining('Répartition'));
+    const descId = img.getAttribute('aria-describedby');
+    expect(descId).toBeTruthy();
+    expect(document.getElementById(descId as string)?.querySelector('table')).not.toBeNull();
+    expect(screen.getByText('Afficher les données sous forme de tableau')).toBeInTheDocument();
     expect(screen.getAllByText('A').length).toBeGreaterThan(0);
   });
 

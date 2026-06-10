@@ -15,6 +15,7 @@ interface StatChartProps {
 
 export function StatChart({ name, parsed }: StatChartProps) {
   const titleId = useId();
+  const descId = useId();
   const { items, total, dimensionLabel, metricLabel } = parsed;
 
   const slices = useMemo(() => {
@@ -54,7 +55,8 @@ export function StatChart({ name, parsed }: StatChartProps) {
           className={styles.svg}
           viewBox={`0 0 ${SIZE} ${SIZE}`}
           role="img"
-          aria-label={`${name} : répartition en pourcentage. Données détaillées dans la légende ci-après.`}
+          aria-label={`${name} : répartition en pourcentage.`}
+          aria-describedby={descId}
         >
           {isFullCircle ? (
             <circle
@@ -66,12 +68,9 @@ export function StatChart({ name, parsed }: StatChartProps) {
               strokeWidth={R_OUTER - R_INNER}
             />
           ) : (
-            // Survol géré en CSS pur (:hover) : liseré contrasté sur la part pointée, sans handlers JS
-            // sur un élément non opérable au clavier (la donnée vit dans la légende et le tableau).
             slices.map((slice) => (
               <path
                 key={slice.label}
-                className={styles.slice}
                 d={annularSectorPath(CENTER, CENTER, R_OUTER, R_INNER, slice.start, slice.end)}
                 fill={slice.color}
                 stroke="var(--background-default-grey)"
@@ -81,7 +80,9 @@ export function StatChart({ name, parsed }: StatChartProps) {
           )}
         </svg>
 
-        <ul className={styles.legend}>
+        {/* aria-hidden : le tableau (aria-describedby du svg) est la version accessible des données,
+            exposer aussi la légende serait redondant à la lecture. */}
+        <ul className={styles.legend} aria-hidden="true">
           {slices.map((slice) => (
             <li key={slice.label} className={styles.legendItem}>
               <span className={styles.swatch} style={{ background: slice.color }} aria-hidden="true" />
@@ -95,15 +96,17 @@ export function StatChart({ name, parsed }: StatChartProps) {
       </div>
 
       <details className={styles.details}>
-        <summary>Afficher les données du graphique</summary>
-        <StatTable
-          caption={name}
-          items={items}
-          total={total}
-          dimensionLabel={dimensionLabel}
-          metricLabel={metricLabel}
-          hideCaption
-        />
+        <summary>Afficher les données sous forme de tableau</summary>
+        <div id={descId}>
+          <StatTable
+            caption={name}
+            items={items}
+            total={total}
+            dimensionLabel={dimensionLabel}
+            metricLabel={metricLabel}
+            hideCaption
+          />
+        </div>
       </details>
     </figure>
   );
