@@ -18,6 +18,7 @@ import {
   deduplicateFileName,
   enrichSituationWithTraitementDesFaits,
   filterOtherEntitesAffectedForUser,
+  generateRequetePdfBuffer,
   getOtherEntitesAffected,
   getPrefixedFileName,
   getRequeteEntiteById,
@@ -26,6 +27,7 @@ import {
   updatePrioriteRequete,
   updateRequete,
   updateRequeteDeclarant,
+  updateRequeteParticipant,
   updateRequeteSituation,
   updateStatusRequete,
 } from './requetesEntite.service.js';
@@ -80,6 +82,7 @@ import { getFileStream } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
+import { RequetePdfBuilder } from './requetesEntite.pdf.builder.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -1352,6 +1355,34 @@ describe('requetesEntite.service', () => {
 
       expect(result).toEqual(mockRequete);
       expect(prisma.requete.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateRequeteParticipant', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('persists the Mesure de protection when updating the Personne concernée', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite.requete,
+        participant: { id: 'participant123', identite: null },
+      } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
+      vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
+
+      await updateRequeteParticipant('req123', { mesureProtection: 'MANDATAIRE_JUDICIAIRE' });
+
+      expect(prisma.requete.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            participant: expect.objectContaining({
+              update: expect.objectContaining({
+                mesureProtection: 'MANDATAIRE_JUDICIAIRE',
+              }),
+            }),
+          }),
+        }),
+      );
     });
   });
 
@@ -3011,6 +3042,43 @@ describe('requetesEntite.service', () => {
       await updatePrioriteRequete('req123', 'ent123', 'HAUTE');
 
       expect(vi.mocked(createChangeLog)).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('generateRequetePdfBuffer', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      vi.restoreAllMocks();
+    });
+
+    it('adds positive Mesure de protection to the generated request PDF', async () => {
+      const fieldSpy = vi.spyOn(RequetePdfBuilder.prototype, 'field');
+      vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statut: { id: 'EN_COURS', label: 'En cours' },
+        priorite: null,
+        requete: {
+          ...mockRequeteEntite.requete,
+          receptionType: null,
+          provenance: null,
+          declarant: null,
+          participant: {
+            id: 'participant123',
+            mesureProtection: 'MANDATAIRE_JUDICIAIRE',
+            identite: null,
+            adresse: null,
+            age: null,
+            lienVictime: null,
+          },
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+      await generateRequetePdfBuffer('req123', 'ent123');
+
+      expect(fieldSpy).toHaveBeenCalledWith('Il/elle est sous mesure de protection', 'mandataire judiciaire');
     });
   });
 

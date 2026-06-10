@@ -15,7 +15,7 @@ import {
   type RequeteStatutType,
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
-import { getLieuPrecisionLabel } from '@sirena/common/utils';
+import { getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
 import archiver from 'archiver';
 import type { z } from 'zod';
 import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
@@ -875,6 +875,7 @@ export const updateRequeteParticipant = async (
               participantData.estVictimeInformee === false ? participantData.victimeInformeeCommentaire || '' : '',
             autrePersonnes: participantData.autrePersonnes || '',
             aAutrePersonnes: participantData.aAutrePersonnes ?? undefined,
+            mesureProtection: participantData.mesureProtection ?? undefined,
             commentaire: participantData.commentaire || '',
             ageId: participantData.age || undefined,
             dateNaissance: participantData.dateNaissance ? new Date(participantData.dateNaissance) : null,
@@ -2173,6 +2174,8 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
   // ===== 4. PERSONNE CONCERNÉE =====
   if (requete.participant) {
     const p = requete.participant;
+    const mesureProtectionLabel = getMesureProtectionShortLabel(p.mesureProtection);
+
     pdf
       .section('Personne concernée')
       .field('Civilité', p.identite?.civilite?.label || null)
@@ -2197,6 +2200,10 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       .field("D'autres personnes sont concernées par la requête", booleanLabel(p.aAutrePersonnes))
       .field('Précisions sur les autres personnes concernées', p.autrePersonnes || null)
       .field('Autres précisions', p.commentaire || null);
+
+    if (mesureProtectionLabel) {
+      pdf.field('Il/elle est sous mesure de protection', mesureProtectionLabel);
+    }
   }
 
   // ===== 5. SITUATIONS =====
@@ -2365,7 +2372,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         pdf.field('Motif(s) de clôture', etape.clotureReason.map((r) => r.label).join(', '));
       }
 
-      for (const note of etape.notes) {
+      for (const note of etape.notes ?? []) {
         const noteAuthor = note.author
           ? `${capitalizeFirst(note.author.prenom)} ${capitalizeFirst(note.author.nom)}`
           : 'Système';
@@ -2373,7 +2380,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         pdf.paragraph(`Note du ${noteDate} — ${noteAuthor}`, { bold: true });
         if (note.texte) pdf.paragraph(note.texte);
 
-        const noteFiles = note.uploadedFiles
+        const noteFiles = (note.uploadedFiles ?? [])
           .map((f) => getOriginalFileName(f as Parameters<typeof getOriginalFileName>[0]))
           .filter(Boolean);
         if (noteFiles.length > 0) {
