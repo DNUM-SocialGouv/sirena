@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 import { getRequeteIdFromSirecId, saveFromSirec } from './sirecMigration.service.js';
 
+vi.mock('../../libs/asyncLocalStorage.js', () => ({
+  getLoggerStore: vi.fn(() => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() })),
+}));
+
 vi.mock('@sirena/db', () => ({
   prisma: {
     $transaction: vi.fn(),
