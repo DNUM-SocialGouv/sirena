@@ -1,0 +1,179 @@
+import Alert from '@codegouvfr/react-dsfr/Alert';
+import Button from '@codegouvfr/react-dsfr/Button';
+import { Input } from '@codegouvfr/react-dsfr/Input';
+import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { useId, useState } from 'react';
+import { useHasFeature } from '@/hooks/useHasFeature';
+import { migrateByReclamations, migrateByServices } from '@/lib/api/fetchSirecMigration';
+import { requireAuthAndRoles } from '@/lib/auth-guards';
+
+export const Route = createFileRoute('/_auth/admin/sirec-migration')({
+  beforeLoad: async (ctx) => {
+    await requireAuthAndRoles([ROLES.SUPER_ADMIN])(ctx);
+  },
+  head: () => ({
+    meta: [{ title: 'Migration SIREC - SIRENA' }],
+  }),
+  component: RouteComponent,
+});
+
+function parseIds(raw: string): number[] {
+  return [
+    ...new Set(
+      raw
+        .split(/[\n,]+/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map(Number)
+        .filter((n) => Number.isInteger(n) && n > 0),
+    ),
+  ];
+}
+
+type Mode = 'reclamations' | 'services';
+
+export function RouteComponent() {
+  const hasSirecMigration = useHasFeature(FEATURE_FLAGS.SIREC_MIGRATION, false);
+
+  if (!hasSirecMigration) {
+    throw redirect({ to: '/' });
+  }
+
+  const uid = useId();
+  const tabReclamationsId = `${uid}-tab-reclamations`;
+  const tabServicesId = `${uid}-tab-services`;
+  const panelReclamationsId = `${uid}-panel-reclamations`;
+  const panelServicesId = `${uid}-panel-services`;
+
+  const [mode, setMode] = useState<Mode>('reclamations');
+  const [raw, setRaw] = useState('');
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleModeChange = (newMode: Mode) => {
+    setMode(newMode);
+    setRaw('');
+    setResult(null);
+    setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResult(null);
+    setError(null);
+
+    const ids = parseIds(raw);
+    if (ids.length === 0) {
+      setError('Aucun identifiant valide trouvé.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (mode === 'reclamations') {
+        const { queued } = await migrateByReclamations(ids);
+        setResult(`${queued} réclamation${queued > 1 ? 's' : ''} ajoutée${queued > 1 ? 's' : ''} à la queue.`);
+      } else {
+        const { queued, found } = await migrateByServices(ids);
+        setResult(
+          `${found} réclamation${found > 1 ? 's' : ''} trouvée${found > 1 ? 's' : ''}, ${queued} ajoutée${queued > 1 ? 's' : ''} à la queue.`,
+        );
+      }
+      setRaw('');
+    } catch {
+      setError('Une erreur est survenue lors de la requête.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isReclamations = mode === 'reclamations';
+
+  return (
+    <div>
+      <div className="fr-tabs">
+        <div className="fr-tabs__list" role="tablist" aria-label="Mode de migration">
+          <button
+            type="button"
+            id={tabReclamationsId}
+            className="fr-tabs__tab"
+            role="tab"
+            tabIndex={isReclamations ? 0 : -1}
+            aria-selected={isReclamations}
+            aria-controls={panelReclamationsId}
+            onClick={() => handleModeChange('reclamations')}
+          >
+            Par IDs de réclamations
+          </button>
+          <button
+            type="button"
+            id={tabServicesId}
+            className="fr-tabs__tab"
+            role="tab"
+            tabIndex={isReclamations ? -1 : 0}
+            aria-selected={!isReclamations}
+            aria-controls={panelServicesId}
+            onClick={() => handleModeChange('services')}
+          >
+            Par IDs de services
+          </button>
+        </div>
+
+        <div
+          id={panelReclamationsId}
+          className={`fr-tabs__panel${isReclamations ? ' fr-tabs__panel--selected' : ''}`}
+          role="tabpanel"
+          aria-labelledby={tabReclamationsId}
+        >
+          {isReclamations && (
+            <form onSubmit={handleSubmit} className="fr-mt-2w">
+              <Input
+                label="IDs de réclamations SIREC"
+                hintText="Un identifiant par ligne ou séparés par des virgules"
+                textArea
+                nativeTextAreaProps={{
+                  value: raw,
+                  onChange: (e) => setRaw(e.target.value),
+                  rows: 6,
+                }}
+              />
+              <Button type="submit" disabled={loading || raw.trim() === ''}>
+                {loading ? 'Envoi en cours…' : 'Ajouter à la queue'}
+              </Button>
+            </form>
+          )}
+        </div>
+
+        <div
+          id={panelServicesId}
+          className={`fr-tabs__panel${!isReclamations ? ' fr-tabs__panel--selected' : ''}`}
+          role="tabpanel"
+          aria-labelledby={tabServicesId}
+        >
+          {!isReclamations && (
+            <form onSubmit={handleSubmit} className="fr-mt-2w">
+              <Input
+                label="IDs de services SIREC"
+                hintText="Un identifiant par ligne ou séparés par des virgules"
+                textArea
+                nativeTextAreaProps={{
+                  value: raw,
+                  onChange: (e) => setRaw(e.target.value),
+                  rows: 6,
+                }}
+              />
+              <Button type="submit" disabled={loading || raw.trim() === ''}>
+                {loading ? 'Recherche en cours…' : 'Rechercher et ajouter à la queue'}
+              </Button>
+            </form>
+          )}
+        </div>
+      </div>
+
+      {result && <Alert className="fr-mt-2w" severity="success" title={result} />}
+      {error && <Alert className="fr-mt-2w" severity="error" title={error} />}
+    </div>
+  );
+}

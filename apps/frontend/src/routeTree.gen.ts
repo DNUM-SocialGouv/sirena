@@ -21,6 +21,7 @@ import { Route as AuthInactiveRouteRouteImport } from './routes/_auth/inactive/r
 import { Route as AuthAdminRouteRouteImport } from './routes/_auth/admin/route'
 import { Route as AuthUserRouteRouteImport } from './routes/_auth/_user/route'
 import { Route as AuthAdminIndexRouteImport } from './routes/_auth/admin/index'
+import { Route as AuthAdminSirecMigrationRouteImport } from './routes/_auth/admin/sirec-migration'
 import { Route as AuthAdminFeatureFlagsRouteImport } from './routes/_auth/admin/feature-flags'
 import { Route as AuthUserStatistiquesRouteImport } from './routes/_auth/_user/statistiques'
 import { Route as AuthUserHomeRouteImport } from './routes/_auth/_user/home'
@@ -102,6 +103,11 @@ const AuthUserRouteRoute = AuthUserRouteRouteImport.update({
 const AuthAdminIndexRoute = AuthAdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthAdminRouteRoute,
+} as any)
+const AuthAdminSirecMigrationRoute = AuthAdminSirecMigrationRouteImport.update({
+  id: '/sirec-migration',
+  path: '/sirec-migration',
   getParentRoute: () => AuthAdminRouteRoute,
 } as any)
 const AuthAdminFeatureFlagsRoute = AuthAdminFeatureFlagsRouteImport.update({
@@ -253,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof AuthUserHomeRoute
   '/statistiques': typeof AuthUserStatistiquesRoute
   '/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
+  '/admin/sirec-migration': typeof AuthAdminSirecMigrationRoute
   '/admin/': typeof AuthAdminIndexRoute
   '/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/request/create': typeof AuthUserRequestCreateRouteWithChildren
@@ -286,6 +293,7 @@ export interface FileRoutesByTo {
   '/home': typeof AuthUserHomeRoute
   '/statistiques': typeof AuthUserStatistiquesRoute
   '/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
+  '/admin/sirec-migration': typeof AuthAdminSirecMigrationRoute
   '/admin': typeof AuthAdminIndexRoute
   '/admin/user/$userId': typeof AuthAdminUserUserIdRoute
   '/admin/users/all': typeof AuthAdminUsersAllRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/_auth/_user/home': typeof AuthUserHomeRoute
   '/_auth/_user/statistiques': typeof AuthUserStatistiquesRoute
   '/_auth/admin/feature-flags': typeof AuthAdminFeatureFlagsRoute
+  '/_auth/admin/sirec-migration': typeof AuthAdminSirecMigrationRoute
   '/_auth/admin/': typeof AuthAdminIndexRoute
   '/_auth/_user/request/$requestId': typeof AuthUserRequestRequestIdRouteWithChildren
   '/_auth/_user/request/create': typeof AuthUserRequestCreateRouteWithChildren
@@ -358,6 +367,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/statistiques'
     | '/admin/feature-flags'
+    | '/admin/sirec-migration'
     | '/admin/'
     | '/request/$requestId'
     | '/request/create'
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/statistiques'
     | '/admin/feature-flags'
+    | '/admin/sirec-migration'
     | '/admin'
     | '/admin/user/$userId'
     | '/admin/users/all'
@@ -425,6 +436,7 @@ export interface FileRouteTypes {
     | '/_auth/_user/home'
     | '/_auth/_user/statistiques'
     | '/_auth/admin/feature-flags'
+    | '/_auth/admin/sirec-migration'
     | '/_auth/admin/'
     | '/_auth/_user/request/$requestId'
     | '/_auth/_user/request/create'
@@ -539,6 +551,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthAdminIndexRouteImport
+      parentRoute: typeof AuthAdminRouteRoute
+    }
+    '/_auth/admin/sirec-migration': {
+      id: '/_auth/admin/sirec-migration'
+      path: '/sirec-migration'
+      fullPath: '/admin/sirec-migration'
+      preLoaderRoute: typeof AuthAdminSirecMigrationRouteImport
       parentRoute: typeof AuthAdminRouteRoute
     }
     '/_auth/admin/feature-flags': {
@@ -826,6 +845,7 @@ const AuthAdminEntitesEntiteIdRouteWithChildren =
 interface AuthAdminRouteRouteChildren {
   AuthAdminUsersRouteRoute: typeof AuthAdminUsersRouteRouteWithChildren
   AuthAdminFeatureFlagsRoute: typeof AuthAdminFeatureFlagsRoute
+  AuthAdminSirecMigrationRoute: typeof AuthAdminSirecMigrationRoute
   AuthAdminIndexRoute: typeof AuthAdminIndexRoute
   AuthAdminEntitesEntiteIdRoute: typeof AuthAdminEntitesEntiteIdRouteWithChildren
   AuthAdminUserUserIdRoute: typeof AuthAdminUserUserIdRoute
@@ -835,6 +855,7 @@ interface AuthAdminRouteRouteChildren {
 const AuthAdminRouteRouteChildren: AuthAdminRouteRouteChildren = {
   AuthAdminUsersRouteRoute: AuthAdminUsersRouteRouteWithChildren,
   AuthAdminFeatureFlagsRoute: AuthAdminFeatureFlagsRoute,
+  AuthAdminSirecMigrationRoute: AuthAdminSirecMigrationRoute,
   AuthAdminIndexRoute: AuthAdminIndexRoute,
   AuthAdminEntitesEntiteIdRoute: AuthAdminEntitesEntiteIdRouteWithChildren,
   AuthAdminUserUserIdRoute: AuthAdminUserUserIdRoute,
