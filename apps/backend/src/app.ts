@@ -10,6 +10,7 @@ import ProfileController from './features/profile/profile.controller.js';
 import RequeteEtapesController from './features/requeteEtapes/requetesEtapes.controller.js';
 import RequetesEntiteController from './features/requetesEntite/requetesEntite.controller.js';
 import RolesController from './features/roles/roles.controller.js';
+import SirecMigrationController from './features/sirecMigration/sirecMigration.controller.js';
 import SSEController from './features/sse/sse.controller.js';
 import StatisticsController from './features/statistics/statistics.controller.js';
 import ThirdPartyController from './features/third-party/third-party.controller.js';
@@ -44,6 +45,7 @@ export const app = baseApp
   .route('/notes', NotesController)
   .route('/profile', ProfileController)
   .route('/sse', SSEController)
+  .route('/sirec-migration', SirecMigrationController)
   .route('/statistics', StatisticsController)
   .route('/health', HealthController)
   .route('/version', VersionController)
