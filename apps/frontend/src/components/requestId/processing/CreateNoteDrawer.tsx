@@ -126,7 +126,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
             throw error;
           }
         }
-        setErrorMessage("Une erreur est survenue lors de l'upload des fichiers. Veuillez réessayer.");
+        setErrorMessage('Une erreur est survenue lors du téléversement des fichiers. Veuillez réessayer.');
         throw error;
       }
     }
@@ -136,7 +136,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
       {
         onError: () => {
           setIsLoading(false);
-          setErrorMessage("Une erreur est survenue lors de l'upload des fichiers. Veuillez réessayer.");
+          setErrorMessage('Une erreur est survenue lors du téléversement des fichiers. Veuillez réessayer.');
         },
         onSuccess: () => {
           handleCancel();

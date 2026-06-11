@@ -67,32 +67,24 @@ export const SelectedFilesList = ({
   return (
     <div className={className}>
       <p className="fr-text--sm fr-text--bold">{title}</p>
-      <ul style={{ margin: 0, paddingLeft: '1rem' }}>
+      <ul style={{ margin: 0, paddingLeft: '1.5rem', listStyleType: 'disc' }}>
         {files.map((file) => (
-          <li
-            key={file.name}
-            className="fr-text--sm"
-            style={{
-              marginBottom: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '0.5rem',
-            }}
-          >
-            <span>
-              {file.name} ({formatFileSize(file.size)})
-            </span>
-            {onRemove && (
-              <button
-                type="button"
-                className={fr.cx('fr-btn', 'fr-btn--tertiary-no-outline', 'fr-btn--sm', 'fr-icon-delete-line')}
-                aria-label={`Supprimer ${file.name}`}
-                title={`Supprimer ${file.name}`}
-                onClick={() => onRemove(file.name)}
-                style={{ flexShrink: 0 }}
-              />
-            )}
+          <li key={file.name} className="fr-text--sm" style={{ marginBottom: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+              <span>
+                {file.name} ({formatFileSize(file.size)})
+              </span>
+              {onRemove && (
+                <button
+                  type="button"
+                  className={fr.cx('fr-btn', 'fr-btn--tertiary-no-outline', 'fr-btn--sm', 'fr-icon-delete-line')}
+                  aria-label={`Supprimer ${file.name}`}
+                  title={`Supprimer ${file.name}`}
+                  onClick={() => onRemove(file.name)}
+                  style={{ flexShrink: 0 }}
+                />
+              )}
+            </div>
           </li>
         ))}
       </ul>
