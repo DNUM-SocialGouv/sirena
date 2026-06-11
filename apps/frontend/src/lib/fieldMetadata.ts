@@ -47,6 +47,7 @@ export const personneConcerneeFieldMetadata: Record<string, FieldMetadata> = {
   victimeInformeeCommentaire: { label: "Raison pour laquelle elle n'est pas informée", type: 'text' },
   autrePersonnes: { label: 'Précisions sur les autres personnes concernées', type: 'textarea' },
   aAutrePersonnes: { label: "Il y a d'autres personnes concernées par la requête", type: 'radio' },
+  mesureProtection: { label: 'La personne concernée est sous mesure de protection', type: 'radio' },
   commentaire: { label: 'Autres précisions sur la personne concernée', type: 'textarea' },
 };
 

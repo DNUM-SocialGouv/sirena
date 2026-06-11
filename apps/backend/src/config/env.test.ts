@@ -49,6 +49,11 @@ process.env = {
 
   API_KEY_HASH_SALT: 'test-salt',
   S3_ENCRYPTION_KEY: 'a'.repeat(64),
+  MARIADB_SIREC_HOST: 'localhost',
+  MARIADB_SIREC_PORT: '3306',
+  MARIADB_SIREC_DB: 'sirec',
+  MARIADB_SIREC_USER: 'sirec',
+  MARIADB_SIREC_PASSWORD: 'sirec',
 };
 
 describe('env.ts', () => {
@@ -91,6 +96,11 @@ describe('env.ts', () => {
       REDIS_PASSWORD: 'redis-password',
       API_KEY_HASH_SALT: 'test-salt',
       S3_ENCRYPTION_KEY: 'a'.repeat(64),
+      MARIADB_SIREC_HOST: 'localhost',
+      MARIADB_SIREC_PORT: '3306',
+      MARIADB_SIREC_DB: 'sirec',
+      MARIADB_SIREC_USER: 'sirec',
+      MARIADB_SIREC_PASSWORD: 'sirec',
     };
 
     expect(() => AppEnvSchema.parse(invalidEnv)).toThrowError(
@@ -126,6 +136,11 @@ describe('env.ts', () => {
       REDIS_PORT: '6379',
       API_KEY_HASH_SALT: 'test-salt',
       S3_ENCRYPTION_KEY: 'a'.repeat(64),
+      MARIADB_SIREC_HOST: 'localhost',
+      MARIADB_SIREC_PORT: '3306',
+      MARIADB_SIREC_DB: 'sirec',
+      MARIADB_SIREC_USER: 'sirec',
+      MARIADB_SIREC_PASSWORD: 'sirec',
     };
 
     const result = AppEnvSchema.parse(envWithoutRedisPassword);

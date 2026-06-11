@@ -4,6 +4,7 @@ import { createMonitoringServer } from './features/monitoring/server.js';
 import { createDefaultLogger } from './helpers/pino.js';
 import { cronWorker } from './jobs/worker/cron.worker.js';
 import { createFileProcessingWorker } from './jobs/workers/fileProcessing.worker.js';
+import { createSirecMigrationWorker } from './jobs/workers/sirecMigration.worker.js';
 import './libs/instrument.js';
 
 const logger = createDefaultLogger();
@@ -20,6 +21,18 @@ cronWorker.on('failed', (job, err) => {
 
 const fileProcessingWorker = createFileProcessingWorker();
 logger.info(`[worker] Starting file processing worker for queue "${fileProcessingWorker.name}"`);
+
+const { MARIADB_SIREC_HOST, MARIADB_SIREC_DB, MARIADB_SIREC_USER, MARIADB_SIREC_PASSWORD } = envVars;
+const sirecMigrationWorker =
+  MARIADB_SIREC_HOST && MARIADB_SIREC_DB && MARIADB_SIREC_USER && MARIADB_SIREC_PASSWORD
+    ? createSirecMigrationWorker()
+    : null;
+
+if (sirecMigrationWorker) {
+  logger.info(`[worker] Starting SIREC migration worker for queue "${sirecMigrationWorker.name}"`);
+} else {
+  logger.info('[worker] SIREC migration worker not started (MARIADB env vars not set)');
+}
 
 const monitoringServer = createMonitoringServer({
   getMetrics: getPrometheusMetrics,
@@ -43,6 +56,7 @@ const shutdown = async () => {
 
   await cronWorker.close();
   await fileProcessingWorker.close();
+  await sirecMigrationWorker?.close();
   process.exit(0);
 };
 

@@ -3,12 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const logger = { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() };
 
+const mockedEnvVars = vi.hoisted(() => ({
+  METABASE_SITE_URL: 'https://metabase.example.com',
+  METABASE_SECRET_KEY: 'test-secret-key',
+  METABASE_DASHBOARD_ID: '7',
+}));
+
 vi.mock('../../config/env.js', () => ({
-  envVars: {
-    METABASE_SITE_URL: 'https://metabase.example.com',
-    METABASE_SECRET_KEY: 'test-secret-key',
-    METABASE_DASHBOARD_ID: '7',
-  },
+  envVars: mockedEnvVars,
 }));
 
 vi.mock('../../libs/asyncLocalStorage.js', () => ({
@@ -24,16 +26,12 @@ vi.mock('@sirena/backend-utils/helpers', () => ({
 const fetchMock = vi.fn();
 global.fetch = fetchMock;
 
-const defaultEnv = {
-  METABASE_SITE_URL: 'https://metabase.example.com',
-  METABASE_SECRET_KEY: 'test-secret-key',
-  METABASE_DASHBOARD_ID: '7',
-};
-
 describe('statistics.service.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.doMock('../../config/env.js', () => ({ envVars: defaultEnv }));
+    mockedEnvVars.METABASE_SITE_URL = 'https://metabase.example.com';
+    mockedEnvVars.METABASE_SECRET_KEY = 'test-secret-key';
+    mockedEnvVars.METABASE_DASHBOARD_ID = '7';
   });
 
   afterEach(() => {
@@ -232,13 +230,7 @@ describe('statistics.service.ts', () => {
 
     it('throws 503 when the dashboard id is missing', async () => {
       vi.resetModules();
-      vi.doMock('../../config/env.js', () => ({
-        envVars: {
-          METABASE_SITE_URL: 'https://metabase.example.com',
-          METABASE_SECRET_KEY: 'test-secret-key',
-          METABASE_DASHBOARD_ID: '',
-        },
-      }));
+      mockedEnvVars.METABASE_DASHBOARD_ID = '';
 
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       await expect(fetchDashboardCardsData()).rejects.toThrow(/^503:Metabase dashboard id is not configured/);
