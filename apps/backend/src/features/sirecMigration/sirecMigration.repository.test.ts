@@ -3,6 +3,7 @@ import { mariadbPool } from '../../config/mariadb.js';
 import {
   fetchSirecData,
   fetchSirecGroupIds,
+  fetchSirecIdsByServiceIds,
   fetchSirecInstitutionPartenaires,
   fetchSirecMisEnCauses,
   fetchSirecMotifsDeclaresById,
@@ -553,6 +554,40 @@ describe('sirecMigration.repository.ts', () => {
       await fetchSirecData(99);
 
       expect(mariadbPool.query).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('fetchSirecIdsByServiceIds', () => {
+    it('should return distinct id_data for the given service ids', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([{ id_data: 10 }, { id_data: 20 }, { id_data: 30 }]);
+
+      const result = await fetchSirecIdsByServiceIds([5, 6]);
+
+      expect(result).toEqual([10, 20, 30]);
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_data_group'), [[5, 6]]);
+    });
+
+    it('should return an empty array when no reclamations found', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      const result = await fetchSirecIdsByServiceIds([99]);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should return an empty array without querying when serviceIds is empty', async () => {
+      const result = await fetchSirecIdsByServiceIds([]);
+
+      expect(result).toEqual([]);
+      expect(mariadbPool.query).not.toHaveBeenCalled();
+    });
+
+    it('should exclude the system group (id_group != 1) via the SQL query', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      await fetchSirecIdsByServiceIds([1]);
+
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('id_group != 1'), expect.any(Array));
     });
   });
 });
