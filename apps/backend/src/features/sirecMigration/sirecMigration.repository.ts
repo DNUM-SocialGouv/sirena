@@ -123,13 +123,13 @@ export interface SirecReclamationData {
   misEnCauses: SirecMisEnCause[];
 }
 
-// TODO: confirmer avec l'équipe SIREC quelle colonne/table représente un "service".
-// Candidats : sire_reclamation_data_group.id_group (N-N), service_gestionnaire, service_recepteur_niv1.
-// La requête ci-dessous utilise id_group (table de liaison). À ajuster si nécessaire.
 export async function fetchSirecIdsByServiceIds(serviceIds: number[]): Promise<number[]> {
   if (serviceIds.length === 0) return [];
   const rows = await mariadbPool.query<{ id_data: number }[]>(
-    'SELECT DISTINCT id_data FROM sire_reclamation_data_group WHERE id_group IN (?) AND id_group != 1',
+    `SELECT DISTINCT r.id_data
+     FROM sire_reclamation_data r
+     INNER JOIN sire_reclamation_data_group rg ON r.id_data = rg.id_data
+     WHERE rg.id_group IN (?)`,
     [serviceIds],
   );
   return rows.map((row) => row.id_data);

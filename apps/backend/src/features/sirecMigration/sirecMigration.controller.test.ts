@@ -1,4 +1,3 @@
-import { ROLES } from '@sirena/common/constants';
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -31,7 +30,7 @@ vi.mock('../../middlewares/userStatus.middleware.js', () => ({
 const { addSirecIdsToQueueSpy, fetchSirecIdsByServiceIdsSpy, currentRole } = vi.hoisted(() => ({
   addSirecIdsToQueueSpy: vi.fn(),
   fetchSirecIdsByServiceIdsSpy: vi.fn(),
-  currentRole: { value: ROLES.SUPER_ADMIN as string },
+  currentRole: { value: 'SUPER_ADMIN' as string },
 }));
 
 vi.mock('../../middlewares/role.middleware.js', () => ({
@@ -47,12 +46,12 @@ describe('SirecMigration controller', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    currentRole.value = ROLES.SUPER_ADMIN;
+    currentRole.value = 'SUPER_ADMIN';
   });
 
   describe('POST /by-reclamations', () => {
     it('should return 403 without SUPER_ADMIN role', async () => {
-      currentRole.value = ROLES.WRITER;
+      currentRole.value = 'WRITER';
       const res = await client['by-reclamations'].$post({ json: { sirecIds: [1, 2, 3] } });
       expect(res.status).toBe(403);
       expect(addSirecIdsToQueueSpy).not.toHaveBeenCalled();
@@ -75,7 +74,7 @@ describe('SirecMigration controller', () => {
 
   describe('POST /by-services', () => {
     it('should return 403 without SUPER_ADMIN role', async () => {
-      currentRole.value = ROLES.ENTITY_ADMIN;
+      currentRole.value = 'ENTITY_ADMIN';
       const res = await client['by-services'].$post({ json: { serviceIds: [10] } });
       expect(res.status).toBe(403);
     });

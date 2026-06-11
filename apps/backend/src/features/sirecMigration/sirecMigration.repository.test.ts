@@ -564,7 +564,7 @@ describe('sirecMigration.repository.ts', () => {
       const result = await fetchSirecIdsByServiceIds([5, 6]);
 
       expect(result).toEqual([10, 20, 30]);
-      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_data_group'), [[5, 6]]);
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_reclamation_data r'), [[5, 6]]);
     });
 
     it('should return an empty array when no reclamations found', async () => {
@@ -582,12 +582,15 @@ describe('sirecMigration.repository.ts', () => {
       expect(mariadbPool.query).not.toHaveBeenCalled();
     });
 
-    it('should exclude the system group (id_group != 1) via the SQL query', async () => {
+    it('should query with INNER JOIN on sire_reclamation_data', async () => {
       vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
 
       await fetchSirecIdsByServiceIds([1]);
 
-      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('id_group != 1'), expect.any(Array));
+      expect(mariadbPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('INNER JOIN sire_reclamation_data_group'),
+        expect.any(Array),
+      );
     });
   });
 });
