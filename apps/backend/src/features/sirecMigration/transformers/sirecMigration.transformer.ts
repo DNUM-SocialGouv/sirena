@@ -8,6 +8,7 @@ import { transformSirecAccuseReception } from './etapes/sirecMigration.accuseRec
 import type { SirenaEtapeData } from './etapes/sirecMigration.etape.types.js';
 import { transformSirecExamenCommission } from './etapes/sirecMigration.examenCommission.transformer.js';
 import { transformSirecInstitutionsPartenaires } from './etapes/sirecMigration.institutionPartenaire.transformer.js';
+import { transformSirecMainCourantes } from './etapes/sirecMigration.mainCourante.transformer.js';
 import { transformSirecPriseEnCharge } from './etapes/sirecMigration.priseEnCharge.transformer.js';
 import { transformSirecReceptionProvenances } from './etapes/sirecMigration.receptionProvenance.transformer.js';
 import { transformSirecReponsePlaignant } from './etapes/sirecMigration.reponsePlaignant.transformer.js';
@@ -66,6 +67,7 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
       ...transformSirecPriseEnCharge(sirecData, arsEntiteIds),
       ...transformSirecExamenCommission(sirecData, arsEntiteIds),
       ...transformSirecReponsePlaignant(sirecData, arsEntiteIds),
+      ...transformSirecMainCourantes(sirecData),
     ],
     situations: transformSirecMisEnCauseSituations(sirecData, situationEntiteIds),
   };

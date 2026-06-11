@@ -77,6 +77,7 @@ describe('sirecMigration.transformer.ts', () => {
     institutionPartenaires: {} as Record<number, string>,
     typeTraitementIdDicos: [] as number[],
     misEnCauses: [],
+    mainCourantes: [],
   };
 
   it('should map all fields correctly', () => {

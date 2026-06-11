@@ -4,6 +4,7 @@ import {
   fetchSirecData,
   fetchSirecGroupIds,
   fetchSirecInstitutionPartenaires,
+  fetchSirecMainCourantes,
   fetchSirecMisEnCauses,
   fetchSirecMotifsDeclaresById,
   fetchSirecProvenances,
@@ -470,6 +471,43 @@ describe('sirecMigration.repository.ts', () => {
     });
   });
 
+  describe('fetchSirecMainCourantes', () => {
+    it('should return main courantes with aggregated groupIds', async () => {
+      const date = new Date('2024-06-01');
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
+        { id_data: 10, type_action1: 100, commentaire: 'RAS', date_action: date, id_group: 693 },
+        { id_data: 10, type_action1: 100, commentaire: 'RAS', date_action: date, id_group: 677 },
+        { id_data: 20, type_action1: null, commentaire: null, date_action: null, id_group: 693 },
+      ]);
+
+      const result = await fetchSirecMainCourantes(42);
+
+      expect(result).toEqual([
+        { id_data: 10, type_action1: 100, commentaire: 'RAS', date_action: date, groupIds: [693, 677] },
+        { id_data: 20, type_action1: null, commentaire: null, date_action: null, groupIds: [693] },
+      ]);
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('sire_main_courante_data'), [42]);
+    });
+
+    it('should return main courante with empty groupIds when no groups are linked', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([
+        { id_data: 10, type_action1: null, commentaire: null, date_action: null, id_group: null },
+      ]);
+
+      const result = await fetchSirecMainCourantes(42);
+
+      expect(result).toEqual([{ id_data: 10, type_action1: null, commentaire: null, date_action: null, groupIds: [] }]);
+    });
+
+    it('should return an empty array when no mains courantes found', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      const result = await fetchSirecMainCourantes(42);
+
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('fetchSirecData', () => {
     const mockRow = {
       id_data: 42,
@@ -489,6 +527,7 @@ describe('sirecMigration.repository.ts', () => {
         .mockResolvedValueOnce([{ id_group: 3 }, { id_group: 5 }])
         .mockResolvedValueOnce([{ id_provenance: 103, id_group: 693, date_signalement: null, reponse_attendue: null }])
         .mockResolvedValueOnce([{ id_dico: 344 }])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]);
 
       const result = await fetchSirecData(42);
@@ -501,6 +540,7 @@ describe('sirecMigration.repository.ts', () => {
         institutionPartenaires: {},
         typeTraitementIdDicos: [344],
         misEnCauses: [],
+        mainCourantes: [],
       });
     });
 
@@ -515,6 +555,7 @@ describe('sirecMigration.repository.ts', () => {
           { id_data: 10, institution: 'CPAM de Rouen' },
           { id_data: 20, institution: 'DREETS Normandie' },
         ])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]);
 
@@ -531,12 +572,13 @@ describe('sirecMigration.repository.ts', () => {
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]);
 
       const result = await fetchSirecData(42);
 
       expect(result?.institutionPartenaires).toEqual({});
-      expect(mariadbPool.query).toHaveBeenCalledTimes(6);
+      expect(mariadbPool.query).toHaveBeenCalledTimes(7);
     });
 
     it('should return null when the reclamation is not found', async () => {
