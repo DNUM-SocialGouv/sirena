@@ -153,7 +153,7 @@ export function RouteComponent() {
                   rows: 6,
                 }}
               />
-              <Button type="submit" disabled={loading || raw.trim() === ''}>
+              <Button type="submit" disabled={loading}>
                 {loading ? 'Envoi en cours…' : 'Ajouter à la queue'}
               </Button>
             </form>
@@ -180,7 +180,7 @@ export function RouteComponent() {
                   rows: 6,
                 }}
               />
-              <Button type="submit" disabled={loading || raw.trim() === ''}>
+              <Button type="submit" disabled={loading}>
                 {loading ? 'Recherche en cours…' : 'Rechercher et ajouter à la queue'}
               </Button>
             </form>
