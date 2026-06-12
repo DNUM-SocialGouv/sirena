@@ -49,24 +49,27 @@ export function RouteComponent() {
   const [mode, setMode] = useState<Mode>('reclamations');
   const [raw, setRaw] = useState('');
   const [result, setResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<string | null>(null);
+  const [systemError, setSystemError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleModeChange = (newMode: Mode) => {
     setMode(newMode);
     setRaw('');
     setResult(null);
-    setError(null);
+    setFieldError(null);
+    setSystemError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setResult(null);
-    setError(null);
+    setFieldError(null);
+    setSystemError(null);
 
     const ids = parseIds(raw);
     if (ids.length === 0) {
-      setError('Aucun identifiant valide trouvé.');
+      setFieldError('Aucun identifiant valide trouvé.');
       return;
     }
 
@@ -83,7 +86,7 @@ export function RouteComponent() {
       }
       setRaw('');
     } catch {
-      setError('Une erreur est survenue lors de la requête.');
+      setSystemError('Une erreur est survenue lors de la requête.');
     } finally {
       setLoading(false);
     }
@@ -141,6 +144,8 @@ export function RouteComponent() {
               <Input
                 label="IDs de réclamations SIREC"
                 hintText="Un identifiant par ligne ou séparés par des virgules"
+                state={fieldError ? 'error' : 'default'}
+                stateRelatedMessage={fieldError ?? undefined}
                 textArea
                 nativeTextAreaProps={{
                   value: raw,
@@ -166,6 +171,8 @@ export function RouteComponent() {
               <Input
                 label="IDs de services SIREC"
                 hintText="Un identifiant par ligne ou séparés par des virgules"
+                state={fieldError ? 'error' : 'default'}
+                stateRelatedMessage={fieldError ?? undefined}
                 textArea
                 nativeTextAreaProps={{
                   value: raw,
@@ -182,7 +189,7 @@ export function RouteComponent() {
       </div>
 
       {result && <Alert className="fr-mt-2w" severity="success" title={result} />}
-      {error && <Alert className="fr-mt-2w" severity="error" title={error} />}
+      {systemError && <Alert className="fr-mt-2w" severity="error" title={systemError} />}
     </div>
   );
 }
