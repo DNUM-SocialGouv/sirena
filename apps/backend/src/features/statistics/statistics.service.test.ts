@@ -97,8 +97,14 @@ describe('statistics.service.ts', () => {
       const result = await fetchDashboardCardsData();
 
       expect(result).toEqual([
-        { id: 42, dashcardId: 100, name: 'Requêtes par mois', data: [{ month: '2026-01', total: 12 }] },
-        { id: 43, dashcardId: 101, name: 'Top entités', data: [{ entite: 'ARS Île-de-France', total: 7 }] },
+        { id: 42, dashcardId: 100, name: 'Requêtes par mois', display: null, data: [{ month: '2026-01', total: 12 }] },
+        {
+          id: 43,
+          dashcardId: 101,
+          name: 'Top entités',
+          display: null,
+          data: [{ entite: 'ARS Île-de-France', total: 7 }],
+        },
       ]);
 
       expect(fetchMock).toHaveBeenCalledTimes(3);
@@ -124,7 +130,7 @@ describe('statistics.service.ts', () => {
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       const result = await fetchDashboardCardsData();
 
-      expect(result).toEqual([{ id: 50, dashcardId: 200, name: 'Legacy', data: [{ k: 1 }] }]);
+      expect(result).toEqual([{ id: 50, dashcardId: 200, name: 'Legacy', display: null, data: [{ k: 1 }] }]);
     });
 
     it('returns an empty array when the dashboard exposes no readable cards', async () => {
@@ -172,8 +178,8 @@ describe('statistics.service.ts', () => {
       const result = await fetchDashboardCardsData();
 
       expect(result).toEqual([
-        { id: 42, dashcardId: 100, name: 'OK', data: [{ total: 12 }] },
-        { id: 43, dashcardId: 101, name: 'KO', data: [] },
+        { id: 42, dashcardId: 100, name: 'OK', display: null, data: [{ total: 12 }] },
+        { id: 43, dashcardId: 101, name: 'KO', display: null, data: [] },
       ]);
     });
 
@@ -189,7 +195,7 @@ describe('statistics.service.ts', () => {
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       const result = await fetchDashboardCardsData();
 
-      expect(result).toEqual([{ id: 42, dashcardId: 100, name: 'Card', data: [] }]);
+      expect(result).toEqual([{ id: 42, dashcardId: 100, name: 'Card', display: null, data: [] }]);
     });
 
     it('falls back to a generated name when the card has no name', async () => {
@@ -204,7 +210,35 @@ describe('statistics.service.ts', () => {
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       const result = await fetchDashboardCardsData();
 
-      expect(result).toEqual([{ id: 42, dashcardId: 100, name: 'Carte 42', data: [{ k: 1 }] }]);
+      expect(result).toEqual([{ id: 42, dashcardId: 100, name: 'Carte 42', display: null, data: [{ k: 1 }] }]);
+    });
+
+    it('reads the visualizer display override in priority, then falls back to card.display', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            dashcards: [
+              // Override "visualizer" au niveau dashcard : prime sur card.display ("table")
+              {
+                id: 100,
+                card_id: 42,
+                card: { id: 42, name: 'Répartition', display: 'table' },
+                visualization_settings: { visualization: { display: 'pie' } },
+              },
+              // Pas d'override : on retombe sur card.display
+              { id: 101, card_id: 43, card: { id: 43, name: 'KPI', display: 'scalar' } },
+            ],
+          }),
+        })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ raison: 'A', nb: 3 }] })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ total: 9 }] });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      const result = await fetchDashboardCardsData();
+
+      expect(result.map((card) => card.display)).toEqual(['pie', 'scalar']);
     });
 
     it('forwards params into the dashboard JWT so they reach Metabase locked filters', async () => {

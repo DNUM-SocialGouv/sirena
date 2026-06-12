@@ -160,9 +160,9 @@ const buildDeptPostalFilter = async (deptCodes: string[]): Promise<Prisma.LieuDe
 
 const buildRequetesEntiteWhere = async (
   entiteIds: string[] | null,
-  query: { search?: string; entiteId?: string; departementCodes?: string; prioriteId?: string },
+  query: { search?: string; entiteId?: string; departementCodes?: string; domaineIds?: string; prioriteId?: string },
 ): Promise<Prisma.RequeteEntiteWhereInput> => {
-  const { search, entiteId, departementCodes, prioriteId } = query;
+  const { search, entiteId, departementCodes, domaineIds, prioriteId } = query;
   const searchConditions: Prisma.RequeteEntiteWhereInput = search ? createSearchConditionsForRequeteEntite(search) : {};
   const andFilters: Prisma.RequeteEntiteWhereInput[] = [];
 
@@ -193,6 +193,21 @@ const buildRequetesEntiteWhere = async (
     if (lieuFilter) {
       andFilters.push({
         requete: { situations: { some: { lieuDeSurvenue: lieuFilter } } },
+      });
+    }
+  }
+  if (domaineIds) {
+    const ids = domaineIds
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (ids.length > 0) {
+      andFilters.push({
+        requete: {
+          situations: {
+            some: { domainesFonctionnelsId: { in: ids } },
+          },
+        },
       });
     }
   }
@@ -317,9 +332,18 @@ export const getRequetesEntite = async (entiteIds: string[] | null, query: GetRe
       return [dptToDept[dptCode] ?? { code: dptCode, lib: '' }];
     });
 
+    const seenDomaineIds = new Set<string>();
+    const domainesFonctionnels = (requeteEntite.requete?.situations ?? []).flatMap((s) => {
+      const d = s.domainesFonctionnels;
+      if (!d || seenDomaineIds.has(d.id)) return [];
+      seenDomaineIds.add(d.id);
+      return [{ id: d.id, label: d.label }];
+    });
+
     return {
       ...requeteEntite,
       departementsLieuSurvenue,
+      domainesFonctionnels,
       requete: {
         ...requeteEntite.requete,
         situations: enrichedSituations,
@@ -343,6 +367,21 @@ export const getRequetesCountsByDepartement = async (
       const where = await buildRequetesEntiteWhere(entiteIds, { ...baseQuery, departementCodes: code });
       const count = await prisma.requeteEntite.count({ where });
       return { code, count };
+    }),
+  );
+  return results;
+};
+
+export const getRequetesCountsByDomaine = async (
+  entiteIds: string[] | null,
+  domaineIds: string[],
+  baseQuery: { search?: string; entiteId?: string },
+) => {
+  const results = await Promise.all(
+    domaineIds.map(async (id) => {
+      const where = await buildRequetesEntiteWhere(entiteIds, { ...baseQuery, domaineIds: id });
+      const count = await prisma.requeteEntite.count({ where });
+      return { id, count };
     }),
   );
   return results;

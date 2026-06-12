@@ -47,6 +47,7 @@ import {
   getOtherEntitesAffectedRoute,
   getRequeteEntiteRoute,
   getRequetesDepartementCountsRoute,
+  getRequetesDomaineCountsRoute,
   getRequetesEntiteRoute,
   reopenRequeteRoute,
   updateStatutRoute,
@@ -55,6 +56,7 @@ import {
   CloseRequeteBodySchema,
   CreateRequeteBodySchema,
   GetDepartementCountsQuerySchema,
+  GetDomaineCountsQuerySchema,
   GetRequetesEntiteQuerySchema,
   UpdateDeclarantBodySchema,
   UpdateParticipantBodySchema,
@@ -75,6 +77,7 @@ import {
   getOtherEntitesAffected,
   getRequeteEntiteById,
   getRequetesCountsByDepartement,
+  getRequetesCountsByDomaine,
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
@@ -110,6 +113,31 @@ const app = factoryWithLogs
         .map((code) => code.trim())
         .filter(Boolean);
       const data = await getRequetesCountsByDepartement([topEntiteId], codes, {
+        search: query.search,
+        entiteId: query.entiteId,
+      });
+      return c.json({ data });
+    },
+  )
+
+  .get(
+    '/domaine-counts',
+    getRequetesDomaineCountsRoute,
+    zValidator('query', GetDomaineCountsQuerySchema),
+    async (c) => {
+      const query = c.req.valid('query');
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+      const ids = query.domaineIds
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean);
+      const data = await getRequetesCountsByDomaine([topEntiteId], ids, {
         search: query.search,
         entiteId: query.entiteId,
       });
