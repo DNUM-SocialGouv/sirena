@@ -13,6 +13,7 @@ vi.mock('../../jobs/queues/sirecMigration.queue.js', () => ({
 }));
 
 vi.mock('./sirecMigration.repository.js', () => ({
+  fetchExistingSirecIds: fetchExistingSirecIdsSpy,
   fetchSirecIdsByServiceIds: fetchSirecIdsByServiceIdsSpy,
 }));
 
@@ -27,11 +28,14 @@ vi.mock('../../middlewares/userStatus.middleware.js', () => ({
   default: (_: Context, next: Next) => next(),
 }));
 
-const { addSirecIdsToQueueSpy, fetchSirecIdsByServiceIdsSpy, currentRole } = vi.hoisted(() => ({
-  addSirecIdsToQueueSpy: vi.fn(),
-  fetchSirecIdsByServiceIdsSpy: vi.fn(),
-  currentRole: { value: 'SUPER_ADMIN' as string },
-}));
+const { addSirecIdsToQueueSpy, fetchExistingSirecIdsSpy, fetchSirecIdsByServiceIdsSpy, currentRole } = vi.hoisted(
+  () => ({
+    addSirecIdsToQueueSpy: vi.fn(),
+    fetchExistingSirecIdsSpy: vi.fn(),
+    fetchSirecIdsByServiceIdsSpy: vi.fn(),
+    currentRole: { value: 'SUPER_ADMIN' as string },
+  }),
+);
 
 vi.mock('../../middlewares/role.middleware.js', () => ({
   default: (roles: string[]) => async (c: Context, next: Next) => {
@@ -57,13 +61,32 @@ describe('SirecMigration controller', () => {
       expect(addSirecIdsToQueueSpy).not.toHaveBeenCalled();
     });
 
-    it('should push ids to queue and return queued count', async () => {
+    it('should push ids to queue and return queued count when all ids exist', async () => {
+      fetchExistingSirecIdsSpy.mockResolvedValue([1, 2, 3]);
       addSirecIdsToQueueSpy.mockResolvedValue(3);
       const res = await client['by-reclamations'].$post({ json: { sirecIds: [1, 2, 3] } });
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body).toEqual({ queued: 3 });
       expect(addSirecIdsToQueueSpy).toHaveBeenCalledWith([1, 2, 3]);
+    });
+
+    it('should return 422 with unknown ids when some do not exist in SIREC', async () => {
+      fetchExistingSirecIdsSpy.mockResolvedValue([1, 3]);
+      const res = await client['by-reclamations'].$post({ json: { sirecIds: [1, 2, 3] } });
+      expect(res.status).toBe(422);
+      const body = await res.json();
+      expect(body).toEqual({ unknownIds: [2] });
+      expect(addSirecIdsToQueueSpy).not.toHaveBeenCalled();
+    });
+
+    it('should return 422 with all ids when none exist in SIREC', async () => {
+      fetchExistingSirecIdsSpy.mockResolvedValue([]);
+      const res = await client['by-reclamations'].$post({ json: { sirecIds: [99, 100] } });
+      expect(res.status).toBe(422);
+      const body = await res.json();
+      expect(body).toEqual({ unknownIds: [99, 100] });
+      expect(addSirecIdsToQueueSpy).not.toHaveBeenCalled();
     });
 
     it('should return 400 with invalid body (empty array)', async () => {

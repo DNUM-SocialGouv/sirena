@@ -123,6 +123,15 @@ export interface SirecReclamationData {
   misEnCauses: SirecMisEnCause[];
 }
 
+export async function fetchExistingSirecIds(sirecIds: number[]): Promise<number[]> {
+  if (sirecIds.length === 0) return [];
+  const rows = await mariadbPool.query<{ id_data: number }[]>(
+    'SELECT id_data FROM sire_reclamation_data WHERE id_data IN (?)',
+    [sirecIds],
+  );
+  return rows.map((row) => row.id_data);
+}
+
 export async function fetchSirecIdsByServiceIds(serviceIds: number[]): Promise<number[]> {
   if (serviceIds.length === 0) return [];
   const rows = await mariadbPool.query<{ id_data: number }[]>(
