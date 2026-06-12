@@ -2081,16 +2081,6 @@ const getEtapePdfTitle = (type: RequeteEtapeType, statutId: RequeteEtapeStatutTy
   return nom;
 };
 
-const buildEtapeCreatorLabel = (
-  type: RequeteEtapeType,
-  createdBy: { prenom: string; nom: string } | null,
-  requeteCreatedBy: { prenom: string; nom: string } | null,
-): string | null => {
-  const agent = type === REQUETE_ETAPE_TYPES.CREATION ? requeteCreatedBy : createdBy;
-  if (!agent) return null;
-  return `Par ${capitalizeFirst(agent.prenom)} ${capitalizeFirst(agent.nom)}`;
-};
-
 export const generateRequetePdfBuffer = async (requeteId: string, entiteId: string | null): Promise<Buffer | null> => {
   if (!entiteId) return null;
 
@@ -2161,9 +2151,12 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
     .field('Priorité', requeteEntite.priorite?.label || null)
     .field('Date de génération', formatDateFr(new Date()));
 
-  // ===== 2. REQUÊTE ORIGINALE =====
+  // ===== 2. DÉTAILS DE LA REQUÊTE =====
+  pdf.section('Détails de la requête');
+
+  // ===== 2a. REQUÊTE ORIGINALE =====
   pdf
-    .section('Requête originale')
+    .subsection('Requête originale')
     .field('Date de réception', formatDateFr(requete.receptionDate))
     .field('Date de la demande par le déclarant', formatDateFr(requete.dateDemandeDeclarant))
     .field('Mode de réception', requete.receptionType?.label || null)
@@ -2171,14 +2164,19 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
     .field('Précision provenance', requete.provenancePrecision || null)
     .field('N° Demat.Social', requete.dematSocialId ? String(requete.dematSocialId) : null);
 
-  // ===== 3. DÉCLARANT =====
+  const fichiersRequete = requete.fichiersRequeteOriginale ?? [];
+  if (fichiersRequete.length > 0) {
+    pdf.subsubsection('Document original').list(fichiersRequete.map(getOriginalFileName));
+  }
+
+  // ===== 2b. DÉCLARANT =====
   if (requete.declarant) {
     const d = requete.declarant;
     if (d.estVictime) {
-      pdf.section('Déclarant').paragraph('Le déclarant est la personne concernée par la requête.');
+      pdf.subsection('Déclarant').paragraph('Le déclarant est la personne concernée par la requête.');
     } else {
       pdf
-        .section('Déclarant')
+        .subsection('Déclarant')
         .field('Civilité', d.identite?.civilite?.label || null)
         .field('Prénom', d.identite?.prenom || null)
         .field('Nom', d.identite?.nom || null)
@@ -2210,13 +2208,13 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
     }
   }
 
-  // ===== 4. PERSONNE CONCERNÉE =====
+  // ===== 2c. PERSONNE CONCERNÉE =====
   if (requete.participant) {
     const p = requete.participant;
     const mesureProtectionLabel = getMesureProtectionShortLabel(p.mesureProtection);
 
     pdf
-      .section('Personne concernée')
+      .subsection('Personne concernée')
       .field('Civilité', p.identite?.civilite?.label || null)
       .field('Prénom', p.identite?.prenom || null)
       .field('Nom', p.identite?.nom || null)
@@ -2245,14 +2243,19 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
     }
   }
 
-  // ===== 5. SITUATIONS =====
-  for (const [index, situation] of (requete.situations ?? []).entries()) {
-    pdf.section(`Situation ${index + 1}`);
+  // ===== 2d. SITUATIONS =====
+  const situations = requete.situations ?? [];
+  const multiplesSituations = situations.length > 1;
+  for (const [index, situation] of situations.entries()) {
+    const situationTitle = multiplesSituations
+      ? `Description de la situation (${index + 1})`
+      : 'Description de la situation';
+    pdf.subsection(situationTitle);
 
     const lieu = situation.lieuDeSurvenue;
     if (lieu) {
       pdf
-        .subsection('Lieu de survenue')
+        .subsubsection('Lieu de survenue')
         .field('Type de lieu', lieu.lieuType?.label || null)
         .field('Précision du lieu', getLieuPrecisionLabel(lieu.lieuType?.id, lieu.lieuPrecision) || null)
         .field('Rue', formatRue(lieu.adresse))
@@ -2266,7 +2269,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
     const mec = situation.misEnCause;
     if (mec) {
       pdf
-        .subsection('Mis en cause')
+        .subsubsection('Mis en cause')
         .field('Type', mec.misEnCauseType?.label || null)
         .field('Précision type', mec.misEnCauseTypePrecision?.label || null)
         .field('Civilité du mis en cause', mec.civilite || null)
@@ -2317,68 +2320,77 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
             : null;
 
       pdf
-        .subsection('Période et description des faits')
+        .subsubsection('Période et description des faits')
         .field('Période', periodeLabel)
         .field('Explication des faits', faits.commentaire || null)
         .field('Autres précisions', faits.autresPrecisions || null);
-
-      const fichiersSituation = faits.fichiers ?? [];
-      if (fichiersSituation.length > 0) {
-        pdf.subsection('Pièces jointes de la situation').list(fichiersSituation.map(getOriginalFileName));
-      }
     }
 
-    if (situation.domainesFonctionnels?.label) {
-      pdf.field('Domaine fonctionnel', situation.domainesFonctionnels.label);
-    }
-
+    const fichiersSituation = faits?.fichiers ?? [];
     const demarches = situation.demarchesEngagees;
-    if (demarches?.demarches && demarches.demarches.length > 0) {
-      pdf.subsection('Démarches engagées');
+    const hasDemarches = !!(demarches?.demarches && demarches.demarches.length > 0);
+    const hasInfosComplementaires =
+      !!situation.domainesFonctionnels?.label || hasDemarches || fichiersSituation.length > 0;
 
-      const groups: { label: string; children: string[] }[] = [];
+    if (hasInfosComplementaires) {
+      pdf.subsubsection('Informations complémentaires');
 
-      for (const demarche of demarches.demarches) {
-        const children: string[] = [];
-
-        if (demarche.label === demarcheEngageeLabels.CONTACT_RESPONSABLES) {
-          const dateContact = formatDateFr(demarches.dateContactEtablissement);
-          if (dateContact) {
-            children.push(`Date de prise de contact : ${dateContact}`);
-          }
-          if (demarches.etablissementARepondu) {
-            children.push('Le déclarant a reçu une réponse');
-          }
-        }
-
-        if (demarche.label === demarcheEngageeLabels.CONTACT_ORGANISME && demarches.organisme) {
-          children.push(`Précisions sur l'organisme contacté : ${demarches.organisme}`);
-        }
-
-        if (demarche.label === demarcheEngageeLabels.PLAINTE) {
-          const datePlainte = formatDateFr(demarches.datePlainte);
-          if (datePlainte) {
-            children.push(`Date du dépôt de plainte : ${datePlainte}`);
-          }
-          if (demarches.autoriteType?.label) {
-            children.push(`Lieu de dépôt de la plainte : ${demarches.autoriteType.label}`);
-          }
-        }
-
-        groups.push({ label: demarche.label, children });
+      if (situation.domainesFonctionnels?.label) {
+        pdf.field('Domaine fonctionnel', situation.domainesFonctionnels.label);
       }
 
-      pdf.groupedList(groups);
+      if (hasDemarches && demarches) {
+        pdf.paragraph('Démarches engagées par le déclarant :', { bold: true });
 
-      if (demarches.commentaire) {
-        pdf.field('Commentaire', demarches.commentaire);
+        const groups: { label: string; children: string[] }[] = [];
+
+        for (const demarche of demarches.demarches) {
+          const children: string[] = [];
+
+          if (demarche.label === demarcheEngageeLabels.CONTACT_RESPONSABLES) {
+            const dateContact = formatDateFr(demarches.dateContactEtablissement);
+            if (dateContact) {
+              children.push(`Date de prise de contact : ${dateContact}`);
+            }
+            if (demarches.etablissementARepondu) {
+              children.push('Le déclarant a reçu une réponse');
+            }
+          }
+
+          if (demarche.label === demarcheEngageeLabels.CONTACT_ORGANISME && demarches.organisme) {
+            children.push(`Précisions sur l'organisme contacté : ${demarches.organisme}`);
+          }
+
+          if (demarche.label === demarcheEngageeLabels.PLAINTE) {
+            const datePlainte = formatDateFr(demarches.datePlainte);
+            if (datePlainte) {
+              children.push(`Date du dépôt de plainte : ${datePlainte}`);
+            }
+            if (demarches.autoriteType?.label) {
+              children.push(`Lieu de dépôt de la plainte : ${demarches.autoriteType.label}`);
+            }
+          }
+
+          groups.push({ label: demarche.label, children });
+        }
+
+        pdf.groupedList(groups);
+
+        if (demarches.commentaire) {
+          pdf.field('Commentaire', demarches.commentaire);
+        }
+      }
+
+      if (fichiersSituation.length > 0) {
+        pdf.paragraph('Pièces jointes :', { bold: true });
+        pdf.list(fichiersSituation.map(getOriginalFileName));
       }
     }
 
     const entitesTraitement = situation.traitementDesFaits?.entites ?? [];
     if (entitesTraitement.length > 0) {
       pdf
-        .subsection('Traitement')
+        .subsubsection('Traitement')
         .list(
           entitesTraitement.map((e) =>
             e.directionServiceName ? `${e.entiteName} — ${e.directionServiceName}` : e.entiteName,
@@ -2387,7 +2399,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
     }
   }
 
-  // ===== 6. ÉTAPES DE TRAITEMENT =====
+  // ===== 3. ÉTAPES DE TRAITEMENT =====
   const etapes = requeteEntite.requeteEtape ?? [];
   if (etapes.length > 0) {
     pdf.section('Étapes de traitement');
@@ -2399,13 +2411,21 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         etape.nom,
       );
 
-      pdf
-        .subsection(etapeTitle)
-        .field('Statut', etape.statut?.label || etape.statutId)
-        .field('Date', formatDateFr(etape.createdAt));
+      const etapeAgent = etape.type === REQUETE_ETAPE_TYPES.CREATION ? requete.createdBy : etape.createdBy;
+      const etapeAgentName = etapeAgent
+        ? `${capitalizeFirst(etapeAgent.prenom)} ${capitalizeFirst(etapeAgent.nom)}`
+        : null;
+      const etapeDateLabel = formatDateFr(etape.createdAt);
+      const addedByLabel =
+        etapeDateLabel && etapeAgentName
+          ? `Ajouté le ${etapeDateLabel} par ${etapeAgentName}`
+          : etapeDateLabel
+            ? `Ajouté le ${etapeDateLabel}`
+            : null;
 
-      const creatorLabel = buildEtapeCreatorLabel(etape.type as RequeteEtapeType, etape.createdBy, requete.createdBy);
-      if (creatorLabel) pdf.paragraph(creatorLabel);
+      pdf.subsection(etapeTitle).field('Statut', etape.statut?.label || etape.statutId);
+
+      if (addedByLabel) pdf.paragraph(addedByLabel);
 
       if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && etape.clotureReason.length > 0) {
         pdf.field('Motif(s) de clôture', etape.clotureReason.map((r) => r.label).join(', '));
@@ -2416,7 +2436,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
           ? `${capitalizeFirst(note.author.prenom)} ${capitalizeFirst(note.author.nom)}`
           : 'Système';
         const noteDate = formatDateFr(note.createdAt);
-        pdf.paragraph(`Note du ${noteDate} — ${noteAuthor}`, { bold: true });
+        pdf.paragraph(`Note du ${noteDate} par ${noteAuthor} :`, { bold: true });
         if (note.texte) pdf.paragraph(note.texte);
 
         const noteFiles = (note.uploadedFiles ?? [])
@@ -2428,12 +2448,6 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         }
       }
     }
-  }
-
-  // ===== 7. PIÈCES JOINTES REQUÊTE ORIGINALE =====
-  const fichiersRequete = requete.fichiersRequeteOriginale ?? [];
-  if (fichiersRequete.length > 0) {
-    pdf.section('Pièces jointes de la requête originale').list(fichiersRequete.map(getOriginalFileName));
   }
 
   return pdf.toBuffer();
