@@ -81,11 +81,11 @@ jobs:
       - name: Generate Prisma client
         run: pnpm db:generate
 
-      - name: Run typecheck
-        run: pnpm typecheck
-
       - name: Build workspace packages (parallel, topological)
         run: pnpm --filter "@sirena/backend..." --workspace-concurrency=4 run build
+
+      - name: Run typecheck
+        run: pnpm typecheck
 
       - name: Run tests
         run: pnpm test:unit
