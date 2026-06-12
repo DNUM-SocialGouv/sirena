@@ -5,6 +5,7 @@ export type StatisticsCard = {
   id: number;
   dashcardId: number;
   name: string;
+  display: string | null;
   data: Array<Record<string, unknown>>;
 };
 
