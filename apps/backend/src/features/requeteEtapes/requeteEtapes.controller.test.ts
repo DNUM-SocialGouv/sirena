@@ -602,10 +602,16 @@ describe('requeteEtapes.controller.ts', () => {
       })[];
       clotureReason: { label: string }[];
       createdBy: { prenom: string; nom: string } | null;
+      requete: {
+        dematSocialId: number | null;
+        thirdPartyAccountId: string | null;
+        createdBy: { prenom: string; nom: string } | null;
+      };
     } = {
       ...requeteEtape,
       clotureReason: [],
       createdBy: null,
+      requete: { dematSocialId: null, thirdPartyAccountId: null, createdBy: null },
       notes: [
         {
           ...note,

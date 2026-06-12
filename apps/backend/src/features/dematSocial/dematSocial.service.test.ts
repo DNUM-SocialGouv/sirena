@@ -254,6 +254,7 @@ describe('dematSocial.service.ts', () => {
         .mockResolvedValueOnce({
           id: '1',
           dematSocialId: 300000,
+          sirecId: null,
           createdAt: dateDepot,
           updatedAt: dateDepot,
           createdById: null,
@@ -268,6 +269,7 @@ describe('dematSocial.service.ts', () => {
         .mockResolvedValueOnce({
           id: '2',
           dematSocialId: 300001,
+          sirecId: null,
           createdAt: dateDepot,
           updatedAt: dateDepot,
           createdById: null,

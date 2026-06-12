@@ -443,6 +443,7 @@ describe('requetes.service.ts', () => {
       const mockRequete = {
         id: '1',
         dematSocialId: 123,
+        sirecId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         commentaire: 'Requête créée automatiquement',
@@ -566,6 +567,7 @@ describe('requetes.service.ts', () => {
       vi.mocked(prisma.requete.create).mockResolvedValueOnce({
         id: '1',
         dematSocialId: 1,
+        sirecId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         commentaire: 'Requête créée automatiquement',
@@ -584,6 +586,7 @@ describe('requetes.service.ts', () => {
         estNonIdentifiee: null,
         estIdentifie: null,
         isTuteur: null,
+        mesureProtection: null,
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
         veutGarderAnonymat: null,
@@ -600,6 +603,11 @@ describe('requetes.service.ts', () => {
       });
 
       vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
+        label: '',
+        codePostal: '',
+        ville: '',
+        rue: '',
+        numero: '',
         ...(fakeRequeteDto.declarant.adresse ?? {}),
         id: '1',
         personneConcerneeId: '1',
@@ -611,6 +619,7 @@ describe('requetes.service.ts', () => {
         id: '2',
         estHandicapee: null,
         isTuteur: null,
+        mesureProtection: null,
         lienVictimeId: LIEN_VICTIME.PROCHE,
         estNonIdentifiee: null,
         estIdentifie: null,
@@ -631,6 +640,11 @@ describe('requetes.service.ts', () => {
       });
 
       vi.mocked(prisma.adresse.create).mockResolvedValueOnce({
+        label: '',
+        codePostal: '',
+        ville: '',
+        rue: '',
+        numero: '',
         ...(fakeRequeteDto.declarant.adresse ?? {}),
         id: '2',
         personneConcerneeId: '2',
@@ -692,6 +706,7 @@ describe('requetes.service.ts', () => {
           lieuDeSurvenueId: '1',
           misEnCauseId: '1',
           demarchesEngageesId: '1',
+          domainesFonctionnelsId: null,
         });
 
         situation.faits.forEach((fait) => {
@@ -720,6 +735,7 @@ describe('requetes.service.ts', () => {
           commentaire: '',
           receptionDate: fakeRequeteDto.receptionDate,
           dematSocialId: fakeRequeteDto.dematSocialId,
+          sirecId: null,
           receptionTypeId: fakeRequeteDto.receptionTypeId,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -732,6 +748,7 @@ describe('requetes.service.ts', () => {
           commentaire: '',
           receptionDate: fakeRequeteDto.receptionDate,
           dematSocialId: fakeRequeteDto.dematSocialId,
+          sirecId: null,
           receptionTypeId: fakeRequeteDto.receptionTypeId,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -746,6 +763,7 @@ describe('requetes.service.ts', () => {
         commentaire: '',
         receptionDate: fakeRequeteDto.receptionDate,
         dematSocialId: fakeRequeteDto.dematSocialId,
+        sirecId: null,
         receptionTypeId: fakeRequeteDto.receptionTypeId,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
@@ -827,6 +845,7 @@ describe('requetes.service.ts', () => {
       vi.mocked(prisma.requete.create).mockResolvedValueOnce({
         id: '1',
         dematSocialId: 1,
+        sirecId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         commentaire: 'Requête créée automatiquement',
@@ -845,6 +864,7 @@ describe('requetes.service.ts', () => {
         estNonIdentifiee: null,
         estIdentifie: null,
         isTuteur: null,
+        mesureProtection: null,
         estVictimeInformee: null,
         victimeInformeeCommentaire: '',
         veutGarderAnonymat: null,
@@ -866,6 +886,7 @@ describe('requetes.service.ts', () => {
         id: '2',
         estHandicapee: null,
         isTuteur: null,
+        mesureProtection: null,
         lienVictimeId: LIEN_VICTIME.PROCHE,
         estNonIdentifiee: null,
         estIdentifie: null,
@@ -928,6 +949,7 @@ describe('requetes.service.ts', () => {
           lieuDeSurvenueId: '1',
           misEnCauseId: '1',
           demarchesEngageesId: '1',
+          domainesFonctionnelsId: null,
         });
 
         situation.faits.forEach((fait) => {
@@ -957,6 +979,7 @@ describe('requetes.service.ts', () => {
           receptionDate: dto.receptionDate,
           dateDemandeDeclarant: null,
           dematSocialId: dto.dematSocialId,
+          sirecId: null,
           receptionTypeId: dto.receptionTypeId,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -979,6 +1002,7 @@ describe('requetes.service.ts', () => {
         receptionDate: new Date('2025-01-02T00:00:00.000Z'),
         dateDemandeDeclarant: null,
         dematSocialId: null,
+        sirecId: null,
         receptionTypeId: RECEPTION_TYPE.EMAIL,
         createdAt: new Date('2024-12-31T00:00:00.000Z'),
         updatedAt: existingUpdatedAt,
@@ -1024,6 +1048,7 @@ describe('requetes.service.ts', () => {
         receptionDate: new Date('2025-02-02T00:00:00.000Z'),
         dateDemandeDeclarant: null,
         dematSocialId: null,
+        sirecId: null,
         receptionTypeId: RECEPTION_TYPE.EMAIL,
         createdAt: new Date('2025-02-01T00:00:00.000Z'),
         updatedAt: serverUpdatedAt,
@@ -1061,6 +1086,7 @@ describe('requetes.service.ts', () => {
         receptionDate: new Date('2025-01-02T00:00:00.000Z'),
         dateDemandeDeclarant: null,
         dematSocialId: null,
+        sirecId: null,
         receptionTypeId: RECEPTION_TYPE.EMAIL,
         createdAt: new Date('2024-12-31T00:00:00.000Z'),
         updatedAt: existingUpdatedAt,
@@ -1105,6 +1131,7 @@ describe('requetes.service.ts', () => {
         receptionDate: new Date('2025-01-02T00:00:00.000Z'),
         dateDemandeDeclarant: null,
         dematSocialId: null,
+        sirecId: null,
         receptionTypeId: RECEPTION_TYPE.EMAIL,
         createdAt: new Date('2024-12-31T00:00:00.000Z'),
         updatedAt: existingUpdatedAt,
