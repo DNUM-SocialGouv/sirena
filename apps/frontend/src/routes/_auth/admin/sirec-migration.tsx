@@ -13,7 +13,7 @@ export const Route = createFileRoute('/_auth/admin/sirec-migration')({
     await requireAuthAndRoles([ROLES.SUPER_ADMIN])(ctx);
   },
   head: () => ({
-    meta: [{ title: 'Migration SIREC - SIRENA' }],
+    meta: [{ title: 'Migration SIREC - Espace administrateur - SIRENA' }],
   }),
   component: RouteComponent,
 });
@@ -94,32 +94,41 @@ export function RouteComponent() {
   return (
     <div>
       <div className="fr-tabs">
-        <div className="fr-tabs__list" role="tablist" aria-label="Mode de migration">
-          <button
-            type="button"
-            id={tabReclamationsId}
-            className="fr-tabs__tab"
-            role="tab"
-            tabIndex={isReclamations ? 0 : -1}
-            aria-selected={isReclamations}
-            aria-controls={panelReclamationsId}
-            onClick={() => handleModeChange('reclamations')}
-          >
-            Par IDs de réclamations
-          </button>
-          <button
-            type="button"
-            id={tabServicesId}
-            className="fr-tabs__tab"
-            role="tab"
-            tabIndex={isReclamations ? -1 : 0}
-            aria-selected={!isReclamations}
-            aria-controls={panelServicesId}
-            onClick={() => handleModeChange('services')}
-          >
-            Par IDs de services
-          </button>
-        </div>
+        <ul
+          className="fr-tabs__list"
+          // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: needed by the dsfr
+          role="tablist"
+          aria-label="Mode de migration SIREC"
+        >
+          <li role="presentation">
+            <button
+              type="button"
+              id={tabReclamationsId}
+              className="fr-tabs__tab"
+              role="tab"
+              tabIndex={isReclamations ? 0 : -1}
+              aria-selected={isReclamations}
+              aria-controls={panelReclamationsId}
+              onClick={() => handleModeChange('reclamations')}
+            >
+              Par IDs de réclamations
+            </button>
+          </li>
+          <li role="presentation">
+            <button
+              type="button"
+              id={tabServicesId}
+              className="fr-tabs__tab"
+              role="tab"
+              tabIndex={isReclamations ? -1 : 0}
+              aria-selected={!isReclamations}
+              aria-controls={panelServicesId}
+              onClick={() => handleModeChange('services')}
+            >
+              Par IDs de services
+            </button>
+          </li>
+        </ul>
 
         <div
           id={panelReclamationsId}
