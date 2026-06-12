@@ -106,7 +106,7 @@ export function DropdownCheckboxFilter({
       <button
         ref={triggerRef}
         type="button"
-        className="dropdown-checkbox-filter__button fr-btn fr-btn--tertiary"
+        className={`dropdown-checkbox-filter__button fr-btn fr-btn--tertiary fr-btn--icon-right ${isOpen ? 'fr-icon-arrow-up-s-line' : 'fr-icon-arrow-down-s-line'}`}
         aria-expanded={isOpen}
         aria-controls={menuId}
         onClick={toggle}

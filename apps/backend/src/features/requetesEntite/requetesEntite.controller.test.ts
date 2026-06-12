@@ -246,6 +246,7 @@ describe('RequetesEntite endpoints: /', () => {
       prioriteId: null,
       requeteEtape: [],
       departementsLieuSurvenue: [],
+      domainesFonctionnels: [],
     },
   ] satisfies Awaited<ReturnType<typeof getRequetesEntite>>['data'];
 
