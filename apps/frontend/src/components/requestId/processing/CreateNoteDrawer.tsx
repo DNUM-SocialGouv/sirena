@@ -126,7 +126,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
             throw error;
           }
         }
-        setErrorMessage("Une erreur est survenue lors de l'upload des fichiers. Veuillez réessayer.");
+        setErrorMessage('Une erreur est survenue lors du téléversement des fichiers. Veuillez réessayer.');
         throw error;
       }
     }
@@ -136,7 +136,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
       {
         onError: () => {
           setIsLoading(false);
-          setErrorMessage("Une erreur est survenue lors de l'upload des fichiers. Veuillez réessayer.");
+          setErrorMessage('Une erreur est survenue lors du téléversement des fichiers. Veuillez réessayer.');
         },
         onSuccess: () => {
           handleCancel();
@@ -206,7 +206,13 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                       errorMessage={errorMessage}
                       isUploading={isLoading}
                       onFilesSelect={(selectedFiles) => {
-                        setFiles(selectedFiles.map((file) => new File([file], file.name, { type: file.type })));
+                        setFiles((prev) => {
+                          const existingNames = new Set(prev.map((f) => f.name));
+                          const newFiles = selectedFiles
+                            .filter((f) => !existingNames.has(f.name))
+                            .map((f) => new File([f], f.name, { type: f.type }));
+                          return [...prev, ...newFiles];
+                        });
                         setFileErrors({});
                         if (contentError && selectedFiles.length > 0) {
                           setContentError(null);
@@ -223,6 +229,7 @@ export const CreateNoteDrawer = forwardRef<CreateNoteDrawerRef, CreateNoteDrawer
                       title="Fichiers sélectionnés"
                       className={styles.selectedFilesList}
                       variant="compact"
+                      onRemove={(fileName) => setFiles((prev) => prev.filter((f) => f.name !== fileName))}
                     />
                   </section>
                   <div className={styles.footerActions}>
