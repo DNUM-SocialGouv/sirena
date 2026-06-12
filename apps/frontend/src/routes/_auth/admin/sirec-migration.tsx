@@ -2,9 +2,9 @@ import Alert from '@codegouvfr/react-dsfr/Alert';
 import Button from '@codegouvfr/react-dsfr/Button';
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
-import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useId, useState } from 'react';
-import { useHasFeature } from '@/hooks/useHasFeature';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useEffect, useId, useState } from 'react';
+import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { migrateByReclamations, migrateByServices } from '@/lib/api/fetchSirecMigration';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
@@ -34,11 +34,15 @@ function parseIds(raw: string): number[] {
 type Mode = 'reclamations' | 'services';
 
 export function RouteComponent() {
-  const hasSirecMigration = useHasFeature(FEATURE_FLAGS.SIREC_MIGRATION, false);
+  const navigate = useNavigate();
+  const { isPending, data: flags } = useResolvedFeatureFlags();
+  const hasSirecMigration = flags?.[FEATURE_FLAGS.SIREC_MIGRATION] ?? false;
 
-  if (!hasSirecMigration) {
-    throw redirect({ to: '/' });
-  }
+  useEffect(() => {
+    if (!isPending && !hasSirecMigration) {
+      navigate({ to: '/' });
+    }
+  }, [isPending, hasSirecMigration, navigate]);
 
   const uid = useId();
   const tabReclamationsId = `${uid}-tab-reclamations`;
@@ -93,6 +97,8 @@ export function RouteComponent() {
   };
 
   const isReclamations = mode === 'reclamations';
+
+  if (isPending || !hasSirecMigration) return null;
 
   return (
     <div>
