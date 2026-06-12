@@ -91,6 +91,8 @@
 
 .details {
   margin-top: 2rem;
+  /* Le reset DSFR met cursor: pointer sur tout le <details>, le contenu (tableau) ne doit pas en hériter. */
+  cursor: auto;
 }
 
 .details summary {
