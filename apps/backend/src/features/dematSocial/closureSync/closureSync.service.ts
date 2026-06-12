@@ -75,8 +75,10 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
     return { kind: 'skipped', reason: 'DIFFERENT_FINAL_STATE' };
   }
 
+  const dossierMutationId = `Dossier-${syncData.dematSocialId}`;
+
   if (dossier.state === DossierState.EnConstruction) {
-    const instruction = await updateInstruction(dossier.id);
+    const instruction = await updateInstruction(dossierMutationId);
     const errors = instruction?.dossierPasserEnInstruction?.errors ?? [];
     if (errors.length > 0 || !instruction?.dossierPasserEnInstruction?.dossier) {
       const message = errors.map((error) => error.message).join(', ') || 'No dossier returned';
@@ -85,11 +87,11 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
   }
 
   if (decision.targetState === DossierState.Accepte) {
-    await acceptDossierWithoutNotification(dossier.id, decision.motivation);
+    await acceptDossierWithoutNotification(dossierMutationId, decision.motivation);
     return { kind: 'synced' };
   }
 
-  await classerDossierSansSuiteWithoutNotification(dossier.id, decision.motivation);
+  await classerDossierSansSuiteWithoutNotification(dossierMutationId, decision.motivation);
   return { kind: 'synced' };
 }
 

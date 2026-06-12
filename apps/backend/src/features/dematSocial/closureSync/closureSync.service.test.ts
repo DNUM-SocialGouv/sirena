@@ -51,7 +51,7 @@ const mockSyncData = (closureReasons: RequeteClotureReason[] = [REQUETE_CLOTURE_
 const mockDossierState = (state: DossierState) => {
   vi.mocked(getRequete).mockResolvedValueOnce({
     dossier: {
-      id: 'Dossier-123',
+      id: 'RG9zc2llci0xMjM=',
       number: 123,
       state,
     },
