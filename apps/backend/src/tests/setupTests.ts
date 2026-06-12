@@ -230,4 +230,9 @@ Object.assign(process.env, {
   REDIS_TLS: 'false',
   REDIS_USERNAME: 'redis-username',
   REDIS_PASSWORD: 'redis-password',
+  MARIADB_SIREC_HOST: 'localhost',
+  MARIADB_SIREC_PORT: '3306',
+  MARIADB_SIREC_DB: 'sirec',
+  MARIADB_SIREC_USER: 'sirec',
+  MARIADB_SIREC_PASSWORD: 'sirec',
 });

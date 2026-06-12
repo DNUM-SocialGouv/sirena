@@ -1,4 +1,5 @@
 import { mappers } from '@sirena/common';
+import type { MesureProtection } from '@sirena/common/schemas';
 
 export interface PersonneConcerneeData {
   civilite?: string;
@@ -17,6 +18,7 @@ export interface PersonneConcerneeData {
   victimeInformeeCommentaire?: string;
   autrePersonnes?: string;
   aAutrePersonnes?: boolean;
+  mesureProtection?: MesureProtection | null;
   commentaire?: string;
 }
 
@@ -57,6 +59,7 @@ export function formatPersonneConcerneeFromServer(participant: unknown): Personn
     victimeInformeeCommentaire: (p.victimeInformeeCommentaire as string) || '',
     autrePersonnes: (p.autrePersonnes as string) || '',
     aAutrePersonnes: p.aAutrePersonnes as boolean | undefined,
+    mesureProtection: p.mesureProtection as MesureProtection | null | undefined,
     commentaire: (p.commentaire as string) || '',
   };
 }
@@ -79,6 +82,7 @@ export function formatPersonneConcerneeToServer(data: PersonneConcerneeData) {
     victimeInformeeCommentaire: data.victimeInformeeCommentaire,
     autrePersonnes: data.autrePersonnes,
     aAutrePersonnes: data.aAutrePersonnes,
+    mesureProtection: data.mesureProtection,
     commentaire: data.commentaire,
   };
 }

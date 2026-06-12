@@ -9,8 +9,9 @@
 
 .kpi-card {
   display: flex;
-  /* DOM order is <dt> then <dd> for screen readers; visually invert so the value sits on top. */
-  flex-direction: column-reverse;
+  /* Le libellé (dt) précède la valeur (dd), visuellement comme dans le DOM :
+     même ordre de lecture avec et sans CSS. */
+  flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 0.5rem;

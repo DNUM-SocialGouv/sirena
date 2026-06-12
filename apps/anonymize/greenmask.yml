@@ -314,6 +314,11 @@ restore:
     dbname: "${PG_URL_TO}"
     jobs: 4
     exit-on-error: true
+    # La source (OVH) et la cible (CNPG) n'ont pas les mêmes rôles :
+    # on saute les ALTER OWNER et GRANT/REVOKE du dump, les objets
+    # appartiennent au rôle de connexion de PG_URL_TO.
+    no-owner: true
+    no-privileges: true
 
 # Limite la sortie de `greenmask validate` aux seules colonnes
 # transformees (plus la PK) au lieu d'afficher toutes les colonnes

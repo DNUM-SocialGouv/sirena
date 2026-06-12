@@ -173,6 +173,7 @@ export const fakeRequeteEntite = {
     receptionDate: new Date(),
     dateDemandeDeclarant: null,
     dematSocialId: 123,
+    sirecId: null,
     receptionTypeId: 'receptionTypeId',
     provenanceId: null,
     provenancePrecision: null,
@@ -211,6 +212,7 @@ describe('RequetesEntite endpoints: /', () => {
         receptionDate: new Date(),
         dateDemandeDeclarant: null,
         dematSocialId: 123,
+        sirecId: null,
         receptionTypeId: 'receptionTypeId',
         participant: null,
         situations: [],
@@ -223,6 +225,7 @@ describe('RequetesEntite endpoints: /', () => {
           estHandicapee: false,
           estIdentifie: true,
           isTuteur: null,
+          mesureProtection: null,
           estVictime: null,
           estVictimeInformee: null,
           victimeInformeeCommentaire: '',
@@ -242,6 +245,7 @@ describe('RequetesEntite endpoints: /', () => {
       },
       prioriteId: null,
       requeteEtape: [],
+      departementsLieuSurvenue: [],
     },
   ] satisfies Awaited<ReturnType<typeof getRequetesEntite>>['data'];
 
@@ -999,7 +1003,7 @@ describe('RequetesEntite endpoints: /', () => {
       });
 
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body = (await res.json()) as { data: { etapeId: string } };
       expect(body.data.etapeId).toBe('etape-reopen-id');
       expect(reopenRequeteForEntite).toHaveBeenCalledWith('requeteId', 'entiteId', 'id1');
     });
@@ -1012,7 +1016,7 @@ describe('RequetesEntite endpoints: /', () => {
       });
 
       expect(res.status).toBe(403);
-      const body = await res.json();
+      const body = (await res.json()) as { message: string };
       expect(body.message).toBe('You are not allowed to reopen this requete');
       expect(reopenRequeteForEntite).not.toHaveBeenCalled();
     });
@@ -1026,7 +1030,7 @@ describe('RequetesEntite endpoints: /', () => {
       });
 
       expect(res.status).toBe(404);
-      const body = await res.json();
+      const body = (await res.json()) as { message: string };
       expect(body.message).toBe('Requête not found');
     });
 
@@ -1039,7 +1043,7 @@ describe('RequetesEntite endpoints: /', () => {
       });
 
       expect(res.status).toBe(400);
-      const body = await res.json();
+      const body = (await res.json()) as { error: string };
       expect(body.error).toBe('REQUETE_NOT_CLOSED');
     });
 
@@ -1052,7 +1056,7 @@ describe('RequetesEntite endpoints: /', () => {
       });
 
       expect(res.status).toBe(500);
-      const body = await res.json();
+      const body = (await res.json()) as { error: string };
       expect(body.error).toBe('INTERNAL_ERROR');
     });
   });
