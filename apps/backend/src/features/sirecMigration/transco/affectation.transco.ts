@@ -238,15 +238,16 @@ type EntiteRow = {
   entiteMere: { id: string; nomComplet: string; entiteMere: { id: string; nomComplet: string } | null } | null;
 };
 
-const nfc = (s: string) => s.normalize('NFC');
+const normalize = (s: string) => s.normalize('NFC').replace(/['’ʼ]/g, "'");
 
 function findEntityId(entities: EntiteRow[], sirenaLabels: EntiteSirenaLabels & { parentLabel: string }): string {
   const match = entities.find(
     (e) =>
-      nfc(e.nomComplet) === nfc(sirenaLabels.label) &&
-      e.entiteMere?.nomComplet.normalize('NFC') === nfc(sirenaLabels.parentLabel) &&
+      normalize(e.nomComplet) === normalize(sirenaLabels.label) &&
+      (e.entiteMere ? normalize(e.entiteMere.nomComplet) : undefined) === normalize(sirenaLabels.parentLabel) &&
       (sirenaLabels.grandParentLabel === undefined ||
-        e.entiteMere?.entiteMere?.nomComplet.normalize('NFC') === nfc(sirenaLabels.grandParentLabel)),
+        (e.entiteMere?.entiteMere ? normalize(e.entiteMere.entiteMere.nomComplet) : undefined) ===
+          normalize(sirenaLabels.grandParentLabel)),
   );
   if (!match) {
     const ancestry = [sirenaLabels.grandParentLabel, sirenaLabels.parentLabel].filter(Boolean).join(' > ');
@@ -275,7 +276,7 @@ export async function initAffectationTransco(): Promise<void> {
     const sirecId = Number(sirecIdStr);
     const firstEntity = entitesSirenaLabels[0];
     const topLevelLabel = firstEntity.grandParentLabel ?? firstEntity.parentLabel ?? firstEntity.label;
-    const topLevelEntity = entities.find((e) => nfc(e.nomComplet) === nfc(topLevelLabel) && !e.entiteMere);
+    const topLevelEntity = entities.find((e) => normalize(e.nomComplet) === normalize(topLevelLabel) && !e.entiteMere);
     if (!topLevelEntity) throw new Error(`Entité SIRENA introuvable: "${topLevelLabel}" (sans entité mère)`);
     const serviceEntiteIds = entitesSirenaLabels
       .filter((s): s is EntiteSirenaLabels & { parentLabel: string } => s.parentLabel !== undefined)
