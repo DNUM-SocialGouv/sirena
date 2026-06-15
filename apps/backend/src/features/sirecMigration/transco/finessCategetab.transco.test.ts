@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { transcodeFinessCategetab } from './finessCategetab.transco.js';
-import { SirecDataError, SirecTranscoError } from './sirecTransco.error.js';
+import { SirecTranscoError } from './sirecTransco.error.js';
 
 describe('finessCategetab.transco.ts', () => {
   describe('Case A — MEC précision (pas de lieu survenu)', () => {
@@ -71,8 +71,10 @@ describe('finessCategetab.transco.ts', () => {
   });
 
   describe('error cases', () => {
-    it('should throw SirecDataError when categetab is null', () => {
-      expect(() => transcodeFinessCategetab(null)).toThrow(SirecDataError);
+    it('should return AUTRE precision when categetab is null', () => {
+      expect(transcodeFinessCategetab(null)).toEqual({
+        misEnCause: { misEnCauseTypeId: 'ETABLISSEMENT', misEnCauseTypePrecisionId: 'AUTRE' },
+      });
     });
 
     it('should throw SirecTranscoError when categetab is unknown', () => {

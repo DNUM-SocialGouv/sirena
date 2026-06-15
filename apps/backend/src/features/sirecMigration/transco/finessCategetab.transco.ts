@@ -7,7 +7,7 @@ import {
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   MIS_EN_CAUSE_TYPE,
 } from '@sirena/common/constants';
-import { SirecDataError, SirecTranscoError } from './sirecTransco.error.js';
+import { SirecTranscoError } from './sirecTransco.error.js';
 
 export type CategetabEntry = {
   misEnCause: {
@@ -365,7 +365,14 @@ const CATEGETAB_TRANSCO: Record<number, CategetabEntry> = {
 };
 
 export function transcodeFinessCategetab(categetab: number | null): CategetabEntry {
-  if (categetab === null) throw new SirecDataError('sire_finess_data.categetab est null');
+  if (categetab === null) {
+    return {
+      misEnCause: {
+        misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
+        misEnCauseTypePrecisionId: MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.AUTRE,
+      },
+    };
+  }
   const entry = CATEGETAB_TRANSCO[categetab];
   if (entry === undefined) throw new SirecTranscoError(categetab, 'finessCategetab');
   return entry;
