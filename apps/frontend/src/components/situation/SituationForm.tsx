@@ -8,6 +8,7 @@ import { useEntites } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { hasSituationContent } from '@/utils/situationHelpers';
 import { DescriptionFaits } from './sections/DescriptionSituation';
+import { Identification } from './sections/Identification';
 import { InformationsComplementaires } from './sections/InformationsComplementaires';
 import { LieuSurvenu } from './sections/LieuSurvenu';
 import TraitementDesFaitsSection from './TraitementDesFaits';
@@ -130,6 +131,8 @@ export function SituationForm({
           setFaitFiles={setFaitFiles}
           isSaving={isSaving}
         />
+
+        <Identification formData={formData} isSaving={isSaving} setFormData={setFormData} />
 
         <TraitementDesFaitsSection
           entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({
