@@ -35,6 +35,17 @@ export const getRequetesDepartementCountsRoute = openApiProtectedRoute({
   },
 });
 
+export const getRequetesDomaineCountsRoute = openApiProtectedRoute({
+  description: 'Get requetes counts grouped by domaine fonctionnel',
+  responses: {
+    ...openApiResponse(
+      z.object({
+        data: z.array(z.object({ id: z.string(), count: z.number() })),
+      }),
+    ),
+  },
+});
+
 export const getOtherEntitesAffectedRoute = openApiProtectedRoute({
   description: 'Get other entites affected by the requete',
   responses: {
