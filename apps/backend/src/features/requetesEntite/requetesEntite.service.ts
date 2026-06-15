@@ -1661,6 +1661,7 @@ export const closeRequeteForEntite = async (
         requeteId,
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+        clotureEffectiveDate: new Date(clotureEffectiveDate),
         clotureReason: {
           connect: uniqueReasonIds.map((id) => ({ id })),
         },
@@ -1702,6 +1703,7 @@ export const closeRequeteForEntite = async (
     return {
       etapeId: etape.id,
       closedAt: etape.createdAt.toISOString(),
+      clotureEffectiveDate,
       noteId,
       etape,
       note,

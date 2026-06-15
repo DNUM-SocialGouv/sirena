@@ -545,6 +545,8 @@ model RequeteEtape {
 
   clotureReason RequeteClotureReasonEnum[]
 
+  clotureEffectiveDate DateTime? @db.Date
+
   createdById String?
   createdBy   User?   @relation(fields: [createdById], references: [id])
 

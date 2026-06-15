@@ -1531,12 +1531,13 @@ describe('requetesEntite.service', () => {
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
 
+      const createRequeteEtape = vi.fn().mockResolvedValue(mockEtape);
       transactionSpy.mockImplementation(async (cb) => {
         const mockTx = {
           ...prismaMock,
           requeteEtape: {
             ...prismaMock.requeteEtape,
-            create: vi.fn().mockResolvedValue(mockEtape),
+            create: createRequeteEtape,
           },
           requeteEtapeNote: {
             create: vi.fn().mockResolvedValue(mockNote),
@@ -1566,10 +1567,17 @@ describe('requetesEntite.service', () => {
       expect(result).toEqual({
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
+        clotureEffectiveDate: '2024-01-01',
         noteId: 'note123',
         etape: mockEtape,
         note: mockNote,
       });
+
+      expect(createRequeteEtape).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ clotureEffectiveDate: new Date('2024-01-01') }),
+        }),
+      );
 
       expect(createChangeLog).toHaveBeenCalledWith({
         entity: 'RequeteEntite',
@@ -1636,6 +1644,7 @@ describe('requetesEntite.service', () => {
       expect(result).toEqual({
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
+        clotureEffectiveDate: '2024-01-01',
         noteId: 'note123',
         etape: mockEtape,
         note: mockNote,
@@ -1707,6 +1716,7 @@ describe('requetesEntite.service', () => {
       expect(result).toEqual({
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
+        clotureEffectiveDate: '2024-01-01',
         noteId: 'note123',
         etape: mockEtape,
         note: mockNote,
@@ -1811,6 +1821,7 @@ describe('requetesEntite.service', () => {
       expect(result).toEqual({
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
+        clotureEffectiveDate: '2024-01-01',
         noteId: 'note123',
         etape: mockEtape,
         note: mockNote,
