@@ -13,21 +13,21 @@ const ARS_AUVERGNE_ID = 'ars-auvergne-id';
 const ARS_GRAND_EST_ID = 'ars-grand-est-id';
 const ARS_PACA_ID = 'ars-paca-id';
 
-const makeArs = (id: string, label: string) => ({ id, label, entiteMere: null });
+const makeArs = (id: string, nomComplet: string) => ({ id, nomComplet, entiteMere: null });
 
 const makeEntity = (
   id: string,
-  label: string,
-  parentLabel: string,
+  nomComplet: string,
+  parentNomComplet: string,
   parentId = 'parent-id',
-  grandParentLabel?: string,
+  grandParentNomComplet?: string,
 ) => ({
   id,
-  label,
+  nomComplet,
   entiteMere: {
     id: parentId,
-    label: parentLabel,
-    entiteMere: grandParentLabel ? { id: 'grand-parent-id', label: grandParentLabel } : null,
+    nomComplet: parentNomComplet,
+    entiteMere: grandParentNomComplet ? { id: 'grand-parent-id', nomComplet: grandParentNomComplet } : null,
   },
 });
 
@@ -209,7 +209,7 @@ describe('affectation.transco.ts', () => {
       });
 
       it('should throw when a required ARS entity is missing from the Entite table', async () => {
-        const entitiesWithoutArsNormandie = makeAllRequiredEntities().filter((e) => e.label !== 'ARS Normandie');
+        const entitiesWithoutArsNormandie = makeAllRequiredEntities().filter((e) => e.nomComplet !== 'ARS Normandie');
         const { prisma } = await import('@sirena/db');
         vi.mocked(prisma.entite.findMany).mockResolvedValueOnce(entitiesWithoutArsNormandie as never);
 

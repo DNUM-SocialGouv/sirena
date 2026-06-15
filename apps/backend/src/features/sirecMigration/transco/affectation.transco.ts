@@ -234,8 +234,8 @@ let arsEntiteIdSet: Set<string> = new Set();
 
 type EntiteRow = {
   id: string;
-  label: string;
-  entiteMere: { id: string; label: string; entiteMere: { id: string; label: string } | null } | null;
+  nomComplet: string;
+  entiteMere: { id: string; nomComplet: string; entiteMere: { id: string; nomComplet: string } | null } | null;
 };
 
 const nfc = (s: string) => s.normalize('NFC');
@@ -243,10 +243,10 @@ const nfc = (s: string) => s.normalize('NFC');
 function findEntityId(entities: EntiteRow[], sirenaLabels: EntiteSirenaLabels & { parentLabel: string }): string {
   const match = entities.find(
     (e) =>
-      nfc(e.label) === nfc(sirenaLabels.label) &&
-      e.entiteMere?.label.normalize('NFC') === nfc(sirenaLabels.parentLabel) &&
+      nfc(e.nomComplet) === nfc(sirenaLabels.label) &&
+      e.entiteMere?.nomComplet.normalize('NFC') === nfc(sirenaLabels.parentLabel) &&
       (sirenaLabels.grandParentLabel === undefined ||
-        e.entiteMere?.entiteMere?.label.normalize('NFC') === nfc(sirenaLabels.grandParentLabel)),
+        e.entiteMere?.entiteMere?.nomComplet.normalize('NFC') === nfc(sirenaLabels.grandParentLabel)),
   );
   if (!match) {
     const ancestry = [sirenaLabels.grandParentLabel, sirenaLabels.parentLabel].filter(Boolean).join(' > ');
@@ -259,12 +259,12 @@ export async function initAffectationTransco(): Promise<void> {
   const entities = await prisma.entite.findMany({
     select: {
       id: true,
-      label: true,
+      nomComplet: true,
       entiteMere: {
         select: {
           id: true,
-          label: true,
-          entiteMere: { select: { id: true, label: true } },
+          nomComplet: true,
+          entiteMere: { select: { id: true, nomComplet: true } },
         },
       },
     },
@@ -275,7 +275,7 @@ export async function initAffectationTransco(): Promise<void> {
     const sirecId = Number(sirecIdStr);
     const firstEntity = entitesSirenaLabels[0];
     const topLevelLabel = firstEntity.grandParentLabel ?? firstEntity.parentLabel ?? firstEntity.label;
-    const topLevelEntity = entities.find((e) => nfc(e.label) === nfc(topLevelLabel) && !e.entiteMere);
+    const topLevelEntity = entities.find((e) => nfc(e.nomComplet) === nfc(topLevelLabel) && !e.entiteMere);
     if (!topLevelEntity) throw new Error(`Entité SIRENA introuvable: "${topLevelLabel}" (sans entité mère)`);
     const serviceEntiteIds = entitesSirenaLabels
       .filter((s): s is EntiteSirenaLabels & { parentLabel: string } => s.parentLabel !== undefined)
