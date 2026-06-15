@@ -3,13 +3,20 @@ import { ZodError } from 'zod';
 import { connection } from '../../config/redis.js';
 import { fetchSirecData } from '../../features/sirecMigration/sirecMigration.repository.js';
 import { getRequeteIdFromSirecId, saveFromSirec } from '../../features/sirecMigration/sirecMigration.service.js';
+import { initAffectationTransco } from '../../features/sirecMigration/transco/affectation.transco.js';
 import { SirecDataError, SirecTranscoError } from '../../features/sirecMigration/transco/sirecTransco.error.js';
 import { transformSirecReclamation } from '../../features/sirecMigration/transformers/sirecMigration.transformer.js';
 import { createDefaultLogger } from '../../helpers/pino.js';
 import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
 import { SIREC_MIGRATION_QUEUE_NAME, type SirecMigrationJobData } from '../queues/sirecMigration.queue.js';
 
+let transcoInitPromise: Promise<void> | null = null;
+
 const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> => {
+  if (!transcoInitPromise) {
+    transcoInitPromise = initAffectationTransco();
+  }
+  await transcoInitPromise;
   const { sirecId } = job.data;
 
   return loggerStorage.run(
