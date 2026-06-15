@@ -1,10 +1,32 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ParsedCard } from './chartData';
 import { StatChart } from './StatChart';
 
 vi.mock('@codegouvfr/react-dsfr', () => ({
   fr: { cx: (...args: string[]) => args.join(' ') },
+}));
+
+// Stub léger du SegmentedControl DSFR : on n'a besoin que des radios pour piloter la vue.
+vi.mock('@codegouvfr/react-dsfr/SegmentedControl', () => ({
+  SegmentedControl: ({
+    segments,
+  }: {
+    segments: Array<{ label: string; nativeInputProps?: { checked?: boolean; onChange?: () => void } }>;
+  }) => (
+    <fieldset>
+      {segments.map((segment) => (
+        <label key={segment.label}>
+          <input
+            type="radio"
+            checked={Boolean(segment.nativeInputProps?.checked)}
+            onChange={() => segment.nativeInputProps?.onChange?.()}
+          />
+          {segment.label}
+        </label>
+      ))}
+    </fieldset>
+  ),
 }));
 
 const parsed: ParsedCard = {
@@ -20,17 +42,26 @@ const parsed: ParsedCard = {
 afterEach(cleanup);
 
 describe('StatChart', () => {
-  it('renders a real heading, an img-role chart described by the data table, and a data-table disclosure', () => {
+  it('renders a heading, the chart image and a graph/table switch', () => {
     render(<StatChart name="Répartition" parsed={parsed} />);
 
     expect(screen.getByRole('heading', { level: 2, name: 'Répartition' })).toBeInTheDocument();
-    const img = screen.getByRole('img');
-    expect(img).toHaveAttribute('aria-label', expect.stringContaining('Répartition'));
-    const descId = img.getAttribute('aria-describedby');
-    expect(descId).toBeTruthy();
-    expect(document.getElementById(descId as string)?.querySelector('table')).not.toBeNull();
-    expect(screen.getByText('Afficher les données sous forme de tableau')).toBeInTheDocument();
+    expect(screen.getByRole('img')).toHaveAttribute('aria-label', expect.stringContaining('légende'));
+    expect(screen.getByRole('radio', { name: 'Graphique' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Tableau' })).toBeInTheDocument();
+    // Chart view by default: legend shown, no data table yet
     expect(screen.getAllByText('A').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('columnheader', { name: 'Nombre' })).not.toBeInTheDocument();
+  });
+
+  it('switches to the data table when the table segment is selected', () => {
+    render(<StatChart name="Répartition" parsed={parsed} />);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Tableau' }));
+
+    expect(screen.getByRole('columnheader', { name: 'Raison' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Nombre' })).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
   it('renders an empty state when there is no data', () => {
