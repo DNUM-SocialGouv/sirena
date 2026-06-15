@@ -1402,7 +1402,7 @@ describe('requetesEntite.service', () => {
 
     it('should throw error if requeteEntite is not found', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(null);
-      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123')).rejects.toThrow(
+      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01')).rejects.toThrow(
         'REQUETE_NOT_FOUND',
       );
     });
@@ -1410,14 +1410,14 @@ describe('requetesEntite.service', () => {
     it('should throw error if reason is not found', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
       vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([]);
-      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123')).rejects.toThrow(
+      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01')).rejects.toThrow(
         'REASON_INVALID',
       );
     });
 
     it('should throw error if requete is already closed for entity', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockClosedRequeteEntite);
-      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123')).rejects.toThrow(
+      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01')).rejects.toThrow(
         'READONLY_FOR_ENTITY',
       );
     });
@@ -1453,7 +1453,7 @@ describe('requetesEntite.service', () => {
         },
       ]);
       await expect(
-        closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '', ['fileid1', 'fileid2']),
+        closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01', '', ['fileid1', 'fileid2']),
       ).rejects.toThrow('FILES_INVALID');
     });
 
@@ -1553,10 +1553,15 @@ describe('requetesEntite.service', () => {
         return cb(mockTx);
       });
 
-      const result = await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', 'Test precision', [
-        'fileid1',
-        'fileid2',
-      ]);
+      const result = await closeRequeteForEntite(
+        'req123',
+        'ent123',
+        ['reason123'],
+        'user123',
+        '2024-01-01',
+        'Test precision',
+        ['fileid1', 'fileid2'],
+      );
 
       expect(result).toEqual({
         etapeId: 'etape123',
@@ -1626,7 +1631,7 @@ describe('requetesEntite.service', () => {
         return cb(mockTx);
       });
 
-      const result = await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123');
+      const result = await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01');
 
       expect(result).toEqual({
         etapeId: 'etape123',
@@ -1690,7 +1695,14 @@ describe('requetesEntite.service', () => {
         return cb(mockTx);
       });
 
-      const result = await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', 'Test precision');
+      const result = await closeRequeteForEntite(
+        'req123',
+        'ent123',
+        ['reason123'],
+        'user123',
+        '2024-01-01',
+        'Test precision',
+      );
 
       expect(result).toEqual({
         etapeId: 'etape123',
@@ -1786,7 +1798,15 @@ describe('requetesEntite.service', () => {
         return cb(mockTx);
       });
 
-      const result = await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', undefined, ['fileid1']);
+      const result = await closeRequeteForEntite(
+        'req123',
+        'ent123',
+        ['reason123'],
+        'user123',
+        '2024-01-01',
+        undefined,
+        ['fileid1'],
+      );
 
       expect(result).toEqual({
         etapeId: 'etape123',

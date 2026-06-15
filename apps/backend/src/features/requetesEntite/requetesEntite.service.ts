@@ -1573,6 +1573,7 @@ export const closeRequeteForEntite = async (
   entiteId: string,
   reasonIds: string[],
   authorId: string,
+  clotureEffectiveDate: string,
   precision?: string,
   fileIds?: string[],
 ) => {

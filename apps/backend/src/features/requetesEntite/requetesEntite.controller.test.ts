@@ -591,6 +591,7 @@ describe('RequetesEntite endpoints: /', () => {
     const mockCloseResult = {
       etapeId: 'etape123',
       closedAt: '2024-01-01T10:00:00.000Z',
+      clotureEffectiveDate: '2024-01-01',
       noteId: 'note123',
       etape: {
         id: 'etape123',
@@ -622,6 +623,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
           precision: 'Test precision',
           fileIds: ['file1', 'file2'],
         },
@@ -636,6 +638,7 @@ describe('RequetesEntite endpoints: /', () => {
         'entiteId',
         ['reason123'],
         'id1',
+        '2024-01-01',
         'Test precision',
         ['file1', 'file2'],
       );
@@ -645,6 +648,7 @@ describe('RequetesEntite endpoints: /', () => {
       const mockCloseResultMinimal = {
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
+        clotureEffectiveDate: '2024-01-01',
         noteId: 'note123',
         etape: {
           id: 'etape123',
@@ -675,6 +679,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 
@@ -687,6 +692,7 @@ describe('RequetesEntite endpoints: /', () => {
         'entiteId',
         ['reason123'],
         'id1',
+        '2024-01-01',
         undefined,
         undefined,
       );
@@ -703,6 +709,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 
@@ -724,6 +731,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 
@@ -740,6 +748,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['invalidReason'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 
@@ -756,6 +765,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 
@@ -775,6 +785,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
           fileIds: ['invalidFile'],
         },
       });
@@ -792,6 +803,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 

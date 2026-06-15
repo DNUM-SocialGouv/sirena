@@ -194,6 +194,7 @@ export const UpdateStatutResponseSchema = z.object({
 });
 
 export const CloseRequeteBodySchema = z.object({
+  clotureEffectiveDate: z.iso.date(),
   reasonIds: z.array(z.string().min(1)).min(1, {
     message:
       'Vous devez renseigner au moins une raison de clôture pour clôturer la requête. Veuillez sélectionner une valeur dans la liste.',
@@ -205,6 +206,7 @@ export const CloseRequeteBodySchema = z.object({
 export const CloseRequeteResponseSchema = z.object({
   etapeId: z.string(),
   closedAt: z.iso.datetime(),
+  clotureEffectiveDate: z.iso.date(),
   noteId: z.string().nullable(),
 });
 
