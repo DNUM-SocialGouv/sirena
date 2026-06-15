@@ -1737,6 +1737,7 @@ export const closeRequeteForEntite = async (
     after: {
       statutId: REQUETE_STATUT_TYPES.CLOTUREE,
       clotureReasonIds: uniqueReasonIds,
+      clotureEffectiveDate,
       precision: precision?.trim() || null,
       ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
     } as Prisma.JsonObject,

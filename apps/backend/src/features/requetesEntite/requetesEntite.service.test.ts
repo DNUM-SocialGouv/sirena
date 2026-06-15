@@ -1596,6 +1596,7 @@ describe('requetesEntite.service', () => {
         after: {
           statutId: REQUETE_STATUT_TYPES.CLOTUREE,
           clotureReasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
           precision: 'Test precision',
           fileIds: ['fileid1', 'fileid2'],
         },
@@ -1664,7 +1665,12 @@ describe('requetesEntite.service', () => {
         entityId: 'req123:ent123',
         action: ChangeLogAction.UPDATED,
         before: { statutId: 'EN_COURS' },
-        after: { statutId: REQUETE_STATUT_TYPES.CLOTUREE, clotureReasonIds: ['reason123'], precision: null },
+        after: {
+          statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+          clotureReasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
+          precision: null,
+        },
         changedById: 'user123',
       });
     });
@@ -1739,6 +1745,7 @@ describe('requetesEntite.service', () => {
         after: {
           statutId: REQUETE_STATUT_TYPES.CLOTUREE,
           clotureReasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
           precision: 'Test precision',
         },
         changedById: 'user123',
@@ -1844,6 +1851,7 @@ describe('requetesEntite.service', () => {
         after: {
           statutId: REQUETE_STATUT_TYPES.CLOTUREE,
           clotureReasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
           precision: null,
           fileIds: ['fileid1'],
         },
