@@ -759,6 +759,26 @@ describe('RequetesEntite endpoints: /', () => {
       expect(json).toEqual({ error: 'REASON_INVALID', message: 'Invalid reason provided' });
     });
 
+    it('should return 400 when clotureEffectiveDate is in the future', async () => {
+      vi.mocked(closeRequeteForEntite).mockRejectedValueOnce(new Error('CLOTURE_EFFECTIVE_DATE_IN_FUTURE'));
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+
+      const res = await client[':id'].close.$post({
+        param: { id: 'requeteId' },
+        json: {
+          reasonIds: ['reason123'],
+          clotureEffectiveDate: '2999-01-01',
+        },
+      });
+
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json).toEqual({
+        error: 'CLOTURE_EFFECTIVE_DATE_IN_FUTURE',
+        message: 'Date de clôture effective cannot be in the future',
+      });
+    });
+
     it('should return 403 when requete is already closed', async () => {
       vi.mocked(closeRequeteForEntite).mockRejectedValueOnce(new Error('READONLY_FOR_ENTITY'));
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);

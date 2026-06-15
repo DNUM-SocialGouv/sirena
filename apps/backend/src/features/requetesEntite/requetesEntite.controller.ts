@@ -1046,6 +1046,14 @@ const app = factoryWithLogs
               );
             case 'FILES_INVALID':
               return c.json({ error: 'FILES_INVALID', message: 'Invalid files provided' }, 400);
+            case 'CLOTURE_EFFECTIVE_DATE_IN_FUTURE':
+              return c.json(
+                {
+                  error: 'CLOTURE_EFFECTIVE_DATE_IN_FUTURE',
+                  message: 'Date de clôture effective cannot be in the future',
+                },
+                400,
+              );
             default:
               if ('status' in error && error.status === 403) {
                 return c.json({ error: 'Unauthorized', message: 'You are not allowed to close this requete' }, 403);

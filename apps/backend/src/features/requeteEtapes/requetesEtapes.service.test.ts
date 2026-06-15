@@ -574,7 +574,6 @@ describe('RequeteEtapes.service.ts', () => {
           type: 'MANUAL',
           statutId: requeteEtape.statutId,
           createdById: 'userId',
-          clotureEffectiveDate: null,
         },
       });
     });

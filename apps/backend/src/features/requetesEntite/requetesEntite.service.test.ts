@@ -1423,6 +1423,14 @@ describe('requetesEntite.service', () => {
       );
     });
 
+    it('should throw error if clotureEffectiveDate is in the future', async () => {
+      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2999-01-01')).rejects.toThrow(
+        'CLOTURE_EFFECTIVE_DATE_IN_FUTURE',
+      );
+
+      expect(prisma.requeteEntite.findUnique).not.toHaveBeenCalled();
+    });
+
     it('should throw error if files are invalid', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
       vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
