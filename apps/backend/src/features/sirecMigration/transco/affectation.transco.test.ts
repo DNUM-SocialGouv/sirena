@@ -1,13 +1,127 @@
-import { describe, expect, it } from 'vitest';
-import { filterArsEntiteIds, transcodeAffectation } from './affectation.transco.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { filterArsEntiteIds, initAffectationTransco, transcodeAffectation } from './affectation.transco.js';
 import { SirecTranscoError } from './sirecTransco.error.js';
 
-const ARS_NORMANDIE_ID = '4af829ff-07c1-425d-85d6-83b5f97e4422';
+vi.mock('@sirena/db', () => ({
+  prisma: {
+    entite: { findMany: vi.fn() },
+  },
+}));
+
+const ARS_NORMANDIE_ID = 'ars-normandie-dynamic-id';
+const ARS_AUVERGNE_ID = 'ars-auvergne-id';
+const ARS_GRAND_EST_ID = 'ars-grand-est-id';
+const ARS_PACA_ID = 'ars-paca-id';
+
+const makeArs = (id: string, label: string) => ({ id, label, entiteMere: null });
+
+const makeEntity = (
+  id: string,
+  label: string,
+  parentLabel: string,
+  parentId = 'parent-id',
+  grandParentLabel?: string,
+) => ({
+  id,
+  label,
+  entiteMere: {
+    id: parentId,
+    label: parentLabel,
+    entiteMere: grandParentLabel ? { id: 'grand-parent-id', label: grandParentLabel } : null,
+  },
+});
+
+async function setupTransco(entities: object[]) {
+  const { prisma } = await import('@sirena/db');
+  vi.mocked(prisma.entite.findMany).mockResolvedValueOnce(entities as never);
+  await initAffectationTransco();
+}
+
+function makeAllRequiredEntities() {
+  const dosId = 'dos-id';
+  const damtnId = 'damtn-id';
+  const dspId = 'dsp-id';
+
+  const childOfArs = (id: string, label: string) => makeEntity(id, label, 'ARS Normandie', ARS_NORMANDIE_ID);
+  const childOfDos = (id: string, label: string) =>
+    makeEntity(id, label, "Direction de l'Offre de Soin", dosId, 'ARS Normandie');
+  const childOfDamtn = (id: string, label: string) => makeEntity(id, label, 'DAMTN', damtnId, 'ARS Normandie');
+  const childOfDsp = (id: string, label: string) =>
+    makeEntity(id, label, 'Direction de la Santé Publique', dspId, 'ARS Normandie');
+
+  return [
+    // ARS entities
+    makeArs(ARS_NORMANDIE_ID, 'ARS Normandie'),
+    makeArs(ARS_AUVERGNE_ID, 'ARS Auvergne-Rhône-Alpes'),
+    makeArs('ars-bfc-id', 'ARS Bourgogne-Franche-Comté'),
+    makeArs('ars-bretagne-id', 'ARS Bretagne'),
+    makeArs('ars-cvl-id', 'ARS Centre-Val de Loire'),
+    makeArs('ars-corse-id', 'ARS Corse'),
+    makeArs(ARS_GRAND_EST_ID, 'ARS Grand Est'),
+    makeArs('ars-guadeloupe-id', 'ARS Guadeloupe'),
+    makeArs('ars-guyane-id', 'ARS Guyane'),
+    makeArs('ars-hautsdefrance-id', 'ARS Hauts-de-France'),
+    makeArs('ars-ile-de-france-id', 'ARS Île-de-France'),
+    makeArs('ars-reunion-id', 'ARS La Réunion'),
+    makeArs('ars-martinique-id', 'ARS Martinique'),
+    makeArs('ars-mayotte-id', 'ARS Mayotte'),
+    makeArs('ars-nouvelle-aquitaine-id', 'ARS Nouvelle-Aquitaine'),
+    makeArs('ars-occitanie-id', 'ARS Occitanie'),
+    makeArs('ars-pays-de-la-loire-id', 'ARS Pays de la Loire'),
+    makeArs(ARS_PACA_ID, "ARS Provence-Alpes-Côte d'Azur"),
+    // Service entities (ARS Normandie)
+    childOfArs(dosId, "Direction de l'Offre de Soin"),
+    childOfArs(damtnId, 'DAMTN'),
+    childOfArs('dau-id', "Direction de l'Autonomie"),
+    childOfArs('mic-id', 'Mission Inspection-Controle (MIC)'),
+    childOfArs('paj-id', 'PAJ'),
+    childOfArs(dspId, 'Direction de la Santé Publique'),
+    childOfDos('poa-id', 'Pôle Offre Ambulatoire (POA)'),
+    childOfDos('psp27-76-id', 'Pôle soins et sûreté des personnes 27-76'),
+    childOfDos('psp14-50-61-id', 'Pôle soins et sûreté des personnes 14-50-61'),
+    childOfDos('ts14-id', 'Transports sanitaires 14'),
+    childOfDos('ts27-id', 'Transports sanitaires 27'),
+    childOfDos('ts50-id', 'Transports sanitaires 50'),
+    childOfDos('ts61-id', 'Transports sanitaires 61'),
+    childOfDos('ts76-id', 'Transports sanitaires 76'),
+    childOfDamtn('pnm-id', 'Professions Non Médicales (PNM)'),
+    childOfDamtn('pm-id', 'Professions Médicales (PM)'),
+    childOfDsp('se14-id', 'Santé Environnement (SE) DD 14'),
+    childOfDsp('se27-id', 'Santé Environnement (SE) DD 27'),
+    childOfDsp('se50-id', 'Santé Environnement (SE) DD 50'),
+    childOfDsp('se61-id', 'Santé Environnement (SE) DD 61'),
+    childOfDsp('se76-id', 'Santé Environnement (SE) DD 76'),
+    makeArs('ddets-seine-id', 'DDETS de la Seine-Maritime'),
+    makeArs('cd-calvados-id', 'Conseil départemental du Calvados'),
+    makeArs('cd-eure-id', "Conseil départemental de L'Eure"),
+    makeArs('cd-manche-id', 'Conseil départemental de la Manche'),
+    makeArs('cd-orne-id', "Conseil départemental de L'Orne"),
+    makeEntity('das-seine-id', 'Direction Autonomie Santé', 'DDETS de la Seine-Maritime', 'ddets-seine-id'),
+    makeEntity('das-calvados-id', 'Direction Autonomie Santé', 'Conseil départemental du Calvados', 'cd-calvados-id'),
+    makeEntity('das-eure-id', 'Direction Autonomie Santé', "Conseil départemental de L'Eure", 'cd-eure-id'),
+    makeEntity(
+      'mda-manche-id',
+      "Maison Départementale de l'autonomie",
+      'Conseil départemental de la Manche',
+      'cd-manche-id',
+    ),
+    makeEntity(
+      'mda-orne-id',
+      "MDA (Maison Départementale de l'Autonomie)",
+      "Conseil départemental de L'Orne",
+      'cd-orne-id',
+    ),
+  ];
+}
 
 describe('affectation.transco.ts', () => {
-  describe('ARS ids', () => {
+  describe('ARS ids — require initAffectationTransco()', () => {
+    beforeEach(async () => {
+      await setupTransco(makeAllRequiredEntities());
+    });
+
     it('should return the ARS entiteId in requeteEntiteIds and empty situationEntiteIds', () => {
-      const result = transcodeAffectation(693); // ARS Normandie
+      const result = transcodeAffectation(693);
 
       expect(result).toEqual({
         requeteEntiteIds: [ARS_NORMANDIE_ID],
@@ -16,63 +130,138 @@ describe('affectation.transco.ts', () => {
     });
 
     it('should map each ARS id to its SIRENA entiteId', () => {
-      expect(transcodeAffectation(667).requeteEntiteIds).toEqual(['4988789e-9775-4958-861f-52f03cbc9257']);
-      expect(transcodeAffectation(677).requeteEntiteIds).toEqual(['359e7f37-7344-4680-8b78-3101a01b073c']);
-      expect(transcodeAffectation(701).requeteEntiteIds).toEqual(['acf617c0-892a-4af1-a757-125409ffccdd']);
-    });
-
-    it('should map multiple SIREC ARS ids to the same SIRENA entiteId', () => {
-      expect(transcodeAffectation(683).requeteEntiteIds).toEqual(transcodeAffectation(685).requeteEntiteIds);
+      expect(transcodeAffectation(667).requeteEntiteIds).toEqual([ARS_AUVERGNE_ID]);
+      expect(transcodeAffectation(677).requeteEntiteIds).toEqual([ARS_GRAND_EST_ID]);
+      expect(transcodeAffectation(701).requeteEntiteIds).toEqual([ARS_PACA_ID]);
     });
   });
 
-  describe('service ids (ARS Normandie)', () => {
-    it('should return service entiteIds and ARS Normandie in situationEntiteIds', () => {
+  describe('service ids (ARS Normandie) — require initAffectationTransco()', () => {
+    beforeEach(async () => {
+      await setupTransco(makeAllRequiredEntities());
+    });
+
+    it('should return ARS Normandie in requeteEntiteIds', () => {
       const result = transcodeAffectation(1115);
 
       expect(result.requeteEntiteIds).toEqual([ARS_NORMANDIE_ID]);
-      expect(result.situationEntiteIds).toContain('c773bd6f-73e8-479c-b552-fd72f91c2efb');
+    });
+
+    it('should include the service entity and ARS Normandie in situationEntiteIds', () => {
+      const result = transcodeAffectation(1115);
+
+      expect(result.situationEntiteIds).toContain('dau-id');
       expect(result.situationEntiteIds).toContain(ARS_NORMANDIE_ID);
     });
 
-    it('should include multiple service entiteIds when one SIREC id maps to several', () => {
+    it('should include multiple service entities when one SIREC id maps to several', () => {
       const result = transcodeAffectation(1093);
 
-      expect(result.situationEntiteIds).toContain('f7e2a9c5-4b8d-4e16-9f0a-3d6c2b8e1f7a');
-      expect(result.situationEntiteIds).toContain('8d4b1e6f-a3c9-4f72-b5d0-1e9a7c4f2b8d');
+      expect(result.situationEntiteIds).toContain('pnm-id');
+      expect(result.situationEntiteIds).toContain('pm-id');
       expect(result.requeteEntiteIds).toEqual([ARS_NORMANDIE_ID]);
+    });
+
+    it('should use the top-level entity (not ARS) in requeteEntiteIds when service parent is non-ARS', () => {
+      const result = transcodeAffectation(1119);
+
+      expect(result.situationEntiteIds).toContain('das-calvados-id');
+      expect(result.requeteEntiteIds).toEqual(['cd-calvados-id']);
+    });
+
+    it('should find entity by three-level hierarchy (label + parent + grandparent)', () => {
+      const result = transcodeAffectation(1091);
+
+      expect(result.situationEntiteIds).toContain('poa-id');
+      expect(result.requeteEntiteIds).toEqual([ARS_NORMANDIE_ID]);
+    });
+
+    it('should resolve to the same entity id for two SIREC ids that map to the same entity', () => {
+      expect(transcodeAffectation(1087).situationEntiteIds).toContain('mic-id');
+      expect(transcodeAffectation(1113).situationEntiteIds).toContain('mic-id');
+    });
+
+    it('should map five transports sanitaires for SIREC id 1099', () => {
+      const result = transcodeAffectation(1099);
+
+      expect(result.situationEntiteIds).toContain('ts14-id');
+      expect(result.situationEntiteIds).toContain('ts27-id');
+      expect(result.situationEntiteIds).toContain('ts50-id');
+      expect(result.situationEntiteIds).toContain('ts61-id');
+      expect(result.situationEntiteIds).toContain('ts76-id');
+    });
+
+    describe('initialization error cases', () => {
+      it('should throw when initAffectationTransco has not been called', async () => {
+        await vi.resetModules();
+        const { transcodeAffectation: freshTranscode } = await import('./affectation.transco.js');
+
+        expect(() => freshTranscode(693)).toThrow('initAffectationTransco()');
+        expect(() => freshTranscode(1115)).toThrow('initAffectationTransco()');
+      });
+
+      it('should throw when a required service entity is missing from the Entite table', async () => {
+        const entitiesWithoutDau = makeAllRequiredEntities().filter((e) => e.id !== 'dau-id');
+        const { prisma } = await import('@sirena/db');
+        vi.mocked(prisma.entite.findMany).mockResolvedValueOnce(entitiesWithoutDau as never);
+
+        await expect(initAffectationTransco()).rejects.toThrow("Direction de l'Autonomie");
+      });
+
+      it('should throw when a required ARS entity is missing from the Entite table', async () => {
+        const entitiesWithoutArsNormandie = makeAllRequiredEntities().filter((e) => e.label !== 'ARS Normandie');
+        const { prisma } = await import('@sirena/db');
+        vi.mocked(prisma.entite.findMany).mockResolvedValueOnce(entitiesWithoutArsNormandie as never);
+
+        await expect(initAffectationTransco()).rejects.toThrow('ARS Normandie');
+      });
     });
   });
 
   describe('filterArsEntiteIds', () => {
-    it('should return only ARS entiteIds from the input list', () => {
-      const result = filterArsEntiteIds([ARS_NORMANDIE_ID, 'c773bd6f-73e8-479c-b552-fd72f91c2efb', 'unknown-id']);
+    beforeEach(async () => {
+      await setupTransco(makeAllRequiredEntities());
+    });
+
+    it('should recognise the dynamically resolved ARS Normandie id', () => {
+      const result = filterArsEntiteIds([ARS_NORMANDIE_ID]);
+
+      expect(result).toContain(ARS_NORMANDIE_ID);
+    });
+
+    it('should exclude non-ARS entity ids', () => {
+      const result = filterArsEntiteIds([ARS_NORMANDIE_ID, 'dau-id', 'unknown-id']);
 
       expect(result).toEqual([ARS_NORMANDIE_ID]);
     });
 
-    it('should return an empty array when no ARS entiteId is present', () => {
-      const result = filterArsEntiteIds(['service-id-1', 'service-id-2']);
-
-      expect(result).toEqual([]);
-    });
-
-    it('should return all ARS entiteIds when input contains multiple ARS', () => {
-      const arsGrandEst = '359e7f37-7344-4680-8b78-3101a01b073c';
-      const result = filterArsEntiteIds([ARS_NORMANDIE_ID, arsGrandEst]);
+    it('should recognise multiple dynamically resolved ARS ids', () => {
+      const result = filterArsEntiteIds([ARS_NORMANDIE_ID, ARS_GRAND_EST_ID]);
 
       expect(result).toContain(ARS_NORMANDIE_ID);
-      expect(result).toContain(arsGrandEst);
+      expect(result).toContain(ARS_GRAND_EST_ID);
       expect(result).toHaveLength(2);
     });
 
-    it('should return an empty array for an empty input', () => {
-      expect(filterArsEntiteIds([])).toEqual([]);
+    it('should recognise non-ARS top-level entities from service specs', () => {
+      const result = filterArsEntiteIds(['cd-calvados-id', 'dau-id']);
+
+      expect(result).toEqual(['cd-calvados-id']);
+    });
+
+    it('should return an empty array when no ARS entiteId is present', () => {
+      const result = filterArsEntiteIds(['dau-id', 'poa-id']);
+
+      expect(result).toEqual([]);
     });
   });
 
   describe('unknown ids', () => {
-    it('should throw SirecTranscoError for an unknown id', () => {
+    beforeEach(async () => {
+      await setupTransco(makeAllRequiredEntities());
+    });
+
+    it('should throw SirecTranscoError for an unknown id after init', () => {
       expect(() => transcodeAffectation(9999)).toThrow(SirecTranscoError);
     });
 

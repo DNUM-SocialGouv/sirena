@@ -1,6 +1,31 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { SirecDataError } from '../transco/sirecTransco.error.js';
 import { transformSirecReclamation } from './sirecMigration.transformer.js';
+
+vi.mock('../transco/affectation.transco.js', () => ({
+  transcodeAffectation: vi.fn((id: number) => {
+    const ARS: Record<number, string> = {
+      667: '4988789e-9775-4958-861f-52f03cbc9257',
+      677: '359e7f37-7344-4680-8b78-3101a01b073c',
+      693: '4af829ff-07c1-425d-85d6-83b5f97e4422',
+    };
+    const arsId = ARS[id];
+    if (arsId) return { requeteEntiteIds: [arsId], situationEntiteIds: [] };
+    return {
+      requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
+      situationEntiteIds: [`service-${id}`, '4af829ff-07c1-425d-85d6-83b5f97e4422'],
+    };
+  }),
+  filterArsEntiteIds: vi.fn((ids: string[]) => {
+    const ARS_IDS = new Set([
+      '4988789e-9775-4958-861f-52f03cbc9257',
+      '359e7f37-7344-4680-8b78-3101a01b073c',
+      '4af829ff-07c1-425d-85d6-83b5f97e4422',
+    ]);
+    return ids.filter((id) => ARS_IDS.has(id));
+  }),
+  initAffectationTransco: vi.fn(),
+}));
 
 describe('sirecMigration.transformer.ts', () => {
   const sirecData = {
@@ -115,7 +140,7 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.requeteEntiteIds).toEqual(['4af829ff-07c1-425d-85d6-83b5f97e4422']);
-    expect(result.situations[0].entiteIds).toContain('c773bd6f-73e8-479c-b552-fd72f91c2efb');
+    expect(result.situations[0].entiteIds).toContain('service-1115');
   });
 
   it('should map id_data to sirecId', () => {
