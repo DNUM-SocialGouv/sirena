@@ -37,7 +37,7 @@ jobs:
       PG_URL: postgresql://sirena:sirena@localhost:5432/sirena_test
 
     steps:
-      - uses: actions/checkout@1cce3390c2bfda521930d01229c073c7ff920824 # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           fetch-depth: 1
 
