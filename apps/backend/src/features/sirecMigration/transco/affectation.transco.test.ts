@@ -120,12 +120,12 @@ describe('affectation.transco.ts', () => {
       await setupTransco(makeAllRequiredEntities());
     });
 
-    it('should return the ARS entiteId in requeteEntiteIds and empty situationEntiteIds', () => {
+    it('should return the ARS entiteId in both requeteEntiteIds and situationEntiteIds', () => {
       const result = transcodeAffectation(693);
 
       expect(result).toEqual({
         requeteEntiteIds: [ARS_NORMANDIE_ID],
-        situationEntiteIds: [],
+        situationEntiteIds: [ARS_NORMANDIE_ID],
       });
     });
 

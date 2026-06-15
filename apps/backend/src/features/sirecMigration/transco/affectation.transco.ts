@@ -1,34 +1,32 @@
 import { prisma } from '@sirena/db';
 import { SirecTranscoError } from './sirecTransco.error.js';
 
-const ARS_LABEL_TRANSCO: Record<number, string> = {
-  667: 'ARS Auvergne-Rhône-Alpes',
-  669: 'ARS Bourgogne-Franche-Comté',
-  671: 'ARS Bretagne',
-  673: 'ARS Centre-Val de Loire',
-  675: 'ARS Corse',
-  677: 'ARS Grand Est',
-  679: 'ARS Guadeloupe',
-  681: 'ARS Guyane',
-  683: 'ARS Hauts-de-France',
-  685: 'ARS Île-de-France',
-  687: 'ARS La Réunion',
-  689: 'ARS Martinique',
-  691: 'ARS Mayotte',
-  693: 'ARS Normandie',
-  695: 'ARS Nouvelle-Aquitaine',
-  697: 'ARS Occitanie',
-  699: 'ARS Pays de la Loire',
-  701: "ARS Provence-Alpes-Côte d'Azur",
-};
-
-interface ServiceLookupSpec {
+interface EntiteSirenaLabels {
   label: string;
-  parentLabel: string;
+  parentLabel?: string;
   grandParentLabel?: string;
 }
 
-const SERVICES_LOOKUP_SPECS: Record<number, ServiceLookupSpec[]> = {
+const AFFECTATION_ENTITES: Record<number, [EntiteSirenaLabels, ...EntiteSirenaLabels[]]> = {
+  667: [{ label: 'ARS Auvergne-Rhône-Alpes' }],
+  669: [{ label: 'ARS Bourgogne-Franche-Comté' }],
+  671: [{ label: 'ARS Bretagne' }],
+  673: [{ label: 'ARS Centre-Val de Loire' }],
+  675: [{ label: 'ARS Corse' }],
+  677: [{ label: 'ARS Grand Est' }],
+  679: [{ label: 'ARS Guadeloupe' }],
+  681: [{ label: 'ARS Guyane' }],
+  683: [{ label: 'ARS Hauts-de-France' }],
+  685: [{ label: 'ARS Île-de-France' }],
+  687: [{ label: 'ARS La Réunion' }],
+  689: [{ label: 'ARS Martinique' }],
+  691: [{ label: 'ARS Mayotte' }],
+  693: [{ label: 'ARS Normandie' }],
+  695: [{ label: 'ARS Nouvelle-Aquitaine' }],
+  697: [{ label: 'ARS Occitanie' }],
+  699: [{ label: 'ARS Pays de la Loire' }],
+  701: [{ label: "ARS Provence-Alpes-Côte d'Azur" }],
+  // Services Normandie
   1087: [{ label: 'Mission Inspection-Controle (MIC)', parentLabel: 'ARS Normandie' }],
   1089: [{ label: "Direction de l'Offre de Soin", parentLabel: 'ARS Normandie' }],
   1091: [
@@ -226,13 +224,12 @@ const SERVICES_LOOKUP_SPECS: Record<number, ServiceLookupSpec[]> = {
   ],
 };
 
-interface ServiceArsEntry {
+interface AffectationEntry {
   topLevelEntiteId: string;
   serviceEntiteIds: string[];
 }
 
-let arsTransco: Map<number, string> | null = null;
-let serviceTransco: Map<number, ServiceArsEntry> | null = null;
+let transco: Map<number, AffectationEntry> | null = null;
 let arsEntiteIdSet: Set<string> = new Set();
 
 type EntiteRow = {
@@ -241,16 +238,17 @@ type EntiteRow = {
   entiteMere: { id: string; label: string; entiteMere: { id: string; label: string } | null } | null;
 };
 
-function findEntityId(entities: EntiteRow[], spec: ServiceLookupSpec): string {
+function findEntityId(entities: EntiteRow[], sirenaLabels: EntiteSirenaLabels & { parentLabel: string }): string {
   const match = entities.find(
     (e) =>
-      e.label === spec.label &&
-      e.entiteMere?.label === spec.parentLabel &&
-      (spec.grandParentLabel === undefined || e.entiteMere?.entiteMere?.label === spec.grandParentLabel),
+      e.label === sirenaLabels.label &&
+      e.entiteMere?.label === sirenaLabels.parentLabel &&
+      (sirenaLabels.grandParentLabel === undefined ||
+        e.entiteMere?.entiteMere?.label === sirenaLabels.grandParentLabel),
   );
   if (!match) {
-    const ancestry = [spec.grandParentLabel, spec.parentLabel].filter(Boolean).join(' > ');
-    throw new Error(`Entité SIRENA introuvable: "${spec.label}" sous "${ancestry}"`);
+    const ancestry = [sirenaLabels.grandParentLabel, sirenaLabels.parentLabel].filter(Boolean).join(' > ');
+    throw new Error(`Entité SIRENA introuvable: "${sirenaLabels.label}" sous "${ancestry}"`);
   }
   return match.id;
 }
@@ -270,30 +268,21 @@ export async function initAffectationTransco(): Promise<void> {
     },
   });
 
-  const newArsTransco = new Map<number, string>();
-  for (const [sirecIdStr, arsLabel] of Object.entries(ARS_LABEL_TRANSCO)) {
+  const newTransco = new Map<number, AffectationEntry>();
+  for (const [sirecIdStr, entitesSirenaLabels] of Object.entries(AFFECTATION_ENTITES)) {
     const sirecId = Number(sirecIdStr);
-    const arsEntity = entities.find((e) => e.label === arsLabel && !e.entiteMere);
-    if (!arsEntity) throw new Error(`Entité ARS SIRENA introuvable: "${arsLabel}"`);
-    newArsTransco.set(sirecId, arsEntity.id);
-  }
-
-  const newServiceTransco = new Map<number, ServiceArsEntry>();
-  for (const [sirecIdStr, specs] of Object.entries(SERVICES_LOOKUP_SPECS)) {
-    const sirecId = Number(sirecIdStr);
-    const topLevelLabel = specs[0].grandParentLabel ?? specs[0].parentLabel;
+    const firstEntity = entitesSirenaLabels[0];
+    const topLevelLabel = firstEntity.grandParentLabel ?? firstEntity.parentLabel ?? firstEntity.label;
     const topLevelEntity = entities.find((e) => e.label === topLevelLabel && !e.entiteMere);
     if (!topLevelEntity) throw new Error(`Entité SIRENA introuvable: "${topLevelLabel}" (sans entité mère)`);
-    const serviceEntiteIds = specs.map((spec) => findEntityId(entities, spec));
-    newServiceTransco.set(sirecId, { topLevelEntiteId: topLevelEntity.id, serviceEntiteIds });
+    const serviceEntiteIds = entitesSirenaLabels
+      .filter((s): s is EntiteSirenaLabels & { parentLabel: string } => s.parentLabel !== undefined)
+      .map((s) => findEntityId(entities, s));
+    newTransco.set(sirecId, { topLevelEntiteId: topLevelEntity.id, serviceEntiteIds });
   }
 
-  arsTransco = newArsTransco;
-  serviceTransco = newServiceTransco;
-  arsEntiteIdSet = new Set([
-    ...newArsTransco.values(),
-    ...[...newServiceTransco.values()].map((e) => e.topLevelEntiteId),
-  ]);
+  transco = newTransco;
+  arsEntiteIdSet = new Set([...newTransco.values()].map((e) => e.topLevelEntiteId));
 }
 
 export interface AffectationEntites {
@@ -306,22 +295,15 @@ export function filterArsEntiteIds(entiteIds: string[]): string[] {
 }
 
 export function transcodeAffectation(idSirec: number): AffectationEntites {
-  if (arsTransco === null || serviceTransco === null) {
+  if (transco === null) {
     throw new Error('initAffectationTransco() doit être appelé avant transcodeAffectation()');
   }
-
-  const arsEntiteId = arsTransco.get(idSirec);
-  if (arsEntiteId !== undefined) {
-    return { requeteEntiteIds: [arsEntiteId], situationEntiteIds: [] };
-  }
-
-  const serviceEntry = serviceTransco.get(idSirec);
-  if (serviceEntry !== undefined) {
+  const entry = transco.get(idSirec);
+  if (entry !== undefined) {
     return {
-      requeteEntiteIds: [serviceEntry.topLevelEntiteId],
-      situationEntiteIds: [...serviceEntry.serviceEntiteIds, serviceEntry.topLevelEntiteId],
+      requeteEntiteIds: [entry.topLevelEntiteId],
+      situationEntiteIds: [...entry.serviceEntiteIds, entry.topLevelEntiteId],
     };
   }
-
   throw new SirecTranscoError(idSirec, 'affectation');
 }
