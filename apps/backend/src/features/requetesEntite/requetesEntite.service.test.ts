@@ -155,6 +155,7 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
       nom: 'Etape 1',
       requeteId: 'req123',
       createdById: 'user123',
+      clotureEffectiveDate: null,
     },
   ],
   departementsLieuSurvenue: [],
