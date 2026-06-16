@@ -6,6 +6,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useId, useState } from 'react';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { migrateByReclamations, migrateByServices } from '@/lib/api/fetchSirecMigration';
+import { HttpError } from '@/lib/api/tanstackQuery';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 
 export const Route = createFileRoute('/_auth/admin/sirec-migration')({
@@ -89,7 +90,18 @@ export function RouteComponent() {
         );
       }
       setRaw('');
-    } catch {
+    } catch (error) {
+      if (error instanceof HttpError && error.status === 422) {
+        const unknownIds = (error.rawData as { unknownIds?: number[] } | undefined)?.unknownIds;
+        if (unknownIds && unknownIds.length > 0) {
+          setFieldError(
+            `Identifiant${unknownIds.length > 1 ? 's' : ''} introuvable${
+              unknownIds.length > 1 ? 's' : ''
+            } dans SIREC : ${unknownIds.join(', ')}.`,
+          );
+          return;
+        }
+      }
       setSystemError('Une erreur est survenue lors de la requête.');
     } finally {
       setLoading(false);

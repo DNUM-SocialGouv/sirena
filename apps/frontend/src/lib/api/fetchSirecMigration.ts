@@ -3,7 +3,7 @@ import { handleRequestErrors } from '@/lib/api/tanstackQuery';
 
 export async function migrateByReclamations(sirecIds: number[]): Promise<{ queued: number }> {
   const res = await client['sirec-migration']['by-reclamations'].$post({ json: { sirecIds } });
-  await handleRequestErrors(res);
+  await handleRequestErrors(res, { silentToastError: true });
   return res.json();
 }
 
