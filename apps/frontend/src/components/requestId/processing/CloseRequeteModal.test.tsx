@@ -135,7 +135,7 @@ describe('CloseRequeteModal', () => {
     render(<CloseRequeteModal requestId="REQ-354" />);
 
     expect(screen.getByText('Chargement des informations de la requête...')).toBeInTheDocument();
-    expect(screen.getByText('Raisons de la clôture (obligatoire)')).toBeInTheDocument();
+    expect(screen.getByText('Raisons de la clôture')).toBeInTheDocument();
   });
 
   it('displays a non-blocking direct fallback message when the closing context cannot be loaded', () => {
@@ -146,7 +146,7 @@ describe('CloseRequeteModal', () => {
     render(<CloseRequeteModal requestId="REQ-354" />);
 
     expect(screen.getByText('Information : vous allez clôturer la requête REQ-354.')).toBeInTheDocument();
-    expect(screen.getByText('Raisons de la clôture (obligatoire)')).toBeInTheDocument();
+    expect(screen.getByText('Raisons de la clôture')).toBeInTheDocument();
   });
 
   it('uses provided other affected entities when the query cannot be loaded', () => {
@@ -166,6 +166,23 @@ describe('CloseRequeteModal', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
     expect(useRequeteOtherEntitiesAffected).toHaveBeenCalledWith('REQ-354', { enabled: false });
+  });
+
+  it('displays the required-fields legend and expected field labels', () => {
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({
+        data: { otherEntites: [], subAdministrativeEntites: [] },
+        isLoading: false,
+        error: null,
+      }),
+    );
+
+    render(<CloseRequeteModal requestId="REQ-354" />);
+
+    expect(screen.getByText('Sauf mention contraire, tous les champs sont obligatoires.')).toBeInTheDocument();
+    expect(screen.getByText('Raisons de la clôture')).toBeInTheDocument();
+    expect(screen.getByText('Précisions (facultatif)')).toBeInTheDocument();
+    expect(screen.getByText('Pièces jointes (facultatif)')).toBeInTheDocument();
   });
 
   it('displays a required Date de clôture field defaulting to today', () => {

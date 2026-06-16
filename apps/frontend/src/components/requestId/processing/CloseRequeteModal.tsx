@@ -275,9 +275,11 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
           </div>
         </div>
 
+        <p className="fr-text--sm fr-mb-2w">Sauf mention contraire, tous les champs sont obligatoires.</p>
+
         <div className="fr-mb-4w">
           <SelectWithChildren
-            label="Raisons de la clôture (obligatoire)"
+            label="Raisons de la clôture"
             options={reasonOptions}
             value={reasonIds}
             onChange={(values) => setReasonIds(values)}
