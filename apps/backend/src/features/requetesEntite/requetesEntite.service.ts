@@ -15,7 +15,7 @@ import {
   type RequeteStatutType,
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
-import { getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
+import { getDateTodayInParis, getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
 import archiver from 'archiver';
 import type { z } from 'zod';
 import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
@@ -59,21 +59,6 @@ const parseNullableDate = (dateString: string | undefined | null): Date | null =
   if (!dateString) return null;
   const date = new Date(dateString);
   return Number.isNaN(date.getTime()) ? null : date;
-};
-
-const getDateTodayInParis = (): string => {
-  const parts = new Intl.DateTimeFormat('fr-FR', {
-    timeZone: 'Europe/Paris',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date());
-
-  const year = parts.find((part) => part.type === 'year')?.value;
-  const month = parts.find((part) => part.type === 'month')?.value;
-  const day = parts.find((part) => part.type === 'day')?.value;
-
-  return `${year}-${month}-${day}`;
 };
 
 const SITUATION_INCLUDE_BASE = {

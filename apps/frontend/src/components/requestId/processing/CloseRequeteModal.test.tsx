@@ -1,19 +1,37 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { CloseRequeteModal } from './CloseRequeteModal';
+
+const closeRequeteMutateAsync = vi.hoisted(() => vi.fn());
 
 vi.mock('@codegouvfr/react-dsfr/Modal', () => ({
   createModal: () => ({
     id: 'close-requete-modal',
     open: vi.fn(),
     close: vi.fn(),
-    Component: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    Component: ({
+      children,
+      buttons,
+    }: {
+      children: React.ReactNode;
+      buttons: { children: React.ReactNode; onClick: () => void }[];
+    }) => (
+      <div>
+        {children}
+        {buttons.map((button) => (
+          <button key={String(button.children)} type="button" onClick={button.onClick}>
+            {button.children}
+          </button>
+        ))}
+      </div>
+    ),
   }),
 }));
 
 vi.mock('@/hooks/mutations/closeRequete.hook', () => ({
-  useCloseRequete: () => ({ mutateAsync: vi.fn() }),
+  useCloseRequete: () => ({ mutateAsync: closeRequeteMutateAsync }),
 }));
 
 vi.mock('@/hooks/mutations/updateUploadedFiles.hook', () => ({
@@ -145,6 +163,45 @@ describe('CloseRequeteModal', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('list')).not.toBeInTheDocument();
     expect(useRequeteOtherEntitiesAffected).toHaveBeenCalledWith('REQ-354', { enabled: false });
+  });
+
+  it('displays a required Date de clôture field defaulting to today', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-05-20T22:30:00.000Z'));
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({
+        data: { otherEntites: [], subAdministrativeEntites: [] },
+        isLoading: false,
+        error: null,
+      }),
+    );
+
+    render(<CloseRequeteModal requestId="REQ-354" />);
+
+    expect(screen.getByLabelText(/^Date de clôture/)).toHaveAttribute('type', 'date');
+    expect(screen.getByLabelText(/^Date de clôture/)).toHaveValue('2024-05-21');
+
+    vi.useRealTimers();
+  });
+
+  it('shows a field-level error and does not close when Date de clôture is empty', async () => {
+    const user = userEvent.setup();
+    closeRequeteMutateAsync.mockResolvedValue({});
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({
+        data: { otherEntites: [], subAdministrativeEntites: [] },
+        isLoading: false,
+        error: null,
+      }),
+    );
+
+    render(<CloseRequeteModal requestId="REQ-354" />);
+
+    await user.clear(screen.getByLabelText(/^Date de clôture/));
+    await user.click(screen.getByRole('button', { name: 'Clôturer la requête' }));
+
+    expect(screen.getByText('Vous devez renseigner une date de clôture pour clôturer la requête.')).toBeInTheDocument();
+    expect(closeRequeteMutateAsync).not.toHaveBeenCalled();
   });
 
   it('uses provided other affected entities immediately for the close proposal flow', () => {
