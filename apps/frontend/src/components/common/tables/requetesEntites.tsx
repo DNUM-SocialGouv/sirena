@@ -122,6 +122,7 @@ export function RequetesEntite() {
     ...(queries.search && { search: queries.search }),
     ...(queries.entiteId ? { entiteId: queries.entiteId } : {}),
     ...(queries.departementCodes ? { departementCodes: queries.departementCodes } : {}),
+    ...(queries.domaineIds ? { domaineIds: queries.domaineIds } : {}),
     ...(queries.prioriteId ? { prioriteId: queries.prioriteId } : {}),
     offset,
     limit,
@@ -222,6 +223,7 @@ export function RequetesEntite() {
     ...(isTopEntiteARS
       ? [{ key: 'custom:departement', label: 'Département lieu de survenue' } as Column<RequeteEntiteRow>]
       : []),
+    { key: 'custom:domaine', label: 'Domaine fonctionnel' },
     { key: 'custom:misEnCause', label: 'Mis en cause' },
     { key: 'custom:motifs', label: 'Motifs' },
     {
@@ -248,8 +250,8 @@ export function RequetesEntite() {
 
   const cells: Cells<RequeteEntiteRow> = {
     'requete.id': (row) => (
-      <Link to="/request/$requestId" params={{ requestId: row.requeteId }}>
-        Voir {row.requete.id}
+      <Link to="/request/$requestId" className="fr-link" params={{ requestId: row.requeteId }}>
+        Voir <span className="fr-sr-only">la requête</span> {row.requete.id}
       </Link>
     ),
     'requete.receptionDate': (row) => {
@@ -312,6 +314,17 @@ export function RequetesEntite() {
           },
         }
       : {}),
+    'custom:domaine': (row: RequeteEntiteRow) => {
+      const domaines = row.domainesFonctionnels;
+      if (!domaines?.length) return null;
+      return (
+        <ul>
+          {domaines.map((d) => (
+            <li key={d.id}>{d.label}</li>
+          ))}
+        </ul>
+      );
+    },
   };
 
   const total = useMemo(() => requetes?.meta?.total ?? 0, [requetes?.meta?.total]);
