@@ -1,15 +1,27 @@
 import { Input } from '@codegouvfr/react-dsfr/Input';
 import { RadioButtons } from '@codegouvfr/react-dsfr/RadioButtons';
 import type { SituationData } from '@sirena/common/schemas';
+import { useEffect } from 'react';
+
+const NUMEROS_SIGNALEMENT_REGEX = /^\s*[a-zA-Z0-9]+(\s*,\s*[a-zA-Z0-9]+)*\s*$/;
+
+const isNumerosSignalementValid = (value?: string) =>
+  !value || value.trim() === '' || NUMEROS_SIGNALEMENT_REGEX.test(value);
 
 type IdentificationProps = {
   formData: SituationData;
   setFormData: React.Dispatch<React.SetStateAction<SituationData>>;
   isSaving: boolean;
+  onValidationChange?: (isValid: boolean) => void;
 };
 
-export function Identification({ formData, setFormData, isSaving }: IdentificationProps) {
+export function Identification({ formData, setFormData, isSaving, onValidationChange }: IdentificationProps) {
   const estLieAuSignalement = formData.estLieAuSignalement;
+  const hasError = estLieAuSignalement === true && !isNumerosSignalementValid(formData.numerosSignalement);
+
+  useEffect(() => {
+    onValidationChange?.(!hasError);
+  }, [hasError, onValidationChange]);
 
   const handleEstLieChange = (value: boolean) => {
     setFormData((prev) => ({
@@ -58,6 +70,12 @@ export function Identification({ formData, setFormData, isSaving }: Identificati
           <Input
             label="Numéro de signalement associé"
             hintText="Si plusieurs signalements, séparer les valeurs par des virgules. Exemples : 098655, 446789"
+            state={hasError ? 'error' : 'default'}
+            stateRelatedMessage={
+              hasError
+                ? 'Le champ « Numéro de signalement associé » doit contenir uniquement des lettres et des chiffres. Saisissez une ou plusieurs valeurs séparées par des virgules. Exemple : 098655, 446789.'
+                : undefined
+            }
             nativeInputProps={{
               value: formData.numerosSignalement || '',
               onChange: (e) =>
