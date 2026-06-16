@@ -142,6 +142,8 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
       if (!clotureEffectiveDate) {
         newErrors.clotureEffectiveDate = 'Vous devez renseigner une date de clôture pour clôturer la requête.';
+      } else if (clotureEffectiveDate > getDateTodayInParis()) {
+        newErrors.clotureEffectiveDate = 'La date de clôture ne peut pas être dans le futur.';
       }
 
       if (precision.length > 5000) {

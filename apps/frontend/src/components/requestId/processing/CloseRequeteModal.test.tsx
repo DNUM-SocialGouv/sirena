@@ -204,6 +204,27 @@ describe('CloseRequeteModal', () => {
     expect(closeRequeteMutateAsync).not.toHaveBeenCalled();
   });
 
+  it('shows a field-level error and does not close when Date de clôture is in the future', async () => {
+    const user = userEvent.setup();
+    closeRequeteMutateAsync.mockResolvedValue({});
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({
+        data: { otherEntites: [], subAdministrativeEntites: [] },
+        isLoading: false,
+        error: null,
+      }),
+    );
+
+    render(<CloseRequeteModal requestId="REQ-354" />);
+
+    await user.clear(screen.getByLabelText(/^Date de clôture/));
+    await user.type(screen.getByLabelText(/^Date de clôture/), '2999-01-01');
+    await user.click(screen.getByRole('button', { name: 'Clôturer la requête' }));
+
+    expect(screen.getByText('La date de clôture ne peut pas être dans le futur.')).toBeInTheDocument();
+    expect(closeRequeteMutateAsync).not.toHaveBeenCalled();
+  });
+
   it('uses provided other affected entities immediately for the close proposal flow', () => {
     vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
       mockOtherEntitiesAffectedQuery({ data: undefined, isLoading: true, error: null }),
