@@ -36,12 +36,14 @@ import {
   addProcessingStepRoute,
   deleteRequeteEtapeRoute,
   sendAcknowledgmentRoute,
+  updateRequeteEtapeDateRealisationRoute,
   updateRequeteEtapeNomRoute,
   updateRequeteEtapeStatutRoute,
 } from './requetesEtapes.route.js';
 import {
   AddProcessingStepBodySchema,
   SendAcknowledgmentBodySchema,
+  UpdateRequeteEtapeDateRealisationSchema,
   UpdateRequeteEtapeNomSchema,
   UpdateRequeteEtapeStatutSchema,
 } from './requetesEtapes.schema.js';
@@ -50,6 +52,7 @@ import {
   deleteRequeteEtape,
   getRequeteEtapeById,
   getRequeteEtapes,
+  updateRequeteEtapeDateRealisation,
   updateRequeteEtapeNom,
   updateRequeteEtapeStatut,
 } from './requetesEtapes.service.js';
@@ -382,6 +385,67 @@ const app = factoryWithLogs
         },
         'RequeteEtape nom updated successfully',
       );
+
+      return c.json({ data: updatedRequeteEtape });
+    },
+  )
+
+  .patch(
+    '/:id/date-realisation',
+    updateRequeteEtapeDateRealisationRoute,
+    zValidator('json', UpdateRequeteEtapeDateRealisationSchema),
+    requeteEtapesChangelogMiddleware({ action: ChangeLogAction.UPDATED }),
+    async (c) => {
+      const logger = c.get('logger');
+      const { id } = c.req.param();
+      const body = c.req.valid('json');
+      const userId = c.get('userId');
+
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+      const requeteEtape = await getRequeteEtapeById(id);
+
+      if (!requeteEtape) {
+        throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+      }
+      const hasAccessToReq = await hasAccessToRequete({
+        requeteId: requeteEtape.requeteId,
+        entiteId: topEntiteId,
+      });
+
+      if (!hasAccessToReq) {
+        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
+      if (topEntiteId !== requeteEtape.entiteId) {
+        throwHTTPException403Forbidden('You are not allowed to update this requete etape', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
+      const updatedRequeteEtape = await updateRequeteEtapeDateRealisation(id, {
+        dateRealisation: body.dateRealisation,
+      });
+
+      if (!updatedRequeteEtape) {
+        throwHTTPException400BadRequest(
+          'La date de réalisation ne peut être renseignée que pour une étape manuelle au statut « Fait ».',
+          { res: c.res, kind: ERROR_KIND.BUSINESS },
+        );
+      }
+
+      c.set('changelogId', updatedRequeteEtape.id);
+
+      logger.info({ requeteEtapeId: id, userId }, 'RequeteEtape dateRealisation updated successfully');
 
       return c.json({ data: updatedRequeteEtape });
     },
