@@ -20,23 +20,34 @@ const entitesTab: TabDescriptor = {
   tabId: 'tab-entites',
 };
 
-export function getTabs(role: Role | null): TabDescriptor[] {
-  return role === ROLES.SUPER_ADMIN ? [...baseTabs, entitesTab] : baseTabs;
+const sirecMigrationTab: TabDescriptor = {
+  label: 'Migration SIREC',
+  tabPanelId: 'panel-sirec-migration',
+  tabId: 'tab-sirec-migration',
+};
+
+export function getTabs(role: Role | null, hasSirecMigration = false): TabDescriptor[] {
+  const tabs = role === ROLES.SUPER_ADMIN ? [...baseTabs, entitesTab] : [...baseTabs];
+  if (hasSirecMigration) tabs.push(sirecMigrationTab);
+  return tabs;
 }
 
-export function getTabPaths(role: Role | null): string[] {
+export function getTabPaths(role: Role | null, hasSirecMigration = false): string[] {
   const paths = ['/admin/users', '/admin/users/all'];
-
-  return role === ROLES.SUPER_ADMIN ? [...paths, '/admin/entites'] : paths;
+  if (role === ROLES.SUPER_ADMIN) paths.push('/admin/entites');
+  if (hasSirecMigration) paths.push('/admin/sirec-migration');
+  return paths;
 }
 
-export function getActiveTab(pathname: string, role: Role | null): number {
-  if (pathname === '/admin/users/all') {
-    return 1;
-  }
+export function getActiveTab(pathname: string, role: Role | null, hasSirecMigration = false): number {
+  if (pathname === '/admin/users/all') return 1;
 
   if (role === ROLES.SUPER_ADMIN && (pathname === '/admin/entites' || pathname.startsWith('/admin/entites/'))) {
     return 2;
+  }
+
+  if (hasSirecMigration && pathname === '/admin/sirec-migration') {
+    return role === ROLES.SUPER_ADMIN ? 3 : 2;
   }
 
   return 0;

@@ -19,3 +19,10 @@ export const sirecMigrationQueue = new Queue<SirecMigrationJobData>(SIREC_MIGRAT
     removeOnFail: { age: 7 * 86400, count: 5000 },
   },
 });
+
+export async function addSirecIdsToQueue(sirecIds: number[]): Promise<number> {
+  if (sirecIds.length === 0) return 0;
+  const jobs = sirecIds.map((sirecId) => ({ name: 'migrate', data: { sirecId } }));
+  await sirecMigrationQueue.addBulk(jobs);
+  return jobs.length;
+}
