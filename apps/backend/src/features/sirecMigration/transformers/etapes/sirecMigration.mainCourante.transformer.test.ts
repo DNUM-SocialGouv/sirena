@@ -13,6 +13,7 @@ vi.mock('../../transco/affectation.transco.js', () => ({
   transcodeAffectation: vi.fn((id: number) => {
     if (id === 693) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] };
     if (id === 677) return { requeteEntiteIds: ['ars-grand-est'], situationEntiteIds: [] };
+    if (id === 999) return { requeteEntiteIds: ['ars-a', 'ars-b'], situationEntiteIds: [] };
     throw new SirecTranscoError(id, 'affectation');
   }),
 }));
@@ -173,6 +174,26 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].entiteId).toBe('ars-normandie');
+  });
+
+  it('should create one etape per requeteEntiteId when a group maps to multiple entiteIds', () => {
+    const result = transformSirecMainCourantes(
+      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [999] }]),
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result[0].entiteId).toBe('ars-a');
+    expect(result[1].entiteId).toBe('ars-b');
+  });
+
+  it('should deduplicate etapes with the same id_data and entiteId across multiple groups', () => {
+    // group 693 → ['ars-normandie'], group 999 → ['ars-a', 'ars-b']
+    const result = transformSirecMainCourantes(
+      makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [693, 693, 999] }]),
+    );
+
+    expect(result).toHaveLength(3);
+    expect(result.map((e) => e.entiteId)).toEqual(['ars-normandie', 'ars-a', 'ars-b']);
   });
 
   it('should create etapes for multiple mains courantes', () => {

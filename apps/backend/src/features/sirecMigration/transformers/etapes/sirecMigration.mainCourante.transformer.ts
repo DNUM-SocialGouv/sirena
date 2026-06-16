@@ -30,19 +30,20 @@ export function transformSirecMainCourantes(sirecData: SirecReclamationData): Si
 
     for (const id_group of mc.groupIds) {
       const { requeteEntiteIds } = transcodeAffectation(id_group);
-      const entiteId = requeteEntiteIds[0];
 
-      const currentMainCouranteForEntity = `${mc.id_data}:${entiteId}`;
-      if (mainCouranteForEntitySet.has(currentMainCouranteForEntity)) continue;
-      mainCouranteForEntitySet.add(currentMainCouranteForEntity);
+      for (const entiteId of requeteEntiteIds) {
+        const currentMainCouranteForEntity = `${mc.id_data}:${entiteId}`;
+        if (mainCouranteForEntitySet.has(currentMainCouranteForEntity)) continue;
+        mainCouranteForEntitySet.add(currentMainCouranteForEntity);
 
-      etapes.push({
-        nom,
-        entiteId,
-        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-        ...(mc.date_action !== null ? { createdAt: mc.date_action } : {}),
-        note,
-      });
+        etapes.push({
+          nom,
+          entiteId,
+          statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+          ...(mc.date_action !== null ? { createdAt: mc.date_action } : {}),
+          note,
+        });
+      }
     }
   }
 

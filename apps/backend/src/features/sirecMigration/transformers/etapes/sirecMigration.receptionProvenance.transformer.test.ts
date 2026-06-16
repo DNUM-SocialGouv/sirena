@@ -14,6 +14,7 @@ vi.mock('../../transco/affectation.transco.js', () => ({
   transcodeAffectation: vi.fn((id: number) => {
     if (id === 693) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] };
     if (id === 677) return { requeteEntiteIds: ['ars-grand-est'], situationEntiteIds: [] };
+    if (id === 999) return { requeteEntiteIds: ['ars-a', 'ars-b'], situationEntiteIds: [] };
     throw new SirecTranscoError(id, 'affectation');
   }),
 }));
@@ -151,6 +152,16 @@ describe('sirecMigration.provenance.transformer.ts', () => {
     );
 
     expect(result).toHaveLength(2);
+  });
+
+  it('should create one etape per requeteEntiteId when a group maps to multiple entiteIds', () => {
+    const result = transformSirecReceptionProvenances(makeData([{ id_provenance: 103, id_group: 999 }]));
+
+    expect(result).toHaveLength(2);
+    expect(result[0].entiteId).toBe('ars-a');
+    expect(result[1].entiteId).toBe('ars-b');
+    expect(result[0].nom).toBe("Réception à l'institution de provenance : Institution 1");
+    expect(result[1].nom).toBe("Réception à l'institution de provenance : Institution 1");
   });
 
   it('should throw SirecTranscoError for an unknown id_provenance', () => {
