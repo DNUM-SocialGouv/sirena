@@ -595,6 +595,7 @@ describe('RequeteEtapes.service.ts', () => {
           nom: true,
           type: true,
           statutId: true,
+          clotureEffectiveDate: true,
           createdAt: true,
           updatedAt: true,
           clotureReason: {
@@ -671,6 +672,7 @@ describe('RequeteEtapes.service.ts', () => {
           nom: true,
           type: true,
           statutId: true,
+          clotureEffectiveDate: true,
           createdAt: true,
           updatedAt: true,
           clotureReason: {
