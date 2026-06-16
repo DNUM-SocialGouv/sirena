@@ -132,6 +132,27 @@ export interface SirecReclamationData {
   mainCourantes: SirecMainCourante[];
 }
 
+export async function fetchExistingSirecIds(sirecIds: number[]): Promise<number[]> {
+  if (sirecIds.length === 0) return [];
+  const rows = await mariadbPool.query<{ id_data: number }[]>(
+    'SELECT id_data FROM sire_reclamation_data WHERE id_data IN (?)',
+    [sirecIds],
+  );
+  return rows.map((row) => row.id_data);
+}
+
+export async function fetchSirecIdsByServiceIds(serviceIds: number[]): Promise<number[]> {
+  if (serviceIds.length === 0) return [];
+  const rows = await mariadbPool.query<{ id_data: number }[]>(
+    `SELECT DISTINCT r.id_data
+     FROM sire_reclamation_data r
+     INNER JOIN sire_reclamation_data_group rg ON r.id_data = rg.id_data
+     WHERE rg.id_group IN (?)`,
+    [serviceIds],
+  );
+  return rows.map((row) => row.id_data);
+}
+
 export async function fetchSirecReclamationById(sirecId: number): Promise<SirecReclamationRow | null> {
   const rows = await mariadbPool.query<SirecReclamationRow[]>(
     'SELECT id_data, r_recept_date, description, reception, prioritaire, prioritaire_precisez, dest, dest_primaire, dest_secondaire, saisine, courrier_signal, plaignant, plaignant_anonyme, plaignant_est_anonyme, plaignant_type, plaignant_adresse, plaignant_adresse_complement, requerant_adresse, requerant_adresse_complete, requerant_cp, requerant_ville, preciser_statut, plaignant_rs, nom_representant, prenom_representant, plaignant_nom, plaignant_prenom, plaignant_mail, plaignant_tel, plaignant_connu, victime_lien_plaignant, lien_plai_autre, victime_non_identifiee, victime_age, victime_sexe, victime_adresse, victime_adresse_complement, usager_adresse, usager_adresse_complete, usager_cp, usager_ville, victime_nom, victime_prenom, victime_mail, victime_tel, service_recepteur_niv1, service_gestionnaire, accuser_reception, date_envoi_ar, accuser_reception_precision, institution_part, niv_competence_reclam, date_transfert_instit1, date_transfert_instit2, date_transfert_instit3, prec_niv_comp, date_traitement, type_traitement_prec, date_commission, date_rep_provenance1, date_rep_provenance2, date_rep_provenance3, reponse_plaignant, date_rep_plaignant, reponse_plaignant_precision, sans_mc, observation FROM sire_reclamation_data WHERE id_data = ?',

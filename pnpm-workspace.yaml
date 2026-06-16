@@ -26,7 +26,7 @@ catalog:
   "@vitest/coverage-v8": ^4.1.8
   clsx: ^2.1.1
   dotenv: ^17.4.2
-  hono: ^4.12.24
+  hono: ^4.12.25
   hono-openapi: ^1.3.0
   jsdom: ^29.1.1
   prisma: ^7.8.0
@@ -52,3 +52,9 @@ overrides:
   esbuild@<0.28.1: ">=0.28.1"
   "@hono/node-server@<1.19.13": ">=1.19.13"
   '@opentelemetry/core@<2.8.0': ^2.8.0
+  # hono <4.12.25 reste tiré transitivement par prisma > @prisma/dev. Les
+  # consommateurs directs sont déjà sur 4.12.25 via le catalog ; l'override
+  # aligne le reste de l'arbre (CORS / serve-static / body-limit).
+  hono@<4.12.25: ">=4.12.25"
+  # js-yaml <4.1.2 transitif (DoS quadratique sur les merge keys).
+  js-yaml@<4.1.2: ">=4.1.2"
