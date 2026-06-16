@@ -1,13 +1,22 @@
-import { type Job, Worker } from 'bullmq';
+import { type Job, UnrecoverableError, Worker } from 'bullmq';
+import { ZodError } from 'zod';
 import { connection } from '../../config/redis.js';
-import { fetchSirecReclamationById } from '../../features/sirecMigration/sirecMigration.repository.js';
-import { getRequeteIdFromSirecId, saveRequeteFromSirec } from '../../features/sirecMigration/sirecMigration.service.js';
-import { transformSirecReclamation } from '../../features/sirecMigration/sirecMigration.transformer.js';
+import { fetchSirecData } from '../../features/sirecMigration/sirecMigration.repository.js';
+import { getRequeteIdFromSirecId, saveFromSirec } from '../../features/sirecMigration/sirecMigration.service.js';
+import { initAffectationTransco } from '../../features/sirecMigration/transco/affectation/affectation.transco.js';
+import { SirecDataError, SirecTranscoError } from '../../features/sirecMigration/transco/sirecTransco.error.js';
+import { transformSirecReclamation } from '../../features/sirecMigration/transformers/sirecMigration.transformer.js';
 import { createDefaultLogger } from '../../helpers/pino.js';
 import { getLoggerStore, loggerStorage } from '../../libs/asyncLocalStorage.js';
 import { SIREC_MIGRATION_QUEUE_NAME, type SirecMigrationJobData } from '../queues/sirecMigration.queue.js';
 
+let transcoInitPromise: Promise<void> | null = null;
+
 const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> => {
+  if (!transcoInitPromise) {
+    transcoInitPromise = initAffectationTransco();
+  }
+  await transcoInitPromise;
   const { sirecId } = job.data;
 
   return loggerStorage.run(
@@ -16,22 +25,46 @@ const processMigration = async (job: Job<SirecMigrationJobData>): Promise<void> 
       const logger = getLoggerStore();
       logger.info({ sirecId }, 'Starting SIREC migration');
 
-      const row = await fetchSirecReclamationById(sirecId);
-      if (!row) {
+      const sirecData = await fetchSirecData(sirecId);
+      if (!sirecData) {
         logger.error({ sirecId }, 'SIREC record not found, skipping');
         return;
       }
 
-      const data = transformSirecReclamation(row);
-
-      const existingRequeteId = await getRequeteIdFromSirecId(row.id_data);
-
+      const existingRequeteId = await getRequeteIdFromSirecId(sirecId);
       if (existingRequeteId !== null) {
-        logger.info({ requeteId: existingRequeteId, sirecId: data.sirecId }, 'SIREC record already migrated, skipping');
+        logger.info({ requeteId: existingRequeteId, sirecId }, 'SIREC record already migrated, skipping');
         return;
       }
 
-      const sirenaRequeteId = await saveRequeteFromSirec(data);
+      let data: ReturnType<typeof transformSirecReclamation>;
+      try {
+        data = transformSirecReclamation(sirecData);
+      } catch (err) {
+        if (err instanceof SirecTranscoError) {
+          logger.error(
+            { sirecId, idDico: err.idDico, tableName: err.tableName },
+            'Unknown SIREC id_dico in transco table',
+          );
+          throw new UnrecoverableError(err.message);
+        }
+        if (err instanceof SirecDataError) {
+          logger.error({ sirecId }, err.message);
+          throw new UnrecoverableError(err.message);
+        }
+        throw err;
+      }
+
+      let sirenaRequeteId: string;
+      try {
+        sirenaRequeteId = await saveFromSirec(data);
+      } catch (err) {
+        if (err instanceof ZodError) {
+          logger.error({ sirecId, validationErrors: err.issues }, 'SIREC record failed schema validation, skipping');
+          return;
+        }
+        throw err;
+      }
 
       logger.info({ requeteId: sirenaRequeteId, sirecId: data.sirecId }, 'SIREC record migrated successfully');
     },
