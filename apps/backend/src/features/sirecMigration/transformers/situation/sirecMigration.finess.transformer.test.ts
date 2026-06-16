@@ -120,6 +120,26 @@ describe('sirecMigration.finess.transformer.ts', () => {
       const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: 355, rs: 'Hôpital B' }));
       expect(lieuDeSurvenueData?.adresse.label).toBe('Hôpital B');
     });
+
+    it('should map adresse codePostal from codepostal', () => {
+      const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: 355, codepostal: '69001' }));
+      expect(lieuDeSurvenueData?.adresse.codePostal).toBe('69001');
+    });
+
+    it('should map adresse ville from libcommune', () => {
+      const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: 355, libcommune: 'Lyon' }));
+      expect(lieuDeSurvenueData?.adresse.ville).toBe('Lyon');
+    });
+
+    it('should fallback adresse codePostal to empty string when null', () => {
+      const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: 355, codepostal: null }));
+      expect(lieuDeSurvenueData?.adresse.codePostal).toBe('');
+    });
+
+    it('should fallback adresse ville to empty string when null', () => {
+      const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: 355, libcommune: null }));
+      expect(lieuDeSurvenueData?.adresse.ville).toBe('');
+    });
   });
 
   describe('error cases', () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { SirecReclamationData } from '../../sirecMigration.repository.js';
 import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecAffectation } from './sirecMigration.affectation.transformer.js';
 
@@ -16,24 +17,29 @@ const makeData = (
   service_recepteur_niv1: number | null,
   service_gestionnaire: number | null,
   groupIds: number[] = [],
-) => ({
-  reclamation: {
-    id_data: 42,
-    r_recept_date: null,
-    description: null,
-    reception: null,
-    prioritaire: null,
-    service_recepteur_niv1,
-    service_gestionnaire,
-    accuser_reception: null,
-    date_envoi_ar: null,
-    accuser_reception_precision: null,
-  },
-  motifsDeclaresIdDicos: [],
-  groupIds,
-  provenances: [],
-  misEnCauses: [],
-});
+  mainCourantes: { groupIds: number[] }[] = [],
+) =>
+  ({
+    reclamation: {
+      id_data: 42,
+      r_recept_date: null,
+      description: null,
+      reception: null,
+      prioritaire: null,
+      service_recepteur_niv1,
+      service_gestionnaire,
+      accuser_reception: null,
+      date_envoi_ar: null,
+      accuser_reception_precision: null,
+    },
+    motifsDeclaresIdDicos: [],
+    groupIds,
+    mainCourantes,
+    provenances: [],
+    institutionPartenaires: {},
+    typeTraitementIdDicos: [],
+    misEnCauses: [],
+  }) as unknown as SirecReclamationData;
 
 describe('sirecMigration.affectation.transformer.ts', () => {
   describe('ARS direct assignment', () => {
