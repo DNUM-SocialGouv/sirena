@@ -171,7 +171,7 @@ describe('sirecMigration.service.ts', () => {
         situations: [{ fait: { autresPrecisions: 123 as any, motifsDeclaratifs: [] } }],
       };
 
-      await expect(saveFromSirec(invalidData)).rejects.toThrow(ZodError);
+      await expect(saveFromSirec(invalidData as any)).rejects.toThrow(ZodError);
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 

@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test assertions on optional fields> */
 import { describe, expect, it, vi } from 'vitest';
-import type { SirecFinessData, SirecRppsData } from '../../sirecMigration.repository.js';
+import type { SirecFinessData, SirecReclamationData, SirecRppsData } from '../../sirecMigration.repository.js';
 import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecMisEnCauseSituations } from './sirecMigration.misEnCause.transformer.js';
 
@@ -126,7 +126,7 @@ const mockFinessData: SirecFinessData = {
   rs: 'Hôpital Saint-Louis',
   codepostal: '75010',
   libcommune: 'Paris',
-  numvoie: '1',
+  numvoie: 1,
   typevoie: 'RUE',
   voie: 'de la Paix',
 };
@@ -136,21 +136,23 @@ const makeData = (
   misEnCauses: ReturnType<typeof makeMisEnCause>[] = [],
   sansMc: number | null = null,
   observation: string | null = null,
-) => ({
-  reclamation: {
-    id_data: 42,
-    service_recepteur_niv1: 693 as number | null,
-    service_gestionnaire: null as number | null,
-    sans_mc: sansMc,
-    observation,
-  },
-  motifsDeclaresIdDicos: [],
-  groupIds,
-  provenances: [],
-  institutionPartenaires: {},
-  typeTraitementIdDicos: [],
-  misEnCauses,
-});
+) =>
+  ({
+    reclamation: {
+      id_data: 42,
+      service_recepteur_niv1: 693 as number | null,
+      service_gestionnaire: null as number | null,
+      sans_mc: sansMc,
+      observation,
+    },
+    motifsDeclaresIdDicos: [],
+    groupIds,
+    provenances: [],
+    institutionPartenaires: {},
+    typeTraitementIdDicos: [],
+    mainCourantes: [],
+    misEnCauses,
+  }) as unknown as SirecReclamationData;
 
 const mockRppsData: SirecRppsData = {
   id_data: 12345678901,
@@ -274,7 +276,7 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
       );
 
       expect(result[0].misEnCauseData).not.toBeNull();
-      expect(result[0].misEnCauseData?.rpps).toBe('12345678901');
+      expect((result[0].misEnCauseData as any)?.rpps).toBe('12345678901');
     });
 
     it('should throw SirecDataError when type is 65 but rppsData is null', () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { SirecReclamationData } from '../../sirecMigration.repository.js';
 import { transformSirecFait } from './sirecMigration.fait.transformer.js';
 
 vi.mock('../../transco/motifsDeclaratifs.transco.js', () => ({
@@ -31,8 +32,11 @@ describe('sirecMigration.fait.transformer.ts', () => {
     motifsDeclaresIdDicos: [809, 811],
     groupIds: [],
     provenances: [],
+    institutionPartenaires: {},
+    typeTraitementIdDicos: [],
+    mainCourantes: [],
     misEnCauses: [],
-  };
+  } as unknown as SirecReclamationData;
 
   it('should map prioritaire_precisez to commentaire when dest is null', () => {
     const result = transformSirecFait(sirecData);

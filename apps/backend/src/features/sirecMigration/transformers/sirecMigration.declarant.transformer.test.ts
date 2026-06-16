@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: test purposes */
 import { describe, expect, it } from 'vitest';
 import { transformDeclarantIdentite, transformSirecDeclarant } from './sirecMigration.declarant.transformer.js';
 
@@ -24,7 +25,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     plaignant_connu: null as number | null,
     victime_lien_plaignant: null as number | null,
     lien_plai_autre: null as string | null,
-  };
+  } as any;
 
   it('should map plaignant=34 to declarant with estVictime true', () => {
     const result = transformSirecDeclarant({ ...reclamation, plaignant: 34 });

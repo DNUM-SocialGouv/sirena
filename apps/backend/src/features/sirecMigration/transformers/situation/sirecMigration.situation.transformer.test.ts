@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { SirecReclamationData } from '../../sirecMigration.repository.js';
 import { transformSirecSituation } from './sirecMigration.situation.transformer.js';
 
 describe('sirecMigration.situation.transformer.ts', () => {
@@ -17,8 +18,11 @@ describe('sirecMigration.situation.transformer.ts', () => {
     motifsDeclaresIdDicos: [809],
     groupIds: [],
     provenances: [],
+    institutionPartenaires: {},
+    typeTraitementIdDicos: [],
+    mainCourantes: [],
     misEnCauses: [],
-  };
+  } as unknown as SirecReclamationData;
 
   it('should map description to fait.autresPrecisions', () => {
     const result = transformSirecSituation(sirecData, []);

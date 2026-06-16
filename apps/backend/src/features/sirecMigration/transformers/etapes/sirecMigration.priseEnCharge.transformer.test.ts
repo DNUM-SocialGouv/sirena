@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { SirecReclamationData } from '../../sirecMigration.repository.js';
 import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecPriseEnCharge } from './sirecMigration.priseEnCharge.transformer.js';
 
@@ -8,20 +9,22 @@ const makeData = (
     type_traitement_prec?: string | null;
   } = {},
   typeTraitementIdDicos: number[] = [],
-) => ({
-  reclamation: {
-    id_data: 42,
-    date_traitement: null,
-    type_traitement_prec: null,
-    ...overrides,
-  },
-  motifsDeclaresIdDicos: [],
-  groupIds: [],
-  provenances: [],
-  institutionPartenaires: {},
-  typeTraitementIdDicos,
-  misEnCauses: [],
-});
+) =>
+  ({
+    reclamation: {
+      id_data: 42,
+      date_traitement: null,
+      type_traitement_prec: null,
+      ...overrides,
+    },
+    motifsDeclaresIdDicos: [],
+    groupIds: [],
+    provenances: [],
+    institutionPartenaires: {},
+    typeTraitementIdDicos,
+    mainCourantes: [],
+    misEnCauses: [],
+  }) as unknown as SirecReclamationData;
 
 const ARS_1 = 'ars-normandie';
 const ARS_2 = 'ars-grand-est';

@@ -37,6 +37,8 @@ describe('sirecMigration.transformer.ts', () => {
       prioritaire: 1,
       prioritaire_precisez: 'Précision prioritaire',
       dest: null,
+      dest_primaire: null as string | null,
+      dest_secondaire: null as string | null,
       saisine: null as number | null,
       courrier_signal: null as number | null,
       plaignant: null as number | null,
@@ -101,6 +103,7 @@ describe('sirecMigration.transformer.ts', () => {
     provenances: [],
     institutionPartenaires: {} as Record<number, string>,
     typeTraitementIdDicos: [] as number[],
+    mainCourantes: [],
     misEnCauses: [],
   };
 

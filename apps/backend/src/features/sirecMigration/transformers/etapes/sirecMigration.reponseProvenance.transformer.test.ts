@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { SirecReclamationData } from '../../sirecMigration.repository.js';
 import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecReponseProvenances } from './sirecMigration.reponseProvenance.transformer.js';
 
@@ -26,25 +27,27 @@ const makeData = (
     date_rep_provenance3?: Date | null;
   } = {},
   provenances: { id_provenance: number; id_group: number }[] = [],
-) => ({
-  reclamation: {
-    id_data: 42,
-    date_rep_provenance1: null,
-    date_rep_provenance2: null,
-    date_rep_provenance3: null,
-    ...reclamationOverrides,
-  },
-  motifsDeclaresIdDicos: [],
-  groupIds: [],
-  provenances: provenances.map((p) => ({
-    date_signalement: null,
-    reponse_attendue: null,
-    ...p,
-  })),
-  institutionPartenaires: {},
-  typeTraitementIdDicos: [],
-  misEnCauses: [],
-});
+) =>
+  ({
+    reclamation: {
+      id_data: 42,
+      date_rep_provenance1: null,
+      date_rep_provenance2: null,
+      date_rep_provenance3: null,
+      ...reclamationOverrides,
+    },
+    motifsDeclaresIdDicos: [],
+    groupIds: [],
+    institutionPartenaires: {},
+    typeTraitementIdDicos: [],
+    mainCourantes: [],
+    provenances: provenances.map((p) => ({
+      date_signalement: null,
+      reponse_attendue: null,
+      ...p,
+    })),
+    misEnCauses: [],
+  }) as unknown as SirecReclamationData;
 
 describe('sirecMigration.reponseProvenance.transformer.ts', () => {
   it('should return an empty array when there are no provenances', () => {
