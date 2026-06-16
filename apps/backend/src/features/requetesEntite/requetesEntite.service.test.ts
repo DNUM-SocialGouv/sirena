@@ -122,6 +122,7 @@ vi.mock('../../libs/prisma.js', () => ({
 export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situations?: unknown[] } } & {
   requeteEtape: RequeteEtape[];
   departementsLieuSurvenue: { code: string; lib: string }[];
+  domainesFonctionnels: { id: string; label: string }[];
 } = {
   requeteId: 'req123',
   entiteId: 'ent123',
@@ -130,6 +131,7 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
   requete: {
     id: 'req123',
     dematSocialId: 123,
+    sirecId: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: null,
@@ -157,6 +159,7 @@ export const mockRequeteEntite: RequeteEntite & { requete: Requete & { situation
     },
   ],
   departementsLieuSurvenue: [],
+  domainesFonctionnels: [],
 };
 
 const mockedRequeteEntite = vi.mocked(prisma.requeteEntite);
@@ -809,6 +812,7 @@ describe('requetesEntite.service', () => {
         estSignalementProfessionnel: null,
         aAutrePersonnes: null,
         isTuteur: null,
+        mesureProtection: null,
       };
 
       type RequeteWithDeclarant = Requete & {
@@ -820,6 +824,7 @@ describe('requetesEntite.service', () => {
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
         id: 'req123',
         dematSocialId: null,
+        sirecId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
@@ -885,6 +890,7 @@ describe('requetesEntite.service', () => {
         estSignalementProfessionnel: null,
         aAutrePersonnes: null,
         isTuteur: null,
+        mesureProtection: null,
       };
 
       type RequeteWithDeclarant = Requete & {
@@ -896,6 +902,7 @@ describe('requetesEntite.service', () => {
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
         id: 'req123',
         dematSocialId: null,
+        sirecId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
@@ -984,6 +991,7 @@ describe('requetesEntite.service', () => {
     const mockRequeteWithoutDeclarant = {
       id: 'req123',
       dematSocialId: null,
+      sirecId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
       createdById: null,
@@ -1291,6 +1299,7 @@ describe('requetesEntite.service', () => {
         createdAt: timestamp,
         updatedAt: timestamp,
         isTuteur: null,
+        mesureProtection: null,
       };
 
       type RequeteWithDeclarant = Requete & {
@@ -1302,6 +1311,7 @@ describe('requetesEntite.service', () => {
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({
         id: 'req123',
         dematSocialId: null,
+        sirecId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,
@@ -1337,6 +1347,7 @@ describe('requetesEntite.service', () => {
       const mockRequete = {
         id: 'req123',
         dematSocialId: null,
+        sirecId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: null,

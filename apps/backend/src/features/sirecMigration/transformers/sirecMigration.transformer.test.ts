@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SirecDataError } from '../transco/sirecTransco.error.js';
 import { transformSirecReclamation } from './sirecMigration.transformer.js';
 
-vi.mock('../transco/affectation.transco.js', () => ({
+vi.mock('../transco/affectation/affectation.transco.js', () => ({
   transcodeAffectation: vi.fn((id: number) => {
     const ARS: Record<number, string> = {
       667: '4988789e-9775-4958-861f-52f03cbc9257',
@@ -37,6 +37,8 @@ describe('sirecMigration.transformer.ts', () => {
       prioritaire: 1,
       prioritaire_precisez: 'Précision prioritaire',
       dest: null,
+      dest_primaire: null as string | null,
+      dest_secondaire: null as string | null,
       saisine: null as number | null,
       courrier_signal: null as number | null,
       plaignant: null as number | null,
@@ -101,6 +103,7 @@ describe('sirecMigration.transformer.ts', () => {
     provenances: [],
     institutionPartenaires: {} as Record<number, string>,
     typeTraitementIdDicos: [] as number[],
+    mainCourantes: [],
     misEnCauses: [],
     mainCourantes: [],
   };

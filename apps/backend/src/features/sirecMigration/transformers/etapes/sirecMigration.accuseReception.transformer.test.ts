@@ -17,6 +17,9 @@ const makeData = (overrides: {
   motifsDeclaresIdDicos: [],
   groupIds: [],
   provenances: [],
+  institutionPartenaires: {},
+  typeTraitementIdDicos: [],
+  mainCourantes: [],
   misEnCauses: [],
 });
 

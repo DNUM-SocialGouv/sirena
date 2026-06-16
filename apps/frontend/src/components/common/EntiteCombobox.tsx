@@ -180,49 +180,51 @@ export function EntiteCombobox({
       <div className={inputGroupClass}>
         <label className="fr-label" htmlFor={inputId}>
           {label}
+          <span className="fr-hint-text">Commencez à saisir le nom puis sélectionnez dans la liste</span>
         </label>
 
-        <input
-          ref={inputRef}
-          id={inputId}
-          className={inputClass}
-          type="text"
-          role="combobox"
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
-          aria-autocomplete="list"
-          aria-controls={listboxId}
-          aria-activedescendant={activeIndex >= 0 ? `option-${uid}-${activeIndex}` : undefined}
-          aria-required={required || undefined}
-          aria-invalid={hasError ? 'true' : undefined}
-          aria-describedby={hasError ? errorId : undefined}
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          disabled={disabled}
-          value={inputValue}
-          onChange={handleInputChange}
-          onBlur={handleBlur}
-          onFocus={() => {
-            if (skipNextFocus.current) {
-              skipNextFocus.current = false;
-              return;
-            }
-            if (!disabled) {
-              setIsOpen(true);
-              // Si une saisie partielle est en attente (aucune entité sélectionnée), reprendre le filtre
-              setHasTyped(!value && inputValue.length >= MIN_FILTER_LENGTH);
-            }
-          }}
-          onClick={() => {
-            if (!disabled) {
-              setIsOpen(true);
-              setHasTyped(!value && inputValue.length >= MIN_FILTER_LENGTH);
-            }
-          }}
-          onKeyDown={handleKeyDown}
-        />
+        <div className="fr-input-wrap fr-icon-search-line">
+          <input
+            ref={inputRef}
+            id={inputId}
+            className={inputClass}
+            type="text"
+            role="combobox"
+            aria-haspopup="listbox"
+            aria-expanded={isOpen}
+            aria-autocomplete="list"
+            aria-controls={listboxId}
+            aria-activedescendant={activeIndex >= 0 ? `option-${uid}-${activeIndex}` : undefined}
+            aria-required={required || undefined}
+            aria-invalid={hasError ? 'true' : undefined}
+            aria-describedby={hasError ? errorId : undefined}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            disabled={disabled}
+            value={inputValue}
+            onChange={handleInputChange}
+            onBlur={handleBlur}
+            onFocus={() => {
+              if (skipNextFocus.current) {
+                skipNextFocus.current = false;
+                return;
+              }
+              if (!disabled) {
+                setIsOpen(true);
+                setHasTyped(!value && inputValue.length >= MIN_FILTER_LENGTH);
+              }
+            }}
+            onClick={() => {
+              if (!disabled) {
+                setIsOpen(true);
+                setHasTyped(!value && inputValue.length >= MIN_FILTER_LENGTH);
+              }
+            }}
+            onKeyDown={handleKeyDown}
+          />
+        </div>
 
         {hasError && stateRelatedMessage && (
           <p id={errorId} className="fr-message fr-message--error">

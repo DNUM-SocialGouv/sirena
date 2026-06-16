@@ -142,6 +142,7 @@ export function FileDropZone({
               if (files) {
                 onFilesSelect(Array.from(files));
               }
+              e.target.value = '';
             }}
           />
         </div>

@@ -1,0 +1,119 @@
+/* Palette catégorielle de dsfr-chart 
+   https://gouvernementfr.github.io/dsfr-chart/#Accessibilité
+   déclinés clair/sombre car ils ne font pas partie des variables CSS du DSFR. */
+:global(:root) {
+  --sirena-chart-color-01: #5c68e5;
+  --sirena-chart-color-02: #82b5f2;
+  --sirena-chart-color-03: #29598f;
+  --sirena-chart-color-04: #31a7ae;
+  --sirena-chart-color-05: #81eef5;
+  --sirena-chart-color-06: #b478f1;
+  --sirena-chart-color-07: #cfb1f5;
+  --sirena-chart-color-08: #cecece;
+}
+
+:global(:root[data-fr-theme="dark"]) {
+  --sirena-chart-color-01: #5c68e5;
+  --sirena-chart-color-02: #699bd6;
+  --sirena-chart-color-03: #4878b1;
+  --sirena-chart-color-04: #00828a;
+  --sirena-chart-color-05: #51c1c8;
+  --sirena-chart-color-06: #bc8af2;
+  --sirena-chart-color-07: #cfb1f5;
+  --sirena-chart-color-08: #a4a4a4;
+}
+
+.figure {
+  margin: 0;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0 0 1.5rem;
+}
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2rem 3rem;
+}
+
+.svg {
+  flex: 0 0 auto;
+  width: clamp(180px, 38vw, 240px);
+  height: auto;
+}
+
+.legend {
+  flex: 1 1 16rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.legendItem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  column-gap: 0.75rem;
+  border-radius: 3px;
+  padding: 0.1rem 0.25rem;
+  transition: background-color 150ms ease;
+}
+
+.legendItem:hover {
+  background-color: var(--background-alt-grey);
+}
+
+.swatch {
+  inline-size: 0.85rem;
+  block-size: 0.85rem;
+  border-radius: 3px;
+  align-self: center;
+  /* Liseré pour garantir 3:1 (1.4.11) même avec les teintes claires de la palette sur fond blanc. */
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 25%);
+}
+
+.legendLabel {
+  line-height: 1.35;
+}
+
+.legendValue {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.details {
+  margin-top: 2rem;
+  /* Le reset DSFR met cursor: pointer sur tout le <details>, le contenu (tableau) ne doit pas en hériter. */
+  cursor: auto;
+}
+
+.details summary {
+  cursor: pointer;
+  color: var(--text-action-high-blue-france);
+  font-weight: 500;
+  text-decoration: underline;
+  width: fit-content;
+}
+
+.details summary:focus-visible {
+  outline: 2px solid var(--focus, #0a76f6);
+  outline-offset: 2px;
+}
+
+.details > div {
+  margin-top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legendItem {
+    transition: none;
+  }
+}

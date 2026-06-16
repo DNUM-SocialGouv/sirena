@@ -3,7 +3,7 @@ import { ZodError } from 'zod';
 import { connection } from '../../config/redis.js';
 import { fetchSirecData } from '../../features/sirecMigration/sirecMigration.repository.js';
 import { getRequeteIdFromSirecId, saveFromSirec } from '../../features/sirecMigration/sirecMigration.service.js';
-import { initAffectationTransco } from '../../features/sirecMigration/transco/affectation.transco.js';
+import { initAffectationTransco } from '../../features/sirecMigration/transco/affectation/affectation.transco.js';
 import { SirecDataError, SirecTranscoError } from '../../features/sirecMigration/transco/sirecTransco.error.js';
 import { transformSirecReclamation } from '../../features/sirecMigration/transformers/sirecMigration.transformer.js';
 import { createDefaultLogger } from '../../helpers/pino.js';

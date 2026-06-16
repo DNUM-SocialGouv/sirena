@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
+import type { SirecReclamationData } from '../../sirecMigration.repository.js';
 import { transformSirecExamenCommission } from './sirecMigration.examenCommission.transformer.js';
 
-const makeData = (date_commission: Date | null = null) => ({
-  reclamation: { id_data: 42, date_commission },
-  motifsDeclaresIdDicos: [],
-  groupIds: [],
-  provenances: [],
-  institutionPartenaires: {},
-  typeTraitementIdDicos: [],
-  misEnCauses: [],
-});
+const makeData = (date_commission: Date | null = null) =>
+  ({
+    reclamation: { id_data: 42, date_commission },
+    motifsDeclaresIdDicos: [],
+    groupIds: [],
+    provenances: [],
+    institutionPartenaires: {},
+    typeTraitementIdDicos: [],
+    mainCourantes: [],
+    misEnCauses: [],
+  }) as unknown as SirecReclamationData;
 
 const ARS_1 = 'ars-normandie';
 const ARS_2 = 'ars-grand-est';
