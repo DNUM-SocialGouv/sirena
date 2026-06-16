@@ -2444,6 +2444,10 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
 
       pdf.subsection(etapeTitle).field('Statut', etape.statut?.label || etape.statutId);
 
+      if (etape.dateRealisation) {
+        pdf.field('Date de réalisation', formatDateFr(etape.dateRealisation));
+      }
+
       if (addedByLabel) pdf.paragraph(addedByLabel);
 
       if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && etape.clotureReason.length > 0) {
