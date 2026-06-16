@@ -42,26 +42,28 @@ const parsed: ParsedCard = {
 afterEach(cleanup);
 
 describe('StatChart', () => {
-  it('renders a heading, the chart image and a graph/table switch', () => {
+  it('renders a heading, the data table by default and a graph/table switch', () => {
     render(<StatChart name="Répartition" parsed={parsed} />);
 
     expect(screen.getByRole('heading', { level: 2, name: 'Répartition' })).toBeInTheDocument();
-    expect(screen.getByRole('img')).toHaveAttribute('aria-label', expect.stringContaining('légende'));
     expect(screen.getByRole('radio', { name: 'Graphique' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Tableau' })).toBeInTheDocument();
-    // Chart view by default: legend shown, no data table yet
-    expect(screen.getAllByText('A').length).toBeGreaterThan(0);
-    expect(screen.queryByRole('columnheader', { name: 'Nombre' })).not.toBeInTheDocument();
-  });
-
-  it('switches to the data table when the table segment is selected', () => {
-    render(<StatChart name="Répartition" parsed={parsed} />);
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Tableau' }));
-
+    // Table view by default: data table shown, no chart image yet
     expect(screen.getByRole('columnheader', { name: 'Raison' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Nombre' })).toBeInTheDocument();
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('switches to the chart image when the graph segment is selected', () => {
+    render(<StatChart name="Répartition" parsed={parsed} />);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Graphique' }));
+
+    const image = screen.getByRole('img');
+    expect(image).toHaveAttribute('aria-label', expect.stringContaining('répartition'));
+    expect(image).toHaveAttribute('aria-describedby');
+    expect(screen.getAllByText('A').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('columnheader', { name: 'Nombre' })).not.toBeInTheDocument();
   });
 
   it('renders an empty state when there is no data', () => {

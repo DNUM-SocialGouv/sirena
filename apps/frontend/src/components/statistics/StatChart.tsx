@@ -18,7 +18,8 @@ interface StatChartProps {
 
 export function StatChart({ name, parsed }: StatChartProps) {
   const titleId = useId();
-  const [view, setView] = useState<View>('chart');
+  const legendId = useId();
+  const [view, setView] = useState<View>('table');
   const { items, total, dimensionLabel, metricLabel } = parsed;
 
   const slices = useMemo(() => {
@@ -57,7 +58,7 @@ export function StatChart({ name, parsed }: StatChartProps) {
         <SegmentedControl
           small
           hideLegend
-          legend="Type d'affichage"
+          legend="Choisir le type d'affichage des données"
           name={`${titleId}-view`}
           segments={[
             {
@@ -80,7 +81,8 @@ export function StatChart({ name, parsed }: StatChartProps) {
             className={styles.svg}
             viewBox={`0 0 ${SIZE} ${SIZE}`}
             role="img"
-            aria-label={`${name} : répartition en pourcentage. Données détaillées dans la légende ci-après.`}
+            aria-label={`${name} : répartition en pourcentage.`}
+            aria-describedby={legendId}
           >
             {isFullCircle ? (
               <circle
@@ -104,7 +106,7 @@ export function StatChart({ name, parsed }: StatChartProps) {
             )}
           </svg>
 
-          <ul className={styles.legend}>
+          <ul id={legendId} className={styles.legend}>
             {slices.map((slice) => (
               <li key={slice.label} className={styles.legendItem}>
                 <span className={styles.swatch} style={{ background: slice.color }} aria-hidden="true" />
