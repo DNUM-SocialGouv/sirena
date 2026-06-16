@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SirecDataError } from '../transco/sirecTransco.error.js';
 import { transformSirecReclamation } from './sirecMigration.transformer.js';
 
-vi.mock('../transco/affectation.transco.js', () => ({
+vi.mock('../transco/affectation/affectation.transco.js', () => ({
   transcodeAffectation: vi.fn((id: number) => {
     const ARS: Record<number, string> = {
       667: '4988789e-9775-4958-861f-52f03cbc9257',

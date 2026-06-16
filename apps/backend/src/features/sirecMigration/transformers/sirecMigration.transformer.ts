@@ -1,7 +1,7 @@
 import { REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { generateSirenaIdFromSirecReclamation } from '../../../helpers/sirecMigration.js';
 import type { SirecReclamationData } from '../sirecMigration.repository.js';
-import { filterArsEntiteIds } from '../transco/affectation.transco.js';
+import { filterArsEntiteIds } from '../transco/affectation/affectation.transco.js';
 import { transcodeReceptionType } from '../transco/receptionType.transco.js';
 import { SirecDataError } from '../transco/sirecTransco.error.js';
 import { transformSirecAccuseReception } from './etapes/sirecMigration.accuseReception.transformer.js';

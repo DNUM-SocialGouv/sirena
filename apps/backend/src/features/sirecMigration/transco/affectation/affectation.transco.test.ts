@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SirecTranscoError } from '../sirecTransco.error.js';
 import { filterArsEntiteIds, initAffectationTransco, transcodeAffectation } from './affectation.transco.js';
-import { SirecTranscoError } from './sirecTransco.error.js';
 
 vi.mock('@sirena/db', () => ({
   prisma: {
