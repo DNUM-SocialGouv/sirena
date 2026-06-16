@@ -42,6 +42,7 @@ minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - esbuild@0.28.1
   - "@esbuild/*"
+  - '@opentelemetry/core@2.8.0'
 overrides:
   # bullmq épingle ioredis à un patch exact (5.10.1) alors que le backend
   # consomme la branche 5.11.x. Sans alignement, deux copies coexistent et
@@ -50,3 +51,4 @@ overrides:
   ioredis: ^5.11.0
   esbuild@<0.28.1: ">=0.28.1"
   "@hono/node-server@<1.19.13": ">=1.19.13"
+  '@opentelemetry/core@<2.8.0': ^2.8.0
