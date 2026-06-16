@@ -185,6 +185,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
         await closeRequeteMutation.mutateAsync({
           reasonIds,
+          clotureEffectiveDate,
           precision: precision.trim() || undefined,
           fileIds: fileIds.length > 0 ? fileIds : undefined,
         });

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { CloseRequeteModal } from './CloseRequeteModal';
 
@@ -55,6 +55,9 @@ const mockOtherEntitiesAffectedQuery = (
 ) => query as unknown as ReturnType<typeof useRequeteOtherEntitiesAffected>;
 
 describe('CloseRequeteModal', () => {
+  beforeEach(() => {
+    closeRequeteMutateAsync.mockClear();
+  });
   it('displays a single info alert with the direct closing context from the treatment tab', () => {
     vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
       mockOtherEntitiesAffectedQuery({
@@ -202,6 +205,35 @@ describe('CloseRequeteModal', () => {
 
     expect(screen.getByText('Vous devez renseigner une date de clôture pour clôturer la requête.')).toBeInTheDocument();
     expect(closeRequeteMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('submits the Date de clôture with selected reasons', async () => {
+    const user = userEvent.setup();
+    closeRequeteMutateAsync.mockResolvedValue({});
+    vi.mocked(useRequeteOtherEntitiesAffected).mockReturnValue(
+      mockOtherEntitiesAffectedQuery({
+        data: { otherEntites: [], subAdministrativeEntites: [] },
+        isLoading: false,
+        error: null,
+      }),
+    );
+
+    render(<CloseRequeteModal requestId="REQ-354" />);
+
+    await user.click(screen.getByText('Sélectionner une ou plusieurs options'));
+    await user.click(
+      screen.getByRole('checkbox', { name: "Mesures correctives prises par l'établissement / le mis en cause" }),
+    );
+    await user.clear(screen.getByLabelText(/^Date de clôture/));
+    await user.type(screen.getByLabelText(/^Date de clôture/), '2024-05-19');
+    await user.click(screen.getByRole('button', { name: 'Clôturer la requête' }));
+
+    expect(closeRequeteMutateAsync).toHaveBeenCalledWith({
+      reasonIds: ['MESURES_CORRECTIVES'],
+      clotureEffectiveDate: '2024-05-19',
+      precision: undefined,
+      fileIds: undefined,
+    });
   });
 
   it('shows a field-level error and does not close when Date de clôture is in the future', async () => {
