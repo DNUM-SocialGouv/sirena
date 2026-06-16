@@ -5,7 +5,8 @@ import { transformSirecFiness } from './sirecMigration.finess.transformer.js';
 
 vi.mock('../transco/finessCategetab.transco.js', () => ({
   transcodeFinessCategetab: vi.fn((categetab: number | null) => {
-    if (categetab === null) throw new SirecDataError('categetab null');
+    if (categetab === null)
+      return { misEnCause: { misEnCauseTypeId: 'ETABLISSEMENT', misEnCauseTypePrecisionId: 'AUTRE' } };
     if (categetab === 354)
       return { misEnCause: { misEnCauseTypeId: 'ETABLISSEMENT', misEnCauseTypePrecisionId: 'SAD_SOINS' } };
     if (categetab === 500)
@@ -151,8 +152,11 @@ describe('sirecMigration.finess.transformer.ts', () => {
       expect(() => transformSirecFiness(makeFinessData({ categetab: 9999 }))).toThrow(SirecTranscoError);
     });
 
-    it('should propagate SirecDataError for null categetab', () => {
-      expect(() => transformSirecFiness(makeFinessData({ categetab: null }))).toThrow(SirecDataError);
+    it('should use AUTRE fallback for null categetab', () => {
+      const { misEnCauseData, lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: null }));
+
+      expect(misEnCauseData.misEnCauseTypePrecisionId).toBe('AUTRE');
+      expect(lieuDeSurvenueData).toBeNull();
     });
   });
 });

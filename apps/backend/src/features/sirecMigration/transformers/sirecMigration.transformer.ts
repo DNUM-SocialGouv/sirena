@@ -3,7 +3,6 @@ import { generateSirenaIdFromSirecReclamation } from '../../../helpers/sirecMigr
 import type { SirecReclamationData } from '../sirecMigration.repository.js';
 import { filterArsEntiteIds } from '../transco/affectation/affectation.transco.js';
 import { transcodeReceptionType } from '../transco/receptionType.transco.js';
-import { SirecDataError } from '../transco/sirecTransco.error.js';
 import { transformSirecAccuseReception } from './etapes/sirecMigration.accuseReception.transformer.js';
 import type { SirenaEtapeData } from './etapes/sirecMigration.etape.types.js';
 import { transformSirecExamenCommission } from './etapes/sirecMigration.examenCommission.transformer.js';
@@ -41,14 +40,6 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
   const provenanceEtapes = transformSirecReceptionProvenances(sirecData);
   const declarant = transformSirecDeclarant(sirecData.reclamation);
   const victime = transformSirecVictime(sirecData.reclamation);
-
-  for (const etape of provenanceEtapes) {
-    if (!requeteEntiteIds.includes(etape.entiteId)) {
-      throw new SirecDataError(
-        `L'entité de la provenance "${etape.nom}" (id ${etape.entiteId}) n'est pas parmi les entités de la réclamation SIREC ${sirecData.reclamation.id_data}`,
-      );
-    }
-  }
 
   return {
     sirenaId: generateSirenaIdFromSirecReclamation(sirecData.reclamation),

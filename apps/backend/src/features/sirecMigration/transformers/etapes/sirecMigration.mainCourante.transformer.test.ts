@@ -9,7 +9,7 @@ vi.mock('../../transco/dictionnaire.transco.js', () => ({
   },
 }));
 
-vi.mock('../../transco/affectation.transco.js', () => ({
+vi.mock('../../transco/affectation/affectation.transco.js', () => ({
   transcodeAffectation: vi.fn((id: number) => {
     if (id === 693) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] };
     if (id === 677) return { requeteEntiteIds: ['ars-grand-est'], situationEntiteIds: [] };

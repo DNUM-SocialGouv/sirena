@@ -233,16 +233,6 @@ describe('sirecMigration.transformer.ts', () => {
       expect(result.etapes[0].nom).toBe("Réception à l'institution de provenance : Institution 1");
       expect(result.etapes[0].entiteId).toBe('4af829ff-07c1-425d-85d6-83b5f97e4422');
     });
-
-    it('should throw SirecDataError when provenance entiteId is not in requeteEntiteIds', () => {
-      // service_recepteur_niv1: 693 → ARS Normandie, provenance id_group: 677 → ARS Grand Est (mismatch)
-      expect(() =>
-        transformSirecReclamation({
-          ...sirecData,
-          provenances: [{ id_provenance: 103, id_group: 677, date_signalement: null, reponse_attendue: null }],
-        }),
-      ).toThrow(SirecDataError);
-    });
   });
 
   describe('etapes (institutionsPartenaires)', () => {
