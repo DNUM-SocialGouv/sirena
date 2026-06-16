@@ -36,6 +36,10 @@ vi.mock('@/hooks/mutations/updateProcessingStepName.hook', () => ({
   useUpdateProcessingStepName: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
+vi.mock('@/hooks/mutations/updateProcessingStepDateRealisation.hook', () => ({
+  useUpdateProcessingStepDateRealisation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
 vi.mock('@/hooks/mutations/updateUploadedFiles.hook', () => ({
   useDeleteUploadedFile: () => ({ mutate: vi.fn(), isPending: false }),
 }));
