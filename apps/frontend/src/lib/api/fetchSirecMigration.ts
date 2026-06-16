@@ -1,9 +1,12 @@
 import { client } from '@/lib/api/hc';
-import { handleRequestErrors } from '@/lib/api/tanstackQuery';
+import { HttpError, handleRequestErrors } from '@/lib/api/tanstackQuery';
 
 export async function migrateByReclamations(sirecIds: number[]): Promise<{ queued: number }> {
   const res = await client['sirec-migration']['by-reclamations'].$post({ json: { sirecIds } });
   await handleRequestErrors(res, { silentToastError: true });
+  if (!res.ok) {
+    throw new HttpError(`HTTP ${res.status}`, res.status);
+  }
   return res.json();
 }
 
