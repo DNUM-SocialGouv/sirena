@@ -707,6 +707,8 @@ describe('requetes.service.ts', () => {
           misEnCauseId: '1',
           demarchesEngageesId: '1',
           domainesFonctionnelsId: null,
+          estLieAuSignalement: null,
+          numerosSignalement: '',
         });
 
         situation.faits.forEach((fait) => {
@@ -950,6 +952,8 @@ describe('requetes.service.ts', () => {
           misEnCauseId: '1',
           demarchesEngageesId: '1',
           domainesFonctionnelsId: null,
+          estLieAuSignalement: null,
+          numerosSignalement: '',
         });
 
         situation.faits.forEach((fait) => {
