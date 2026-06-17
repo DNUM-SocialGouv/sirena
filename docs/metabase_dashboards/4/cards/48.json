@@ -1,0 +1,189 @@
+{
+  "archived": false,
+  "archived_directly": false,
+  "average_query_time": 165.7173913043478,
+  "cache_ttl": null,
+  "can_delete": false,
+  "can_manage_db": true,
+  "can_restore": false,
+  "can_run_adhoc_query": true,
+  "can_write": true,
+  "card_schema": 23,
+  "collection": {
+    "authority_level": null,
+    "can_write": true,
+    "id": "root",
+    "is_personal": false,
+    "is_remote_synced": false,
+    "metabase.collections.models.collection.root/is-root?": true,
+    "name": "Our analytics"
+  },
+  "collection_id": null,
+  "collection_position": null,
+  "collection_preview": true,
+  "creator_id": 3,
+  "dashboard": {
+    "id": 4,
+    "moderation_status": null,
+    "name": "[integrated] Sirena"
+  },
+  "dashboard_count": 1,
+  "dashboard_id": 4,
+  "database_id": 4,
+  "dataset_query": {
+    "database": 4,
+    "lib/type": "mbql/query",
+    "stages": [
+      {
+        "lib/type": "mbql.stage/native",
+        "native": "SELECT\n  COUNT(*) AS nombre_requetes\nFROM\n  \"RequeteEntite\" re\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n  re.\"statutId\" = 'NOUVEAU'\n  [[ AND e.label = {{entity_label}} ]]\n  [[ AND r.\"receptionDate\" >= {{start_date}} ]]\n  [[ AND r.\"receptionDate\" <  ({{end_date}}::date + INTERVAL '1 day') ]];",
+        "template-tags": {
+          "end_date": {
+            "display-name": "End Date",
+            "id": "63e6a5b7-a326-4ae5-9ab6-6b6c9b0db210",
+            "name": "end_date",
+            "type": "date"
+          },
+          "entity_label": {
+            "display-name": "Entity Label",
+            "id": "fe2fc655-5100-4c24-85ce-9d3bb93488eb",
+            "name": "entity_label",
+            "required": false,
+            "type": "text"
+          },
+          "start_date": {
+            "display-name": "Start Date",
+            "id": "99a9d6ba-6cb9-4199-a794-06fbf3296075",
+            "name": "start_date",
+            "type": "date"
+          }
+        }
+      }
+    ]
+  },
+  "description": null,
+  "dimension_mappings": null,
+  "dimensions": null,
+  "display": "scalar",
+  "document_id": null,
+  "embedding_params": null,
+  "embedding_type": null,
+  "enable_embedding": false,
+  "entity_id": "iB2FCamFXsLUqH2gYr9AC",
+  "id": 48,
+  "is_remote_synced": false,
+  "last_query_start": "2026-06-17T12:02:22.991107Z",
+  "legacy_query": null,
+  "made_public_by_id": null,
+  "metabase_version": "v0.60.4.4 (65c9d32)",
+  "moderation_reviews": [],
+  "name": "Nombre de nouvelles requêtes",
+  "param_fields": {},
+  "parameter_mappings": [],
+  "parameter_usage_count": 0,
+  "parameters": [
+    {
+      "id": "fe2fc655-5100-4c24-85ce-9d3bb93488eb",
+      "isMultiSelect": false,
+      "name": "Entity Label",
+      "required": false,
+      "slug": "entity_label",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "entity_label"
+        ]
+      ],
+      "type": "string/=",
+      "values_query_type": "list",
+      "values_source_config": {
+        "card_id": 46,
+        "value_field": [
+          "field",
+          "label",
+          {
+            "base-type": "type/Text"
+          }
+        ]
+      },
+      "values_source_type": "card"
+    },
+    {
+      "id": "99a9d6ba-6cb9-4199-a794-06fbf3296075",
+      "isMultiSelect": false,
+      "name": "Start Date",
+      "slug": "start_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "start_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "63e6a5b7-a326-4ae5-9ab6-6b6c9b0db210",
+      "isMultiSelect": false,
+      "name": "End Date",
+      "slug": "end_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "end_date"
+        ]
+      ],
+      "type": "date/single"
+    }
+  ],
+  "public_uuid": null,
+  "query_type": "native",
+  "result_metadata": [
+    {
+      "base_type": "type/BigInteger",
+      "database_type": "int8",
+      "display_name": "nombre_requetes",
+      "effective_type": "type/BigInteger",
+      "field_ref": [
+        "field",
+        "nombre_requetes",
+        {
+          "base-type": "type/BigInteger"
+        }
+      ],
+      "fingerprint": {
+        "global": {
+          "distinct-count": 1,
+          "nil%": 0
+        },
+        "type": {
+          "type/Number": {
+            "avg": 470,
+            "max": 470,
+            "min": 470,
+            "q1": 470,
+            "q3": 470,
+            "sd": null
+          }
+        }
+      },
+      "lib/deduplicated-name": "nombre_requetes",
+      "lib/desired-column-alias": "nombre_requetes",
+      "lib/original-name": "nombre_requetes",
+      "lib/source": "source/native",
+      "lib/source-column-alias": "nombre_requetes",
+      "name": "nombre_requetes",
+      "semantic_type": null,
+      "source": "native"
+    }
+  ],
+  "source_card_id": null,
+  "table_id": null,
+  "type": "question",
+  "visualization_settings": {
+    "scalar.segments": [],
+    "table.pivot_column": "nombre_requetes"
+  }
+}
