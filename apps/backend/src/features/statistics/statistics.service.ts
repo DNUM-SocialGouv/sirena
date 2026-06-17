@@ -16,11 +16,19 @@ type MetabaseDashboardConfig = MetabaseConfig & {
   dashboardId: number;
 };
 
+export type CardLayout = {
+  col: number;
+  row: number;
+  sizeX: number;
+  sizeY: number;
+};
+
 export type DashboardCardData = {
   id: number;
   dashcardId: number;
   name: string;
   display: string | null;
+  layout: CardLayout | null;
   data: Array<Record<string, unknown>>;
 };
 
@@ -120,6 +128,10 @@ type RawDashcard = {
   card_id?: unknown;
   card?: { id?: unknown; name?: unknown; display?: unknown } | null;
   visualization_settings?: { visualization?: { display?: unknown } | null } | null;
+  col?: unknown;
+  row?: unknown;
+  size_x?: unknown;
+  size_y?: unknown;
 };
 
 type RawDashboardPayload = {
@@ -132,6 +144,7 @@ type DashcardDescriptor = {
   cardId: number;
   name: string;
   display: string | null;
+  layout: CardLayout | null;
 };
 
 const extractDashcards = (payload: unknown): RawDashcard[] => {
@@ -148,13 +161,24 @@ const extractDisplay = (raw: RawDashcard): string | null => {
   return typeof raw.card?.display === 'string' ? raw.card.display : null;
 };
 
+// Position de la dashcard sur la grille Metabase (24 colonnes). Null si une coordonnée manque,
+// pour retomber proprement sur un affichage pleine largeur côté front.
+const extractLayout = (raw: RawDashcard): CardLayout | null => {
+  const { col, row, size_x: sizeX, size_y: sizeY } = raw;
+  if (typeof col !== 'number' || typeof row !== 'number' || typeof sizeX !== 'number' || typeof sizeY !== 'number') {
+    return null;
+  }
+  return { col, row, sizeX, sizeY };
+};
+
 const toDashcardDescriptor = (raw: RawDashcard): DashcardDescriptor | null => {
   const cardId = typeof raw.card?.id === 'number' ? raw.card.id : typeof raw.card_id === 'number' ? raw.card_id : null;
   const dashcardId = typeof raw.id === 'number' ? raw.id : null;
   if (cardId == null || dashcardId == null) return null;
   const name = typeof raw.card?.name === 'string' ? raw.card.name : `Carte ${cardId}`;
   const display = extractDisplay(raw);
-  return { dashcardId, cardId, name, display };
+  const layout = extractLayout(raw);
+  return { dashcardId, cardId, name, display, layout };
 };
 
 export const fetchDashboardCardsData = async (params: Record<string, unknown> = {}): Promise<DashboardCardData[]> => {
@@ -177,7 +201,7 @@ export const fetchDashboardCardsData = async (params: Record<string, unknown> = 
   // allSettled (et non all) : une dashcard en échec ne doit pas rendre tout le dashboard
   // inaccessible. La carte fautive est renvoyée avec des données vides et le reste s'affiche.
   const settled = await Promise.allSettled(
-    dashcards.map(async ({ dashcardId, cardId, name, display }) => {
+    dashcards.map(async ({ dashcardId, cardId, name, display, layout }) => {
       const cardUrl = `${base}/api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${cardId}/json`;
       const data = await fetchJson(cardUrl, { dashboardId, dashcardId, cardId, step: 'card-data' });
 
@@ -186,17 +210,17 @@ export const fetchDashboardCardsData = async (params: Record<string, unknown> = 
           { dashboardId, dashcardId, cardId, payloadType: typeof data },
           '[statistics] dashcard data is not an array, returning empty',
         );
-        return { id: cardId, dashcardId, name, display, data: [] };
+        return { id: cardId, dashcardId, name, display, layout, data: [] };
       }
 
-      return { id: cardId, dashcardId, name, display, data: data as Array<Record<string, unknown>> };
+      return { id: cardId, dashcardId, name, display, layout, data: data as Array<Record<string, unknown>> };
     }),
   );
 
   return settled.map((result, index) => {
     if (result.status === 'fulfilled') return result.value;
 
-    const { dashcardId, cardId, name, display } = dashcards[index];
+    const { dashcardId, cardId, name, display, layout } = dashcards[index];
     logger.warn(
       {
         dashboardId,
@@ -206,6 +230,6 @@ export const fetchDashboardCardsData = async (params: Record<string, unknown> = 
       },
       '[statistics] dashcard fetch failed, returning empty data',
     );
-    return { id: cardId, dashcardId, name, display, data: [] };
+    return { id: cardId, dashcardId, name, display, layout, data: [] };
   });
 };
