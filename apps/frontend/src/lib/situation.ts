@@ -89,5 +89,7 @@ export function formatSituationFromServer(situation: SituationFromAPI | undefine
       : undefined,
     domainesFonctionnels: situation.domainesFonctionnels?.id || undefined,
     traitementDesFaits: situation.traitementDesFaits,
+    estLieAuSignalement: situation.estLieAuSignalement ?? undefined,
+    numerosSignalement: situation.numerosSignalement || undefined,
   };
 }

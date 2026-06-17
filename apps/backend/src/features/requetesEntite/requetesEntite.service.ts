@@ -1275,6 +1275,8 @@ const updateExistingSituation = async (
   await tx.situation.update({
     where: { id: existingSituation.id },
     data: {
+      estLieAuSignalement: situationData.estLieAuSignalement ?? null,
+      numerosSignalement: situationData.estLieAuSignalement === true ? situationData.numerosSignalement || '' : '',
       lieuDeSurvenue: { update: buildLieuDeSurvenueUpdate(situationData.lieuDeSurvenue) },
       misEnCause: { update: buildMisEnCauseUpdate(situationData.misEnCause) },
       demarchesEngagees: { update: buildDemarchesEngageesUpdate(situationData.demarchesEngagees) },
@@ -2251,6 +2253,15 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       ? `Description de la situation (${index + 1})`
       : 'Description de la situation';
     pdf.subsection(situationTitle);
+
+    if (situation.estLieAuSignalement !== null && situation.estLieAuSignalement !== undefined) {
+      pdf
+        .subsubsection('Identification')
+        .field('Situation en lien avec un ou plusieurs signalement(s)', situation.estLieAuSignalement ? 'Oui' : 'Non');
+      if (situation.estLieAuSignalement && situation.numerosSignalement) {
+        pdf.field('Numéro(s) de signalement associé(s)', situation.numerosSignalement);
+      }
+    }
 
     const lieu = situation.lieuDeSurvenue;
     if (lieu) {
