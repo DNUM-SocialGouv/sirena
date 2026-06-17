@@ -1,6 +1,17 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
 import { envVars } from './src/config/env.js';
 
+const sharedConfig = {
+  useTypeImports: true,
+  defaultScalarType: 'any',
+  scalars: {
+    ISO8601DateTime: 'string',
+    ISO8601Date: 'string',
+    BigInt: 'bigint',
+    URL: 'string',
+  },
+};
+
 const config: CodegenConfig = {
   overwrite: true,
   schema: [
@@ -15,16 +26,15 @@ const config: CodegenConfig = {
   ],
   documents: 'src/**/*.graphql',
   generates: {
+    './src/graphql/schema.ts': {
+      plugins: ['typescript'],
+      config: sharedConfig,
+    },
     './src/graphql/graphql.ts': {
-      plugins: ['typescript', 'typescript-operations', 'typed-document-node'],
+      plugins: [{ add: { content: "export * from './schema.js';" } }, 'typescript-operations', 'typed-document-node'],
       config: {
-        useTypeImports: true,
-        scalars: {
-          ISO8601DateTime: 'string',
-          ISO8601Date: 'string',
-          BigInt: 'bigint',
-          URL: 'string',
-        },
+        ...sharedConfig,
+        importSchemaTypesFrom: '~./schema.js',
       },
     },
   },

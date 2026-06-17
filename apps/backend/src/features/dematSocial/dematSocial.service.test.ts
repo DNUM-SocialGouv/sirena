@@ -2,7 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DossierState } from '../../graphql/graphql.js';
 import { graffle } from '../../libs/graffle.js';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '../requetes/requetes.service.js';
-import { getRequetes, importRequetes } from './dematSocial.service.js';
+import {
+  acceptDossierWithoutNotification,
+  classerDossierSansSuiteWithoutNotification,
+  getRequetes,
+  importRequetes,
+  updateInstruction,
+} from './dematSocial.service.js';
 
 const sendMock = vi.fn();
 
@@ -19,6 +25,8 @@ vi.mock('../../libs/graffle.js', () => {
     GetDossiersMetadataDocument: {},
     GetDossierDocument: {},
     ChangerInstructionDocument: {},
+    AccepterDossierDocument: {},
+    ClasserDossierSansSuiteDocument: {},
   };
 });
 
@@ -90,6 +98,64 @@ vi.mock('../declarants/declarants.notification.service.js', () => ({
 describe('dematSocial.service.ts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('finalisation operations', () => {
+    it('accepts a dossier with notifications disabled', async () => {
+      sendMock.mockResolvedValueOnce({ dossierAccepter: { dossier: { id: 'Dossier-123' }, errors: [] } });
+
+      await acceptDossierWithoutNotification('Dossier-123', 'Motivation SIRENA');
+
+      expect(sendMock).toHaveBeenCalledWith({
+        dossierId: Buffer.from('Dossier-123').toString('base64'),
+        instructeurId: Buffer.from('Instructeur-123').toString('base64'),
+        motivation: 'Motivation SIRENA',
+        disableNotification: true,
+      });
+    });
+
+    it('classifies a dossier sans suite with notifications disabled and motivation', async () => {
+      sendMock.mockResolvedValueOnce({ dossierClasserSansSuite: { dossier: { id: 'Dossier-123' }, errors: [] } });
+
+      await classerDossierSansSuiteWithoutNotification('Dossier-123', 'Motivation SIRENA');
+
+      expect(sendMock).toHaveBeenCalledWith({
+        dossierId: Buffer.from('Dossier-123').toString('base64'),
+        instructeurId: Buffer.from('Instructeur-123').toString('base64'),
+        motivation: 'Motivation SIRENA',
+        disableNotification: true,
+      });
+    });
+
+    it('passes a dossier to instruction with notifications disabled', async () => {
+      sendMock.mockResolvedValueOnce({ dossierPasserEnInstruction: { dossier: { id: 'Dossier-123' }, errors: [] } });
+
+      await updateInstruction('Dossier-123');
+
+      expect(sendMock).toHaveBeenCalledWith({
+        dossierId: Buffer.from('Dossier-123').toString('base64'),
+        instructeurId: Buffer.from('Instructeur-123').toString('base64'),
+        disableNotification: true,
+      });
+    });
+
+    it('throws when accepting a dossier returns demat.social validation errors', async () => {
+      sendMock.mockResolvedValueOnce({
+        dossierAccepter: { dossier: null, errors: [{ message: 'Le dossier ne peut pas être accepté' }] },
+      });
+
+      await expect(acceptDossierWithoutNotification('Dossier-123', 'Motivation SIRENA')).rejects.toThrow(
+        'Le dossier ne peut pas être accepté',
+      );
+    });
+
+    it('throws when classifying a dossier sans suite does not return a dossier', async () => {
+      sendMock.mockResolvedValueOnce({ dossierClasserSansSuite: { dossier: null, errors: [] } });
+
+      await expect(classerDossierSansSuiteWithoutNotification('Dossier-123', 'Motivation SIRENA')).rejects.toThrow(
+        'No dossier returned',
+      );
+    });
   });
 
   describe('getRequetes()', () => {
