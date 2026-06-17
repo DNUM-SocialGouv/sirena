@@ -115,6 +115,8 @@ export const mapSituationToPrismaCreate = (situationData: SituationInput) => {
     lieuData?.adresse?.ville;
 
   return {
+    estLieAuSignalement: situationData.estLieAuSignalement ?? null,
+    numerosSignalement: situationData.estLieAuSignalement === true ? situationData.numerosSignalement || '' : '',
     lieuDeSurvenue: {
       create: {
         lieuTypeId: lieuData?.lieuType || null,
