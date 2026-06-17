@@ -179,7 +179,10 @@ describe('syncClosedRequeteToDematSocial', () => {
     mockSyncData([REQUETE_CLOTURE_REASON.HORS_COMPETENCE]);
     mockDossierState(DossierState.EnConstruction);
     vi.mocked(updateInstruction).mockResolvedValueOnce({
-      dossierPasserEnInstruction: { dossier: { id: 'Dossier-123' }, errors: [] },
+      dossierPasserEnInstruction: {
+        dossier: { id: 'Dossier-123', number: 123, state: DossierState.EnInstruction },
+        errors: [],
+      },
     } as Awaited<ReturnType<typeof updateInstruction>>);
 
     await syncClosedRequeteToDematSocial('requete-1');

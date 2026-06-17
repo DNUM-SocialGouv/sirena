@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { SirecDataError } from '../transco/sirecTransco.error.js';
 import { transformSirecReclamation } from './sirecMigration.transformer.js';
 
 vi.mock('../transco/affectation/affectation.transco.js', () => ({

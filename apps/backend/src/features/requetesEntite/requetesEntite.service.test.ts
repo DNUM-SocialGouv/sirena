@@ -1722,7 +1722,7 @@ describe('requetesEntite.service', () => {
         transactionEvents.push('sync');
       });
 
-      await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123');
+      await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01');
 
       expect(safeSyncClosedRequeteToDematSocial).toHaveBeenCalledWith('req123');
       expect(transactionEvents).toEqual(['transaction:start', 'transaction:committed', 'sync']);
@@ -1762,7 +1762,9 @@ describe('requetesEntite.service', () => {
       });
       vi.mocked(safeSyncClosedRequeteToDematSocial).mockRejectedValueOnce(new Error('demat.social unavailable'));
 
-      await expect(closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123')).resolves.toMatchObject({
+      await expect(
+        closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01'),
+      ).resolves.toMatchObject({
         etapeId: 'etape123',
       });
     });
