@@ -22,19 +22,20 @@ export function transformSirecReponseProvenances(sirecData: SirecReclamationData
     if (institutionNom === undefined) throw new SirecTranscoError(id_provenance, 'provenance');
 
     const { requeteEntiteIds } = transcodeAffectation(id_group);
-    const entiteId = requeteEntiteIds[0];
 
-    const currentProvenanceForEntity = `${id_provenance}:${entiteId}`;
-    if (provenanceForEntitySet.has(currentProvenanceForEntity)) continue;
-    provenanceForEntitySet.add(currentProvenanceForEntity);
+    for (const entiteId of requeteEntiteIds) {
+      const currentProvenanceForEntity = `${id_provenance}:${entiteId}`;
+      if (provenanceForEntitySet.has(currentProvenanceForEntity)) continue;
+      provenanceForEntitySet.add(currentProvenanceForEntity);
 
-    etapes.push({
-      nom: `Réponse à l'institution de provenance : ${institutionNom}`,
-      entiteId,
-      statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-      createdAt: date,
-      note: `Date de la réponse : ${formatSirecDate(date)}`,
-    });
+      etapes.push({
+        nom: `Réponse à l'institution de provenance : ${institutionNom}`,
+        entiteId,
+        statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        createdAt: date,
+        note: `Date de la réponse : ${formatSirecDate(date)}`,
+      });
+    }
   }
 
   return etapes;

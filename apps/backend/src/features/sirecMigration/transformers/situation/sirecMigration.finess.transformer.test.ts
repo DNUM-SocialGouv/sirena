@@ -5,7 +5,8 @@ import { transformSirecFiness } from './sirecMigration.finess.transformer.js';
 
 vi.mock('../transco/finessCategetab.transco.js', () => ({
   transcodeFinessCategetab: vi.fn((categetab: number | null) => {
-    if (categetab === null) throw new SirecDataError('categetab null');
+    if (categetab === null)
+      return { misEnCause: { misEnCauseTypeId: 'ETABLISSEMENT', misEnCauseTypePrecisionId: 'AUTRE' } };
     if (categetab === 354)
       return { misEnCause: { misEnCauseTypeId: 'ETABLISSEMENT', misEnCauseTypePrecisionId: 'SAD_SOINS' } };
     if (categetab === 500)
@@ -120,6 +121,26 @@ describe('sirecMigration.finess.transformer.ts', () => {
       const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: 355, rs: 'Hôpital B' }));
       expect(lieuDeSurvenueData?.adresse.label).toBe('Hôpital B');
     });
+
+    it('should map adresse codePostal from codepostal', () => {
+      const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: 355, codepostal: '69001' }));
+      expect(lieuDeSurvenueData?.adresse.codePostal).toBe('69001');
+    });
+
+    it('should map adresse ville from libcommune', () => {
+      const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: 355, libcommune: 'Lyon' }));
+      expect(lieuDeSurvenueData?.adresse.ville).toBe('Lyon');
+    });
+
+    it('should fallback adresse codePostal to empty string when null', () => {
+      const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: 355, codepostal: null }));
+      expect(lieuDeSurvenueData?.adresse.codePostal).toBe('');
+    });
+
+    it('should fallback adresse ville to empty string when null', () => {
+      const { lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: 355, libcommune: null }));
+      expect(lieuDeSurvenueData?.adresse.ville).toBe('');
+    });
   });
 
   describe('error cases', () => {
@@ -131,8 +152,11 @@ describe('sirecMigration.finess.transformer.ts', () => {
       expect(() => transformSirecFiness(makeFinessData({ categetab: 9999 }))).toThrow(SirecTranscoError);
     });
 
-    it('should propagate SirecDataError for null categetab', () => {
-      expect(() => transformSirecFiness(makeFinessData({ categetab: null }))).toThrow(SirecDataError);
+    it('should use AUTRE fallback for null categetab', () => {
+      const { misEnCauseData, lieuDeSurvenueData } = transformSirecFiness(makeFinessData({ categetab: null }));
+
+      expect(misEnCauseData.misEnCauseTypePrecisionId).toBe('AUTRE');
+      expect(lieuDeSurvenueData).toBeNull();
     });
   });
 });

@@ -113,6 +113,14 @@ export interface SirecMisEnCause {
   finessData: SirecFinessData | null;
 }
 
+export interface SirecMainCourante {
+  id_data: number;
+  type_action1: number | null;
+  commentaire: string | null;
+  date_action: Date | null;
+  groupIds: number[];
+}
+
 export interface SirecReclamationData {
   reclamation: SirecReclamationRow;
   motifsDeclaresIdDicos: number[];
@@ -121,6 +129,7 @@ export interface SirecReclamationData {
   institutionPartenaires: Record<number, string>;
   typeTraitementIdDicos: number[];
   misEnCauses: SirecMisEnCause[];
+  mainCourantes: SirecMainCourante[];
 }
 
 export async function fetchExistingSirecIds(sirecIds: number[]): Promise<number[]> {
@@ -299,6 +308,42 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
   return [...map.values()];
 }
 
+type MainCouranteRow = {
+  id_data: number;
+  type_action1: number | null;
+  commentaire: string | null;
+  date_action: Date | null;
+  id_group: number | null;
+};
+
+export async function fetchSirecMainCourantes(sirecId: number): Promise<SirecMainCourante[]> {
+  const rows = await mariadbPool.query<MainCouranteRow[]>(
+    `SELECT mc.id_data, mc.type_action1, mc.commentaire, mc.date_action, dg.id_group
+     FROM sire_main_courante_data mc
+     LEFT JOIN sire_main_courante_data_group dg ON mc.id_data = dg.id_data AND dg.id_group != 1
+     WHERE mc.id_reclamation = ?`,
+    [sirecId],
+  );
+
+  const map = new Map<number, SirecMainCourante>();
+  for (const row of rows) {
+    if (!map.has(row.id_data)) {
+      map.set(row.id_data, {
+        id_data: row.id_data,
+        type_action1: row.type_action1,
+        commentaire: row.commentaire,
+        date_action: row.date_action,
+        groupIds: [],
+      });
+    }
+    if (row.id_group !== null) {
+      // biome-ignore lint/style/noNonNullAssertion: key was just set above
+      map.get(row.id_data)!.groupIds.push(row.id_group);
+    }
+  }
+  return [...map.values()];
+}
+
 function parseInstitutionPartNumericIds(value: string | null): number[] {
   if (!value) return [];
   return value
@@ -314,15 +359,23 @@ export async function fetchSirecData(sirecId: number): Promise<SirecReclamationD
 
   const institutionIds = parseInstitutionPartNumericIds(reclamation.institution_part);
 
-  const [motifsDeclaresIdDicos, groupIds, provenances, institutionPartenaires, typeTraitementIdDicos, misEnCauses] =
-    await Promise.all([
-      fetchSirecMotifsDeclaresById(sirecId),
-      fetchSirecGroupIds(sirecId),
-      fetchSirecProvenances(sirecId),
-      fetchSirecInstitutionPartenaires(institutionIds),
-      fetchSirecTypeTraitementIds(sirecId),
-      fetchSirecMisEnCauses(sirecId),
-    ]);
+  const [
+    motifsDeclaresIdDicos,
+    groupIds,
+    provenances,
+    institutionPartenaires,
+    typeTraitementIdDicos,
+    misEnCauses,
+    mainCourantes,
+  ] = await Promise.all([
+    fetchSirecMotifsDeclaresById(sirecId),
+    fetchSirecGroupIds(sirecId),
+    fetchSirecProvenances(sirecId),
+    fetchSirecInstitutionPartenaires(institutionIds),
+    fetchSirecTypeTraitementIds(sirecId),
+    fetchSirecMisEnCauses(sirecId),
+    fetchSirecMainCourantes(sirecId),
+  ]);
 
   return {
     reclamation,
@@ -332,5 +385,6 @@ export async function fetchSirecData(sirecId: number): Promise<SirecReclamationD
     institutionPartenaires,
     typeTraitementIdDicos,
     misEnCauses,
+    mainCourantes,
   };
 }

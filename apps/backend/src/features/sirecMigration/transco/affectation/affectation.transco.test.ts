@@ -8,6 +8,11 @@ vi.mock('@sirena/db', () => ({
   },
 }));
 
+const mockWarn = vi.hoisted(() => vi.fn());
+vi.mock('../../../../helpers/pino.js', () => ({
+  createDefaultLogger: () => ({ warn: mockWarn }),
+}));
+
 const ARS_NORMANDIE_ID = 'ars-normandie-dynamic-id';
 const ARS_AUVERGNE_ID = 'ars-auvergne-id';
 const ARS_GRAND_EST_ID = 'ars-grand-est-id';
@@ -200,20 +205,28 @@ describe('affectation.transco.ts', () => {
         expect(() => freshTranscode(1115)).toThrow('initAffectationTransco()');
       });
 
-      it('should throw when a required service entity is missing from the Entite table', async () => {
+      it('should not throw during init when a service entity is missing, but throw SirecTranscoError on use', async () => {
         const entitiesWithoutDau = makeAllRequiredEntities().filter((e) => e.id !== 'dau-id');
-        const { prisma } = await import('@sirena/db');
-        vi.mocked(prisma.entite.findMany).mockResolvedValueOnce(entitiesWithoutDau as never);
+        await setupTransco(entitiesWithoutDau);
 
-        await expect(initAffectationTransco()).rejects.toThrow("Direction de l'Autonomie");
+        expect(() => transcodeAffectation(1115)).toThrow(SirecTranscoError);
       });
 
-      it('should throw when a required ARS entity is missing from the Entite table', async () => {
-        const entitiesWithoutArsNormandie = makeAllRequiredEntities().filter((e) => e.nomComplet !== 'ARS Normandie');
-        const { prisma } = await import('@sirena/db');
-        vi.mocked(prisma.entite.findMany).mockResolvedValueOnce(entitiesWithoutArsNormandie as never);
+      it('should log a warning when a service entity is missing during init', async () => {
+        const entitiesWithoutDau = makeAllRequiredEntities().filter((e) => e.id !== 'dau-id');
+        await setupTransco(entitiesWithoutDau);
 
-        await expect(initAffectationTransco()).rejects.toThrow('ARS Normandie');
+        expect(mockWarn).toHaveBeenCalledWith(
+          expect.objectContaining({ sirecId: expect.any(Number) }),
+          expect.any(String),
+        );
+      });
+
+      it('should not throw during init when an ARS entity is missing, but throw SirecTranscoError on use', async () => {
+        const entitiesWithoutArsNormandie = makeAllRequiredEntities().filter((e) => e.nomComplet !== 'ARS Normandie');
+        await setupTransco(entitiesWithoutArsNormandie);
+
+        expect(() => transcodeAffectation(693)).toThrow(SirecTranscoError);
       });
     });
   });

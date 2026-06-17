@@ -14,8 +14,10 @@ vi.mock('../../transco/dictionnaire.transco.js', () => ({
 vi.mock('../../transco/affectation/affectation.transco.js', () => ({
   transcodeAffectation: vi.fn((id: number) => {
     if (id === 693) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] };
+    if (id === 695) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] }; // different id_group, same ARS
     if (id === 677) return { requeteEntiteIds: ['ars-grand-est'], situationEntiteIds: [] };
     if (id === 680) return { requeteEntiteIds: ['ars-idf'], situationEntiteIds: [] };
+    if (id === 999) return { requeteEntiteIds: ['ars-a', 'ars-b'], situationEntiteIds: [] };
     throw new SirecTranscoError(id, 'affectation');
   }),
 }));
@@ -154,20 +156,32 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
     expect(result).toHaveLength(1);
   });
 
-  it('should deduplicate etapes with the same id_provenance and entiteId', () => {
+  it('should deduplicate etapes when different id_groups resolve to the same ARS and same id_provenance', () => {
     const date1 = new Date('2024-01-10');
     const date2 = new Date('2024-02-15');
-    // id_group 693 and 677 both map to 'ars-normandie' in this scenario
+    // id_group 693 and 695 both map to 'ars-normandie'
     const result = transformSirecReponseProvenances(
       makeData({ date_rep_provenance1: date1, date_rep_provenance2: date2 }, [
         { id_provenance: 103, id_group: 693 },
-        { id_provenance: 103, id_group: 693 },
+        { id_provenance: 103, id_group: 695 },
       ]),
     );
 
     expect(result).toHaveLength(1);
     expect(result[0].entiteId).toBe('ars-normandie');
     expect(result[0].createdAt).toEqual(date1);
+  });
+
+  it('should create one etape per requeteEntiteId when a group maps to multiple entiteIds', () => {
+    const result = transformSirecReponseProvenances(
+      makeData({ date_rep_provenance1: new Date('2024-03-05') }, [{ id_provenance: 103, id_group: 999 }]),
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result[0].entiteId).toBe('ars-a');
+    expect(result[1].entiteId).toBe('ars-b');
+    expect(result[0].nom).toBe("Réponse à l'institution de provenance : Institution 1");
+    expect(result[1].nom).toBe("Réponse à l'institution de provenance : Institution 1");
   });
 
   it('should throw SirecTranscoError for an unknown id_provenance', () => {
