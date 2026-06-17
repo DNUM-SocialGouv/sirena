@@ -15,7 +15,7 @@ import {
   type RequeteStatutType,
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
-import { getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
+import { getDateTodayInParis, getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
 import archiver from 'archiver';
 import type { z } from 'zod';
 import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
@@ -1614,9 +1614,14 @@ export const closeRequeteForEntite = async (
   entiteId: string,
   reasonIds: string[],
   authorId: string,
+  clotureEffectiveDate: string,
   precision?: string,
   fileIds?: string[],
 ) => {
+  if (clotureEffectiveDate > getDateTodayInParis()) {
+    throw new Error('CLOTURE_EFFECTIVE_DATE_IN_FUTURE');
+  }
+
   // Helper function to create changelog for RequeteEtapeNote
   const createRequeteEtapeNoteChangelog = async (
     noteId: string,
@@ -1701,6 +1706,7 @@ export const closeRequeteForEntite = async (
         requeteId,
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+        clotureEffectiveDate: new Date(clotureEffectiveDate),
         clotureReason: {
           connect: uniqueReasonIds.map((id) => ({ id })),
         },
@@ -1742,6 +1748,7 @@ export const closeRequeteForEntite = async (
     return {
       etapeId: etape.id,
       closedAt: etape.createdAt.toISOString(),
+      clotureEffectiveDate,
       noteId,
       etape,
       note,
@@ -1756,6 +1763,7 @@ export const closeRequeteForEntite = async (
     after: {
       statutId: REQUETE_STATUT_TYPES.CLOTUREE,
       clotureReasonIds: uniqueReasonIds,
+      clotureEffectiveDate,
       precision: precision?.trim() || null,
       ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
     } as Prisma.JsonObject,
