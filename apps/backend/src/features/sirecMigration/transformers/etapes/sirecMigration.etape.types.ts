@@ -4,4 +4,5 @@ export interface SirenaEtapeData {
   statutId: string;
   createdAt?: Date;
   note: string | null;
+  clotureReason?: string;
 }

@@ -91,8 +91,16 @@ describe('sirecMigration.service.ts', () => {
         commentaire: string;
         ageId: string | null;
       } | null,
+      requeteStatutId: 'EN_COURS',
       requeteEntiteIds: ['ars-1', 'ars-2'],
-      etapes: [] as { nom: string; entiteId: string; statutId: string; createdAt?: Date; note: string | null }[],
+      etapes: [] as {
+        nom: string;
+        entiteId: string;
+        statutId: string;
+        createdAt?: Date;
+        note: string | null;
+        clotureReason?: string;
+      }[],
       situations: [
         {
           fait: {
@@ -815,6 +823,50 @@ describe('sirecMigration.service.ts', () => {
       });
 
       expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('should connect clotureReason when set on etape', async () => {
+      await saveFromSirec({
+        ...data,
+        etapes: [{ nom: 'Clôture', entiteId: 'ars-1', statutId: 'FAIT', note: null, clotureReason: 'SANS_SUITE' }],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'FAIT',
+          nom: 'Clôture',
+          clotureReason: { connect: [{ id: 'SANS_SUITE' }] },
+        },
+      });
+    });
+
+    it('should not include clotureReason when not set on etape', async () => {
+      await saveFromSirec({
+        ...data,
+        etapes: [{ nom: 'Clôture', entiteId: 'ars-1', statutId: 'FAIT', note: null }],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: expect.not.objectContaining({ clotureReason: expect.anything() }),
+      });
+    });
+
+    it('should use requeteStatutId from data for requeteEntite', async () => {
+      await saveFromSirec({ ...data, requeteStatutId: 'CLOTUREE' });
+
+      expect(prisma.requeteEntite.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([expect.objectContaining({ statutId: 'CLOTUREE' })]),
+      });
+    });
+
+    it('should use EN_COURS statutId for requeteEntite by default', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.requeteEntite.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([expect.objectContaining({ statutId: 'EN_COURS' })]),
+      });
     });
 
     describe('misEnCause RPPS', () => {
