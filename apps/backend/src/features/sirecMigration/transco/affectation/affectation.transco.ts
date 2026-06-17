@@ -1,7 +1,10 @@
 import { prisma } from '@sirena/db';
+import { createDefaultLogger } from '../../../../helpers/pino.js';
 import { SirecTranscoError } from '../sirecTransco.error.js';
 import { AFFECTATION_ENTITES_NORMANDIE } from './entitesNormandie.js';
 import { AFFECTATION_ENTITES_TOP_LEVEL } from './entitesTopLevel.js';
+
+const logger = createDefaultLogger();
 
 export interface EntiteSirenaLabels {
   label: string;
@@ -35,7 +38,7 @@ function findEntityId(entities: EntiteRow[], sirenaLabels: EntiteSirenaLabels & 
   );
   if (!match) {
     const ancestry = [sirenaLabels.grandParentLabel, sirenaLabels.parentLabel].filter(Boolean).join(' > ');
-    throw new Error(`Entité SIRENA introuvable: "${sirenaLabels.label}" sous "${ancestry}"`);
+    throw new Error(`SIRENA Entity not found: "${sirenaLabels.label}" under "${ancestry}"`);
   }
   return match.id;
 }
@@ -61,14 +64,20 @@ export async function initAffectationTransco(): Promise<void> {
     ...AFFECTATION_ENTITES_NORMANDIE,
   })) {
     const sirecId = Number(sirecIdStr);
-    const firstEntity = entitesSirenaLabels[0];
-    const topLevelLabel = firstEntity.grandParentLabel ?? firstEntity.parentLabel ?? firstEntity.label;
-    const topLevelEntity = entities.find((e) => normalize(e.nomComplet) === normalize(topLevelLabel) && !e.entiteMere);
-    if (!topLevelEntity) throw new Error(`Entité SIRENA introuvable: "${topLevelLabel}" (sans entité mère)`);
-    const serviceEntiteIds = entitesSirenaLabels
-      .filter((s): s is EntiteSirenaLabels & { parentLabel: string } => s.parentLabel !== undefined)
-      .map((s) => findEntityId(entities, s));
-    newTransco.set(sirecId, { topLevelEntiteId: topLevelEntity.id, serviceEntiteIds });
+    try {
+      const firstEntity = entitesSirenaLabels[0];
+      const topLevelLabel = firstEntity.grandParentLabel ?? firstEntity.parentLabel ?? firstEntity.label;
+      const topLevelEntity = entities.find(
+        (e) => normalize(e.nomComplet) === normalize(topLevelLabel) && !e.entiteMere,
+      );
+      if (!topLevelEntity) continue;
+      const serviceEntiteIds = entitesSirenaLabels
+        .filter((s): s is EntiteSirenaLabels & { parentLabel: string } => s.parentLabel !== undefined)
+        .map((s) => findEntityId(entities, s));
+      newTransco.set(sirecId, { topLevelEntiteId: topLevelEntity.id, serviceEntiteIds });
+    } catch (err) {
+      logger.warn({ err, sirecId }, 'SIREC Entity not found in SIRENA, ignored during initialization');
+    }
   }
 
   transco = newTransco;
@@ -86,7 +95,7 @@ export function filterArsEntiteIds(entiteIds: string[]): string[] {
 
 export function transcodeAffectation(idSirec: number): AffectationEntites {
   if (transco === null) {
-    throw new Error('initAffectationTransco() doit être appelé avant transcodeAffectation()');
+    throw new Error('initAffectationTransco() must be called before transcodeAffectation()');
   }
   const entry = transco.get(idSirec);
   if (entry !== undefined) {

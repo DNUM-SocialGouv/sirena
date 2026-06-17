@@ -25,6 +25,9 @@ export function transformSirecAffectation(sirecData: SirecReclamationData): Sire
     sirecData.reclamation.service_recepteur_niv1,
     sirecData.reclamation.service_gestionnaire,
     ...sirecData.groupIds,
+    ...sirecData.mainCourantes.flatMap((mc) => mc.groupIds),
+    ...sirecData.provenances.map((p) => p.id_group),
+    ...sirecData.misEnCauses.flatMap((mec) => mec.groupIds),
   ];
 
   for (const fieldValue of allIds) {
