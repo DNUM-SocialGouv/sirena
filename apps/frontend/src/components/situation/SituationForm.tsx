@@ -8,6 +8,7 @@ import { useEntites } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { hasSituationContent } from '@/utils/situationHelpers';
 import { DescriptionFaits } from './sections/DescriptionSituation';
+import { Identification } from './sections/Identification';
 import { InformationsComplementaires } from './sections/InformationsComplementaires';
 import { LieuSurvenu } from './sections/LieuSurvenu';
 import TraitementDesFaitsSection from './TraitementDesFaits';
@@ -44,6 +45,7 @@ export function SituationForm({
   const [isSaving, setIsSaving] = useState(false);
   const [faitFiles, setFaitFiles] = useState<File[]>([]);
   const [isTraitementDesFaitsValid, setIsTraitementDesFaitsValid] = useState(true);
+  const [isIdentificationValid, setIsIdentificationValid] = useState(true);
   const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
   const { data: entitesData } = useEntites(undefined);
   const { data: profile } = useProfile();
@@ -65,7 +67,7 @@ export function SituationForm({
   const handleSave = async () => {
     setHasAttemptedSave(true);
 
-    if (!isTraitementDesFaitsValid) {
+    if (!isTraitementDesFaitsValid || !isIdentificationValid) {
       return;
     }
 
@@ -129,6 +131,13 @@ export function SituationForm({
           faitFiles={faitFiles}
           setFaitFiles={setFaitFiles}
           isSaving={isSaving}
+        />
+
+        <Identification
+          formData={formData}
+          isSaving={isSaving}
+          setFormData={setFormData}
+          onValidationChange={setIsIdentificationValid}
         />
 
         <TraitementDesFaitsSection

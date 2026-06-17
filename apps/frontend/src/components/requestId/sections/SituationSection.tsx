@@ -314,6 +314,21 @@ export const SituationSection = ({ id, requestId, situation, receptionType, edit
 
     return (
       <>
+        {situation?.estLieAuSignalement != null && (
+          <>
+            <SectionTitle level={4}>Identification</SectionTitle>
+            <p className={fr.cx('fr-mb-1w')}>
+              <span>Situation en lien avec un ou plusieurs signalement(s) :</span>{' '}
+              {situation.estLieAuSignalement ? 'Oui' : 'Non'}
+            </p>
+            {situation.estLieAuSignalement && situation.numerosSignalement && (
+              <p className={fr.cx('fr-mb-3w')}>
+                <span>Numéro(s) de signalement associé(s) :</span> {situation.numerosSignalement}
+              </p>
+            )}
+          </>
+        )}
+
         {hasLieu && (
           <>
             <SectionTitle level={4}>Lieu où se sont déroulés les faits</SectionTitle>

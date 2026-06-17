@@ -31,6 +31,7 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: 'user-1',
+    clotureEffectiveDate: null,
   };
 
   beforeEach(() => {

@@ -41,6 +41,7 @@ const columns = [
 export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns).extend({
   entiteId: z.string().optional(),
   departementCodes: z.string().optional(),
+  domaineIds: z.string().optional(),
   prioriteId: z
     .enum([REQUETE_PRIORITE_TYPES.BASSE, REQUETE_PRIORITE_TYPES.MOYENNE, REQUETE_PRIORITE_TYPES.HAUTE])
     .optional(),
@@ -48,6 +49,12 @@ export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns)
 
 export const GetDepartementCountsQuerySchema = z.object({
   departementCodes: z.string(),
+  entiteId: z.string().optional(),
+  search: z.string().optional(),
+});
+
+export const GetDomaineCountsQuerySchema = z.object({
+  domaineIds: z.string(),
   entiteId: z.string().optional(),
   search: z.string().optional(),
 });
@@ -124,6 +131,7 @@ export const GetRequeteEntiteSchema = RequeteEntiteSchema.extend({
   requete: RequeteWithSituationsSchema,
   requeteEtape: z.array(RequeteEtapeSchema),
   departementsLieuSurvenue: z.array(z.object({ code: z.string(), lib: z.string() })),
+  domainesFonctionnels: z.array(z.object({ id: z.string(), label: z.string() })),
 });
 
 export const GetRequetesEntiteResponseSchema = z.array(GetRequeteEntiteSchema);
@@ -194,6 +202,7 @@ export const UpdateStatutResponseSchema = z.object({
 });
 
 export const CloseRequeteBodySchema = z.object({
+  clotureEffectiveDate: z.iso.date(),
   reasonIds: z.array(z.string().min(1)).min(1, {
     message:
       'Vous devez renseigner au moins une raison de clôture pour clôturer la requête. Veuillez sélectionner une valeur dans la liste.',
@@ -205,6 +214,7 @@ export const CloseRequeteBodySchema = z.object({
 export const CloseRequeteResponseSchema = z.object({
   etapeId: z.string(),
   closedAt: z.iso.datetime(),
+  clotureEffectiveDate: z.iso.date(),
   noteId: z.string().nullable(),
 });
 

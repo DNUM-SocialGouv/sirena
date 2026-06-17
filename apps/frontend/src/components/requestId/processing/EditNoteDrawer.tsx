@@ -399,10 +399,14 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                         fileErrors={fileErrors}
                         isUploading={isLoading}
                         onFilesSelect={(selectedFiles) => {
-                          setFilesToUpload(
-                            selectedFiles.map((file) => new File([file], file.name, { type: file.type })),
-                          );
-                          setModifications((prev) => ({ ...prev, filesAdded: selectedFiles.length > 0 }));
+                          setFilesToUpload((prev) => {
+                            const existingNames = new Set(prev.map((f) => f.name));
+                            const newFiles = selectedFiles
+                              .filter((f) => !existingNames.has(f.name))
+                              .map((f) => new File([f], f.name, { type: f.type }));
+                            return [...prev, ...newFiles];
+                          });
+                          setModifications((prev) => ({ ...prev, filesAdded: true }));
                           setFileErrors({});
                         }}
                         title="Sélectionner ou glisser un fichier à joindre"
@@ -415,6 +419,10 @@ export const EditNoteDrawer = forwardRef<EditNoteDrawerRef>((_props, ref) => {
                         title="Fichiers sélectionnés"
                         className={styles.selectedFilesList}
                         variant="compact"
+                        onRemove={(fileName) => {
+                          setFilesToUpload((prev) => prev.filter((f) => f.name !== fileName));
+                          setModifications((prev) => ({ ...prev, filesAdded: filesToUpload.length > 1 }));
+                        }}
                       />
                     </section>
                     <div className={styles.footerActions}>

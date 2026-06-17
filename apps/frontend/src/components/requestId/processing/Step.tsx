@@ -90,15 +90,17 @@ const getStepSubtitle = (
   createdBy: StepType['createdBy'],
   notes: StepType['notes'],
   requete: StepType['requete'],
+  clotureEffectiveDate?: string | null,
 ): React.ReactNode => {
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
     const agent = createdBy ?? notes[0]?.author;
+    const closureDate = clotureEffectiveDate ?? createdAt;
     return agent ? (
       <>
-        Requête clôturée le {formatDate(createdAt)} par {formatAgent(agent)}
+        Requête clôturée le {formatDate(closureDate)} par {formatAgent(agent)}
       </>
     ) : (
-      `Requête clôturée le ${formatDate(createdAt)}`
+      `Requête clôturée le ${formatDate(closureDate)}`
     );
   }
   if (type === REQUETE_ETAPE_TYPES.CREATION) {
@@ -155,6 +157,7 @@ const StepComponent = ({
   notes,
   id,
   requete,
+  clotureEffectiveDate,
   ...rest
 }: StepProps) => {
   const deleteStepModal = createModal({
@@ -375,7 +378,16 @@ const StepComponent = ({
             <div className="fr-grid-row fr-grid-row--middle fr-mt-1w">
               <div className="fr-col">
                 <p className="fr-text--xs fr-text-mention--grey">
-                  {getStepSubtitle(rest.type, statutId, createdAt, updatedAt, createdBy, notes, requete)}
+                  {getStepSubtitle(
+                    rest.type,
+                    statutId,
+                    createdAt,
+                    updatedAt,
+                    createdBy,
+                    notes,
+                    requete,
+                    clotureEffectiveDate,
+                  )}
                 </p>
                 {isAcknowledgmentSendable && canEdit && (
                   <div className="fr-mt-2w">
@@ -504,6 +516,7 @@ const StepComponent = ({
                         updatedAt,
                         createdBy,
                         requete,
+                        clotureEffectiveDate,
                         ...rest,
                       },
                       noteData,
@@ -542,6 +555,7 @@ const StepComponent = ({
                     updatedAt,
                     createdBy,
                     requete,
+                    clotureEffectiveDate,
                     ...rest,
                   })
                 }

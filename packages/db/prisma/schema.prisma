@@ -340,6 +340,9 @@ model Situation {
   domainesFonctionnelsId String?
   domainesFonctionnels   DomainesFonctionnelsEnum? @relation(fields: [domainesFonctionnelsId], references: [id], onDelete: SetNull)
 
+  estLieAuSignalement Boolean?
+  numerosSignalement  String   @default("")
+
   requete   Requete? @relation(fields: [requeteId], references: [id], onDelete: Cascade)
   requeteId String?
 
@@ -544,6 +547,8 @@ model RequeteEtape {
   notes RequeteEtapeNote[]
 
   clotureReason RequeteClotureReasonEnum[]
+
+  clotureEffectiveDate DateTime? @db.Date
 
   createdById String?
   createdBy   User?   @relation(fields: [createdById], references: [id])

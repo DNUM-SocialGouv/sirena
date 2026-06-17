@@ -96,6 +96,7 @@ export const hasSituationContent = (
   const hasFaits = checkFaits(fait, additionalFiles);
   const hasDemarches = checkDemarches(situation.demarchesEngagees);
   const hasTraitementDesFaits = checkTraitementDesFaits(traitementDesFaits);
+  const hasIdentification = situation.estLieAuSignalement != null || hasValue(situation.numerosSignalement);
 
-  return hasMisEnCause || hasLieu || hasFaits || hasDemarches || hasTraitementDesFaits;
+  return hasMisEnCause || hasLieu || hasFaits || hasDemarches || hasTraitementDesFaits || hasIdentification;
 };

@@ -246,6 +246,7 @@ describe('RequetesEntite endpoints: /', () => {
       prioriteId: null,
       requeteEtape: [],
       departementsLieuSurvenue: [],
+      domainesFonctionnels: [],
     },
   ] satisfies Awaited<ReturnType<typeof getRequetesEntite>>['data'];
 
@@ -591,6 +592,7 @@ describe('RequetesEntite endpoints: /', () => {
     const mockCloseResult = {
       etapeId: 'etape123',
       closedAt: '2024-01-01T10:00:00.000Z',
+      clotureEffectiveDate: '2024-01-01',
       noteId: 'note123',
       etape: {
         id: 'etape123',
@@ -601,6 +603,7 @@ describe('RequetesEntite endpoints: /', () => {
         requeteId: 'requeteId',
         entiteId: 'e1',
         createdById: 'id1',
+        clotureEffectiveDate: null,
         createdAt: new Date('2024-01-01T10:00:00.000Z'),
         updatedAt: new Date('2024-01-01T10:00:00.000Z'),
       },
@@ -622,6 +625,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
           precision: 'Test precision',
           fileIds: ['file1', 'file2'],
         },
@@ -636,6 +640,7 @@ describe('RequetesEntite endpoints: /', () => {
         'entiteId',
         ['reason123'],
         'id1',
+        '2024-01-01',
         'Test precision',
         ['file1', 'file2'],
       );
@@ -645,6 +650,7 @@ describe('RequetesEntite endpoints: /', () => {
       const mockCloseResultMinimal = {
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
+        clotureEffectiveDate: '2024-01-01',
         noteId: 'note123',
         etape: {
           id: 'etape123',
@@ -655,6 +661,7 @@ describe('RequetesEntite endpoints: /', () => {
           requeteId: 'requeteId',
           entiteId: 'e1',
           createdById: 'id1',
+          clotureEffectiveDate: null,
           createdAt: new Date('2024-01-01T10:00:00.000Z'),
           updatedAt: new Date('2024-01-01T10:00:00.000Z'),
         },
@@ -675,6 +682,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 
@@ -687,6 +695,7 @@ describe('RequetesEntite endpoints: /', () => {
         'entiteId',
         ['reason123'],
         'id1',
+        '2024-01-01',
         undefined,
         undefined,
       );
@@ -703,6 +712,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 
@@ -724,6 +734,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 
@@ -740,12 +751,33 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['invalidReason'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 
       expect(res.status).toBe(400);
       const json = await res.json();
       expect(json).toEqual({ error: 'REASON_INVALID', message: 'Invalid reason provided' });
+    });
+
+    it('should return 400 when clotureEffectiveDate is in the future', async () => {
+      vi.mocked(closeRequeteForEntite).mockRejectedValueOnce(new Error('CLOTURE_EFFECTIVE_DATE_IN_FUTURE'));
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
+
+      const res = await client[':id'].close.$post({
+        param: { id: 'requeteId' },
+        json: {
+          reasonIds: ['reason123'],
+          clotureEffectiveDate: '2999-01-01',
+        },
+      });
+
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json).toEqual({
+        error: 'CLOTURE_EFFECTIVE_DATE_IN_FUTURE',
+        message: 'Date de clôture effective cannot be in the future',
+      });
     });
 
     it('should return 403 when requete is already closed', async () => {
@@ -756,6 +788,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 
@@ -775,6 +808,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
           fileIds: ['invalidFile'],
         },
       });
@@ -792,6 +826,7 @@ describe('RequetesEntite endpoints: /', () => {
         param: { id: 'requeteId' },
         json: {
           reasonIds: ['reason123'],
+          clotureEffectiveDate: '2024-01-01',
         },
       });
 
@@ -992,6 +1027,7 @@ describe('RequetesEntite endpoints: /', () => {
           updatedAt: new Date(),
           estPartagee: false,
           createdById: 'id1',
+          clotureEffectiveDate: null,
         },
       };
 

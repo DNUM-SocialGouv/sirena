@@ -47,6 +47,7 @@ import {
   getOtherEntitesAffectedRoute,
   getRequeteEntiteRoute,
   getRequetesDepartementCountsRoute,
+  getRequetesDomaineCountsRoute,
   getRequetesEntiteRoute,
   reopenRequeteRoute,
   updateStatutRoute,
@@ -55,6 +56,7 @@ import {
   CloseRequeteBodySchema,
   CreateRequeteBodySchema,
   GetDepartementCountsQuerySchema,
+  GetDomaineCountsQuerySchema,
   GetRequetesEntiteQuerySchema,
   UpdateDeclarantBodySchema,
   UpdateParticipantBodySchema,
@@ -75,6 +77,7 @@ import {
   getOtherEntitesAffected,
   getRequeteEntiteById,
   getRequetesCountsByDepartement,
+  getRequetesCountsByDomaine,
   getRequetesEntite,
   hasAccessToRequete,
   reopenRequeteForEntite,
@@ -110,6 +113,31 @@ const app = factoryWithLogs
         .map((code) => code.trim())
         .filter(Boolean);
       const data = await getRequetesCountsByDepartement([topEntiteId], codes, {
+        search: query.search,
+        entiteId: query.entiteId,
+      });
+      return c.json({ data });
+    },
+  )
+
+  .get(
+    '/domaine-counts',
+    getRequetesDomaineCountsRoute,
+    zValidator('query', GetDomaineCountsQuerySchema),
+    async (c) => {
+      const query = c.req.valid('query');
+      const topEntiteId = c.get('topEntiteId');
+      if (!topEntiteId) {
+        throwHTTPException400BadRequest('You are not allowed to read requetes without topEntiteId.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+      const ids = query.domaineIds
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean);
+      const data = await getRequetesCountsByDomaine([topEntiteId], ids, {
         search: query.search,
         entiteId: query.entiteId,
       });
@@ -989,7 +1017,7 @@ const app = factoryWithLogs
           kind: ERROR_KIND.BUSINESS,
         });
       }
-      const { reasonIds, precision, fileIds } = c.req.valid('json');
+      const { reasonIds, clotureEffectiveDate, precision, fileIds } = c.req.valid('json');
 
       try {
         const hasAccessToReq = await hasAccessToRequete({ requeteId: id, entiteId: topEntiteId });
@@ -1000,7 +1028,15 @@ const app = factoryWithLogs
           });
         }
 
-        const result = await closeRequeteForEntite(id, topEntiteId, reasonIds, userId, precision, fileIds);
+        const result = await closeRequeteForEntite(
+          id,
+          topEntiteId,
+          reasonIds,
+          userId,
+          clotureEffectiveDate,
+          precision,
+          fileIds,
+        );
 
         c.set('changelogId', result.etapeId);
 
@@ -1038,6 +1074,14 @@ const app = factoryWithLogs
               );
             case 'FILES_INVALID':
               return c.json({ error: 'FILES_INVALID', message: 'Invalid files provided' }, 400);
+            case 'CLOTURE_EFFECTIVE_DATE_IN_FUTURE':
+              return c.json(
+                {
+                  error: 'CLOTURE_EFFECTIVE_DATE_IN_FUTURE',
+                  message: 'Date de clôture effective cannot be in the future',
+                },
+                400,
+              );
             default:
               if ('status' in error && error.status === 403) {
                 return c.json({ error: 'Unauthorized', message: 'You are not allowed to close this requete' }, 403);

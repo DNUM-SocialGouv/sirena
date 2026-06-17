@@ -109,6 +109,7 @@ const fakeRequeteEtape: RequeteEtape = {
   type: 'MANUAL',
   estPartagee: false,
   createdById: 'user1',
+  clotureEffectiveDate: null,
 };
 
 describe('notes.controller.ts', () => {
