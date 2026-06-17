@@ -92,6 +92,9 @@ export const SituationDataSchema = z.object({
     .optional(),
 
   domainesFonctionnels: z.string().optional(),
+
+  estLieAuSignalement: z.boolean().optional(),
+  numerosSignalement: z.string().optional(),
 });
 
 export type SituationData = z.infer<typeof SituationDataSchema>;
