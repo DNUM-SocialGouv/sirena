@@ -198,3 +198,53 @@ mutation changerInstruction($dossierId: ID!, $instructeurId: ID!, $disableNotifi
     }
   }
 }
+
+mutation accepterDossier(
+  $dossierId: ID!
+  $instructeurId: ID!
+  $motivation: String
+  $disableNotification: Boolean = true
+) {
+  dossierAccepter(
+    input: {
+      dossierId: $dossierId
+      instructeurId: $instructeurId
+      motivation: $motivation
+      disableNotification: $disableNotification
+    }
+  ) {
+    dossier {
+      id
+      number
+      state
+    }
+    errors {
+      message
+    }
+  }
+}
+
+mutation classerDossierSansSuite(
+  $dossierId: ID!
+  $instructeurId: ID!
+  $motivation: String!
+  $disableNotification: Boolean = true
+) {
+  dossierClasserSansSuite(
+    input: {
+      dossierId: $dossierId
+      instructeurId: $instructeurId
+      motivation: $motivation
+      disableNotification: $disableNotification
+    }
+  ) {
+    dossier {
+      id
+      number
+      state
+    }
+    errors {
+      message
+    }
+  }
+}

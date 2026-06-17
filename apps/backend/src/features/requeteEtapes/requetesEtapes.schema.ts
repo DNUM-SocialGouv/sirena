@@ -17,6 +17,7 @@ export const RequeteEtapeSchema = z.object({
   requeteId: z.string(),
   entiteId: z.string(),
   clotureReasonIds: z.array(z.string()).optional(),
+  clotureEffectiveDate: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });

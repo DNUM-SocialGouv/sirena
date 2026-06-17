@@ -3,6 +3,7 @@ import { Input } from '@codegouvfr/react-dsfr/Input';
 import { createModal } from '@codegouvfr/react-dsfr/Modal';
 import { Upload } from '@codegouvfr/react-dsfr/Upload';
 import { requeteClotureReasonLabels } from '@sirena/common/constants';
+import { getDateTodayInParis } from '@sirena/common/utils';
 import { SelectWithChildren } from '@sirena/ui';
 import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useCloseRequete } from '@/hooks/mutations/closeRequete.hook';
@@ -41,9 +42,10 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     const reasonErrorId = useId();
     const [reasonIds, setReasonIds] = useState<string[]>([]);
     const [precision, setPrecision] = useState<string>('');
+    const [clotureEffectiveDate, setClotureEffectiveDate] = useState<string>(getDateTodayInParis());
     const [files, setFiles] = useState<File[]>([]);
     const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
-    const [errors, setErrors] = useState<{ reasonIds?: string }>({});
+    const [errors, setErrors] = useState<{ reasonIds?: string; clotureEffectiveDate?: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const wasActionTakenRef = useRef(false);
 
@@ -72,6 +74,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     const openModal = () => {
       setReasonIds([]);
       setPrecision('');
+      setClotureEffectiveDate(getDateTodayInParis());
       setFiles([]);
       setFileErrors({});
       setErrors({});
@@ -129,11 +132,17 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
     };
 
     const validateForm = (): boolean => {
-      const newErrors: { reasonIds?: string } = {};
+      const newErrors: { reasonIds?: string; clotureEffectiveDate?: string } = {};
 
       if (reasonIds.length === 0) {
         newErrors.reasonIds =
           'Vous devez renseigner au moins une raison de clôture pour clôturer la requête. Veuillez sélectionner une valeur dans la liste.';
+      }
+
+      if (!clotureEffectiveDate) {
+        newErrors.clotureEffectiveDate = 'Vous devez renseigner une date de clôture pour clôturer la requête.';
+      } else if (clotureEffectiveDate > getDateTodayInParis()) {
+        newErrors.clotureEffectiveDate = 'La date de clôture ne peut pas être dans le futur.';
       }
 
       if (precision.length > 5000) {
@@ -175,6 +184,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
         await closeRequeteMutation.mutateAsync({
           reasonIds,
+          clotureEffectiveDate,
           precision: precision.trim() || undefined,
           fileIds: fileIds.length > 0 ? fileIds : undefined,
         });
@@ -264,9 +274,11 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
           </div>
         </div>
 
+        <p className="fr-text--sm fr-mb-2w">Sauf mention contraire, tous les champs sont obligatoires.</p>
+
         <div className="fr-mb-4w">
           <SelectWithChildren
-            label="Raisons de la clôture (obligatoire)"
+            label="Raisons de la clôture"
             options={reasonOptions}
             value={reasonIds}
             onChange={(values) => setReasonIds(values)}
@@ -276,6 +288,23 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
               {errors.reasonIds}
             </p>
           )}
+        </div>
+
+        <div className="fr-mb-4w">
+          <Input
+            label="Date de clôture"
+            hintText="Format attendu : JJ-MM-AAAA"
+            nativeInputProps={{
+              type: 'date',
+              value: clotureEffectiveDate,
+              onChange: (e) => {
+                setClotureEffectiveDate(e.target.value);
+                setErrors((currentErrors) => ({ ...currentErrors, clotureEffectiveDate: undefined }));
+              },
+            }}
+            state={errors.clotureEffectiveDate ? 'error' : 'default'}
+            stateRelatedMessage={errors.clotureEffectiveDate}
+          />
         </div>
 
         <div className="fr-mb-4w">

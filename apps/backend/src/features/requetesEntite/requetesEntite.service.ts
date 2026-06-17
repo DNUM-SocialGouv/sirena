@@ -15,7 +15,7 @@ import {
   type RequeteStatutType,
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
-import { getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
+import { getDateTodayInParis, getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
 import archiver from 'archiver';
 import type { z } from 'zod';
 import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
@@ -27,6 +27,7 @@ import { deleteFileFromMinio, getFileStream } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
+import { safeSyncClosedRequeteToDematSocial } from '../dematSocial/closureSync/closureSync.service.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
@@ -1614,9 +1615,14 @@ export const closeRequeteForEntite = async (
   entiteId: string,
   reasonIds: string[],
   authorId: string,
+  clotureEffectiveDate: string,
   precision?: string,
   fileIds?: string[],
 ) => {
+  if (clotureEffectiveDate > getDateTodayInParis()) {
+    throw new Error('CLOTURE_EFFECTIVE_DATE_IN_FUTURE');
+  }
+
   // Helper function to create changelog for RequeteEtapeNote
   const createRequeteEtapeNoteChangelog = async (
     noteId: string,
@@ -1701,6 +1707,7 @@ export const closeRequeteForEntite = async (
         requeteId,
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+        clotureEffectiveDate: new Date(clotureEffectiveDate),
         clotureReason: {
           connect: uniqueReasonIds.map((id) => ({ id })),
         },
@@ -1742,11 +1749,14 @@ export const closeRequeteForEntite = async (
     return {
       etapeId: etape.id,
       closedAt: etape.createdAt.toISOString(),
+      clotureEffectiveDate,
       noteId,
       etape,
       note,
     };
   });
+
+  await safeSyncClosedRequeteToDematSocial(requeteId).catch(() => undefined);
 
   await createChangeLogForRequeteEntite({
     requeteId,
@@ -1756,6 +1766,7 @@ export const closeRequeteForEntite = async (
     after: {
       statutId: REQUETE_STATUT_TYPES.CLOTUREE,
       clotureReasonIds: uniqueReasonIds,
+      clotureEffectiveDate,
       precision: precision?.trim() || null,
       ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
     } as Prisma.JsonObject,

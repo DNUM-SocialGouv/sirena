@@ -1,10 +1,24 @@
-.kpi-grid {
+/* Reproduction de la grille Metabase (24 colonnes) : chaque carte occupe col → col + size_x.
+   En dessous de 48em, on empile en une seule colonne pour la lisibilité mobile. */
+.mb-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 2.5rem 3rem;
-  align-items: start;
-  margin: 0;
-  padding: 0;
+  gap: 2rem;
+}
+
+.mb-cell {
+  min-width: 0;
+}
+
+@media (min-width: 48em) {
+  .mb-grid {
+    grid-template-columns: repeat(24, minmax(0, 1fr));
+    grid-auto-flow: row dense;
+    align-items: start;
+  }
+
+  .mb-cell {
+    grid-column: var(--col-start) / span var(--col-span);
+  }
 }
 
 .kpi-card {

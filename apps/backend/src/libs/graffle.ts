@@ -6,8 +6,10 @@ import { Graffle } from 'graffle';
 import { envVars } from '../config/env.js';
 
 export {
+  AccepterDossierDocument,
   AddressType,
   ChangerInstructionDocument,
+  ClasserDossierSansSuiteDocument,
   GetDossierDocument,
   GetDossiersByDateDocument,
   GetDossiersMetadataDocument,

@@ -229,6 +229,7 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
             label: true,
           },
         },
+        clotureEffectiveDate: true,
         createdAt: true,
         updatedAt: true,
         createdBy: {

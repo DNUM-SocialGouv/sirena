@@ -1,11 +1,19 @@
 import { client } from '@/lib/api/hc';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery';
 
+export type StatisticsCardLayout = {
+  col: number;
+  row: number;
+  sizeX: number;
+  sizeY: number;
+};
+
 export type StatisticsCard = {
   id: number;
   dashcardId: number;
   name: string;
   display: string | null;
+  layout: StatisticsCardLayout | null;
   data: Array<Record<string, unknown>>;
 };
 
