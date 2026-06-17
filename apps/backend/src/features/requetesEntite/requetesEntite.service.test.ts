@@ -77,7 +77,7 @@ vi.mock('archiver', () => {
 });
 
 import type { Readable } from 'node:stream';
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
+import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { getFileStream } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
@@ -3090,6 +3090,70 @@ describe('requetesEntite.service', () => {
       await generateRequetePdfBuffer('req123', 'ent123');
 
       expect(fieldSpy).toHaveBeenCalledWith('Il/elle est sous mesure de protection', 'mandataire judiciaire');
+    });
+
+    it('does not render the acknowledgment auto-note as a note but keeps its file', async () => {
+      const paragraphSpy = vi.spyOn(RequetePdfBuilder.prototype, 'paragraph');
+      const listSpy = vi.spyOn(RequetePdfBuilder.prototype, 'list');
+      vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+
+      const autoNoteText = "Email d'accusé de réception envoyé le 15/06/2026 15:06:57";
+      const author = { prenom: 'Delphine', nom: 'TEST' };
+
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statut: { id: 'EN_COURS', label: 'En cours' },
+        priorite: null,
+        requete: {
+          ...mockRequeteEntite.requete,
+          receptionType: null,
+          provenance: null,
+          createdBy: author,
+          declarant: null,
+          participant: null,
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+        requeteEtape: [
+          {
+            id: 'etapeAck',
+            type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            statut: { id: 'FAIT', label: 'Fait' },
+            clotureReason: [],
+            createdBy: null,
+            nom: "Envoi de l'accusé de réception",
+            createdAt: new Date('2026-06-12'),
+            updatedAt: new Date('2026-06-15'),
+            notes: [
+              {
+                id: 'note-user',
+                texte: "J'ai envoyé l'AR because...",
+                createdAt: new Date('2026-06-15'),
+                author,
+                uploadedFiles: [{ fileName: 'a_Test_jpg.pdf', metadata: null }],
+              },
+              {
+                id: 'note-auto',
+                texte: autoNoteText,
+                createdAt: new Date('2026-06-15'),
+                author,
+                uploadedFiles: [{ fileName: 'AR_2026-06-RS9.pdf', metadata: null }],
+              },
+            ],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+      await generateRequetePdfBuffer('req123', 'ent123');
+
+      const paragraphArgs = paragraphSpy.mock.calls.map((call) => call[0]);
+      // The auto-note must NOT be rendered as a note.
+      expect(paragraphArgs).not.toContain(autoNoteText);
+      // Its file is kept at the étape level (like the UI).
+      expect(listSpy).toHaveBeenCalledWith(['AR_2026-06-RS9.pdf']);
+      // The genuine user note is still rendered.
+      expect(paragraphArgs).toContain("J'ai envoyé l'AR because...");
     });
   });
 
