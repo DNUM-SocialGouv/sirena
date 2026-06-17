@@ -40,7 +40,6 @@ export type CloseRequeteModalProps = {
 export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteModalProps>(
   ({ requestId, otherEntitiesAffected, triggerButtonRef, onBeforeClose, onCancel, onSuccess, onDismiss }, ref) => {
     const reasonErrorId = useId();
-    const clotureEffectiveDateErrorId = useId();
     const [reasonIds, setReasonIds] = useState<string[]>([]);
     const [precision, setPrecision] = useState<string>('');
     const [clotureEffectiveDate, setClotureEffectiveDate] = useState<string>(getDateTodayInParis());
@@ -298,14 +297,14 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
             nativeInputProps={{
               type: 'date',
               value: clotureEffectiveDate,
-              onChange: (e) => setClotureEffectiveDate(e.target.value),
+              onChange: (e) => {
+                setClotureEffectiveDate(e.target.value);
+                setErrors((currentErrors) => ({ ...currentErrors, clotureEffectiveDate: undefined }));
+              },
             }}
+            state={errors.clotureEffectiveDate ? 'error' : 'default'}
+            stateRelatedMessage={errors.clotureEffectiveDate}
           />
-          {errors.clotureEffectiveDate && (
-            <p className="fr-message fr-message--error" id={clotureEffectiveDateErrorId}>
-              {errors.clotureEffectiveDate}
-            </p>
-          )}
         </div>
 
         <div className="fr-mb-4w">
