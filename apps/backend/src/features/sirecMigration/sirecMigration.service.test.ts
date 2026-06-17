@@ -92,6 +92,7 @@ describe('sirecMigration.service.ts', () => {
         ageId: string | null;
       } | null,
       requeteStatutId: 'EN_COURS',
+      sysLastModDate: null as Date | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
       etapes: [] as {
         nom: string;
@@ -790,7 +791,89 @@ describe('sirecMigration.service.ts', () => {
           statutId: 'FAIT',
           nom: 'Envoyer un accusé de réception au déclarant',
           createdAt: date,
-          notes: { create: [{ texte: "Date d'envoi de l'accusé de réception au requérant : 10/06/2024" }] },
+          notes: {
+            create: [{ texte: "Date d'envoi de l'accusé de réception au requérant : 10/06/2024", createdAt: date }],
+          },
+        },
+      });
+    });
+
+    it('should set note createdAt to sysLastModDate when etape has no createdAt', async () => {
+      const sysLastModDate = new Date('2024-03-20');
+      await saveFromSirec({
+        ...data,
+        sysLastModDate,
+        etapes: [
+          {
+            nom: "Réception à l'institution de provenance : Institution 1",
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            note: 'Note',
+          },
+        ],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'FAIT',
+          nom: "Réception à l'institution de provenance : Institution 1",
+          notes: { create: [{ texte: 'Note', createdAt: sysLastModDate }] },
+        },
+      });
+    });
+
+    it('should prefer etape createdAt over sysLastModDate for note date', async () => {
+      const etapeDate = new Date('2024-06-10');
+      const sysLastModDate = new Date('2024-03-20');
+      await saveFromSirec({
+        ...data,
+        sysLastModDate,
+        etapes: [
+          {
+            nom: 'Envoyer un accusé de réception au déclarant',
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            createdAt: etapeDate,
+            note: 'Note',
+          },
+        ],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'FAIT',
+          nom: 'Envoyer un accusé de réception au déclarant',
+          createdAt: etapeDate,
+          notes: { create: [{ texte: 'Note', createdAt: etapeDate }] },
+        },
+      });
+    });
+
+    it('should not set createdAt on note when etape has no date and sysLastModDate is null', async () => {
+      await saveFromSirec({
+        ...data,
+        sysLastModDate: null,
+        etapes: [
+          {
+            nom: "Réception à l'institution de provenance : Institution 1",
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            note: 'Note',
+          },
+        ],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'FAIT',
+          nom: "Réception à l'institution de provenance : Institution 1",
+          notes: { create: [{ texte: 'Note' }] },
         },
       });
     });

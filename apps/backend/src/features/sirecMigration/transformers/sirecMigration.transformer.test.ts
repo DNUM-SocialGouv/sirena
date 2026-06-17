@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { SirecDataError } from '../transco/sirecTransco.error.js';
 import { transformSirecReclamation } from './sirecMigration.transformer.js';
 
 vi.mock('../transco/affectation/affectation.transco.js', () => ({
@@ -124,6 +123,7 @@ describe('sirecMigration.transformer.ts', () => {
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
       requeteStatutId: 'EN_COURS',
+      sysLastModDate: null,
       declarant: null,
       victime: null,
       requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
@@ -203,6 +203,16 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.prioriteId).toBeNull();
+  });
+
+  it('should map sys_last_mod_date to sysLastModDate', () => {
+    const date = new Date('2024-03-20');
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, sys_last_mod_date: date },
+    });
+
+    expect(result.sysLastModDate).toEqual(date);
   });
 
   it('should create victime from transformSirecVictime when victime_non_identifiee=1', () => {
