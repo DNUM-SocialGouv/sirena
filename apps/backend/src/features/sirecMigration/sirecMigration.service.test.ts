@@ -114,6 +114,7 @@ describe('sirecMigration.service.ts', () => {
           demarchesIds: [] as string[],
           misEnCauseData: null as any,
           lieuDeSurvenueData: null as any,
+          domainesFonctionnelsId: null as string | null,
         },
       ],
     };
@@ -247,6 +248,25 @@ describe('sirecMigration.service.ts', () => {
         data: { demarches: { connect: [{ id: 'PLAINTE' }] } },
         select: { id: true },
       });
+    });
+
+    it('should create Situation with null domainesFonctionnelsId when not set', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ domainesFonctionnelsId: null }) }),
+      );
+    });
+
+    it('should create Situation with domainesFonctionnelsId when set', async () => {
+      await saveFromSirec({
+        ...data,
+        situations: [{ ...data.situations[0], domainesFonctionnelsId: 'SANITAIRE' }],
+      });
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ domainesFonctionnelsId: 'SANITAIRE' }) }),
+      );
     });
 
     it('should not create PersonneConcernee when declarant is null', async () => {
