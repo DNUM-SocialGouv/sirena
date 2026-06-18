@@ -12,7 +12,21 @@ interface EntiteComboboxProps {
   required?: boolean;
 }
 
-const MIN_FILTER_LENGTH = 3;
+const MIN_FILTER_LENGTH = 1;
+
+const normalizeSearchText = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/-/g, ' ')
+    .toLowerCase();
+
+const matchesSearch = (nomComplet: string, search: string) => {
+  const terms = normalizeSearchText(search).trim().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return true;
+  const searchable = normalizeSearchText(nomComplet);
+  return terms.every((term) => searchable.includes(term));
+};
 
 export function EntiteCombobox({
   entites,
@@ -48,7 +62,7 @@ export function EntiteCombobox({
   const filteredEntites = useMemo(
     () =>
       hasTyped && inputValue.length >= MIN_FILTER_LENGTH
-        ? entites.filter((e) => e.nomComplet.toLowerCase().includes(inputValue.toLowerCase()))
+        ? entites.filter((e) => matchesSearch(e.nomComplet, inputValue))
         : entites,
     [hasTyped, inputValue, entites],
   );

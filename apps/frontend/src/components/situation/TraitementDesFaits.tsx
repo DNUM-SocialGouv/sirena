@@ -131,6 +131,7 @@ function TraitementDesFaitsRowComponent({
                 value: entite.id,
               }))}
               label="Direction ou Service"
+              hint={isEntiteReadOnly ? undefined : 'Sélectionnez dans la liste'}
             />
           )}
         </div>
