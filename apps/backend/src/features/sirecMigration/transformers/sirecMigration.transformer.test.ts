@@ -103,6 +103,7 @@ describe('sirecMigration.transformer.ts', () => {
       type_cloture: null as number | null,
       motif_cloture: null as string | null,
       date_cloture: null as Date | null,
+      date_ecriture: null as Date | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
@@ -124,6 +125,7 @@ describe('sirecMigration.transformer.ts', () => {
       prioriteId: 'HAUTE',
       requeteStatutId: 'EN_COURS',
       sysLastModDate: null,
+      dateDemandeDeclarant: null,
       declarant: null,
       victime: null,
       requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
@@ -213,6 +215,25 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.sysLastModDate).toEqual(date);
+  });
+
+  it('should map date_ecriture to dateDemandeDeclarant', () => {
+    const date = new Date('2023-11-07');
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, date_ecriture: date },
+    });
+
+    expect(result.dateDemandeDeclarant).toEqual(date);
+  });
+
+  it('should map null date_ecriture to null dateDemandeDeclarant', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, date_ecriture: null },
+    });
+
+    expect(result.dateDemandeDeclarant).toBeNull();
   });
 
   it('should create victime from transformSirecVictime when victime_non_identifiee=1', () => {

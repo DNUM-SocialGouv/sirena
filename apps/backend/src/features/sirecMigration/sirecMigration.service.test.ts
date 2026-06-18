@@ -93,6 +93,7 @@ describe('sirecMigration.service.ts', () => {
       } | null,
       requeteStatutId: 'EN_COURS',
       sysLastModDate: null as Date | null,
+      dateDemandeDeclarant: null as Date | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
       etapes: [] as {
         nom: string;
@@ -139,7 +140,17 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec(data);
 
       expect(prisma.requete.create).toHaveBeenCalledWith({
-        data: { id: 'SIREC-42', sirecId: 42, receptionDate, receptionTypeId: 'EMAIL' },
+        data: { id: 'SIREC-42', sirecId: 42, receptionDate, receptionTypeId: 'EMAIL', dateDemandeDeclarant: null },
+        select: { id: true },
+      });
+    });
+
+    it('should create Requete with dateDemandeDeclarant when set', async () => {
+      const dateDemandeDeclarant = new Date('2023-11-07');
+      await saveFromSirec({ ...data, dateDemandeDeclarant });
+
+      expect(prisma.requete.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ dateDemandeDeclarant }),
         select: { id: true },
       });
     });
