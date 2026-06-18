@@ -4,7 +4,12 @@ import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import { transformSirecCloture } from './sirecMigration.cloture.transformer.js';
 
 const makeData = (
-  overrides: { type_cloture?: number | null; motif_cloture?: string | null; date_cloture?: Date | null } = {},
+  overrides: {
+    type_cloture?: number | null;
+    motif_cloture?: string | null;
+    date_cloture?: Date | null;
+    sys_last_mod_date?: Date | null;
+  } = {},
 ) =>
   ({
     reclamation: {
@@ -12,6 +17,7 @@ const makeData = (
       type_cloture: null,
       motif_cloture: null,
       date_cloture: null,
+      sys_last_mod_date: null,
       ...overrides,
     },
     motifsDeclaresIdDicos: [],
@@ -61,10 +67,10 @@ describe('sirecMigration.cloture.transformer.ts', () => {
       expect(result.etapes[0].nom).toBe('Clôture');
     });
 
-    it('should set statutId to FAIT', () => {
+    it('should set statutId to CLOTUREE', () => {
       const result = transformSirecCloture(makeData({ type_cloture: 115 }), [ARS_1]);
 
-      expect(result.etapes[0].statutId).toBe('FAIT');
+      expect(result.etapes[0].statutId).toBe('CLOTUREE');
     });
 
     it('should set clotureReason from type_cloture transco (115 → SANS_SUITE)', () => {
@@ -93,17 +99,47 @@ describe('sirecMigration.cloture.transformer.ts', () => {
       expect(result.etapes[0].note).toBeNull();
     });
 
-    it('should set createdAt from date_cloture when provided', () => {
-      const date = new Date('2024-08-20');
-      const result = transformSirecCloture(makeData({ type_cloture: 115, date_cloture: date }), [ARS_1]);
-
-      expect(result.etapes[0].createdAt).toEqual(date);
-    });
-
     it('should not set createdAt when date_cloture is null', () => {
       const result = transformSirecCloture(makeData({ type_cloture: 115 }), [ARS_1]);
 
       expect(result.etapes[0].createdAt).toBeUndefined();
+    });
+
+    it('should set clotureEffectiveDate from date_cloture when provided', () => {
+      const date = new Date('2024-08-20');
+      const result = transformSirecCloture(makeData({ type_cloture: 115, date_cloture: date }), [ARS_1]);
+
+      expect(result.etapes[0].clotureEffectiveDate).toEqual(date);
+    });
+
+    it('should set clotureEffectiveDate from sys_last_mod_date when date_cloture is null', () => {
+      const sysDate = new Date('2024-03-10');
+      const result = transformSirecCloture(
+        makeData({ type_cloture: 115, date_cloture: null, sys_last_mod_date: sysDate }),
+        [ARS_1],
+      );
+
+      expect(result.etapes[0].clotureEffectiveDate).toEqual(sysDate);
+    });
+
+    it('should prefer date_cloture over sys_last_mod_date for clotureEffectiveDate', () => {
+      const clotureDate = new Date('2024-08-20');
+      const sysDate = new Date('2024-03-10');
+      const result = transformSirecCloture(
+        makeData({ type_cloture: 115, date_cloture: clotureDate, sys_last_mod_date: sysDate }),
+        [ARS_1],
+      );
+
+      expect(result.etapes[0].clotureEffectiveDate).toEqual(clotureDate);
+    });
+
+    it('should not set clotureEffectiveDate when both date_cloture and sys_last_mod_date are null', () => {
+      const result = transformSirecCloture(
+        makeData({ type_cloture: 115, date_cloture: null, sys_last_mod_date: null }),
+        [ARS_1],
+      );
+
+      expect(result.etapes[0].clotureEffectiveDate).toBeUndefined();
     });
 
     it('should return empty etapes when arsEntiteIds is empty', () => {

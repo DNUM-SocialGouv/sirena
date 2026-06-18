@@ -798,7 +798,7 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should set note createdAt to sysLastModDate when etape has no createdAt', async () => {
+    it('should set etape and note createdAt to sysLastModDate when etape has no createdAt', async () => {
       const sysLastModDate = new Date('2024-03-20');
       await saveFromSirec({
         ...data,
@@ -819,12 +819,13 @@ describe('sirecMigration.service.ts', () => {
           entiteId: 'ars-1',
           statutId: 'FAIT',
           nom: "Réception à l'institution de provenance : Institution 1",
+          createdAt: sysLastModDate,
           notes: { create: [{ texte: 'Note', createdAt: sysLastModDate }] },
         },
       });
     });
 
-    it('should prefer etape createdAt over sysLastModDate for note date', async () => {
+    it('should prefer etape createdAt over sysLastModDate for etape and note date', async () => {
       const etapeDate = new Date('2024-06-10');
       const sysLastModDate = new Date('2024-03-20');
       await saveFromSirec({
@@ -853,7 +854,7 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should not set createdAt on note when etape has no date and sysLastModDate is null', async () => {
+    it('should not set createdAt on etape or note when etape has no date and sysLastModDate is null', async () => {
       await saveFromSirec({
         ...data,
         sysLastModDate: null,
@@ -933,6 +934,29 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
         data: expect.not.objectContaining({ clotureReason: expect.anything() }),
+      });
+    });
+
+    it('should set clotureEffectiveDate on RequeteEtape when provided', async () => {
+      const date = new Date('2024-08-20');
+      await saveFromSirec({
+        ...data,
+        etapes: [{ nom: 'Clôture', entiteId: 'ars-1', statutId: 'FAIT', note: null, clotureEffectiveDate: date }],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ clotureEffectiveDate: date }),
+      });
+    });
+
+    it('should not include clotureEffectiveDate when not set on etape', async () => {
+      await saveFromSirec({
+        ...data,
+        etapes: [{ nom: 'Clôture', entiteId: 'ars-1', statutId: 'FAIT', note: null }],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: expect.not.objectContaining({ clotureEffectiveDate: expect.anything() }),
       });
     });
 

@@ -5,4 +5,5 @@ export interface SirenaEtapeData {
   createdAt?: Date;
   note: string | null;
   clotureReason?: string;
+  clotureEffectiveDate?: Date;
 }
