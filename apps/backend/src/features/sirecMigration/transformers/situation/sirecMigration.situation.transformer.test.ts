@@ -14,6 +14,7 @@ describe('sirecMigration.situation.transformer.ts', () => {
       accuser_reception: null as number | null,
       date_envoi_ar: null as Date | null,
       accuser_reception_precision: null as string | null,
+      domaine: null as number | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],

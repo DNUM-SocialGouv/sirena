@@ -104,6 +104,7 @@ describe('sirecMigration.transformer.ts', () => {
       motif_cloture: null as string | null,
       date_cloture: null as Date | null,
       date_ecriture: null as Date | null,
+      domaine: null as number | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
@@ -141,6 +142,7 @@ describe('sirecMigration.transformer.ts', () => {
           demarchesIds: [],
           misEnCauseData: null,
           lieuDeSurvenueData: null,
+          domainesFonctionnelsId: null,
         },
       ],
     });
@@ -234,6 +236,33 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.dateDemandeDeclarant).toBeNull();
+  });
+
+  it('should map domaine to domainesFonctionnelsId via transco', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, domaine: 88 },
+    });
+
+    expect(result.situations[0].domainesFonctionnelsId).toBe('SANITAIRE');
+  });
+
+  it('should map null domaine to null domainesFonctionnelsId', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, domaine: null },
+    });
+
+    expect(result.situations[0].domainesFonctionnelsId).toBeNull();
+  });
+
+  it('should map domaine 113 to null domainesFonctionnelsId', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, domaine: 113 },
+    });
+
+    expect(result.situations[0].domainesFonctionnelsId).toBeNull();
   });
 
   it('should create victime from transformSirecVictime when victime_non_identifiee=1', () => {

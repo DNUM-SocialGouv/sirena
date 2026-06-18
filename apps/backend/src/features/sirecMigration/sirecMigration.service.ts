@@ -133,6 +133,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
           misEnCauseId,
           demarchesEngageesId: demarchesEngagees.id,
           requeteId: sirenaRequete.id,
+          domainesFonctionnelsId: situationData.domainesFonctionnelsId,
         },
         select: { id: true },
       });

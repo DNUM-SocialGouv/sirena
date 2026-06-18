@@ -1,5 +1,6 @@
 import { DEMARCHES_ENGAGEES } from '@sirena/common/constants';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
+import { transcodeDomaineFonctionnel } from '../../transco/domaineFonctionnel.transco.js';
 import type { SirenaAutreMisEnCauseData } from './sirecMigration.autre.transformer.js';
 import { type SirenaFaitData, transformSirecFait } from './sirecMigration.fait.transformer.js';
 import type { SirenaFinessMisEnCauseData, SirenaLieuDeSurvenueData } from './sirecMigration.finess.transformer.js';
@@ -20,6 +21,7 @@ export interface SirenaSituationData {
   demarchesIds: string[];
   misEnCauseData: SirenaMisEnCauseData | null;
   lieuDeSurvenueData: SirenaLieuDeSurvenueData | null;
+  domainesFonctionnelsId: string | null;
 }
 
 const SAISINE_PLAINTE = 75;
@@ -33,5 +35,6 @@ export function transformSirecSituation(sirecData: SirecReclamationData, entiteI
     demarchesIds,
     misEnCauseData: null,
     lieuDeSurvenueData: null,
+    domainesFonctionnelsId: transcodeDomaineFonctionnel(sirecData.reclamation.domaine),
   };
 }
