@@ -5,7 +5,8 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { getEntiteById } from '../entites/entites.service.js';
-import { getStatisticsDashboardRoute } from './statistics.route.js';
+import { generateExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
+import { getExportRequetesRoute, getStatisticsDashboardRoute } from './statistics.route.js';
 import { fetchDashboardCardsData } from './statistics.service.js';
 
 const app = factoryWithLogs
@@ -24,6 +25,20 @@ const app = factoryWithLogs
       });
     }
     return next();
+  })
+
+  .get('/export-requetes', getExportRequetesRoute, async (c) => {
+    const topEntiteId = c.get('topEntiteId');
+
+    if (!topEntiteId) {
+      throwHTTPException403Forbidden('User must be linked to an entity to export requêtes', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+    }
+
+    const csv = await generateExportRequetesCsv(topEntiteId);
+    return c.text(csv);
   })
 
   .get('/dashboard', getStatisticsDashboardRoute, async (c) => {
