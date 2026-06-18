@@ -1,3 +1,26 @@
+.period-filter {
+  margin-bottom: 2rem;
+}
+
+.period-filter__fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.period-filter__fields :global(.fr-input-group) {
+  margin-bottom: 0;
+}
+
+.period-filter__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 /* Reproduction de la grille Metabase (24 colonnes) : chaque carte occupe col → col + size_x.
    En dessous de 48em, on empile en une seule colonne pour la lisibilité mobile. */
 .mb-grid {
