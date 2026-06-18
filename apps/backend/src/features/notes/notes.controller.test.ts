@@ -108,6 +108,7 @@ const fakeRequeteEtape: RequeteEtape = {
   updatedAt: new Date(),
   type: 'MANUAL',
   estPartagee: false,
+  dateRealisation: null,
   createdById: 'user1',
   clotureEffectiveDate: null,
 };
