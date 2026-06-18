@@ -17,7 +17,6 @@ import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { StatusMenu } from '@/components/common/statusMenu';
 import { capitalizeFirst } from '@/components/requestId/sections/helpers';
 import { useDeleteProcessingStep, useUpdateProcessingStepStatus } from '@/hooks/mutations/updateProcessingStep.hook';
-import { useUpdateProcessingStepDateRealisation } from '@/hooks/mutations/updateProcessingStepDateRealisation.hook';
 import { useUpdateProcessingStepName } from '@/hooks/mutations/updateProcessingStepName.hook';
 import { useDeleteUploadedFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
@@ -53,13 +52,6 @@ const formatDate = (dateStr: string) =>
     month: '2-digit',
     year: 'numeric',
   });
-
-const toDateInputValue = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 const formatAgent = (agent: { prenom: string; nom: string }): React.ReactNode => (
   <>
@@ -197,9 +189,6 @@ const StepComponent = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editStepName, setEditStepName] = useState(nom ?? '');
   const [editError, setEditError] = useState<string | null>(null);
-  const updateDateRealisationMutation = useUpdateProcessingStepDateRealisation(requestId);
-  const [editDate, setEditDate] = useState('');
-  const [editDateError, setEditDateError] = useState<string | null>(null);
   const { canEdit } = useCanEdit({ requeteId: requestId });
   const userRole = useUserStore((s) => s.role);
   const canWrite = userRole
@@ -207,9 +196,6 @@ const StepComponent = ({
     : false;
 
   const isSystemStep = rest.type !== REQUETE_ETAPE_TYPES.MANUAL || statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE;
-  const dateRealisation = rest.dateRealisation ?? null;
-  const showDateRealisation = rest.type === REQUETE_ETAPE_TYPES.MANUAL && statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT;
-  const isSavingEdit = updateStepNameMutation.isPending || updateDateRealisationMutation.isPending;
   const isAcknowledgmentStep = rest.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
   const sendNote = isAcknowledgmentStep
     ? notes.find((note) => note.texte?.startsWith("Email d'accusé de réception envoyé le"))
@@ -236,8 +222,6 @@ const StepComponent = ({
     setIsEditing(open);
     setEditStepName(nom ?? '');
     setEditError(null);
-    setEditDate(toDateInputValue(dateRealisation ? new Date(dateRealisation) : new Date()));
-    setEditDateError(null);
   };
 
   const clotureReasonLabels =
@@ -245,7 +229,7 @@ const StepComponent = ({
       ? rest.clotureReason.map((reason) => reason.label).filter(Boolean)
       : [];
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = () => {
     const validationResult = UpdateProcessingStepNameSchema.safeParse({
       stepName: editStepName,
     });
@@ -256,34 +240,13 @@ const StepComponent = ({
       return;
     }
 
-    if (showDateRealisation && !editDate) {
-      setEditDateError('La date de réalisation est obligatoire.');
-      return;
-    }
+    updateStepNameMutation.mutate({
+      id,
+      nom: validationResult.data.stepName,
+    });
 
-    const currentDate = dateRealisation ? toDateInputValue(new Date(dateRealisation)) : null;
-
-    try {
-      if (validationResult.data.stepName !== (nom ?? '')) {
-        await updateStepNameMutation.mutateAsync({
-          id,
-          nom: validationResult.data.stepName,
-        });
-      }
-
-      if (showDateRealisation && editDate !== currentDate) {
-        await updateDateRealisationMutation.mutateAsync({
-          id,
-          dateRealisation: new Date(`${editDate}T00:00:00`).toISOString(),
-        });
-      }
-
-      setIsEditing(false);
-      setEditError(null);
-      setEditDateError(null);
-    } catch {
-      setIsEditing(true);
-    }
+    setIsEditing(false);
+    setEditError(null);
   };
 
   const handleDeleteStep = async () => {
@@ -351,22 +314,6 @@ const StepComponent = ({
               state={editError ? 'error' : 'default'}
               stateRelatedMessage={editError}
             />
-            {showDateRealisation && (
-              <Input
-                label="Date de réalisation (obligatoire)"
-                hintText="Format attendu : JJ-MM-AAAA"
-                nativeInputProps={{
-                  type: 'date',
-                  value: editDate,
-                  onChange: (e) => {
-                    setEditDate(e.target.value);
-                    setEditDateError(null);
-                  },
-                }}
-                state={editDateError ? 'error' : 'default'}
-                stateRelatedMessage={editDateError}
-              />
-            )}
             <div className="fr-grid-row fr-grid-row--middle fr-mt-2w">
               <div className="fr-col">
                 <ButtonLink icon="fr-icon-delete-line" onClick={handleDeleteClick}>
@@ -383,8 +330,13 @@ const StepComponent = ({
                   >
                     Annuler
                   </Button>
-                  <Button priority="primary" size="small" onClick={handleSaveEdit} disabled={isSavingEdit}>
-                    {isSavingEdit ? 'Enregistrement...' : 'Modifier'}
+                  <Button
+                    priority="primary"
+                    size="small"
+                    onClick={handleSaveEdit}
+                    disabled={updateStepNameMutation.isPending}
+                  >
+                    {updateStepNameMutation.isPending ? 'Enregistrement...' : 'Modifier'}
                   </Button>
                 </div>
               </div>
@@ -425,12 +377,7 @@ const StepComponent = ({
             </div>
             <div className="fr-grid-row fr-grid-row--middle fr-mt-1w">
               <div className="fr-col">
-                <p
-                  className={clsx(
-                    'fr-text--xs fr-text-mention--grey',
-                    showDateRealisation && dateRealisation && 'fr-mb-1v',
-                  )}
-                >
+                <p className="fr-text--xs fr-text-mention--grey">
                   {getStepSubtitle(
                     rest.type,
                     statutId,
@@ -442,11 +389,6 @@ const StepComponent = ({
                     clotureEffectiveDate,
                   )}
                 </p>
-                {showDateRealisation && dateRealisation && (
-                  <p className="fr-text--xs fr-text-mention--grey fr-mt-0 fr-mb-0">
-                    Réalisée le {formatDate(dateRealisation)}
-                  </p>
-                )}
                 {isAcknowledgmentSendable && canEdit && (
                   <div className="fr-mt-2w">
                     <Button priority="secondary" size="small" onClick={onSendAcknowledgment}>

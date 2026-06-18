@@ -84,22 +84,6 @@ export async function updateProcessingStepName(stepId: string, data: UpdateProce
   return res.json();
 }
 
-export type UpdateProcessingStepDateRealisationData = {
-  dateRealisation: string;
-};
-
-export async function updateProcessingStepDateRealisation(
-  stepId: string,
-  data: UpdateProcessingStepDateRealisationData,
-) {
-  const res = await client['requete-etapes'][':id']['date-realisation'].$patch({
-    param: { id: stepId },
-    json: data,
-  });
-  await handleRequestErrors(res);
-  return res.json();
-}
-
 export async function deleteProcessingStep(stepId: string) {
   const res = await client['requete-etapes'][':id'].$delete({
     param: { id: stepId },
