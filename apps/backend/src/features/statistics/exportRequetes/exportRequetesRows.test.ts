@@ -36,4 +36,20 @@ describe('buildExportRequetesRows', () => {
     expect(rows[1][16]).toBe(2);
     expect(rows[1][50]).toBe('18/06/2026');
   });
+
+  it('builds one CSV row with empty situation fields for a requête without situation', () => {
+    const rows = buildExportRequetesRows([
+      {
+        numero: 'REQ-2026-0003',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [],
+      },
+    ]);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toHaveLength(59);
+    expect(rows[0][0]).toBe('REQ-2026-0003');
+    expect(rows[0][16]).toBe('');
+    expect(rows[0][50]).toBe('18/06/2026');
+  });
 });

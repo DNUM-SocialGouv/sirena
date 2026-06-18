@@ -13,17 +13,26 @@ type ExportSituationRecord = {
 };
 
 export function buildExportRequetesRows(requetes: ExportRequeteRecord[]): ExportRequetesCsvRow[] {
-  return requetes.flatMap((requete) =>
-    requete.situations.map((situation) => {
-      const row = createEmptyExportRow();
+  return requetes.flatMap((requete) => {
+    if (requete.situations.length === 0) {
+      return [buildExportRequeteRow(requete, null)];
+    }
 
-      row[0] = requete.numero;
-      row[16] = situation.numero;
-      row[50] = formatExportDate(requete.createdAt);
+    return requete.situations.map((situation) => buildExportRequeteRow(requete, situation));
+  });
+}
 
-      return row;
-    }),
-  );
+function buildExportRequeteRow(
+  requete: ExportRequeteRecord,
+  situation: ExportSituationRecord | null,
+): ExportRequetesCsvRow {
+  const row = createEmptyExportRow();
+
+  row[0] = requete.numero;
+  row[16] = situation?.numero ?? '';
+  row[50] = formatExportDate(requete.createdAt);
+
+  return row;
 }
 
 function createEmptyExportRow(): ExportRequetesCsvRow {
