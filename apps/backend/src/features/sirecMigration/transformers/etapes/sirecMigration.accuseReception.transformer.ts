@@ -40,7 +40,8 @@ export function transformSirecAccuseReception(
       nom: NOM_ETAPE,
       entiteId,
       statutId: date_envoi_ar !== null ? REQUETE_ETAPE_STATUT_TYPES.FAIT : REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
-      ...(date_envoi_ar !== null ? { createdAt: date_envoi_ar } : {}),
+      ...(date_envoi_ar !== null ? { dateRealisation: date_envoi_ar } : {}),
+      createdAt: date_envoi_ar ?? sirecData.reclamation.sys_creation_date,
       note: parts.length > 0 ? parts.join('\n') : null,
     };
   });
