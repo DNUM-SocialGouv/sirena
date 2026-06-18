@@ -38,7 +38,12 @@ const app = factoryWithLogs
     }
 
     const csv = await generateExportRequetesCsv(topEntiteId);
-    return c.text(csv);
+    const today = new Date().toISOString().slice(0, 10);
+
+    c.header('Content-Type', 'text/csv; charset=utf-8');
+    c.header('Content-Disposition', `attachment; filename="export-requetes-sirena-${today}.csv"`);
+
+    return c.body(csv);
   })
 
   .get('/dashboard', getStatisticsDashboardRoute, async (c) => {

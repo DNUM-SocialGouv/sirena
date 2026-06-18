@@ -73,5 +73,20 @@ describe('statistics.controller.ts', () => {
       expect(response.status).toBe(403);
       expect(generateExportRequetesCsv).not.toHaveBeenCalled();
     });
+
+    it('returns the generated CSV as a dated attachment', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      vi.mocked(generateExportRequetesCsv).mockResolvedValueOnce('\uFEFFNuméro de requête\nREQ-2026-0001');
+
+      const response = await client['export-requetes'].$get();
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toContain('text/csv');
+      expect(response.headers.get('content-disposition')).toBe(
+        'attachment; filename="export-requetes-sirena-2026-06-18.csv"',
+      );
+      expect(await response.text()).toBe('Numéro de requête\nREQ-2026-0001');
+      expect(generateExportRequetesCsv).toHaveBeenCalledWith('root-entite');
+    });
   });
 });
