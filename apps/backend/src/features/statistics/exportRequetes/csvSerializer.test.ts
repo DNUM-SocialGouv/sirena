@@ -14,4 +14,10 @@ describe('serializeCsv', () => {
 
     expect(csv).toBe('\uFEFFDescription\n"Alerte; ""urgente""\nà traiter"');
   });
+
+  it('exports null and undefined values as empty cells', () => {
+    const csv = serializeCsv(['Nom', 'Date', 'Commentaire'], [['Alice', null, undefined]]);
+
+    expect(csv).toBe('\uFEFFNom;Date;Commentaire\nAlice;;');
+  });
 });
