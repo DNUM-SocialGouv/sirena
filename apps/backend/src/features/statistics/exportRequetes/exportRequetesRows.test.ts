@@ -6,9 +6,9 @@ describe('buildExportRequetesRows', () => {
   it('builds one CSV row for one requête with one situation', () => {
     const rows = buildExportRequetesRows([
       {
-        numero: 'REQ-2026-0001',
+        id: 'REQ-2026-0001',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),
-        situations: [{ numero: 1 }],
+        situations: [{}],
       },
     ]);
 
@@ -22,9 +22,9 @@ describe('buildExportRequetesRows', () => {
   it('builds one CSV row per situation and repeats request-level fields', () => {
     const rows = buildExportRequetesRows([
       {
-        numero: 'REQ-2026-0002',
+        id: 'REQ-2026-0002',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),
-        situations: [{ numero: 1 }, { numero: 2 }],
+        situations: [{}, {}],
       },
     ]);
 
@@ -40,7 +40,7 @@ describe('buildExportRequetesRows', () => {
   it('builds one CSV row with empty situation fields for a requête without situation', () => {
     const rows = buildExportRequetesRows([
       {
-        numero: 'REQ-2026-0003',
+        id: 'REQ-2026-0003',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),
         situations: [],
       },

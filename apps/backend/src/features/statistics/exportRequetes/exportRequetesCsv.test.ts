@@ -19,9 +19,9 @@ describe('buildExportRequetesCsv', () => {
   it('exports requête records as CSV data rows below the header', () => {
     const csv = buildExportRequetesCsvFromRecords([
       {
-        numero: 'REQ-2026-0001',
+        id: 'REQ-2026-0001',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),
-        situations: [{ numero: 1 }],
+        situations: [{}],
       },
     ]);
     const lines = csv.replace(/^\uFEFF/, '').split('\n');

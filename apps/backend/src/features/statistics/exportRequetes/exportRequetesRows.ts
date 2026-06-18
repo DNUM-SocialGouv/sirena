@@ -3,14 +3,12 @@ import type { ExportRequetesCsvRow } from './exportRequetesCsv.js';
 import { formatExportDate } from './exportRequetesFormatters.js';
 
 export type ExportRequeteRecord = {
-  numero: string | null;
+  id: string | null;
   createdAt: Date | null;
   situations: ExportSituationRecord[];
 };
 
-type ExportSituationRecord = {
-  numero: number | null;
-};
+type ExportSituationRecord = Record<string, unknown>;
 
 export function buildExportRequetesRows(requetes: ExportRequeteRecord[]): ExportRequetesCsvRow[] {
   return requetes.flatMap((requete) => {
@@ -18,18 +16,19 @@ export function buildExportRequetesRows(requetes: ExportRequeteRecord[]): Export
       return [buildExportRequeteRow(requete, null)];
     }
 
-    return requete.situations.map((situation) => buildExportRequeteRow(requete, situation));
+    return requete.situations.map((situation, index) => buildExportRequeteRow(requete, situation, index));
   });
 }
 
 function buildExportRequeteRow(
   requete: ExportRequeteRecord,
   situation: ExportSituationRecord | null,
+  situationIndex?: number,
 ): ExportRequetesCsvRow {
   const row = createEmptyExportRow();
 
-  row[0] = requete.numero;
-  row[16] = situation?.numero ?? '';
+  row[0] = requete.id;
+  row[16] = situation ? (situationIndex ?? 0) + 1 : '';
   row[50] = formatExportDate(requete.createdAt);
 
   return row;
