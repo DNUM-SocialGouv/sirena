@@ -4,6 +4,7 @@ import { createFileRoute, Navigate } from '@tanstack/react-router';
 import type { CSSProperties } from 'react';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { parseCard } from '@/components/statistics/chartData';
+import { ExportRequetesButton } from '@/components/statistics/ExportRequetesButton';
 import { StatChart } from '@/components/statistics/StatChart';
 import { StatTable } from '@/components/statistics/StatTable';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
@@ -126,7 +127,10 @@ function RouteComponent() {
 
   return (
     <div className={fr.cx('fr-container', 'fr-my-8w')}>
-      <h1>Indicateurs</h1>
+      <div className={styles['page-header']}>
+        <h1 className="fr-mb-0">Indicateurs</h1>
+        <ExportRequetesButton />
+      </div>
       <QueryStateHandler query={query} noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}>
         {({ data }) => {
           if (data.cards.length === 0) {
