@@ -25,6 +25,7 @@ const makeData = (
     commentaire: string | null;
     date_action: Date | null;
     groupIds: number[];
+    sys_creation_date?: Date | null;
   }[] = [],
 ) => ({
   reclamation: { id_data: 42 } as never,
@@ -98,21 +99,39 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
     expect(result[0].statutId).toBe('FAIT');
   });
 
-  it('should set createdAt to date_action when non-null', () => {
+  it('should set createdAt from sys_creation_date', () => {
+    const sysDate = new Date('2024-01-01');
+    const result = transformSirecMainCourantes(
+      makeData([
+        {
+          id_data: 1,
+          type_action1: null,
+          commentaire: null,
+          date_action: null,
+          groupIds: [693],
+          sys_creation_date: sysDate,
+        },
+      ]),
+    );
+
+    expect(result[0].createdAt).toEqual(sysDate);
+  });
+
+  it('should set dateRealisation to date_action when non-null', () => {
     const date = new Date('2024-06-15');
     const result = transformSirecMainCourantes(
       makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: date, groupIds: [693] }]),
     );
 
-    expect(result[0].createdAt).toEqual(date);
+    expect(result[0].dateRealisation).toEqual(date);
   });
 
-  it('should not set createdAt when date_action is null', () => {
+  it('should not set dateRealisation when date_action is null', () => {
     const result = transformSirecMainCourantes(
       makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [693] }]),
     );
 
-    expect(result[0].createdAt).toBeUndefined();
+    expect(result[0].dateRealisation).toBeUndefined();
   });
 
   it('should set note to null when both commentaire and date_action are null', () => {

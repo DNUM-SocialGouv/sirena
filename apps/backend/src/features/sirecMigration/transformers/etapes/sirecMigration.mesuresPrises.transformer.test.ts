@@ -8,7 +8,7 @@ const makeData = (
     mesures_prises?: number | null;
     mesures_initiative?: number | null;
     mesures_precision?: string | null;
-    sys_last_mod_date?: Date | null;
+    sys_creation_date?: Date | null;
   } = {},
 ) =>
   ({
@@ -17,7 +17,7 @@ const makeData = (
       mesures_prises: null,
       mesures_initiative: null,
       mesures_precision: null,
-      sys_last_mod_date: null,
+      sys_creation_date: null,
       ...overrides,
     },
     motifsDeclaresIdDicos: [],
@@ -72,17 +72,17 @@ describe('sirecMigration.mesuresPrises.transformer.ts', () => {
       expect(result[0].statutId).toBe('FAIT');
     });
 
-    it('should set createdAt when sys_last_mod_date is provided', () => {
+    it('should set createdAt when sys_creation_date is provided', () => {
       const date = new Date('2024-05-10');
-      const result = transformSirecMesuresPrises(makeData({ mesures_prises: 1, sys_last_mod_date: date }), [ARS_1]);
+      const result = transformSirecMesuresPrises(makeData({ mesures_prises: 1, sys_creation_date: date }), [ARS_1]);
 
       expect(result[0].createdAt).toEqual(date);
     });
 
-    it('should not set createdAt when sys_last_mod_date is null', () => {
-      const result = transformSirecMesuresPrises(makeData({ mesures_prises: 1, sys_last_mod_date: null }), [ARS_1]);
+    it('should set createdAt to null when sys_creation_date is null', () => {
+      const result = transformSirecMesuresPrises(makeData({ mesures_prises: 1, sys_creation_date: null }), [ARS_1]);
 
-      expect(result[0].createdAt).toBeUndefined();
+      expect(result[0].createdAt).toBeNull();
     });
 
     it('should create one etape per arsEntiteId', () => {
