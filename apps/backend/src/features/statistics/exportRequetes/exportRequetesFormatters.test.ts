@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatExportBoolean, formatExportDate } from './exportRequetesFormatters.js';
+import { formatExportBoolean, formatExportDate, formatExportList } from './exportRequetesFormatters.js';
 
 describe('formatExportDate', () => {
   it('formats dates as DD/MM/YYYY for the CSV export', () => {
@@ -19,5 +19,11 @@ describe('formatExportBoolean', () => {
     expect(formatExportBoolean(false)).toBe('Non');
     expect(formatExportBoolean(null)).toBe('');
     expect(formatExportBoolean(undefined)).toBe('');
+  });
+});
+
+describe('formatExportList', () => {
+  it('joins multiple values with a comma and a space and ignores missing values', () => {
+    expect(formatExportList(['Motif A', null, 'Motif B', undefined])).toBe('Motif A, Motif B');
   });
 });

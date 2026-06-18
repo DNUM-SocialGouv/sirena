@@ -17,3 +17,7 @@ export function formatExportBoolean(value: boolean | null | undefined): string {
 
   return value ? 'Oui' : 'Non';
 }
+
+export function formatExportList(values: Array<string | null | undefined>): string {
+  return values.filter((value): value is string => value != null && value !== '').join(', ');
+}
