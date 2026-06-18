@@ -25,7 +25,7 @@ const makeData = (
     commentaire: string | null;
     date_action: Date | null;
     groupIds: number[];
-    sys_creation_date?: Date | null;
+    sys_creation_date?: Date;
   }[] = [],
 ) => ({
   reclamation: { id_data: 42 } as never,
@@ -35,7 +35,7 @@ const makeData = (
   institutionPartenaires: {},
   typeTraitementIdDicos: [],
   misEnCauses: [],
-  mainCourantes,
+  mainCourantes: mainCourantes as never,
 });
 
 describe('sirecMigration.mainCourante.transformer.ts', () => {
