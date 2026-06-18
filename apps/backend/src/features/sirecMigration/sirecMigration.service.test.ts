@@ -118,6 +118,8 @@ describe('sirecMigration.service.ts', () => {
           misEnCauseData: null as any,
           lieuDeSurvenueData: null as any,
           domainesFonctionnelsId: null as string | null,
+          estLieAuSignalement: undefined as boolean | undefined,
+          numerosSignalement: '',
         },
       ],
     };
@@ -269,6 +271,44 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.situation.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ domainesFonctionnelsId: 'SANITAIRE' }) }),
+      );
+    });
+
+    it('should create Situation with estLieAuSignalement undefined when not set', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ estLieAuSignalement: undefined }) }),
+      );
+    });
+
+    it('should create Situation with estLieAuSignalement true when set', async () => {
+      await saveFromSirec({
+        ...data,
+        situations: [{ ...data.situations[0], estLieAuSignalement: true }],
+      });
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ estLieAuSignalement: true }) }),
+      );
+    });
+
+    it('should create Situation with numerosSignalement empty string by default', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ numerosSignalement: '' }) }),
+      );
+    });
+
+    it('should create Situation with numerosSignalement when set', async () => {
+      await saveFromSirec({
+        ...data,
+        situations: [{ ...data.situations[0], numerosSignalement: 'SIG001,SIG002' }],
+      });
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ numerosSignalement: 'SIG001,SIG002' }) }),
       );
     });
 

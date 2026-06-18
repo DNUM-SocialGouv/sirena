@@ -15,6 +15,8 @@ describe('sirecMigration.situation.transformer.ts', () => {
       date_envoi_ar: null as Date | null,
       accuser_reception_precision: null as string | null,
       domaine: null as number | null,
+      ei_avere: null as number | null,
+      num_sign_assoc: null as string | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
@@ -83,5 +85,70 @@ describe('sirecMigration.situation.transformer.ts', () => {
     const result = transformSirecSituation(sirecData, []);
 
     expect(result.lieuDeSurvenueData).toBeNull();
+  });
+
+  describe('estLieAuSignalement and numerosSignalement', () => {
+    it('should set estLieAuSignalement to true when ei_avere is true (1)', () => {
+      const result = transformSirecSituation(
+        { ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: 1 } },
+        [],
+      );
+
+      expect(result.estLieAuSignalement).toBe(true);
+    });
+
+    it('should set estLieAuSignalement to undefined when ei_avere is false and num_sign_assoc is null', () => {
+      const result = transformSirecSituation(
+        { ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: 0, num_sign_assoc: null } },
+        [],
+      );
+
+      expect(result.estLieAuSignalement).toBeUndefined();
+    });
+
+    it('should set estLieAuSignalement to undefined when both fields are null', () => {
+      const result = transformSirecSituation(sirecData, []);
+
+      expect(result.estLieAuSignalement).toBeUndefined();
+    });
+
+    it('should set estLieAuSignalement to true when num_sign_assoc is non-empty', () => {
+      const result = transformSirecSituation(
+        { ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: null, num_sign_assoc: 'SIG001' } },
+        [],
+      );
+
+      expect(result.estLieAuSignalement).toBe(true);
+    });
+
+    it('should set estLieAuSignalement to true when both ei_avere is true and num_sign_assoc is set', () => {
+      const result = transformSirecSituation(
+        { ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: 1, num_sign_assoc: 'SIG001' } },
+        [],
+      );
+
+      expect(result.estLieAuSignalement).toBe(true);
+    });
+
+    it('should throw SirecTranscoError when ei_avere has an unknown id', () => {
+      expect(() =>
+        transformSirecSituation({ ...sirecData, reclamation: { ...sirecData.reclamation, ei_avere: 999 } }, []),
+      ).toThrow();
+    });
+
+    it('should set numerosSignalement to num_sign_assoc content when non-empty', () => {
+      const result = transformSirecSituation(
+        { ...sirecData, reclamation: { ...sirecData.reclamation, num_sign_assoc: 'SIG001,SIG002' } },
+        [],
+      );
+
+      expect(result.numerosSignalement).toBe('SIG001,SIG002');
+    });
+
+    it('should set numerosSignalement to empty string when num_sign_assoc is null', () => {
+      const result = transformSirecSituation(sirecData, []);
+
+      expect(result.numerosSignalement).toBe('');
+    });
   });
 });

@@ -107,6 +107,8 @@ describe('sirecMigration.transformer.ts', () => {
       domaine: null as number | null,
       mandataire_judiciaire: null as number | null,
       mandataire_precisez: null as number | null,
+      ei_avere: null as number | null,
+      num_sign_assoc: null as string | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
@@ -145,6 +147,8 @@ describe('sirecMigration.transformer.ts', () => {
           misEnCauseData: null,
           lieuDeSurvenueData: null,
           domainesFonctionnelsId: null,
+          estLieAuSignalement: undefined,
+          numerosSignalement: '',
         },
       ],
     });
