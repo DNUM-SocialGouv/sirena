@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
 import { transformSirecExamenCommission } from './sirecMigration.examenCommission.transformer.js';
 
-const makeData = (date_commission: Date | null = null) =>
+const makeData = (date_commission: Date | null = null, sys_creation_date?: Date) =>
   ({
-    reclamation: { id_data: 42, date_commission },
+    reclamation: { id_data: 42, date_commission, sys_creation_date },
     motifsDeclaresIdDicos: [],
     groupIds: [],
     provenances: [],
@@ -44,11 +44,18 @@ describe('sirecMigration.examenCommission.transformer.ts', () => {
     expect(result[0].statutId).toBe('FAIT');
   });
 
-  it('should set createdAt to date_commission', () => {
+  it('should set createdAt from sys_creation_date', () => {
+    const sysDate = new Date('2024-01-01');
+    const result = transformSirecExamenCommission(makeData(new Date('2024-06-15'), sysDate), [ARS_1]);
+
+    expect(result[0].createdAt).toEqual(sysDate);
+  });
+
+  it('should set dateRealisation to date_commission', () => {
     const date = new Date('2024-06-15');
     const result = transformSirecExamenCommission(makeData(date), [ARS_1]);
 
-    expect(result[0].createdAt).toEqual(date);
+    expect(result[0].dateRealisation).toEqual(date);
   });
 
   it('should set note with formatted date', () => {

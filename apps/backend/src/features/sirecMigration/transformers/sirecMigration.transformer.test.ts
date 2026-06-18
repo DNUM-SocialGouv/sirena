@@ -455,7 +455,7 @@ describe('sirecMigration.transformer.ts', () => {
 
       expect(result.etapes).toHaveLength(1);
       expect(result.etapes[0].nom).toBe('Examen en commission');
-      expect(result.etapes[0].createdAt).toEqual(date);
+      expect(result.etapes[0].dateRealisation).toEqual(date);
       expect(result.etapes[0].note).toBe("Date d'examen en commission : 05/09/2024");
     });
   });

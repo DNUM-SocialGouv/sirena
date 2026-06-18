@@ -27,6 +27,7 @@ const makeData = (
     date_rep_provenance1?: Date | null;
     date_rep_provenance2?: Date | null;
     date_rep_provenance3?: Date | null;
+    sys_creation_date?: Date | null;
   } = {},
   provenances: { id_provenance: number; id_group: number }[] = [],
 ) =>
@@ -36,6 +37,7 @@ const makeData = (
       date_rep_provenance1: null,
       date_rep_provenance2: null,
       date_rep_provenance3: null,
+      sys_creation_date: null,
       ...reclamationOverrides,
     },
     motifsDeclaresIdDicos: [],
@@ -104,13 +106,24 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
     expect(result[0].statutId).toBe('FAIT');
   });
 
-  it('should set createdAt to the date', () => {
+  it('should set dateRealisation to the date', () => {
     const date = new Date('2024-03-05');
     const result = transformSirecReponseProvenances(
       makeData({ date_rep_provenance1: date }, [{ id_provenance: 103, id_group: 693 }]),
     );
 
-    expect(result[0].createdAt).toEqual(date);
+    expect(result[0].dateRealisation).toEqual(date);
+  });
+
+  it('should set createdAt from sys_creation_date', () => {
+    const sysDate = new Date('2024-01-01');
+    const result = transformSirecReponseProvenances(
+      makeData({ date_rep_provenance1: new Date('2024-03-05'), sys_creation_date: sysDate }, [
+        { id_provenance: 103, id_group: 693 },
+      ]),
+    );
+
+    expect(result[0].createdAt).toEqual(sysDate);
   });
 
   it('should set note to "Date de la réponse : DD/MM/YYYY"', () => {
@@ -135,11 +148,11 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
 
     expect(result).toHaveLength(3);
     expect(result[0].nom).toBe("Réponse à l'institution de provenance : Institution 1");
-    expect(result[0].createdAt).toEqual(date1);
+    expect(result[0].dateRealisation).toEqual(date1);
     expect(result[1].nom).toBe("Réponse à l'institution de provenance : Institution 2");
-    expect(result[1].createdAt).toEqual(date2);
+    expect(result[1].dateRealisation).toEqual(date2);
     expect(result[2].nom).toBe("Réponse à l'institution de provenance : Institution 3");
-    expect(result[2].createdAt).toEqual(date3);
+    expect(result[2].dateRealisation).toEqual(date3);
   });
 
   it('should ignore date_rep_provenance beyond index of provenances', () => {
@@ -169,7 +182,7 @@ describe('sirecMigration.reponseProvenance.transformer.ts', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].entiteId).toBe('ars-normandie');
-    expect(result[0].createdAt).toEqual(date1);
+    expect(result[0].dateRealisation).toEqual(date1);
   });
 
   it('should create one etape per requeteEntiteId when a group maps to multiple entiteIds', () => {
