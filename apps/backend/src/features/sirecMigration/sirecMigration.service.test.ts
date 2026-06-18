@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test purposes> */
+
+import type { MesureProtection } from '@sirena/db/generated-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 import { getRequeteIdFromSirecId, saveFromSirec } from './sirecMigration.service.js';
@@ -90,6 +92,7 @@ describe('sirecMigration.service.ts', () => {
         adresse: { rue: string | null; codePostal: string | null; ville: string | null } | null;
         commentaire: string;
         ageId: string | null;
+        mesureProtection: MesureProtection | null;
       } | null,
       requeteStatutId: 'EN_COURS',
       sysLastModDate: null as Date | null,
@@ -287,7 +290,7 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
         },
-        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledOnce();
@@ -296,6 +299,7 @@ describe('sirecMigration.service.ts', () => {
           estVictime: true,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
           declarantDeId: 'SIREC-42',
           participantDeId: 'SIREC-42',
         },
@@ -314,19 +318,25 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
         },
-        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledTimes(2);
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
-        data: { participantDeId: 'SIREC-42', estVictime: true, commentaire: '', ageId: null },
+        data: { participantDeId: 'SIREC-42', estVictime: true, commentaire: '', ageId: null, mesureProtection: null },
       });
     });
 
     it('should pass victime.commentaire to PersonneConcernee when victime_non_identifiee=1', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, adresse: null, commentaire: 'Usager (Victime) non identifié : oui', ageId: null },
+        victime: {
+          identite: null,
+          adresse: null,
+          commentaire: 'Usager (Victime) non identifié : oui',
+          ageId: null,
+          mesureProtection: null,
+        },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -335,6 +345,7 @@ describe('sirecMigration.service.ts', () => {
           estVictime: true,
           commentaire: 'Usager (Victime) non identifié : oui',
           ageId: null,
+          mesureProtection: null,
         },
       });
     });
@@ -353,6 +364,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
         },
       });
 
@@ -362,6 +374,7 @@ describe('sirecMigration.service.ts', () => {
           estVictime: true,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
           identite: {
             create: {
               nom: 'Martin',
@@ -389,6 +402,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
         },
       });
 
@@ -398,6 +412,7 @@ describe('sirecMigration.service.ts', () => {
           estVictime: true,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
           identite: {
             create: {
               nom: 'Martin',
@@ -414,18 +429,30 @@ describe('sirecMigration.service.ts', () => {
     it('should pass ageId to victime PersonneConcernee when set', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, adresse: null, commentaire: 'Age de la victime : 45', ageId: '30-59' },
+        victime: {
+          identite: null,
+          adresse: null,
+          commentaire: 'Age de la victime : 45',
+          ageId: '30-59',
+          mesureProtection: null,
+        },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
-        data: { participantDeId: 'SIREC-42', estVictime: true, commentaire: 'Age de la victime : 45', ageId: '30-59' },
+        data: {
+          participantDeId: 'SIREC-42',
+          estVictime: true,
+          commentaire: 'Age de la victime : 45',
+          ageId: '30-59',
+          mesureProtection: null,
+        },
       });
     });
 
     it('should not add identite to victime PersonneConcernee when identite is null', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -678,6 +705,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: { rue: '5 rue des Lilas', codePostal: '69001', ville: 'Lyon' },
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
         },
       });
 
@@ -687,6 +715,7 @@ describe('sirecMigration.service.ts', () => {
           estVictime: true,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
           adresse: { create: { rue: '5 rue des Lilas', codePostal: '69001', ville: 'Lyon' } },
         },
       });
@@ -700,6 +729,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: { rue: '5 rue des Lilas', codePostal: null, ville: null },
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
         },
       });
 
@@ -709,6 +739,7 @@ describe('sirecMigration.service.ts', () => {
           estVictime: true,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
           adresse: { create: { rue: '5 rue des Lilas', codePostal: '', ville: '' } },
         },
       });
@@ -717,7 +748,7 @@ describe('sirecMigration.service.ts', () => {
     it('should not add adresse to victime PersonneConcernee when adresse is null', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -1149,6 +1180,43 @@ describe('sirecMigration.service.ts', () => {
           },
           select: { id: true },
         });
+      });
+    });
+
+    it('should pass mesureProtection to victime PersonneConcernee when set', async () => {
+      await saveFromSirec({
+        ...data,
+        victime: {
+          identite: null,
+          adresse: null,
+          commentaire: '',
+          ageId: null,
+          mesureProtection: 'MANDATAIRE_JUDICIAIRE',
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ mesureProtection: 'MANDATAIRE_JUDICIAIRE' }),
+      });
+    });
+
+    it('should pass mesureProtection null to victime PersonneConcernee when victime is null', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: {
+          estVictime: true,
+          veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          adresse: null,
+          identite: null,
+          commentaire: '',
+        },
+        victime: null,
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ mesureProtection: null }),
       });
     });
 

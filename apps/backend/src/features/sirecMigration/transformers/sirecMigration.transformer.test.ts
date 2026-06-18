@@ -105,6 +105,8 @@ describe('sirecMigration.transformer.ts', () => {
       date_cloture: null as Date | null,
       date_ecriture: null as Date | null,
       domaine: null as number | null,
+      mandataire_judiciaire: null as number | null,
+      mandataire_precisez: null as number | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
