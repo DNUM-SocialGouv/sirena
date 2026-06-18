@@ -11,5 +11,15 @@ export function serializeCsv(headers: string[], rows: CsvValue[][]): string {
 }
 
 function formatCsvValue(value: CsvValue): string {
-  return value == null ? '' : String(value);
+  if (value == null) {
+    return '';
+  }
+
+  const stringValue = String(value);
+
+  if (!/[;"\n\r]/.test(stringValue)) {
+    return stringValue;
+  }
+
+  return `"${stringValue.replaceAll('"', '""')}"`;
 }

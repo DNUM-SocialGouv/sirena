@@ -8,4 +8,10 @@ describe('serializeCsv', () => {
 
     expect(csv).toBe('\uFEFFNom;Date\nAlice;18/06/2026');
   });
+
+  it('quotes cells containing semicolons, quotes or line breaks and doubles embedded quotes', () => {
+    const csv = serializeCsv(['Description'], [['Alerte; "urgente"\nà traiter']]);
+
+    expect(csv).toBe('\uFEFFDescription\n"Alerte; ""urgente""\nà traiter"');
+  });
 });
