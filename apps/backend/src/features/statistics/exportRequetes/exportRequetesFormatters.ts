@@ -9,3 +9,11 @@ export function formatExportDate(date: Date | null | undefined): string {
 
   return `${day}/${month}/${year}`;
 }
+
+export function formatExportBoolean(value: boolean | null | undefined): string {
+  if (value == null) {
+    return '';
+  }
+
+  return value ? 'Oui' : 'Non';
+}
