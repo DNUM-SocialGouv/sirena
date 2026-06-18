@@ -1,5 +1,5 @@
 import { SituationDataSchema } from '@sirena/common/schemas';
-import { prisma, type Requete } from '@sirena/db';
+import { type MesureProtection, prisma, type Requete } from '@sirena/db';
 import { UnrecoverableError } from 'bullmq';
 import { isPrismaUniqueConstraintError } from '../../helpers/prisma.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
@@ -236,6 +236,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
           estVictime: true,
           commentaire: data.victime?.commentaire ?? '',
           ageId: data.victime?.ageId ?? null,
+          mesureProtection: data.victime?.mesureProtection ?? null,
           ...(data.declarant?.estVictime && { declarantDeId: sirenaRequete.id }),
           ...(data.victime?.adresse !== null && data.victime?.adresse !== undefined
             ? {

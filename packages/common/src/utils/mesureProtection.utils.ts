@@ -1,4 +1,4 @@
-import type { MesureProtection } from '../schemas/personneConcernee.schema.js';
+import type { MesureProtection } from '../schemas/index.js';
 
 const MESURE_PROTECTION_PERSONNE_CONCERNEE_LABELS = {
   MANDATAIRE_JUDICIAIRE: 'mandataire judiciaire',
