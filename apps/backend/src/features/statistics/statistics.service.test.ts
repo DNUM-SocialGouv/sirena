@@ -97,12 +97,20 @@ describe('statistics.service.ts', () => {
       const result = await fetchDashboardCardsData();
 
       expect(result).toEqual([
-        { id: 42, dashcardId: 100, name: 'Requêtes par mois', display: null, data: [{ month: '2026-01', total: 12 }] },
+        {
+          id: 42,
+          dashcardId: 100,
+          name: 'Requêtes par mois',
+          display: null,
+          layout: null,
+          data: [{ month: '2026-01', total: 12 }],
+        },
         {
           id: 43,
           dashcardId: 101,
           name: 'Top entités',
           display: null,
+          layout: null,
           data: [{ entite: 'ARS Île-de-France', total: 7 }],
         },
       ]);
@@ -130,7 +138,9 @@ describe('statistics.service.ts', () => {
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       const result = await fetchDashboardCardsData();
 
-      expect(result).toEqual([{ id: 50, dashcardId: 200, name: 'Legacy', display: null, data: [{ k: 1 }] }]);
+      expect(result).toEqual([
+        { id: 50, dashcardId: 200, name: 'Legacy', display: null, layout: null, data: [{ k: 1 }] },
+      ]);
     });
 
     it('returns an empty array when the dashboard exposes no readable cards', async () => {
@@ -178,8 +188,8 @@ describe('statistics.service.ts', () => {
       const result = await fetchDashboardCardsData();
 
       expect(result).toEqual([
-        { id: 42, dashcardId: 100, name: 'OK', display: null, data: [{ total: 12 }] },
-        { id: 43, dashcardId: 101, name: 'KO', display: null, data: [] },
+        { id: 42, dashcardId: 100, name: 'OK', display: null, layout: null, data: [{ total: 12 }] },
+        { id: 43, dashcardId: 101, name: 'KO', display: null, layout: null, data: [] },
       ]);
     });
 
@@ -195,7 +205,7 @@ describe('statistics.service.ts', () => {
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       const result = await fetchDashboardCardsData();
 
-      expect(result).toEqual([{ id: 42, dashcardId: 100, name: 'Card', display: null, data: [] }]);
+      expect(result).toEqual([{ id: 42, dashcardId: 100, name: 'Card', display: null, layout: null, data: [] }]);
     });
 
     it('falls back to a generated name when the card has no name', async () => {
@@ -210,7 +220,31 @@ describe('statistics.service.ts', () => {
       const { fetchDashboardCardsData } = await import('./statistics.service.js');
       const result = await fetchDashboardCardsData();
 
-      expect(result).toEqual([{ id: 42, dashcardId: 100, name: 'Carte 42', display: null, data: [{ k: 1 }] }]);
+      expect(result).toEqual([
+        { id: 42, dashcardId: 100, name: 'Carte 42', display: null, layout: null, data: [{ k: 1 }] },
+      ]);
+    });
+
+    it('extracts the Metabase grid layout (col/row/size) and leaves it null when incomplete', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            dashcards: [
+              { id: 100, card_id: 42, card: { id: 42, name: 'Placée' }, col: 6, row: 0, size_x: 12, size_y: 9 },
+              // size_y manquant -> layout incomplet -> null
+              { id: 101, card_id: 43, card: { id: 43, name: 'Sans layout' }, col: 0, row: 0, size_x: 6 },
+            ],
+          }),
+        })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 1 }] })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 2 }] });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      const result = await fetchDashboardCardsData();
+
+      expect(result.map((card) => card.layout)).toEqual([{ col: 6, row: 0, sizeX: 12, sizeY: 9 }, null]);
     });
 
     it('reads the visualizer display override in priority, then falls back to card.display', async () => {

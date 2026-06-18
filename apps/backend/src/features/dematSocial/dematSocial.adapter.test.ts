@@ -40,12 +40,13 @@ const communeChamp = (mappingId: string, postalCode: string): RootChampFragmentF
   __typename: 'CommuneChamp',
   label: '',
   id: toB64(mappingId),
+  stringValue: postalCode,
   commune: {
-    __typename: 'Commune',
     code: postalCode,
     name: '',
     postalCode,
   },
+  departement: null,
 });
 
 type FinessData = {
@@ -67,6 +68,7 @@ const multiSelectChamp = (mappingId: string, values: string[]): RootChampFragmen
   __typename: 'MultipleDropDownListChamp',
   label: '',
   id: toB64(mappingId),
+  stringValue: values.join(', '),
   values,
 });
 
@@ -74,6 +76,7 @@ const dateChamp = (mappingId: string, iso: string | null): RootChampFragmentFrag
   __typename: 'DateChamp',
   label: '',
   id: toB64(mappingId),
+  stringValue: iso,
   date: iso,
 });
 
@@ -81,6 +84,7 @@ const repetitionEmpty = (mappingId: string): RootChampFragmentFragment => ({
   __typename: 'RepetitionChamp',
   label: '',
   id: toB64(mappingId),
+  stringValue: null,
   champs: [],
 });
 
@@ -88,6 +92,7 @@ const booleanChamp = (mappingId: string, checked: boolean): RootChampFragmentFra
   __typename: 'CheckboxChamp',
   label: '',
   id: toB64(mappingId),
+  stringValue: String(checked),
   checked,
 });
 
@@ -95,12 +100,20 @@ const addressChamp = (mappingIdB64: string): RootChampFragmentFragment => ({
   __typename: 'AddressChamp',
   label: '',
   id: toB64(mappingIdB64),
+  stringValue: 'l',
   address: {
     label: 'l',
     type: AddressType.Street,
+    streetAddress: null,
+    streetNumber: null,
+    streetName: null,
     postalCode: '75001',
     cityName: 'paris',
     cityCode: 'paris',
+    departmentName: null,
+    departmentCode: null,
+    regionName: null,
+    regionCode: null,
   },
 });
 
@@ -111,6 +124,7 @@ const filesChamp = (
   __typename: 'PieceJustificativeChamp',
   label: '',
   id: toB64(mappingId),
+  stringValue: null,
   files: files.map((f) => ({
     __typename: 'File',
     checksum: '',
@@ -120,7 +134,10 @@ const filesChamp = (
   })),
 });
 
-const repetitionChamp = (mappingId: string, parts: Record<string, RootChampFragmentFragment[]>) => {
+const repetitionChamp = (
+  mappingId: string,
+  parts: Record<string, RootChampFragmentFragment[]>,
+): RootChampFragmentFragment => {
   const champs = Object.entries(parts).flatMap(([partKey, arr]) =>
     arr.map((champ) => ({
       ...champ,
@@ -129,9 +146,10 @@ const repetitionChamp = (mappingId: string, parts: Record<string, RootChampFragm
   );
 
   return {
-    __typename: 'RepetitionChamp' as const,
+    __typename: 'RepetitionChamp',
     label: '',
     id: toB64(mappingId),
+    stringValue: null,
     champs,
   };
 };

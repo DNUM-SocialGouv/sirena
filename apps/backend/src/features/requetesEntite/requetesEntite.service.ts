@@ -27,6 +27,7 @@ import { deleteFileFromMinio, getFileStream } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
+import { safeSyncClosedRequeteToDematSocial } from '../dematSocial/closureSync/closureSync.service.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
@@ -1754,6 +1755,8 @@ export const closeRequeteForEntite = async (
       note,
     };
   });
+
+  await safeSyncClosedRequeteToDematSocial(requeteId).catch(() => undefined);
 
   await createChangeLogForRequeteEntite({
     requeteId,
