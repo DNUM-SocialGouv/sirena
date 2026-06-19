@@ -4,6 +4,27 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ExportRequetesButton } from './ExportRequetesButton';
 
+function mockBrowserDownload(objectUrl = 'blob:export-requetes') {
+  const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
+  const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+  let clickedLink: HTMLAnchorElement | undefined;
+  const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+    this: HTMLAnchorElement,
+  ) {
+    clickedLink = this;
+  });
+
+  return {
+    clickSpy,
+    createObjectURLSpy,
+    get clickedLink() {
+      return clickedLink;
+    },
+    objectUrl,
+    revokeObjectURLSpy,
+  };
+}
+
 describe('ExportRequetesButton', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -28,15 +49,7 @@ describe('ExportRequetesButton', () => {
 
   it('downloads the exported CSV with the response filename', async () => {
     const csv = 'Numéro de requête;Statut\n2026-05-RS1;Clôturée\n';
-    const objectUrl = 'blob:export-requetes';
-    const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
-    const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    let clickedLink: HTMLAnchorElement | undefined;
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
-      this: HTMLAnchorElement,
-    ) {
-      clickedLink = this;
-    });
+    const browserDownload = mockBrowserDownload();
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(csv, {
         headers: {
@@ -50,32 +63,26 @@ describe('ExportRequetesButton', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Exporter les requêtes' }));
 
-    expect(createObjectURLSpy).toHaveBeenCalledWith(expect.any(Blob));
-    expect(clickSpy).toHaveBeenCalledOnce();
-    expect(clickedLink).toMatchObject({
+    expect(browserDownload.createObjectURLSpy).toHaveBeenCalledWith(expect.any(Blob));
+    expect(browserDownload.clickSpy).toHaveBeenCalledOnce();
+    expect(browserDownload.clickedLink).toMatchObject({
       download: 'export-requetes-sirena-2026-06-18.csv',
-      href: objectUrl,
+      href: browserDownload.objectUrl,
     });
-    expect(revokeObjectURLSpy).toHaveBeenCalledWith(objectUrl);
+    expect(browserDownload.revokeObjectURLSpy).toHaveBeenCalledWith(browserDownload.objectUrl);
   });
 
   it('downloads the exported CSV with a fallback filename when the response has no filename', async () => {
-    const objectUrl = 'blob:export-requetes';
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    let clickedLink: HTMLAnchorElement | undefined;
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
-      clickedLink = this;
-    });
+    const browserDownload = mockBrowserDownload();
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Numéro de requête\n'));
 
     render(<ExportRequetesButton />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Exporter les requêtes' }));
 
-    expect(clickedLink).toMatchObject({
+    expect(browserDownload.clickedLink).toMatchObject({
       download: 'export-requetes-sirena.csv',
-      href: objectUrl,
+      href: browserDownload.objectUrl,
     });
   });
 
