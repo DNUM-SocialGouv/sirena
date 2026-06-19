@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 213.05833333333334,
+  "average_query_time": 200.82456140350877,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,24 +36,23 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'NOUVEAU'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
+        "native": "  SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    TRUE\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
         "template-tags": {
           "end_date": {
             "display-name": "End Date",
-            "id": "63e6a5b7-a326-4ae5-9ab6-6b6c9b0db210",
+            "id": "3411f4eb-2d32-4849-8b7c-438328f9938a",
             "name": "end_date",
             "type": "date"
           },
           "entity_label": {
             "display-name": "Entity Label",
-            "id": "fe2fc655-5100-4c24-85ce-9d3bb93488eb",
+            "id": "3a350622-7615-4473-91ce-4b96b1b8ce2b",
             "name": "entity_label",
-            "required": false,
             "type": "text"
           },
           "start_date": {
             "display-name": "Start Date",
-            "id": "99a9d6ba-6cb9-4199-a794-06fbf3296075",
+            "id": "e3ebe751-0c1d-48a7-82d1-6387312ba30a",
             "name": "start_date",
             "type": "date"
           }
@@ -69,24 +68,23 @@
   "embedding_params": null,
   "embedding_type": null,
   "enable_embedding": false,
-  "entity_id": "iB2FCamFXsLUqH2gYr9AC",
-  "id": 48,
+  "entity_id": "-amAbLzIyj64hmyOmt0n2",
+  "id": 50,
   "is_remote_synced": false,
-  "last_query_start": "2026-06-19T14:16:12.198574Z",
+  "last_query_start": "2026-06-19T14:12:50.802954Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
   "moderation_reviews": [],
-  "name": "Nombre de nouvelles requêtes",
+  "name": "Nombre total de requêtes",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
   "parameters": [
     {
-      "id": "fe2fc655-5100-4c24-85ce-9d3bb93488eb",
+      "id": "3a350622-7615-4473-91ce-4b96b1b8ce2b",
       "isMultiSelect": false,
       "name": "Entity Label",
-      "required": false,
       "slug": "entity_label",
       "target": [
         "variable",
@@ -110,7 +108,7 @@
       "values_source_type": "card"
     },
     {
-      "id": "99a9d6ba-6cb9-4199-a794-06fbf3296075",
+      "id": "e3ebe751-0c1d-48a7-82d1-6387312ba30a",
       "isMultiSelect": false,
       "name": "Start Date",
       "slug": "start_date",
@@ -124,7 +122,7 @@
       "type": "date/single"
     },
     {
-      "id": "63e6a5b7-a326-4ae5-9ab6-6b6c9b0db210",
+      "id": "3411f4eb-2d32-4849-8b7c-438328f9938a",
       "isMultiSelect": false,
       "name": "End Date",
       "slug": "end_date",
@@ -159,7 +157,6 @@
   "table_id": null,
   "type": "question",
   "visualization_settings": {
-    "scalar.segments": [],
-    "table.pivot_column": "nombre_requetes"
+    "scalar.segments": []
   }
 }

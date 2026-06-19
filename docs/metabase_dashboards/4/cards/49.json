@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 185.6341463414634,
+  "average_query_time": 216.96694214876032,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n  COUNT(*) AS nombre_requetes\nFROM\n  \"RequeteEntite\" re\n  JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r ON r.id = re.\"requeteId\"\nWHERE\n  re.\"statutId\" = 'EN_COURS'\n  [[ AND e.label = {{entity_label}} ]]\n  [[ AND r.\"receptionDate\" >= {{start_date}} ]]\n  [[ AND r.\"receptionDate\" <  ({{end_date}}::date + INTERVAL '1 day') ]];",
+        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'EN_COURS'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
         "template-tags": {
           "end_date": {
             "display-name": "End Date",
@@ -71,7 +71,7 @@
   "entity_id": "0W14Ln9t4zIgOyyvNvud6",
   "id": 49,
   "is_remote_synced": false,
-  "last_query_start": "2026-06-17T12:02:23.290638Z",
+  "last_query_start": "2026-06-19T14:17:11.490066Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
@@ -143,7 +143,6 @@
       "base_type": "type/BigInteger",
       "database_type": "int8",
       "display_name": "nombre_requetes",
-      "effective_type": "type/BigInteger",
       "field_ref": [
         "field",
         "nombre_requetes",
@@ -151,30 +150,7 @@
           "base-type": "type/BigInteger"
         }
       ],
-      "fingerprint": {
-        "global": {
-          "distinct-count": 1,
-          "nil%": 0
-        },
-        "type": {
-          "type/Number": {
-            "avg": 277,
-            "max": 277,
-            "min": 277,
-            "q1": 277,
-            "q3": 277,
-            "sd": null
-          }
-        }
-      },
-      "lib/deduplicated-name": "nombre_requetes",
-      "lib/desired-column-alias": "nombre_requetes",
-      "lib/original-name": "nombre_requetes",
-      "lib/source": "source/native",
-      "lib/source-column-alias": "nombre_requetes",
-      "name": "nombre_requetes",
-      "semantic_type": null,
-      "source": "native"
+      "name": "nombre_requetes"
     }
   ],
   "source_card_id": null,
