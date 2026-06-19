@@ -1,5 +1,5 @@
 import { SituationDataSchema } from '@sirena/common/schemas';
-import { type MesureProtection, prisma, type Requete } from '@sirena/db';
+import { prisma, type Requete } from '@sirena/db';
 import { UnrecoverableError } from 'bullmq';
 import { isPrismaUniqueConstraintError } from '../../helpers/prisma.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
@@ -25,6 +25,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       sirenaRequete = await tx.requete.create({
         data: {
           id: data.sirenaId,
+          createdAt: data.sysCreationDate,
           sirecId: data.sirecId,
           receptionDate: data.receptionDate,
           receptionTypeId: data.receptionTypeId,
@@ -182,14 +183,14 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       clotureEffectiveDate,
       dateRealisation,
     } of data.etapes) {
-      const etapeCreatedAt = createdAt ?? data.sysCreationDate ?? undefined;
+      const etapeCreatedAt = createdAt ?? data.sysCreationDate;
       await tx.requeteEtape.create({
         data: {
           requeteId: sirenaRequete.id,
           entiteId,
           statutId,
           nom,
-          ...(etapeCreatedAt !== undefined ? { createdAt: etapeCreatedAt } : {}),
+          createdAt: etapeCreatedAt,
           ...(note !== null
             ? {
                 notes: {
@@ -207,6 +208,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     if (data.declarant !== null && !data.declarant.estVictime) {
       await tx.personneConcernee.create({
         data: {
+          createdAt: data.sysCreationDate,
           declarantDeId: sirenaRequete.id,
           estVictime: data.declarant.estVictime,
           veutGarderAnonymat: data.declarant.veutGarderAnonymat,
@@ -244,6 +246,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     if (data.victime !== null || data.declarant?.estVictime) {
       await tx.personneConcernee.create({
         data: {
+          createdAt: data.sysCreationDate,
           participantDeId: sirenaRequete.id,
           estVictime: true,
           commentaire: data.victime?.commentaire ?? '',
@@ -265,6 +268,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
             ? {
                 identite: {
                   create: {
+                    createdAt: data.sysCreationDate,
                     nom: data.victime.identite.nom ?? '',
                     prenom: data.victime.identite.prenom ?? '',
                     email: data.victime.identite.email ?? '',
