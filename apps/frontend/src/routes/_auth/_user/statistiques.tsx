@@ -1,12 +1,12 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { Button } from '@codegouvfr/react-dsfr/Button';
-import { Input } from '@codegouvfr/react-dsfr/Input';
 import { FEATURE_FLAGS, ROLES_READ } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
-import { type CSSProperties, type FormEvent, useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { z } from 'zod';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { parseCard } from '@/components/statistics/chartData';
+import { PeriodFilter } from '@/components/statistics/PeriodFilter';
+import { describePeriod, PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
 import { StatTable } from '@/components/statistics/StatTable';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
@@ -19,6 +19,7 @@ import styles from './statistiques.module.css';
 const numberFormatter = new Intl.NumberFormat('fr-FR');
 
 const StatisticsSearchSchema = z.object({
+  period: z.enum(PERIOD_PRESETS).optional().catch(undefined),
   startDate: z.iso.date().optional().catch(undefined),
   endDate: z.iso.date().optional().catch(undefined),
 });
@@ -116,67 +117,6 @@ function ChartCard({ card }: { card: StatisticsCard }) {
   );
 }
 
-type PeriodValue = { startDate?: string; endDate?: string };
-
-function PeriodFilter({ value, onApply }: { value: PeriodValue; onApply: (next: PeriodValue) => void }) {
-  const [start, setStart] = useState(value.startDate ?? '');
-  const [end, setEnd] = useState(value.endDate ?? '');
-
-  useEffect(() => setStart(value.startDate ?? ''), [value.startDate]);
-  useEffect(() => setEnd(value.endDate ?? ''), [value.endDate]);
-
-  const isInvalid = start !== '' && end !== '' && start > end;
-  const hasActiveFilter = Boolean(value.startDate || value.endDate);
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (isInvalid) return;
-    onApply({ startDate: start || undefined, endDate: end || undefined });
-  };
-
-  const handleReset = () => {
-    setStart('');
-    setEnd('');
-    onApply({ startDate: undefined, endDate: undefined });
-  };
-
-  return (
-    <form className={styles['period-filter']} onSubmit={handleSubmit}>
-      <fieldset className={styles['period-filter__fields']}>
-        <legend className={fr.cx('fr-text--bold')}>Période</legend>
-        <Input
-          label="Du"
-          nativeInputProps={{
-            type: 'date',
-            value: start,
-            max: end || undefined,
-            onChange: (e) => setStart(e.target.value),
-          }}
-        />
-        <Input
-          label="Au"
-          state={isInvalid ? 'error' : 'default'}
-          stateRelatedMessage={isInvalid ? 'La date de fin doit être postérieure à la date de début.' : undefined}
-          nativeInputProps={{
-            type: 'date',
-            value: end,
-            min: start || undefined,
-            onChange: (e) => setEnd(e.target.value),
-          }}
-        />
-        <div className={styles['period-filter__actions']}>
-          <Button type="submit" disabled={isInvalid}>
-            Appliquer
-          </Button>
-          <Button type="button" priority="secondary" disabled={!hasActiveFilter} onClick={handleReset}>
-            Réinitialiser
-          </Button>
-        </div>
-      </fieldset>
-    </form>
-  );
-}
-
 function RouteComponent() {
   const resolvedFlagsQuery = useResolvedFeatureFlags();
   const { data: profile, isPending: isProfilePending } = useProfile();
@@ -187,11 +127,18 @@ function RouteComponent() {
 
   const areFlagsReady = resolvedFlagsQuery.status !== 'pending';
   const isEnabled = resolvedFlagsQuery.data?.[FEATURE_FLAGS.STATISTICS] ?? false;
-  const filters = { startDate: search.startDate, endDate: search.endDate };
-  const query = useStatisticsDashboard(filters, areFlagsReady && isEnabled && hasEntityLink);
+  const selection: PeriodSelection = {
+    period: search.period,
+    startDate: search.startDate,
+    endDate: search.endDate,
+  };
+  const range = resolveDateRange(selection, new Date());
+  const query = useStatisticsDashboard(range, areFlagsReady && isEnabled && hasEntityLink);
 
-  const handleApplyPeriod = (next: PeriodValue) => {
-    navigate({ search: (prev) => ({ ...prev, startDate: next.startDate, endDate: next.endDate }) });
+  const handlePeriodChange = (next: PeriodSelection) => {
+    navigate({
+      search: (prev) => ({ ...prev, period: next.period, startDate: next.startDate, endDate: next.endDate }),
+    });
   };
 
   if (isProfilePending || !areFlagsReady) {
@@ -201,10 +148,20 @@ function RouteComponent() {
     return <Navigate to="/home" />;
   }
 
+  const periodLabel = describePeriod(selection);
+  const statusMessage = query.isFetching
+    ? 'Mise à jour des indicateurs en cours…'
+    : query.isSuccess
+      ? `Indicateurs à jour${periodLabel ? ` pour la période : ${periodLabel}` : ''}.`
+      : '';
+
   return (
     <div className={fr.cx('fr-container', 'fr-my-8w')}>
       <h1>Indicateurs</h1>
-      <PeriodFilter value={filters} onApply={handleApplyPeriod} />
+      <PeriodFilter value={selection} onChange={handlePeriodChange} />
+      <p role="status" className="fr-sr-only">
+        {statusMessage}
+      </p>
       <QueryStateHandler query={query} noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}>
         {({ data }) => {
           if (data.cards.length === 0) {

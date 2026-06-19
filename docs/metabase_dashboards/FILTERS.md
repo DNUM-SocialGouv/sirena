@@ -37,10 +37,10 @@ sequenceDiagram
 > **Token vs query string (point crucial).** En embedding signé Metabase, les paramètres
 > **« Locked »** sont lus dans le **JWT** (`params`), tandis que les paramètres **« Enabled »**
 > sont lus dans la **query string** de la requête d'embedding — **jamais** dans le token. Mettre
-> une borne de date « Enabled » dans le JWT est donc **silencieusement ignoré** par Metabase
-> (symptôme classique : « le filtre marche dans Metabase mais pas dans l'app »). Le service met
-> donc `entity_label` (Locked) dans le token et `start_date` / `end_date` (Enabled) en query
-> string.
+> un filtre de date « Enabled » dans le JWT est donc **ignoré sans générer d'erreur** par
+> Metabase (symptôme classique : « le filtre marche dans Metabase mais pas dans l'app »). Le
+> service met donc `entity_label` (Locked) dans le token et `start_date` / `end_date` (Enabled)
+> en query string.
 
 > **Découverte dynamique des filtres.** Le backend ne code pas en dur les filtres qu'il
 > envoie : il lit le tableau `parameters` renvoyé par l'API d'embedding du dashboard
@@ -58,10 +58,10 @@ sont eux-mêmes câblés sur les **template tags** (`{{...}}`) des requêtes SQL
 
 ### Correspondance API ↔ Metabase
 
-Le contrôleur traduit la query en paramètres Metabase. **Les bornes ne sont transmises (en
-query string) que si elles sont fournies _et_ déclarées par le dashboard** (découverte
-dynamique ci-dessus) : un dashboard sans filtre de date configuré continue donc de fonctionner
-exactement comme avant (cf. § sécurité).
+Le contrôleur traduit la query en paramètres Metabase. **Les dates de début et de fin ne sont
+transmises (en query string) que si elles sont fournies _et_ déclarées par le dashboard**
+(découverte dynamique ci-dessus) : un dashboard sans filtre de date configuré continue donc de
+fonctionner exactement comme avant (cf. § sécurité).
 
 | Query param (API) | Paramètre Metabase | Visibilité embedding | Transmis via |
 | --- | --- | --- | --- |
@@ -76,16 +76,20 @@ exactement comme avant (cf. § sécurité).
 
 ### État dans l'URL
 
-Côté front, le filtre est persisté dans l'URL (`?startDate=…&endDate=…`) via `validateSearch`
-de TanStack Router. La période est donc **partageable** et **conservée au rechargement**, et
-chaque changement relance automatiquement la requête (la `queryKey` inclut les bornes).
+Côté front, le filtre est stocké dans les paramètres d'URL de la page `/statistiques`
+(`?period=…` pour une période prédéfinie, ou `?startDate=…&endDate=…` pour une période
+personnalisée) via `validateSearch` de TanStack Router. Elle est donc **conservée lors d'un
+rechargement** et **partageable** via l'URL, et chaque changement relance automatiquement la
+requête (la `queryKey` inclut les dates). En revanche, elle n'est **pas** automatiquement
+conservée lors d'une navigation vers une autre page de l'application puis d'un retour sur
+`/statistiques`.
 
 ---
 
 ## 3. Configurer le filtre côté Metabase
 
 Tant que le dashboard Metabase n'expose pas les paramètres `start_date` / `end_date`, le
-backend continue de fonctionner mais les bornes envoyées sont ignorées. Pour activer le filtre
+backend continue de fonctionner mais les dates envoyées sont ignorées. Pour activer le filtre
 de bout en bout :
 
 ### 3.1. Ajouter les template tags dans chaque requête de carte
@@ -98,7 +102,7 @@ crée alors automatiquement deux **template tags** ; les configurer ainsi :
 | `start_date` | **Date** | non |
 | `end_date` | **Date** | non |
 
-> Type **Date** (et non « Field Filter ») : on pilote nous-mêmes deux bornes simples, ce qui
+> Type **Date** (et non « Field Filter ») : on pilote nous-mêmes deux dates simples, ce qui
 > donne une valeur de token triviale au format `YYYY-MM-DD`.
 
 ### 3.2. Créer les paramètres au niveau du dashboard
@@ -156,7 +160,7 @@ selon le besoin).
 
 Points d'attention :
 
-- chaque borne est dans son **propre** bloc `[[ ]]` pour rester indépendamment optionnelle ;
+- chaque date est dans son **propre** bloc `[[ ]]` pour rester indépendamment optionnelle ;
 - `{{start_date}}`/`{{end_date}}` doivent apparaître dans une clause `WHERE` (ou `AND`) déjà
   amorcée, sinon préfixer le premier bloc par `[[ WHERE ... ]]` ;
 - une carte sans dimension temporelle pertinente n'a simplement pas besoin de ces clauses (ne
@@ -209,9 +213,9 @@ GROUP BY cr.label
 ORDER BY nb_requetes DESC;
 ```
 
-> `end_date` est **inclusive** : si la colonne est un `timestamp` (heure comprise), une borne
+> `end_date` est **inclusive** : si la colonne est un `timestamp` (heure comprise), une date
 > de fin `2026-03-31` exclut les événements du 31 après 00:00. Pour inclure toute la journée,
-> filtrer plutôt sur `< end_date + interval '1 day'`, ou borner sur la date seule
+> filtrer plutôt sur `< end_date + interval '1 day'`, ou comparer sur la date seule
 > (`<colonne>::date <= {{end_date}}`).
 
 ---
@@ -240,17 +244,19 @@ couches :
 - **`entity_label` doit rester `Locked`.** C'est lui qui restreint les statistiques au
   périmètre de l'entité de l'utilisateur ; il est imposé côté serveur et ne doit jamais être
   pilotable par le client.
-- **Les filtres « confort » (date, etc.) sont `Enabled`.** Ils ne changent pas le périmètre de
-  sécurité, seulement le sous-ensemble temporel affiché. Le backend les signe lui-même après
+- **Les filtres de consultation (date, etc.) sont `Enabled`.** Ils ne changent pas le périmètre
+  de sécurité, seulement le sous-ensemble temporel affiché. Le backend les signe lui-même après
   validation Zod ; aucune valeur brute du client n'atteint Metabase sans passer par cette
   validation.
-- **Dégradation gracieuse.** Le backend découvre les filtres déclarés par le dashboard et ne
-  transmet `start_date` / `end_date` (en query string) que s'ils sont fournis **et** déclarés.
-  Sélectionner une date sur un dashboard qui n'expose pas encore ces paramètres est donc sans
-  effet (filtre ignoré), et non plus une erreur Metabase. Activer le filtre côté Metabase (§ 3)
-  suffit à le rendre opérant, sans changement de code.
+- **Si le dashboard n'expose pas encore les paramètres, les filtres sont simplement ignorés et
+  le dashboard continue de fonctionner normalement.** Le backend découvre les filtres déclarés
+  par le dashboard et ne transmet `start_date` / `end_date` (en query string) que s'ils sont
+  fournis **et** déclarés. Sélectionner une date sur un dashboard qui n'expose pas encore ces
+  paramètres est donc sans effet (filtre ignoré), et non plus une erreur Metabase. Activer le
+  filtre côté Metabase (§ 3) suffit à le rendre opérant, sans changement de code.
 - **Token vs query string.** En embedding signé, un paramètre **« Enabled »** ne se lit que
-  dans la **query string**, jamais dans le JWT. Mettre une borne « Enabled » dans le token est
-  silencieusement ignoré (le filtre semble marcher dans Metabase mais pas dans l'app). Le
+  dans la **query string**, jamais dans le JWT. Mettre un filtre de date « Enabled » dans le
+  token est ignoré sans générer d'erreur (le filtre semble marcher dans Metabase mais pas dans
+  l'app). Le
   service passe donc les filtres optionnels en query string et réserve le token au seul
   `entity_label` verrouillé.
