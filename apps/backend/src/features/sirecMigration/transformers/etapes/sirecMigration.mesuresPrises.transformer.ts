@@ -16,11 +16,12 @@ export function transformSirecMesuresPrises(
 ): SirenaEtapeData[] {
   const { mesures_prises, mesures_initiative, mesures_precision, sys_last_mod_date } = sirecData.reclamation;
 
-  if (mesures_prises !== null) {
-    const value = SIREC_BOOLEAN_TRANSCO[mesures_prises];
-    if (value === undefined) throw new SirecTranscoError(mesures_prises, 'mesures_prises');
-    if (!value) return [];
+  if (mesures_prises === null) {
+    return [];
   }
+  const value = SIREC_BOOLEAN_TRANSCO[mesures_prises];
+  if (value === undefined) throw new SirecTranscoError(mesures_prises, 'mesures_prises');
+  if (!value) return [];
 
   const noteParts: string[] = [];
 
