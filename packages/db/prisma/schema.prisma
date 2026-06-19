@@ -540,8 +540,8 @@ model RequeteEtape {
   type        String  @default("MANUAL")
   estPartagee Boolean @default(false)
 
-  statutId String
-  statut   RequeteEtapeStatutEnum @relation(fields: [statutId], references: [id])
+  statutId String?
+  statut   RequeteEtapeStatutEnum? @relation(fields: [statutId], references: [id])
 
   dateRealisation DateTime?
 
@@ -553,6 +553,8 @@ model RequeteEtape {
   requeteEntite RequeteEntite @relation(fields: [requeteId, entiteId], references: [requeteId, entiteId])
 
   notes RequeteEtapeNote[]
+
+  uploadedFiles UploadedFile[]
 
   clotureReason RequeteClotureReasonEnum[]
 
@@ -618,6 +620,9 @@ model UploadedFile {
   requeteEtapeNoteId String?
   requeteEtapeNote   RequeteEtapeNote? @relation(fields: [requeteEtapeNoteId], references: [id], onDelete: Cascade)
 
+  requeteEtapeId String?
+  requeteEtape   RequeteEtape? @relation(fields: [requeteEtapeId], references: [id], onDelete: Cascade)
+
   requeteId String?
   Requete   Requete? @relation(fields: [requeteId], references: [id], onDelete: Cascade)
 
@@ -631,6 +636,7 @@ model UploadedFile {
   updatedAt DateTime @updatedAt
 
   @@index([entiteId])
+  @@index([requeteEtapeId])
 }
 
 model ChangeLog {
