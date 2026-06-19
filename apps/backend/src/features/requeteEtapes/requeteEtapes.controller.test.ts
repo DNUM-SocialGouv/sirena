@@ -368,6 +368,7 @@ describe('requeteEtapes.controller.ts', () => {
       uploadedById: 'user1',
       status: 'PENDING',
       requeteEtapeNoteId: 'step1',
+      requeteEtapeId: null,
       demarchesEngageesId: null,
       canDelete: true,
       scanStatus: 'PENDING',

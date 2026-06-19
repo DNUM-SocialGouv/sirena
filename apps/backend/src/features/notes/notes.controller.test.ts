@@ -233,6 +233,7 @@ describe('notes.controller.ts', () => {
         {
           id: 'f1',
           requeteEtapeNoteId: 'note1',
+          requeteEtapeId: null,
           requeteId: null,
           faitSituationId: null,
           status: 'COMPLETED',
@@ -256,6 +257,7 @@ describe('notes.controller.ts', () => {
         {
           id: 'f2',
           requeteEtapeNoteId: 'note1',
+          requeteEtapeId: null,
           requeteId: null,
           faitSituationId: null,
           status: 'COMPLETED',
