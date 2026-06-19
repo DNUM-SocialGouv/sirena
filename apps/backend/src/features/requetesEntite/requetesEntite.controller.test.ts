@@ -294,6 +294,7 @@ describe('RequetesEntite endpoints: /', () => {
       mimeType: 'application/pdf',
       size: 5,
       requeteId: 'requeteId',
+      requeteEtapeId: null,
       faitSituationId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
