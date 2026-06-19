@@ -1,7 +1,7 @@
 import type { Context, Next } from 'hono';
 import { testClient } from 'hono/testing';
 import { pinoLogger } from 'hono-pino';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { errorHandler } from '../../helpers/errors.js';
 import appWithLogs from '../../helpers/factories/appWithLogs.js';
 import { generateExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
@@ -66,6 +66,10 @@ describe('statistics.controller.ts', () => {
     entitesMiddlewareState.topEntiteId = null;
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('GET /export-requetes', () => {
     it('rejects export when the user has no root entity', async () => {
       const response = await client['export-requetes'].$get();
@@ -75,6 +79,8 @@ describe('statistics.controller.ts', () => {
     });
 
     it('returns the generated CSV as a dated attachment', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-06-18T12:00:00.000Z'));
       entitesMiddlewareState.topEntiteId = 'root-entite';
       vi.mocked(generateExportRequetesCsv).mockResolvedValueOnce('\uFEFFNuméro de requête\nREQ-2026-0001');
 
