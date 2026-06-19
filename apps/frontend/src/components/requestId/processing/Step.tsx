@@ -74,7 +74,7 @@ const formatStepCreationInfo = (
   return `Ajouté automatiquement le ${date}`;
 };
 
-const getStepTitle = (type: string, statutId: string, nom: string | null): string => {
+const getStepTitle = (type: string, statutId: string | null, nom: string | null): string => {
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return 'Clôture';
   if (type === REQUETE_ETAPE_TYPES.CREATION) return 'Création de la requête';
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) return "Envoi de l'accusé de réception";
@@ -84,7 +84,7 @@ const getStepTitle = (type: string, statutId: string, nom: string | null): strin
 
 const getStepSubtitle = (
   type: string,
-  statutId: string,
+  statutId: string | null,
   createdAt: string,
   updatedAt: string,
   createdBy: StepType['createdBy'],
