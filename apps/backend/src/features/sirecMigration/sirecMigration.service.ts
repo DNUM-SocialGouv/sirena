@@ -172,7 +172,16 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       })),
     });
 
-    for (const { nom, entiteId, statutId, createdAt, note, clotureReason, clotureEffectiveDate } of data.etapes) {
+    for (const {
+      nom,
+      entiteId,
+      statutId,
+      createdAt,
+      note,
+      clotureReason,
+      clotureEffectiveDate,
+      dateRealisation,
+    } of data.etapes) {
       const etapeCreatedAt = createdAt ?? data.sysLastModDate ?? undefined;
       await tx.requeteEtape.create({
         data: {
@@ -190,6 +199,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
             : {}),
           ...(clotureReason !== undefined ? { clotureReason: { connect: [{ id: clotureReason }] } } : {}),
           ...(clotureEffectiveDate !== undefined ? { clotureEffectiveDate } : {}),
+          ...(dateRealisation !== undefined ? { dateRealisation } : {}),
         },
       });
     }

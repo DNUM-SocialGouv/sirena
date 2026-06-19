@@ -25,6 +25,7 @@ export function transformSirecAccuseReception(
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
         note: "Envoi d'un accusé de réception : non",
+        createdAt: sirecData.reclamation.sys_creation_date,
       };
     }
 
