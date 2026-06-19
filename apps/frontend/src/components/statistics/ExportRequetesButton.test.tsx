@@ -79,6 +79,23 @@ describe('ExportRequetesButton', () => {
     });
   });
 
+  it('cleans up the object URL and shows an error when triggering the download fails', async () => {
+    const objectUrl = 'blob:export-requetes';
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
+    const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {
+      throw new Error('Download failed');
+    });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Numéro de requête\n'));
+
+    render(<ExportRequetesButton />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Exporter les requêtes' }));
+
+    expect(revokeObjectURLSpy).toHaveBeenCalledWith(objectUrl);
+    expect(screen.getByRole('alert')).toHaveTextContent("L'export des requêtes a échoué. Veuillez réessayer.");
+  });
+
   it('shows an error and re-enables the button when the export fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 500 }));
 

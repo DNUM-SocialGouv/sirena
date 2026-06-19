@@ -29,9 +29,13 @@ export function ExportRequetesButton() {
       link.href = url;
       link.download = getFilenameFromContentDisposition(response.headers.get('Content-Disposition'));
       document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+
+      try {
+        link.click();
+      } finally {
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
     } catch {
       setError("L'export des requêtes a échoué. Veuillez réessayer.");
     } finally {
