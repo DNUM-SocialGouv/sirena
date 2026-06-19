@@ -28,6 +28,7 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
     statutId: 'EN_ATTENTE',
     type: 'MANUAL',
     estPartagee: false,
+    dateRealisation: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: 'user-1',
@@ -124,10 +125,12 @@ describe('changelog.requeteEtapes.middleware.ts', () => {
         before: {
           nom: testRequeteEtape.nom,
           statutId: testRequeteEtape.statutId,
+          dateRealisation: testRequeteEtape.dateRealisation,
         },
         after: {
           nom: updatedRequeteEtape.nom,
           statutId: updatedRequeteEtape.statutId,
+          dateRealisation: updatedRequeteEtape.dateRealisation,
         },
       });
     });

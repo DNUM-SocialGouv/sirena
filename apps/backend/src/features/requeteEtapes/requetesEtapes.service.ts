@@ -10,6 +10,7 @@ import { ChangeLogAction } from '../changelog/changelog.type.js';
 import type {
   GetRequeteEtapesQuery,
   RequeteEtapeCreationDto,
+  UpdateRequeteEtapeDateRealisationDto,
   UpdateRequeteEtapeNomDto,
   UpdateRequeteEtapeStatutDto,
 } from './requetesEtapes.type.js';
@@ -224,6 +225,7 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
         nom: true,
         type: true,
         statutId: true,
+        dateRealisation: true,
         clotureReason: {
           select: {
             label: true,
@@ -301,14 +303,45 @@ export const updateRequeteEtapeStatut = async (
     return null;
   }
 
+  let dateRealisation: Date | null | undefined;
+  if (requeteEtape.type === REQUETE_ETAPE_TYPES.MANUAL) {
+    if (data.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
+      dateRealisation = requeteEtape.dateRealisation ?? new Date();
+    } else {
+      dateRealisation = null;
+    }
+  }
+
   const updatedRequeteEtape = await prisma.requeteEtape.update({
     where: { id },
     data: {
       statutId: data.statutId,
+      ...(dateRealisation !== undefined ? { dateRealisation } : {}),
     },
   });
 
   return updatedRequeteEtape;
+};
+
+export const updateRequeteEtapeDateRealisation = async (
+  id: string,
+  data: UpdateRequeteEtapeDateRealisationDto,
+): Promise<RequeteEtape | null> => {
+  const requeteEtape = await getRequeteEtapeById(id);
+  if (!requeteEtape) {
+    return null;
+  }
+
+  if (requeteEtape.type !== REQUETE_ETAPE_TYPES.MANUAL || requeteEtape.statutId !== REQUETE_ETAPE_STATUT_TYPES.FAIT) {
+    return null;
+  }
+
+  return prisma.requeteEtape.update({
+    where: { id },
+    data: {
+      dateRealisation: data.dateRealisation,
+    },
+  });
 };
 
 export const updateRequeteEtapeNom = async (

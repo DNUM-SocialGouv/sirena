@@ -8,6 +8,7 @@ export interface SelectWithChildrenProps {
   value: string[];
   onChange: (values: string[]) => void;
   label?: string;
+  hint?: string;
   options: SelectWithChildrenOption[];
   id?: string;
   disabled?: boolean;

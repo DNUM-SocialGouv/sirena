@@ -537,6 +537,8 @@ model RequeteEtape {
   statutId String
   statut   RequeteEtapeStatutEnum @relation(fields: [statutId], references: [id])
 
+  dateRealisation DateTime?
+
   requeteId String
   requete   Requete @relation(fields: [requeteId], references: [id], onDelete: Cascade)
 

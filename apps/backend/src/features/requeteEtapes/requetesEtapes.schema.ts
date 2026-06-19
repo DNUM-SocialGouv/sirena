@@ -14,6 +14,7 @@ export const RequeteEtapeSchema = z.object({
   ]),
   estPartagee: z.boolean(),
   statutId: z.string(),
+  dateRealisation: z.coerce.date().nullable(),
   requeteId: z.string(),
   entiteId: z.string(),
   clotureReasonIds: z.array(z.string()).optional(),
@@ -60,6 +61,10 @@ export const SendAcknowledgmentBodySchema = z.object({
     .max(30000)
     .transform((str) => str.trim().replace(/[<>]/g, ''))
     .optional(),
+});
+
+export const UpdateRequeteEtapeDateRealisationSchema = z.object({
+  dateRealisation: z.coerce.date({ message: 'La date de réalisation est obligatoire.' }),
 });
 
 export const UpdateRequeteEtapeNomSchema = z.object({
