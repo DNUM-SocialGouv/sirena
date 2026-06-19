@@ -182,7 +182,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       clotureEffectiveDate,
       dateRealisation,
     } of data.etapes) {
-      const etapeCreatedAt = createdAt ?? data.sysLastModDate ?? undefined;
+      const etapeCreatedAt = createdAt ?? data.sysCreationDate ?? undefined;
       await tx.requeteEtape.create({
         data: {
           requeteId: sirenaRequete.id,

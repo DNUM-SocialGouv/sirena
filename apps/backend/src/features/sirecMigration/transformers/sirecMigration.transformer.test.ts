@@ -99,8 +99,8 @@ describe('sirecMigration.transformer.ts', () => {
       mesures_prises: null as number | null,
       mesures_initiative: null as number | null,
       mesures_precision: null as string | null,
-      sys_last_mod_date: null as unknown as Date,
-      sys_creation_date: null as unknown as Date,
+      sys_last_mod_date: new Date('2024-01-17'),
+      sys_creation_date: new Date('2024-01-20'),
       type_cloture: null as number | null,
       motif_cloture: null as string | null,
       date_cloture: null as Date | null,
@@ -130,7 +130,8 @@ describe('sirecMigration.transformer.ts', () => {
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
       requeteStatutId: 'EN_COURS',
-      sysLastModDate: null,
+      sysLastModDate: new Date('2024-01-17'),
+      sysCreationDate: new Date('2024-01-20'),
       dateDemandeDeclarant: null,
       declarant: null,
       victime: null,
@@ -224,6 +225,16 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.sysLastModDate).toEqual(date);
+  });
+
+  it('should map sys_creation_date to sysCreationDate', () => {
+    const date = new Date('2024-03-20');
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, sys_creation_date: date },
+    });
+
+    expect(result.sysCreationDate).toEqual(date);
   });
 
   it('should map date_ecriture to dateDemandeDeclarant', () => {
