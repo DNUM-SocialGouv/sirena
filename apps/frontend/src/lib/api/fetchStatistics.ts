@@ -23,3 +23,9 @@ export async function fetchStatisticsDashboard(): Promise<{ cards: StatisticsCar
   const { data } = await res.json();
   return data;
 }
+
+export async function fetchExportRequetesCsv(): Promise<Response> {
+  const res = await fetch('/api/statistics/export-requetes');
+  await handleRequestErrors(res, { silentToastError: true });
+  return res;
+}

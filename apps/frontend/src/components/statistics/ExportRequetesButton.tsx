@@ -1,7 +1,7 @@
 import Alert from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { useState } from 'react';
-import { handleRequestErrors } from '@/lib/api/tanstackQuery';
+import { fetchExportRequetesCsv } from '@/lib/api/fetchStatistics';
 
 const FALLBACK_FILENAME = 'export-requetes-sirena.csv';
 
@@ -19,10 +19,7 @@ export function ExportRequetesButton() {
     setError(null);
 
     try {
-      const response = await fetch('/api/statistics/export-requetes');
-
-      await handleRequestErrors(response, { silentToastError: true });
-
+      const response = await fetchExportRequetesCsv();
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
