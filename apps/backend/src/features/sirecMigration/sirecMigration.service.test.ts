@@ -91,8 +91,17 @@ describe('sirecMigration.service.ts', () => {
         commentaire: string;
         ageId: string | null;
       } | null,
+      requeteStatutId: 'EN_COURS',
+      sysLastModDate: null as Date | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
-      etapes: [] as { nom: string; entiteId: string; statutId: string; createdAt?: Date; note: string | null }[],
+      etapes: [] as {
+        nom: string;
+        entiteId: string;
+        statutId: string;
+        createdAt?: Date;
+        note: string | null;
+        clotureReason?: string;
+      }[],
       situations: [
         {
           fait: {
@@ -782,7 +791,90 @@ describe('sirecMigration.service.ts', () => {
           statutId: 'FAIT',
           nom: 'Envoyer un accusé de réception au déclarant',
           createdAt: date,
-          notes: { create: [{ texte: "Date d'envoi de l'accusé de réception au requérant : 10/06/2024" }] },
+          notes: {
+            create: [{ texte: "Date d'envoi de l'accusé de réception au requérant : 10/06/2024", createdAt: date }],
+          },
+        },
+      });
+    });
+
+    it('should set etape and note createdAt to sysLastModDate when etape has no createdAt', async () => {
+      const sysLastModDate = new Date('2024-03-20');
+      await saveFromSirec({
+        ...data,
+        sysLastModDate,
+        etapes: [
+          {
+            nom: "Réception à l'institution de provenance : Institution 1",
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            note: 'Note',
+          },
+        ],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'FAIT',
+          nom: "Réception à l'institution de provenance : Institution 1",
+          createdAt: sysLastModDate,
+          notes: { create: [{ texte: 'Note', createdAt: sysLastModDate }] },
+        },
+      });
+    });
+
+    it('should prefer etape createdAt over sysLastModDate for etape and note date', async () => {
+      const etapeDate = new Date('2024-06-10');
+      const sysLastModDate = new Date('2024-03-20');
+      await saveFromSirec({
+        ...data,
+        sysLastModDate,
+        etapes: [
+          {
+            nom: 'Envoyer un accusé de réception au déclarant',
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            createdAt: etapeDate,
+            note: 'Note',
+          },
+        ],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'FAIT',
+          nom: 'Envoyer un accusé de réception au déclarant',
+          createdAt: etapeDate,
+          notes: { create: [{ texte: 'Note', createdAt: etapeDate }] },
+        },
+      });
+    });
+
+    it('should not set createdAt on etape or note when etape has no date and sysLastModDate is null', async () => {
+      await saveFromSirec({
+        ...data,
+        sysLastModDate: null,
+        etapes: [
+          {
+            nom: "Réception à l'institution de provenance : Institution 1",
+            entiteId: 'ars-1',
+            statutId: 'FAIT',
+            note: 'Note',
+          },
+        ],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'FAIT',
+          nom: "Réception à l'institution de provenance : Institution 1",
+          notes: { create: [{ texte: 'Note' }] },
         },
       });
     });
@@ -815,6 +907,73 @@ describe('sirecMigration.service.ts', () => {
       });
 
       expect(prisma.requeteEtape.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('should connect clotureReason when set on etape', async () => {
+      await saveFromSirec({
+        ...data,
+        etapes: [{ nom: 'Clôture', entiteId: 'ars-1', statutId: 'FAIT', note: null, clotureReason: 'SANS_SUITE' }],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: {
+          requeteId: 'SIREC-42',
+          entiteId: 'ars-1',
+          statutId: 'FAIT',
+          nom: 'Clôture',
+          clotureReason: { connect: [{ id: 'SANS_SUITE' }] },
+        },
+      });
+    });
+
+    it('should not include clotureReason when not set on etape', async () => {
+      await saveFromSirec({
+        ...data,
+        etapes: [{ nom: 'Clôture', entiteId: 'ars-1', statutId: 'FAIT', note: null }],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: expect.not.objectContaining({ clotureReason: expect.anything() }),
+      });
+    });
+
+    it('should set clotureEffectiveDate on RequeteEtape when provided', async () => {
+      const date = new Date('2024-08-20');
+      await saveFromSirec({
+        ...data,
+        etapes: [{ nom: 'Clôture', entiteId: 'ars-1', statutId: 'FAIT', note: null, clotureEffectiveDate: date }],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ clotureEffectiveDate: date }),
+      });
+    });
+
+    it('should not include clotureEffectiveDate when not set on etape', async () => {
+      await saveFromSirec({
+        ...data,
+        etapes: [{ nom: 'Clôture', entiteId: 'ars-1', statutId: 'FAIT', note: null }],
+      });
+
+      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
+        data: expect.not.objectContaining({ clotureEffectiveDate: expect.anything() }),
+      });
+    });
+
+    it('should use requeteStatutId from data for requeteEntite', async () => {
+      await saveFromSirec({ ...data, requeteStatutId: 'CLOTUREE' });
+
+      expect(prisma.requeteEntite.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([expect.objectContaining({ statutId: 'CLOTUREE' })]),
+      });
+    });
+
+    it('should use EN_COURS statutId for requeteEntite by default', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.requeteEntite.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([expect.objectContaining({ statutId: 'EN_COURS' })]),
+      });
     });
 
     describe('misEnCause RPPS', () => {

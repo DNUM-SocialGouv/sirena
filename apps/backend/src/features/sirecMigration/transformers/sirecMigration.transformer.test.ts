@@ -96,6 +96,13 @@ describe('sirecMigration.transformer.ts', () => {
       reponse_plaignant_precision: null as string | null,
       sans_mc: null as number | null,
       observation: null as string | null,
+      mesures_prises: null as number | null,
+      mesures_initiative: null as number | null,
+      mesures_precision: null as string | null,
+      sys_last_mod_date: null as Date | null,
+      type_cloture: null as number | null,
+      motif_cloture: null as string | null,
+      date_cloture: null as Date | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
@@ -115,6 +122,8 @@ describe('sirecMigration.transformer.ts', () => {
       receptionDate: new Date('2024-01-15'),
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
+      requeteStatutId: 'EN_COURS',
+      sysLastModDate: null,
       declarant: null,
       victime: null,
       requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
@@ -194,6 +203,16 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.prioriteId).toBeNull();
+  });
+
+  it('should map sys_last_mod_date to sysLastModDate', () => {
+    const date = new Date('2024-03-20');
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, sys_last_mod_date: date },
+    });
+
+    expect(result.sysLastModDate).toEqual(date);
   });
 
   it('should create victime from transformSirecVictime when victime_non_identifiee=1', () => {
