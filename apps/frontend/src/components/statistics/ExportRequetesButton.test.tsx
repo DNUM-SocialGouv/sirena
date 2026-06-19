@@ -59,6 +59,26 @@ describe('ExportRequetesButton', () => {
     expect(revokeObjectURLSpy).toHaveBeenCalledWith(objectUrl);
   });
 
+  it('downloads the exported CSV with a fallback filename when the response has no filename', async () => {
+    const objectUrl = 'blob:export-requetes';
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    let clickedLink: HTMLAnchorElement | undefined;
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      clickedLink = this;
+    });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Numéro de requête\n'));
+
+    render(<ExportRequetesButton />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Exporter les requêtes' }));
+
+    expect(clickedLink).toMatchObject({
+      download: 'export-requetes-sirena.csv',
+      href: objectUrl,
+    });
+  });
+
   it('shows an error and re-enables the button when the export fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 500 }));
 
