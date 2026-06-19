@@ -86,6 +86,7 @@ const app = factoryWithLogs
         entiteId: topEntiteId,
         uploadedById: userId,
         requeteEtapeNoteId: null,
+        requeteEtapeId: null,
         requeteId: null,
         faitSituationId: null,
         demarchesEngageesId: null,
