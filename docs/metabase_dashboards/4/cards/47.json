@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 146.84186046511627,
+  "average_query_time": 172.42456140350876,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,7 +36,7 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "  SELECT\n    cr.label              AS raison_cloture,\n    COUNT(DISTINCT et.id) AS nb_requetes\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\" e\n    ON e.id = re.\"entiteId\"\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = re.\"requeteId\"\n   AND et.\"entiteId\"  = re.\"entiteId\"\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j\n    ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr\n    ON cr.id = j.\"A\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND et.\"createdAt\" >= {{start_date}} ]]\n    [[ AND et.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day')]]\n  GROUP BY cr.label\n  ORDER BY nb_requetes DESC;",
+        "native": "SELECT\n    cr.label              AS raison_cloture,\n    COUNT(DISTINCT et.id) AS nb_requetes\n  FROM \"RequeteEntite\" re\n  JOIN \"Entite\" e\n    ON e.id = re.\"entiteId\"\n  JOIN \"Requete\" r\n    ON r.id = re.\"requeteId\"\n  JOIN \"RequeteEtape\" et\n    ON et.\"requeteId\" = re.\"requeteId\"\n   AND et.\"entiteId\"  = re.\"entiteId\"\n   AND et.\"statutId\"  = 'CLOTUREE'\n  JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j\n    ON j.\"B\" = et.id\n  JOIN \"RequeteClotureReasonEnum\" cr\n    ON cr.id = j.\"A\"\n  WHERE re.\"statutId\" = 'CLOTUREE'\n    AND e.label = {{entity_label}}\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day')]]\n  GROUP BY cr.label\n  ORDER BY nb_requetes DESC;",
         "template-tags": {
           "end_date": {
             "display-name": "End Date",
@@ -71,7 +71,7 @@
   "entity_id": "AhmL1ImfBecTkedR2qyJB",
   "id": 47,
   "is_remote_synced": false,
-  "last_query_start": "2026-06-17T12:02:23.291033Z",
+  "last_query_start": "2026-06-19T14:21:21.207227Z",
   "legacy_query": null,
   "made_public_by_id": null,
   "metabase_version": "v0.60.4.4 (65c9d32)",
