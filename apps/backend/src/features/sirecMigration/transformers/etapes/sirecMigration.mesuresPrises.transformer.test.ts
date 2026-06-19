@@ -34,8 +34,8 @@ const ARS_2 = 'ars-grand-est';
 
 describe('sirecMigration.mesuresPrises.transformer.ts', () => {
   describe('trigger condition', () => {
-    it('should create etapes when mesures_prises is null', () => {
-      expect(transformSirecMesuresPrises(makeData({ mesures_prises: null }), [ARS_1])).toHaveLength(1);
+    it('should not create etapes when mesures_prises is null', () => {
+      expect(transformSirecMesuresPrises(makeData({ mesures_prises: null }), [ARS_1])).toEqual([]);
     });
 
     it('should return empty when mesures_prises maps to false (id 111)', () => {
