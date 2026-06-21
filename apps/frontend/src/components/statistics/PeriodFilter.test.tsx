@@ -14,7 +14,7 @@ describe('PeriodFilter', () => {
 
     expect(screen.getByRole('button', { name: 'Période' })).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByLabelText('Date de début')).not.toBeInTheDocument();
-    expect(screen.queryByRole('menuitemradio', { name: 'Mois courant' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'Mois courant' })).not.toBeInTheDocument();
   });
 
   it('exposes predefined periods and a custom range once opened', async () => {
@@ -22,10 +22,10 @@ describe('PeriodFilter', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Période' }));
 
-    expect(screen.getByRole('menuitemradio', { name: 'Semaine courante' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitemradio', { name: 'Mois courant' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitemradio', { name: 'Année courante' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitemradio', { name: 'Mois glissant' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Semaine courante' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Mois courant' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Année courante' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Mois glissant' })).toBeInTheDocument();
     expect(screen.getByLabelText(/Date de début/)).toBeInTheDocument();
   });
 
@@ -34,18 +34,18 @@ describe('PeriodFilter', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Période' }));
 
-    await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Semaine courante' })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'Semaine courante' })).toHaveFocus());
   });
 
-  it('applies a predefined period on click and closes the panel', async () => {
+  it('applies a predefined period on click and keeps the panel open', async () => {
     const onChange = vi.fn();
     render(<PeriodFilter value={{}} onChange={onChange} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Période' }));
-    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Mois courant' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Mois courant' }));
 
     expect(onChange).toHaveBeenCalledWith({ period: 'current-month', startDate: undefined, endDate: undefined });
-    expect(screen.queryByRole('menuitemradio', { name: 'Mois courant' })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Mois courant' })).toBeInTheDocument();
   });
 
   it('applies a custom range and clears any preset', async () => {
@@ -81,30 +81,14 @@ describe('PeriodFilter', () => {
     expect(endInput).toHaveFocus();
   });
 
-  it('exposes presets as a radio menu and marks the active one as checked', async () => {
+  it('exposes presets as a radio group and marks the active one as checked', async () => {
     render(<PeriodFilter value={{ period: 'rolling-month' }} onChange={vi.fn()} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Période' }));
 
-    expect(screen.getByRole('menu', { name: 'Période prédéfinie' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitemradio', { name: 'Mois glissant' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('menuitemradio', { name: 'Mois courant' })).toHaveAttribute('aria-checked', 'false');
-  });
-
-  it('navigates predefined periods with the arrow keys', async () => {
-    render(<PeriodFilter value={{}} onChange={vi.fn()} />);
-
-    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
-    await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Semaine courante' })).toHaveFocus());
-
-    await userEvent.keyboard('{ArrowDown}');
-    expect(screen.getByRole('menuitemradio', { name: 'Mois courant' })).toHaveFocus();
-
-    await userEvent.keyboard('{End}');
-    expect(screen.getByRole('menuitemradio', { name: 'Mois glissant' })).toHaveFocus();
-
-    await userEvent.keyboard('{ArrowDown}');
-    expect(screen.getByRole('menuitemradio', { name: 'Semaine courante' })).toHaveFocus();
+    expect(screen.getByRole('group', { name: 'Période prédéfinie' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Mois glissant' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Mois courant' })).not.toBeChecked();
   });
 
   it('shows the active selection as a tag that clears the period when dismissed', async () => {
