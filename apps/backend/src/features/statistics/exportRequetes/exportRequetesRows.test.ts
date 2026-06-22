@@ -76,6 +76,49 @@ describe('buildExportRequetesRows', () => {
     expect(rows[0][54]).toBe('Demat.social');
   });
 
+  it('populates facts motifs, consequences, dates and functional domain', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0007',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            domainesFonctionnels: { label: 'Santé' },
+            faits: [
+              {
+                dateDebut: new Date('2026-06-12T00:00:00.000Z'),
+                dateFin: new Date('2026-06-14T00:00:00.000Z'),
+                motifsDeclaratifs: [
+                  { motifDeclaratif: { label: 'Violence verbale' } },
+                  { motifDeclaratif: { label: 'Négligence' } },
+                ],
+                motifs: [{ motif: { label: 'Défaut de prise en charge' } }],
+                consequences: [{ consequence: { label: 'Stress' } }],
+              },
+              {
+                dateDebut: new Date('2026-06-10T00:00:00.000Z'),
+                dateFin: new Date('2026-06-16T00:00:00.000Z'),
+                motifsDeclaratifs: [{ motifDeclaratif: { label: 'Violence verbale' } }],
+                motifs: [
+                  { motif: { label: 'Défaut de prise en charge' } },
+                  { motif: { label: 'Défaut d’information' } },
+                ],
+                consequences: [{ consequence: { label: 'Stress' } }, { consequence: { label: 'Blessure' } }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'motifsDeclaratifs')).toBe('Violence verbale, Négligence');
+    expect(cell(rows[0], 'motifsQualifies')).toBe('Défaut de prise en charge, Défaut d’information');
+    expect(cell(rows[0], 'consequencesPersonneConcernee')).toBe('Stress, Blessure');
+    expect(cell(rows[0], 'dateDebutFaits')).toBe('10/06/2026');
+    expect(cell(rows[0], 'dateFinFaits')).toBe('16/06/2026');
+    expect(cell(rows[0], 'domaineFonctionnel')).toBe('Santé');
+  });
+
   it('populates lieu de survenue and non-sensitive mis en cause fields', () => {
     const rows = buildExportRequetesRows([
       {

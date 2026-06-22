@@ -50,6 +50,26 @@ const exportRequetesInclude = {
           misEnCauseTypePrecision: true,
         },
       },
+      faits: {
+        include: {
+          motifs: {
+            include: {
+              motif: true,
+            },
+          },
+          motifsDeclaratifs: {
+            include: {
+              motifDeclaratif: true,
+            },
+          },
+          consequences: {
+            include: {
+              consequence: true,
+            },
+          },
+        },
+      },
+      domainesFonctionnels: true,
     },
   },
 } satisfies Prisma.RequeteInclude;
@@ -89,6 +109,8 @@ function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportReque
     situations: requete.situations.map((situation) => ({
       lieuDeSurvenue: situation.lieuDeSurvenue,
       misEnCause: situation.misEnCause,
+      faits: situation.faits,
+      domainesFonctionnels: situation.domainesFonctionnels,
     })),
   };
 }

@@ -91,9 +91,19 @@ type ExportMisEnCauseRecord = {
   prenom?: string | null;
 };
 
+type ExportFaitRecord = {
+  dateDebut?: Date | null;
+  dateFin?: Date | null;
+  motifsDeclaratifs: Array<{ motifDeclaratif: ExportLabelRecord | null }>;
+  motifs: Array<{ motif: ExportLabelRecord | null }>;
+  consequences: Array<{ consequence: ExportLabelRecord | null }>;
+};
+
 type ExportSituationRecord = {
   lieuDeSurvenue?: ExportLieuDeSurvenueRecord | null;
   misEnCause?: ExportMisEnCauseRecord | null;
+  faits?: ExportFaitRecord[];
+  domainesFonctionnels?: ExportLabelRecord | null;
 };
 
 type ExportRequeteKeyedRow = Partial<Record<ExportRequetesColumnKey, ExportRequetesCsvRow[number]>>;
@@ -123,6 +133,7 @@ function buildExportRequeteRow(
   const closureEtape = getLatestClosureEtape(requete.etapes, options.topEntiteId);
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
   const misEnCause = situation?.misEnCause;
+  const faits = situation?.faits ?? [];
 
   return toExportRequetesCsvRow({
     numeroRequete: requete.id,
@@ -154,6 +165,16 @@ function buildExportRequeteRow(
     finessMisEnCause: misEnCause?.finess ?? '',
     nomService: misEnCause?.nomService ?? '',
     codePostalMisEnCause: misEnCause?.codePostal ?? '',
+    motifsDeclaratifs: formatUniqueLabels(
+      faits.flatMap((fait) => fait.motifsDeclaratifs.map((motif) => motif.motifDeclaratif?.label)),
+    ),
+    motifsQualifies: formatUniqueLabels(faits.flatMap((fait) => fait.motifs.map((motif) => motif.motif?.label))),
+    consequencesPersonneConcernee: formatUniqueLabels(
+      faits.flatMap((fait) => fait.consequences.map((consequence) => consequence.consequence?.label)),
+    ),
+    dateDebutFaits: formatExportDate(getEarliestDate(faits.map((fait) => fait.dateDebut))),
+    dateFinFaits: formatExportDate(getLatestDate(faits.map((fait) => fait.dateFin))),
+    domaineFonctionnel: situation?.domainesFonctionnels?.label ?? '',
     entitesStatutsRequete: formatRequeteEntites(requete.requeteEntites),
     prioriteRequeteEntiteAdministrative: rootRequeteEntite?.priorite?.label ?? '',
     dateCreationRequeteSirena: formatExportDate(requete.createdAt),
@@ -166,6 +187,24 @@ function buildExportRequeteRow(
       closureEtape?.clotureReason.map((reason) => reason.label) ?? [],
     ),
   });
+}
+
+function formatUniqueLabels(labels: Array<string | null | undefined>): string {
+  return formatExportList(
+    Array.from(new Set(labels.filter((label): label is string => label != null && label !== ''))),
+  );
+}
+
+function getEarliestDate(dates: Array<Date | null | undefined>): Date | null {
+  const validDates = dates.filter((date): date is Date => date != null);
+
+  return validDates.toSorted((left, right) => left.getTime() - right.getTime())[0] ?? null;
+}
+
+function getLatestDate(dates: Array<Date | null | undefined>): Date | null {
+  const validDates = dates.filter((date): date is Date => date != null);
+
+  return validDates.toSorted((left, right) => right.getTime() - left.getTime())[0] ?? null;
 }
 
 function formatLieuSurvenuePrecision(lieuDeSurvenue: ExportLieuDeSurvenueRecord | null | undefined): string {
