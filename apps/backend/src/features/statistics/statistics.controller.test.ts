@@ -12,6 +12,19 @@ const entitesMiddlewareState = vi.hoisted(() => ({
   topEntiteId: null as string | null,
 }));
 
+const logger = vi.hoisted(() => ({
+  info: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+}));
+
+vi.mock('hono-pino', () => ({
+  pinoLogger: () => (c: Context, next: Next) => {
+    c.set('logger', logger);
+    return next();
+  },
+}));
+
 vi.mock('./exportRequetes/exportRequetes.service.js', () => ({
   generateExportRequetesCsv: vi.fn(),
 }));
@@ -93,6 +106,32 @@ describe('statistics.controller.ts', () => {
       );
       expect(await response.text()).toBe('Numéro de requête\nREQ-2026-0001');
       expect(generateExportRequetesCsv).toHaveBeenCalledWith('root-entite');
+      expect(logger.info).toHaveBeenCalledWith(
+        {
+          topEntiteId: 'root-entite',
+          durationMs: expect.any(Number),
+          csvSizeBytes: expect.any(Number),
+        },
+        '[statistics] export requêtes generated successfully',
+      );
+    });
+
+    it('logs export failures before propagating the error', async () => {
+      entitesMiddlewareState.topEntiteId = 'root-entite';
+      const error = new Error('export failed');
+      vi.mocked(generateExportRequetesCsv).mockRejectedValueOnce(error);
+
+      const response = await client['export-requetes'].$get();
+
+      expect(response.status).toBe(500);
+      expect(logger.error).toHaveBeenCalledWith(
+        {
+          err: error,
+          topEntiteId: 'root-entite',
+          durationMs: expect.any(Number),
+        },
+        '[statistics] export requêtes generation failed',
+      );
     });
   });
 });

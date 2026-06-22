@@ -28,6 +28,7 @@ const app = factoryWithLogs
   })
 
   .get('/export-requetes', getExportRequetesRoute, async (c) => {
+    const logger = c.get('logger');
     const topEntiteId = c.get('topEntiteId');
 
     if (!topEntiteId) {
@@ -37,13 +38,25 @@ const app = factoryWithLogs
       });
     }
 
-    const csv = await generateExportRequetesCsv(topEntiteId);
-    const today = new Date().toISOString().slice(0, 10);
+    const startedAt = Date.now();
 
-    c.header('Content-Type', 'text/csv; charset=utf-8');
-    c.header('Content-Disposition', `attachment; filename="export-requetes-sirena-${today}.csv"`);
+    try {
+      const csv = await generateExportRequetesCsv(topEntiteId);
+      const durationMs = Date.now() - startedAt;
+      const csvSizeBytes = Buffer.byteLength(csv, 'utf8');
+      const today = new Date().toISOString().slice(0, 10);
 
-    return c.body(csv);
+      logger.info({ topEntiteId, durationMs, csvSizeBytes }, '[statistics] export requêtes generated successfully');
+
+      c.header('Content-Type', 'text/csv; charset=utf-8');
+      c.header('Content-Disposition', `attachment; filename="export-requetes-sirena-${today}.csv"`);
+
+      return c.body(csv);
+    } catch (err) {
+      const durationMs = Date.now() - startedAt;
+      logger.error({ err, topEntiteId, durationMs }, '[statistics] export requêtes generation failed');
+      throw err;
+    }
   })
 
   .get('/dashboard', getStatisticsDashboardRoute, async (c) => {
