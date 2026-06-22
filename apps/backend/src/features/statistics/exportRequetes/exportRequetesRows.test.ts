@@ -76,6 +76,55 @@ describe('buildExportRequetesRows', () => {
     expect(rows[0][54]).toBe('Demat.social');
   });
 
+  it('populates situation entity hierarchy fields', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0009',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            situationEntites: [
+              {
+                entite: {
+                  label: 'ARS Île-de-France',
+                  entiteMere: null,
+                },
+              },
+              {
+                entite: {
+                  label: 'Direction Autonomie',
+                  entiteMere: { label: 'ARS Île-de-France', entiteMere: null },
+                },
+              },
+              {
+                entite: {
+                  label: 'Service PA',
+                  entiteMere: {
+                    label: 'Direction Autonomie',
+                    entiteMere: { label: 'ARS Île-de-France', entiteMere: null },
+                  },
+                },
+              },
+              {
+                entite: {
+                  label: 'Service PA',
+                  entiteMere: {
+                    label: 'Direction Autonomie',
+                    entiteMere: { label: 'ARS Île-de-France', entiteMere: null },
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'entitesAdministrativesSituation')).toBe('ARS Île-de-France');
+    expect(cell(rows[0], 'directionsSituation')).toBe('Direction Autonomie');
+    expect(cell(rows[0], 'servicesSituation')).toBe('Service PA');
+  });
+
   it('populates démarches fields and leaves ambiguous boolean columns empty', () => {
     const rows = buildExportRequetesRows([
       {

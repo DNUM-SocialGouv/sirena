@@ -76,6 +76,19 @@ const exportRequetesInclude = {
           demarches: true,
         },
       },
+      situationEntites: {
+        include: {
+          entite: {
+            include: {
+              entiteMere: {
+                include: {
+                  entiteMere: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   },
 } satisfies Prisma.RequeteInclude;
@@ -118,6 +131,7 @@ function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportReque
       faits: situation.faits,
       domainesFonctionnels: situation.domainesFonctionnels,
       demarchesEngagees: situation.demarchesEngagees,
+      situationEntites: situation.situationEntites,
     })),
   };
 }

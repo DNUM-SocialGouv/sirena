@@ -107,12 +107,22 @@ type ExportDemarchesEngageesRecord = {
   demarches: ExportLabelRecord[];
 };
 
+type ExportSituationEntiteRecord = {
+  entite: ExportEntiteRecord | null;
+};
+
+type ExportEntiteRecord = {
+  label: string | null;
+  entiteMere?: ExportEntiteRecord | null;
+};
+
 type ExportSituationRecord = {
   lieuDeSurvenue?: ExportLieuDeSurvenueRecord | null;
   misEnCause?: ExportMisEnCauseRecord | null;
   faits?: ExportFaitRecord[];
   domainesFonctionnels?: ExportLabelRecord | null;
   demarchesEngagees?: ExportDemarchesEngageesRecord | null;
+  situationEntites?: ExportSituationEntiteRecord[];
 };
 
 type ExportRequeteKeyedRow = Partial<Record<ExportRequetesColumnKey, ExportRequetesCsvRow[number]>>;
@@ -189,6 +199,9 @@ function buildExportRequeteRow(
     dateDepotPlainte: formatExportDate(demarchesEngagees?.datePlainte),
     lieuDepotPlainte: demarchesEngagees?.autoriteType?.label ?? '',
     demarchesAutresOrganismes: formatUniqueLabels(demarchesEngagees?.demarches.map((demarche) => demarche.label) ?? []),
+    entitesAdministrativesSituation: formatSituationRootEntites(situation?.situationEntites),
+    directionsSituation: formatSituationDirections(situation?.situationEntites),
+    servicesSituation: formatSituationServices(situation?.situationEntites),
     entitesStatutsRequete: formatRequeteEntites(requete.requeteEntites),
     prioriteRequeteEntiteAdministrative: rootRequeteEntite?.priorite?.label ?? '',
     dateCreationRequeteSirena: formatExportDate(requete.createdAt),
@@ -201,6 +214,62 @@ function buildExportRequeteRow(
       closureEtape?.clotureReason.map((reason) => reason.label) ?? [],
     ),
   });
+}
+
+function formatSituationRootEntites(situationEntites: ExportSituationEntiteRecord[] | undefined): string {
+  return formatUniqueLabels(
+    situationEntites?.map((situationEntite) => getRootEntite(situationEntite.entite)?.label) ?? [],
+  );
+}
+
+function formatSituationDirections(situationEntites: ExportSituationEntiteRecord[] | undefined): string {
+  return formatUniqueLabels(
+    situationEntites?.flatMap((situationEntite) => {
+      const entite = situationEntite.entite;
+
+      if (entite && isDirection(entite)) {
+        return [entite.label];
+      }
+
+      if (entite && isService(entite)) {
+        return [entite.entiteMere?.label];
+      }
+
+      return [];
+    }) ?? [],
+  );
+}
+
+function formatSituationServices(situationEntites: ExportSituationEntiteRecord[] | undefined): string {
+  return formatUniqueLabels(
+    situationEntites?.map((situationEntite) => {
+      const entite = situationEntite.entite;
+
+      return entite && isService(entite) ? entite.label : null;
+    }) ?? [],
+  );
+}
+
+function getRootEntite(entite: ExportEntiteRecord | null | undefined): ExportEntiteRecord | null {
+  if (!entite) {
+    return null;
+  }
+
+  let current: ExportEntiteRecord = entite;
+
+  while (current.entiteMere) {
+    current = current.entiteMere;
+  }
+
+  return current;
+}
+
+function isDirection(entite: ExportEntiteRecord | null | undefined): boolean {
+  return entite != null && entite.entiteMere != null && entite.entiteMere.entiteMere == null;
+}
+
+function isService(entite: ExportEntiteRecord | null | undefined): boolean {
+  return entite?.entiteMere?.entiteMere != null;
 }
 
 function formatUniqueLabels(labels: Array<string | null | undefined>): string {
