@@ -32,7 +32,7 @@ const SAISINE_PLAINTE = 75;
 
 function resolveEstLieAuSignalement(ei_avere: number | null, num_sign_assoc: string | null): boolean | undefined {
   let eiAvereIsTrue = false;
-  if (ei_avere !== null) {
+  if (ei_avere !== null && ei_avere !== 77) {
     const value = SIREC_BOOLEAN_TRANSCO[ei_avere];
     if (value === undefined) throw new SirecTranscoError(ei_avere, 'ei_avere');
     eiAvereIsTrue = value;
