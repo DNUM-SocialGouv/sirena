@@ -43,6 +43,7 @@ minimumReleaseAgeExclude:
   - esbuild@0.28.1
   - "@esbuild/*"
   - '@opentelemetry/core@2.8.0'
+  - undici@7.28.0 || 6.27.0
 overrides:
   # bullmq épingle ioredis à un patch exact (5.10.1) alors que le backend
   # consomme la branche 5.11.x. Sans alignement, deux copies coexistent et
@@ -58,3 +59,6 @@ overrides:
   hono@<4.12.25: ">=4.12.25"
   # js-yaml <4.1.2 transitif (DoS quadratique sur les merge keys).
   js-yaml@<4.1.2: ">=4.1.2"
+  undici@>=7.0.0 <7.28.0: ^7.28.0
+  undici@>=7.23.0 <7.28.0: ^7.28.0
+  undici@>=6.26.0 <6.27.0: ^6.27.0

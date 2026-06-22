@@ -2447,13 +2447,36 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
 
       pdf.subsection(etapeTitle).field('Statut', etape.statut?.label || etape.statutId);
 
+      if (etape.dateRealisation) {
+        pdf.field('Date de réalisation', formatDateFr(etape.dateRealisation));
+      }
+
       if (addedByLabel) pdf.paragraph(addedByLabel);
 
       if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && etape.clotureReason.length > 0) {
         pdf.field('Motif(s) de clôture', etape.clotureReason.map((r) => r.label).join(', '));
       }
 
-      for (const note of etape.notes ?? []) {
+      // The acknowledgment email auto-generates a note ("Email d'accusé de réception envoyé le ...").
+      // don't render it as a note, but keep its file at the étape level.
+      const etapeNotes = etape.notes ?? [];
+      const sendNote =
+        etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT
+          ? etapeNotes.find((note) => note.texte?.startsWith("Email d'accusé de réception envoyé le"))
+          : undefined;
+      const displayNotes = sendNote ? etapeNotes.filter((note) => note.id !== sendNote.id) : etapeNotes;
+
+      if (sendNote) {
+        const acknowledgmentFiles = (sendNote.uploadedFiles ?? [])
+          .map((f) => getOriginalFileName(f as Parameters<typeof getOriginalFileName>[0]))
+          .filter(Boolean);
+        if (acknowledgmentFiles.length > 0) {
+          pdf.paragraph('Pièces jointes :', { bold: true });
+          pdf.list(acknowledgmentFiles);
+        }
+      }
+
+      for (const note of displayNotes) {
         const noteAuthor = note.author
           ? `${capitalizeFirst(note.author.prenom)} ${capitalizeFirst(note.author.nom)}`
           : 'Système';

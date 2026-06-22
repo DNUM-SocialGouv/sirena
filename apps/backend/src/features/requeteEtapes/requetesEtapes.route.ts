@@ -42,6 +42,13 @@ export const updateRequeteEtapeNomRoute = openApiProtectedRoute({
   },
 });
 
+export const updateRequeteEtapeDateRealisationRoute = openApiProtectedRoute({
+  description: 'Update the "dateRealisation" of a RequeteEtape',
+  responses: {
+    ...openApiResponse(RequeteEtapeSchema),
+  },
+});
+
 export const deleteRequeteEtapeRoute = openApiProtectedRoute({
   description: 'Delete a RequeteEtape and all its associated notes and files',
   responses: {

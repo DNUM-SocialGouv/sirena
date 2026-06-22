@@ -1,4 +1,3 @@
-import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { SituationDataSchema } from '@sirena/common/schemas';
 import { prisma, type Requete } from '@sirena/db';
 import { UnrecoverableError } from 'bullmq';
@@ -164,21 +163,29 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       data: data.requeteEntiteIds.map((entiteId) => ({
         requeteId: sirenaRequete.id,
         entiteId,
-        // TODO: mapper l'état SIREC vers statutId
-        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+        statutId: data.requeteStatutId,
         prioriteId: data.prioriteId,
       })),
     });
 
-    for (const { nom, entiteId, statutId, createdAt, note } of data.etapes) {
+    for (const { nom, entiteId, statutId, createdAt, note, clotureReason, clotureEffectiveDate } of data.etapes) {
+      const etapeCreatedAt = createdAt ?? data.sysLastModDate ?? undefined;
       await tx.requeteEtape.create({
         data: {
           requeteId: sirenaRequete.id,
           entiteId,
           statutId,
           nom,
-          ...(createdAt !== undefined ? { createdAt } : {}),
-          ...(note !== null ? { notes: { create: [{ texte: note }] } } : {}),
+          ...(etapeCreatedAt !== undefined ? { createdAt: etapeCreatedAt } : {}),
+          ...(note !== null
+            ? {
+                notes: {
+                  create: [{ texte: note, ...(etapeCreatedAt !== undefined ? { createdAt: etapeCreatedAt } : {}) }],
+                },
+              }
+            : {}),
+          ...(clotureReason !== undefined ? { clotureReason: { connect: [{ id: clotureReason }] } } : {}),
+          ...(clotureEffectiveDate !== undefined ? { clotureEffectiveDate } : {}),
         },
       });
     }

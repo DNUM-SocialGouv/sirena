@@ -22,6 +22,7 @@ export function SelectWithChildren({
   value,
   onChange,
   label = "Motifs qualifiés par l'agent",
+  hint,
   options,
   id,
   disabled = false,
@@ -82,6 +83,7 @@ export function SelectWithChildren({
     <div className="fr-select-group">
       <label className="fr-label" htmlFor={buttonId}>
         {label}
+        {hint && <span className="fr-hint-text">{hint}</span>}
       </label>
 
       <div className={styles.selectWrapper} ref={dropdownRef}>
