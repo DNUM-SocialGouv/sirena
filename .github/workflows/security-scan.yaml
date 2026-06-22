@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@1cce3390c2bfda521930d01229c073c7ff920824 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           fetch-depth: 1
 
@@ -48,7 +48,7 @@ jobs:
           cache: 'true'
 
       - name: Upload Trivy filesystem scan results
-        uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v3
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v3
         if: always()
         with:
           sarif_file: "trivy-fs-results.sarif"
