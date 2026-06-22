@@ -10,6 +10,14 @@ export function formatExportDate(date: Date | null | undefined): string {
   return `${day}/${month}/${year}`;
 }
 
+export function formatExportYear(date: Date | null | undefined): string {
+  if (!date) {
+    return '';
+  }
+
+  return String(date.getUTCFullYear());
+}
+
 export function formatExportBoolean(value: boolean | null | undefined): string {
   if (value == null) {
     return '';

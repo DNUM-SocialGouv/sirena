@@ -4,6 +4,25 @@ import { buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
 import type { ExportRequeteRecord } from './exportRequetesRows.js';
 
 const exportRequetesInclude = {
+  declarant: {
+    include: {
+      adresse: true,
+      lienVictime: true,
+    },
+  },
+  participant: {
+    include: {
+      adresse: true,
+      age: true,
+      identite: {
+        include: {
+          civilite: true,
+        },
+      },
+    },
+  },
+  provenance: true,
+  receptionType: true,
   situations: true,
 } satisfies Prisma.RequeteInclude;
 
@@ -31,6 +50,12 @@ function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportReque
   return {
     id: requete.id,
     createdAt: requete.createdAt,
+    receptionDate: requete.receptionDate,
+    dateDemandeDeclarant: requete.dateDemandeDeclarant,
+    receptionType: requete.receptionType,
+    provenance: requete.provenance,
+    declarant: requete.declarant,
+    participant: requete.participant,
     situations: requete.situations.map(() => ({})),
   };
 }
