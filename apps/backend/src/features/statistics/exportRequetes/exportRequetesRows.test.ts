@@ -76,6 +76,56 @@ describe('buildExportRequetesRows', () => {
     expect(rows[0][54]).toBe('Demat.social');
   });
 
+  it('populates lieu de survenue and non-sensitive mis en cause fields', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0006',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              lieuTypeId: 'ETABLISSEMENT_SANTE',
+              lieuType: { label: 'Établissement de santé' },
+              lieuPrecision: 'CH',
+              transportType: { label: 'Ambulance' },
+              finess: '750000001',
+              categLib: 'Centre hospitalier',
+              codePostal: '',
+              adresse: { codePostal: '75013' },
+            },
+            misEnCause: {
+              misEnCauseType: { label: 'Établissement' },
+              misEnCauseTypePrecision: { label: 'Service hospitalier' },
+              autrePrecision: 'Autre précision',
+              finess: '750000002',
+              nomService: 'Urgences',
+              codePostal: '75014',
+              rpps: '12345678901',
+              nom: 'Donnée sensible',
+              prenom: 'Donnée sensible',
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'typeLieuSurvenue')).toBe('Établissement de santé');
+    expect(cell(rows[0], 'precisionTypeLieuSurvenue')).toBe('CH, Ambulance');
+    expect(cell(rows[0], 'finessLieuSurvenue')).toBe('750000001');
+    expect(cell(rows[0], 'categorieFinessLieuSurvenue')).toBe('Centre hospitalier');
+    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('');
+    expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('75013');
+    expect(cell(rows[0], 'typeMisEnCause')).toBe('Établissement');
+    expect(cell(rows[0], 'precisionTypeMisEnCause')).toBe('Service hospitalier');
+    expect(cell(rows[0], 'finessMisEnCause')).toBe('750000002');
+    expect(cell(rows[0], 'categorieFinessMisEnCause')).toBe('');
+    expect(cell(rows[0], 'nomService')).toBe('Urgences');
+    expect(cell(rows[0], 'rppsMisEnCause')).toBe('');
+    expect(cell(rows[0], 'nomMisEnCause')).toBe('');
+    expect(cell(rows[0], 'codePostalMisEnCause')).toBe('75014');
+    expect(cell(rows[0], 'categorieProfessionnelleRppsMisEnCause')).toBe('');
+  });
+
   it('populates request entity status, root-scoped priority and latest root-scoped closure fields', () => {
     const rows = buildExportRequetesRows(
       [

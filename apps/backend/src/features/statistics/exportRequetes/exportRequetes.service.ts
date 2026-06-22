@@ -35,7 +35,23 @@ const exportRequetesInclude = {
       statut: true,
     },
   },
-  situations: true,
+  situations: {
+    include: {
+      lieuDeSurvenue: {
+        include: {
+          adresse: true,
+          lieuType: true,
+          transportType: true,
+        },
+      },
+      misEnCause: {
+        include: {
+          misEnCauseType: true,
+          misEnCauseTypePrecision: true,
+        },
+      },
+    },
+  },
 } satisfies Prisma.RequeteInclude;
 
 type ExportRequetePrismaPayload = Prisma.RequeteGetPayload<{
@@ -70,6 +86,9 @@ function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportReque
     participant: requete.participant,
     requeteEntites: requete.requeteEntites,
     etapes: requete.etapes,
-    situations: requete.situations.map(() => ({})),
+    situations: requete.situations.map((situation) => ({
+      lieuDeSurvenue: situation.lieuDeSurvenue,
+      misEnCause: situation.misEnCause,
+    })),
   };
 }

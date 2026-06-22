@@ -1,4 +1,4 @@
-import { getMesureProtectionShortLabel } from '@sirena/common/utils';
+import { getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
 import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
 import type { ExportRequetesCsvRow } from './exportRequetesCsv.js';
 import {
@@ -68,7 +68,33 @@ type ExportRequeteEtapeRecord = {
   clotureReason: ExportLabelRecord[];
 };
 
-type ExportSituationRecord = Record<string, unknown>;
+type ExportLieuDeSurvenueRecord = {
+  lieuTypeId?: string | null;
+  lieuType?: ExportLabelRecord | null;
+  lieuPrecision?: string | null;
+  transportType?: ExportLabelRecord | null;
+  finess?: string | null;
+  categLib?: string | null;
+  codePostal?: string | null;
+  adresse?: ExportAdresseRecord | null;
+};
+
+type ExportMisEnCauseRecord = {
+  misEnCauseType?: ExportLabelRecord | null;
+  misEnCauseTypePrecision?: ExportLabelRecord | null;
+  autrePrecision?: string | null;
+  finess?: string | null;
+  nomService?: string | null;
+  codePostal?: string | null;
+  rpps?: string | null;
+  nom?: string | null;
+  prenom?: string | null;
+};
+
+type ExportSituationRecord = {
+  lieuDeSurvenue?: ExportLieuDeSurvenueRecord | null;
+  misEnCause?: ExportMisEnCauseRecord | null;
+};
 
 type ExportRequeteKeyedRow = Partial<Record<ExportRequetesColumnKey, ExportRequetesCsvRow[number]>>;
 
@@ -95,6 +121,8 @@ function buildExportRequeteRow(
     (requeteEntite) => requeteEntite.entiteId === options.topEntiteId,
   );
   const closureEtape = getLatestClosureEtape(requete.etapes, options.topEntiteId);
+  const lieuDeSurvenue = situation?.lieuDeSurvenue;
+  const misEnCause = situation?.misEnCause;
 
   return toExportRequetesCsvRow({
     numeroRequete: requete.id,
@@ -116,6 +144,16 @@ function buildExportRequeteRow(
     personneConcerneeHandicap: formatExportBoolean(requete.participant?.estHandicapee),
     autrePersonneConcernee: requete.participant?.aAutrePersonnes ? (requete.participant.autrePersonnes ?? '') : '',
     numeroSituation: situation ? (situationIndex ?? 0) + 1 : '',
+    typeLieuSurvenue: lieuDeSurvenue?.lieuType?.label ?? '',
+    precisionTypeLieuSurvenue: formatLieuSurvenuePrecision(lieuDeSurvenue),
+    finessLieuSurvenue: lieuDeSurvenue?.finess ?? '',
+    categorieFinessLieuSurvenue: lieuDeSurvenue?.categLib ?? '',
+    codePostalLieuSurvenue: lieuDeSurvenue?.codePostal || lieuDeSurvenue?.adresse?.codePostal || '',
+    typeMisEnCause: misEnCause?.misEnCauseType?.label ?? '',
+    precisionTypeMisEnCause: misEnCause?.misEnCauseTypePrecision?.label || misEnCause?.autrePrecision || '',
+    finessMisEnCause: misEnCause?.finess ?? '',
+    nomService: misEnCause?.nomService ?? '',
+    codePostalMisEnCause: misEnCause?.codePostal ?? '',
     entitesStatutsRequete: formatRequeteEntites(requete.requeteEntites),
     prioriteRequeteEntiteAdministrative: rootRequeteEntite?.priorite?.label ?? '',
     dateCreationRequeteSirena: formatExportDate(requete.createdAt),
@@ -128,6 +166,13 @@ function buildExportRequeteRow(
       closureEtape?.clotureReason.map((reason) => reason.label) ?? [],
     ),
   });
+}
+
+function formatLieuSurvenuePrecision(lieuDeSurvenue: ExportLieuDeSurvenueRecord | null | undefined): string {
+  return formatExportList([
+    getLieuPrecisionLabel(lieuDeSurvenue?.lieuTypeId ?? undefined, lieuDeSurvenue?.lieuPrecision ?? undefined),
+    lieuDeSurvenue?.transportType?.label,
+  ]);
 }
 
 function formatRequeteEntites(requeteEntites: ExportRequeteEntiteRecord[] | undefined): string {
