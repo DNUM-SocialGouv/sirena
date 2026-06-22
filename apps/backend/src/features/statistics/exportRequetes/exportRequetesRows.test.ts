@@ -15,10 +15,10 @@ describe('buildExportRequetesRows', () => {
     ]);
 
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toHaveLength(59);
-    expect(rows[0][0]).toBe('REQ-2026-0001');
-    expect(rows[0][16]).toBe(1);
-    expect(rows[0][50]).toBe('18/06/2026');
+    expect(rows[0]).toHaveLength(EXPORT_REQUETES_COLUMNS.length);
+    expect(cell(rows[0], 'numeroRequete')).toBe('REQ-2026-0001');
+    expect(cell(rows[0], 'numeroSituation')).toBe(1);
+    expect(cell(rows[0], 'dateCreationRequeteSirena')).toBe('18/06/2026');
   });
 
   it('populates request, declarant, personne concernée, reception and provenance fields', () => {
@@ -55,25 +55,25 @@ describe('buildExportRequetesRows', () => {
       },
     ]);
 
-    expect(rows[0][1]).toBe('Non');
-    expect(rows[0][2]).toBe('Parent');
-    expect(rows[0][3]).toBe('Oui');
-    expect(rows[0][4]).toBe('75001');
-    expect(rows[0][5]).toBe('Oui');
-    expect(rows[0][6]).toBe('Oui');
-    expect(rows[0][7]).toBe('Madame');
-    expect(rows[0][8]).toBe('');
-    expect(rows[0][9]).toBe('1980');
-    expect(rows[0][10]).toBe('69002');
-    expect(rows[0][11]).toBe('Non');
-    expect(rows[0][12]).toBe('Non');
-    expect(rows[0][13]).toBe('mandataire judiciaire');
-    expect(rows[0][14]).toBe('Oui');
-    expect(rows[0][15]).toBe('Sa sœur');
-    expect(rows[0][51]).toBe('17/06/2026');
-    expect(rows[0][52]).toBe('Téléphone');
-    expect(rows[0][53]).toBe('16/06/2026');
-    expect(rows[0][54]).toBe('Demat.social');
+    expect(cell(rows[0], 'declarantEstPersonneConcernee')).toBe('Non');
+    expect(cell(rows[0], 'lienPersonneConcernee')).toBe('Parent');
+    expect(cell(rows[0], 'declarantEstTuteurCurateur')).toBe('Oui');
+    expect(cell(rows[0], 'codePostalDeclarant')).toBe('75001');
+    expect(cell(rows[0], 'declarantConsentIdentiteCommuniquee')).toBe('Oui');
+    expect(cell(rows[0], 'declarantProfessionnelEig')).toBe('Oui');
+    expect(cell(rows[0], 'civilitePersonneConcernee')).toBe('Madame');
+    expect(cell(rows[0], 'trancheAgePersonneConcernee')).toBe('');
+    expect(cell(rows[0], 'anneeNaissancePersonneConcernee')).toBe('1980');
+    expect(cell(rows[0], 'codePostalPersonneConcernee')).toBe('69002');
+    expect(cell(rows[0], 'personneConcerneeConsentIdentiteCommuniquee')).toBe('Non');
+    expect(cell(rows[0], 'personneConcerneeInformeeDemarche')).toBe('Non');
+    expect(cell(rows[0], 'mesureProtectionPersonneConcernee')).toBe('mandataire judiciaire');
+    expect(cell(rows[0], 'personneConcerneeHandicap')).toBe('Oui');
+    expect(cell(rows[0], 'autrePersonneConcernee')).toBe('Sa sœur');
+    expect(cell(rows[0], 'dateReception')).toBe('17/06/2026');
+    expect(cell(rows[0], 'modeReception')).toBe('Téléphone');
+    expect(cell(rows[0], 'dateDemandeDeclarant')).toBe('16/06/2026');
+    expect(cell(rows[0], 'provenance')).toBe('Demat.social');
   });
 
   it('populates situation entity hierarchy fields', () => {
@@ -311,12 +311,12 @@ describe('buildExportRequetesRows', () => {
     ]);
 
     expect(rows).toHaveLength(2);
-    expect(rows[0][0]).toBe('REQ-2026-0002');
-    expect(rows[0][16]).toBe(1);
-    expect(rows[0][50]).toBe('18/06/2026');
-    expect(rows[1][0]).toBe('REQ-2026-0002');
-    expect(rows[1][16]).toBe(2);
-    expect(rows[1][50]).toBe('18/06/2026');
+    expect(cell(rows[0], 'numeroRequete')).toBe('REQ-2026-0002');
+    expect(cell(rows[0], 'numeroSituation')).toBe(1);
+    expect(cell(rows[0], 'dateCreationRequeteSirena')).toBe('18/06/2026');
+    expect(cell(rows[1], 'numeroRequete')).toBe('REQ-2026-0002');
+    expect(cell(rows[1], 'numeroSituation')).toBe(2);
+    expect(cell(rows[1], 'dateCreationRequeteSirena')).toBe('18/06/2026');
   });
 
   it('builds one CSV row with empty situation fields for a requête without situation', () => {
@@ -329,10 +329,10 @@ describe('buildExportRequetesRows', () => {
     ]);
 
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toHaveLength(59);
-    expect(rows[0][0]).toBe('REQ-2026-0003');
-    expect(rows[0][16]).toBe('');
-    expect(rows[0][50]).toBe('18/06/2026');
+    expect(rows[0]).toHaveLength(EXPORT_REQUETES_COLUMNS.length);
+    expect(cell(rows[0], 'numeroRequete')).toBe('REQ-2026-0003');
+    expect(cell(rows[0], 'numeroSituation')).toBe('');
+    expect(cell(rows[0], 'dateCreationRequeteSirena')).toBe('18/06/2026');
   });
 });
 
