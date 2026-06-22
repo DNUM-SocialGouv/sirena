@@ -139,6 +139,7 @@ async function attachEmailPdfToStep(
           ...(encryptionMetadata && { encryption: encryptionMetadata }),
         },
         requeteEtapeNoteId: null,
+        requeteEtapeId: null,
         requeteId: null,
         faitSituationId: null,
         demarchesEngageesId: null,
