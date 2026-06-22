@@ -70,6 +70,12 @@ const exportRequetesInclude = {
         },
       },
       domainesFonctionnels: true,
+      demarchesEngagees: {
+        include: {
+          autoriteType: true,
+          demarches: true,
+        },
+      },
     },
   },
 } satisfies Prisma.RequeteInclude;
@@ -111,6 +117,7 @@ function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportReque
       misEnCause: situation.misEnCause,
       faits: situation.faits,
       domainesFonctionnels: situation.domainesFonctionnels,
+      demarchesEngagees: situation.demarchesEngagees,
     })),
   };
 }

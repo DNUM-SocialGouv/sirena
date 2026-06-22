@@ -76,6 +76,34 @@ describe('buildExportRequetesRows', () => {
     expect(rows[0][54]).toBe('Demat.social');
   });
 
+  it('populates démarches fields and leaves ambiguous boolean columns empty', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0008',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            demarchesEngagees: {
+              dateContactEtablissement: new Date('2026-06-11T00:00:00.000Z'),
+              etablissementARepondu: true,
+              datePlainte: new Date('2026-06-12T00:00:00.000Z'),
+              autoriteType: { label: 'Gendarmerie' },
+              demarches: [{ label: 'Conseil départemental' }, { label: 'Défenseur des droits' }],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'misEnCauseContacte')).toBe('');
+    expect(cell(rows[0], 'datePriseContact')).toBe('11/06/2026');
+    expect(cell(rows[0], 'declarantRecuReponse')).toBe('');
+    expect(cell(rows[0], 'plainteDeposee')).toBe('');
+    expect(cell(rows[0], 'dateDepotPlainte')).toBe('12/06/2026');
+    expect(cell(rows[0], 'lieuDepotPlainte')).toBe('Gendarmerie');
+    expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Conseil départemental, Défenseur des droits');
+  });
+
   it('populates facts motifs, consequences, dates and functional domain', () => {
     const rows = buildExportRequetesRows([
       {

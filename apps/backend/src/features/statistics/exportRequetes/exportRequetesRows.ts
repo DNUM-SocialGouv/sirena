@@ -99,11 +99,20 @@ type ExportFaitRecord = {
   consequences: Array<{ consequence: ExportLabelRecord | null }>;
 };
 
+type ExportDemarchesEngageesRecord = {
+  dateContactEtablissement?: Date | null;
+  etablissementARepondu?: boolean | null;
+  datePlainte?: Date | null;
+  autoriteType?: ExportLabelRecord | null;
+  demarches: ExportLabelRecord[];
+};
+
 type ExportSituationRecord = {
   lieuDeSurvenue?: ExportLieuDeSurvenueRecord | null;
   misEnCause?: ExportMisEnCauseRecord | null;
   faits?: ExportFaitRecord[];
   domainesFonctionnels?: ExportLabelRecord | null;
+  demarchesEngagees?: ExportDemarchesEngageesRecord | null;
 };
 
 type ExportRequeteKeyedRow = Partial<Record<ExportRequetesColumnKey, ExportRequetesCsvRow[number]>>;
@@ -134,6 +143,7 @@ function buildExportRequeteRow(
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
   const misEnCause = situation?.misEnCause;
   const faits = situation?.faits ?? [];
+  const demarchesEngagees = situation?.demarchesEngagees;
 
   return toExportRequetesCsvRow({
     numeroRequete: requete.id,
@@ -175,6 +185,10 @@ function buildExportRequeteRow(
     dateDebutFaits: formatExportDate(getEarliestDate(faits.map((fait) => fait.dateDebut))),
     dateFinFaits: formatExportDate(getLatestDate(faits.map((fait) => fait.dateFin))),
     domaineFonctionnel: situation?.domainesFonctionnels?.label ?? '',
+    datePriseContact: formatExportDate(demarchesEngagees?.dateContactEtablissement),
+    dateDepotPlainte: formatExportDate(demarchesEngagees?.datePlainte),
+    lieuDepotPlainte: demarchesEngagees?.autoriteType?.label ?? '',
+    demarchesAutresOrganismes: formatUniqueLabels(demarchesEngagees?.demarches.map((demarche) => demarche.label) ?? []),
     entitesStatutsRequete: formatRequeteEntites(requete.requeteEntites),
     prioriteRequeteEntiteAdministrative: rootRequeteEntite?.priorite?.label ?? '',
     dateCreationRequeteSirena: formatExportDate(requete.createdAt),
