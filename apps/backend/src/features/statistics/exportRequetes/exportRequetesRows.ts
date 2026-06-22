@@ -1,5 +1,5 @@
 import { getMesureProtectionShortLabel } from '@sirena/common/utils';
-import { EXPORT_REQUETES_HEADERS } from './exportRequetesColumns.js';
+import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
 import type { ExportRequetesCsvRow } from './exportRequetesCsv.js';
 import { formatExportBoolean, formatExportDate, formatExportYear } from './exportRequetesFormatters.js';
 
@@ -48,6 +48,8 @@ type ExportParticipantRecord = {
 
 type ExportSituationRecord = Record<string, unknown>;
 
+type ExportRequeteKeyedRow = Partial<Record<ExportRequetesColumnKey, ExportRequetesCsvRow[number]>>;
+
 export function buildExportRequetesRows(requetes: ExportRequeteRecord[]): ExportRequetesCsvRow[] {
   return requetes.flatMap((requete) => {
     if (requete.situations.length === 0) {
@@ -63,32 +65,32 @@ function buildExportRequeteRow(
   situation: ExportSituationRecord | null,
   situationIndex?: number,
 ): ExportRequetesCsvRow {
-  const row = createEmptyExportRow();
-
-  row[0] = requete.id;
-  row[1] = formatExportBoolean(requete.declarant?.estVictime);
-  row[2] = formatLienVictime(requete.declarant);
-  row[3] = formatExportBoolean(requete.declarant?.isTuteur);
-  row[4] = requete.declarant?.adresse?.codePostal ?? '';
-  row[5] = formatConsentIdentite(requete.declarant?.veutGarderAnonymat);
-  row[6] = formatExportBoolean(requete.declarant?.estSignalementProfessionnel);
-  row[7] = requete.participant?.identite?.civilite?.label ?? '';
-  row[8] = requete.participant?.age?.label ?? '';
-  row[9] = requete.participant?.age?.label ? '' : formatExportYear(requete.participant?.dateNaissance);
-  row[10] = requete.participant?.adresse?.codePostal ?? '';
-  row[11] = formatConsentIdentite(requete.participant?.veutGarderAnonymat);
-  row[12] = formatExportBoolean(requete.participant?.estVictimeInformee);
-  row[13] = getMesureProtectionShortLabel(requete.participant?.mesureProtection) ?? '';
-  row[14] = formatExportBoolean(requete.participant?.estHandicapee);
-  row[15] = requete.participant?.aAutrePersonnes ? (requete.participant.autrePersonnes ?? '') : '';
-  row[16] = situation ? (situationIndex ?? 0) + 1 : '';
-  row[50] = formatExportDate(requete.createdAt);
-  row[51] = formatExportDate(requete.receptionDate);
-  row[52] = requete.receptionType?.label ?? '';
-  row[53] = formatExportDate(requete.dateDemandeDeclarant);
-  row[54] = requete.provenance?.label ?? '';
-
-  return row;
+  return toExportRequetesCsvRow({
+    numeroRequete: requete.id,
+    declarantEstPersonneConcernee: formatExportBoolean(requete.declarant?.estVictime),
+    lienPersonneConcernee: formatLienVictime(requete.declarant),
+    declarantEstTuteurCurateur: formatExportBoolean(requete.declarant?.isTuteur),
+    codePostalDeclarant: requete.declarant?.adresse?.codePostal ?? '',
+    declarantConsentIdentiteCommuniquee: formatConsentIdentite(requete.declarant?.veutGarderAnonymat),
+    declarantProfessionnelEig: formatExportBoolean(requete.declarant?.estSignalementProfessionnel),
+    civilitePersonneConcernee: requete.participant?.identite?.civilite?.label ?? '',
+    trancheAgePersonneConcernee: requete.participant?.age?.label ?? '',
+    anneeNaissancePersonneConcernee: requete.participant?.age?.label
+      ? ''
+      : formatExportYear(requete.participant?.dateNaissance),
+    codePostalPersonneConcernee: requete.participant?.adresse?.codePostal ?? '',
+    personneConcerneeConsentIdentiteCommuniquee: formatConsentIdentite(requete.participant?.veutGarderAnonymat),
+    personneConcerneeInformeeDemarche: formatExportBoolean(requete.participant?.estVictimeInformee),
+    mesureProtectionPersonneConcernee: getMesureProtectionShortLabel(requete.participant?.mesureProtection) ?? '',
+    personneConcerneeHandicap: formatExportBoolean(requete.participant?.estHandicapee),
+    autrePersonneConcernee: requete.participant?.aAutrePersonnes ? (requete.participant.autrePersonnes ?? '') : '',
+    numeroSituation: situation ? (situationIndex ?? 0) + 1 : '',
+    dateCreationRequeteSirena: formatExportDate(requete.createdAt),
+    dateReception: formatExportDate(requete.receptionDate),
+    modeReception: requete.receptionType?.label ?? '',
+    dateDemandeDeclarant: formatExportDate(requete.dateDemandeDeclarant),
+    provenance: requete.provenance?.label ?? '',
+  });
 }
 
 function formatLienVictime(declarant: ExportDeclarantRecord | null | undefined): string {
@@ -111,6 +113,6 @@ function formatConsentIdentite(veutGarderAnonymat: boolean | null | undefined): 
   return formatExportBoolean(!veutGarderAnonymat);
 }
 
-function createEmptyExportRow(): ExportRequetesCsvRow {
-  return Array.from({ length: EXPORT_REQUETES_HEADERS.length }, () => '');
+function toExportRequetesCsvRow(row: ExportRequeteKeyedRow): ExportRequetesCsvRow {
+  return EXPORT_REQUETES_COLUMNS.map((column) => row[column.key] ?? '');
 }
