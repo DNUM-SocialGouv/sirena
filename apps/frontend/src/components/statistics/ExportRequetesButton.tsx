@@ -51,7 +51,7 @@ export function ExportRequetesButton() {
       >
         {isExporting ? 'Export en cours…' : 'Exporter les requêtes'}
       </Button>
-      {error ? <Alert className="fr-mt-2w" severity="error" small title={error} /> : null}
+      {error ? <Alert className="fr-mt-2w" severity="error" small description={error} /> : null}
     </>
   );
 }
