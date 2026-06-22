@@ -8,6 +8,9 @@ export function buildExportRequetesCsv(rows: ExportRequetesCsvRow[]): string {
   return serializeCsv([...EXPORT_REQUETES_HEADERS], rows);
 }
 
-export function buildExportRequetesCsvFromRecords(requetes: ExportRequeteRecord[]): string {
-  return buildExportRequetesCsv(buildExportRequetesRows(requetes));
+export function buildExportRequetesCsvFromRecords(
+  requetes: ExportRequeteRecord[],
+  options: { topEntiteId?: string } = {},
+): string {
+  return buildExportRequetesCsv(buildExportRequetesRows(requetes, options));
 }

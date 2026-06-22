@@ -23,6 +23,18 @@ const exportRequetesInclude = {
   },
   provenance: true,
   receptionType: true,
+  etapes: {
+    include: {
+      clotureReason: true,
+    },
+  },
+  requeteEntites: {
+    include: {
+      entite: true,
+      priorite: true,
+      statut: true,
+    },
+  },
   situations: true,
 } satisfies Prisma.RequeteInclude;
 
@@ -43,7 +55,7 @@ export async function generateExportRequetesCsv(topEntiteId: string): Promise<st
     include: exportRequetesInclude,
   });
 
-  return buildExportRequetesCsvFromRecords(requetes.map(toExportRequeteRecord));
+  return buildExportRequetesCsvFromRecords(requetes.map(toExportRequeteRecord), { topEntiteId });
 }
 
 function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportRequeteRecord {
@@ -56,6 +68,8 @@ function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportReque
     provenance: requete.provenance,
     declarant: requete.declarant,
     participant: requete.participant,
+    requeteEntites: requete.requeteEntites,
+    etapes: requete.etapes,
     situations: requete.situations.map(() => ({})),
   };
 }
