@@ -103,7 +103,7 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
   ],
 };
 
-const requeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: RequeteEtape[] } = {
+const _requeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: RequeteEtape[] } = {
   entiteId: 'entiteId',
   requeteId: 'requeteId',
   statutId: 'EN_COURS',
@@ -471,7 +471,7 @@ describe('RequeteEtapes.service.ts', () => {
 
       const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0, limit: 10 });
 
-      expect(result.data).toEqual([requeteEtapeWithNotesAndFiles]);
+      expect(result.data).toEqual([{ ...requeteEtapeWithNotesAndFiles, editable: true, canOnlyEditNotes: false }]);
       expect(result.total).toBe(1);
       expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith({
         where: { requeteId: 'requeteId', entiteId: 'entiteId' },
@@ -522,8 +522,29 @@ describe('RequeteEtapes.service.ts', () => {
               },
             },
           },
+          uploadedFiles: {
+            select: {
+              id: true,
+              size: true,
+              metadata: true,
+              status: true,
+              scanStatus: true,
+              sanitizeStatus: true,
+              safeFilePath: true,
+              canDelete: true,
+              createdAt: true,
+              uploadedBy: {
+                select: {
+                  prenom: true,
+                  nom: true,
+                },
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
           requete: {
             select: {
+              createdById: true,
               createdBy: {
                 select: {
                   prenom: true,
@@ -549,7 +570,7 @@ describe('RequeteEtapes.service.ts', () => {
 
       const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0 });
 
-      expect(result.data).toEqual([requeteEtapeWithNotesAndFiles]);
+      expect(result.data).toEqual([{ ...requeteEtapeWithNotesAndFiles, editable: true, canOnlyEditNotes: false }]);
       expect(result.total).toBe(1);
       expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith({
         where: { requeteId: 'requeteId', entiteId: 'entiteId' },
@@ -600,8 +621,29 @@ describe('RequeteEtapes.service.ts', () => {
               },
             },
           },
+          uploadedFiles: {
+            select: {
+              id: true,
+              size: true,
+              metadata: true,
+              status: true,
+              scanStatus: true,
+              sanitizeStatus: true,
+              safeFilePath: true,
+              canDelete: true,
+              createdAt: true,
+              uploadedBy: {
+                select: {
+                  prenom: true,
+                  nom: true,
+                },
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
           requete: {
             select: {
+              createdById: true,
               createdBy: {
                 select: {
                   prenom: true,
@@ -618,6 +660,33 @@ describe('RequeteEtapes.service.ts', () => {
         skip: 0,
         orderBy: { createdAt: 'desc' },
       });
+    });
+
+    it('should expose editability flags per step type', async () => {
+      const closedEtape = {
+        ...requeteEtape,
+        type: 'MANUAL',
+        statutId: 'CLOTUREE',
+        notes: [],
+        uploadedFiles: [],
+        requete: { createdById: 'agent-1' },
+      };
+      const autoAckEtape = {
+        ...requeteEtape,
+        id: 'ackEtapeId',
+        type: 'ACKNOWLEDGMENT',
+        statutId: 'FAIT',
+        notes: [],
+        uploadedFiles: [],
+        requete: { createdById: null },
+      };
+      vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([closedEtape, autoAckEtape]);
+      vi.mocked(prisma.requeteEtape.count).mockResolvedValueOnce(2);
+
+      const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0 });
+
+      expect(result.data[0]).toMatchObject({ editable: false, canOnlyEditNotes: false });
+      expect(result.data[1]).toMatchObject({ editable: true, canOnlyEditNotes: true });
     });
   });
 
