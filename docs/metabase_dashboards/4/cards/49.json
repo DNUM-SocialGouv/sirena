@@ -1,0 +1,162 @@
+{
+  "archived": false,
+  "archived_directly": false,
+  "average_query_time": 216.96694214876032,
+  "cache_ttl": null,
+  "can_delete": false,
+  "can_manage_db": true,
+  "can_restore": false,
+  "can_run_adhoc_query": true,
+  "can_write": true,
+  "card_schema": 23,
+  "collection": {
+    "authority_level": null,
+    "can_write": true,
+    "id": "root",
+    "is_personal": false,
+    "is_remote_synced": false,
+    "metabase.collections.models.collection.root/is-root?": true,
+    "name": "Our analytics"
+  },
+  "collection_id": null,
+  "collection_position": null,
+  "collection_preview": true,
+  "creator_id": 3,
+  "dashboard": {
+    "id": 4,
+    "moderation_status": null,
+    "name": "[integrated] Sirena"
+  },
+  "dashboard_count": 1,
+  "dashboard_id": 4,
+  "database_id": 4,
+  "dataset_query": {
+    "database": 4,
+    "lib/type": "mbql/query",
+    "stages": [
+      {
+        "lib/type": "mbql.stage/native",
+        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'EN_COURS'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
+        "template-tags": {
+          "end_date": {
+            "display-name": "End Date",
+            "id": "52c02cb9-93a4-40bb-a052-8ef8ad4988c5",
+            "name": "end_date",
+            "type": "date"
+          },
+          "entity_label": {
+            "display-name": "Entity Label",
+            "id": "ec0c9ad1-7a80-42ab-b6c9-5ee27007e7fb",
+            "name": "entity_label",
+            "type": "text"
+          },
+          "start_date": {
+            "display-name": "Start Date",
+            "id": "7ecfa54a-5d0e-4afd-832b-0e2e2aa62ff7",
+            "name": "start_date",
+            "type": "date"
+          }
+        }
+      }
+    ]
+  },
+  "description": null,
+  "dimension_mappings": null,
+  "dimensions": null,
+  "display": "scalar",
+  "document_id": null,
+  "embedding_params": null,
+  "embedding_type": null,
+  "enable_embedding": false,
+  "entity_id": "0W14Ln9t4zIgOyyvNvud6",
+  "id": 49,
+  "is_remote_synced": false,
+  "last_query_start": "2026-06-19T14:17:11.490066Z",
+  "legacy_query": null,
+  "made_public_by_id": null,
+  "metabase_version": "v0.60.4.4 (65c9d32)",
+  "moderation_reviews": [],
+  "name": "Nombre de requêtes en cours",
+  "param_fields": {},
+  "parameter_mappings": [],
+  "parameter_usage_count": 0,
+  "parameters": [
+    {
+      "id": "ec0c9ad1-7a80-42ab-b6c9-5ee27007e7fb",
+      "isMultiSelect": false,
+      "name": "Entity Label",
+      "slug": "entity_label",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "entity_label"
+        ]
+      ],
+      "type": "string/=",
+      "values_query_type": "list",
+      "values_source_config": {
+        "card_id": 46,
+        "value_field": [
+          "field",
+          "label",
+          {
+            "base-type": "type/Text"
+          }
+        ]
+      },
+      "values_source_type": "card"
+    },
+    {
+      "id": "7ecfa54a-5d0e-4afd-832b-0e2e2aa62ff7",
+      "isMultiSelect": false,
+      "name": "Start Date",
+      "slug": "start_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "start_date"
+        ]
+      ],
+      "type": "date/single"
+    },
+    {
+      "id": "52c02cb9-93a4-40bb-a052-8ef8ad4988c5",
+      "isMultiSelect": false,
+      "name": "End Date",
+      "slug": "end_date",
+      "target": [
+        "variable",
+        [
+          "template-tag",
+          "end_date"
+        ]
+      ],
+      "type": "date/single"
+    }
+  ],
+  "public_uuid": null,
+  "query_type": "native",
+  "result_metadata": [
+    {
+      "base_type": "type/BigInteger",
+      "database_type": "int8",
+      "display_name": "nombre_requetes",
+      "field_ref": [
+        "field",
+        "nombre_requetes",
+        {
+          "base-type": "type/BigInteger"
+        }
+      ],
+      "name": "nombre_requetes"
+    }
+  ],
+  "source_card_id": null,
+  "table_id": null,
+  "type": "question",
+  "visualization_settings": {
+    "scalar.segments": []
+  }
+}
