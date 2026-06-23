@@ -1,5 +1,6 @@
 import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
 import { ERROR_KIND } from '@sirena/common/constants';
+import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
@@ -7,6 +8,7 @@ import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { getEntiteById } from '../entites/entites.service.js';
 import { generateExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
 import { getExportRequetesRoute, getStatisticsDashboardRoute } from './statistics.route.js';
+import { StatisticsDashboardQuerySchema } from './statistics.schema.js';
 import { fetchDashboardCardsData } from './statistics.service.js';
 
 const app = factoryWithLogs
@@ -59,10 +61,11 @@ const app = factoryWithLogs
     }
   })
 
-  .get('/dashboard', getStatisticsDashboardRoute, async (c) => {
+  .get('/dashboard', getStatisticsDashboardRoute, zValidator('query', StatisticsDashboardQuerySchema), async (c) => {
     const logger = c.get('logger');
     const userId = c.get('userId');
     const topEntiteId = c.get('topEntiteId');
+    const { startDate, endDate } = c.req.valid('query');
 
     if (!topEntiteId) {
       throwHTTPException403Forbidden('User must be linked to an entity to access the statistics dashboard', {
@@ -80,7 +83,14 @@ const app = factoryWithLogs
       });
     }
 
-    const cards = await fetchDashboardCardsData({ entity_label: topEntite.label });
+    // entity_label est verrouillé côté serveur (sécurité : périmètre de l'entité de l'utilisateur).
+    // Les bornes de date sont des filtres optionnels : le service ne les signe que si le dashboard
+    // les déclare réellement, donc un dashboard sans filtre de date continue de fonctionner.
+    // Voir docs/metabase_dashboards/FILTERS.md.
+    const cards = await fetchDashboardCardsData(
+      { entity_label: topEntite.label },
+      { start_date: startDate, end_date: endDate },
+    );
     return c.json({ data: { cards } });
   });
 

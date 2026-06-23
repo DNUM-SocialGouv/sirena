@@ -137,6 +137,17 @@ type RawDashcard = {
 type RawDashboardPayload = {
   dashcards?: RawDashcard[];
   ordered_cards?: RawDashcard[];
+  parameters?: Array<{ slug?: unknown; name?: unknown }> | null;
+};
+
+export const extractDashboardParameterSlugs = (payload: unknown): Set<string> => {
+  if (!payload || typeof payload !== 'object') return new Set();
+  const { parameters } = payload as RawDashboardPayload;
+  if (!Array.isArray(parameters)) return new Set();
+  const slugs = parameters
+    .map((p) => (typeof p?.slug === 'string' ? p.slug : typeof p?.name === 'string' ? p.name : null))
+    .filter((slug): slug is string => slug !== null);
+  return new Set(slugs);
 };
 
 type DashcardDescriptor = {
@@ -181,14 +192,29 @@ const toDashcardDescriptor = (raw: RawDashcard): DashcardDescriptor | null => {
   return { dashcardId, cardId, name, display, layout };
 };
 
-export const fetchDashboardCardsData = async (params: Record<string, unknown> = {}): Promise<DashboardCardData[]> => {
+export const fetchDashboardCardsData = async (
+  lockedParams: Record<string, unknown> = {},
+  optionalParams: Record<string, unknown> = {},
+): Promise<DashboardCardData[]> => {
   const logger = getLoggerStore();
   const { siteUrl, secretKey, dashboardId } = ensureMetabaseDashboardConfigured();
 
-  const token = signMetabaseDashboardToken(dashboardId, secretKey, params);
   const base = siteUrl.replace(/\/$/, '');
 
+  const token = signMetabaseDashboardToken(dashboardId, secretKey, lockedParams);
   const metadata = await fetchJson(`${base}/api/embed/dashboard/${token}`, { dashboardId, step: 'metadata' });
+
+  const declaredSlugs = extractDashboardParameterSlugs(metadata);
+  const appliedOptional = Object.entries(optionalParams).filter(
+    ([slug, value]) => value != null && declaredSlugs.has(slug),
+  );
+
+  const filterSearch = new URLSearchParams();
+  for (const [slug, value] of appliedOptional) {
+    filterSearch.set(slug, String(value));
+  }
+  const filterQuery = filterSearch.toString();
+  const filterSuffix = filterQuery ? `?${filterQuery}` : '';
 
   const rawDashcards = extractDashcards(metadata);
   const dashcards = rawDashcards.map(toDashcardDescriptor).filter((d): d is DashcardDescriptor => d !== null);
@@ -202,7 +228,7 @@ export const fetchDashboardCardsData = async (params: Record<string, unknown> = 
   // inaccessible. La carte fautive est renvoyée avec des données vides et le reste s'affiche.
   const settled = await Promise.allSettled(
     dashcards.map(async ({ dashcardId, cardId, name, display, layout }) => {
-      const cardUrl = `${base}/api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${cardId}/json`;
+      const cardUrl = `${base}/api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${cardId}/json${filterSuffix}`;
       const data = await fetchJson(cardUrl, { dashboardId, dashcardId, cardId, step: 'card-data' });
 
       if (!Array.isArray(data)) {
