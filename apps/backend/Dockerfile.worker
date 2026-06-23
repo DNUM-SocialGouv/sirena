@@ -7,6 +7,7 @@ ARG APP_VERSION
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV PNPM_STORE_DIR="/pnpm/store"
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV APP_VERSION=$APP_VERSION
 
 RUN apk add --no-cache tzdata && corepack enable pnpm
