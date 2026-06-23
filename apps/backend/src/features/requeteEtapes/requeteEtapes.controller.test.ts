@@ -612,16 +612,34 @@ describe('requeteEtapes.controller.ts', () => {
       })[];
       clotureReason: { label: string }[];
       createdBy: { prenom: string; nom: string } | null;
+      uploadedFiles: (Pick<
+        UploadedFile,
+        | 'id'
+        | 'size'
+        | 'metadata'
+        | 'status'
+        | 'scanStatus'
+        | 'sanitizeStatus'
+        | 'safeFilePath'
+        | 'canDelete'
+        | 'createdAt'
+      > & { uploadedBy: { prenom: string; nom: string } | null })[];
       requete: {
+        createdById: string | null;
         dematSocialId: number | null;
         thirdPartyAccountId: string | null;
         createdBy: { prenom: string; nom: string } | null;
       };
+      editable: boolean;
+      canOnlyEditNotes: boolean;
     } = {
       ...requeteEtape,
       clotureReason: [],
       createdBy: null,
-      requete: { dematSocialId: null, thirdPartyAccountId: null, createdBy: null },
+      uploadedFiles: [],
+      requete: { createdById: null, dematSocialId: null, thirdPartyAccountId: null, createdBy: null },
+      editable: true,
+      canOnlyEditNotes: false,
       notes: [
         {
           ...note,

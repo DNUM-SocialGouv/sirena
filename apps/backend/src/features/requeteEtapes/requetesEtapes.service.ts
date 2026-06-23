@@ -507,10 +507,31 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
           },
           orderBy: { createdAt: 'desc' },
         },
+        uploadedFiles: {
+          select: {
+            id: true,
+            size: true,
+            metadata: true,
+            status: true,
+            scanStatus: true,
+            sanitizeStatus: true,
+            safeFilePath: true,
+            canDelete: true,
+            createdAt: true,
+            uploadedBy: {
+              select: {
+                prenom: true,
+                nom: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
         requeteId: true,
         entiteId: true,
         requete: {
           select: {
+            createdById: true,
             createdBy: {
               select: { prenom: true, nom: true },
             },
@@ -525,8 +546,18 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
     }),
   ]);
 
+  // closure / creation = not editable; automatic ACR = statut + files locked but notes OK; manual = full.
+  const data = raw.map((etape) => {
+    const { editable, canOnlyEditNotes } = getEtapePermissions({
+      type: etape.type,
+      statutId: etape.statutId,
+      requete: etape.requete ? { createdById: etape.requete.createdById } : null,
+    });
+    return { ...etape, editable, canOnlyEditNotes };
+  });
+
   return {
-    data: raw,
+    data,
     total,
   };
 };
