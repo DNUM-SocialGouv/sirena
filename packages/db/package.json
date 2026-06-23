@@ -4,12 +4,14 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "generate": "prisma generate",
-    "migrate": "prisma migrate dev",
+    "generate": "prisma generate --generator client",
+    "migrate": "DISABLE_ERD=true prisma migrate dev",
     "studio": "prisma studio",
     "deploy": "prisma migrate deploy",
     "migrate:resolve": "prisma migrate resolve --rolled-back",
-    "reset": "prisma migrate reset",
+    "reset": "DISABLE_ERD=true prisma migrate reset",
+    "erd": "node scripts/erd/generate.mjs",
+    "erd:check": "node scripts/erd/check.mjs",
     "lint": "biome check",
     "build": "tsc"
   },
@@ -42,6 +44,7 @@
     "@types/node": "catalog:",
     "@types/pg": "^8.20.0",
     "prisma": "catalog:",
+    "prisma-erd-generator": "^2.4.3",
     "typescript": "catalog:"
   }
 }
