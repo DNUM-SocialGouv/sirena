@@ -1726,15 +1726,16 @@ export const closeRequeteForEntite = async (
       },
     });
 
-    const note = await tx.requeteEtapeNote.create({
-      data: {
-        requeteEtapeId: etape.id,
-        texte: precision?.trim() || '',
-        authorId,
-      },
-    });
-
-    const noteId = note.id;
+    const trimmedPrecision = precision?.trim() || '';
+    const note = trimmedPrecision
+      ? await tx.requeteEtapeNote.create({
+          data: {
+            requeteEtapeId: etape.id,
+            texte: trimmedPrecision,
+            authorId,
+          },
+        })
+      : null;
 
     if (fileIds && fileIds.length > 0) {
       await tx.uploadedFile.updateMany({
@@ -1742,7 +1743,7 @@ export const closeRequeteForEntite = async (
           id: { in: fileIds },
         },
         data: {
-          requeteEtapeNoteId: noteId,
+          requeteEtapeId: etape.id,
         },
       });
     }
@@ -1760,7 +1761,7 @@ export const closeRequeteForEntite = async (
       etapeId: etape.id,
       closedAt: etape.createdAt.toISOString(),
       clotureEffectiveDate,
-      noteId,
+      noteId: note?.id ?? null,
       etape,
       note,
     };
@@ -1785,21 +1786,22 @@ export const closeRequeteForEntite = async (
     changedById: authorId,
   });
 
-  // Create changelogs for the created step and note
-  await createRequeteEtapeNoteChangelog(
-    result.noteId,
-    ChangeLogAction.CREATED,
-    null,
-    {
-      id: result.note.id,
-      texte: result.note.texte,
-      authorId: result.note.authorId,
-      requeteEtapeId: result.note.requeteEtapeId,
-      clotureReasonIds: uniqueReasonIds,
-      createdAt: result.note.createdAt.toISOString(),
-    } as Prisma.JsonObject,
-    authorId,
-  );
+  if (result.note) {
+    await createRequeteEtapeNoteChangelog(
+      result.note.id,
+      ChangeLogAction.CREATED,
+      null,
+      {
+        id: result.note.id,
+        texte: result.note.texte,
+        authorId: result.note.authorId,
+        requeteEtapeId: result.note.requeteEtapeId,
+        clotureReasonIds: uniqueReasonIds,
+        createdAt: result.note.createdAt.toISOString(),
+      } as Prisma.JsonObject,
+      authorId,
+    );
+  }
 
   // Create changelogs for the uploaded files if any
   if (fileIds && fileIds.length > 0) {
@@ -1814,11 +1816,11 @@ export const closeRequeteForEntite = async (
         file.id,
         ChangeLogAction.UPDATED,
         {
-          requeteEtapeNoteId: null,
+          requeteEtapeId: null,
           metadata: file.metadata,
         } as Prisma.JsonObject,
         {
-          requeteEtapeNoteId: result.noteId,
+          requeteEtapeId: result.etapeId,
           metadata: file.metadata,
         } as Prisma.JsonObject,
         authorId,
@@ -2155,6 +2157,9 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
           statut: true,
           clotureReason: true,
           createdBy: { select: { prenom: true, nom: true } },
+          uploadedFiles: {
+            select: { fileName: true, metadata: true },
+          },
           notes: {
             orderBy: { createdAt: 'asc' },
             include: {
@@ -2480,8 +2485,6 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         pdf.field('Motif(s) de clôture', etape.clotureReason.map((r) => r.label).join(', '));
       }
 
-      // The acknowledgment email auto-generates a note ("Email d'accusé de réception envoyé le ...").
-      // don't render it as a note, but keep its file at the étape level.
       const etapeNotes = etape.notes ?? [];
       const sendNote =
         etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT
@@ -2489,14 +2492,20 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
           : undefined;
       const displayNotes = sendNote ? etapeNotes.filter((note) => note.id !== sendNote.id) : etapeNotes;
 
+      const etapeFileNames = new Set<string>();
+      const etapeFiles = (etape.uploadedFiles ?? [])
+        .map((f) => getOriginalFileName(f as Parameters<typeof getOriginalFileName>[0]))
+        .filter(Boolean);
+      for (const name of etapeFiles) etapeFileNames.add(name);
       if (sendNote) {
-        const acknowledgmentFiles = (sendNote.uploadedFiles ?? [])
-          .map((f) => getOriginalFileName(f as Parameters<typeof getOriginalFileName>[0]))
-          .filter(Boolean);
-        if (acknowledgmentFiles.length > 0) {
-          pdf.paragraph('Pièces jointes :', { bold: true });
-          pdf.list(acknowledgmentFiles);
+        for (const f of sendNote.uploadedFiles ?? []) {
+          const name = getOriginalFileName(f as Parameters<typeof getOriginalFileName>[0]);
+          if (name) etapeFileNames.add(name);
         }
+      }
+      if (etapeFileNames.size > 0) {
+        pdf.paragraph('Pièces jointes :', { bold: true });
+        pdf.list([...etapeFileNames]);
       }
 
       for (const note of displayNotes) {
@@ -2509,7 +2518,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
 
         const noteFiles = (note.uploadedFiles ?? [])
           .map((f) => getOriginalFileName(f as Parameters<typeof getOriginalFileName>[0]))
-          .filter(Boolean);
+          .filter((name): name is string => Boolean(name) && !etapeFileNames.has(name));
         if (noteFiles.length > 0) {
           pdf.paragraph('Pièces jointes :', { bold: true });
           pdf.list(noteFiles);
