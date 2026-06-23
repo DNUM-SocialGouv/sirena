@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+export const StatisticsDashboardQuerySchema = z
+  .object({
+    startDate: z.iso.date().optional(),
+    endDate: z.iso.date().optional(),
+  })
+  .refine((q) => !q.startDate || !q.endDate || q.startDate <= q.endDate, {
+    message: 'startDate doit être antérieure ou égale à endDate',
+    path: ['startDate'],
+  });
+
+export type StatisticsDashboardQuery = z.infer<typeof StatisticsDashboardQuerySchema>;
+
 export const StatisticsDashboardCardLayoutSchema = z.object({
   col: z.number().int(),
   row: z.number().int(),

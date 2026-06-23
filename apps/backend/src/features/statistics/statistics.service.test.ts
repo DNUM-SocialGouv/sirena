@@ -296,6 +296,63 @@ describe('statistics.service.ts', () => {
       expect(decoded.params).toEqual({ entity_label: 'UA 27' });
     });
 
+    it('keeps the token to locked params and passes declared optional filters as query string', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            parameters: [{ slug: 'entity_label' }, { slug: 'start_date' }, { slug: 'end_date' }],
+            dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Card' } }],
+          }),
+        })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 1 }] });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      await fetchDashboardCardsData({ entity_label: 'UA 27' }, { start_date: '2026-01-01', end_date: '2026-03-31' });
+
+      const [metadataCall, cardCall] = fetchMock.mock.calls;
+      const tokenFromUrl = (url: string) => url.match(/\/dashboard\/([^/?]+)/)?.[1] ?? '';
+      const decodeParams = (url: string) =>
+        (jwt.verify(tokenFromUrl(url), 'test-secret-key') as { params: Record<string, unknown> }).params;
+
+      expect(decodeParams(metadataCall[0] as string)).toEqual({ entity_label: 'UA 27' });
+      expect(decodeParams(cardCall[0] as string)).toEqual({ entity_label: 'UA 27' });
+
+      const cardUrl = new URL(cardCall[0] as string);
+      expect(cardUrl.searchParams.get('start_date')).toBe('2026-01-01');
+      expect(cardUrl.searchParams.get('end_date')).toBe('2026-03-31');
+      expect(metadataCall[0]).not.toContain('?');
+    });
+
+    it('ignores optional filters that the dashboard does not declare', async () => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            parameters: [{ slug: 'entity_label' }],
+            dashcards: [{ id: 100, card_id: 42, card: { id: 42, name: 'Card' } }],
+          }),
+        })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => [{ k: 1 }] });
+
+      const { fetchDashboardCardsData } = await import('./statistics.service.js');
+      await fetchDashboardCardsData({ entity_label: 'UA 27' }, { start_date: '2026-01-01' });
+
+      const cardUrl = new URL(fetchMock.mock.calls[1][0] as string);
+      expect(cardUrl.searchParams.has('start_date')).toBe(false);
+    });
+
+    it('extractDashboardParameterSlugs reads slugs and tolerates missing parameters', async () => {
+      const { extractDashboardParameterSlugs } = await import('./statistics.service.js');
+      expect(extractDashboardParameterSlugs({ parameters: [{ slug: 'a' }, { name: 'b' }, {}] })).toEqual(
+        new Set(['a', 'b']),
+      );
+      expect(extractDashboardParameterSlugs({})).toEqual(new Set());
+      expect(extractDashboardParameterSlugs(null)).toEqual(new Set());
+    });
+
     it('throws 503 when the dashboard id is missing', async () => {
       vi.resetModules();
       mockedEnvVars.METABASE_DASHBOARD_ID = '';
