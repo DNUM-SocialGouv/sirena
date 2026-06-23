@@ -9,8 +9,8 @@ allowBuilds:
   msgpackr-extract: true
   prisma: true
 catalog:
-  "@biomejs/biome": ^2.4.16
-  "@codegouvfr/react-dsfr": ^1.32.2
+  "@biomejs/biome": ^2.5.0
+  "@codegouvfr/react-dsfr": ^1.32.4
   "@hono/standard-validator": ^0.2.2
   "@prisma/adapter-pg": ^7.8.0
   "@prisma/client": ^7.8.0
@@ -18,12 +18,12 @@ catalog:
   "@testing-library/jest-dom": ^6.9.1
   "@testing-library/react": ^16.3.2
   "@testing-library/user-event": ^14.6.1
-  "@types/node": ^25.9.2
+  "@types/node": ^25.9.3
   "@types/react": ^19.2.17
   "@types/react-dom": ^19.2.3
   "@vitejs/plugin-react": ^6.0.2
-  "@vitest/browser": ^4.1.8
-  "@vitest/coverage-v8": ^4.1.8
+  "@vitest/browser": ^4.1.9
+  "@vitest/coverage-v8": ^4.1.9
   clsx: ^2.1.1
   dotenv: ^17.4.2
   hono: ^4.12.25
@@ -35,7 +35,7 @@ catalog:
   tsx: ^4.22.4
   typescript: ~6.0.3
   vite: ^8.0.16
-  vitest: ^4.1.8
+  vitest: ^4.1.9
   zod: ^4.4.3
 enablePrePostScripts: true
 minimumReleaseAge: 10080
@@ -51,14 +51,10 @@ overrides:
   # (minor additif, compatible bullmq) pour garder une seule instance.
   ioredis: ^5.11.0
   esbuild@<0.28.1: ">=0.28.1"
+  # @hono/node-server <1.19.13 reste tiré transitivement par prisma > @prisma/dev
+  # (contournement de middleware sur serveStatic, GHSA-92pp-h63x-v22m).
   "@hono/node-server@<1.19.13": ">=1.19.13"
-  '@opentelemetry/core@<2.8.0': ^2.8.0
-  # hono <4.12.25 reste tiré transitivement par prisma > @prisma/dev. Les
-  # consommateurs directs sont déjà sur 4.12.25 via le catalog ; l'override
-  # aligne le reste de l'arbre (CORS / serve-static / body-limit).
-  hono@<4.12.25: ">=4.12.25"
   # js-yaml <4.1.2 transitif (DoS quadratique sur les merge keys).
   js-yaml@<4.1.2: ">=4.1.2"
   undici@>=7.0.0 <7.28.0: ^7.28.0
-  undici@>=7.23.0 <7.28.0: ^7.28.0
   undici@>=6.26.0 <6.27.0: ^6.27.0
