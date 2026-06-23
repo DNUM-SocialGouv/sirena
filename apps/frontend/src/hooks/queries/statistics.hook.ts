@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchStatisticsDashboard } from '@/lib/api/fetchStatistics';
+import { fetchStatisticsDashboard, type StatisticsDashboardFilters } from '@/lib/api/fetchStatistics';
 
-export const useStatisticsDashboard = (enabled = true) =>
+export const useStatisticsDashboard = (filters: StatisticsDashboardFilters = {}, enabled = true) =>
   useQuery({
-    queryKey: ['statistics', 'dashboard'],
-    queryFn: fetchStatisticsDashboard,
+    queryKey: ['statistics', 'dashboard', filters.startDate ?? null, filters.endDate ?? null],
+    queryFn: () => fetchStatisticsDashboard(filters),
     enabled,
     staleTime: 5 * 60_000,
     retry: 1,

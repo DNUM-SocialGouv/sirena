@@ -17,8 +17,19 @@ export type StatisticsCard = {
   data: Array<Record<string, unknown>>;
 };
 
-export async function fetchStatisticsDashboard(): Promise<{ cards: StatisticsCard[] }> {
-  const res = await client.statistics.dashboard.$get();
+export type StatisticsDashboardFilters = {
+  startDate?: string;
+  endDate?: string;
+};
+
+export async function fetchStatisticsDashboard(
+  filters: StatisticsDashboardFilters = {},
+): Promise<{ cards: StatisticsCard[] }> {
+  const query: Record<string, string> = {};
+  if (filters.startDate) query.startDate = filters.startDate;
+  if (filters.endDate) query.endDate = filters.endDate;
+
+  const res = await client.statistics.dashboard.$get({ query });
   await handleRequestErrors(res);
   const { data } = await res.json();
   return data;
