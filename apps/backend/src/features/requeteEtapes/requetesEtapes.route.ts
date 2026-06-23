@@ -21,6 +21,13 @@ export const getProcessingStepsRoute = openApiProtectedRoute({
   },
 });
 
+export const updateProcessingStepRoute = openApiProtectedRoute({
+  description: 'Update a processing step (name, status, date, notes and files)',
+  responses: {
+    ...openApiResponse(RequeteEtapeSchema),
+  },
+});
+
 export const addProcessingStepNoteRoute = openApiProtectedRoute({
   description: 'Add a processing note to a step of a request',
   responses: {

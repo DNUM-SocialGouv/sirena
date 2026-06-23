@@ -39,11 +39,54 @@ const columns = [
   Prisma.RequeteEtapeScalarFieldEnum.statutId,
 ] as const;
 
-export const AddProcessingStepBodySchema = z.object({
-  nom: z
-    .string()
-    .min(1, { message: "Le champ 'Nom de l'étape' est obligatoire. Veuillez le renseigner pour ajouter une étape." }),
-});
+const etapeNomSchema = z
+  .string()
+  .min(1, { message: "Le champ 'Nom de l'étape' est obligatoire. Veuillez le renseigner pour ajouter une étape." })
+  .max(300, { message: `Le nom de l'étape ne peut pas dépasser 300 caractères.` })
+  .transform((str) => str.trim().replace(/[<>]/g, '').replace(/\s+/g, ' '))
+  .refine((val) => val.length > 0, { message: "Le nom de l'étape ne peut pas être vide." });
+
+const etapeStatutEnum = z.enum([REQUETE_ETAPE_STATUT_TYPES.A_FAIRE, REQUETE_ETAPE_STATUT_TYPES.FAIT]);
+
+const noteTexteSchema = z
+  .string()
+  .transform((s) => s.trim())
+  .pipe(
+    z
+      .string()
+      .min(1, { message: 'Le texte de la note est obligatoire.' })
+      .max(100000, { message: 'Maximum 10 000 caractères.' }),
+  );
+
+const fileIdsSchema = z.array(z.string().min(1, 'id vide'));
+
+// DateRealisation is mandatory when statut is « Fait ».
+const requireDateWhenFait = (data: { statutId?: string | null; dateRealisation?: Date }) =>
+  data.statutId !== REQUETE_ETAPE_STATUT_TYPES.FAIT || data.dateRealisation != null;
+
+export const AddProcessingStepBodySchema = z
+  .object({
+    nom: etapeNomSchema,
+    statutId: etapeStatutEnum.optional(),
+    dateRealisation: z.coerce.date().optional(),
+    notes: z
+      .array(z.object({ texte: noteTexteSchema }))
+      .optional()
+      .default([]),
+    fileIds: fileIdsSchema.optional().default([]),
+  })
+  .refine(requireDateWhenFait, { path: ['dateRealisation'], message: 'La date de réalisation est obligatoire.' });
+
+export const UpdateProcessingStepBodySchema = z
+  .object({
+    nom: etapeNomSchema,
+    statutId: etapeStatutEnum,
+    dateRealisation: z.coerce.date().optional(),
+
+    notes: z.array(z.object({ id: z.string().optional(), texte: noteTexteSchema })).default([]),
+    fileIds: fileIdsSchema.default([]),
+  })
+  .refine(requireDateWhenFait, { path: ['dateRealisation'], message: 'La date de réalisation est obligatoire.' });
 
 export const GetRequeteEtapesQuerySchema = paginationQueryParamsSchema(columns);
 

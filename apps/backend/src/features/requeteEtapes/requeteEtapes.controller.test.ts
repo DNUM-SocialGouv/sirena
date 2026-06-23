@@ -17,10 +17,12 @@ import {
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
 import RequeteEtapesController from './requetesEtapes.controller.js';
 import {
-  addProcessingEtape,
+  createProcessingEtape,
   deleteRequeteEtape,
+  EtapeNotEditableError,
   getRequeteEtapeById,
   getRequeteEtapes,
+  updateProcessingEtape,
   updateRequeteEtapeNom,
   updateRequeteEtapeStatut,
 } from './requetesEtapes.service.js';
@@ -36,7 +38,10 @@ vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
   updateRequeteEtapeStatut: vi.fn(),
   updateRequeteEtapeNom: vi.fn(() => Promise.resolve(fakeUpdatedNomRequeteEtape)),
   deleteRequeteEtape: vi.fn(),
-  addProcessingEtape: vi.fn(),
+  createProcessingEtape: vi.fn(),
+  updateProcessingEtape: vi.fn(),
+  EtapeNotEditableError: class EtapeNotEditableError extends Error {},
+  FilesNotOwnedError: class FilesNotOwnedError extends Error {},
   getRequeteEtapes: vi.fn(),
 }));
 
@@ -675,7 +680,7 @@ describe('requeteEtapes.controller.ts', () => {
         clotureEffectiveDate: null,
       };
 
-      vi.mocked(addProcessingEtape).mockResolvedValueOnce(fakeStep);
+      vi.mocked(createProcessingEtape).mockResolvedValueOnce(fakeStep);
 
       const res = await client[':id']['processing-steps'].$post({
         param: { id: '1' },
@@ -685,12 +690,22 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(201);
       const json = await res.json();
       expect(json).toEqual({ data: convertDatesToStrings(fakeStep) });
-      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' }, 'test-user-id');
+      expect(createProcessingEtape).toHaveBeenCalledWith(
+        '1',
+        'e1',
+        'test-user-id',
+        {
+          nom: 'Step 1',
+          notes: [],
+          fileIds: [],
+        },
+        expect.anything(),
+      );
     });
 
     it('should return 404 if hasAccessToRequete returns false', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
-      vi.mocked(addProcessingEtape).mockResolvedValueOnce(null);
+      vi.mocked(createProcessingEtape).mockResolvedValueOnce(null);
 
       const res = await client[':id']['processing-steps'].$post({
         param: { id: 'nonexistent' },
@@ -705,7 +720,7 @@ describe('requeteEtapes.controller.ts', () => {
     it('should return 404 if step is not created', async () => {
       vi.mocked(hasAccessToRequete).mockResolvedValueOnce(true);
 
-      vi.mocked(addProcessingEtape).mockResolvedValueOnce(null);
+      vi.mocked(createProcessingEtape).mockResolvedValueOnce(null);
 
       const res = await client[':id']['processing-steps'].$post({
         param: { id: '1' },
@@ -715,7 +730,69 @@ describe('requeteEtapes.controller.ts', () => {
       expect(res.status).toBe(404);
       const json = await res.json();
       expect(json).toEqual({ message: 'Requete entite not found', cause: { kind: ERROR_KIND.BUSINESS } });
-      expect(addProcessingEtape).toHaveBeenCalledWith('1', 'e1', { nom: 'Step 1' }, 'test-user-id');
+      expect(createProcessingEtape).toHaveBeenCalledWith(
+        '1',
+        'e1',
+        'test-user-id',
+        {
+          nom: 'Step 1',
+          notes: [],
+          fileIds: [],
+        },
+        expect.anything(),
+      );
+    });
+  });
+
+  describe('PATCH /:id', () => {
+    const validBody = { nom: 'Updated', statutId: 'A_FAIRE' as const, notes: [], fileIds: [] };
+
+    it('updates a step and returns 200', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
+      vi.mocked(updateProcessingEtape).mockResolvedValueOnce(fakeUpdatedNomRequeteEtape);
+
+      const res = await client[':id'].$patch({ param: { id: 'step1' }, json: validBody });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({ data: convertDatesToStrings(fakeUpdatedNomRequeteEtape) });
+      expect(updateProcessingEtape).toHaveBeenCalledWith('step1', 'test-user-id', validBody, expect.anything());
+    });
+
+    it('returns 404 if RequeteEtape not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
+
+      const res = await client[':id'].$patch({ param: { id: 'nope' }, json: validBody });
+
+      expect(res.status).toBe(404);
+      expect(updateProcessingEtape).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 if the step belongs to another entite', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce({ ...fakeRequeteEtape, entiteId: 'other-entite' });
+
+      const res = await client[':id'].$patch({ param: { id: 'step1' }, json: validBody });
+
+      expect(res.status).toBe(403);
+      expect(updateProcessingEtape).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 if the step is not editable', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(fakeRequeteEtape);
+      vi.mocked(updateProcessingEtape).mockRejectedValueOnce(new EtapeNotEditableError('ETAPE_NOT_EDITABLE'));
+
+      const res = await client[':id'].$patch({ param: { id: 'step1' }, json: validBody });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('validates the body (status EN_COURS is rejected)', async () => {
+      const res = await client[':id'].$patch({
+        param: { id: 'step1' },
+        json: { ...validBody, statutId: 'EN_COURS' as never },
+      });
+
+      expect(res.status).toBe(400);
     });
   });
 });
