@@ -168,6 +168,16 @@ export const setNoteFile = async (
   return updateFilesWithRelation(uploadedFileId, { requeteEtapeNoteId: noteId }, entiteId, changedById);
 };
 
+export const setEtapeFile = async (
+  requeteEtapeId: string,
+  uploadedFileId: UploadedFile['id'][],
+  entiteId: string | null = null,
+  changedById?: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  return updateFilesWithRelation(uploadedFileId, { requeteEtapeId }, entiteId, changedById, tx);
+};
+
 export const setRequeteFile = async (
   requeteId: string,
   uploadedFileId: UploadedFile['id'][],
