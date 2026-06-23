@@ -254,7 +254,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
               <div className={fr.cx('fr-col-12', 'fr-mb-2w')}>
                 <Input
                   label="Date de réception"
-                  hintText="Format attendu : JJ-MM-AAAA"
+                  hintText="Format attendu : JJ/MM/AAAA"
                   nativeInputProps={{
                     type: 'date',
                     value: dateValue,
@@ -265,7 +265,7 @@ export const OriginalRequestSection = ({ requestId, data, onEdit, updatedAt }: O
               <div className={fr.cx('fr-col-12', 'fr-mb-2w')}>
                 <Input
                   label="Date de la demande par le déclarant"
-                  hintText="Format attendu : JJ-MM-AAAA"
+                  hintText="Format attendu : JJ/MM/AAAA"
                   nativeInputProps={{
                     type: 'date',
                     value: dateDemandeDeclarantValue,

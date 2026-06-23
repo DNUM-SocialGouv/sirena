@@ -293,7 +293,7 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
         <div className="fr-mb-4w">
           <Input
             label="Date de clôture"
-            hintText="Format attendu : JJ-MM-AAAA"
+            hintText="Format attendu : JJ/MM/AAAA"
             nativeInputProps={{
               type: 'date',
               value: clotureEffectiveDate,
