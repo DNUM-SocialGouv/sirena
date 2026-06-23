@@ -1,9 +1,12 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { FEATURE_FLAGS, ROLES_READ } from '@sirena/common/constants';
-import { createFileRoute, Navigate } from '@tanstack/react-router';
+import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
 import type { CSSProperties } from 'react';
+import { z } from 'zod';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { parseCard } from '@/components/statistics/chartData';
+import { PeriodFilter } from '@/components/statistics/PeriodFilter';
+import { describePeriod, PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
 import { StatTable } from '@/components/statistics/StatTable';
 import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
@@ -15,8 +18,15 @@ import styles from './statistiques.module.css';
 
 const numberFormatter = new Intl.NumberFormat('fr-FR');
 
+const StatisticsSearchSchema = z.object({
+  period: z.enum(PERIOD_PRESETS).optional().catch(undefined),
+  startDate: z.iso.date().optional().catch(undefined),
+  endDate: z.iso.date().optional().catch(undefined),
+});
+
 export const Route = createFileRoute('/_auth/_user/statistiques')({
   beforeLoad: requireAuthAndRoles([...ROLES_READ]),
+  validateSearch: StatisticsSearchSchema,
   head: () => ({
     meta: [{ title: 'Indicateurs - SIRENA' }],
   }),
@@ -110,12 +120,26 @@ function ChartCard({ card }: { card: StatisticsCard }) {
 function RouteComponent() {
   const resolvedFlagsQuery = useResolvedFeatureFlags();
   const { data: profile, isPending: isProfilePending } = useProfile();
+  const search = useSearch({ from: '/_auth/_user/statistiques' });
+  const navigate = useNavigate({ from: '/statistiques' });
 
   const hasEntityLink = profile?.entiteId != null;
 
   const areFlagsReady = resolvedFlagsQuery.status !== 'pending';
   const isEnabled = resolvedFlagsQuery.data?.[FEATURE_FLAGS.STATISTICS] ?? false;
-  const query = useStatisticsDashboard(areFlagsReady && isEnabled && hasEntityLink);
+  const selection: PeriodSelection = {
+    period: search.period,
+    startDate: search.startDate,
+    endDate: search.endDate,
+  };
+  const range = resolveDateRange(selection, new Date());
+  const query = useStatisticsDashboard(range, areFlagsReady && isEnabled && hasEntityLink);
+
+  const handlePeriodChange = (next: PeriodSelection) => {
+    navigate({
+      search: (prev) => ({ ...prev, period: next.period, startDate: next.startDate, endDate: next.endDate }),
+    });
+  };
 
   if (isProfilePending || !areFlagsReady) {
     return null;
@@ -124,9 +148,20 @@ function RouteComponent() {
     return <Navigate to="/home" />;
   }
 
+  const periodLabel = describePeriod(selection);
+  const statusMessage = query.isFetching
+    ? 'Mise à jour des indicateurs en cours…'
+    : query.isSuccess
+      ? `Indicateurs à jour${periodLabel ? ` pour la période : ${periodLabel}` : ''}.`
+      : '';
+
   return (
     <div className={fr.cx('fr-container', 'fr-my-8w')}>
       <h1>Indicateurs</h1>
+      <PeriodFilter value={selection} onChange={handlePeriodChange} />
+      <p role="status" className="fr-sr-only">
+        {statusMessage}
+      </p>
       <QueryStateHandler query={query} noDataComponent={<p>Aucune carte configurée dans le dashboard Metabase.</p>}>
         {({ data }) => {
           if (data.cards.length === 0) {
