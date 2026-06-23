@@ -1552,6 +1552,8 @@ describe('requetesEntite.service', () => {
       };
 
       const createRequeteEtape = vi.fn().mockResolvedValue(mockEtape);
+      const noteCreate = vi.fn().mockResolvedValue(mockNote);
+      const fileUpdateMany = vi.fn().mockResolvedValue({ count: 2 });
       transactionSpy.mockImplementation(async (cb) => {
         const mockTx = {
           ...prismaMock,
@@ -1560,7 +1562,7 @@ describe('requetesEntite.service', () => {
             create: createRequeteEtape,
           },
           requeteEtapeNote: {
-            create: vi.fn().mockResolvedValue(mockNote),
+            create: noteCreate,
           },
           requeteEntite: {
             ...prismaMock.requeteEntite,
@@ -1568,7 +1570,7 @@ describe('requetesEntite.service', () => {
           },
           uploadedFile: {
             ...prismaMock.uploadedFile,
-            updateMany: vi.fn().mockResolvedValue({ count: 2 }),
+            updateMany: fileUpdateMany,
           },
         } as typeof prismaMock;
         return cb(mockTx);
@@ -1584,6 +1586,13 @@ describe('requetesEntite.service', () => {
         ['fileid1', 'fileid2'],
       );
 
+      expect(noteCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ texte: 'Test precision' }) }),
+      );
+      expect(fileUpdateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['fileid1', 'fileid2'] } },
+        data: { requeteEtapeId: 'etape123' },
+      });
       expect(result).toEqual({
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
@@ -1641,6 +1650,7 @@ describe('requetesEntite.service', () => {
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
 
+      const noteCreate = vi.fn().mockResolvedValue(mockNote);
       transactionSpy.mockImplementation(async (cb) => {
         const mockTx = {
           ...prismaMock,
@@ -1650,7 +1660,7 @@ describe('requetesEntite.service', () => {
           },
           requeteEtapeNote: {
             ...prismaMock.requeteEtapeNote,
-            create: vi.fn().mockResolvedValue(mockNote),
+            create: noteCreate,
           },
           requeteEntite: {
             ...prismaMock.requeteEntite,
@@ -1662,13 +1672,14 @@ describe('requetesEntite.service', () => {
 
       const result = await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01');
 
+      expect(noteCreate).not.toHaveBeenCalled();
       expect(result).toEqual({
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
         clotureEffectiveDate: '2024-01-01',
-        noteId: 'note123',
+        noteId: null,
         etape: mockEtape,
-        note: mockNote,
+        note: null,
       });
 
       expect(createChangeLog).toHaveBeenCalledWith({
@@ -1901,6 +1912,8 @@ describe('requetesEntite.service', () => {
         createdAt: new Date('2024-01-01T10:00:00Z'),
       };
 
+      const noteCreate = vi.fn().mockResolvedValue(mockNote);
+      const fileUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
       transactionSpy.mockImplementation(async (cb) => {
         const mockTx = {
           ...prismaMock,
@@ -1909,7 +1922,7 @@ describe('requetesEntite.service', () => {
             create: vi.fn().mockResolvedValue(mockEtape),
           },
           requeteEtapeNote: {
-            create: vi.fn().mockResolvedValue(mockNote),
+            create: noteCreate,
           },
           requeteEntite: {
             ...prismaMock.requeteEntite,
@@ -1917,7 +1930,7 @@ describe('requetesEntite.service', () => {
           },
           uploadedFile: {
             ...prismaMock.uploadedFile,
-            updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+            updateMany: fileUpdateMany,
           },
         } as typeof prismaMock;
         return cb(mockTx);
@@ -1933,13 +1946,18 @@ describe('requetesEntite.service', () => {
         ['fileid1'],
       );
 
+      expect(noteCreate).not.toHaveBeenCalled();
+      expect(fileUpdateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['fileid1'] } },
+        data: { requeteEtapeId: 'etape123' },
+      });
       expect(result).toEqual({
         etapeId: 'etape123',
         closedAt: '2024-01-01T10:00:00.000Z',
         clotureEffectiveDate: '2024-01-01',
-        noteId: 'note123',
+        noteId: null,
         etape: mockEtape,
-        note: mockNote,
+        note: null,
       });
 
       expect(createChangeLog).toHaveBeenCalledWith({
@@ -3299,6 +3317,48 @@ describe('requetesEntite.service', () => {
       expect(listSpy).toHaveBeenCalledWith(['AR_2026-06-RS9.pdf']);
       // The genuine user note is still rendered.
       expect(paragraphArgs).toContain("J'ai envoyé l'AR because...");
+    });
+
+    it('renders étape-level files (new ACR model without auto-note)', async () => {
+      const listSpy = vi.spyOn(RequetePdfBuilder.prototype, 'list');
+      vi.spyOn(RequetePdfBuilder.prototype, 'toBuffer').mockResolvedValue(Buffer.from('%PDF-test'));
+
+      const author = { prenom: 'Delphine', nom: 'TEST' };
+
+      vi.mocked(prisma.requeteEntite.findFirst).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statut: { id: 'EN_COURS', label: 'En cours' },
+        priorite: null,
+        requete: {
+          ...mockRequeteEntite.requete,
+          receptionType: null,
+          provenance: null,
+          createdBy: author,
+          declarant: null,
+          participant: null,
+          fichiersRequeteOriginale: [],
+          situations: [],
+        },
+        requeteEtape: [
+          {
+            id: 'etapeAck',
+            type: REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT,
+            statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+            statut: { id: 'FAIT', label: 'Fait' },
+            clotureReason: [],
+            createdBy: null,
+            nom: "Envoi de l'accusé de réception",
+            createdAt: new Date('2026-06-12'),
+            updatedAt: new Date('2026-06-15'),
+            uploadedFiles: [{ fileName: 'AR_2026-06-RS9.pdf', metadata: null }],
+            notes: [],
+          },
+        ],
+      } as unknown as Awaited<ReturnType<typeof prisma.requeteEntite.findFirst>>);
+
+      await generateRequetePdfBuffer('req123', 'ent123');
+
+      expect(listSpy).toHaveBeenCalledWith(['AR_2026-06-RS9.pdf']);
     });
   });
 
