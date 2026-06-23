@@ -11,7 +11,7 @@ export const EXPORT_REQUETES_COLUMNS = [
     key: 'declarantConsentIdentiteCommuniquee',
     header: 'Le déclarant consent à ce que son identité soit communiquée',
   },
-  { key: 'declarantProfessionnelEig', header: 'Déclarant est un professionnel qui déclare un EIG ' },
+  { key: 'declarantProfessionnelEig', header: 'Déclarant est un professionnel qui déclare un EIG' },
   { key: 'civilitePersonneConcernee', header: 'Civilité Personne concernée' },
   { key: 'trancheAgePersonneConcernee', header: 'Tranche age personne concernée' },
   {
@@ -48,7 +48,7 @@ export const EXPORT_REQUETES_COLUMNS = [
   { key: 'rppsMisEnCause', header: 'RPPS mis en cause' },
   { key: 'nomMisEnCause', header: 'Nom mis en cause' },
   { key: 'codePostalMisEnCause', header: 'Code postal mis en cause' },
-  { key: 'categorieProfessionnelleRppsMisEnCause', header: 'Catégorie professionnelle du RPPS mis en cause ' },
+  { key: 'categorieProfessionnelleRppsMisEnCause', header: 'Catégorie professionnelle du RPPS mis en cause' },
   {
     key: 'motifsDeclaratifs',
     header: 'Motifs renseignés par le déclarant (dans demat.social ou plateforme téléphonique)',
@@ -65,7 +65,7 @@ export const EXPORT_REQUETES_COLUMNS = [
   { key: 'dateDepotPlainte', header: 'Date de dépot de plate' },
   { key: 'lieuDepotPlainte', header: 'Lieu de dépot de plainte' },
   { key: 'demarchesAutresOrganismes', header: "Des démarches ont été engagées auprès d'autres organismes" },
-  { key: 'entitesAdministrativesSituation', header: 'Entités administratives affectées à la situation ' },
+  { key: 'entitesAdministrativesSituation', header: 'Entités administratives affectées à la situation' },
   { key: 'directionsSituation', header: 'Directions affectées à la situation' },
   { key: 'servicesSituation', header: 'Services affectés à la situation' },
   { key: 'entitesStatutsRequete', header: 'Entités (+statut entité) affectées à la requête' },
