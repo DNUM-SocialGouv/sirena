@@ -139,11 +139,11 @@ async function attachEmailPdfToStep(
           ...(encryptionMetadata && { encryption: encryptionMetadata }),
         },
         requeteEtapeNoteId: null,
-        requeteEtapeId: null,
+        requeteEtapeId: etape.id,
         requeteId: null,
         faitSituationId: null,
         demarchesEngageesId: null,
-        uploadedById: null,
+        uploadedById: authorId ?? null,
         entiteId,
       });
 
@@ -164,7 +164,7 @@ async function attachEmailPdfToStep(
         'metadata',
         'entiteId',
         'uploadedById',
-        'requeteEtapeNoteId',
+        'requeteEtapeId',
         'requeteId',
         'faitSituationId',
         'demarchesEngageesId',
@@ -189,36 +189,6 @@ async function attachEmailPdfToStep(
             error: changelogError,
           },
           'Failed to create changelog entry for uploaded file',
-        );
-      }
-
-      const note = await prisma.requeteEtapeNote.create({
-        data: {
-          texte: `Email d'accusé de réception envoyé le ${emailInfo.sentDate.toLocaleString('fr-FR')}`,
-          authorId: authorId ?? null,
-          requeteEtapeId: etape.id,
-          uploadedFiles: {
-            connect: [{ id: uploadedFile.id }],
-          },
-        },
-      });
-
-      try {
-        await createChangeLog({
-          entity: 'RequeteEtapeNote',
-          entityId: note.id,
-          action: ChangeLogAction.CREATED,
-          before: null,
-          after: {
-            texte: note.texte,
-            authorId: note.authorId,
-          },
-          changedById: null, // System action
-        });
-      } catch (changelogError) {
-        logger.error(
-          { requeteId, entiteId, noteId: note.id, error: changelogError },
-          'Failed to create changelog entry for requete etape note',
         );
       }
 
