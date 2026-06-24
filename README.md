@@ -92,6 +92,8 @@ packages/
 | `pnpm db:migrate`                      | Run dev migrations (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:migrate:resolve`              | Run dev migrations (`@sirena/backend`) with `.env`                                   |
 | `pnpm db:generate`                     | Generate Prisma client from schema (`@sirena/backend`) with `.env`                   |
+| `pnpm db:erd`                          | Regenerate the ER diagram `docs/prisma.svg` from the schema (uses the Chromium downloaded by Puppeteer at install) |
+| `pnpm db:erd:check`                    | Verify `docs/prisma.svg` is up to date with the schema (CI guard-rail)               |
 | `pnpm op:import:geodata`               | Import geodata (`@sirena/backend`) with `.env`                                       |
 | `pnpm op:diff:enums`                   | Check enum consistency (`@sirena/backend`) with `.env`. Use `--dump-migration` for clean SQL output (no logger timestamps), `--invert` for rollback SQL |
 | `pnpm op:import:dematsocial`           | Import requests from DematSocial (`@sirena/backend`) with `.env`                       |
