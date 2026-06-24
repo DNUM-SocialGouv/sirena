@@ -3113,6 +3113,23 @@ describe('requetesEntite.service', () => {
 
       expect(safeSyncRequetePriseEnChargeToDematSocial).not.toHaveBeenCalled();
     });
+
+    it('should keep the status update successful when demat.social sync fails', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      });
+      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockRejectedValueOnce(new Error('demat.social unavailable'));
+
+      await expect(updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.EN_COURS)).resolves.toMatchObject({
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      });
+    });
   });
 
   describe('updatePrioriteRequete', () => {

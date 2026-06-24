@@ -1900,7 +1900,7 @@ export const updateStatusRequete = async (
     previousRequeteEntite?.statutId === REQUETE_STATUT_TYPES.NOUVEAU &&
     [REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE].includes(statut)
   ) {
-    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
+    await safeSyncRequetePriseEnChargeToDematSocial(requeteId).catch(() => undefined);
   }
 
   return requeteEntite;
