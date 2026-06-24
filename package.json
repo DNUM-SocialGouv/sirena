@@ -30,6 +30,8 @@
     "op:metabase:export-dashboard": "dotenv -e .env -- pnpm --filter @sirena/backend op:metabase:export-dashboard",
     "db:deploy": "dotenv -e .env -- pnpm --filter @sirena/db run deploy",
     "db:generate": "dotenv -e .env -- pnpm --filter @sirena/db generate",
+    "db:erd": "dotenv -e .env -- pnpm --filter @sirena/db erd",
+    "db:erd:check": "pnpm --filter @sirena/db erd:check",
     "db:migrate:resolve": "dotenv -e .env -- pnpm --filter @sirena/db migrate:resolve",
     "db:reset": "dotenv -e .env -- pnpm --filter @sirena/db reset",
     "prisma": "dotenv -e .env -- pnpm --filter @sirena/db exec prisma",
