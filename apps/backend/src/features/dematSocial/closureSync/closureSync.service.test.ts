@@ -1,5 +1,3 @@
-import type { RequeteClotureReason } from '@sirena/common/constants';
-import { REQUETE_CLOTURE_REASON } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DossierState } from '../../../graphql/graphql.js';
 import {
@@ -39,12 +37,11 @@ vi.mock('../dematSocial.service.js', () => ({
   updateInstruction: vi.fn(),
 }));
 
-const mockSyncData = (closureReasons: RequeteClotureReason[] = [REQUETE_CLOTURE_REASON.MESURES_CORRECTIVES]) => {
+const mockSyncData = () => {
   vi.mocked(loadClosedRequeteForDematSocialSync).mockResolvedValueOnce({
     kind: 'candidate',
     requeteId: 'requete-1',
     dematSocialId: 123,
-    closureReasons,
   });
 };
 
@@ -63,10 +60,10 @@ describe('syncClosedRequeteToDematSocial', () => {
     vi.clearAllMocks();
   });
 
-  it('skips when the closed Requête SIRENA is not eligible for demat.social sync', async () => {
+  it('skips when the Requête SIRENA is not eligible for demat.social sync', async () => {
     vi.mocked(loadClosedRequeteForDematSocialSync).mockResolvedValueOnce({
       kind: 'skip',
-      reason: 'REQUETE_NOT_COMPLETELY_CLOSED',
+      reason: 'REQUETE_WITHOUT_DEMAT_SOCIAL_ID',
     });
 
     await syncClosedRequeteToDematSocial('requete-1');
@@ -76,24 +73,8 @@ describe('syncClosedRequeteToDematSocial', () => {
     expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();
   });
 
-  it('logs and skips when closed Requête data has an anomaly', async () => {
-    vi.mocked(loadClosedRequeteForDematSocialSync).mockResolvedValueOnce({
-      kind: 'anomaly',
-      reason: 'MISSING_LATEST_CLOSURE_REASONS',
-      entiteIds: ['entite-1'],
-    });
-
-    await syncClosedRequeteToDematSocial('requete-1');
-
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.objectContaining({ requeteId: 'requete-1', reason: 'MISSING_LATEST_CLOSURE_REASONS' }),
-      expect.stringContaining('anomaly'),
-    );
-    expect(getRequete).not.toHaveBeenCalled();
-  });
-
   it('logs and skips when the demat.social dossier cannot be read', async () => {
-    mockSyncData([REQUETE_CLOTURE_REASON.MESURES_CORRECTIVES]);
+    mockSyncData();
     vi.mocked(getRequete).mockResolvedValueOnce({ dossier: null } as unknown as Awaited<ReturnType<typeof getRequete>>);
 
     await syncClosedRequeteToDematSocial('requete-1');
@@ -106,7 +87,7 @@ describe('syncClosedRequeteToDematSocial', () => {
   });
 
   it('does nothing when demat.social is already in the expected final state', async () => {
-    mockSyncData([REQUETE_CLOTURE_REASON.MESURES_CORRECTIVES]);
+    mockSyncData();
     mockDossierState(DossierState.Accepte);
 
     await syncClosedRequeteToDematSocial('requete-1');
@@ -116,18 +97,27 @@ describe('syncClosedRequeteToDematSocial', () => {
     expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();
   });
 
-  it('does not overwrite a refused demat.social dossier', async () => {
-    mockSyncData([REQUETE_CLOTURE_REASON.MESURES_CORRECTIVES]);
+  it('logs an anomaly and does not overwrite a refused demat.social dossier', async () => {
+    mockSyncData();
     mockDossierState(DossierState.Refuse);
 
     await syncClosedRequeteToDematSocial('requete-1');
 
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requeteId: 'requete-1',
+        dematSocialId: 123,
+        expectedState: DossierState.Accepte,
+        currentState: DossierState.Refuse,
+      }),
+      expect.stringContaining('different final state'),
+    );
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
     expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();
   });
 
   it('logs an anomaly and does not overwrite a different final demat.social state', async () => {
-    mockSyncData([REQUETE_CLOTURE_REASON.MESURES_CORRECTIVES]);
+    mockSyncData();
     mockDossierState(DossierState.SansSuite);
 
     await syncClosedRequeteToDematSocial('requete-1');
@@ -140,7 +130,7 @@ describe('syncClosedRequeteToDematSocial', () => {
   });
 
   it('accepts an en_instruction demat.social dossier with the SIRENA takeover motivation', async () => {
-    mockSyncData([REQUETE_CLOTURE_REASON.HORS_COMPETENCE]);
+    mockSyncData();
     mockDossierState(DossierState.EnInstruction);
 
     await syncClosedRequeteToDematSocial('requete-1');
@@ -149,7 +139,7 @@ describe('syncClosedRequeteToDematSocial', () => {
   });
 
   it('passes an en_construction demat.social dossier to instruction before accepting it', async () => {
-    mockSyncData([REQUETE_CLOTURE_REASON.HORS_COMPETENCE]);
+    mockSyncData();
     mockDossierState(DossierState.EnConstruction);
     vi.mocked(updateInstruction).mockResolvedValueOnce({
       dossierPasserEnInstruction: {
@@ -166,7 +156,7 @@ describe('syncClosedRequeteToDematSocial', () => {
   });
 
   it('throws and does not finalise when passing an en_construction dossier to instruction returns errors', async () => {
-    mockSyncData([REQUETE_CLOTURE_REASON.HORS_COMPETENCE]);
+    mockSyncData();
     mockDossierState(DossierState.EnConstruction);
     vi.mocked(updateInstruction).mockResolvedValueOnce({
       dossierPasserEnInstruction: { dossier: null, errors: [{ message: 'Transition impossible' }] },

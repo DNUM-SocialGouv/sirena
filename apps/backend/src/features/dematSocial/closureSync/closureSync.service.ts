@@ -1,11 +1,6 @@
 import { DossierState } from '../../../graphql/graphql.js';
 import { getLoggerStore, getSentryStore } from '../../../libs/asyncLocalStorage.js';
-import {
-  acceptDossierWithoutNotification,
-  classerDossierSansSuiteWithoutNotification,
-  getRequete,
-  updateInstruction,
-} from '../dematSocial.service.js';
+import { acceptDossierWithoutNotification, getRequete, updateInstruction } from '../dematSocial.service.js';
 import { loadClosedRequeteForDematSocialSync } from './closedRequeteSyncData.service.js';
 
 const finalStates = new Set<DossierState>([DossierState.Accepte, DossierState.Refuse, DossierState.SansSuite]);
@@ -19,14 +14,6 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
 
   if (syncData.kind === 'skip') {
     logger.debug({ requeteId, reason: syncData.reason }, 'Skipping demat.social closure sync');
-    return { kind: 'skipped', reason: syncData.reason };
-  }
-
-  if (syncData.kind === 'anomaly') {
-    logger.warn(
-      { requeteId, reason: syncData.reason, entiteIds: syncData.entiteIds },
-      'Skipping demat.social closure sync anomaly',
-    );
     return { kind: 'skipped', reason: syncData.reason };
   }
 
@@ -46,11 +33,6 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
       'demat.social dossier already in expected final state',
     );
     return { kind: 'skipped', reason: 'ALREADY_EXPECTED_FINAL_STATE' };
-  }
-
-  if (dossier.state === DossierState.Refuse) {
-    logger.debug({ requeteId, dematSocialId: syncData.dematSocialId }, 'demat.social dossier already refused');
-    return { kind: 'skipped', reason: 'ALREADY_REFUSED' };
   }
 
   if (finalStates.has(dossier.state)) {
@@ -78,6 +60,7 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
   }
 
   await acceptDossierWithoutNotification(dossierMutationId, SIRENA_TAKEOVER_ACCEPTANCE_MOTIVATION);
+
   return { kind: 'synced' };
 }
 
