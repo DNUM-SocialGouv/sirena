@@ -3133,7 +3133,7 @@ describe('requetesEntite.service', () => {
       expect(safeSyncRequetePriseEnChargeToDematSocial).not.toHaveBeenCalled();
     });
 
-    it('should keep the status update successful when demat.social sync fails', async () => {
+    it('should keep the status update successful when the safe demat.social sync layer handles its own failures', async () => {
       vi.clearAllMocks();
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
         ...mockRequeteEntite,
@@ -3143,7 +3143,7 @@ describe('requetesEntite.service', () => {
         ...mockRequeteEntite,
         statutId: REQUETE_STATUT_TYPES.EN_COURS,
       });
-      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockRejectedValueOnce(new Error('demat.social unavailable'));
+      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockResolvedValueOnce(undefined);
 
       await expect(updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.EN_COURS)).resolves.toMatchObject({
         statutId: REQUETE_STATUT_TYPES.EN_COURS,

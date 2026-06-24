@@ -62,6 +62,16 @@ const parseNullableDate = (dateString: string | undefined | null): Date | null =
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+const shouldTriggerDematSocialTakeoverSync = (
+  previousStatut: string | null | undefined,
+  nextStatut: RequeteStatutType,
+): boolean => {
+  return (
+    previousStatut === REQUETE_STATUT_TYPES.NOUVEAU &&
+    (nextStatut === REQUETE_STATUT_TYPES.EN_COURS || nextStatut === REQUETE_STATUT_TYPES.CLOTUREE)
+  );
+};
+
 const SITUATION_INCLUDE_BASE = {
   lieuDeSurvenue: {
     include: { adresse: true },
@@ -1756,6 +1766,10 @@ export const closeRequeteForEntite = async (
     };
   });
 
+  if (shouldTriggerDematSocialTakeoverSync(requeteEntite.statutId, REQUETE_STATUT_TYPES.CLOTUREE)) {
+    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
+  }
+
   await createChangeLogForRequeteEntite({
     requeteId,
     entiteId,
@@ -1896,11 +1910,8 @@ export const updateStatusRequete = async (
     field: REQUETE_UPDATE_FIELDS.STATUS,
   });
 
-  if (
-    previousRequeteEntite?.statutId === REQUETE_STATUT_TYPES.NOUVEAU &&
-    [REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE].includes(statut)
-  ) {
-    await safeSyncRequetePriseEnChargeToDematSocial(requeteId).catch(() => undefined);
+  if (shouldTriggerDematSocialTakeoverSync(previousRequeteEntite?.statutId, statut) && !tx) {
+    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
   }
 
   return requeteEntite;
