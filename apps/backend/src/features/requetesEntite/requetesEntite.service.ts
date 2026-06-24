@@ -27,6 +27,7 @@ import { deleteFileFromMinio, getFileStream } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
+import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/closureSync/closureSync.service.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
@@ -1879,6 +1880,11 @@ export const updateStatusRequete = async (
   tx?: Prisma.TransactionClient,
 ) => {
   const db = tx ?? prisma;
+  const previousRequeteEntite = await db.requeteEntite.findUnique({
+    where: { requeteId_entiteId: { requeteId, entiteId } },
+    select: { statutId: true },
+  });
+
   const requeteEntite = await db.requeteEntite.update({
     where: { requeteId_entiteId: { requeteId, entiteId } },
     data: { statutId: statut },
@@ -1889,6 +1895,13 @@ export const updateStatusRequete = async (
     entiteId,
     field: REQUETE_UPDATE_FIELDS.STATUS,
   });
+
+  if (
+    previousRequeteEntite?.statutId === REQUETE_STATUT_TYPES.NOUVEAU &&
+    [REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE].includes(statut)
+  ) {
+    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
+  }
 
   return requeteEntite;
 };
