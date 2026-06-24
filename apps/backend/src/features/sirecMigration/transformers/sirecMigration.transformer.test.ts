@@ -99,10 +99,17 @@ describe('sirecMigration.transformer.ts', () => {
       mesures_prises: null as number | null,
       mesures_initiative: null as number | null,
       mesures_precision: null as string | null,
-      sys_last_mod_date: null as Date | null,
+      sys_last_mod_date: new Date('2024-01-17'),
+      sys_creation_date: new Date('2024-01-20'),
       type_cloture: null as number | null,
       motif_cloture: null as string | null,
       date_cloture: null as Date | null,
+      date_ecriture: null as Date | null,
+      domaine: null as number | null,
+      mandataire_judiciaire: null as number | null,
+      mandataire_precisez: null as number | null,
+      ei_avere: null as number | null,
+      num_sign_assoc: null as string | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
@@ -123,7 +130,9 @@ describe('sirecMigration.transformer.ts', () => {
       receptionTypeId: 'EMAIL',
       prioriteId: 'HAUTE',
       requeteStatutId: 'EN_COURS',
-      sysLastModDate: null,
+      sysLastModDate: new Date('2024-01-17'),
+      sysCreationDate: new Date('2024-01-20'),
+      dateDemandeDeclarant: null,
       declarant: null,
       victime: null,
       requeteEntiteIds: ['4af829ff-07c1-425d-85d6-83b5f97e4422'],
@@ -139,6 +148,9 @@ describe('sirecMigration.transformer.ts', () => {
           demarchesIds: [],
           misEnCauseData: null,
           lieuDeSurvenueData: null,
+          domainesFonctionnelsId: null,
+          estLieAuSignalement: undefined,
+          numerosSignalement: '',
         },
       ],
     });
@@ -213,6 +225,62 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.sysLastModDate).toEqual(date);
+  });
+
+  it('should map sys_creation_date to sysCreationDate', () => {
+    const date = new Date('2024-03-20');
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, sys_creation_date: date },
+    });
+
+    expect(result.sysCreationDate).toEqual(date);
+  });
+
+  it('should map date_ecriture to dateDemandeDeclarant', () => {
+    const date = new Date('2023-11-07');
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, date_ecriture: date },
+    });
+
+    expect(result.dateDemandeDeclarant).toEqual(date);
+  });
+
+  it('should map null date_ecriture to null dateDemandeDeclarant', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, date_ecriture: null },
+    });
+
+    expect(result.dateDemandeDeclarant).toBeNull();
+  });
+
+  it('should map domaine to domainesFonctionnelsId via transco', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, domaine: 88 },
+    });
+
+    expect(result.situations[0].domainesFonctionnelsId).toBe('SANITAIRE');
+  });
+
+  it('should map null domaine to null domainesFonctionnelsId', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, domaine: null },
+    });
+
+    expect(result.situations[0].domainesFonctionnelsId).toBeNull();
+  });
+
+  it('should map domaine 113 to null domainesFonctionnelsId', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, domaine: 113 },
+    });
+
+    expect(result.situations[0].domainesFonctionnelsId).toBeNull();
   });
 
   it('should create victime from transformSirecVictime when victime_non_identifiee=1', () => {
@@ -399,7 +467,7 @@ describe('sirecMigration.transformer.ts', () => {
 
       expect(result.etapes).toHaveLength(1);
       expect(result.etapes[0].nom).toBe('Examen en commission');
-      expect(result.etapes[0].createdAt).toEqual(date);
+      expect(result.etapes[0].dateRealisation).toEqual(date);
       expect(result.etapes[0].note).toBe("Date d'examen en commission : 05/09/2024");
     });
   });

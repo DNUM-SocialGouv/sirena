@@ -99,10 +99,43 @@ describe('sirecMigration.cloture.transformer.ts', () => {
       expect(result.etapes[0].note).toBeNull();
     });
 
-    it('should not set createdAt when date_cloture is null', () => {
+    it('should set createdAt to sys_last_mod_date', () => {
+      const sysDate = new Date('2024-03-10');
+      const result = transformSirecCloture(makeData({ type_cloture: 115, sys_last_mod_date: sysDate }), [ARS_1]);
+
+      expect(result.etapes[0].createdAt).toEqual(sysDate);
+    });
+
+    it('should set createdAt to null when sys_last_mod_date is null', () => {
       const result = transformSirecCloture(makeData({ type_cloture: 115 }), [ARS_1]);
 
-      expect(result.etapes[0].createdAt).toBeUndefined();
+      expect(result.etapes[0].createdAt).toBeNull();
+    });
+
+    it('should set dateRealisation from date_cloture when provided', () => {
+      const date = new Date('2024-08-20');
+      const result = transformSirecCloture(makeData({ type_cloture: 115, date_cloture: date }), [ARS_1]);
+
+      expect(result.etapes[0].dateRealisation).toEqual(date);
+    });
+
+    it('should set dateRealisation from sys_last_mod_date when date_cloture is null', () => {
+      const sysDate = new Date('2024-03-10');
+      const result = transformSirecCloture(
+        makeData({ type_cloture: 115, date_cloture: null, sys_last_mod_date: sysDate }),
+        [ARS_1],
+      );
+
+      expect(result.etapes[0].dateRealisation).toEqual(sysDate);
+    });
+
+    it('should not set dateRealisation when both date_cloture and sys_last_mod_date are null', () => {
+      const result = transformSirecCloture(
+        makeData({ type_cloture: 115, date_cloture: null, sys_last_mod_date: null }),
+        [ARS_1],
+      );
+
+      expect(result.etapes[0].dateRealisation).toBeUndefined();
     });
 
     it('should set clotureEffectiveDate from date_cloture when provided', () => {

@@ -11,11 +11,14 @@ export function transformSirecExamenCommission(
 
   if (date_commission === null) return [];
 
-  return arsEntiteIds.map((entiteId) => ({
-    nom: 'Examen en commission',
-    entiteId,
-    statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-    createdAt: date_commission,
-    note: `Date d'examen en commission : ${formatSirecDate(date_commission)}`,
-  }));
+  return arsEntiteIds.map(
+    (entiteId): SirenaEtapeData => ({
+      nom: 'Examen en commission',
+      entiteId,
+      statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+      createdAt: sirecData.reclamation.sys_creation_date,
+      dateRealisation: date_commission,
+      note: `Date d'examen en commission : ${formatSirecDate(date_commission)}`,
+    }),
+  );
 }
