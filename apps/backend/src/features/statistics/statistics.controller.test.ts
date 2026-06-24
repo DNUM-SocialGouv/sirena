@@ -44,6 +44,7 @@ vi.mock('../../middlewares/userStatus.middleware.js', () => ({
 vi.mock('../../middlewares/auth.middleware.js', () => ({
   default: (c: Context, next: Next) => {
     c.set('userId', 'test-user-id');
+    c.set('roleId', 'READER');
     return next();
   },
 }));
