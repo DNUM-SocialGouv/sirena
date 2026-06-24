@@ -7,9 +7,9 @@ import {
   updateInstruction,
 } from '../dematSocial.service.js';
 import { loadClosedRequeteForDematSocialSync } from './closedRequeteSyncData.service.js';
-import { decideDematSocialClosureTarget } from './closureReasonDecision.js';
 
 const finalStates = new Set<DossierState>([DossierState.Accepte, DossierState.Refuse, DossierState.SansSuite]);
+const SIRENA_TAKEOVER_ACCEPTANCE_MOTIVATION = 'Dossier pris en charge dans SIRENA';
 
 export type DematSocialClosureSyncResult = { kind: 'synced' } | { kind: 'skipped'; reason: string };
 
@@ -30,15 +30,6 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
     return { kind: 'skipped', reason: syncData.reason };
   }
 
-  const decision = decideDematSocialClosureTarget(syncData.closureReasons);
-  if (decision.kind === 'skip') {
-    logger.warn(
-      { requeteId, dematSocialId: syncData.dematSocialId, reason: decision.reason },
-      'Skipping demat.social closure sync anomaly',
-    );
-    return { kind: 'skipped', reason: decision.reason };
-  }
-
   const dematSocialDossier = await getRequete(syncData.dematSocialId);
   const dossier = dematSocialDossier?.dossier;
   if (!dossier) {
@@ -49,9 +40,9 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
     return { kind: 'skipped', reason: 'DOSSIER_NOT_FOUND' };
   }
 
-  if (dossier.state === decision.targetState) {
+  if (dossier.state === DossierState.Accepte) {
     logger.debug(
-      { requeteId, dematSocialId: syncData.dematSocialId, expectedState: decision.targetState },
+      { requeteId, dematSocialId: syncData.dematSocialId, expectedState: DossierState.Accepte },
       'demat.social dossier already in expected final state',
     );
     return { kind: 'skipped', reason: 'ALREADY_EXPECTED_FINAL_STATE' };
@@ -67,7 +58,7 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
       {
         requeteId,
         dematSocialId: syncData.dematSocialId,
-        expectedState: decision.targetState,
+        expectedState: DossierState.Accepte,
         currentState: dossier.state,
       },
       'demat.social dossier already in a different final state',
@@ -86,12 +77,7 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
     }
   }
 
-  if (decision.targetState === DossierState.Accepte) {
-    await acceptDossierWithoutNotification(dossierMutationId, decision.motivation);
-    return { kind: 'synced' };
-  }
-
-  await classerDossierSansSuiteWithoutNotification(dossierMutationId, decision.motivation);
+  await acceptDossierWithoutNotification(dossierMutationId, SIRENA_TAKEOVER_ACCEPTANCE_MOTIVATION);
   return { kind: 'synced' };
 }
 

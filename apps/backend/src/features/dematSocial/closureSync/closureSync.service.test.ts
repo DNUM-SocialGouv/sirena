@@ -151,16 +151,13 @@ describe('syncClosedRequeteToDematSocial', () => {
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
   });
 
-  it('accepts an en_instruction demat.social dossier when expected state is Accepté', async () => {
-    mockSyncData([REQUETE_CLOTURE_REASON.MESURES_CORRECTIVES]);
+  it('accepts an en_instruction demat.social dossier with the SIRENA takeover motivation', async () => {
+    mockSyncData([REQUETE_CLOTURE_REASON.HORS_COMPETENCE]);
     mockDossierState(DossierState.EnInstruction);
 
     await syncClosedRequeteToDematSocial('requete-1');
 
-    expect(acceptDossierWithoutNotification).toHaveBeenCalledWith(
-      'Dossier-123',
-      "Dossier clôturé dans SIRENA. Motifs de clôture : Mesures correctives prises par l'établissement / le mis en cause.",
-    );
+    expect(acceptDossierWithoutNotification).toHaveBeenCalledWith('Dossier-123', 'Dossier pris en charge dans SIRENA');
   });
 
   it('classifies an en_instruction demat.social dossier sans suite when expected state is Sans suite', async () => {
