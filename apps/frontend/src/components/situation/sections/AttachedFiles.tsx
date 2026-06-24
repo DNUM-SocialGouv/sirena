@@ -54,10 +54,7 @@ export function AttachedFiles({
     (files: File[]) => {
       setFileErrors({});
 
-      if (files.length === 0) {
-        setFaitFiles([]);
-        return;
-      }
+      if (files.length === 0) return;
 
       const newFileErrors = validateFiles(files);
       if (Object.keys(newFileErrors).length > 0) {
@@ -65,7 +62,11 @@ export function AttachedFiles({
         return;
       }
 
-      setFaitFiles(files);
+      setFaitFiles((prev) => {
+        const existingNames = new Set(prev.map((file) => file.name));
+        const newFiles = files.filter((file) => !existingNames.has(file.name));
+        return [...prev, ...newFiles];
+      });
     },
     [setFaitFiles],
   );
@@ -185,6 +186,7 @@ export function AttachedFiles({
                 const fileArray = Array.from(files);
                 handleFileSelect(fileArray.map((file) => new File([file], file.name, { type: file.type })));
               }
+              e.target.value = '';
             },
           }}
         />
