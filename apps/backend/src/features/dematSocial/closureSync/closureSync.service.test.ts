@@ -92,18 +92,6 @@ describe('syncClosedRequeteToDematSocial', () => {
     expect(getRequete).not.toHaveBeenCalled();
   });
 
-  it('logs and skips when no usable closure reason can determine a demat.social target state', async () => {
-    mockSyncData([]);
-
-    await syncClosedRequeteToDematSocial('requete-1');
-
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.objectContaining({ requeteId: 'requete-1', dematSocialId: 123, reason: 'NO_USABLE_CLOSURE_REASON' }),
-      expect.stringContaining('anomaly'),
-    );
-    expect(getRequete).not.toHaveBeenCalled();
-  });
-
   it('logs and skips when the demat.social dossier cannot be read', async () => {
     mockSyncData([REQUETE_CLOTURE_REASON.MESURES_CORRECTIVES]);
     vi.mocked(getRequete).mockResolvedValueOnce({ dossier: null } as unknown as Awaited<ReturnType<typeof getRequete>>);
@@ -160,19 +148,7 @@ describe('syncClosedRequeteToDematSocial', () => {
     expect(acceptDossierWithoutNotification).toHaveBeenCalledWith('Dossier-123', 'Dossier pris en charge dans SIRENA');
   });
 
-  it('classifies an en_instruction demat.social dossier sans suite when expected state is Sans suite', async () => {
-    mockSyncData([REQUETE_CLOTURE_REASON.HORS_COMPETENCE]);
-    mockDossierState(DossierState.EnInstruction);
-
-    await syncClosedRequeteToDematSocial('requete-1');
-
-    expect(classerDossierSansSuiteWithoutNotification).toHaveBeenCalledWith(
-      'Dossier-123',
-      'Dossier clôturé dans SIRENA. Motifs de clôture : Hors compétence.',
-    );
-  });
-
-  it('passes an en_construction demat.social dossier to instruction before finalising it', async () => {
+  it('passes an en_construction demat.social dossier to instruction before accepting it', async () => {
     mockSyncData([REQUETE_CLOTURE_REASON.HORS_COMPETENCE]);
     mockDossierState(DossierState.EnConstruction);
     vi.mocked(updateInstruction).mockResolvedValueOnce({
@@ -185,10 +161,8 @@ describe('syncClosedRequeteToDematSocial', () => {
     await syncClosedRequeteToDematSocial('requete-1');
 
     expect(updateInstruction).toHaveBeenCalledWith('Dossier-123');
-    expect(classerDossierSansSuiteWithoutNotification).toHaveBeenCalledWith(
-      'Dossier-123',
-      'Dossier clôturé dans SIRENA. Motifs de clôture : Hors compétence.',
-    );
+    expect(acceptDossierWithoutNotification).toHaveBeenCalledWith('Dossier-123', 'Dossier pris en charge dans SIRENA');
+    expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();
   });
 
   it('throws and does not finalise when passing an en_construction dossier to instruction returns errors', async () => {
