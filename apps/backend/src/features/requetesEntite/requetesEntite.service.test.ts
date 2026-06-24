@@ -1565,6 +1565,7 @@ describe('requetesEntite.service', () => {
           },
           requeteEntite: {
             ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
             update: vi.fn().mockResolvedValue(mockRequeteEntite),
           },
           uploadedFile: {
@@ -1655,6 +1656,7 @@ describe('requetesEntite.service', () => {
           },
           requeteEntite: {
             ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
             update: vi.fn().mockResolvedValue(mockRequeteEntite),
           },
         } as typeof prismaMock;
@@ -1717,7 +1719,11 @@ describe('requetesEntite.service', () => {
           ...prismaMock,
           requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue(mockEtape) },
           requeteEtapeNote: { ...prismaMock.requeteEtapeNote, create: vi.fn().mockResolvedValue(mockNote) },
-          requeteEntite: { ...prismaMock.requeteEntite, update: vi.fn().mockResolvedValue(mockRequeteEntite) },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
+            update: vi.fn().mockResolvedValue(mockRequeteEntite),
+          },
         } as typeof prismaMock;
         const result = await cb(mockTx);
         transactionEvents.push('transaction:committed');
@@ -1760,7 +1766,11 @@ describe('requetesEntite.service', () => {
           ...prismaMock,
           requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue(mockEtape) },
           requeteEtapeNote: { ...prismaMock.requeteEtapeNote, create: vi.fn().mockResolvedValue(mockNote) },
-          requeteEntite: { ...prismaMock.requeteEntite, update: vi.fn().mockResolvedValue(mockRequeteEntite) },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
+            update: vi.fn().mockResolvedValue(mockRequeteEntite),
+          },
         } as typeof prismaMock;
         return cb(mockTx);
       });
@@ -1809,6 +1819,7 @@ describe('requetesEntite.service', () => {
           },
           requeteEntite: {
             ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
             update: vi.fn().mockResolvedValue(mockRequeteEntite),
           },
         } as typeof prismaMock;
@@ -1910,6 +1921,7 @@ describe('requetesEntite.service', () => {
           },
           requeteEntite: {
             ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
             update: vi.fn().mockResolvedValue(mockRequeteEntite),
           },
           uploadedFile: {
@@ -3019,6 +3031,13 @@ describe('requetesEntite.service', () => {
     });
   });
   describe('updateStatusRequete', () => {
+    beforeEach(() => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockReset();
+      vi.mocked(prisma.requeteEntite.update).mockReset();
+      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockReset();
+      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockResolvedValue(undefined);
+    });
+
     it('should update the status of the requeteEntite', async () => {
       vi.clearAllMocks();
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
