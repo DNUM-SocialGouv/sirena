@@ -1,6 +1,6 @@
 import { prisma } from '../../../libs/prisma.js';
 
-export type ClosedRequeteForDematSocialSync =
+export type RequetePriseEnChargeForDematSocialSync =
   | {
       kind: 'candidate';
       requeteId: string;
@@ -11,7 +11,9 @@ export type ClosedRequeteForDematSocialSync =
       reason: 'REQUETE_NOT_FOUND' | 'REQUETE_WITHOUT_DEMAT_SOCIAL_ID';
     };
 
-export async function loadClosedRequeteForDematSocialSync(requeteId: string): Promise<ClosedRequeteForDematSocialSync> {
+export async function loadRequetePriseEnChargeForDematSocialSync(
+  requeteId: string,
+): Promise<RequetePriseEnChargeForDematSocialSync> {
   const requete = await prisma.requete.findUnique({
     where: { id: requeteId },
     select: {
@@ -34,3 +36,6 @@ export async function loadClosedRequeteForDematSocialSync(requeteId: string): Pr
     dematSocialId: requete.dematSocialId,
   };
 }
+
+export type ClosedRequeteForDematSocialSync = RequetePriseEnChargeForDematSocialSync;
+export const loadClosedRequeteForDematSocialSync = loadRequetePriseEnChargeForDematSocialSync;

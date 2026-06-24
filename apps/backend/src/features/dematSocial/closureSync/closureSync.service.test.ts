@@ -6,8 +6,11 @@ import {
   getRequete,
   updateInstruction,
 } from '../dematSocial.service.js';
-import { loadClosedRequeteForDematSocialSync } from './closedRequeteSyncData.service.js';
-import { safeSyncClosedRequeteToDematSocial, syncClosedRequeteToDematSocial } from './closureSync.service.js';
+import { loadRequetePriseEnChargeForDematSocialSync } from './closedRequeteSyncData.service.js';
+import {
+  safeSyncRequetePriseEnChargeToDematSocial,
+  syncRequetePriseEnChargeToDematSocial,
+} from './closureSync.service.js';
 
 const logger = {
   info: vi.fn(),
@@ -27,7 +30,7 @@ vi.mock('../../../libs/asyncLocalStorage.js', () => ({
 }));
 
 vi.mock('./closedRequeteSyncData.service.js', () => ({
-  loadClosedRequeteForDematSocialSync: vi.fn(),
+  loadRequetePriseEnChargeForDematSocialSync: vi.fn(),
 }));
 
 vi.mock('../dematSocial.service.js', () => ({
@@ -38,7 +41,7 @@ vi.mock('../dematSocial.service.js', () => ({
 }));
 
 const mockSyncData = () => {
-  vi.mocked(loadClosedRequeteForDematSocialSync).mockResolvedValueOnce({
+  vi.mocked(loadRequetePriseEnChargeForDematSocialSync).mockResolvedValueOnce({
     kind: 'candidate',
     requeteId: 'requete-1',
     dematSocialId: 123,
@@ -55,18 +58,18 @@ const mockDossierState = (state: DossierState) => {
   } as Awaited<ReturnType<typeof getRequete>>);
 };
 
-describe('syncClosedRequeteToDematSocial', () => {
+describe('syncRequetePriseEnChargeToDematSocial', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('skips when the Requête SIRENA is not eligible for demat.social sync', async () => {
-    vi.mocked(loadClosedRequeteForDematSocialSync).mockResolvedValueOnce({
+    vi.mocked(loadRequetePriseEnChargeForDematSocialSync).mockResolvedValueOnce({
       kind: 'skip',
       reason: 'REQUETE_WITHOUT_DEMAT_SOCIAL_ID',
     });
 
-    await syncClosedRequeteToDematSocial('requete-1');
+    await syncRequetePriseEnChargeToDematSocial('requete-1');
 
     expect(getRequete).not.toHaveBeenCalled();
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
@@ -77,7 +80,7 @@ describe('syncClosedRequeteToDematSocial', () => {
     mockSyncData();
     vi.mocked(getRequete).mockResolvedValueOnce({ dossier: null } as unknown as Awaited<ReturnType<typeof getRequete>>);
 
-    await syncClosedRequeteToDematSocial('requete-1');
+    await syncRequetePriseEnChargeToDematSocial('requete-1');
 
     expect(logger.warn).toHaveBeenCalledWith(
       expect.objectContaining({ requeteId: 'requete-1', dematSocialId: 123 }),
@@ -90,7 +93,7 @@ describe('syncClosedRequeteToDematSocial', () => {
     mockSyncData();
     mockDossierState(DossierState.Accepte);
 
-    await syncClosedRequeteToDematSocial('requete-1');
+    await syncRequetePriseEnChargeToDematSocial('requete-1');
 
     expect(getRequete).toHaveBeenCalledWith(123);
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
@@ -101,7 +104,7 @@ describe('syncClosedRequeteToDematSocial', () => {
     mockSyncData();
     mockDossierState(DossierState.Refuse);
 
-    await syncClosedRequeteToDematSocial('requete-1');
+    await syncRequetePriseEnChargeToDematSocial('requete-1');
 
     expect(logger.warn).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -120,7 +123,7 @@ describe('syncClosedRequeteToDematSocial', () => {
     mockSyncData();
     mockDossierState(DossierState.SansSuite);
 
-    await syncClosedRequeteToDematSocial('requete-1');
+    await syncRequetePriseEnChargeToDematSocial('requete-1');
 
     expect(logger.warn).toHaveBeenCalledWith(
       expect.objectContaining({ requeteId: 'requete-1', dematSocialId: 123, expectedState: DossierState.Accepte }),
@@ -133,7 +136,7 @@ describe('syncClosedRequeteToDematSocial', () => {
     mockSyncData();
     mockDossierState(DossierState.EnInstruction);
 
-    await syncClosedRequeteToDematSocial('requete-1');
+    await syncRequetePriseEnChargeToDematSocial('requete-1');
 
     expect(acceptDossierWithoutNotification).toHaveBeenCalledWith('Dossier-123', 'Dossier pris en charge dans SIRENA');
   });
@@ -148,7 +151,7 @@ describe('syncClosedRequeteToDematSocial', () => {
       },
     } as Awaited<ReturnType<typeof updateInstruction>>);
 
-    await syncClosedRequeteToDematSocial('requete-1');
+    await syncRequetePriseEnChargeToDematSocial('requete-1');
 
     expect(updateInstruction).toHaveBeenCalledWith('Dossier-123');
     expect(acceptDossierWithoutNotification).toHaveBeenCalledWith('Dossier-123', 'Dossier pris en charge dans SIRENA');
@@ -162,23 +165,23 @@ describe('syncClosedRequeteToDematSocial', () => {
       dossierPasserEnInstruction: { dossier: null, errors: [{ message: 'Transition impossible' }] },
     } as unknown as Awaited<ReturnType<typeof updateInstruction>>);
 
-    await expect(syncClosedRequeteToDematSocial('requete-1')).rejects.toThrow('Transition impossible');
+    await expect(syncRequetePriseEnChargeToDematSocial('requete-1')).rejects.toThrow('Transition impossible');
 
     expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
   });
 });
 
-describe('safeSyncClosedRequeteToDematSocial', () => {
+describe('safeSyncRequetePriseEnChargeToDematSocial', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('logs and reports sync errors without throwing', async () => {
     const error = new Error('demat.social unavailable');
-    vi.mocked(loadClosedRequeteForDematSocialSync).mockRejectedValueOnce(error);
+    vi.mocked(loadRequetePriseEnChargeForDematSocialSync).mockRejectedValueOnce(error);
 
-    await expect(safeSyncClosedRequeteToDematSocial('requete-1')).resolves.toBeUndefined();
+    await expect(safeSyncRequetePriseEnChargeToDematSocial('requete-1')).resolves.toBeUndefined();
 
     expect(logger.error).toHaveBeenCalledWith(
       expect.objectContaining({ err: error, requeteId: 'requete-1' }),

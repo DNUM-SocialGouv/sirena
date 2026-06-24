@@ -1683,7 +1683,7 @@ describe('requetesEntite.service', () => {
       });
     });
 
-    it('should sync demat.social after the closure transaction succeeds', async () => {
+    it('should not sync demat.social from the closure-only path', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
       vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
         { id: 'reason123', label: 'Reason 123' },
@@ -1725,11 +1725,10 @@ describe('requetesEntite.service', () => {
 
       await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01');
 
-      expect(safeSyncClosedRequeteToDematSocial).toHaveBeenCalledWith('req123');
-      expect(transactionEvents).toEqual(['transaction:start', 'transaction:committed', 'sync']);
+      expect(transactionEvents).toEqual(['transaction:start', 'transaction:committed']);
     });
 
-    it('should not fail closure when demat.social sync fails', async () => {
+    it('should close requete', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
       vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
         { id: 'reason123', label: 'Reason 123' },
@@ -1761,8 +1760,6 @@ describe('requetesEntite.service', () => {
         } as typeof prismaMock;
         return cb(mockTx);
       });
-      vi.mocked(safeSyncClosedRequeteToDematSocial).mockRejectedValueOnce(new Error('demat.social unavailable'));
-
       await expect(
         closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01'),
       ).resolves.toMatchObject({

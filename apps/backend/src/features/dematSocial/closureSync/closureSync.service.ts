@@ -1,16 +1,16 @@
 import { DossierState } from '../../../graphql/graphql.js';
 import { getLoggerStore, getSentryStore } from '../../../libs/asyncLocalStorage.js';
 import { acceptDossierWithoutNotification, getRequete, updateInstruction } from '../dematSocial.service.js';
-import { loadClosedRequeteForDematSocialSync } from './closedRequeteSyncData.service.js';
+import { loadRequetePriseEnChargeForDematSocialSync } from './closedRequeteSyncData.service.js';
 
 const finalStates = new Set<DossierState>([DossierState.Accepte, DossierState.Refuse, DossierState.SansSuite]);
 const SIRENA_TAKEOVER_ACCEPTANCE_MOTIVATION = 'Dossier pris en charge dans SIRENA';
 
 export type DematSocialClosureSyncResult = { kind: 'synced' } | { kind: 'skipped'; reason: string };
 
-export async function syncClosedRequeteToDematSocial(requeteId: string): Promise<DematSocialClosureSyncResult> {
+export async function syncRequetePriseEnChargeToDematSocial(requeteId: string): Promise<DematSocialClosureSyncResult> {
   const logger = getLoggerStore();
-  const syncData = await loadClosedRequeteForDematSocialSync(requeteId);
+  const syncData = await loadRequetePriseEnChargeForDematSocialSync(requeteId);
 
   if (syncData.kind === 'skip') {
     logger.debug({ requeteId, reason: syncData.reason }, 'Skipping demat.social closure sync');
@@ -64,13 +64,16 @@ export async function syncClosedRequeteToDematSocial(requeteId: string): Promise
   return { kind: 'synced' };
 }
 
-export async function safeSyncClosedRequeteToDematSocial(requeteId: string): Promise<void> {
+export async function safeSyncRequetePriseEnChargeToDematSocial(requeteId: string): Promise<void> {
   try {
-    await syncClosedRequeteToDematSocial(requeteId);
+    await syncRequetePriseEnChargeToDematSocial(requeteId);
   } catch (err) {
     const logger = getLoggerStore();
     const sentry = getSentryStore();
-    logger.error({ err, requeteId }, 'Error during demat.social closure sync');
+    logger.error({ err, requeteId }, 'Error during demat.social takeover sync');
     sentry.captureException(err);
   }
 }
+
+export const syncClosedRequeteToDematSocial = syncRequetePriseEnChargeToDematSocial;
+export const safeSyncClosedRequeteToDematSocial = safeSyncRequetePriseEnChargeToDematSocial;
