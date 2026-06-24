@@ -25,9 +25,11 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       sirenaRequete = await tx.requete.create({
         data: {
           id: data.sirenaId,
+          createdAt: data.sysCreationDate,
           sirecId: data.sirecId,
           receptionDate: data.receptionDate,
           receptionTypeId: data.receptionTypeId,
+          dateDemandeDeclarant: data.dateDemandeDeclarant,
         },
         select: { id: true },
       });
@@ -132,6 +134,9 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
           misEnCauseId,
           demarchesEngageesId: demarchesEngagees.id,
           requeteId: sirenaRequete.id,
+          domainesFonctionnelsId: situationData.domainesFonctionnelsId,
+          estLieAuSignalement: situationData.estLieAuSignalement,
+          numerosSignalement: situationData.numerosSignalement,
         },
         select: { id: true },
       });
@@ -168,15 +173,24 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
       })),
     });
 
-    for (const { nom, entiteId, statutId, createdAt, note, clotureReason, clotureEffectiveDate } of data.etapes) {
-      const etapeCreatedAt = createdAt ?? data.sysLastModDate ?? undefined;
+    for (const {
+      nom,
+      entiteId,
+      statutId,
+      createdAt,
+      note,
+      clotureReason,
+      clotureEffectiveDate,
+      dateRealisation,
+    } of data.etapes) {
+      const etapeCreatedAt = createdAt ?? data.sysCreationDate;
       await tx.requeteEtape.create({
         data: {
           requeteId: sirenaRequete.id,
           entiteId,
           statutId,
           nom,
-          ...(etapeCreatedAt !== undefined ? { createdAt: etapeCreatedAt } : {}),
+          createdAt: etapeCreatedAt,
           ...(note !== null
             ? {
                 notes: {
@@ -186,6 +200,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
             : {}),
           ...(clotureReason !== undefined ? { clotureReason: { connect: [{ id: clotureReason }] } } : {}),
           ...(clotureEffectiveDate !== undefined ? { clotureEffectiveDate } : {}),
+          ...(dateRealisation !== undefined ? { dateRealisation } : {}),
         },
       });
     }
@@ -193,6 +208,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     if (data.declarant !== null && !data.declarant.estVictime) {
       await tx.personneConcernee.create({
         data: {
+          createdAt: data.sysCreationDate,
           declarantDeId: sirenaRequete.id,
           estVictime: data.declarant.estVictime,
           veutGarderAnonymat: data.declarant.veutGarderAnonymat,
@@ -230,10 +246,12 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
     if (data.victime !== null || data.declarant?.estVictime) {
       await tx.personneConcernee.create({
         data: {
+          createdAt: data.sysCreationDate,
           participantDeId: sirenaRequete.id,
           estVictime: true,
           commentaire: data.victime?.commentaire ?? '',
           ageId: data.victime?.ageId ?? null,
+          mesureProtection: data.victime?.mesureProtection ?? null,
           ...(data.declarant?.estVictime && { declarantDeId: sirenaRequete.id }),
           ...(data.victime?.adresse !== null && data.victime?.adresse !== undefined
             ? {
@@ -250,6 +268,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
             ? {
                 identite: {
                   create: {
+                    createdAt: data.sysCreationDate,
                     nom: data.victime.identite.nom ?? '',
                     prenom: data.victime.identite.prenom ?? '',
                     email: data.victime.identite.email ?? '',
