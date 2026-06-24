@@ -1,0 +1,31 @@
+name: ERD diagram
+
+# Runs only on PRs that touch the Prisma schema: the committed diagram
+# (docs/prisma.svg) must then be regenerated via `pnpm db:erd`.
+on:
+  pull_request:
+    paths:
+      - packages/db/prisma/schema.prisma
+
+concurrency:
+  group: erd-diagram-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  erd-up-to-date:
+    name: ERD diagram up to date
+    runs-on: ubuntu-latest
+    # Pure Node check (no install, no browser): docs/prisma.svg must carry
+    # the current schema fingerprint.
+    steps:
+      - uses: actions/checkout@1cce3390c2bfda521930d01229c073c7ff920824 # v6
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .node-version
+      - name: Verify docs/prisma.svg is up to date with the Prisma schema
+        run: node packages/db/scripts/erd/check.mjs
