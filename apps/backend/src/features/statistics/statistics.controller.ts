@@ -1,9 +1,10 @@
 import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
-import { ERROR_KIND } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES_READ } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { getEntiteById } from '../entites/entites.service.js';
 import { generateExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
@@ -15,6 +16,7 @@ const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
   .use(userStatusMiddleware)
+  .use(roleMiddleware([...ROLES_READ]))
   .use(entitesMiddleware)
   .use(async (c, next) => {
     const entiteIds = c.get('entiteIds');
