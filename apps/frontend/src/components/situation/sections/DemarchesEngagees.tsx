@@ -75,7 +75,7 @@ export function DemarchesEngagees({ formData, setFormData }: DemarchesEngageesPr
               <div className="fr-col-12 fr-col-md-6">
                 <Input
                   label="Date de prise de contact"
-                  hintText="Format attendu JJ/MM/AAAA"
+                  hintText="Format attendu : JJ/MM/AAAA"
                   nativeInputProps={{
                     type: 'date',
                     value: formData.demarchesEngagees?.dateContactResponsables || '',
@@ -187,7 +187,7 @@ export function DemarchesEngagees({ formData, setFormData }: DemarchesEngageesPr
               <div className="fr-col-12 fr-col-md-6">
                 <Input
                   label="Date du dépôt de plainte"
-                  hintText="Format attendu JJ/MM/AAAA"
+                  hintText="Format attendu : JJ/MM/AAAA"
                   nativeInputProps={{
                     type: 'date',
                     value: formData.demarchesEngagees?.dateDepotPlainte || '',
