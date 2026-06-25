@@ -13,6 +13,7 @@ import {
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { isUserOwner, setEtapeFile } from '../uploadedFiles/uploadedFiles.service.js';
 import {
+  addClotureEtapeFiles,
   createDefaultRequeteEtapes,
   createProcessingEtape,
   deleteRequeteEtape,
@@ -778,6 +779,51 @@ describe('RequeteEtapes.service.ts', () => {
 
       expect(result).toBeNull();
       expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('addClotureEtapeFiles()', () => {
+    const closureEtape: RequeteEtape = { ...requeteEtape, statutId: 'CLOTUREE' };
+
+    it('should attach files at the step level after ownership check on a closure step', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(closureEtape).mockResolvedValueOnce(closureEtape);
+      vi.mocked(isUserOwner).mockResolvedValueOnce(true);
+
+      const result = await addClotureEtapeFiles('requeteEtapeId', 'userId', 'entiteId', ['file1', 'file2']);
+
+      expect(isUserOwner).toHaveBeenCalledWith('userId', ['file1', 'file2']);
+      expect(setEtapeFile).toHaveBeenCalledWith('requeteEtapeId', ['file1', 'file2'], 'entiteId', 'userId');
+      expect(result).toEqual(closureEtape);
+    });
+
+    it('should return null if RequeteEtape not found', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(null);
+
+      const result = await addClotureEtapeFiles('999', 'userId', 'entiteId', ['file1']);
+
+      expect(result).toBeNull();
+      expect(isUserOwner).not.toHaveBeenCalled();
+      expect(setEtapeFile).not.toHaveBeenCalled();
+    });
+
+    it('should throw EtapeNotEditableError when the step is not a closure step', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(requeteEtape);
+
+      await expect(addClotureEtapeFiles('requeteEtapeId', 'userId', 'entiteId', ['file1'])).rejects.toBeInstanceOf(
+        EtapeNotEditableError,
+      );
+      expect(isUserOwner).not.toHaveBeenCalled();
+      expect(setEtapeFile).not.toHaveBeenCalled();
+    });
+
+    it('should throw FilesNotOwnedError when the user does not own the files', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(closureEtape);
+      vi.mocked(isUserOwner).mockResolvedValueOnce(false);
+
+      await expect(addClotureEtapeFiles('requeteEtapeId', 'userId', 'entiteId', ['file1'])).rejects.toBeInstanceOf(
+        FilesNotOwnedError,
+      );
+      expect(setEtapeFile).not.toHaveBeenCalled();
     });
   });
 

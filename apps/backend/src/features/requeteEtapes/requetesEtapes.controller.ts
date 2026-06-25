@@ -33,6 +33,7 @@ import {
 } from '../requetesEntite/requetesEntite.service.js';
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
 import {
+  addClotureFilesRoute,
   addProcessingStepRoute,
   deleteRequeteEtapeRoute,
   sendAcknowledgmentRoute,
@@ -42,6 +43,7 @@ import {
   updateRequeteEtapeStatutRoute,
 } from './requetesEtapes.route.js';
 import {
+  AddClotureFilesSchema,
   AddProcessingStepBodySchema,
   SendAcknowledgmentBodySchema,
   UpdateProcessingStepBodySchema,
@@ -50,6 +52,7 @@ import {
   UpdateRequeteEtapeStatutSchema,
 } from './requetesEtapes.schema.js';
 import {
+  addClotureEtapeFiles,
   createProcessingEtape,
   deleteRequeteEtape,
   EtapeNotEditableError,
@@ -321,6 +324,73 @@ const app = factoryWithLogs
       return c.json({ data: updated });
     },
   )
+  .post('/:id/cloture-files', addClotureFilesRoute, zValidator('json', AddClotureFilesSchema), async (c) => {
+    const logger = c.get('logger');
+    const { id } = c.req.param();
+    const body = c.req.valid('json');
+    const userId = c.get('userId');
+    const topEntiteId = c.get('topEntiteId');
+    if (!topEntiteId) {
+      throwHTTPException400BadRequest('You are not allowed to add files without topEntiteId.', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+    }
+
+    const requeteEtape = await getRequeteEtapeById(id);
+    if (!requeteEtape) {
+      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
+
+    if (topEntiteId !== requeteEtape.entiteId) {
+      throwHTTPException403Forbidden('You are not allowed to add files to this requete etape', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+    }
+
+    const hasAccessToReq = await hasAccessToRequete({
+      requeteId: requeteEtape.requeteId,
+      entiteId: topEntiteId,
+    });
+
+    if (!hasAccessToReq) {
+      throwHTTPException403Forbidden('You are not allowed to add files to this requete etape', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+    }
+
+    let updated: Awaited<ReturnType<typeof addClotureEtapeFiles>>;
+    try {
+      updated = await addClotureEtapeFiles(id, userId, topEntiteId, body.fileIds);
+    } catch (err) {
+      if (err instanceof EtapeNotEditableError) {
+        throwHTTPException403Forbidden('Cette étape ne permet pas l’ajout de fichiers.', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+      if (err instanceof FilesNotOwnedError) {
+        throwHTTPException403Forbidden('You are not allowed to add these files', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+      throw err;
+    }
+
+    if (!updated) {
+      throwHTTPException404NotFound('RequeteEtape not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+    }
+
+    logger.info(
+      { requeteEtapeId: id, userId, fileCount: body.fileIds.length },
+      'Closure files attached to requete etape',
+    );
+
+    return c.json({ data: updated });
+  })
   .patch(
     '/:id/statut',
     updateRequeteEtapeStatutRoute,
