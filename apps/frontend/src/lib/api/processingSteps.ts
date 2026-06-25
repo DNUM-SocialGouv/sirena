@@ -10,14 +10,54 @@ export async function fetchProcessingSteps(requestId: string) {
   return res.json();
 }
 
+export type ProcessingStepStatut = Exclude<RequeteEtapeStatutType, 'EN_COURS' | 'CLOTUREE'>;
+
+export type ProcessingStepNoteInput = {
+  id?: string;
+  texte: string;
+};
+
 export type AddProcessingStepData = {
   nom: string;
+  statutId?: ProcessingStepStatut;
+  dateRealisation?: string;
+  notes?: { texte: string }[];
+  fileIds?: string[];
 };
 
 export async function addProcessingStep(requestId: string, data: AddProcessingStepData) {
   const res = await client['requete-etapes'][':id']['processing-steps'].$post({
     param: { id: requestId },
-    json: { nom: data.nom },
+    json: {
+      nom: data.nom,
+      ...(data.statutId ? { statutId: data.statutId } : {}),
+      ...(data.dateRealisation ? { dateRealisation: data.dateRealisation } : {}),
+      notes: data.notes ?? [],
+      fileIds: data.fileIds ?? [],
+    },
+  });
+  await handleRequestErrors(res);
+  return res.json();
+}
+
+export type UpdateProcessingStepData = {
+  nom: string;
+  statutId?: ProcessingStepStatut | null;
+  dateRealisation?: string;
+  notes: ProcessingStepNoteInput[];
+  fileIds: string[];
+};
+
+export async function updateProcessingStep(stepId: string, data: UpdateProcessingStepData) {
+  const res = await client['requete-etapes'][':id'].$patch({
+    param: { id: stepId },
+    json: {
+      nom: data.nom,
+      statutId: data.statutId ?? null,
+      ...(data.dateRealisation ? { dateRealisation: data.dateRealisation } : {}),
+      notes: data.notes,
+      fileIds: data.fileIds,
+    },
   });
   await handleRequestErrors(res);
   return res.json();
