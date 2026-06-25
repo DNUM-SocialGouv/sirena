@@ -124,6 +124,10 @@ export const UpdateProcessingStepBodySchema = z
   })
   .refine(requireDateWhenFait, { path: ['dateRealisation'], message: 'La date de réalisation est obligatoire.' });
 
+export const AddClotureFilesSchema = z.object({
+  fileIds: fileIdsSchema.min(1, { message: 'Vous devez sélectionner au moins un fichier.' }),
+});
+
 export const GetRequeteEtapesQuerySchema = paginationQueryParamsSchema(columns);
 
 export const UpdateRequeteEtapeStatutSchema = z.object({
