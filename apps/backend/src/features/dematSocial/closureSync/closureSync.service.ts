@@ -74,6 +74,3 @@ export async function safeSyncRequetePriseEnChargeToDematSocial(requeteId: strin
     sentry.captureException(err);
   }
 }
-
-export const syncClosedRequeteToDematSocial = syncRequetePriseEnChargeToDematSocial;
-export const safeSyncClosedRequeteToDematSocial = safeSyncRequetePriseEnChargeToDematSocial;

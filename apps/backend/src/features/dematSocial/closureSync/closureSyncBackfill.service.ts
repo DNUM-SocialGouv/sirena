@@ -53,5 +53,3 @@ export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<Dem
   logger.info(result, 'Completed demat.social taken-over Requête backfill');
   return result;
 }
-
-export const backfillClosedRequetesToDematSocial = backfillRequetesPrisesEnChargeToDematSocial;

@@ -36,6 +36,3 @@ export async function loadRequetePriseEnChargeForDematSocialSync(
     dematSocialId: requete.dematSocialId,
   };
 }
-
-export type ClosedRequeteForDematSocialSync = RequetePriseEnChargeForDematSocialSync;
-export const loadClosedRequeteForDematSocialSync = loadRequetePriseEnChargeForDematSocialSync;

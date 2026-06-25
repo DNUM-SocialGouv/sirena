@@ -49,7 +49,6 @@ vi.mock('../changelog/changelog.service.js', () => ({
 }));
 
 vi.mock('../dematSocial/closureSync/closureSync.service.js', () => ({
-  safeSyncClosedRequeteToDematSocial: vi.fn().mockResolvedValue(undefined),
   safeSyncRequetePriseEnChargeToDematSocial: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -86,10 +85,7 @@ import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES }
 import { getFileStream } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import {
-  safeSyncClosedRequeteToDematSocial,
-  safeSyncRequetePriseEnChargeToDematSocial,
-} from '../dematSocial/closureSync/closureSync.service.js';
+import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/closureSync/closureSync.service.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
 import { RequetePdfBuilder } from './requetesEntite.pdf.builder.js';
 
@@ -1689,7 +1685,7 @@ describe('requetesEntite.service', () => {
       });
     });
 
-    it('should not sync demat.social from the closure-only path', async () => {
+    it('should not sync demat.social when closing a RequêteEntité that was already in progress', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
       vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
         { id: 'reason123', label: 'Reason 123' },
@@ -1729,7 +1725,7 @@ describe('requetesEntite.service', () => {
         transactionEvents.push('transaction:committed');
         return result;
       });
-      vi.mocked(safeSyncClosedRequeteToDematSocial).mockImplementation(async () => {
+      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockImplementation(async () => {
         transactionEvents.push('sync');
       });
 
