@@ -16,7 +16,7 @@
     "db:generate": "pnpm --filter @sirena/db generate",
     "db:migrate": "pnpm --filter @sirena/db migrate dev",
     "op:import:dematsocial": "tsx src/scripts/import_dematsocial.ts",
-    "op:backfill:taken-over-requetes:dematsocial": "tsx src/scripts/backfill_closed_requetes_dematsocial.ts",
+    "op:backfill:taken-over-requetes:dematsocial": "tsx src/scripts/backfill_taken_over_requetes_dematsocial.ts",
     "op:import:geodata": "tsx src/scripts/import_geodata.ts",
     "op:manage-api-keys": "tsx src/scripts/manage-api-keys.ts",
     "op:file-integrity": "tsx src/scripts/file-integrity.ts",

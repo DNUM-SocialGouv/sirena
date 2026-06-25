@@ -1,16 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DossierState } from '../../../graphql/graphql.js';
-import {
-  acceptDossierWithoutNotification,
-  classerDossierSansSuiteWithoutNotification,
-  getRequete,
-  updateInstruction,
-} from '../dematSocial.service.js';
-import { loadRequetePriseEnChargeForDematSocialSync } from './closedRequeteSyncData.service.js';
+import { acceptDossierWithoutNotification, getRequete, updateInstruction } from '../dematSocial.service.js';
+import { loadRequetePriseEnChargeForDematSocialSync } from './takeoverRequeteSyncData.service.js';
 import {
   safeSyncRequetePriseEnChargeToDematSocial,
   syncRequetePriseEnChargeToDematSocial,
-} from './closureSync.service.js';
+} from './takeoverSync.service.js';
 
 const logger = {
   info: vi.fn(),
@@ -29,13 +24,12 @@ vi.mock('../../../libs/asyncLocalStorage.js', () => ({
   getSentryStore: vi.fn(() => sentry),
 }));
 
-vi.mock('./closedRequeteSyncData.service.js', () => ({
+vi.mock('./takeoverRequeteSyncData.service.js', () => ({
   loadRequetePriseEnChargeForDematSocialSync: vi.fn(),
 }));
 
 vi.mock('../dematSocial.service.js', () => ({
   acceptDossierWithoutNotification: vi.fn(),
-  classerDossierSansSuiteWithoutNotification: vi.fn(),
   getRequete: vi.fn(),
   updateInstruction: vi.fn(),
 }));
@@ -77,7 +71,6 @@ describe('syncRequetePriseEnChargeToDematSocial', () => {
     );
     expect(getRequete).not.toHaveBeenCalled();
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
-    expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();
   });
 
   it('logs and skips when the demat.social dossier cannot be read', async () => {
@@ -101,7 +94,6 @@ describe('syncRequetePriseEnChargeToDematSocial', () => {
 
     expect(getRequete).toHaveBeenCalledWith(123);
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
-    expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();
   });
 
   it('logs an anomaly and does not overwrite a refused demat.social dossier', async () => {
@@ -120,7 +112,6 @@ describe('syncRequetePriseEnChargeToDematSocial', () => {
       expect.stringContaining('different final state'),
     );
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
-    expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();
   });
 
   it('logs an anomaly and does not overwrite a different final demat.social state', async () => {
@@ -159,7 +150,6 @@ describe('syncRequetePriseEnChargeToDematSocial', () => {
 
     expect(updateInstruction).toHaveBeenCalledWith('Dossier-123');
     expect(acceptDossierWithoutNotification).toHaveBeenCalledWith('Dossier-123', 'Dossier pris en charge dans SIRENA');
-    expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();
   });
 
   it('throws and does not finalise when passing an en_construction dossier to instruction returns errors', async () => {
@@ -171,7 +161,6 @@ describe('syncRequetePriseEnChargeToDematSocial', () => {
 
     await expect(syncRequetePriseEnChargeToDematSocial('requete-1')).rejects.toThrow('Transition impossible');
 
-    expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
   });
 });

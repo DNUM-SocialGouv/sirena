@@ -1,7 +1,7 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
 import { prisma } from '../../../libs/prisma.js';
-import { type DematSocialTakeoverSyncResult, syncRequetePriseEnChargeToDematSocial } from './closureSync.service.js';
+import { type DematSocialTakeoverSyncResult, syncRequetePriseEnChargeToDematSocial } from './takeoverSync.service.js';
 
 export type DematSocialTakeoverBackfillResult = {
   found: number;

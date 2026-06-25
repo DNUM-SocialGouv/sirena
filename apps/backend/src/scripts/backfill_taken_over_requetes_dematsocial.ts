@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/node';
 import { connection as redisConnection } from '../config/redis.js';
-import { backfillRequetesPrisesEnChargeToDematSocial } from '../features/dematSocial/closureSync/closureSyncBackfill.service.js';
+import { backfillRequetesPrisesEnChargeToDematSocial } from '../features/dematSocial/takeoverSync/takeoverSyncBackfill.service.js';
 import { createDefaultLogger } from '../helpers/pino.js';
 import { abortControllerStorage, loggerStorage, sentryStorage } from '../libs/asyncLocalStorage.js';
 import '../libs/instrument.js';

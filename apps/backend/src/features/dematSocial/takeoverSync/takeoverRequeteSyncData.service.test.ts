@@ -1,7 +1,7 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../../libs/__mocks__/prisma.js';
-import { loadRequetePriseEnChargeForDematSocialSync } from './closedRequeteSyncData.service.js';
+import { loadRequetePriseEnChargeForDematSocialSync } from './takeoverRequeteSyncData.service.js';
 
 vi.mock('../../../libs/prisma.js', () => ({ prisma }));
 

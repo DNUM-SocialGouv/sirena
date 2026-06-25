@@ -1,7 +1,7 @@
 import { DossierState } from '../../../graphql/graphql.js';
 import { getLoggerStore, getSentryStore } from '../../../libs/asyncLocalStorage.js';
 import { acceptDossierWithoutNotification, getRequete, updateInstruction } from '../dematSocial.service.js';
-import { loadRequetePriseEnChargeForDematSocialSync } from './closedRequeteSyncData.service.js';
+import { loadRequetePriseEnChargeForDematSocialSync } from './takeoverRequeteSyncData.service.js';
 
 const finalStates = new Set<DossierState>([DossierState.Accepte, DossierState.Refuse, DossierState.SansSuite]);
 const SIRENA_TAKEOVER_ACCEPTANCE_MOTIVATION = 'Dossier pris en charge dans SIRENA';

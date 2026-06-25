@@ -1,8 +1,8 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../../libs/prisma.js';
-import { syncRequetePriseEnChargeToDematSocial } from './closureSync.service.js';
-import { backfillRequetesPrisesEnChargeToDematSocial } from './closureSyncBackfill.service.js';
+import { syncRequetePriseEnChargeToDematSocial } from './takeoverSync.service.js';
+import { backfillRequetesPrisesEnChargeToDematSocial } from './takeoverSyncBackfill.service.js';
 
 const logger = {
   info: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock('../../../libs/prisma.js', () => ({
   },
 }));
 
-vi.mock('./closureSync.service.js', () => ({
+vi.mock('./takeoverSync.service.js', () => ({
   syncRequetePriseEnChargeToDematSocial: vi.fn(),
 }));
 
