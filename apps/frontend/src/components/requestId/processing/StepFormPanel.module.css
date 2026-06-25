@@ -1,0 +1,98 @@
+.topActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.fieldBlock {
+  margin-top: 1.5rem;
+}
+
+.attachmentSection {
+  margin-top: 1.5rem;
+}
+
+.attachmentTitle {
+  margin-bottom: 0.75rem;
+}
+
+.drawerDropZone {
+  margin-top: 0;
+}
+
+.selectedFilesList {
+  margin-top: 1rem;
+}
+
+.errorText {
+  color: var(--text-default-error);
+}
+
+.notesSection {
+  margin-top: 1.5rem;
+}
+
+.noteCard {
+  margin-bottom: 1.5rem;
+}
+
+.noteHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.noteHeaderLabel {
+  font-weight: 700;
+  margin: 0;
+}
+
+.readOnlyNote {
+  border: 1px solid var(--border-default-grey);
+  border-radius: 0.5rem;
+  background: var(--background-alt-grey);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.readOnlyNoteLabel {
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+
+.readOnlyNoteText {
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.existingFilesList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.existingFileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+
+.lockHint {
+  color: var(--text-mention-grey);
+}
+
+.footerActions {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-default-grey);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
