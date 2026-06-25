@@ -110,6 +110,7 @@ const updateFilesWithRelation = async (
         select: {
           id: true,
           requeteId: true,
+          requeteEtapeId: true,
           requeteEtapeNoteId: true,
           faitSituationId: true,
           demarchesEngageesId: true,
@@ -136,6 +137,7 @@ const updateFilesWithRelation = async (
           action: ChangeLogAction.UPDATED,
           before: {
             requeteId: fileBefore.requeteId,
+            requeteEtapeId: fileBefore.requeteEtapeId,
             requeteEtapeNoteId: fileBefore.requeteEtapeNoteId,
             faitSituationId: fileBefore.faitSituationId,
             demarchesEngageesId: fileBefore.demarchesEngageesId,
@@ -144,6 +146,7 @@ const updateFilesWithRelation = async (
           } as Prisma.JsonObject,
           after: {
             requeteId: fileAfter.requeteId,
+            requeteEtapeId: fileAfter.requeteEtapeId,
             requeteEtapeNoteId: fileAfter.requeteEtapeNoteId,
             faitSituationId: fileAfter.faitSituationId,
             demarchesEngageesId: fileAfter.demarchesEngageesId,
@@ -207,6 +210,7 @@ const uploadedFileChangelogTrackedFields: (keyof UploadedFile)[] = [
   'metadata',
   'entiteId',
   'uploadedById',
+  'requeteEtapeId',
   'requeteEtapeNoteId',
   'requeteId',
   'faitSituationId',

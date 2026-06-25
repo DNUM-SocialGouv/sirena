@@ -76,6 +76,19 @@ export async function updateProcessingStepStatus(stepId: string, data: UpdatePro
   return res.json();
 }
 
+export type AddClotureFilesData = {
+  fileIds: string[];
+};
+
+export async function addClotureFiles(stepId: string, data: AddClotureFilesData) {
+  const res = await client['requete-etapes'][':id']['cloture-files'].$post({
+    param: { id: stepId },
+    json: { fileIds: data.fileIds },
+  });
+  await handleRequestErrors(res);
+  return res.json();
+}
+
 export type AddProcessingStepNoteData = {
   texte: string;
   fileIds: string[];

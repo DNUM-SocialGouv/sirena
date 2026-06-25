@@ -35,6 +35,13 @@ export const addProcessingStepNoteRoute = openApiProtectedRoute({
   },
 });
 
+export const addClotureFilesRoute = openApiProtectedRoute({
+  description: 'Attach uploaded files to a CLOTUREE (closure) step.',
+  responses: {
+    ...openApiResponse(RequeteEtapeSchema),
+  },
+});
+
 export const updateRequeteEtapeStatutRoute = openApiProtectedRoute({
   description: 'Update the statut of a RequeteEtape',
   responses: {

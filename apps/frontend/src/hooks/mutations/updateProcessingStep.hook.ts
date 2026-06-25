@@ -1,8 +1,10 @@
 import type { RequeteEtapeStatutType } from '@sirena/common/constants';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  type AddClotureFilesData,
   type AddProcessingStepData,
   type AddProcessingStepNoteData,
+  addClotureFiles,
   addProcessingStep,
   addProcessingStepNote,
   deleteProcessingStep,
@@ -35,6 +37,21 @@ export const useUpdateProcessingStep = (requestId: string) => {
 
   return useMutation({
     mutationFn: ({ id, ...data }: UpdateProcessingStepParams) => updateProcessingStep(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
+    },
+  });
+};
+
+type AddClotureFilesDataParams = {
+  stepId: string;
+} & AddClotureFilesData;
+
+export const useAddClotureFiles = (requestId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ stepId, fileIds }: AddClotureFilesDataParams) => addClotureFiles(stepId, { fileIds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
     },
