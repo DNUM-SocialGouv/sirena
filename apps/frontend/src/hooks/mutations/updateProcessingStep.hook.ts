@@ -8,7 +8,9 @@ import {
   deleteProcessingStep,
   deleteProcessingStepNote,
   sendAcknowledgment,
+  type UpdateProcessingStepData,
   type UpdateProcessingStepNoteData,
+  updateProcessingStep,
   updateProcessingStepNote,
   updateProcessingStepStatus,
 } from '@/lib/api/processingSteps';
@@ -18,6 +20,21 @@ export const useAddProcessingStep = (requestId: string) => {
 
   return useMutation({
     mutationFn: (data: AddProcessingStepData) => addProcessingStep(requestId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
+    },
+  });
+};
+
+type UpdateProcessingStepParams = {
+  id: string;
+} & UpdateProcessingStepData;
+
+export const useUpdateProcessingStep = (requestId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, ...data }: UpdateProcessingStepParams) => updateProcessingStep(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['processingSteps', requestId] });
     },

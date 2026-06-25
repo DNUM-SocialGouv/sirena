@@ -962,12 +962,21 @@ describe('RequeteEtapes.service.ts', () => {
           ackNotesOnly: true,
         },
       );
+      // even before being marked FAIT, an automatic ACR stays notes-only
+      expect(
+        getEtapeEditability({ type: 'ACKNOWLEDGMENT', statutId: 'A_FAIRE', requete: { createdById: null } }),
+      ).toEqual({ editable: true, ackNotesOnly: true });
     });
 
-    it('manual ACR (requete with createdById) is fully editable', () => {
+    it('manual ACR is always notes-only', () => {
+      // sent
       expect(
         getEtapeEditability({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', requete: { createdById: 'agent-1' } }),
-      ).toEqual({ editable: true, ackNotesOnly: false });
+      ).toEqual({ editable: true, ackNotesOnly: true });
+      // not yet sent
+      expect(
+        getEtapeEditability({ type: 'ACKNOWLEDGMENT', statutId: 'A_FAIRE', requete: { createdById: 'agent-1' } }),
+      ).toEqual({ editable: true, ackNotesOnly: true });
     });
   });
 

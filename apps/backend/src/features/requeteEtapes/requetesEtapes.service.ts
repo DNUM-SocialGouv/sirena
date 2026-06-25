@@ -164,7 +164,7 @@ export const getEtapeEditability = (etape: {
   if (etape.type === REQUETE_ETAPE_TYPES.CREATION || etape.type === REQUETE_ETAPE_TYPES.REOPEN) {
     return { editable: false, ackNotesOnly: false };
   }
-  const ackNotesOnly = etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && etape.requete?.createdById == null;
+  const ackNotesOnly = etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
   return { editable: true, ackNotesOnly };
 };
 
@@ -213,7 +213,7 @@ export const createProcessingEtape = async (
     update: {},
   });
 
-  const statutId = data.statutId ?? REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
+  const statutId = data.statutId ?? null;
   const dateRealisation = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
 
   if (data.fileIds.length > 0 && !(await isUserOwner(userId, data.fileIds))) {
@@ -305,8 +305,8 @@ export const updateProcessingEtape = async (
     throw new FilesNotOwnedError('FILES_NOT_OWNED');
   }
 
-  const dateRealisation =
-    data.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
+  const statutId = data.statutId ?? null;
+  const dateRealisation = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
 
   const noteChangelogs: {
     action: ChangeLogAction;
@@ -319,7 +319,7 @@ export const updateProcessingEtape = async (
     if (!ackNotesOnly) {
       await tx.requeteEtape.update({
         where: { id: stepId },
-        data: { nom: data.nom, statutId: data.statutId, dateRealisation },
+        data: { nom: data.nom, statutId, dateRealisation },
       });
     }
 
