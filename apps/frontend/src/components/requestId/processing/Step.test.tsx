@@ -1,7 +1,12 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, ROLES } from '@sirena/common/constants';
 import { render, screen } from '@testing-library/react';
+import { forwardRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { Step } from './Step';
+
+vi.mock('./AddFilesClotureDrawer', () => ({
+  AddFilesClotureDrawer: forwardRef(() => null),
+}));
 
 vi.mock('@codegouvfr/react-dsfr/Modal', () => ({
   createModal: () => ({
@@ -71,5 +76,37 @@ describe('Step', () => {
 
     expect(screen.getByText(/Requête clôturée le 18\/05\/2024/)).toBeInTheDocument();
     expect(screen.queryByText(/Requête clôturée le 20\/05\/2024/)).not.toBeInTheDocument();
+  });
+
+  it('shows the "Ajouter un fichier" button on a closure step without note (no precision)', () => {
+    const closureStep: React.ComponentProps<typeof Step> = {
+      requestId: 'REQ-354',
+      requeteId: 'REQ-354',
+      entiteId: 'ENTITE-1',
+      id: 'step-1',
+      nom: '',
+      type: REQUETE_ETAPE_TYPES.MANUAL,
+      statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+      createdAt: '2024-05-20T12:00:00.000Z',
+      updatedAt: '2024-05-20T12:00:00.000Z',
+      clotureEffectiveDate: '2024-05-18',
+      createdBy: { prenom: 'camille', nom: 'dupont' },
+      dateRealisation: null,
+      notes: [],
+      uploadedFiles: [],
+      editable: false,
+      canOnlyEditNotes: false,
+      requete: {
+        dematSocialId: null,
+        createdById: null,
+        thirdPartyAccountId: null,
+        createdBy: null,
+      },
+      clotureReason: [],
+    };
+
+    render(<Step {...closureStep} />);
+
+    expect(screen.getByRole('button', { name: /Ajouter un fichier/ })).toBeInTheDocument();
   });
 });

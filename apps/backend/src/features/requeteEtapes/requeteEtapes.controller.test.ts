@@ -17,9 +17,11 @@ import {
 import { getUploadedFileById } from '../uploadedFiles/uploadedFiles.service.js';
 import RequeteEtapesController from './requetesEtapes.controller.js';
 import {
+  addClotureEtapeFiles,
   createProcessingEtape,
   deleteRequeteEtape,
   EtapeNotEditableError,
+  FilesNotOwnedError,
   getRequeteEtapeById,
   getRequeteEtapes,
   updateProcessingEtape,
@@ -40,6 +42,7 @@ vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
   deleteRequeteEtape: vi.fn(),
   createProcessingEtape: vi.fn(),
   updateProcessingEtape: vi.fn(),
+  addClotureEtapeFiles: vi.fn(),
   EtapeNotEditableError: class EtapeNotEditableError extends Error {},
   FilesNotOwnedError: class FilesNotOwnedError extends Error {},
   getRequeteEtapes: vi.fn(),
@@ -166,6 +169,79 @@ describe('requeteEtapes.controller.ts', () => {
       entiteId: 'e1',
       prioriteId: null,
     } as RequeteEntite);
+  });
+
+  describe('POST /:id/cloture-files', () => {
+    it('should attach files to the closure step', async () => {
+      vi.mocked(addClotureEtapeFiles).mockResolvedValueOnce(fakeRequeteEtape);
+
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: ['file1', 'file2'] },
+      });
+
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body).toEqual({ data: convertDatesToStrings(fakeRequeteEtape) });
+      expect(addClotureEtapeFiles).toHaveBeenCalledWith('step1', 'test-user-id', 'e1', ['file1', 'file2']);
+    });
+
+    it('should return 404 if RequeteEtape not found', async () => {
+      vi.mocked(getRequeteEtapeById).mockResolvedValueOnce(null);
+
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: ['file1'] },
+      });
+
+      expect(res.status).toBe(404);
+      expect(addClotureEtapeFiles).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 if user has no access to requete', async () => {
+      vi.mocked(hasAccessToRequete).mockResolvedValueOnce(false);
+
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: ['file1'] },
+      });
+
+      expect(res.status).toBe(403);
+      expect(addClotureEtapeFiles).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 if the user does not own the files', async () => {
+      vi.mocked(addClotureEtapeFiles).mockRejectedValueOnce(new FilesNotOwnedError('FILES_NOT_OWNED'));
+
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: ['file1'] },
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should return 403 if the step does not accept files (not a closure step)', async () => {
+      vi.mocked(addClotureEtapeFiles).mockRejectedValueOnce(new EtapeNotEditableError('ETAPE_NOT_EDITABLE'));
+
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: ['file1'] },
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should validate that at least one file is provided', async () => {
+      const res = await client[':id']['cloture-files'].$post({
+        param: { id: 'step1' },
+        json: { fileIds: [] },
+      });
+
+      expect(res.status).toBe(400);
+      expect(addClotureEtapeFiles).not.toHaveBeenCalled();
+    });
   });
 
   describe('PATCH /:id/statut', () => {

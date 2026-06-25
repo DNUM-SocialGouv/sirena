@@ -279,11 +279,11 @@ const StepComponent = ({
                 </div>
               )}
             </div>
-            {notes[0]?.uploadedFiles && notes[0].uploadedFiles.filter((f) => !deletedFileIds.has(f.id)).length > 0 && (
+            {rest.uploadedFiles && rest.uploadedFiles.filter((f) => !deletedFileIds.has(f.id)).length > 0 && (
               <ul className={`fr-mt-1w ${styles['cloture-files']}`}>
-                {notes[0].uploadedFiles
+                {rest.uploadedFiles
                   .filter((f) => !deletedFileIds.has(f.id))
-                  .map((file: (typeof notes)[number]['uploadedFiles'][number]) => {
+                  .map((file: StepType['uploadedFiles'][number]) => {
                     const fileName = file.fileName;
                     return (
                       <li key={file.id} className={styles['request-note__file']}>
@@ -403,7 +403,7 @@ const StepComponent = ({
             )}
           </>
         )}
-        {statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && canWrite && notes[0] && (
+        {statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && canWrite && (
           <>
             <Button
               className={styles['request-step__add-note']}
@@ -414,7 +414,7 @@ const StepComponent = ({
             >
               Ajouter un fichier
             </Button>
-            <AddFilesClotureDrawer ref={addFilesClotureDrawerRef} noteId={notes[0].id} noteTexte={notes[0].texte} />
+            <AddFilesClotureDrawer ref={addFilesClotureDrawerRef} stepId={id} />
           </>
         )}
       </div>
