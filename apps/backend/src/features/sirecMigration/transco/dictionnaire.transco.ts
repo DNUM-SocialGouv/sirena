@@ -446,7 +446,9 @@ export const SIREC_DICO: Record<number, string> = {
 
 export const SIREC_BOOLEAN_TRANSCO: Record<number, boolean> = {
   1: true,
+  75: true,
   112: true,
   0: false,
   111: false,
+  76: false,
 };

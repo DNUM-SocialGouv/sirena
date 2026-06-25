@@ -1,5 +1,8 @@
 import { DEMARCHES_ENGAGEES } from '@sirena/common/constants';
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
+import { SIREC_BOOLEAN_TRANSCO } from '../../transco/dictionnaire.transco.js';
+import { transcodeDomaineFonctionnel } from '../../transco/domaineFonctionnel.transco.js';
+import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import type { SirenaAutreMisEnCauseData } from './sirecMigration.autre.transformer.js';
 import { type SirenaFaitData, transformSirecFait } from './sirecMigration.fait.transformer.js';
 import type { SirenaFinessMisEnCauseData, SirenaLieuDeSurvenueData } from './sirecMigration.finess.transformer.js';
@@ -20,12 +23,26 @@ export interface SirenaSituationData {
   demarchesIds: string[];
   misEnCauseData: SirenaMisEnCauseData | null;
   lieuDeSurvenueData: SirenaLieuDeSurvenueData | null;
+  domainesFonctionnelsId: string | null;
+  estLieAuSignalement: boolean | undefined;
+  numerosSignalement: string;
 }
 
 const SAISINE_PLAINTE = 75;
 
+function resolveEstLieAuSignalement(ei_avere: number | null, num_sign_assoc: string | null): boolean | undefined {
+  let eiAvereIsTrue = false;
+  if (ei_avere !== null && ei_avere !== 77) {
+    const value = SIREC_BOOLEAN_TRANSCO[ei_avere];
+    if (value === undefined) throw new SirecTranscoError(ei_avere, 'ei_avere');
+    eiAvereIsTrue = value;
+  }
+  return eiAvereIsTrue || num_sign_assoc ? true : undefined;
+}
+
 export function transformSirecSituation(sirecData: SirecReclamationData, entiteIds: string[]): SirenaSituationData {
-  const demarchesIds = sirecData.reclamation.saisine === SAISINE_PLAINTE ? [DEMARCHES_ENGAGEES.PLAINTE] : [];
+  const { saisine, ei_avere, num_sign_assoc } = sirecData.reclamation;
+  const demarchesIds = saisine === SAISINE_PLAINTE ? [DEMARCHES_ENGAGEES.PLAINTE] : [];
 
   return {
     fait: transformSirecFait(sirecData),
@@ -33,5 +50,8 @@ export function transformSirecSituation(sirecData: SirecReclamationData, entiteI
     demarchesIds,
     misEnCauseData: null,
     lieuDeSurvenueData: null,
+    domainesFonctionnelsId: transcodeDomaineFonctionnel(sirecData.reclamation.domaine),
+    estLieAuSignalement: resolveEstLieAuSignalement(ei_avere, num_sign_assoc),
+    numerosSignalement: num_sign_assoc ?? '',
   };
 }
