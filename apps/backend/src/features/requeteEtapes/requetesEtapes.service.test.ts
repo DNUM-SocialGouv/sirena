@@ -954,11 +954,19 @@ describe('RequeteEtapes.service.ts', () => {
           canOnlyEditNotes: true,
         },
       );
+      // even before being marked FAIT, an automatic ACR stays notes-only
+      expect(
+        getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'A_FAIRE', requete: { createdById: null } }),
+      ).toEqual({ editable: true, canOnlyEditNotes: true });
     });
 
     it('manual ACR (requete with createdById) is fully editable', () => {
+      // a manually-sent ACR is not locked: an agent can still edit status/date/files
       expect(
         getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', requete: { createdById: 'agent-1' } }),
+      ).toEqual({ editable: true, canOnlyEditNotes: false });
+      expect(
+        getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'A_FAIRE', requete: { createdById: 'agent-1' } }),
       ).toEqual({ editable: true, canOnlyEditNotes: false });
     });
   });

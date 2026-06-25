@@ -67,7 +67,7 @@ test.describe('Request Details Feature', () => {
     await expect(inputEtape).toBeVisible();
     await inputEtape.fill(randomStepName);
 
-    await page.getByRole('button', { name: 'Ajouter', exact: true }).click();
+    await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
 
     await expect(page.getByRole('heading', { name: randomStepName, level: 3 })).toBeVisible({ timeout: 10000 });
 

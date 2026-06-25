@@ -2,24 +2,21 @@ import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { EntiteTypeBadge } from '@/components/common/EntiteTypeBadge';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
-import { CreateStep } from '@/components/requestId/processing/createStep';
 import { Step } from '@/components/requestId/processing/Step';
 import { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { type useRequeteDetails, useRequeteOtherEntitiesAffected } from '@/hooks/queries/useRequeteDetails';
 import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { CloseRequeteModal, type CloseRequeteModalRef } from './processing/CloseRequeteModal';
-import { CreateNoteDrawer, type CreateNoteDrawerRef } from './processing/CreateNoteDrawer';
-import { EditNoteDrawer, type EditNoteDrawerRef } from './processing/EditNoteDrawer';
 import { ReopenRequeteModal, type ReopenRequeteModalRef } from './processing/ReopenRequeteModal';
 import { SendAcknowledgmentDrawer, type SendAcknowledgmentDrawerRef } from './processing/SendAcknowledgmentDrawer';
+import { StepFormPanel, type StepFormPanelRef } from './processing/StepFormPanel';
 import { OtherEntitiesAffected } from './sections/OtherEntitesAffected';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
-type NoteData = Parameters<EditNoteDrawerRef['openDrawer']>[1];
 
 interface ProcessingProps {
   requestId?: string;
@@ -28,9 +25,7 @@ interface ProcessingProps {
 
 export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   const navigate = useNavigate();
-  const [isAddingStep, setIsAddingStep] = useState(false);
-  const createNoteDrawerRef = useRef<CreateNoteDrawerRef>(null);
-  const editNoteDrawerRef = useRef<EditNoteDrawerRef>(null);
+  const stepFormPanelRef = useRef<StepFormPanelRef>(null);
   const sendAcknowledgmentDrawerRef = useRef<SendAcknowledgmentDrawerRef>(null);
   const closeRequeteModalRef = useRef<CloseRequeteModalRef>(null);
   const closeRequeteButtonRef = useRef<HTMLButtonElement>(null);
@@ -56,12 +51,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
   }, [queryProcessingSteps.error, navigate, requestId]);
 
   const handleOpenEdit = (step: StepType) => {
-    editNoteDrawerRef.current?.closeDrawer();
-    createNoteDrawerRef.current?.openDrawer(step);
-  };
-  const handleOpenEditNote = (step: StepType, noteData: NoteData) => {
-    createNoteDrawerRef.current?.closeDrawer();
-    editNoteDrawerRef.current?.openDrawer(step, noteData);
+    stepFormPanelRef.current?.openEdit(step);
   };
   const handleCloseRequete = () => closeRequeteModalRef.current?.openModal();
   const handleReopenRequete = () => reopenRequeteModalRef.current?.openModal();
@@ -70,26 +60,11 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
     <>
       <div className={styles['timeline-container']}>
         <div className={styles['timeline-line']} />
-        <CreateStep requestId={requestId} isAddingStep={isAddingStep} setIsAddingStep={setIsAddingStep} />
         <QueryStateHandler query={queryProcessingSteps}>
           {({ data }) => {
-            const isDematSocialRequest = !!requestQuery.data?.requete?.dematSocialId;
             const isManualRequest = !!requestQuery.data?.requete?.createdById;
 
-            return data.data.map((step, index: number) => {
-              const isAutomaticallyUpdated =
-                isDematSocialRequest &&
-                step.createdBy === null &&
-                step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT &&
-                step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
-              const hasAcknowledgmentEmailSent =
-                step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
-                step.notes.some((note) => note.texte?.startsWith("Email d'accusé de réception envoyé le"));
-              const isDisabled =
-                index === data.data.length - 1 ||
-                step.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE ||
-                isAutomaticallyUpdated ||
-                (hasAcknowledgmentEmailSent && step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT);
+            return data.data.map((step) => {
               const isAcknowledgmentSendable =
                 isManualRequest &&
                 step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT &&
@@ -99,21 +74,18 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                   key={step.id}
                   requestId={requestId}
                   {...step}
-                  disabled={isDisabled}
                   isAcknowledgmentSendable={isAcknowledgmentSendable}
                   onSendAcknowledgment={
                     isAcknowledgmentSendable ? () => sendAcknowledgmentDrawerRef.current?.openDrawer(step) : undefined
                   }
                   openEdit={handleOpenEdit}
-                  openEditNote={handleOpenEditNote}
                 />
               );
             });
           }}
         </QueryStateHandler>
       </div>
-      <CreateNoteDrawer ref={createNoteDrawerRef} />
-      <EditNoteDrawer ref={editNoteDrawerRef} />
+      <StepFormPanel ref={stepFormPanelRef} requestId={requestId} />
       <SendAcknowledgmentDrawer ref={sendAcknowledgmentDrawerRef} />
       <CloseRequeteModal ref={closeRequeteModalRef} requestId={requestId} triggerButtonRef={closeRequeteButtonRef} />
       <ReopenRequeteModal ref={reopenRequeteModalRef} requestId={requestId} triggerButtonRef={reopenRequeteButtonRef} />
@@ -184,8 +156,7 @@ export const Processing = ({ requestId, requestQuery }: ProcessingProps) => {
                       priority="secondary"
                       className="fr-mr-2w"
                       size="small"
-                      onClick={() => setIsAddingStep(true)}
-                      disabled={isAddingStep}
+                      onClick={() => stepFormPanelRef.current?.openCreate()}
                     >
                       Ajouter une étape
                     </Button>
