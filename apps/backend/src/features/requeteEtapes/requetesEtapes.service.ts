@@ -413,6 +413,33 @@ export const updateProcessingEtape = async (
   return prisma.requeteEtape.findUnique({ where: { id: stepId } });
 };
 
+/**
+ * Attaches uploaded files to a CLOTUREE (closure) step at the step level (requeteEtapeId).
+ */
+export const addClotureEtapeFiles = async (
+  stepId: string,
+  userId: string,
+  entiteId: string,
+  fileIds: string[],
+): Promise<RequeteEtape | null> => {
+  const etape = await prisma.requeteEtape.findUnique({ where: { id: stepId } });
+  if (!etape) {
+    return null;
+  }
+
+  if (etape.statutId !== REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
+    throw new EtapeNotEditableError('ETAPE_NOT_EDITABLE');
+  }
+
+  if (!(await isUserOwner(userId, fileIds))) {
+    throw new FilesNotOwnedError('FILES_NOT_OWNED');
+  }
+
+  await setEtapeFile(stepId, fileIds, entiteId, userId);
+
+  return prisma.requeteEtape.findUnique({ where: { id: stepId } });
+};
+
 export const getRequeteEtapes = async (requeteId: string, entiteId: string | null, query: GetRequeteEtapesQuery) => {
   if (!entiteId) {
     return { data: [], total: 0 };
