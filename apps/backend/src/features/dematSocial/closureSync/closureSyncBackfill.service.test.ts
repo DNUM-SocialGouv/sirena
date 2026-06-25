@@ -1,7 +1,7 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../../libs/prisma.js';
-import { syncClosedRequeteToDematSocial } from './closureSync.service.js';
+import { syncRequetePriseEnChargeToDematSocial } from './closureSync.service.js';
 import { backfillClosedRequetesToDematSocial } from './closureSyncBackfill.service.js';
 
 const logger = {
@@ -24,7 +24,7 @@ vi.mock('../../../libs/prisma.js', () => ({
 }));
 
 vi.mock('./closureSync.service.js', () => ({
-  syncClosedRequeteToDematSocial: vi.fn(),
+  syncRequetePriseEnChargeToDematSocial: vi.fn(),
 }));
 
 describe('backfillClosedRequetesToDematSocial', () => {
@@ -32,16 +32,16 @@ describe('backfillClosedRequetesToDematSocial', () => {
     vi.clearAllMocks();
   });
 
-  it('syncs all fully closed linked Requêtes and continues after per-Requête failures', async () => {
+  it('syncs taken-over Requêtes and continues after per-Requête failures', async () => {
     vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
       { id: 'requete-1' },
       { id: 'requete-2' },
       { id: 'requete-3' },
     ] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>);
-    vi.mocked(syncClosedRequeteToDematSocial)
+    vi.mocked(syncRequetePriseEnChargeToDematSocial)
       .mockResolvedValueOnce({ kind: 'synced' })
       .mockRejectedValueOnce(new Error('demat.social unavailable'))
-      .mockResolvedValueOnce({ kind: 'skipped', reason: 'ALREADY_FINAL' });
+      .mockResolvedValueOnce({ kind: 'skipped', reason: 'DIFFERENT_FINAL_STATE' });
 
     const result = await backfillClosedRequetesToDematSocial();
 
@@ -49,16 +49,15 @@ describe('backfillClosedRequetesToDematSocial', () => {
       where: {
         dematSocialId: { not: null },
         requeteEntites: {
-          some: {},
-          every: { statutId: REQUETE_STATUT_TYPES.CLOTUREE },
+          some: { statutId: { in: [REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE] } },
         },
       },
       select: { id: true },
       orderBy: { id: 'asc' },
     });
-    expect(syncClosedRequeteToDematSocial).toHaveBeenNthCalledWith(1, 'requete-1');
-    expect(syncClosedRequeteToDematSocial).toHaveBeenNthCalledWith(2, 'requete-2');
-    expect(syncClosedRequeteToDematSocial).toHaveBeenNthCalledWith(3, 'requete-3');
+    expect(syncRequetePriseEnChargeToDematSocial).toHaveBeenNthCalledWith(1, 'requete-1');
+    expect(syncRequetePriseEnChargeToDematSocial).toHaveBeenNthCalledWith(2, 'requete-2');
+    expect(syncRequetePriseEnChargeToDematSocial).toHaveBeenNthCalledWith(3, 'requete-3');
     expect(result).toEqual({ found: 3, synchronised: 1, skipped: 1, failed: 1 });
     expect(logger.error).toHaveBeenCalledWith(
       expect.objectContaining({ requeteId: 'requete-2' }),

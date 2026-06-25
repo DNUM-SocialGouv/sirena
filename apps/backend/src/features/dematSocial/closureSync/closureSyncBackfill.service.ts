@@ -1,7 +1,7 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
 import { prisma } from '../../../libs/prisma.js';
-import { type DematSocialClosureSyncResult, syncClosedRequeteToDematSocial } from './closureSync.service.js';
+import { type DematSocialClosureSyncResult, syncRequetePriseEnChargeToDematSocial } from './closureSync.service.js';
 
 export type DematSocialClosureBackfillResult = {
   found: number;
@@ -18,8 +18,7 @@ export async function backfillClosedRequetesToDematSocial(): Promise<DematSocial
     where: {
       dematSocialId: { not: null },
       requeteEntites: {
-        some: {},
-        every: { statutId: REQUETE_STATUT_TYPES.CLOTUREE },
+        some: { statutId: { in: [REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE] } },
       },
     },
     select: { id: true },
@@ -37,7 +36,7 @@ export async function backfillClosedRequetesToDematSocial(): Promise<DematSocial
 
   for (const requete of requetes) {
     try {
-      const syncResult = await syncClosedRequeteToDematSocial(requete.id);
+      const syncResult = await syncRequetePriseEnChargeToDematSocial(requete.id);
       if (isSynchronised(syncResult)) {
         result.synchronised += 1;
       } else {
