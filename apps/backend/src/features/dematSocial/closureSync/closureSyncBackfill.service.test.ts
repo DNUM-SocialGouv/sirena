@@ -2,7 +2,7 @@ import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../../libs/prisma.js';
 import { syncRequetePriseEnChargeToDematSocial } from './closureSync.service.js';
-import { backfillClosedRequetesToDematSocial } from './closureSyncBackfill.service.js';
+import { backfillRequetesPrisesEnChargeToDematSocial } from './closureSyncBackfill.service.js';
 
 const logger = {
   info: vi.fn(),
@@ -27,7 +27,7 @@ vi.mock('./closureSync.service.js', () => ({
   syncRequetePriseEnChargeToDematSocial: vi.fn(),
 }));
 
-describe('backfillClosedRequetesToDematSocial', () => {
+describe('backfillRequetesPrisesEnChargeToDematSocial', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -43,7 +43,7 @@ describe('backfillClosedRequetesToDematSocial', () => {
       .mockRejectedValueOnce(new Error('demat.social unavailable'))
       .mockResolvedValueOnce({ kind: 'skipped', reason: 'DIFFERENT_FINAL_STATE' });
 
-    const result = await backfillClosedRequetesToDematSocial();
+    const result = await backfillRequetesPrisesEnChargeToDematSocial();
 
     expect(prisma.requete.findMany).toHaveBeenCalledWith({
       where: {
@@ -59,9 +59,11 @@ describe('backfillClosedRequetesToDematSocial', () => {
     expect(syncRequetePriseEnChargeToDematSocial).toHaveBeenNthCalledWith(2, 'requete-2');
     expect(syncRequetePriseEnChargeToDematSocial).toHaveBeenNthCalledWith(3, 'requete-3');
     expect(result).toEqual({ found: 3, synchronised: 1, skipped: 1, failed: 1 });
+    expect(logger.info).toHaveBeenCalledWith({ found: 3 }, expect.stringContaining('taken-over Requête backfill'));
+    expect(logger.info).toHaveBeenCalledWith(result, expect.stringContaining('taken-over Requête backfill'));
     expect(logger.error).toHaveBeenCalledWith(
       expect.objectContaining({ requeteId: 'requete-2' }),
-      expect.stringContaining('backfill'),
+      expect.stringContaining('taken-over Requête backfill'),
     );
   });
 });

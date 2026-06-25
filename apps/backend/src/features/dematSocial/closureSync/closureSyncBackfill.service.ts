@@ -3,16 +3,18 @@ import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
 import { prisma } from '../../../libs/prisma.js';
 import { type DematSocialClosureSyncResult, syncRequetePriseEnChargeToDematSocial } from './closureSync.service.js';
 
-export type DematSocialClosureBackfillResult = {
+export type DematSocialTakeoverBackfillResult = {
   found: number;
   synchronised: number;
   skipped: number;
   failed: number;
 };
 
+export type DematSocialClosureBackfillResult = DematSocialTakeoverBackfillResult;
+
 const isSynchronised = (result: DematSocialClosureSyncResult): boolean => result.kind === 'synced';
 
-export async function backfillClosedRequetesToDematSocial(): Promise<DematSocialClosureBackfillResult> {
+export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<DematSocialTakeoverBackfillResult> {
   const logger = getLoggerStore();
   const requetes = await prisma.requete.findMany({
     where: {
@@ -25,14 +27,14 @@ export async function backfillClosedRequetesToDematSocial(): Promise<DematSocial
     orderBy: { id: 'asc' },
   });
 
-  const result: DematSocialClosureBackfillResult = {
+  const result: DematSocialTakeoverBackfillResult = {
     found: requetes.length,
     synchronised: 0,
     skipped: 0,
     failed: 0,
   };
 
-  logger.info({ found: result.found }, 'Starting demat.social closed Requête backfill');
+  logger.info({ found: result.found }, 'Starting demat.social taken-over Requête backfill');
 
   for (const requete of requetes) {
     try {
@@ -44,10 +46,12 @@ export async function backfillClosedRequetesToDematSocial(): Promise<DematSocial
       }
     } catch (err) {
       result.failed += 1;
-      logger.error({ err, requeteId: requete.id }, 'Failed demat.social closed Requête backfill item');
+      logger.error({ err, requeteId: requete.id }, 'Failed demat.social taken-over Requête backfill item');
     }
   }
 
-  logger.info(result, 'Completed demat.social closed Requête backfill');
+  logger.info(result, 'Completed demat.social taken-over Requête backfill');
   return result;
 }
+
+export const backfillClosedRequetesToDematSocial = backfillRequetesPrisesEnChargeToDematSocial;
