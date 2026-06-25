@@ -165,7 +165,8 @@ export const getEtapePermissions = (etape: {
   if (etape.type === REQUETE_ETAPE_TYPES.CREATION || etape.type === REQUETE_ETAPE_TYPES.REOPEN) {
     return { editable: false, canOnlyEditNotes: false };
   }
-  // Automatic ACR = acknowledgment step on a request not created by an agent (createdById null).
+  // Spec: only an ACR sent automatically is locked (status + uploaded files), notes always editable.
+  // Automatic = request not created by an agent (createdById null) ; a manual ACR stays fully editable.
   const canOnlyEditNotes = etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && etape.requete?.createdById == null;
   return { editable: true, canOnlyEditNotes };
 };
@@ -215,7 +216,7 @@ export const createProcessingEtape = async (
     update: {},
   });
 
-  const statutId = data.statutId ?? REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
+  const statutId = data.statutId ?? null;
   const dateRealisation = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
 
   const createdNotes: { id: string; texte: string; authorId: string | null; requeteEtapeId: string }[] = [];
@@ -405,8 +406,8 @@ export const updateProcessingEtape = async (
   const notesDiff = diffEtapeNotes(etape.notes, data.notes);
   const { fileIdsToAttach, filesToRemove } = diffEtapeFiles(etape.uploadedFiles, data.fileIds);
 
-  const dateRealisation =
-    data.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
+  const statutId = data.statutId ?? null;
+  const dateRealisation = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
 
   let noteChangelogs: NoteChangelogEntry[] = [];
 
@@ -415,7 +416,7 @@ export const updateProcessingEtape = async (
     if (!canOnlyEditNotes) {
       await tx.requeteEtape.update({
         where: { id: stepId },
-        data: { nom: data.nom, statutId: data.statutId, dateRealisation },
+        data: { nom: data.nom, statutId, dateRealisation },
       });
     }
 

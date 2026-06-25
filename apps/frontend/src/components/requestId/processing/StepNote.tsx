@@ -1,8 +1,6 @@
-import { Button } from '@codegouvfr/react-dsfr/Button';
 import clsx from 'clsx';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
 import { capitalizeFirst } from '@/components/requestId/sections/helpers';
-import { useCanEdit } from '@/hooks/useCanEdit';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 
 type StepNoteProps = {
@@ -10,7 +8,6 @@ type StepNoteProps = {
   content: string;
   createdAt: string;
   requeteStateId: string;
-  requestId: string;
   clotureReasonLabels: string[] | null;
   author?: {
     prenom: string;
@@ -25,45 +22,9 @@ type StepNoteProps = {
     sanitizeStatus?: string;
     safeFilePath?: string | null;
   }[];
-  onEdit?: (noteData: {
-    id: string;
-    requeteStateId: string;
-    content: string;
-    files: {
-      id: string;
-      size: number;
-      originalName: string;
-      status?: string;
-      scanStatus?: string;
-      sanitizeStatus?: string;
-      safeFilePath?: string | null;
-    }[];
-  }) => void;
 };
 
-export const StepNote = ({
-  id,
-  author,
-  content,
-  createdAt,
-  requeteStateId,
-  requestId,
-  files,
-  onEdit,
-  clotureReasonLabels,
-}: StepNoteProps) => {
-  const { canEdit } = useCanEdit({ requeteId: requestId });
-  const isSystemNote = author === null;
-
-  const handleEdit = () => {
-    onEdit?.({
-      id,
-      requeteStateId,
-      content,
-      files,
-    });
-  };
-
+export const StepNote = ({ author, content, createdAt, requeteStateId, files, clotureReasonLabels }: StepNoteProps) => {
   return (
     <div className={styles['request-note']}>
       <div className="fr-grid-row fr-grid-row--middle fr-mb-1v">
@@ -86,22 +47,6 @@ export const StepNote = ({
             </>
           )}
         </p>
-        <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-          {canEdit && !isSystemNote && (
-            <Button
-              priority="tertiary no outline"
-              size="small"
-              iconId="fr-icon-edit-line"
-              title="Modifier la note"
-              aria-label="Modifier la note"
-              className="fr-btn--icon-center center-icon-with-sr-only"
-              onClick={handleEdit}
-              style={{ whiteSpace: 'nowrap' }}
-            >
-              <span className="fr-sr-only">Modifier la note</span>
-            </Button>
-          )}
-        </div>
       </div>
       {clotureReasonLabels && (
         <div>
