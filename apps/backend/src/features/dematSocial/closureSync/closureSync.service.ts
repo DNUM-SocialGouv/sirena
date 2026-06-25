@@ -6,14 +6,14 @@ import { loadRequetePriseEnChargeForDematSocialSync } from './closedRequeteSyncD
 const finalStates = new Set<DossierState>([DossierState.Accepte, DossierState.Refuse, DossierState.SansSuite]);
 const SIRENA_TAKEOVER_ACCEPTANCE_MOTIVATION = 'Dossier pris en charge dans SIRENA';
 
-export type DematSocialClosureSyncResult = { kind: 'synced' } | { kind: 'skipped'; reason: string };
+export type DematSocialTakeoverSyncResult = { kind: 'synced' } | { kind: 'skipped'; reason: string };
 
-export async function syncRequetePriseEnChargeToDematSocial(requeteId: string): Promise<DematSocialClosureSyncResult> {
+export async function syncRequetePriseEnChargeToDematSocial(requeteId: string): Promise<DematSocialTakeoverSyncResult> {
   const logger = getLoggerStore();
   const syncData = await loadRequetePriseEnChargeForDematSocialSync(requeteId);
 
   if (syncData.kind === 'skip') {
-    logger.debug({ requeteId, reason: syncData.reason }, 'Skipping demat.social closure sync');
+    logger.debug({ requeteId, reason: syncData.reason }, 'Skipping demat.social takeover sync');
     return { kind: 'skipped', reason: syncData.reason };
   }
 
@@ -22,7 +22,7 @@ export async function syncRequetePriseEnChargeToDematSocial(requeteId: string): 
   if (!dossier) {
     logger.warn(
       { requeteId, dematSocialId: syncData.dematSocialId },
-      'Skipping demat.social closure sync: dossier not found',
+      'Skipping demat.social takeover sync: dossier not found',
     );
     return { kind: 'skipped', reason: 'DOSSIER_NOT_FOUND' };
   }

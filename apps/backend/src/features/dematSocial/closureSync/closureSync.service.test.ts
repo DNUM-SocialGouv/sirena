@@ -71,6 +71,10 @@ describe('syncRequetePriseEnChargeToDematSocial', () => {
 
     await syncRequetePriseEnChargeToDematSocial('requete-1');
 
+    expect(logger.debug).toHaveBeenCalledWith(
+      expect.objectContaining({ requeteId: 'requete-1', reason: 'REQUETE_WITHOUT_DEMAT_SOCIAL_ID' }),
+      expect.stringContaining('takeover sync'),
+    );
     expect(getRequete).not.toHaveBeenCalled();
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
     expect(classerDossierSansSuiteWithoutNotification).not.toHaveBeenCalled();

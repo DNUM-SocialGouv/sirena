@@ -1,7 +1,7 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
 import { prisma } from '../../../libs/prisma.js';
-import { type DematSocialClosureSyncResult, syncRequetePriseEnChargeToDematSocial } from './closureSync.service.js';
+import { type DematSocialTakeoverSyncResult, syncRequetePriseEnChargeToDematSocial } from './closureSync.service.js';
 
 export type DematSocialTakeoverBackfillResult = {
   found: number;
@@ -10,9 +10,7 @@ export type DematSocialTakeoverBackfillResult = {
   failed: number;
 };
 
-export type DematSocialClosureBackfillResult = DematSocialTakeoverBackfillResult;
-
-const isSynchronised = (result: DematSocialClosureSyncResult): boolean => result.kind === 'synced';
+const isSynchronised = (result: DematSocialTakeoverSyncResult): boolean => result.kind === 'synced';
 
 export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<DematSocialTakeoverBackfillResult> {
   const logger = getLoggerStore();
