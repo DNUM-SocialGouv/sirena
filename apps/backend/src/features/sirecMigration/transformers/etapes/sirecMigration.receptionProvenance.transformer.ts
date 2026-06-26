@@ -37,6 +37,8 @@ export function transformSirecReceptionProvenances(sirecData: SirecReclamationDa
         nom: `Réception à l'institution de provenance : ${institutionNom}`,
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
+        createdAt: date_signalement || sirecData.reclamation.sys_creation_date,
+        ...(date_signalement && { dateRealisation: date_signalement }),
         note: [formatDateNote(date_signalement), formatReponseNote(reponse_attendue)].join('\n'),
       });
     }

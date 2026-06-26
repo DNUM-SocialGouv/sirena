@@ -7,7 +7,7 @@ import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import type { SirenaEtapeData } from './sirecMigration.etape.types.js';
 
 export function transformSirecReponseProvenances(sirecData: SirecReclamationData): SirenaEtapeData[] {
-  const { date_rep_provenance1, date_rep_provenance2, date_rep_provenance3 } = sirecData.reclamation;
+  const { date_rep_provenance1, date_rep_provenance2, date_rep_provenance3, sys_creation_date } = sirecData.reclamation;
   const reponseDates: (Date | null)[] = [date_rep_provenance1, date_rep_provenance2, date_rep_provenance3];
 
   const etapes: SirenaEtapeData[] = [];
@@ -32,7 +32,8 @@ export function transformSirecReponseProvenances(sirecData: SirecReclamationData
         nom: `Réponse à l'institution de provenance : ${institutionNom}`,
         entiteId,
         statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-        createdAt: date,
+        createdAt: sys_creation_date,
+        dateRealisation: date,
         note: `Date de la réponse : ${formatSirecDate(date)}`,
       });
     }

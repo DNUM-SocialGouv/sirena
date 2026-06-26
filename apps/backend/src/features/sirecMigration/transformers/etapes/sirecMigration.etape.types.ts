@@ -6,4 +6,5 @@ export interface SirenaEtapeData {
   note: string | null;
   clotureReason?: string;
   clotureEffectiveDate?: Date;
+  dateRealisation?: Date;
 }

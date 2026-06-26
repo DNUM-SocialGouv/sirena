@@ -30,7 +30,9 @@ export interface SirenaRequeteData {
   receptionTypeId: string | null;
   prioriteId: string | null;
   requeteStatutId: string;
-  sysLastModDate: Date | null;
+  sysLastModDate: Date;
+  sysCreationDate: Date;
+  dateDemandeDeclarant: Date | null;
   declarant: SirenaDeclarantData | null;
   victime: SirenaVictimeData | null;
   requeteEntiteIds: string[];
@@ -54,6 +56,8 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
     prioriteId: sirecData.reclamation.prioritaire === 1 ? REQUETE_PRIORITE_TYPES.HAUTE : null,
     requeteStatutId,
     sysLastModDate: sirecData.reclamation.sys_last_mod_date,
+    sysCreationDate: sirecData.reclamation.sys_creation_date,
+    dateDemandeDeclarant: sirecData.reclamation.date_ecriture,
     declarant,
     victime,
     requeteEntiteIds,

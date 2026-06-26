@@ -40,7 +40,8 @@ export function transformSirecMainCourantes(sirecData: SirecReclamationData): Si
           nom,
           entiteId,
           statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-          ...(mc.date_action !== null ? { createdAt: mc.date_action } : {}),
+          createdAt: mc.sys_creation_date,
+          ...(mc.date_action !== null ? { dateRealisation: mc.date_action } : {}),
           note,
         });
       }
