@@ -1,7 +1,7 @@
-import Alert from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { useState } from 'react';
 import { fetchExportRequetesCsv } from '@/lib/api/fetchStatistics';
+import { toastManager } from '@/lib/toastManager';
 
 const FALLBACK_FILENAME = 'export-requetes-sirena.csv';
 
@@ -12,11 +12,9 @@ function getFilenameFromContentDisposition(contentDisposition: string | null) {
 
 export function ExportRequetesButton() {
   const [isExporting, setIsExporting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleExport = async () => {
     setIsExporting(true);
-    setError(null);
 
     try {
       const response = await fetchExportRequetesCsv();
@@ -34,24 +32,26 @@ export function ExportRequetesButton() {
         URL.revokeObjectURL(url);
       }
     } catch {
-      setError("L'export des requêtes a échoué. Veuillez réessayer.");
+      toastManager.add({
+        title: "Erreur lors de l'export",
+        description: "L'export des requêtes a échoué. Veuillez réessayer.",
+        timeout: 0,
+        data: { icon: 'fr-alert--error' },
+      });
     } finally {
       setIsExporting(false);
     }
   };
 
   return (
-    <>
-      <Button
-        type="button"
-        priority="secondary"
-        iconId="fr-icon-download-line"
-        onClick={handleExport}
-        disabled={isExporting}
-      >
-        {isExporting ? 'Export en cours…' : 'Exporter les requêtes'}
-      </Button>
-      {error ? <Alert className="fr-mt-2w" severity="error" small description={error} /> : null}
-    </>
+    <Button
+      type="button"
+      priority="secondary"
+      iconId="fr-icon-download-line"
+      onClick={handleExport}
+      disabled={isExporting}
+    >
+      {isExporting ? 'Export en cours…' : 'Exporter les requêtes'}
+    </Button>
   );
 }
