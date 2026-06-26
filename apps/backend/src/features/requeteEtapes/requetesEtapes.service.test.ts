@@ -23,8 +23,6 @@ import {
   getRequeteEtapeById,
   getRequeteEtapes,
   updateProcessingEtape,
-  updateRequeteEtapeNom,
-  updateRequeteEtapeStatut,
 } from './requetesEtapes.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
@@ -714,79 +712,6 @@ describe('RequeteEtapes.service.ts', () => {
       expect(prisma.requeteEtape.findUnique).toHaveBeenCalledWith({
         where: { id: 'missing' },
       });
-    });
-  });
-
-  describe('updateRequeteEtapeStatut()', () => {
-    it('should update the statut of a RequeteEtape', async () => {
-      const mockEtape = {
-        ...requeteEtape,
-      };
-
-      const mockUpdatedEtape = {
-        ...mockEtape,
-        statutId: 'EN_COURS',
-        updatedAt: new Date(),
-      };
-
-      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(mockEtape);
-      vi.mocked(prisma.requeteEtape.update).mockResolvedValueOnce(mockUpdatedEtape);
-
-      const result = await updateRequeteEtapeStatut('1', { statutId: 'EN_COURS' });
-
-      expect(result).toEqual(mockUpdatedEtape);
-      expect(prisma.requeteEtape.update).toHaveBeenCalledWith({
-        where: { id: '1' },
-        data: {
-          statutId: 'EN_COURS',
-          dateRealisation: null,
-        },
-      });
-    });
-
-    it('should return null if RequeteEtape not found', async () => {
-      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(null);
-
-      const result = await updateRequeteEtapeStatut('999', { statutId: 'EN_COURS' });
-
-      expect(result).toBeNull();
-      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('updateRequeteEtapeNom()', () => {
-    it('should update the nom of a RequeteEtape', async () => {
-      const mockEtape = {
-        ...requeteEtape,
-      };
-
-      const mockUpdatedEtape = {
-        ...mockEtape,
-        nom: 'New Nom',
-        updatedAt: new Date(),
-      };
-
-      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(mockEtape);
-      vi.mocked(prisma.requeteEtape.update).mockResolvedValueOnce(mockUpdatedEtape);
-
-      const result = await updateRequeteEtapeNom('1', { nom: 'New Etape Name' });
-
-      expect(result).toEqual(mockUpdatedEtape);
-      expect(prisma.requeteEtape.update).toHaveBeenCalledWith({
-        where: { id: '1' },
-        data: {
-          nom: 'New Etape Name',
-        },
-      });
-    });
-
-    it('should return null if RequeteEtape not found', async () => {
-      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(null);
-
-      const result = await updateRequeteEtapeNom('999', { nom: 'New Etape Name' });
-
-      expect(result).toBeNull();
-      expect(prisma.requeteEtape.update).not.toHaveBeenCalled();
     });
   });
 

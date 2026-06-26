@@ -45,8 +45,6 @@ const fakeFile: UploadedFile = {
   processingError: null,
 };
 
-const fakeData: UploadedFile[] = [fakeFile];
-
 const signedUrl = 'https://test-signed-url.com';
 
 vi.mock('../../libs/minio.js', () => ({
@@ -64,7 +62,6 @@ vi.mock('../../libs/minio.js', () => ({
 
 vi.mock('./uploadedFiles.service.js', () => ({
   createUploadedFile: vi.fn(() => Promise.resolve(fakeFile)),
-  getUploadedFiles: vi.fn(() => Promise.resolve({ data: fakeData, total: 1 })),
   getUploadedFileById: vi.fn(() => Promise.resolve(fakeFile)),
   deleteUploadedFile: vi.fn(() => Promise.resolve()),
 }));

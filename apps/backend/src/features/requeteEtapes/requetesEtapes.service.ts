@@ -8,14 +8,7 @@ import { prisma, type RequeteEtape } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
 import { isUserOwner, setEtapeFile } from '../uploadedFiles/uploadedFiles.service.js';
-import type {
-  AddProcessingStepDto,
-  GetRequeteEtapesQuery,
-  UpdateProcessingStepDto,
-  UpdateRequeteEtapeDateRealisationDto,
-  UpdateRequeteEtapeNomDto,
-  UpdateRequeteEtapeStatutDto,
-} from './requetesEtapes.type.js';
+import type { AddProcessingStepDto, GetRequeteEtapesQuery, UpdateProcessingStepDto } from './requetesEtapes.type.js';
 
 export const CREATION_STEP_NAME_PREFIX = 'Création de la requête';
 export const AUTOMATIC_CREATION_STEP_NAME_PREFIX = 'Création de la requête';
@@ -562,73 +555,6 @@ export const getRequeteEtapeById = async (id: string) =>
   await prisma.requeteEtape.findUnique({
     where: { id },
   });
-
-export const updateRequeteEtapeStatut = async (
-  id: string,
-  data: UpdateRequeteEtapeStatutDto,
-): Promise<RequeteEtape | null> => {
-  const requeteEtape = await getRequeteEtapeById(id);
-  if (!requeteEtape) {
-    return null;
-  }
-
-  let dateRealisation: Date | null | undefined;
-  if (requeteEtape.type === REQUETE_ETAPE_TYPES.MANUAL) {
-    if (data.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
-      dateRealisation = requeteEtape.dateRealisation ?? new Date();
-    } else {
-      dateRealisation = null;
-    }
-  }
-
-  const updatedRequeteEtape = await prisma.requeteEtape.update({
-    where: { id },
-    data: {
-      statutId: data.statutId,
-      ...(dateRealisation !== undefined ? { dateRealisation } : {}),
-    },
-  });
-
-  return updatedRequeteEtape;
-};
-
-export const updateRequeteEtapeDateRealisation = async (
-  id: string,
-  data: UpdateRequeteEtapeDateRealisationDto,
-): Promise<RequeteEtape | null> => {
-  const requeteEtape = await getRequeteEtapeById(id);
-  if (!requeteEtape) {
-    return null;
-  }
-
-  if (requeteEtape.type !== REQUETE_ETAPE_TYPES.MANUAL || requeteEtape.statutId !== REQUETE_ETAPE_STATUT_TYPES.FAIT) {
-    return null;
-  }
-
-  return prisma.requeteEtape.update({
-    where: { id },
-    data: {
-      dateRealisation: data.dateRealisation,
-    },
-  });
-};
-
-export const updateRequeteEtapeNom = async (
-  id: string,
-  data: UpdateRequeteEtapeNomDto,
-): Promise<RequeteEtape | null> => {
-  const requeteEtape = await getRequeteEtapeById(id);
-  if (!requeteEtape) {
-    return null;
-  }
-
-  return prisma.requeteEtape.update({
-    where: { id },
-    data: {
-      nom: data.nom,
-    },
-  });
-};
 
 /**
  * Updates the acknowledgment step for all entities (when acknowledgment email is sent automatically)
