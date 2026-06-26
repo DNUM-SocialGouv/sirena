@@ -1,19 +1,21 @@
 import { DossierState } from '../../../graphql/graphql.js';
 import { getLoggerStore, getSentryStore } from '../../../libs/asyncLocalStorage.js';
 import { acceptDossierWithoutNotification, getRequete, updateInstruction } from '../dematSocial.service.js';
-import { loadRequetePriseEnChargeForDematSocialSync } from './takeoverRequeteSyncData.service.js';
+import { loadRequetePriseEnChargeForDematSocialSync } from './requetePriseEnChargeSyncData.service.js';
 
 const finalStates = new Set<DossierState>([DossierState.Accepte, DossierState.Refuse, DossierState.SansSuite]);
-const SIRENA_TAKEOVER_ACCEPTANCE_MOTIVATION = 'Dossier pris en charge dans SIRENA';
+const SIRENA_PRISE_EN_CHARGE_ACCEPTANCE_MOTIVATION = 'Dossier pris en charge dans SIRENA';
 
-export type DematSocialTakeoverSyncResult = { kind: 'synced' } | { kind: 'skipped'; reason: string };
+export type DematSocialPriseEnChargeSyncResult = { kind: 'synced' } | { kind: 'skipped'; reason: string };
 
-export async function syncRequetePriseEnChargeToDematSocial(requeteId: string): Promise<DematSocialTakeoverSyncResult> {
+export async function syncRequetePriseEnChargeToDematSocial(
+  requeteId: string,
+): Promise<DematSocialPriseEnChargeSyncResult> {
   const logger = getLoggerStore();
   const syncData = await loadRequetePriseEnChargeForDematSocialSync(requeteId);
 
   if (syncData.kind === 'skip') {
-    logger.debug({ requeteId, reason: syncData.reason }, 'Skipping demat.social takeover sync');
+    logger.debug({ requeteId, reason: syncData.reason }, 'Skipping demat.social prise en charge sync');
     return { kind: 'skipped', reason: syncData.reason };
   }
 
@@ -22,7 +24,7 @@ export async function syncRequetePriseEnChargeToDematSocial(requeteId: string): 
   if (!dossier) {
     logger.warn(
       { requeteId, dematSocialId: syncData.dematSocialId },
-      'Skipping demat.social takeover sync: dossier not found',
+      'Skipping demat.social prise en charge sync: dossier not found',
     );
     return { kind: 'skipped', reason: 'DOSSIER_NOT_FOUND' };
   }
@@ -59,7 +61,7 @@ export async function syncRequetePriseEnChargeToDematSocial(requeteId: string): 
     }
   }
 
-  await acceptDossierWithoutNotification(dossierMutationId, SIRENA_TAKEOVER_ACCEPTANCE_MOTIVATION);
+  await acceptDossierWithoutNotification(dossierMutationId, SIRENA_PRISE_EN_CHARGE_ACCEPTANCE_MOTIVATION);
 
   return { kind: 'synced' };
 }
@@ -70,7 +72,7 @@ export async function safeSyncRequetePriseEnChargeToDematSocial(requeteId: strin
   } catch (err) {
     const logger = getLoggerStore();
     const sentry = getSentryStore();
-    logger.error({ err, requeteId }, 'Error during demat.social takeover sync');
+    logger.error({ err, requeteId }, 'Error during demat.social prise en charge sync');
     sentry.captureException(err);
   }
 }

@@ -1,7 +1,7 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../../libs/__mocks__/prisma.js';
-import { loadRequetePriseEnChargeForDematSocialSync } from './takeoverRequeteSyncData.service.js';
+import { loadRequetePriseEnChargeForDematSocialSync } from './requetePriseEnChargeSyncData.service.js';
 
 vi.mock('../../../libs/prisma.js', () => ({ prisma }));
 
@@ -10,7 +10,7 @@ const mockFindUniqueRequete = (requete: unknown) => {
 };
 
 describe('loadRequetePriseEnChargeForDematSocialSync', () => {
-  it('returns a candidate for a demat.social-linked Requête SIRENA without requiring complete closure', async () => {
+  it('returns a sync candidate when the Requête SIRENA has a dematSocialId', async () => {
     mockFindUniqueRequete({
       id: 'requete-1',
       dematSocialId: 123,

@@ -27,7 +27,7 @@ import { deleteFileFromMinio, getFileStream } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/takeoverSync/takeoverSync.service.js';
+import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/priseEnChargeSync/priseEnChargeSync.service.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';

@@ -1,18 +1,21 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { getLoggerStore } from '../../../libs/asyncLocalStorage.js';
 import { prisma } from '../../../libs/prisma.js';
-import { type DematSocialTakeoverSyncResult, syncRequetePriseEnChargeToDematSocial } from './takeoverSync.service.js';
+import {
+  type DematSocialPriseEnChargeSyncResult,
+  syncRequetePriseEnChargeToDematSocial,
+} from './priseEnChargeSync.service.js';
 
-export type DematSocialTakeoverBackfillResult = {
+export type DematSocialPriseEnChargeBackfillResult = {
   found: number;
   synchronised: number;
   skipped: number;
   failed: number;
 };
 
-const isSynchronised = (result: DematSocialTakeoverSyncResult): boolean => result.kind === 'synced';
+const isSynchronised = (result: DematSocialPriseEnChargeSyncResult): boolean => result.kind === 'synced';
 
-export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<DematSocialTakeoverBackfillResult> {
+export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<DematSocialPriseEnChargeBackfillResult> {
   const logger = getLoggerStore();
   const requetes = await prisma.requete.findMany({
     where: {
@@ -25,14 +28,14 @@ export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<Dem
     orderBy: { id: 'asc' },
   });
 
-  const result: DematSocialTakeoverBackfillResult = {
+  const result: DematSocialPriseEnChargeBackfillResult = {
     found: requetes.length,
     synchronised: 0,
     skipped: 0,
     failed: 0,
   };
 
-  logger.info({ found: result.found }, 'Starting demat.social taken-over Requête backfill');
+  logger.info({ found: result.found }, 'Starting demat.social Requêtes prises en charge backfill');
 
   for (const requete of requetes) {
     try {
@@ -44,10 +47,10 @@ export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<Dem
       }
     } catch (err) {
       result.failed += 1;
-      logger.error({ err, requeteId: requete.id }, 'Failed demat.social taken-over Requête backfill item');
+      logger.error({ err, requeteId: requete.id }, 'Failed demat.social Requêtes prises en charge backfill item');
     }
   }
 
-  logger.info(result, 'Completed demat.social taken-over Requête backfill');
+  logger.info(result, 'Completed demat.social Requêtes prises en charge backfill');
   return result;
 }

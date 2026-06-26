@@ -1,8 +1,8 @@
 import { REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../../libs/prisma.js';
-import { syncRequetePriseEnChargeToDematSocial } from './takeoverSync.service.js';
-import { backfillRequetesPrisesEnChargeToDematSocial } from './takeoverSyncBackfill.service.js';
+import { syncRequetePriseEnChargeToDematSocial } from './priseEnChargeSync.service.js';
+import { backfillRequetesPrisesEnChargeToDematSocial } from './priseEnChargeSyncBackfill.service.js';
 
 const logger = {
   info: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock('../../../libs/prisma.js', () => ({
   },
 }));
 
-vi.mock('./takeoverSync.service.js', () => ({
+vi.mock('./priseEnChargeSync.service.js', () => ({
   syncRequetePriseEnChargeToDematSocial: vi.fn(),
 }));
 
@@ -32,7 +32,7 @@ describe('backfillRequetesPrisesEnChargeToDematSocial', () => {
     vi.clearAllMocks();
   });
 
-  it('syncs taken-over Requêtes and continues after per-Requête failures', async () => {
+  it('syncs Requêtes prises en charge and continues after per-Requête failures', async () => {
     vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
       { id: 'requete-1' },
       { id: 'requete-2' },
@@ -59,11 +59,14 @@ describe('backfillRequetesPrisesEnChargeToDematSocial', () => {
     expect(syncRequetePriseEnChargeToDematSocial).toHaveBeenNthCalledWith(2, 'requete-2');
     expect(syncRequetePriseEnChargeToDematSocial).toHaveBeenNthCalledWith(3, 'requete-3');
     expect(result).toEqual({ found: 3, synchronised: 1, skipped: 1, failed: 1 });
-    expect(logger.info).toHaveBeenCalledWith({ found: 3 }, expect.stringContaining('taken-over Requête backfill'));
-    expect(logger.info).toHaveBeenCalledWith(result, expect.stringContaining('taken-over Requête backfill'));
+    expect(logger.info).toHaveBeenCalledWith(
+      { found: 3 },
+      expect.stringContaining('Requêtes prises en charge backfill'),
+    );
+    expect(logger.info).toHaveBeenCalledWith(result, expect.stringContaining('Requêtes prises en charge backfill'));
     expect(logger.error).toHaveBeenCalledWith(
       expect.objectContaining({ requeteId: 'requete-2' }),
-      expect.stringContaining('taken-over Requête backfill'),
+      expect.stringContaining('Requêtes prises en charge backfill'),
     );
   });
 });

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DossierState } from '../../../graphql/graphql.js';
 import { acceptDossierWithoutNotification, getRequete, updateInstruction } from '../dematSocial.service.js';
-import { loadRequetePriseEnChargeForDematSocialSync } from './takeoverRequeteSyncData.service.js';
 import {
   safeSyncRequetePriseEnChargeToDematSocial,
   syncRequetePriseEnChargeToDematSocial,
-} from './takeoverSync.service.js';
+} from './priseEnChargeSync.service.js';
+import { loadRequetePriseEnChargeForDematSocialSync } from './requetePriseEnChargeSyncData.service.js';
 
 const logger = {
   info: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock('../../../libs/asyncLocalStorage.js', () => ({
   getSentryStore: vi.fn(() => sentry),
 }));
 
-vi.mock('./takeoverRequeteSyncData.service.js', () => ({
+vi.mock('./requetePriseEnChargeSyncData.service.js', () => ({
   loadRequetePriseEnChargeForDematSocialSync: vi.fn(),
 }));
 
@@ -67,7 +67,7 @@ describe('syncRequetePriseEnChargeToDematSocial', () => {
 
     expect(logger.debug).toHaveBeenCalledWith(
       expect.objectContaining({ requeteId: 'requete-1', reason: 'REQUETE_WITHOUT_DEMAT_SOCIAL_ID' }),
-      expect.stringContaining('takeover sync'),
+      expect.stringContaining('prise en charge sync'),
     );
     expect(getRequete).not.toHaveBeenCalled();
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
@@ -127,7 +127,7 @@ describe('syncRequetePriseEnChargeToDematSocial', () => {
     expect(acceptDossierWithoutNotification).not.toHaveBeenCalled();
   });
 
-  it('accepts an en_instruction demat.social dossier with the SIRENA takeover motivation', async () => {
+  it('accepts an en_instruction demat.social dossier with the SIRENA prise en charge motivation', async () => {
     mockSyncData();
     mockDossierState(DossierState.EnInstruction);
 

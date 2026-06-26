@@ -48,7 +48,7 @@ vi.mock('../changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock('../dematSocial/takeoverSync/takeoverSync.service.js', () => ({
+vi.mock('../dematSocial/priseEnChargeSync/priseEnChargeSync.service.js', () => ({
   safeSyncRequetePriseEnChargeToDematSocial: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -85,7 +85,7 @@ import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES }
 import { getFileStream } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/takeoverSync/takeoverSync.service.js';
+import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/priseEnChargeSync/priseEnChargeSync.service.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
 import { RequetePdfBuilder } from './requetesEntite.pdf.builder.js';
 
