@@ -146,10 +146,10 @@ function buildExportRequeteRow(
   options: { topEntiteId?: string },
   situationIndex?: number,
 ): ExportRequetesCsvRow {
-  const rootRequeteEntite = requete.requeteEntites?.find(
+  const requeteEntiteRacine = requete.requeteEntites?.find(
     (requeteEntite) => requeteEntite.entiteId === options.topEntiteId,
   );
-  const closureEtape = getLatestClosureEtape(requete.etapes, options.topEntiteId);
+  const etapeCloturee = getLatestEtapeCloturee(requete.etapes, options.topEntiteId);
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
   const misEnCause = situation?.misEnCause;
   const faits = situation?.faits ?? [];
@@ -203,22 +203,22 @@ function buildExportRequeteRow(
     directionsSituation: formatSituationDirections(situation?.situationEntites),
     servicesSituation: formatSituationServices(situation?.situationEntites),
     entitesStatutsRequete: formatRequeteEntites(requete.requeteEntites),
-    prioriteRequeteEntiteAdministrative: rootRequeteEntite?.priorite?.label ?? '',
+    prioriteRequeteEntiteAdministrative: requeteEntiteRacine?.priorite?.label ?? '',
     dateCreationRequeteSirena: formatExportDate(requete.createdAt),
     dateReception: formatExportDate(requete.receptionDate),
     modeReception: requete.receptionType?.label ?? '',
     dateDemandeDeclarant: formatExportDate(requete.dateDemandeDeclarant),
     provenance: requete.provenance?.label ?? '',
-    derniereDateClotureEntiteAdministrative: formatExportDate(closureEtape?.clotureEffectiveDate),
+    derniereDateClotureEntiteAdministrative: formatExportDate(etapeCloturee?.clotureEffectiveDate),
     raisonsClotureEntiteAdministrative: formatExportList(
-      closureEtape?.clotureReason.map((reason) => reason.label) ?? [],
+      etapeCloturee?.clotureReason.map((reason) => reason.label) ?? [],
     ),
   });
 }
 
 function formatSituationRootEntites(situationEntites: ExportSituationEntiteRecord[] | undefined): string {
   return formatUniqueLabels(
-    situationEntites?.map((situationEntite) => getRootEntite(situationEntite.entite)?.label) ?? [],
+    situationEntites?.map((situationEntite) => getEntiteRacine(situationEntite.entite)?.label) ?? [],
   );
 }
 
@@ -250,7 +250,7 @@ function formatSituationServices(situationEntites: ExportSituationEntiteRecord[]
   );
 }
 
-function getRootEntite(entite: ExportEntiteRecord | null | undefined): ExportEntiteRecord | null {
+function getEntiteRacine(entite: ExportEntiteRecord | null | undefined): ExportEntiteRecord | null {
   if (!entite) {
     return null;
   }
@@ -312,7 +312,7 @@ function formatRequeteEntites(requeteEntites: ExportRequeteEntiteRecord[] | unde
   );
 }
 
-function getLatestClosureEtape(
+function getLatestEtapeCloturee(
   etapes: ExportRequeteEtapeRecord[] | undefined,
   topEntiteId: string | undefined,
 ): ExportRequeteEtapeRecord | undefined {
