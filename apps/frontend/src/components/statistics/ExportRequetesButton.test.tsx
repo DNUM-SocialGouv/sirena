@@ -2,7 +2,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { toastManager } from '@/lib/toastManager';
 import { ExportRequetesButton } from './ExportRequetesButton';
+
+vi.mock('@/lib/toastManager', () => ({
+  toastManager: {
+    add: vi.fn(),
+  },
+}));
 
 function mockBrowserDownload(objectUrl = 'blob:export-requetes') {
   const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
@@ -86,7 +93,7 @@ describe('ExportRequetesButton', () => {
     });
   });
 
-  it('cleans up the object URL and shows an error when triggering the download fails', async () => {
+  it('cleans up the object URL and shows an error toast when triggering the download fails', async () => {
     const objectUrl = 'blob:export-requetes';
     vi.spyOn(URL, 'createObjectURL').mockReturnValue(objectUrl);
     const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
@@ -100,32 +107,43 @@ describe('ExportRequetesButton', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Exporter les requêtes' }));
 
     expect(revokeObjectURLSpy).toHaveBeenCalledWith(objectUrl);
-    expect(screen.getByRole('alert')).toHaveTextContent("L'export des requêtes a échoué. Veuillez réessayer.");
+    expect(toastManager.add).toHaveBeenCalledWith({
+      title: "Erreur lors de l'export",
+      description: "L'export des requêtes a échoué. Veuillez réessayer.",
+      timeout: 0,
+      data: { icon: 'fr-alert--error' },
+    });
   });
 
-  it('shows an error and re-enables the button when the export request cannot be completed', async () => {
+  it('shows an error toast and re-enables the button when the export request cannot be completed', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network error'));
 
     render(<ExportRequetesButton />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Exporter les requêtes' }));
 
-    const alert = screen.getByRole('alert');
-    expect(alert).toHaveTextContent("L'export des requêtes a échoué. Veuillez réessayer.");
-    expect(alert).toHaveClass('fr-alert--error');
+    expect(toastManager.add).toHaveBeenCalledWith({
+      title: "Erreur lors de l'export",
+      description: "L'export des requêtes a échoué. Veuillez réessayer.",
+      timeout: 0,
+      data: { icon: 'fr-alert--error' },
+    });
     expect(screen.getByRole('button', { name: 'Exporter les requêtes' })).toBeEnabled();
   });
 
-  it('shows an error and re-enables the button when the export fails', async () => {
+  it('shows an error toast and re-enables the button when the export fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 500 }));
 
     render(<ExportRequetesButton />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Exporter les requêtes' }));
 
-    const alert = screen.getByRole('alert');
-    expect(alert).toHaveTextContent("L'export des requêtes a échoué. Veuillez réessayer.");
-    expect(alert).toHaveClass('fr-alert--error');
+    expect(toastManager.add).toHaveBeenCalledWith({
+      title: "Erreur lors de l'export",
+      description: "L'export des requêtes a échoué. Veuillez réessayer.",
+      timeout: 0,
+      data: { icon: 'fr-alert--error' },
+    });
     expect(screen.getByRole('button', { name: 'Exporter les requêtes' })).toBeEnabled();
   });
 });
