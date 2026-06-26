@@ -32,4 +32,10 @@ describe('serializeCsv', () => {
 
     expect(csv).toBe('\uFEFFDescription\n"\'=HYPERLINK(""https://attacker.example"",""click"")"');
   });
+
+  it('neutralizes tab and carriage-return prefixed values that spreadsheet tools could interpret as formulas', () => {
+    const csv = serializeCsv(['Tabulation', 'Retour chariot'], [['\t=1+1', '\r=1+1']]);
+
+    expect(csv).toBe('\uFEFFTabulation;Retour chariot\n\'\t=1+1;"\'\r=1+1"');
+  });
 });
