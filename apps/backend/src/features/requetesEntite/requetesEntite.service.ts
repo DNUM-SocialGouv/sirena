@@ -27,7 +27,7 @@ import { deleteFileFromMinio, getFileStream } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { safeSyncClosedRequeteToDematSocial } from '../dematSocial/closureSync/closureSync.service.js';
+import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/priseEnChargeSync/priseEnChargeSync.service.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo, getEntiteDescendantIds } from '../entites/entites.service.js';
 import { createDefaultRequeteEtapes } from '../requeteEtapes/requetesEtapes.service.js';
 import { generateRequeteId } from '../requetes/functionalId.service.js';
@@ -60,6 +60,16 @@ const parseNullableDate = (dateString: string | undefined | null): Date | null =
   if (!dateString) return null;
   const date = new Date(dateString);
   return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const shouldTriggerDematSocialPriseEnChargeSync = (
+  previousStatut: string | null | undefined,
+  nextStatut: RequeteStatutType,
+): boolean => {
+  return (
+    previousStatut === REQUETE_STATUT_TYPES.NOUVEAU &&
+    (nextStatut === REQUETE_STATUT_TYPES.EN_COURS || nextStatut === REQUETE_STATUT_TYPES.CLOTUREE)
+  );
 };
 
 const SITUATION_INCLUDE_BASE = {
@@ -1756,7 +1766,9 @@ export const closeRequeteForEntite = async (
     };
   });
 
-  await safeSyncClosedRequeteToDematSocial(requeteId).catch(() => undefined);
+  if (shouldTriggerDematSocialPriseEnChargeSync(requeteEntite.statutId, REQUETE_STATUT_TYPES.CLOTUREE)) {
+    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
+  }
 
   await createChangeLogForRequeteEntite({
     requeteId,
@@ -1882,6 +1894,11 @@ export const updateStatusRequete = async (
   tx?: Prisma.TransactionClient,
 ) => {
   const db = tx ?? prisma;
+  const previousRequeteEntite = await db.requeteEntite.findUnique({
+    where: { requeteId_entiteId: { requeteId, entiteId } },
+    select: { statutId: true },
+  });
+
   const requeteEntite = await db.requeteEntite.update({
     where: { requeteId_entiteId: { requeteId, entiteId } },
     data: { statutId: statut },
@@ -1892,6 +1909,10 @@ export const updateStatusRequete = async (
     entiteId,
     field: REQUETE_UPDATE_FIELDS.STATUS,
   });
+
+  if (shouldTriggerDematSocialPriseEnChargeSync(previousRequeteEntite?.statutId, statut) && !tx) {
+    await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
+  }
 
   return requeteEntite;
 };
