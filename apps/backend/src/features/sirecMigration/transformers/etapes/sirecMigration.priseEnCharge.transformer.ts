@@ -44,7 +44,8 @@ export function transformSirecPriseEnCharge(
     nom: NOM_ETAPE,
     entiteId,
     statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-    ...(date_traitement !== null ? { createdAt: date_traitement } : {}),
+    ...(date_traitement !== null ? { dateRealisation: date_traitement } : {}),
+    createdAt: date_traitement ?? sirecData.reclamation.sys_creation_date,
     note: noteParts.join('\n'),
   }));
 }

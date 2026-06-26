@@ -11,7 +11,8 @@ export function transformSirecReponsePlaignant(
   sirecData: SirecReclamationData,
   arsEntiteIds: string[],
 ): SirenaEtapeData[] {
-  const { reponse_plaignant, date_rep_plaignant, reponse_plaignant_precision } = sirecData.reclamation;
+  const { reponse_plaignant, date_rep_plaignant, reponse_plaignant_precision, sys_creation_date } =
+    sirecData.reclamation;
 
   const hasData = reponse_plaignant !== null || date_rep_plaignant !== null || reponse_plaignant_precision !== null;
   if (!hasData) return [];
@@ -32,11 +33,14 @@ export function transformSirecReponsePlaignant(
     noteParts.push(`Précisions : ${reponse_plaignant_precision}`);
   }
 
-  return arsEntiteIds.map((entiteId) => ({
-    nom: NOM_ETAPE,
-    entiteId,
-    statutId: date_rep_plaignant !== null ? REQUETE_ETAPE_STATUT_TYPES.FAIT : REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
-    ...(date_rep_plaignant !== null ? { createdAt: date_rep_plaignant } : {}),
-    note: noteParts.length > 0 ? noteParts.join('\n') : null,
-  }));
+  return arsEntiteIds.map(
+    (entiteId): SirenaEtapeData => ({
+      nom: NOM_ETAPE,
+      entiteId,
+      statutId: date_rep_plaignant !== null ? REQUETE_ETAPE_STATUT_TYPES.FAIT : REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
+      createdAt: date_rep_plaignant || sys_creation_date,
+      ...(date_rep_plaignant && { dateRealisation: date_rep_plaignant }),
+      note: noteParts.length > 0 ? noteParts.join('\n') : null,
+    }),
+  );
 }

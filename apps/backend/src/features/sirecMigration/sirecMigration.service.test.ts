@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: <test purposes> */
+
+import type { MesureProtection } from '@sirena/db/generated-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 import { getRequeteIdFromSirecId, saveFromSirec } from './sirecMigration.service.js';
@@ -90,9 +92,12 @@ describe('sirecMigration.service.ts', () => {
         adresse: { rue: string | null; codePostal: string | null; ville: string | null } | null;
         commentaire: string;
         ageId: string | null;
+        mesureProtection: MesureProtection | null;
       } | null,
       requeteStatutId: 'EN_COURS',
-      sysLastModDate: null as Date | null,
+      sysLastModDate: new Date('2024-01-17'),
+      sysCreationDate: new Date('2024-01-20'),
+      dateDemandeDeclarant: null as Date | null,
       requeteEntiteIds: ['ars-1', 'ars-2'],
       etapes: [] as {
         nom: string;
@@ -113,6 +118,9 @@ describe('sirecMigration.service.ts', () => {
           demarchesIds: [] as string[],
           misEnCauseData: null as any,
           lieuDeSurvenueData: null as any,
+          domainesFonctionnelsId: null as string | null,
+          estLieAuSignalement: undefined as boolean | undefined,
+          numerosSignalement: '',
         },
       ],
     };
@@ -139,7 +147,24 @@ describe('sirecMigration.service.ts', () => {
       await saveFromSirec(data);
 
       expect(prisma.requete.create).toHaveBeenCalledWith({
-        data: { id: 'SIREC-42', sirecId: 42, receptionDate, receptionTypeId: 'EMAIL' },
+        data: {
+          id: 'SIREC-42',
+          createdAt: new Date('2024-01-20'),
+          sirecId: 42,
+          receptionDate,
+          receptionTypeId: 'EMAIL',
+          dateDemandeDeclarant: null,
+        },
+        select: { id: true },
+      });
+    });
+
+    it('should create Requete with dateDemandeDeclarant when set', async () => {
+      const dateDemandeDeclarant = new Date('2023-11-07');
+      await saveFromSirec({ ...data, dateDemandeDeclarant });
+
+      expect(prisma.requete.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ dateDemandeDeclarant }),
         select: { id: true },
       });
     });
@@ -238,6 +263,63 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
+    it('should create Situation with null domainesFonctionnelsId when not set', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ domainesFonctionnelsId: null }) }),
+      );
+    });
+
+    it('should create Situation with domainesFonctionnelsId when set', async () => {
+      await saveFromSirec({
+        ...data,
+        situations: [{ ...data.situations[0], domainesFonctionnelsId: 'SANITAIRE' }],
+      });
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ domainesFonctionnelsId: 'SANITAIRE' }) }),
+      );
+    });
+
+    it('should create Situation with estLieAuSignalement undefined when not set', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ estLieAuSignalement: undefined }) }),
+      );
+    });
+
+    it('should create Situation with estLieAuSignalement true when set', async () => {
+      await saveFromSirec({
+        ...data,
+        situations: [{ ...data.situations[0], estLieAuSignalement: true }],
+      });
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ estLieAuSignalement: true }) }),
+      );
+    });
+
+    it('should create Situation with numerosSignalement empty string by default', async () => {
+      await saveFromSirec(data);
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ numerosSignalement: '' }) }),
+      );
+    });
+
+    it('should create Situation with numerosSignalement when set', async () => {
+      await saveFromSirec({
+        ...data,
+        situations: [{ ...data.situations[0], numerosSignalement: 'SIG001,SIG002' }],
+      });
+
+      expect(prisma.situation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ numerosSignalement: 'SIG001,SIG002' }) }),
+      );
+    });
+
     it('should not create PersonneConcernee when declarant is null', async () => {
       await saveFromSirec(data);
 
@@ -256,15 +338,17 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
         },
-        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledOnce();
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           estVictime: true,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
           declarantDeId: 'SIREC-42',
           participantDeId: 'SIREC-42',
         },
@@ -283,27 +367,42 @@ describe('sirecMigration.service.ts', () => {
           identite: null,
           commentaire: '',
         },
-        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledTimes(2);
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
-        data: { participantDeId: 'SIREC-42', estVictime: true, commentaire: '', ageId: null },
+        data: {
+          createdAt: new Date('2024-01-20'),
+          participantDeId: 'SIREC-42',
+          estVictime: true,
+          commentaire: '',
+          ageId: null,
+          mesureProtection: null,
+        },
       });
     });
 
     it('should pass victime.commentaire to PersonneConcernee when victime_non_identifiee=1', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, adresse: null, commentaire: 'Usager (Victime) non identifié : oui', ageId: null },
+        victime: {
+          identite: null,
+          adresse: null,
+          commentaire: 'Usager (Victime) non identifié : oui',
+          ageId: null,
+          mesureProtection: null,
+        },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           participantDeId: 'SIREC-42',
           estVictime: true,
           commentaire: 'Usager (Victime) non identifié : oui',
           ageId: null,
+          mesureProtection: null,
         },
       });
     });
@@ -322,17 +421,21 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
         },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           participantDeId: 'SIREC-42',
           estVictime: true,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
           identite: {
             create: {
+              createdAt: new Date('2024-01-20'),
               nom: 'Martin',
               prenom: 'Alice',
               email: 'alice@example.com',
@@ -358,17 +461,21 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
         },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           participantDeId: 'SIREC-42',
           estVictime: true,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
           identite: {
             create: {
+              createdAt: new Date('2024-01-20'),
               nom: 'Martin',
               prenom: 'Alice',
               email: 'alice@example.com',
@@ -383,18 +490,31 @@ describe('sirecMigration.service.ts', () => {
     it('should pass ageId to victime PersonneConcernee when set', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, adresse: null, commentaire: 'Age de la victime : 45', ageId: '30-59' },
+        victime: {
+          identite: null,
+          adresse: null,
+          commentaire: 'Age de la victime : 45',
+          ageId: '30-59',
+          mesureProtection: null,
+        },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
-        data: { participantDeId: 'SIREC-42', estVictime: true, commentaire: 'Age de la victime : 45', ageId: '30-59' },
+        data: {
+          createdAt: new Date('2024-01-20'),
+          participantDeId: 'SIREC-42',
+          estVictime: true,
+          commentaire: 'Age de la victime : 45',
+          ageId: '30-59',
+          mesureProtection: null,
+        },
       });
     });
 
     it('should not add identite to victime PersonneConcernee when identite is null', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -436,6 +556,7 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           estVictime: false,
           veutGarderAnonymat: null,
           lienVictimeId: null,
@@ -462,6 +583,7 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           estVictime: null,
           veutGarderAnonymat: null,
           lienVictimeId: null,
@@ -488,6 +610,7 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           estVictime: null,
           veutGarderAnonymat: true,
           lienVictimeId: null,
@@ -514,6 +637,7 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           estVictime: null,
           veutGarderAnonymat: null,
           lienVictimeId: null,
@@ -541,6 +665,7 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           estVictime: null,
           veutGarderAnonymat: null,
           lienVictimeId: null,
@@ -574,6 +699,7 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           estVictime: null,
           veutGarderAnonymat: null,
           lienVictimeId: null,
@@ -609,6 +735,7 @@ describe('sirecMigration.service.ts', () => {
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           estVictime: null,
           veutGarderAnonymat: null,
           lienVictimeId: null,
@@ -647,15 +774,18 @@ describe('sirecMigration.service.ts', () => {
           adresse: { rue: '5 rue des Lilas', codePostal: '69001', ville: 'Lyon' },
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
         },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           participantDeId: 'SIREC-42',
           estVictime: true,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
           adresse: { create: { rue: '5 rue des Lilas', codePostal: '69001', ville: 'Lyon' } },
         },
       });
@@ -669,15 +799,18 @@ describe('sirecMigration.service.ts', () => {
           adresse: { rue: '5 rue des Lilas', codePostal: null, ville: null },
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
         },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: {
+          createdAt: new Date('2024-01-20'),
           participantDeId: 'SIREC-42',
           estVictime: true,
           commentaire: '',
           ageId: null,
+          mesureProtection: null,
           adresse: { create: { rue: '5 rue des Lilas', codePostal: '', ville: '' } },
         },
       });
@@ -686,7 +819,7 @@ describe('sirecMigration.service.ts', () => {
     it('should not add adresse to victime PersonneConcernee when adresse is null', async () => {
       await saveFromSirec({
         ...data,
-        victime: { identite: null, adresse: null, commentaire: '', ageId: null },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
@@ -764,7 +897,8 @@ describe('sirecMigration.service.ts', () => {
           entiteId: 'ars-1',
           statutId: 'FAIT',
           nom: "Réception à l'institution de provenance : Institution 1",
-          notes: { create: [{ texte: 'Note ligne 1\nNote ligne 2' }] },
+          createdAt: new Date('2024-01-20'),
+          notes: { create: [{ texte: 'Note ligne 1\nNote ligne 2', createdAt: new Date('2024-01-20') }] },
         },
       });
     });
@@ -798,11 +932,13 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should set etape and note createdAt to sysLastModDate when etape has no createdAt', async () => {
+    it('should set etape and note createdAt to sysCreationDate when etape has no createdAt', async () => {
       const sysLastModDate = new Date('2024-03-20');
+      const sysCreationDate = new Date('2024-03-24');
       await saveFromSirec({
         ...data,
         sysLastModDate,
+        sysCreationDate,
         etapes: [
           {
             nom: "Réception à l'institution de provenance : Institution 1",
@@ -819,8 +955,8 @@ describe('sirecMigration.service.ts', () => {
           entiteId: 'ars-1',
           statutId: 'FAIT',
           nom: "Réception à l'institution de provenance : Institution 1",
-          createdAt: sysLastModDate,
-          notes: { create: [{ texte: 'Note', createdAt: sysLastModDate }] },
+          createdAt: sysCreationDate,
+          notes: { create: [{ texte: 'Note', createdAt: sysCreationDate }] },
         },
       });
     });
@@ -854,31 +990,6 @@ describe('sirecMigration.service.ts', () => {
       });
     });
 
-    it('should not set createdAt on etape or note when etape has no date and sysLastModDate is null', async () => {
-      await saveFromSirec({
-        ...data,
-        sysLastModDate: null,
-        etapes: [
-          {
-            nom: "Réception à l'institution de provenance : Institution 1",
-            entiteId: 'ars-1',
-            statutId: 'FAIT',
-            note: 'Note',
-          },
-        ],
-      });
-
-      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
-        data: {
-          requeteId: 'SIREC-42',
-          entiteId: 'ars-1',
-          statutId: 'FAIT',
-          nom: "Réception à l'institution de provenance : Institution 1",
-          notes: { create: [{ texte: 'Note' }] },
-        },
-      });
-    });
-
     it('should create RequeteEtape without notes when note is null', async () => {
       await saveFromSirec({
         ...data,
@@ -893,6 +1004,7 @@ describe('sirecMigration.service.ts', () => {
           entiteId: 'ars-1',
           statutId: 'A_FAIRE',
           nom: 'Envoyer un accusé de réception au déclarant',
+          createdAt: new Date('2024-01-20'),
         },
       });
     });
@@ -922,6 +1034,7 @@ describe('sirecMigration.service.ts', () => {
           statutId: 'FAIT',
           nom: 'Clôture',
           clotureReason: { connect: [{ id: 'SANS_SUITE' }] },
+          createdAt: new Date('2024-01-20'),
         },
       });
     });
@@ -1118,6 +1231,43 @@ describe('sirecMigration.service.ts', () => {
           },
           select: { id: true },
         });
+      });
+    });
+
+    it('should pass mesureProtection to victime PersonneConcernee when set', async () => {
+      await saveFromSirec({
+        ...data,
+        victime: {
+          identite: null,
+          adresse: null,
+          commentaire: '',
+          ageId: null,
+          mesureProtection: 'MANDATAIRE_JUDICIAIRE',
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ mesureProtection: 'MANDATAIRE_JUDICIAIRE' }),
+      });
+    });
+
+    it('should pass mesureProtection null to victime PersonneConcernee when victime is null', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: {
+          estVictime: true,
+          veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          adresse: null,
+          identite: null,
+          commentaire: '',
+        },
+        victime: null,
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ mesureProtection: null }),
       });
     });
 
