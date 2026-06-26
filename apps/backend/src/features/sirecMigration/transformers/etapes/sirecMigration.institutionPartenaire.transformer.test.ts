@@ -11,6 +11,7 @@ const makeData = (
     date_transfert_instit2?: Date | null;
     date_transfert_instit3?: Date | null;
     prec_niv_comp?: string | null;
+    sys_creation_date?: Date | null;
   } = {},
   institutionPartenaires: Record<number, string> = {},
 ) =>
@@ -23,6 +24,7 @@ const makeData = (
       date_transfert_instit2: null,
       date_transfert_instit3: null,
       prec_niv_comp: null,
+      sys_creation_date: null,
       ...overrides,
     },
     motifsDeclaresIdDicos: [],
@@ -171,7 +173,7 @@ describe('sirecMigration.institutionPartenaire.transformer.ts', () => {
       );
 
       expect(result[0].note).toContain('Date de transfert : 15/03/2024');
-      expect(result[0].createdAt).toEqual(date);
+      expect(result[0].dateRealisation).toEqual(date);
     });
 
     it('should use date_transfert_instit1 for the first institution', () => {
@@ -182,7 +184,7 @@ describe('sirecMigration.institutionPartenaire.transformer.ts', () => {
       );
 
       expect(result[0].note).toContain('Date de transfert : 15/03/2024');
-      expect(result[0].createdAt).toEqual(date);
+      expect(result[0].dateRealisation).toEqual(date);
     });
 
     it('should use date_transfert_instit2 for the second institution', () => {
@@ -196,7 +198,7 @@ describe('sirecMigration.institutionPartenaire.transformer.ts', () => {
       );
 
       expect(result[1].note).toContain('Date de transfert : 20/04/2024');
-      expect(result[1].createdAt).toEqual(date);
+      expect(result[1].dateRealisation).toEqual(date);
     });
 
     it('should use date_transfert_instit3 for the third institution', () => {
@@ -210,7 +212,17 @@ describe('sirecMigration.institutionPartenaire.transformer.ts', () => {
       );
 
       expect(result[2].note).toContain('Date de transfert : 25/05/2024');
-      expect(result[2].createdAt).toEqual(date);
+      expect(result[2].dateRealisation).toEqual(date);
+    });
+
+    it('should set createdAt from sys_creation_date', () => {
+      const sysDate = new Date('2024-01-01');
+      const result = transformSirecInstitutionsPartenaires(
+        makeData({ institution_part: '1', niv_competence_reclam: 54, sys_creation_date: sysDate }, { 1: 'A' }),
+        [ARS_1],
+      );
+
+      expect(result[0].createdAt).toEqual(sysDate);
     });
 
     it('should produce "Date de transfert non renseignée" when date is null for the first institution', () => {
@@ -238,7 +250,8 @@ describe('sirecMigration.institutionPartenaire.transformer.ts', () => {
       );
 
       expect(result[3].note).toContain('Date de transfert non renseignée');
-      expect(result[3].createdAt).toBeUndefined();
+      expect(result[3].dateRealisation).toBeUndefined();
+      expect(result[3].createdAt).toBeNull();
     });
 
     it('should use date_transfert_instit1 for free-text institution', () => {

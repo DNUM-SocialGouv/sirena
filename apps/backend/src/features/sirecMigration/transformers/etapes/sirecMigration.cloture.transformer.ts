@@ -19,14 +19,17 @@ export function transformSirecCloture(
   const clotureEffectiveDate =
     rawClotureEffectiveDate !== undefined ? toSirecLocalDate(rawClotureEffectiveDate) : undefined;
 
-  const etapes = arsEntiteIds.map((entiteId) => ({
-    nom: 'Clôture',
-    entiteId,
-    statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
-    note: motif_cloture,
-    ...(clotureReason !== null ? { clotureReason } : {}),
-    ...(clotureEffectiveDate !== undefined ? { clotureEffectiveDate } : {}),
-  }));
+  const etapes = arsEntiteIds.map(
+    (entiteId): SirenaEtapeData => ({
+      nom: 'Clôture',
+      entiteId,
+      statutId: REQUETE_ETAPE_STATUT_TYPES.CLOTUREE,
+      note: motif_cloture,
+      ...(clotureReason !== null ? { clotureReason } : {}),
+      createdAt: sirecData.reclamation.sys_last_mod_date,
+      ...(clotureEffectiveDate !== undefined ? { clotureEffectiveDate, dateRealisation: clotureEffectiveDate } : {}),
+    }),
+  );
 
   return { requeteStatutId: REQUETE_STATUT_TYPES.CLOTUREE, etapes };
 }

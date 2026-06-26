@@ -14,7 +14,7 @@ export function transformSirecMesuresPrises(
   sirecData: SirecReclamationData,
   arsEntiteIds: string[],
 ): SirenaEtapeData[] {
-  const { mesures_prises, mesures_initiative, mesures_precision, sys_last_mod_date } = sirecData.reclamation;
+  const { mesures_prises, mesures_initiative, mesures_precision, sys_creation_date } = sirecData.reclamation;
 
   if (mesures_prises === null) {
     return [];
@@ -39,7 +39,7 @@ export function transformSirecMesuresPrises(
     nom: 'Mesures prises par le mis en cause',
     entiteId,
     statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT,
-    ...(sys_last_mod_date !== null ? { createdAt: sys_last_mod_date } : {}),
+    createdAt: sys_creation_date,
     note,
   }));
 }

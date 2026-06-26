@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SirecTranscoError } from '../transco/sirecTransco.error.js';
 import { transformSirecVictime } from './sirecMigration.victime.transformer.js';
 
 describe('sirecMigration.victime.transformer.ts', () => {
@@ -16,6 +17,8 @@ describe('sirecMigration.victime.transformer.ts', () => {
     victime_prenom: null as string | null,
     victime_mail: null as string | null,
     victime_tel: null as string | null,
+    mandataire_judiciaire: null as number | null,
+    mandataire_precisez: null as number | null,
   } as Parameters<typeof transformSirecVictime>[0];
 
   it('should return null when all victime fields are null', () => {
@@ -34,6 +37,7 @@ describe('sirecMigration.victime.transformer.ts', () => {
       adresse: null,
       commentaire: 'Usager (Victime) non identifié : oui',
       ageId: null,
+      mesureProtection: null,
     });
   });
 
@@ -228,5 +232,87 @@ describe('sirecMigration.victime.transformer.ts', () => {
 
   it('should return null when only usager_adresse_complete is null and no other data', () => {
     expect(transformSirecVictime({ ...reclamation, usager_adresse_complete: null })).toBeNull();
+  });
+
+  it('should set mesureProtection to MANDATAIRE_JUDICIAIRE when mandataire_judiciaire=1', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_nom: 'Martin', mandataire_judiciaire: 1 });
+
+    expect(result?.mesureProtection).toBe('MANDATAIRE_JUDICIAIRE');
+  });
+
+  it('should set mesureProtection to MANDATAIRE_JUDICIAIRE when mandataire_judiciaire=112', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_nom: 'Martin', mandataire_judiciaire: 112 });
+
+    expect(result?.mesureProtection).toBe('MANDATAIRE_JUDICIAIRE');
+  });
+
+  it('should set mesureProtection to null when mandataire_judiciaire=0', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_nom: 'Martin', mandataire_judiciaire: 0 });
+
+    expect(result?.mesureProtection).toBeNull();
+  });
+
+  it('should set mesureProtection to null when mandataire_judiciaire=111', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_nom: 'Martin', mandataire_judiciaire: 111 });
+
+    expect(result?.mesureProtection).toBeNull();
+  });
+
+  it('should set mesureProtection to null when mandataire_judiciaire is null', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_nom: 'Martin', mandataire_judiciaire: null });
+
+    expect(result?.mesureProtection).toBeNull();
+  });
+
+  it('should throw SirecTranscoError for unknown mandataire_judiciaire value', () => {
+    expect(() => transformSirecVictime({ ...reclamation, mandataire_judiciaire: 999 })).toThrow(SirecTranscoError);
+  });
+
+  it('should return non-null when only mandataire_judiciaire=1 is set', () => {
+    expect(transformSirecVictime({ ...reclamation, mandataire_judiciaire: 1 })).not.toBeNull();
+  });
+
+  it('should append mandataire_precisez label to commentaire when set', () => {
+    const result = transformSirecVictime({
+      ...reclamation,
+      victime_nom: 'Martin',
+      mandataire_precisez: 108,
+    });
+
+    expect(result?.commentaire).toBe('Précisions concernant le mandat judiciaire : Curatelle');
+  });
+
+  it('should append mandataire_precisez 109 as Sauvegarde de justice', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_nom: 'Martin', mandataire_precisez: 109 });
+
+    expect(result?.commentaire).toBe('Précisions concernant le mandat judiciaire : Sauvegarde de justice');
+  });
+
+  it('should not add to commentaire when mandataire_precisez is null', () => {
+    const result = transformSirecVictime({ ...reclamation, victime_non_identifiee: 1, mandataire_precisez: null });
+
+    expect(result?.commentaire).toBe('Usager (Victime) non identifié : oui');
+  });
+
+  it('should not add to commentaire when mandataire_precisez is unknown', () => {
+    const result = transformSirecVictime({
+      ...reclamation,
+      victime_non_identifiee: 1,
+      mandataire_precisez: 99999,
+    });
+
+    expect(result?.commentaire).toBe('Usager (Victime) non identifié : oui');
+  });
+
+  it('should combine mandataire_precisez with other commentaire parts', () => {
+    const result = transformSirecVictime({
+      ...reclamation,
+      victime_non_identifiee: 1,
+      mandataire_precisez: 110,
+    });
+
+    expect(result?.commentaire).toBe(
+      'Usager (Victime) non identifié : oui\nPrécisions concernant le mandat judiciaire : Tutelle',
+    );
   });
 });
