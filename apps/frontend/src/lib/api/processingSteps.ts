@@ -63,19 +63,6 @@ export async function updateProcessingStep(stepId: string, data: UpdateProcessin
   return res.json();
 }
 
-export type UpdateProcessingStepStatusData = {
-  statutId: Exclude<RequeteEtapeStatutType, 'CLOTUREE'>;
-};
-
-export async function updateProcessingStepStatus(stepId: string, data: UpdateProcessingStepStatusData) {
-  const res = await client['requete-etapes'][':id'].statut.$patch({
-    param: { id: stepId },
-    json: data,
-  });
-  await handleRequestErrors(res);
-  return res.json();
-}
-
 export type AddClotureFilesData = {
   fileIds: string[];
 };
@@ -84,54 +71,6 @@ export async function addClotureFiles(stepId: string, data: AddClotureFilesData)
   const res = await client['requete-etapes'][':id']['cloture-files'].$post({
     param: { id: stepId },
     json: { fileIds: data.fileIds },
-  });
-  await handleRequestErrors(res);
-  return res.json();
-}
-
-export type AddProcessingStepNoteData = {
-  texte: string;
-  fileIds: string[];
-};
-
-export async function addProcessingStepNote(stepId: string, data: AddProcessingStepNoteData) {
-  const res = await client.notes.$post({
-    json: { texte: data.texte, fileIds: data.fileIds, requeteEtapeId: stepId },
-  });
-  await handleRequestErrors(res);
-  return res.json();
-}
-
-export type UpdateProcessingStepNoteData = {
-  texte: string;
-  fileIds: string[];
-};
-
-export async function updateProcessingStepNote(noteId: string, data: UpdateProcessingStepNoteData) {
-  const res = await client.notes[':id'].$patch({
-    param: { id: noteId },
-    json: { texte: data.texte, fileIds: data.fileIds },
-  });
-  await handleRequestErrors(res);
-  return res.json();
-}
-
-export async function deleteProcessingStepNote(noteId: string) {
-  const res = await client.notes[':noteId'].$delete({
-    param: { noteId: noteId },
-  });
-  await handleRequestErrors(res);
-  return;
-}
-
-export type UpdateProcessingStepNameData = {
-  nom: string;
-};
-
-export async function updateProcessingStepName(stepId: string, data: UpdateProcessingStepNameData) {
-  const res = await client['requete-etapes'][':id'].nom.$patch({
-    param: { id: stepId },
-    json: data,
   });
   await handleRequestErrors(res);
   return res.json();
