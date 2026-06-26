@@ -113,6 +113,27 @@
   color: var(--text-action-high-blue-france);
 }
 
+.step-files {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.step-file {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border-default-grey);
+  border-radius: 0.25rem;
+}
+
+.step-file__from {
+  font-size: 0.8rem;
+  margin-bottom: 0;
+}
+
 .timeline-step:last-child .request-step {
   border-bottom: none;
 }
