@@ -12,7 +12,6 @@ import { Toast } from '@sirena/ui';
 import { clsx } from 'clsx';
 import { memo, useMemo, useRef, useState } from 'react';
 import { FileDownloadLink } from '@/components/common/FileDownloadLink';
-import { capitalizeFirst } from '@/components/requestId/sections/helpers';
 import { useDeleteUploadedFile } from '@/hooks/mutations/updateUploadedFiles.hook';
 import type { useProcessingSteps } from '@/hooks/queries/processingSteps.hook';
 import { useCanEdit } from '@/hooks/useCanEdit';
@@ -20,7 +19,9 @@ import { useModalFocusRestore } from '@/hooks/useModalFocusRestore';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
 import { useUserStore } from '@/stores/userStore';
 import { AddFilesClotureDrawer, type AddFilesClotureDrawerRef } from './AddFilesClotureDrawer';
+import { StepFiles } from './StepFiles';
 import { StepNote } from './StepNote';
+import { formatAgent, formatDate } from './stepFormat';
 
 type StepType = NonNullable<ReturnType<typeof useProcessingSteps>['data']>['data'][number];
 
@@ -30,19 +31,6 @@ type StepProps = StepType & {
   onSendAcknowledgment?: () => void;
   openEdit?(step: StepType): void;
 };
-
-const formatDate = (dateStr: string | Date) =>
-  new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-
-const formatAgent = (agent: { prenom: string; nom: string }): React.ReactNode => (
-  <>
-    {capitalizeFirst(agent.prenom)} <span className="lastname">{capitalizeFirst(agent.nom)}</span>
-  </>
-);
 
 const formatStepCreationInfo = (
   createdBy: { prenom: string; nom: string } | null | undefined,
@@ -75,6 +63,7 @@ const getStepSubtitle = (
   createdBy: StepType['createdBy'],
   notes: StepType['notes'],
   requete: StepType['requete'],
+  uploadedFiles: StepType['uploadedFiles'],
   clotureEffectiveDate?: string | null,
   dateRealisation?: string | Date | null,
 ): React.ReactNode => {
@@ -109,6 +98,18 @@ const getStepSubtitle = (
   }
   if (type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT) {
     if (statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT) {
+      // The AR PDF is attached to the step and kept non-deletable (canDelete:false).
+      const arFile = uploadedFiles.find((file) => !file.canDelete);
+      if (arFile?.uploadedBy) {
+        return (
+          <>
+            Envoyé le {formatDate(arFile.createdAt)} par {formatAgent(arFile.uploadedBy)}
+          </>
+        );
+      }
+      if (arFile) {
+        return `Envoyé automatiquement le ${formatDate(arFile.createdAt)}`;
+      }
       const sendNote = notes.find((note) => note.texte?.startsWith("Email d'accusé de réception envoyé le"));
       const isManualRequest = !!requete?.createdBy;
       if (isManualRequest && sendNote?.author) {
@@ -243,6 +244,7 @@ const StepComponent = ({
                   createdBy,
                   notes,
                   requete,
+                  rest.uploadedFiles,
                   clotureEffectiveDate,
                   step.dateRealisation,
                 )}
@@ -322,46 +324,9 @@ const StepComponent = ({
           </>
         ) : (
           <>
-            {sendNote && sendNote.uploadedFiles.length > 0 && (
-              <ul className="fr-mt-1w fr-mb-2w" style={{ listStyle: 'none', padding: 0 }}>
-                {sendNote.uploadedFiles.map((file: (typeof sendNote.uploadedFiles)[number]) => {
-                  const fileName = file.fileName;
-                  return (
-                    <li key={file.id} className={styles['request-note__file']}>
-                      <FileDownloadLink
-                        href={`/api/requete-etapes/${id}/file/${file.id}`}
-                        safeHref={`/api/requete-etapes/${id}/file/${file.id}/safe`}
-                        fileName={fileName}
-                        fileId={file.id}
-                        fileSize={file.size}
-                        status={file.status}
-                        scanStatus={file.scanStatus}
-                        sanitizeStatus={file.sanitizeStatus}
-                      />
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
             <div className={styles['request-notes']}>
               {displayNotes.slice(0, isOpen ? displayNotes.length : 3).map((note: StepType['notes'][number]) => (
-                <StepNote
-                  key={note.id}
-                  content={note.texte}
-                  author={note.author}
-                  id={note.id}
-                  createdAt={note.createdAt}
-                  files={note.uploadedFiles.map((file: (typeof note.uploadedFiles)[number]) => ({
-                    id: file.id,
-                    size: file.size,
-                    originalName: file.fileName,
-                    status: file.status,
-                    scanStatus: file.scanStatus,
-                    sanitizeStatus: file.sanitizeStatus,
-                  }))}
-                  requeteStateId={id}
-                  clotureReasonLabels={null}
-                />
+                <StepNote key={note.id} content={note.texte} author={note.author} createdAt={note.createdAt} />
               ))}
             </div>
             <div className={styles['request-notes-distplay']}>
@@ -377,6 +342,7 @@ const StepComponent = ({
                 </button>
               )}
             </div>
+            <StepFiles files={rest.uploadedFiles} stepId={id} />
             {canEditStep && (
               <Button
                 className={styles['request-step__add-note']}
