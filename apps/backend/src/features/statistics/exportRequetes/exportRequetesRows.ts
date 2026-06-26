@@ -146,34 +146,61 @@ function buildExportRequeteRow(
   options: { topEntiteId?: string },
   situationIndex?: number,
 ): ExportRequetesCsvRow {
-  const requeteEntiteRacine = requete.requeteEntites?.find(
-    (requeteEntite) => requeteEntite.entiteId === options.topEntiteId,
-  );
-  const etapeCloturee = getLatestEtapeCloturee(requete.etapes, options.topEntiteId);
+  return toExportRequetesCsvRow({
+    ...buildRequeteFields(requete),
+    ...buildDeclarantFields(requete.declarant),
+    ...buildPersonneConcerneeFields(requete.participant),
+    ...buildSituationFields(situation, situationIndex),
+    ...buildFaitsFields(situation?.faits ?? []),
+    ...buildDemarchesFields(situation?.demarchesEngagees),
+    ...buildWorkflowFields(requete, options),
+  });
+}
+
+function buildRequeteFields(requete: ExportRequeteRecord): ExportRequeteKeyedRow {
+  return {
+    numeroRequete: requete.id,
+    dateCreationRequeteSirena: formatExportDate(requete.createdAt),
+    dateReception: formatExportDate(requete.receptionDate),
+    modeReception: requete.receptionType?.label ?? '',
+    dateDemandeDeclarant: formatExportDate(requete.dateDemandeDeclarant),
+    provenance: requete.provenance?.label ?? '',
+  };
+}
+
+function buildDeclarantFields(declarant: ExportDeclarantRecord | null | undefined): ExportRequeteKeyedRow {
+  return {
+    declarantEstPersonneConcernee: formatExportBoolean(declarant?.estVictime),
+    lienPersonneConcernee: formatLienVictime(declarant),
+    declarantEstTuteurCurateur: formatExportBoolean(declarant?.isTuteur),
+    codePostalDeclarant: declarant?.adresse?.codePostal ?? '',
+    declarantConsentIdentiteCommuniquee: formatConsentIdentite(declarant?.veutGarderAnonymat),
+    declarantProfessionnelEig: formatExportBoolean(declarant?.estSignalementProfessionnel),
+  };
+}
+
+function buildPersonneConcerneeFields(participant: ExportParticipantRecord | null | undefined): ExportRequeteKeyedRow {
+  return {
+    civilitePersonneConcernee: participant?.identite?.civilite?.label ?? '',
+    trancheAgePersonneConcernee: participant?.age?.label ?? '',
+    anneeNaissancePersonneConcernee: participant?.age?.label ? '' : formatExportYear(participant?.dateNaissance),
+    codePostalPersonneConcernee: participant?.adresse?.codePostal ?? '',
+    personneConcerneeConsentIdentiteCommuniquee: formatConsentIdentite(participant?.veutGarderAnonymat),
+    personneConcerneeInformeeDemarche: formatExportBoolean(participant?.estVictimeInformee),
+    mesureProtectionPersonneConcernee: getMesureProtectionShortLabel(participant?.mesureProtection) ?? '',
+    personneConcerneeHandicap: formatExportBoolean(participant?.estHandicapee),
+    autrePersonneConcernee: participant?.aAutrePersonnes ? (participant.autrePersonnes ?? '') : '',
+  };
+}
+
+function buildSituationFields(
+  situation: ExportSituationRecord | null,
+  situationIndex: number | undefined,
+): ExportRequeteKeyedRow {
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
   const misEnCause = situation?.misEnCause;
-  const faits = situation?.faits ?? [];
-  const demarchesEngagees = situation?.demarchesEngagees;
 
-  return toExportRequetesCsvRow({
-    numeroRequete: requete.id,
-    declarantEstPersonneConcernee: formatExportBoolean(requete.declarant?.estVictime),
-    lienPersonneConcernee: formatLienVictime(requete.declarant),
-    declarantEstTuteurCurateur: formatExportBoolean(requete.declarant?.isTuteur),
-    codePostalDeclarant: requete.declarant?.adresse?.codePostal ?? '',
-    declarantConsentIdentiteCommuniquee: formatConsentIdentite(requete.declarant?.veutGarderAnonymat),
-    declarantProfessionnelEig: formatExportBoolean(requete.declarant?.estSignalementProfessionnel),
-    civilitePersonneConcernee: requete.participant?.identite?.civilite?.label ?? '',
-    trancheAgePersonneConcernee: requete.participant?.age?.label ?? '',
-    anneeNaissancePersonneConcernee: requete.participant?.age?.label
-      ? ''
-      : formatExportYear(requete.participant?.dateNaissance),
-    codePostalPersonneConcernee: requete.participant?.adresse?.codePostal ?? '',
-    personneConcerneeConsentIdentiteCommuniquee: formatConsentIdentite(requete.participant?.veutGarderAnonymat),
-    personneConcerneeInformeeDemarche: formatExportBoolean(requete.participant?.estVictimeInformee),
-    mesureProtectionPersonneConcernee: getMesureProtectionShortLabel(requete.participant?.mesureProtection) ?? '',
-    personneConcerneeHandicap: formatExportBoolean(requete.participant?.estHandicapee),
-    autrePersonneConcernee: requete.participant?.aAutrePersonnes ? (requete.participant.autrePersonnes ?? '') : '',
+  return {
     numeroSituation: situation ? (situationIndex ?? 0) + 1 : '',
     typeLieuSurvenue: lieuDeSurvenue?.lieuType?.label ?? '',
     precisionTypeLieuSurvenue: formatLieuSurvenuePrecision(lieuDeSurvenue),
@@ -185,6 +212,15 @@ function buildExportRequeteRow(
     finessMisEnCause: misEnCause?.finess ?? '',
     nomService: misEnCause?.nomService ?? '',
     codePostalMisEnCause: misEnCause?.codePostal ?? '',
+    domaineFonctionnel: situation?.domainesFonctionnels?.label ?? '',
+    entitesAdministrativesSituation: formatSituationRootEntites(situation?.situationEntites),
+    directionsSituation: formatSituationDirections(situation?.situationEntites),
+    servicesSituation: formatSituationServices(situation?.situationEntites),
+  };
+}
+
+function buildFaitsFields(faits: ExportFaitRecord[]): ExportRequeteKeyedRow {
+  return {
     motifsDeclaratifs: formatUniqueLabels(
       faits.flatMap((fait) => fait.motifsDeclaratifs.map((motif) => motif.motifDeclaratif?.label)),
     ),
@@ -194,26 +230,34 @@ function buildExportRequeteRow(
     ),
     dateDebutFaits: formatExportDate(getEarliestDate(faits.map((fait) => fait.dateDebut))),
     dateFinFaits: formatExportDate(getLatestDate(faits.map((fait) => fait.dateFin))),
-    domaineFonctionnel: situation?.domainesFonctionnels?.label ?? '',
+  };
+}
+
+function buildDemarchesFields(
+  demarchesEngagees: ExportDemarchesEngageesRecord | null | undefined,
+): ExportRequeteKeyedRow {
+  return {
     datePriseContact: formatExportDate(demarchesEngagees?.dateContactEtablissement),
     dateDepotPlainte: formatExportDate(demarchesEngagees?.datePlainte),
     lieuDepotPlainte: demarchesEngagees?.autoriteType?.label ?? '',
     demarchesAutresOrganismes: formatUniqueLabels(demarchesEngagees?.demarches.map((demarche) => demarche.label) ?? []),
-    entitesAdministrativesSituation: formatSituationRootEntites(situation?.situationEntites),
-    directionsSituation: formatSituationDirections(situation?.situationEntites),
-    servicesSituation: formatSituationServices(situation?.situationEntites),
+  };
+}
+
+function buildWorkflowFields(requete: ExportRequeteRecord, options: { topEntiteId?: string }): ExportRequeteKeyedRow {
+  const requeteEntiteRacine = requete.requeteEntites?.find(
+    (requeteEntite) => requeteEntite.entiteId === options.topEntiteId,
+  );
+  const etapeCloturee = getLatestEtapeCloturee(requete.etapes, options.topEntiteId);
+
+  return {
     entitesStatutsRequete: formatRequeteEntites(requete.requeteEntites),
     prioriteRequeteEntiteAdministrative: requeteEntiteRacine?.priorite?.label ?? '',
-    dateCreationRequeteSirena: formatExportDate(requete.createdAt),
-    dateReception: formatExportDate(requete.receptionDate),
-    modeReception: requete.receptionType?.label ?? '',
-    dateDemandeDeclarant: formatExportDate(requete.dateDemandeDeclarant),
-    provenance: requete.provenance?.label ?? '',
     derniereDateClotureEntiteAdministrative: formatExportDate(etapeCloturee?.clotureEffectiveDate),
     raisonsClotureEntiteAdministrative: formatExportList(
       etapeCloturee?.clotureReason.map((reason) => reason.label) ?? [],
     ),
-  });
+  };
 }
 
 function formatSituationRootEntites(situationEntites: ExportSituationEntiteRecord[] | undefined): string {
