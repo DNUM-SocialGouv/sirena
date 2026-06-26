@@ -6,7 +6,7 @@ import {
   syncRequetePriseEnChargeToDematSocial,
 } from './priseEnChargeSync.service.js';
 
-export type DematSocialPriseEnChargeBackfillResult = {
+export type DematSocialRequetePriseEnChargeBackfillResult = {
   found: number;
   synchronised: number;
   skipped: number;
@@ -15,7 +15,7 @@ export type DematSocialPriseEnChargeBackfillResult = {
 
 const isSynchronised = (result: DematSocialPriseEnChargeSyncResult): boolean => result.kind === 'synced';
 
-export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<DematSocialPriseEnChargeBackfillResult> {
+export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<DematSocialRequetePriseEnChargeBackfillResult> {
   const logger = getLoggerStore();
   const requetes = await prisma.requete.findMany({
     where: {
@@ -28,7 +28,7 @@ export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<Dem
     orderBy: { id: 'asc' },
   });
 
-  const result: DematSocialPriseEnChargeBackfillResult = {
+  const result: DematSocialRequetePriseEnChargeBackfillResult = {
     found: requetes.length,
     synchronised: 0,
     skipped: 0,
@@ -52,5 +52,6 @@ export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<Dem
   }
 
   logger.info(result, 'Completed demat.social Requêtes prises en charge backfill');
+
   return result;
 }

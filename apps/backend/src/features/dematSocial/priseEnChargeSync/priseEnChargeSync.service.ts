@@ -16,16 +16,19 @@ export async function syncRequetePriseEnChargeToDematSocial(
 
   if (syncData.kind === 'skip') {
     logger.debug({ requeteId, reason: syncData.reason }, 'Skipping demat.social prise en charge sync');
+
     return { kind: 'skipped', reason: syncData.reason };
   }
 
   const dematSocialDossier = await getRequete(syncData.dematSocialId);
   const dossier = dematSocialDossier?.dossier;
+
   if (!dossier) {
     logger.warn(
       { requeteId, dematSocialId: syncData.dematSocialId },
       'Skipping demat.social prise en charge sync: dossier not found',
     );
+
     return { kind: 'skipped', reason: 'DOSSIER_NOT_FOUND' };
   }
 
@@ -34,6 +37,7 @@ export async function syncRequetePriseEnChargeToDematSocial(
       { requeteId, dematSocialId: syncData.dematSocialId, expectedState: DossierState.Accepte },
       'demat.social dossier already in expected final state',
     );
+
     return { kind: 'skipped', reason: 'ALREADY_EXPECTED_FINAL_STATE' };
   }
 
@@ -47,6 +51,7 @@ export async function syncRequetePriseEnChargeToDematSocial(
       },
       'demat.social dossier already in a different final state',
     );
+
     return { kind: 'skipped', reason: 'DIFFERENT_FINAL_STATE' };
   }
 
@@ -55,8 +60,10 @@ export async function syncRequetePriseEnChargeToDematSocial(
   if (dossier.state === DossierState.EnConstruction) {
     const instruction = await updateInstruction(dossierMutationId);
     const errors = instruction?.dossierPasserEnInstruction?.errors ?? [];
+
     if (errors.length > 0 || !instruction?.dossierPasserEnInstruction?.dossier) {
       const message = errors.map((error) => error.message).join(', ') || 'No dossier returned';
+
       throw new Error(`demat.social dossierPasserEnInstruction failed: ${message}`);
     }
   }

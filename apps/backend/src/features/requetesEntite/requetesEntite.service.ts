@@ -62,7 +62,7 @@ const parseNullableDate = (dateString: string | undefined | null): Date | null =
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-const shouldTriggerDematSocialTakeoverSync = (
+const shouldTriggerDematSocialPriseEnChargeSync = (
   previousStatut: string | null | undefined,
   nextStatut: RequeteStatutType,
 ): boolean => {
@@ -1766,7 +1766,7 @@ export const closeRequeteForEntite = async (
     };
   });
 
-  if (shouldTriggerDematSocialTakeoverSync(requeteEntite.statutId, REQUETE_STATUT_TYPES.CLOTUREE)) {
+  if (shouldTriggerDematSocialPriseEnChargeSync(requeteEntite.statutId, REQUETE_STATUT_TYPES.CLOTUREE)) {
     await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
   }
 
@@ -1910,7 +1910,7 @@ export const updateStatusRequete = async (
     field: REQUETE_UPDATE_FIELDS.STATUS,
   });
 
-  if (shouldTriggerDematSocialTakeoverSync(previousRequeteEntite?.statutId, statut) && !tx) {
+  if (shouldTriggerDematSocialPriseEnChargeSync(previousRequeteEntite?.statutId, statut) && !tx) {
     await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
   }
 

@@ -1685,7 +1685,7 @@ describe('requetesEntite.service', () => {
       });
     });
 
-    it('should not sync demat.social when closing a RequêteEntité that was already in progress', async () => {
+    it('should not sync demat.social when closing a RequeteEntite that was already in progress', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
       vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
         { id: 'reason123', label: 'Reason 123' },
