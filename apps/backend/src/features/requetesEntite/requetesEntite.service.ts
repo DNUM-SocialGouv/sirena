@@ -2141,9 +2141,6 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
             orderBy: { createdAt: 'asc' },
             include: {
               author: { select: { prenom: true, nom: true } },
-              uploadedFiles: {
-                select: { fileName: true, metadata: true },
-              },
             },
           },
         },
@@ -2469,16 +2466,10 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         pdf.field('Motif(s) de clôture', etape.clotureReason.map((r) => r.label).join(', '));
       }
 
-      const etapeNotes = etape.notes ?? [];
-      const sendNote =
-        etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT
-          ? etapeNotes.find((note) => note.texte?.startsWith("Email d'accusé de réception envoyé le"))
-          : undefined;
-      const displayNotes = sendNote ? etapeNotes.filter((note) => note.id !== sendNote.id) : etapeNotes;
+      const displayNotes = etape.notes ?? [];
 
       const etapeFileNames = new Set<string>();
       addFileNames(etape.uploadedFiles ?? [], etapeFileNames);
-      if (sendNote) addFileNames(sendNote.uploadedFiles ?? [], etapeFileNames);
       if (etapeFileNames.size > 0) {
         pdf.paragraph('Pièces jointes :', { bold: true });
         pdf.list([...etapeFileNames]);
@@ -2491,14 +2482,6 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         const noteDate = formatDateFr(note.createdAt);
         pdf.paragraph(`Note du ${noteDate} par ${noteAuthor} :`, { bold: true });
         if (note.texte) pdf.paragraph(note.texte);
-
-        const noteFiles = (note.uploadedFiles ?? [])
-          .map((f) => getOriginalFileName(f))
-          .filter((name): name is string => Boolean(name) && !etapeFileNames.has(name));
-        if (noteFiles.length > 0) {
-          pdf.paragraph('Pièces jointes :', { bold: true });
-          pdf.list(noteFiles);
-        }
       }
     }
   }

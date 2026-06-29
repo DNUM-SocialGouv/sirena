@@ -509,17 +509,6 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
             id: true,
             texte: true,
             createdAt: true,
-            uploadedFiles: {
-              select: {
-                id: true,
-                fileName: true,
-                metadata: true,
-                size: true,
-                status: true,
-                scanStatus: true,
-                sanitizeStatus: true,
-              },
-            },
             author: {
               select: {
                 prenom: true,
@@ -585,7 +574,6 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
       editable,
       canOnlyEditNotes,
       uploadedFiles: etape.uploadedFiles.map(sanitizeFile),
-      notes: etape.notes.map((note) => ({ ...note, uploadedFiles: note.uploadedFiles.map(sanitizeFile) })),
     };
   });
 
@@ -686,7 +674,8 @@ export const deleteRequeteEtape = async (id: string, logger: PinoLogger, changed
   const requeteEtape = await prisma.requeteEtape.findUnique({
     where: { id },
     include: {
-      notes: { include: { uploadedFiles: true } },
+      notes: true,
+      uploadedFiles: true,
     },
   });
 
@@ -694,8 +683,8 @@ export const deleteRequeteEtape = async (id: string, logger: PinoLogger, changed
     return;
   }
 
-  const notes = requeteEtape.notes.map(({ uploadedFiles, ...note }) => note);
-  const files = requeteEtape.notes.flatMap((n) => n.uploadedFiles);
+  const notes = requeteEtape.notes;
+  const files = requeteEtape.uploadedFiles;
   const filePaths = files.map((f) => f.filePath);
 
   // Delete RequeteEtape (all related entities will be deleted in cascade)

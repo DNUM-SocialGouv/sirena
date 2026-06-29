@@ -87,11 +87,10 @@ const uploadedFile: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'metadata' |
 };
 
 const requeteEtapeWithNotesAndFiles: RequeteEtape & {
-  notes: (RequeteEtapeNote & { uploadedFiles: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'metadata'>[] })[];
-  uploadedFiles: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'metadata'>[];
+  notes: RequeteEtapeNote[];
+  uploadedFiles: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'metadata' | 'filePath'>[];
 } = {
   ...requeteEtape,
-  uploadedFiles: [],
   notes: [
     {
       id: 'noteId',
@@ -100,9 +99,9 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
       updatedAt: new Date(),
       authorId: 'authorId',
       requeteEtapeId: 'requeteEtapeId',
-      uploadedFiles: [uploadedFile],
     },
   ],
+  uploadedFiles: [uploadedFile],
 };
 
 describe('RequeteEtapes.service.ts', () => {
@@ -452,9 +451,8 @@ describe('RequeteEtapes.service.ts', () => {
 
       expect(result.data).toHaveLength(1);
       expect(result.data[0]).toMatchObject({ id: 'requeteEtapeId', editable: true, canOnlyEditNotes: false });
-      expect(result.data[0].uploadedFiles).toEqual([]);
       // metadata (encryption keys) is stripped and the original filename is resolved from metadata.originalName
-      expect(result.data[0].notes[0].uploadedFiles).toEqual([
+      expect(result.data[0].uploadedFiles).toEqual([
         { id: 'uploadedFileId', fileName: 'rapport.pdf', size: 1024, filePath: 'path/to/file1.pdf' },
       ]);
       expect(result.total).toBe(1);
@@ -488,17 +486,6 @@ describe('RequeteEtapes.service.ts', () => {
               id: true,
               texte: true,
               createdAt: true,
-              uploadedFiles: {
-                select: {
-                  id: true,
-                  fileName: true,
-                  metadata: true,
-                  size: true,
-                  status: true,
-                  scanStatus: true,
-                  sanitizeStatus: true,
-                },
-              },
               author: {
                 select: {
                   prenom: true,
@@ -557,9 +544,8 @@ describe('RequeteEtapes.service.ts', () => {
 
       expect(result.data).toHaveLength(1);
       expect(result.data[0]).toMatchObject({ id: 'requeteEtapeId', editable: true, canOnlyEditNotes: false });
-      expect(result.data[0].uploadedFiles).toEqual([]);
       // metadata (encryption keys) is stripped and the original filename is resolved from metadata.originalName
-      expect(result.data[0].notes[0].uploadedFiles).toEqual([
+      expect(result.data[0].uploadedFiles).toEqual([
         { id: 'uploadedFileId', fileName: 'rapport.pdf', size: 1024, filePath: 'path/to/file1.pdf' },
       ]);
       expect(result.total).toBe(1);
@@ -593,17 +579,6 @@ describe('RequeteEtapes.service.ts', () => {
               id: true,
               texte: true,
               createdAt: true,
-              uploadedFiles: {
-                select: {
-                  id: true,
-                  fileName: true,
-                  metadata: true,
-                  size: true,
-                  status: true,
-                  scanStatus: true,
-                  sanitizeStatus: true,
-                },
-              },
               author: {
                 select: {
                   prenom: true,
@@ -774,7 +749,8 @@ describe('RequeteEtapes.service.ts', () => {
       expect(prisma.requeteEtape.findUnique).toHaveBeenCalledWith({
         where: { id: 'requeteEtapeId' },
         include: {
-          notes: { include: { uploadedFiles: true } },
+          notes: true,
+          uploadedFiles: true,
         },
       });
       expect(prisma.requeteEtape.delete).toHaveBeenCalledWith({ where: { id: requeteEtapeWithNotesAndFiles.id } });
@@ -795,6 +771,7 @@ describe('RequeteEtapes.service.ts', () => {
       vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValue({
         ...requeteEtapeWithNotesAndFiles,
         notes: [],
+        uploadedFiles: [],
       } as typeof requeteEtapeWithNotesAndFiles);
       vi.mocked(prisma.requeteEtape.delete).mockResolvedValue({} as RequeteEtape);
       vi.mocked(createChangeLog).mockResolvedValue({} as unknown as ChangeLog);
@@ -816,9 +793,9 @@ describe('RequeteEtapes.service.ts', () => {
             updatedAt: new Date(),
             authorId: 'authorId',
             requeteEtapeId: 'requeteEtapeId',
-            uploadedFiles: [],
           },
         ],
+        uploadedFiles: [],
       } as typeof requeteEtapeWithNotesAndFiles);
       vi.mocked(prisma.requeteEtape.delete).mockResolvedValue({} as RequeteEtape);
       vi.mocked(createChangeLog).mockResolvedValue({} as unknown as ChangeLog);
