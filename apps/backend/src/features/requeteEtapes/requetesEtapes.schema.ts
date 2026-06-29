@@ -55,10 +55,12 @@ const noteTexteSchema = z
     z
       .string()
       .min(1, { message: 'Le texte de la note est obligatoire.' })
-      .max(100000, { message: 'Maximum 10 000 caractères.' }),
+      .max(10_000, { message: 'Maximum 10 000 caractères.' }),
   );
 
-const fileIdsSchema = z.array(z.string().min(1, 'id vide'));
+const fileIdsSchema = z.array(z.string().min(1, 'id vide')).refine((ids) => new Set(ids).size === ids.length, {
+  message: 'Les fichiers ne doivent pas être dupliqués.',
+});
 
 // DateRealisation is mandatory when statut is « Fait ».
 const requireDateWhenFait = (data: { statutId?: string | null; dateRealisation?: Date }) =>
