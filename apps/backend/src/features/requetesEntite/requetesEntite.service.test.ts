@@ -48,8 +48,8 @@ vi.mock('../changelog/changelog.service.js', () => ({
   createChangeLog: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock('../dematSocial/closureSync/closureSync.service.js', () => ({
-  safeSyncClosedRequeteToDematSocial: vi.fn().mockResolvedValue(undefined),
+vi.mock('../dematSocial/priseEnChargeSync/priseEnChargeSync.service.js', () => ({
+  safeSyncRequetePriseEnChargeToDematSocial: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../helpers/sse.js', () => ({
@@ -85,7 +85,7 @@ import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES }
 import { getFileStream } from '../../libs/minio.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import { safeSyncClosedRequeteToDematSocial } from '../dematSocial/closureSync/closureSync.service.js';
+import { safeSyncRequetePriseEnChargeToDematSocial } from '../dematSocial/priseEnChargeSync/priseEnChargeSync.service.js';
 import { buildEntitesTraitement, getEntiteAscendanteInfo } from '../entites/entites.service.js';
 import { RequetePdfBuilder } from './requetesEntite.pdf.builder.js';
 
@@ -1561,6 +1561,7 @@ describe('requetesEntite.service', () => {
           },
           requeteEntite: {
             ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
             update: vi.fn().mockResolvedValue(mockRequeteEntite),
           },
           uploadedFile: {
@@ -1651,6 +1652,7 @@ describe('requetesEntite.service', () => {
           },
           requeteEntite: {
             ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
             update: vi.fn().mockResolvedValue(mockRequeteEntite),
           },
         } as typeof prismaMock;
@@ -1683,7 +1685,7 @@ describe('requetesEntite.service', () => {
       });
     });
 
-    it('should sync demat.social after the closure transaction succeeds', async () => {
+    it('should not sync demat.social when closing a RequeteEntite that was already in progress', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
       vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
         { id: 'reason123', label: 'Reason 123' },
@@ -1713,23 +1715,26 @@ describe('requetesEntite.service', () => {
           ...prismaMock,
           requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue(mockEtape) },
           requeteEtapeNote: { ...prismaMock.requeteEtapeNote, create: vi.fn().mockResolvedValue(mockNote) },
-          requeteEntite: { ...prismaMock.requeteEntite, update: vi.fn().mockResolvedValue(mockRequeteEntite) },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
+            update: vi.fn().mockResolvedValue(mockRequeteEntite),
+          },
         } as typeof prismaMock;
         const result = await cb(mockTx);
         transactionEvents.push('transaction:committed');
         return result;
       });
-      vi.mocked(safeSyncClosedRequeteToDematSocial).mockImplementation(async () => {
+      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockImplementation(async () => {
         transactionEvents.push('sync');
       });
 
       await closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01');
 
-      expect(safeSyncClosedRequeteToDematSocial).toHaveBeenCalledWith('req123');
-      expect(transactionEvents).toEqual(['transaction:start', 'transaction:committed', 'sync']);
+      expect(transactionEvents).toEqual(['transaction:start', 'transaction:committed']);
     });
 
-    it('should not fail closure when demat.social sync fails', async () => {
+    it('should close requete', async () => {
       vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
       vi.mocked(prisma.requeteClotureReasonEnum.findMany).mockResolvedValueOnce([
         { id: 'reason123', label: 'Reason 123' },
@@ -1757,12 +1762,14 @@ describe('requetesEntite.service', () => {
           ...prismaMock,
           requeteEtape: { ...prismaMock.requeteEtape, create: vi.fn().mockResolvedValue(mockEtape) },
           requeteEtapeNote: { ...prismaMock.requeteEtapeNote, create: vi.fn().mockResolvedValue(mockNote) },
-          requeteEntite: { ...prismaMock.requeteEntite, update: vi.fn().mockResolvedValue(mockRequeteEntite) },
+          requeteEntite: {
+            ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
+            update: vi.fn().mockResolvedValue(mockRequeteEntite),
+          },
         } as typeof prismaMock;
         return cb(mockTx);
       });
-      vi.mocked(safeSyncClosedRequeteToDematSocial).mockRejectedValueOnce(new Error('demat.social unavailable'));
-
       await expect(
         closeRequeteForEntite('req123', 'ent123', ['reason123'], 'user123', '2024-01-01'),
       ).resolves.toMatchObject({
@@ -1808,6 +1815,7 @@ describe('requetesEntite.service', () => {
           },
           requeteEntite: {
             ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
             update: vi.fn().mockResolvedValue(mockRequeteEntite),
           },
         } as typeof prismaMock;
@@ -1909,6 +1917,7 @@ describe('requetesEntite.service', () => {
           },
           requeteEntite: {
             ...prismaMock.requeteEntite,
+            findUnique: vi.fn().mockResolvedValue(mockRequeteEntite),
             update: vi.fn().mockResolvedValue(mockRequeteEntite),
           },
           uploadedFile: {
@@ -3018,8 +3027,16 @@ describe('requetesEntite.service', () => {
     });
   });
   describe('updateStatusRequete', () => {
+    beforeEach(() => {
+      vi.mocked(prisma.requeteEntite.findUnique).mockReset();
+      vi.mocked(prisma.requeteEntite.update).mockReset();
+      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockReset();
+      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockResolvedValue(undefined);
+    });
+
     it('should update the status of the requeteEntite', async () => {
       vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce(mockRequeteEntite);
       vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
         ...mockRequeteEntite,
         statutId: 'CLOTUREE',
@@ -3030,6 +3047,103 @@ describe('requetesEntite.service', () => {
       expect(prisma.requeteEntite.update).toHaveBeenCalledOnce();
 
       expect(result.statutId).toBe('CLOTUREE');
+    });
+
+    it('should sync demat.social when status changes from NOUVEAU to EN_COURS', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      });
+
+      await updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.EN_COURS);
+
+      expect(safeSyncRequetePriseEnChargeToDematSocial).toHaveBeenCalledWith('req123');
+    });
+
+    it('should sync demat.social when status changes from NOUVEAU to CLOTUREE', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+      });
+
+      await updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.CLOTUREE);
+
+      expect(safeSyncRequetePriseEnChargeToDematSocial).toHaveBeenCalledWith('req123');
+    });
+
+    it('should not sync demat.social when status changes from EN_COURS to CLOTUREE', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+      });
+
+      await updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.CLOTUREE);
+
+      expect(safeSyncRequetePriseEnChargeToDematSocial).not.toHaveBeenCalled();
+    });
+
+    it('should not sync demat.social when status remains NOUVEAU', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      });
+
+      await updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.NOUVEAU);
+
+      expect(safeSyncRequetePriseEnChargeToDematSocial).not.toHaveBeenCalled();
+    });
+
+    it('should not sync demat.social when reopening from CLOTUREE to EN_COURS', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.CLOTUREE,
+      });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      });
+
+      await updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.EN_COURS);
+
+      expect(safeSyncRequetePriseEnChargeToDematSocial).not.toHaveBeenCalled();
+    });
+
+    it('should keep the status update successful when the safe demat.social sync layer handles its own failures', async () => {
+      vi.clearAllMocks();
+      vi.mocked(prisma.requeteEntite.findUnique).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.NOUVEAU,
+      });
+      vi.mocked(prisma.requeteEntite.update).mockResolvedValueOnce({
+        ...mockRequeteEntite,
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      });
+      vi.mocked(safeSyncRequetePriseEnChargeToDematSocial).mockResolvedValueOnce(undefined);
+
+      await expect(updateStatusRequete('req123', 'ent123', REQUETE_STATUT_TYPES.EN_COURS)).resolves.toMatchObject({
+        statutId: REQUETE_STATUT_TYPES.EN_COURS,
+      });
     });
   });
 

@@ -23,7 +23,7 @@
     "op:diff:entites:up": "dotenv -e .env -- pnpm --filter @sirena/backend op:diff:entites:up",
     "op:diff:entites:down": "dotenv -e .env -- pnpm --filter @sirena/backend op:diff:entites:down",
     "op:import:dematsocial": "dotenv -e .env -- pnpm --filter @sirena/backend op:import:dematsocial",
-    "op:backfill:closed-requetes:dematsocial": "dotenv -e .env -- pnpm --filter @sirena/backend op:backfill:closed-requetes:dematsocial",
+    "op:backfill:requetes-prises-en-charge:dematsocial": "dotenv -e .env -- pnpm --filter @sirena/backend op:backfill:requetes-prises-en-charge:dematsocial",
     "op:manage-api-keys": "dotenv -e .env -- pnpm --filter @sirena/backend op:manage-api-keys",
     "op:file-integrity": "dotenv -e .env -- pnpm --filter @sirena/backend op:file-integrity",
     "op:get-load-test-user": "dotenv -e .env -- pnpm --filter @sirena/backend op:get-load-test-user",
