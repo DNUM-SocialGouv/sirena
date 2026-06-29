@@ -468,7 +468,6 @@ describe('sendManualAcknowledgmentEmail() — PDF attachment', () => {
     expect(mockedCreateUploadedFile).toHaveBeenCalledWith(
       expect.objectContaining({
         requeteEtapeId: 'etapeAck',
-        requeteEtapeNoteId: null,
         uploadedById: 'user123',
         canDelete: false,
       }),

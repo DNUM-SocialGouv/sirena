@@ -31,7 +31,6 @@ const fakeFile: UploadedFile = {
   metadata: null,
   entiteId: 'entite1',
   status: 'PENDING',
-  requeteEtapeNoteId: 'step1',
   requeteEtapeId: null,
   faitSituationId: null,
   requeteId: 'requeteId',
