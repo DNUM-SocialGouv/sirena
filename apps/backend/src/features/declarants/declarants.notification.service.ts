@@ -70,7 +70,7 @@ function formatEntiteCompleteString(entites: EntiteForMessage[]): string {
 }
 
 /**
- * Attaches an email PDF to the acknowledgment step via RequeteEtapeNote
+ * Attaches an email PDF directly to the acknowledgment step (requeteEtapeId)
  */
 async function attachEmailPdfToStep(
   requeteId: string,
@@ -138,7 +138,6 @@ async function attachEmailPdfToStep(
           emailSubject: emailInfo.subject,
           ...(encryptionMetadata && { encryption: encryptionMetadata }),
         },
-        requeteEtapeNoteId: null,
         requeteEtapeId: etape.id,
         requeteId: null,
         faitSituationId: null,
