@@ -51,7 +51,7 @@ describe('ExportRequetesButton', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Exporter les requêtes' }));
 
     expect(screen.getByRole('button', { name: 'Export en cours…' })).toBeDisabled();
-    expect(fetch).toHaveBeenCalledWith('/api/statistics/export-requetes');
+    expect(fetch).toHaveBeenCalledWith('/api/statistics/export-requetes', expect.objectContaining({ method: 'GET' }));
   });
 
   it('downloads the exported CSV with the response filename', async () => {

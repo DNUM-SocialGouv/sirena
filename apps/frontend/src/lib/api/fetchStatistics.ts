@@ -36,7 +36,7 @@ export async function fetchStatisticsDashboard(
 }
 
 export async function fetchExportRequetesCsv(): Promise<Response> {
-  const res = await fetch('/api/statistics/export-requetes');
+  const res = await client.statistics['export-requetes'].$get();
   await handleRequestErrors(res, { silentToastError: true });
   return res;
 }
