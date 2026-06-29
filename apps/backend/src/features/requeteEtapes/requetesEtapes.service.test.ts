@@ -18,7 +18,7 @@ import {
   deleteRequeteEtape,
   EtapeNotEditableError,
   FilesNotOwnedError,
-  getEtapeEditability,
+  getEtapePermissions,
   getRequeteEtapeById,
   getRequeteEtapes,
   updateProcessingEtape,
@@ -860,45 +860,45 @@ describe('RequeteEtapes.service.ts', () => {
     });
   });
 
-  describe('getEtapeEditability', () => {
+  describe('getEtapePermissions', () => {
     it('MANUAL step is fully editable', () => {
-      expect(getEtapeEditability({ type: 'MANUAL', statutId: 'A_FAIRE', requete: { createdById: 'agent-1' } })).toEqual(
+      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'A_FAIRE', requete: { createdById: 'agent-1' } })).toEqual(
         {
           editable: true,
-          ackNotesOnly: false,
+          canOnlyEditNotes: false,
         },
       );
     });
 
     it('CLOTUREE step is not editable', () => {
-      expect(getEtapeEditability({ type: 'MANUAL', statutId: 'CLOTUREE', requete: { createdById: 'a' } })).toEqual({
+      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'CLOTUREE', requete: { createdById: 'a' } })).toEqual({
         editable: false,
-        ackNotesOnly: false,
+        canOnlyEditNotes: false,
       });
     });
 
     it('CREATION and REOPEN steps are not editable', () => {
-      expect(getEtapeEditability({ type: 'CREATION', statutId: 'FAIT', requete: { createdById: null } }).editable).toBe(
+      expect(getEtapePermissions({ type: 'CREATION', statutId: 'FAIT', requete: { createdById: null } }).editable).toBe(
         false,
       );
-      expect(getEtapeEditability({ type: 'REOPEN', statutId: 'FAIT', requete: { createdById: 'a' } }).editable).toBe(
+      expect(getEtapePermissions({ type: 'REOPEN', statutId: 'FAIT', requete: { createdById: 'a' } }).editable).toBe(
         false,
       );
     });
 
     it('automatic ACR (requete without createdById) is notes-only', () => {
-      expect(getEtapeEditability({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', requete: { createdById: null } })).toEqual(
+      expect(getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', requete: { createdById: null } })).toEqual(
         {
           editable: true,
-          ackNotesOnly: true,
+          canOnlyEditNotes: true,
         },
       );
     });
 
     it('manual ACR (requete with createdById) is fully editable', () => {
       expect(
-        getEtapeEditability({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', requete: { createdById: 'agent-1' } }),
-      ).toEqual({ editable: true, ackNotesOnly: false });
+        getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', requete: { createdById: 'agent-1' } }),
+      ).toEqual({ editable: true, canOnlyEditNotes: false });
     });
   });
 
@@ -952,6 +952,12 @@ describe('RequeteEtapes.service.ts', () => {
       vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({ id: 'req-1' } as Requete);
       vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce({} as RequeteEntite);
       vi.mocked(isUserOwner).mockResolvedValue(false);
+
+      const tx = {
+        requeteEtape: { create: vi.fn().mockResolvedValue({ ...requeteEtape, id: 'new-step' }) },
+        requeteEtapeNote: { create: vi.fn() },
+      };
+      vi.mocked(prisma.$transaction).mockImplementation((async (cb: (t: unknown) => unknown) => cb(tx)) as never);
 
       await expect(
         createProcessingEtape('req-1', 'e1', 'user-1', { nom: 'X', notes: [], fileIds: ['not-mine'] }, logger),

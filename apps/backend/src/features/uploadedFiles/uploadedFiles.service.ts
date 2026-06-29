@@ -85,8 +85,13 @@ export const createUploadedFile = async (
   });
 };
 
-export const isUserOwner = async (userId: string, uploadedFileIds: UploadedFile['id'][]): Promise<boolean> => {
-  const count = await prisma.uploadedFile.count({
+export const isUserOwner = async (
+  userId: string,
+  uploadedFileIds: UploadedFile['id'][],
+  tx?: Prisma.TransactionClient,
+): Promise<boolean> => {
+  const client = tx ?? prisma;
+  const count = await client.uploadedFile.count({
     where: {
       id: { in: uploadedFileIds },
       uploadedById: userId,
