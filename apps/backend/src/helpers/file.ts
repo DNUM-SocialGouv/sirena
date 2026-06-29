@@ -56,7 +56,7 @@ export const urlToStream = async (url: string, maxSize = MAX_FILE_SIZE) => {
   };
 };
 
-export const getOriginalFileName = (file: UploadedFile): string => {
+export const getOriginalFileName = (file: Pick<UploadedFile, 'fileName' | 'metadata'>): string => {
   const metadata = file.metadata as Prisma.JsonObject | null;
   return metadata?.originalName?.toString() || file.fileName;
 };
