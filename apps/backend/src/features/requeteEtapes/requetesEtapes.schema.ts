@@ -32,6 +32,40 @@ export const RequeteEtapeNoteSchema = z.object({
   updatedAt: z.coerce.date(),
 });
 
+// Safe projection of an uploaded file for the read endpoint: never exposes `metadata`
+// (which carries the file encryption keys) nor internal storage paths (`safeFilePath`).
+const EtapeNoteUploadedFileSchema = z.object({
+  id: z.string(),
+  fileName: z.string(),
+  size: z.number(),
+  status: z.string(),
+  scanStatus: z.string(),
+  sanitizeStatus: z.string(),
+});
+
+const EtapeUploadedFileSchema = EtapeNoteUploadedFileSchema.extend({
+  canDelete: z.boolean(),
+  createdAt: z.coerce.date(),
+  uploadedBy: z.object({ prenom: z.string(), nom: z.string() }).nullable(),
+});
+
+const RequeteEtapeNoteWithFilesSchema = z.object({
+  id: z.string(),
+  texte: z.string(),
+  createdAt: z.coerce.date(),
+  uploadedFiles: z.array(EtapeNoteUploadedFileSchema),
+  author: z.object({ prenom: z.string(), nom: z.string() }).nullable(),
+});
+
+// Response schema for the list endpoint, which enriches each step with editability
+// flags and its notes/files (see getRequeteEtapes).
+export const RequeteEtapeWithDetailsSchema = RequeteEtapeSchema.extend({
+  editable: z.boolean(),
+  canOnlyEditNotes: z.boolean(),
+  uploadedFiles: z.array(EtapeUploadedFileSchema),
+  notes: z.array(RequeteEtapeNoteWithFilesSchema),
+});
+
 const columns = [
   Prisma.RequeteEtapeScalarFieldEnum.nom,
   Prisma.RequeteEtapeScalarFieldEnum.createdAt,

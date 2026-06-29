@@ -595,34 +595,22 @@ describe('requeteEtapes.controller.ts', () => {
       requeteEtapeId: 'requeteEtapeId',
     };
 
-    const uploadedFile: Pick<UploadedFile, 'id' | 'size' | 'metadata' | 'filePath'> = {
+    const uploadedFile: Pick<UploadedFile, 'id' | 'fileName' | 'size'> = {
       id: 'uploadedFileId',
+      fileName: 'file1.pdf',
       size: 1024,
-      metadata: null,
-      filePath: 'path/to/file1.pdf',
     };
 
     const requeteEtapeWithNotesAndFiles: RequeteEtape & {
       notes: (RequeteEtapeNote & {
         author: { prenom: string; nom: string };
-        uploadedFiles: Pick<
-          UploadedFile,
-          'id' | 'size' | 'metadata' | 'status' | 'scanStatus' | 'sanitizeStatus' | 'safeFilePath'
-        >[];
+        uploadedFiles: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'status' | 'scanStatus' | 'sanitizeStatus'>[];
       })[];
       clotureReason: { label: string }[];
       createdBy: { prenom: string; nom: string } | null;
       uploadedFiles: (Pick<
         UploadedFile,
-        | 'id'
-        | 'size'
-        | 'metadata'
-        | 'status'
-        | 'scanStatus'
-        | 'sanitizeStatus'
-        | 'safeFilePath'
-        | 'canDelete'
-        | 'createdAt'
+        'id' | 'fileName' | 'size' | 'status' | 'scanStatus' | 'sanitizeStatus' | 'canDelete' | 'createdAt'
       > & { uploadedBy: { prenom: string; nom: string } | null })[];
       requete: {
         createdById: string | null;
@@ -644,7 +632,7 @@ describe('requeteEtapes.controller.ts', () => {
         {
           ...note,
           author: { prenom: 'John', nom: 'Doe' },
-          uploadedFiles: [{ ...uploadedFile, status: '', scanStatus: '', sanitizeStatus: '', safeFilePath: null }],
+          uploadedFiles: [{ ...uploadedFile, status: '', scanStatus: '', sanitizeStatus: '' }],
         },
       ],
     };
