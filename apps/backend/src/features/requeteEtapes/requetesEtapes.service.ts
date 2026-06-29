@@ -490,12 +490,11 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
             uploadedFiles: {
               select: {
                 id: true,
+                fileName: true,
                 size: true,
-                metadata: true,
                 status: true,
                 scanStatus: true,
                 sanitizeStatus: true,
-                safeFilePath: true,
               },
             },
             author: {
@@ -510,12 +509,11 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
         uploadedFiles: {
           select: {
             id: true,
+            fileName: true,
             size: true,
-            metadata: true,
             status: true,
             scanStatus: true,
             sanitizeStatus: true,
-            safeFilePath: true,
             canDelete: true,
             createdAt: true,
             uploadedBy: {

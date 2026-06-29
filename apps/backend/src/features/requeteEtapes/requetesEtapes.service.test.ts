@@ -103,29 +103,6 @@ const requeteEtapeWithNotesAndFiles: RequeteEtape & {
   ],
 };
 
-const _requeteEntite: RequeteEntite & { requete: Requete } & { requeteEtape: RequeteEtape[] } = {
-  entiteId: 'entiteId',
-  requeteId: 'requeteId',
-  statutId: 'EN_COURS',
-  prioriteId: null,
-  requete: {
-    id: 'requeteId',
-    commentaire: 'Commentaire',
-    receptionDate: new Date(),
-    dateDemandeDeclarant: null,
-    dematSocialId: 123,
-    sirecId: null,
-    receptionTypeId: 'receptionTypeId',
-    createdById: null,
-    provenanceId: null,
-    provenancePrecision: null,
-    thirdPartyAccountId: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  requeteEtape: [],
-};
-
 describe('RequeteEtapes.service.ts', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -506,12 +483,11 @@ describe('RequeteEtapes.service.ts', () => {
               uploadedFiles: {
                 select: {
                   id: true,
+                  fileName: true,
                   size: true,
-                  metadata: true,
                   status: true,
                   scanStatus: true,
                   sanitizeStatus: true,
-                  safeFilePath: true,
                 },
               },
               author: {
@@ -525,12 +501,11 @@ describe('RequeteEtapes.service.ts', () => {
           uploadedFiles: {
             select: {
               id: true,
+              fileName: true,
               size: true,
-              metadata: true,
               status: true,
               scanStatus: true,
               sanitizeStatus: true,
-              safeFilePath: true,
               canDelete: true,
               createdAt: true,
               uploadedBy: {
@@ -605,12 +580,11 @@ describe('RequeteEtapes.service.ts', () => {
               uploadedFiles: {
                 select: {
                   id: true,
+                  fileName: true,
                   size: true,
-                  metadata: true,
                   status: true,
                   scanStatus: true,
                   sanitizeStatus: true,
-                  safeFilePath: true,
                 },
               },
               author: {
@@ -624,12 +598,11 @@ describe('RequeteEtapes.service.ts', () => {
           uploadedFiles: {
             select: {
               id: true,
+              fileName: true,
               size: true,
-              metadata: true,
               status: true,
               scanStatus: true,
               sanitizeStatus: true,
-              safeFilePath: true,
               canDelete: true,
               createdAt: true,
               uploadedBy: {
