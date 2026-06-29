@@ -374,7 +374,7 @@ function formatLienVictime(declarant: ExportDeclarantRecord | null | undefined):
     return '';
   }
 
-  if (declarant.lienVictime.label === 'AUTRE') {
+  if (declarant.lienVictime.label.toLowerCase() === 'autre') {
     return declarant.lienAutrePrecision || declarant.lienVictime.label;
   }
 
