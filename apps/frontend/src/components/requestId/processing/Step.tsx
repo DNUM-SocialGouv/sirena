@@ -123,16 +123,8 @@ const getStepSubtitle = ({
       if (arFile) {
         return `Envoyé automatiquement le ${formatDate(arFile.createdAt)}`;
       }
-      const sendNote = notes.find((note) => note.texte?.startsWith("Email d'accusé de réception envoyé le"));
       const isManualRequest = !!requete?.createdBy;
-      if (isManualRequest && sendNote?.author) {
-        return (
-          <>
-            Envoyé le {formatDate(updatedAt)} par {formatAgent(sendNote.author)}
-          </>
-        );
-      }
-      if (isManualRequest && !sendNote) {
+      if (isManualRequest) {
         return `Marqué comme fait le ${formatDate(updatedAt)}`;
       }
       return `Envoyé automatiquement le ${formatDate(updatedAt)}`;

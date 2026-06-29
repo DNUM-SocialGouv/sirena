@@ -162,7 +162,6 @@ describe('Step', () => {
               texte: 'Texte de la note',
               createdAt: '2026-05-19T10:00:00.000Z',
               author: { prenom: 'jeanne', nom: 'Moulon' },
-              uploadedFiles: [],
             },
           ],
         })}
