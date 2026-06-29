@@ -67,6 +67,7 @@
     "@sirena/db": "workspace:*",
     "archiver": "^7.0.1",
     "bullmq": "^5.78.1",
+    "csv-stringify": "^6.8.0",
     "file-type": "^22.0.1",
     "graffle": "8.0.0-next.173",
     "graphql": "^16.14.2",

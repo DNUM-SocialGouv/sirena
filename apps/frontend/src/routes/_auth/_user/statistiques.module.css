@@ -1,3 +1,12 @@
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
 /* Reproduction de la grille Metabase (24 colonnes) : chaque carte occupe col → col + size_x.
    En dessous de 48em, on empile en une seule colonne pour la lisibilité mobile. */
 .mb-grid {
