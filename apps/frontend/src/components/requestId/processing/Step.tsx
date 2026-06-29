@@ -129,7 +129,10 @@ const getStepSubtitle = (
     <>
       {formatStepCreationInfo(createdBy, createdAt)}
       {statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT && dateRealisation ? (
-        <> • Fait le {formatDate(dateRealisation)}</>
+        <>
+          {' '}
+          <span aria-hidden="true">•</span> Fait le {formatDate(dateRealisation)}
+        </>
       ) : null}
     </>
   );
@@ -223,9 +226,9 @@ const StepComponent = ({
             </div>
             {showAFaireBadge && (
               <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-                <span className="fr-badge fr-badge--no-icon fr-badge--sm fr-badge--info">
+                <p className="fr-badge fr-badge--no-icon fr-badge--sm fr-badge--info">
                   {requeteEtapeStatutType.A_FAIRE}
-                </span>
+                </p>
               </div>
             )}
           </div>

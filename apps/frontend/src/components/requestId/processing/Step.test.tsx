@@ -54,7 +54,6 @@ describe('Step', () => {
       updatedAt: '2024-05-20T12:00:00.000Z',
       clotureEffectiveDate: '2024-05-18',
       createdBy: { prenom: 'camille', nom: 'dupont' },
-      dateRealisation: null,
       notes: [],
       uploadedFiles: [],
       editable: false,
@@ -62,7 +61,6 @@ describe('Step', () => {
       requete: {
         createdById: null,
         dematSocialId: null,
-        createdById: null,
         thirdPartyAccountId: null,
         createdBy: null,
       },
