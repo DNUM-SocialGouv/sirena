@@ -1,5 +1,6 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
+import { getOriginalFileName } from '../../helpers/file.js';
 import { capitalizeFirst, formatDateFr } from '../../helpers/string.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { deleteFileFromMinio } from '../../libs/minio.js';
@@ -491,6 +492,7 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
               select: {
                 id: true,
                 fileName: true,
+                metadata: true,
                 size: true,
                 status: true,
                 scanStatus: true,
@@ -510,6 +512,7 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
           select: {
             id: true,
             fileName: true,
+            metadata: true,
             size: true,
             status: true,
             scanStatus: true,
@@ -544,6 +547,11 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
     }),
   ]);
 
+  const sanitizeFile = <T extends { fileName: string; metadata: Prisma.JsonValue | null }>(file: T) => {
+    const { metadata: _metadata, ...rest } = file;
+    return { ...rest, fileName: getOriginalFileName(file) };
+  };
+
   // closure / creation = not editable; automatic ACR = statut + files locked but notes OK; manual = full.
   const data = raw.map((etape) => {
     const { editable, canOnlyEditNotes } = getEtapePermissions({
@@ -551,7 +559,13 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
       statutId: etape.statutId,
       requete: etape.requete ? { createdById: etape.requete.createdById } : null,
     });
-    return { ...etape, editable, canOnlyEditNotes };
+    return {
+      ...etape,
+      editable,
+      canOnlyEditNotes,
+      uploadedFiles: etape.uploadedFiles.map(sanitizeFile),
+      notes: etape.notes.map((note) => ({ ...note, uploadedFiles: note.uploadedFiles.map(sanitizeFile) })),
+    };
   });
 
   return {

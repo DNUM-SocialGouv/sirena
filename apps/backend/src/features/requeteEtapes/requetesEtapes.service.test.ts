@@ -79,17 +79,20 @@ const requeteEtape: RequeteEtape = {
   clotureEffectiveDate: null,
 };
 
-const uploadedFile: Pick<UploadedFile, 'id' | 'size' | 'metadata' | 'filePath'> = {
+const uploadedFile: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'metadata' | 'filePath'> = {
   id: 'uploadedFileId',
+  fileName: 'stored-uuid.pdf',
   size: 1024,
-  metadata: null,
+  metadata: { originalName: 'rapport.pdf' },
   filePath: 'path/to/file1.pdf',
 };
 
 const requeteEtapeWithNotesAndFiles: RequeteEtape & {
-  notes: (RequeteEtapeNote & { uploadedFiles: Pick<UploadedFile, 'id' | 'size' | 'metadata'>[] })[];
+  notes: (RequeteEtapeNote & { uploadedFiles: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'metadata'>[] })[];
+  uploadedFiles: Pick<UploadedFile, 'id' | 'fileName' | 'size' | 'metadata'>[];
 } = {
   ...requeteEtape,
+  uploadedFiles: [],
   notes: [
     {
       id: 'noteId',
@@ -448,7 +451,13 @@ describe('RequeteEtapes.service.ts', () => {
 
       const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0, limit: 10 });
 
-      expect(result.data).toEqual([{ ...requeteEtapeWithNotesAndFiles, editable: true, canOnlyEditNotes: false }]);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]).toMatchObject({ id: 'requeteEtapeId', editable: true, canOnlyEditNotes: false });
+      expect(result.data[0].uploadedFiles).toEqual([]);
+      // metadata (encryption keys) is stripped and the original filename is resolved from metadata.originalName
+      expect(result.data[0].notes[0].uploadedFiles).toEqual([
+        { id: 'uploadedFileId', fileName: 'rapport.pdf', size: 1024, filePath: 'path/to/file1.pdf' },
+      ]);
       expect(result.total).toBe(1);
       expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith({
         where: { requeteId: 'requeteId', entiteId: 'entiteId' },
@@ -484,6 +493,7 @@ describe('RequeteEtapes.service.ts', () => {
                 select: {
                   id: true,
                   fileName: true,
+                  metadata: true,
                   size: true,
                   status: true,
                   scanStatus: true,
@@ -502,6 +512,7 @@ describe('RequeteEtapes.service.ts', () => {
             select: {
               id: true,
               fileName: true,
+              metadata: true,
               size: true,
               status: true,
               scanStatus: true,
@@ -545,7 +556,13 @@ describe('RequeteEtapes.service.ts', () => {
 
       const result = await getRequeteEtapes('requeteId', 'entiteId', { offset: 0 });
 
-      expect(result.data).toEqual([{ ...requeteEtapeWithNotesAndFiles, editable: true, canOnlyEditNotes: false }]);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0]).toMatchObject({ id: 'requeteEtapeId', editable: true, canOnlyEditNotes: false });
+      expect(result.data[0].uploadedFiles).toEqual([]);
+      // metadata (encryption keys) is stripped and the original filename is resolved from metadata.originalName
+      expect(result.data[0].notes[0].uploadedFiles).toEqual([
+        { id: 'uploadedFileId', fileName: 'rapport.pdf', size: 1024, filePath: 'path/to/file1.pdf' },
+      ]);
       expect(result.total).toBe(1);
       expect(prisma.requeteEtape.findMany).toHaveBeenCalledWith({
         where: { requeteId: 'requeteId', entiteId: 'entiteId' },
@@ -581,6 +598,7 @@ describe('RequeteEtapes.service.ts', () => {
                 select: {
                   id: true,
                   fileName: true,
+                  metadata: true,
                   size: true,
                   status: true,
                   scanStatus: true,
@@ -599,6 +617,7 @@ describe('RequeteEtapes.service.ts', () => {
             select: {
               id: true,
               fileName: true,
+              metadata: true,
               size: true,
               status: true,
               scanStatus: true,
