@@ -5,6 +5,7 @@ import type { CSSProperties } from 'react';
 import { z } from 'zod';
 import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHandler';
 import { parseCard } from '@/components/statistics/chartData';
+import { ExportRequetesButton } from '@/components/statistics/ExportRequetesButton';
 import { PeriodFilter } from '@/components/statistics/PeriodFilter';
 import { describePeriod, PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
@@ -157,7 +158,10 @@ function RouteComponent() {
 
   return (
     <div className={fr.cx('fr-container', 'fr-my-8w')}>
-      <h1>Indicateurs</h1>
+      <div className={styles['page-header']}>
+        <h1 className="fr-mb-0">Indicateurs</h1>
+        <ExportRequetesButton />
+      </div>
       <PeriodFilter value={selection} onChange={handlePeriodChange} />
       <p role="status" className="fr-sr-only">
         {statusMessage}

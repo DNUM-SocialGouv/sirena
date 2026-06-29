@@ -1,12 +1,14 @@
 import { throwHTTPException403Forbidden } from '@sirena/backend-utils/helpers';
-import { ERROR_KIND } from '@sirena/common/constants';
+import { ERROR_KIND, ROLES_READ } from '@sirena/common/constants';
 import { validator as zValidator } from 'hono-openapi';
 import factoryWithLogs from '../../helpers/factories/appWithLogs.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { getEntiteById } from '../entites/entites.service.js';
-import { getStatisticsDashboardRoute } from './statistics.route.js';
+import { generateExportRequetesCsv } from './exportRequetes/exportRequetes.service.js';
+import { getExportRequetesRoute, getStatisticsDashboardRoute } from './statistics.route.js';
 import { StatisticsDashboardQuerySchema } from './statistics.schema.js';
 import { fetchDashboardCardsData } from './statistics.service.js';
 
@@ -14,6 +16,7 @@ const app = factoryWithLogs
   .createApp()
   .use(authMiddleware)
   .use(userStatusMiddleware)
+  .use(roleMiddleware([...ROLES_READ]))
   .use(entitesMiddleware)
   .use(async (c, next) => {
     const entiteIds = c.get('entiteIds');
@@ -26,6 +29,38 @@ const app = factoryWithLogs
       });
     }
     return next();
+  })
+
+  .get('/export-requetes', getExportRequetesRoute, async (c) => {
+    const logger = c.get('logger');
+    const topEntiteId = c.get('topEntiteId');
+
+    if (!topEntiteId) {
+      throwHTTPException403Forbidden('User must be linked to an entity to export requêtes', {
+        res: c.res,
+        kind: ERROR_KIND.BUSINESS,
+      });
+    }
+
+    const startedAt = Date.now();
+
+    try {
+      const csv = await generateExportRequetesCsv(topEntiteId);
+      const durationMs = Date.now() - startedAt;
+      const csvSizeBytes = Buffer.byteLength(csv, 'utf8');
+      const today = new Date().toISOString().slice(0, 10);
+
+      logger.info({ topEntiteId, durationMs, csvSizeBytes }, '[statistics] export requêtes generated successfully');
+
+      c.header('Content-Type', 'text/csv; charset=utf-8');
+      c.header('Content-Disposition', `attachment; filename="export-requetes-sirena-${today}.csv"`);
+
+      return c.body(csv);
+    } catch (err) {
+      const durationMs = Date.now() - startedAt;
+      logger.error({ err, topEntiteId, durationMs }, '[statistics] export requêtes generation failed');
+      throw err;
+    }
   })
 
   .get('/dashboard', getStatisticsDashboardRoute, zValidator('query', StatisticsDashboardQuerySchema), async (c) => {
