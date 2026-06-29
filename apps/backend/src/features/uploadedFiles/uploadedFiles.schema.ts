@@ -16,7 +16,6 @@ export const UploadedFileSchema = z.object({
   metadata: z.record(z.string(), z.string()).nullable(),
   entiteId: z.string().nullable(),
   uploadedById: z.string().nullable(),
-  requeteEtapeNoteId: z.string().nullable(),
   requeteId: z.string().nullable(),
   faitSituationId: z.string().nullable(),
   demarchesEngageesId: z.string().nullable(),

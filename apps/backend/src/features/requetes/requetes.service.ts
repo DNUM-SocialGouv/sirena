@@ -127,7 +127,6 @@ export const createRequeteFromDematSocial = async ({
         },
         entiteId: info.entiteId,
         uploadedById: null,
-        requeteEtapeNoteId: null,
         requeteId: element.requeteId ?? null,
         demarchesEngageesId: element.demarchesEngageesId ?? null,
         faitSituationId: element.faitSituationId ?? null,

@@ -302,7 +302,6 @@ describe('RequetesEntite endpoints: /', () => {
       entiteId: 'entite1',
       uploadedById: 'user1',
       status: 'PENDING',
-      requeteEtapeNoteId: 'step1',
       demarchesEngageesId: null,
       canDelete: true,
       scanStatus: '',
