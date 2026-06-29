@@ -55,9 +55,10 @@ type ExistingFile = {
 };
 
 const NOTE_MAX_LENGTH = 10000;
-const NOTE_MAX_LENGTH_ERROR = 'Le texte de la note ne doit pas dépasser 10 000 caractères.';
+const NOTE_MAX_LENGTH_ERROR =
+  'Le champ "Ajouter une note à l\'étape" ne doit pas dépasser 10 000 caractères. Supprimer les caractères excédentaires.';
 const NOM_REQUIRED_ERROR = "Le champ 'Nom de l'étape' est obligatoire. Veuillez le renseigner pour ajouter une étape.";
-const DATE_REQUIRED_ERROR = 'La date de réalisation est obligatoire lorsque le statut est « Fait ».';
+const DATE_REQUIRED_ERROR = "La date de réalisation est obligatoire lorsque le statut de l'étape est « Fait ».";
 
 let noteKeySeq = 0;
 const nextNoteKey = () => {
@@ -96,6 +97,8 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const titleId = `${generatedId}-step-form`;
   const headingRef = useRef<HTMLHeadingElement>(null);
   const triggerElementRef = useRef<HTMLElement | null>(null);
+  const nomInputRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
@@ -115,7 +118,6 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
   const [fileErrors, setFileErrors] = useState<Record<string, FileValidationError[]>>({});
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const addStepMutation = useAddProcessingStep(requestId);
@@ -135,7 +137,6 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     setExistingFiles([]);
     setFilesToUpload([]);
     setFileErrors({});
-    setErrorMessage(null);
     setIsLoading(false);
   };
 
@@ -244,19 +245,21 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
       return [...prev, ...merged];
     });
     setFileErrors({});
-    setErrorMessage(null);
   };
 
   const validate = (): boolean => {
     let valid = true;
+    let firstErrorField: HTMLElement | null = null;
 
     if (!nom.trim()) {
       setNomError(NOM_REQUIRED_ERROR);
+      firstErrorField = firstErrorField ?? nomInputRef.current;
       valid = false;
     }
 
     if (!fieldsLocked && isFait && !dateRealisation) {
       setDateError(DATE_REQUIRED_ERROR);
+      firstErrorField = firstErrorField ?? dateInputRef.current;
       valid = false;
     }
 
@@ -268,6 +271,10 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
     if (Object.keys(newFileErrors).length > 0) {
       setFileErrors(newFileErrors);
       valid = false;
+    }
+
+    if (!valid && firstErrorField) {
+      firstErrorField.focus();
     }
 
     return valid;
@@ -285,7 +292,11 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
         uploadedIds = uploaded.map((u) => u.id);
       } catch {
         setIsLoading(false);
-        setErrorMessage('Une erreur est survenue lors du téléversement des fichiers. Veuillez réessayer.');
+        toastManager.add({
+          title: 'Erreur',
+          description: 'Une erreur est survenue lors du téléversement des fichiers. Veuillez réessayer.',
+          data: { icon: 'fr-alert--error' },
+        });
         return;
       }
     }
@@ -327,7 +338,11 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
       closeDrawer();
     } catch {
       setIsLoading(false);
-      setErrorMessage("Une erreur est survenue lors de l'enregistrement de l'étape. Veuillez réessayer.");
+      toastManager.add({
+        title: 'Erreur',
+        description: "Une erreur est survenue lors de l'enregistrement de l'étape. Veuillez réessayer.",
+        data: { icon: 'fr-alert--error' },
+      });
     }
   };
 
@@ -395,12 +410,12 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       state={nomError ? 'error' : 'default'}
                       stateRelatedMessage={nomError ?? undefined}
                       nativeInputProps={{
+                        ref: nomInputRef,
                         value: nom,
                         onChange: (e) => {
                           setNom(e.target.value);
                           if (nomError) setNomError(null);
                         },
-                        placeholder: "Saisir le nom de l'étape",
                       }}
                     />
 
@@ -438,11 +453,12 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       <div className={styles.fieldBlock}>
                         <Input
                           label="Fait le (obligatoire)"
-                          hintText="Date au format JJ-MM-AAAA"
+                          hintText="Format attendu : JJ-MM-AAAA"
                           disabled={isLoading || fieldsLocked}
                           state={dateError ? 'error' : 'default'}
                           stateRelatedMessage={dateError ?? undefined}
                           nativeInputProps={{
+                            ref: dateInputRef,
                             type: 'date',
                             value: dateRealisation,
                             onChange: (e) => {
@@ -465,7 +481,12 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                       ))}
 
                       {notes.map((note) => {
-                        const noteLabel = note.createdAt ? `Note du ${formatNoteDate(note.createdAt)}` : 'Note';
+                        const noteLabel = note.createdAt
+                          ? `Note du ${formatNoteDate(note.createdAt)}`
+                          : 'Ajouter une note';
+                        const noteDeleteLabel = note.createdAt
+                          ? `Supprimer la note du ${formatNoteDate(note.createdAt)}`
+                          : 'Supprimer la note';
                         return (
                           <div key={note.key} className={mode === 'edit' ? styles.noteCard : undefined}>
                             {mode === 'edit' && (
@@ -476,8 +497,8 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                                   priority="tertiary"
                                   size="small"
                                   iconId="fr-icon-delete-line"
-                                  title="Supprimer la note"
-                                  aria-label={`Supprimer la ${noteLabel.toLowerCase()}`}
+                                  title={noteDeleteLabel}
+                                  aria-label={noteDeleteLabel}
                                   disabled={isLoading}
                                   onClick={() => handleRemoveNote(note.key)}
                                 />
@@ -555,7 +576,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                     {!fieldsLocked && (
                       <section className={styles.attachmentSection}>
                         <p className={`fr-label ${styles.attachmentTitle}`}>
-                          {existingFiles.length > 0 ? "Ajouter d'autres fichiers" : 'Fichiers'}
+                          {existingFiles.length > 0 ? "Ajouter d'autres pièces jointes" : 'Ajouter des pièces jointes'}
                         </p>
                         <FileDropZone
                           selectedFiles={filesToUpload}
@@ -576,8 +597,6 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                         />
                       </section>
                     )}
-
-                    {errorMessage && <p className={`fr-text--sm fr-mt-2w ${styles.errorText}`}>{errorMessage}</p>}
 
                     <div className={styles.footerActions}>
                       {mode === 'edit' && !fieldsLocked && (

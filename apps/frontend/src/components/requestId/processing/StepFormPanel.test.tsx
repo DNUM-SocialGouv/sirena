@@ -160,7 +160,7 @@ describe('StepFormPanel', () => {
     expect(screen.getByText(/Note du 02-01-2026 \(lecture seule\)/)).toBeInTheDocument();
   });
 
-  it('removes an editable note via its trash button', async () => {
+  it('removes an editable note via its delete button', async () => {
     const ref = createRef<StepFormPanelRef>();
     render(<StepFormPanel ref={ref} requestId="REQ-1" />);
 
