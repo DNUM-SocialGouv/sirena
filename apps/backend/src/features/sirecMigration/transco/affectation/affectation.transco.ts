@@ -1,7 +1,9 @@
 import { prisma } from '@sirena/db';
 import { createDefaultLogger } from '../../../../helpers/pino.js';
 import { SirecTranscoError } from '../sirecTransco.error.js';
+import { AFFECTATION_ENTITES_ILE_DE_FRANCE } from './entitesIleDeFrance.js';
 import { AFFECTATION_ENTITES_NORMANDIE } from './entitesNormandie.js';
+import { AFFECTATION_ENTITES_OCCITANIE } from './entitesOccitanie.js';
 import { AFFECTATION_ENTITES_TOP_LEVEL } from './entitesTopLevel.js';
 
 const logger = createDefaultLogger();
@@ -61,7 +63,9 @@ export async function initAffectationTransco(): Promise<void> {
   const newTransco = new Map<number, AffectationEntry>();
   for (const [sirecIdStr, entitesSirenaLabels] of Object.entries({
     ...AFFECTATION_ENTITES_TOP_LEVEL,
+    ...AFFECTATION_ENTITES_ILE_DE_FRANCE,
     ...AFFECTATION_ENTITES_NORMANDIE,
+    ...AFFECTATION_ENTITES_OCCITANIE,
   })) {
     const sirecId = Number(sirecIdStr);
     try {
