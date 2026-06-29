@@ -1894,10 +1894,12 @@ export const updateStatusRequete = async (
   tx?: Prisma.TransactionClient,
 ) => {
   const db = tx ?? prisma;
-  const previousRequeteEntite = await db.requeteEntite.findUnique({
-    where: { requeteId_entiteId: { requeteId, entiteId } },
-    select: { statutId: true },
-  });
+  const previousRequeteEntite = tx
+    ? null
+    : await db.requeteEntite.findUnique({
+        where: { requeteId_entiteId: { requeteId, entiteId } },
+        select: { statutId: true },
+      });
 
   const requeteEntite = await db.requeteEntite.update({
     where: { requeteId_entiteId: { requeteId, entiteId } },
@@ -1910,7 +1912,7 @@ export const updateStatusRequete = async (
     field: REQUETE_UPDATE_FIELDS.STATUS,
   });
 
-  if (shouldTriggerDematSocialPriseEnChargeSync(previousRequeteEntite?.statutId, statut) && !tx) {
+  if (shouldTriggerDematSocialPriseEnChargeSync(previousRequeteEntite?.statutId, statut)) {
     await safeSyncRequetePriseEnChargeToDematSocial(requeteId);
   }
 
