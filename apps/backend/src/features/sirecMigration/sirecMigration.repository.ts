@@ -105,7 +105,7 @@ export interface SirecRppsData {
 export interface SirecFinessData {
   id_data: number;
   nofinesset: string | null;
-  categetab: number | null;
+  categetab: string | null;
   libcategetab: string | null;
   rs: string | null;
   codepostal: string | null;
@@ -244,7 +244,7 @@ type MisEnCauseRow = {
   rpps_libelle_prof: string | null;
   finess_id_data: number | null;
   finess_nofinesset: string | null;
-  finess_categetab: number | null;
+  finess_categetab: string | null;
   finess_libcategetab: string | null;
   finess_rs: string | null;
   finess_codepostal: string | null;

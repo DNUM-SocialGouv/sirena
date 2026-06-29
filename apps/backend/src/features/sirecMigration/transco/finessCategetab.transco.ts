@@ -7,7 +7,7 @@ import {
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   MIS_EN_CAUSE_TYPE,
 } from '@sirena/common/constants';
-import { SirecTranscoError } from './sirecTransco.error.js';
+import { SirecDataError, SirecTranscoError } from './sirecTransco.error.js';
 
 export type CategetabEntry = {
   misEnCause: {
@@ -364,8 +364,8 @@ const CATEGETAB_TRANSCO: Record<number, CategetabEntry> = {
   699: MEC(MIS_EN_CAUSE_ETABLISSEMENT_PRECISION.AUTRE),
 };
 
-export function transcodeFinessCategetab(categetab: number | null): CategetabEntry {
-  if (categetab === null) {
+export function transcodeFinessCategetab(categetab: string | null): CategetabEntry {
+  if (categetab === null || categetab === '') {
     return {
       misEnCause: {
         misEnCauseTypeId: MIS_EN_CAUSE_TYPE.ETABLISSEMENT,
@@ -373,7 +373,12 @@ export function transcodeFinessCategetab(categetab: number | null): CategetabEnt
       },
     };
   }
-  const entry = CATEGETAB_TRANSCO[categetab];
-  if (entry === undefined) throw new SirecTranscoError(categetab, 'finessCategetab');
+  if (Number.isNaN(categetab)) {
+    throw new SirecDataError(`Catégorie FINESS is not a number (categetab=${categetab})`);
+  }
+  const entry = CATEGETAB_TRANSCO[+categetab];
+  if (entry === undefined) {
+    throw new SirecDataError(`Catégorie FINESS has no correspondance (categetab=${categetab})`);
+  }
   return entry;
 }
