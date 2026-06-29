@@ -10,7 +10,7 @@ export async function fetchProcessingSteps(requestId: string) {
   return res.json();
 }
 
-export type ProcessingStepStatut = Exclude<RequeteEtapeStatutType, 'EN_COURS' | 'CLOTUREE'>;
+export type ProcessingStepStatut = Exclude<RequeteEtapeStatutType, 'CLOTUREE'>;
 
 export type ProcessingStepNoteInput = {
   id?: string;

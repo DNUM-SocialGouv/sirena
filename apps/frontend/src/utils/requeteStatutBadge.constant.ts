@@ -43,11 +43,6 @@ export const requeteEtapeStatutBadges: StatutBadge[] = [
     value: REQUETE_ETAPE_STATUT_TYPES.FAIT,
   },
   {
-    type: 'new',
-    text: requeteEtapeStatutType.EN_COURS,
-    value: REQUETE_ETAPE_STATUT_TYPES.EN_COURS,
-  },
-  {
     type: 'info',
     text: requeteEtapeStatutType.A_FAIRE,
     value: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE,
