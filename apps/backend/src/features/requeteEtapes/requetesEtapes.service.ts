@@ -155,17 +155,18 @@ export const createDefaultRequeteEtapes = async (
   return { etape1, etape2 };
 };
 
-export const getEtapeEditability = (etape: {
+export const getEtapePermissions = (etape: {
   type: string;
   statutId: string | null;
   requete: { createdById: string | null } | null;
-}): { editable: boolean; ackNotesOnly: boolean } => {
-  if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return { editable: false, ackNotesOnly: false };
+}): { editable: boolean; canOnlyEditNotes: boolean } => {
+  if (etape.statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) return { editable: false, canOnlyEditNotes: false };
   if (etape.type === REQUETE_ETAPE_TYPES.CREATION || etape.type === REQUETE_ETAPE_TYPES.REOPEN) {
-    return { editable: false, ackNotesOnly: false };
+    return { editable: false, canOnlyEditNotes: false };
   }
-  const ackNotesOnly = etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && etape.requete?.createdById == null;
-  return { editable: true, ackNotesOnly };
+  // Automatic ACR = acknowledgment step on a request not created by an agent (createdById null).
+  const canOnlyEditNotes = etape.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT && etape.requete?.createdById == null;
+  return { editable: true, canOnlyEditNotes };
 };
 
 export class EtapeNotEditableError extends Error {
@@ -216,10 +217,6 @@ export const createProcessingEtape = async (
   const statutId = data.statutId ?? REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
   const dateRealisation = statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
 
-  if (data.fileIds.length > 0 && !(await isUserOwner(userId, data.fileIds))) {
-    throw new FilesNotOwnedError('FILES_NOT_OWNED');
-  }
-
   const createdNotes: { id: string; texte: string; authorId: string | null; requeteEtapeId: string }[] = [];
 
   const etape = await prisma.$transaction(async (tx) => {
@@ -243,6 +240,9 @@ export const createProcessingEtape = async (
     }
 
     if (data.fileIds.length > 0) {
+      if (!(await isUserOwner(userId, data.fileIds, tx))) {
+        throw new FilesNotOwnedError('FILES_NOT_OWNED');
+      }
       await setEtapeFile(etape.id, data.fileIds, entiteId, userId, tx);
     }
 
@@ -265,6 +265,119 @@ export const createProcessingEtape = async (
   return etape;
 };
 
+type EtapeNoteRow = { id: string; authorId: string | null; texte: string };
+type EtapeFileRow = { id: string; canDelete: boolean; filePath: string };
+type NoteChangelogEntry = {
+  action: ChangeLogAction;
+  id: string;
+  before: Prisma.JsonObject | null;
+  after: Prisma.JsonObject | null;
+};
+
+// Diff notes — only notes of THIS step and non system (authorId non null) are editable/deletable.
+const diffEtapeNotes = (existingNotes: EtapeNoteRow[], sentNotes: UpdateProcessingStepDto['notes']) => {
+  const editableNoteIds = new Set(existingNotes.filter((n) => n.authorId !== null).map((n) => n.id));
+  const existingNoteById = new Map<string, EtapeNoteRow>(existingNotes.map((n) => [n.id, n]));
+  const sentNoteIds = new Set(sentNotes.filter((n) => n.id).map((n) => n.id as string));
+  const notesToDelete = existingNotes.filter((n) => n.authorId !== null && !sentNoteIds.has(n.id));
+  return { editableNoteIds, existingNoteById, notesToDelete };
+};
+
+// Diff files — only remove those removed AND deletable (canDelete) ; never lose anything else.
+const diffEtapeFiles = (uploadedFiles: EtapeFileRow[], desiredFileIds: string[]) => {
+  const currentFileIds = new Set(uploadedFiles.map((f) => f.id));
+  const desired = new Set(desiredFileIds);
+  const fileIdsToAttach = desiredFileIds.filter((id) => !currentFileIds.has(id));
+  const filesToRemove = uploadedFiles.filter((f) => !desired.has(f.id) && f.canDelete);
+  return { fileIdsToAttach, filesToRemove };
+};
+
+// Applies the desired note state inside the transaction and returns the changelog entries to emit after commit.
+// The panel sends the full desired state of the notes:
+// - note with an id that is editable (of this step, non system) -> update the text;
+// - note with an id that is not editable (system / other entity) -> ignored (read-only);
+// - note without an id -> create.
+// Editable notes missing from the payload are deleted (notesToDelete).
+const applyEtapeNoteChanges = async (
+  tx: Prisma.TransactionClient,
+  stepId: string,
+  userId: string,
+  sentNotes: UpdateProcessingStepDto['notes'],
+  diff: ReturnType<typeof diffEtapeNotes>,
+): Promise<NoteChangelogEntry[]> => {
+  const changelogs: NoteChangelogEntry[] = [];
+  for (const note of sentNotes) {
+    if (note.id) {
+      if (diff.editableNoteIds.has(note.id)) {
+        const before = diff.existingNoteById.get(note.id);
+        await tx.requeteEtapeNote.update({ where: { id: note.id }, data: { texte: note.texte } });
+        if (before && before.texte !== note.texte) {
+          changelogs.push({
+            action: ChangeLogAction.UPDATED,
+            id: note.id,
+            before: { texte: before.texte, authorId: before.authorId },
+            after: { texte: note.texte, authorId: before.authorId },
+          });
+        }
+      }
+    } else {
+      const created = await tx.requeteEtapeNote.create({
+        data: { authorId: userId, texte: note.texte, requeteEtapeId: stepId },
+      });
+      changelogs.push({
+        action: ChangeLogAction.CREATED,
+        id: created.id,
+        before: null,
+        after: { id: created.id, texte: created.texte, authorId: created.authorId, requeteEtapeId: stepId },
+      });
+    }
+  }
+  for (const note of diff.notesToDelete) {
+    await tx.requeteEtapeNote.delete({ where: { id: note.id } });
+    changelogs.push({
+      action: ChangeLogAction.DELETED,
+      id: note.id,
+      before: { id: note.id, texte: note.texte, authorId: note.authorId },
+      after: null,
+    });
+  }
+  return changelogs;
+};
+
+const cleanupRemovedEtapeFiles = async (
+  filesToRemove: EtapeFileRow[],
+  userId: string,
+  logger: PinoLogger,
+): Promise<void> => {
+  await Promise.allSettled(
+    filesToRemove.map(async (f) => {
+      try {
+        await createChangeLog({
+          entity: 'UploadedFile',
+          entityId: f.id,
+          action: ChangeLogAction.DELETED,
+          before: { id: f.id, canDelete: f.canDelete, filePath: f.filePath } as Prisma.JsonObject,
+          after: null,
+          changedById: userId,
+        });
+      } catch (err) {
+        logger.error({ err, fileId: f.id }, 'Failed to create changelog for removed step file');
+      }
+    }),
+  );
+
+  // Delete physical files from MinIO after commit
+  await Promise.allSettled(
+    filesToRemove.map(async (f) => {
+      try {
+        await deleteFileFromMinio(f.filePath);
+      } catch (err) {
+        logger.error({ err, filePath: f.filePath }, 'Failed to delete MinIO file from step');
+      }
+    }),
+  );
+};
+
 export const updateProcessingEtape = async (
   stepId: string,
   userId: string,
@@ -283,89 +396,35 @@ export const updateProcessingEtape = async (
     return null;
   }
 
-  const { editable, ackNotesOnly } = getEtapeEditability(etape);
+  const { editable, canOnlyEditNotes } = getEtapePermissions(etape);
   if (!editable) {
     throw new EtapeNotEditableError('ETAPE_NOT_EDITABLE');
   }
 
-  // Diff notes — only notes of THIS step and non system (authorId non null) are editable/deletable.
-  const editableNoteIds = new Set(etape.notes.filter((n) => n.authorId !== null).map((n) => n.id));
-  const existingNoteById = new Map(etape.notes.map((n) => [n.id, n]));
-  const sentNoteIds = new Set(data.notes.filter((n) => n.id).map((n) => n.id as string));
-  const notesToDelete = etape.notes.filter((n) => n.authorId !== null && !sentNoteIds.has(n.id));
-
-  // Diff files — only remove those removed AND deletable (canDelete) ; never lose anything else.
-  const currentFileIds = new Set(etape.uploadedFiles.map((f) => f.id));
-  const desiredFileIds = new Set(data.fileIds);
-  const fileIdsToAttach = data.fileIds.filter((id) => !currentFileIds.has(id));
-  const filesToRemove = etape.uploadedFiles.filter((f) => !desiredFileIds.has(f.id) && f.canDelete);
-
-  // User must own the files he attaches
-  if (!ackNotesOnly && fileIdsToAttach.length > 0 && !(await isUserOwner(userId, fileIdsToAttach))) {
-    throw new FilesNotOwnedError('FILES_NOT_OWNED');
-  }
+  const notesDiff = diffEtapeNotes(etape.notes, data.notes);
+  const { fileIdsToAttach, filesToRemove } = diffEtapeFiles(etape.uploadedFiles, data.fileIds);
 
   const dateRealisation =
     data.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT ? (data.dateRealisation ?? new Date()) : null;
 
-  const noteChangelogs: {
-    action: ChangeLogAction;
-    id: string;
-    before: Prisma.JsonObject | null;
-    after: Prisma.JsonObject | null;
-  }[] = [];
+  let noteChangelogs: NoteChangelogEntry[] = [];
 
   await prisma.$transaction(async (tx) => {
-    if (!ackNotesOnly) {
+    // canOnlyEditNotes (automatic ACR) only persists notes
+    if (!canOnlyEditNotes) {
       await tx.requeteEtape.update({
         where: { id: stepId },
         data: { nom: data.nom, statutId: data.statutId, dateRealisation },
       });
     }
 
-    // The panel sends the full desired state of the notes:
-    // - note with an id that is editable (of this step, non system) -> update the text;
-    // - note with an id that is not editable (system / other entity) -> ignored (read-only);
-    // - note without an id -> create.
-    // Editable notes missing from the payload are deleted (notesToDelete, below).
-    for (const note of data.notes) {
-      if (note.id) {
-        if (editableNoteIds.has(note.id)) {
-          const before = existingNoteById.get(note.id);
-          await tx.requeteEtapeNote.update({ where: { id: note.id }, data: { texte: note.texte } });
-          if (before && before.texte !== note.texte) {
-            noteChangelogs.push({
-              action: ChangeLogAction.UPDATED,
-              id: note.id,
-              before: { texte: before.texte, authorId: before.authorId },
-              after: { texte: note.texte, authorId: before.authorId },
-            });
-          }
-        }
-      } else {
-        const created = await tx.requeteEtapeNote.create({
-          data: { authorId: userId, texte: note.texte, requeteEtapeId: stepId },
-        });
-        noteChangelogs.push({
-          action: ChangeLogAction.CREATED,
-          id: created.id,
-          before: null,
-          after: { id: created.id, texte: created.texte, authorId: created.authorId, requeteEtapeId: stepId },
-        });
-      }
-    }
-    for (const note of notesToDelete) {
-      await tx.requeteEtapeNote.delete({ where: { id: note.id } });
-      noteChangelogs.push({
-        action: ChangeLogAction.DELETED,
-        id: note.id,
-        before: { id: note.id, texte: note.texte, authorId: note.authorId },
-        after: null,
-      });
-    }
+    noteChangelogs = await applyEtapeNoteChanges(tx, stepId, userId, data.notes, notesDiff);
 
-    if (!ackNotesOnly) {
+    if (!canOnlyEditNotes) {
       if (fileIdsToAttach.length > 0) {
+        if (!(await isUserOwner(userId, fileIdsToAttach, tx))) {
+          throw new FilesNotOwnedError('FILES_NOT_OWNED');
+        }
         await setEtapeFile(stepId, fileIdsToAttach, etape.entiteId, userId, tx);
       }
       if (filesToRemove.length > 0) {
@@ -378,36 +437,8 @@ export const updateProcessingEtape = async (
     noteChangelogs.map((ev) => logNoteChangelog(ev.action, ev.id, ev.before, ev.after, userId, logger)),
   );
 
-  if (!ackNotesOnly && filesToRemove.length > 0) {
-    await Promise.allSettled(
-      filesToRemove.map(async (f) => {
-        try {
-          await createChangeLog({
-            entity: 'UploadedFile',
-            entityId: f.id,
-            action: ChangeLogAction.DELETED,
-            before: { id: f.id, canDelete: f.canDelete, filePath: f.filePath } as Prisma.JsonObject,
-            after: null,
-            changedById: userId,
-          });
-        } catch (err) {
-          logger.error({ err, fileId: f.id }, 'Failed to create changelog for removed step file');
-        }
-      }),
-    );
-  }
-
-  // Delete physical files from MinIO after commit
-  if (!ackNotesOnly && filesToRemove.length > 0) {
-    await Promise.allSettled(
-      filesToRemove.map(async (f) => {
-        try {
-          await deleteFileFromMinio(f.filePath);
-        } catch (err) {
-          logger.error({ err, filePath: f.filePath }, 'Failed to delete MinIO file from step');
-        }
-      }),
-    );
+  if (!canOnlyEditNotes && filesToRemove.length > 0) {
+    await cleanupRemovedEtapeFiles(filesToRemove, userId, logger);
   }
 
   return prisma.requeteEtape.findUnique({ where: { id: stepId } });
