@@ -32,7 +32,7 @@ describe('buildExportRequetesRows', () => {
         provenance: { label: 'Demat.social' },
         declarant: {
           estVictime: false,
-          lienVictime: { label: 'Parent' },
+          lienVictime: { label: 'Autre' },
           lienAutrePrecision: 'Voisin',
           isTuteur: true,
           adresse: { codePostal: '75001' },
@@ -56,7 +56,7 @@ describe('buildExportRequetesRows', () => {
     ]);
 
     expect(cell(rows[0], 'declarantEstPersonneConcernee')).toBe('Non');
-    expect(cell(rows[0], 'lienPersonneConcernee')).toBe('Parent');
+    expect(cell(rows[0], 'lienPersonneConcernee')).toBe('Voisin');
     expect(cell(rows[0], 'declarantEstTuteurCurateur')).toBe('Oui');
     expect(cell(rows[0], 'codePostalDeclarant')).toBe('75001');
     expect(cell(rows[0], 'declarantConsentIdentiteCommuniquee')).toBe('Oui');
