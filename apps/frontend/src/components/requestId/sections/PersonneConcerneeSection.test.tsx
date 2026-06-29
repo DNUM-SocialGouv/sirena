@@ -12,6 +12,6 @@ describe('PersonneConcerneeSection', () => {
 
     render(<PersonneConcerneeSection id={sectionId} personne={{ mesureProtection: 'MANDATAIRE_JUDICIAIRE' }} />);
 
-    expect(screen.getByText('Il/elle est sous mesure de protection : mandataire judiciaire')).toBeInTheDocument();
+    expect(screen.getByText('Il/elle est en mesure de protection : mandataire judiciaire')).toBeInTheDocument();
   });
 });

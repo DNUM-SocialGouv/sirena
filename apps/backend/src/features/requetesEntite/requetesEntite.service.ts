@@ -2275,7 +2275,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       .field('Autres précisions', p.commentaire || null);
 
     if (mesureProtectionLabel) {
-      pdf.field('Il/elle est sous mesure de protection', mesureProtectionLabel);
+      pdf.field('Il/elle est en mesure de protection', mesureProtectionLabel);
     }
   }
 

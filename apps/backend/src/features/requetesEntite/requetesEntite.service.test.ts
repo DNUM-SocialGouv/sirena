@@ -1388,14 +1388,14 @@ describe('requetesEntite.service', () => {
       } as unknown as Awaited<ReturnType<typeof prisma.requete.findUnique>>);
       vi.mocked(prisma.requete.update).mockResolvedValueOnce({} as Requete);
 
-      await updateRequeteParticipant('req123', { mesureProtection: 'MANDATAIRE_JUDICIAIRE' });
+      await updateRequeteParticipant('req123', { mesureProtection: 'MANDATAIRE_FAMILIAL' });
 
       expect(prisma.requete.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             participant: expect.objectContaining({
               update: expect.objectContaining({
-                mesureProtection: 'MANDATAIRE_JUDICIAIRE',
+                mesureProtection: 'MANDATAIRE_FAMILIAL',
               }),
             }),
           }),
@@ -3331,7 +3331,7 @@ describe('requetesEntite.service', () => {
           declarant: null,
           participant: {
             id: 'participant123',
-            mesureProtection: 'MANDATAIRE_JUDICIAIRE',
+            mesureProtection: 'MANDATAIRE_FAMILIAL',
             identite: null,
             adresse: null,
             age: null,
@@ -3344,7 +3344,7 @@ describe('requetesEntite.service', () => {
 
       await generateRequetePdfBuffer('req123', 'ent123');
 
-      expect(fieldSpy).toHaveBeenCalledWith('Il/elle est sous mesure de protection', 'mandataire judiciaire');
+      expect(fieldSpy).toHaveBeenCalledWith('Il/elle est en mesure de protection', 'mandataire familial');
     });
 
     it('does not render the acknowledgment auto-note as a note but keeps its file', async () => {
