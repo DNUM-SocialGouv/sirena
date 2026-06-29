@@ -584,8 +584,6 @@ model RequeteEtapeNote {
   authorId String?
   author   User?   @relation(fields: [authorId], references: [id])
 
-  uploadedFiles UploadedFile[]
-
   requeteEtapeId String
   requeteEtape   RequeteEtape @relation(fields: [requeteEtapeId], references: [id], onDelete: Cascade)
 
@@ -616,9 +614,6 @@ model UploadedFile {
 
   uploadedById String?
   uploadedBy   User?   @relation(fields: [uploadedById], references: [id])
-
-  requeteEtapeNoteId String?
-  requeteEtapeNote   RequeteEtapeNote? @relation(fields: [requeteEtapeNoteId], references: [id], onDelete: Cascade)
 
   requeteEtapeId String?
   requeteEtape   RequeteEtape? @relation(fields: [requeteEtapeId], references: [id], onDelete: Cascade)
