@@ -8,6 +8,21 @@ import { AFFECTATION_ENTITES_TOP_LEVEL } from './entitesTopLevel.js';
 
 const logger = createDefaultLogger();
 
+const ALL_AFFECTATION_ENTITES = {
+  ...AFFECTATION_ENTITES_TOP_LEVEL,
+  ...AFFECTATION_ENTITES_ILE_DE_FRANCE,
+  ...AFFECTATION_ENTITES_NORMANDIE,
+  ...AFFECTATION_ENTITES_OCCITANIE,
+};
+
+export function getAffectationLabel(sirecId: number | null): string | null {
+  if (sirecId === null) return null;
+  const entites = ALL_AFFECTATION_ENTITES[sirecId];
+  if (!entites) return null;
+  const labels = [...new Set(entites.map((e) => e.label))];
+  return labels.join(' / ');
+}
+
 export interface EntiteSirenaLabels {
   label: string;
   parentLabel?: string;
@@ -61,12 +76,7 @@ export async function initAffectationTransco(): Promise<void> {
   });
 
   const newTransco = new Map<number, AffectationEntry>();
-  for (const [sirecIdStr, entitesSirenaLabels] of Object.entries({
-    ...AFFECTATION_ENTITES_TOP_LEVEL,
-    ...AFFECTATION_ENTITES_ILE_DE_FRANCE,
-    ...AFFECTATION_ENTITES_NORMANDIE,
-    ...AFFECTATION_ENTITES_OCCITANIE,
-  })) {
+  for (const [sirecIdStr, entitesSirenaLabels] of Object.entries(ALL_AFFECTATION_ENTITES)) {
     const sirecId = Number(sirecIdStr);
     try {
       const firstEntity = entitesSirenaLabels[0];

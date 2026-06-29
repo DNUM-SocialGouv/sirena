@@ -5,6 +5,7 @@ import { filterArsEntiteIds } from '../transco/affectation/affectation.transco.j
 import { transcodeReceptionType } from '../transco/receptionType.transco.js';
 import { transformSirecAccuseReception } from './etapes/sirecMigration.accuseReception.transformer.js';
 import { transformSirecCloture } from './etapes/sirecMigration.cloture.transformer.js';
+import { transformSirecDateRecepGest } from './etapes/sirecMigration.dateRecepGest.transformer.js';
 import type { SirenaEtapeData } from './etapes/sirecMigration.etape.types.js';
 import { transformSirecExamenCommission } from './etapes/sirecMigration.examenCommission.transformer.js';
 import { transformSirecInstitutionsPartenaires } from './etapes/sirecMigration.institutionPartenaire.transformer.js';
@@ -64,6 +65,7 @@ export function transformSirecReclamation(sirecData: SirecReclamationData): Sire
     etapes: [
       ...provenanceEtapes,
       ...transformSirecReponseProvenances(sirecData),
+      ...transformSirecDateRecepGest(sirecData, arsEntiteIds),
       ...transformSirecAccuseReception(sirecData, arsEntiteIds),
       ...transformSirecInstitutionsPartenaires(sirecData, arsEntiteIds),
       ...transformSirecPriseEnCharge(sirecData, arsEntiteIds),

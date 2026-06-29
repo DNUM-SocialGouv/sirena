@@ -7,7 +7,7 @@ import {
   MIS_EN_CAUSE_ETABLISSEMENT_PRECISION,
   MIS_EN_CAUSE_TYPE,
 } from '@sirena/common/constants';
-import { SirecDataError, SirecTranscoError } from './sirecTransco.error.js';
+import { SirecDataError } from './sirecTransco.error.js';
 
 export type CategetabEntry = {
   misEnCause: {
