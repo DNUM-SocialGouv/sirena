@@ -2431,6 +2431,13 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
   if (etapes.length > 0) {
     pdf.section('Étapes de traitement');
 
+    const addFileNames = (files: Pick<UploadedFile, 'fileName' | 'metadata'>[], names: Set<string>) => {
+      for (const file of files) {
+        const name = getOriginalFileName(file);
+        if (name) names.add(name);
+      }
+    };
+
     for (const etape of etapes) {
       const etapeTitle = getEtapePdfTitle(
         etape.type as RequeteEtapeType,
@@ -2470,16 +2477,8 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
       const displayNotes = sendNote ? etapeNotes.filter((note) => note.id !== sendNote.id) : etapeNotes;
 
       const etapeFileNames = new Set<string>();
-      const etapeFiles = (etape.uploadedFiles ?? [])
-        .map((f) => getOriginalFileName(f as Parameters<typeof getOriginalFileName>[0]))
-        .filter(Boolean);
-      for (const name of etapeFiles) etapeFileNames.add(name);
-      if (sendNote) {
-        for (const f of sendNote.uploadedFiles ?? []) {
-          const name = getOriginalFileName(f as Parameters<typeof getOriginalFileName>[0]);
-          if (name) etapeFileNames.add(name);
-        }
-      }
+      addFileNames(etape.uploadedFiles ?? [], etapeFileNames);
+      if (sendNote) addFileNames(sendNote.uploadedFiles ?? [], etapeFileNames);
       if (etapeFileNames.size > 0) {
         pdf.paragraph('Pièces jointes :', { bold: true });
         pdf.list([...etapeFileNames]);
@@ -2494,7 +2493,7 @@ export const generateRequetePdfBuffer = async (requeteId: string, entiteId: stri
         if (note.texte) pdf.paragraph(note.texte);
 
         const noteFiles = (note.uploadedFiles ?? [])
-          .map((f) => getOriginalFileName(f as Parameters<typeof getOriginalFileName>[0]))
+          .map((f) => getOriginalFileName(f))
           .filter((name): name is string => Boolean(name) && !etapeFileNames.has(name));
         if (noteFiles.length > 0) {
           pdf.paragraph('Pièces jointes :', { bold: true });
