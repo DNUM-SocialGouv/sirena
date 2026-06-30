@@ -38,14 +38,9 @@
 .noteHeader {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.5rem;
   margin-bottom: 0.25rem;
-}
-
-.noteHeaderLabel {
-  font-weight: 700;
-  margin: 0;
 }
 
 .readOnlyNote {
