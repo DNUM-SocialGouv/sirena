@@ -1,5 +1,6 @@
 import { REQUETE_ETAPE_STATUT_TYPES, REQUETE_ETAPE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import type { PinoLogger } from 'hono-pino';
+import { getOriginalFileName } from '../../helpers/file.js';
 import { capitalizeFirst, formatDateFr } from '../../helpers/string.js';
 import { getLoggerStore } from '../../libs/asyncLocalStorage.js';
 import { deleteFileFromMinio } from '../../libs/minio.js';
@@ -490,15 +491,35 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
             uploadedFiles: {
               select: {
                 id: true,
-                size: true,
+                fileName: true,
                 metadata: true,
+                size: true,
                 status: true,
                 scanStatus: true,
                 sanitizeStatus: true,
-                safeFilePath: true,
               },
             },
             author: {
+              select: {
+                prenom: true,
+                nom: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        uploadedFiles: {
+          select: {
+            id: true,
+            fileName: true,
+            metadata: true,
+            size: true,
+            status: true,
+            scanStatus: true,
+            sanitizeStatus: true,
+            canDelete: true,
+            createdAt: true,
+            uploadedBy: {
               select: {
                 prenom: true,
                 nom: true,
@@ -511,6 +532,7 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
         entiteId: true,
         requete: {
           select: {
+            createdById: true,
             createdBy: {
               select: { prenom: true, nom: true },
             },
@@ -525,8 +547,29 @@ export const getRequeteEtapes = async (requeteId: string, entiteId: string | nul
     }),
   ]);
 
+  const sanitizeFile = <T extends { fileName: string; metadata: Prisma.JsonValue | null }>(file: T) => {
+    const { metadata: _metadata, ...rest } = file;
+    return { ...rest, fileName: getOriginalFileName(file) };
+  };
+
+  // closure / creation = not editable; automatic ACR = statut + files locked but notes OK; manual = full.
+  const data = raw.map((etape) => {
+    const { editable, canOnlyEditNotes } = getEtapePermissions({
+      type: etape.type,
+      statutId: etape.statutId,
+      requete: etape.requete ? { createdById: etape.requete.createdById } : null,
+    });
+    return {
+      ...etape,
+      editable,
+      canOnlyEditNotes,
+      uploadedFiles: etape.uploadedFiles.map(sanitizeFile),
+      notes: etape.notes.map((note) => ({ ...note, uploadedFiles: note.uploadedFiles.map(sanitizeFile) })),
+    };
+  });
+
   return {
-    data: raw,
+    data,
     total,
   };
 };

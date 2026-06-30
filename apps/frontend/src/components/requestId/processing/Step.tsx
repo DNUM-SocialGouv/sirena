@@ -427,7 +427,7 @@ const StepComponent = ({
                 {notes[0].uploadedFiles
                   .filter((f) => !deletedFileIds.has(f.id))
                   .map((file: (typeof notes)[number]['uploadedFiles'][number]) => {
-                    const fileName = (file.metadata as { originalName?: string })?.originalName || 'Unknown';
+                    const fileName = file.fileName;
                     return (
                       <li key={file.id} className={styles['request-note__file']}>
                         <FileDownloadLink
@@ -468,7 +468,7 @@ const StepComponent = ({
             {sendNote && sendNote.uploadedFiles.length > 0 && (
               <ul className="fr-mt-1w fr-mb-2w" style={{ listStyle: 'none', padding: 0 }}>
                 {sendNote.uploadedFiles.map((file: (typeof sendNote.uploadedFiles)[number]) => {
-                  const fileName = (file.metadata as { originalName?: string })?.originalName || 'Unknown';
+                  const fileName = file.fileName;
                   return (
                     <li key={file.id} className={styles['request-note__file']}>
                       <FileDownloadLink
@@ -498,11 +498,10 @@ const StepComponent = ({
                   files={note.uploadedFiles.map((file: (typeof note.uploadedFiles)[number]) => ({
                     id: file.id,
                     size: file.size,
-                    originalName: (file.metadata as { originalName?: string })?.originalName || 'Unknown',
+                    originalName: file.fileName,
                     status: file.status,
                     scanStatus: file.scanStatus,
                     sanitizeStatus: file.sanitizeStatus,
-                    safeFilePath: file.safeFilePath,
                   }))}
                   requeteStateId={id}
                   onEdit={(noteData) =>
