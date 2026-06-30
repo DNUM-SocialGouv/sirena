@@ -85,8 +85,13 @@ export const createUploadedFile = async (
   });
 };
 
-export const isUserOwner = async (userId: string, uploadedFileIds: UploadedFile['id'][]): Promise<boolean> => {
-  const count = await prisma.uploadedFile.count({
+export const isUserOwner = async (
+  userId: string,
+  uploadedFileIds: UploadedFile['id'][],
+  tx?: Prisma.TransactionClient,
+): Promise<boolean> => {
+  const client = tx ?? prisma;
+  const count = await client.uploadedFile.count({
     where: {
       id: { in: uploadedFileIds },
       uploadedById: userId,
@@ -166,6 +171,16 @@ export const setNoteFile = async (
   changedById?: string,
 ) => {
   return updateFilesWithRelation(uploadedFileId, { requeteEtapeNoteId: noteId }, entiteId, changedById);
+};
+
+export const setEtapeFile = async (
+  requeteEtapeId: string,
+  uploadedFileId: UploadedFile['id'][],
+  entiteId: string | null = null,
+  changedById?: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  return updateFilesWithRelation(uploadedFileId, { requeteEtapeId }, entiteId, changedById, tx);
 };
 
 export const setRequeteFile = async (

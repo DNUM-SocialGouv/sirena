@@ -11,12 +11,17 @@ import {
   type UploadedFile,
 } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
+import { isUserOwner, setEtapeFile } from '../uploadedFiles/uploadedFiles.service.js';
 import {
-  addProcessingEtape,
   createDefaultRequeteEtapes,
+  createProcessingEtape,
   deleteRequeteEtape,
+  EtapeNotEditableError,
+  FilesNotOwnedError,
+  getEtapePermissions,
   getRequeteEtapeById,
   getRequeteEtapes,
+  updateProcessingEtape,
   updateRequeteEtapeNom,
   updateRequeteEtapeStatut,
 } from './requetesEtapes.service.js';
@@ -52,6 +57,11 @@ vi.mock('../changelog/changelog.service.js', () => ({
 
 vi.mock('../../libs/minio.js', () => ({
   deleteFileFromMinio: vi.fn(),
+}));
+
+vi.mock('../uploadedFiles/uploadedFiles.service.js', () => ({
+  isUserOwner: vi.fn(() => Promise.resolve(true)),
+  setEtapeFile: vi.fn(() => Promise.resolve([])),
 }));
 
 const requeteEtape: RequeteEtape = {
@@ -454,142 +464,6 @@ describe('RequeteEtapes.service.ts', () => {
     });
   });
 
-  describe('addProcessingEtape()', () => {
-    it('should add a processing etape when requete exists', async () => {
-      const mockRequete = {
-        id: 'requeteId',
-        commentaire: 'Test',
-        receptionDate: new Date('2024-01-15T10:00:00Z'),
-        dateDemandeDeclarant: null,
-        dematSocialId: 123,
-        sirecId: null,
-        receptionTypeId: 'type',
-        createdById: null,
-        provenanceId: null,
-        provenancePrecision: null,
-        thirdPartyAccountId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      vi.mocked(prisma.requete.findUnique).mockReset();
-      vi.mocked(prisma.requeteEntite.upsert).mockReset();
-      vi.mocked(prisma.requeteEtape.create).mockReset();
-
-      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequete);
-      vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce(requeteEntite);
-      vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(requeteEtape);
-
-      const result = await addProcessingEtape('requeteId', 'entiteId', {
-        nom: requeteEtape.nom,
-      });
-
-      expect(result).toEqual(requeteEtape);
-      expect(prisma.requete.findUnique).toHaveBeenCalledWith({
-        where: { id: 'requeteId' },
-      });
-      expect(prisma.requeteEntite.upsert).toHaveBeenCalledWith({
-        where: {
-          requeteId_entiteId: {
-            requeteId: 'requeteId',
-            entiteId: 'entiteId',
-          },
-        },
-        create: {
-          requeteId: 'requeteId',
-          entiteId: 'entiteId',
-          statutId: 'NOUVEAU',
-        },
-        update: {},
-      });
-      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
-        data: {
-          requeteId: requeteEtape.requeteId,
-          entiteId: requeteEtape.entiteId,
-          nom: requeteEtape.nom,
-          type: 'MANUAL',
-          statutId: requeteEtape.statutId,
-        },
-      });
-    });
-
-    it('should return null if requete does not exist', async () => {
-      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(null);
-
-      const result = await addProcessingEtape('nonExistentRequeteId', 'entiteId', {
-        nom: 'Processing Etape',
-      });
-
-      expect(result).toBeNull();
-      expect(prisma.requeteEntite.upsert).not.toHaveBeenCalled();
-      expect(prisma.requeteEtape.create).not.toHaveBeenCalled();
-    });
-
-    it('should add a processing etape with userId', async () => {
-      const mockRequete = {
-        id: 'requeteId',
-        commentaire: 'Test',
-        receptionDate: new Date('2024-01-15T10:00:00Z'),
-        dateDemandeDeclarant: null,
-        dematSocialId: 123,
-        sirecId: null,
-        receptionTypeId: 'type',
-        createdById: null,
-        provenanceId: null,
-        provenancePrecision: null,
-        thirdPartyAccountId: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      vi.mocked(prisma.requete.findUnique).mockReset();
-      vi.mocked(prisma.requeteEntite.upsert).mockReset();
-      vi.mocked(prisma.requeteEtape.create).mockReset();
-
-      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce(mockRequete);
-      vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce(requeteEntite);
-      vi.mocked(prisma.requeteEtape.create).mockResolvedValueOnce(requeteEtape);
-
-      const result = await addProcessingEtape(
-        'requeteId',
-        'entiteId',
-        {
-          nom: requeteEtape.nom,
-        },
-        'userId',
-      );
-
-      expect(result).toEqual(requeteEtape);
-      expect(prisma.requete.findUnique).toHaveBeenCalledWith({
-        where: { id: 'requeteId' },
-      });
-      expect(prisma.requeteEntite.upsert).toHaveBeenCalledWith({
-        where: {
-          requeteId_entiteId: {
-            requeteId: 'requeteId',
-            entiteId: 'entiteId',
-          },
-        },
-        create: {
-          requeteId: 'requeteId',
-          entiteId: 'entiteId',
-          statutId: 'NOUVEAU',
-        },
-        update: {},
-      });
-      expect(prisma.requeteEtape.create).toHaveBeenCalledWith({
-        data: {
-          requeteId: requeteEtape.requeteId,
-          entiteId: requeteEtape.entiteId,
-          nom: requeteEtape.nom,
-          type: 'MANUAL',
-          statutId: requeteEtape.statutId,
-          createdById: 'userId',
-        },
-      });
-    });
-  });
-
   describe('getRequeteEtapes()', () => {
     it('should retrieve RequeteEtapes for a given RequeteEntite', async () => {
       vi.mocked(prisma.requeteEtape.findMany).mockResolvedValueOnce([requeteEtapeWithNotesAndFiles]);
@@ -983,6 +857,228 @@ describe('RequeteEtapes.service.ts', () => {
 
       expect(createChangeLog).toHaveBeenCalledTimes(2); // 1 note + 1 file
       expect(deleteFileFromMinio).toHaveBeenCalledWith('path/to/file1.pdf');
+    });
+  });
+
+  describe('getEtapePermissions', () => {
+    it('MANUAL step is fully editable', () => {
+      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'A_FAIRE', requete: { createdById: 'agent-1' } })).toEqual(
+        {
+          editable: true,
+          canOnlyEditNotes: false,
+        },
+      );
+    });
+
+    it('CLOTUREE step is not editable', () => {
+      expect(getEtapePermissions({ type: 'MANUAL', statutId: 'CLOTUREE', requete: { createdById: 'a' } })).toEqual({
+        editable: false,
+        canOnlyEditNotes: false,
+      });
+    });
+
+    it('CREATION and REOPEN steps are not editable', () => {
+      expect(getEtapePermissions({ type: 'CREATION', statutId: 'FAIT', requete: { createdById: null } }).editable).toBe(
+        false,
+      );
+      expect(getEtapePermissions({ type: 'REOPEN', statutId: 'FAIT', requete: { createdById: 'a' } }).editable).toBe(
+        false,
+      );
+    });
+
+    it('automatic ACR (requete without createdById) is notes-only', () => {
+      expect(getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', requete: { createdById: null } })).toEqual(
+        {
+          editable: true,
+          canOnlyEditNotes: true,
+        },
+      );
+    });
+
+    it('manual ACR (requete with createdById) is fully editable', () => {
+      expect(
+        getEtapePermissions({ type: 'ACKNOWLEDGMENT', statutId: 'FAIT', requete: { createdById: 'agent-1' } }),
+      ).toEqual({ editable: true, canOnlyEditNotes: false });
+    });
+  });
+
+  describe('createProcessingEtape', () => {
+    const logger = { error: vi.fn(), info: vi.fn() } as unknown as PinoLogger;
+
+    it('returns null when entiteId is missing', async () => {
+      expect(
+        await createProcessingEtape('req-1', null, 'user-1', { nom: 'X', notes: [], fileIds: [] }, logger),
+      ).toBeNull();
+    });
+
+    it('creates the step, its notes and attaches files in one transaction', async () => {
+      const createdEtape = { ...requeteEtape, id: 'new-step' };
+      vi.mocked(isUserOwner).mockResolvedValue(true);
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({ id: 'req-1' } as Requete);
+      vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce({} as RequeteEntite);
+
+      const tx = {
+        requeteEtape: { create: vi.fn().mockResolvedValue(createdEtape) },
+        requeteEtapeNote: {
+          create: vi
+            .fn()
+            .mockResolvedValue({ id: 'note-1', texte: 'note 1', authorId: 'user-1', requeteEtapeId: 'new-step' }),
+        },
+        uploadedFile: { updateMany: vi.fn() },
+      };
+      vi.mocked(prisma.$transaction).mockImplementation((async (cb: (t: unknown) => unknown) => cb(tx)) as never);
+
+      const result = await createProcessingEtape(
+        'req-1',
+        'e1',
+        'user-1',
+        {
+          nom: 'Analyse',
+          statutId: 'FAIT',
+          dateRealisation: new Date('2026-05-20'),
+          notes: [{ texte: 'note 1' }],
+          fileIds: ['file-1'],
+        },
+        logger,
+      );
+
+      expect(result).toEqual(createdEtape);
+      expect(tx.requeteEtape.create).toHaveBeenCalledTimes(1);
+      expect(tx.requeteEtapeNote.create).toHaveBeenCalledTimes(1);
+      expect(setEtapeFile).toHaveBeenCalledWith('new-step', ['file-1'], 'e1', 'user-1', tx);
+    });
+
+    it('throws FilesNotOwnedError when the user does not own the files', async () => {
+      vi.mocked(prisma.requete.findUnique).mockResolvedValueOnce({ id: 'req-1' } as Requete);
+      vi.mocked(prisma.requeteEntite.upsert).mockResolvedValueOnce({} as RequeteEntite);
+      vi.mocked(isUserOwner).mockResolvedValue(false);
+
+      const tx = {
+        requeteEtape: { create: vi.fn().mockResolvedValue({ ...requeteEtape, id: 'new-step' }) },
+        requeteEtapeNote: { create: vi.fn() },
+      };
+      vi.mocked(prisma.$transaction).mockImplementation((async (cb: (t: unknown) => unknown) => cb(tx)) as never);
+
+      await expect(
+        createProcessingEtape('req-1', 'e1', 'user-1', { nom: 'X', notes: [], fileIds: ['not-mine'] }, logger),
+      ).rejects.toBeInstanceOf(FilesNotOwnedError);
+    });
+  });
+
+  describe('updateProcessingEtape', () => {
+    const logger = { error: vi.fn(), info: vi.fn() } as unknown as PinoLogger;
+    const makeTx = () => ({
+      requeteEtape: { update: vi.fn() },
+      requeteEtapeNote: {
+        update: vi.fn(),
+        create: vi
+          .fn()
+          .mockResolvedValue({ id: 'new-note', texte: 'new note', authorId: 'user-1', requeteEtapeId: 'step-1' }),
+        delete: vi.fn(),
+      },
+      uploadedFile: { updateMany: vi.fn(), deleteMany: vi.fn() },
+    });
+
+    it('returns null when the step does not exist', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce(null);
+      const result = await updateProcessingEtape(
+        'nope',
+        'user-1',
+        { nom: 'X', statutId: 'A_FAIRE', notes: [], fileIds: [] },
+        logger,
+      );
+      expect(result).toBeNull();
+    });
+
+    it('throws EtapeNotEditableError for a closed step', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique).mockResolvedValueOnce({
+        id: 'c',
+        type: 'MANUAL',
+        statutId: 'CLOTUREE',
+        entiteId: 'e1',
+        notes: [],
+        uploadedFiles: [],
+        requete: { createdById: 'a' },
+      } as never);
+      await expect(
+        updateProcessingEtape('c', 'user-1', { nom: 'X', statutId: 'A_FAIRE', notes: [], fileIds: [] }, logger),
+      ).rejects.toBeInstanceOf(EtapeNotEditableError);
+    });
+
+    it('diffs notes (update/create/delete, protecting system notes) and files', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique)
+        .mockResolvedValueOnce({
+          id: 'step-1',
+          type: 'MANUAL',
+          statutId: 'A_FAIRE',
+          entiteId: 'e1',
+          notes: [
+            { id: 'keep', authorId: 'u' },
+            { id: 'remove', authorId: 'u' },
+            { id: 'system', authorId: null },
+          ],
+          uploadedFiles: [
+            { id: 'fA', canDelete: true, filePath: 'a.pdf' },
+            { id: 'fB', canDelete: true, filePath: 'b.pdf' },
+          ],
+          requete: { createdById: 'agent' },
+        } as never)
+        .mockResolvedValueOnce({ ...requeteEtape, id: 'step-1' });
+
+      const tx = makeTx();
+      vi.mocked(isUserOwner).mockResolvedValue(true);
+      vi.mocked(prisma.$transaction).mockImplementation((async (cb: (t: unknown) => unknown) => cb(tx)) as never);
+      vi.mocked(deleteFileFromMinio).mockResolvedValue();
+
+      await updateProcessingEtape(
+        'step-1',
+        'user-1',
+        {
+          nom: 'X',
+          statutId: 'A_FAIRE',
+          notes: [{ id: 'keep', texte: 'updated' }, { texte: 'new note' }],
+          fileIds: ['fA', 'fC'],
+        },
+        logger,
+      );
+
+      expect(tx.requeteEtape.update).toHaveBeenCalledTimes(1);
+      expect(tx.requeteEtapeNote.update).toHaveBeenCalledWith({ where: { id: 'keep' }, data: { texte: 'updated' } });
+      expect(tx.requeteEtapeNote.create).toHaveBeenCalledTimes(1);
+      expect(tx.requeteEtapeNote.delete).toHaveBeenCalledWith({ where: { id: 'remove' } });
+      expect(tx.requeteEtapeNote.delete).toHaveBeenCalledTimes(1);
+      expect(setEtapeFile).toHaveBeenCalledWith('step-1', ['fC'], 'e1', 'user-1', tx);
+      expect(tx.uploadedFile.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['fB'] } } });
+      expect(deleteFileFromMinio).toHaveBeenCalledWith('b.pdf');
+    });
+
+    it('automatic ACR: applies notes only, leaves fields and files untouched', async () => {
+      vi.mocked(prisma.requeteEtape.findUnique)
+        .mockResolvedValueOnce({
+          id: 'ack',
+          type: 'ACKNOWLEDGMENT',
+          statutId: 'FAIT',
+          entiteId: 'e1',
+          notes: [],
+          uploadedFiles: [{ id: 'ar', canDelete: false, filePath: 'ar.pdf' }],
+          requete: { createdById: null },
+        } as never)
+        .mockResolvedValueOnce({ ...requeteEtape, id: 'ack' });
+
+      const tx = makeTx();
+      vi.mocked(prisma.$transaction).mockImplementation((async (cb: (t: unknown) => unknown) => cb(tx)) as never);
+
+      await updateProcessingEtape(
+        'ack',
+        'user-1',
+        { nom: 'Changed', statutId: 'A_FAIRE', notes: [{ texte: 'note added' }], fileIds: [] },
+        logger,
+      );
+
+      expect(tx.requeteEtape.update).not.toHaveBeenCalled();
+      expect(tx.requeteEtapeNote.create).toHaveBeenCalledTimes(1);
+      expect(tx.uploadedFile.deleteMany).not.toHaveBeenCalled();
+      expect(tx.uploadedFile.updateMany).not.toHaveBeenCalled();
     });
   });
 });
