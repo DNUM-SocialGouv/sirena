@@ -77,7 +77,11 @@ vi.mock('archiver', () => {
     on: vi.fn(),
     abort: vi.fn(),
   };
-  return { default: vi.fn(() => mockArchive) };
+  return {
+    ZipArchive: vi.fn(function () {
+      return mockArchive;
+    }),
+  };
 });
 
 import type { Readable } from 'node:stream';
