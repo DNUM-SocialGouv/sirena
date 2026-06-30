@@ -96,13 +96,13 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const generatedId = useId();
   const titleId = `${generatedId}-step-form`;
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const triggerElementRef = useRef<HTMLElement | null>(null);
   const nomInputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [editStepId, setEditStepId] = useState<string | null>(null);
+  const [editStepNom, setEditStepNom] = useState('');
   const [canOnlyEditNotes, setCanOnlyEditNotes] = useState(false);
 
   const [nom, setNom] = useState('');
@@ -129,6 +129,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   const resetForm = () => {
     setNom('');
     setNomError(null);
+    setEditStepNom('');
     setStatutId(null);
     setDateRealisation('');
     setDateError(null);
@@ -141,7 +142,6 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   };
 
   const openCreate = () => {
-    triggerElementRef.current = (document.activeElement as HTMLElement) ?? null;
     resetForm();
     setMode('create');
     setEditStepId(null);
@@ -152,19 +152,17 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
 
   const openEdit = (step: StepType) => {
     if (!step.editable) return;
-    triggerElementRef.current = (document.activeElement as HTMLElement) ?? null;
     resetForm();
     setMode('edit');
     setEditStepId(step.id);
+    setEditStepNom(step.nom);
     setCanOnlyEditNotes(step.canOnlyEditNotes);
     setNom(step.nom);
 
     const initialStatut =
-      step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT
-        ? REQUETE_ETAPE_STATUT_TYPES.FAIT
-        : step.statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE
-          ? REQUETE_ETAPE_STATUT_TYPES.A_FAIRE
-          : null;
+      step.statutId === REQUETE_ETAPE_STATUT_TYPES.FAIT || step.statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE
+        ? step.statutId
+        : null;
     setStatutId(initialStatut);
     setDateRealisation(
       step.dateRealisation
@@ -207,11 +205,11 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
   useImperativeHandle(ref, () => ({ openCreate, openEdit, closeDrawer }));
 
   useEffect(() => {
-    if (isOpen) {
-      const id = window.setTimeout(() => headingRef.current?.focus(), 0);
-      return () => window.clearTimeout(id);
-    }
-    triggerElementRef.current?.focus();
+    if (!isOpen) return;
+    // À l'ouverture, on déplace le focus sur le titre du panneau ; la restauration
+    // du focus à la fermeture est assurée par Drawer.Root.
+    const id = window.setTimeout(() => headingRef.current?.focus(), 0);
+    return () => window.clearTimeout(id);
   }, [isOpen]);
 
   const handleOpenChange = (open: boolean) => {
@@ -387,7 +385,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                     </Button>
                   </div>
                   <h3 id={titleId} className="fr-h6" ref={headingRef} tabIndex={-1}>
-                    {mode === 'create' ? 'Ajouter une étape' : "Modifier l'étape"}
+                    {mode === 'create' ? 'Ajouter une étape' : `Modifier l'étape « ${editStepNom} »`}
                   </h3>
                   <p className="fr-text--sm fr-mb-2w">Sauf mention contraire, tous les champs sont facultatifs.</p>
 
@@ -491,7 +489,6 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                           <div key={note.key} className={mode === 'edit' ? styles.noteCard : undefined}>
                             {mode === 'edit' && (
                               <div className={styles.noteHeader}>
-                                <p className={styles.noteHeaderLabel}>{noteLabel}</p>
                                 <Button
                                   type="button"
                                   priority="tertiary"
@@ -505,7 +502,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                               </div>
                             )}
                             <Input
-                              label={mode === 'edit' ? <span className="fr-sr-only">{noteLabel}</span> : noteLabel}
+                              label={noteLabel}
                               hintText="Maximum 10 000 caractères"
                               textArea
                               disabled={isLoading}
@@ -561,7 +558,7 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                                   priority="tertiary"
                                   size="small"
                                   iconId="fr-icon-delete-line"
-                                  title="Retirer le fichier"
+                                  title={`Retirer le fichier ${file.originalName}`}
                                   aria-label={`Retirer le fichier ${file.originalName}`}
                                   disabled={isLoading}
                                   onClick={() => setExistingFiles((prev) => prev.filter((f) => f.id !== file.id))}
