@@ -46,7 +46,7 @@ describe('buildExportRequetesRows', () => {
           adresse: { codePostal: '69002' },
           veutGarderAnonymat: true,
           estVictimeInformee: false,
-          mesureProtection: 'MANDATAIRE_JUDICIAIRE',
+          mesureProtection: 'MANDATAIRE_FAMILIAL',
           estHandicapee: true,
           aAutrePersonnes: true,
           autrePersonnes: 'Sa sœur',
@@ -67,7 +67,10 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'codePostalPersonneConcernee')).toBe('69002');
     expect(cell(rows[0], 'personneConcerneeConsentIdentiteCommuniquee')).toBe('Non');
     expect(cell(rows[0], 'personneConcerneeInformeeDemarche')).toBe('Non');
-    expect(cell(rows[0], 'mesureProtectionPersonneConcernee')).toBe('mandataire judiciaire');
+    expect(EXPORT_REQUETES_COLUMNS.find((column) => column.key === 'mesureProtectionPersonneConcernee')?.header).toBe(
+      'Mesure de protection de la personne concernée',
+    );
+    expect(cell(rows[0], 'mesureProtectionPersonneConcernee')).toBe('mandataire familial');
     expect(cell(rows[0], 'personneConcerneeHandicap')).toBe('Oui');
     expect(cell(rows[0], 'autrePersonneConcernee')).toBe('Sa sœur');
     expect(cell(rows[0], 'dateReception')).toBe('17/06/2026');

@@ -233,7 +233,7 @@ model DemarchesEngageesEnum {
 
 enum MesureProtection {
   MANDATAIRE_JUDICIAIRE
-  HABILITATION_FAMILIALE
+  MANDATAIRE_FAMILIAL
   NON
 }
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const MesureProtectionSchema = z.enum(['MANDATAIRE_JUDICIAIRE', 'HABILITATION_FAMILIALE', 'NON']);
+export const MesureProtectionSchema = z.enum(['MANDATAIRE_JUDICIAIRE', 'MANDATAIRE_FAMILIAL', 'NON']);
 
 export const PersonneConcerneeDataSchema = z.object({
   civilite: z.string().optional(),
