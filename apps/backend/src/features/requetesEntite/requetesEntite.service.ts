@@ -16,7 +16,7 @@ import {
 } from '@sirena/common/constants';
 import type { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import { getDateTodayInParis, getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import type { z } from 'zod';
 import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionParams } from '../../helpers/file.js';
 import { sortObject } from '../../helpers/prisma/sort.js';
@@ -2041,7 +2041,7 @@ export const createRequeteFilesArchive = async (requeteId: string, entiteId: str
     return 'NO_FILES' as const;
   }
 
-  const archive = archiver('zip', { store: true });
+  const archive = new ZipArchive({ store: true });
   const usedNames = new Set<string>();
 
   const appendFileToArchive = async (file: UploadedFile, entryName: string) => {
