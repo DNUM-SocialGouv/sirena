@@ -13,7 +13,7 @@ export const RequeteEtapeSchema = z.object({
     REQUETE_ETAPE_TYPES.MANUAL,
   ]),
   estPartagee: z.boolean(),
-  statutId: z.string(),
+  statutId: z.string().nullable(),
   dateRealisation: z.coerce.date().nullable(),
   requeteId: z.string(),
   entiteId: z.string(),
@@ -103,7 +103,7 @@ const requireDateWhenFait = (data: { statutId?: string | null; dateRealisation?:
 export const AddProcessingStepBodySchema = z
   .object({
     nom: etapeNomSchema,
-    statutId: etapeStatutEnum.optional(),
+    statutId: etapeStatutEnum.nullable().optional(),
     dateRealisation: z.coerce.date().optional(),
     notes: z
       .array(z.object({ texte: noteTexteSchema }))
@@ -116,7 +116,7 @@ export const AddProcessingStepBodySchema = z
 export const UpdateProcessingStepBodySchema = z
   .object({
     nom: etapeNomSchema,
-    statutId: etapeStatutEnum,
+    statutId: etapeStatutEnum.nullable().optional(),
     dateRealisation: z.coerce.date().optional(),
 
     notes: z.array(z.object({ id: z.string().optional(), texte: noteTexteSchema })).default([]),
