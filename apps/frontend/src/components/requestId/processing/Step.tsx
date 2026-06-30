@@ -152,7 +152,7 @@ const StepComponent = ({
   id,
   requete,
   clotureEffectiveDate,
-  ...rest
+  ...step
 }: StepProps) => {
   const deleteClotureFileModal = useMemo(
     () =>
@@ -179,18 +179,18 @@ const StepComponent = ({
     ? ([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER] as string[]).includes(userRole)
     : false;
 
-  const isAcknowledgmentStep = rest.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
+  const isAcknowledgmentStep = step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
   const sendNote = isAcknowledgmentStep
     ? notes.find((note) => note.texte?.startsWith("Email d'accusé de réception envoyé le"))
     : undefined;
   const displayNotes = sendNote ? notes.filter((note) => note.id !== sendNote.id) : notes;
 
   const showAFaireBadge = statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
-  const canEditStep = canEdit && rest.editable;
+  const canEditStep = canEdit && step.editable;
 
   const clotureReasonLabels =
     statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE
-      ? rest.clotureReason.map((reason) => reason.label).filter(Boolean)
+      ? step.clotureReason.map((reason) => reason.label).filter(Boolean)
       : [];
 
   const handleConfirmDeleteClotureFile = async () => {
@@ -222,7 +222,7 @@ const StepComponent = ({
         <div className="fr-mb-1w">
           <div className="fr-grid-row fr-grid-row--middle">
             <div className="fr-col">
-              <h3 className="fr-h6 fr-mb-0">{getStepTitle(rest.type, statutId, nom)}</h3>
+              <h3 className="fr-h6 fr-mb-0">{getStepTitle(step.type, statutId, nom)}</h3>
             </div>
             {showAFaireBadge && (
               <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
@@ -236,7 +236,7 @@ const StepComponent = ({
             <div className="fr-col">
               <p className="fr-text--xs fr-text-mention--grey">
                 {getStepSubtitle(
-                  rest.type,
+                  step.type,
                   statutId,
                   createdAt,
                   updatedAt,
@@ -244,7 +244,7 @@ const StepComponent = ({
                   notes,
                   requete,
                   clotureEffectiveDate,
-                  rest.dateRealisation,
+                  step.dateRealisation,
                 )}
               </p>
               {isAcknowledgmentSendable && canEdit && (
@@ -279,11 +279,11 @@ const StepComponent = ({
                 </div>
               )}
             </div>
-            {notes[0]?.uploadedFiles && notes[0].uploadedFiles.filter((f) => !deletedFileIds.has(f.id)).length > 0 && (
+            {step.uploadedFiles && step.uploadedFiles.filter((f) => !deletedFileIds.has(f.id)).length > 0 && (
               <ul className={`fr-mt-1w ${styles['cloture-files']}`}>
-                {notes[0].uploadedFiles
+                {step.uploadedFiles
                   .filter((f) => !deletedFileIds.has(f.id))
-                  .map((file: (typeof notes)[number]['uploadedFiles'][number]) => {
+                  .map((file: StepType['uploadedFiles'][number]) => {
                     const fileName = file.fileName;
                     return (
                       <li key={file.id} className={styles['request-note__file']}>
@@ -394,7 +394,7 @@ const StepComponent = ({
                     createdBy,
                     requete,
                     clotureEffectiveDate,
-                    ...rest,
+                    ...step,
                   })
                 }
               >
@@ -403,7 +403,7 @@ const StepComponent = ({
             )}
           </>
         )}
-        {statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && canWrite && notes[0] && (
+        {statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE && canWrite && (
           <>
             <Button
               className={styles['request-step__add-note']}
@@ -414,7 +414,7 @@ const StepComponent = ({
             >
               Ajouter un fichier
             </Button>
-            <AddFilesClotureDrawer ref={addFilesClotureDrawerRef} noteId={notes[0].id} noteTexte={notes[0].texte} />
+            <AddFilesClotureDrawer ref={addFilesClotureDrawerRef} stepId={id} />
           </>
         )}
       </div>
