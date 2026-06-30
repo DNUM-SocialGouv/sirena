@@ -133,7 +133,10 @@ describe('syncRequetePriseEnChargeToDematSocial', () => {
 
     await syncRequetePriseEnChargeToDematSocial('requete-1');
 
-    expect(acceptDossierWithoutNotification).toHaveBeenCalledWith('Dossier-123', 'Dossier pris en charge dans SIRENA');
+    expect(acceptDossierWithoutNotification).toHaveBeenCalledWith(
+      'Dossier-123',
+      'Dossier pris en charge par le service compétent',
+    );
   });
 
   it('passes an en_construction demat.social dossier to instruction before accepting it', async () => {
@@ -149,7 +152,10 @@ describe('syncRequetePriseEnChargeToDematSocial', () => {
     await syncRequetePriseEnChargeToDematSocial('requete-1');
 
     expect(updateInstruction).toHaveBeenCalledWith('Dossier-123');
-    expect(acceptDossierWithoutNotification).toHaveBeenCalledWith('Dossier-123', 'Dossier pris en charge dans SIRENA');
+    expect(acceptDossierWithoutNotification).toHaveBeenCalledWith(
+      'Dossier-123',
+      'Dossier pris en charge par le service compétent',
+    );
   });
 
   it('throws and does not finalise when passing an en_construction dossier to instruction returns errors', async () => {

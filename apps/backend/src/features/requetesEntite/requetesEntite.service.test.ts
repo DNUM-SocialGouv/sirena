@@ -78,6 +78,7 @@ vi.mock('archiver', () => {
     abort: vi.fn(),
   };
   return {
+    // biome-ignore lint/complexity/useArrowFunction: ZipArchive is instantiated with `new`; arrow functions are not constructors.
     ZipArchive: vi.fn(function () {
       return mockArchive;
     }),
