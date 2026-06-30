@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describePeriod, resolveDateRange, resolvePeriodPreset } from './period';
+import { describeCreatedPeriod, describePeriod, resolveDateRange, resolvePeriodPreset } from './period';
 
 // Jeudi 18 juin 2026 comme date de référence déterministe.
 const today = new Date(2026, 5, 18);
@@ -58,5 +58,26 @@ describe('describePeriod', () => {
 
   it('returns null when nothing is selected', () => {
     expect(describePeriod({})).toBeNull();
+  });
+});
+
+describe('describeCreatedPeriod', () => {
+  it('frames a preset around the request creation date', () => {
+    expect(describeCreatedPeriod({ period: 'rolling-month' })).toBe('Requêtes créées : Mois glissant');
+  });
+
+  it('frames a full custom range with "entre le ... et le ..."', () => {
+    expect(describeCreatedPeriod({ startDate: '2026-01-01', endDate: '2026-01-31' })).toBe(
+      'Requêtes créées entre le 01/01/2026 et le 31/01/2026',
+    );
+  });
+
+  it('frames an open-ended custom range', () => {
+    expect(describeCreatedPeriod({ startDate: '2026-01-01' })).toBe('Requêtes créées à partir du 01/01/2026');
+    expect(describeCreatedPeriod({ endDate: '2026-01-31' })).toBe("Requêtes créées jusqu'au 31/01/2026");
+  });
+
+  it('returns null when nothing is selected', () => {
+    expect(describeCreatedPeriod({})).toBeNull();
   });
 });

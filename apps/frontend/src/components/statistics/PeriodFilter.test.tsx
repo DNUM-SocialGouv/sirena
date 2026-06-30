@@ -37,15 +37,34 @@ describe('PeriodFilter', () => {
     await waitFor(() => expect(screen.getByRole('radio', { name: 'Semaine courante' })).toHaveFocus());
   });
 
-  it('applies a predefined period on click and keeps the panel open', async () => {
+  it('treats a predefined period as a draft and only applies it on submit', async () => {
     const onChange = vi.fn();
     render(<PeriodFilter value={{}} onChange={onChange} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Période' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Mois courant' }));
 
+    expect(screen.getByRole('radio', { name: 'Mois courant' })).toBeChecked();
+    expect(onChange).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
     expect(onChange).toHaveBeenCalledWith({ period: 'current-month', startDate: undefined, endDate: undefined });
-    expect(screen.getByRole('radio', { name: 'Mois courant' })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'Mois courant' })).not.toBeInTheDocument();
+  });
+
+  it('keeps a preset and a custom range mutually exclusive in the draft', async () => {
+    render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Mois courant' }));
+    expect(screen.getByRole('radio', { name: 'Mois courant' })).toBeChecked();
+
+    fireEvent.change(screen.getByLabelText(/Date de début/), { target: { value: '2026-01-01' } });
+    expect(screen.getByRole('radio', { name: 'Mois courant' })).not.toBeChecked();
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Semaine courante' }));
+    expect(screen.getByLabelText(/Date de début/)).toHaveValue('');
   });
 
   it('applies a custom range and clears any preset', async () => {
@@ -58,6 +77,20 @@ describe('PeriodFilter', () => {
     await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
 
     expect(onChange).toHaveBeenCalledWith({ period: undefined, startDate: '2026-01-01', endDate: '2026-01-31' });
+  });
+
+  it('does not apply or clear anything when submitting with no selection', async () => {
+    const onChange = vi.fn();
+    render(<PeriodFilter value={{}} onChange={onChange} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+    await userEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(
+      screen.getByText('Sélectionnez une période prédéfinie ou renseignez une période personnalisée.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Semaine courante' })).toHaveFocus();
   });
 
   it('does not apply an invalid range and moves focus to the end date field', async () => {
@@ -95,11 +128,69 @@ describe('PeriodFilter', () => {
     const onChange = vi.fn();
     render(<PeriodFilter value={{ period: 'rolling-month' }} onChange={onChange} />);
 
-    // Le nom accessible contient le libellé visible (WCAG 2.5.3 Label in Name).
-    const tag = screen.getByRole('button', { name: /^Période : Mois glissant/ });
+    const tag = screen.getByRole('button', { name: /^Requêtes créées : Mois glissant/ });
     expect(tag).toBeInTheDocument();
 
     await userEvent.click(tag);
     expect(onChange).toHaveBeenCalledWith({ period: undefined, startDate: undefined, endDate: undefined });
+  });
+
+  it('phrases a custom range tag around the request creation date', () => {
+    render(<PeriodFilter value={{ startDate: '2026-01-01', endDate: '2026-01-31' }} onChange={vi.fn()} />);
+
+    expect(
+      screen.getByRole('button', { name: /^Requêtes créées entre le 01\/01\/2026 et le 31\/01\/2026/ }),
+    ).toBeInTheDocument();
+  });
+
+  it('explains in the panel that the filter uses the request creation date', async () => {
+    render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+
+    expect(screen.getByText('Le filtre porte sur la date de création de la requête dans SIRENA.')).toBeInTheDocument();
+  });
+
+  it('stays open on a transient focusout while focus remains inside the panel', async () => {
+    render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+    const firstRadio = screen.getByRole('radio', { name: 'Semaine courante' });
+    firstRadio.focus();
+
+    fireEvent.focusOut(firstRadio, { relatedTarget: null });
+
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'Semaine courante' })).toBeInTheDocument());
+  });
+
+  it('closes when focus actually leaves the panel (WCAG keyboard tab-out)', async () => {
+    render(
+      <>
+        <PeriodFilter value={{}} onChange={vi.fn()} />
+        <button type="button">Ailleurs</button>
+      </>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Période' }));
+    expect(screen.getByRole('radio', { name: 'Semaine courante' })).toBeInTheDocument();
+
+    const outside = screen.getByRole('button', { name: 'Ailleurs' });
+    outside.focus();
+    fireEvent.focusOut(screen.getByRole('radio', { name: 'Semaine courante' }), { relatedTarget: outside });
+
+    await waitFor(() => expect(screen.queryByRole('radio', { name: 'Semaine courante' })).not.toBeInTheDocument());
+  });
+
+  it('does not close via focusout when focus moves to the trigger', async () => {
+    render(<PeriodFilter value={{}} onChange={vi.fn()} />);
+
+    const trigger = screen.getByRole('button', { name: 'Période' });
+    await userEvent.click(trigger);
+    const firstRadio = screen.getByRole('radio', { name: 'Semaine courante' });
+
+    trigger.focus();
+    fireEvent.focusOut(firstRadio, { relatedTarget: trigger });
+
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'Semaine courante' })).toBeInTheDocument());
   });
 });

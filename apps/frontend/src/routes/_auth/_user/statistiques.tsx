@@ -59,10 +59,10 @@ function KpiCard({ card }: { card: StatisticsCard }) {
   const display = value !== undefined ? formatValue(value) : '—';
 
   return (
-    <dl className={styles['kpi-card']}>
-      <dt className={styles['kpi-label']}>{card.name}</dt>
-      <dd className={styles['kpi-value']}>{display}</dd>
-    </dl>
+    <p className={styles['kpi-card']}>
+      <span className={styles['kpi-value']}>{display}</span>
+      <span className={styles['kpi-label']}>{card.name}</span>
+    </p>
   );
 }
 

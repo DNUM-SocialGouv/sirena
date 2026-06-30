@@ -7,7 +7,7 @@ import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 
 import { useDisclosureMenu } from '@/hooks/useDisclosureMenu';
 import styles from './PeriodFilter.module.css';
 import {
-  describePeriod,
+  describeCreatedPeriod,
   PERIOD_PRESET_LABELS,
   PERIOD_PRESETS,
   type PeriodPreset,
@@ -20,18 +20,23 @@ type Props = {
 };
 
 export function PeriodFilter({ value, onChange }: Props) {
+  const [draftPeriod, setDraftPeriod] = useState<PeriodPreset | undefined>(value.period);
   const [start, setStart] = useState(value.startDate ?? '');
   const [end, setEnd] = useState(value.endDate ?? '');
+  const [isEmptyError, setIsEmptyError] = useState(false);
   const endInputRef = useRef<HTMLInputElement>(null);
   const menuId = useId();
 
   const syncDraft = useCallback(() => {
+    setDraftPeriod(value.period);
     setStart(value.startDate ?? '');
     setEnd(value.endDate ?? '');
-  }, [value.startDate, value.endDate]);
+    setIsEmptyError(false);
+  }, [value.period, value.startDate, value.endDate]);
 
   const { isOpen, toggle, close, triggerRef, panelRef } = useDisclosureMenu({ onOpen: syncDraft });
 
+  useEffect(() => setDraftPeriod(value.period), [value.period]);
   useEffect(() => setStart(value.startDate ?? ''), [value.startDate]);
   useEffect(() => setEnd(value.endDate ?? ''), [value.endDate]);
 
@@ -39,10 +44,11 @@ export function PeriodFilter({ value, onChange }: Props) {
     if (!isOpen) return;
     const panel = panelRef.current;
 
-    // Fermeture si le focus clavier sort du panneau (WCAG-safe).
     const onFocusOut = (e: FocusEvent) => {
       const next = e.relatedTarget as Node | null;
-      if (!next || !panel?.contains(next)) close();
+      if (!next) return;
+      if (panel?.contains(next) || triggerRef.current?.contains(next)) return;
+      close();
     };
     panel?.addEventListener('focusout', onFocusOut);
 
@@ -53,30 +59,64 @@ export function PeriodFilter({ value, onChange }: Props) {
     });
 
     return () => panel?.removeEventListener('focusout', onFocusOut);
-  }, [isOpen, panelRef, close]);
+  }, [isOpen, panelRef, triggerRef, close]);
 
   const isInvalid = start !== '' && end !== '' && start > end;
-  const activeLabel = describePeriod(value);
+  const activeLabel = describeCreatedPeriod(value);
 
-  const applyPreset = (preset: PeriodPreset) => {
-    onChange({ period: preset, startDate: undefined, endDate: undefined });
-  };
+  const focusFirstPreset = useCallback(() => {
+    panelRef.current?.querySelector<HTMLInputElement>('input[type="radio"]')?.focus();
+  }, [panelRef]);
 
-  const applyCustom = (e: FormEvent) => {
-    e.preventDefault();
-    if (isInvalid) {
-      endInputRef.current?.focus();
-      return;
-    }
-    onChange({ period: undefined, startDate: start || undefined, endDate: end || undefined });
-    close();
-  };
-
-  const reset = () => {
+  const selectPreset = (preset: PeriodPreset) => {
+    setDraftPeriod(preset);
     setStart('');
     setEnd('');
-    onChange({ period: undefined, startDate: undefined, endDate: undefined });
+    setIsEmptyError(false);
   };
+
+  const handleStartChange = (next: string) => {
+    setStart(next);
+    setDraftPeriod(undefined);
+    setIsEmptyError(false);
+  };
+
+  const handleEndChange = (next: string) => {
+    setEnd(next);
+    setDraftPeriod(undefined);
+    setIsEmptyError(false);
+  };
+
+  const apply = useCallback(
+    (e: FormEvent) => {
+      e.preventDefault();
+      if (draftPeriod) {
+        onChange({ period: draftPeriod, startDate: undefined, endDate: undefined });
+        close();
+        return;
+      }
+      if (isInvalid) {
+        endInputRef.current?.focus();
+        return;
+      }
+      if (!start && !end) {
+        setIsEmptyError(true);
+        focusFirstPreset();
+        return;
+      }
+      onChange({ period: undefined, startDate: start || undefined, endDate: end || undefined });
+      close();
+    },
+    [draftPeriod, isInvalid, start, end, onChange, close, focusFirstPreset],
+  );
+
+  const reset = useCallback(() => {
+    setDraftPeriod(undefined);
+    setStart('');
+    setEnd('');
+    setIsEmptyError(false);
+    onChange({ period: undefined, startDate: undefined, endDate: undefined });
+  }, [onChange]);
 
   return (
     <div className={styles.period}>
@@ -92,25 +132,36 @@ export function PeriodFilter({ value, onChange }: Props) {
           Période
         </button>
 
-        {isOpen && (
+        {isOpen ? (
           <div id={menuId} ref={panelRef} className={`${styles.period__panel} fr-card fr-px-3w fr-py-2w`}>
-            <RadioButtons
-              className={styles.period__presets}
-              legend={<span className={fr.cx('fr-text--bold')}>Période prédéfinie</span>}
-              name={`period-preset-${menuId}`}
-              options={PERIOD_PRESETS.map((preset) => ({
-                label: PERIOD_PRESET_LABELS[preset],
-                nativeInputProps: {
-                  value: preset,
-                  checked: value.period === preset,
-                  onChange: () => applyPreset(preset),
-                },
-              }))}
-            />
+            <form onSubmit={apply}>
+              <RadioButtons
+                className={styles.period__presets}
+                legend={<span className={fr.cx('fr-text--bold')}>Période prédéfinie</span>}
+                name={`period-preset-${menuId}`}
+                state={isEmptyError ? 'error' : 'default'}
+                stateRelatedMessage={
+                  isEmptyError
+                    ? 'Sélectionnez une période prédéfinie ou renseignez une période personnalisée.'
+                    : undefined
+                }
+                options={PERIOD_PRESETS.map((preset) => ({
+                  label: PERIOD_PRESET_LABELS[preset],
+                  nativeInputProps: {
+                    value: preset,
+                    checked: draftPeriod === preset,
+                    onChange: () => selectPreset(preset),
+                  },
+                }))}
+              />
 
-            <form className={styles.period__custom} onSubmit={applyCustom}>
-              <fieldset className={styles.period__section}>
-                <legend className={fr.cx('fr-text--bold')}>Période personnalisée</legend>
+              <fieldset className={`${styles.period__section} ${styles.period__custom}`}>
+                <legend className={fr.cx('fr-fieldset__legend', 'fr-text--regular')}>
+                  <span className={fr.cx('fr-text--bold')}>Période personnalisée</span>
+                </legend>
+                <p className={styles.period__note}>
+                  Le filtre porte sur la date de création de la requête dans SIRENA.
+                </p>
                 <Input
                   label="Date de début"
                   hintText="Format attendu : JJ/MM/AAAA"
@@ -118,7 +169,7 @@ export function PeriodFilter({ value, onChange }: Props) {
                     type: 'date',
                     value: start,
                     max: end || undefined,
-                    onChange: (e) => setStart(e.target.value),
+                    onChange: (e) => handleStartChange(e.target.value),
                   }}
                 />
                 <Input
@@ -133,13 +184,13 @@ export function PeriodFilter({ value, onChange }: Props) {
                     type: 'date',
                     value: end,
                     min: start || undefined,
-                    onChange: (e) => setEnd(e.target.value),
+                    onChange: (e) => handleEndChange(e.target.value),
                   }}
                 />
               </fieldset>
               <div className={styles.period__actions}>
                 <Button type="submit" iconId="fr-icon-search-line">
-                  Appliquer <span className="fr-sr-only">le filtre de période personnalisée</span>
+                  Appliquer <span className="fr-sr-only">le filtre de période</span>
                 </Button>
                 <Button type="button" priority="secondary" iconId="fr-icon-refresh-line" onClick={reset}>
                   Réinitialiser <span className="fr-sr-only">le filtre de période</span>
@@ -147,19 +198,19 @@ export function PeriodFilter({ value, onChange }: Props) {
               </div>
             </form>
           </div>
-        )}
+        ) : null}
       </div>
 
-      {activeLabel && (
+      {activeLabel ? (
         <Tag
           as="button"
           dismissible
           onClick={reset}
-          nativeButtonProps={{ 'aria-label': `Période : ${activeLabel}, retirer le filtre` }}
+          nativeButtonProps={{ 'aria-label': `${activeLabel}, retirer le filtre` }}
         >
-          Période : {activeLabel}
+          {activeLabel}
         </Tag>
-      )}
+      ) : null}
     </div>
   );
 }
