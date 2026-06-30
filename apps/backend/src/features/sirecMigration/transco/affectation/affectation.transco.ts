@@ -1,6 +1,8 @@
 import { prisma } from '@sirena/db';
 import { createDefaultLogger } from '../../../../helpers/pino.js';
 import { SirecTranscoError } from '../sirecTransco.error.js';
+import { AFFECTATION_ENTITES_GRAND_EST } from './entitesGrandEst.js';
+import { AFFECTATION_ENTITES_GUADELOUPE } from './entitesGuadeloupe.js';
 import { AFFECTATION_ENTITES_ILE_DE_FRANCE } from './entitesIleDeFrance.js';
 import { AFFECTATION_ENTITES_NORMANDIE } from './entitesNormandie.js';
 import { AFFECTATION_ENTITES_OCCITANIE } from './entitesOccitanie.js';
@@ -13,6 +15,8 @@ const ALL_AFFECTATION_ENTITES = {
   ...AFFECTATION_ENTITES_ILE_DE_FRANCE,
   ...AFFECTATION_ENTITES_NORMANDIE,
   ...AFFECTATION_ENTITES_OCCITANIE,
+  ...AFFECTATION_ENTITES_GRAND_EST,
+  ...AFFECTATION_ENTITES_GUADELOUPE,
 };
 
 export function getAffectationLabel(sirecId: number | null): string | null {
