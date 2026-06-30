@@ -78,9 +78,7 @@ vi.mock('archiver', () => {
     abort: vi.fn(),
   };
   return {
-    ZipArchive: vi.fn(function () {
-      return mockArchive;
-    }),
+    ZipArchive: vi.fn(() => mockArchive),
   };
 });
 

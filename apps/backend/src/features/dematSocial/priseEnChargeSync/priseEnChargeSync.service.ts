@@ -4,7 +4,7 @@ import { acceptDossierWithoutNotification, getRequete, updateInstruction } from 
 import { loadRequetePriseEnChargeForDematSocialSync } from './requetePriseEnChargeSyncData.service.js';
 
 const finalStates = new Set<DossierState>([DossierState.Accepte, DossierState.Refuse, DossierState.SansSuite]);
-const SIRENA_PRISE_EN_CHARGE_ACCEPTANCE_MOTIVATION = 'Dossier pris en charge dans SIRENA';
+const SIRENA_PRISE_EN_CHARGE_ACCEPTANCE_MOTIVATION = 'Dossier pris en charge par le service compétent';
 
 export type DematSocialPriseEnChargeSyncResult = { kind: 'synced' } | { kind: 'skipped'; reason: string };
 
