@@ -111,6 +111,7 @@ describe('sirecMigration.transformer.ts', () => {
       ei_avere: null as number | null,
       num_sign_assoc: null as string | null,
       date_recep_gest: null as Date | null,
+      signalement: null as number | null,
     },
     motifsDeclaresIdDicos: [809],
     groupIds: [],
@@ -300,6 +301,15 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     expect(result.victime).toBeNull();
+  });
+
+  it('should map signalement=1 to declarant.estSignalementProfessionnel true', () => {
+    const result = transformSirecReclamation({
+      ...sirecData,
+      reclamation: { ...sirecData.reclamation, signalement: 1 },
+    });
+
+    expect(result.declarant?.estSignalementProfessionnel).toBe(true);
   });
 
   describe('etapes (provenances)', () => {
