@@ -146,8 +146,8 @@ describe('Admin directions and services route', () => {
     await userEvent.type(searchInput, ' pa ');
     await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }));
 
-    expect(screen.getByText('Service PA')).toBeInTheDocument();
-    expect(screen.queryByText('Service Enfance')).not.toBeInTheDocument();
+    expect(screen.getByRole('row', { name: /Service PA/ })).toBeInTheDocument();
+    expect(screen.queryByRole('row', { name: /Service Enfance/ })).not.toBeInTheDocument();
   });
 
   it('renders disabled row edit actions with unique accessible labels', () => {
@@ -214,8 +214,8 @@ describe('Admin directions and services route', () => {
 
     expect(screen.getByRole('columnheader', { name: 'Nom de la direction' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Nom du service' })).toBeInTheDocument();
-    expect(screen.getAllByText('Direction Autonomie')).toHaveLength(2);
-    expect(screen.getByText('Service PA')).toBeInTheDocument();
+    expect(screen.getAllByRole('cell', { name: 'Direction Autonomie' })).toHaveLength(2);
+    expect(screen.getByRole('cell', { name: 'Service PA' })).toBeInTheDocument();
     expect(screen.getByText('service-pa@ars.fr')).toBeInTheDocument();
     expect(screen.queryByText('Contact usager')).not.toBeInTheDocument();
     expect(screen.queryByText('Statut')).not.toBeInTheDocument();

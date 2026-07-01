@@ -232,7 +232,7 @@ describe('Entites endpoints: /entites', () => {
           },
         ],
       });
-      expect(getDirectionsServicesRows).toHaveBeenCalledWith('root-ars');
+      expect(getDirectionsServicesRows).toHaveBeenCalledWith('root-ars', { search: '' });
     });
 
     it('passes search query to local directions and services rows service', async () => {
