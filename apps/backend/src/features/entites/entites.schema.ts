@@ -103,6 +103,18 @@ export const GetEntitesListAdminResponseSchema = z.array(
   }),
 );
 
+export const GetDirectionsServicesRowsResponseSchema = z.array(
+  z.object({
+    id: z.string(),
+    directionNom: z.string(),
+    directionLabel: z.string(),
+    serviceNom: z.string(),
+    serviceLabel: z.string(),
+    email: z.string(),
+    editId: z.string(),
+  }),
+);
+
 export const GetEntitesByIdAdminResponseSchema = EntiteAdminSchema;
 
 export const EditEntiteInputSchema = EntiteAdminSchema.omit({ id: true });

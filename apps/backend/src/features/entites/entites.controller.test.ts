@@ -9,6 +9,7 @@ import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
+  getDirectionsServicesRows,
   getEditableEntitiesChain,
   getEntiteById,
   getEntites,
@@ -24,6 +25,7 @@ vi.mock('./entites.service.js', () => ({
   getEntites: vi.fn(),
   getEntiteById: vi.fn(),
   getEntitesListAdmin: vi.fn(),
+  getDirectionsServicesRows: vi.fn(),
   getRootEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
   editEntiteAdmin: editEntiteAdminSpy,
@@ -78,6 +80,7 @@ vi.mock('../../middlewares/entites.middleware.js', () => {
   return {
     default: async (c: Context, next: Next) => {
       c.set('entiteIds', ['id1', 'id2']);
+      c.set('topEntiteId', 'root-ars');
       return next();
     },
   };
@@ -195,6 +198,51 @@ describe('Entites endpoints: /entites', () => {
         offset: 0,
         limit: 10,
       });
+    });
+  });
+
+  describe('GET /admin/directions-services', () => {
+    it('returns local directions and services rows for ENTITY_ADMIN perimeter', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce([
+        {
+          id: 'dir-autonomie',
+          directionNom: 'Direction Autonomie',
+          directionLabel: 'DA',
+          serviceNom: '',
+          serviceLabel: '',
+          email: 'direction-autonomie@ars.fr',
+          editId: 'dir-autonomie',
+        },
+      ]);
+
+      const res = await app.request('/admin/directions-services');
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: [
+          {
+            id: 'dir-autonomie',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: '',
+            serviceLabel: '',
+            email: 'direction-autonomie@ars.fr',
+            editId: 'dir-autonomie',
+          },
+        ],
+      });
+      expect(getDirectionsServicesRows).toHaveBeenCalledWith('root-ars', { search: '' });
+    });
+
+    it('passes search query to local directions and services rows service', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce([]);
+
+      const res = await app.request('/admin/directions-services?search=autonomie');
+
+      expect(res.status).toBe(200);
+      expect(getDirectionsServicesRows).toHaveBeenCalledWith('root-ars', { search: 'autonomie' });
     });
   });
 

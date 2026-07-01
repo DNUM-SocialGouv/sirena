@@ -1,6 +1,7 @@
 import type { Pagination } from '@sirena/backend-utils/types';
 import { type Entite, prisma } from '../../libs/prisma.js';
 import { buildEntitesListAdmin } from './entites.admin.mapper.js';
+import { buildDirectionsServicesRows as buildDirectionsServicesRowsFromHierarchy } from './entites.directions-services.mapper.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type.js';
 
@@ -175,6 +176,55 @@ export const getRootEntitesListAdmin = async () =>
     },
     orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
   });
+
+export const getDirectionsServicesRows = async (topEntiteId: string, { search = '' }: { search?: string } = {}) => {
+  const entites = await prisma.entite.findMany({
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+      email: true,
+      entiteMereId: true,
+    },
+  });
+
+  const childrenByParentId = new Map<string, typeof entites>();
+  for (const entite of entites) {
+    if (entite.entiteMereId === null) {
+      continue;
+    }
+
+    const siblings = childrenByParentId.get(entite.entiteMereId) ?? [];
+    siblings.push(entite);
+    childrenByParentId.set(entite.entiteMereId, siblings);
+  }
+
+  const scopedEntites: typeof entites = [];
+  const topEntite = entites.find((entite) => entite.id === topEntiteId);
+
+  if (!topEntite) {
+    return [];
+  }
+
+  const parentEntite = topEntite.entiteMereId
+    ? entites.find((entite) => entite.id === topEntite.entiteMereId)
+    : undefined;
+
+  if (parentEntite?.entiteMereId !== null && parentEntite !== undefined) {
+    return buildDirectionsServicesRowsFromHierarchy([parentEntite, topEntite], { search });
+  }
+
+  const walk = (entite: (typeof entites)[number]) => {
+    scopedEntites.push(entite);
+    for (const child of childrenByParentId.get(entite.id) ?? []) {
+      walk(child);
+    }
+  };
+
+  walk(topEntite);
+
+  return buildDirectionsServicesRowsFromHierarchy(scopedEntites, { search });
+};
 
 export const createChildEntiteAdmin = async (
   parentId: string,
