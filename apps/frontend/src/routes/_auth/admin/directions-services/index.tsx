@@ -1,5 +1,6 @@
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ROLES } from '@sirena/common/constants';
+import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { useDirectionsServicesRows } from '@/hooks/queries/entites.hook';
@@ -10,6 +11,25 @@ export const Route = createFileRoute('/_auth/admin/directions-services/')({
   beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN]),
   component: RouteComponent,
 });
+
+type DirectionServiceRow = NonNullable<Awaited<ReturnType<typeof useDirectionsServicesRows>>['data']>['data'][number];
+
+const columns: Column<DirectionServiceRow>[] = [
+  { key: 'directionNom', label: 'Nom de la direction' },
+  { key: 'directionLabel', label: 'Libellé de la direction' },
+  { key: 'serviceNom', label: 'Nom du service' },
+  { key: 'serviceLabel', label: 'Libellé du service' },
+  { key: 'email', label: 'Email' },
+  { key: 'custom:edit', label: 'Action' },
+];
+
+const cells: Cells<DirectionServiceRow> = {
+  'custom:edit': () => (
+    <Button type="button" disabled size="small" priority="secondary">
+      Modifier
+    </Button>
+  ),
+};
 
 export function RouteComponent() {
   const { data: profile } = useProfile();
@@ -38,34 +58,15 @@ export function RouteComponent() {
         </Button>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Nom de la direction</th>
-            <th scope="col">Libellé de la direction</th>
-            <th scope="col">Nom du service</th>
-            <th scope="col">Libellé du service</th>
-            <th scope="col">Email</th>
-            <th scope="col">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {directionsServicesQuery.data?.data.map((row) => (
-            <tr key={row.id}>
-              <td>{row.directionNom}</td>
-              <td>{row.directionLabel}</td>
-              <td>{row.serviceNom}</td>
-              <td>{row.serviceLabel}</td>
-              <td>{row.email}</td>
-              <td>
-                <Button type="button" disabled size="small" priority="secondary">
-                  Modifier
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable
+        title="Liste des directions et services"
+        hideCaption
+        rowId="id"
+        data={directionsServicesQuery.data?.data ?? []}
+        columns={columns}
+        cells={cells}
+        isLoading={directionsServicesQuery.isFetching}
+      />
     </section>
   );
 }
