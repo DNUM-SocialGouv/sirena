@@ -24,7 +24,7 @@ export const StepFiles = ({ files, stepId }: StepFilesProps) => {
               <span className="fr-icon-attachment-line fr-icon--xs" aria-hidden="true" /> Fichier ajouté{' '}
               {author ? (
                 <>
-                  le {formatDate(file.createdAt)} par <span className="fr-text--bold">{formatAgent(author)}</span>
+                  le {formatDate(file.createdAt)} par {formatAgent(author)}
                 </>
               ) : (
                 <>automatiquement le {formatDate(file.createdAt)}</>

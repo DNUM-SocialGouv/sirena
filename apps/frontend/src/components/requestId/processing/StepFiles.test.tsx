@@ -8,19 +8,18 @@ vi.mock('@/components/common/FileDownloadLink', () => ({
 
 type StepFile = React.ComponentProps<typeof StepFiles>['files'][number];
 
-const makeFile = (overrides: Partial<StepFile> = {}): StepFile =>
-  ({
-    id: 'f',
-    size: 1,
-    fileName: 'f.pdf',
-    status: 'READY',
-    scanStatus: 'CLEAN',
-    sanitizeStatus: 'COMPLETED',
-    canDelete: true,
-    createdAt: '2026-05-19T10:00:00.000Z',
-    uploadedBy: { prenom: 'jeanne', nom: 'Moulon' },
-    ...overrides,
-  }) as StepFile;
+const makeFile = (overrides: Partial<StepFile> = {}): StepFile => ({
+  id: 'f',
+  size: 1,
+  fileName: 'f.pdf',
+  status: 'READY',
+  scanStatus: 'CLEAN',
+  sanitizeStatus: 'COMPLETED',
+  canDelete: true,
+  createdAt: '2026-05-19T10:00:00.000Z',
+  uploadedBy: { prenom: 'jeanne', nom: 'Moulon' },
+  ...overrides,
+});
 
 describe('StepFiles', () => {
   it('renders each file as its own card', () => {
