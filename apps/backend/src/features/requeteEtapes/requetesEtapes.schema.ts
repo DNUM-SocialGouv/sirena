@@ -25,7 +25,7 @@ export const RequeteEtapeSchema = z.object({
 
 // Safe projection of an uploaded file for the read endpoint: never exposes `metadata`
 // (which carries the file encryption keys) nor internal storage paths (`safeFilePath`).
-const EtapeNoteUploadedFileSchema = z.object({
+const EtapeUploadedFileBaseSchema = z.object({
   id: z.string(),
   fileName: z.string(),
   size: z.number(),
@@ -34,17 +34,16 @@ const EtapeNoteUploadedFileSchema = z.object({
   sanitizeStatus: z.string(),
 });
 
-const EtapeUploadedFileSchema = EtapeNoteUploadedFileSchema.extend({
+const EtapeUploadedFileSchema = EtapeUploadedFileBaseSchema.extend({
   canDelete: z.boolean(),
   createdAt: z.coerce.date(),
   uploadedBy: z.object({ prenom: z.string(), nom: z.string() }).nullable(),
 });
 
-const RequeteEtapeNoteWithFilesSchema = z.object({
+const RequeteEtapeNoteSchema = z.object({
   id: z.string(),
   texte: z.string(),
   createdAt: z.coerce.date(),
-  uploadedFiles: z.array(EtapeNoteUploadedFileSchema),
   author: z.object({ prenom: z.string(), nom: z.string() }).nullable(),
 });
 
@@ -54,7 +53,7 @@ export const RequeteEtapeWithDetailsSchema = RequeteEtapeSchema.extend({
   editable: z.boolean(),
   canOnlyEditNotes: z.boolean(),
   uploadedFiles: z.array(EtapeUploadedFileSchema),
-  notes: z.array(RequeteEtapeNoteWithFilesSchema),
+  notes: z.array(RequeteEtapeNoteSchema),
 });
 
 const columns = [
