@@ -96,6 +96,21 @@ describe('Admin directions and services route', () => {
     expect(screen.getByRole('button', { name: 'Ajouter un service' })).toBeDisabled();
   });
 
+  it('passes trimmed search to the directions and services rows hook', async () => {
+    vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
+    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+
+    render(<RouteComponent />);
+
+    const searchInput = screen.getByRole('searchbox', {
+      name: 'Rechercher une direction ou un service par nom ou libellé',
+    });
+    await userEvent.type(searchInput, ' pa ');
+    await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }));
+
+    expect(useDirectionsServicesRows).toHaveBeenLastCalledWith({ search: 'pa' });
+  });
+
   it('filters visible rows by Service abbreviation search', async () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
     vi.mocked(useDirectionsServicesRows).mockReturnValue({

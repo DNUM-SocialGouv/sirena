@@ -48,14 +48,14 @@ const cells: Cells<DirectionServiceRow> = {
 
 export function RouteComponent() {
   const { data: profile } = useProfile();
-  const directionsServicesQuery = useDirectionsServicesRows();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
+  const directionsServicesQuery = useDirectionsServicesRows({ search: activeSearch || undefined });
   const affectationLevel = profile?.affectationChain?.length ?? 1;
   const isAffectedToEntiteAdministrative = affectationLevel === 1;
   const isAffectedToDirection = affectationLevel === 2;
   const canCreateDirection = isAffectedToEntiteAdministrative;
   const canCreateService = isAffectedToEntiteAdministrative || isAffectedToDirection;
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeSearch, setActiveSearch] = useState('');
   const organizationName = profile?.affectationChain?.at(-1)?.nomComplet;
   const title = useMemo(
     () => (organizationName ? `Directions et services (${organizationName})` : 'Directions et services'),

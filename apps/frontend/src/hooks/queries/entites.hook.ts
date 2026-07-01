@@ -43,14 +43,15 @@ export const useRootEntitesListAdminQueryOptions = () => ({
 
 export const useRootEntitesListAdmin = () => useQuery(useRootEntitesListAdminQueryOptions());
 
-export const useDirectionsServicesRowsQueryOptions = () => ({
-  queryKey: ['entites', 'admin', 'directions-services'],
-  queryFn: () => fetchDirectionsServicesRows(),
+export const useDirectionsServicesRowsQueryOptions = (query: Pick<QueryParams, 'search'> = {}) => ({
+  queryKey: ['entites', 'admin', 'directions-services', query],
+  queryFn: () => fetchDirectionsServicesRows(query),
   retry: false,
   initialData: { data: [] },
 });
 
-export const useDirectionsServicesRows = () => useQuery(useDirectionsServicesRowsQueryOptions());
+export const useDirectionsServicesRows = (query: Pick<QueryParams, 'search'> = {}) =>
+  useQuery(useDirectionsServicesRowsQueryOptions(query));
 
 export const useEntiteByIdAdmin = (entiteId: string) =>
   useQuery({

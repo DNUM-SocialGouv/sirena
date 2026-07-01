@@ -34,8 +34,10 @@ export async function fetchEntitesListAdmin(query: QueryParams = {}) {
   return { data, meta };
 }
 
-export async function fetchDirectionsServicesRows() {
-  const res = await client.entites.admin['directions-services'].$get();
+export async function fetchDirectionsServicesRows(query: Pick<QueryParams, 'search'> = {}) {
+  const res = await client.entites.admin['directions-services'].$get({
+    query: formatPaginationParams(query),
+  });
 
   await handleRequestErrors(res);
 
