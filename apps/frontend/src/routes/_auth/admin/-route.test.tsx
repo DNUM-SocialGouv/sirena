@@ -62,6 +62,26 @@ describe('Admin route', () => {
     expect(screen.queryByRole('tab', { name: 'Gestion des entités' })).not.toBeInTheDocument();
   });
 
+  it('renders the directions and services tab as active for entity admins on directions-services routes', () => {
+    mockedUseMatches.mockReturnValue([
+      { routeId: '/_auth/admin', pathname: '/admin' },
+      { routeId: '/_auth/admin/directions-services/', pathname: '/admin/directions-services/' },
+    ] as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('tab', { name: 'Gestion des directions et services' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByRole('tab', { name: "Gestion des demandes d'habilitations" })).toHaveAttribute(
+      'aria-selected',
+      'false',
+    );
+    expect(screen.getByRole('tab', { name: 'Gestion des utilisateurs' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.queryByRole('tab', { name: 'Gestion des entités' })).not.toBeInTheDocument();
+  });
+
   it('renders the entites tab as active for super admins on entites routes', () => {
     mockRole(ROLES.SUPER_ADMIN);
     mockedUseMatches.mockReturnValue([
