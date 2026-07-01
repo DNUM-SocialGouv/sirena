@@ -36,7 +36,9 @@ export function RouteComponent() {
   const directionsServicesQuery = useDirectionsServicesRows();
   const affectationLevel = profile?.affectationChain?.length ?? 1;
   const isAffectedToEntiteAdministrative = affectationLevel === 1;
+  const isAffectedToDirection = affectationLevel === 2;
   const canCreateDirection = isAffectedToEntiteAdministrative;
+  const canCreateService = isAffectedToEntiteAdministrative || isAffectedToDirection;
   const organizationName = profile?.affectationChain?.at(-1)?.nomComplet;
   const title = useMemo(
     () => (organizationName ? `Directions et services (${organizationName})` : 'Directions et services'),
@@ -58,9 +60,11 @@ export function RouteComponent() {
             Ajouter une direction
           </Button>
         ) : null}
-        <Button type="button" disabled priority="secondary">
-          Ajouter un service
-        </Button>
+        {canCreateService ? (
+          <Button type="button" disabled priority="secondary">
+            Ajouter un service
+          </Button>
+        ) : null}
       </div>
 
       <DataTable
