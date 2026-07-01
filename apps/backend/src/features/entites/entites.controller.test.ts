@@ -234,6 +234,16 @@ describe('Entites endpoints: /entites', () => {
       });
       expect(getDirectionsServicesRows).toHaveBeenCalledWith('root-ars');
     });
+
+    it('passes search query to local directions and services rows service', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce([]);
+
+      const res = await app.request('/admin/directions-services?search=autonomie');
+
+      expect(res.status).toBe(200);
+      expect(getDirectionsServicesRows).toHaveBeenCalledWith('root-ars', { search: 'autonomie' });
+    });
   });
 
   describe('GET /admin/roots', () => {

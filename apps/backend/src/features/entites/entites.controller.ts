@@ -113,14 +113,15 @@ const app = factoryWithLogs
     async (c) => {
       const logger = c.get('logger');
       const topEntiteId = c.get('topEntiteId');
+      const search = c.req.query('search') ?? '';
 
-      logger.info({ topEntiteId }, 'Local directions and services list requested');
+      logger.info({ topEntiteId, search }, 'Local directions and services list requested');
 
       if (!topEntiteId) {
         return c.json({ data: [] });
       }
 
-      const rows = await getDirectionsServicesRows(topEntiteId);
+      const rows = await getDirectionsServicesRows(topEntiteId, { search });
       logger.info({ rowsCount: rows.length }, 'Local directions and services list retrieved successfully');
 
       return c.json({ data: rows });

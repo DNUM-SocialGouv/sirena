@@ -177,7 +177,7 @@ export const getRootEntitesListAdmin = async () =>
     orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
   });
 
-export const getDirectionsServicesRows = async (topEntiteId: string) => {
+export const getDirectionsServicesRows = async (topEntiteId: string, { search = '' }: { search?: string } = {}) => {
   const entites = await prisma.entite.findMany({
     select: {
       id: true,
@@ -211,7 +211,7 @@ export const getDirectionsServicesRows = async (topEntiteId: string) => {
     : undefined;
 
   if (parentEntite?.entiteMereId !== null && parentEntite !== undefined) {
-    return buildDirectionsServicesRowsFromHierarchy([parentEntite, topEntite]);
+    return buildDirectionsServicesRowsFromHierarchy([parentEntite, topEntite], { search });
   }
 
   const walk = (entite: (typeof entites)[number]) => {
@@ -223,7 +223,7 @@ export const getDirectionsServicesRows = async (topEntiteId: string) => {
 
   walk(topEntite);
 
-  return buildDirectionsServicesRowsFromHierarchy(scopedEntites);
+  return buildDirectionsServicesRowsFromHierarchy(scopedEntites, { search });
 };
 
 export const createChildEntiteAdmin = async (
