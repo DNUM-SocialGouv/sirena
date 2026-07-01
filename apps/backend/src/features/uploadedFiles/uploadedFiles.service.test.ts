@@ -5,12 +5,10 @@ import { createUploadedFile, deleteUploadedFile, getUploadedFileById, isUserOwne
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
     uploadedFile: {
-      findMany: vi.fn(),
       findFirst: vi.fn(),
       count: vi.fn(),
       create: vi.fn(),
       delete: vi.fn(),
-      updateMany: vi.fn(),
     },
   },
 }));
