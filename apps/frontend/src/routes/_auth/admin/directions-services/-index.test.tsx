@@ -50,6 +50,16 @@ describe('Admin directions and services route', () => {
     expect(document.title).toBe('Directions et services (ARS Normandie)');
   });
 
+  it('shows disabled add direction and add service controls', () => {
+    vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
+    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('button', { name: 'Ajouter une direction' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Ajouter un service' })).toBeDisabled();
+  });
+
   it('renders direction and service rows without global admin columns', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
     vi.mocked(useDirectionsServicesRows).mockReturnValue({

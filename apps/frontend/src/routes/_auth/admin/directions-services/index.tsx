@@ -1,3 +1,4 @@
+import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ROLES } from '@sirena/common/constants';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
@@ -28,6 +29,15 @@ export function RouteComponent() {
       <h2>{title}</h2>
       <p className="fr-text--sm fr-mb-0">Gestion de : directions et services</p>
 
+      <div>
+        <Button type="button" disabled>
+          Ajouter une direction
+        </Button>
+        <Button type="button" disabled priority="secondary">
+          Ajouter un service
+        </Button>
+      </div>
+
       <table>
         <thead>
           <tr>
@@ -48,9 +58,9 @@ export function RouteComponent() {
               <td>{row.serviceLabel}</td>
               <td>{row.email}</td>
               <td>
-                <button type="button" disabled>
+                <Button type="button" disabled size="small" priority="secondary">
                   Modifier
-                </button>
+                </Button>
               </td>
             </tr>
           ))}
