@@ -185,12 +185,6 @@ const StepComponent = ({
     ? ([ROLES.ENTITY_ADMIN, ROLES.NATIONAL_STEERING, ROLES.WRITER] as string[]).includes(userRole)
     : false;
 
-  const isAcknowledgmentStep = step.type === REQUETE_ETAPE_TYPES.ACKNOWLEDGMENT;
-  const sendNote = isAcknowledgmentStep
-    ? notes.find((note) => note.texte?.startsWith("Email d'accusé de réception envoyé le"))
-    : undefined;
-  const displayNotes = sendNote ? notes.filter((note) => note.id !== sendNote.id) : notes;
-
   const showAFaireBadge = statutId === REQUETE_ETAPE_STATUT_TYPES.A_FAIRE;
   const canEditStep = canEdit && step.editable;
 
@@ -330,12 +324,12 @@ const StepComponent = ({
         ) : (
           <>
             <div className={styles['request-notes']}>
-              {displayNotes.slice(0, isOpen ? displayNotes.length : 3).map((note: StepType['notes'][number]) => (
+              {notes.slice(0, isOpen ? notes.length : 3).map((note: StepType['notes'][number]) => (
                 <StepNote key={note.id} content={note.texte} author={note.author} createdAt={note.createdAt} />
               ))}
             </div>
             <div className={styles['request-notes-distplay']}>
-              {displayNotes.length > 3 && (
+              {notes.length > 3 && (
                 <button type="button" className="fr-btn-link" onClick={() => setIsOpen(!isOpen)}>
                   {isOpen ? 'Masquer' : 'Afficher'} les notes précédentes{' '}
                   <span
