@@ -373,7 +373,7 @@ export function transcodeFinessCategetab(categetab: string | null): CategetabEnt
       },
     };
   }
-  if (Number.isNaN(categetab)) {
+  if (Number.isNaN(+categetab)) {
     throw new SirecDataError(`Catégorie FINESS is not a number (categetab=${categetab})`);
   }
   const entry = CATEGETAB_TRANSCO[+categetab];

@@ -80,5 +80,9 @@ describe('finessCategetab.transco.ts', () => {
     it('should throw SirecDataError when categetab is unknown', () => {
       expect(() => transcodeFinessCategetab('9999')).toThrow(SirecDataError);
     });
+
+    it('should throw SirecDataError when categetab is not a number', () => {
+      expect(() => transcodeFinessCategetab('AZE')).toThrow(SirecDataError);
+    });
   });
 });
