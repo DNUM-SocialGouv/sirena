@@ -55,18 +55,31 @@ const getStepTitle = (type: string, statutId: string | null, nom: string | null)
   return nom ?? '';
 };
 
-const getStepSubtitle = (
-  type: string,
-  statutId: string | null,
-  createdAt: string,
-  updatedAt: string,
-  createdBy: StepType['createdBy'],
-  notes: StepType['notes'],
-  requete: StepType['requete'],
-  uploadedFiles: StepType['uploadedFiles'],
-  clotureEffectiveDate?: string | null,
-  dateRealisation?: string | Date | null,
-): React.ReactNode => {
+type StepSubtitleArgs = {
+  type: string;
+  statutId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: StepType['createdBy'];
+  notes: StepType['notes'];
+  requete: StepType['requete'];
+  uploadedFiles: StepType['uploadedFiles'];
+  clotureEffectiveDate?: string | null;
+  dateRealisation?: string | Date | null;
+};
+
+const getStepSubtitle = ({
+  type,
+  statutId,
+  createdAt,
+  updatedAt,
+  createdBy,
+  notes,
+  requete,
+  uploadedFiles,
+  clotureEffectiveDate,
+  dateRealisation,
+}: StepSubtitleArgs): React.ReactNode => {
   if (statutId === REQUETE_ETAPE_STATUT_TYPES.CLOTUREE) {
     const agent = createdBy ?? notes[0]?.author;
     const closureDate = clotureEffectiveDate ?? createdAt;
@@ -225,29 +238,22 @@ const StepComponent = ({
             <div className="fr-col">
               <h3 className="fr-h6 fr-mb-0">{getStepTitle(step.type, statutId, nom)}</h3>
             </div>
-            {showAFaireBadge && (
-              <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-                <p className="fr-badge fr-badge--no-icon fr-badge--sm fr-badge--info">
-                  {requeteEtapeStatutType.A_FAIRE}
-                </p>
-              </div>
-            )}
           </div>
           <div className="fr-grid-row fr-grid-row--middle fr-mt-1w">
             <div className="fr-col">
               <p className="fr-text--xs fr-text-mention--grey">
-                {getStepSubtitle(
-                  step.type,
+                {getStepSubtitle({
+                  type: step.type,
                   statutId,
                   createdAt,
                   updatedAt,
                   createdBy,
                   notes,
                   requete,
-                  rest.uploadedFiles,
+                  uploadedFiles: step.uploadedFiles,
                   clotureEffectiveDate,
-                  step.dateRealisation,
-                )}
+                  dateRealisation: step.dateRealisation,
+                })}
               </p>
               {isAcknowledgmentSendable && canEdit && (
                 <div className="fr-mt-2w">
@@ -257,6 +263,13 @@ const StepComponent = ({
                 </div>
               )}
             </div>
+            {showAFaireBadge && (
+              <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
+                <p className="fr-badge fr-badge--no-icon fr-badge--sm fr-badge--info">
+                  {requeteEtapeStatutType.A_FAIRE}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -342,7 +355,7 @@ const StepComponent = ({
                 </button>
               )}
             </div>
-            <StepFiles files={rest.uploadedFiles} stepId={id} />
+            <StepFiles files={step.uploadedFiles} stepId={id} />
             {canEditStep && (
               <Button
                 className={styles['request-step__add-note']}
