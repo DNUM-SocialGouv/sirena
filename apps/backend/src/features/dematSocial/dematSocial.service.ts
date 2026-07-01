@@ -9,7 +9,6 @@ import { abortControllerStorage, getLoggerStore, getSentryStore } from '../../li
 import {
   AccepterDossierDocument,
   ChangerInstructionDocument,
-  ClasserDossierSansSuiteDocument,
   GetDossierDocument,
   GetDossiersByDateDocument,
   GetDossiersMetadataDocument,
@@ -42,7 +41,6 @@ type FinalisationVariables = {
 
 type FinalisationResponse = {
   dossierAccepter?: { dossier?: unknown; errors?: { message: string }[] | null } | null;
-  dossierClasserSansSuite?: { dossier?: unknown; errors?: { message: string }[] | null } | null;
 };
 
 const getFinalisationVariables = (id: string, motivation: string): FinalisationVariables => ({
@@ -75,13 +73,6 @@ export const acceptDossierWithoutNotification = async (id: string, motivation: s
     .gql(AccepterDossierDocument)
     .send(getFinalisationVariables(id, motivation))) as FinalisationResponse;
   return assertFinalisationSuccess(response, 'dossierAccepter');
-};
-
-export const classerDossierSansSuiteWithoutNotification = async (id: string, motivation: string) => {
-  const response = (await graffle
-    .gql(ClasserDossierSansSuiteDocument)
-    .send(getFinalisationVariables(id, motivation))) as FinalisationResponse;
-  return assertFinalisationSuccess(response, 'dossierClasserSansSuite');
 };
 
 export const getRequetes = async (createdSince?: Date, state?: DossierState) => {

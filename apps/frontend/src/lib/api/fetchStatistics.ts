@@ -34,3 +34,9 @@ export async function fetchStatisticsDashboard(
   const { data } = await res.json();
   return data;
 }
+
+export async function fetchExportRequetesCsv(): Promise<Response> {
+  const res = await client.statistics['export-requetes'].$get();
+  await handleRequestErrors(res, { silentToastError: true });
+  return res;
+}

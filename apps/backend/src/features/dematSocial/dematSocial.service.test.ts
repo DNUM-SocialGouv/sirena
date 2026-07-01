@@ -4,7 +4,6 @@ import { graffle } from '../../libs/graffle.js';
 import { createRequeteFromDematSocial, getRequeteByDematSocialId } from '../requetes/requetes.service.js';
 import {
   acceptDossierWithoutNotification,
-  classerDossierSansSuiteWithoutNotification,
   getRequetes,
   importRequetes,
   updateInstruction,
@@ -26,7 +25,6 @@ vi.mock('../../libs/graffle.js', () => {
     GetDossierDocument: {},
     ChangerInstructionDocument: {},
     AccepterDossierDocument: {},
-    ClasserDossierSansSuiteDocument: {},
   };
 });
 
@@ -114,19 +112,6 @@ describe('dematSocial.service.ts', () => {
       });
     });
 
-    it('classifies a dossier sans suite with notifications disabled and motivation', async () => {
-      sendMock.mockResolvedValueOnce({ dossierClasserSansSuite: { dossier: { id: 'Dossier-123' }, errors: [] } });
-
-      await classerDossierSansSuiteWithoutNotification('Dossier-123', 'Motivation SIRENA');
-
-      expect(sendMock).toHaveBeenCalledWith({
-        dossierId: Buffer.from('Dossier-123').toString('base64'),
-        instructeurId: Buffer.from('Instructeur-123').toString('base64'),
-        motivation: 'Motivation SIRENA',
-        disableNotification: true,
-      });
-    });
-
     it('passes a dossier to instruction with notifications disabled', async () => {
       sendMock.mockResolvedValueOnce({ dossierPasserEnInstruction: { dossier: { id: 'Dossier-123' }, errors: [] } });
 
@@ -146,14 +131,6 @@ describe('dematSocial.service.ts', () => {
 
       await expect(acceptDossierWithoutNotification('Dossier-123', 'Motivation SIRENA')).rejects.toThrow(
         'Le dossier ne peut pas être accepté',
-      );
-    });
-
-    it('throws when classifying a dossier sans suite does not return a dossier', async () => {
-      sendMock.mockResolvedValueOnce({ dossierClasserSansSuite: { dossier: null, errors: [] } });
-
-      await expect(classerDossierSansSuiteWithoutNotification('Dossier-123', 'Motivation SIRENA')).rejects.toThrow(
-        'No dossier returned',
       );
     });
   });

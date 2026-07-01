@@ -75,3 +75,14 @@ export function describePeriod(selection: PeriodSelection): string | null {
   if (end) return `jusqu'au ${end}`;
   return null;
 }
+
+export function describeCreatedPeriod(selection: PeriodSelection): string | null {
+  if (selection.period) return `Requêtes créées : ${PERIOD_PRESET_LABELS[selection.period]}`;
+
+  const start = formatDisplayDate(selection.startDate);
+  const end = formatDisplayDate(selection.endDate);
+  if (start && end) return `Requêtes créées entre le ${start} et le ${end}`;
+  if (start) return `Requêtes créées à partir du ${start}`;
+  if (end) return `Requêtes créées jusqu'au ${end}`;
+  return null;
+}

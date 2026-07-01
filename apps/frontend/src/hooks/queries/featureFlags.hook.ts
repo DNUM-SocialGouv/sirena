@@ -13,18 +13,15 @@ export const useResolvedFeatureFlags = () => {
   const query = useQuery({
     queryKey: ['featureFlags', 'resolved'],
     queryFn: fetchResolvedFeatureFlags,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const setFlags = useFeatureFlagStore((s) => s.setFlags);
-  const reset = useFeatureFlagStore((s) => s.reset);
 
   useEffect(() => {
     if (query.data) setFlags(query.data);
   }, [query.data, setFlags]);
-
-  useEffect(() => {
-    if (query.isError) reset();
-  }, [query.isError, reset]);
 
   return query;
 };

@@ -382,11 +382,11 @@ export function PersonneConcerneeForm({ mode, requestId, initialData, onSave }: 
                     },
                   },
                   {
-                    label: 'Habilitation familiale',
+                    label: 'Mandataire familial',
                     nativeInputProps: {
-                      value: 'HABILITATION_FAMILIALE',
-                      checked: formData.mesureProtection === 'HABILITATION_FAMILIALE',
-                      onChange: () => handleMesureProtectionChange('HABILITATION_FAMILIALE'),
+                      value: 'MANDATAIRE_FAMILIAL',
+                      checked: formData.mesureProtection === 'MANDATAIRE_FAMILIAL',
+                      onChange: () => handleMesureProtectionChange('MANDATAIRE_FAMILIAL'),
                     },
                   },
                   {

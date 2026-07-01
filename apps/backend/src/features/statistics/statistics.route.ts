@@ -10,3 +10,9 @@ export const getStatisticsDashboardRoute = openApiProtectedRoute({
     ...openApiResponse(StatisticsDashboardPayloadSchema),
   },
 });
+
+export const getExportRequetesRoute = openApiProtectedRoute({
+  description: 'Exporte les requêtes SIRENA au format CSV',
+  tags: ['statistics'],
+  responses: {},
+});

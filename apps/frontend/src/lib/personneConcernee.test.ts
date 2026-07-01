@@ -3,11 +3,11 @@ import { formatPersonneConcerneeFromServer, formatPersonneConcerneeToServer } fr
 
 describe('personneConcernee formatters', () => {
   it('preserves the Mesure de protection between server data, form data, and API payload', () => {
-    const formData = formatPersonneConcerneeFromServer({ mesureProtection: 'HABILITATION_FAMILIALE' });
+    const formData = formatPersonneConcerneeFromServer({ mesureProtection: 'MANDATAIRE_FAMILIAL' });
 
-    expect(formData.mesureProtection).toBe('HABILITATION_FAMILIALE');
+    expect(formData.mesureProtection).toBe('MANDATAIRE_FAMILIAL');
     expect(formatPersonneConcerneeToServer(formData)).toMatchObject({
-      mesureProtection: 'HABILITATION_FAMILIALE',
+      mesureProtection: 'MANDATAIRE_FAMILIAL',
     });
   });
 });

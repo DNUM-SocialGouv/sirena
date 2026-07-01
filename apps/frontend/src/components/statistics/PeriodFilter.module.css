@@ -41,6 +41,18 @@
   margin: 0;
 }
 
+.period__section > legend {
+  margin-inline: 0;
+  padding-block-end: 0;
+  padding-inline: 0;
+}
+
+.period__note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-mention-grey);
+}
+
 .period__custom {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
