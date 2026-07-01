@@ -1,5 +1,6 @@
 import { ROLES } from '@sirena/common/constants';
 import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useDirectionsServicesRows } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
@@ -93,6 +94,45 @@ describe('Admin directions and services route', () => {
 
     expect(screen.getByRole('button', { name: 'Ajouter une direction' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Ajouter un service' })).toBeDisabled();
+  });
+
+  it('filters visible rows by Service abbreviation search', async () => {
+    vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
+    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'service-pa',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: 'Service PA',
+            serviceLabel: 'PA',
+            email: 'service-pa@ars.fr',
+            editId: 'service-pa',
+          },
+          {
+            id: 'service-enfance',
+            directionNom: 'Direction Enfance',
+            directionLabel: 'DE',
+            serviceNom: 'Service Enfance',
+            serviceLabel: 'SE',
+            email: 'service-enfance@ars.fr',
+            editId: 'service-enfance',
+          },
+        ],
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    const searchInput = screen.getByRole('searchbox', {
+      name: 'Rechercher une direction ou un service par nom ou libellé',
+    });
+    await userEvent.type(searchInput, ' pa ');
+    await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }));
+
+    expect(screen.getByText('Service PA')).toBeInTheDocument();
+    expect(screen.queryByText('Service Enfance')).not.toBeInTheDocument();
   });
 
   it('renders direction and service rows without global admin columns', () => {
