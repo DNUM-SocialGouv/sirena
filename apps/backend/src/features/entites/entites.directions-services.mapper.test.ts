@@ -13,6 +13,61 @@ const entite = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe('buildDirectionsServicesRows', () => {
+  it('filters rows by Direction full name search', () => {
+    const rows = buildDirectionsServicesRows(
+      [
+        entite({
+          id: 'root-ars',
+          nomComplet: 'ARS Normandie',
+          label: 'ARS NOR',
+        }),
+        entite({
+          id: 'dir-autonomie',
+          nomComplet: 'Direction Autonomie',
+          label: 'DA',
+          email: 'direction-autonomie@ars.fr',
+          entiteMereId: 'root-ars',
+        }),
+        entite({
+          id: 'service-pa',
+          nomComplet: 'Service PA',
+          label: 'PA',
+          email: 'service-pa@ars.fr',
+          entiteMereId: 'dir-autonomie',
+        }),
+        entite({
+          id: 'dir-enfance',
+          nomComplet: 'Direction Enfance',
+          label: 'DE',
+          email: 'direction-enfance@ars.fr',
+          entiteMereId: 'root-ars',
+        }),
+      ],
+      { search: 'autonomie' },
+    );
+
+    expect(rows).toEqual([
+      {
+        id: 'dir-autonomie',
+        directionNom: 'Direction Autonomie',
+        directionLabel: 'DA',
+        serviceNom: '',
+        serviceLabel: '',
+        email: 'direction-autonomie@ars.fr',
+        editId: 'dir-autonomie',
+      },
+      {
+        id: 'service-pa',
+        directionNom: 'Direction Autonomie',
+        directionLabel: 'DA',
+        serviceNom: 'Service PA',
+        serviceLabel: 'PA',
+        email: 'service-pa@ars.fr',
+        editId: 'service-pa',
+      },
+    ]);
+  });
+
   it('builds local direction and service rows without returning the root entite or global-only columns', () => {
     const rows = buildDirectionsServicesRows([
       entite({

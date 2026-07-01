@@ -19,7 +19,22 @@ type DirectionsServicesRow = {
 const compareByNomComplet = (a: EntiteHierarchyNode, b: EntiteHierarchyNode) =>
   a.nomComplet.localeCompare(b.nomComplet);
 
-export const buildDirectionsServicesRows = (scopedEntites: EntiteHierarchyNode[]): DirectionsServicesRow[] => {
+const rowMatchesSearch = (row: DirectionsServicesRow, search: string) => {
+  const normalizedSearch = search.trim().toLocaleLowerCase('fr');
+
+  if (!normalizedSearch) {
+    return true;
+  }
+
+  return [row.directionNom, row.directionLabel, row.serviceNom, row.serviceLabel].some((value) =>
+    value.toLocaleLowerCase('fr').includes(normalizedSearch),
+  );
+};
+
+export const buildDirectionsServicesRows = (
+  scopedEntites: EntiteHierarchyNode[],
+  { search = '' }: { search?: string } = {},
+): DirectionsServicesRow[] => {
   const childrenByParentId = new Map<string, EntiteHierarchyNode[]>();
 
   for (const entite of scopedEntites) {
@@ -80,5 +95,5 @@ export const buildDirectionsServicesRows = (scopedEntites: EntiteHierarchyNode[]
     }
   }
 
-  return rows;
+  return rows.filter((row) => rowMatchesSearch(row, search));
 };
