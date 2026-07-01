@@ -1,10 +1,37 @@
 import { prisma } from '@sirena/db';
 import { createDefaultLogger } from '../../../../helpers/pino.js';
 import { SirecTranscoError } from '../sirecTransco.error.js';
+import { AFFECTATION_ENTITES_BOURGOGNE_FRANCHE_COMTE } from './entitesBourgogneFrancheComte.js';
+import { AFFECTATION_ENTITES_GRAND_EST } from './entitesGrandEst.js';
+import { AFFECTATION_ENTITES_GUADELOUPE } from './entitesGuadeloupe.js';
+import { AFFECTATION_ENTITES_ILE_DE_FRANCE } from './entitesIleDeFrance.js';
 import { AFFECTATION_ENTITES_NORMANDIE } from './entitesNormandie.js';
+import { AFFECTATION_ENTITES_NOUVELLE_AQUITAINE } from './entitesNouvelleAquitaine.js';
+import { AFFECTATION_ENTITES_OCCITANIE } from './entitesOccitanie.js';
+import { AFFECTATION_ENTITES_PAYS_DE_LA_LOIRE } from './entitesPaysDeLaLoire.js';
 import { AFFECTATION_ENTITES_TOP_LEVEL } from './entitesTopLevel.js';
 
 const logger = createDefaultLogger();
+
+const ALL_AFFECTATION_ENTITES = {
+  ...AFFECTATION_ENTITES_TOP_LEVEL,
+  ...AFFECTATION_ENTITES_ILE_DE_FRANCE,
+  ...AFFECTATION_ENTITES_NORMANDIE,
+  ...AFFECTATION_ENTITES_OCCITANIE,
+  ...AFFECTATION_ENTITES_GRAND_EST,
+  ...AFFECTATION_ENTITES_GUADELOUPE,
+  ...AFFECTATION_ENTITES_BOURGOGNE_FRANCHE_COMTE,
+  ...AFFECTATION_ENTITES_PAYS_DE_LA_LOIRE,
+  ...AFFECTATION_ENTITES_NOUVELLE_AQUITAINE,
+};
+
+export function getAffectationLabel(sirecId: number | null): string | null {
+  if (sirecId === null) return null;
+  const entites = ALL_AFFECTATION_ENTITES[sirecId];
+  if (!entites) return null;
+  const labels = [...new Set(entites.map((e) => e.label))];
+  return labels.join(' / ');
+}
 
 export interface EntiteSirenaLabels {
   label: string;
@@ -59,10 +86,7 @@ export async function initAffectationTransco(): Promise<void> {
   });
 
   const newTransco = new Map<number, AffectationEntry>();
-  for (const [sirecIdStr, entitesSirenaLabels] of Object.entries({
-    ...AFFECTATION_ENTITES_TOP_LEVEL,
-    ...AFFECTATION_ENTITES_NORMANDIE,
-  })) {
+  for (const [sirecIdStr, entitesSirenaLabels] of Object.entries(ALL_AFFECTATION_ENTITES)) {
     const sirecId = Number(sirecIdStr);
     try {
       const firstEntity = entitesSirenaLabels[0];
