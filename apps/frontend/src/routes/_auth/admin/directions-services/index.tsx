@@ -39,11 +39,15 @@ const filterRowsBySearch = (rows: DirectionServiceRow[], search: string) => {
 };
 
 const cells: Cells<DirectionServiceRow> = {
-  'custom:edit': () => (
-    <Button type="button" disabled size="small" priority="secondary">
-      Modifier
-    </Button>
-  ),
+  'custom:edit': (row) => {
+    const representedUnitName = row.serviceNom || row.directionNom;
+
+    return (
+      <Button type="button" disabled size="small" priority="secondary">
+        Modifier <span className="fr-sr-only">{representedUnitName}</span>
+      </Button>
+    );
+  },
 };
 
 export function RouteComponent() {

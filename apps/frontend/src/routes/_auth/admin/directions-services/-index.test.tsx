@@ -150,6 +150,39 @@ describe('Admin directions and services route', () => {
     expect(screen.queryByText('Service Enfance')).not.toBeInTheDocument();
   });
 
+  it('renders disabled row edit actions with unique accessible labels', () => {
+    vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
+    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+      data: {
+        data: [
+          {
+            id: 'dir-test',
+            directionNom: 'Direction Test',
+            directionLabel: 'DT',
+            serviceNom: '',
+            serviceLabel: '',
+            email: 'direction-test@ars.fr',
+            editId: 'dir-test',
+          },
+          {
+            id: 'service-test',
+            directionNom: 'Direction Test',
+            directionLabel: 'DT',
+            serviceNom: 'Service Test',
+            serviceLabel: 'ST',
+            email: 'service-test@ars.fr',
+            editId: 'service-test',
+          },
+        ],
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('button', { name: 'Modifier Direction Test' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Modifier Service Test' })).toBeDisabled();
+  });
+
   it('renders direction and service rows without global admin columns', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
     vi.mocked(useDirectionsServicesRows).mockReturnValue({
