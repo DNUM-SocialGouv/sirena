@@ -78,7 +78,7 @@ describe('sirecMigration.dateRecepGest.transformer.ts', () => {
       const date = new Date('2024-03-15');
       const result = transformSirecDateRecepGest(makeData(date), [ARS_1]);
 
-      expect(result[0].note).toContain('Date de répcetion au service de premier niveau : 15/03/2024');
+      expect(result[0].note).toContain('Date de réception au service de premier niveau : 15/03/2024');
     });
 
     it('should include service label on second line when service_recepteur_niv1 is known', () => {
@@ -86,7 +86,7 @@ describe('sirecMigration.dateRecepGest.transformer.ts', () => {
       const result = transformSirecDateRecepGest(makeData(date, 693), [ARS_1]);
 
       expect(result[0].note).toBe(
-        'Date de répcetion au service de premier niveau : 15/03/2024\nService de premier niveau : ARS Normandie',
+        'Date de réception au service de premier niveau : 15/03/2024\nService de premier niveau : ARS Normandie',
       );
     });
 
@@ -94,14 +94,14 @@ describe('sirecMigration.dateRecepGest.transformer.ts', () => {
       const date = new Date('2024-03-15');
       const result = transformSirecDateRecepGest(makeData(date, null), [ARS_1]);
 
-      expect(result[0].note).toBe('Date de répcetion au service de premier niveau : 15/03/2024');
+      expect(result[0].note).toBe('Date de réception au service de premier niveau : 15/03/2024');
     });
 
     it('should omit service line when service_recepteur_niv1 is unknown', () => {
       const date = new Date('2024-03-15');
       const result = transformSirecDateRecepGest(makeData(date, 9999), [ARS_1]);
 
-      expect(result[0].note).toBe('Date de répcetion au service de premier niveau : 15/03/2024');
+      expect(result[0].note).toBe('Date de réception au service de premier niveau : 15/03/2024');
     });
   });
 
