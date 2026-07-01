@@ -50,6 +50,23 @@ describe('Admin directions and services route', () => {
     expect(document.title).toBe('Directions et services (ARS Normandie)');
   });
 
+  it('shows only the disabled add service control for a Direction-level affectation', () => {
+    vi.mocked(useProfile).mockReturnValue({
+      data: {
+        affectationChain: [
+          { id: 'root-ars', nomComplet: 'ARS Normandie' },
+          { id: 'dir-autonomie', nomComplet: 'Direction Autonomie' },
+        ],
+      },
+    } as never);
+    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.queryByRole('button', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ajouter un service' })).toBeDisabled();
+  });
+
   it('shows disabled add direction and add service controls', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
     vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);

@@ -34,6 +34,9 @@ const cells: Cells<DirectionServiceRow> = {
 export function RouteComponent() {
   const { data: profile } = useProfile();
   const directionsServicesQuery = useDirectionsServicesRows();
+  const affectationLevel = profile?.affectationChain?.length ?? 1;
+  const isAffectedToEntiteAdministrative = affectationLevel === 1;
+  const canCreateDirection = isAffectedToEntiteAdministrative;
   const organizationName = profile?.affectationChain?.at(-1)?.nomComplet;
   const title = useMemo(
     () => (organizationName ? `Directions et services (${organizationName})` : 'Directions et services'),
@@ -50,9 +53,11 @@ export function RouteComponent() {
       <p className="fr-text--sm fr-mb-0">Gestion de : directions et services</p>
 
       <div>
-        <Button type="button" disabled>
-          Ajouter une direction
-        </Button>
+        {canCreateDirection ? (
+          <Button type="button" disabled>
+            Ajouter une direction
+          </Button>
+        ) : null}
         <Button type="button" disabled priority="secondary">
           Ajouter un service
         </Button>
