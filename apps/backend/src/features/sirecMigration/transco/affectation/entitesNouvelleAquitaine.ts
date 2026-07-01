@@ -13,9 +13,9 @@ export const AFFECTATION_ENTITES_NOUVELLE_AQUITAINE: Record<number, [EntiteSiren
   947: [{ label: 'Délégation départementale ARS Deux-Sèvres – DD 79', parentLabel: 'ARS Nouvelle-Aquitaine' }],
   949: [{ label: 'Délégation départementale ARS Vienne – DD86', parentLabel: 'ARS Nouvelle-Aquitaine' }],
   951: [{ label: 'Délégation départementale ARS Haute-Vienne – DD87', parentLabel: 'ARS Nouvelle-Aquitaine' }],
-  959: [{ label: 'ARS Nouvelle Aquitaine' }],
-  // 953: [{ label: 'DOS', parentLabel: 'ARS Nouvelle-Aquitaine' }], // TODO Attente retour ARS
+  959: [{ label: 'ARS Nouvelle-Aquitaine' }],
+  953: [{ label: 'ARS Nouvelle-Aquitaine' }],
   5066: [{ label: 'DOS-DMSCD (Tatoueurs)', parentLabel: 'ARS Nouvelle-Aquitaine' }],
   957: [{ label: 'DOS-PPSPB (Pharmacie-Produits de santé-Biologie médicale)', parentLabel: 'ARS Nouvelle-Aquitaine' }],
-  961: [{ label: 'ARS Nouvelle Aquitaine' }],
+  961: [{ label: 'ARS Nouvelle-Aquitaine' }],
 };
