@@ -3,12 +3,8 @@ import { sseEventManager } from '../../helpers/sse.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
 import { ChangeLogAction } from '../changelog/changelog.type.js';
-import type { CreateUploadedFileDto, GetUploadedFilesQuery } from './uploadedFiles.type.js';
+import type { CreateUploadedFileDto } from './uploadedFiles.type.js';
 
-export type GetUploadedFilesResult = {
-  data: UploadedFile[];
-  total: number;
-};
 export type UploadedFileByIdResult = UploadedFile | null;
 export type UploadedFileCreateResult = UploadedFile;
 export type UploadedFileDeleteResult = UploadedFile;
@@ -16,41 +12,6 @@ export type UploadedFileDeleteResult = UploadedFile;
 const filterByEntities = (entiteIds: string[] | null): Prisma.UploadedFileWhereInput | null => {
   if (!entiteIds) return null;
   return { entiteId: { in: entiteIds } };
-};
-
-export const getUploadedFiles = async (
-  entiteIds: string[] | null = null,
-  query: GetUploadedFilesQuery = {},
-): Promise<GetUploadedFilesResult> => {
-  const { offset = 0, limit, sort = 'createdAt', order = 'desc', search, mimeType, fileName } = query;
-
-  const entiteFilter = filterByEntities(entiteIds);
-
-  const searchConditions: Prisma.UploadedFileWhereInput[] | undefined = search?.trim()
-    ? [{ fileName: { contains: search, mode: 'insensitive' } }, { filePath: { contains: search, mode: 'insensitive' } }]
-    : undefined;
-
-  const where: Prisma.UploadedFileWhereInput = {
-    ...(entiteFilter ?? {}),
-    ...(mimeType ? { mimeType } : {}),
-    ...(fileName ? { fileName } : {}),
-    ...(searchConditions ? { OR: searchConditions } : {}),
-  };
-
-  const [data, total] = await Promise.all([
-    prisma.uploadedFile.findMany({
-      where,
-      skip: offset,
-      ...(typeof limit === 'number' ? { take: limit } : {}),
-      orderBy: { [sort]: order },
-    }),
-    prisma.uploadedFile.count({ where }),
-  ]);
-
-  return {
-    data,
-    total,
-  };
 };
 
 export const getUploadedFileById = async (
@@ -167,15 +128,6 @@ const updateFilesWithRelation = async (
   return filesAfter;
 };
 
-export const setNoteFile = async (
-  noteId: string,
-  uploadedFileId: UploadedFile['id'][],
-  entiteId: string | null = null,
-  changedById?: string,
-) => {
-  return updateFilesWithRelation(uploadedFileId, { requeteEtapeNoteId: noteId }, entiteId, changedById);
-};
-
 export const setEtapeFile = async (
   requeteEtapeId: string,
   uploadedFileId: UploadedFile['id'][],
@@ -285,15 +237,6 @@ export const deleteFaitFilesRemovedFromSituation = async (
   }
 
   return { filePaths };
-};
-
-export const setDemarchesEngageesFiles = async (
-  demarchesEngageesId: string,
-  uploadedFileId: UploadedFile['id'][],
-  entiteId: string | null = null,
-  changedById?: string,
-) => {
-  return updateFilesWithRelation(uploadedFileId, { demarchesEngageesId }, entiteId, changedById);
 };
 
 export const isFileBelongsToRequete = async (fileId: UploadedFile['id'], requeteId: string): Promise<boolean> => {

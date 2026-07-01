@@ -5,7 +5,6 @@ import EntitesController from './features/entites/entites.controller.js';
 import EsanteController from './features/esante/esante.controller.js';
 import FeatureFlagsController from './features/featureFlags/featureFlags.controller.js';
 import HealthController from './features/health/health.controller.js';
-import NotesController from './features/notes/notes.controller.js';
 import ProfileController from './features/profile/profile.controller.js';
 import RequeteEtapesController from './features/requeteEtapes/requetesEtapes.controller.js';
 import RequetesEntiteController from './features/requetesEntite/requetesEntite.controller.js';
@@ -42,7 +41,6 @@ export const app = baseApp
   .route('/uploaded-files', UploadedFilesController)
   .route('/requetes-entite', RequetesEntiteController)
   .route('/requete-etapes', RequeteEtapesController)
-  .route('/notes', NotesController)
   .route('/profile', ProfileController)
   .route('/sse', SSEController)
   .route('/sirec-migration', SirecMigrationController)
