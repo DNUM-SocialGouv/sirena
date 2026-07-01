@@ -2,6 +2,7 @@ import type { SirecReclamationRow } from '../sirecMigration.repository.js';
 import { transcodeDeclarant } from '../transco/declarant.transco.js';
 import { SIREC_DICO } from '../transco/dictionnaire.transco.js';
 import { transcodePlaignantAnonyme } from '../transco/plaignantAnonyme.transco.js';
+import { transcodeSignalement } from '../transco/signalement.transco.js';
 import { transcodeVictimeLienPlaignant } from '../transco/victimeLienPlaignant.transco.js';
 
 const PLAIGNANT_TYPE_PAS_PHYSIQUE = new Set([22, 106]);
@@ -28,6 +29,7 @@ export interface SirenaDeclarantData {
   adresse: SirenaAdresseData | null;
   identite: SirenaIdentiteData | null;
   commentaire: string;
+  estSignalementProfessionnel: boolean | null;
 }
 export function transformDeclarantIdentite(reclamation: SirecReclamationRow): SirenaIdentiteData | null {
   const { plaignant_nom, plaignant_prenom, plaignant_mail, plaignant_tel } = reclamation;
@@ -45,6 +47,7 @@ export function transformDeclarantIdentite(reclamation: SirecReclamationRow): Si
 
 export function transformSirecDeclarant(reclamation: SirecReclamationRow): SirenaDeclarantData | null {
   const estVictime = transcodeDeclarant(reclamation.plaignant);
+  const estSignalementProfessionnel = transcodeSignalement(reclamation.signalement);
 
   if (estVictime === true) {
     return {
@@ -55,6 +58,7 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
       adresse: null,
       identite: null,
       commentaire: '',
+      estSignalementProfessionnel,
     };
   }
 
@@ -117,7 +121,8 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
     lien_plai_autre !== null ||
     adresse !== null ||
     identite !== null ||
-    declarantCommentaire !== '';
+    declarantCommentaire !== '' ||
+    estSignalementProfessionnel !== null;
 
   return hasDeclarantData
     ? {
@@ -128,6 +133,7 @@ export function transformSirecDeclarant(reclamation: SirecReclamationRow): Siren
         adresse,
         identite,
         commentaire: declarantCommentaire,
+        estSignalementProfessionnel,
       }
     : null;
 }
