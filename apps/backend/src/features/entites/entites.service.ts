@@ -206,6 +206,14 @@ export const getDirectionsServicesRows = async (topEntiteId: string) => {
     return [];
   }
 
+  const parentEntite = topEntite.entiteMereId
+    ? entites.find((entite) => entite.id === topEntite.entiteMereId)
+    : undefined;
+
+  if (parentEntite?.entiteMereId !== null && parentEntite !== undefined) {
+    return buildDirectionsServicesRowsFromHierarchy([parentEntite, topEntite]);
+  }
+
   const walk = (entite: (typeof entites)[number]) => {
     scopedEntites.push(entite);
     for (const child of childrenByParentId.get(entite.id) ?? []) {

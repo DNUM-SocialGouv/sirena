@@ -36,11 +36,34 @@ export const buildDirectionsServicesRows = (scopedEntites: EntiteHierarchyNode[]
     siblings.sort(compareByNomComplet);
   }
 
-  const roots = scopedEntites.filter((entite) => entite.entiteMereId === null).sort(compareByNomComplet);
+  const scopedEntiteIds = new Set(scopedEntites.map((entite) => entite.id));
+  const perimeterRoots = scopedEntites
+    .filter((entite) => entite.entiteMereId === null || !scopedEntiteIds.has(entite.entiteMereId))
+    .sort(compareByNomComplet);
   const rows: DirectionsServicesRow[] = [];
 
-  for (const root of roots) {
-    const directions = childrenByParentId.get(root.id) ?? [];
+  const pushServiceRows = (direction: EntiteHierarchyNode) => {
+    const services = childrenByParentId.get(direction.id) ?? [];
+    for (const service of services) {
+      rows.push({
+        id: service.id,
+        directionNom: direction.nomComplet,
+        directionLabel: direction.label,
+        serviceNom: service.nomComplet,
+        serviceLabel: service.label,
+        email: service.email,
+        editId: service.id,
+      });
+    }
+  };
+
+  for (const perimeterRoot of perimeterRoots) {
+    if (perimeterRoot.entiteMereId !== null) {
+      pushServiceRows(perimeterRoot);
+      continue;
+    }
+
+    const directions = childrenByParentId.get(perimeterRoot.id) ?? [];
 
     for (const direction of directions) {
       rows.push({
@@ -53,18 +76,7 @@ export const buildDirectionsServicesRows = (scopedEntites: EntiteHierarchyNode[]
         editId: direction.id,
       });
 
-      const services = childrenByParentId.get(direction.id) ?? [];
-      for (const service of services) {
-        rows.push({
-          id: service.id,
-          directionNom: direction.nomComplet,
-          directionLabel: direction.label,
-          serviceNom: service.nomComplet,
-          serviceLabel: service.label,
-          email: service.email,
-          editId: service.id,
-        });
-      }
+      pushServiceRows(direction);
     }
   }
 

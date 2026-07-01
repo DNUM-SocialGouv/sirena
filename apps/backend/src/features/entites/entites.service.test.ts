@@ -1081,6 +1081,110 @@ describe('getDirectionsServicesRows()', () => {
     vi.resetAllMocks();
   });
 
+  it('returns only the selected Service row with parent Direction context for a Service perimeter', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteMereId: null,
+      },
+      {
+        ...fakeEntite('dir-autonomie'),
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        email: 'direction-autonomie@ars.fr',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('service-pa'),
+        nomComplet: 'Service PA',
+        label: 'PA',
+        email: 'service-pa@ars.fr',
+        entiteMereId: 'dir-autonomie',
+      },
+      {
+        ...fakeEntite('service-ph'),
+        nomComplet: 'Service PH',
+        label: 'PH',
+        email: 'service-ph@ars.fr',
+        entiteMereId: 'dir-autonomie',
+      },
+      {
+        ...fakeEntite('dir-enfance'),
+        nomComplet: 'Direction Enfance',
+        label: 'DE',
+        entiteMereId: 'root-ars',
+      },
+    ]);
+
+    const result = await getDirectionsServicesRows('service-pa');
+
+    expect(result).toEqual([
+      {
+        id: 'service-pa',
+        directionNom: 'Direction Autonomie',
+        directionLabel: 'DA',
+        serviceNom: 'Service PA',
+        serviceLabel: 'PA',
+        email: 'service-pa@ars.fr',
+        editId: 'service-pa',
+      },
+    ]);
+  });
+
+  it('returns only service rows under the selected Direction perimeter with parent Direction context', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteMereId: null,
+      },
+      {
+        ...fakeEntite('dir-autonomie'),
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        email: 'direction-autonomie@ars.fr',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('service-pa'),
+        nomComplet: 'Service PA',
+        label: 'PA',
+        email: 'service-pa@ars.fr',
+        entiteMereId: 'dir-autonomie',
+      },
+      {
+        ...fakeEntite('dir-enfance'),
+        nomComplet: 'Direction Enfance',
+        label: 'DE',
+        entiteMereId: 'root-ars',
+      },
+      {
+        ...fakeEntite('service-enfance'),
+        nomComplet: 'Service Enfance',
+        label: 'SE',
+        email: 'service-enfance@ars.fr',
+        entiteMereId: 'dir-enfance',
+      },
+    ]);
+
+    const result = await getDirectionsServicesRows('dir-autonomie');
+
+    expect(result).toEqual([
+      {
+        id: 'service-pa',
+        directionNom: 'Direction Autonomie',
+        directionLabel: 'DA',
+        serviceNom: 'Service PA',
+        serviceLabel: 'PA',
+        email: 'service-pa@ars.fr',
+        editId: 'service-pa',
+      },
+    ]);
+  });
+
   it('returns direction and service rows scoped to the selected entite administrative perimeter', async () => {
     vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
       {
