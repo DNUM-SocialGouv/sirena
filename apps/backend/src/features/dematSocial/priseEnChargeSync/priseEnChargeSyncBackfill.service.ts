@@ -21,7 +21,11 @@ export async function backfillRequetesPrisesEnChargeToDematSocial(): Promise<Dem
     where: {
       dematSocialId: { not: null },
       requeteEntites: {
-        some: { statutId: { in: [REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE] } },
+        some: {
+          statutId: {
+            in: [REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE, REQUETE_STATUT_TYPES.TRAITEE],
+          },
+        },
       },
     },
     select: { id: true },
