@@ -27,7 +27,7 @@ COPY --chown=node:node ./packages/backend-utils/package.json packages/backend-ut
 COPY --chown=node:node ./packages/common/package.json packages/common/
 COPY --chown=node:node ./packages/db/package.json packages/db/
 
-RUN --mount=type=cache,id=pnpm-store-backend-v2,target=/pnpm/store,sharing=locked \
+RUN --mount=type=cache,id=pnpm-store-backend,target=/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile --prefer-offline
 
 # Stage de build
@@ -60,9 +60,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV TZ=Europe/Paris
 
-# Copier seulement les dépendances de production
-COPY --from=deps --chown=node:node /app/node_modules ./node_modules
-COPY --from=deps --chown=node:node /app/package*.json /app/pnpm* ./
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/package*.json /app/pnpm* ./
 
 # Copier les builds
 COPY --from=builder --chown=node:node /app/apps/backend apps/backend
