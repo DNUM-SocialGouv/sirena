@@ -88,7 +88,7 @@ export function RouteComponent() {
       <h2>{title}</h2>
 
       <Alert
-        className="fr-mb-2w"
+        className="fr-mb-3w"
         severity="info"
         small
         description={
