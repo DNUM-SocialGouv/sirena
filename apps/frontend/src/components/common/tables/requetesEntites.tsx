@@ -7,6 +7,7 @@ import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@si
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { SelectedFiltersTags } from '@/components/common/filters/SelectedFiltersTags';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
@@ -84,6 +85,7 @@ export function RequetesEntite() {
   const navigate = useNavigate({ from: '/home' });
   const queryClient = useQueryClient();
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const moreFiltersButtonRef = useRef<HTMLButtonElement>(null);
   const { data: profile } = useProfile();
   const userTopEntiteId = profile?.topEntiteId;
   const isTopEntiteARS = profile?.topEntiteTypeId === entiteTypes.ARS;
@@ -116,13 +118,18 @@ export function RequetesEntite() {
 
   const [searchTerm, setSearchTerm] = useState<string>(queries.search || '');
 
+  useEffect(() => {
+    setSearchTerm(queries.search ?? '');
+  }, [queries.search]);
+
   const { data: requetes, isFetching } = useRequetesEntite({
     ...(queries.sort && { sort: queries.sort }),
-    ...(queries.order && { order: queries.order as 'asc' | 'desc' }),
+    ...(queries.order && { order: queries.order }),
     ...(queries.search && { search: queries.search }),
     ...(queries.entiteId ? { entiteId: queries.entiteId } : {}),
     ...(queries.departementCodes ? { departementCodes: queries.departementCodes } : {}),
     ...(queries.domaineIds ? { domaineIds: queries.domaineIds } : {}),
+    ...(queries.statutIds ? { statutIds: queries.statutIds } : {}),
     ...(queries.prioriteId ? { prioriteId: queries.prioriteId } : {}),
     offset,
     limit,
@@ -413,7 +420,8 @@ export function RequetesEntite() {
         )}
       </div>
       <div className="requetesEntitesTable">
-        <RequetesEntiteQuickFilters />
+        <RequetesEntiteQuickFilters moreFiltersButtonRef={moreFiltersButtonRef} />
+        <SelectedFiltersTags fallbackFocusRef={moreFiltersButtonRef} />
         <DataTable
           title={title}
           rowId="id"

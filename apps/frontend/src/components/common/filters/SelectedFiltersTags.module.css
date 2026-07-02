@@ -1,0 +1,46 @@
+.selectedFilters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 1rem;
+  /* Reset des styles par défaut du <fieldset>. */
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.label {
+  flex: 0 0 var(--filters-label-width, 11rem);
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Espace les tags via `gap` plutôt que les marges DSFR par défaut, pour une rangée alignée proprement.
+   DSFR applique `margin: 0 .25rem .5rem .25rem` directement sur `.fr-tag` : cette marge basse
+   décentrait le tag verticalement, on la neutralise ici. */
+.selectedFilters :global(.fr-tags-group) {
+  margin: 0;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Le <li> génère une line-box plus haute (44px) que le tag (32px), ce qui décentrait le tag
+   verticalement. En flex, le <li> se réduit à la hauteur du tag et le centre proprement. */
+.selectedFilters :global(.fr-tags-group li) {
+  display: flex;
+  align-items: center;
+}
+
+.selectedFilters :global(.fr-tags-group .fr-tag) {
+  margin: 0;
+}
+
+/* Chip de filtre actif : fond bleu-France clair, texte bleu-France, croix à gauche (icône). */
+.selectedFilters :global(.fr-tag) {
+  --idle: transparent;
+  --hover: var(--background-action-low-blue-france-hover);
+  --active: var(--background-action-low-blue-france-active);
+  background-color: var(--background-action-low-blue-france);
+  color: var(--text-action-high-blue-france);
+}
