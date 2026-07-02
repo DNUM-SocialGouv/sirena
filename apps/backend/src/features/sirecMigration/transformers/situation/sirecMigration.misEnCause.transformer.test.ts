@@ -55,7 +55,7 @@ vi.mock('./sirecMigration.finess.transformer.js', () => ({
       ville: finessData.libcommune,
     },
     lieuDeSurvenueData:
-      finessData.categetab === 355
+      finessData.categetab === '355'
         ? {
             finess: finessData.nofinesset,
             lieuTypeId: 'ETABLISSEMENT_SANTE',
@@ -121,7 +121,7 @@ const makeMisEnCause = (
 const mockFinessData: SirecFinessData = {
   id_data: 20,
   nofinesset: '750000001',
-  categetab: 355,
+  categetab: '355',
   libcategetab: 'CH',
   rs: 'Hôpital Saint-Louis',
   codepostal: '75010',
