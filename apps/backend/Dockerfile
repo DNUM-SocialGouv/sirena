@@ -27,7 +27,7 @@ COPY --chown=node:node ./packages/backend-utils/package.json packages/backend-ut
 COPY --chown=node:node ./packages/common/package.json packages/common/
 COPY --chown=node:node ./packages/db/package.json packages/db/
 
-RUN --mount=type=cache,id=pnpm-store-backend,target=/pnpm/store,sharing=locked \
+RUN --mount=type=cache,id=pnpm-store-backend-v2,target=/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile --prefer-offline
 
 # Stage de build
@@ -71,5 +71,7 @@ COPY --from=builder --chown=node:node /app/packages/common packages/common
 COPY --from=builder --chown=node:node /app/packages/db packages/db
 
 COPY --chown=node:node ./scripts/backend.entrypoint.sh scripts/
+
+RUN cd apps/backend && node --input-type=module -e "await import('@sirena/db')"
 
 ENTRYPOINT ["/app/scripts/backend.entrypoint.sh"]
