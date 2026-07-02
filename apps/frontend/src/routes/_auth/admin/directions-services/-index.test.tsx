@@ -48,6 +48,9 @@ describe('Admin directions and services route', () => {
     expect(
       screen.getByRole('heading', { level: 2, name: 'Directions et services (ARS Normandie)' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /Direction désigne le premier niveau de votre organisation et Service désigne le second niveau/,
+    );
     expect(document.title).toBe('Directions et services (ARS Normandie)');
   });
 

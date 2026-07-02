@@ -1,3 +1,4 @@
+import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
 import { ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
@@ -85,7 +86,18 @@ export function RouteComponent() {
   return (
     <section>
       <h2>{title}</h2>
-      <p className="fr-text--sm fr-mb-0">Gestion de : directions et services</p>
+
+      <Alert
+        className="fr-mb-2w"
+        severity="info"
+        small
+        description={
+          <>
+            dans SIRENA, <em>Direction</em> désigne le premier niveau de votre organisation et <em>Service</em> désigne
+            le second niveau. Un <em>Service</em> est donc toujours rattaché à une <em>Direction</em>.
+          </>
+        }
+      />
 
       <TableSearchBar
         label="Rechercher une organisation par nom ou libellé"
