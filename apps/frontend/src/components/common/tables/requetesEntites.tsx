@@ -118,11 +118,12 @@ export function RequetesEntite() {
 
   const { data: requetes, isFetching } = useRequetesEntite({
     ...(queries.sort && { sort: queries.sort }),
-    ...(queries.order && { order: queries.order as 'asc' | 'desc' }),
+    ...(queries.order && { order: queries.order }),
     ...(queries.search && { search: queries.search }),
     ...(queries.entiteId ? { entiteId: queries.entiteId } : {}),
     ...(queries.departementCodes ? { departementCodes: queries.departementCodes } : {}),
     ...(queries.domaineIds ? { domaineIds: queries.domaineIds } : {}),
+    ...(queries.statutIds ? { statutIds: queries.statutIds } : {}),
     ...(queries.prioriteId ? { prioriteId: queries.prioriteId } : {}),
     offset,
     limit,
