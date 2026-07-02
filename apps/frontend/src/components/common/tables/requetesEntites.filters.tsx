@@ -122,10 +122,7 @@ export function RequetesEntiteQuickFilters() {
 
   return (
     <fieldset className="requetesEntitesTable__filters fr-mb-2w">
-      <legend className="fr-sr-only">Filtrer les requêtes</legend>
-      <p className="fr-label fr-mb-1v" aria-hidden="true">
-        Filtrer les requêtes
-      </p>
+      <legend className="fr-label fr-mb-1v">Filtrer les requêtes</legend>
       <div className="requetesEntitesTable__quick-filters">
         {quickFilters.affectation.isVisible && (
           <CheckboxFilter
