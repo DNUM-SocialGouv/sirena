@@ -8,6 +8,7 @@ import { TableSearchBar } from '@/components/common/tables/TableSearchBar';
 import { useDirectionsServicesRows } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+import './index.css';
 
 export const Route = createFileRoute('/_auth/admin/directions-services/')({
   beforeLoad: requireAuthAndRoles([ROLES.ENTITY_ADMIN]),
@@ -99,27 +100,38 @@ export function RouteComponent() {
         }
       />
 
-      <TableSearchBar
-        label="Rechercher une organisation par nom ou libellé"
-        value={searchTerm}
-        activeSearch={activeSearch}
-        total={filteredRows.length}
-        onValueChange={setSearchTerm}
-        onSearch={handleSearch}
-        onClear={handleClearSearch}
-      />
-
-      <div>
-        {canCreateDirection ? (
-          <Button type="button" disabled>
-            Ajouter une direction
-          </Button>
-        ) : null}
-        {canCreateService ? (
-          <Button type="button" disabled priority="secondary">
-            Ajouter un service
-          </Button>
-        ) : null}
+      <div className="fr-grid-row fr-grid-row--gutters fr-grid-row--middle" data-testid="directions-services-toolbar">
+        <div className="fr-col-12 fr-col-md-5">
+          <TableSearchBar
+            label="Rechercher une organisation par nom ou libellé"
+            value={searchTerm}
+            activeSearch={activeSearch}
+            total={filteredRows.length}
+            onValueChange={setSearchTerm}
+            onSearch={handleSearch}
+            onClear={handleClearSearch}
+            inputContainerClassName="fr-col-12"
+          />
+        </div>
+        <div
+          className="directions-services-actions fr-col-12 fr-col-md-7 fr-grid-row fr-grid-row--right"
+          data-testid="directions-services-actions"
+        >
+          {canCreateDirection ? (
+            <div className="fr-col-auto">
+              <Button type="button" disabled>
+                Ajouter une direction
+              </Button>
+            </div>
+          ) : null}
+          {canCreateService ? (
+            <div className="fr-col-auto">
+              <Button type="button" disabled priority="secondary">
+                Ajouter un service
+              </Button>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <DataTable
