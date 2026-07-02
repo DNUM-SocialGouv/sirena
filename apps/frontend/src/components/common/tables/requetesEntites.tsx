@@ -7,7 +7,6 @@ import { type Cells, type Column, DataTable, type OnSortChangeParams } from '@si
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { SelectedFiltersTags } from '@/components/common/filters/SelectedFiltersTags';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
@@ -85,7 +84,6 @@ export function RequetesEntite() {
   const navigate = useNavigate({ from: '/home' });
   const queryClient = useQueryClient();
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const moreFiltersButtonRef = useRef<HTMLButtonElement>(null);
   const { data: profile } = useProfile();
   const userTopEntiteId = profile?.topEntiteId;
   const isTopEntiteARS = profile?.topEntiteTypeId === entiteTypes.ARS;
@@ -117,10 +115,6 @@ export function RequetesEntite() {
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
 
   const [searchTerm, setSearchTerm] = useState<string>(queries.search || '');
-
-  useEffect(() => {
-    setSearchTerm(queries.search ?? '');
-  }, [queries.search]);
 
   const { data: requetes, isFetching } = useRequetesEntite({
     ...(queries.sort && { sort: queries.sort }),
@@ -420,8 +414,7 @@ export function RequetesEntite() {
         )}
       </div>
       <div className="requetesEntitesTable">
-        <RequetesEntiteQuickFilters moreFiltersButtonRef={moreFiltersButtonRef} />
-        <SelectedFiltersTags fallbackFocusRef={moreFiltersButtonRef} />
+        <RequetesEntiteQuickFilters />
         <DataTable
           title={title}
           rowId="id"

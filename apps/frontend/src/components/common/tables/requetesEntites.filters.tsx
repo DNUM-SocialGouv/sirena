@@ -1,21 +1,17 @@
 import { DOMAINES_FONCTIONNELS, entiteTypes, REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { type RefObject, useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { CheckboxFilter } from '@/components/common/filters/CheckboxFilter';
 import { DepartementFilter } from '@/components/common/filters/DepartementFilter';
 import { DomaineFilter } from '@/components/common/filters/DomaineFilter';
-import { MoreFiltersDrawer } from '@/components/common/filters/MoreFiltersDrawer';
+import { StatutFilter } from '@/components/common/filters/StatutFilter';
 import { useDepartementCounts } from '@/hooks/queries/departementCounts.hook';
 import { useDomaineCounts } from '@/hooks/queries/domaineCounts.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { splitCsv } from '@/utils/filters';
 import { getRequetesQuickFiltersViewModel } from './requetesEntites.filters.model';
 
-type Props = {
-  moreFiltersButtonRef?: RefObject<HTMLButtonElement | null>;
-};
-
-export function RequetesEntiteQuickFilters({ moreFiltersButtonRef }: Props) {
+export function RequetesEntiteQuickFilters() {
   const queries = useSearch({ from: '/_auth/_user/home' });
   const navigate = useNavigate({ from: '/home' });
   const { data: profile } = useProfile();
@@ -127,52 +123,44 @@ export function RequetesEntiteQuickFilters({ moreFiltersButtonRef }: Props) {
   return (
     <fieldset className="requetesEntitesTable__filters fr-mb-2w">
       <legend className="fr-sr-only">Filtrer les requêtes</legend>
-      <div className="requetesEntitesTable__filters-row">
-        <span className="fr-text--regular requetesEntitesTable__filters-label" aria-hidden="true">
-          Filtrer les requêtes
-        </span>
-        <div className="requetesEntitesTable__quick-filters">
-          {quickFilters.affectation.isVisible && (
-            <CheckboxFilter
-              label={quickFilters.affectation.label}
-              checked={quickFilters.affectation.isChecked}
-              onChange={handleAffectationChange}
-            />
-          )}
-
+      <p className="fr-label fr-mb-1v" aria-hidden="true">
+        Filtrer les requêtes
+      </p>
+      <div className="requetesEntitesTable__quick-filters">
+        {quickFilters.affectation.isVisible && (
           <CheckboxFilter
-            label="Priorité haute"
-            checked={quickFilters.isHautePrioriteOnly}
-            onChange={handlePrioriteChange}
+            label={quickFilters.affectation.label}
+            checked={quickFilters.affectation.isChecked}
+            onChange={handleAffectationChange}
           />
+        )}
 
-          {isTopEntiteARS && (
-            <DepartementFilter
-              departements={arsDepartements}
-              selectedCodes={selectedDepartements}
-              counts={departementCounts}
-              onChange={handleDepartementChange}
-              onOpen={() => setIsDepartementDropdownOpen(true)}
-              onClose={() => setIsDepartementDropdownOpen(false)}
-            />
-          )}
+        <CheckboxFilter
+          label="Priorité haute"
+          checked={quickFilters.isHautePrioriteOnly}
+          onChange={handlePrioriteChange}
+        />
 
-          <DomaineFilter
-            selectedIds={selectedDomaines}
-            counts={domaineCounts}
-            onChange={handleDomaineChange}
-            onOpen={() => setIsDomaineDropdownOpen(true)}
-            onClose={() => setIsDomaineDropdownOpen(false)}
+        {isTopEntiteARS && (
+          <DepartementFilter
+            departements={arsDepartements}
+            selectedCodes={selectedDepartements}
+            counts={departementCounts}
+            onChange={handleDepartementChange}
+            onOpen={() => setIsDepartementDropdownOpen(true)}
+            onClose={() => setIsDepartementDropdownOpen(false)}
           />
-        </div>
+        )}
 
-        <div className="requetesEntitesTable__more-filters">
-          <MoreFiltersDrawer
-            selectedStatutIds={selectedStatuts}
-            onApply={handleStatutChange}
-            triggerRef={moreFiltersButtonRef}
-          />
-        </div>
+        <DomaineFilter
+          selectedIds={selectedDomaines}
+          counts={domaineCounts}
+          onChange={handleDomaineChange}
+          onOpen={() => setIsDomaineDropdownOpen(true)}
+          onClose={() => setIsDomaineDropdownOpen(false)}
+        />
+
+        <StatutFilter selectedIds={selectedStatuts} onChange={handleStatutChange} />
       </div>
     </fieldset>
   );

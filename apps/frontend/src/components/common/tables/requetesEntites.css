@@ -1,26 +1,10 @@
 .requetesEntitesTable {
   --table-column-min-width: 320px;
-  /* Largeur de colonne partagée par les libellés « Filtrer les requêtes » et « Filtres actifs »
-     pour que les deux rangées s'alignent. Doit tenir « Filtrer les requêtes » sur une ligne. */
-  --filters-label-width: 11rem;
-}
-
-.requetesEntitesTable__filters-label {
-  flex: 0 0 var(--filters-label-width);
-  margin: 0;
-  white-space: nowrap;
 }
 
 .requetesEntitesTable__filters {
   padding: 0;
   border: 0;
-}
-
-.requetesEntitesTable__filters-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
 }
 
 .requetesEntitesTable__quick-filters {
@@ -29,16 +13,6 @@
   align-items: center;
   gap: 0.75rem;
   margin: 0;
-}
-
-.requetesEntitesTable__more-filters {
-  margin-left: auto;
-  flex: 0 0 auto;
-}
-
-/* Empêche le bouton « Plus de filtres » d'être compressé et de passer sur deux lignes. */
-.requetesEntitesTable__more-filters .fr-btn {
-  white-space: nowrap;
 }
 
 .requetesEntitesTable__filter-item {
