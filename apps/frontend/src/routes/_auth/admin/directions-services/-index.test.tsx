@@ -103,7 +103,7 @@ describe('Admin directions and services route', () => {
     render(<RouteComponent />);
 
     const searchInput = screen.getByRole('searchbox', {
-      name: 'Rechercher une direction ou un service par nom ou libellé',
+      name: 'Rechercher une organisation par nom ou libellé',
     });
     await userEvent.type(searchInput, ' pa ');
     await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }));
@@ -141,7 +141,7 @@ describe('Admin directions and services route', () => {
     render(<RouteComponent />);
 
     const searchInput = screen.getByRole('searchbox', {
-      name: 'Rechercher une direction ou un service par nom ou libellé',
+      name: 'Rechercher une organisation par nom ou libellé',
     });
     await userEvent.type(searchInput, ' pa ');
     await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }));

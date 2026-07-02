@@ -88,7 +88,7 @@ export function RouteComponent() {
       <p className="fr-text--sm fr-mb-0">Gestion de : directions et services</p>
 
       <TableSearchBar
-        label="Rechercher une direction ou un service par nom ou libellé"
+        label="Rechercher une organisation par nom ou libellé"
         value={searchTerm}
         activeSearch={activeSearch}
         total={filteredRows.length}
