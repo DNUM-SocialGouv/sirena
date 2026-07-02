@@ -32,7 +32,7 @@ describe('backfillRequetesPrisesEnChargeToDematSocial', () => {
     vi.clearAllMocks();
   });
 
-  it('syncs Requêtes prises en charge and continues after per-Requête failures', async () => {
+  it('syncs Requêtes prises en charge, including Pris en compte, and continues after per-Requête failures', async () => {
     vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
       { id: 'requete-1' },
       { id: 'requete-2' },
@@ -49,7 +49,11 @@ describe('backfillRequetesPrisesEnChargeToDematSocial', () => {
       where: {
         dematSocialId: { not: null },
         requeteEntites: {
-          some: { statutId: { in: [REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE] } },
+          some: {
+            statutId: {
+              in: [REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE, REQUETE_STATUT_TYPES.TRAITEE],
+            },
+          },
         },
       },
       select: { id: true },
