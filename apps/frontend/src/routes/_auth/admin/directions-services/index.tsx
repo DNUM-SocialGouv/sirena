@@ -17,10 +17,10 @@ type DirectionServiceRow = NonNullable<Awaited<ReturnType<typeof useDirectionsSe
 
 const columns: Column<DirectionServiceRow>[] = [
   { key: 'directionNom', label: 'Nom de la direction' },
-  { key: 'directionLabel', label: 'Libellé de la direction' },
+  { key: 'directionLabel', label: 'Abréviation direction' },
   { key: 'serviceNom', label: 'Nom du service' },
-  { key: 'serviceLabel', label: 'Libellé du service' },
-  { key: 'email', label: 'Email' },
+  { key: 'serviceLabel', label: 'Abréviation service' },
+  { key: 'email', label: 'E-mail de notification' },
   { key: 'custom:edit', label: 'Action' },
 ];
 
