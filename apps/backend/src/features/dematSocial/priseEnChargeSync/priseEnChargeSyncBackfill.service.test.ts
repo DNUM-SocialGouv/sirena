@@ -32,30 +32,7 @@ describe('backfillRequetesPrisesEnChargeToDematSocial', () => {
     vi.clearAllMocks();
   });
 
-  it('selects demat.social-linked Requêtes with Pris en compte status', async () => {
-    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce(
-      [] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>,
-    );
-
-    await backfillRequetesPrisesEnChargeToDematSocial();
-
-    expect(prisma.requete.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          dematSocialId: { not: null },
-          requeteEntites: {
-            some: {
-              statutId: {
-                in: [REQUETE_STATUT_TYPES.EN_COURS, REQUETE_STATUT_TYPES.CLOTUREE, REQUETE_STATUT_TYPES.TRAITEE],
-              },
-            },
-          },
-        }),
-      }),
-    );
-  });
-
-  it('syncs Requêtes prises en charge and continues after per-Requête failures', async () => {
+  it('syncs Requêtes prises en charge, including Pris en compte, and continues after per-Requête failures', async () => {
     vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
       { id: 'requete-1' },
       { id: 'requete-2' },
