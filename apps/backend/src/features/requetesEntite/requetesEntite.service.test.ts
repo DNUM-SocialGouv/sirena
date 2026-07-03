@@ -497,6 +497,19 @@ describe('requetesEntite.service', () => {
 
       expect(result.total).toBe(1);
     });
+
+    it('should filter by statutIds when provided', async () => {
+      mockedRequeteEntite.findMany.mockResolvedValueOnce([mockRequeteEntite]);
+      mockedRequeteEntite.count.mockResolvedValueOnce(1);
+
+      await getRequetesEntite(null, { statutIds: 'NOUVEAU,EN_COURS' });
+
+      expect(mockedRequeteEntite.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { AND: [{ statutId: { in: ['NOUVEAU', 'EN_COURS'] } }] },
+        }),
+      );
+    });
   });
 
   describe('hasAccessToRequete', () => {

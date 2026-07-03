@@ -2,6 +2,7 @@ import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import { RECEPTION_TYPE, REQUETE_PRIORITE_TYPES, REQUETE_STATUT_TYPES } from '@sirena/common/constants';
 import { DeclarantDataSchema, PersonneConcerneeDataSchema, SituationDataSchema } from '@sirena/common/schemas';
 import { z } from 'zod';
+import { splitCsv } from '../../helpers/string.js';
 import { Prisma } from '../../libs/prisma.js';
 import { EntiteSchema } from '../entites/entites.schema.js';
 import { RequeteEtapeSchema } from '../requeteEtapes/requetesEtapes.schema.js';
@@ -38,25 +39,36 @@ const columns = [
   'priorite.sortOrder',
 ] as const;
 
+const CSV_FILTER_MAX = 500;
+const SEARCH_MAX = 200;
+const REQUETE_STATUT_IDS = Object.values(REQUETE_STATUT_TYPES) as string[];
+
 export const GetRequetesEntiteQuerySchema = paginationQueryParamsSchema(columns).extend({
   entiteId: z.string().optional(),
-  departementCodes: z.string().optional(),
-  domaineIds: z.string().optional(),
+  departementCodes: z.string().max(CSV_FILTER_MAX).optional(),
+  domaineIds: z.string().max(CSV_FILTER_MAX).optional(),
+  statutIds: z
+    .string()
+    .max(CSV_FILTER_MAX)
+    .refine((value) => splitCsv(value).every((id) => REQUETE_STATUT_IDS.includes(id)), {
+      message: 'Statut(s) invalide(s)',
+    })
+    .optional(),
   prioriteId: z
     .enum([REQUETE_PRIORITE_TYPES.BASSE, REQUETE_PRIORITE_TYPES.MOYENNE, REQUETE_PRIORITE_TYPES.HAUTE])
     .optional(),
 });
 
 export const GetDepartementCountsQuerySchema = z.object({
-  departementCodes: z.string(),
+  departementCodes: z.string().max(CSV_FILTER_MAX),
   entiteId: z.string().optional(),
-  search: z.string().optional(),
+  search: z.string().max(SEARCH_MAX).optional(),
 });
 
 export const GetDomaineCountsQuerySchema = z.object({
-  domaineIds: z.string(),
+  domaineIds: z.string().max(CSV_FILTER_MAX),
   entiteId: z.string().optional(),
-  search: z.string().optional(),
+  search: z.string().max(SEARCH_MAX).optional(),
 });
 
 export const GetRequeteEntiteResponseSchema = RequeteSchema.extend({
