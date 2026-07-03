@@ -243,7 +243,7 @@ describe('Entites endpoints: /entites', () => {
       const res = await app.request('/admin/directions-services?search=autonomie');
 
       expect(res.status).toBe(200);
-      expect(getDirectionsServicesRows).toHaveBeenCalledWith('root-ars', { search: 'autonomie' });
+      expect(getDirectionsServicesRows).toHaveBeenCalledWith('dir-autonomie', { search: 'autonomie' });
     });
   });
 
@@ -559,7 +559,7 @@ describe('Entites endpoints: /entites', () => {
 
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ data: mockData });
-      expect(getEditableEntitiesChain).toHaveBeenCalledWith('1', ['id1', 'id2']);
+      expect(getEditableEntitiesChain).toHaveBeenCalledWith('1', ['dir-autonomie', 'service-pa']);
     });
 
     it('should return empty array if no ID is provided', async () => {
