@@ -153,6 +153,34 @@ describe('Admin directions and services route', () => {
     expect(screen.queryByRole('row', { name: /Service Enfance/ })).not.toBeInTheDocument();
   });
 
+  it('renders local pagination when more than 10 rows are visible', async () => {
+    vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
+    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+      data: {
+        data: Array.from({ length: 11 }, (_, index) => ({
+          id: `service-${index + 1}`,
+          directionNom: 'Direction Test',
+          directionLabel: 'DT',
+          serviceNom: `Service ${index + 1}`,
+          serviceLabel: `S${index + 1}`,
+          email: `service-${index + 1}@ars.fr`,
+          editId: `service-${index + 1}`,
+        })),
+      },
+    } as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('navigation', { name: 'Pagination' })).toBeInTheDocument();
+    expect(screen.getByRole('row', { name: /Service 10/ })).toBeInTheDocument();
+    expect(screen.queryByRole('row', { name: /Service 11/ })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: '2' }));
+
+    expect(screen.getByRole('row', { name: /Service 11/ })).toBeInTheDocument();
+    expect(screen.queryByRole('row', { name: /Service 10/ })).not.toBeInTheDocument();
+  });
+
   it('renders disabled row edit actions with unique accessible labels', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
     vi.mocked(useDirectionsServicesRows).mockReturnValue({

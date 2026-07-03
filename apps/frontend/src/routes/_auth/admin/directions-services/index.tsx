@@ -1,5 +1,6 @@
 import { Alert } from '@codegouvfr/react-dsfr/Alert';
 import { Button } from '@codegouvfr/react-dsfr/Button';
+import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import { ROLES } from '@sirena/common/constants';
 import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { createFileRoute } from '@tanstack/react-router';
@@ -58,6 +59,7 @@ export function RouteComponent() {
   const { data: profile } = useProfile();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const directionsServicesQuery = useDirectionsServicesRows({ search: activeSearch || undefined });
   const affectationLevel = profile?.affectationChain?.length ?? 1;
   const isAffectedToEntiteAdministrative = affectationLevel === 1;
@@ -77,14 +79,20 @@ export function RouteComponent() {
 
   const rows = directionsServicesQuery.data?.data ?? [];
   const filteredRows = useMemo(() => filterRowsBySearch(rows, activeSearch), [rows, activeSearch]);
+  const pageSize = 10;
+  const totalPages = Math.ceil(filteredRows.length / pageSize);
+  const paginatedRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const shouldShowPagination = filteredRows.length > pageSize;
 
   const handleSearch = useCallback((value: string) => {
+    setCurrentPage(1);
     setActiveSearch(value.trim());
   }, []);
 
   const handleClearSearch = useCallback(() => {
     setSearchTerm('');
     setActiveSearch('');
+    setCurrentPage(1);
   }, []);
 
   return (
@@ -141,11 +149,27 @@ export function RouteComponent() {
         title="Liste des directions et services"
         hideCaption
         rowId="id"
-        data={filteredRows}
+        data={paginatedRows}
         columns={columns}
         cells={cells}
         isLoading={directionsServicesQuery.isFetching}
       />
+
+      {shouldShowPagination && (
+        <div className="fr-mt-3w fr-grid-row fr-grid-row--center">
+          <Pagination
+            count={totalPages}
+            defaultPage={currentPage}
+            getPageLinkProps={(pageNumber) => ({
+              href: '#',
+              onClick: (event) => {
+                event.preventDefault();
+                setCurrentPage(pageNumber);
+              },
+            })}
+          />
+        </div>
+      )}
     </section>
   );
 }
