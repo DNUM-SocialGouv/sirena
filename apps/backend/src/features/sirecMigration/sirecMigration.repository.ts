@@ -188,7 +188,7 @@ export async function fetchSirecMotifsDeclaresById(sirecId: number): Promise<num
 
 export async function fetchSirecGroupIds(sirecId: number): Promise<number[]> {
   const rows = await mariadbPool.query<{ id_group: number }[]>(
-    'SELECT id_group FROM sire_reclamation_data_group WHERE id_data = ? AND id_group != 1',
+    'SELECT id_group FROM sire_reclamation_data_group WHERE id_data = ? AND id_group != 1 and id_group != 3',
     [sirecId],
   );
   return rows.map((row) => row.id_group);
