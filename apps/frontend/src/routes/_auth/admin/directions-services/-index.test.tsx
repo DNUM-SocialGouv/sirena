@@ -114,7 +114,7 @@ describe('Admin directions and services route', () => {
     expect(useDirectionsServicesRows).toHaveBeenLastCalledWith({ search: 'pa' });
   });
 
-  it('filters visible rows by Service abbreviation search', async () => {
+  it('renders rows after submitting a search', async () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
     vi.mocked(useDirectionsServicesRows).mockReturnValue({
       data: {
@@ -149,8 +149,9 @@ describe('Admin directions and services route', () => {
     await userEvent.type(searchInput, ' pa ');
     await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }));
 
+    expect(useDirectionsServicesRows).toHaveBeenLastCalledWith({ search: 'pa' });
     expect(screen.getByRole('row', { name: /Service PA/ })).toBeInTheDocument();
-    expect(screen.queryByRole('row', { name: /Service Enfance/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('row', { name: /Service Enfance/ })).toBeInTheDocument();
   });
 
   it('renders local pagination when more than 10 rows are visible', async () => {

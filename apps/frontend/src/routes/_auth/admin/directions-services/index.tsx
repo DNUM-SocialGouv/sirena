@@ -27,20 +27,6 @@ const columns: Column<DirectionServiceRow>[] = [
   { key: 'custom:edit', label: 'Action' },
 ];
 
-const filterRowsBySearch = (rows: DirectionServiceRow[], search: string) => {
-  const normalizedSearch = search.trim().toLocaleLowerCase('fr');
-
-  if (!normalizedSearch) {
-    return rows;
-  }
-
-  return rows.filter((row) =>
-    [row.directionNom, row.directionLabel, row.serviceNom, row.serviceLabel].some((value) =>
-      value.toLocaleLowerCase('fr').includes(normalizedSearch),
-    ),
-  );
-};
-
 const cells: Cells<DirectionServiceRow> = {
   'custom:edit': (row) => {
     const editLabel = row.serviceNom
@@ -78,11 +64,10 @@ export function RouteComponent() {
   }, [documentTitle]);
 
   const rows = directionsServicesQuery.data?.data ?? [];
-  const filteredRows = useMemo(() => filterRowsBySearch(rows, activeSearch), [rows, activeSearch]);
   const pageSize = 10;
-  const totalPages = Math.ceil(filteredRows.length / pageSize);
-  const paginatedRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const shouldShowPagination = filteredRows.length > pageSize;
+  const totalPages = Math.ceil(rows.length / pageSize);
+  const paginatedRows = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const shouldShowPagination = rows.length > pageSize;
 
   const handleSearch = useCallback((value: string) => {
     setCurrentPage(1);
@@ -117,7 +102,7 @@ export function RouteComponent() {
             label="Rechercher une organisation par nom ou libellé"
             value={searchTerm}
             activeSearch={activeSearch}
-            total={filteredRows.length}
+            total={rows.length}
             onValueChange={setSearchTerm}
             onSearch={handleSearch}
             onClear={handleClearSearch}
