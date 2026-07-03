@@ -1,14 +1,34 @@
-export type ChartItem = { label: string; value: number };
+export type MetabaseColumn = {
+  name: string;
+  display_name: string;
+  base_type: string;
+  semantic_type: string | null;
+  // `breakout` = axe (dimension), `aggregation` = mesure (métrique) ; `null` pour une requête SQL native.
+  source: string | null;
+};
+
+export type CardData = {
+  cols: MetabaseColumn[];
+  rows: unknown[][];
+};
+
+export type ChartItem = { label: string; value: number; percent?: number | null };
 
 export type ParsedCard = {
   items: ChartItem[];
   total: number;
   dimensionLabel: string;
   metricLabel: string;
+  percentLabel: string;
+  hasPrecomputedPercent: boolean;
 };
 
 export const numberFormatter = new Intl.NumberFormat('fr-FR');
 export const percentFormatter = new Intl.NumberFormat('fr-FR', { style: 'percent', maximumFractionDigits: 1 });
+export const percentPointFormatter = new Intl.NumberFormat('fr-FR', {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
 
 export const CHART_COLORS = [
   'var(--sirena-chart-color-01)',
@@ -30,35 +50,56 @@ const toNumber = (value: unknown): number | null => {
   return null;
 };
 
-const humanize = (key: string): string => {
-  const spaced = key
-    .replace(/[_-]+/g, ' ')
-    .trim()
-    .replace(/^nb\s+/i, 'Nombre de ');
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-};
+const isNumericColumn = (col: MetabaseColumn): boolean => /Integer|Decimal|Float|Number/i.test(col.base_type);
 
-export const parseCard = (rows: Array<Record<string, unknown>>): ParsedCard | null => {
-  const [first] = rows;
-  if (!first) return null;
-  const keys = Object.keys(first);
-  if (keys.length < 2) return null;
+const PERCENT_SEMANTIC_TYPE = 'type/Percentage';
 
-  // Plusieurs colonnes peuvent être numériques (ex. un id technique + la valeur) :
-  // la métrique est la dernière colonne numérique, Metabase plaçant les agrégats en fin de ligne.
-  const numericKeys = keys.filter((key) => rows.every((row) => toNumber(row[key]) !== null));
-  const metricKey = numericKeys.at(-1) ?? keys[keys.length - 1];
-  const dimensionKey =
-    keys.find((key) => !numericKeys.includes(key)) ?? keys.find((key) => key !== metricKey) ?? keys[0];
+const isPercentByName = (col: MetabaseColumn): boolean =>
+  /%|pourcent/i.test(col.display_name) || /%|pourcent/i.test(col.name);
+
+export const parseCard = ({ cols, rows }: CardData): ParsedCard | null => {
+  if (cols.length < 2 || rows.length === 0) return null;
+
+  const percentColumn =
+    cols.find((col) => col.semantic_type === PERCENT_SEMANTIC_TYPE) ??
+    cols.find((col) => isNumericColumn(col) && isPercentByName(col)) ??
+    null;
+
+  const metricCandidates = cols.filter((col) => col !== percentColumn && isNumericColumn(col));
+  const percentCol = metricCandidates.length > 0 ? percentColumn : null;
+
+  const metricCol =
+    metricCandidates.find((col) => col.source === 'aggregation') ??
+    metricCandidates.at(-1) ??
+    cols.filter(isNumericColumn).at(-1) ??
+    cols[cols.length - 1];
+
+  const dimensionCol =
+    cols.find((col) => col.source === 'breakout' && col !== metricCol && col !== percentCol) ??
+    cols.find((col) => col !== metricCol && col !== percentCol && !isNumericColumn(col)) ??
+    cols.find((col) => col !== metricCol && col !== percentCol) ??
+    cols[0];
+
+  const dimensionIndex = cols.indexOf(dimensionCol);
+  const metricIndex = cols.indexOf(metricCol);
+  const percentIndex = percentCol ? cols.indexOf(percentCol) : -1;
 
   const items = rows.map((row) => ({
-    label: row[dimensionKey] == null ? 'Non précisé' : String(row[dimensionKey]),
-    value: toNumber(row[metricKey]) ?? 0,
+    label: row[dimensionIndex] == null ? 'Non précisé' : String(row[dimensionIndex]),
+    value: toNumber(row[metricIndex]) ?? 0,
+    ...(percentCol ? { percent: toNumber(row[percentIndex]) } : {}),
   }));
 
   const total = items.reduce((sum, item) => sum + item.value, 0);
 
-  return { items, total, dimensionLabel: humanize(dimensionKey), metricLabel: humanize(metricKey) };
+  return {
+    items,
+    total,
+    dimensionLabel: dimensionCol.display_name,
+    metricLabel: metricCol.display_name,
+    percentLabel: percentCol ? percentCol.display_name : 'Part (%)',
+    hasPrecomputedPercent: percentCol !== null,
+  };
 };
 
 const polarToCartesian = (cx: number, cy: number, radius: number, angleDeg: number): [number, number] => {

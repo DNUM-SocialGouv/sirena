@@ -46,12 +46,11 @@ function formatValue(value: unknown): string {
 }
 
 function getScalarValue(card: StatisticsCard): unknown | undefined {
-  if (card.data.length !== 1) return undefined;
-  const [row] = card.data;
-  const keys = Object.keys(row);
-  if (keys.length !== 1) return undefined;
-  const [key] = keys;
-  return row[key];
+  const { cols, rows } = card.data;
+  if (cols.length !== 1 || rows.length !== 1) return undefined;
+  const [row] = rows;
+  const [value] = row;
+  return value;
 }
 
 function KpiCard({ card }: { card: StatisticsCard }) {
@@ -112,6 +111,8 @@ function ChartCard({ card }: { card: StatisticsCard }) {
         total={parsed.total}
         dimensionLabel={parsed.dimensionLabel}
         metricLabel={parsed.metricLabel}
+        percentLabel={parsed.percentLabel}
+        hasPrecomputedPercent={parsed.hasPrecomputedPercent}
         hideCaption
       />
     </>

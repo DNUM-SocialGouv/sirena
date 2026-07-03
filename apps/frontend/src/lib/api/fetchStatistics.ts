@@ -1,3 +1,4 @@
+import type { CardData } from '@/components/statistics/chartData';
 import { client } from '@/lib/api/hc';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery';
 
@@ -14,7 +15,7 @@ export type StatisticsCard = {
   name: string;
   display: string | null;
   layout: StatisticsCardLayout | null;
-  data: Array<Record<string, unknown>>;
+  data: CardData;
 };
 
 export type StatisticsDashboardFilters = {
