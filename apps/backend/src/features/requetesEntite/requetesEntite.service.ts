@@ -22,7 +22,7 @@ import { getFileEncryptionParams, getOriginalFileName, getSafeFileEncryptionPara
 import { sortObject } from '../../helpers/prisma/sort.js';
 import { createSearchConditionsForRequeteEntite } from '../../helpers/search.js';
 import { sseEventManager } from '../../helpers/sse.js';
-import { capitalizeFirst, formatDateFr } from '../../helpers/string.js';
+import { capitalizeFirst, formatDateFr, splitCsv } from '../../helpers/string.js';
 import { deleteFileFromMinio, getFileStream } from '../../libs/minio.js';
 import { type Prisma, prisma, type UploadedFile } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
@@ -171,9 +171,16 @@ const buildDeptPostalFilter = async (deptCodes: string[]): Promise<Prisma.LieuDe
 
 const buildRequetesEntiteWhere = async (
   entiteIds: string[] | null,
-  query: { search?: string; entiteId?: string; departementCodes?: string; domaineIds?: string; prioriteId?: string },
+  query: {
+    search?: string;
+    entiteId?: string;
+    departementCodes?: string;
+    domaineIds?: string;
+    statutIds?: string;
+    prioriteId?: string;
+  },
 ): Promise<Prisma.RequeteEntiteWhereInput> => {
-  const { search, entiteId, departementCodes, domaineIds, prioriteId } = query;
+  const { search, entiteId, departementCodes, domaineIds, statutIds, prioriteId } = query;
   const searchConditions: Prisma.RequeteEntiteWhereInput = search ? createSearchConditionsForRequeteEntite(search) : {};
   const andFilters: Prisma.RequeteEntiteWhereInput[] = [];
 
@@ -196,10 +203,7 @@ const buildRequetesEntiteWhere = async (
     });
   }
   if (departementCodes) {
-    const codes = departementCodes
-      .split(',')
-      .map((c) => c.trim())
-      .filter(Boolean);
+    const codes = splitCsv(departementCodes);
     const lieuFilter = codes.length > 0 ? await buildDeptPostalFilter(codes) : null;
     if (lieuFilter) {
       andFilters.push({
@@ -208,10 +212,7 @@ const buildRequetesEntiteWhere = async (
     }
   }
   if (domaineIds) {
-    const ids = domaineIds
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const ids = splitCsv(domaineIds);
     if (ids.length > 0) {
       andFilters.push({
         requete: {
@@ -220,6 +221,12 @@ const buildRequetesEntiteWhere = async (
           },
         },
       });
+    }
+  }
+  if (statutIds) {
+    const ids = splitCsv(statutIds);
+    if (ids.length > 0) {
+      andFilters.push({ statutId: { in: ids } });
     }
   }
   if (prioriteId) {
