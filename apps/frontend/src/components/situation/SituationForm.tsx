@@ -45,7 +45,6 @@ export function SituationForm({
   const [isSaving, setIsSaving] = useState(false);
   const [faitFiles, setFaitFiles] = useState<File[]>([]);
   const [isTraitementDesFaitsValid, setIsTraitementDesFaitsValid] = useState(true);
-  const [isIdentificationValid, setIsIdentificationValid] = useState(true);
   const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
   const { data: entitesData } = useEntites(undefined);
   const { data: profile } = useProfile();
@@ -67,7 +66,7 @@ export function SituationForm({
   const handleSave = async () => {
     setHasAttemptedSave(true);
 
-    if (!isTraitementDesFaitsValid || !isIdentificationValid) {
+    if (!isTraitementDesFaitsValid) {
       return;
     }
 
@@ -133,12 +132,7 @@ export function SituationForm({
           isSaving={isSaving}
         />
 
-        <Identification
-          formData={formData}
-          isSaving={isSaving}
-          setFormData={setFormData}
-          onValidationChange={setIsIdentificationValid}
-        />
+        <Identification formData={formData} isSaving={isSaving} setFormData={setFormData} />
 
         <TraitementDesFaitsSection
           entites={(entitesData?.data || []).map((e: { id: string; nomComplet: string }) => ({
