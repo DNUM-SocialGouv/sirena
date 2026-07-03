@@ -487,22 +487,26 @@ export const StepFormPanel = forwardRef<StepFormPanelRef, StepFormPanelProps>(({
                           : 'Supprimer la note';
                         return (
                           <div key={note.key} className={mode === 'edit' ? styles.noteCard : undefined}>
-                            {mode === 'edit' && (
-                              <div className={styles.noteHeader}>
-                                <Button
-                                  type="button"
-                                  priority="tertiary"
-                                  size="small"
-                                  iconId="fr-icon-delete-line"
-                                  title={noteDeleteLabel}
-                                  aria-label={noteDeleteLabel}
-                                  disabled={isLoading}
-                                  onClick={() => handleRemoveNote(note.key)}
-                                />
-                              </div>
-                            )}
                             <Input
-                              label={noteLabel}
+                              label={
+                                mode === 'edit' ? (
+                                  <span className={styles.noteLabelRow}>
+                                    <span>{noteLabel}</span>
+                                    <Button
+                                      type="button"
+                                      priority="tertiary"
+                                      size="small"
+                                      iconId="fr-icon-delete-line"
+                                      title={noteDeleteLabel}
+                                      aria-label={noteDeleteLabel}
+                                      disabled={isLoading}
+                                      onClick={() => handleRemoveNote(note.key)}
+                                    />
+                                  </span>
+                                ) : (
+                                  noteLabel
+                                )
+                              }
                               hintText="Maximum 10 000 caractères"
                               textArea
                               disabled={isLoading}

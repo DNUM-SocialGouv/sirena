@@ -35,12 +35,12 @@
   margin-bottom: 1.5rem;
 }
 
-.noteHeader {
+.noteLabelRow {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 0.25rem;
+  width: 100%;
 }
 
 .readOnlyNote {

@@ -221,8 +221,13 @@ const StepComponent = ({
       <div className={styles.step}>
         <div className="fr-mb-1w">
           <div className="fr-grid-row fr-grid-row--middle">
-            <div className="fr-col">
+            <div className="fr-col" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <h3 className="fr-h6 fr-mb-0">{getStepTitle(step.type, statutId, nom)}</h3>
+              {showAFaireBadge && (
+                <p className="fr-badge fr-badge--no-icon fr-badge--sm fr-badge--info fr-mb-0">
+                  {requeteEtapeStatutType.A_FAIRE}
+                </p>
+              )}
             </div>
           </div>
           <div className="fr-grid-row fr-grid-row--middle fr-mt-1w">
@@ -249,13 +254,6 @@ const StepComponent = ({
                 </div>
               )}
             </div>
-            {showAFaireBadge && (
-              <div className="fr-col-auto" style={{ minWidth: 'fit-content', flexShrink: 0 }}>
-                <p className="fr-badge fr-badge--no-icon fr-badge--sm fr-badge--info">
-                  {requeteEtapeStatutType.A_FAIRE}
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>
