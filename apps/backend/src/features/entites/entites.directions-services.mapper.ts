@@ -1,4 +1,4 @@
-type EntiteHierarchyNode = {
+type EntiteAdminLocal = {
   id: string;
   nomComplet: string;
   label: string;
@@ -16,8 +16,7 @@ type DirectionsServicesRow = {
   editId: string;
 };
 
-const compareByNomComplet = (a: EntiteHierarchyNode, b: EntiteHierarchyNode) =>
-  a.nomComplet.localeCompare(b.nomComplet);
+const compareByNomComplet = (a: EntiteAdminLocal, b: EntiteAdminLocal) => a.nomComplet.localeCompare(b.nomComplet);
 
 const rowMatchesSearch = (row: DirectionsServicesRow, search: string) => {
   const normalizedSearch = search.trim().toLocaleLowerCase('fr');
@@ -32,12 +31,12 @@ const rowMatchesSearch = (row: DirectionsServicesRow, search: string) => {
 };
 
 export const buildDirectionsServicesRows = (
-  scopedEntites: EntiteHierarchyNode[],
+  entitesAdminLocal: EntiteAdminLocal[],
   { search = '' }: { search?: string } = {},
 ): DirectionsServicesRow[] => {
-  const childrenByParentId = new Map<string, EntiteHierarchyNode[]>();
+  const childrenByParentId = new Map<string, EntiteAdminLocal[]>();
 
-  for (const entite of scopedEntites) {
+  for (const entite of entitesAdminLocal) {
     if (entite.entiteMereId === null) {
       continue;
     }
@@ -51,13 +50,13 @@ export const buildDirectionsServicesRows = (
     siblings.sort(compareByNomComplet);
   }
 
-  const scopedEntiteIds = new Set(scopedEntites.map((entite) => entite.id));
-  const perimeterRoots = scopedEntites
-    .filter((entite) => entite.entiteMereId === null || !scopedEntiteIds.has(entite.entiteMereId))
+  const adminLocalEntiteIds = new Set(entitesAdminLocal.map((entite) => entite.id));
+  const adminLocalRoots = entitesAdminLocal
+    .filter((entite) => entite.entiteMereId === null || !adminLocalEntiteIds.has(entite.entiteMereId))
     .sort(compareByNomComplet);
   const rows: DirectionsServicesRow[] = [];
 
-  const pushServiceRows = (direction: EntiteHierarchyNode) => {
+  const pushServiceRows = (direction: EntiteAdminLocal) => {
     const services = childrenByParentId.get(direction.id) ?? [];
     for (const service of services) {
       rows.push({
@@ -72,13 +71,13 @@ export const buildDirectionsServicesRows = (
     }
   };
 
-  for (const perimeterRoot of perimeterRoots) {
-    if (perimeterRoot.entiteMereId !== null) {
-      pushServiceRows(perimeterRoot);
+  for (const adminLocalRoot of adminLocalRoots) {
+    if (adminLocalRoot.entiteMereId !== null) {
+      pushServiceRows(adminLocalRoot);
       continue;
     }
 
-    const directions = childrenByParentId.get(perimeterRoot.id) ?? [];
+    const directions = childrenByParentId.get(adminLocalRoot.id) ?? [];
 
     for (const direction of directions) {
       rows.push({

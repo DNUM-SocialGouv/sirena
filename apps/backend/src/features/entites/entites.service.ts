@@ -177,7 +177,10 @@ export const getRootEntitesListAdmin = async () =>
     orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
   });
 
-export const getDirectionsServicesRows = async (topEntiteId: string, { search = '' }: { search?: string } = {}) => {
+export const getDirectionsServicesRows = async (
+  entiteAdminLocalId: string,
+  { search = '' }: { search?: string } = {},
+) => {
   const entites = await prisma.entite.findMany({
     select: {
       id: true,
@@ -188,42 +191,43 @@ export const getDirectionsServicesRows = async (topEntiteId: string, { search = 
     },
   });
 
-  const childrenByParentId = new Map<string, typeof entites>();
+  const entitesParEntiteMere = new Map<string, typeof entites>();
+
   for (const entite of entites) {
     if (entite.entiteMereId === null) {
       continue;
     }
 
-    const siblings = childrenByParentId.get(entite.entiteMereId) ?? [];
-    siblings.push(entite);
-    childrenByParentId.set(entite.entiteMereId, siblings);
+    const entitesEnfants = entitesParEntiteMere.get(entite.entiteMereId) ?? [];
+    entitesEnfants.push(entite);
+    entitesParEntiteMere.set(entite.entiteMereId, entitesEnfants);
   }
 
-  const scopedEntites: typeof entites = [];
-  const topEntite = entites.find((entite) => entite.id === topEntiteId);
+  const entitesAdminLocal: typeof entites = [];
+  const entiteAdminLocal = entites.find((entite) => entite.id === entiteAdminLocalId);
 
-  if (!topEntite) {
+  if (!entiteAdminLocal) {
     return [];
   }
 
-  const parentEntite = topEntite.entiteMereId
-    ? entites.find((entite) => entite.id === topEntite.entiteMereId)
+  const entiteMereAdminLocal = entiteAdminLocal.entiteMereId
+    ? entites.find((entite) => entite.id === entiteAdminLocal.entiteMereId)
     : undefined;
 
-  if (parentEntite?.entiteMereId !== null && parentEntite !== undefined) {
-    return buildDirectionsServicesRowsFromHierarchy([parentEntite, topEntite], { search });
+  if (entiteMereAdminLocal?.entiteMereId !== null && entiteMereAdminLocal !== undefined) {
+    return buildDirectionsServicesRowsFromHierarchy([entiteMereAdminLocal, entiteAdminLocal], { search });
   }
 
-  const walk = (entite: (typeof entites)[number]) => {
-    scopedEntites.push(entite);
-    for (const child of childrenByParentId.get(entite.id) ?? []) {
-      walk(child);
+  const buildEntitesAdminLocal = (entite: (typeof entites)[number]) => {
+    entitesAdminLocal.push(entite);
+    for (const entiteEnfant of entitesParEntiteMere.get(entite.id) ?? []) {
+      buildEntitesAdminLocal(entiteEnfant);
     }
   };
 
-  walk(topEntite);
+  buildEntitesAdminLocal(entiteAdminLocal);
 
-  return buildDirectionsServicesRowsFromHierarchy(scopedEntites, { search });
+  return buildDirectionsServicesRowsFromHierarchy(entitesAdminLocal, { search });
 };
 
 export const createChildEntiteAdmin = async (
