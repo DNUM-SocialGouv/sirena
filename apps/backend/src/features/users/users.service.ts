@@ -149,20 +149,28 @@ export const patchUser = async (id: User['id'], data: PatchUserDto) => {
 };
 
 export const getUserEntities = async (userId: User['id'], entiteIds: string[] | null) => {
+  const { entiteIds: userEntiteIds } = await getUserEntiteContext(userId, entiteIds);
+
+  return userEntiteIds;
+};
+
+export const getUserEntiteContext = async (userId: User['id'], entiteIds: string[] | null = null) => {
   const user = await getUserById(userId, entiteIds, null);
+
   if (!user) {
-    return [];
+    return { assignedEntiteId: null, entiteIds: [] };
   }
 
+  const assignedEntiteId = user.entiteId ?? null;
   const isSuperAdmin = user.roleId === ROLES.SUPER_ADMIN;
 
   if (isSuperAdmin) {
-    return null;
+    return { assignedEntiteId, entiteIds: null };
   }
 
-  if (!user.entiteId) {
-    return [];
+  if (!assignedEntiteId) {
+    return { assignedEntiteId: null, entiteIds: [] };
   }
 
-  return entitesDescendantIdsCache.get(user.entiteId);
+  return { assignedEntiteId, entiteIds: await entitesDescendantIdsCache.get(assignedEntiteId) };
 };
