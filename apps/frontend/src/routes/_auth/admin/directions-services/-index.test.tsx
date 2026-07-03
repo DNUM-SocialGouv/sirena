@@ -182,8 +182,10 @@ describe('Admin directions and services route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('button', { name: 'Modifier Direction Test' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Modifier Service Test' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Modifier la direction Direction Test' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Modifier le service Service Test de la direction Direction Test' }),
+    ).toBeDisabled();
   });
 
   it('renders direction and service rows without global admin columns', () => {
@@ -216,9 +218,9 @@ describe('Admin directions and services route', () => {
     render(<RouteComponent />);
 
     expect(screen.getByRole('columnheader', { name: 'Nom de la direction' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Abréviation direction' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Abréviation de la direction' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Nom du service' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Abréviation service' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Abréviation du service' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'E-mail de notification' })).toBeInTheDocument();
     expect(screen.getAllByRole('cell', { name: 'Direction Autonomie' })).toHaveLength(2);
     expect(screen.getByRole('cell', { name: 'Service PA' })).toBeInTheDocument();

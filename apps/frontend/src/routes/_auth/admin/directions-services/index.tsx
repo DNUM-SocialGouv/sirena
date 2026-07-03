@@ -19,9 +19,9 @@ type DirectionServiceRow = NonNullable<Awaited<ReturnType<typeof useDirectionsSe
 
 const columns: Column<DirectionServiceRow>[] = [
   { key: 'directionNom', label: 'Nom de la direction' },
-  { key: 'directionLabel', label: 'Abréviation direction' },
+  { key: 'directionLabel', label: 'Abréviation de la direction' },
   { key: 'serviceNom', label: 'Nom du service' },
-  { key: 'serviceLabel', label: 'Abréviation service' },
+  { key: 'serviceLabel', label: 'Abréviation du service' },
   { key: 'email', label: 'E-mail de notification' },
   { key: 'custom:edit', label: 'Action' },
 ];
@@ -42,11 +42,13 @@ const filterRowsBySearch = (rows: DirectionServiceRow[], search: string) => {
 
 const cells: Cells<DirectionServiceRow> = {
   'custom:edit': (row) => {
-    const representedUnitName = row.serviceNom || row.directionNom;
+    const editLabel = row.serviceNom
+      ? `le service ${row.serviceNom} de la direction ${row.directionNom}`
+      : `la direction ${row.directionNom}`;
 
     return (
       <Button type="button" disabled size="small" priority="secondary">
-        Modifier <span className="fr-sr-only">{representedUnitName}</span>
+        Modifier <span className="fr-sr-only">{editLabel}</span>
       </Button>
     );
   },
