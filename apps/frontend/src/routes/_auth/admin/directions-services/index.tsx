@@ -69,10 +69,11 @@ export function RouteComponent() {
     () => (organizationName ? `Directions et services (${organizationName})` : 'Directions et services'),
     [organizationName],
   );
+  const documentTitle = `${title} - Espace administrateur - SIRENA`;
 
   useEffect(() => {
-    document.title = title;
-  }, [title]);
+    document.title = documentTitle;
+  }, [documentTitle]);
 
   const rows = directionsServicesQuery.data?.data ?? [];
   const filteredRows = useMemo(() => filterRowsBySearch(rows, activeSearch), [rows, activeSearch]);

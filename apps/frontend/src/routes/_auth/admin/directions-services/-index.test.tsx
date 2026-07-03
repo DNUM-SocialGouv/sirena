@@ -51,7 +51,7 @@ describe('Admin directions and services route', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       /Direction désigne le premier niveau de votre organisation et Service désigne le second niveau/,
     );
-    expect(document.title).toBe('Directions et services (ARS Normandie)');
+    expect(document.title).toBe('Directions et services (ARS Normandie) - Espace administrateur - SIRENA');
   });
 
   it('hides creation controls for a Service-level affectation', () => {
