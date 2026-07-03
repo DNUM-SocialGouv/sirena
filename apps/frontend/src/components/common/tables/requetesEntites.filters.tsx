@@ -4,9 +4,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { CheckboxFilter } from '@/components/common/filters/CheckboxFilter';
 import { DepartementFilter } from '@/components/common/filters/DepartementFilter';
 import { DomaineFilter } from '@/components/common/filters/DomaineFilter';
+import { StatutFilter } from '@/components/common/filters/StatutFilter';
 import { useDepartementCounts } from '@/hooks/queries/departementCounts.hook';
 import { useDomaineCounts } from '@/hooks/queries/domaineCounts.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
+import { splitCsv } from '@/utils/filters';
 import { getRequetesQuickFiltersViewModel } from './requetesEntites.filters.model';
 
 export function RequetesEntiteQuickFilters() {
@@ -23,15 +25,11 @@ export function RequetesEntiteQuickFilters() {
 
   const allDomaineIds = useMemo(() => Object.values(DOMAINES_FONCTIONNELS).join(','), []);
 
-  const selectedDepartements = useMemo(
-    () => (queries.departementCodes ? queries.departementCodes.split(',').filter(Boolean) : []),
-    [queries.departementCodes],
-  );
+  const selectedDepartements = useMemo(() => splitCsv(queries.departementCodes), [queries.departementCodes]);
 
-  const selectedDomaines = useMemo(
-    () => (queries.domaineIds ? queries.domaineIds.split(',').filter(Boolean) : []),
-    [queries.domaineIds],
-  );
+  const selectedDomaines = useMemo(() => splitCsv(queries.domaineIds), [queries.domaineIds]);
+
+  const selectedStatuts = useMemo(() => splitCsv(queries.statutIds), [queries.statutIds]);
 
   const { data: departementCountsData } = useDepartementCounts({
     departementCodes: arsDepartements.map((d) => d.code).join(','),
@@ -109,47 +107,57 @@ export function RequetesEntiteQuickFilters() {
     [navigate],
   );
 
+  const handleStatutChange = useCallback(
+    (ids: string[]) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          statutIds: ids.length > 0 ? ids.join(',') : undefined,
+          offset: undefined,
+        }),
+      });
+    },
+    [navigate],
+  );
+
   return (
     <fieldset className="requetesEntitesTable__filters fr-mb-2w">
-      <legend className="fr-sr-only">Filtrer les requêtes</legend>
-      <div className="requetesEntitesTable__filters-row">
-        <span className="fr-text--regular" aria-hidden="true">
-          Filtrer les requêtes
-        </span>
-        <div className="requetesEntitesTable__quick-filters">
-          {quickFilters.affectation.isVisible && (
-            <CheckboxFilter
-              label={quickFilters.affectation.label}
-              checked={quickFilters.affectation.isChecked}
-              onChange={handleAffectationChange}
-            />
-          )}
-
+      <legend className="fr-label fr-mb-1v">Filtrer les requêtes</legend>
+      <div className="requetesEntitesTable__quick-filters">
+        {quickFilters.affectation.isVisible && (
           <CheckboxFilter
-            label="Priorité haute"
-            checked={quickFilters.isHautePrioriteOnly}
-            onChange={handlePrioriteChange}
+            label={quickFilters.affectation.label}
+            checked={quickFilters.affectation.isChecked}
+            onChange={handleAffectationChange}
           />
+        )}
 
-          {isTopEntiteARS && (
-            <DepartementFilter
-              departements={arsDepartements}
-              selectedCodes={selectedDepartements}
-              counts={departementCounts}
-              onChange={handleDepartementChange}
-              onOpen={() => setIsDepartementDropdownOpen(true)}
-              onClose={() => setIsDepartementDropdownOpen(false)}
-            />
-          )}
+        <CheckboxFilter
+          label="Priorité haute"
+          checked={quickFilters.isHautePrioriteOnly}
+          onChange={handlePrioriteChange}
+        />
 
-          <DomaineFilter
-            selectedIds={selectedDomaines}
-            counts={domaineCounts}
-            onChange={handleDomaineChange}
-            onOpen={() => setIsDomaineDropdownOpen(true)}
-            onClose={() => setIsDomaineDropdownOpen(false)}
+        {isTopEntiteARS && (
+          <DepartementFilter
+            departements={arsDepartements}
+            selectedCodes={selectedDepartements}
+            counts={departementCounts}
+            onChange={handleDepartementChange}
+            onOpen={() => setIsDepartementDropdownOpen(true)}
+            onClose={() => setIsDepartementDropdownOpen(false)}
           />
-        </div>
+        )}
+
+        <DomaineFilter
+          selectedIds={selectedDomaines}
+          counts={domaineCounts}
+          onChange={handleDomaineChange}
+          onOpen={() => setIsDomaineDropdownOpen(true)}
+          onClose={() => setIsDomaineDropdownOpen(false)}
+        />
+
+        <StatutFilter selectedIds={selectedStatuts} onChange={handleStatutChange} />
       </div>
     </fieldset>
   );

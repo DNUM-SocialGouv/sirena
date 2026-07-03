@@ -60,9 +60,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV TZ=Europe/Paris
 
-# Copier seulement les dépendances de production
-COPY --from=deps --chown=node:node /app/node_modules ./node_modules
-COPY --from=deps --chown=node:node /app/package*.json /app/pnpm* ./
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/package*.json /app/pnpm* ./
 
 # Copier les builds
 COPY --from=builder --chown=node:node /app/apps/backend apps/backend
@@ -71,5 +70,7 @@ COPY --from=builder --chown=node:node /app/packages/common packages/common
 COPY --from=builder --chown=node:node /app/packages/db packages/db
 
 COPY --chown=node:node ./scripts/backend.entrypoint.sh scripts/
+
+RUN cd apps/backend && node --input-type=module -e "await import('@sirena/db')"
 
 ENTRYPOINT ["/app/scripts/backend.entrypoint.sh"]
