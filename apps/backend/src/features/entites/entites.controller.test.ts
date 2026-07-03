@@ -79,7 +79,8 @@ vi.mock('../../middlewares/role.middleware.js', () => {
 vi.mock('../../middlewares/entites.middleware.js', () => {
   return {
     default: async (c: Context, next: Next) => {
-      c.set('entiteIds', ['id1', 'id2']);
+      c.set('entiteIds', ['dir-autonomie', 'service-pa']);
+      c.set('assignedEntiteId', 'dir-autonomie');
       c.set('topEntiteId', 'root-ars');
       return next();
     },
@@ -202,7 +203,7 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('GET /admin/directions-services', () => {
-    it('returns local directions and services rows for ENTITY_ADMIN perimeter', async () => {
+    it('scopes local directions and services rows from the assigned entity', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce([
         {
@@ -232,7 +233,7 @@ describe('Entites endpoints: /entites', () => {
           },
         ],
       });
-      expect(getDirectionsServicesRows).toHaveBeenCalledWith('root-ars', { search: '' });
+      expect(getDirectionsServicesRows).toHaveBeenCalledWith('dir-autonomie', { search: '' });
     });
 
     it('passes search query to local directions and services rows service', async () => {

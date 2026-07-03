@@ -112,16 +112,16 @@ const app = factoryWithLogs
     getDirectionsServicesRowsRoute,
     async (c) => {
       const logger = c.get('logger');
-      const topEntiteId = c.get('topEntiteId');
+      const assignedEntiteId = c.get('assignedEntiteId');
       const search = c.req.query('search') ?? '';
 
-      logger.info({ topEntiteId, search }, 'Local directions and services list requested');
+      logger.info({ assignedEntiteId, search }, 'Local directions and services list requested');
 
-      if (!topEntiteId) {
+      if (!assignedEntiteId) {
         return c.json({ data: [] });
       }
 
-      const rows = await getDirectionsServicesRows(topEntiteId, { search });
+      const rows = await getDirectionsServicesRows(assignedEntiteId, { search });
       logger.info({ rowsCount: rows.length }, 'Local directions and services list retrieved successfully');
 
       return c.json({ data: rows });
