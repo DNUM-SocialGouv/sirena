@@ -33,4 +33,26 @@ describe('fetchDirectionsServicesRows', () => {
       query: { search: 'direction test' },
     });
   });
+
+  it('returns top-level capabilities from the directions and services endpoint', async () => {
+    directionsServicesGet.mockResolvedValueOnce({
+      json: async () => ({
+        data: [],
+        capabilities: {
+          canCreateDirection: true,
+          canCreateService: false,
+        },
+      }),
+    });
+
+    const result = await fetchDirectionsServicesRows();
+
+    expect(result).toEqual({
+      data: [],
+      capabilities: {
+        canCreateDirection: true,
+        canCreateService: false,
+      },
+    });
+  });
 });
