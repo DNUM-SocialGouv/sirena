@@ -113,6 +113,7 @@ export const GetDirectionsServicesRowsResponseSchema = z.object({
       serviceLabel: z.string(),
       email: z.string(),
       editId: z.string(),
+      canEdit: z.boolean(),
     }),
   ),
   capabilities: z.object({

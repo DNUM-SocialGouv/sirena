@@ -16,6 +16,7 @@ type DirectionsServicesRow = {
   serviceLabel: string;
   email: string;
   editId: string;
+  canEdit: boolean;
 };
 
 const compareByNomComplet = (a: EntiteAdminLocal, b: EntiteAdminLocal) => a.nomComplet.localeCompare(b.nomComplet);
@@ -59,6 +60,7 @@ export const buildDirectionsServicesRows = (
         serviceLabel: service.label,
         email: service.email,
         editId: service.id,
+        canEdit: true,
       });
     }
   };
@@ -80,6 +82,7 @@ export const buildDirectionsServicesRows = (
         serviceLabel: '',
         email: direction.email,
         editId: direction.id,
+        canEdit: true,
       });
 
       pushServiceRows(direction);

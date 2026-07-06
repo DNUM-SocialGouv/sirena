@@ -1129,7 +1129,7 @@ describe('getDirectionsServicesRows()', () => {
     });
   });
 
-  it('returns only service rows under the selected Direction perimeter with parent Direction context', async () => {
+  it('returns editable service rows under the selected Direction perimeter with parent Direction context', async () => {
     vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
       {
         ...fakeEntite('root-ars'),
@@ -1177,6 +1177,7 @@ describe('getDirectionsServicesRows()', () => {
         serviceLabel: 'PA',
         email: 'service-pa@ars.fr',
         editId: 'service-pa',
+        canEdit: true,
       },
     ]);
   });
@@ -1264,6 +1265,7 @@ describe('getDirectionsServicesRows()', () => {
         serviceLabel: '',
         email: 'direction-autonomie@ars.fr',
         editId: 'dir-autonomie',
+        canEdit: true,
       },
       {
         id: 'service-pa',
@@ -1273,6 +1275,7 @@ describe('getDirectionsServicesRows()', () => {
         serviceLabel: 'PA',
         email: 'service-pa@ars.fr',
         editId: 'service-pa',
+        canEdit: true,
       },
     ]);
   });
