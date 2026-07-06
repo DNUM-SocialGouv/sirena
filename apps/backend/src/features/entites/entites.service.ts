@@ -222,7 +222,7 @@ export const getDirectionsServicesRows = async (
 
   if (entiteMereAdminLocal?.entiteMereId !== null && entiteMereAdminLocal !== undefined) {
     return {
-      data: buildDirectionsServicesRowsFromHierarchy([entiteMereAdminLocal, entiteAdminLocal], { search }),
+      data: [],
       capabilities: emptyCapabilities,
     };
   }

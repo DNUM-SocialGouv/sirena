@@ -1081,7 +1081,7 @@ describe('getDirectionsServicesRows()', () => {
     vi.resetAllMocks();
   });
 
-  it('returns only the selected Service row with parent Direction context for a Service perimeter', async () => {
+  it('returns no rows and no creation capabilities for a Service perimeter', async () => {
     vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
       {
         ...fakeEntite('root-ars'),
@@ -1120,17 +1120,13 @@ describe('getDirectionsServicesRows()', () => {
 
     const result = await getDirectionsServicesRows('service-pa');
 
-    expect(result.data).toEqual([
-      {
-        id: 'service-pa',
-        directionNom: 'Direction Autonomie',
-        directionLabel: 'DA',
-        serviceNom: 'Service PA',
-        serviceLabel: 'PA',
-        email: 'service-pa@ars.fr',
-        editId: 'service-pa',
+    expect(result).toEqual({
+      data: [],
+      capabilities: {
+        canCreateDirection: false,
+        canCreateService: false,
       },
-    ]);
+    });
   });
 
   it('returns only service rows under the selected Direction perimeter with parent Direction context', async () => {
