@@ -254,6 +254,27 @@ export const getDirectionsServicesList = async (
   };
 };
 
+export const createDirectionAdminLocal = async (
+  assignedEntiteId: string,
+  data: {
+    nomComplet: string;
+    label: string;
+    email: string;
+    isActive: boolean;
+  },
+) => {
+  return createChildEntiteAdmin(
+    assignedEntiteId,
+    {
+      ...data,
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+    },
+    { requireRootParent: true },
+  );
+};
+
 export const createChildEntiteAdmin = async (
   parentId: string,
   data: {
@@ -265,6 +286,7 @@ export const createChildEntiteAdmin = async (
     telContactUsager: string;
     isActive: boolean;
   },
+  options: { requireRootParent?: boolean } = {},
 ) => {
   const parent = await prisma.entite.findUnique({
     where: { id: parentId },
@@ -284,6 +306,10 @@ export const createChildEntiteAdmin = async (
 
   if (!parent) {
     throw new EntiteNotFoundError();
+  }
+
+  if (options.requireRootParent && parent.entiteMereId !== null) {
+    throw new EntiteChildCreationForbiddenError();
   }
 
   if (parent.entiteMere?.entiteMereId) {

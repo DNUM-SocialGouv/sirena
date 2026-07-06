@@ -3,6 +3,7 @@ import { type Entite, prisma } from '../../libs/prisma.js';
 import { EntiteChildCreationForbiddenError } from './entites.error.js';
 import {
   createChildEntiteAdmin,
+  createDirectionAdminLocal,
   editEntiteAdmin,
   getDirectionsFromRequeteEntiteId,
   getDirectionsServicesFromRequeteEntiteId,
@@ -1046,6 +1047,105 @@ describe('createChildEntiteAdmin()', () => {
     await expect(createChildEntiteAdmin('service-1', createChildInput)).rejects.toBeInstanceOf(
       EntiteChildCreationForbiddenError,
     );
+
+    expect(prisma.entite.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('createDirectionAdminLocal()', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('creates a Direction under the assigned entite administrative with hidden contact-usager fields initialized empty', async () => {
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+      entiteTypeId: 'ARS',
+      departementCode: '14',
+      ctcdCode: '14118',
+      regionCode: '28',
+      regLib: 'Normandie',
+      dptLib: 'Calvados',
+      entiteMereId: null,
+      entiteMere: null,
+    } as never);
+    vi.mocked(prisma.entite.create).mockResolvedValueOnce({
+      id: 'dir-autonomie',
+      nomComplet: 'Direction Autonomie',
+      label: 'DA',
+      email: 'direction-autonomie@ars.fr',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+      isActive: false,
+    } as never);
+
+    const result = await createDirectionAdminLocal('root-ars', {
+      nomComplet: 'Direction Autonomie',
+      label: 'DA',
+      email: 'direction-autonomie@ars.fr',
+      isActive: false,
+    });
+
+    expect(prisma.entite.create).toHaveBeenCalledWith({
+      data: {
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        email: 'direction-autonomie@ars.fr',
+        isActive: false,
+        emailContactUsager: '',
+        adresseContactUsager: '',
+        telContactUsager: '',
+        entiteMereId: 'root-ars',
+        entiteTypeId: 'ARS',
+        departementCode: '14',
+        ctcdCode: '14118',
+        regionCode: '28',
+        regLib: 'Normandie',
+        dptLib: 'Calvados',
+      },
+      select: {
+        id: true,
+        nomComplet: true,
+        label: true,
+        email: true,
+        emailContactUsager: true,
+        adresseContactUsager: true,
+        telContactUsager: true,
+        isActive: true,
+      },
+    });
+    expect(result).toEqual({
+      id: 'dir-autonomie',
+      nomComplet: 'Direction Autonomie',
+      label: 'DA',
+      email: 'direction-autonomie@ars.fr',
+      emailContactUsager: '',
+      adresseContactUsager: '',
+      telContactUsager: '',
+      isActive: false,
+    });
+  });
+
+  it('throws when the assigned entity is a Direction', async () => {
+    vi.mocked(prisma.entite.findUnique).mockResolvedValueOnce({
+      entiteTypeId: 'ARS',
+      departementCode: '14',
+      ctcdCode: '14118',
+      regionCode: '28',
+      regLib: 'Normandie',
+      dptLib: 'Calvados',
+      entiteMereId: 'root-ars',
+      entiteMere: { entiteMereId: null },
+    } as never);
+
+    await expect(
+      createDirectionAdminLocal('dir-autonomie', {
+        nomComplet: 'Direction Enfance',
+        label: 'DE',
+        email: 'direction-enfance@ars.fr',
+        isActive: true,
+      }),
+    ).rejects.toBeInstanceOf(EntiteChildCreationForbiddenError);
 
     expect(prisma.entite.create).not.toHaveBeenCalled();
   });
