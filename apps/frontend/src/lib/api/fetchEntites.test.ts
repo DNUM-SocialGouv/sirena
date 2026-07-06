@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fetchDirectionsServicesRows } from './fetchEntites';
+import { fetchDirectionsServicesList } from './fetchEntites';
 
 const { directionsServicesGet } = vi.hoisted(() => ({
   directionsServicesGet: vi.fn(),
@@ -21,13 +21,13 @@ vi.mock('@/lib/api/tanstackQuery.ts', () => ({
   handleRequestErrors: vi.fn(),
 }));
 
-describe('fetchDirectionsServicesRows', () => {
+describe('fetchDirectionsServicesList', () => {
   it('passes search query to the directions and services endpoint', async () => {
     directionsServicesGet.mockResolvedValueOnce({
       json: async () => ({ data: [] }),
     });
 
-    await fetchDirectionsServicesRows({ search: 'direction test' });
+    await fetchDirectionsServicesList({ search: 'direction test' });
 
     expect(directionsServicesGet).toHaveBeenCalledWith({
       query: { search: 'direction test' },
@@ -45,7 +45,7 @@ describe('fetchDirectionsServicesRows', () => {
       }),
     });
 
-    const result = await fetchDirectionsServicesRows();
+    const result = await fetchDirectionsServicesList();
 
     expect(result).toEqual({
       data: [],

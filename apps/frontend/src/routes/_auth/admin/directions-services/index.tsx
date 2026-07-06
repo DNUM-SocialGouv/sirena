@@ -6,7 +6,7 @@ import { type Cells, type Column, DataTable } from '@sirena/ui';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TableSearchBar } from '@/components/common/tables/TableSearchBar';
-import { useDirectionsServicesRows } from '@/hooks/queries/entites.hook';
+import { useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import './index.css';
@@ -16,7 +16,7 @@ export const Route = createFileRoute('/_auth/admin/directions-services/')({
   component: RouteComponent,
 });
 
-type DirectionServiceRow = NonNullable<Awaited<ReturnType<typeof useDirectionsServicesRows>>['data']>['data'][number];
+type DirectionServiceRow = NonNullable<Awaited<ReturnType<typeof useDirectionsServicesList>>['data']>['data'][number];
 
 const columns: Column<DirectionServiceRow>[] = [
   { key: 'directionNom', label: 'Nom de la direction' },
@@ -50,7 +50,7 @@ export function RouteComponent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const directionsServicesQuery = useDirectionsServicesRows({ search: activeSearch || undefined });
+  const directionsServicesQuery = useDirectionsServicesList({ search: activeSearch || undefined });
   const capabilities = directionsServicesQuery.data?.capabilities;
   const canCreateDirection = capabilities?.canCreateDirection ?? false;
   const canCreateService = capabilities?.canCreateService ?? false;

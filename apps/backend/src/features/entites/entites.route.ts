@@ -39,7 +39,7 @@ export const getRootEntitesListAdminRoute = openApiProtectedRoute({
 });
 
 export const getDirectionsServicesListRoute = openApiProtectedRoute({
-  description: 'Get local directions and services rows for entity admins',
+  description: 'Get local directions and services list for entity admins',
   responses: {
     ...openApiRawResponse(GetDirectionsServicesListResponseSchema),
   },

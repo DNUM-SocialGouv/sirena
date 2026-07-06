@@ -203,7 +203,7 @@ describe('Entites endpoints: /entites', () => {
   });
 
   describe('GET /admin/directions-services', () => {
-    it('scopes local directions and services rows from the assigned entity', async () => {
+    it('scopes local directions and services list from the assigned entity', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       vi.mocked(getDirectionsServicesList).mockResolvedValueOnce({
         data: [
@@ -215,6 +215,7 @@ describe('Entites endpoints: /entites', () => {
             serviceLabel: '',
             email: 'direction-autonomie@ars.fr',
             editId: 'dir-autonomie',
+            canEdit: true,
           },
         ],
         capabilities: {
@@ -236,6 +237,7 @@ describe('Entites endpoints: /entites', () => {
             serviceLabel: '',
             email: 'direction-autonomie@ars.fr',
             editId: 'dir-autonomie',
+            canEdit: true,
           },
         ],
         capabilities: {
@@ -246,7 +248,7 @@ describe('Entites endpoints: /entites', () => {
       expect(getDirectionsServicesList).toHaveBeenCalledWith('dir-autonomie', { search: '' });
     });
 
-    it('passes search query to local directions and services rows service', async () => {
+    it('passes search query to local directions and services list service', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       vi.mocked(getDirectionsServicesList).mockResolvedValueOnce({
         data: [],

@@ -2,7 +2,7 @@ import { ROLES } from '@sirena/common/constants';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useDirectionsServicesRows } from '@/hooks/queries/entites.hook';
+import { useDirectionsServicesList } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { Route, RouteComponent } from './index';
@@ -16,7 +16,7 @@ vi.mock('@/hooks/queries/profile.hook', () => ({
 }));
 
 vi.mock('@/hooks/queries/entites.hook', () => ({
-  useDirectionsServicesRows: vi.fn(),
+  useDirectionsServicesList: vi.fn(),
 }));
 
 vi.mock('@/lib/auth-guards', () => ({
@@ -41,7 +41,7 @@ describe('Admin directions and services route', () => {
         affectationChain: [{ id: 'root-ars', nomComplet: 'ARS Normandie' }],
       },
     } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({ data: { data: [] } } as never);
 
     render(<RouteComponent />);
 
@@ -64,7 +64,7 @@ describe('Admin directions and services route', () => {
         ],
       },
     } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({ data: { data: [] } } as never);
 
     render(<RouteComponent />);
 
@@ -81,7 +81,7 @@ describe('Admin directions and services route', () => {
         ],
       },
     } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
         data: [],
         capabilities: {
@@ -99,7 +99,7 @@ describe('Admin directions and services route', () => {
 
   it('shows add direction and add service controls from backend capabilities', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
         data: [],
         capabilities: {
@@ -115,9 +115,9 @@ describe('Admin directions and services route', () => {
     expect(screen.getByRole('button', { name: 'Ajouter un service' })).toBeDisabled();
   });
 
-  it('passes trimmed search to the directions and services rows hook', async () => {
+  it('passes trimmed search to the directions and services list hook', async () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+    vi.mocked(useDirectionsServicesList).mockReturnValue({ data: { data: [] } } as never);
 
     render(<RouteComponent />);
 
@@ -127,12 +127,12 @@ describe('Admin directions and services route', () => {
     await userEvent.type(searchInput, ' pa ');
     await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }));
 
-    expect(useDirectionsServicesRows).toHaveBeenLastCalledWith({ search: 'pa' });
+    expect(useDirectionsServicesList).toHaveBeenLastCalledWith({ search: 'pa' });
   });
 
   it('renders rows after submitting a search', async () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
         data: [
           {
@@ -165,14 +165,14 @@ describe('Admin directions and services route', () => {
     await userEvent.type(searchInput, ' pa ');
     await userEvent.click(screen.getByRole('button', { name: 'Rechercher' }));
 
-    expect(useDirectionsServicesRows).toHaveBeenLastCalledWith({ search: 'pa' });
+    expect(useDirectionsServicesList).toHaveBeenLastCalledWith({ search: 'pa' });
     expect(screen.getByRole('row', { name: /Service PA/ })).toBeInTheDocument();
     expect(screen.getByRole('row', { name: /Service Enfance/ })).toBeInTheDocument();
   });
 
   it('renders local pagination when more than 10 rows are visible', async () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
         data: Array.from({ length: 11 }, (_, index) => ({
           id: `service-${index + 1}`,
@@ -200,7 +200,7 @@ describe('Admin directions and services route', () => {
 
   it('hides row edit action when backend row capability disallows edit', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
         data: [
           {
@@ -224,7 +224,7 @@ describe('Admin directions and services route', () => {
 
   it('renders direction and service rows without global admin columns', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+    vi.mocked(useDirectionsServicesList).mockReturnValue({
       data: {
         data: [
           {

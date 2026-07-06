@@ -4,7 +4,7 @@ import {
   createChildEntiteAdmin,
   type EditEntiteAdminInput,
   editEntiteAdmin,
-  fetchDirectionsServicesRows,
+  fetchDirectionsServicesList,
   fetchEntiteByIdAdmin,
   fetchEntiteChain,
   fetchEntiteDescendants,
@@ -43,15 +43,15 @@ export const useRootEntitesListAdminQueryOptions = () => ({
 
 export const useRootEntitesListAdmin = () => useQuery(useRootEntitesListAdminQueryOptions());
 
-export const useDirectionsServicesRowsQueryOptions = (query: Pick<QueryParams, 'search'> = {}) => ({
+export const useDirectionsServicesListQueryOptions = (query: Pick<QueryParams, 'search'> = {}) => ({
   queryKey: ['entites', 'admin', 'directions-services', query],
-  queryFn: () => fetchDirectionsServicesRows(query),
+  queryFn: () => fetchDirectionsServicesList(query),
   retry: false,
   initialData: { data: [], capabilities: { canCreateDirection: false, canCreateService: false } },
 });
 
-export const useDirectionsServicesRows = (query: Pick<QueryParams, 'search'> = {}) =>
-  useQuery(useDirectionsServicesRowsQueryOptions(query));
+export const useDirectionsServicesList = (query: Pick<QueryParams, 'search'> = {}) =>
+  useQuery(useDirectionsServicesListQueryOptions(query));
 
 export const useEntiteByIdAdmin = (entiteId: string) =>
   useQuery({
