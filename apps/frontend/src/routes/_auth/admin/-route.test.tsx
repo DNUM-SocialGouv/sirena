@@ -40,7 +40,7 @@ afterEach(() => {
 });
 
 describe('Admin route', () => {
-  it('renders the admin shell with two tabs for entity admins', () => {
+  it('renders the admin shell with directions and services instead of global entites for entity admins', () => {
     mockedUseMatches.mockReturnValue([
       { routeId: '/_auth/admin', pathname: '/admin' },
       { routeId: '/_auth/admin/users', pathname: '/admin/users' },
@@ -53,6 +53,30 @@ describe('Admin route', () => {
     expect(screen.getByRole('tab', { name: "Gestion des demandes d'habilitations" })).toHaveAttribute(
       'aria-selected',
       'true',
+    );
+    expect(screen.getByRole('tab', { name: 'Gestion des utilisateurs' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByRole('tab', { name: 'Gestion des directions et services' })).toHaveAttribute(
+      'aria-selected',
+      'false',
+    );
+    expect(screen.queryByRole('tab', { name: 'Gestion des entités' })).not.toBeInTheDocument();
+  });
+
+  it('renders the directions and services tab as active for entity admins on directions-services routes', () => {
+    mockedUseMatches.mockReturnValue([
+      { routeId: '/_auth/admin', pathname: '/admin' },
+      { routeId: '/_auth/admin/directions-services/', pathname: '/admin/directions-services/' },
+    ] as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.getByRole('tab', { name: 'Gestion des directions et services' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByRole('tab', { name: "Gestion des demandes d'habilitations" })).toHaveAttribute(
+      'aria-selected',
+      'false',
     );
     expect(screen.getByRole('tab', { name: 'Gestion des utilisateurs' })).toHaveAttribute('aria-selected', 'false');
     expect(screen.queryByRole('tab', { name: 'Gestion des entités' })).not.toBeInTheDocument();
@@ -73,5 +97,6 @@ describe('Admin route', () => {
       'false',
     );
     expect(screen.getByRole('tab', { name: 'Gestion des utilisateurs' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.queryByRole('tab', { name: 'Gestion des directions et services' })).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,7 @@
 import type { Pagination } from '@sirena/backend-utils/types';
 import { type Entite, prisma } from '../../libs/prisma.js';
 import { buildEntitesListAdmin } from './entites.admin.mapper.js';
+import { buildDirectionsServicesRows as buildDirectionsServicesRowsFromHierarchy } from './entites.directions-services.mapper.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import type { EntiteChain, EntiteTraitement, EntiteTraitementInput } from './entites.type.js';
 
@@ -175,6 +176,59 @@ export const getRootEntitesListAdmin = async () =>
     },
     orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
   });
+
+export const getDirectionsServicesRows = async (
+  entiteAdminLocalId: string,
+  { search = '' }: { search?: string } = {},
+) => {
+  const entites = await prisma.entite.findMany({
+    select: {
+      id: true,
+      nomComplet: true,
+      label: true,
+      email: true,
+      entiteMereId: true,
+    },
+  });
+
+  const entitesParEntiteMere = new Map<string, typeof entites>();
+
+  for (const entite of entites) {
+    if (entite.entiteMereId === null) {
+      continue;
+    }
+
+    const entitesEnfants = entitesParEntiteMere.get(entite.entiteMereId) ?? [];
+    entitesEnfants.push(entite);
+    entitesParEntiteMere.set(entite.entiteMereId, entitesEnfants);
+  }
+
+  const entitesAdminLocal: typeof entites = [];
+  const entiteAdminLocal = entites.find((entite) => entite.id === entiteAdminLocalId);
+
+  if (!entiteAdminLocal) {
+    return [];
+  }
+
+  const entiteMereAdminLocal = entiteAdminLocal.entiteMereId
+    ? entites.find((entite) => entite.id === entiteAdminLocal.entiteMereId)
+    : undefined;
+
+  if (entiteMereAdminLocal?.entiteMereId !== null && entiteMereAdminLocal !== undefined) {
+    return buildDirectionsServicesRowsFromHierarchy([entiteMereAdminLocal, entiteAdminLocal], { search });
+  }
+
+  const buildEntitesAdminLocal = (entite: (typeof entites)[number]) => {
+    entitesAdminLocal.push(entite);
+    for (const entiteEnfant of entitesParEntiteMere.get(entite.id) ?? []) {
+      buildEntitesAdminLocal(entiteEnfant);
+    }
+  };
+
+  buildEntitesAdminLocal(entiteAdminLocal);
+
+  return buildDirectionsServicesRowsFromHierarchy(entitesAdminLocal, { search });
+};
 
 export const createChildEntiteAdmin = async (
   parentId: string,
