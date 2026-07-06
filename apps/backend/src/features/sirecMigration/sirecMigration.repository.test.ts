@@ -470,6 +470,14 @@ describe('sirecMigration.repository.ts', () => {
 
       expect(result).toEqual([]);
     });
+
+    it('should exclude rows with identifiant = 0 in the query', async () => {
+      vi.mocked(mariadbPool.query).mockResolvedValueOnce([]);
+
+      await fetchSirecMisEnCauses(42);
+
+      expect(mariadbPool.query).toHaveBeenCalledWith(expect.stringContaining('m.identifiant != 0'), [42]);
+    });
   });
 
   describe('fetchSirecMainCourantes', () => {

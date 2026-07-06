@@ -270,7 +270,8 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
      LEFT JOIN sire_misencause_data_group mcg ON m.id_data = mcg.id_data AND mcg.id_group != 1 AND mcg.id_group != 0
      LEFT JOIN sire_rpps_data r ON r.id_data = m.identifiant AND m.type = 65
      LEFT JOIN sire_finess_data f ON f.id_data = m.identifiant AND m.type = 64
-     WHERE m.id_reclamation = ?`,
+     WHERE m.id_reclamation = ?
+     and m.identifiant != 0`,
     [sirecId],
   );
 
