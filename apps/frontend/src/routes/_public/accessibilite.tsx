@@ -9,7 +9,7 @@ export function AccessibilitePage() {
     <>
       <h1>Déclaration d’accessibilité</h1>
       <p>
-        <strong>Les ministères sociaux</strong> s’engagent à rendre leurs sites internet, intranet, extranet et leurs
+        <strong>Les Ministères Sociaux</strong> s’engagent à rendre leurs sites internet, intranet, extranet et leurs
         progiciels accessibles (et leurs applications mobiles et mobilier urbain numérique) conformément à l’article 47
         de la loi n°2005-102 du 11 février 2005.
       </p>
@@ -94,7 +94,7 @@ export function AccessibilitePage() {
       <h2>Établissement de cette déclaration d’accessibilité</h2>
       <p>Cette déclaration a été établie le 29 mai 2026.</p>
 
-      <h3>Technologies utilisées pour la réalisation de l’audit</h3>
+      <h3>Technologies utilisées</h3>
       <ul className="technical-information technologies-used">
         <li>
           <abbr lang="en" title="HyperText Markup Language">
@@ -107,6 +107,7 @@ export function AccessibilitePage() {
           </abbr>
         </li>
         <li>JavaScript</li>
+        <li>React</li>
       </ul>
 
       <h3>Environnement de test</h3>
@@ -177,6 +178,9 @@ export function AccessibilitePage() {
             Contacter le délégué du Défenseur des droits dans votre région{' '}
             <span className="fr-sr-only">nouvelle fenêtre</span>
           </a>
+        </li>
+        <li>
+          Par téléphone : <a href="tel:0969390000">09 69 39 00 00</a>
         </li>
         <li>
           <p>Envoyer un courrier par la poste (gratuit, ne pas mettre de timbre) à :</p>
