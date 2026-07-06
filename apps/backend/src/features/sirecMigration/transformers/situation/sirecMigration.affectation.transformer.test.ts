@@ -4,6 +4,7 @@ import { SirecDataError, SirecTranscoError } from '../../transco/sirecTransco.er
 import { transformSirecAffectation } from './sirecMigration.affectation.transformer.js';
 
 vi.mock('../../transco/affectation/affectation.transco.js', () => ({
+  SIREC_NATIONAL_ENTITE_ID: 1,
   transcodeAffectation: vi.fn((id: number) => {
     if (id === 693) return { requeteEntiteIds: ['ars-normandie'], situationEntiteIds: [] };
     if (id === 677) return { requeteEntiteIds: ['ars-grand-est'], situationEntiteIds: [] };
@@ -114,6 +115,16 @@ describe('sirecMigration.affectation.transformer.ts', () => {
 
     it('should throw SirecDataError when both fields are zero', () => {
       expect(() => transformSirecAffectation(makeData(0, 0))).toThrow(SirecDataError);
+    });
+
+    it('should ignore the national entite id (1) and not transcode it', () => {
+      const result = transformSirecAffectation(makeData(1, 693));
+
+      expect(result.requeteEntiteIds).toEqual(['ars-normandie']);
+    });
+
+    it('should throw SirecDataError when only the national entite id (1) is present', () => {
+      expect(() => transformSirecAffectation(makeData(1, null))).toThrow(SirecDataError);
     });
   });
 

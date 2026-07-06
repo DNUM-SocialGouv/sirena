@@ -1,5 +1,5 @@
 import type { SirecReclamationData } from '../../sirecMigration.repository.js';
-import { transcodeAffectation } from '../../transco/affectation/affectation.transco.js';
+import { SIREC_NATIONAL_ENTITE_ID, transcodeAffectation } from '../../transco/affectation/affectation.transco.js';
 import { SirecDataError } from '../../transco/sirecTransco.error.js';
 
 export interface SirenaAffectationData {
@@ -31,7 +31,7 @@ export function transformSirecAffectation(sirecData: SirecReclamationData): Sire
   ];
 
   for (const fieldValue of allIds) {
-    if (!fieldValue) continue;
+    if (!fieldValue || fieldValue === SIREC_NATIONAL_ENTITE_ID) continue;
 
     const { requeteEntiteIds, situationEntiteIds } = transcodeAffectation(fieldValue);
     for (const id of requeteEntiteIds) requeteIds.add(id);
