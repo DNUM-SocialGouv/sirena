@@ -189,7 +189,7 @@ export async function fetchSirecMotifsDeclaresById(sirecId: number): Promise<num
 
 export async function fetchSirecGroupIds(sirecId: number): Promise<number[]> {
   const rows = await mariadbPool.query<{ id_group: number }[]>(
-    'SELECT id_group FROM sire_reclamation_data_group WHERE id_data = ? AND id_group != 1',
+    'SELECT id_group FROM sire_reclamation_data_group WHERE id_data = ? AND id_group != 1 and id_group != 3',
     [sirecId],
   );
   return rows.map((row) => row.id_group);
@@ -267,7 +267,7 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
             f.rs AS finess_rs, f.codepostal AS finess_codepostal, f.libcommune AS finess_libcommune,
             f.numvoie AS finess_numvoie, f.typevoie AS finess_typevoie, f.voie AS finess_voie
      FROM sire_misencause_data m
-     LEFT JOIN sire_misencause_data_group mcg ON m.id_data = mcg.id_data AND mcg.id_group != 1
+     LEFT JOIN sire_misencause_data_group mcg ON m.id_data = mcg.id_data AND mcg.id_group != 1 AND mcg.id_group != 0
      LEFT JOIN sire_rpps_data r ON r.id_data = m.identifiant AND m.type = 65
      LEFT JOIN sire_finess_data f ON f.id_data = m.identifiant AND m.type = 64
      WHERE m.id_reclamation = ?`,
