@@ -198,7 +198,7 @@ describe('Admin directions and services route', () => {
     expect(screen.queryByRole('row', { name: /Service 10/ })).not.toBeInTheDocument();
   });
 
-  it('renders disabled row edit actions with unique accessible labels', () => {
+  it('hides row edit action when backend row capability disallows edit', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
     vi.mocked(useDirectionsServicesRows).mockReturnValue({
       data: {
@@ -211,15 +211,7 @@ describe('Admin directions and services route', () => {
             serviceLabel: '',
             email: 'direction-test@ars.fr',
             editId: 'dir-test',
-          },
-          {
-            id: 'service-test',
-            directionNom: 'Direction Test',
-            directionLabel: 'DT',
-            serviceNom: 'Service Test',
-            serviceLabel: 'ST',
-            email: 'service-test@ars.fr',
-            editId: 'service-test',
+            canEdit: false,
           },
         ],
       },
@@ -227,10 +219,7 @@ describe('Admin directions and services route', () => {
 
     render(<RouteComponent />);
 
-    expect(screen.getByRole('button', { name: 'Modifier la direction Direction Test' })).toBeDisabled();
-    expect(
-      screen.getByRole('button', { name: 'Modifier le service Service Test de la direction Direction Test' }),
-    ).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Modifier la direction Direction Test' })).not.toBeInTheDocument();
   });
 
   it('renders direction and service rows without global admin columns', () => {

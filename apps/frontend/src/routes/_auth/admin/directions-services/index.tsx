@@ -29,6 +29,10 @@ const columns: Column<DirectionServiceRow>[] = [
 
 const cells: Cells<DirectionServiceRow> = {
   'custom:edit': (row) => {
+    if (!row.canEdit) {
+      return null;
+    }
+
     const editLabel = row.serviceNom
       ? `le service ${row.serviceNom} de la direction ${row.directionNom}`
       : `la direction ${row.directionNom}`;
