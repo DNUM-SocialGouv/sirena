@@ -11,7 +11,7 @@ import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entite
 import {
   createChildEntiteAdminRoute,
   editEntiteAdminRoute,
-  getDirectionsServicesRowsRoute,
+  getDirectionsServicesListRoute,
   getEntiteByIdAdminRoute,
   getEntiteChainRoute,
   getEntitesListAdminRoute,
@@ -27,7 +27,7 @@ import {
 import {
   createChildEntiteAdmin,
   editEntiteAdmin,
-  getDirectionsServicesRows,
+  getDirectionsServicesList,
   getEditableEntitiesChain,
   getEntiteById,
   getEntiteDescendantIds,
@@ -109,7 +109,7 @@ const app = factoryWithLogs
   .get(
     '/admin/directions-services',
     roleMiddleware([ROLES.ENTITY_ADMIN]),
-    getDirectionsServicesRowsRoute,
+    getDirectionsServicesListRoute,
     async (c) => {
       const logger = c.get('logger');
       const assignedEntiteId = c.get('assignedEntiteId');
@@ -127,7 +127,7 @@ const app = factoryWithLogs
         });
       }
 
-      const result = await getDirectionsServicesRows(assignedEntiteId, { search });
+      const result = await getDirectionsServicesList(assignedEntiteId, { search });
       logger.info({ rowsCount: result.data.length }, 'Local directions and services list retrieved successfully');
 
       return c.json(result);

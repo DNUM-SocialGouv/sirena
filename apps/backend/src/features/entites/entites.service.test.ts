@@ -6,7 +6,7 @@ import {
   editEntiteAdmin,
   getDirectionsFromRequeteEntiteId,
   getDirectionsServicesFromRequeteEntiteId,
-  getDirectionsServicesRows,
+  getDirectionsServicesList,
   getEditableEntitiesChain,
   getEntiteAscendanteIds,
   getEntiteChain,
@@ -1076,7 +1076,7 @@ describe('getRootEntitesListAdmin()', () => {
   });
 });
 
-describe('getDirectionsServicesRows()', () => {
+describe('getDirectionsServicesList()', () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
@@ -1118,7 +1118,7 @@ describe('getDirectionsServicesRows()', () => {
       },
     ]);
 
-    const result = await getDirectionsServicesRows('service-pa');
+    const result = await getDirectionsServicesList('service-pa');
 
     expect(result).toEqual({
       data: [],
@@ -1166,7 +1166,7 @@ describe('getDirectionsServicesRows()', () => {
       },
     ]);
 
-    const result = await getDirectionsServicesRows('dir-autonomie');
+    const result = await getDirectionsServicesList('dir-autonomie');
 
     expect(result.data).toEqual([
       {
@@ -1200,7 +1200,7 @@ describe('getDirectionsServicesRows()', () => {
       },
     ]);
 
-    const result = await getDirectionsServicesRows('root-ars');
+    const result = await getDirectionsServicesList('root-ars');
 
     expect(result.capabilities).toEqual({
       canCreateDirection: true,
@@ -1244,7 +1244,7 @@ describe('getDirectionsServicesRows()', () => {
       },
     ]);
 
-    const result = await getDirectionsServicesRows('root-ars');
+    const result = await getDirectionsServicesList('root-ars');
 
     expect(prisma.entite.findMany).toHaveBeenCalledWith({
       select: {

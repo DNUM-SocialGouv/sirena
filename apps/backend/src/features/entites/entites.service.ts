@@ -177,7 +177,7 @@ export const getRootEntitesListAdmin = async () =>
     orderBy: [{ entiteTypeId: 'asc' }, { nomComplet: 'asc' }],
   });
 
-export const getDirectionsServicesRows = async (
+export const getDirectionsServicesList = async (
   entiteAdminLocalId: string,
   { search = '' }: { search?: string } = {},
 ) => {

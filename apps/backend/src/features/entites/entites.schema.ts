@@ -103,7 +103,7 @@ export const GetEntitesListAdminResponseSchema = z.array(
   }),
 );
 
-export const GetDirectionsServicesRowsResponseSchema = z.object({
+export const GetDirectionsServicesListResponseSchema = z.object({
   data: z.array(
     z.object({
       id: z.string(),

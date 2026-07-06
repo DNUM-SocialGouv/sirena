@@ -9,7 +9,7 @@ import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
-  getDirectionsServicesRows,
+  getDirectionsServicesList,
   getEditableEntitiesChain,
   getEntiteById,
   getEntites,
@@ -25,7 +25,7 @@ vi.mock('./entites.service.js', () => ({
   getEntites: vi.fn(),
   getEntiteById: vi.fn(),
   getEntitesListAdmin: vi.fn(),
-  getDirectionsServicesRows: vi.fn(),
+  getDirectionsServicesList: vi.fn(),
   getRootEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
   editEntiteAdmin: editEntiteAdminSpy,
@@ -205,7 +205,7 @@ describe('Entites endpoints: /entites', () => {
   describe('GET /admin/directions-services', () => {
     it('scopes local directions and services rows from the assigned entity', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
-      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce({
+      vi.mocked(getDirectionsServicesList).mockResolvedValueOnce({
         data: [
           {
             id: 'dir-autonomie',
@@ -243,12 +243,12 @@ describe('Entites endpoints: /entites', () => {
           canCreateService: true,
         },
       });
-      expect(getDirectionsServicesRows).toHaveBeenCalledWith('dir-autonomie', { search: '' });
+      expect(getDirectionsServicesList).toHaveBeenCalledWith('dir-autonomie', { search: '' });
     });
 
     it('passes search query to local directions and services rows service', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
-      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce({
+      vi.mocked(getDirectionsServicesList).mockResolvedValueOnce({
         data: [],
         capabilities: {
           canCreateDirection: false,
@@ -259,7 +259,7 @@ describe('Entites endpoints: /entites', () => {
       const res = await app.request('/admin/directions-services?search=autonomie');
 
       expect(res.status).toBe(200);
-      expect(getDirectionsServicesRows).toHaveBeenCalledWith('dir-autonomie', { search: 'autonomie' });
+      expect(getDirectionsServicesList).toHaveBeenCalledWith('dir-autonomie', { search: 'autonomie' });
     });
   });
 

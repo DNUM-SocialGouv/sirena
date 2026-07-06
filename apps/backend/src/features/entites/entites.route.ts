@@ -9,7 +9,7 @@ import {
 import {
   CreateChildEntiteAdminResponseSchema,
   EditEntiteAdminResponseSchema,
-  GetDirectionsServicesRowsResponseSchema,
+  GetDirectionsServicesListResponseSchema,
   GetEntitesByIdAdminResponseSchema,
   GetEntitesListAdminResponseSchema,
   GetEntitiesChainResponseSchema,
@@ -38,10 +38,10 @@ export const getRootEntitesListAdminRoute = openApiProtectedRoute({
   },
 });
 
-export const getDirectionsServicesRowsRoute = openApiProtectedRoute({
+export const getDirectionsServicesListRoute = openApiProtectedRoute({
   description: 'Get local directions and services rows for entity admins',
   responses: {
-    ...openApiRawResponse(GetDirectionsServicesRowsResponseSchema),
+    ...openApiRawResponse(GetDirectionsServicesListResponseSchema),
   },
 });
 
