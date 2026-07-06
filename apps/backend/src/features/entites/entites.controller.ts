@@ -118,13 +118,19 @@ const app = factoryWithLogs
       logger.info({ assignedEntiteId, search }, 'Local directions and services list requested');
 
       if (!assignedEntiteId) {
-        return c.json({ data: [] });
+        return c.json({
+          data: [],
+          capabilities: {
+            canCreateDirection: false,
+            canCreateService: false,
+          },
+        });
       }
 
-      const rows = await getDirectionsServicesRows(assignedEntiteId, { search });
-      logger.info({ rowsCount: rows.length }, 'Local directions and services list retrieved successfully');
+      const result = await getDirectionsServicesRows(assignedEntiteId, { search });
+      logger.info({ rowsCount: result.data.length }, 'Local directions and services list retrieved successfully');
 
-      return c.json({ data: rows });
+      return c.json(result);
     },
   )
 

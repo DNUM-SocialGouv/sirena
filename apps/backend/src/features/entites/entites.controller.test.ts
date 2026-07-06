@@ -205,17 +205,23 @@ describe('Entites endpoints: /entites', () => {
   describe('GET /admin/directions-services', () => {
     it('scopes local directions and services rows from the assigned entity', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
-      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce([
-        {
-          id: 'dir-autonomie',
-          directionNom: 'Direction Autonomie',
-          directionLabel: 'DA',
-          serviceNom: '',
-          serviceLabel: '',
-          email: 'direction-autonomie@ars.fr',
-          editId: 'dir-autonomie',
+      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce({
+        data: [
+          {
+            id: 'dir-autonomie',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: '',
+            serviceLabel: '',
+            email: 'direction-autonomie@ars.fr',
+            editId: 'dir-autonomie',
+          },
+        ],
+        capabilities: {
+          canCreateDirection: false,
+          canCreateService: true,
         },
-      ]);
+      });
 
       const res = await app.request('/admin/directions-services');
 
@@ -232,13 +238,23 @@ describe('Entites endpoints: /entites', () => {
             editId: 'dir-autonomie',
           },
         ],
+        capabilities: {
+          canCreateDirection: false,
+          canCreateService: true,
+        },
       });
       expect(getDirectionsServicesRows).toHaveBeenCalledWith('dir-autonomie', { search: '' });
     });
 
     it('passes search query to local directions and services rows service', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
-      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce([]);
+      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce({
+        data: [],
+        capabilities: {
+          canCreateDirection: false,
+          canCreateService: true,
+        },
+      });
 
       const res = await app.request('/admin/directions-services?search=autonomie');
 

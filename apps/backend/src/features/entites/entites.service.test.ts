@@ -1120,7 +1120,7 @@ describe('getDirectionsServicesRows()', () => {
 
     const result = await getDirectionsServicesRows('service-pa');
 
-    expect(result).toEqual([
+    expect(result.data).toEqual([
       {
         id: 'service-pa',
         directionNom: 'Direction Autonomie',
@@ -1172,7 +1172,7 @@ describe('getDirectionsServicesRows()', () => {
 
     const result = await getDirectionsServicesRows('dir-autonomie');
 
-    expect(result).toEqual([
+    expect(result.data).toEqual([
       {
         id: 'service-pa',
         directionNom: 'Direction Autonomie',
@@ -1183,6 +1183,32 @@ describe('getDirectionsServicesRows()', () => {
         editId: 'service-pa',
       },
     ]);
+  });
+
+  it('returns only create capability booleans without disabled reason fields', async () => {
+    vi.mocked(prisma.entite.findMany).mockResolvedValueOnce([
+      {
+        ...fakeEntite('root-ars'),
+        nomComplet: 'ARS Normandie',
+        label: 'ARS NOR',
+        entiteMereId: null,
+      },
+      {
+        ...fakeEntite('dir-autonomie'),
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        email: 'direction-autonomie@ars.fr',
+        entiteMereId: 'root-ars',
+        isActive: false,
+      },
+    ]);
+
+    const result = await getDirectionsServicesRows('root-ars');
+
+    expect(result.capabilities).toEqual({
+      canCreateDirection: true,
+      canCreateService: false,
+    });
   });
 
   it('returns direction and service rows scoped to the selected entite administrative perimeter', async () => {
@@ -1230,9 +1256,10 @@ describe('getDirectionsServicesRows()', () => {
         label: true,
         email: true,
         entiteMereId: true,
+        isActive: true,
       },
     });
-    expect(result).toEqual([
+    expect(result.data).toEqual([
       {
         id: 'dir-autonomie',
         directionNom: 'Direction Autonomie',

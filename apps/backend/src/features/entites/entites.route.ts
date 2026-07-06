@@ -2,6 +2,7 @@ import {
   openApi400BadRequest,
   openApi404NotFound,
   openApiProtectedRoute,
+  openApiRawResponse,
   openApiResponse,
   openApiResponses,
 } from '@sirena/backend-utils/helpers';
@@ -40,7 +41,7 @@ export const getRootEntitesListAdminRoute = openApiProtectedRoute({
 export const getDirectionsServicesRowsRoute = openApiProtectedRoute({
   description: 'Get local directions and services rows for entity admins',
   responses: {
-    ...openApiResponses(GetDirectionsServicesRowsResponseSchema),
+    ...openApiRawResponse(GetDirectionsServicesRowsResponseSchema),
   },
 });
 

@@ -188,6 +188,7 @@ export const getDirectionsServicesRows = async (
       label: true,
       email: true,
       entiteMereId: true,
+      isActive: true,
     },
   });
 
@@ -206,8 +207,13 @@ export const getDirectionsServicesRows = async (
   const entitesAdminLocal: typeof entites = [];
   const entiteAdminLocal = entites.find((entite) => entite.id === entiteAdminLocalId);
 
+  const emptyCapabilities = {
+    canCreateDirection: false,
+    canCreateService: false,
+  };
+
   if (!entiteAdminLocal) {
-    return [];
+    return { data: [], capabilities: emptyCapabilities };
   }
 
   const entiteMereAdminLocal = entiteAdminLocal.entiteMereId
@@ -215,7 +221,10 @@ export const getDirectionsServicesRows = async (
     : undefined;
 
   if (entiteMereAdminLocal?.entiteMereId !== null && entiteMereAdminLocal !== undefined) {
-    return buildDirectionsServicesRowsFromHierarchy([entiteMereAdminLocal, entiteAdminLocal], { search });
+    return {
+      data: buildDirectionsServicesRowsFromHierarchy([entiteMereAdminLocal, entiteAdminLocal], { search }),
+      capabilities: emptyCapabilities,
+    };
   }
 
   const buildEntitesAdminLocal = (entite: (typeof entites)[number]) => {
@@ -227,7 +236,22 @@ export const getDirectionsServicesRows = async (
 
   buildEntitesAdminLocal(entiteAdminLocal);
 
-  return buildDirectionsServicesRowsFromHierarchy(entitesAdminLocal, { search });
+  const isAssignedToEntiteAdministrative = entiteAdminLocal.entiteMereId === null;
+  const hasActiveDirection = entitesAdminLocal.some(
+    (entite) => entite.entiteMereId === entiteAdminLocal.id && entite.isActive,
+  );
+  const isAssignedToDirection = entiteMereAdminLocal?.entiteMereId === null;
+  const canCreateService = isAssignedToEntiteAdministrative
+    ? hasActiveDirection
+    : isAssignedToDirection && entiteAdminLocal.isActive;
+
+  return {
+    data: buildDirectionsServicesRowsFromHierarchy(entitesAdminLocal, { search }),
+    capabilities: {
+      canCreateDirection: isAssignedToEntiteAdministrative,
+      canCreateService,
+    },
+  };
 };
 
 export const createChildEntiteAdmin = async (

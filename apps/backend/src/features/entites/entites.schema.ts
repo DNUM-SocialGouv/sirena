@@ -103,17 +103,23 @@ export const GetEntitesListAdminResponseSchema = z.array(
   }),
 );
 
-export const GetDirectionsServicesRowsResponseSchema = z.array(
-  z.object({
-    id: z.string(),
-    directionNom: z.string(),
-    directionLabel: z.string(),
-    serviceNom: z.string(),
-    serviceLabel: z.string(),
-    email: z.string(),
-    editId: z.string(),
+export const GetDirectionsServicesRowsResponseSchema = z.object({
+  data: z.array(
+    z.object({
+      id: z.string(),
+      directionNom: z.string(),
+      directionLabel: z.string(),
+      serviceNom: z.string(),
+      serviceLabel: z.string(),
+      email: z.string(),
+      editId: z.string(),
+    }),
+  ),
+  capabilities: z.object({
+    canCreateDirection: z.boolean(),
+    canCreateService: z.boolean(),
   }),
-);
+});
 
 export const GetEntitesByIdAdminResponseSchema = EntiteAdminSchema;
 
