@@ -47,7 +47,7 @@ export const useDirectionsServicesRowsQueryOptions = (query: Pick<QueryParams, '
   queryKey: ['entites', 'admin', 'directions-services', query],
   queryFn: () => fetchDirectionsServicesRows(query),
   retry: false,
-  initialData: { data: [] },
+  initialData: { data: [], capabilities: { canCreateDirection: false, canCreateService: false } },
 });
 
 export const useDirectionsServicesRows = (query: Pick<QueryParams, 'search'> = {}) =>

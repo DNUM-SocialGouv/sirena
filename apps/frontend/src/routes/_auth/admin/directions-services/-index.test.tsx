@@ -72,7 +72,7 @@ describe('Admin directions and services route', () => {
     expect(screen.queryByRole('button', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
-  it('shows only the disabled add service control for a Direction-level affectation', () => {
+  it('hides add service when backend capabilities disallow it for a Direction-level affectation', () => {
     vi.mocked(useProfile).mockReturnValue({
       data: {
         affectationChain: [
@@ -81,17 +81,33 @@ describe('Admin directions and services route', () => {
         ],
       },
     } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+      data: {
+        data: [],
+        capabilities: {
+          canCreateDirection: false,
+          canCreateService: false,
+        },
+      },
+    } as never);
 
     render(<RouteComponent />);
 
     expect(screen.queryByRole('button', { name: 'Ajouter une direction' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ajouter un service' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Ajouter un service' })).not.toBeInTheDocument();
   });
 
-  it('shows disabled add direction and add service controls', () => {
+  it('shows add direction and add service controls from backend capabilities', () => {
     vi.mocked(useProfile).mockReturnValue({ data: {} } as never);
-    vi.mocked(useDirectionsServicesRows).mockReturnValue({ data: { data: [] } } as never);
+    vi.mocked(useDirectionsServicesRows).mockReturnValue({
+      data: {
+        data: [],
+        capabilities: {
+          canCreateDirection: true,
+          canCreateService: true,
+        },
+      },
+    } as never);
 
     render(<RouteComponent />);
 

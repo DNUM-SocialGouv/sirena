@@ -47,11 +47,9 @@ export function RouteComponent() {
   const [activeSearch, setActiveSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const directionsServicesQuery = useDirectionsServicesRows({ search: activeSearch || undefined });
-  const affectationLevel = profile?.affectationChain?.length ?? 1;
-  const isAffectedToEntiteAdministrative = affectationLevel === 1;
-  const isAffectedToDirection = affectationLevel === 2;
-  const canCreateDirection = isAffectedToEntiteAdministrative;
-  const canCreateService = isAffectedToEntiteAdministrative || isAffectedToDirection;
+  const capabilities = directionsServicesQuery.data?.capabilities;
+  const canCreateDirection = capabilities?.canCreateDirection ?? false;
+  const canCreateService = capabilities?.canCreateService ?? false;
   const organizationName = profile?.affectationChain?.at(-1)?.nomComplet;
   const title = useMemo(
     () => (organizationName ? `Directions et services (${organizationName})` : 'Directions et services'),

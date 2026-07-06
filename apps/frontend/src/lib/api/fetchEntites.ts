@@ -41,9 +41,9 @@ export async function fetchDirectionsServicesRows(query: Pick<QueryParams, 'sear
 
   await handleRequestErrors(res);
 
-  const { data } = await res.json();
+  const { data, capabilities } = await res.json();
 
-  return { data };
+  return { data, capabilities };
 }
 
 export async function fetchEntiteByIdAdmin(id: string) {
