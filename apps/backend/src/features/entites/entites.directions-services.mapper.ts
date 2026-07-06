@@ -1,3 +1,5 @@
+import { groupEntitesByParentId } from './entites.hierarchy.js';
+
 type EntiteAdminLocal = {
   id: string;
   nomComplet: string;
@@ -34,20 +36,10 @@ export const buildDirectionsServicesRows = (
   entitesAdminLocal: EntiteAdminLocal[],
   { search = '' }: { search?: string } = {},
 ): DirectionsServicesRow[] => {
-  const childrenByParentId = new Map<string, EntiteAdminLocal[]>();
+  const entitesParEntiteMere = groupEntitesByParentId(entitesAdminLocal);
 
-  for (const entite of entitesAdminLocal) {
-    if (entite.entiteMereId === null) {
-      continue;
-    }
-
-    const siblings = childrenByParentId.get(entite.entiteMereId) ?? [];
-    siblings.push(entite);
-    childrenByParentId.set(entite.entiteMereId, siblings);
-  }
-
-  for (const siblings of childrenByParentId.values()) {
-    siblings.sort(compareByNomComplet);
+  for (const entitesEnfants of entitesParEntiteMere.values()) {
+    entitesEnfants.sort(compareByNomComplet);
   }
 
   const adminLocalEntiteIds = new Set(entitesAdminLocal.map((entite) => entite.id));
@@ -57,7 +49,7 @@ export const buildDirectionsServicesRows = (
   const rows: DirectionsServicesRow[] = [];
 
   const pushServiceRows = (direction: EntiteAdminLocal) => {
-    const services = childrenByParentId.get(direction.id) ?? [];
+    const services = entitesParEntiteMere.get(direction.id) ?? [];
     for (const service of services) {
       rows.push({
         id: service.id,
@@ -77,7 +69,7 @@ export const buildDirectionsServicesRows = (
       continue;
     }
 
-    const directions = childrenByParentId.get(adminLocalRoot.id) ?? [];
+    const directions = entitesParEntiteMere.get(adminLocalRoot.id) ?? [];
 
     for (const direction of directions) {
       rows.push({
