@@ -87,6 +87,11 @@ export type CreateChildEntiteAdminInput = {
   isActive: boolean;
 };
 
+export type CreateDirectionAdminLocalInput = Omit<
+  CreateChildEntiteAdminInput,
+  'emailContactUsager' | 'adresseContactUsager' | 'telContactUsager'
+>;
+
 export async function editEntiteAdmin(id: string, input: EditEntiteAdminInput) {
   const res = await client.entites.admin[':id'].$patch({
     param: { id },
@@ -100,6 +105,15 @@ export async function editEntiteAdmin(id: string, input: EditEntiteAdminInput) {
 export async function createChildEntiteAdmin(id: string, input: CreateChildEntiteAdminInput) {
   const res = await client.entites.admin[':id'].children.$post({
     param: { id },
+    json: input,
+  });
+  await handleRequestErrors(res);
+  const { data } = await res.json();
+  return data;
+}
+
+export async function createDirectionAdminLocal(input: CreateDirectionAdminLocalInput) {
+  const res = await client.entites.admin['directions-services'].directions.$post({
     json: input,
   });
   await handleRequestErrors(res);
