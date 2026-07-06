@@ -9,6 +9,7 @@ import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
+  createDirectionAdminLocal,
   getDirectionsServicesList,
   getEditableEntitiesChain,
   getEntiteById,
@@ -30,6 +31,7 @@ vi.mock('./entites.service.js', () => ({
   getEditableEntitiesChain: vi.fn(),
   editEntiteAdmin: editEntiteAdminSpy,
   createChildEntiteAdmin: createChildEntiteAdminSpy,
+  createDirectionAdminLocal: createDirectionAdminLocalSpy,
 }));
 
 vi.mock('../../middlewares/auth.middleware.js', () => {
@@ -54,11 +56,15 @@ const {
   currentRole,
   patchEntiteAdminByIdSpy: editEntiteAdminSpy,
   postChildEntiteAdminSpy: createChildEntiteAdminSpy,
+  createDirectionAdminLocalSpy,
+  assignedEntiteIdState,
 } = vi.hoisted(() => ({
   roleMiddlewareSpy: vi.fn(),
   currentRole: { value: 'SUPER_ADMIN' },
   patchEntiteAdminByIdSpy: vi.fn(),
   postChildEntiteAdminSpy: vi.fn(),
+  createDirectionAdminLocalSpy: vi.fn(),
+  assignedEntiteIdState: { value: 'dir-autonomie' as string | undefined },
 }));
 
 vi.mock('../../middlewares/role.middleware.js', () => {
@@ -80,7 +86,7 @@ vi.mock('../../middlewares/entites.middleware.js', () => {
   return {
     default: async (c: Context, next: Next) => {
       c.set('entiteIds', ['dir-autonomie', 'service-pa']);
-      c.set('assignedEntiteId', 'dir-autonomie');
+      c.set('assignedEntiteId', assignedEntiteIdState.value);
       c.set('topEntiteId', 'root-ars');
       return next();
     },
@@ -113,6 +119,7 @@ describe('Entites endpoints: /entites', () => {
 
   beforeEach(() => {
     currentRole.value = ROLES.SUPER_ADMIN;
+    assignedEntiteIdState.value = 'dir-autonomie';
     vi.clearAllMocks();
   });
 
@@ -262,6 +269,97 @@ describe('Entites endpoints: /entites', () => {
 
       expect(res.status).toBe(200);
       expect(getDirectionsServicesList).toHaveBeenCalledWith('dir-autonomie', { search: 'autonomie' });
+    });
+  });
+
+  describe('POST /admin/directions-services/directions', () => {
+    it('creates a Direction from the assigned entite administrative for ENTITY_ADMIN', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      const createDirectionPayload = {
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        email: 'direction-autonomie@ars.fr',
+        isActive: false,
+      };
+      vi.mocked(createDirectionAdminLocal).mockResolvedValueOnce({
+        id: 'dir-autonomie',
+        ...createDirectionPayload,
+        emailContactUsager: '',
+        adresseContactUsager: '',
+        telContactUsager: '',
+      });
+
+      const res = await app.request('/admin/directions-services/directions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(createDirectionPayload),
+      });
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: {
+          id: 'dir-autonomie',
+          ...createDirectionPayload,
+          emailContactUsager: '',
+          adresseContactUsager: '',
+          telContactUsager: '',
+        },
+      });
+      expect(createDirectionAdminLocal).toHaveBeenCalledWith('dir-autonomie', createDirectionPayload);
+    });
+
+    it('returns 400 when local Direction creation is forbidden for the assigned entity', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      const createDirectionPayload = {
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        email: 'direction-autonomie@ars.fr',
+        isActive: true,
+      };
+      vi.mocked(createDirectionAdminLocal).mockRejectedValueOnce(new EntiteChildCreationForbiddenError());
+
+      const res = await app.request('/admin/directions-services/directions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(createDirectionPayload),
+      });
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toEqual({
+        message: 'Child entite creation is not allowed for this parent',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
+      expect(createDirectionAdminLocal).toHaveBeenCalledWith('dir-autonomie', createDirectionPayload);
+    });
+
+    it('returns 400 without calling the service when no assigned entity is available', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      assignedEntiteIdState.value = undefined;
+      const createDirectionPayload = {
+        nomComplet: 'Direction Autonomie',
+        label: 'DA',
+        email: 'direction-autonomie@ars.fr',
+        isActive: true,
+      };
+
+      const res = await app.request('/admin/directions-services/directions', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(createDirectionPayload),
+      });
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toEqual({
+        message: 'Assigned entite is required to create a Direction',
+        cause: { kind: ERROR_KIND.BUSINESS },
+      });
+      expect(createDirectionAdminLocal).not.toHaveBeenCalled();
     });
   });
 

@@ -149,3 +149,11 @@ export const CreateChildEntiteAdminInputSchema = z.object({
 export const CreateChildEntiteAdminResponseSchema = CreateChildEntiteAdminInputSchema.extend({
   id: z.string(),
 });
+
+export const CreateDirectionAdminLocalInputSchema = CreateChildEntiteAdminInputSchema.omit({
+  emailContactUsager: true,
+  adresseContactUsager: true,
+  telContactUsager: true,
+});
+
+export const CreateDirectionAdminLocalResponseSchema = CreateChildEntiteAdminResponseSchema;

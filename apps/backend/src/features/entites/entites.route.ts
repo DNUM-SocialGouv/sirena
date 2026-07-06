@@ -8,6 +8,7 @@ import {
 } from '@sirena/backend-utils/helpers';
 import {
   CreateChildEntiteAdminResponseSchema,
+  CreateDirectionAdminLocalResponseSchema,
   EditEntiteAdminResponseSchema,
   GetDirectionsServicesListResponseSchema,
   GetEntitesByIdAdminResponseSchema,
@@ -49,6 +50,15 @@ export const getEntiteByIdAdminRoute = openApiProtectedRoute({
   description: 'Get entite by id for super admins',
   responses: {
     ...openApiResponse(GetEntitesByIdAdminResponseSchema),
+    ...openApi404NotFound('Entite not found'),
+  },
+});
+
+export const createDirectionAdminLocalRoute = openApiProtectedRoute({
+  description: 'Create Direction for entity admins from local directions and services workflow',
+  responses: {
+    ...openApiResponse(CreateDirectionAdminLocalResponseSchema),
+    ...openApi400BadRequest('Child entite creation is not allowed for this parent'),
     ...openApi404NotFound('Entite not found'),
   },
 });

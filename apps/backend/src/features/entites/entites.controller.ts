@@ -10,6 +10,7 @@ import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
   createChildEntiteAdminRoute,
+  createDirectionAdminLocalRoute,
   editEntiteAdminRoute,
   getDirectionsServicesListRoute,
   getEntiteByIdAdminRoute,
@@ -20,12 +21,14 @@ import {
 } from './entites.route.js';
 import {
   CreateChildEntiteAdminInputSchema,
+  CreateDirectionAdminLocalInputSchema,
   EditEntiteInputSchema,
   GetEntitesListAdminQuerySchema,
   GetEntitiesQuerySchema,
 } from './entites.schema.js';
 import {
   createChildEntiteAdmin,
+  createDirectionAdminLocal,
   editEntiteAdmin,
   getDirectionsServicesList,
   getEditableEntitiesChain,
@@ -131,6 +134,48 @@ const app = factoryWithLogs
       logger.info({ rowsCount: result.data.length }, 'Local directions and services list retrieved successfully');
 
       return c.json(result);
+    },
+  )
+
+  .post(
+    '/admin/directions-services/directions',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    zValidator('json', CreateDirectionAdminLocalInputSchema),
+    createDirectionAdminLocalRoute,
+    async (c) => {
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const data = c.req.valid('json');
+      const logger = c.get('logger');
+
+      if (!assignedEntiteId) {
+        throwHTTPException400BadRequest('Assigned entite is required to create a Direction', {
+          res: c.res,
+          kind: ERROR_KIND.BUSINESS,
+        });
+      }
+
+      try {
+        const entite = await createDirectionAdminLocal(assignedEntiteId, data);
+        return c.json({ data: entite });
+      } catch (error) {
+        if (error instanceof EntiteNotFoundError) {
+          logger.warn({ entiteId: assignedEntiteId }, 'Entite not found');
+          throwHTTPException404NotFound('Entite not found', { res: c.res, kind: ERROR_KIND.BUSINESS });
+        }
+
+        if (error instanceof EntiteChildCreationForbiddenError) {
+          logger.warn(
+            { entiteId: assignedEntiteId },
+            'Local Direction creation is not allowed for this assigned entity',
+          );
+          throwHTTPException400BadRequest('Child entite creation is not allowed for this parent', {
+            res: c.res,
+            kind: ERROR_KIND.BUSINESS,
+          });
+        }
+
+        throw error;
+      }
     },
   )
 
