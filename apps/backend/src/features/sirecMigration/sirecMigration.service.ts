@@ -215,6 +215,7 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
           lienVictimeId: data.declarant.lienVictimeId,
           lienAutrePrecision: data.declarant.lienAutrePrecision,
           commentaire: data.declarant.commentaire,
+          estSignalementProfessionnel: data.declarant.estSignalementProfessionnel,
           ...(data.declarant.adresse !== null
             ? {
                 adresse: {
@@ -252,7 +253,10 @@ export async function saveFromSirec(data: SirenaRequeteData): Promise<string> {
           commentaire: data.victime?.commentaire ?? '',
           ageId: data.victime?.ageId ?? null,
           mesureProtection: data.victime?.mesureProtection ?? null,
-          ...(data.declarant?.estVictime && { declarantDeId: sirenaRequete.id }),
+          ...(data.declarant?.estVictime && {
+            declarantDeId: sirenaRequete.id,
+            estSignalementProfessionnel: data.declarant.estSignalementProfessionnel,
+          }),
           ...(data.victime?.adresse !== null && data.victime?.adresse !== undefined
             ? {
                 adresse: {

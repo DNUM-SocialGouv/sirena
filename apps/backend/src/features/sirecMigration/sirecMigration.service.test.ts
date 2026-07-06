@@ -80,6 +80,7 @@ describe('sirecMigration.service.ts', () => {
           civiliteId: string | null;
         } | null;
         commentaire: string;
+        estSignalementProfessionnel: boolean | null;
       } | null,
       victime: null as {
         identite: {
@@ -337,6 +338,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           identite: null,
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
         victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
@@ -351,6 +353,7 @@ describe('sirecMigration.service.ts', () => {
           mesureProtection: null,
           declarantDeId: 'SIREC-42',
           participantDeId: 'SIREC-42',
+          estSignalementProfessionnel: null,
         },
       });
     });
@@ -366,6 +369,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           identite: null,
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
         victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
       });
@@ -533,6 +537,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           identite: null,
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
         victime: null,
       });
@@ -551,6 +556,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           identite: null,
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
       });
 
@@ -563,6 +569,7 @@ describe('sirecMigration.service.ts', () => {
           lienAutrePrecision: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
+          estSignalementProfessionnel: null,
         },
       });
     });
@@ -578,6 +585,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           identite: null,
           commentaire: 'Le requérant est anonyme : oui',
+          estSignalementProfessionnel: null,
         },
       });
 
@@ -590,6 +598,7 @@ describe('sirecMigration.service.ts', () => {
           lienAutrePrecision: null,
           commentaire: 'Le requérant est anonyme : oui',
           declarantDeId: 'SIREC-42',
+          estSignalementProfessionnel: null,
         },
       });
     });
@@ -605,6 +614,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           identite: null,
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
       });
 
@@ -617,6 +627,7 @@ describe('sirecMigration.service.ts', () => {
           lienAutrePrecision: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
+          estSignalementProfessionnel: null,
         },
       });
     });
@@ -632,6 +643,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: { rue: '12 rue de la Paix', codePostal: '75001', ville: 'Paris' },
           identite: null,
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
       });
 
@@ -644,6 +656,7 @@ describe('sirecMigration.service.ts', () => {
           lienAutrePrecision: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
+          estSignalementProfessionnel: null,
           adresse: { create: { rue: '12 rue de la Paix', codePostal: '75001', ville: 'Paris' } },
         },
       });
@@ -660,6 +673,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: { rue: '12 rue de la Paix', codePostal: null, ville: null },
           identite: null,
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
       });
 
@@ -672,6 +686,7 @@ describe('sirecMigration.service.ts', () => {
           lienAutrePrecision: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
+          estSignalementProfessionnel: null,
           adresse: { create: { rue: '12 rue de la Paix', codePostal: '', ville: '' } },
         },
       });
@@ -694,6 +709,7 @@ describe('sirecMigration.service.ts', () => {
             civiliteId: null,
           },
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
       });
 
@@ -706,6 +722,7 @@ describe('sirecMigration.service.ts', () => {
           lienAutrePrecision: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
+          estSignalementProfessionnel: null,
           identite: {
             create: {
               nom: 'Dupont',
@@ -730,6 +747,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           identite: { nom: 'Dupont', prenom: null, email: null, telephone: null, civiliteId: null },
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
       });
 
@@ -742,6 +760,7 @@ describe('sirecMigration.service.ts', () => {
           lienAutrePrecision: null,
           commentaire: '',
           declarantDeId: 'SIREC-42',
+          estSignalementProfessionnel: null,
           identite: { create: { nom: 'Dupont', prenom: '', email: '', telephone: '', civiliteId: null } },
         },
       });
@@ -758,6 +777,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           identite: null,
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
       });
 
@@ -838,6 +858,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           identite: null,
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
       });
 
@@ -857,11 +878,57 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           identite: null,
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
       });
 
       expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ lienAutrePrecision: 'Voisin', declarantDeId: 'SIREC-42' }),
+      });
+    });
+
+    it('should pass estSignalementProfessionnel to declarant PersonneConcernee when set', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: {
+          estVictime: false,
+          veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          adresse: null,
+          identite: null,
+          commentaire: '',
+          estSignalementProfessionnel: true,
+        },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ estSignalementProfessionnel: true, declarantDeId: 'SIREC-42' }),
+      });
+    });
+
+    it('should pass estSignalementProfessionnel to the merged PersonneConcernee when declarant is the victime', async () => {
+      await saveFromSirec({
+        ...data,
+        declarant: {
+          estVictime: true,
+          veutGarderAnonymat: null,
+          lienVictimeId: null,
+          lienAutrePrecision: null,
+          adresse: null,
+          identite: null,
+          commentaire: '',
+          estSignalementProfessionnel: true,
+        },
+        victime: { identite: null, adresse: null, commentaire: '', ageId: null, mesureProtection: null },
+      });
+
+      expect(prisma.personneConcernee.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          estSignalementProfessionnel: true,
+          declarantDeId: 'SIREC-42',
+          participantDeId: 'SIREC-42',
+        }),
       });
     });
 
@@ -1262,6 +1329,7 @@ describe('sirecMigration.service.ts', () => {
           adresse: null,
           identite: null,
           commentaire: '',
+          estSignalementProfessionnel: null,
         },
         victime: null,
       });
