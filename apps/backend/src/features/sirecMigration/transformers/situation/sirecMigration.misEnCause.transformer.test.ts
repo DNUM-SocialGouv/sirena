@@ -136,6 +136,7 @@ const makeData = (
   misEnCauses: ReturnType<typeof makeMisEnCause>[] = [],
   sansMc: number | null = null,
   observation: string | null = null,
+  signalement: number | null = null,
 ) =>
   ({
     reclamation: {
@@ -144,6 +145,7 @@ const makeData = (
       service_gestionnaire: null as number | null,
       sans_mc: sansMc,
       observation,
+      signalement,
     },
     motifsDeclaresIdDicos: [],
     groupIds,
@@ -453,6 +455,87 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
 
       expect((result[0].misEnCauseData as any)?.autrePrecision).toBe('Observations : Obs commune');
       expect((result[1].misEnCauseData as any)?.autrePrecision).toBe('Observations : Obs commune');
+    });
+  });
+
+  describe('signalement', () => {
+    it('should not set autrePrecision on mis en cause when signalement is null', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })]),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBeUndefined();
+    });
+
+    it('should not set autrePrecision on mis en cause when signalement is false (0)', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })],
+          null,
+          null,
+          0,
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBeUndefined();
+    });
+
+    it('should set autrePrecision when signalement is true (1) on RPPS mis en cause', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })],
+          null,
+          null,
+          1,
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBe('Enregistré en tant que Signalement dans SIREC');
+    });
+
+    it('should append the signalement line after the observation on the same mis en cause', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData(
+          [],
+          [makeMisEnCause({ id_data: 10, type: 65, identifiant: 12345678901, rppsData: mockRppsData })],
+          null,
+          'Texte obs',
+          1,
+        ),
+        [],
+      );
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBe(
+        'Observations : Texte obs\nEnregistré en tant que Signalement dans SIREC',
+      );
+    });
+
+    it('should append the signalement line to "Sans mis en cause" when sans_mc is true', () => {
+      const result = transformSirecMisEnCauseSituations(makeData([], [], 1, null, 1), []);
+
+      expect((result[0].misEnCauseData as any)?.autrePrecision).toBe(
+        'Sans mis en cause\nEnregistré en tant que Signalement dans SIREC',
+      );
+    });
+
+    it('should not set autrePrecision for null misEnCauseData even when signalement is true', () => {
+      const result = transformSirecMisEnCauseSituations(
+        makeData([], [makeMisEnCause({ id_data: 10, type: null })], null, null, 1),
+        [],
+      );
+
+      expect(result[0].misEnCauseData).toBeNull();
+    });
+
+    it('should throw SirecTranscoError when signalement has an unknown value', () => {
+      expect(() => transformSirecMisEnCauseSituations(makeData([], [], null, null, 999), [])).toThrow(
+        SirecTranscoError,
+      );
     });
   });
 });
