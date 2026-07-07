@@ -9,6 +9,7 @@ import { QueryStateHandler } from '@/components/queryStateHandler/queryStateHand
 import { useEntitesListAdmin, useRootEntitesListAdmin } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { QueryParamsSchema } from '@/schemas/pagination.schema';
+import { useListStateStore } from '@/stores/listStateStore';
 import './index.css';
 
 export const Route = createFileRoute('/_auth/admin/entites/')({
@@ -71,6 +72,11 @@ const getEffectiveSort = (sort?: string, order?: 'asc' | 'desc') => {
 export function RouteComponent() {
   const search = useSearch({ from: '/_auth/admin/entites/' });
   const navigate = useNavigate({ from: '/admin/entites/' });
+  const setListLocation = useListStateStore((s) => s.setListLocation);
+
+  useEffect(() => {
+    setListLocation('entites', { to: '/admin/entites', search });
+  }, [search, setListLocation]);
 
   const limit = search.limit ?? DEFAULT_PAGE_SIZE;
   const offset = search.offset ?? 0;
