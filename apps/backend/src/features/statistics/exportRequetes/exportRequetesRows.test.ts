@@ -243,6 +243,29 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Ambulances Dupont');
   });
 
+  it('falls back to the category-code referential for lieu de survenue FINESS category', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0019',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          situations: [
+            {
+              lieuDeSurvenue: {
+                finess: '750000001',
+                categCode: '355',
+                categLib: '',
+              },
+            },
+          ],
+        },
+      ],
+      { categorieFinessLieuSurvenueByCode: new Map([['355', 'Centre hospitalier régional']]) },
+    );
+
+    expect(cell(rows[0], 'categorieFinessLieuSurvenue')).toBe('Centre hospitalier régional');
+  });
+
   it('populates lieu de survenue name from the address label', () => {
     const rows = buildExportRequetesRows([
       {

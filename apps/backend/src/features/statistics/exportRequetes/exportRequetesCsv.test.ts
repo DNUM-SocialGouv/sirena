@@ -4,14 +4,14 @@ import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportR
 import { buildExportRequetesCsv, buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
 
 describe('buildExportRequetesCsv', () => {
-  it('exports the stable 64-column business header when there are no rows', () => {
+  it('exports the stable 60-column business header when there are no rows', () => {
     const csv = buildExportRequetesCsv([]);
     const header = csv.replace(/^\uFEFF/, '');
     const columns = header.split(';');
 
     expect(csv).toMatch(/^\uFEFF/);
     expect(header).not.toContain('\n');
-    expect(columns).toHaveLength(64);
+    expect(columns).toHaveLength(60);
     expect(headerCell(columns, 'statutRequeteEntiteAdministrative')).toBe(
       'Statut de la requête pour mon entité administrative',
     );
@@ -120,14 +120,13 @@ describe('buildExportRequetesCsv', () => {
       .split('\n')[1]
       .split(';');
 
-    expect(row).toHaveLength(64);
+    expect(row).toHaveLength(60);
     expect(csvCell(row, 'codePostalDeclarant')).toBe('75001');
     expect(csvCell(row, 'departementDeclarant')).toBe('');
     expect(csvCell(row, 'codePostalPersonneConcernee')).toBe('97110');
     expect(csvCell(row, 'departementPersonneConcernee')).toBe('');
     expect(csvCell(row, 'codePostalLieuSurvenue')).toBe('69002');
     expect(csvCell(row, 'departementLieuSurvenue')).toBe('');
-    expect(csvCell(row, 'codePostalMisEnCause')).toBe('98000');
     expect(csvCell(row, 'departementMisEnCause')).toBe('');
   });
 

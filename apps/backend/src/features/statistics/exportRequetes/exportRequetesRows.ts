@@ -83,6 +83,7 @@ type ExportLieuDeSurvenueRecord = {
   transportType?: ExportLabelRecord | null;
   societeTransport?: string | null;
   finess?: string | null;
+  categCode?: string | null;
   categLib?: string | null;
   codePostal?: string | null;
   adresse?: ExportAdresseRecord | null;
@@ -136,9 +137,14 @@ type ExportSituationRecord = {
 
 type ExportRequeteKeyedRow = Partial<Record<ExportRequetesColumnKey, ExportRequetesCsvRow[number]>>;
 
+export type BuildExportRequetesRowsOptions = {
+  topEntiteId?: string;
+  categorieFinessLieuSurvenueByCode?: Map<string, string>;
+};
+
 export function buildExportRequetesRows(
   requetes: ExportRequeteRecord[],
-  options: { topEntiteId?: string } = {},
+  options: BuildExportRequetesRowsOptions = {},
 ): ExportRequetesCsvRow[] {
   return requetes.flatMap((requete) => {
     if (requete.situations.length === 0) {
@@ -152,7 +158,7 @@ export function buildExportRequetesRows(
 function buildExportRequeteRow(
   requete: ExportRequeteRecord,
   situation: ExportSituationRecord | null,
-  options: { topEntiteId?: string },
+  options: BuildExportRequetesRowsOptions,
   situationIndex?: number,
 ): ExportRequetesCsvRow {
   const requeteEntiteRacine = getRequeteEntiteRacine(requete, options.topEntiteId);
@@ -162,7 +168,12 @@ function buildExportRequeteRow(
     ...buildRequeteFields(requete),
     ...buildDeclarantFields(requete.declarant, shouldExportDepartements),
     ...buildPersonneConcerneeFields(requete.participant, shouldExportDepartements),
-    ...buildSituationFields(situation, situationIndex, shouldExportDepartements),
+    ...buildSituationFields(
+      situation,
+      situationIndex,
+      shouldExportDepartements,
+      options.categorieFinessLieuSurvenueByCode,
+    ),
     ...buildFaitsFields(situation?.faits ?? []),
     ...buildDemarchesFields(situation?.demarchesEngagees),
     ...buildWorkflowFields(requete, options, requeteEntiteRacine),
@@ -223,6 +234,7 @@ function buildSituationFields(
   situation: ExportSituationRecord | null,
   situationIndex: number | undefined,
   shouldExportDepartements: boolean,
+  categorieFinessLieuSurvenueByCode: Map<string, string> | undefined,
 ): ExportRequeteKeyedRow {
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
   const misEnCause = situation?.misEnCause;
@@ -235,7 +247,7 @@ function buildSituationFields(
     typeLieuSurvenue: lieuDeSurvenue?.lieuType?.label ?? '',
     precisionTypeLieuSurvenue: formatLieuSurvenuePrecision(lieuDeSurvenue),
     finessLieuSurvenue: lieuDeSurvenue?.finess ?? '',
-    categorieFinessLieuSurvenue: lieuDeSurvenue?.categLib ?? '',
+    categorieFinessLieuSurvenue: formatCategorieFinessLieuSurvenue(lieuDeSurvenue, categorieFinessLieuSurvenueByCode),
     nomLieuSurvenue: lieuDeSurvenue?.adresse?.label || lieuDeSurvenue?.societeTransport || '',
     codePostalLieuSurvenue,
     departementLieuSurvenue: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalLieuSurvenue) : '',
@@ -243,7 +255,6 @@ function buildSituationFields(
     precisionTypeMisEnCause: misEnCause?.misEnCauseTypePrecision?.label || misEnCause?.autrePrecision || '',
     finessMisEnCause: misEnCause?.finess ?? '',
     nomService: misEnCause?.nomService ?? '',
-    codePostalMisEnCause,
     departementMisEnCause: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalMisEnCause) : '',
     domaineFonctionnel: situation?.domainesFonctionnels?.label ?? '',
     entitesAdministrativesSituation: formatSituationRootEntites(situation?.situationEntites),
@@ -404,6 +415,21 @@ function formatLieuSurvenuePrecision(lieuDeSurvenue: ExportLieuDeSurvenueRecord 
     getLieuPrecisionLabel(lieuDeSurvenue?.lieuTypeId ?? undefined, lieuDeSurvenue?.lieuPrecision ?? undefined),
     lieuDeSurvenue?.transportType?.label,
   ]);
+}
+
+function formatCategorieFinessLieuSurvenue(
+  lieuDeSurvenue: ExportLieuDeSurvenueRecord | null | undefined,
+  categorieFinessLieuSurvenueByCode: Map<string, string> | undefined,
+): string {
+  if (lieuDeSurvenue?.categLib) {
+    return lieuDeSurvenue.categLib;
+  }
+
+  if (!lieuDeSurvenue?.categCode) {
+    return '';
+  }
+
+  return categorieFinessLieuSurvenueByCode?.get(lieuDeSurvenue.categCode) ?? '';
 }
 
 function formatRequeteEntites(requeteEntites: ExportRequeteEntiteRecord[] | undefined): string {

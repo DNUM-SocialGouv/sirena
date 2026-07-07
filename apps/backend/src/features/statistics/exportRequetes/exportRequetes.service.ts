@@ -110,8 +110,41 @@ export async function generateExportRequetesCsv(topEntiteId: string): Promise<st
     },
     include: exportRequetesInclude,
   });
+  const categorieFinessLieuSurvenueByCode = await getCategorieFinessLieuSurvenueByCode(requetes);
 
-  return buildExportRequetesCsvFromRecords(requetes.map(toExportRequeteRecord), { topEntiteId });
+  return buildExportRequetesCsvFromRecords(requetes.map(toExportRequeteRecord), {
+    topEntiteId,
+    categorieFinessLieuSurvenueByCode,
+  });
+}
+
+async function getCategorieFinessLieuSurvenueByCode(
+  requetes: ExportRequetePrismaPayload[],
+): Promise<Map<string, string>> {
+  const categCodes = Array.from(
+    new Set(
+      requetes.flatMap((requete) =>
+        requete.situations
+          .map((situation) => situation.lieuDeSurvenue?.categCode)
+          .filter((code): code is string => !!code),
+      ),
+    ),
+  );
+
+  if (categCodes.length === 0) {
+    return new Map();
+  }
+
+  const referentielRows = await prisma.autoriteCompetenteReferentiel.findMany({
+    where: { categCode: { in: categCodes } },
+    select: { categCode: true, categLib: true },
+  });
+
+  return new Map(
+    referentielRows
+      .filter((row): row is { categCode: string; categLib: string } => row.categLib != null && row.categLib !== '')
+      .map((row) => [row.categCode, row.categLib]),
+  );
 }
 
 function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportRequeteRecord {
