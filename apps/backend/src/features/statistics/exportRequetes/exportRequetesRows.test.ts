@@ -199,6 +199,42 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'domaineFonctionnel')).toBe('Santé');
   });
 
+  it('falls back to transport company for lieu de survenue name when address label is absent', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0013',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              societeTransport: 'Ambulances Dupont',
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Ambulances Dupont');
+  });
+
+  it('populates lieu de survenue name from the address label', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0012',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              adresse: { codePostal: '75013', label: 'Hôpital Pitié-Salpêtrière' },
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Hôpital Pitié-Salpêtrière');
+  });
+
   it('populates lieu de survenue and non-sensitive mis en cause fields', () => {
     const rows = buildExportRequetesRows([
       {
