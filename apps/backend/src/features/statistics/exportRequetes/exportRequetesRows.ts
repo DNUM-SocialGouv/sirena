@@ -52,7 +52,7 @@ type ExportParticipantRecord = {
   adresse?: ExportAdresseRecord | null;
   veutGarderAnonymat: boolean | null;
   estVictimeInformee: boolean | null;
-  mesureProtection?: Parameters<typeof getMesureProtectionShortLabel>[0];
+  mesureProtection?: string | null;
   estHandicapee: boolean | null;
   aAutrePersonnes: boolean | null;
   autrePersonnes?: string | null;
@@ -210,7 +210,7 @@ function buildPersonneConcerneeFields(
       : '',
     personneConcerneeConsentIdentiteCommuniquee: formatConsentIdentite(participant?.veutGarderAnonymat),
     personneConcerneeInformeeDemarche: formatExportBoolean(participant?.estVictimeInformee),
-    mesureProtectionPersonneConcernee: getMesureProtectionShortLabel(participant?.mesureProtection) ?? '',
+    mesureProtectionPersonneConcernee: formatMesureProtectionShortLabel(participant?.mesureProtection),
     personneConcerneeHandicap: formatExportBoolean(participant?.estHandicapee),
     autrePersonneConcernee: participant?.aAutrePersonnes ? (participant.autrePersonnes ?? '') : '',
   };
@@ -422,6 +422,18 @@ function getLatestEtapeCloturee(
   return etapes
     ?.filter((etape) => etape.entiteId === topEntiteId && etape.statutId === 'CLOTUREE')
     .toSorted((left, right) => right.createdAt.getTime() - left.createdAt.getTime())[0];
+}
+
+function formatMesureProtectionShortLabel(mesureProtection: string | null | undefined): string {
+  if (
+    mesureProtection !== 'MANDATAIRE_JUDICIAIRE' &&
+    mesureProtection !== 'MANDATAIRE_FAMILIAL' &&
+    mesureProtection !== 'NON'
+  ) {
+    return '';
+  }
+
+  return getMesureProtectionShortLabel(mesureProtection) ?? '';
 }
 
 function formatLienVictime(declarant: ExportDeclarantRecord | null | undefined): string {
