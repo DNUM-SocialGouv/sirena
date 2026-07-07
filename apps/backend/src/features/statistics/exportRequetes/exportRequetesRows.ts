@@ -212,7 +212,7 @@ function buildPersonneConcerneeFields(
     personneConcerneeInformeeDemarche: formatExportBoolean(participant?.estVictimeInformee),
     mesureProtectionPersonneConcernee: formatMesureProtectionShortLabel(participant?.mesureProtection),
     personneConcerneeHandicap: formatExportBoolean(participant?.estHandicapee),
-    autrePersonneConcernee: participant?.aAutrePersonnes ? (participant.autrePersonnes ?? '') : '',
+    autrePersonneConcernee: formatExportBoolean(participant?.aAutrePersonnes),
   };
 }
 
@@ -267,10 +267,17 @@ function buildDemarchesFields(
   demarchesEngagees: ExportDemarchesEngageesRecord | null | undefined,
 ): ExportRequeteKeyedRow {
   return {
+    misEnCauseContacte: demarchesEngagees ? formatExportBoolean(demarchesEngagees.dateContactEtablissement != null) : '',
     datePriseContact: formatExportDate(demarchesEngagees?.dateContactEtablissement),
+    declarantRecuReponse: formatExportBoolean(demarchesEngagees?.etablissementARepondu),
+    plainteDeposee: demarchesEngagees
+      ? formatExportBoolean(demarchesEngagees.datePlainte != null || demarchesEngagees.autoriteType?.label != null)
+      : '',
     dateDepotPlainte: formatExportDate(demarchesEngagees?.datePlainte),
     lieuDepotPlainte: demarchesEngagees?.autoriteType?.label ?? '',
-    demarchesAutresOrganismes: formatUniqueLabels(demarchesEngagees?.demarches.map((demarche) => demarche.label) ?? []),
+    demarchesAutresOrganismes: demarchesEngagees
+      ? formatExportBoolean(demarchesEngagees.demarches.some((demarche) => demarche.label != null))
+      : '',
   };
 }
 

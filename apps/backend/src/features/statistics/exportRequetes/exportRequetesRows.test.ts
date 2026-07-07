@@ -72,7 +72,7 @@ describe('buildExportRequetesRows', () => {
     );
     expect(cell(rows[0], 'mesureProtectionPersonneConcernee')).toBe('mandataire familial');
     expect(cell(rows[0], 'personneConcerneeHandicap')).toBe('Oui');
-    expect(cell(rows[0], 'autrePersonneConcernee')).toBe('Sa sœur');
+    expect(cell(rows[0], 'autrePersonneConcernee')).toBe('Oui');
     expect(cell(rows[0], 'dateReception')).toBe('17/06/2026');
     expect(cell(rows[0], 'modeReception')).toBe('Téléphone');
     expect(cell(rows[0], 'dateDemandeDeclarant')).toBe('16/06/2026');
@@ -128,7 +128,7 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'servicesSituation')).toBe('Service PA');
   });
 
-  it('populates démarches fields and leaves ambiguous boolean columns empty', () => {
+  it('populates démarches fields and maps contact presence to Oui/Non', () => {
     const rows = buildExportRequetesRows([
       {
         id: 'REQ-2026-0008',
@@ -147,13 +147,35 @@ describe('buildExportRequetesRows', () => {
       },
     ]);
 
-    expect(cell(rows[0], 'misEnCauseContacte')).toBe('');
+    expect(cell(rows[0], 'misEnCauseContacte')).toBe('Oui');
     expect(cell(rows[0], 'datePriseContact')).toBe('11/06/2026');
-    expect(cell(rows[0], 'declarantRecuReponse')).toBe('');
-    expect(cell(rows[0], 'plainteDeposee')).toBe('');
+    expect(cell(rows[0], 'declarantRecuReponse')).toBe('Oui');
+    expect(cell(rows[0], 'plainteDeposee')).toBe('Oui');
     expect(cell(rows[0], 'dateDepotPlainte')).toBe('12/06/2026');
     expect(cell(rows[0], 'lieuDepotPlainte')).toBe('Gendarmerie');
-    expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Conseil départemental, Défenseur des droits');
+    expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Oui');
+  });
+
+  it('exports Non for démarches booleans when the démarches record exists without related data', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0015',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            demarchesEngagees: {
+              etablissementARepondu: false,
+              demarches: [],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'misEnCauseContacte')).toBe('Non');
+    expect(cell(rows[0], 'declarantRecuReponse')).toBe('Non');
+    expect(cell(rows[0], 'plainteDeposee')).toBe('Non');
+    expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Non');
   });
 
   it('populates facts motifs, consequences, dates and functional domain', () => {
