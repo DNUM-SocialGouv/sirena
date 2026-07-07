@@ -249,6 +249,37 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'categorieProfessionnelleRppsMisEnCause')).toBe('');
   });
 
+  it('exports the root-scoped request status as the first column', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0010',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'ARS Île-de-France' },
+              statut: { label: 'Clôturée' },
+            },
+            {
+              entiteId: 'other-root',
+              entite: { label: 'ARS Normandie' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [{}],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(EXPORT_REQUETES_COLUMNS[0]).toEqual({
+      key: 'statutRequeteEntiteAdministrative',
+      header: 'Statut de la requête pour mon entité administrative',
+    });
+    expect(rows[0][0]).toBe('Clôturée');
+  });
+
   it('populates request entity status, root-scoped priority and latest root-scoped closure fields', () => {
     const rows = buildExportRequetesRows(
       [

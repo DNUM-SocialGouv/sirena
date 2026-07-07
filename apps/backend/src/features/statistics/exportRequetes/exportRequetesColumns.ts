@@ -1,4 +1,8 @@
 export const EXPORT_REQUETES_COLUMNS = [
+  {
+    key: 'statutRequeteEntiteAdministrative',
+    header: 'Statut de la requête pour mon entité administrative',
+  },
   { key: 'numeroRequete', header: 'Numéro de requête' },
   { key: 'declarantEstPersonneConcernee', header: 'Le déclarant est la personne concernée' },
   { key: 'lienPersonneConcernee', header: 'Lien avec la personne concernée' },

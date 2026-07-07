@@ -251,6 +251,7 @@ function buildWorkflowFields(requete: ExportRequeteRecord, options: { topEntiteI
   const etapeCloturee = getLatestEtapeCloturee(requete.etapes, options.topEntiteId);
 
   return {
+    statutRequeteEntiteAdministrative: requeteEntiteRacine?.statut?.label ?? '',
     entitesStatutsRequete: formatRequeteEntites(requete.requeteEntites),
     prioriteRequeteEntiteAdministrative: requeteEntiteRacine?.priorite?.label ?? '',
     derniereDateClotureEntiteAdministrative: formatExportDate(etapeCloturee?.clotureEffectiveDate),
