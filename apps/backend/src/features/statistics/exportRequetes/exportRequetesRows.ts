@@ -68,10 +68,12 @@ type ExportRequeteEntiteRecord = {
 
 type ExportRequeteEtapeRecord = {
   entiteId: string;
+  type?: string | null;
   statutId: string;
   createdAt: Date;
   clotureEffectiveDate?: Date | null;
   clotureReason: ExportLabelRecord[];
+  notes?: Array<{ texte: string | null }>;
 };
 
 type ExportLieuDeSurvenueRecord = {
@@ -290,11 +292,14 @@ function buildWorkflowFields(
   requeteEntiteRacine: ExportRequeteEntiteRecord | undefined,
 ): ExportRequeteKeyedRow {
   const etapeCloturee = getLatestEtapeCloturee(requete.etapes, options.topEntiteId);
+  const accuseReception = getAccuseReceptionEnvoi(requete.etapes, options.topEntiteId);
 
   return {
     statutRequeteEntiteAdministrative: requeteEntiteRacine?.statut?.label ?? '',
     entitesStatutsRequete: formatRequeteEntites(requete.requeteEntites),
     prioriteRequeteEntiteAdministrative: requeteEntiteRacine?.priorite?.label ?? '',
+    dateEnvoiAccuseReceptionEntiteAdministrative: formatExportDate(accuseReception?.date),
+    typeEnvoiAccuseReception: accuseReception?.type ?? '',
     derniereDateClotureEntiteAdministrative: formatExportDate(etapeCloturee?.clotureEffectiveDate),
     raisonsClotureEntiteAdministrative: formatExportList(
       etapeCloturee?.clotureReason.map((reason) => reason.label) ?? [],
@@ -437,6 +442,41 @@ function formatDepartementFromCodePostal(codePostal: string): string {
   }
 
   return codePostal.slice(0, 2);
+}
+
+function getAccuseReceptionEnvoi(
+  etapes: ExportRequeteEtapeRecord[] | undefined,
+  topEntiteId: string | undefined,
+): { date: Date; type: string } | undefined {
+  if (!topEntiteId) {
+    return undefined;
+  }
+
+  for (const etape of etapes ?? []) {
+    if (etape.entiteId !== topEntiteId || etape.type !== 'ACKNOWLEDGMENT') {
+      continue;
+    }
+
+    for (const note of etape.notes ?? []) {
+      const emailMatch = note.texte?.match(/Email d'accusé de réception envoyé le (\d{2})\/(\d{2})\/(\d{4})/);
+
+      if (emailMatch) {
+        const [, day, month, year] = emailMatch;
+        return { date: new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))), type: 'Email' };
+      }
+
+      const migratedMatch = note.texte?.match(
+        /Date d'envoi de l'accusé de réception au requérant : (\d{2})\/(\d{2})\/(\d{4})/,
+      );
+
+      if (migratedMatch) {
+        const [, day, month, year] = migratedMatch;
+        return { date: new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))), type: '' };
+      }
+    }
+  }
+
+  return undefined;
 }
 
 function getLatestEtapeCloturee(

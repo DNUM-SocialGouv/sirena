@@ -445,6 +445,58 @@ describe('buildExportRequetesRows', () => {
     expect(rows[0][0]).toBe('Clôturée');
   });
 
+  it('populates root-scoped acknowledgment email date and type from an auto-note', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0016',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          etapes: [
+            {
+              entiteId: 'root-entite',
+              type: 'ACKNOWLEDGMENT',
+              statutId: 'EN_COURS',
+              createdAt: new Date('2026-06-15T15:06:57.000Z'),
+              clotureReason: [],
+              notes: [{ texte: "Email d'accusé de réception envoyé le 15/06/2026 15:06:57" }],
+            },
+          ],
+          situations: [{}],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('15/06/2026');
+    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Email');
+  });
+
+  it('populates migrated acknowledgment date without inventing the send type', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0017',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          etapes: [
+            {
+              entiteId: 'root-entite',
+              type: 'ACKNOWLEDGMENT',
+              statutId: 'EN_COURS',
+              createdAt: new Date('2026-06-15T15:06:57.000Z'),
+              clotureReason: [],
+              notes: [{ texte: "Date d'envoi de l'accusé de réception au requérant : 16/06/2026" }],
+            },
+          ],
+          situations: [{}],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('16/06/2026');
+    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('');
+  });
+
   it('populates request entity status, root-scoped priority and latest root-scoped closure fields', () => {
     const rows = buildExportRequetesRows(
       [

@@ -26,6 +26,7 @@ const exportRequetesInclude = {
   etapes: {
     include: {
       clotureReason: true,
+      notes: true,
     },
   },
   requeteEntites: {
