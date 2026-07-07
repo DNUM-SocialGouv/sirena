@@ -329,6 +329,50 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'departementMisEnCause')).toBe('980');
   });
 
+  it('leaves department columns blank for non-ARS exports', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0014',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          declarant: {
+            estVictime: false,
+            isTuteur: false,
+            adresse: { codePostal: '75001' },
+            veutGarderAnonymat: false,
+            estSignalementProfessionnel: false,
+          },
+          participant: {
+            adresse: { codePostal: '69002' },
+            veutGarderAnonymat: false,
+            estVictimeInformee: false,
+            estHandicapee: false,
+            aAutrePersonnes: false,
+          },
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Conseil départemental', entiteTypeId: 'CD' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [
+            {
+              lieuDeSurvenue: { codePostal: '97110' },
+              misEnCause: { codePostal: '98000' },
+            },
+          ],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'departementDeclarant')).toBe('');
+    expect(cell(rows[0], 'departementPersonneConcernee')).toBe('');
+    expect(cell(rows[0], 'departementLieuSurvenue')).toBe('');
+    expect(cell(rows[0], 'departementMisEnCause')).toBe('');
+  });
+
   it('places department columns immediately after their postal-code columns', () => {
     expect(columnAfter('codePostalDeclarant')).toEqual({
       key: 'departementDeclarant',

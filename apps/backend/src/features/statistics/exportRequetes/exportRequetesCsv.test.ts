@@ -4,16 +4,23 @@ import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportR
 import { buildExportRequetesCsv, buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
 
 describe('buildExportRequetesCsv', () => {
-  it('exports the 59 XLSX business columns as a semicolon-separated CSV header when there are no rows', () => {
+  it('exports the stable 64-column business header when there are no rows', () => {
     const csv = buildExportRequetesCsv([]);
     const header = csv.replace(/^\uFEFF/, '');
     const columns = header.split(';');
 
     expect(csv).toMatch(/^\uFEFF/);
     expect(header).not.toContain('\n');
-    expect(columns).toHaveLength(EXPORT_REQUETES_COLUMNS.length);
+    expect(columns).toHaveLength(64);
+    expect(headerCell(columns, 'statutRequeteEntiteAdministrative')).toBe(
+      'Statut de la requête pour mon entité administrative',
+    );
     expect(headerCell(columns, 'numeroRequete')).toBe('Numéro de requête');
+    expect(headerCell(columns, 'departementDeclarant')).toBe('Département déclarant');
+    expect(headerCell(columns, 'departementPersonneConcernee')).toBe('Département personne concernée');
     expect(headerCell(columns, 'numeroSituation')).toBe('Numéro de situation');
+    expect(headerCell(columns, 'departementLieuSurvenue')).toBe('Département lieu de survenue');
+    expect(headerCell(columns, 'departementMisEnCause')).toBe('Département mis en cause');
     expect(headerCell(columns, 'raisonsClotureEntiteAdministrative')).toBe(
       'Raison(s) clôture de la requête pour mon entité administrative',
     );
