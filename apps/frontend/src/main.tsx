@@ -4,6 +4,8 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { Link, type LinkProps, RouterProvider } from '@tanstack/react-router';
 import { type JSX, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { AppUpdateNotice } from '@/components/AppUpdateNotice';
+import { registerPreloadErrorHandler } from '@/lib/preloadError';
 import { queryClient } from '@/lib/queryClient';
 import { router } from '@/lib/router';
 import { toastManager } from '@/lib/toastManager';
@@ -26,6 +28,7 @@ declare module '@codegouvfr/react-dsfr/spa' {
 
 startReactDsfr({ defaultColorScheme: 'system', Link });
 initMatomo();
+registerPreloadErrorHandler();
 
 function App() {
   return <RouterProvider router={router} />;
@@ -44,6 +47,7 @@ createRoot(document.getElementById('root') as HTMLElement, {
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <Toast.Provider limit={Infinity} toastManager={toastManager}>
+        <AppUpdateNotice />
         <App />
         <Toast.Portal container={document.body}>
           <Toast.Viewport className="toast-list__viewport">
