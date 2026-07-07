@@ -112,6 +112,7 @@ type ExportFaitRecord = {
 type ExportDemarchesEngageesRecord = {
   dateContactEtablissement?: Date | null;
   etablissementARepondu?: boolean | null;
+  organisme?: string | null;
   datePlainte?: Date | null;
   autoriteType?: ExportLabelRecord | null;
   demarches: ExportLabelRecord[];
@@ -292,9 +293,16 @@ function buildDemarchesFields(
     dateDepotPlainte: formatExportDate(demarchesEngagees?.datePlainte),
     lieuDepotPlainte: demarchesEngagees?.autoriteType?.label ?? '',
     demarchesAutresOrganismes: demarchesEngagees
-      ? formatExportBoolean(demarchesEngagees.demarches.some((demarche) => demarche.label != null))
+      ? formatExportBoolean(hasDemarchesAutresOrganismes(demarchesEngagees))
       : '',
   };
+}
+
+function hasDemarchesAutresOrganismes(demarchesEngagees: ExportDemarchesEngageesRecord): boolean {
+  return (
+    demarchesEngagees.demarches.some((demarche) => demarche.label != null) ||
+    (demarchesEngagees.organisme?.trim() ?? '') !== ''
+  );
 }
 
 function buildWorkflowFields(
