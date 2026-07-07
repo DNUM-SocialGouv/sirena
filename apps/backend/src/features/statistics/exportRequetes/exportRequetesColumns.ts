@@ -11,6 +11,7 @@ export const EXPORT_REQUETES_COLUMNS = [
     header: 'Le déclarant est tuteur/curateur de la personne concernée',
   },
   { key: 'codePostalDeclarant', header: 'Code Postal déclarant' },
+  { key: 'departementDeclarant', header: 'Département déclarant' },
   {
     key: 'declarantConsentIdentiteCommuniquee',
     header: 'Le déclarant consent à ce que son identité soit communiquée',
@@ -23,6 +24,7 @@ export const EXPORT_REQUETES_COLUMNS = [
     header: 'Si tranche non renseignée : Année de naissance personne concernée',
   },
   { key: 'codePostalPersonneConcernee', header: 'Code Postal personne concernée' },
+  { key: 'departementPersonneConcernee', header: 'Département personne concernée' },
   {
     key: 'personneConcerneeConsentIdentiteCommuniquee',
     header: 'La personne concernée consent à ce que son identité soit communiquée',
@@ -44,6 +46,7 @@ export const EXPORT_REQUETES_COLUMNS = [
     header: "Nom de l'établissement / Nom du lieu de survenue / Société de transport concernée",
   },
   { key: 'codePostalLieuSurvenue', header: 'Code postal lieu de survenue' },
+  { key: 'departementLieuSurvenue', header: 'Département lieu de survenue' },
   { key: 'typeMisEnCause', header: 'Type de mis en cause' },
   { key: 'precisionTypeMisEnCause', header: 'Précision type de mis en cause' },
   { key: 'finessMisEnCause', header: 'FINESS mis en cause' },
@@ -52,6 +55,7 @@ export const EXPORT_REQUETES_COLUMNS = [
   { key: 'rppsMisEnCause', header: 'RPPS mis en cause' },
   { key: 'nomMisEnCause', header: 'Nom mis en cause' },
   { key: 'codePostalMisEnCause', header: 'Code postal mis en cause' },
+  { key: 'departementMisEnCause', header: 'Département mis en cause' },
   { key: 'categorieProfessionnelleRppsMisEnCause', header: 'Catégorie professionnelle du RPPS mis en cause' },
   {
     key: 'motifsDeclaratifs',

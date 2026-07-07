@@ -249,6 +249,25 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'categorieProfessionnelleRppsMisEnCause')).toBe('');
   });
 
+  it('places department columns immediately after their postal-code columns', () => {
+    expect(columnAfter('codePostalDeclarant')).toEqual({
+      key: 'departementDeclarant',
+      header: 'Département déclarant',
+    });
+    expect(columnAfter('codePostalPersonneConcernee')).toEqual({
+      key: 'departementPersonneConcernee',
+      header: 'Département personne concernée',
+    });
+    expect(columnAfter('codePostalLieuSurvenue')).toEqual({
+      key: 'departementLieuSurvenue',
+      header: 'Département lieu de survenue',
+    });
+    expect(columnAfter('codePostalMisEnCause')).toEqual({
+      key: 'departementMisEnCause',
+      header: 'Département mis en cause',
+    });
+  });
+
   it('exports the root-scoped request status as the first column', () => {
     const rows = buildExportRequetesRows(
       [
@@ -374,4 +393,10 @@ function cell(row: ExportRequetesCsvRow, key: ExportRequetesColumnKey): ExportRe
   const index = EXPORT_REQUETES_COLUMNS.findIndex((column) => column.key === key);
 
   return row[index];
+}
+
+function columnAfter(key: ExportRequetesColumnKey): (typeof EXPORT_REQUETES_COLUMNS)[number] | undefined {
+  const index = EXPORT_REQUETES_COLUMNS.findIndex((column) => column.key === key);
+
+  return EXPORT_REQUETES_COLUMNS[index + 1];
 }
