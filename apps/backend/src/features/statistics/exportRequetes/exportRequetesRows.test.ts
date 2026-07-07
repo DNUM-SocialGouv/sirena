@@ -249,6 +249,50 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'categorieProfessionnelleRppsMisEnCause')).toBe('');
   });
 
+  it('populates department columns for ARS exports from their matching postal-code columns', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0011',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          declarant: {
+            estVictime: false,
+            isTuteur: false,
+            adresse: { codePostal: '75001' },
+            veutGarderAnonymat: false,
+            estSignalementProfessionnel: false,
+          },
+          participant: {
+            adresse: { codePostal: '20167' },
+            veutGarderAnonymat: false,
+            estVictimeInformee: false,
+            estHandicapee: false,
+            aAutrePersonnes: false,
+          },
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [
+            {
+              lieuDeSurvenue: { codePostal: '97110' },
+              misEnCause: { codePostal: '98000' },
+            },
+          ],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'departementDeclarant')).toBe('75');
+    expect(cell(rows[0], 'departementPersonneConcernee')).toBe('20');
+    expect(cell(rows[0], 'departementLieuSurvenue')).toBe('971');
+    expect(cell(rows[0], 'departementMisEnCause')).toBe('980');
+  });
+
   it('places department columns immediately after their postal-code columns', () => {
     expect(columnAfter('codePostalDeclarant')).toEqual({
       key: 'departementDeclarant',

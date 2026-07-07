@@ -26,6 +26,10 @@ type ExportLabelRecord = {
   label: string | null;
 };
 
+type ExportEntiteReferenceRecord = ExportLabelRecord & {
+  entiteTypeId?: string | null;
+};
+
 type ExportAdresseRecord = {
   codePostal: string | null;
 };
@@ -55,7 +59,7 @@ type ExportParticipantRecord = {
 
 type ExportRequeteEntiteRecord = {
   entiteId: string;
-  entite: ExportLabelRecord | null;
+  entite: ExportEntiteReferenceRecord | null;
   statut: ExportLabelRecord | null;
   priorite?: ExportLabelRecord | null;
 };
@@ -146,14 +150,17 @@ function buildExportRequeteRow(
   options: { topEntiteId?: string },
   situationIndex?: number,
 ): ExportRequetesCsvRow {
+  const requeteEntiteRacine = getRequeteEntiteRacine(requete, options.topEntiteId);
+  const shouldExportDepartements = requeteEntiteRacine?.entite?.entiteTypeId === 'ARS';
+
   return toExportRequetesCsvRow({
     ...buildRequeteFields(requete),
-    ...buildDeclarantFields(requete.declarant),
-    ...buildPersonneConcerneeFields(requete.participant),
-    ...buildSituationFields(situation, situationIndex),
+    ...buildDeclarantFields(requete.declarant, shouldExportDepartements),
+    ...buildPersonneConcerneeFields(requete.participant, shouldExportDepartements),
+    ...buildSituationFields(situation, situationIndex, shouldExportDepartements),
     ...buildFaitsFields(situation?.faits ?? []),
     ...buildDemarchesFields(situation?.demarchesEngagees),
-    ...buildWorkflowFields(requete, options),
+    ...buildWorkflowFields(requete, options, requeteEntiteRacine),
   });
 }
 
@@ -168,23 +175,37 @@ function buildRequeteFields(requete: ExportRequeteRecord): ExportRequeteKeyedRow
   };
 }
 
-function buildDeclarantFields(declarant: ExportDeclarantRecord | null | undefined): ExportRequeteKeyedRow {
+function buildDeclarantFields(
+  declarant: ExportDeclarantRecord | null | undefined,
+  shouldExportDepartements: boolean,
+): ExportRequeteKeyedRow {
+  const codePostalDeclarant = declarant?.adresse?.codePostal ?? '';
+
   return {
     declarantEstPersonneConcernee: formatExportBoolean(declarant?.estVictime),
     lienPersonneConcernee: formatLienVictime(declarant),
     declarantEstTuteurCurateur: formatExportBoolean(declarant?.isTuteur),
-    codePostalDeclarant: declarant?.adresse?.codePostal ?? '',
+    codePostalDeclarant,
+    departementDeclarant: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalDeclarant) : '',
     declarantConsentIdentiteCommuniquee: formatConsentIdentite(declarant?.veutGarderAnonymat),
     declarantProfessionnelEig: formatExportBoolean(declarant?.estSignalementProfessionnel),
   };
 }
 
-function buildPersonneConcerneeFields(participant: ExportParticipantRecord | null | undefined): ExportRequeteKeyedRow {
+function buildPersonneConcerneeFields(
+  participant: ExportParticipantRecord | null | undefined,
+  shouldExportDepartements: boolean,
+): ExportRequeteKeyedRow {
+  const codePostalPersonneConcernee = participant?.adresse?.codePostal ?? '';
+
   return {
     civilitePersonneConcernee: participant?.identite?.civilite?.label ?? '',
     trancheAgePersonneConcernee: participant?.age?.label ?? '',
     anneeNaissancePersonneConcernee: participant?.age?.label ? '' : formatExportYear(participant?.dateNaissance),
-    codePostalPersonneConcernee: participant?.adresse?.codePostal ?? '',
+    codePostalPersonneConcernee,
+    departementPersonneConcernee: shouldExportDepartements
+      ? formatDepartementFromCodePostal(codePostalPersonneConcernee)
+      : '',
     personneConcerneeConsentIdentiteCommuniquee: formatConsentIdentite(participant?.veutGarderAnonymat),
     personneConcerneeInformeeDemarche: formatExportBoolean(participant?.estVictimeInformee),
     mesureProtectionPersonneConcernee: getMesureProtectionShortLabel(participant?.mesureProtection) ?? '',
@@ -196,9 +217,13 @@ function buildPersonneConcerneeFields(participant: ExportParticipantRecord | nul
 function buildSituationFields(
   situation: ExportSituationRecord | null,
   situationIndex: number | undefined,
+  shouldExportDepartements: boolean,
 ): ExportRequeteKeyedRow {
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
   const misEnCause = situation?.misEnCause;
+
+  const codePostalLieuSurvenue = lieuDeSurvenue?.codePostal || lieuDeSurvenue?.adresse?.codePostal || '';
+  const codePostalMisEnCause = misEnCause?.codePostal ?? '';
 
   return {
     numeroSituation: situation ? (situationIndex ?? 0) + 1 : '',
@@ -206,12 +231,14 @@ function buildSituationFields(
     precisionTypeLieuSurvenue: formatLieuSurvenuePrecision(lieuDeSurvenue),
     finessLieuSurvenue: lieuDeSurvenue?.finess ?? '',
     categorieFinessLieuSurvenue: lieuDeSurvenue?.categLib ?? '',
-    codePostalLieuSurvenue: lieuDeSurvenue?.codePostal || lieuDeSurvenue?.adresse?.codePostal || '',
+    codePostalLieuSurvenue,
+    departementLieuSurvenue: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalLieuSurvenue) : '',
     typeMisEnCause: misEnCause?.misEnCauseType?.label ?? '',
     precisionTypeMisEnCause: misEnCause?.misEnCauseTypePrecision?.label || misEnCause?.autrePrecision || '',
     finessMisEnCause: misEnCause?.finess ?? '',
     nomService: misEnCause?.nomService ?? '',
-    codePostalMisEnCause: misEnCause?.codePostal ?? '',
+    codePostalMisEnCause,
+    departementMisEnCause: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalMisEnCause) : '',
     domaineFonctionnel: situation?.domainesFonctionnels?.label ?? '',
     entitesAdministrativesSituation: formatSituationRootEntites(situation?.situationEntites),
     directionsSituation: formatSituationDirections(situation?.situationEntites),
@@ -244,10 +271,11 @@ function buildDemarchesFields(
   };
 }
 
-function buildWorkflowFields(requete: ExportRequeteRecord, options: { topEntiteId?: string }): ExportRequeteKeyedRow {
-  const requeteEntiteRacine = requete.requeteEntites?.find(
-    (requeteEntite) => requeteEntite.entiteId === options.topEntiteId,
-  );
+function buildWorkflowFields(
+  requete: ExportRequeteRecord,
+  options: { topEntiteId?: string },
+  requeteEntiteRacine: ExportRequeteEntiteRecord | undefined,
+): ExportRequeteKeyedRow {
   const etapeCloturee = getLatestEtapeCloturee(requete.etapes, options.topEntiteId);
 
   return {
@@ -355,6 +383,29 @@ function formatRequeteEntites(requeteEntites: ExportRequeteEntiteRecord[] | unde
       return statutLabel ? `${entiteLabel} (${statutLabel})` : entiteLabel;
     }) ?? [],
   );
+}
+
+function getRequeteEntiteRacine(
+  requete: ExportRequeteRecord,
+  topEntiteId: string | undefined,
+): ExportRequeteEntiteRecord | undefined {
+  return requete.requeteEntites?.find((requeteEntite) => requeteEntite.entiteId === topEntiteId);
+}
+
+function formatDepartementFromCodePostal(codePostal: string): string {
+  if (!/^\d{5}$/.test(codePostal)) {
+    return '';
+  }
+
+  if (codePostal.startsWith('20')) {
+    return '20';
+  }
+
+  if (codePostal.startsWith('97') || codePostal.startsWith('98')) {
+    return codePostal.slice(0, 3);
+  }
+
+  return codePostal.slice(0, 2);
 }
 
 function getLatestEtapeCloturee(
