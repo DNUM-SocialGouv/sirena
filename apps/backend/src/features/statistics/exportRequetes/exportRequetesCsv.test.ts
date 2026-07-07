@@ -26,6 +26,111 @@ describe('buildExportRequetesCsv', () => {
     );
   });
 
+  it('exports ARS CSV rows with status, departments and lieu name', () => {
+    const csv = buildExportRequetesCsvFromRecords(
+      [
+        {
+          id: 'REQ-2026-0015',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          declarant: {
+            estVictime: false,
+            isTuteur: false,
+            adresse: { codePostal: '75001' },
+            veutGarderAnonymat: false,
+            estSignalementProfessionnel: false,
+          },
+          participant: {
+            adresse: { codePostal: '97110' },
+            veutGarderAnonymat: false,
+            estVictimeInformee: false,
+            estHandicapee: false,
+            aAutrePersonnes: false,
+          },
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'Clôturée' },
+            },
+          ],
+          situations: [
+            {
+              lieuDeSurvenue: {
+                adresse: { codePostal: '69002', label: 'IFSI AP-HP DU CH AMBROISE PARÉ' },
+              },
+              misEnCause: { codePostal: '98000' },
+            },
+          ],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+    const row = csv
+      .replace(/^\uFEFF/, '')
+      .split('\n')[1]
+      .split(';');
+
+    expect(csvCell(row, 'statutRequeteEntiteAdministrative')).toBe('Clôturée');
+    expect(csvCell(row, 'departementDeclarant')).toBe('75');
+    expect(csvCell(row, 'departementPersonneConcernee')).toBe('971');
+    expect(csvCell(row, 'nomLieuSurvenue')).toBe('IFSI AP-HP DU CH AMBROISE PARÉ');
+    expect(csvCell(row, 'departementLieuSurvenue')).toBe('69');
+    expect(csvCell(row, 'departementMisEnCause')).toBe('980');
+  });
+
+  it('exports non-ARS CSV rows with department columns present but empty', () => {
+    const csv = buildExportRequetesCsvFromRecords(
+      [
+        {
+          id: 'REQ-2026-0016',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          declarant: {
+            estVictime: false,
+            isTuteur: false,
+            adresse: { codePostal: '75001' },
+            veutGarderAnonymat: false,
+            estSignalementProfessionnel: false,
+          },
+          participant: {
+            adresse: { codePostal: '97110' },
+            veutGarderAnonymat: false,
+            estVictimeInformee: false,
+            estHandicapee: false,
+            aAutrePersonnes: false,
+          },
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Conseil départemental', entiteTypeId: 'CD' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [
+            {
+              lieuDeSurvenue: { codePostal: '69002' },
+              misEnCause: { codePostal: '98000' },
+            },
+          ],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+    const row = csv
+      .replace(/^\uFEFF/, '')
+      .split('\n')[1]
+      .split(';');
+
+    expect(row).toHaveLength(64);
+    expect(csvCell(row, 'codePostalDeclarant')).toBe('75001');
+    expect(csvCell(row, 'departementDeclarant')).toBe('');
+    expect(csvCell(row, 'codePostalPersonneConcernee')).toBe('97110');
+    expect(csvCell(row, 'departementPersonneConcernee')).toBe('');
+    expect(csvCell(row, 'codePostalLieuSurvenue')).toBe('69002');
+    expect(csvCell(row, 'departementLieuSurvenue')).toBe('');
+    expect(csvCell(row, 'codePostalMisEnCause')).toBe('98000');
+    expect(csvCell(row, 'departementMisEnCause')).toBe('');
+  });
+
   it('exports requête records as CSV data rows below the header', () => {
     const csv = buildExportRequetesCsvFromRecords([
       {
