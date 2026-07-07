@@ -1,3 +1,4 @@
+import { MOTIFS_HIERARCHICAL_DATA } from '@sirena/common/constants';
 import { getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
 import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
 import type { ExportRequetesCsvRow } from './exportRequetesCsv.js';
@@ -101,7 +102,7 @@ type ExportFaitRecord = {
   dateDebut?: Date | null;
   dateFin?: Date | null;
   motifsDeclaratifs: Array<{ motifDeclaratif: ExportLabelRecord | null }>;
-  motifs: Array<{ motif: ExportLabelRecord | null }>;
+  motifs: Array<{ motifId?: string | null; motif: ExportLabelRecord | null }>;
   consequences: Array<{ consequence: ExportLabelRecord | null }>;
 };
 
@@ -254,7 +255,7 @@ function buildFaitsFields(faits: ExportFaitRecord[]): ExportRequeteKeyedRow {
     motifsDeclaratifs: formatUniqueLabels(
       faits.flatMap((fait) => fait.motifsDeclaratifs.map((motif) => motif.motifDeclaratif?.label)),
     ),
-    motifsQualifies: formatUniqueLabels(faits.flatMap((fait) => fait.motifs.map((motif) => motif.motif?.label))),
+    motifsQualifies: formatUniqueLabels(faits.flatMap((fait) => fait.motifs.map(formatMotifQualifieLabel))),
     consequencesPersonneConcernee: formatUniqueLabels(
       faits.flatMap((fait) => fait.consequences.map((consequence) => consequence.consequence?.label)),
     ),
@@ -267,7 +268,9 @@ function buildDemarchesFields(
   demarchesEngagees: ExportDemarchesEngageesRecord | null | undefined,
 ): ExportRequeteKeyedRow {
   return {
-    misEnCauseContacte: demarchesEngagees ? formatExportBoolean(demarchesEngagees.dateContactEtablissement != null) : '',
+    misEnCauseContacte: demarchesEngagees
+      ? formatExportBoolean(demarchesEngagees.dateContactEtablissement != null)
+      : '',
     datePriseContact: formatExportDate(demarchesEngagees?.dateContactEtablissement),
     declarantRecuReponse: formatExportBoolean(demarchesEngagees?.etablissementARepondu),
     plainteDeposee: demarchesEngagees
@@ -359,6 +362,24 @@ function formatUniqueLabels(labels: Array<string | null | undefined>): string {
   return formatExportList(
     Array.from(new Set(labels.filter((label): label is string => label != null && label !== ''))),
   );
+}
+
+function formatMotifQualifieLabel(motif: ExportFaitRecord['motifs'][number]): string {
+  const fallbackLabel = motif.motif?.label ?? '';
+  const [parentValue, childValue] = motif.motifId?.split('/') ?? [];
+
+  if (!parentValue || !childValue) {
+    return fallbackLabel;
+  }
+
+  const parent = MOTIFS_HIERARCHICAL_DATA.find((motifParent) => motifParent.value === parentValue);
+  const child = parent?.children.find((motifChild) => motifChild.value === childValue);
+
+  if (!parent || !child) {
+    return fallbackLabel;
+  }
+
+  return `${child.label} (${parent.label})`;
 }
 
 function getEarliestDate(dates: Array<Date | null | undefined>): Date | null {
