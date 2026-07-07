@@ -52,11 +52,7 @@ export const EXPORT_REQUETES_COLUMNS = [
   { key: 'finessMisEnCause', header: 'FINESS mis en cause' },
   { key: 'categorieFinessMisEnCause', header: 'Catégorie établissement du FINESS mis en cause' },
   { key: 'nomService', header: 'Nom du service' },
-  { key: 'rppsMisEnCause', header: 'RPPS mis en cause' },
-  { key: 'nomMisEnCause', header: 'Nom mis en cause' },
-  { key: 'codePostalMisEnCause', header: 'Code postal mis en cause' },
   { key: 'departementMisEnCause', header: 'Département mis en cause' },
-  { key: 'categorieProfessionnelleRppsMisEnCause', header: 'Catégorie professionnelle du RPPS mis en cause' },
   {
     key: 'motifsDeclaratifs',
     header: 'Motifs renseignés par le déclarant (dans demat.social ou plateforme téléphonique)',

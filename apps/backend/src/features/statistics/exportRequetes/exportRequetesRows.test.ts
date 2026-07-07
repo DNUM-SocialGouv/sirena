@@ -279,10 +279,6 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'finessMisEnCause')).toBe('750000002');
     expect(cell(rows[0], 'categorieFinessMisEnCause')).toBe('');
     expect(cell(rows[0], 'nomService')).toBe('Urgences');
-    expect(cell(rows[0], 'rppsMisEnCause')).toBe('');
-    expect(cell(rows[0], 'nomMisEnCause')).toBe('');
-    expect(cell(rows[0], 'codePostalMisEnCause')).toBe('75014');
-    expect(cell(rows[0], 'categorieProfessionnelleRppsMisEnCause')).toBe('');
   });
 
   it('populates department columns for ARS exports from their matching postal-code columns', () => {
@@ -373,7 +369,7 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'departementMisEnCause')).toBe('');
   });
 
-  it('places department columns immediately after their postal-code columns', () => {
+  it('places department columns immediately after their source/location columns', () => {
     expect(columnAfter('codePostalDeclarant')).toEqual({
       key: 'departementDeclarant',
       header: 'Département déclarant',
@@ -386,7 +382,7 @@ describe('buildExportRequetesRows', () => {
       key: 'departementLieuSurvenue',
       header: 'Département lieu de survenue',
     });
-    expect(columnAfter('codePostalMisEnCause')).toEqual({
+    expect(columnAfter('nomService')).toEqual({
       key: 'departementMisEnCause',
       header: 'Département mis en cause',
     });
