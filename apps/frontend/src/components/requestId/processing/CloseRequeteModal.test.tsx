@@ -108,7 +108,7 @@ describe('CloseRequeteModal', () => {
         data: {
           otherEntites: [
             singleActiveEntity,
-            { id: 'ddets', nomComplet: 'DDETS 35', entiteTypeId: 'DD', statutId: 'EN_COURS' },
+            { id: 'ddets', label: 'DDETS 35', nomComplet: 'DDETS 35', entiteTypeId: 'DD', statutId: 'EN_COURS' },
           ],
           subAdministrativeEntites: [],
         },

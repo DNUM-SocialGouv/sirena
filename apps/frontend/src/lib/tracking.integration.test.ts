@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockUUIDs = ['uuid-1', 'uuid-2', 'uuid-3', 'uuid-4'];
 let uuidCallCount = 0;
 
-Object.defineProperty(global, 'crypto', {
+Object.defineProperty(globalThis, 'crypto', {
   value: {
     randomUUID: vi.fn(() => mockUUIDs[uuidCallCount++]),
   },
