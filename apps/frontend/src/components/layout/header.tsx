@@ -1,8 +1,7 @@
 import { Header } from '@codegouvfr/react-dsfr/Header';
-import { FEATURE_FLAGS, ROLES_READ, type Role } from '@sirena/common/constants';
+import { ROLES_READ, type Role } from '@sirena/common/constants';
 import { Link, useLocation } from '@tanstack/react-router';
 import { useId } from 'react';
-import { useFeatureFlagStore } from '@/stores/featureFlagStore';
 import { useUserStore } from '@/stores/userStore';
 import style from './header.module.css';
 import { UserMenu } from './userMenu';
@@ -20,10 +19,9 @@ export const HeaderMenu = (props: HeaderMenuProps) => {
   const id = useId();
   const userStore = useUserStore();
   const { pathname } = useLocation();
-  const isStatisticsEnabled = useFeatureFlagStore((s) => s.flags[FEATURE_FLAGS.STATISTICS] ?? false);
 
   const canAccessRequests = userStore.role != null && (ROLES_READ as readonly Role[]).includes(userStore.role);
-  const showStatisticsLink = userStore.isLogged && isStatisticsEnabled && canAccessRequests;
+  const showStatisticsLink = userStore.isLogged && canAccessRequests;
   const isOnStatistics = pathname === '/statistiques';
 
   const statisticsLink = !showStatisticsLink ? null : isOnStatistics ? (

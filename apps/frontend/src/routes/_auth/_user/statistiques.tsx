@@ -1,5 +1,5 @@
 import { fr } from '@codegouvfr/react-dsfr';
-import { FEATURE_FLAGS, ROLES_READ } from '@sirena/common/constants';
+import { ROLES_READ } from '@sirena/common/constants';
 import { createFileRoute, Navigate, useNavigate, useSearch } from '@tanstack/react-router';
 import type { CSSProperties } from 'react';
 import { z } from 'zod';
@@ -10,7 +10,6 @@ import { PeriodFilter } from '@/components/statistics/PeriodFilter';
 import { describePeriod, PERIOD_PRESETS, type PeriodSelection, resolveDateRange } from '@/components/statistics/period';
 import { StatChart } from '@/components/statistics/StatChart';
 import { StatTable } from '@/components/statistics/StatTable';
-import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useStatisticsDashboard } from '@/hooks/queries/statistics.hook';
 import type { StatisticsCard } from '@/lib/api/fetchStatistics';
@@ -119,22 +118,19 @@ function ChartCard({ card }: { card: StatisticsCard }) {
 }
 
 function RouteComponent() {
-  const resolvedFlagsQuery = useResolvedFeatureFlags();
   const { data: profile, isPending: isProfilePending } = useProfile();
   const search = useSearch({ from: '/_auth/_user/statistiques' });
   const navigate = useNavigate({ from: '/statistiques' });
 
   const hasEntityLink = profile?.entiteId != null;
 
-  const areFlagsReady = resolvedFlagsQuery.status !== 'pending';
-  const isEnabled = resolvedFlagsQuery.data?.[FEATURE_FLAGS.STATISTICS] ?? false;
   const selection: PeriodSelection = {
     period: search.period,
     startDate: search.startDate,
     endDate: search.endDate,
   };
   const range = resolveDateRange(selection, new Date());
-  const query = useStatisticsDashboard(range, areFlagsReady && isEnabled && hasEntityLink);
+  const query = useStatisticsDashboard(range, hasEntityLink);
 
   const handlePeriodChange = (next: PeriodSelection) => {
     navigate({
@@ -142,10 +138,10 @@ function RouteComponent() {
     });
   };
 
-  if (isProfilePending || !areFlagsReady) {
+  if (isProfilePending) {
     return null;
   }
-  if (!isEnabled || !hasEntityLink) {
+  if (!hasEntityLink) {
     return <Navigate to="/home" />;
   }
 
