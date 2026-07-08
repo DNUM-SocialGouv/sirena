@@ -253,7 +253,7 @@ function buildSituationFields(
     codePostalLieuSurvenue,
     departementLieuSurvenue: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalLieuSurvenue) : '',
     typeMisEnCause: misEnCause?.misEnCauseType?.label ?? '',
-    precisionTypeMisEnCause: misEnCause?.misEnCauseTypePrecision?.label || misEnCause?.autrePrecision || '',
+    precisionTypeMisEnCause: misEnCause?.misEnCauseTypePrecision?.label ?? '',
     finessMisEnCause: misEnCause?.finess ?? '',
     nomService: misEnCause?.nomService ?? '',
     departementMisEnCause: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalMisEnCause) : '',
