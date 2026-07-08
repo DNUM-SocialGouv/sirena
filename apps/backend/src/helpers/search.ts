@@ -7,7 +7,10 @@ export const createSearchConditionsForRequeteEntite = (raw: string): Prisma.Requ
   const search = raw?.trim();
   if (!search) return {};
 
-  const numberSearch = Number.isFinite(Number(search)) ? Number(search) : null;
+  // dematSocialId is a positive Int (int4) column. Match it only for a plain digit string that
+  // fits in int4, otherwise Postgres throws "out of range for type integer" (e.g. a 12-digit RPPS).
+  const INT32_MAX = 2_147_483_647;
+  const dematSocialId = /^\d+$/.test(search) && Number(search) <= INT32_MAX ? Number(search) : null;
   const nameParts = search.split(/\s+/).filter(Boolean);
   const firstName = nameParts.length >= 2 ? nameParts[0] : null;
   const lastName = nameParts.length >= 2 ? nameParts.slice(1).join(' ') : null;
@@ -62,7 +65,7 @@ export const createSearchConditionsForRequeteEntite = (raw: string): Prisma.Requ
       { requete: { id: ci(search) } },
       { requete: { commentaire: ci(search) } },
       { requete: { receptionType: { label: ci(search) } } },
-      ...(numberSearch !== null ? [{ requete: { dematSocialId: numberSearch } }] : []),
+      ...(dematSocialId !== null ? [{ requete: { dematSocialId } }] : []),
 
       // ───────── Declarant ─────────
       { requete: { declarant: { identite: { prenom: ci(search) } } } },
