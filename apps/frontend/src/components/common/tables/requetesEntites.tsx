@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
+import { useListStateStore } from '@/stores/listStateStore';
 import { RequetePrioriteTag, RequeteStatutTag } from '../RequeteStatutTag';
 import { renderAffectationCell, renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
 import { RequetesEntiteQuickFilters } from './requetesEntites.filters';
@@ -82,6 +83,7 @@ const SSE_DEBOUNCE_MS = 500;
 export function RequetesEntite() {
   const queries = useSearch({ from: '/_auth/_user/home' });
   const navigate = useNavigate({ from: '/home' });
+  const setListState = useListStateStore((s) => s.setListState);
   const queryClient = useQueryClient();
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { data: profile } = useProfile();
@@ -109,6 +111,10 @@ export function RequetesEntite() {
   }, []);
 
   useRequetesListSSE({ onUpdate: handleUpdate });
+
+  useEffect(() => {
+    setListState('requetes', { to: '/home', search: queries });
+  }, [queries, setListState]);
 
   const limit = queries.limit ?? DEFAULT_PAGE_SIZE;
   const offset = queries.offset ?? 0;
