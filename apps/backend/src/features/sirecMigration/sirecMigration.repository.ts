@@ -204,7 +204,8 @@ export async function fetchSirecProvenances(sirecId: number): Promise<SirecProve
   const rows = await mariadbPool.query<SirecProvenance[]>(
     `SELECT p.id_provenance, pg.id_group, p.date_signalement, p.reponse_attendue
      FROM sire_provenances_data p
-     INNER JOIN sire_provenances_data_group pg ON pg.id_data = p.id_data and pg.id_group != ${SIREC_NATIONAL_ENTITE_ID}
+              INNER JOIN sire_provenances_data_group pg
+                         ON pg.id_data = p.id_data and pg.id_group != ${SIREC_NATIONAL_ENTITE_ID} and pg.id_group != 3
      WHERE p.id_reclamation = ?`,
     [sirecId],
   );
@@ -263,20 +264,39 @@ type MisEnCauseRow = {
 
 export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEnCause[]> {
   const rows = await mariadbPool.query<MisEnCauseRow[]>(
-    `SELECT m.id_data, m.type, m.identifiant, m.autres_mc_type, m.label, m.adresse, mcg.id_group,
-            r.id_data AS rpps_id_data, r.rpps AS rpps_rpps, r.civilite AS rpps_civilite, r.nom AS rpps_nom,
-            r.prenom AS rpps_prenom, r.code_postal AS rpps_code_postal,
-            r.commune AS rpps_commune, r.libelle_prof AS rpps_libelle_prof,
-            f.id_data AS finess_id_data, f.nofinesset AS finess_nofinesset,
-            f.categetab AS finess_categetab, f.libcategetab AS finess_libcategetab,
-            f.rs AS finess_rs, f.codepostal AS finess_codepostal, f.libcommune AS finess_libcommune,
-            f.numvoie AS finess_numvoie, f.typevoie AS finess_typevoie, f.voie AS finess_voie
+    `SELECT m.id_data,
+            m.type,
+            m.identifiant,
+            m.autres_mc_type,
+            m.label,
+            m.adresse,
+            mcg.id_group,
+            r.id_data      AS rpps_id_data,
+            r.rpps         AS rpps_rpps,
+            r.civilite     AS rpps_civilite,
+            r.nom          AS rpps_nom,
+            r.prenom       AS rpps_prenom,
+            r.code_postal  AS rpps_code_postal,
+            r.commune      AS rpps_commune,
+            r.libelle_prof AS rpps_libelle_prof,
+            f.id_data      AS finess_id_data,
+            f.nofinesset   AS finess_nofinesset,
+            f.categetab AS finess_categetab,
+            f.libcategetab AS finess_libcategetab,
+            f.rs           AS finess_rs,
+            f.codepostal   AS finess_codepostal,
+            f.libcommune   AS finess_libcommune,
+            f.numvoie      AS finess_numvoie,
+            f.typevoie     AS finess_typevoie,
+            f.voie         AS finess_voie
      FROM sire_misencause_data m
-     LEFT JOIN sire_misencause_data_group mcg ON m.id_data = mcg.id_data AND mcg.id_group != ${SIREC_NATIONAL_ENTITE_ID} AND mcg.id_group != 0
-     LEFT JOIN sire_rpps_data r ON r.id_data = m.identifiant AND m.type = 65
-     LEFT JOIN sire_finess_data f ON f.id_data = m.identifiant AND m.type = 64
+              LEFT JOIN sire_misencause_data_group mcg
+                        ON m.id_data = mcg.id_data AND mcg.id_group != ${SIREC_NATIONAL_ENTITE_ID} AND
+                           mcg.id_group != 3 AND mcg.id_group != 0
+              LEFT JOIN sire_rpps_data r ON r.id_data = m.identifiant AND m.type = 65
+              LEFT JOIN sire_finess_data f ON f.id_data = m.identifiant AND m.type = 64
      WHERE m.id_reclamation = ?
-     and m.identifiant != 0`,
+       and m.identifiant != 0`,
     [sirecId],
   );
 
@@ -345,7 +365,7 @@ export async function fetchSirecMainCourantes(sirecId: number): Promise<SirecMai
     `SELECT mc.id_data, mc.type_action1, mc.commentaire, mc.date_action, mc.sys_creation_date, dg.id_group
      FROM sire_main_courante_data mc
               LEFT JOIN sire_main_courante_data_group dg
-                        ON mc.id_data = dg.id_data AND dg.id_group != ${SIREC_NATIONAL_ENTITE_ID}
+                        ON mc.id_data = dg.id_data AND dg.id_group != ${SIREC_NATIONAL_ENTITE_ID} and dg.id_group != 3
      WHERE mc.id_reclamation = ?`,
     [sirecId],
   );

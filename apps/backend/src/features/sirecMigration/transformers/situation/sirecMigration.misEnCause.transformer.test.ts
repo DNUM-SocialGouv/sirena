@@ -254,6 +254,38 @@ describe('sirecMigration.misEnCause.transformer.ts', () => {
       expect(result[0].entiteIds.filter((id) => id === 'ars-normandie')).toHaveLength(1);
     });
 
+    it('should not include service_recepteur_niv1 in orphanEntiteIds when it is the national id (1)', () => {
+      const sirecData = {
+        ...makeData([], [makeMisEnCause({ id_data: 10 })]),
+        reclamation: {
+          id_data: 42,
+          service_recepteur_niv1: 1,
+          service_gestionnaire: null,
+          sans_mc: null,
+          observation: null,
+          signalement: null,
+        },
+      } as unknown as SirecReclamationData;
+
+      expect(() => transformSirecMisEnCauseSituations(sirecData, [])).not.toThrow();
+    });
+
+    it('should not include service_gestionnaire in orphanEntiteIds when it is the national id (1)', () => {
+      const sirecData = {
+        ...makeData([], [makeMisEnCause({ id_data: 10 })]),
+        reclamation: {
+          id_data: 42,
+          service_recepteur_niv1: null,
+          service_gestionnaire: 1,
+          sans_mc: null,
+          observation: null,
+          signalement: null,
+        },
+      } as unknown as SirecReclamationData;
+
+      expect(() => transformSirecMisEnCauseSituations(sirecData, [])).not.toThrow();
+    });
+
     it('should duplicate the fait and demarchesIds for each situation', () => {
       const result = transformSirecMisEnCauseSituations(
         makeData([], [makeMisEnCause({ id_data: 10 }), makeMisEnCause({ id_data: 20 })]),

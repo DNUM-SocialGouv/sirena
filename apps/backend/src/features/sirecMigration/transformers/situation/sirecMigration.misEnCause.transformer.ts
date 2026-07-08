@@ -1,4 +1,5 @@
 import type { SirecMisEnCause, SirecReclamationData, SirecReclamationRow } from '../../sirecMigration.repository.js';
+import { SIREC_NATIONAL_ENTITE_ID } from '../../transco/affectation/affectation.transco.js';
 import { SIREC_BOOLEAN_TRANSCO } from '../../transco/dictionnaire.transco.js';
 import { SIREC_TYPE_FINESS } from '../../transco/finessCategetab.transco.js';
 import { SIREC_TYPE_AUTRE } from '../../transco/misEnCauseAutre.transco.js';
@@ -101,8 +102,9 @@ export function transformSirecMisEnCauseSituations(
   const orphanGroupIds = groupIds.filter((id) => !allMisEnCauseGroupIds.has(id));
 
   const orphanEntiteIds = computeSituationEntiteIds([
-    reclamation.service_recepteur_niv1,
-    reclamation.service_gestionnaire,
+    ...[reclamation.service_recepteur_niv1, reclamation.service_gestionnaire].filter(
+      (id) => id !== SIREC_NATIONAL_ENTITE_ID,
+    ),
     ...orphanGroupIds,
   ]);
 
