@@ -7,6 +7,7 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import adminLocalDirectionsServicesFeatureFlagMiddleware from '../featureFlags/adminLocalDirectionsServicesFeatureFlag.middleware.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
   createChildEntiteAdminRoute,
@@ -109,6 +110,7 @@ const app = factoryWithLogs
   .get(
     '/admin/directions-services',
     roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
     getDirectionsServicesRowsRoute,
     async (c) => {
       const logger = c.get('logger');
