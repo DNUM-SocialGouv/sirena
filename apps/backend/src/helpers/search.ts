@@ -38,6 +38,21 @@ export const createSearchConditionsForRequeteEntite = (raw: string): Prisma.Requ
               { requete: { participant: { identite: { nom: ci(firstName) } } } },
             ],
           },
+          // Mis en cause: the same mis en cause must carry both the first name AND the last name
+          {
+            requete: {
+              situations: {
+                some: { misEnCause: { prenom: ci(firstName), nom: ci(lastName) } },
+              },
+            },
+          },
+          {
+            requete: {
+              situations: {
+                some: { misEnCause: { prenom: ci(lastName), nom: ci(firstName) } },
+              },
+            },
+          },
         ]
       : [];
 
@@ -125,6 +140,50 @@ export const createSearchConditionsForRequeteEntite = (raw: string): Prisma.Requ
             some: {
               misEnCause: {
                 rpps: ci(search),
+              },
+            },
+          },
+        },
+      },
+      {
+        requete: {
+          situations: {
+            some: {
+              misEnCause: {
+                nom: ci(search),
+              },
+            },
+          },
+        },
+      },
+      {
+        requete: {
+          situations: {
+            some: {
+              misEnCause: {
+                prenom: ci(search),
+              },
+            },
+          },
+        },
+      },
+      {
+        requete: {
+          situations: {
+            some: {
+              misEnCause: {
+                finess: ci(search),
+              },
+            },
+          },
+        },
+      },
+      {
+        requete: {
+          situations: {
+            some: {
+              misEnCause: {
+                nomService: ci(search),
               },
             },
           },
