@@ -1,6 +1,10 @@
 import { type CsvValue, serializeCsv } from './csvSerializer.js';
 import { EXPORT_REQUETES_HEADERS } from './exportRequetesColumns.js';
-import { buildExportRequetesRows, type ExportRequeteRecord } from './exportRequetesRows.js';
+import {
+  type BuildExportRequetesRowsOptions,
+  buildExportRequetesRows,
+  type ExportRequeteRecord,
+} from './exportRequetesRows.js';
 
 export type ExportRequetesCsvRow = CsvValue[];
 
@@ -10,7 +14,7 @@ export function buildExportRequetesCsv(rows: ExportRequetesCsvRow[]): string {
 
 export function buildExportRequetesCsvFromRecords(
   requetes: ExportRequeteRecord[],
-  options: { topEntiteId?: string } = {},
+  options: BuildExportRequetesRowsOptions = {},
 ): string {
   return buildExportRequetesCsv(buildExportRequetesRows(requetes, options));
 }

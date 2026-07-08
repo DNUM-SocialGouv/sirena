@@ -9,6 +9,7 @@ import { formatFullName } from '@/components/requestId/sections/helpers';
 import { useRequeteDetails } from '@/hooks/queries/useRequeteDetails';
 import { useRequeteStatusSSE } from '@/hooks/useRequeteStatusSSE';
 import styles from '@/routes/_auth/_user/request.$requestId.module.css';
+import { useListStateStore } from '@/stores/listStateStore';
 
 // TODO: Use API types instead of local interfaces
 interface RequestData {
@@ -28,6 +29,7 @@ interface RequestFormProps {
 export function RequestForm({ requestId }: RequestFormProps) {
   const [activeTab, setActiveTab] = useState(0);
   const queryClient = useQueryClient();
+  const requetesListSearch = useListStateStore((s) => s.states.requetes?.search);
   const requestQuery = useRequeteDetails(requestId);
 
   const handleUpdate = useCallback(() => {
@@ -94,7 +96,7 @@ export function RequestForm({ requestId }: RequestFormProps) {
       <div className="bg-cumulus fr-mb-4w">
         <div className="fr-container fr-py-2w">
           <div className="fr-mb-2w">
-            <Link className="fr-link fr-mb-1w" to="/home">
+            <Link className="fr-link fr-mb-1w" to="/home" search={requetesListSearch ?? {}}>
               <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des requêtes
             </Link>
           </div>

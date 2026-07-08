@@ -5,6 +5,8 @@ export const FEATURE_FLAGS = {
   STATISTICS: 'STATISTICS',
   // Email-targeted FF for the SIREC migration admin screen
   SIREC_MIGRATION: 'SIREC_MIGRATION',
+  // Temporary FF for the Admin local directions/services rollout
+  ADMIN_LOCAL_DIRECTIONS_SERVICES: 'ADMIN_LOCAL_DIRECTIONS_SERVICES',
 } as const;
 
 export type FeatureFlag = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];

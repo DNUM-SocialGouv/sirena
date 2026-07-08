@@ -6,7 +6,7 @@ const mockUUID = 'mock-uuid-123';
 const mockCrypto = {
   randomUUID: vi.fn(() => mockUUID),
 };
-Object.defineProperty(global, 'crypto', {
+Object.defineProperty(globalThis, 'crypto', {
   value: mockCrypto,
   configurable: true,
 });
@@ -39,8 +39,8 @@ describe('tracking utilities', () => {
 
     it('should fallback to Math.random when crypto.randomUUID is not available', () => {
       // Temporarily remove crypto.randomUUID
-      const originalCrypto = global.crypto;
-      Object.defineProperty(global, 'crypto', {
+      const originalCrypto = globalThis.crypto;
+      Object.defineProperty(globalThis, 'crypto', {
         value: {},
         configurable: true,
       });
@@ -51,7 +51,7 @@ describe('tracking utilities', () => {
       expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 
       // Restore crypto
-      Object.defineProperty(global, 'crypto', {
+      Object.defineProperty(globalThis, 'crypto', {
         value: originalCrypto,
         configurable: true,
       });
@@ -59,8 +59,8 @@ describe('tracking utilities', () => {
 
     it('should fallback when crypto is undefined', () => {
       // Temporarily remove crypto entirely
-      const originalCrypto = global.crypto;
-      Reflect.deleteProperty(global as typeof global & { crypto?: Crypto }, 'crypto');
+      const originalCrypto = globalThis.crypto;
+      Reflect.deleteProperty(globalThis as typeof globalThis & { crypto?: Crypto }, 'crypto');
 
       const uuid = generateUUID();
 
@@ -68,13 +68,13 @@ describe('tracking utilities', () => {
       expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 
       // Restore crypto
-      (global as typeof global & { crypto?: Crypto }).crypto = originalCrypto;
+      (globalThis as typeof globalThis & { crypto?: Crypto }).crypto = originalCrypto;
     });
 
     it('should generate unique UUIDs with fallback method', () => {
       // Remove crypto.randomUUID to force fallback
-      const originalCrypto = global.crypto;
-      Object.defineProperty(global, 'crypto', {
+      const originalCrypto = globalThis.crypto;
+      Object.defineProperty(globalThis, 'crypto', {
         value: {},
         configurable: true,
       });
@@ -95,7 +95,7 @@ describe('tracking utilities', () => {
       expect(uuid3).toMatch(uuidRegex);
 
       // Restore crypto
-      Object.defineProperty(global, 'crypto', {
+      Object.defineProperty(globalThis, 'crypto', {
         value: originalCrypto,
         configurable: true,
       });
