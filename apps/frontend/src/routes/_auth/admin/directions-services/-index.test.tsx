@@ -1,14 +1,22 @@
-import { ROLES } from '@sirena/common/constants';
+import { FEATURE_FLAGS, ROLES } from '@sirena/common/constants';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDirectionsServicesRows } from '@/hooks/queries/entites.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
+import { fetchResolvedFeatureFlags } from '@/lib/api/fetchFeatureFlags';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
+import { queryClient } from '@/lib/queryClient';
 import { Route, RouteComponent } from './index';
+
+const { authGuardSpy, redirectSpy } = vi.hoisted(() => ({
+  authGuardSpy: vi.fn(),
+  redirectSpy: vi.fn((args: unknown) => ({ redirect: args })),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => options,
+  redirect: redirectSpy,
 }));
 
 vi.mock('@/hooks/queries/profile.hook', () => ({
@@ -19,8 +27,18 @@ vi.mock('@/hooks/queries/entites.hook', () => ({
   useDirectionsServicesRows: vi.fn(),
 }));
 
+vi.mock('@/lib/api/fetchFeatureFlags', () => ({
+  fetchResolvedFeatureFlags: vi.fn(),
+}));
+
+vi.mock('@/lib/queryClient', () => ({
+  queryClient: {
+    ensureQueryData: vi.fn(),
+  },
+}));
+
 vi.mock('@/lib/auth-guards', () => ({
-  requireAuthAndRoles: vi.fn(() => 'mocked-entity-admin-guard'),
+  requireAuthAndRoles: vi.fn(() => authGuardSpy),
 }));
 
 afterEach(() => {
@@ -32,7 +50,18 @@ afterEach(() => {
 describe('Admin directions and services route', () => {
   it('restricts the route to entity admins', () => {
     expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.ENTITY_ADMIN]);
-    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBe('mocked-entity-admin-guard');
+    expect((Route as unknown as { beforeLoad: unknown }).beforeLoad).toBeTypeOf('function');
+  });
+
+  it('redirects to admin users from beforeLoad when the feature flag is disabled', async () => {
+    vi.mocked(queryClient.ensureQueryData).mockResolvedValueOnce({
+      [FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES]: false,
+    });
+
+    await expect(
+      (Route as unknown as { beforeLoad: (ctx: unknown) => Promise<void> }).beforeLoad({ location: { href: '' } }),
+    ).rejects.toEqual({ redirect: { to: '/admin/users' } });
+    expect(fetchResolvedFeatureFlags).not.toHaveBeenCalled();
   });
 
   it('renders an accessible page title with the admin local affectation organization', () => {
