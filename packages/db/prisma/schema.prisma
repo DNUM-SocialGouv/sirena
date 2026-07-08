@@ -335,12 +335,12 @@ model Situation {
   lieuDeSurvenueId String         @unique
   lieuDeSurvenue   LieuDeSurvenue @relation("SituationLieu", fields: [lieuDeSurvenueId], references: [id], onDelete: Cascade)
 
-  misEnCauseId String
+  misEnCauseId String     @unique
   misEnCause   MisEnCause @relation(fields: [misEnCauseId], references: [id], onDelete: Cascade)
 
   faits Fait[]
 
-  demarchesEngageesId String
+  demarchesEngageesId String            @unique
   demarchesEngagees   DemarchesEngagees @relation(fields: [demarchesEngageesId], references: [id], onDelete: Cascade)
 
   domainesFonctionnelsId String?
