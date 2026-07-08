@@ -1,20 +1,23 @@
 import { create } from 'zustand';
 import type { QueryParams } from '@/schemas/pagination.schema';
 
-/** Remembers each table's last state so detail pages can restore it on back-navigation. In-memory only. */
+/**
+ * Remembers each list's UI state (pagination, filters, sort) plus the route it
+ * was on, so detail pages can restore it on back-navigation. In-memory only.
+ */
 export type ListKey = 'requetes' | 'users' | 'entites';
 
-export type ListLocation = {
+export type ListState = {
   to: string;
   search: QueryParams;
 };
 
 type ListStateStore = {
-  locations: Partial<Record<ListKey, ListLocation>>;
-  setListLocation: (key: ListKey, location: ListLocation) => void;
+  states: Partial<Record<ListKey, ListState>>;
+  setListState: (key: ListKey, value: ListState) => void;
 };
 
 export const useListStateStore = create<ListStateStore>((set) => ({
-  locations: {},
-  setListLocation: (key, location) => set((state) => ({ locations: { ...state.locations, [key]: location } })),
+  states: {},
+  setListState: (key, value) => set((state) => ({ states: { ...state.states, [key]: value } })),
 }));

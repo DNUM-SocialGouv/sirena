@@ -56,11 +56,11 @@ export function AllUsersTab() {
 
   const queries = useSearch({ from: '/_auth/admin/users' });
   const navigate = useNavigate({ from: '/admin/users/all' });
-  const setListLocation = useListStateStore((s) => s.setListLocation);
+  const setListState = useListStateStore((s) => s.setListState);
 
   useEffect(() => {
-    setListLocation('users', { to: '/admin/users/all', search: queries });
-  }, [queries, setListLocation]);
+    setListState('users', { to: '/admin/users/all', search: queries });
+  }, [queries, setListState]);
 
   const rolesToFilter: Role[] =
     data?.role?.id === ROLES.ENTITY_ADMIN ? [ROLES.SUPER_ADMIN, ROLES.PENDING] : [ROLES.PENDING];

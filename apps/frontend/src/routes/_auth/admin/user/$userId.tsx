@@ -74,8 +74,8 @@ function RouteComponent() {
   const navigate = useNavigate();
   const router = useRouter();
   const userStore = useUserStore();
-  const usersListLocation = useListStateStore((s) => s.locations.users);
-  const usersListTo = usersListLocation?.to === '/admin/users/all' ? '/admin/users/all' : '/admin/users';
+  const usersListState = useListStateStore((s) => s.states.users);
+  const usersListTo = usersListState?.to === '/admin/users/all' ? '/admin/users/all' : '/admin/users';
   const userQuery = useUserById(userId);
   const patchUser = usePatchUser();
   const { data: profile } = useQuery({ ...profileQueryOptions(), enabled: false });
@@ -169,7 +169,7 @@ function RouteComponent() {
           {({ data: user }) => (
             <div className="fr-container">
               <div className="fr-mb-2w">
-                <Link className="fr-link fr-mb-1w" to={usersListTo} search={usersListLocation?.search ?? {}}>
+                <Link className="fr-link fr-mb-1w" to={usersListTo} search={usersListState?.search ?? {}}>
                   <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true"></span> Liste des
                   utilisateurs
                 </Link>

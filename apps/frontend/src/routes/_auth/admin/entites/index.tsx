@@ -72,11 +72,11 @@ const getEffectiveSort = (sort?: string, order?: 'asc' | 'desc') => {
 export function RouteComponent() {
   const search = useSearch({ from: '/_auth/admin/entites/' });
   const navigate = useNavigate({ from: '/admin/entites/' });
-  const setListLocation = useListStateStore((s) => s.setListLocation);
+  const setListState = useListStateStore((s) => s.setListState);
 
   useEffect(() => {
-    setListLocation('entites', { to: '/admin/entites', search });
-  }, [search, setListLocation]);
+    setListState('entites', { to: '/admin/entites', search });
+  }, [search, setListState]);
 
   const limit = search.limit ?? DEFAULT_PAGE_SIZE;
   const offset = search.offset ?? 0;

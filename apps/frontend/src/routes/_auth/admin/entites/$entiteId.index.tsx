@@ -34,7 +34,7 @@ export function RouteComponent() {
   const editEntiteAdmin = useEditEntiteAdmin();
   const entiteQuery = useEntiteByIdAdmin(entiteId);
   const entiteChainQuery = useEntiteChain(entiteId);
-  const entitesListSearch = useListStateStore((s) => s.locations.entites?.search);
+  const entitesListSearch = useListStateStore((s) => s.states.entites?.search);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const entiteDepth = entiteChainQuery.data?.length ?? 0;

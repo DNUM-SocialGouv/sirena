@@ -51,11 +51,11 @@ export function PendingUsersTab() {
 
   const queries = useSearch({ from: '/_auth/admin/users' });
   const navigate = useNavigate({ from: '/admin/users' });
-  const setListLocation = useListStateStore((s) => s.setListLocation);
+  const setListState = useListStateStore((s) => s.setListState);
 
   useEffect(() => {
-    setListLocation('users', { to: '/admin/users', search: queries });
-  }, [queries, setListLocation]);
+    setListState('users', { to: '/admin/users', search: queries });
+  }, [queries, setListState]);
 
   const limit = queries.limit ?? DEFAULT_PAGE_SIZE;
   const offset = queries.offset ?? 0;

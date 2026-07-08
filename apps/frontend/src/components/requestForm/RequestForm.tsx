@@ -29,7 +29,7 @@ interface RequestFormProps {
 export function RequestForm({ requestId }: RequestFormProps) {
   const [activeTab, setActiveTab] = useState(0);
   const queryClient = useQueryClient();
-  const requetesListSearch = useListStateStore((s) => s.locations.requetes?.search);
+  const requetesListSearch = useListStateStore((s) => s.states.requetes?.search);
   const requestQuery = useRequeteDetails(requestId);
 
   const handleUpdate = useCallback(() => {

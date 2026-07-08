@@ -83,7 +83,7 @@ const SSE_DEBOUNCE_MS = 500;
 export function RequetesEntite() {
   const queries = useSearch({ from: '/_auth/_user/home' });
   const navigate = useNavigate({ from: '/home' });
-  const setListLocation = useListStateStore((s) => s.setListLocation);
+  const setListState = useListStateStore((s) => s.setListState);
   const queryClient = useQueryClient();
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { data: profile } = useProfile();
@@ -113,8 +113,8 @@ export function RequetesEntite() {
   useRequetesListSSE({ onUpdate: handleUpdate });
 
   useEffect(() => {
-    setListLocation('requetes', { to: '/home', search: queries });
-  }, [queries, setListLocation]);
+    setListState('requetes', { to: '/home', search: queries });
+  }, [queries, setListState]);
 
   const limit = queries.limit ?? DEFAULT_PAGE_SIZE;
   const offset = queries.offset ?? 0;
