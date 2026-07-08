@@ -72,7 +72,7 @@ describe('buildExportRequetesRows', () => {
     );
     expect(cell(rows[0], 'mesureProtectionPersonneConcernee')).toBe('mandataire familial');
     expect(cell(rows[0], 'personneConcerneeHandicap')).toBe('Oui');
-    expect(cell(rows[0], 'autrePersonneConcernee')).toBe('Sa sœur');
+    expect(cell(rows[0], 'autrePersonneConcernee')).toBe('Oui');
     expect(cell(rows[0], 'dateReception')).toBe('17/06/2026');
     expect(cell(rows[0], 'modeReception')).toBe('Téléphone');
     expect(cell(rows[0], 'dateDemandeDeclarant')).toBe('16/06/2026');
@@ -128,7 +128,7 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'servicesSituation')).toBe('Service PA');
   });
 
-  it('populates démarches fields and leaves ambiguous boolean columns empty', () => {
+  it('populates démarches fields and maps contact presence to Oui/Non', () => {
     const rows = buildExportRequetesRows([
       {
         id: 'REQ-2026-0008',
@@ -147,13 +147,35 @@ describe('buildExportRequetesRows', () => {
       },
     ]);
 
-    expect(cell(rows[0], 'misEnCauseContacte')).toBe('');
+    expect(cell(rows[0], 'misEnCauseContacte')).toBe('Oui');
     expect(cell(rows[0], 'datePriseContact')).toBe('11/06/2026');
-    expect(cell(rows[0], 'declarantRecuReponse')).toBe('');
-    expect(cell(rows[0], 'plainteDeposee')).toBe('');
+    expect(cell(rows[0], 'declarantRecuReponse')).toBe('Oui');
+    expect(cell(rows[0], 'plainteDeposee')).toBe('Oui');
     expect(cell(rows[0], 'dateDepotPlainte')).toBe('12/06/2026');
     expect(cell(rows[0], 'lieuDepotPlainte')).toBe('Gendarmerie');
-    expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Conseil départemental, Défenseur des droits');
+    expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Oui');
+  });
+
+  it('exports Non for démarches booleans when the démarches record exists without related data', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0015',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            demarchesEngagees: {
+              etablissementARepondu: false,
+              demarches: [],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'misEnCauseContacte')).toBe('Non');
+    expect(cell(rows[0], 'declarantRecuReponse')).toBe('Non');
+    expect(cell(rows[0], 'plainteDeposee')).toBe('Non');
+    expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Non');
   });
 
   it('populates facts motifs, consequences, dates and functional domain', () => {
@@ -172,7 +194,9 @@ describe('buildExportRequetesRows', () => {
                   { motifDeclaratif: { label: 'Violence verbale' } },
                   { motifDeclaratif: { label: 'Négligence' } },
                 ],
-                motifs: [{ motif: { label: 'Défaut de prise en charge' } }],
+                motifs: [
+                  { motifId: 'QUALITE_SOINS/DELAIS_PRISE_EN_CHARGE', motif: { label: 'Délais de prise en charge' } },
+                ],
                 consequences: [{ consequence: { label: 'Stress' } }],
               },
               {
@@ -180,7 +204,7 @@ describe('buildExportRequetesRows', () => {
                 dateFin: new Date('2026-06-16T00:00:00.000Z'),
                 motifsDeclaratifs: [{ motifDeclaratif: { label: 'Violence verbale' } }],
                 motifs: [
-                  { motif: { label: 'Défaut de prise en charge' } },
+                  { motifId: 'QUALITE_SOINS/DELAIS_PRISE_EN_CHARGE', motif: { label: 'Délais de prise en charge' } },
                   { motif: { label: 'Défaut d’information' } },
                 ],
                 consequences: [{ consequence: { label: 'Stress' } }, { consequence: { label: 'Blessure' } }],
@@ -192,11 +216,72 @@ describe('buildExportRequetesRows', () => {
     ]);
 
     expect(cell(rows[0], 'motifsDeclaratifs')).toBe('Violence verbale, Négligence');
-    expect(cell(rows[0], 'motifsQualifies')).toBe('Défaut de prise en charge, Défaut d’information');
+    expect(cell(rows[0], 'motifsQualifies')).toBe(
+      'Délais de prise en charge (Qualité des soins), Défaut d’information',
+    );
     expect(cell(rows[0], 'consequencesPersonneConcernee')).toBe('Stress, Blessure');
     expect(cell(rows[0], 'dateDebutFaits')).toBe('10/06/2026');
     expect(cell(rows[0], 'dateFinFaits')).toBe('16/06/2026');
     expect(cell(rows[0], 'domaineFonctionnel')).toBe('Santé');
+  });
+
+  it('falls back to transport company for lieu de survenue name when address label is absent', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0013',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              societeTransport: 'Ambulances Dupont',
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Ambulances Dupont');
+  });
+
+  it('falls back to the category-code referential for lieu de survenue FINESS category', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0019',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          situations: [
+            {
+              lieuDeSurvenue: {
+                finess: '750000001',
+                categCode: '355',
+                categLib: '',
+              },
+            },
+          ],
+        },
+      ],
+      { categorieFinessLieuSurvenueByCode: new Map([['355', 'Centre hospitalier régional']]) },
+    );
+
+    expect(cell(rows[0], 'categorieFinessLieuSurvenue')).toBe('Centre hospitalier régional');
+  });
+
+  it('populates lieu de survenue name from the address label', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0012',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              adresse: { codePostal: '75013', label: 'Hôpital Pitié-Salpêtrière' },
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Hôpital Pitié-Salpêtrière');
   });
 
   it('populates lieu de survenue and non-sensitive mis en cause fields', () => {
@@ -243,10 +328,196 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'finessMisEnCause')).toBe('750000002');
     expect(cell(rows[0], 'categorieFinessMisEnCause')).toBe('');
     expect(cell(rows[0], 'nomService')).toBe('Urgences');
-    expect(cell(rows[0], 'rppsMisEnCause')).toBe('');
-    expect(cell(rows[0], 'nomMisEnCause')).toBe('');
-    expect(cell(rows[0], 'codePostalMisEnCause')).toBe('75014');
-    expect(cell(rows[0], 'categorieProfessionnelleRppsMisEnCause')).toBe('');
+  });
+
+  it('populates department columns for ARS exports from their matching postal-code columns', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0011',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          declarant: {
+            estVictime: false,
+            isTuteur: false,
+            adresse: { codePostal: '75001' },
+            veutGarderAnonymat: false,
+            estSignalementProfessionnel: false,
+          },
+          participant: {
+            adresse: { codePostal: '20167' },
+            veutGarderAnonymat: false,
+            estVictimeInformee: false,
+            estHandicapee: false,
+            aAutrePersonnes: false,
+          },
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [
+            {
+              lieuDeSurvenue: { codePostal: '97110' },
+              misEnCause: { codePostal: '98000' },
+            },
+          ],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'departementDeclarant')).toBe('75');
+    expect(cell(rows[0], 'departementPersonneConcernee')).toBe('20');
+    expect(cell(rows[0], 'departementLieuSurvenue')).toBe('971');
+    expect(cell(rows[0], 'departementMisEnCause')).toBe('980');
+  });
+
+  it('leaves department columns blank for non-ARS exports', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0014',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          declarant: {
+            estVictime: false,
+            isTuteur: false,
+            adresse: { codePostal: '75001' },
+            veutGarderAnonymat: false,
+            estSignalementProfessionnel: false,
+          },
+          participant: {
+            adresse: { codePostal: '69002' },
+            veutGarderAnonymat: false,
+            estVictimeInformee: false,
+            estHandicapee: false,
+            aAutrePersonnes: false,
+          },
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Conseil départemental', entiteTypeId: 'CD' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [
+            {
+              lieuDeSurvenue: { codePostal: '97110' },
+              misEnCause: { codePostal: '98000' },
+            },
+          ],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'departementDeclarant')).toBe('');
+    expect(cell(rows[0], 'departementPersonneConcernee')).toBe('');
+    expect(cell(rows[0], 'departementLieuSurvenue')).toBe('');
+    expect(cell(rows[0], 'departementMisEnCause')).toBe('');
+  });
+
+  it('places department columns immediately after their source/location columns', () => {
+    expect(columnAfter('codePostalDeclarant')).toEqual({
+      key: 'departementDeclarant',
+      header: 'Département déclarant',
+    });
+    expect(columnAfter('codePostalPersonneConcernee')).toEqual({
+      key: 'departementPersonneConcernee',
+      header: 'Département personne concernée',
+    });
+    expect(columnAfter('codePostalLieuSurvenue')).toEqual({
+      key: 'departementLieuSurvenue',
+      header: 'Département lieu de survenue',
+    });
+    expect(columnAfter('nomService')).toEqual({
+      key: 'departementMisEnCause',
+      header: 'Département mis en cause',
+    });
+  });
+
+  it('exports the root-scoped request status as the first column', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0010',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'ARS Île-de-France' },
+              statut: { label: 'Clôturée' },
+            },
+            {
+              entiteId: 'other-root',
+              entite: { label: 'ARS Normandie' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [{}],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(EXPORT_REQUETES_COLUMNS[0]).toEqual({
+      key: 'statutRequeteEntiteAdministrative',
+      header: 'Statut de la requête pour mon entité administrative',
+    });
+    expect(rows[0][0]).toBe('Clôturée');
+  });
+
+  it('populates root-scoped acknowledgment email date and type from an auto-note', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0016',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          etapes: [
+            {
+              entiteId: 'root-entite',
+              type: 'ACKNOWLEDGMENT',
+              statutId: 'EN_COURS',
+              createdAt: new Date('2026-06-15T15:06:57.000Z'),
+              clotureReason: [],
+              notes: [{ texte: "Email d'accusé de réception envoyé le 15/06/2026 15:06:57" }],
+            },
+          ],
+          situations: [{}],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('15/06/2026');
+    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Email');
+  });
+
+  it('populates migrated acknowledgment date without inventing the send type', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0017',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          etapes: [
+            {
+              entiteId: 'root-entite',
+              type: 'ACKNOWLEDGMENT',
+              statutId: 'EN_COURS',
+              createdAt: new Date('2026-06-15T15:06:57.000Z'),
+              clotureReason: [],
+              notes: [{ texte: "Date d'envoi de l'accusé de réception au requérant : 16/06/2026" }],
+            },
+          ],
+          situations: [{}],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('16/06/2026');
+    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('');
   });
 
   it('populates request entity status, root-scoped priority and latest root-scoped closure fields', () => {
@@ -343,4 +614,10 @@ function cell(row: ExportRequetesCsvRow, key: ExportRequetesColumnKey): ExportRe
   const index = EXPORT_REQUETES_COLUMNS.findIndex((column) => column.key === key);
 
   return row[index];
+}
+
+function columnAfter(key: ExportRequetesColumnKey): (typeof EXPORT_REQUETES_COLUMNS)[number] | undefined {
+  const index = EXPORT_REQUETES_COLUMNS.findIndex((column) => column.key === key);
+
+  return EXPORT_REQUETES_COLUMNS[index + 1];
 }
