@@ -30,6 +30,15 @@
   }
 }
 
+.data-note {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border-default-grey);
+  padding-top: 2rem;
+}
+
 .kpi-card {
   display: flex;
   flex-direction: column;

@@ -1,7 +1,7 @@
 {
   "archived": false,
   "archived_directly": false,
-  "average_query_time": 278.8088578088578,
+  "average_query_time": 275.6,
   "cache_ttl": null,
   "can_delete": false,
   "can_manage_db": true,
@@ -36,23 +36,23 @@
     "stages": [
       {
         "lib/type": "mbql.stage/native",
-        "native": "SELECT\n    COUNT(*) AS nombre_requetes\n  FROM\n    \"RequeteEntite\" re\n    JOIN \"Entite\" e ON e.id = re.\"entiteId\"\n    JOIN \"Requete\" r ON r.id = re.\"requeteId\"\n  WHERE\n    re.\"statutId\" = 'EN_COURS'\n    [[ AND e.label = {{entity_label}} ]]\n    [[ AND r.\"createdAt\" >= {{start_date}} ]]\n    [[ AND r.\"createdAt\" < ({{end_date}}::date + INTERVAL '1 day') ]];",
+        "native": "-- Nombre de requêtes de l'entité de l'agent connecté qui sont en compétence partagée,\n-- c.-à-d. affectées à au moins une AUTRE entité administrative « réellement » compétente.\n-- Une autre entité est ignorée si elle a clôturé la requête pour motif « Hors compétence ».\nSELECT\n  COUNT(DISTINCT re_self.\"requeteId\") AS nombre_requetes_competence_partagee\nFROM \"RequeteEntite\" re_self\nJOIN \"Entite\"   e ON e.id = re_self.\"entiteId\"\nJOIN \"Requete\"  r ON r.id = re_self.\"requeteId\"\nWHERE\n  e.label = {{entity_label}}\n  AND EXISTS (\n    -- une autre entité affectée à la même requête...\n    SELECT 1\n    FROM \"RequeteEntite\" re_other\n    WHERE re_other.\"requeteId\" = re_self.\"requeteId\"\n      AND re_other.\"entiteId\" <> re_self.\"entiteId\"\n      -- ...qui n'est PAS clôturée « Hors compétence »\n      AND NOT (\n        re_other.\"statutId\" = 'CLOTUREE'\n        AND EXISTS (\n          SELECT 1\n          FROM \"RequeteEtape\" et\n          JOIN \"_RequeteClotureReasonEnumToRequeteEtape\" j ON j.\"B\" = et.id\n          WHERE et.\"requeteId\" = re_other.\"requeteId\"\n            AND et.\"entiteId\"  = re_other.\"entiteId\"\n            AND et.\"statutId\"  = 'CLOTUREE'\n            AND j.\"A\"          = 'HORS_COMPETENCE'\n        )\n      )\n  )\n  [[ AND r.\"createdAt\" >= {{start_date}} ]]\n  [[ AND r.\"createdAt\" <  ({{end_date}}::date + INTERVAL '1 day') ]];",
         "template-tags": {
           "end_date": {
             "display-name": "End Date",
-            "id": "52c02cb9-93a4-40bb-a052-8ef8ad4988c5",
+            "id": "1d20b736-898e-4a78-8bdd-ff198232d8e3",
             "name": "end_date",
             "type": "date"
           },
           "entity_label": {
             "display-name": "Entity Label",
-            "id": "ec0c9ad1-7a80-42ab-b6c9-5ee27007e7fb",
+            "id": "fd677468-a4da-47d0-8c73-87bd90cafe61",
             "name": "entity_label",
             "type": "text"
           },
           "start_date": {
             "display-name": "Start Date",
-            "id": "7ecfa54a-5d0e-4afd-832b-0e2e2aa62ff7",
+            "id": "39685465-f3f0-40e4-9a14-ae74670e2eed",
             "name": "start_date",
             "type": "date"
           }
@@ -68,21 +68,21 @@
   "embedding_params": null,
   "embedding_type": null,
   "enable_embedding": false,
-  "entity_id": "0W14Ln9t4zIgOyyvNvud6",
-  "id": 49,
+  "entity_id": "gYpEpTUnIXQCbRJm3uW7a",
+  "id": 51,
   "is_remote_synced": false,
-  "last_query_start": "2026-07-03T13:53:54.99619Z",
+  "last_query_start": "2026-07-03T13:53:54.888723Z",
   "legacy_query": null,
   "made_public_by_id": null,
-  "metabase_version": "v0.60.4.4 (65c9d32)",
+  "metabase_version": "v0.62.3.3 (686cac9)",
   "moderation_reviews": [],
-  "name": "requêtes en cours",
+  "name": "requêtes en compétence partagée",
   "param_fields": {},
   "parameter_mappings": [],
   "parameter_usage_count": 0,
   "parameters": [
     {
-      "id": "ec0c9ad1-7a80-42ab-b6c9-5ee27007e7fb",
+      "id": "fd677468-a4da-47d0-8c73-87bd90cafe61",
       "isMultiSelect": false,
       "name": "Entity Label",
       "slug": "entity_label",
@@ -97,6 +97,13 @@
       "values_query_type": "list",
       "values_source_config": {
         "card_id": 46,
+        "label_field": [
+          "field",
+          "nomComplet",
+          {
+            "base-type": "type/Text"
+          }
+        ],
         "value_field": [
           "field",
           "label",
@@ -108,7 +115,7 @@
       "values_source_type": "card"
     },
     {
-      "id": "7ecfa54a-5d0e-4afd-832b-0e2e2aa62ff7",
+      "id": "39685465-f3f0-40e4-9a14-ae74670e2eed",
       "isMultiSelect": false,
       "name": "Start Date",
       "slug": "start_date",
@@ -122,7 +129,7 @@
       "type": "date/single"
     },
     {
-      "id": "52c02cb9-93a4-40bb-a052-8ef8ad4988c5",
+      "id": "1d20b736-898e-4a78-8bdd-ff198232d8e3",
       "isMultiSelect": false,
       "name": "End Date",
       "slug": "end_date",
@@ -142,11 +149,11 @@
     {
       "base_type": "type/BigInteger",
       "database_type": "int8",
-      "display_name": "nombre_requetes",
+      "display_name": "nombre_requetes_competence_partagee",
       "effective_type": "type/BigInteger",
       "field_ref": [
         "field",
-        "nombre_requetes",
+        "nombre_requetes_competence_partagee",
         {
           "base-type": "type/BigInteger"
         }
@@ -158,13 +165,13 @@
         },
         "type": {
           "type/Number": {
-            "avg": 169,
+            "avg": 102,
             "excess-kurtosis": null,
-            "max": 169,
-            "min": 169,
+            "max": 102,
+            "min": 102,
             "mode-fraction": 1,
-            "q1": 169,
-            "q3": 169,
+            "q1": 102,
+            "q3": 102,
             "sd": 0,
             "skewness": null,
             "top-3-fraction": 1,
@@ -172,12 +179,12 @@
           }
         }
       },
-      "lib/deduplicated-name": "nombre_requetes",
-      "lib/desired-column-alias": "nombre_requetes",
-      "lib/original-name": "nombre_requetes",
+      "lib/deduplicated-name": "nombre_requetes_competence_partagee",
+      "lib/desired-column-alias": "nombre_requetes_competence_partagee",
+      "lib/original-name": "nombre_requetes_competence_partagee",
       "lib/source": "source/native",
-      "lib/source-column-alias": "nombre_requetes",
-      "name": "nombre_requetes",
+      "lib/source-column-alias": "nombre_requetes_competence_partagee",
+      "name": "nombre_requetes_competence_partagee",
       "semantic_type": null,
       "source": "native"
     }
