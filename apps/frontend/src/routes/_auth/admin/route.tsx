@@ -17,12 +17,16 @@ export function RouteComponent() {
   const matches = useMatches();
   const { data } = useProfile();
   const hasSirecMigration = useHasFeature(FEATURE_FLAGS.SIREC_MIGRATION, false);
+  const hasAdminLocalDirectionsServicesFeatureFlag = useHasFeature(
+    FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES,
+    false,
+  );
 
   const role = (data?.role?.id ?? null) as Role | null;
   const pathname = matches.at(-1)?.pathname ?? '/admin/users';
-  const tabs = getTabs(role, hasSirecMigration);
-  const tabPaths = getTabPaths(role, hasSirecMigration);
-  const activeTab = getActiveTab(pathname, role, hasSirecMigration);
+  const tabs = getTabs(role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
+  const tabPaths = getTabPaths(role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
+  const activeTab = getActiveTab(pathname, role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
   const isUserEditPage = pathname.startsWith('/admin/user/');
 
   const handleTabChange = (newTabIndex: number) => {

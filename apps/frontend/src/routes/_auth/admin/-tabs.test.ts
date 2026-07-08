@@ -19,6 +19,13 @@ describe('tabs', () => {
     ]);
   });
 
+  it('hides directions and services for entity admins when the feature flag is disabled', () => {
+    expect(getTabs(ROLES.ENTITY_ADMIN, false, false).map((tab) => tab.label)).toEqual([
+      "Gestion des demandes d'habilitations",
+      'Gestion des utilisateurs',
+    ]);
+  });
+
   it('returns the matching tab paths for super admins', () => {
     expect(getTabPaths(ROLES.SUPER_ADMIN)).toEqual(['/admin/users', '/admin/users/all', '/admin/entites']);
   });
