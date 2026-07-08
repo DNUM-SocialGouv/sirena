@@ -220,7 +220,6 @@ describe('Entites endpoints: /entites', () => {
     it('rejects entity admins when the local directions and services feature flag is disabled', async () => {
       currentRole.value = ROLES.ENTITY_ADMIN;
       hasFeatureSpy.mockResolvedValueOnce(false);
-      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce([]);
 
       const res = await app.request('/admin/directions-services');
 
