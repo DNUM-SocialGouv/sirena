@@ -373,11 +373,12 @@ export function RequetesEntite() {
       <div className="fr-mb-3w">
         <div className="fr-grid-row">
           <div className="fr-col-12 fr-col-md-5">
-            <p className="fr-label fr-mb-1v" aria-hidden="true">
-              Rechercher dans les requêtes par numéro, lieu de survenue, mis en cause (nom, RPPS, FINESS), ...
+            <h2 className="fr-h6 fr-mb-1v">Rechercher une requête</h2>
+            <p className="fr-hint-text fr-mb-1w" aria-hidden="true">
+              Par numéro, lieu de survenue, mis en cause (nom, RPPS, FINESS) etc.
             </p>
             <SearchBar
-              label="Rechercher dans les requêtes par numéro, lieu de survenue, mis en cause (nom, RPPS, FINESS), ..."
+              label="Rechercher une requête par numéro, lieu de survenue, mis en cause (nom, RPPS, FINESS)"
               onButtonClick={handleSearch}
               renderInput={(inputProps) => (
                 <input
