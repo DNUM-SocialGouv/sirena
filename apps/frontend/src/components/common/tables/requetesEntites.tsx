@@ -118,11 +118,12 @@ export function RequetesEntite() {
 
   const { data: requetes, isFetching } = useRequetesEntite({
     ...(queries.sort && { sort: queries.sort }),
-    ...(queries.order && { order: queries.order as 'asc' | 'desc' }),
+    ...(queries.order && { order: queries.order }),
     ...(queries.search && { search: queries.search }),
     ...(queries.entiteId ? { entiteId: queries.entiteId } : {}),
     ...(queries.departementCodes ? { departementCodes: queries.departementCodes } : {}),
     ...(queries.domaineIds ? { domaineIds: queries.domaineIds } : {}),
+    ...(queries.statutIds ? { statutIds: queries.statutIds } : {}),
     ...(queries.prioriteId ? { prioriteId: queries.prioriteId } : {}),
     offset,
     limit,
@@ -367,10 +368,10 @@ export function RequetesEntite() {
         <div className="fr-grid-row">
           <div className="fr-col-12 fr-col-md-5">
             <p className="fr-label fr-mb-1v" aria-hidden="true">
-              Rechercher dans les requêtes par numéro, lieu de survenue, ...
+              Rechercher dans les requêtes par numéro, lieu de survenue, mis en cause (nom, RPPS, FINESS), ...
             </p>
             <SearchBar
-              label="Rechercher dans les requêtes par numéro, lieu de survenue, ..."
+              label="Rechercher dans les requêtes par numéro, lieu de survenue, mis en cause (nom, RPPS, FINESS), ..."
               onButtonClick={handleSearch}
               renderInput={(inputProps) => (
                 <input

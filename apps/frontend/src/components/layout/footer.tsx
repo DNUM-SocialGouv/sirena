@@ -9,7 +9,7 @@ export function AppFooter() {
     <Footer
       id={footerId}
       domains={[]}
-      accessibility="non compliant"
+      accessibility="partially compliant"
       contentDescription={`frontend version: ${APP_VERSION} backend version: ${data?.version}`}
       accessibilityLinkProps={{ href: '/accessibilite' }}
       bottomItems={[

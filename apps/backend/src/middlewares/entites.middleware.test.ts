@@ -1,14 +1,14 @@
 import { testClient } from 'hono/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { getEntiteAscendanteInfo } from '../features/entites/entites.service.js';
-import { getUserEntities } from '../features/users/users.service.js';
+import { getUserEntiteContext } from '../features/users/users.service.js';
 import { errorHandler } from '../helpers/errors.js';
 import appWithAuth from '../helpers/factories/appWithAuth.js';
 import appWithLogs from '../helpers/factories/appWithLogs.js';
 import entitesMiddleware from './entites.middleware.js';
 
 vi.mock('../features/users/users.service.js', () => ({
-  getUserEntities: vi.fn(),
+  getUserEntiteContext: vi.fn(),
 }));
 
 vi.mock('../features/entites/entites.service.js', () => ({
@@ -20,7 +20,7 @@ describe('entite.middleware.ts', () => {
     const mockUserId = 'user-123';
     const mockEntiteIds = ['e1', 'e2'];
 
-    vi.mocked(getUserEntities).mockResolvedValueOnce(mockEntiteIds);
+    vi.mocked(getUserEntiteContext).mockResolvedValueOnce({ assignedEntiteId: 'e1', entiteIds: mockEntiteIds });
 
     const route = appWithAuth
       .createApp()
@@ -47,7 +47,7 @@ describe('entite.middleware.ts', () => {
     const mockUserId = 'user-123';
     const mockTopEntiteId = 'e1';
 
-    vi.mocked(getUserEntities).mockResolvedValueOnce(['e1']);
+    vi.mocked(getUserEntiteContext).mockResolvedValueOnce({ assignedEntiteId: 'e1', entiteIds: ['e1'] });
     vi.mocked(getEntiteAscendanteInfo).mockResolvedValueOnce({ entiteId: 'e1', level: 1 });
 
     const route = appWithAuth
@@ -71,10 +71,42 @@ describe('entite.middleware.ts', () => {
     expect(json.topEntiteId).toEqual(mockTopEntiteId);
   });
 
+  it('should attach assignedEntiteId from the user entity context', async () => {
+    const mockUserId = 'user-123';
+
+    vi.mocked(getUserEntiteContext).mockResolvedValueOnce({
+      assignedEntiteId: 'dir-autonomie',
+      entiteIds: ['dir-autonomie', 'service-pa'],
+    });
+    vi.mocked(getEntiteAscendanteInfo).mockResolvedValueOnce({ entiteId: 'root-ars', level: 2 });
+
+    const route = appWithAuth
+      .createApp()
+      .use((c, next) => {
+        c.set('userId', mockUserId);
+        return next();
+      })
+      .use(entitesMiddleware)
+      .get('/', (c) => {
+        const assignedEntiteId = c.get('assignedEntiteId');
+        const entiteIds = c.get('entiteIds');
+        return c.json({ assignedEntiteId, entiteIds });
+      });
+
+    const app = appWithLogs.createApp().route('/test', route).onError(errorHandler);
+    const client = testClient(app);
+
+    const res = await client.test.$get();
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({ assignedEntiteId: 'dir-autonomie', entiteIds: ['dir-autonomie', 'service-pa'] });
+    expect(getUserEntiteContext).toHaveBeenCalledWith(mockUserId);
+  });
+
   it('should keep entiteIds as null for super admins (not default to empty array)', async () => {
     const mockUserId = 'super-admin-123';
 
-    vi.mocked(getUserEntities).mockResolvedValueOnce(null);
+    vi.mocked(getUserEntiteContext).mockResolvedValueOnce({ assignedEntiteId: null, entiteIds: null });
 
     const route = appWithAuth
       .createApp()

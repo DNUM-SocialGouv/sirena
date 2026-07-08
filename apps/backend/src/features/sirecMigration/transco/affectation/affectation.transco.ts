@@ -2,6 +2,7 @@ import { prisma } from '@sirena/db';
 import { createDefaultLogger } from '../../../../helpers/pino.js';
 import { SirecTranscoError } from '../sirecTransco.error.js';
 import { AFFECTATION_ENTITES_BOURGOGNE_FRANCHE_COMTE } from './entitesBourgogneFrancheComte.js';
+import { AFFECTATION_ENTITES_CENTRE_VAL_DE_LOIRE } from './entitesCentreValDeLoire.js';
 import { AFFECTATION_ENTITES_GRAND_EST } from './entitesGrandEst.js';
 import { AFFECTATION_ENTITES_GUADELOUPE } from './entitesGuadeloupe.js';
 import { AFFECTATION_ENTITES_ILE_DE_FRANCE } from './entitesIleDeFrance.js';
@@ -23,6 +24,7 @@ const ALL_AFFECTATION_ENTITES = {
   ...AFFECTATION_ENTITES_BOURGOGNE_FRANCHE_COMTE,
   ...AFFECTATION_ENTITES_PAYS_DE_LA_LOIRE,
   ...AFFECTATION_ENTITES_NOUVELLE_AQUITAINE,
+  ...AFFECTATION_ENTITES_CENTRE_VAL_DE_LOIRE,
 };
 
 export function getAffectationLabel(sirecId: number | null): string | null {

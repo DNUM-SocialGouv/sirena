@@ -8,6 +8,7 @@ import {
 import {
   CreateChildEntiteAdminResponseSchema,
   EditEntiteAdminResponseSchema,
+  GetDirectionsServicesRowsResponseSchema,
   GetEntitesByIdAdminResponseSchema,
   GetEntitesListAdminResponseSchema,
   GetEntitiesChainResponseSchema,
@@ -33,6 +34,13 @@ export const getRootEntitesListAdminRoute = openApiProtectedRoute({
   description: 'Get root entites list for super admins',
   responses: {
     ...openApiResponses(GetRootEntitesListAdminResponseSchema),
+  },
+});
+
+export const getDirectionsServicesRowsRoute = openApiProtectedRoute({
+  description: 'Get local directions and services rows for entity admins',
+  responses: {
+    ...openApiResponses(GetDirectionsServicesRowsResponseSchema),
   },
 });
 

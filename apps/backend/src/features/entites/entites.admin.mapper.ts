@@ -1,3 +1,5 @@
+import { groupEntitesByParentId } from './entites.hierarchy.js';
+
 type EntiteAdmin = {
   id: string;
   nomComplet: string;
@@ -51,19 +53,8 @@ const compareRootEntiteType = (a: EntiteAdmin, b: EntiteAdmin) => {
 };
 
 const buildTreeOrder = (entites: EntiteAdmin[]) => {
-  const childrenByParentId = new Map<string, EntiteAdmin[]>();
-
   const sortedChildren = entites.filter((entite) => entite.entiteMereId !== null).toSorted(compareByNomComplet);
-
-  for (const entite of sortedChildren) {
-    if (entite.entiteMereId === null) {
-      continue;
-    }
-
-    const siblings = childrenByParentId.get(entite.entiteMereId) ?? [];
-    siblings.push(entite);
-    childrenByParentId.set(entite.entiteMereId, siblings);
-  }
+  const entitesParEntiteMere = groupEntitesByParentId(sortedChildren);
 
   const roots = entites.filter((entite) => entite.entiteMereId === null).sort(compareRootEntiteType);
 
@@ -72,9 +63,9 @@ const buildTreeOrder = (entites: EntiteAdmin[]) => {
   const visit = (entite: EntiteAdmin) => {
     ordered.push(entite);
 
-    const children = childrenByParentId.get(entite.id) ?? [];
-    for (const child of children) {
-      visit(child);
+    const entitesEnfants = entitesParEntiteMere.get(entite.id) ?? [];
+    for (const entiteEnfant of entitesEnfants) {
+      visit(entiteEnfant);
     }
   };
 

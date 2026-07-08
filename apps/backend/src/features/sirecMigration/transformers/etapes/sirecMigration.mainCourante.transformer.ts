@@ -7,7 +7,7 @@ import { SirecTranscoError } from '../../transco/sirecTransco.error.js';
 import type { SirenaEtapeData } from './sirecMigration.etape.types.js';
 
 function transcodeTypeAction(typeAction1: number | null): string {
-  if (typeAction1 === null) return 'Type de traitement : Autre';
+  if (typeAction1 === null) return 'Type de traitement : Non précisé';
   const label = SIREC_DICO[typeAction1];
   if (label === undefined) throw new SirecTranscoError(typeAction1, 'typeAction');
   return label;

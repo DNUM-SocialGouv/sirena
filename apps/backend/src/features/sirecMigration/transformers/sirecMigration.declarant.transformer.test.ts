@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: test purposes */
 import { describe, expect, it } from 'vitest';
+import { SirecTranscoError } from '../transco/sirecTransco.error.js';
 import { transformDeclarantIdentite, transformSirecDeclarant } from './sirecMigration.declarant.transformer.js';
 
 describe('sirecMigration.declarant.transformer.ts', () => {
@@ -25,6 +26,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
     plaignant_connu: null as number | null,
     victime_lien_plaignant: null as number | null,
     lien_plai_autre: null as string | null,
+    signalement: null as number | null,
   } as any;
 
   it('should map plaignant=34 to declarant with estVictime true', () => {
@@ -38,6 +40,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       adresse: null,
       identite: null,
       commentaire: '',
+      estSignalementProfessionnel: null,
     });
   });
 
@@ -52,6 +55,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       adresse: null,
       identite: null,
       commentaire: '',
+      estSignalementProfessionnel: null,
     });
   });
 
@@ -70,6 +74,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       adresse: null,
       identite: null,
       commentaire: 'Le requérant est anonyme : oui',
+      estSignalementProfessionnel: null,
     });
   });
 
@@ -94,6 +99,7 @@ describe('sirecMigration.declarant.transformer.ts', () => {
       adresse: null,
       identite: null,
       commentaire: '',
+      estSignalementProfessionnel: null,
     });
   });
 
@@ -418,6 +424,43 @@ describe('sirecMigration.declarant.transformer.ts', () => {
 
   it('should create declarant from lien_plai_autre alone', () => {
     expect(transformSirecDeclarant({ ...reclamation, lien_plai_autre: 'Voisin' })).not.toBeNull();
+  });
+
+  it('should map signalement=1 to estSignalementProfessionnel true', () => {
+    expect(transformSirecDeclarant({ ...reclamation, signalement: 1 })?.estSignalementProfessionnel).toBe(true);
+  });
+
+  it('should map signalement=0 to estSignalementProfessionnel false', () => {
+    expect(transformSirecDeclarant({ ...reclamation, signalement: 0 })?.estSignalementProfessionnel).toBe(false);
+  });
+
+  it('should map null signalement to null estSignalementProfessionnel', () => {
+    expect(
+      transformSirecDeclarant({ ...reclamation, plaignant: 34, signalement: null })?.estSignalementProfessionnel,
+    ).toBeNull();
+  });
+
+  it('should create declarant from signalement alone', () => {
+    expect(transformSirecDeclarant({ ...reclamation, signalement: 1 })).not.toBeNull();
+  });
+
+  it('should set estSignalementProfessionnel true even when estVictime is true', () => {
+    const result = transformSirecDeclarant({ ...reclamation, plaignant: 34, signalement: 1 });
+
+    expect(result).toEqual({
+      estVictime: true,
+      veutGarderAnonymat: null,
+      lienVictimeId: null,
+      lienAutrePrecision: null,
+      adresse: null,
+      identite: null,
+      commentaire: '',
+      estSignalementProfessionnel: true,
+    });
+  });
+
+  it('should throw SirecTranscoError for an unknown signalement value', () => {
+    expect(() => transformSirecDeclarant({ ...reclamation, signalement: 99999 })).toThrow(SirecTranscoError);
   });
 
   it('should not use requerant_adresse_complete for non-physical person (only used in rue)', () => {
