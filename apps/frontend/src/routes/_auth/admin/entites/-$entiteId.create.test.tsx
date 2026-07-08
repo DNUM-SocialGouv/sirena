@@ -17,6 +17,7 @@ const { addToastSpy, routerNavigateSpy, createChildEntiteAdminMutateAsyncSpy, ro
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => ({
     ...options,
+    options,
     useParams: () => routeParamsState,
   }),
   Link: ({ to, params, children }: { to: string; params?: { entiteId?: string }; children: React.ReactNode }) => (
@@ -88,7 +89,7 @@ afterEach(() => {
 describe('Admin entity child creation route', () => {
   it('restricts the route to SUPER_ADMIN users', () => {
     expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.SUPER_ADMIN]);
-    expect(Route.beforeLoad).toBe('mocked-super-admin-guard');
+    expect(Route.options.beforeLoad).toBe('mocked-super-admin-guard');
   });
 
   it('renders the title "Créer une direction" when the parent entity is a root entite', () => {
