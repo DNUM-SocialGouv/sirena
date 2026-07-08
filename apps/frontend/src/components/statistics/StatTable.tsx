@@ -1,7 +1,7 @@
 import { fr } from '@codegouvfr/react-dsfr';
 import { Pagination } from '@codegouvfr/react-dsfr/Pagination';
 import type { MouseEvent, ReactNode } from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useOverflowX } from '@/hooks/useOverflowX';
 import { type ChartItem, numberFormatter, percentFormatter, percentPointFormatter } from './chartData';
 import styles from './statTable.module.css';
@@ -45,8 +45,7 @@ export function StatTable({
   hasPrecomputedPercent = false,
   hideCaption,
 }: StatTableProps) {
-  const sortedItems = useMemo(() => [...items].sort((a, b) => b.value - a.value), [items]);
-  const max = sortedItems.reduce((acc, item) => Math.max(acc, item.value), 0);
+  const max = items.reduce((acc, item) => Math.max(acc, item.value), 0);
   const { ref, isOverflowing } = useOverflowX<HTMLDivElement>();
 
   const [page, setPage] = useState(1);
@@ -57,12 +56,10 @@ export function StatTable({
     setPage(1);
   }
 
-  const pageCount = Math.ceil(sortedItems.length / PAGE_SIZE);
-  const showPagination = sortedItems.length > PAGE_SIZE;
+  const pageCount = Math.ceil(items.length / PAGE_SIZE);
+  const showPagination = items.length > PAGE_SIZE;
   const currentPage = Math.min(page, Math.max(pageCount, 1));
-  const visibleItems = showPagination
-    ? sortedItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-    : sortedItems;
+  const visibleItems = showPagination ? items.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE) : items;
 
   const getPageLinkProps = useCallback(
     (pageNumber: number) => ({
@@ -75,8 +72,16 @@ export function StatTable({
     [],
   );
 
+  const paginationLabel = `Pagination du tableau ${caption}`;
+  const paginationRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      node?.setAttribute('aria-label', paginationLabel);
+    },
+    [paginationLabel],
+  );
+
   return (
-    <>
+    <div className={styles.container}>
       <div ref={ref} className={styles.scroll} {...(isOverflowing ? { tabIndex: 0 } : {})}>
         <table className={styles.table}>
           <caption className={hideCaption ? fr.cx('fr-sr-only') : styles.caption}>{caption}</caption>
@@ -119,15 +124,15 @@ export function StatTable({
         </table>
       </div>
       {showPagination && (
-        <>
-          <p className={fr.cx('fr-sr-only')} aria-live="polite">
-            {`${caption} : page ${currentPage} sur ${pageCount}`}
-          </p>
-          <div className={fr.cx('fr-mt-2w', 'fr-grid-row', 'fr-grid-row--center')}>
-            <Pagination count={pageCount} defaultPage={currentPage} getPageLinkProps={getPageLinkProps} />
-          </div>
-        </>
+        <div className={fr.cx('fr-mt-2w', 'fr-grid-row', 'fr-grid-row--center')}>
+          <Pagination
+            ref={paginationRef}
+            count={pageCount}
+            defaultPage={currentPage}
+            getPageLinkProps={getPageLinkProps}
+          />
+        </div>
       )}
-    </>
+    </div>
   );
 }

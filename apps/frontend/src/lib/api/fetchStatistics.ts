@@ -1,22 +1,8 @@
-import type { CardData } from '@/components/statistics/chartData';
+import type { StatisticsCard } from '@/components/statistics/statistics.types';
 import { client } from '@/lib/api/hc';
 import { handleRequestErrors } from '@/lib/api/tanstackQuery';
 
-export type StatisticsCardLayout = {
-  col: number;
-  row: number;
-  sizeX: number;
-  sizeY: number;
-};
-
-export type StatisticsCard = {
-  id: number;
-  dashcardId: number;
-  name: string;
-  display: string | null;
-  layout: StatisticsCardLayout | null;
-  data: CardData;
-};
+export type { StatisticsCard };
 
 export type StatisticsDashboardFilters = {
   startDate?: string;

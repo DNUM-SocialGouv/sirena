@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { annularSectorPath, type CardData, type MetabaseColumn, parseCard } from './chartData';
 
 type TestCol = Partial<MetabaseColumn> & { name: string };
-const card = (cols: TestCol[], rows: unknown[][]): CardData => ({
+const card = (cols: TestCol[], rows: CardData['rows']): CardData => ({
   cols: cols.map((col) => ({
     name: col.name,
     display_name: col.display_name ?? col.name,

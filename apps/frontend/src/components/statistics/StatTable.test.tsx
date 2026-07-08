@@ -79,7 +79,7 @@ describe('StatTable', () => {
     expect(screen.queryByRole('rowheader', { name: 'Total' })).not.toBeInTheDocument();
   });
 
-  it('sorts rows by value in descending order (largest first)', () => {
+  it('keeps the rows in their original order', () => {
     render(
       <StatTable
         caption="c"
@@ -96,7 +96,7 @@ describe('StatTable', () => {
 
     const rowHeaders = screen.getAllByRole('rowheader').map((cell) => cell.textContent);
     // Total exclu (pied de tableau) : on ne garde que les lignes de données.
-    expect(rowHeaders.filter((label) => label !== 'Total')).toEqual(['Grand', 'Moyen', 'Petit']);
+    expect(rowHeaders.filter((label) => label !== 'Total')).toEqual(['Petit', 'Grand', 'Moyen']);
   });
 
   it('paginates client-side when there are more than 10 rows', () => {
@@ -107,17 +107,17 @@ describe('StatTable', () => {
 
     render(<StatTable caption="c" items={many} total={78} dimensionLabel="Motif" metricLabel="Nombre" />);
 
-    // Tri décroissant : page 1 = les 10 plus grandes valeurs (Motif 12 → Motif 3).
-    expect(screen.getByRole('rowheader', { name: 'Motif 12' })).toBeInTheDocument();
-    expect(screen.getByRole('rowheader', { name: 'Motif 3' })).toBeInTheDocument();
-    expect(screen.queryByRole('rowheader', { name: 'Motif 2' })).not.toBeInTheDocument();
+    // Ordre d'origine préservé : page 1 = les 10 premières lignes (Motif 1 → Motif 10).
+    expect(screen.getByRole('rowheader', { name: 'Motif 1' })).toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: 'Motif 10' })).toBeInTheDocument();
+    expect(screen.queryByRole('rowheader', { name: 'Motif 11' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText('page 2'));
 
-    // Page 2 : les 2 plus petites valeurs (Motif 2 et Motif 1), Motif 12 masqué.
-    expect(screen.getByRole('rowheader', { name: 'Motif 2' })).toBeInTheDocument();
-    expect(screen.getByRole('rowheader', { name: 'Motif 1' })).toBeInTheDocument();
-    expect(screen.queryByRole('rowheader', { name: 'Motif 12' })).not.toBeInTheDocument();
+    // Page 2 : les 2 dernières lignes (Motif 11 et Motif 12), Motif 1 masqué.
+    expect(screen.getByRole('rowheader', { name: 'Motif 11' })).toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: 'Motif 12' })).toBeInTheDocument();
+    expect(screen.queryByRole('rowheader', { name: 'Motif 1' })).not.toBeInTheDocument();
   });
 
   it('does not render pagination for 10 rows or fewer', () => {
@@ -156,15 +156,15 @@ describe('StatTable', () => {
     );
 
     fireEvent.click(screen.getByText('page 2'));
-    expect(screen.getByRole('rowheader', { name: 'Motif 1' })).toBeInTheDocument();
+    expect(screen.getByRole('rowheader', { name: 'Motif 11' })).toBeInTheDocument();
 
     rerender(
       <StatTable caption="c" items={buildItems('Autre')} total={78} dimensionLabel="Motif" metricLabel="Nombre" />,
     );
 
-    // Retour en page 1 sur le nouveau jeu : les plus grandes valeurs, pas la queue de la page 2.
-    expect(screen.getByRole('rowheader', { name: 'Autre 12' })).toBeInTheDocument();
-    expect(screen.queryByRole('rowheader', { name: 'Autre 1' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('rowheader', { name: 'Motif 1' })).not.toBeInTheDocument();
+    // Retour en page 1 sur le nouveau jeu, dans l'ordre d'origine (Autre 1 → Autre 10).
+    expect(screen.getByRole('rowheader', { name: 'Autre 1' })).toBeInTheDocument();
+    expect(screen.queryByRole('rowheader', { name: 'Autre 12' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('rowheader', { name: 'Motif 11' })).not.toBeInTheDocument();
   });
 });

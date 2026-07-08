@@ -1,16 +1,6 @@
-export type MetabaseColumn = {
-  name: string;
-  display_name: string;
-  base_type: string;
-  semantic_type: string | null;
-  // `breakout` = axe (dimension), `aggregation` = mesure (métrique) ; `null` pour une requête SQL native.
-  source: string | null;
-};
+import type { CardData, MetabaseColumn } from './statistics.types';
 
-export type CardData = {
-  cols: MetabaseColumn[];
-  rows: unknown[][];
-};
+export type { CardData, MetabaseColumn };
 
 export type ChartItem = { label: string; value: number; percent?: number | null };
 
@@ -65,12 +55,12 @@ export const parseCard = ({ cols, rows }: CardData): ParsedCard | null => {
     cols.find((col) => isNumericColumn(col) && isPercentByName(col)) ??
     null;
 
-  const metricCandidates = cols.filter((col) => col !== percentColumn && isNumericColumn(col));
-  const percentCol = metricCandidates.length > 0 ? percentColumn : null;
+  const metricColumns = cols.filter((col) => col !== percentColumn && isNumericColumn(col));
+  const percentCol = metricColumns.length > 0 ? percentColumn : null;
 
   const metricCol =
-    metricCandidates.find((col) => col.source === 'aggregation') ??
-    metricCandidates.at(-1) ??
+    metricColumns.find((col) => col.source === 'aggregation') ??
+    metricColumns.at(-1) ??
     cols.filter(isNumericColumn).at(-1) ??
     cols[cols.length - 1];
 

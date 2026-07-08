@@ -18,6 +18,13 @@ import { requireAuthAndRoles } from '@/lib/auth-guards';
 import styles from './statistiques.module.css';
 
 const numberFormatter = new Intl.NumberFormat('fr-FR');
+const dataDateFormatter = new Intl.DateTimeFormat('fr-FR');
+
+function formatDataDate(reference: Date): string {
+  const previousDay = new Date(reference);
+  previousDay.setDate(previousDay.getDate() - 1);
+  return dataDateFormatter.format(previousDay);
+}
 
 const StatisticsSearchSchema = z.object({
   period: z.enum(PERIOD_PRESETS).optional().catch(undefined),
@@ -135,6 +142,7 @@ function RouteComponent() {
     endDate: search.endDate,
   };
   const range = resolveDateRange(selection, new Date());
+  const dataDate = formatDataDate(new Date());
   const query = useStatisticsDashboard(range, areFlagsReady && isEnabled && hasEntityLink);
 
   const handlePeriodChange = (next: PeriodSelection) => {
@@ -186,6 +194,10 @@ function RouteComponent() {
           );
         }}
       </QueryStateHandler>
+      <p className={`${fr.cx('fr-text--sm', 'fr-mt-6w', 'fr-mb-0')} ${styles['data-note']}`}>
+        <span className={fr.cx('fr-icon-time-line')} aria-hidden="true" />
+        Données du {dataDate}
+      </p>
     </div>
   );
 }

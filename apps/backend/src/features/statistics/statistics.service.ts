@@ -215,15 +215,9 @@ type RawMetabaseColumn = {
 
 const EMPTY_CARD_DATA: CardData = { cols: [], rows: [] };
 
-const toMetabaseColumn = (raw: unknown): MetabaseColumn | null => {
+const toMetabaseColumn = (raw: RawMetabaseColumn): MetabaseColumn | null => {
   if (!raw || typeof raw !== 'object') return null;
-  const {
-    name,
-    display_name: displayName,
-    base_type: baseType,
-    semantic_type: semanticType,
-    source,
-  } = raw as RawMetabaseColumn;
+  const { name, display_name: displayName, base_type: baseType, semantic_type: semanticType, source } = raw;
   if (typeof name !== 'string') return null;
   return {
     name,
