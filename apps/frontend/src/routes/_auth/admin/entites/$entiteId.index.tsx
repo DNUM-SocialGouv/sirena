@@ -9,6 +9,7 @@ import { QueryErrorState } from '@/components/queryStateHandler/queryStateHandle
 import { useEditEntiteAdmin, useEntiteByIdAdmin, useEntiteChain } from '@/hooks/queries/entites.hook';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getFieldError, zodIssuesToFieldErrors } from '@/lib/zodFormValidation';
+import { useListStateStore } from '@/stores/listStateStore';
 import { EntiteAdminFormFields } from './-components/EntiteAdminFormFields';
 import { getEditEntiteTitle } from './-helpers';
 
@@ -33,6 +34,7 @@ export function RouteComponent() {
   const editEntiteAdmin = useEditEntiteAdmin();
   const entiteQuery = useEntiteByIdAdmin(entiteId);
   const entiteChainQuery = useEntiteChain(entiteId);
+  const entitesListSearch = useListStateStore((s) => s.states.entites?.search);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const entiteDepth = entiteChainQuery.data?.length ?? 0;
@@ -165,7 +167,7 @@ export function RouteComponent() {
   return (
     <div className="fr-container fr-mt-4w">
       <div className="fr-mb-3w">
-        <Link className="fr-link" to="/admin/entites">
+        <Link className="fr-link" to="/admin/entites" search={entitesListSearch ?? {}}>
           <span className="fr-icon-arrow-left-line fr-icon--sm" aria-hidden="true" />
           Liste des entités
         </Link>
@@ -197,7 +199,7 @@ export function RouteComponent() {
           />
 
           <div className="fr-btns-group fr-btns-group--right fr-btns-group--inline-md">
-            <Link className="fr-btn fr-btn--secondary" to="/admin/entites">
+            <Link className="fr-btn fr-btn--secondary" to="/admin/entites" search={entitesListSearch ?? {}}>
               Annuler
             </Link>
             <Button type="submit" disabled={editEntiteAdmin.isPending}>
