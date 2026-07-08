@@ -13,3 +13,5 @@ export const QueryParamsSchema = z.object({
   prioriteId: z.string().optional(),
   rootEntiteIds: z.string().optional(),
 });
+
+export type QueryParams = z.infer<typeof QueryParamsSchema>;

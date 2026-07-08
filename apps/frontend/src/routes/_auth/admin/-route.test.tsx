@@ -2,6 +2,7 @@ import { ROLES } from '@sirena/common/constants';
 import { useMatches, useNavigate } from '@tanstack/react-router';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { RouteComponent } from './route';
 
@@ -17,9 +18,14 @@ vi.mock('@/hooks/queries/profile.hook', () => ({
   useProfile: vi.fn(),
 }));
 
+vi.mock('@/hooks/queries/featureFlags.hook', () => ({
+  useResolvedFeatureFlags: vi.fn(),
+}));
+
 const mockedUseMatches = vi.mocked(useMatches);
 const mockedUseNavigate = vi.mocked(useNavigate);
 const mockedUseProfile = vi.mocked(useProfile);
+const mockedUseResolvedFeatureFlags = vi.mocked(useResolvedFeatureFlags);
 
 function mockRole(roleId: string) {
   mockedUseProfile.mockReturnValue({
@@ -31,6 +37,13 @@ function mockRole(roleId: string) {
 
 beforeEach(() => {
   mockedUseNavigate.mockReturnValue(vi.fn() as never);
+  mockedUseResolvedFeatureFlags.mockReturnValue({
+    isPending: false,
+    data: {
+      ADMIN_LOCAL_DIRECTIONS_SERVICES: true,
+      SIREC_MIGRATION: false,
+    },
+  } as never);
   mockRole(ROLES.ENTITY_ADMIN);
 });
 
@@ -40,6 +53,18 @@ afterEach(() => {
 });
 
 describe('Admin route', () => {
+  it('renders nothing while resolved feature flags are pending', () => {
+    mockedUseResolvedFeatureFlags.mockReturnValue({ isPending: true, data: undefined } as never);
+    mockedUseMatches.mockReturnValue([
+      { routeId: '/_auth/admin', pathname: '/admin' },
+      { routeId: '/_auth/admin/users', pathname: '/admin/users' },
+    ] as never);
+
+    render(<RouteComponent />);
+
+    expect(screen.queryByRole('heading', { level: 1, name: 'Espace administrateur' })).not.toBeInTheDocument();
+  });
+
   it('renders the admin shell with directions and services instead of global entites for entity admins', () => {
     mockedUseMatches.mockReturnValue([
       { routeId: '/_auth/admin', pathname: '/admin' },

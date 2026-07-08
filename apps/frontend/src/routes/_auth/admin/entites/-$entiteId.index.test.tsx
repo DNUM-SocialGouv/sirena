@@ -14,6 +14,7 @@ const { addToastSpy, editEntiteAdminMutateAsyncSpy } = vi.hoisted(() => ({
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: Record<string, unknown>) => ({
     ...options,
+    options,
     useParams: () => ({ entiteId: 'root-ars' }),
   }),
   Link: ({ to, params, children }: { to: string; params?: { entiteId?: string }; children: React.ReactNode }) => (
@@ -97,7 +98,7 @@ afterEach(() => {
 describe('Admin entity edit route', () => {
   it('restricts the route to SUPER_ADMIN users', () => {
     expect(vi.mocked(requireAuthAndRoles)).toHaveBeenCalledWith([ROLES.SUPER_ADMIN]);
-    expect(Route.beforeLoad).toBe('mocked-super-admin-guard');
+    expect(Route.options.beforeLoad).toBe('mocked-super-admin-guard');
   });
 
   it('displays the shared loader while entity data is loading', () => {
