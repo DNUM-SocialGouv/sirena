@@ -1,4 +1,4 @@
-import { MOTIFS_HIERARCHICAL_DATA } from '@sirena/common/constants';
+import { demarcheEngageeLabels, MOTIFS_HIERARCHICAL_DATA } from '@sirena/common/constants';
 import { getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/common/utils';
 import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
 import type { ExportRequetesCsvRow } from './exportRequetesCsv.js';
@@ -303,12 +303,21 @@ function buildDemarchesFields(
 ): ExportRequeteKeyedRow {
   return {
     misEnCauseContacte: demarchesEngagees
-      ? formatExportBoolean(demarchesEngagees.dateContactEtablissement != null)
+      ? formatExportBoolean(
+          demarchesEngagees.dateContactEtablissement != null ||
+            demarchesEngagees.demarches.some(
+              (demarche) => demarche.label === demarcheEngageeLabels.CONTACT_RESPONSABLES,
+            ),
+        )
       : '',
     datePriseContact: formatExportDate(demarchesEngagees?.dateContactEtablissement),
     declarantRecuReponse: formatExportBoolean(demarchesEngagees?.etablissementARepondu),
     plainteDeposee: demarchesEngagees
-      ? formatExportBoolean(demarchesEngagees.datePlainte != null || demarchesEngagees.autoriteType?.label != null)
+      ? formatExportBoolean(
+          demarchesEngagees.datePlainte != null ||
+            demarchesEngagees.autoriteType?.label != null ||
+            demarchesEngagees.demarches.some((demarche) => demarche.label === demarcheEngageeLabels.PLAINTE),
+        )
       : '',
     dateDepotPlainte: formatExportDate(demarchesEngagees?.datePlainte),
     lieuDepotPlainte: demarchesEngagees?.autoriteType?.label ?? '',
@@ -320,7 +329,7 @@ function buildDemarchesFields(
 
 function hasDemarchesAutresOrganismes(demarchesEngagees: ExportDemarchesEngageesRecord): boolean {
   return (
-    demarchesEngagees.demarches.some((demarche) => demarche.label != null) ||
+    demarchesEngagees.demarches.some((demarche) => demarche.label === demarcheEngageeLabels.CONTACT_ORGANISME) ||
     (demarchesEngagees.organisme?.trim() ?? '') !== ''
   );
 }

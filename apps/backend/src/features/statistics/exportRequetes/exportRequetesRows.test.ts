@@ -242,7 +242,10 @@ describe('buildExportRequetesRows', () => {
               etablissementARepondu: true,
               datePlainte: new Date('2026-06-12T00:00:00.000Z'),
               autoriteType: { label: 'Gendarmerie' },
-              demarches: [{ label: 'Conseil départemental' }, { label: 'Défenseur des droits' }],
+              demarches: [
+                { label: "Démarches engagées auprès d'autres organismes" },
+                { label: 'Défenseur des droits' },
+              ],
             },
           },
         ],
@@ -256,6 +259,60 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'dateDepotPlainte')).toBe('12/06/2026');
     expect(cell(rows[0], 'lieuDepotPlainte')).toBe('Gendarmerie');
     expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Oui');
+  });
+
+  it('exports Oui when the responsible-contact démarche is selected without a contact date', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0030',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            demarchesEngagees: {
+              demarches: [{ label: "L'établissement ou le responsables des faits a été contacté" }],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'misEnCauseContacte')).toBe('Oui');
+  });
+
+  it('exports Oui when the complaint démarche is selected without a complaint date or place', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0031',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            demarchesEngagees: {
+              demarches: [{ label: 'Une plainte a été déposée auprès des autorités judiciaires' }],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'plainteDeposee')).toBe('Oui');
+  });
+
+  it('exports Non for other organizations when only an unrelated démarche is selected', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0032',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            demarchesEngagees: {
+              demarches: [{ label: "L'établissement ou le responsables des faits a été contacté" }],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Non');
   });
 
   it('exports Non for démarches booleans when the démarches record exists without related data', () => {
@@ -278,6 +335,25 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'declarantRecuReponse')).toBe('Non');
     expect(cell(rows[0], 'plainteDeposee')).toBe('Non');
     expect(cell(rows[0], 'demarchesAutresOrganismes')).toBe('Non');
+  });
+
+  it('exports an empty declarant-response value when the stored response is unknown', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0033',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            demarchesEngagees: {
+              etablissementARepondu: null,
+              demarches: [],
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'declarantRecuReponse')).toBe('');
   });
 
   it('populates facts motifs, consequences, dates and functional domain', () => {
