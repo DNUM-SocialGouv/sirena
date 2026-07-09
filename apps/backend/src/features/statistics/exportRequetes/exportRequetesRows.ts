@@ -225,6 +225,7 @@ function buildPersonneConcerneeFields(
     trancheAgePersonneConcernee: participant?.age?.label ?? '',
     anneeNaissancePersonneConcernee: participant?.age?.label ? '' : formatExportYear(participant?.dateNaissance),
     codePostalPersonneConcernee,
+    villePersonneConcernee: participant?.adresse?.ville ?? '',
     departementPersonneConcernee: shouldExportDepartements
       ? formatDepartementFromCodePostal(codePostalPersonneConcernee)
       : '',

@@ -98,6 +98,25 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'villeDeclarant')).toBe('Paris');
   });
 
+  it('exports ville personne concernée from the participant address', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0024',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        participant: {
+          adresse: { codePostal: '69002', ville: 'Lyon' },
+          veutGarderAnonymat: false,
+          estVictimeInformee: false,
+          estHandicapee: false,
+          aAutrePersonnes: false,
+        },
+        situations: [{}],
+      },
+    ]);
+
+    expect(cell(rows[0], 'villePersonneConcernee')).toBe('Lyon');
+  });
+
   it('populates situation entity hierarchy fields', () => {
     const rows = buildExportRequetesRows([
       {
@@ -540,6 +559,10 @@ describe('buildExportRequetesRows', () => {
       header: 'Département déclarant',
     });
     expect(columnAfter('codePostalPersonneConcernee')).toEqual({
+      key: 'villePersonneConcernee',
+      header: 'Ville personne concernée',
+    });
+    expect(columnAfter('villePersonneConcernee')).toEqual({
       key: 'departementPersonneConcernee',
       header: 'Département personne concernée',
     });

@@ -4,14 +4,14 @@ import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportR
 import { buildExportRequetesCsv, buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
 
 describe('buildExportRequetesCsv', () => {
-  it('exports the stable 62-column business header when there are no rows', () => {
+  it('exports the stable 63-column business header when there are no rows', () => {
     const csv = buildExportRequetesCsv([]);
     const header = csv.replace(/^\uFEFF/, '');
     const columns = header.split(';');
 
     expect(csv).toMatch(/^\uFEFF/);
     expect(header).not.toContain('\n');
-    expect(columns).toHaveLength(62);
+    expect(columns).toHaveLength(63);
     expect(columns[0]).toBe('Numéro de requête');
     expect(headerCell(columns, 'statutRequeteEntiteAdministrative')).toBe(
       'Statut de la requête pour mon entité administrative',
@@ -20,6 +20,7 @@ describe('buildExportRequetesCsv', () => {
     expect(headerCell(columns, 'dateDepotPlainte')).toBe('Date de dépôt de plainte');
     expect(headerCell(columns, 'villeDeclarant')).toBe('Ville déclarant');
     expect(headerCell(columns, 'departementDeclarant')).toBe('Département déclarant');
+    expect(headerCell(columns, 'villePersonneConcernee')).toBe('Ville personne concernée');
     expect(headerCell(columns, 'departementPersonneConcernee')).toBe('Département personne concernée');
     expect(columns).not.toContain('RPPS mis en cause');
     expect(columns).not.toContain('Nom mis en cause');
@@ -77,11 +78,12 @@ describe('buildExportRequetesCsv', () => {
       .split('\n')[1]
       .split(';');
 
-    expect(row).toHaveLength(62);
+    expect(row).toHaveLength(63);
     expect(csvCell(row, 'codePostalDeclarant')).toBe('75001');
     expect(csvCell(row, 'villeDeclarant')).toBe('');
     expect(csvCell(row, 'departementDeclarant')).toBe('');
     expect(csvCell(row, 'codePostalPersonneConcernee')).toBe('97110');
+    expect(csvCell(row, 'villePersonneConcernee')).toBe('');
     expect(csvCell(row, 'departementPersonneConcernee')).toBe('');
     expect(csvCell(row, 'codePostalLieuSurvenue')).toBe('69002');
     expect(csvCell(row, 'villeLieuSurvenue')).toBe('');

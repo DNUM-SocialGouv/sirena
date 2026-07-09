@@ -25,6 +25,7 @@ export const EXPORT_REQUETES_COLUMNS = [
     header: 'Si tranche non renseignée : Année de naissance personne concernée',
   },
   { key: 'codePostalPersonneConcernee', header: 'Code Postal personne concernée' },
+  { key: 'villePersonneConcernee', header: 'Ville personne concernée' },
   { key: 'departementPersonneConcernee', header: 'Département personne concernée' },
   {
     key: 'personneConcerneeConsentIdentiteCommuniquee',
