@@ -8,6 +8,12 @@ vi.mock('../../../libs/prisma.js', () => ({
     requete: {
       findMany: vi.fn(),
     },
+    inseePostal: {
+      findMany: vi.fn(),
+    },
+    commune: {
+      findMany: vi.fn(),
+    },
   },
 }));
 
@@ -62,6 +68,61 @@ describe('generateExportRequetesCsv', () => {
     );
     expect(csv).toContain('REQ-2026-0001');
     expect(csv).toContain('18/06/2026');
+  });
+
+  it('wires department names for occurrence-place department exports', async () => {
+    vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
+    vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
+      {
+        id: 'REQ-2026-0021',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        declarant: null,
+        participant: null,
+        requeteEntites: [
+          {
+            entiteId: 'root-entite',
+            entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+            statut: { label: 'En cours' },
+          },
+        ],
+        etapes: [],
+        situations: [
+          {
+            lieuDeSurvenue: {
+              codePostal: '33000',
+              adresse: { codePostal: '63000' },
+            },
+          },
+        ],
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>);
+    vi.mocked(prisma.inseePostal.findMany).mockResolvedValueOnce([
+      {
+        codePostal: '63000',
+        commune: { dptCodeActuel: '63' },
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.inseePostal.findMany>>);
+    vi.mocked(prisma.commune.findMany).mockResolvedValueOnce([
+      {
+        dptCodeActuel: '63',
+        dptLibActuel: 'Puy-de-Dôme',
+      },
+    ] as unknown as Awaited<ReturnType<typeof prisma.commune.findMany>>);
+
+    const csv = await generateExportRequetesCsv('root-entite');
+
+    expect(prisma.inseePostal.findMany).toHaveBeenCalledWith({
+      where: { codePostal: { in: ['63000'] } },
+      select: { codePostal: true, commune: { select: { dptCodeActuel: true } } },
+      distinct: ['codePostal'],
+    });
+    expect(prisma.commune.findMany).toHaveBeenCalledWith({
+      where: { dptCodeActuel: { in: ['63'] } },
+      select: { dptCodeActuel: true, dptLibActuel: true },
+      distinct: ['dptCodeActuel'],
+    });
+    expect(csv).toContain('Puy-de-Dôme (63)');
+    expect(csv).not.toContain('Gironde (33)');
   });
 
   it('passes the root entity scope to row building for root-scoped fields', async () => {

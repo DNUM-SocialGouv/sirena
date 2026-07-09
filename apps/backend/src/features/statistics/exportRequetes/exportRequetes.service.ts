@@ -115,11 +115,15 @@ export async function generateExportRequetesCsv(topEntiteId: string): Promise<st
     },
     include: exportRequetesInclude,
   });
-  const categorieFinessLieuSurvenueByCode = await getCategorieFinessLieuSurvenueByCode(requetes);
+  const [categorieFinessLieuSurvenueByCode, departementNamesByCode] = await Promise.all([
+    getCategorieFinessLieuSurvenueByCode(requetes),
+    getDepartementNamesByCode(requetes),
+  ]);
 
   return buildExportRequetesCsvFromRecords(requetes.map(toExportRequeteRecord), {
     topEntiteId,
     categorieFinessLieuSurvenueByCode,
+    departementNamesByCode,
   });
 }
 
@@ -150,6 +154,66 @@ async function getCategorieFinessLieuSurvenueByCode(
       .filter((row): row is { categCode: string; categLib: string } => row.categLib != null && row.categLib !== '')
       .map((row) => [row.categCode, row.categLib]),
   );
+}
+
+async function getDepartementNamesByCode(requetes: ExportRequetePrismaPayload[]): Promise<Map<string, string>> {
+  const codePostaux = Array.from(
+    new Set(
+      requetes.flatMap((requete) =>
+        requete.situations
+          .map((situation) => situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal)
+          .filter((codePostal): codePostal is string => !!codePostal),
+      ),
+    ),
+  );
+
+  if (codePostaux.length === 0) {
+    return new Map();
+  }
+
+  const inseePostalRows = await prisma.inseePostal.findMany({
+    where: { codePostal: { in: codePostaux } },
+    select: { codePostal: true, commune: { select: { dptCodeActuel: true } } },
+    distinct: ['codePostal'],
+  });
+  const departmentCodesByPostalCode = new Map(
+    inseePostalRows
+      .filter((row): row is { codePostal: string; commune: { dptCodeActuel: string } } => row.commune != null)
+      .map((row) => [row.codePostal, row.commune.dptCodeActuel]),
+  );
+  const departmentCodes = Array.from(
+    new Set(
+      codePostaux.map((codePostal) => departmentCodesByPostalCode.get(codePostal) ?? extractDepartmentCode(codePostal)),
+    ),
+  ).filter((departmentCode) => departmentCode !== '');
+
+  if (departmentCodes.length === 0) {
+    return new Map();
+  }
+
+  const communeRows = await prisma.commune.findMany({
+    where: { dptCodeActuel: { in: departmentCodes } },
+    select: { dptCodeActuel: true, dptLibActuel: true },
+    distinct: ['dptCodeActuel'],
+  });
+
+  return new Map(communeRows.map((row) => [row.dptCodeActuel, row.dptLibActuel]));
+}
+
+function extractDepartmentCode(codePostal: string): string {
+  if (!/^\d{5}$/.test(codePostal)) {
+    return '';
+  }
+
+  if (codePostal.startsWith('20')) {
+    return '20';
+  }
+
+  if (codePostal.startsWith('97') || codePostal.startsWith('98')) {
+    return codePostal.slice(0, 3);
+  }
+
+  return codePostal.slice(0, 2);
 }
 
 function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportRequeteRecord {
