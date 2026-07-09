@@ -12,6 +12,7 @@ describe('buildExportRequetesCsv', () => {
     expect(csv).toMatch(/^\uFEFF/);
     expect(header).not.toContain('\n');
     expect(columns).toHaveLength(60);
+    expect(columns[0]).toBe('Numéro de requête');
     expect(headerCell(columns, 'statutRequeteEntiteAdministrative')).toBe(
       'Statut de la requête pour mon entité administrative',
     );
@@ -19,6 +20,11 @@ describe('buildExportRequetesCsv', () => {
     expect(headerCell(columns, 'dateDepotPlainte')).toBe('Date de dépôt de plainte');
     expect(headerCell(columns, 'departementDeclarant')).toBe('Département déclarant');
     expect(headerCell(columns, 'departementPersonneConcernee')).toBe('Département personne concernée');
+    expect(columns).not.toContain('RPPS mis en cause');
+    expect(columns).not.toContain('Nom mis en cause');
+    expect(columns).not.toContain('Code postal mis en cause');
+    expect(columns).not.toContain('Catégorie professionnelle du RPPS mis en cause');
+    expect(columns).toContain('Département mis en cause');
     expect(headerCell(columns, 'numeroSituation')).toBe('Numéro de situation');
     expect(headerCell(columns, 'departementLieuSurvenue')).toBe('Département lieu de survenue');
     expect(headerCell(columns, 'departementMisEnCause')).toBe('Département mis en cause');

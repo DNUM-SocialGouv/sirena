@@ -437,7 +437,7 @@ describe('buildExportRequetesRows', () => {
     });
   });
 
-  it('exports the root-scoped request status as the first column', () => {
+  it('exports the root-scoped request status in the status column', () => {
     const rows = buildExportRequetesRows(
       [
         {
@@ -461,11 +461,7 @@ describe('buildExportRequetesRows', () => {
       { topEntiteId: 'root-entite' },
     );
 
-    expect(EXPORT_REQUETES_COLUMNS[0]).toEqual({
-      key: 'statutRequeteEntiteAdministrative',
-      header: 'Statut de la requête pour mon entité administrative',
-    });
-    expect(rows[0][0]).toBe('Clôturée');
+    expect(cell(rows[0], 'statutRequeteEntiteAdministrative')).toBe('Clôturée');
   });
 
   it('populates root-scoped acknowledgment email date and type from an auto-note', () => {
