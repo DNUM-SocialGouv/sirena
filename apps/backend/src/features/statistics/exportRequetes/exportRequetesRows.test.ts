@@ -327,6 +327,44 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'domaineFonctionnel')).toBe('Santé');
   });
 
+  it('exports visible trajet lieu precision', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0028',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              lieuTypeId: 'TRAJET',
+              lieuPrecision: 'INTER_ETABLISSEMENT',
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'precisionTypeLieuSurvenue')).toBe('INTER_ETABLISSEMENT');
+  });
+
+  it('does not export transport type for trajet because SIRENA detail does not display it', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0029',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              lieuTypeId: 'TRAJET',
+              transportType: { label: 'Ambulance' },
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'precisionTypeLieuSurvenue')).toBe('');
+  });
+
   it('falls back to transport company for lieu de survenue name when address label is absent', () => {
     const rows = buildExportRequetesRows([
       {
@@ -368,7 +406,7 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'categorieFinessLieuSurvenue')).toBe('Centre hospitalier régional');
   });
 
-  it('populates lieu de survenue name from the address label', () => {
+  it('populates lieu de survenue name from an establishment address label', () => {
     const rows = buildExportRequetesRows([
       {
         id: 'REQ-2026-0012',
@@ -376,6 +414,7 @@ describe('buildExportRequetesRows', () => {
         situations: [
           {
             lieuDeSurvenue: {
+              lieuTypeId: 'ETABLISSEMENT_SANTE',
               adresse: { codePostal: '75013', label: 'Hôpital Pitié-Salpêtrière' },
             },
           },
@@ -384,6 +423,25 @@ describe('buildExportRequetesRows', () => {
     ]);
 
     expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Hôpital Pitié-Salpêtrière');
+  });
+
+  it('does not export trajet address label as lieu de survenue name', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0030',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              lieuTypeId: 'TRAJET',
+              adresse: { label: '12 rue du Départ 63000 Clermont-Ferrand' },
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('');
   });
 
   it('does not export domicile address data as lieu de survenue name', () => {

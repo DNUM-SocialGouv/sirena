@@ -441,16 +441,30 @@ function getLatestDate(dates: Array<Date | null | undefined>): Date | null {
 function formatLieuSurvenuePrecision(lieuDeSurvenue: ExportLieuDeSurvenueRecord | null | undefined): string {
   return formatExportList([
     getLieuPrecisionLabel(lieuDeSurvenue?.lieuTypeId ?? undefined, lieuDeSurvenue?.lieuPrecision ?? undefined),
-    lieuDeSurvenue?.transportType?.label,
+    lieuDeSurvenue?.lieuTypeId === 'TRAJET' ? undefined : lieuDeSurvenue?.transportType?.label,
   ]);
 }
 
 function formatNomLieuSurvenue(lieuDeSurvenue: ExportLieuDeSurvenueRecord | null | undefined): string {
-  if (lieuDeSurvenue?.lieuTypeId === 'DOMICILE') {
+  if (lieuDeSurvenue?.societeTransport) {
+    return lieuDeSurvenue.societeTransport;
+  }
+
+  if (!isEtablissementLieuType(lieuDeSurvenue?.lieuTypeId)) {
     return '';
   }
 
-  return lieuDeSurvenue?.adresse?.label || lieuDeSurvenue?.societeTransport || '';
+  return lieuDeSurvenue?.adresse?.label ?? '';
+}
+
+function isEtablissementLieuType(lieuTypeId: string | null | undefined): boolean {
+  return (
+    lieuTypeId === 'ETABLISSEMENT_SANTE' ||
+    lieuTypeId === 'ETABLISSEMENT_PERSONNES_AGEES' ||
+    lieuTypeId === 'ETABLISSEMENT_HANDICAP' ||
+    lieuTypeId === 'ETABLISSEMENT_SOCIAL' ||
+    lieuTypeId === 'AUTRES_ETABLISSEMENTS'
+  );
 }
 
 function formatCategorieFinessLieuSurvenue(

@@ -132,6 +132,7 @@ describe('buildExportRequetesCsv', () => {
           situations: [
             {
               lieuDeSurvenue: {
+                lieuTypeId: 'ETABLISSEMENT_SANTE',
                 finess: '750000001',
                 categCode: '355',
                 adresse: { codePostal: '69002', label: 'IFSI AP-HP DU CH AMBROISE PARÉ' },
