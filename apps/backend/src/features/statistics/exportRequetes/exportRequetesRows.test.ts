@@ -284,6 +284,30 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Hôpital Pitié-Salpêtrière');
   });
 
+  it('does not export domicile address data as lieu de survenue name', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0020',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              lieuTypeId: 'DOMICILE',
+              adresse: {
+                label: '12 rue des Lilas 63000 Clermont-Ferrand',
+                rue: '12 rue des Lilas',
+                codePostal: '63000',
+                ville: 'Clermont-Ferrand',
+              },
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'nomLieuSurvenue')).toBe('');
+  });
+
   it('prefers the qualified SIRENA postal code for lieu de survenue', () => {
     const rows = buildExportRequetesRows([
       {

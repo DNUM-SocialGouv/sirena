@@ -250,7 +250,7 @@ function buildSituationFields(
     precisionTypeLieuSurvenue: formatLieuSurvenuePrecision(lieuDeSurvenue),
     finessLieuSurvenue: lieuDeSurvenue?.finess ?? '',
     categorieFinessLieuSurvenue: formatCategorieFinessLieuSurvenue(lieuDeSurvenue, categorieFinessLieuSurvenueByCode),
-    nomLieuSurvenue: lieuDeSurvenue?.adresse?.label || lieuDeSurvenue?.societeTransport || '',
+    nomLieuSurvenue: formatNomLieuSurvenue(lieuDeSurvenue),
     codePostalLieuSurvenue,
     departementLieuSurvenue: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalLieuSurvenue) : '',
     typeMisEnCause: misEnCause?.misEnCauseType?.label ?? '',
@@ -424,6 +424,14 @@ function formatLieuSurvenuePrecision(lieuDeSurvenue: ExportLieuDeSurvenueRecord 
     getLieuPrecisionLabel(lieuDeSurvenue?.lieuTypeId ?? undefined, lieuDeSurvenue?.lieuPrecision ?? undefined),
     lieuDeSurvenue?.transportType?.label,
   ]);
+}
+
+function formatNomLieuSurvenue(lieuDeSurvenue: ExportLieuDeSurvenueRecord | null | undefined): string {
+  if (lieuDeSurvenue?.lieuTypeId === 'DOMICILE') {
+    return '';
+  }
+
+  return lieuDeSurvenue?.adresse?.label || lieuDeSurvenue?.societeTransport || '';
 }
 
 function formatCategorieFinessLieuSurvenue(
