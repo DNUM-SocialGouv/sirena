@@ -417,6 +417,38 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'departementMisEnCause')).toBe('980');
   });
 
+  it('exports occurrence-place department as name and code from the selected postal code', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0021',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [
+            {
+              lieuDeSurvenue: {
+                codePostal: '33000',
+                adresse: { codePostal: '63000' },
+              },
+            },
+          ],
+        },
+      ],
+      {
+        topEntiteId: 'root-entite',
+        departementNamesByCode: new Map([['63', 'Puy-de-Dôme']]),
+      },
+    );
+
+    expect(cell(rows[0], 'departementLieuSurvenue')).toBe('Puy-de-Dôme (63)');
+  });
+
   it('leaves department columns blank for non-ARS exports', () => {
     const rows = buildExportRequetesRows(
       [

@@ -142,6 +142,7 @@ type ExportRequeteKeyedRow = Partial<Record<ExportRequetesColumnKey, ExportReque
 export type BuildExportRequetesRowsOptions = {
   topEntiteId?: string;
   categorieFinessLieuSurvenueByCode?: Map<string, string>;
+  departementNamesByCode?: Map<string, string>;
 };
 
 export function buildExportRequetesRows(
@@ -175,6 +176,7 @@ function buildExportRequeteRow(
       situationIndex,
       shouldExportDepartements,
       options.categorieFinessLieuSurvenueByCode,
+      options.departementNamesByCode,
     ),
     ...buildFaitsFields(situation?.faits ?? []),
     ...buildDemarchesFields(situation?.demarchesEngagees),
@@ -237,11 +239,13 @@ function buildSituationFields(
   situationIndex: number | undefined,
   shouldExportDepartements: boolean,
   categorieFinessLieuSurvenueByCode: Map<string, string> | undefined,
+  departementNamesByCode: Map<string, string> | undefined,
 ): ExportRequeteKeyedRow {
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
   const misEnCause = situation?.misEnCause;
 
   const codePostalLieuSurvenue = lieuDeSurvenue?.adresse?.codePostal || lieuDeSurvenue?.codePostal || '';
+  const departementLieuSurvenue = formatDepartementFromCodePostal(codePostalLieuSurvenue);
   const codePostalMisEnCause = misEnCause?.codePostal ?? '';
 
   return {
@@ -252,7 +256,9 @@ function buildSituationFields(
     categorieFinessLieuSurvenue: formatCategorieFinessLieuSurvenue(lieuDeSurvenue, categorieFinessLieuSurvenueByCode),
     nomLieuSurvenue: formatNomLieuSurvenue(lieuDeSurvenue),
     codePostalLieuSurvenue,
-    departementLieuSurvenue: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalLieuSurvenue) : '',
+    departementLieuSurvenue: shouldExportDepartements
+      ? formatDepartementWithName(departementLieuSurvenue, departementNamesByCode)
+      : '',
     typeMisEnCause: misEnCause?.misEnCauseType?.label ?? '',
     precisionTypeMisEnCause: misEnCause?.misEnCauseTypePrecision?.label ?? '',
     finessMisEnCause: misEnCause?.finess ?? '',
@@ -485,6 +491,19 @@ function formatDepartementFromCodePostal(codePostal: string): string {
   }
 
   return codePostal.slice(0, 2);
+}
+
+function formatDepartementWithName(
+  departementCode: string,
+  departementNamesByCode: Map<string, string> | undefined,
+): string {
+  if (!departementCode) {
+    return '';
+  }
+
+  const departementName = departementNamesByCode?.get(departementCode);
+
+  return departementName ? `${departementName} (${departementCode})` : departementCode;
 }
 
 function getAccuseReceptionEnvoi(
