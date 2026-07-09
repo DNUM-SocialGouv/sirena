@@ -26,7 +26,12 @@ const exportRequetesInclude = {
   etapes: {
     include: {
       clotureReason: true,
-      notes: true,
+      notes: {
+        select: {
+          texte: true,
+          authorId: true,
+        },
+      },
     },
   },
   requeteEntites: {

@@ -180,7 +180,7 @@ describe('buildExportRequetesCsv', () => {
     expect(csvCell(row, 'demarchesAutresOrganismes')).toBe('Oui');
     expect(csvCell(row, 'motifsQualifies')).toBe('Délais de prise en charge (Qualité des soins)');
     expect(csvCell(row, 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('15/06/2026');
-    expect(csvCell(row, 'typeEnvoiAccuseReception')).toBe('Email');
+    expect(csvCell(row, 'typeEnvoiAccuseReception')).toBe('Email automatique');
     expect(csvCell(row, 'categorieFinessLieuSurvenue')).toBe('Centre hospitalier régional');
     expect(csvCell(row, 'departementMisEnCause')).toBe('980');
   });

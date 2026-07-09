@@ -71,9 +71,10 @@ type ExportRequeteEtapeRecord = {
   type?: string | null;
   statutId: string;
   createdAt: Date;
+  dateRealisation?: Date | null;
   clotureEffectiveDate?: Date | null;
   clotureReason: ExportLabelRecord[];
-  notes?: Array<{ texte: string | null }>;
+  notes?: Array<{ texte: string | null; authorId?: string | null }>;
 };
 
 type ExportLieuDeSurvenueRecord = {
@@ -496,7 +497,10 @@ function getAccuseReceptionEnvoi(
 
       if (emailMatch) {
         const [, day, month, year] = emailMatch;
-        return { date: new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))), type: 'Email' };
+        return {
+          date: etape.dateRealisation ?? new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))),
+          type: note.authorId ? 'Email manuel depuis SIRENA' : 'Email automatique',
+        };
       }
 
       const migratedMatch = note.texte?.match(
@@ -505,8 +509,15 @@ function getAccuseReceptionEnvoi(
 
       if (migratedMatch) {
         const [, day, month, year] = migratedMatch;
-        return { date: new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))), type: '' };
+        return {
+          date: etape.dateRealisation ?? new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))),
+          type: 'Autre',
+        };
       }
+    }
+
+    if (etape.dateRealisation && etape.statutId === 'FAIT') {
+      return { date: etape.dateRealisation, type: 'Autre' };
     }
   }
 

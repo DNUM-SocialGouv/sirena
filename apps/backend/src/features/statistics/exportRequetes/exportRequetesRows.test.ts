@@ -464,7 +464,7 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'statutRequeteEntiteAdministrative')).toBe('Clôturée');
   });
 
-  it('populates root-scoped acknowledgment email date and type from an auto-note', () => {
+  it('populates root-scoped acknowledgment email date and automatic type from an auto-note', () => {
     const rows = buildExportRequetesRows(
       [
         {
@@ -487,7 +487,59 @@ describe('buildExportRequetesRows', () => {
     );
 
     expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('15/06/2026');
-    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Email');
+    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Email automatique');
+  });
+
+  it('exports manual SIRENA acknowledgment email type from an authored email note', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0019',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          etapes: [
+            {
+              entiteId: 'root-entite',
+              type: 'ACKNOWLEDGMENT',
+              statutId: 'FAIT',
+              createdAt: new Date('2026-06-15T15:06:57.000Z'),
+              clotureReason: [],
+              notes: [{ texte: "Email d'accusé de réception envoyé le 17/06/2026 11:00:00", authorId: 'userId' }],
+            },
+          ],
+          situations: [{}],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('17/06/2026');
+    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Email manuel depuis SIRENA');
+  });
+
+  it('exports completed acknowledgment dateRealisation as Autre when no SIRENA email send is proven', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0018',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          etapes: [
+            {
+              entiteId: 'root-entite',
+              type: 'ACKNOWLEDGMENT',
+              statutId: 'FAIT',
+              dateRealisation: new Date('2026-06-17T12:00:00.000Z'),
+              createdAt: new Date('2026-06-15T15:06:57.000Z'),
+              clotureReason: [],
+            },
+          ],
+          situations: [{}],
+        },
+      ],
+      { topEntiteId: 'root-entite' },
+    );
+
+    expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('17/06/2026');
+    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Autre');
   });
 
   it('populates migrated acknowledgment date without inventing the send type', () => {
@@ -513,7 +565,7 @@ describe('buildExportRequetesRows', () => {
     );
 
     expect(cell(rows[0], 'dateEnvoiAccuseReceptionEntiteAdministrative')).toBe('16/06/2026');
-    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('');
+    expect(cell(rows[0], 'typeEnvoiAccuseReception')).toBe('Autre');
   });
 
   it('populates request entity status, root-scoped priority and latest root-scoped closure fields', () => {

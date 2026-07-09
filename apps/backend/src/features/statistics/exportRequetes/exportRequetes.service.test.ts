@@ -44,6 +44,22 @@ describe('generateExportRequetesCsv', () => {
         },
       }),
     );
+    expect(vi.mocked(prisma.requete.findMany).mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          etapes: expect.objectContaining({
+            include: expect.objectContaining({
+              notes: {
+                select: expect.objectContaining({
+                  texte: true,
+                  authorId: true,
+                }),
+              },
+            }),
+          }),
+        }),
+      }),
+    );
     expect(csv).toContain('REQ-2026-0001');
     expect(csv).toContain('18/06/2026');
   });
