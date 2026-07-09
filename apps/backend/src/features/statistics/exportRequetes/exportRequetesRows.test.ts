@@ -98,6 +98,38 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'villeDeclarant')).toBe('Paris');
   });
 
+  it('exports département déclarant as name and code', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0025',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          declarant: {
+            estVictime: false,
+            isTuteur: false,
+            adresse: { codePostal: '75001' },
+            veutGarderAnonymat: false,
+            estSignalementProfessionnel: false,
+          },
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [{}],
+        },
+      ],
+      {
+        topEntiteId: 'root-entite',
+        departementNamesByCode: new Map([['75', 'Paris']]),
+      },
+    );
+
+    expect(cell(rows[0], 'departementDeclarant')).toBe('Paris (75)');
+  });
+
   it('exports ville personne concernée from the participant address', () => {
     const rows = buildExportRequetesRows([
       {
@@ -115,6 +147,38 @@ describe('buildExportRequetesRows', () => {
     ]);
 
     expect(cell(rows[0], 'villePersonneConcernee')).toBe('Lyon');
+  });
+
+  it('exports département personne concernée as name and code', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0026',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          participant: {
+            adresse: { codePostal: '69002' },
+            veutGarderAnonymat: false,
+            estVictimeInformee: false,
+            estHandicapee: false,
+            aAutrePersonnes: false,
+          },
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [{}],
+        },
+      ],
+      {
+        topEntiteId: 'root-entite',
+        departementNamesByCode: new Map([['69', 'Rhône']]),
+      },
+    );
+
+    expect(cell(rows[0], 'departementPersonneConcernee')).toBe('Rhône (69)');
   });
 
   it('populates situation entity hierarchy fields', () => {
@@ -503,6 +567,35 @@ describe('buildExportRequetesRows', () => {
     );
 
     expect(cell(rows[0], 'departementLieuSurvenue')).toBe('Puy-de-Dôme (63)');
+  });
+
+  it('exports département mis en cause as name and code', () => {
+    const rows = buildExportRequetesRows(
+      [
+        {
+          id: 'REQ-2026-0027',
+          createdAt: new Date('2026-06-18T10:00:00.000Z'),
+          requeteEntites: [
+            {
+              entiteId: 'root-entite',
+              entite: { label: 'Agence régionale', entiteTypeId: 'ARS' },
+              statut: { label: 'En cours' },
+            },
+          ],
+          situations: [
+            {
+              misEnCause: { codePostal: '98000' },
+            },
+          ],
+        },
+      ],
+      {
+        topEntiteId: 'root-entite',
+        departementNamesByCode: new Map([['980', 'Monaco']]),
+      },
+    );
+
+    expect(cell(rows[0], 'departementMisEnCause')).toBe('Monaco (980)');
   });
 
   it('leaves department columns blank for non-ARS exports', () => {

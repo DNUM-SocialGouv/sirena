@@ -70,14 +70,26 @@ describe('generateExportRequetesCsv', () => {
     expect(csv).toContain('18/06/2026');
   });
 
-  it('wires department names for département lieu de survenue exports', async () => {
+  it('wires department names for all exported department sources', async () => {
     vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
     vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
       {
         id: 'REQ-2026-0021',
         createdAt: new Date('2026-06-18T10:00:00.000Z'),
-        declarant: null,
-        participant: null,
+        declarant: {
+          estVictime: false,
+          isTuteur: false,
+          adresse: { codePostal: '75001' },
+          veutGarderAnonymat: false,
+          estSignalementProfessionnel: false,
+        },
+        participant: {
+          adresse: { codePostal: '69002' },
+          veutGarderAnonymat: false,
+          estVictimeInformee: false,
+          estHandicapee: false,
+          aAutrePersonnes: false,
+        },
         requeteEntites: [
           {
             entiteId: 'root-entite',
@@ -92,36 +104,64 @@ describe('generateExportRequetesCsv', () => {
               codePostal: '33000',
               adresse: { codePostal: '63000' },
             },
+            misEnCause: { codePostal: '98000' },
           },
         ],
       },
     ] as unknown as Awaited<ReturnType<typeof prisma.requete.findMany>>);
     vi.mocked(prisma.inseePostal.findMany).mockResolvedValueOnce([
       {
+        codePostal: '75001',
+        commune: { dptCodeActuel: '75' },
+      },
+      {
+        codePostal: '69002',
+        commune: { dptCodeActuel: '69' },
+      },
+      {
         codePostal: '63000',
         commune: { dptCodeActuel: '63' },
+      },
+      {
+        codePostal: '98000',
+        commune: { dptCodeActuel: '980' },
       },
     ] as unknown as Awaited<ReturnType<typeof prisma.inseePostal.findMany>>);
     vi.mocked(prisma.commune.findMany).mockResolvedValueOnce([
       {
+        dptCodeActuel: '75',
+        dptLibActuel: 'Paris',
+      },
+      {
+        dptCodeActuel: '69',
+        dptLibActuel: 'Rhône',
+      },
+      {
         dptCodeActuel: '63',
         dptLibActuel: 'Puy-de-Dôme',
+      },
+      {
+        dptCodeActuel: '980',
+        dptLibActuel: 'Monaco',
       },
     ] as unknown as Awaited<ReturnType<typeof prisma.commune.findMany>>);
 
     const csv = await generateExportRequetesCsv('root-entite');
 
     expect(prisma.inseePostal.findMany).toHaveBeenCalledWith({
-      where: { codePostal: { in: ['63000'] } },
+      where: { codePostal: { in: ['75001', '69002', '63000', '98000'] } },
       select: { codePostal: true, commune: { select: { dptCodeActuel: true } } },
       distinct: ['codePostal'],
     });
     expect(prisma.commune.findMany).toHaveBeenCalledWith({
-      where: { dptCodeActuel: { in: ['63'] } },
+      where: { dptCodeActuel: { in: ['75', '69', '63', '980'] } },
       select: { dptCodeActuel: true, dptLibActuel: true },
       distinct: ['dptCodeActuel'],
     });
+    expect(csv).toContain('Paris (75)');
+    expect(csv).toContain('Rhône (69)');
     expect(csv).toContain('Puy-de-Dôme (63)');
+    expect(csv).toContain('Monaco (980)');
     expect(csv).not.toContain('Gironde (33)');
   });
 

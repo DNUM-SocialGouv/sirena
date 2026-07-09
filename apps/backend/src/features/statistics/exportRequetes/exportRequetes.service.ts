@@ -159,11 +159,16 @@ async function getCategorieFinessLieuSurvenueByCode(
 async function getDepartementNamesByCode(requetes: ExportRequetePrismaPayload[]): Promise<Map<string, string>> {
   const codePostaux = Array.from(
     new Set(
-      requetes.flatMap((requete) =>
-        requete.situations
-          .map((situation) => situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal)
-          .filter((codePostal): codePostal is string => !!codePostal),
-      ),
+      requetes
+        .flatMap((requete) => [
+          requete.declarant?.adresse?.codePostal,
+          requete.participant?.adresse?.codePostal,
+          ...requete.situations.flatMap((situation) => [
+            situation.lieuDeSurvenue?.adresse?.codePostal || situation.lieuDeSurvenue?.codePostal,
+            situation.misEnCause?.codePostal,
+          ]),
+        ])
+        .filter((codePostal): codePostal is string => !!codePostal),
     ),
   );
 

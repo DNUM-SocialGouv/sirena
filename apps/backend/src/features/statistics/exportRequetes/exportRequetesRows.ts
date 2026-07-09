@@ -170,8 +170,8 @@ function buildExportRequeteRow(
 
   return toExportRequetesCsvRow({
     ...buildRequeteFields(requete),
-    ...buildDeclarantFields(requete.declarant, shouldExportDepartements),
-    ...buildPersonneConcerneeFields(requete.participant, shouldExportDepartements),
+    ...buildDeclarantFields(requete.declarant, shouldExportDepartements, options.departementNamesByCode),
+    ...buildPersonneConcerneeFields(requete.participant, shouldExportDepartements, options.departementNamesByCode),
     ...buildSituationFields(
       situation,
       situationIndex,
@@ -199,8 +199,10 @@ function buildRequeteFields(requete: ExportRequeteRecord): ExportRequeteKeyedRow
 function buildDeclarantFields(
   declarant: ExportDeclarantRecord | null | undefined,
   shouldExportDepartements: boolean,
+  departementNamesByCode: Map<string, string> | undefined,
 ): ExportRequeteKeyedRow {
   const codePostalDeclarant = declarant?.adresse?.codePostal ?? '';
+  const departementDeclarant = formatDepartementFromCodePostal(codePostalDeclarant);
 
   return {
     declarantEstPersonneConcernee: formatExportBoolean(declarant?.estVictime),
@@ -208,7 +210,9 @@ function buildDeclarantFields(
     declarantEstTuteurCurateur: formatExportBoolean(declarant?.isTuteur),
     codePostalDeclarant,
     villeDeclarant: declarant?.adresse?.ville ?? '',
-    departementDeclarant: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalDeclarant) : '',
+    departementDeclarant: shouldExportDepartements
+      ? formatDepartementWithName(departementDeclarant, departementNamesByCode)
+      : '',
     declarantConsentIdentiteCommuniquee: formatConsentIdentite(declarant?.veutGarderAnonymat),
     declarantProfessionnelEig: formatExportBoolean(declarant?.estSignalementProfessionnel),
   };
@@ -217,8 +221,10 @@ function buildDeclarantFields(
 function buildPersonneConcerneeFields(
   participant: ExportParticipantRecord | null | undefined,
   shouldExportDepartements: boolean,
+  departementNamesByCode: Map<string, string> | undefined,
 ): ExportRequeteKeyedRow {
   const codePostalPersonneConcernee = participant?.adresse?.codePostal ?? '';
+  const departementPersonneConcernee = formatDepartementFromCodePostal(codePostalPersonneConcernee);
 
   return {
     civilitePersonneConcernee: participant?.identite?.civilite?.label ?? '',
@@ -227,7 +233,7 @@ function buildPersonneConcerneeFields(
     codePostalPersonneConcernee,
     villePersonneConcernee: participant?.adresse?.ville ?? '',
     departementPersonneConcernee: shouldExportDepartements
-      ? formatDepartementFromCodePostal(codePostalPersonneConcernee)
+      ? formatDepartementWithName(departementPersonneConcernee, departementNamesByCode)
       : '',
     personneConcerneeConsentIdentiteCommuniquee: formatConsentIdentite(participant?.veutGarderAnonymat),
     personneConcerneeInformeeDemarche: formatExportBoolean(participant?.estVictimeInformee),
@@ -250,6 +256,7 @@ function buildSituationFields(
   const codePostalLieuSurvenue = lieuDeSurvenue?.adresse?.codePostal || lieuDeSurvenue?.codePostal || '';
   const departementLieuSurvenue = formatDepartementFromCodePostal(codePostalLieuSurvenue);
   const codePostalMisEnCause = misEnCause?.codePostal ?? '';
+  const departementMisEnCause = formatDepartementFromCodePostal(codePostalMisEnCause);
 
   return {
     numeroSituation: situation ? (situationIndex ?? 0) + 1 : '',
@@ -267,7 +274,9 @@ function buildSituationFields(
     precisionTypeMisEnCause: misEnCause?.misEnCauseTypePrecision?.label ?? '',
     finessMisEnCause: misEnCause?.finess ?? '',
     nomService: misEnCause?.nomService ?? '',
-    departementMisEnCause: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalMisEnCause) : '',
+    departementMisEnCause: shouldExportDepartements
+      ? formatDepartementWithName(departementMisEnCause, departementNamesByCode)
+      : '',
     domaineFonctionnel: situation?.domainesFonctionnels?.label ?? '',
     entitesAdministrativesSituation: formatSituationRootEntites(situation?.situationEntites),
     directionsSituation: formatSituationDirections(situation?.situationEntites),
