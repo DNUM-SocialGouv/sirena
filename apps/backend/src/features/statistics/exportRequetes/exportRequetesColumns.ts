@@ -11,6 +11,7 @@ export const EXPORT_REQUETES_COLUMNS = [
     header: 'Le déclarant est tuteur/curateur de la personne concernée',
   },
   { key: 'codePostalDeclarant', header: 'Code Postal déclarant' },
+  { key: 'villeDeclarant', header: 'Ville déclarant' },
   { key: 'departementDeclarant', header: 'Département déclarant' },
   {
     key: 'declarantConsentIdentiteCommuniquee',

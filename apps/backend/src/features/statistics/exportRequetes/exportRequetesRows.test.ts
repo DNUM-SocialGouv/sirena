@@ -79,6 +79,25 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'provenance')).toBe('Demat.social');
   });
 
+  it('exports ville déclarant from the declarant address', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0023',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        declarant: {
+          estVictime: false,
+          isTuteur: false,
+          adresse: { codePostal: '75001', ville: 'Paris' },
+          veutGarderAnonymat: false,
+          estSignalementProfessionnel: false,
+        },
+        situations: [{}],
+      },
+    ]);
+
+    expect(cell(rows[0], 'villeDeclarant')).toBe('Paris');
+  });
+
   it('populates situation entity hierarchy fields', () => {
     const rows = buildExportRequetesRows([
       {
@@ -513,6 +532,10 @@ describe('buildExportRequetesRows', () => {
 
   it('places department columns immediately after their source/location columns', () => {
     expect(columnAfter('codePostalDeclarant')).toEqual({
+      key: 'villeDeclarant',
+      header: 'Ville déclarant',
+    });
+    expect(columnAfter('villeDeclarant')).toEqual({
       key: 'departementDeclarant',
       header: 'Département déclarant',
     });

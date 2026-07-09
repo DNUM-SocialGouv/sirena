@@ -207,6 +207,7 @@ function buildDeclarantFields(
     lienPersonneConcernee: formatLienVictime(declarant),
     declarantEstTuteurCurateur: formatExportBoolean(declarant?.isTuteur),
     codePostalDeclarant,
+    villeDeclarant: declarant?.adresse?.ville ?? '',
     departementDeclarant: shouldExportDepartements ? formatDepartementFromCodePostal(codePostalDeclarant) : '',
     declarantConsentIdentiteCommuniquee: formatConsentIdentite(declarant?.veutGarderAnonymat),
     declarantProfessionnelEig: formatExportBoolean(declarant?.estSignalementProfessionnel),
