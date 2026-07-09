@@ -23,13 +23,26 @@ export type CardLayout = {
   sizeY: number;
 };
 
+export type MetabaseColumn = {
+  name: string;
+  display_name: string;
+  base_type: string;
+  semantic_type: string | null;
+  source: string | null;
+};
+
+export type CardData = {
+  cols: MetabaseColumn[];
+  rows: unknown[][];
+};
+
 export type DashboardCardData = {
   id: number;
   dashcardId: number;
   name: string;
   display: string | null;
   layout: CardLayout | null;
-  data: Array<Record<string, unknown>>;
+  data: CardData;
 };
 
 const ensureMetabaseConfigured = (): MetabaseConfig => {
@@ -192,6 +205,41 @@ const toDashcardDescriptor = (raw: RawDashcard): DashcardDescriptor | null => {
   return { dashcardId, cardId, name, display, layout };
 };
 
+type RawMetabaseColumn = {
+  name?: unknown;
+  display_name?: unknown;
+  base_type?: unknown;
+  semantic_type?: unknown;
+  source?: unknown;
+};
+
+const EMPTY_CARD_DATA: CardData = { cols: [], rows: [] };
+
+const toMetabaseColumn = (raw: RawMetabaseColumn): MetabaseColumn | null => {
+  if (!raw || typeof raw !== 'object') return null;
+  const { name, display_name: displayName, base_type: baseType, semantic_type: semanticType, source } = raw;
+  if (typeof name !== 'string') return null;
+  return {
+    name,
+    display_name: typeof displayName === 'string' ? displayName : name,
+    base_type: typeof baseType === 'string' ? baseType : 'type/*',
+    semantic_type: typeof semanticType === 'string' ? semanticType : null,
+    source: typeof source === 'string' ? source : null,
+  };
+};
+
+const extractCardData = (payload: unknown): CardData => {
+  if (!payload || typeof payload !== 'object') return EMPTY_CARD_DATA;
+  const { data } = payload as { data?: unknown };
+  if (!data || typeof data !== 'object') return EMPTY_CARD_DATA;
+  const { cols, rows } = data as { cols?: unknown; rows?: unknown };
+  if (!Array.isArray(cols) || !Array.isArray(rows)) return EMPTY_CARD_DATA;
+  return {
+    cols: cols.map(toMetabaseColumn).filter((col): col is MetabaseColumn => col !== null),
+    rows: rows.filter((row): row is unknown[] => Array.isArray(row)),
+  };
+};
+
 export const fetchDashboardCardsData = async (
   lockedParams: Record<string, unknown> = {},
   optionalParams: Record<string, unknown> = {},
@@ -228,18 +276,18 @@ export const fetchDashboardCardsData = async (
   // inaccessible. La carte fautive est renvoyée avec des données vides et le reste s'affiche.
   const settled = await Promise.allSettled(
     dashcards.map(async ({ dashcardId, cardId, name, display, layout }) => {
-      const cardUrl = `${base}/api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${cardId}/json${filterSuffix}`;
-      const data = await fetchJson(cardUrl, { dashboardId, dashcardId, cardId, step: 'card-data' });
+      const cardUrl = `${base}/api/embed/dashboard/${token}/dashcard/${dashcardId}/card/${cardId}${filterSuffix}`;
+      const payload = await fetchJson(cardUrl, { dashboardId, dashcardId, cardId, step: 'card-data' });
+      const data = extractCardData(payload);
 
-      if (!Array.isArray(data)) {
+      if (data.cols.length === 0) {
         logger.warn(
-          { dashboardId, dashcardId, cardId, payloadType: typeof data },
-          '[statistics] dashcard data is not an array, returning empty',
+          { dashboardId, dashcardId, cardId, payloadType: typeof payload },
+          '[statistics] dashcard has no readable columns, returning empty',
         );
-        return { id: cardId, dashcardId, name, display, layout, data: [] };
       }
 
-      return { id: cardId, dashcardId, name, display, layout, data: data as Array<Record<string, unknown>> };
+      return { id: cardId, dashcardId, name, display, layout, data };
     }),
   );
 
@@ -256,6 +304,6 @@ export const fetchDashboardCardsData = async (
       },
       '[statistics] dashcard fetch failed, returning empty data',
     );
-    return { id: cardId, dashcardId, name, display, layout, data: [] };
+    return { id: cardId, dashcardId, name, display, layout, data: EMPTY_CARD_DATA };
   });
 };

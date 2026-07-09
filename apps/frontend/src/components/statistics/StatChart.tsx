@@ -20,7 +20,7 @@ export function StatChart({ name, parsed }: StatChartProps) {
   const titleId = useId();
   const legendId = useId();
   const [view, setView] = useState<View>('table');
-  const { items, total, dimensionLabel, metricLabel } = parsed;
+  const { items, total, dimensionLabel, metricLabel, percentLabel, hasPrecomputedPercent } = parsed;
 
   const slices = useMemo(() => {
     let angle = 0;
@@ -96,7 +96,7 @@ export function StatChart({ name, parsed }: StatChartProps) {
             ) : (
               slices.map((slice) => (
                 <path
-                  key={slice.label}
+                  key={`${slice.label}-${slice.start}`}
                   d={annularSectorPath(CENTER, CENTER, R_OUTER, R_INNER, slice.start, slice.end)}
                   fill={slice.color}
                   stroke="var(--background-default-grey)"
@@ -108,7 +108,7 @@ export function StatChart({ name, parsed }: StatChartProps) {
 
           <ul id={legendId} className={styles.legend}>
             {slices.map((slice) => (
-              <li key={slice.label} className={styles.legendItem}>
+              <li key={`${slice.label}-${slice.start}`} className={styles.legendItem}>
                 <span className={styles.swatch} style={{ background: slice.color }} aria-hidden="true" />
                 <span className={styles.legendLabel}>{slice.label}</span>
                 <span className={styles.legendValue}>
@@ -125,6 +125,8 @@ export function StatChart({ name, parsed }: StatChartProps) {
           total={total}
           dimensionLabel={dimensionLabel}
           metricLabel={metricLabel}
+          percentLabel={percentLabel}
+          hasPrecomputedPercent={hasPrecomputedPercent}
           hideCaption
         />
       )}

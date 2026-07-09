@@ -9,6 +9,7 @@ import pinoLogger from '../../middlewares/pino.middleware.js';
 import EntitesController from './entites.controller.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
+  getDirectionsServicesRows,
   getEditableEntitiesChain,
   getEntiteById,
   getEntites,
@@ -24,6 +25,7 @@ vi.mock('./entites.service.js', () => ({
   getEntites: vi.fn(),
   getEntiteById: vi.fn(),
   getEntitesListAdmin: vi.fn(),
+  getDirectionsServicesRows: vi.fn(),
   getRootEntitesListAdmin: vi.fn(),
   getEditableEntitiesChain: vi.fn(),
   editEntiteAdmin: editEntiteAdminSpy,
@@ -50,13 +52,25 @@ vi.mock('../../middlewares/userStatus.middleware.js', () => {
 const {
   roleMiddlewareSpy,
   currentRole,
+  hasFeatureSpy,
+  getUserByIdSpy,
   patchEntiteAdminByIdSpy: editEntiteAdminSpy,
   postChildEntiteAdminSpy: createChildEntiteAdminSpy,
 } = vi.hoisted(() => ({
   roleMiddlewareSpy: vi.fn(),
   currentRole: { value: 'SUPER_ADMIN' },
+  hasFeatureSpy: vi.fn(),
+  getUserByIdSpy: vi.fn(),
   patchEntiteAdminByIdSpy: vi.fn(),
   postChildEntiteAdminSpy: vi.fn(),
+}));
+
+vi.mock('../featureFlags/featureFlags.service.js', () => ({
+  hasFeature: hasFeatureSpy,
+}));
+
+vi.mock('../users/users.service.js', () => ({
+  getUserById: getUserByIdSpy,
 }));
 
 vi.mock('../../middlewares/role.middleware.js', () => {
@@ -77,7 +91,9 @@ vi.mock('../../middlewares/role.middleware.js', () => {
 vi.mock('../../middlewares/entites.middleware.js', () => {
   return {
     default: async (c: Context, next: Next) => {
-      c.set('entiteIds', ['id1', 'id2']);
+      c.set('entiteIds', ['dir-autonomie', 'service-pa']);
+      c.set('assignedEntiteId', 'dir-autonomie');
+      c.set('topEntiteId', 'root-ars');
       return next();
     },
   };
@@ -110,6 +126,8 @@ describe('Entites endpoints: /entites', () => {
   beforeEach(() => {
     currentRole.value = ROLES.SUPER_ADMIN;
     vi.clearAllMocks();
+    hasFeatureSpy.mockResolvedValue(true);
+    getUserByIdSpy.mockResolvedValue({ email: 'entity-admin@example.gouv.fr', entiteId: 'dir-autonomie' });
   });
 
   describe('GET /admin', () => {
@@ -195,6 +213,68 @@ describe('Entites endpoints: /entites', () => {
         offset: 0,
         limit: 10,
       });
+    });
+  });
+
+  describe('GET /admin/directions-services', () => {
+    it('rejects entity admins when the local directions and services feature flag is disabled', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      hasFeatureSpy.mockResolvedValueOnce(false);
+
+      const res = await app.request('/admin/directions-services');
+
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ message: 'Forbidden' });
+      expect(hasFeatureSpy).toHaveBeenCalledWith(
+        'ADMIN_LOCAL_DIRECTIONS_SERVICES',
+        false,
+        'entity-admin@example.gouv.fr',
+        'dir-autonomie',
+      );
+      expect(getDirectionsServicesRows).not.toHaveBeenCalled();
+    });
+
+    it('scopes local directions and services rows from the assigned entity', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce([
+        {
+          id: 'dir-autonomie',
+          directionNom: 'Direction Autonomie',
+          directionLabel: 'DA',
+          serviceNom: '',
+          serviceLabel: '',
+          email: 'direction-autonomie@ars.fr',
+          editId: 'dir-autonomie',
+        },
+      ]);
+
+      const res = await app.request('/admin/directions-services');
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        data: [
+          {
+            id: 'dir-autonomie',
+            directionNom: 'Direction Autonomie',
+            directionLabel: 'DA',
+            serviceNom: '',
+            serviceLabel: '',
+            email: 'direction-autonomie@ars.fr',
+            editId: 'dir-autonomie',
+          },
+        ],
+      });
+      expect(getDirectionsServicesRows).toHaveBeenCalledWith('dir-autonomie', { search: '' });
+    });
+
+    it('passes search query to local directions and services rows service', async () => {
+      currentRole.value = ROLES.ENTITY_ADMIN;
+      vi.mocked(getDirectionsServicesRows).mockResolvedValueOnce([]);
+
+      const res = await app.request('/admin/directions-services?search=autonomie');
+
+      expect(res.status).toBe(200);
+      expect(getDirectionsServicesRows).toHaveBeenCalledWith('dir-autonomie', { search: 'autonomie' });
     });
   });
 
@@ -510,7 +590,7 @@ describe('Entites endpoints: /entites', () => {
 
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ data: mockData });
-      expect(getEditableEntitiesChain).toHaveBeenCalledWith('1', ['id1', 'id2']);
+      expect(getEditableEntitiesChain).toHaveBeenCalledWith('1', ['dir-autonomie', 'service-pa']);
     });
 
     it('should return empty array if no ID is provided', async () => {

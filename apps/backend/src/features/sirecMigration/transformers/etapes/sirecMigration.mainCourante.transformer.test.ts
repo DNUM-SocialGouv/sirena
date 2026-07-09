@@ -51,12 +51,12 @@ describe('sirecMigration.mainCourante.transformer.ts', () => {
     expect(result).toEqual([]);
   });
 
-  it('should set nom to "Type de traitement : Autre" when type_action1 is null', () => {
+  it('should set nom to "Type de traitement : Non précisé" when type_action1 is null', () => {
     const result = transformSirecMainCourantes(
       makeData([{ id_data: 1, type_action1: null, commentaire: null, date_action: null, groupIds: [693] }]),
     );
 
-    expect(result[0].nom).toBe('Type de traitement : Autre');
+    expect(result[0].nom).toBe('Type de traitement : Non précisé');
   });
 
   it('should set nom from SIREC_DICO when type_action1 is a known id', () => {

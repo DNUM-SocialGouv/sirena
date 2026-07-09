@@ -2,8 +2,8 @@ import { FEATURE_FLAGS, ROLES, type Role } from '@sirena/common/constants';
 import { Tabs } from '@sirena/ui';
 import { createFileRoute, Outlet, useMatches, useNavigate } from '@tanstack/react-router';
 import { AdminLayout } from '@/components/layout/admin/layout';
+import { useResolvedFeatureFlags } from '@/hooks/queries/featureFlags.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
-import { useHasFeature } from '@/hooks/useHasFeature';
 import { requireAuthAndRoles } from '@/lib/auth-guards';
 import { getActiveTab, getTabPaths, getTabs } from './-tabs';
 
@@ -16,18 +16,25 @@ export function RouteComponent() {
   const navigate = useNavigate();
   const matches = useMatches();
   const { data } = useProfile();
-  const hasSirecMigration = useHasFeature(FEATURE_FLAGS.SIREC_MIGRATION, false);
+  const resolvedFlagsQuery = useResolvedFeatureFlags();
+  const hasSirecMigration = resolvedFlagsQuery.data?.[FEATURE_FLAGS.SIREC_MIGRATION] ?? false;
+  const hasAdminLocalDirectionsServicesFeatureFlag =
+    resolvedFlagsQuery.data?.[FEATURE_FLAGS.ADMIN_LOCAL_DIRECTIONS_SERVICES] ?? false;
 
   const role = (data?.role?.id ?? null) as Role | null;
   const pathname = matches.at(-1)?.pathname ?? '/admin/users';
-  const tabs = getTabs(role, hasSirecMigration);
-  const tabPaths = getTabPaths(role, hasSirecMigration);
-  const activeTab = getActiveTab(pathname, role, hasSirecMigration);
+  const tabs = getTabs(role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
+  const tabPaths = getTabPaths(role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
+  const activeTab = getActiveTab(pathname, role, hasSirecMigration, hasAdminLocalDirectionsServicesFeatureFlag);
   const isUserEditPage = pathname.startsWith('/admin/user/');
 
   const handleTabChange = (newTabIndex: number) => {
     navigate({ to: tabPaths[newTabIndex] });
   };
+
+  if (resolvedFlagsQuery.isPending) {
+    return null;
+  }
 
   return (
     <AdminLayout>

@@ -7,10 +7,12 @@ import authMiddleware from '../../middlewares/auth.middleware.js';
 import entitesMiddleware from '../../middlewares/entites.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 import userStatusMiddleware from '../../middlewares/userStatus.middleware.js';
+import adminLocalDirectionsServicesFeatureFlagMiddleware from '../featureFlags/adminLocalDirectionsServicesFeatureFlag.middleware.js';
 import { EntiteChildCreationForbiddenError, EntiteNotFoundError } from './entites.error.js';
 import {
   createChildEntiteAdminRoute,
   editEntiteAdminRoute,
+  getDirectionsServicesRowsRoute,
   getEntiteByIdAdminRoute,
   getEntiteChainRoute,
   getEntitesListAdminRoute,
@@ -26,6 +28,7 @@ import {
 import {
   createChildEntiteAdmin,
   editEntiteAdmin,
+  getDirectionsServicesRows,
   getEditableEntitiesChain,
   getEntiteById,
   getEntiteDescendantIds,
@@ -101,6 +104,29 @@ const app = factoryWithLogs
           total,
         },
       });
+    },
+  )
+
+  .get(
+    '/admin/directions-services',
+    roleMiddleware([ROLES.ENTITY_ADMIN]),
+    adminLocalDirectionsServicesFeatureFlagMiddleware,
+    getDirectionsServicesRowsRoute,
+    async (c) => {
+      const logger = c.get('logger');
+      const assignedEntiteId = c.get('assignedEntiteId');
+      const search = c.req.query('search') ?? '';
+
+      logger.info({ assignedEntiteId, search }, 'Local directions and services list requested');
+
+      if (!assignedEntiteId) {
+        return c.json({ data: [] });
+      }
+
+      const rows = await getDirectionsServicesRows(assignedEntiteId, { search });
+      logger.info({ rowsCount: rows.length }, 'Local directions and services list retrieved successfully');
+
+      return c.json({ data: rows });
     },
   )
 

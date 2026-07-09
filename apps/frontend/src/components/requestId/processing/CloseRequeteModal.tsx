@@ -175,11 +175,15 @@ export const CloseRequeteModal = forwardRef<CloseRequeteModalRef, CloseRequeteMo
 
         let fileIds: string[] = [];
         if (files.length > 0) {
-          const uploadPromises = files.map(async (file) => {
-            const response = await uploadFileMutation.mutateAsync(file);
-            return response.id;
-          });
-          fileIds = await Promise.all(uploadPromises);
+          const uploads = await Promise.allSettled(files.map((file) => uploadFileMutation.mutateAsync(file)));
+          const ids: string[] = [];
+          for (const upload of uploads) {
+            if (upload.status === 'rejected') {
+              throw upload.reason;
+            }
+            ids.push(upload.value.id);
+          }
+          fileIds = ids;
         }
 
         await closeRequeteMutation.mutateAsync({

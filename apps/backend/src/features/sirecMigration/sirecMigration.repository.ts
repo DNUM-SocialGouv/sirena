@@ -83,6 +83,7 @@ export interface SirecReclamationRow {
   ei_avere: number | null;
   num_sign_assoc: string | null;
   date_recep_gest: Date | null;
+  signalement: number | null;
 }
 
 export interface SirecProvenance {
@@ -171,7 +172,7 @@ export async function fetchSirecIdsByServiceIds(serviceIds: number[]): Promise<n
 
 export async function fetchSirecReclamationById(sirecId: number): Promise<SirecReclamationRow | null> {
   const rows = await mariadbPool.query<SirecReclamationRow[]>(
-    'SELECT id_data, r_recept_date, description, reception, prioritaire, prioritaire_precisez, dest, dest_primaire, dest_secondaire, saisine, courrier_signal, plaignant, plaignant_anonyme, plaignant_est_anonyme, plaignant_type, plaignant_adresse, plaignant_adresse_complement, requerant_adresse, requerant_adresse_complete, requerant_cp, requerant_ville, preciser_statut, plaignant_rs, nom_representant, prenom_representant, plaignant_nom, plaignant_prenom, plaignant_mail, plaignant_tel, plaignant_connu, victime_lien_plaignant, lien_plai_autre, victime_non_identifiee, victime_age, victime_sexe, victime_adresse, victime_adresse_complement, usager_adresse, usager_adresse_complete, usager_cp, usager_ville, victime_nom, victime_prenom, victime_mail, victime_tel, service_recepteur_niv1, service_gestionnaire, accuser_reception, date_envoi_ar, accuser_reception_precision, institution_part, niv_competence_reclam, date_transfert_instit1, date_transfert_instit2, date_transfert_instit3, prec_niv_comp, date_traitement, type_traitement_prec, date_commission, date_rep_provenance1, date_rep_provenance2, date_rep_provenance3, reponse_plaignant, date_rep_plaignant, reponse_plaignant_precision, sans_mc, observation, mesures_prises, mesures_initiative, mesures_precision, sys_last_mod_date, sys_creation_date, type_cloture, motif_cloture, date_cloture, date_ecriture, domaine, mandataire_judiciaire, mandataire_precisez, ei_avere, num_sign_assoc, date_recep_gest FROM sire_reclamation_data WHERE id_data = ?',
+    'SELECT id_data, r_recept_date, description, reception, prioritaire, prioritaire_precisez, dest, dest_primaire, dest_secondaire, saisine, courrier_signal, plaignant, plaignant_anonyme, plaignant_est_anonyme, plaignant_type, plaignant_adresse, plaignant_adresse_complement, requerant_adresse, requerant_adresse_complete, requerant_cp, requerant_ville, preciser_statut, plaignant_rs, nom_representant, prenom_representant, plaignant_nom, plaignant_prenom, plaignant_mail, plaignant_tel, plaignant_connu, victime_lien_plaignant, lien_plai_autre, victime_non_identifiee, victime_age, victime_sexe, victime_adresse, victime_adresse_complement, usager_adresse, usager_adresse_complete, usager_cp, usager_ville, victime_nom, victime_prenom, victime_mail, victime_tel, service_recepteur_niv1, service_gestionnaire, accuser_reception, date_envoi_ar, accuser_reception_precision, institution_part, niv_competence_reclam, date_transfert_instit1, date_transfert_instit2, date_transfert_instit3, prec_niv_comp, date_traitement, type_traitement_prec, date_commission, date_rep_provenance1, date_rep_provenance2, date_rep_provenance3, reponse_plaignant, date_rep_plaignant, reponse_plaignant_precision, sans_mc, observation, mesures_prises, mesures_initiative, mesures_precision, sys_last_mod_date, sys_creation_date, type_cloture, motif_cloture, date_cloture, date_ecriture, domaine, mandataire_judiciaire, mandataire_precisez, ei_avere, num_sign_assoc, date_recep_gest, signalement FROM sire_reclamation_data WHERE id_data = ?',
     [sirecId],
   );
 
@@ -188,7 +189,7 @@ export async function fetchSirecMotifsDeclaresById(sirecId: number): Promise<num
 
 export async function fetchSirecGroupIds(sirecId: number): Promise<number[]> {
   const rows = await mariadbPool.query<{ id_group: number }[]>(
-    'SELECT id_group FROM sire_reclamation_data_group WHERE id_data = ? AND id_group != 1',
+    'SELECT id_group FROM sire_reclamation_data_group WHERE id_data = ? AND id_group != 1 and id_group != 3',
     [sirecId],
   );
   return rows.map((row) => row.id_group);
@@ -266,7 +267,7 @@ export async function fetchSirecMisEnCauses(sirecId: number): Promise<SirecMisEn
             f.rs AS finess_rs, f.codepostal AS finess_codepostal, f.libcommune AS finess_libcommune,
             f.numvoie AS finess_numvoie, f.typevoie AS finess_typevoie, f.voie AS finess_voie
      FROM sire_misencause_data m
-     LEFT JOIN sire_misencause_data_group mcg ON m.id_data = mcg.id_data AND mcg.id_group != 1
+     LEFT JOIN sire_misencause_data_group mcg ON m.id_data = mcg.id_data AND mcg.id_group != 1 AND mcg.id_group != 0
      LEFT JOIN sire_rpps_data r ON r.id_data = m.identifiant AND m.type = 65
      LEFT JOIN sire_finess_data f ON f.id_data = m.identifiant AND m.type = 64
      WHERE m.id_reclamation = ?`,

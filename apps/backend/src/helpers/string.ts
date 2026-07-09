@@ -1,5 +1,13 @@
 export const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
+export const splitCsv = (value: string | null | undefined): string[] =>
+  value
+    ? value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [];
+
 export const formatDateFr = (date: Date | string | null | undefined): string => {
   if (!date) return '—';
   const d = new Date(date);

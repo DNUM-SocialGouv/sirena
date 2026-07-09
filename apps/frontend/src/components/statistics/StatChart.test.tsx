@@ -37,6 +37,8 @@ const parsed: ParsedCard = {
   total: 4,
   dimensionLabel: 'Raison',
   metricLabel: 'Nombre',
+  percentLabel: 'Part (%)',
+  hasPrecomputedPercent: false,
 };
 
 afterEach(cleanup);
@@ -67,7 +69,19 @@ describe('StatChart', () => {
   });
 
   it('renders an empty state when there is no data', () => {
-    render(<StatChart name="Vide" parsed={{ items: [], total: 0, dimensionLabel: 'd', metricLabel: 'm' }} />);
+    render(
+      <StatChart
+        name="Vide"
+        parsed={{
+          items: [],
+          total: 0,
+          dimensionLabel: 'd',
+          metricLabel: 'm',
+          percentLabel: 'Part (%)',
+          hasPrecomputedPercent: false,
+        }}
+      />,
+    );
 
     expect(screen.getByText('Aucune donnée à afficher.')).toBeInTheDocument();
   });

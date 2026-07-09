@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useProfile } from '@/hooks/queries/profile.hook';
 import { useRequetesEntite } from '@/hooks/queries/requetesEntite.hook';
 import { useRequetesListSSE } from '@/hooks/useRequetesListSSE';
+import { useListStateStore } from '@/stores/listStateStore';
 import { RequetePrioriteTag, RequeteStatutTag } from '../RequeteStatutTag';
 import { renderAffectationCell, renderMisEnCauseCell, renderMotifsCell } from './requetesEntites.cells';
 import { RequetesEntiteQuickFilters } from './requetesEntites.filters';
@@ -82,6 +83,7 @@ const SSE_DEBOUNCE_MS = 500;
 export function RequetesEntite() {
   const queries = useSearch({ from: '/_auth/_user/home' });
   const navigate = useNavigate({ from: '/home' });
+  const setListState = useListStateStore((s) => s.setListState);
   const queryClient = useQueryClient();
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { data: profile } = useProfile();
@@ -110,6 +112,10 @@ export function RequetesEntite() {
 
   useRequetesListSSE({ onUpdate: handleUpdate });
 
+  useEffect(() => {
+    setListState('requetes', { to: '/home', search: queries });
+  }, [queries, setListState]);
+
   const limit = queries.limit ?? DEFAULT_PAGE_SIZE;
   const offset = queries.offset ?? 0;
   const currentPage = useMemo(() => Math.floor(offset / limit) + 1, [offset, limit]);
@@ -118,11 +124,12 @@ export function RequetesEntite() {
 
   const { data: requetes, isFetching } = useRequetesEntite({
     ...(queries.sort && { sort: queries.sort }),
-    ...(queries.order && { order: queries.order as 'asc' | 'desc' }),
+    ...(queries.order && { order: queries.order }),
     ...(queries.search && { search: queries.search }),
     ...(queries.entiteId ? { entiteId: queries.entiteId } : {}),
     ...(queries.departementCodes ? { departementCodes: queries.departementCodes } : {}),
     ...(queries.domaineIds ? { domaineIds: queries.domaineIds } : {}),
+    ...(queries.statutIds ? { statutIds: queries.statutIds } : {}),
     ...(queries.prioriteId ? { prioriteId: queries.prioriteId } : {}),
     offset,
     limit,
@@ -366,11 +373,12 @@ export function RequetesEntite() {
       <div className="fr-mb-3w">
         <div className="fr-grid-row">
           <div className="fr-col-12 fr-col-md-5">
-            <p className="fr-label fr-mb-1v" aria-hidden="true">
-              Rechercher dans les requêtes par numéro, lieu de survenue, ...
+            <h2 className="fr-h6 fr-mb-1v">Rechercher une requête</h2>
+            <p className="fr-hint-text fr-mb-1w" aria-hidden="true">
+              Par numéro, lieu de survenue, mis en cause (nom, RPPS, FINESS) etc.
             </p>
             <SearchBar
-              label="Rechercher dans les requêtes par numéro, lieu de survenue, ..."
+              label="Rechercher une requête par numéro, lieu de survenue, mis en cause (nom, RPPS, FINESS)"
               onButtonClick={handleSearch}
               renderInput={(inputProps) => (
                 <input

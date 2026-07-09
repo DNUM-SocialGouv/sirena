@@ -11,8 +11,16 @@ describe('tabs', () => {
     ]);
   });
 
-  it('does not show the entites tab for entity admins', () => {
-    expect(getTabs(ROLES.ENTITY_ADMIN).map((tab) => tab.label)).toEqual([
+  it('shows directions and services instead of global entites for entity admins when the feature flag is enabled', () => {
+    expect(getTabs(ROLES.ENTITY_ADMIN, false, true).map((tab) => tab.label)).toEqual([
+      "Gestion des demandes d'habilitations",
+      'Gestion des utilisateurs',
+      'Gestion des directions et services',
+    ]);
+  });
+
+  it('hides directions and services for entity admins when the feature flag is disabled', () => {
+    expect(getTabs(ROLES.ENTITY_ADMIN, false, false).map((tab) => tab.label)).toEqual([
       "Gestion des demandes d'habilitations",
       'Gestion des utilisateurs',
     ]);
@@ -22,8 +30,12 @@ describe('tabs', () => {
     expect(getTabPaths(ROLES.SUPER_ADMIN)).toEqual(['/admin/users', '/admin/users/all', '/admin/entites']);
   });
 
-  it('returns the matching tab paths for entity admins', () => {
-    expect(getTabPaths(ROLES.ENTITY_ADMIN)).toEqual(['/admin/users', '/admin/users/all']);
+  it('returns the matching tab paths for entity admins when the feature flag is enabled', () => {
+    expect(getTabPaths(ROLES.ENTITY_ADMIN, false, true)).toEqual([
+      '/admin/users',
+      '/admin/users/all',
+      '/admin/directions-services',
+    ]);
   });
 
   it('marks /admin/users as the first tab', () => {
@@ -42,7 +54,15 @@ describe('tabs', () => {
     expect(getActiveTab('/admin/entites/root-ars', ROLES.SUPER_ADMIN)).toBe(2);
   });
 
-  it('falls back to the first tab for entity admins on unknown admin paths', () => {
+  it('marks /admin/directions-services as the third tab for entity admins when the feature flag is enabled', () => {
+    expect(getActiveTab('/admin/directions-services', ROLES.ENTITY_ADMIN, false, true)).toBe(2);
+  });
+
+  it('marks /admin/directions-services/ as the third tab for entity admins when the feature flag is enabled', () => {
+    expect(getActiveTab('/admin/directions-services/', ROLES.ENTITY_ADMIN, false, true)).toBe(2);
+  });
+
+  it('falls back to the first tab for entity admins on global entites paths', () => {
     expect(getActiveTab('/admin/entites', ROLES.ENTITY_ADMIN)).toBe(0);
   });
 });
