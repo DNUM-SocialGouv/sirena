@@ -284,6 +284,25 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'nomLieuSurvenue')).toBe('Hôpital Pitié-Salpêtrière');
   });
 
+  it('prefers the qualified SIRENA postal code for lieu de survenue', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0020',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              codePostal: '33000',
+              adresse: { codePostal: '63000' },
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('63000');
+  });
+
   it('populates lieu de survenue and non-sensitive mis en cause fields', () => {
     const rows = buildExportRequetesRows([
       {

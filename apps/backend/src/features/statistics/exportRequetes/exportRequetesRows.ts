@@ -241,7 +241,7 @@ function buildSituationFields(
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
   const misEnCause = situation?.misEnCause;
 
-  const codePostalLieuSurvenue = lieuDeSurvenue?.codePostal || lieuDeSurvenue?.adresse?.codePostal || '';
+  const codePostalLieuSurvenue = lieuDeSurvenue?.adresse?.codePostal || lieuDeSurvenue?.codePostal || '';
   const codePostalMisEnCause = misEnCause?.codePostal ?? '';
 
   return {
