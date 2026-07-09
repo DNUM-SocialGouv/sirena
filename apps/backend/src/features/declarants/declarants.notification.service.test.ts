@@ -5,7 +5,7 @@ import { ACKNOWLEDGMENT_EMAIL_SUBJECT } from '../../config/tipimail.constant.js'
 import { sendTipimailEmail } from '../../libs/mail/tipimail.js';
 import { prisma } from '../../libs/prisma.js';
 import { createChangeLog } from '../changelog/changelog.service.js';
-import { sendDeclarantAcknowledgmentEmail } from './declarants.notification.service.js';
+import { sendDeclarantAcknowledgmentEmail, sendManualAcknowledgmentEmail } from './declarants.notification.service.js';
 
 vi.mock('../../libs/prisma.js', () => ({
   prisma: {
@@ -14,6 +14,12 @@ vi.mock('../../libs/prisma.js', () => ({
     },
     entite: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    requeteEtape: {
+      updateMany: vi.fn(),
+      update: vi.fn(),
+      findFirst: vi.fn(),
     },
   },
 }));
@@ -58,6 +64,7 @@ vi.mock('../requeteEtapes/requetesEtapes.service.js', () => ({
 
 const mockedPrismaRequete = vi.mocked(prisma.requete);
 const mockedPrismaEntite = vi.mocked(prisma.entite);
+const mockedPrismaRequeteEtape = vi.mocked(prisma.requeteEtape);
 const mockedSendTipimailEmail = vi.mocked(sendTipimailEmail);
 const mockedCreateChangeLog = vi.mocked(createChangeLog);
 
@@ -408,5 +415,49 @@ describe('sendDeclarantAcknowledgmentEmail()', () => {
     expect(call?.text).toContain('ARS Normandie');
     expect(call?.text).toContain('Adresse e-mail : contact@ars.fr');
     expect(call?.text).toContain('CD Calvados');
+  });
+});
+
+describe('sendManualAcknowledgmentEmail()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('stores the manual SIRENA send date as acknowledgment dateRealisation when claiming the step', async () => {
+    const sentDate = new Date('2026-07-09T11:00:00.000Z');
+    vi.useFakeTimers();
+    vi.setSystemTime(sentDate);
+
+    mockedPrismaRequeteEtape.updateMany.mockResolvedValueOnce({ count: 1 } as any);
+    mockedPrismaRequete.findUnique.mockResolvedValueOnce({
+      declarant: { identite: { email: 'john@example.com', prenom: 'John', nom: 'Doe' } },
+    } as any);
+    mockedPrismaEntite.findUnique.mockResolvedValueOnce({
+      id: 'entiteId',
+      nomComplet: 'ARS Normandie',
+      email: '',
+      emailContactUsager: 'ars@example.com',
+      telContactUsager: '',
+      adresseContactUsager: '',
+      entiteMereId: null,
+    } as any);
+    mockedSendTipimailEmail.mockResolvedValueOnce({ status: 'success' } as any);
+
+    await sendManualAcknowledgmentEmail({
+      etapeId: 'etapeId',
+      requeteId: 'requeteId',
+      entiteId: 'entiteId',
+      userId: 'userId',
+    });
+
+    expect(mockedPrismaRequeteEtape.updateMany).toHaveBeenCalledWith({
+      where: { id: 'etapeId', statutId: 'A_FAIRE' },
+      data: {
+        statutId: 'FAIT',
+        dateRealisation: sentDate,
+      },
+    });
+
+    vi.useRealTimers();
   });
 });

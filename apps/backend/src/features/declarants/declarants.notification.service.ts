@@ -317,9 +317,11 @@ export async function sendManualAcknowledgmentEmail({
 }): Promise<void> {
   const logger = getLoggerStore();
 
+  const sentDate = new Date();
+
   const claimResult = await prisma.requeteEtape.updateMany({
     where: { id: etapeId, statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
-    data: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT },
+    data: { statutId: REQUETE_ETAPE_STATUT_TYPES.FAIT, dateRealisation: sentDate },
   });
 
   if (claimResult.count === 0) {
@@ -362,8 +364,6 @@ export async function sendManualAcknowledgmentEmail({
     const fromAddress = envVars.TIPIMAIL_FROM_ADDRESS;
     const fromPersonalName = envVars.TIPIMAIL_FROM_PERSONAL_NAME;
     const from = { address: fromAddress, personalName: fromPersonalName };
-    const sentDate = new Date();
-
     await sendTipimailEmail({
       to: declarantEmail,
       subject: ACKNOWLEDGMENT_EMAIL_SUBJECT,
@@ -439,7 +439,7 @@ export async function sendManualAcknowledgmentEmail({
     try {
       await prisma.requeteEtape.update({
         where: { id: etapeId },
-        data: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE },
+        data: { statutId: REQUETE_ETAPE_STATUT_TYPES.A_FAIRE, dateRealisation: null },
       });
     } catch (rollbackError) {
       logger.error(
