@@ -13,6 +13,7 @@ describe('buildExportRequetesCsv', () => {
     expect(header).not.toContain('\n');
     expect(columns).toHaveLength(EXPORT_REQUETES_COLUMNS.length);
     expect(headerCell(columns, 'numeroRequete')).toBe('Numéro de requête');
+    expect(headerCell(columns, 'dateDepotPlainte')).toBe('Date de dépôt de plainte');
     expect(headerCell(columns, 'numeroSituation')).toBe('Numéro de situation');
     expect(headerCell(columns, 'raisonsClotureEntiteAdministrative')).toBe(
       'Raison(s) clôture de la requête pour mon entité administrative',

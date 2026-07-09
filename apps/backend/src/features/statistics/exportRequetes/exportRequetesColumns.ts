@@ -62,7 +62,7 @@ export const EXPORT_REQUETES_COLUMNS = [
   { key: 'datePriseContact', header: 'Date de prise de contact' },
   { key: 'declarantRecuReponse', header: 'Le déclarant a réçu une réponse' },
   { key: 'plainteDeposee', header: 'Une plainte a été déposée auprès des autorités judiciaires' },
-  { key: 'dateDepotPlainte', header: 'Date de dépot de plate' },
+  { key: 'dateDepotPlainte', header: 'Date de dépôt de plainte' },
   { key: 'lieuDepotPlainte', header: 'Lieu de dépot de plainte' },
   { key: 'demarchesAutresOrganismes', header: "Des démarches ont été engagées auprès d'autres organismes" },
   { key: 'entitesAdministrativesSituation', header: 'Entités administratives affectées à la situation' },
