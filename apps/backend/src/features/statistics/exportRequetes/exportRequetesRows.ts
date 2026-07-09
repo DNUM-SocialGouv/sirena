@@ -34,6 +34,7 @@ type ExportEntiteReferenceRecord = ExportLabelRecord & {
 type ExportAdresseRecord = {
   codePostal: string | null;
   label?: string | null;
+  ville?: string | null;
 };
 
 type ExportDeclarantRecord = {
@@ -256,6 +257,7 @@ function buildSituationFields(
     categorieFinessLieuSurvenue: formatCategorieFinessLieuSurvenue(lieuDeSurvenue, categorieFinessLieuSurvenueByCode),
     nomLieuSurvenue: formatNomLieuSurvenue(lieuDeSurvenue),
     codePostalLieuSurvenue,
+    villeLieuSurvenue: lieuDeSurvenue?.adresse?.ville ?? '',
     departementLieuSurvenue: shouldExportDepartements
       ? formatDepartementWithName(departementLieuSurvenue, departementNamesByCode)
       : '',

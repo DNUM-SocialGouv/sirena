@@ -70,7 +70,7 @@ describe('generateExportRequetesCsv', () => {
     expect(csv).toContain('18/06/2026');
   });
 
-  it('wires department names for occurrence-place department exports', async () => {
+  it('wires department names for département lieu de survenue exports', async () => {
     vi.mocked(getEntiteDescendantIds).mockResolvedValueOnce(['root-entite']);
     vi.mocked(prisma.requete.findMany).mockResolvedValueOnce([
       {

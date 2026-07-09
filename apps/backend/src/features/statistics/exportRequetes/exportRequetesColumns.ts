@@ -46,6 +46,7 @@ export const EXPORT_REQUETES_COLUMNS = [
     header: "Nom de l'établissement / Nom du lieu de survenue / Société de transport concernée",
   },
   { key: 'codePostalLieuSurvenue', header: 'Code postal lieu de survenue' },
+  { key: 'villeLieuSurvenue', header: 'Ville lieu de survenue' },
   { key: 'departementLieuSurvenue', header: 'Département lieu de survenue' },
   { key: 'typeMisEnCause', header: 'Type de mis en cause' },
   { key: 'precisionTypeMisEnCause', header: 'Précision type de mis en cause' },

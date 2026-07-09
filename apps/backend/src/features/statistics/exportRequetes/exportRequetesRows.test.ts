@@ -327,6 +327,24 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('63000');
   });
 
+  it('exports ville lieu de survenue from the qualified SIRENA address', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0022',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              adresse: { codePostal: '63000', ville: 'Clermont-Ferrand' },
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'villeLieuSurvenue')).toBe('Clermont-Ferrand');
+  });
+
   it('populates lieu de survenue and non-sensitive mis en cause fields', () => {
     const rows = buildExportRequetesRows([
       {
@@ -417,7 +435,7 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'departementMisEnCause')).toBe('980');
   });
 
-  it('exports occurrence-place department as name and code from the selected postal code', () => {
+  it('exports département lieu de survenue as name and code from the selected postal code', () => {
     const rows = buildExportRequetesRows(
       [
         {
@@ -503,6 +521,10 @@ describe('buildExportRequetesRows', () => {
       header: 'Département personne concernée',
     });
     expect(columnAfter('codePostalLieuSurvenue')).toEqual({
+      key: 'villeLieuSurvenue',
+      header: 'Ville lieu de survenue',
+    });
+    expect(columnAfter('villeLieuSurvenue')).toEqual({
       key: 'departementLieuSurvenue',
       header: 'Département lieu de survenue',
     });
