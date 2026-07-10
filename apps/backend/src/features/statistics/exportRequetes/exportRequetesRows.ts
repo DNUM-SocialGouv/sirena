@@ -28,6 +28,7 @@ type ExportLabelRecord = {
 };
 
 type ExportEntiteReferenceRecord = ExportLabelRecord & {
+  nomComplet?: string | null;
   entiteTypeId?: string | null;
 };
 
@@ -112,6 +113,7 @@ type ExportSituationEntiteRecord = {
 
 type ExportEntiteRecord = {
   label: string | null;
+  nomComplet?: string | null;
   entiteMere?: ExportEntiteRecord | null;
 };
 
@@ -338,7 +340,11 @@ function buildWorkflowFields(
 
 function formatSituationRootEntites(situationEntites: ExportSituationEntiteRecord[] | undefined): string {
   return formatUniqueLabels(
-    situationEntites?.map((situationEntite) => getEntiteRacine(situationEntite.entite)?.label) ?? [],
+    situationEntites?.map((situationEntite) => {
+      const entiteRacine = getEntiteRacine(situationEntite.entite);
+
+      return entiteRacine?.nomComplet ?? entiteRacine?.label;
+    }) ?? [],
   );
 }
 
@@ -348,11 +354,11 @@ function formatSituationDirections(situationEntites: ExportSituationEntiteRecord
       const entite = situationEntite.entite;
 
       if (entite && isDirection(entite)) {
-        return [entite.label];
+        return [formatEntiteWithParentLabel(entite)];
       }
 
-      if (entite && isService(entite)) {
-        return [entite.entiteMere?.label];
+      if (entite && isService(entite) && entite.entiteMere) {
+        return [formatEntiteWithParentLabel(entite.entiteMere)];
       }
 
       return [];
@@ -360,12 +366,20 @@ function formatSituationDirections(situationEntites: ExportSituationEntiteRecord
   );
 }
 
+function formatEntiteWithParentLabel(entite: ExportEntiteRecord): string | null {
+  if (!entite.nomComplet) {
+    return entite.label;
+  }
+
+  return entite.entiteMere?.label ? `${entite.nomComplet} (${entite.entiteMere.label})` : entite.nomComplet;
+}
+
 function formatSituationServices(situationEntites: ExportSituationEntiteRecord[] | undefined): string {
   return formatUniqueLabels(
     situationEntites?.map((situationEntite) => {
       const entite = situationEntite.entite;
 
-      return entite && isService(entite) ? entite.label : null;
+      return entite && isService(entite) ? formatEntiteWithParentLabel(entite) : null;
     }) ?? [],
   );
 }
@@ -438,14 +452,14 @@ function formatLieuSurvenuePrecision(lieuDeSurvenue: ExportLieuDeSurvenueRecord 
 function formatRequeteEntites(requeteEntites: ExportRequeteEntiteRecord[] | undefined): string {
   return formatExportList(
     requeteEntites?.map((requeteEntite) => {
-      const entiteLabel = requeteEntite.entite?.label;
+      const entiteName = requeteEntite.entite?.nomComplet ?? requeteEntite.entite?.label;
       const statutLabel = requeteEntite.statut?.label;
 
-      if (!entiteLabel) {
+      if (!entiteName) {
         return null;
       }
 
-      return statutLabel ? `${entiteLabel} (${statutLabel})` : entiteLabel;
+      return statutLabel ? `${entiteName} (${statutLabel})` : entiteName;
     }) ?? [],
   );
 }

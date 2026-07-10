@@ -181,6 +181,122 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'departementPersonneConcernee')).toBe('Rhône (69)');
   });
 
+  it('exports a Situation-level Entité administrative with its full name', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0038',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            situationEntites: [
+              {
+                entite: {
+                  label: 'ARS NOR',
+                  nomComplet: 'Agence régionale de santé de Normandie',
+                  entiteMere: null,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'entitesAdministrativesSituation')).toBe('Agence régionale de santé de Normandie');
+  });
+
+  it('exports a Situation-level Direction with its full name and parent short label', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0039',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            situationEntites: [
+              {
+                entite: {
+                  label: 'DIR AUTO',
+                  nomComplet: 'Direction de l’autonomie',
+                  entiteMere: {
+                    label: 'ARS NOR',
+                    nomComplet: 'Agence régionale de santé de Normandie',
+                    entiteMere: null,
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'directionsSituation')).toBe('Direction de l’autonomie (ARS NOR)');
+  });
+
+  it('exports a Situation-level Service with its full name and parent short label', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0040',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            situationEntites: [
+              {
+                entite: {
+                  label: 'SVC PA',
+                  nomComplet: 'Service personnes âgées',
+                  entiteMere: {
+                    label: 'DIR AUTO',
+                    nomComplet: 'Direction de l’autonomie',
+                    entiteMere: {
+                      label: 'ARS NOR',
+                      nomComplet: 'Agence régionale de santé de Normandie',
+                      entiteMere: null,
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'servicesSituation')).toBe('Service personnes âgées (DIR AUTO)');
+  });
+
+  it('exports an inferred Situation Direction with its full name and root short label', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0041',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            situationEntites: [
+              {
+                entite: {
+                  label: 'SVC PA',
+                  nomComplet: 'Service personnes âgées',
+                  entiteMere: {
+                    label: 'DIR AUTO',
+                    nomComplet: 'Direction de l’autonomie',
+                    entiteMere: {
+                      label: 'ARS NOR',
+                      nomComplet: 'Agence régionale de santé de Normandie',
+                      entiteMere: null,
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'directionsSituation')).toBe('Direction de l’autonomie (ARS NOR)');
+  });
+
   it('populates situation entity hierarchy fields', () => {
     const rows = buildExportRequetesRows([
       {
@@ -784,6 +900,28 @@ describe('buildExportRequetesRows', () => {
     );
 
     expect(cell(rows[0], 'statutRequeteEntiteAdministrative')).toBe('Clôturée');
+  });
+
+  it('exports a request-level affected entity with its full name and request status', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0042',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        requeteEntites: [
+          {
+            entiteId: 'root-entite',
+            entite: {
+              label: 'ARS NOR',
+              nomComplet: 'Agence régionale de santé de Normandie',
+            },
+            statut: { label: 'Clôturée' },
+          },
+        ],
+        situations: [{}],
+      },
+    ]);
+
+    expect(cell(rows[0], 'entitesStatutsRequete')).toBe('Agence régionale de santé de Normandie (Clôturée)');
   });
 
   it('populates request entity status, root-scoped priority and latest root-scoped closure fields', () => {
