@@ -1,6 +1,7 @@
 import { type Prisma, prisma } from '../../../libs/prisma.js';
 import { getEntiteDescendantIds } from '../../entites/entites.service.js';
 import { buildExportRequetesCsvFromRecords } from './exportRequetesCsv.js';
+import { deriveDepartmentCodeFromPostalCode } from './exportRequetesFormatters.js';
 import type { ExportRequeteRecord } from './exportRequetesRows.js';
 
 const exportRequetesSelect = {
@@ -178,7 +179,9 @@ async function getDepartmentReferences(requetes: ExportRequetePrismaPayload[]): 
   );
   const departmentCodes = Array.from(
     new Set(
-      codePostaux.map((codePostal) => departmentCodesByPostalCode.get(codePostal) ?? extractDepartmentCode(codePostal)),
+      codePostaux.map(
+        (codePostal) => departmentCodesByPostalCode.get(codePostal) ?? deriveDepartmentCodeFromPostalCode(codePostal),
+      ),
     ),
   ).filter((departmentCode) => departmentCode !== '');
 
@@ -196,22 +199,6 @@ async function getDepartmentReferences(requetes: ExportRequetePrismaPayload[]): 
     departmentCodesByPostalCode,
     departementNamesByCode: new Map(communeRows.map((row) => [row.dptCodeActuel, row.dptLibActuel])),
   };
-}
-
-function extractDepartmentCode(codePostal: string): string {
-  if (!/^\d{5}$/.test(codePostal)) {
-    return '';
-  }
-
-  if (codePostal.startsWith('20')) {
-    return '20';
-  }
-
-  if (codePostal.startsWith('97') || codePostal.startsWith('98')) {
-    return codePostal.slice(0, 3);
-  }
-
-  return codePostal.slice(0, 2);
 }
 
 function toExportRequeteRecord(requete: ExportRequetePrismaPayload): ExportRequeteRecord {

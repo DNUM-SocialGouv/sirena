@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatExportBoolean, formatExportDate, formatExportList } from './exportRequetesFormatters.js';
+import {
+  deriveDepartmentCodeFromPostalCode,
+  formatExportBoolean,
+  formatExportDate,
+  formatExportList,
+} from './exportRequetesFormatters.js';
+
+describe('deriveDepartmentCodeFromPostalCode', () => {
+  it('derives deterministic fallback codes for valid postal codes and rejects invalid values', () => {
+    expect(deriveDepartmentCodeFromPostalCode('75001')).toBe('75');
+    expect(deriveDepartmentCodeFromPostalCode('97110')).toBe('971');
+    expect(deriveDepartmentCodeFromPostalCode('98000')).toBe('980');
+    expect(deriveDepartmentCodeFromPostalCode('20167')).toBe('20');
+    expect(deriveDepartmentCodeFromPostalCode('Clermont-Ferrand')).toBe('');
+  });
+});
 
 describe('formatExportDate', () => {
   it('formats dates as DD/MM/YYYY for the CSV export', () => {

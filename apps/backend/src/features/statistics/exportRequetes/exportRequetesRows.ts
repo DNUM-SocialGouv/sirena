@@ -3,6 +3,7 @@ import { getLieuPrecisionLabel, getMesureProtectionShortLabel } from '@sirena/co
 import { EXPORT_REQUETES_COLUMNS, type ExportRequetesColumnKey } from './exportRequetesColumns.js';
 import type { ExportRequetesCsvRow } from './exportRequetesCsv.js';
 import {
+  deriveDepartmentCodeFromPostalCode,
   formatExportBoolean,
   formatExportDate,
   formatExportList,
@@ -197,7 +198,7 @@ function buildDeclarantFields(
   const codePostalDeclarant = declarant?.adresse?.codePostal ?? '';
   const departementDeclarant =
     departmentReferences.codesByPostalCode?.get(codePostalDeclarant) ??
-    formatDepartementFromCodePostal(codePostalDeclarant);
+    deriveDepartmentCodeFromPostalCode(codePostalDeclarant);
 
   return {
     declarantEstPersonneConcernee: formatExportBoolean(declarant?.estVictime),
@@ -221,7 +222,7 @@ function buildPersonneConcerneeFields(
   const codePostalPersonneConcernee = participant?.adresse?.codePostal ?? '';
   const departementPersonneConcernee =
     departmentReferences.codesByPostalCode?.get(codePostalPersonneConcernee) ??
-    formatDepartementFromCodePostal(codePostalPersonneConcernee);
+    deriveDepartmentCodeFromPostalCode(codePostalPersonneConcernee);
 
   return {
     civilitePersonneConcernee: participant?.identite?.civilite?.label ?? '',
@@ -254,11 +255,11 @@ function buildSituationFields(
   const villeLieuSurvenue = codePostalLieuSurvenueQualifie ? (lieuDeSurvenue?.adresse?.ville ?? '') : '';
   const departementLieuSurvenue =
     departmentReferences.codesByPostalCode?.get(codePostalLieuSurvenue) ??
-    formatDepartementFromCodePostal(codePostalLieuSurvenue);
+    deriveDepartmentCodeFromPostalCode(codePostalLieuSurvenue);
   const codePostalMisEnCause = misEnCause?.codePostal ?? '';
   const departementMisEnCause =
     departmentReferences.codesByPostalCode?.get(codePostalMisEnCause) ??
-    formatDepartementFromCodePostal(codePostalMisEnCause);
+    deriveDepartmentCodeFromPostalCode(codePostalMisEnCause);
 
   return {
     numeroSituation: situation ? (situationIndex ?? 0) + 1 : '',
@@ -481,22 +482,6 @@ function getRequeteEntiteRacine(
   topEntiteId: string | undefined,
 ): ExportRequeteEntiteRecord | undefined {
   return requete.requeteEntites?.find((requeteEntite) => requeteEntite.entiteId === topEntiteId);
-}
-
-function formatDepartementFromCodePostal(codePostal: string): string {
-  if (!/^\d{5}$/.test(codePostal)) {
-    return '';
-  }
-
-  if (codePostal.startsWith('20')) {
-    return '20';
-  }
-
-  if (codePostal.startsWith('97') || codePostal.startsWith('98')) {
-    return codePostal.slice(0, 3);
-  }
-
-  return codePostal.slice(0, 2);
 }
 
 function formatDepartementWithName(
