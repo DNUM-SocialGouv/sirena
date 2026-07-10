@@ -1,6 +1,4 @@
-import { paginationQueryParamsSchema } from '@sirena/backend-utils/schemas';
 import * as z from 'zod';
-import { Prisma } from '../../libs/prisma.js';
 
 export const UploadedFileSchema = z.object({
   id: z.uuid(),
@@ -18,7 +16,6 @@ export const UploadedFileSchema = z.object({
   metadata: z.record(z.string(), z.string()).nullable(),
   entiteId: z.string().nullable(),
   uploadedById: z.string().nullable(),
-  requeteEtapeNoteId: z.string().nullable(),
   requeteId: z.string().nullable(),
   faitSituationId: z.string().nullable(),
   demarchesEngageesId: z.string().nullable(),
@@ -31,23 +28,6 @@ export const UploadedFileParamsIdSchema = UploadedFileSchema.pick({
 });
 
 export const GetUploadedFileResponseSchema = UploadedFileSchema;
-
-export const GetUploadedFilesResponseSchema = z.array(
-  UploadedFileSchema.omit({
-    metadata: true,
-  }),
-);
-
-const columns = [
-  Prisma.UploadedFileScalarFieldEnum.fileName,
-  Prisma.UploadedFileScalarFieldEnum.filePath,
-  Prisma.UploadedFileScalarFieldEnum.mimeType,
-] as const;
-
-export const GetUploadedFilesQuerySchema = paginationQueryParamsSchema(columns).extend({
-  mimeType: z.string().optional(),
-  fileName: z.string().optional(),
-});
 
 export const FileProcessingStatusSchema = z.object({
   id: z.string(),

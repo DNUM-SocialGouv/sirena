@@ -40,7 +40,7 @@ export async function runFileIntegrityCheck(options?: {
       createdAt: true,
       requeteId: true,
       faitSituationId: true,
-      requeteEtapeNoteId: true,
+      requeteEtapeId: true,
       demarchesEngageesId: true,
     },
   });
@@ -61,7 +61,7 @@ export async function runFileIntegrityCheck(options?: {
   logger.info({ uniqueDbPaths: dbPaths.size }, 'Built DB path index');
 
   const orphanDbFiles = dbFiles.filter(
-    (f) => !f.requeteId && !f.faitSituationId && !f.requeteEtapeNoteId && !f.demarchesEngageesId,
+    (f) => !f.requeteId && !f.faitSituationId && !f.requeteEtapeId && !f.demarchesEngageesId,
   );
   const dbFilesWithoutS3 = dbFiles.filter((f) => !s3Paths.has(f.filePath));
   const s3FilesWithoutDb = s3Objects.filter((o) => !dbPaths.has(o.name));

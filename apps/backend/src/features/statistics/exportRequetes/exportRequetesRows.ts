@@ -69,7 +69,7 @@ type ExportRequeteEntiteRecord = {
 type ExportRequeteEtapeRecord = {
   entiteId: string;
   type?: string | null;
-  statutId: string;
+  statutId: string | null;
   createdAt: Date;
   clotureEffectiveDate?: Date | null;
   clotureReason: ExportLabelRecord[];

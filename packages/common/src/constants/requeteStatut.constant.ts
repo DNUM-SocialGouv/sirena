@@ -1,5 +1,4 @@
 export const REQUETE_ETAPE_STATUT_TYPES = {
-  EN_COURS: 'EN_COURS',
   A_FAIRE: 'A_FAIRE',
   FAIT: 'FAIT',
   CLOTUREE: 'CLOTUREE',
@@ -8,7 +7,6 @@ export const REQUETE_ETAPE_STATUT_TYPES = {
 export type RequeteEtapeStatutType = keyof typeof REQUETE_ETAPE_STATUT_TYPES;
 
 export const requeteEtapeStatutType: Record<RequeteEtapeStatutType, string> = {
-  [REQUETE_ETAPE_STATUT_TYPES.EN_COURS]: 'En cours',
   [REQUETE_ETAPE_STATUT_TYPES.A_FAIRE]: 'À faire',
   [REQUETE_ETAPE_STATUT_TYPES.FAIT]: 'Fait',
   [REQUETE_ETAPE_STATUT_TYPES.CLOTUREE]: 'Clôturée',
