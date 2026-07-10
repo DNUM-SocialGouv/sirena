@@ -460,7 +460,27 @@ describe('buildExportRequetesRows', () => {
     expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('63000');
   });
 
-  it('exports ville lieu de survenue from the qualified SIRENA address', () => {
+  it('keeps the fallback lieu de survenue postal code and city on the declarant source', () => {
+    const rows = buildExportRequetesRows([
+      {
+        id: 'REQ-2026-0034',
+        createdAt: new Date('2026-06-18T10:00:00.000Z'),
+        situations: [
+          {
+            lieuDeSurvenue: {
+              codePostal: '33000',
+              adresse: { codePostal: '', ville: 'Clermont-Ferrand' },
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('33000');
+    expect(cell(rows[0], 'villeLieuSurvenue')).toBe('');
+  });
+
+  it('exports the structured lieu de survenue postal code and city together', () => {
     const rows = buildExportRequetesRows([
       {
         id: 'REQ-2026-0022',
@@ -468,6 +488,7 @@ describe('buildExportRequetesRows', () => {
         situations: [
           {
             lieuDeSurvenue: {
+              codePostal: '33000',
               adresse: { codePostal: '63000', ville: 'Clermont-Ferrand' },
             },
           },
@@ -475,6 +496,7 @@ describe('buildExportRequetesRows', () => {
       },
     ]);
 
+    expect(cell(rows[0], 'codePostalLieuSurvenue')).toBe('63000');
     expect(cell(rows[0], 'villeLieuSurvenue')).toBe('Clermont-Ferrand');
   });
 

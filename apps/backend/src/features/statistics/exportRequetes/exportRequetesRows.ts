@@ -231,7 +231,9 @@ function buildSituationFields(
   const lieuDeSurvenue = situation?.lieuDeSurvenue;
   const misEnCause = situation?.misEnCause;
 
-  const codePostalLieuSurvenue = lieuDeSurvenue?.adresse?.codePostal || lieuDeSurvenue?.codePostal || '';
+  const codePostalLieuSurvenueQualifie = lieuDeSurvenue?.adresse?.codePostal;
+  const codePostalLieuSurvenue = codePostalLieuSurvenueQualifie || lieuDeSurvenue?.codePostal || '';
+  const villeLieuSurvenue = codePostalLieuSurvenueQualifie ? (lieuDeSurvenue?.adresse?.ville ?? '') : '';
   const departementLieuSurvenue = formatDepartementFromCodePostal(codePostalLieuSurvenue);
   const codePostalMisEnCause = misEnCause?.codePostal ?? '';
   const departementMisEnCause = formatDepartementFromCodePostal(codePostalMisEnCause);
@@ -241,7 +243,7 @@ function buildSituationFields(
     typeLieuSurvenue: lieuDeSurvenue?.lieuType?.label ?? '',
     precisionTypeLieuSurvenue: formatLieuSurvenuePrecision(lieuDeSurvenue),
     codePostalLieuSurvenue,
-    villeLieuSurvenue: lieuDeSurvenue?.adresse?.ville ?? '',
+    villeLieuSurvenue,
     departementLieuSurvenue: shouldExportDepartements
       ? formatDepartementWithName(departementLieuSurvenue, departementNamesByCode)
       : '',
