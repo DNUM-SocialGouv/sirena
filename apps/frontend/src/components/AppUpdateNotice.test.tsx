@@ -25,7 +25,7 @@ describe('AppUpdateNotice', () => {
     useAppUpdateStore.setState({ isUpdateAvailable: true });
     render(<AppUpdateNotice />);
 
-    expect(screen.getByText(/nouvelle version de l'application/i)).toBeInTheDocument();
+    expect(screen.getByText(/votre version de sirena chargée sur votre navigateur diffère/i)).toBeInTheDocument();
     expect(reload).not.toHaveBeenCalled();
 
     await userEvent.click(screen.getByRole('button', { name: /rafraîchir/i }));

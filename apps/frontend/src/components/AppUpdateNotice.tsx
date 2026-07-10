@@ -19,7 +19,8 @@ export function AppUpdateNotice() {
       onClose={dismiss}
       title={
         <>
-          Une nouvelle version de l'application est disponible.
+          Votre version de Sirena chargée sur votre navigateur diffère de celle en ligne actuellement. Pour éviter tout
+          problème, nous vous conseillons de recharger la page.
           <Button priority="secondary" size="small" className="fr-ml-2w" onClick={reloadPage}>
             Rafraîchir la page
           </Button>
