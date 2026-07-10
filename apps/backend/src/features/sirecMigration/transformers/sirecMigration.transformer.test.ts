@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { transformSirecReclamation } from './sirecMigration.transformer.js';
 
 vi.mock('../transco/affectation/affectation.transco.js', () => ({
+  SIREC_NATIONAL_ENTITE_ID: 1,
   transcodeAffectation: vi.fn((id: number) => {
     const ARS: Record<number, string> = {
       667: '4988789e-9775-4958-861f-52f03cbc9257',
@@ -74,8 +75,8 @@ describe('sirecMigration.transformer.ts', () => {
       victime_prenom: null as string | null,
       victime_mail: null as string | null,
       victime_tel: null as string | null,
-      service_recepteur_niv1: 693,
-      service_gestionnaire: null,
+      service_recepteur_niv1: null,
+      service_gestionnaire: 693,
       accuser_reception: null as number | null,
       date_envoi_ar: null as Date | null,
       accuser_reception_precision: null as string | null,
@@ -159,10 +160,10 @@ describe('sirecMigration.transformer.ts', () => {
     });
   });
 
-  it('should map service_recepteur_niv1 to requeteEntiteIds via affectation transco', () => {
+  it('should map service_gestionnaire to requeteEntiteIds and situationEntiteIds via affectation transco', () => {
     const result = transformSirecReclamation({
       ...sirecData,
-      reclamation: { ...sirecData.reclamation, service_recepteur_niv1: 1115, service_gestionnaire: null },
+      reclamation: { ...sirecData.reclamation, service_gestionnaire: 1115 },
     });
 
     expect(result.requeteEntiteIds).toEqual(['4af829ff-07c1-425d-85d6-83b5f97e4422']);
@@ -321,7 +322,7 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     it('should map a provenance to an etape with the institution name in nom', () => {
-      // service_recepteur_niv1: 693 → ARS Normandie (4af829ff-...)
+      // service_gestionnaire: 693 → ARS Normandie (4af829ff-...)
       // provenance id_group: 693 → same ARS Normandie
       const result = transformSirecReclamation({
         ...sirecData,
@@ -354,7 +355,7 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     it('should create one etape per institution using the ARS entiteId', () => {
-      // service_recepteur_niv1: 693 → ARS Normandie (4af829ff-...)
+      // service_gestionnaire: 693 → ARS Normandie (4af829ff-...)
       const result = transformSirecReclamation({
         ...sirecData,
         reclamation: { ...sirecData.reclamation, institution_part: '1,2', niv_competence_reclam: 54 },
@@ -389,7 +390,7 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     it('should add one etape per ARS entiteId when accuser_reception is false', () => {
-      // service_recepteur_niv1: 693 → ARS Normandie (1 ARS entiteId)
+      // service_gestionnaire: 693 → ARS Normandie (1 ARS entiteId)
       const result = transformSirecReclamation({
         ...sirecData,
         reclamation: { ...sirecData.reclamation, accuser_reception: 111 },
@@ -430,7 +431,7 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     it('should add one etape per ARS entiteId when date_traitement is set', () => {
-      // service_recepteur_niv1: 693 → ARS Normandie (1 ARS entiteId)
+      // service_gestionnaire: 693 → ARS Normandie (1 ARS entiteId)
       const result = transformSirecReclamation({
         ...sirecData,
         reclamation: { ...sirecData.reclamation, date_traitement: new Date('2024-06-01') },
@@ -470,7 +471,7 @@ describe('sirecMigration.transformer.ts', () => {
     });
 
     it('should add one etape per ARS entiteId when date_commission is set', () => {
-      // service_recepteur_niv1: 693 → ARS Normandie (1 ARS entiteId)
+      // service_gestionnaire: 693 → ARS Normandie (1 ARS entiteId)
       const date = new Date('2024-09-05');
       const result = transformSirecReclamation({
         ...sirecData,
