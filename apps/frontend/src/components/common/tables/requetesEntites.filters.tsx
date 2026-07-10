@@ -1,4 +1,9 @@
-import { DOMAINES_FONCTIONNELS, entiteTypes, REQUETE_PRIORITE_TYPES } from '@sirena/common/constants';
+import {
+  DOMAINES_FONCTIONNELS,
+  entiteTypes,
+  REQUETE_PRIORITE_TYPES,
+  REQUETE_STATUT_TYPES,
+} from '@sirena/common/constants';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useCallback, useMemo, useState } from 'react';
 import { CheckboxFilter } from '@/components/common/filters/CheckboxFilter';
@@ -8,6 +13,7 @@ import { StatutFilter } from '@/components/common/filters/StatutFilter';
 import { useDepartementCounts } from '@/hooks/queries/departementCounts.hook';
 import { useDomaineCounts } from '@/hooks/queries/domaineCounts.hook';
 import { useProfile } from '@/hooks/queries/profile.hook';
+import { useStatutCounts } from '@/hooks/queries/statutCounts.hook';
 import { splitCsv } from '@/utils/filters';
 import { getRequetesQuickFiltersViewModel } from './requetesEntites.filters.model';
 
@@ -22,8 +28,11 @@ export function RequetesEntiteQuickFilters() {
   const arsDepartements = useMemo(() => profile?.topEntiteDepartements ?? [], [profile?.topEntiteDepartements]);
   const [isDepartementDropdownOpen, setIsDepartementDropdownOpen] = useState(false);
   const [isDomaineDropdownOpen, setIsDomaineDropdownOpen] = useState(false);
+  const [isStatutDropdownOpen, setIsStatutDropdownOpen] = useState(false);
 
   const allDomaineIds = useMemo(() => Object.values(DOMAINES_FONCTIONNELS).join(','), []);
+
+  const allStatutIds = useMemo(() => Object.values(REQUETE_STATUT_TYPES).join(','), []);
 
   const selectedDepartements = useMemo(() => splitCsv(queries.departementCodes), [queries.departementCodes]);
 
@@ -54,6 +63,18 @@ export function RequetesEntiteQuickFilters() {
     if (!domaineCountsData) return null;
     return Object.fromEntries(domaineCountsData.map((d) => [d.id, d.count]));
   }, [domaineCountsData]);
+
+  const { data: statutCountsData } = useStatutCounts({
+    statutIds: allStatutIds,
+    entiteId: queries.entiteId,
+    search: queries.search,
+    enabled: isStatutDropdownOpen,
+  });
+
+  const statutCounts = useMemo(() => {
+    if (!statutCountsData) return null;
+    return Object.fromEntries(statutCountsData.map((s) => [s.id, s.count]));
+  }, [statutCountsData]);
 
   const handleAffectationChange = useCallback(
     (checked: boolean) => {
@@ -157,7 +178,13 @@ export function RequetesEntiteQuickFilters() {
           onClose={() => setIsDomaineDropdownOpen(false)}
         />
 
-        <StatutFilter selectedIds={selectedStatuts} onChange={handleStatutChange} />
+        <StatutFilter
+          selectedIds={selectedStatuts}
+          counts={statutCounts}
+          onChange={handleStatutChange}
+          onOpen={() => setIsStatutDropdownOpen(true)}
+          onClose={() => setIsStatutDropdownOpen(false)}
+        />
       </div>
     </fieldset>
   );
